@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>왕사들 · WANGSADEUL — 다섯 봉우리 아래, 왕의 길</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="data.js"></script>
+<script type="text/babel" src="components/Ilwolobongdo.jsx"></script>
+<script type="text/babel" src="components/Shell.jsx"></script>
+<script type="text/babel" src="pages/HomePage.jsx"></script>
+<script type="text/babel" src="pages/CommunityPage.jsx"></script>
+<script type="text/babel" src="pages/WangsanamTourPage.jsx"></script>
+<script type="text/babel" src="pages/ColumnPage.jsx"></script>
+<script type="text/babel" src="pages/BookCheckoutPage.jsx"></script>
+<script type="text/babel" src="pages/AuthAdminPage.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "lineStyle": "outline",
+  "intensity": 1,
+  "heroLayout": "center",
+  "interactive": true
+}/*EDITMODE-END*/;
+
+const App = () => {
+  const [route, setRoute] = React.useState(() => {
+    try { return localStorage.getItem('wsd_route') || 'home'; } catch { return 'home'; }
+  });
+  const [postId, setPostId] = React.useState(null);
+  const [user, setUser] = React.useState(null);
+  const [cart, setCart] = React.useState(null);
+  const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
+  const [editMode, setEditMode] = React.useState(false);
+
+  const go = (r) => {
+    setRoute(r);
+    setPostId(null);
+    try { localStorage.setItem('wsd_route', r); } catch {}
+    window.scrollTo(0, 0);
+  };
+
+  // Edit-mode protocol
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const d = e.data || {};
+      if (d.type === '__activate_edit_mode') setEditMode(true);
+      if (d.type === '__deactivate_edit_mode') setEditMode(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const updateTweaks = (next) => {
+    setTweaks(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
+  };
+
+  const hideNav = route === "login" || route === "signup" || route === "admin";
+  const page = (() => {
+    switch (route) {
+      case "home": return <HomePage go={go} tweaks={tweaks}/>;
+      case "community": return <CommunityPage go={go} postId={postId} setPostId={setPostId}/>;
+      case "wangsanam": return <WangsanamPage go={go}/>;
+      case "tour": return <TourPage go={go}/>;
+      case "column": return <ColumnPage go={go}/>;
+      case "book": return <BookPage go={go} cart={cart} setCart={setCart}/>;
+      case "checkout": return <CheckoutPage go={go} cart={cart}/>;
+      case "login":
+      case "signup": return <LoginPage go={go} setUser={setUser}/>;
+      case "admin": return <AdminPage go={go}/>;
+      default: return <HomePage go={go} tweaks={tweaks}/>;
+    }
+  })();
+
+  return (
+    <div className="app">
+      <Nav route={route} go={go} user={user}/>
+      <main style={{flex:1}}>{page}</main>
+      {!hideNav && <Footer go={go}/>}
+      <Tweaks tweaks={tweaks} setTweaks={updateTweaks} visible={editMode}/>
+    </div>
+  );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
