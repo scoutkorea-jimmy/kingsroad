@@ -10,9 +10,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
-<!-- TOAST UI Editor (for community post writing) -->
-<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
-<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.min.css">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -25,10 +22,22 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+<!-- Tiptap via ESM — exposes factories to window.WSD_TIPTAP -->
+<script type="module">
+  import { Editor } from 'https://esm.sh/@tiptap/core@2.11.5';
+  import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.11.5';
+  import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@2.11.5';
+  import Image from 'https://esm.sh/@tiptap/extension-image@2.11.5';
+  import Link from 'https://esm.sh/@tiptap/extension-link@2.11.5';
+  import Typography from 'https://esm.sh/@tiptap/extension-typography@2.11.5';
+  import Dropcursor from 'https://esm.sh/@tiptap/extension-dropcursor@2.11.5';
+  window.WSD_TIPTAP = { Editor, StarterKit, Placeholder, Image, Link, Typography, Dropcursor };
+  window.dispatchEvent(new Event('wsd-tiptap-ready'));
+</script>
 <script src="data.js"></script>
 <script type="text/babel" src="components/Ilwolobongdo.jsx"></script>
 <script type="text/babel" src="components/Shell.jsx"></script>
+<script type="text/babel" src="components/TiptapEditor.jsx"></script>
 <script type="text/babel" src="pages/HomePage.jsx"></script>
 <script type="text/babel" src="pages/CommunityPage.jsx"></script>
 <script type="text/babel" src="pages/WangsanamTourPage.jsx"></script>
@@ -96,7 +105,9 @@ const App = () => {
       case "checkout": return <CheckoutPage go={go} cart={cart}/>;
       case "login":
       case "signup": return <LoginPage go={go} setUser={setUser}/>;
-      case "admin": return <AdminPage go={go}/>;
+      case "admin": return user?.isAdmin
+        ? <AdminPage go={go} user={user}/>
+        : <AdminDenied go={go} user={user}/>;
       default: return <HomePage go={go} tweaks={tweaks}/>;
     }
   })();

@@ -55,7 +55,9 @@ const Nav = ({ route, go, user, readFont, setReadFont }) => {
             <>
               <span className="mono" aria-label={`로그인: ${user.name}`}
                 style={{fontSize:11, letterSpacing:'0.15em', color:'var(--gold)'}}>{user.name}</span>
-              <button className="btn btn-small" onClick={() => go("admin")}>관리</button>
+              {user.isAdmin && (
+                <button className="btn btn-small" onClick={() => go("admin")}>관리</button>
+              )}
             </>
           ) : (
             <>
@@ -112,7 +114,10 @@ const Footer = ({ go }) => (
       </div>
       <div className="footer-bottom">
         <span>© 2026 WANGSADEUL — ALL RIGHTS RESERVED</span>
-        <span lang="zh-Hant">日月五峯</span><span> · DESIGNED IN SEOUL</span>
+        <span className="mono" style={{color:'var(--gold-dim)'}}>
+          v{window.WSD_VERSION?.version || '0.0.0'} · build {window.WSD_VERSION?.build || '—'} · {window.WSD_VERSION?.channel || ''}
+        </span>
+        <span><span lang="zh-Hant">日月五峯</span> · DESIGNED IN SEOUL</span>
       </div>
     </div>
   </footer>

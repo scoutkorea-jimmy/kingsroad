@@ -28,6 +28,9 @@
   --font-serif: "Noto Serif KR", "Nanum Myeongjo", serif;
   --font-sans: "Wanted Sans Variable", "Wanted Sans", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "IBM Plex Mono", "D2 Coding", monospace;
+  /* Reading font: swaps via toggle in header. Default = 고딕(Wanted Sans). */
+  --font-reading: var(--font-sans);
+  --font-display: var(--font-sans);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -96,31 +99,36 @@ button, [role="button"], a.nav-link, .nav-link, .footer li button {
 }
 
 /* === Reading font modes ========================================
-   Default: gothic (Wanted Sans). Toggle puts body reading in Chosun Myungjo.
-   Scope: only <main> content — nav/footer/admin stay gothic. */
-.app.reading-myungjo main,
-.app.reading-myungjo main p,
-.app.reading-myungjo main h1,
-.app.reading-myungjo main h2,
-.app.reading-myungjo main h3,
-.app.reading-myungjo main h4,
-.app.reading-myungjo main .ko-serif,
-.app.reading-myungjo main .section-title,
-.app.reading-myungjo main .card-title,
-.app.reading-myungjo main .field-input {
-  font-family: 'ChosunIlboMyungjo', var(--font-serif);
-  letter-spacing: 0;
+   고딕(sans)이 기본. 토글 시 명조(ChosunIlboMyungjo)로 전환.
+   적용 범위: <main> 안의 읽기 컨텐츠만 — nav/footer는 건드리지 않음.
+   각 블록은 --font-reading/--font-display 변수를 바라본다. */
+.app.reading-myungjo {
+  --font-reading: 'ChosunIlboMyungjo', 'Noto Serif KR', serif;
+  --font-display: 'ChosunIlboMyungjo', 'Noto Serif KR', serif;
 }
-.app.reading-myungjo main .mono,
-.app.reading-myungjo main .badge,
-.app.reading-myungjo main .pill,
-.app.reading-myungjo main .card-meta,
-.app.reading-myungjo main .row-num,
-.app.reading-myungjo main .row-meta,
-.app.reading-myungjo main code,
-.app.reading-myungjo main time,
-.app.reading-myungjo main .section-eyebrow {
-  font-family: var(--font-mono);
+
+main h1, main h2, main h3, main h4,
+main .section-title,
+main .card-title,
+main .ko-serif {
+  font-family: var(--font-display);
+}
+main p,
+main article,
+main .field-input,
+main textarea,
+main select,
+main li,
+main dd,
+main td,
+main .row-title {
+  font-family: var(--font-reading);
+}
+/* mono/badge/meta는 어느 모드든 모노스페이스 유지 */
+main .mono, main .badge, main .pill, main .card-meta,
+main .row-num, main .row-meta, main code, main pre,
+main time, main .section-eyebrow {
+  font-family: var(--font-mono) !important;
 }
 
 /* Toggle in header */
@@ -151,7 +159,7 @@ button, [role="button"], a.nav-link, .nav-link, .footer li button {
   max-width: 920px;
 }
 .post-body {
-  font-family: var(--font-serif);
+  font-family: var(--font-reading);
   font-size: 18px;
   line-height: 1.95;
   color: var(--ink);
@@ -162,7 +170,6 @@ button, [role="button"], a.nav-link, .nav-link, .footer li button {
   text-wrap: pretty;
 }
 .app.reading-myungjo .post-body {
-  font-family: 'ChosunIlboMyungjo', var(--font-serif);
   font-size: 19px;
   line-height: 2;
 }
@@ -172,7 +179,7 @@ button, [role="button"], a.nav-link, .nav-link, .footer li button {
   text-indent: 0;
 }
 .post-body h1, .post-body h2, .post-body h3, .post-body h4 {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--ink);
@@ -231,15 +238,271 @@ button, [role="button"], a.nav-link, .nav-link, .footer li button {
   width: 40%;
 }
 
-/* TOAST UI Editor — site dark tone harmonisation */
-.toastui-editor-defaultUI {
-  border-color: var(--line-2) !important;
+/* === Tiptap editor ======================================================= */
+.tiptap-wrap {
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
 }
-.toastui-editor-toolbar {
-  background: var(--bg-2) !important;
+.tiptap-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
+  background: var(--bg-3);
+  border-bottom: 1px solid var(--line-2);
+  align-items: center;
 }
-.toastui-editor-main {
-  background: var(--bg) !important;
+.tt-group { display: flex; gap: 2px; }
+.tt-divider { width: 1px; height: 20px; background: var(--line-2); margin: 0 4px; }
+.tt-btn {
+  min-width: 34px;
+  min-height: 30px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tt-btn:hover:not(:disabled) { color: var(--gold); background: rgba(212,175,55,0.08); }
+.tt-btn.on { color: var(--gold); background: rgba(212,175,55,0.12); border-color: var(--gold-dim); }
+.tt-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.tt-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+.tiptap-host { padding: 16px 20px; min-height: 320px; }
+.tiptap-editor {
+  min-height: 300px;
+  outline: none;
+  color: var(--ink);
+  font-family: var(--font-reading);
+  font-size: 16px;
+  line-height: 1.85;
+  word-break: keep-all;
+}
+.tiptap-editor > * + * { margin-top: 0.9em; }
+.tiptap-editor h1 { font-family: var(--font-display); font-size: 1.8em; line-height: 1.3; margin-top: 1.2em; font-weight: 500; }
+.tiptap-editor h2 { font-family: var(--font-display); font-size: 1.4em; line-height: 1.35; margin-top: 1.2em; font-weight: 500; }
+.tiptap-editor h3 { font-family: var(--font-display); font-size: 1.15em; line-height: 1.4; margin-top: 1em; font-weight: 500; }
+.tiptap-editor blockquote {
+  border-left: 2px solid var(--gold);
+  padding-left: 16px;
+  color: var(--gold-ink);
+  font-style: italic;
+}
+.tiptap-editor ul, .tiptap-editor ol { padding-left: 1.4em; }
+.tiptap-editor code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 1px 6px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+}
+.tiptap-editor a {
+  color: var(--gold);
+  text-decoration: underline;
+  text-decoration-color: var(--gold-dim);
+  text-underline-offset: 3px;
+}
+.tiptap-editor hr {
+  border: none;
+  border-top: 1px solid var(--line-2);
+  margin: 1.5em 0;
+}
+.tiptap-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--ink-3);
+  pointer-events: none;
+  height: 0;
+}
+/* Inline image (column preset) */
+.tiptap-editor img, .tiptap-img {
+  max-width: 100%;
+  border: 1px solid var(--line-2);
+  cursor: move;               /* move handle for drag */
+  display: block;
+  margin: 0.6em auto;
+}
+.ProseMirror-selectednode { outline: 2px solid var(--gold); }
+
+/* === Hashtag chips input ================================================ */
+.tag-input-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  min-height: 48px;
+}
+.tag-input-wrap:focus-within { border-color: var(--gold); }
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  background: rgba(212,175,55,0.1);
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+}
+.tag-chip button {
+  color: var(--gold);
+  font-size: 10px;
+  padding: 0 2px;
+  min-height: 0;
+  line-height: 1;
+  background: none; border: none;
+  cursor: pointer;
+}
+.tag-chip button:hover { color: var(--danger); }
+.tag-input-wrap input {
+  flex: 1;
+  min-width: 120px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+/* === Image slider (community post attachments) ========================== */
+.img-slider {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 480px;
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+  overflow: hidden;
+}
+.img-slider-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.img-slider-slide {
+  flex: 0 0 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: var(--bg-3);
+}
+.img-slider-slide img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.img-slider-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+.img-slider-dots button {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  border: none;
+  padding: 0;
+  min-height: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.img-slider-dots button[aria-current="true"] {
+  background: var(--gold);
+  width: 24px;
+  border-radius: 4px;
+}
+.img-slider-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px; height: 40px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+  display: grid; place-items: center;
+  cursor: pointer;
+}
+.img-slider-nav.prev { left: 12px; }
+.img-slider-nav.next { right: 12px; }
+.img-slider-nav:hover { background: rgba(0,0,0,0.7); color: var(--gold); }
+.img-slider-caption {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-2);
+  background: rgba(0,0,0,0.5);
+  padding: 4px 8px;
+  letter-spacing: 0.15em;
+}
+
+/* Thumbnail strip (editor-side image manager) */
+.img-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.img-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+  overflow: hidden;
+}
+.img-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.img-thumb-remove {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 22px; height: 22px;
+  background: rgba(0,0,0,0.7);
+  color: var(--ink);
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+.img-thumb-remove:hover { background: var(--danger); color: white; }
+.img-thumb-order {
+  position: absolute;
+  bottom: 4px; left: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gold);
+  background: rgba(0,0,0,0.6);
+  padding: 1px 5px;
+  letter-spacing: 0.1em;
+}
+
+/* === Grade badge ========================================================= */
+.grade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  border: 1px solid currentColor;
+}
+.grade-badge::before {
+  content: "";
+  width: 6px; height: 6px;
+  background: currentColor;
+  border-radius: 50%;
 }
 
 /* ---- Typography utilities ---- */
@@ -558,11 +821,14 @@ button, [role="button"], a.nav-link, .nav-link, .footer li button {
   padding-top: 24px;
   display: flex;
   justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--ink-3);
   letter-spacing: 0.1em;
 }
+.footer-bottom span { display: inline-block; }
 
 /* ---- Ilwolobongdo SVG ---- */
 .ilwol-svg { display: block; width: 100%; height: auto; overflow: visible; }

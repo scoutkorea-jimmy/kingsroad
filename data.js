@@ -1,4 +1,65 @@
 // 왕사들 mock data
+
+// === 사이트 버전 (수정 시 footer에 노출) ===
+window.WSD_VERSION = {
+  version: "0.3.0",
+  build: "2026.04.20",
+  channel: "preview",
+};
+
+// === 회원 등급/카테고리/해시태그 저장소 (localStorage 연동) ===
+const _lsGet = (k, fallback) => {
+  try {
+    const v = localStorage.getItem(k);
+    return v ? JSON.parse(v) : fallback;
+  } catch { return fallback; }
+};
+const _lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+// 회원 등급 — 번호가 낮을수록 권한 낮음. admin > …
+const DEFAULT_GRADES = [
+  { id: "guest",    label: "방문객", level: 0, color: "#78716a", desc: "비로그인 / 게스트" },
+  { id: "member",   label: "입문", level: 10, color: "#b8b1a1", desc: "회원가입 완료" },
+  { id: "reader",   label: "독자", level: 30, color: "#E8C547", desc: "활동 회원 (댓글 10+)" },
+  { id: "scholar",  label: "사관", level: 60, color: "#D4AF37", desc: "열성 회원 (칼럼 기고 가능)" },
+  { id: "wangsanam",label: "왕사남", level: 90, color: "#F5E6A8", desc: "운영진" },
+  { id: "admin",    label: "관리자", level: 100, color: "#F5E6A8", desc: "최고 관리자" },
+];
+
+// 게시판 분류 — 각 카테고리에 최소 등급(minLevel) 지정 시 접근 제한
+const DEFAULT_CATEGORIES = [
+  { id: "notice",   label: "공지",  boardType: "community", minLevel: 0,  postMinLevel: 100, desc: "운영진 공지 (읽기: 누구나 · 쓰기: 관리자)" },
+  { id: "free",     label: "자유",  boardType: "community", minLevel: 10, postMinLevel: 10,  desc: "자유 게시판 (쓰기: 회원)" },
+  { id: "question", label: "질문",  boardType: "community", minLevel: 10, postMinLevel: 10,  desc: "질문 게시판 (쓰기: 회원)" },
+  { id: "info",     label: "정보",  boardType: "community", minLevel: 10, postMinLevel: 30,  desc: "정보 공유 (쓰기: 독자 이상)" },
+  { id: "column",   label: "칼럼",  boardType: "column",    minLevel: 0,  postMinLevel: 100, desc: "뱅기노자 칼럼 (쓰기: 관리자)" },
+];
+
+window.WSD_STORES = {
+  grades: _lsGet('wsd_grades', DEFAULT_GRADES),
+  categories: _lsGet('wsd_categories', DEFAULT_CATEGORIES),
+  userPosts: _lsGet('wsd_user_posts', []),
+  comments: _lsGet('wsd_comments', {}),
+  userColumns: _lsGet('wsd_user_columns', []),
+};
+window.WSD_SAVE = {
+  grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
+  categories: () => _lsSet('wsd_categories', window.WSD_STORES.categories),
+  userPosts: () => _lsSet('wsd_user_posts', window.WSD_STORES.userPosts),
+  comments: () => _lsSet('wsd_comments', window.WSD_STORES.comments),
+  userColumns: () => _lsSet('wsd_user_columns', window.WSD_STORES.userColumns),
+  resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
+  resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
+};
+
+// 사용자 등급 레벨 계산
+window.WSD_USER_LEVEL = (user) => {
+  if (!user) return 0;
+  if (user.isAdmin) return 100;
+  const g = window.WSD_STORES.grades.find(x => x.id === user.gradeId);
+  return g ? g.level : 10;
+};
+
 window.WANGSADEUL_DATA = {
   notices: [
     { id: 1, tag: "공지", title: "2026년 상반기 궁궐 답사 프로그램 접수 개시", date: "2026.04.18", pinned: true },
