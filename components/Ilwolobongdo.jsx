@@ -5,8 +5,23 @@ const Ilwolobongdo = ({ lineStyle = "outline", intensity = 1, animate = true, in
   const [mouse, setMouse] = React.useState({ x: 0.5, y: 0.5 });
   const [time, setTime] = React.useState(0);
 
+  // Respect prefers-reduced-motion — WCAG 3.0 motion Outcome
+  const [reduceMotion, setReduceMotion] = React.useState(
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  );
   React.useEffect(() => {
-    if (!animate) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = () => setReduceMotion(mq.matches);
+    mq.addEventListener?.('change', onChange);
+    return () => mq.removeEventListener?.('change', onChange);
+  }, []);
+
+  const effectiveAnimate = animate && !reduceMotion;
+  const effectiveInteractive = interactive && !reduceMotion;
+
+  React.useEffect(() => {
+    if (!effectiveAnimate) return;
     let raf;
     const start = performance.now();
     const tick = (now) => {
@@ -15,10 +30,10 @@ const Ilwolobongdo = ({ lineStyle = "outline", intensity = 1, animate = true, in
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [animate]);
+  }, [effectiveAnimate]);
 
   const handleMove = (e) => {
-    if (!interactive || !svgRef.current) return;
+    if (!effectiveInteractive || !svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     setMouse({
       x: (e.clientX - rect.left) / rect.width,
@@ -129,8 +144,15 @@ const Ilwolobongdo = ({ lineStyle = "outline", intensity = 1, animate = true, in
       className={`ilwol-svg ${className}`}
       preserveAspectRatio="xMidYMid meet"
       onMouseMove={handleMove}
+      role="img"
+      aria-labelledby="ilwol-title ilwol-desc"
       style={{ '--intensity': intensity }}
     >
+      <title id="ilwol-title">일월오봉도 와이어프레임</title>
+      <desc id="ilwol-desc">
+        조선 어좌 뒤에 놓였던 일월오봉도를 선화(線畫)로 재해석한 장식 일러스트.
+        다섯 봉우리, 해와 달, 소나무, 물결이 그려져 있습니다.
+      </desc>
       <defs>
         <linearGradient id="goldGrad" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor="var(--gold-2)" stopOpacity="0.7"/>
@@ -272,7 +294,7 @@ const Ilwolobongdo = ({ lineStyle = "outline", intensity = 1, animate = true, in
       </g>
 
       {/* Crosshair that follows mouse */}
-      {interactive && (
+      {effectiveInteractive && (
         <g opacity="0.4" style={{ transition: 'opacity .3s' }}>
           <line x1={mouse.x * 1000} y1="0" x2={mouse.x * 1000} y2="620"
             stroke="var(--gold)" strokeWidth="0.5" strokeDasharray="2 6" />
@@ -289,7 +311,7 @@ const Ilwolobongdo = ({ lineStyle = "outline", intensity = 1, animate = true, in
 
 // Small ornamental mark — used as brand mark / section dividers
 const IlwolMark = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
     <path d="M2 20 L6 10 L9 14 L12 4 L15 14 L18 10 L22 20 Z"
       stroke="currentColor" strokeWidth="1" strokeLinejoin="miter" fill="none"/>
     <circle cx="6" cy="6" r="1.5" fill="currentColor" opacity="0.8"/>

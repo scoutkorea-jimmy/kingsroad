@@ -56,47 +56,68 @@ const LoginPage = ({ go, setUser }) => {
             ))}
           </div>
 
-          {mode === "signup" && (
-            <div className="field">
-              <div className="field-label">이름</div>
-              <input className="field-input" placeholder="실명을 입력해주세요"/>
-            </div>
-          )}
-          <div className="field">
-            <div className="field-label">이메일</div>
-            <input className="field-input" placeholder="hello@wangsadeul.kr"/>
-          </div>
-          <div className="field">
-            <div className="field-label">비밀번호</div>
-            <input type="password" className="field-input" placeholder="••••••••"/>
-          </div>
-          {mode === "signup" && (
-            <>
+          <form onSubmit={(e) => { e.preventDefault(); submit(); }}
+            aria-labelledby="auth-heading" noValidate>
+            <h1 id="auth-heading" className="sr-only">
+              {mode === "login" ? "로그인" : "회원가입"}
+            </h1>
+            {mode === "signup" && (
               <div className="field">
-                <div className="field-label">비밀번호 확인</div>
-                <input type="password" className="field-input" placeholder="••••••••"/>
+                <label className="field-label" htmlFor="auth-name">이름 <span aria-hidden="true" className="gold">*</span><span className="sr-only">(필수)</span></label>
+                <input id="auth-name" name="name" className="field-input"
+                  autoComplete="name" required aria-required="true"
+                  placeholder="실명을 입력해주세요"/>
               </div>
-              <label style={{display:'flex', gap:10, alignItems:'flex-start', margin:'16px 0', fontSize:12, color:'var(--ink-2)', lineHeight:1.6}}>
-                <input type="checkbox" style={{accentColor:'var(--gold)', marginTop:3}}/>
-                <span>이용약관 및 개인정보 처리방침에 동의합니다 <span className="gold">(필수)</span></span>
-              </label>
-              <label style={{display:'flex', gap:10, alignItems:'flex-start', marginBottom:20, fontSize:12, color:'var(--ink-2)', lineHeight:1.6}}>
-                <input type="checkbox" style={{accentColor:'var(--gold)', marginTop:3}}/>
-                <span>뱅기노자 칼럼 · 답사 일정 메일 수신 (선택)</span>
-              </label>
-            </>
-          )}
-          {mode === "login" && (
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, fontSize:12}}>
-              <label style={{display:'flex', gap:8, alignItems:'center', color:'var(--ink-2)'}}>
-                <input type="checkbox" style={{accentColor:'var(--gold)'}}/>로그인 유지
-              </label>
-              <a className="gold" style={{cursor:'pointer'}}>비밀번호 찾기</a>
+            )}
+            <div className="field">
+              <label className="field-label" htmlFor="auth-email">이메일 <span aria-hidden="true" className="gold">*</span><span className="sr-only">(필수)</span></label>
+              <input id="auth-email" name="email" type="email" className="field-input"
+                autoComplete="email" required aria-required="true" inputMode="email"
+                placeholder="hello@wangsadeul.kr"/>
             </div>
-          )}
-          <button className="btn btn-gold btn-block" onClick={submit}>
-            {mode === "login" ? "입장하기 →" : "회원가입 →"}
-          </button>
+            <div className="field">
+              <label className="field-label" htmlFor="auth-password">비밀번호 <span aria-hidden="true" className="gold">*</span><span className="sr-only">(필수)</span></label>
+              <input id="auth-password" name="password" type="password" className="field-input"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                required aria-required="true" minLength={8}
+                aria-describedby="auth-password-hint"
+                placeholder="••••••••"/>
+              {mode === "signup" && (
+                <span id="auth-password-hint" className="field-hint">8자 이상, 영문·숫자·기호 조합 권장</span>
+              )}
+            </div>
+            {mode === "signup" && (
+              <>
+                <div className="field">
+                  <label className="field-label" htmlFor="auth-password2">비밀번호 확인 <span aria-hidden="true" className="gold">*</span></label>
+                  <input id="auth-password2" name="password2" type="password" className="field-input"
+                    autoComplete="new-password" required aria-required="true"
+                    placeholder="••••••••"/>
+                </div>
+                <label htmlFor="consent-terms" style={{display:'flex', gap:10, alignItems:'flex-start', margin:'16px 0', fontSize:12, color:'var(--ink-2)', lineHeight:1.6}}>
+                  <input id="consent-terms" type="checkbox" required aria-required="true"
+                    style={{accentColor:'var(--gold)', marginTop:3}}/>
+                  <span>이용약관 및 개인정보 처리방침에 동의합니다 <span className="gold">(필수)</span></span>
+                </label>
+                <label htmlFor="consent-marketing" style={{display:'flex', gap:10, alignItems:'flex-start', marginBottom:20, fontSize:12, color:'var(--ink-2)', lineHeight:1.6}}>
+                  <input id="consent-marketing" type="checkbox"
+                    style={{accentColor:'var(--gold)', marginTop:3}}/>
+                  <span>뱅기노자 칼럼 · 답사 일정 메일 수신 (선택)</span>
+                </label>
+              </>
+            )}
+            {mode === "login" && (
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, fontSize:12}}>
+                <label htmlFor="keep-login" style={{display:'flex', gap:8, alignItems:'center', color:'var(--ink-2)'}}>
+                  <input id="keep-login" type="checkbox" style={{accentColor:'var(--gold)'}}/>로그인 유지
+                </label>
+                <button type="button" className="btn-ghost" style={{color:'var(--gold)'}}>비밀번호 찾기</button>
+              </div>
+            )}
+            <button type="submit" className="btn btn-gold btn-block">
+              {mode === "login" ? "입장하기 →" : "회원가입 →"}
+            </button>
+          </form>
 
           <div style={{margin:'32px 0', display:'flex', alignItems:'center', gap:16, color:'var(--ink-3)', fontSize:11, fontFamily:'var(--font-mono)', letterSpacing:'0.2em'}}>
             <div style={{flex:1, height:1, background:'var(--line)'}}/>
@@ -112,36 +133,163 @@ const LoginPage = ({ go, setUser }) => {
   );
 };
 
+// === GDPR/PIPA 모의 데이터 ========================================
+const PRIVACY_DATA = {
+  // Data Subject Rights — 정보주체 권리 요청 큐
+  // GDPR Art.15–22 / PIPA §35–38. 기본 응답기한: GDPR 1개월, PIPA 10일. 72h 타이머는 권고.
+  dsrRequests: [
+    { id: "DSR-2026-041", type: "access",     user: "돌담아래",    email: "stone@example.com", openedAt: "2026-04-19T09:12:00Z", dueAt: "2026-05-19T23:59:00Z", law: "GDPR+PIPA", status: "open" },
+    { id: "DSR-2026-040", type: "erasure",    user: "overseas_reader", email: "r@eu.example", openedAt: "2026-04-18T16:04:00Z", dueAt: "2026-05-18T23:59:00Z", law: "GDPR",      status: "in_progress", assignee: "DPO" },
+    { id: "DSR-2026-039", type: "rectify",    user: "역사애호",    email: "h@example.com",    openedAt: "2026-04-16T11:30:00Z", dueAt: "2026-04-26T23:59:00Z", law: "PIPA",      status: "in_progress", assignee: "김관리" },
+    { id: "DSR-2026-038", type: "portability",user: "봄밤의자",    email: "s@eu.example",     openedAt: "2026-04-14T10:00:00Z", dueAt: "2026-05-14T23:59:00Z", law: "GDPR",      status: "done",   resolvedAt: "2026-04-17T15:22:00Z" },
+    { id: "DSR-2026-037", type: "restrict",   user: "입문자",      email: "b@example.com",    openedAt: "2026-04-10T08:00:00Z", dueAt: "2026-04-20T23:59:00Z", law: "PIPA",      status: "done",   resolvedAt: "2026-04-13T09:10:00Z" },
+  ],
+  // 동의 항목 정의 (버전 관리)
+  consentDefs: [
+    { key: "terms",     label: "이용약관",               required: true,  version: "v3.1", updated: "2026-03-02", lawful: "계약 이행" },
+    { key: "privacy",   label: "개인정보 처리방침",      required: true,  version: "v4.0", updated: "2026-03-02", lawful: "법적 의무(PIPA §15)" },
+    { key: "marketing", label: "마케팅 정보 수신 (이메일)", required: false, version: "v2.0", updated: "2026-01-15", lawful: "명시적 동의(GDPR Art.6(1)(a))" },
+    { key: "sms",       label: "SMS 수신",               required: false, version: "v1.2", updated: "2025-11-10", lawful: "명시적 동의" },
+    { key: "profiling", label: "관심사 기반 추천 프로파일링", required: false, version: "v1.0", updated: "2026-02-01", lawful: "명시적 동의(GDPR Art.22)" },
+  ],
+  // ROPA — Record of Processing Activities (GDPR Art.30)
+  ropa: [
+    { id: "ROPA-01", purpose: "회원 식별·계정 운영",   lawful: "계약 이행",     items: "이름, 이메일, 비밀번호(해시)", retention: "탈퇴 후 즉시 파기", controller: "왕사들", processor: "AWS(서울)", transfer: "없음" },
+    { id: "ROPA-02", purpose: "결제 및 주문 처리",     lawful: "계약 이행",     items: "주소, 전화번호, 카드토큰",     retention: "전자상거래법 5년",   controller: "왕사들", processor: "토스페이먼츠", transfer: "없음" },
+    { id: "ROPA-03", purpose: "마케팅·뉴스레터",       lawful: "명시적 동의",   items: "이메일, 관심분야",             retention: "철회 시 즉시",       controller: "왕사들", processor: "Mailgun(US)", transfer: "미국(SCCs)" },
+    { id: "ROPA-04", purpose: "사이트 분석·개선",      lawful: "정당한 이익",   items: "쿠키ID, 접속로그, UA",         retention: "13개월",             controller: "왕사들", processor: "Plausible(EU)", transfer: "EU(적정성)" },
+    { id: "ROPA-05", purpose: "투어 참가자 관리",      lawful: "계약 이행",     items: "이름, 연락처, 참가일자",       retention: "행사 종료 후 6개월", controller: "왕사들", processor: "자체",         transfer: "없음" },
+  ],
+  cookies: [
+    { name: "wsd_session", cat: "필수",  purpose: "로그인 상태 유지",   ttl: "세션",   party: "1st" },
+    { name: "wsd_route",   cat: "필수",  purpose: "마지막 방문 경로",   ttl: "영구(로컬)", party: "1st" },
+    { name: "_pl_visits",  cat: "분석",  purpose: "방문 통계(Plausible)", ttl: "24시간", party: "3rd" },
+    { name: "_mkt_lead",   cat: "마케팅", purpose: "캠페인 효과 측정",   ttl: "90일",   party: "3rd" },
+  ],
+  breaches: [
+    { id: "INC-2026-02", detectedAt: "2026-04-15T02:41:00Z", severity: "low",    affected: 0,   kind: "접근 시도 차단", notifyDueAt: "2026-04-18T02:41:00Z", authorityNotified: false, subjectNotified: false, status: "closed", note: "WAF에서 자동 차단. 유출 없음." },
+    { id: "INC-2026-01", detectedAt: "2026-02-02T13:10:00Z", severity: "medium", affected: 42,  kind: "이메일 오발송",  notifyDueAt: "2026-02-05T13:10:00Z", authorityNotified: true,  subjectNotified: true,  status: "closed" },
+  ],
+  retentionPolicies: [
+    { category: "계정 정보",       period: "탈퇴 후 즉시",            lawful: "PIPA §21" },
+    { category: "전자상거래 기록", period: "5년",                     lawful: "전자상거래법 §6" },
+    { category: "로그인 기록",     period: "3개월",                   lawful: "통신비밀보호법" },
+    { category: "접속 IP",         period: "3개월",                   lawful: "PIPA §21" },
+    { category: "결제 기록",       period: "5년",                     lawful: "전자금융거래법" },
+    { category: "마케팅 동의",     period: "철회 시 즉시",            lawful: "정보통신망법 §50" },
+  ],
+  transfers: [
+    { recipient: "Mailgun Technologies, Inc.",      country: "미국",  purpose: "이메일 발송",          basis: "GDPR SCCs, PIPA §28의8",  items: "이메일, 이름" },
+    { recipient: "Amazon Web Services, Inc.",       country: "한국(서울)", purpose: "클라우드 인프라",   basis: "국내 처리",               items: "전 데이터" },
+    { recipient: "Plausible Insights OÜ",           country: "에스토니아(EU)", purpose: "사이트 분석", basis: "GDPR 적정성 결정(EU 내부)", items: "쿠키ID, UA" },
+  ],
+  auditLog: [
+    { ts: "2026-04-20T14:12:33+09:00", actor: "banginoja@wangsadeul.kr", action: "DSR-2026-039 정정 승인", ip: "203.0.113.21" },
+    { ts: "2026-04-20T13:05:11+09:00", actor: "banginoja@wangsadeul.kr", action: "회원 #8734 개인정보 열람 내보내기", ip: "203.0.113.21" },
+    { ts: "2026-04-20T10:40:02+09:00", actor: "system", action: "보유기간 만료 로그 파기(3개월)", ip: "—" },
+    { ts: "2026-04-19T17:22:51+09:00", actor: "kim-admin@wangsadeul.kr", action: "ROPA-03 수탁처 변경 검토", ip: "203.0.113.45" },
+  ],
+  members: [
+    { id: 8734, handle: "돌담아래", email: "stone@example.com",    joined: "2025-08-12", region: "KR", consents: ["terms","privacy","marketing"] },
+    { id: 8735, handle: "역사애호", email: "h@example.com",        joined: "2025-09-02", region: "KR", consents: ["terms","privacy"] },
+    { id: 8736, handle: "봄밤의자", email: "s@eu.example",         joined: "2025-10-21", region: "EU", consents: ["terms","privacy","profiling"] },
+    { id: 8737, handle: "overseas_reader", email: "r@eu.example",  joined: "2025-12-04", region: "EU", consents: ["terms","privacy","marketing"] },
+    { id: 8738, handle: "입문자",   email: "b@example.com",        joined: "2026-01-15", region: "KR", consents: ["terms","privacy"] },
+  ],
+};
+
+const DSR_LABELS = {
+  access:      { ko: "열람 요청",     gdpr: "Art.15", pipa: "§35" },
+  rectify:     { ko: "정정·수정",     gdpr: "Art.16", pipa: "§36" },
+  erasure:     { ko: "삭제(잊혀질 권리)", gdpr: "Art.17", pipa: "§36②" },
+  restrict:    { ko: "처리 제한",     gdpr: "Art.18", pipa: "§37" },
+  portability: { ko: "데이터 이동",   gdpr: "Art.20", pipa: "—" },
+  object:      { ko: "처리 거부",     gdpr: "Art.21", pipa: "§37" },
+};
+
+const formatTimeLeft = (dueIso) => {
+  const diff = new Date(dueIso).getTime() - Date.now();
+  if (diff <= 0) return { text: "기한 경과", tone: "danger" };
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  if (d === 0) return { text: `${h}시간 남음`, tone: "warn" };
+  if (d <= 3) return { text: `${d}일 ${h}시간 남음`, tone: "warn" };
+  return { text: `${d}일 남음`, tone: "ok" };
+};
+
+// === Admin Page ===================================================
 const AdminPage = ({ go }) => {
   const data = window.WANGSADEUL_DATA;
   const [tab, setTab] = React.useState("대시보드");
-  const tabs = ["대시보드", "게시글", "칼럼", "투어", "회원", "주문", "설정"];
+  const [selectedMember, setSelectedMember] = React.useState(null);
+
+  const tabGroups = [
+    { group: "요약",     items: ["대시보드"] },
+    { group: "콘텐츠",   items: ["게시글", "칼럼", "투어"] },
+    { group: "회원/주문", items: ["회원", "주문"] },
+    { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
+    { group: "시스템",   items: ["설정"] },
+  ];
+
+  const exportMemberData = (m) => {
+    const snapshot = {
+      exported_at: new Date().toISOString(),
+      legal_basis: "GDPR Art.15 / PIPA §35",
+      subject: m,
+      consents: m.consents.map(k => PRIVACY_DATA.consentDefs.find(c => c.key === k)).filter(Boolean),
+      processing_activities: PRIVACY_DATA.ropa,
+      retention: PRIVACY_DATA.retentionPolicies,
+    };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dsr-access-${m.id}-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div style={{display:'grid', gridTemplateColumns:'240px 1fr', minHeight:'calc(100vh - 72px)'}}>
+    <div style={{display:'grid', gridTemplateColumns:'260px 1fr', minHeight:'calc(100vh - 72px)'}}>
       {/* Sidebar */}
-      <div style={{background:'var(--bg-2)', borderRight:'1px solid var(--line)', padding:'32px 0'}}>
+      <aside aria-label="관리자 메뉴" style={{background:'var(--bg-2)', borderRight:'1px solid var(--line)', padding:'32px 0', overflowY:'auto'}}>
         <div style={{padding:'0 24px 24px', borderBottom:'1px solid var(--line)'}}>
           <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em'}}>◆ ADMIN CONSOLE</div>
           <div className="ko-serif" style={{fontSize:20, marginTop:8}}>관리자</div>
           <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>banginoja@wangsadeul.kr</div>
+          <div style={{marginTop:12, padding:'8px 10px', background:'rgba(212,175,55,0.06)', border:'1px solid var(--gold-dim)', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--gold)', letterSpacing:'0.15em'}}>
+            DPO · dpo@wangsadeul.kr
+          </div>
+          <div className="dim-2 mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em'}}>적용법: GDPR + PIPA</div>
+          <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.1em'}}>최근 DPIA: 2026.03.02</div>
         </div>
-        <div style={{padding:'16px 0'}}>
-          {tabs.map(t => (
-            <div key={t}
-              onClick={() => setTab(t)}
-              style={{
-                padding:'12px 24px',
-                fontSize:13,
-                cursor:'pointer',
-                color: tab === t ? 'var(--gold)' : 'var(--ink-2)',
-                background: tab === t ? 'rgba(212,175,55,0.06)' : 'transparent',
-                borderLeft: tab === t ? '2px solid var(--gold)' : '2px solid transparent',
-                letterSpacing:'0.05em',
-              }}>{t}</div>
-          ))}
-        </div>
-      </div>
+        {tabGroups.map(grp => (
+          <div key={grp.group} style={{padding:'14px 0'}}>
+            <div className="mono" style={{fontSize:9, letterSpacing:'0.25em', color:'var(--ink-3)', padding:'0 24px 8px'}}>
+              {grp.group.toUpperCase()}
+            </div>
+            <ul role="list" style={{listStyle:'none', margin:0, padding:0}}>
+              {grp.items.map(t => (
+                <li key={t}>
+                  <button
+                    type="button"
+                    onClick={() => { setTab(t); setSelectedMember(null); }}
+                    aria-current={tab === t ? "page" : undefined}
+                    style={{
+                      width:'100%', textAlign:'left',
+                      padding:'10px 24px',
+                      fontSize:13,
+                      background: tab === t ? 'rgba(212,175,55,0.06)' : 'transparent',
+                      color: tab === t ? 'var(--gold)' : 'var(--ink-2)',
+                      borderLeft: tab === t ? '2px solid var(--gold)' : '2px solid transparent',
+                      letterSpacing:'0.03em',
+                    }}>{t}</button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </aside>
 
       {/* Main */}
       <div style={{padding:40, overflow:'auto'}}>
@@ -150,127 +298,467 @@ const AdminPage = ({ go }) => {
             <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em'}}>ADMIN / {tab.toUpperCase()}</div>
             <h1 className="ko-serif" style={{fontSize:32, fontWeight:500, marginTop:6}}>{tab}</h1>
           </div>
-          <div className="mono dim-2" style={{fontSize:11}}>2026.04.20 · 14:32 KST</div>
+          <time className="mono dim-2" style={{fontSize:11}} dateTime={new Date().toISOString()}>
+            {new Date().toLocaleString('ko-KR')}
+          </time>
         </div>
 
+        {/* 대시보드 */}
         {tab === "대시보드" && (
-          <div>
+          <>
             <div className="grid grid-4" style={{marginBottom:32}}>
               {[
                 { l: "오늘 방문자", v: "2,847", d: "+12%", p: true },
                 { l: "신규 회원", v: "38", d: "+4", p: true },
-                { l: "주문 건수", v: "64", d: "+18", p: true },
+                { l: "DSR 대기", v: String(PRIVACY_DATA.dsrRequests.filter(r=>r.status!=='done').length), d: "3건 기한 임박", p: false },
                 { l: "매출", v: "1,842,000", d: "-3%", p: false, unit: "원" },
               ].map((s, i) => (
                 <div key={i} className="card">
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{s.l.toUpperCase()}</div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{s.l}</div>
                   <div className="ko-serif" style={{fontSize:32, color:'var(--gold-2)'}}>{s.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{s.unit||''}</span></div>
-                  <div style={{fontSize:11, color: s.p ? 'var(--gold)' : 'var(--danger)', marginTop:8}}>
-                    {s.d} vs. 어제
-                  </div>
+                  <div style={{fontSize:11, color: s.p ? 'var(--gold)' : 'var(--danger)', marginTop:8}}>{s.d}</div>
                 </div>
               ))}
             </div>
-
-            <div className="grid grid-2">
-              <div className="card">
-                <h3 className="ko-serif" style={{fontSize:18, marginBottom:20}}>최근 주문</h3>
-                {[
-                  { id: "WSD-0412", name: "『왕의길』 국문판", qty: 1, user: "돌담아래", status: "발송완료" },
-                  { id: "WSD-0413", name: "『왕의길』 영문판", qty: 2, user: "overseas", status: "배송중" },
-                  { id: "WSD-0414", name: "『왕의길』 국문판", qty: 1, user: "역사애호", status: "결제완료" },
-                  { id: "WSD-0415", name: "투어 · 창덕궁 후원", qty: 2, user: "봄밤의자", status: "확정" },
-                ].map((o, i) => (
-                  <div key={i} style={{display:'grid', gridTemplateColumns:'90px 1fr 60px 80px 80px', gap:12, padding:'12px 0', borderBottom:'1px solid var(--line)', alignItems:'center', fontSize:12}}>
-                    <span className="mono gold">{o.id}</span>
-                    <span className="ko-serif">{o.name}</span>
-                    <span className="dim-2" style={{textAlign:'center'}}>×{o.qty}</span>
-                    <span className="dim mono">{o.user}</span>
-                    <span className="badge" style={{fontSize:9}}>{o.status}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="card">
-                <h3 className="ko-serif" style={{fontSize:18, marginBottom:20}}>승인 대기</h3>
-                <div style={{padding:'16px 0', borderBottom:'1px solid var(--line)'}}>
-                  <div className="badge badge-gold" style={{marginBottom:8}}>신규 게시글</div>
-                  <div className="ko-serif" style={{fontSize:15, marginBottom:4}}>"창덕궁 후원 답사 후기"</div>
-                  <div className="dim-2 mono" style={{fontSize:10}}>봄밤의자 · 10분 전</div>
-                  <div style={{marginTop:10, display:'flex', gap:8}}>
-                    <button className="btn btn-small btn-gold">승인</button>
-                    <button className="btn btn-small">반려</button>
-                  </div>
-                </div>
-                <div style={{padding:'16px 0', borderBottom:'1px solid var(--line)'}}>
-                  <div className="badge" style={{marginBottom:8}}>투어 신청</div>
-                  <div className="ko-serif" style={{fontSize:15, marginBottom:4}}>경복궁 5.04 · 2인 신청</div>
-                  <div className="dim-2 mono" style={{fontSize:10}}>돌담아래 · 32분 전</div>
-                  <div style={{marginTop:10, display:'flex', gap:8}}>
-                    <button className="btn btn-small btn-gold">확정</button>
-                    <button className="btn btn-small">대기</button>
-                  </div>
-                </div>
-                <div style={{padding:'16px 0'}}>
-                  <div className="badge" style={{marginBottom:8}}>신고</div>
-                  <div className="ko-serif" style={{fontSize:15, marginBottom:4}}>스팸 댓글 · 3건</div>
-                  <div className="dim-2 mono" style={{fontSize:10}}>시스템 자동 감지</div>
-                </div>
+            <div className="card card-gold">
+              <h2 className="ko-serif" style={{fontSize:18, marginBottom:12}}>개인정보 처리 요약</h2>
+              <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+                본 서비스는 <strong className="gold">GDPR</strong> 및 <strong className="gold">개인정보보호법(PIPA)</strong>을 동시에 준수합니다.
+                정보주체는 언제든 열람·정정·삭제·이동·처리정지를 요청할 수 있으며, 72시간 내 1차 응답을 목표로 합니다.
+              </p>
+              <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
+                <button type="button" className="btn btn-small" onClick={() => setTab("정보주체 권리")}>권리 요청 처리</button>
+                <button type="button" className="btn btn-small" onClick={() => setTab("처리활동(ROPA)")}>ROPA 보기</button>
+                <button type="button" className="btn btn-small" onClick={() => setTab("감사 로그")}>감사 로그</button>
               </div>
             </div>
-          </div>
+          </>
         )}
 
+        {/* 게시글 */}
         {tab === "게시글" && (
           <div>
             <div style={{display:'flex', gap:12, marginBottom:20}}>
-              <input className="field-input" placeholder="검색..." style={{flex:1}}/>
-              <button className="btn btn-gold btn-small">필터</button>
-              <button className="btn btn-small">CSV 다운로드</button>
+              <label htmlFor="post-search" className="sr-only">게시글 검색</label>
+              <input id="post-search" className="field-input" placeholder="검색..." style={{flex:1}}/>
+              <button type="button" className="btn btn-gold btn-small">필터</button>
+              <button type="button" className="btn btn-small">CSV 다운로드</button>
             </div>
-            <div>
-              <div style={{display:'grid', gridTemplateColumns:'60px 100px 1fr 120px 80px 120px 100px', gap:16, padding:'12px 16px', background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
-                <div>ID</div><div>분류</div><div>제목</div><div>작성자</div><div>상태</div><div>날짜</div><div>액션</div>
-              </div>
-              {data.posts.map(p => (
-                <div key={p.id} style={{display:'grid', gridTemplateColumns:'60px 100px 1fr 120px 80px 120px 100px', gap:16, padding:'14px 16px', borderBottom:'1px solid var(--line)', alignItems:'center', fontSize:12}}>
-                  <span className="mono dim-2">#{String(p.id).padStart(4,'0')}</span>
-                  <span className="badge" style={{fontSize:9}}>{p.category}</span>
-                  <span className="ko-serif" style={{fontSize:14}}>{p.title}</span>
-                  <span className="dim mono">{p.author}</span>
-                  <span className="gold mono" style={{fontSize:10}}>공개</span>
-                  <span className="mono dim-2">{p.date}</span>
-                  <span><button className="btn btn-small" style={{padding:'4px 10px', fontSize:10}}>편집</button></span>
-                </div>
-              ))}
-            </div>
+            <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+              <thead>
+                <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>분류</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>제목</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>작성자</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>날짜</th>
+                  <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.posts.map(p => (
+                  <tr key={p.id} style={{borderBottom:'1px solid var(--line)'}}>
+                    <td className="mono dim-2" style={{padding:14}}>#{String(p.id).padStart(4,'0')}</td>
+                    <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{p.category}</span></td>
+                    <td className="ko-serif" style={{padding:14, fontSize:14}}>{p.title}</td>
+                    <td className="dim mono" style={{padding:14}}>{p.author}</td>
+                    <td className="mono dim-2" style={{padding:14}}>{p.date}</td>
+                    <td style={{padding:14, textAlign:'right'}}><button type="button" className="btn btn-small">편집</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
+        {/* 칼럼 */}
         {tab === "칼럼" && (
           <div className="grid grid-2">
-            {data.columns.map((c, i) => (
-              <div key={c.id} className="card">
+            {data.columns.map(c => (
+              <article key={c.id} className="card">
                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:12}}>
                   <span className="pill">{c.category}</span>
                   <span className="mono dim-2" style={{fontSize:10}}>#{String(c.id).padStart(3,'0')}</span>
                 </div>
-                <div className="ko-serif" style={{fontSize:17, marginBottom:8}}>{c.title}</div>
+                <h3 className="ko-serif" style={{fontSize:17, marginBottom:8}}>{c.title}</h3>
                 <div className="dim-2 mono" style={{fontSize:11, marginBottom:12}}>{c.date} · {c.readTime}</div>
                 <div style={{display:'flex', gap:8}}>
-                  <button className="btn btn-small">편집</button>
-                  <button className="btn btn-small">통계</button>
-                  <button className="btn btn-small" style={{marginLeft:'auto'}}>···</button>
+                  <button type="button" className="btn btn-small">편집</button>
+                  <button type="button" className="btn btn-small">통계</button>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         )}
 
-        {(tab === "투어" || tab === "회원" || tab === "주문" || tab === "설정") && (
-          <div className="card" style={{textAlign:'center', padding:80}}>
-            <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:12}}>◆ {tab.toUpperCase()}</div>
-            <div className="ko-serif dim" style={{fontSize:18}}>{tab} 관리 화면 준비 중</div>
+        {/* 투어 */}
+        {tab === "투어" && (
+          <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+            <thead>
+              <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
+                <th scope="col" style={{padding:12, textAlign:'left'}}>프로그램</th>
+                <th scope="col" style={{padding:12, textAlign:'left'}}>난이도</th>
+                <th scope="col" style={{padding:12, textAlign:'left'}}>다음 일정</th>
+                <th scope="col" style={{padding:12, textAlign:'right'}}>가격</th>
+                <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.tours.map(t => (
+                <tr key={t.id} style={{borderBottom:'1px solid var(--line)'}}>
+                  <td className="ko-serif" style={{padding:14, fontSize:14}}>{t.title}</td>
+                  <td style={{padding:14}}><span className="badge">{t.level}</span></td>
+                  <td className="mono gold" style={{padding:14}}>{t.next}</td>
+                  <td className="ko-serif gold-2" style={{padding:14, textAlign:'right'}}>{t.price}</td>
+                  <td style={{padding:14, textAlign:'right'}}><button type="button" className="btn btn-small">편집</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+
+        {/* 회원 */}
+        {tab === "회원" && (
+          <div>
+            {!selectedMember ? (
+              <>
+                <p className="dim" style={{fontSize:12, marginBottom:16}}>
+                  회원 이메일/이름은 <strong className="gold">개인식별정보(PII)</strong>입니다. 열람 이력은 감사 로그에 자동 기록됩니다.
+                </p>
+                <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+                  <caption className="sr-only">회원 목록 — 클릭 시 상세 및 개인정보 내보내기</caption>
+                  <thead>
+                    <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+                      <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
+                      <th scope="col" style={{padding:12, textAlign:'left'}}>닉네임</th>
+                      <th scope="col" style={{padding:12, textAlign:'left'}}>이메일</th>
+                      <th scope="col" style={{padding:12, textAlign:'left'}}>지역(관할법)</th>
+                      <th scope="col" style={{padding:12, textAlign:'left'}}>가입일</th>
+                      <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PRIVACY_DATA.members.map(m => (
+                      <tr key={m.id} style={{borderBottom:'1px solid var(--line)'}}>
+                        <td className="mono dim-2" style={{padding:14}}>#{m.id}</td>
+                        <td className="ko-serif" style={{padding:14}}>{m.handle}</td>
+                        <td className="mono" style={{padding:14}}>{m.email}</td>
+                        <td style={{padding:14}}><span className="badge" style={{borderColor: m.region==='EU' ? 'var(--gold)' : 'var(--line-2)', color: m.region==='EU' ? 'var(--gold)' : 'var(--ink-2)'}}>{m.region === 'EU' ? 'EU · GDPR' : 'KR · PIPA'}</span></td>
+                        <td className="mono dim-2" style={{padding:14}}>{m.joined}</td>
+                        <td style={{padding:14, textAlign:'right'}}>
+                          <button type="button" className="btn btn-small" onClick={() => setSelectedMember(m)}>상세</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : (
+              <div className="card">
+                <button type="button" className="btn btn-small" onClick={() => setSelectedMember(null)} style={{marginBottom:20}}>← 목록</button>
+                <h2 className="ko-serif" style={{fontSize:22, marginBottom:4}}>{selectedMember.handle}</h2>
+                <div className="mono dim-2" style={{fontSize:11, marginBottom:24}}>#{selectedMember.id} · {selectedMember.email} · {selectedMember.region === 'EU' ? 'GDPR 관할' : 'PIPA 관할'}</div>
+                <dl style={{display:'grid', gridTemplateColumns:'180px 1fr', gap:'8px 24px', fontSize:13, lineHeight:1.8}}>
+                  <dt className="dim-2 mono" style={{fontSize:11}}>가입일</dt><dd>{selectedMember.joined}</dd>
+                  <dt className="dim-2 mono" style={{fontSize:11}}>활성 동의</dt>
+                  <dd>{selectedMember.consents.map(k => {
+                    const d = PRIVACY_DATA.consentDefs.find(c => c.key === k);
+                    return d ? <span key={k} className="badge" style={{marginRight:6}}>{d.label} {d.version}</span> : null;
+                  })}</dd>
+                </dl>
+                <div style={{marginTop:32, display:'flex', gap:10, flexWrap:'wrap'}}>
+                  <button type="button" className="btn btn-gold btn-small" onClick={() => exportMemberData(selectedMember)}>
+                    개인정보 스냅샷 다운로드 (Art.15 / §35)
+                  </button>
+                  <button type="button" className="btn btn-small">정정 요청 생성</button>
+                  <button type="button" className="btn btn-small" style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제(잊혀질 권리) 처리</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 주문 */}
+        {tab === "주문" && (
+          <div className="card" style={{padding:24}}>
+            <h2 className="ko-serif" style={{fontSize:18, marginBottom:16}}>주문 목록</h2>
+            <p className="dim" style={{fontSize:12}}>전자상거래법에 따라 5년간 보관됩니다. 상세 구현 예정.</p>
+          </div>
+        )}
+
+        {/* 정보주체 권리 */}
+        {tab === "정보주체 권리" && (
+          <>
+            <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+              GDPR Art.15–22 / PIPA §35–38. 응답기한: <strong className="gold">GDPR 1개월</strong> / <strong className="gold">PIPA 10일</strong>.
+            </p>
+            <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+              <thead>
+                <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>권리유형</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>정보주체</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>적용법</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>접수</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>기한</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>상태</th>
+                  <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PRIVACY_DATA.dsrRequests.map(r => {
+                  const left = r.status === 'done' ? null : formatTimeLeft(r.dueAt);
+                  const toneColor = left?.tone === 'danger' ? 'var(--danger)' : left?.tone === 'warn' ? 'var(--gold-2)' : 'var(--ink-2)';
+                  const label = DSR_LABELS[r.type];
+                  return (
+                    <tr key={r.id} style={{borderBottom:'1px solid var(--line)'}}>
+                      <td className="mono gold" style={{padding:14}}>{r.id}</td>
+                      <td style={{padding:14}}>
+                        <div className="ko-serif">{label?.ko}</div>
+                        <div className="mono dim-2" style={{fontSize:10}}>{label?.gdpr} · {label?.pipa}</div>
+                      </td>
+                      <td style={{padding:14}}>
+                        <div>{r.user}</div>
+                        <div className="mono dim-2" style={{fontSize:10}}>{r.email}</div>
+                      </td>
+                      <td style={{padding:14}}><span className="badge">{r.law}</span></td>
+                      <td className="mono dim-2" style={{padding:14}}>{r.openedAt.slice(0,10)}</td>
+                      <td className="mono" style={{padding:14, color: toneColor}}>
+                        {r.status === 'done' ? '완료' : left?.text}
+                      </td>
+                      <td style={{padding:14}}>
+                        <span className="badge" style={{
+                          borderColor: r.status==='done' ? 'var(--gold-dim)' : r.status==='in_progress' ? 'var(--gold)' : 'var(--line-2)',
+                          color: r.status==='done' ? 'var(--gold-dim)' : r.status==='in_progress' ? 'var(--gold)' : 'var(--ink-2)',
+                        }}>{r.status==='open'?'접수':r.status==='in_progress'?'처리중':'완료'}</span>
+                      </td>
+                      <td style={{padding:14, textAlign:'right'}}>
+                        <button type="button" className="btn btn-small">처리</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* 동의 관리 */}
+        {tab === "동의 관리" && (
+          <>
+            <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+              GDPR Art.7 / PIPA §15, §22. 동의는 <strong className="gold">자유·구체·고지·철회 가능</strong>해야 하며, 버전별 이력이 보존됩니다.
+            </p>
+            <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+              <thead>
+                <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>항목</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>필수</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>버전</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>법적 근거</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>개정일</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PRIVACY_DATA.consentDefs.map(c => (
+                  <tr key={c.key} style={{borderBottom:'1px solid var(--line)'}}>
+                    <td className="ko-serif" style={{padding:14}}>{c.label}</td>
+                    <td style={{padding:14}}>
+                      <span className="badge" style={{borderColor: c.required?'var(--gold)':'var(--line-2)', color: c.required?'var(--gold)':'var(--ink-2)'}}>{c.required ? '필수' : '선택'}</span>
+                    </td>
+                    <td className="mono gold" style={{padding:14}}>{c.version}</td>
+                    <td style={{padding:14}}>{c.lawful}</td>
+                    <td className="mono dim-2" style={{padding:14}}>{c.updated}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* ROPA */}
+        {tab === "처리활동(ROPA)" && (
+          <>
+            <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+              GDPR Art.30. 모든 처리 목적·법적 근거·보유기간·수탁자·국외이전을 문서화합니다.
+            </p>
+            <div className="grid grid-2">
+              {PRIVACY_DATA.ropa.map(r => (
+                <article key={r.id} className="card">
+                  <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em', marginBottom:8}}>{r.id}</div>
+                  <h3 className="ko-serif" style={{fontSize:18, marginBottom:12}}>{r.purpose}</h3>
+                  <dl style={{display:'grid', gridTemplateColumns:'100px 1fr', gap:'6px 16px', fontSize:12, lineHeight:1.6}}>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>법적 근거</dt><dd className="gold">{r.lawful}</dd>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>수집 항목</dt><dd>{r.items}</dd>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>보유기간</dt><dd>{r.retention}</dd>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>수탁사</dt><dd>{r.processor}</dd>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>국외이전</dt><dd>{r.transfer}</dd>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* 쿠키 */}
+        {tab === "쿠키·추적" && (
+          <>
+            <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+              ePrivacy Directive / PIPA §39의8. 필수 외 쿠키는 사전 <strong className="gold">옵트인 동의</strong>가 필요합니다.
+            </p>
+            <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+              <thead>
+                <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>쿠키명</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>분류</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>목적</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>보관</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>당사자</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PRIVACY_DATA.cookies.map(c => (
+                  <tr key={c.name} style={{borderBottom:'1px solid var(--line)'}}>
+                    <td className="mono gold" style={{padding:14}}>{c.name}</td>
+                    <td style={{padding:14}}><span className="badge" style={{borderColor: c.cat==='필수' ? 'var(--gold)' : 'var(--line-2)', color: c.cat==='필수' ? 'var(--gold)' : 'var(--ink-2)'}}>{c.cat}</span></td>
+                    <td style={{padding:14}}>{c.purpose}</td>
+                    <td className="mono dim-2" style={{padding:14}}>{c.ttl}</td>
+                    <td className="mono dim-2" style={{padding:14}}>{c.party}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* 보안 사고 */}
+        {tab === "보안 사고" && (
+          <>
+            <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+              GDPR Art.33 — 인지 후 <strong className="gold">72시간 내 감독기관 통지</strong>. PIPA §34 — 인지 후 72시간 내 정보주체 및 개인정보위 통지.
+            </p>
+            {PRIVACY_DATA.breaches.map(b => {
+              const toneColor = b.severity==='high' ? 'var(--danger)' : b.severity==='medium' ? 'var(--gold-2)' : 'var(--ink-2)';
+              return (
+                <article key={b.id} className="card" style={{marginBottom:16}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
+                    <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>{b.id}</div>
+                    <span className="badge" style={{borderColor:toneColor, color:toneColor}}>심각도: {b.severity}</span>
+                  </div>
+                  <h3 className="ko-serif" style={{fontSize:18, marginBottom:8}}>{b.kind}</h3>
+                  <dl style={{display:'grid', gridTemplateColumns:'120px 1fr', gap:'4px 16px', fontSize:12, lineHeight:1.7}}>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>감지</dt><dd className="mono">{b.detectedAt}</dd>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>72h 기한</dt><dd className="mono">{b.notifyDueAt}</dd>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>영향 주체</dt><dd>{b.affected.toLocaleString()}명</dd>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>당국 통지</dt><dd className={b.authorityNotified?'gold':'dim-2'}>{b.authorityNotified?'✓ 완료':'—'}</dd>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>주체 통지</dt><dd className={b.subjectNotified?'gold':'dim-2'}>{b.subjectNotified?'✓ 완료':'—'}</dd>
+                  </dl>
+                  {b.note && <p className="dim" style={{fontSize:12, marginTop:12, lineHeight:1.7}}>{b.note}</p>}
+                </article>
+              );
+            })}
+            <button type="button" className="btn btn-gold">새 사고 접수 →</button>
+          </>
+        )}
+
+        {/* 보유·파기 */}
+        {tab === "보유·파기" && (
+          <>
+            <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+              GDPR Art.5(1)(e) 저장제한 원칙 / PIPA §21. 목적 달성 후 지체 없이 파기합니다.
+            </p>
+            <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+              <thead>
+                <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>데이터 분류</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>보유기간</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>근거</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PRIVACY_DATA.retentionPolicies.map((r, i) => (
+                  <tr key={i} style={{borderBottom:'1px solid var(--line)'}}>
+                    <td className="ko-serif" style={{padding:14}}>{r.category}</td>
+                    <td className="mono gold" style={{padding:14}}>{r.period}</td>
+                    <td style={{padding:14}}>{r.lawful}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* 국외 이전 */}
+        {tab === "국외 이전" && (
+          <>
+            <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+              GDPR Chapter V / PIPA §28의8. 제3국 이전 시 적정성 결정 또는 SCCs 등 안전장치가 필요합니다.
+            </p>
+            <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+              <thead>
+                <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>수탁·이전 대상</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>국가</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>목적</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>항목</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>안전장치</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PRIVACY_DATA.transfers.map((t, i) => (
+                  <tr key={i} style={{borderBottom:'1px solid var(--line)'}}>
+                    <td className="ko-serif" style={{padding:14}}>{t.recipient}</td>
+                    <td style={{padding:14}}>{t.country}</td>
+                    <td className="dim" style={{padding:14}}>{t.purpose}</td>
+                    <td className="mono" style={{padding:14, fontSize:11}}>{t.items}</td>
+                    <td className="gold mono" style={{padding:14, fontSize:11}}>{t.basis}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* 감사 로그 */}
+        {tab === "감사 로그" && (
+          <>
+            <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+              GDPR Art.32 · PIPA §29. 관리자 접근 및 개인정보 처리 이력은 모두 기록되며, 90일간 보관됩니다.
+            </p>
+            <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+              <thead>
+                <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>시각</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>주체</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>행위</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>IP</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PRIVACY_DATA.auditLog.map((l, i) => (
+                  <tr key={i} style={{borderBottom:'1px solid var(--line)'}}>
+                    <td className="mono dim-2" style={{padding:12}}>{l.ts}</td>
+                    <td className="mono" style={{padding:12}}>{l.actor}</td>
+                    <td style={{padding:12}}>{l.action}</td>
+                    <td className="mono dim-2" style={{padding:12}}>{l.ip}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* 설정 */}
+        {tab === "설정" && (
+          <div className="card">
+            <h2 className="ko-serif" style={{fontSize:20, marginBottom:16}}>사이트 설정</h2>
+            <dl style={{display:'grid', gridTemplateColumns:'200px 1fr', gap:'8px 24px', fontSize:13, lineHeight:1.8}}>
+              <dt className="dim-2 mono" style={{fontSize:11}}>DPO</dt><dd>dpo@wangsadeul.kr · 02-0000-0001</dd>
+              <dt className="dim-2 mono" style={{fontSize:11}}>개인정보 책임자</dt><dd>뱅기노자 / banginoja@wangsadeul.kr</dd>
+              <dt className="dim-2 mono" style={{fontSize:11}}>최근 DPIA</dt><dd>2026-03-02</dd>
+              <dt className="dim-2 mono" style={{fontSize:11}}>적용 법역</dt><dd>대한민국(PIPA) · 유럽연합(GDPR)</dd>
+              <dt className="dim-2 mono" style={{fontSize:11}}>감독기관</dt><dd>개인정보보호위원회 / 관할 EU DPA</dd>
+            </dl>
           </div>
         )}
       </div>

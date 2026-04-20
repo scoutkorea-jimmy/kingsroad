@@ -3,19 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="왕사들 — 조선의 왕들이 걸었던 길을 오늘의 언어로 다시 읽는 커뮤니티. 궁궐 답사, 뱅기노자 칼럼, 『왕의길』 출판.">
+<meta name="theme-color" content="#0a0907">
 <title>왕사들 · WANGSADEUL — 다섯 봉우리 아래, 왕의 길</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<!-- TOAST UI Editor (for community post writing) -->
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.min.css">
 </head>
 <body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<noscript><p style="padding:24px;color:#efe9dc;background:#0a0907;">
+왕사들 사이트는 JavaScript로 렌더링됩니다. 스크립트를 활성화해주세요. 문의: hello@wangsadeul.kr
+</p></noscript>
 <div id="root"></div>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
 <script src="data.js"></script>
 <script type="text/babel" src="components/Ilwolobongdo.jsx"></script>
 <script type="text/babel" src="components/Shell.jsx"></script>
@@ -43,6 +53,12 @@ const App = () => {
   const [cart, setCart] = React.useState(null);
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = React.useState(false);
+  const [readFont, setReadFont] = React.useState(() => {
+    try { return localStorage.getItem('wsd_readfont') || 'sans'; } catch { return 'sans'; }
+  });
+  React.useEffect(() => {
+    try { localStorage.setItem('wsd_readfont', readFont); } catch {}
+  }, [readFont]);
 
   const go = (r) => {
     setRoute(r);
@@ -72,7 +88,7 @@ const App = () => {
   const page = (() => {
     switch (route) {
       case "home": return <HomePage go={go} tweaks={tweaks}/>;
-      case "community": return <CommunityPage go={go} postId={postId} setPostId={setPostId}/>;
+      case "community": return <CommunityPage go={go} postId={postId} setPostId={setPostId} user={user}/>;
       case "wangsanam": return <WangsanamPage go={go}/>;
       case "tour": return <TourPage go={go}/>;
       case "column": return <ColumnPage go={go}/>;
@@ -86,9 +102,9 @@ const App = () => {
   })();
 
   return (
-    <div className="app">
-      <Nav route={route} go={go} user={user}/>
-      <main style={{flex:1}}>{page}</main>
+    <div className={`app ${readFont === 'serif' ? 'reading-myungjo' : ''}`}>
+      <Nav route={route} go={go} user={user} readFont={readFont} setReadFont={setReadFont}/>
+      <main id="main" tabIndex="-1" style={{flex:1, outline:'none'}} aria-label={`${route} 페이지 본문`}>{page}</main>
       {!hideNav && <Footer go={go}/>}
       <Tweaks tweaks={tweaks} setTweaks={updateTweaks} visible={editMode}/>
     </div>

@@ -1,4 +1,13 @@
 /* 왕사들 — 블랙 & 골드 커뮤니티 */
+@import url('https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.1/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css');
+
+@font-face {
+  font-family: 'ChosunIlboMyungjo';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Chosunilbo_myungjo.woff') format('woff');
+  font-weight: normal;
+  font-display: swap;
+}
+
 :root {
   --bg: #0a0907;
   --bg-2: #111010;
@@ -10,13 +19,14 @@
   --gold-dim: #8a7528;
   --gold-ink: #F5E6A8;
   --ink: #efe9dc;
-  --ink-2: #b8b1a1;
-  --ink-3: #78716a;
-  --danger: #c24a3d;
+  --ink-2: #c8c1b1;           /* APCA Lc ≥ 60 on --bg for body */
+  --ink-3: #9a9287;           /* APCA Lc ≥ 45 on --bg for meta (raised from #78716a) */
+  --danger: #e06656;          /* raised contrast from #c24a3d */
+  --focus: #F5E6A8;           /* focus ring — high contrast on all bg tokens */
 
   --gold-strength: 1;
   --font-serif: "Noto Serif KR", "Nanum Myeongjo", serif;
-  --font-sans: "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: "Wanted Sans Variable", "Wanted Sans", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "IBM Plex Mono", "D2 Coding", monospace;
 }
 
@@ -24,9 +34,213 @@
 html, body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-weight: 300; letter-spacing: -0.01em; }
 body { min-height: 100vh; overflow-x: hidden; }
 a { color: inherit; text-decoration: none; }
+a:hover, a:focus-visible { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 4px; }
 button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 input, textarea, select { font: inherit; color: inherit; }
 img { max-width: 100%; display: block; }
+
+/* WCAG 3.0 — Visible focus appearance: 2px solid ring + offset, non-color cue */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Skip link — keyboard users land here first */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  padding: 12px 20px;
+  background: var(--bg);
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  z-index: 1000;
+}
+.skip-link:focus-visible { left: 16px; top: 16px; }
+
+/* Visually hidden but announced by screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Minimum touch target — WCAG 3.0 Gold recommends ≥ 24×24, ideal 44×44 */
+button, [role="button"], a.nav-link, .nav-link, .footer li button {
+  min-height: 24px;
+}
+
+/* Reduced motion — WCAG 3.0 "Support different ways to interact" */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Forced-colors (Windows High Contrast) safety */
+@media (forced-colors: active) {
+  .btn, .card, .nav-link.active { border: 1px solid CanvasText; }
+  :focus-visible { outline-color: Highlight; }
+}
+
+/* === Reading font modes ========================================
+   Default: gothic (Wanted Sans). Toggle puts body reading in Chosun Myungjo.
+   Scope: only <main> content — nav/footer/admin stay gothic. */
+.app.reading-myungjo main,
+.app.reading-myungjo main p,
+.app.reading-myungjo main h1,
+.app.reading-myungjo main h2,
+.app.reading-myungjo main h3,
+.app.reading-myungjo main h4,
+.app.reading-myungjo main .ko-serif,
+.app.reading-myungjo main .section-title,
+.app.reading-myungjo main .card-title,
+.app.reading-myungjo main .field-input {
+  font-family: 'ChosunIlboMyungjo', var(--font-serif);
+  letter-spacing: 0;
+}
+.app.reading-myungjo main .mono,
+.app.reading-myungjo main .badge,
+.app.reading-myungjo main .pill,
+.app.reading-myungjo main .card-meta,
+.app.reading-myungjo main .row-num,
+.app.reading-myungjo main .row-meta,
+.app.reading-myungjo main code,
+.app.reading-myungjo main time,
+.app.reading-myungjo main .section-eyebrow {
+  font-family: var(--font-mono);
+}
+
+/* Toggle in header */
+.read-toggle {
+  display: inline-flex;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.read-toggle button {
+  padding: 6px 10px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--ink-2);
+  background: transparent;
+  min-height: 32px;
+}
+.read-toggle button[aria-pressed="true"] {
+  background: rgba(212,175,55,0.08);
+  color: var(--gold);
+}
+.read-toggle button + button { border-left: 1px solid var(--line-2); }
+.read-toggle button:hover { color: var(--gold); }
+
+/* === Post reading typography ============================================
+   Measure (reading line length): 55–75ch (WCAG 3.0 Readable outcome). */
+.post-read-container {
+  max-width: 920px;
+}
+.post-body {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.95;
+  color: var(--ink);
+  max-width: 68ch;
+  margin: 0 auto;
+  hyphens: auto;
+  word-break: keep-all;         /* 한글 어절 단위 줄바꿈 */
+  text-wrap: pretty;
+}
+.app.reading-myungjo .post-body {
+  font-family: 'ChosunIlboMyungjo', var(--font-serif);
+  font-size: 19px;
+  line-height: 2;
+}
+.post-body > * + * { margin-top: 1.2em; }
+.post-body p {
+  margin-bottom: 0;
+  text-indent: 0;
+}
+.post-body h1, .post-body h2, .post-body h3, .post-body h4 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-top: 2em;
+  margin-bottom: 0.6em;
+  line-height: 1.35;
+}
+.post-body h1 { font-size: 1.7em; }
+.post-body h2 { font-size: 1.4em; }
+.post-body h3 { font-size: 1.2em; }
+.post-body blockquote {
+  border-left: 2px solid var(--gold);
+  padding: 4px 0 4px 24px;
+  margin: 2em 0;
+  color: var(--gold-ink);
+  font-style: italic;
+}
+.post-body blockquote cite {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-3);
+  font-style: normal;
+  margin-top: 10px;
+}
+.post-body ul, .post-body ol { padding-left: 1.5em; }
+.post-body li + li { margin-top: 0.4em; }
+.post-body a {
+  color: var(--gold);
+  text-decoration: underline;
+  text-decoration-color: var(--gold-dim);
+  text-underline-offset: 3px;
+}
+.post-body a:hover { text-decoration-color: var(--gold); }
+.post-body code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 2px 6px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+}
+.post-body pre {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  padding: 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.post-body img { margin: 1.5em auto; border: 1px solid var(--line); }
+.post-body hr {
+  border: none;
+  border-top: 1px solid var(--line-2);
+  margin: 2.5em auto;
+  width: 40%;
+}
+
+/* TOAST UI Editor — site dark tone harmonisation */
+.toastui-editor-defaultUI {
+  border-color: var(--line-2) !important;
+}
+.toastui-editor-toolbar {
+  background: var(--bg-2) !important;
+}
+.toastui-editor-main {
+  background: var(--bg) !important;
+}
 
 /* ---- Typography utilities ---- */
 .ko-serif { font-family: var(--font-serif); }
@@ -105,14 +319,17 @@ img { max-width: 100%; display: block; }
   font-size: 13px;
   letter-spacing: 0.05em;
   color: var(--ink-2);
-  padding: 8px 0;
+  padding: 10px 4px;
   position: relative;
   cursor: pointer;
   transition: color .2s;
+  background: none;
+  border: none;
+  font-family: inherit;
 }
 .nav-link:hover { color: var(--ink); }
-.nav-link.active { color: var(--gold); }
-.nav-link.active::after {
+.nav-link.active, .nav-link[aria-current="page"] { color: var(--gold); }
+.nav-link.active::after, .nav-link[aria-current="page"]::after {
   content: "";
   position: absolute;
   left: 50%; bottom: 0;
@@ -326,8 +543,16 @@ img { max-width: 100%; display: block; }
   margin-bottom: 20px;
   text-transform: uppercase;
 }
-.footer li { list-style: none; font-size: 13px; color: var(--ink-2); margin-bottom: 10px; cursor: pointer; }
-.footer li:hover { color: var(--gold); }
+.footer li { list-style: none; font-size: 13px; margin-bottom: 10px; }
+.footer li button, .footer li a, .footer li span {
+  color: var(--ink-2);
+  background: none; border: none;
+  padding: 4px 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.footer li button:hover, .footer li a:hover, .footer li span:hover { color: var(--gold); }
 .footer-bottom {
   border-top: 1px solid var(--line);
   padding-top: 24px;

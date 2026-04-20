@@ -3,6 +3,19 @@ const HomePage = ({ go, tweaks }) => {
   const data = window.WANGSADEUL_DATA;
   const heroLayout = tweaks.heroLayout;
 
+  // Keyboard-activatable wrapper for visually-clickable regions.
+  // WCAG 3.0 Keyboard-operable outcome: Enter/Space must trigger the same action as click.
+  const clickable = (onClick, label) => ({
+    role: "button",
+    tabIndex: 0,
+    "aria-label": label,
+    onClick,
+    onKeyDown: (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); }
+    },
+    style: { cursor: "pointer" },
+  });
+
   return (
     <div>
       {/* HERO */}
@@ -114,26 +127,27 @@ const HomePage = ({ go, tweaks }) => {
         <div className="container">
           <SectionHead
             eyebrow="NOTICE · 공지사항"
-            title='왕사들에 <span class="accent">전하는 말</span>'
-            action={<button className="btn-ghost" onClick={() => go("community")} style={{cursor:'pointer'}}>전체 보기 →</button>}
+            title={<>왕사들에 <span className="accent">전하는 말</span></>}
+            action={<button type="button" className="btn-ghost" onClick={() => go("community")}>전체 보기 →</button>}
           />
           <div className="grid grid-2">
             <div>
               {data.notices.slice(0, 2).map(n => (
-                <div key={n.id} className="card card-gold" style={{marginBottom:16, cursor:'pointer'}}
-                  onClick={() => go("community")}>
+                <article key={n.id} className="card card-gold"
+                  {...clickable(() => go("community"), `공지: ${n.title}`)}
+                  style={{marginBottom:16, cursor:'pointer'}}>
                   <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:12}}>
                     <span className="badge badge-gold">{n.tag}</span>
                     {n.pinned && <span className="mono" style={{fontSize:10, color:'var(--gold)', letterSpacing:'0.2em'}}>◆ PINNED</span>}
                   </div>
                   <h3 className="card-title">{n.title}</h3>
-                  <div className="card-meta"><span>{n.date}</span></div>
-                </div>
+                  <div className="card-meta"><time dateTime={n.date.replace(/\./g,'-')}>{n.date}</time></div>
+                </article>
               ))}
             </div>
             <div>
               {data.notices.slice(2).map((n, i) => (
-                <div key={n.id} className="row" onClick={() => go("community")}>
+                <div key={n.id} className="row" {...clickable(() => go("community"), n.title)}>
                   <div className="row-num">0{i + 3}</div>
                   <div>
                     <span className="badge" style={{marginRight:12, fontSize:9}}>{n.tag}</span>
@@ -153,10 +167,11 @@ const HomePage = ({ go, tweaks }) => {
         <div className="container">
           <div style={{display:'grid', gridTemplateColumns:'1fr 1.3fr', gap:80, alignItems:'center'}} className="wangsanam-grid">
             <div style={{position:'relative'}}>
-              <div className="placeholder" style={{aspectRatio:'3/4'}}>
-                WANGSANAM · PORTRAIT<br/>750 × 1000
+              <div className="placeholder" style={{aspectRatio:'3/4'}}
+                role="img" aria-label="왕사남 초상 자리 (이미지 준비 중)">
+                <span aria-hidden="true">WANGSANAM · PORTRAIT<br/>750 × 1000</span>
               </div>
-              <div style={{position:'absolute', top:-1, left:-1, right:-1, bottom:-1, border:'1px solid var(--gold-dim)', pointerEvents:'none', transform:'translate(16px, 16px)'}}/>
+              <div aria-hidden="true" style={{position:'absolute', top:-1, left:-1, right:-1, bottom:-1, border:'1px solid var(--gold-dim)', pointerEvents:'none', transform:'translate(16px, 16px)'}}/>
             </div>
             <div>
               <div className="section-eyebrow">ABOUT · 왕사남</div>
@@ -189,13 +204,15 @@ const HomePage = ({ go, tweaks }) => {
         <div className="container">
           <SectionHead
             eyebrow="TOUR PROGRAM · 답사"
-            title='발로 읽는 <span class="accent">조선</span>'
+            title={<>발로 읽는 <span className="accent">조선</span></>}
             subtitle="뱅기노자와 왕사남이 직접 운영하는 궁궐 답사 · 역사 강연 프로그램. 한 회에 최대 15인, 깊이 있는 독법을 지향합니다."
-            action={<button className="btn-ghost" onClick={() => go("tour")} style={{cursor:'pointer'}}>전체 프로그램 →</button>}
+            action={<button type="button" className="btn-ghost" onClick={() => go("tour")}>전체 프로그램 →</button>}
           />
           <div className="grid grid-2">
             {data.tours.map((t, i) => (
-              <div key={t.id} className="card" style={{position:'relative', cursor:'pointer'}} onClick={() => go("tour")}>
+              <article key={t.id} className="card"
+                {...clickable(() => go("tour"), `투어: ${t.title}, ${t.price}, 다음 일정 ${t.next}`)}
+                style={{position:'relative', cursor:'pointer'}}>
                 <div className="mono" style={{position:'absolute', top:20, right:20, fontSize:10, color:'var(--gold-dim)', letterSpacing:'0.2em'}}>
                   0{i+1} / 0{data.tours.length}
                 </div>
@@ -216,7 +233,7 @@ const HomePage = ({ go, tweaks }) => {
                     <div className="ko-serif gold-2" style={{fontSize:22, marginTop:4}}>{t.price}</div>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </div>
@@ -227,9 +244,9 @@ const HomePage = ({ go, tweaks }) => {
         <div className="container">
           <SectionHead
             eyebrow="COLUMN · 뱅기노자의 글"
-            title='<span class="accent">뱅기노자</span>가 쓰다'
+            title={<><span className="accent">뱅기노자</span>가 쓰다</>}
             subtitle="커뮤니티장 뱅기노자의 정기 칼럼. 조선의 왕들을 경유해 오늘을 묻는다."
-            action={<button className="btn-ghost" onClick={() => go("column")} style={{cursor:'pointer'}}>칼럼 아카이브 →</button>}
+            action={<button type="button" className="btn-ghost" onClick={() => go("column")}>칼럼 아카이브 →</button>}
           />
           <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:40}} className="col-grid">
             {/* Feature */}
@@ -273,7 +290,7 @@ const HomePage = ({ go, tweaks }) => {
         <div className="container">
           <SectionHead
             eyebrow="PARTNERS · 파트너십"
-            title='함께 걷는 <span class="accent">기관들</span>'
+            title={<>함께 걷는 <span className="accent">기관들</span></>}
           />
           <div className="grid grid-3">
             {data.partners.map((p, i) => (

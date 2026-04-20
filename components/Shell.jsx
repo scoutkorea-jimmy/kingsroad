@@ -1,15 +1,19 @@
 // 공통 컴포넌트: Nav, Footer, Tweaks, Brand
 const Brand = ({ onClick }) => (
-  <div className="brand" onClick={onClick}>
-    <div className="brand-mark"><IlwolMark size={22}/></div>
-    <div className="brand-name">
+  <button
+    className="brand"
+    onClick={onClick}
+    aria-label="왕사들 홈으로"
+    style={{background:'none', border:'none', padding:0, cursor:'pointer'}}>
+    <span className="brand-mark" aria-hidden="true"><IlwolMark size={22}/></span>
+    <span className="brand-name">
       왕사들
-      <span className="sub">WANGSADEUL</span>
-    </div>
-  </div>
+      <span className="sub" lang="en">WANGSADEUL</span>
+    </span>
+  </button>
 );
 
-const Nav = ({ route, go, user }) => {
+const Nav = ({ route, go, user, readFont, setReadFont }) => {
   const items = [
     { key: "home", label: "홈" },
     { key: "community", label: "커뮤니티" },
@@ -19,26 +23,44 @@ const Nav = ({ route, go, user }) => {
     { key: "book", label: "왕의길" },
   ];
   return (
-    <nav className="nav">
+    <nav className="nav" aria-label="주 메뉴">
       <div className="container nav-inner">
         <Brand onClick={() => go("home")} />
-        <div className="nav-menu">
+        <ul className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>
           {items.map(it => (
-            <span key={it.key}
-              className={`nav-link ${route === it.key ? "active" : ""}`}
-              onClick={() => go(it.key)}>{it.label}</span>
+            <li key={it.key}>
+              <button
+                type="button"
+                className={`nav-link ${route === it.key ? "active" : ""}`}
+                aria-current={route === it.key ? "page" : undefined}
+                onClick={() => go(it.key)}>{it.label}</button>
+            </li>
           ))}
-        </div>
+        </ul>
         <div className="nav-actions">
+          {setReadFont && (
+            <div className="read-toggle" role="group" aria-label="읽기 폰트 선택">
+              <button type="button"
+                aria-pressed={readFont === 'sans'}
+                onClick={() => setReadFont('sans')}
+                title="고딕계열로 읽기">고딕</button>
+              <button type="button"
+                aria-pressed={readFont === 'serif'}
+                onClick={() => setReadFont('serif')}
+                title="명조계열(조선일보명조)로 읽기"
+                style={{fontFamily: "'ChosunIlboMyungjo', serif"}}>명조</button>
+            </div>
+          )}
           {user ? (
             <>
-              <span className="mono" style={{fontSize:11, letterSpacing:'0.15em', color:'var(--gold)'}}>{user.name}</span>
+              <span className="mono" aria-label={`로그인: ${user.name}`}
+                style={{fontSize:11, letterSpacing:'0.15em', color:'var(--gold)'}}>{user.name}</span>
               <button className="btn btn-small" onClick={() => go("admin")}>관리</button>
             </>
           ) : (
             <>
-              <span className="btn-ghost" onClick={() => go("login")}
-                style={{fontSize:12, letterSpacing:'0.1em', cursor:'pointer', color:'var(--ink-2)'}}>로그인</span>
+              <button type="button" className="btn-ghost nav-link" onClick={() => go("login")}
+                style={{fontSize:12, letterSpacing:'0.1em', color:'var(--ink-2)'}}>로그인</button>
               <button className="btn btn-small" onClick={() => go("signup")}>회원가입</button>
             </>
           )}
@@ -49,45 +71,48 @@ const Nav = ({ route, go, user }) => {
 };
 
 const Footer = ({ go }) => (
-  <footer className="footer">
+  <footer className="footer" aria-label="사이트 정보 및 푸터">
     <div className="container">
       <div className="footer-grid">
         <div>
-          <Brand/>
+          <Brand onClick={() => go("home")}/>
           <p className="dim" style={{marginTop:20, fontSize:13, lineHeight:1.7, maxWidth:360}}>
             일월오봉도 아래 모인 사람들. 왕사들은 조선의 왕들과 그들이 걸었던 길을 오늘의 언어로 다시 읽어내는 커뮤니티입니다.
           </p>
+          <button type="button" className="btn btn-small" onClick={() => go("admin")}
+            style={{marginTop:20}}>개인정보 처리 · 관리자</button>
         </div>
-        <div>
-          <h4>콘텐츠</h4>
-          <ul>
-            <li onClick={() => go("column")}>뱅기노자 칼럼</li>
-            <li onClick={() => go("tour")}>투어 프로그램</li>
-            <li onClick={() => go("book")}>『왕의길』</li>
-            <li onClick={() => go("community")}>커뮤니티</li>
+        <nav aria-label="콘텐츠 바로가기">
+          <h4 id="ft-content">콘텐츠</h4>
+          <ul aria-labelledby="ft-content">
+            <li><button type="button" onClick={() => go("column")}>뱅기노자 칼럼</button></li>
+            <li><button type="button" onClick={() => go("tour")}>투어 프로그램</button></li>
+            <li><button type="button" onClick={() => go("book")}>『왕의길』</button></li>
+            <li><button type="button" onClick={() => go("community")}>커뮤니티</button></li>
           </ul>
-        </div>
-        <div>
-          <h4>정보</h4>
-          <ul>
-            <li onClick={() => go("wangsanam")}>왕사남 소개</li>
-            <li>공지사항</li>
-            <li>자주 묻는 질문</li>
-            <li>이용약관</li>
+        </nav>
+        <nav aria-label="정보 바로가기">
+          <h4 id="ft-info">정보</h4>
+          <ul aria-labelledby="ft-info">
+            <li><button type="button" onClick={() => go("wangsanam")}>왕사남 소개</button></li>
+            <li><button type="button" onClick={() => go("community")}>공지사항</button></li>
+            <li><button type="button">자주 묻는 질문</button></li>
+            <li><button type="button">이용약관</button></li>
+            <li><button type="button">개인정보 처리방침</button></li>
           </ul>
-        </div>
-        <div>
-          <h4>연락</h4>
-          <ul>
-            <li>hello@wangsadeul.kr</li>
-            <li>02-0000-0000</li>
-            <li>서울 종로구 사직로</li>
+        </nav>
+        <address style={{fontStyle:'normal'}}>
+          <h4 id="ft-contact">연락</h4>
+          <ul aria-labelledby="ft-contact">
+            <li><a href="mailto:hello@wangsadeul.kr">hello@wangsadeul.kr</a></li>
+            <li><a href="tel:+82-2-0000-0000">02-0000-0000</a></li>
+            <li><span>서울 종로구 사직로</span></li>
           </ul>
-        </div>
+        </address>
       </div>
       <div className="footer-bottom">
         <span>© 2026 WANGSADEUL — ALL RIGHTS RESERVED</span>
-        <span>日月五峯 · DESIGNED IN SEOUL</span>
+        <span lang="zh-Hant">日月五峯</span><span> · DESIGNED IN SEOUL</span>
       </div>
     </div>
   </footer>
@@ -101,16 +126,20 @@ const Ornament = ({ children }) => (
   </div>
 );
 
-const SectionHead = ({ eyebrow, title, subtitle, action }) => (
-  <div className="section-head">
-    <div>
-      {eyebrow && <div className="section-eyebrow">{eyebrow}</div>}
-      <h2 className="section-title" dangerouslySetInnerHTML={{__html: title}}/>
-      {subtitle && <p className="section-subtitle">{subtitle}</p>}
+// title accepts string OR React node. For accent, pass JSX: <>왕사들에 <span className="accent">전하는 말</span></>
+const SectionHead = ({ eyebrow, title, subtitle, action, level = 2 }) => {
+  const H = `h${level}`;
+  return (
+    <div className="section-head">
+      <div>
+        {eyebrow && <div className="section-eyebrow" aria-hidden="true">{eyebrow}</div>}
+        <H className="section-title">{title}</H>
+        {subtitle && <p className="section-subtitle">{subtitle}</p>}
+      </div>
+      {action}
     </div>
-    {action}
-  </div>
-);
+  );
+};
 
 const Tweaks = ({ tweaks, setTweaks, visible }) => {
   if (!visible) return null;
