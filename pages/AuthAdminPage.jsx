@@ -340,6 +340,69 @@ const formatTimeLeft = (dueIso) => {
   return { text: `${d}일 남음`, tone: "ok" };
 };
 
+const ADMIN_VERSION_HISTORY = [
+  {
+    version: "00.004.000",
+    date: "2026-04-25",
+    summary: "관리자 페이지에 KMS와 버전 기록 탭을 신설하고, 운영 문서와 같은 규칙을 관리자 화면에서도 바로 확인할 수 있게 정리했습니다. 특히 KMS 수정 시 변경 결과뿐 아니라 수정 계기와 배경을 함께 기록하는 원칙을 화면 구조에 반영했습니다.",
+    details: [
+      "시스템 탭에 `버전 기록`과 `KMS`를 추가했습니다.",
+      "버전 기록은 핵심 수정사항과 세부 업데이트 내역을 분리해 읽기 쉽게 정리했습니다.",
+      "KMS에는 개발 규칙, 우선순위, 버전 원칙, 기록 방식, 현재 운영 메모를 넣었습니다.",
+    ],
+    context: "여러 AI가 함께 작업하는 구조가 되면서, 관리자 페이지에서도 현재 규칙과 변경 맥락을 즉시 확인할 수 있어야 할 필요가 커졌습니다.",
+  },
+  {
+    version: "00.003.001",
+    date: "2026-04-25",
+    summary: "메인 홈에 왕사남 강연 일정을 노출하고, 로그인 상태 유지·로그아웃·마이페이지 기본 기능을 추가해 사용자 계정 흐름을 정리했습니다.",
+    details: [
+      "홈에 왕사남 강연 일정 섹션을 추가했습니다.",
+      "로그인 상태를 로컬에 저장하고 로그아웃 버튼을 구현했습니다.",
+      "마이페이지를 추가해 계정 상태와 예정 프로그램을 확인할 수 있게 했습니다.",
+    ],
+    context: "사용자가 홈에서 바로 강연 일정을 보고, 로그인 후 본인 상태를 확인할 수 있는 최소 계정 흐름이 필요했습니다.",
+  },
+];
+
+const ADMIN_KMS_SECTIONS = [
+  {
+    title: "AI 작업 기본 원칙",
+    what: "모든 AI는 작업 전에 `ai-development-rules.md`, `project-priority-table.md`, `kms.md`를 먼저 읽고 시작합니다.",
+    why: "AI마다 판단 방식이 달라지면 같은 프로젝트 안에서 규칙 충돌이 생기기 쉽기 때문입니다.",
+    background: "ChatGPT와 Claude가 같이 개발을 진행하는 전제가 생기면서, 선독 원칙을 강하게 고정할 필요가 생겼습니다.",
+    next: "관리자 페이지 KMS도 저장소 문서와 같은 내용을 계속 유지해야 합니다.",
+  },
+  {
+    title: "배포 검토 원칙",
+    what: "모든 수정사항은 가능하면 커밋, 푸시, 배포 반영까지 진행해 사용자가 실제 화면으로 검토할 수 있게 합니다.",
+    why: "로컬 코드만 바뀐 상태는 사용자 입장에서는 검토 가능한 결과물이 아니기 때문입니다.",
+    background: "GitHub Pages 프리뷰를 기준으로 검토하는 운영 흐름이 이미 존재하기 때문에, 개발 완료 기준에 배포 반영을 포함해야 했습니다.",
+    next: "푸시 또는 배포가 막히면 그 이유를 문서와 작업 결과에 함께 남깁니다.",
+  },
+  {
+    title: "비개발자 설명 원칙",
+    what: "설명이 필요할 때는 개발자인 박지민도 바로 이해할 수 있도록 쉬운 표현으로 먼저 설명합니다.",
+    why: "기술 용어 중심 설명은 실제 의사결정과 검토를 어렵게 만들기 때문입니다.",
+    background: "프로젝트 운영자가 비개발자에 가깝다는 전제를 명확히 반영해, 결과 설명 방식까지 규칙으로 묶었습니다.",
+    next: "무엇이 바뀌는지, 왜 필요한지, 어떤 영향이 있는지를 먼저 설명하는 형식으로 유지합니다.",
+  },
+  {
+    title: "계획 문서 원칙",
+    what: "범위가 있는 작업은 시작 전에 계획 문서를 만들고, 완료되면 삭제합니다.",
+    why: "작업 중간의 판단 기준은 남기되, 완료 후에는 운영 문서만 남겨 저장소를 깔끔하게 유지하기 위해서입니다.",
+    background: "컨텍스트 분실을 막으면서도 불필요한 임시 문서가 쌓이지 않게 하려는 운영 방식이 필요했습니다.",
+    next: "장기적으로 남길 내용은 계획 문서가 아니라 KMS나 우선순위 문서로 옮깁니다.",
+  },
+  {
+    title: "KMS 기록 원칙",
+    what: "KMS를 수정할 때는 결과뿐 아니라 수정 계기와 배경도 함께 기록합니다.",
+    why: "나중에 다른 AI나 사람이 문서를 봤을 때, 왜 그런 규칙이 생겼는지 모르면 같은 논의를 반복하게 되기 때문입니다.",
+    background: "향후 여러 사람이 이어서 개발할 가능성을 고려해, 단순 결과 로그가 아니라 맥락 복원형 문서가 필요해졌습니다.",
+    next: "KMS 항목은 `무엇이 바뀌었는가 / 왜 바뀌었는가 / 어떤 배경이 있었는가 / 이후 무엇과 연결되는가` 구조를 기본으로 합니다.",
+  },
+];
+
 // === Admin Page ===================================================
 const AdminPage = ({ go }) => {
   const data = window.WANGSADEUL_DATA;
@@ -352,7 +415,7 @@ const AdminPage = ({ go }) => {
     { group: "회원/주문", items: ["회원", "주문"] },
     { group: "운영 설정", items: ["카테고리", "회원 등급"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템",   items: ["설정"] },
+    { group: "시스템",   items: ["버전 기록", "KMS", "설정"] },
   ];
 
   const exportMemberData = (m) => {
@@ -457,6 +520,90 @@ const AdminPage = ({ go }) => {
               </div>
             </div>
           </>
+        )}
+
+        {tab === "버전 기록" && (
+          <div style={{display:'grid', gap:16}}>
+            {ADMIN_VERSION_HISTORY.map((entry) => (
+              <article key={entry.version} className="card card-gold" style={{padding:24}}>
+                <div style={{display:'flex', justifyContent:'space-between', gap:16, alignItems:'start', marginBottom:16, flexWrap:'wrap'}}>
+                  <div>
+                    <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>VERSION LOG</div>
+                    <h2 className="ko-serif" style={{fontSize:24}}>{entry.version}</h2>
+                  </div>
+                  <div className="mono dim-2" style={{fontSize:11}}>{entry.date}</div>
+                </div>
+
+                <div style={{marginBottom:18}}>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>핵심 수정사항</div>
+                  <p className="dim" style={{fontSize:13, lineHeight:1.8}}>{entry.summary}</p>
+                </div>
+
+                <div style={{marginBottom:18}}>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>세부 업데이트 내역</div>
+                  <div style={{display:'grid', gap:8}}>
+                    {entry.details.map((detail) => (
+                      <div key={detail} className="card" style={{padding:14}}>{detail}</div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>수정 계기와 배경</div>
+                  <div className="card" style={{padding:14}}>
+                    <p className="dim" style={{fontSize:13, lineHeight:1.8}}>{entry.context}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {tab === "KMS" && (
+          <div style={{display:'grid', gap:16}}>
+            <div className="card card-gold" style={{padding:24}}>
+              <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>KMS SUMMARY</div>
+              <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>운영 기준 요약</h2>
+              <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:14}}>
+                KMS는 단순 결과 로그가 아니라, 현재 규칙과 그 규칙이 생긴 이유까지 함께 보는 운영 문서입니다.
+                관리자 화면에서도 저장소 문서와 같은 기준으로 확인할 수 있어야 합니다.
+              </p>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12}} className="stats-grid">
+                <div className="card" style={{padding:14}}>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>우선순위 기준</div>
+                  <div>`project-priority-table.md`</div>
+                </div>
+                <div className="card" style={{padding:14}}>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>AI 작업 기준</div>
+                  <div>`ai-development-rules.md`</div>
+                </div>
+              </div>
+            </div>
+
+            {ADMIN_KMS_SECTIONS.map((section) => (
+              <article key={section.title} className="card" style={{padding:24}}>
+                <h2 className="ko-serif" style={{fontSize:22, marginBottom:14}}>{section.title}</h2>
+                <div style={{display:'grid', gap:12}}>
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>무엇이 바뀌었는가</div>
+                    <div className="card" style={{padding:14}}>{section.what}</div>
+                  </div>
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>왜 바뀌었는가</div>
+                    <div className="card" style={{padding:14}}>{section.why}</div>
+                  </div>
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>어떤 배경이 있었는가</div>
+                    <div className="card" style={{padding:14}}>{section.background}</div>
+                  </div>
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>이후 어떤 작업과 연결되는가</div>
+                    <div className="card" style={{padding:14}}>{section.next}</div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         )}
 
         {/* 게시글 */}
