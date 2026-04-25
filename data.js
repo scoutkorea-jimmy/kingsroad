@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.013.000",
+  version: "00.014.000",
   build: "2026.04.25",
   channel: "preview",
 };
@@ -121,6 +121,9 @@ window.WSD_STORES = {
   reports: _lsGet('wsd_reports', []),
   notifications: _lsGet('wsd_notifications', {}),
   columnEngagement: _lsGet('wsd_column_engagement', {}),
+  lectureOverrides: _lsGet('wsd_lecture_overrides', {}),
+  lectureRegistrations: _lsGet('wsd_lecture_registrations', {}),
+  bankAccount: _lsGet('wsd_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
 };
 window.WSD_SAVE = {
   grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
@@ -135,6 +138,9 @@ window.WSD_SAVE = {
   reports: () => _lsSet('wsd_reports', window.WSD_STORES.reports),
   notifications: () => _lsSet('wsd_notifications', window.WSD_STORES.notifications),
   columnEngagement: () => _lsSet('wsd_column_engagement', window.WSD_STORES.columnEngagement),
+  lectureOverrides: () => _lsSet('wsd_lecture_overrides', window.WSD_STORES.lectureOverrides),
+  lectureRegistrations: () => _lsSet('wsd_lecture_registrations', window.WSD_STORES.lectureRegistrations),
+  bankAccount: () => _lsSet('wsd_bank_account', window.WSD_STORES.bankAccount),
   resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
   resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
 };
@@ -142,7 +148,7 @@ window.WSD_SAVE = {
 window.WSD_DB = {
   version: WSD_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -532,6 +538,223 @@ window.WSD_COLUMNS = {
   deleteComment(id, commentId) { return window.WSD_COMMUNITY.deleteComment(`col-${id}`, commentId); },
 };
 
+// === 강연(WSD_LECTURES) helper ==========================================
+// 운영 정책:
+//   - 시드는 WANGSADEUL_DATA.lectures. 관리자가 정원/일정/제목 등을 수정하면
+//     `lectureOverrides`(같은 id 키)에 변경분만 저장하고 listAll에서 머지.
+//   - 신청은 회원 전용. 한 회원당 한 강연에 한 번만 신청 가능 (중복 방지).
+//   - 결제 정책: price === 0 이면 즉시 'confirmed', price > 0 이면 'pending_payment'.
+//   - 정원 차면 'waitlist'. 신청 취소(또는 관리자 취소)로 인원이 남으면 가장 오래된
+//     waitlist를 'pending_payment'(유료) 또는 'confirmed'(무료)로 자동 승격.
+//   - 'cancelled' 레코드는 잔여 좌석 계산에서 제외.
+window.WSD_LECTURES = {
+  _seed() { return (window.WANGSADEUL_DATA?.lectures || []).slice(); },
+  _override(id) {
+    const map = window.WSD_STORES.lectureOverrides || {};
+    return map[String(id)] || null;
+  },
+  _merge(seed) {
+    const ov = this._override(seed.id);
+    return ov ? { ...seed, ...ov } : { ...seed };
+  },
+  listAll() {
+    const seedIds = new Set(this._seed().map((l) => String(l.id)));
+    const merged = this._seed().map((l) => this._merge(l));
+    // override-only(추가 강연)도 함께 노출
+    const map = window.WSD_STORES.lectureOverrides || {};
+    Object.entries(map).forEach(([id, ov]) => {
+      if (!seedIds.has(String(id))) merged.push({ id, ...ov });
+    });
+    return merged;
+  },
+  getLecture(id) {
+    return this.listAll().find((l) => String(l.id) === String(id)) || null;
+  },
+  saveLecture(payload) {
+    const map = window.WSD_STORES.lectureOverrides || {};
+    map[String(payload.id)] = { ...(map[String(payload.id)] || {}), ...payload, updatedAt: new Date().toISOString() };
+    window.WSD_STORES.lectureOverrides = map;
+    window.WSD_SAVE.lectureOverrides();
+    return this.getLecture(payload.id);
+  },
+  deleteLecture(id) {
+    const map = window.WSD_STORES.lectureOverrides || {};
+    delete map[String(id)];
+    window.WSD_STORES.lectureOverrides = map;
+    window.WSD_SAVE.lectureOverrides();
+    const reg = window.WSD_STORES.lectureRegistrations || {};
+    delete reg[String(id)];
+    window.WSD_STORES.lectureRegistrations = reg;
+    window.WSD_SAVE.lectureRegistrations();
+  },
+  // ── 신청 ──────────────────────────────────────────────────────
+  listRegistrations(lectureId) {
+    const map = window.WSD_STORES.lectureRegistrations || {};
+    return Array.isArray(map[String(lectureId)]) ? map[String(lectureId)].slice() : [];
+  },
+  _saveRegistrations(lectureId, list) {
+    const map = window.WSD_STORES.lectureRegistrations || {};
+    map[String(lectureId)] = list;
+    window.WSD_STORES.lectureRegistrations = map;
+    window.WSD_SAVE.lectureRegistrations();
+  },
+  getSeats(lectureId) {
+    const lecture = this.getLecture(lectureId);
+    const cap = lecture?.capacity || 0;
+    const list = this.listRegistrations(lectureId);
+    const active = list.filter((r) => r.status !== 'cancelled');
+    const taken = active.filter((r) => r.status !== 'waitlist').reduce((s, r) => s + (r.count || 1), 0);
+    const waitlist = active.filter((r) => r.status === 'waitlist').reduce((s, r) => s + (r.count || 1), 0);
+    const remaining = Math.max(0, cap - taken);
+    return { capacity: cap, taken, waitlist, remaining };
+  },
+  hasUserRegistered(lectureId, userId) {
+    if (!userId) return null;
+    return this.listRegistrations(lectureId).find((r) => r.userId === userId && r.status !== 'cancelled') || null;
+  },
+  register(lectureId, payload) {
+    const userId = payload.userId;
+    if (!userId) return { ok: false, message: "회원 가입 후 로그인해 주세요." };
+    const existing = this.hasUserRegistered(lectureId, userId);
+    if (existing) return { ok: false, message: "이미 신청된 강연입니다.", registration: existing };
+    const lecture = this.getLecture(lectureId);
+    if (!lecture) return { ok: false, message: "강연 정보를 찾을 수 없습니다." };
+    const count = Math.max(1, Number(payload.count) || 1);
+    const seats = this.getSeats(lectureId);
+    const wantsConfirmed = (lecture.price || 0) === 0;
+    let status;
+    if (seats.remaining >= count) {
+      status = wantsConfirmed ? 'confirmed' : 'pending_payment';
+    } else {
+      status = 'waitlist';
+    }
+    const reg = {
+      id: `reg-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+      lectureId: String(lectureId),
+      userId,
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone || "",
+      count,
+      note: String(payload.note || "").trim(),
+      price: lecture.price || 0,
+      paid: false,
+      status,
+      createdAt: new Date().toISOString(),
+    };
+    const list = this.listRegistrations(lectureId);
+    this._saveRegistrations(lectureId, [...list, reg]);
+    return { ok: true, registration: reg };
+  },
+  cancelRegistration(lectureId, registrationId) {
+    const list = this.listRegistrations(lectureId);
+    const next = list.map((r) => r.id === registrationId ? { ...r, status: 'cancelled', cancelledAt: new Date().toISOString() } : r);
+    this._saveRegistrations(lectureId, next);
+    this._promoteWaitlist(lectureId);
+    return next.find((r) => r.id === registrationId) || null;
+  },
+  confirmPayment(lectureId, registrationId) {
+    const list = this.listRegistrations(lectureId);
+    const next = list.map((r) => (
+      r.id === registrationId
+        ? { ...r, paid: true, status: 'confirmed', confirmedAt: new Date().toISOString() }
+        : r
+    ));
+    this._saveRegistrations(lectureId, next);
+    return next.find((r) => r.id === registrationId) || null;
+  },
+  unconfirmPayment(lectureId, registrationId) {
+    const list = this.listRegistrations(lectureId);
+    const next = list.map((r) => (
+      r.id === registrationId
+        ? { ...r, paid: false, status: 'pending_payment', confirmedAt: null }
+        : r
+    ));
+    this._saveRegistrations(lectureId, next);
+    return next.find((r) => r.id === registrationId) || null;
+  },
+  _promoteWaitlist(lectureId) {
+    const lecture = this.getLecture(lectureId);
+    if (!lecture) return;
+    const list = this.listRegistrations(lectureId);
+    const seats = this.getSeats(lectureId);
+    let remaining = seats.remaining;
+    const next = list.slice();
+    for (let i = 0; i < next.length && remaining > 0; i += 1) {
+      const r = next[i];
+      if (r.status !== 'waitlist') continue;
+      if (r.count > remaining) continue;
+      const promoted = (lecture.price || 0) === 0 ? 'confirmed' : 'pending_payment';
+      next[i] = { ...r, status: promoted, promotedAt: new Date().toISOString() };
+      remaining -= r.count;
+    }
+    this._saveRegistrations(lectureId, next);
+  },
+  listMyRegistrations(userId) {
+    if (!userId) return [];
+    const map = window.WSD_STORES.lectureRegistrations || {};
+    const out = [];
+    Object.keys(map).forEach((lectureId) => {
+      (map[lectureId] || []).forEach((r) => {
+        if (r.userId === userId) out.push({ ...r, lecture: this.getLecture(lectureId) });
+      });
+    });
+    return out.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  },
+  // ── .ics ──────────────────────────────────────────────────────
+  generateIcs(lecture) {
+    if (!lecture?.startsAt) return null;
+    const start = new Date(lecture.startsAt);
+    const dur = (lecture.durationMinutes || 90) * 60 * 1000;
+    const end = new Date(start.getTime() + dur);
+    const fmt = (d) => {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+    };
+    const escape = (s) => String(s || '').replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Wangsadeul//Lecture//KO',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:lecture-${lecture.id}@wangsadeul`,
+      `DTSTAMP:${fmt(new Date())}`,
+      `DTSTART:${fmt(start)}`,
+      `DTEND:${fmt(end)}`,
+      `SUMMARY:${escape(lecture.topic || lecture.title)}`,
+      `LOCATION:${escape(lecture.venue || '')}`,
+      `DESCRIPTION:${escape((lecture.host ? `진행: ${lecture.host}\n` : '') + (lecture.note || ''))}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ];
+    return lines.join('\r\n');
+  },
+  downloadIcs(lectureId) {
+    const lecture = this.getLecture(lectureId);
+    const ics = this.generateIcs(lecture);
+    if (!ics) return false;
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lecture-${lecture.id}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
+  },
+  // ── 계좌번호 ──────────────────────────────────────────────────
+  getBankAccount() {
+    return { ...(window.WSD_STORES.bankAccount || {}) };
+  },
+  saveBankAccount(payload) {
+    window.WSD_STORES.bankAccount = { ...(window.WSD_STORES.bankAccount || {}), ...payload };
+    window.WSD_SAVE.bankAccount();
+    return this.getBankAccount();
+  },
+};
+
 // 사용자 등급 레벨 계산
 window.WSD_USER_LEVEL = (user) => {
   if (!user) return 0;
@@ -582,9 +805,9 @@ window.WANGSADEUL_DATA = {
     { id: 4, title: "수원 화성 — 정조의 기획", duration: "5시간", group: "10인 이하", price: "150,000원", next: "2026.05.25 · 토", level: "심화", desc: "개혁 군주가 남긴 도시. 근대 이전의 가장 급진적 실험." },
   ],
   lectures: [
-    { id: 1, title: "왕사남 월간 공개 강연", topic: "왕의 자리는 어떻게 설계되었는가", venue: "서울 종로 강연실", next: "2026.05.02 · 토 19:00", host: "뱅기노자", seats: "잔여 18석", note: "왕권, 공간, 상징 체계를 입문자 관점에서 풀어냅니다." },
-    { id: 2, title: "왕사남 심화 강연", topic: "세종의 침묵과 정조의 질문", venue: "온라인 라이브", next: "2026.05.09 · 토 20:00", host: "뱅기노자", seats: "잔여 42석", note: "실록 문장을 중심으로 두 군주의 사고법을 비교합니다." },
-    { id: 3, title: "왕사남 현장 강연", topic: "창덕궁 후원과 왕의 사유", venue: "창덕궁 권역", next: "2026.05.16 · 토 18:30", host: "왕사남 팀", seats: "대기 접수", note: "답사와 강연이 결합된 현장형 프로그램입니다." },
+    { id: 1, title: "왕사남 월간 공개 강연", topic: "왕의 자리는 어떻게 설계되었는가", venue: "서울 종로 강연실", next: "2026.05.02 · 토 19:00", startsAt: "2026-05-02T19:00:00+09:00", durationMinutes: 90, capacity: 30, price: 0, host: "뱅기노자", seats: "잔여 18석", note: "왕권, 공간, 상징 체계를 입문자 관점에서 풀어냅니다." },
+    { id: 2, title: "왕사남 심화 강연", topic: "세종의 침묵과 정조의 질문", venue: "온라인 라이브", next: "2026.05.09 · 토 20:00", startsAt: "2026-05-09T20:00:00+09:00", durationMinutes: 120, capacity: 60, price: 20000, host: "뱅기노자", seats: "잔여 42석", note: "실록 문장을 중심으로 두 군주의 사고법을 비교합니다." },
+    { id: 3, title: "왕사남 현장 강연", topic: "창덕궁 후원과 왕의 사유", venue: "창덕궁 권역", next: "2026.05.16 · 토 18:30", startsAt: "2026-05-16T18:30:00+09:00", durationMinutes: 150, capacity: 20, price: 50000, host: "왕사남 팀", seats: "대기 접수", note: "답사와 강연이 결합된 현장형 프로그램입니다." },
   ],
   posts: DEFAULT_COMMUNITY_POSTS.map((post) => ({ ...post })),
   partners: [

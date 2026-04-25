@@ -172,14 +172,17 @@ const HomePage = ({ go, tweaks }) => {
             eyebrow="LECTURE SCHEDULE · 왕사남 강연"
             title={<>이번 달 <span className="accent">왕사남 강연 일정</span></>}
             subtitle="메인 홈에서 바로 확인할 수 있도록, 가장 가까운 왕사남 강연 일정을 먼저 보여줍니다."
-            action={<button type="button" className="btn-ghost" onClick={() => go("tour")}>투어 프로그램 →</button>}
+            action={<button type="button" className="btn-ghost" onClick={() => go("lectures")}>강연 전체 보기 →</button>}
           />
           <div className="grid grid-3">
             {(data.lectures || []).map((lecture, i) => (
               <article
                 key={lecture.id}
                 className={`card ${i === 0 ? 'card-gold' : ''}`}
-                {...clickable(() => go("tour"), `강연: ${lecture.topic}, 일정 ${lecture.next}`)}
+                {...clickable(() => {
+                  try { sessionStorage.setItem('wsd_pending_lecture_id', String(lecture.id)); } catch {}
+                  go("lectures");
+                }, `강연: ${lecture.topic}, 일정 ${lecture.next}`)}
                 style={{cursor:'pointer'}}
               >
                 <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', marginBottom:14}}>

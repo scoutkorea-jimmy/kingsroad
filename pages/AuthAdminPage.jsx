@@ -397,6 +397,22 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.014.000",
+    date: "2026-04-25",
+    summary: "Cycle 3(뱅기노자 강연 운영) 출시. 회원 전용 강연 신청, 무통장 입금 결제(PG 도입 전 임시), 관리자 입금 확인 → 참가 확정, 정원/대기열 자동 처리, .ics 캘린더 다운로드, 마이페이지 내 신청 내역, 관리자 강연 탭 + 계좌번호 설정까지 한 PR에 묶었습니다.",
+    details: [
+      "`WSD_LECTURES` helper 신설 — listAll / getLecture / saveLecture / deleteLecture / register / cancelRegistration / confirmPayment / unconfirmPayment / getSeats / hasUserRegistered / listMyRegistrations / generateIcs / downloadIcs / getBankAccount / saveBankAccount.",
+      "`WSD_STORES`에 `lectureOverrides` / `lectureRegistrations` / `bankAccount` 신설. 시드 강연(`WANGSADEUL_DATA.lectures`)은 capacity / price / startsAt / durationMinutes를 갖도록 확장.",
+      "`pages/LecturesPage.jsx` 신규 — 강연 목록 / 상세 / 신청 폼(회원 전용) / 무통장 입금 안내 / 본인 상태 카드 / 신청 취소 / .ics 다운로드.",
+      "App에 `lectures` 라우트와 `#lecture-{id}` 해시 딥 링크 추가. 홈 강연 카드 클릭 타겟을 `tour` → `lectures`로 변경.",
+      "마이페이지 `예정 강연` 정적 카드를 `MY LECTURES — 내 신청 강연` 개인화 카드로 교체(상태별 컬러 표시).",
+      "관리자 콘텐츠 메뉴에 `강연` 탭 신설 — 강연 정보 수정(제목/일정/정원/가격) + 참가자 명단 + 입금 확인 토글 + 신청 취소.",
+      "관리자 시스템 메뉴 `설정` 탭에 `BankAccountPanel` 추가 — 은행 / 계좌번호 / 예금주 / 안내 메모 입력. 비어 있으면 신청 화면에서 안내 차단.",
+      "KMS 미션 2(강연) 영역을 위 변경에 맞게 재기록. 미션 평가 카드 25% → ~70%.",
+    ],
+    context: "사용자가 PG는 한참 뒤로 미루고 무통장 입금부터 시작하자는 결정을 명시적으로 내려서, 전체 결제 인프라가 빠진 상태로도 운영 사이클이 닫히도록 흐름을 잡았습니다. 회원만 신청 가능한 정책과 관리자가 입금을 직접 확인하는 단계가 핵심이고, 계좌번호는 관리자 설정 탭에서 입력해 노출되는 구조라 향후 운영 명의가 바뀌어도 코드 변경 없이 따라갈 수 있습니다.",
+  },
+  {
     version: "00.013.000",
     date: "2026-04-25",
     summary: "Cycle 2(뱅기노자 칼럼 운영 강화)를 한 PR에 묶었습니다. 임시 저장 / 예약 발행 / 발행 취소 / 수정 흐름과 좋아요 / 공유 링크 / 댓글 / 검색 / 카테고리 아카이브 / 추정 읽기 시간 자동 계산을 모두 도입해 칼럼이 단순 발행물에서 운영 가능한 콘텐츠 자산으로 전환되었습니다. URL 해시 딥 링크(`#col-{id}`, `#post-{id}`)도 함께 추가되어 외부 공유가 가능해졌습니다.",
@@ -611,10 +627,10 @@ const MISSION_OVERVIEW = [
     id: "lecture",
     number: "02",
     title: "뱅기노자 강연 일정 안내",
-    short: "공개·심화·현장 강연을 알리고 신청을 유도.",
-    state: "정보 노출만",
-    coverage: "기능 25%",
-    verdict: "강연을 '알리는' 단계에서 멈춰 있다. 신청·정원·결제·후기·자료 보관 어느 것도 연결되어 있지 않다.",
+    short: "공개·심화·현장 강연을 알리고 신청·입금까지 운영.",
+    state: "Cycle 3 마무리",
+    coverage: "기능 ~70%",
+    verdict: "신청·정원·대기열·무통장 입금 확인·.ics 캘린더·관리자 명단까지 닫혔다. PG 결제·D-1 알림·자료 보관함은 다음 단계.",
   },
   {
     id: "column",
@@ -976,67 +992,124 @@ const FEATURE_DOMAINS = [
     number: "02",
     label: "강연 일정",
     title: "미션 2 — 뱅기노자 강연 일정 안내",
-    role: "공개 / 심화 / 현장 강연 일정을 알리고 신청을 유도.",
-    routes: ["home(노출)", "tour(상세 영역)", "mypage(예정 강연)"],
-    status: "정보 노출만(부분 구현)",
-    evaluation: "현재는 `data.lectures` 정적 데이터를 홈에 카드로 보여주는 것이 전부다. '알리는' 단계에서 멈춰 있어 신청 → 결제 → 참가 → 후기로 이어지는 사이클이 비어 있다. 강연이 자산으로 누적되지 못한다.",
+    role: "공개 / 심화 / 현장 강연 일정을 알리고 신청·입금·확정까지 운영.",
+    routes: ["lectures(목록·상세·신청)", "home(노출)", "mypage(내 신청 강연)", "admin > 강연(운영 명단)", "admin > 설정(계좌번호)"],
+    status: "Cycle 3 마무리(기능 ~70%)",
+    evaluation: "Cycle 3에서 강연이 '알리기'에서 '신청 → 입금 → 확정'까지 닫혔다. 회원만 신청 가능하고, 무료는 즉시 확정, 유료는 무통장 입금을 받아 관리자가 확인하면 참가 확정으로 전환된다. 정원이 차면 자동 대기열, 취소 시 다음 대기자가 자동 승격된다. .ics 캘린더 다운로드와 URL 해시 딥 링크(`#lecture-{id}`)도 들어갔다.",
     missing: [
-      "강연 신청 폼(회차 · 인원 · 대표자)",
-      "정원 / 대기열 / 잔여석 실시간",
-      "유료 강연 결제 / 무료 강연 등록 분기",
-      "캘린더 다운로드(.ics) · 구글 캘린더 추가",
-      "D-1 알림 · 변경 알림(이메일/푸시)",
-      "참가자 명단 · 체크인 · 출석 이력",
-      "강연 후 자료 보관함(영상 · PDF · 발표자료)",
-      "마이페이지 신청 내역 / 출석 이력",
+      "PG 결제 (현재는 무통장 입금만; 추후 도입 예정)",
+      "D-1 알림 · 변경 알림 (이메일 / 푸시 인프라 필요)",
+      "참가자 체크인 · 출석 이력",
+      "강연 후 자료 보관함 (영상 · PDF · 발표자료)",
       "강연자 프로필 페이지 / 시리즈 묶음",
-      "강연 후기 / 평점",
-      "관리자 강연 운영 화면(현재는 투어 탭에 정보만 있음)",
+      "강연 후기 · 평점",
+      "관리자 강연 신규 등록 (현재는 시드 강연 수정만 지원)",
     ],
     features: [
       {
-        name: "홈 강연 일정 노출",
+        name: "강연 목록 / 상세 / 잔여 좌석 표시",
         status: "구현됨",
-        summary: "메인 홈에 가까운 강연 일정을 3열 카드로 노출.",
+        summary: "공개 / 심화 / 현장 강연을 카드로 보여주고 클릭 시 상세에서 정원·잔여·대기 인원·참가비를 함께 노출.",
         elements: [
-          "프로그램 라벨(왕사남)",
-          "주제(`topic`)",
-          "강연자(`host`)",
-          "장소(`venue`)",
-          "다음 일정(`next`)",
-          "잔여석 텍스트(`seats`)",
+          "강연 카드(라벨 / 다음 일정 / 주제 / 장소 / 진행 / 정원 / 잔여 또는 대기)",
+          "FREE / 무통장 입금 배지",
+          "내 신청 인디케이터(상태 라벨 동시 표시)",
+          "상세 헤더 6 메타(일정·장소·진행·정원·잔여·참가비)",
         ],
-        techSpec: "`HomePage` 안에서 `data.lectures` map. 첫 카드 강조 + 클릭 시 `tour` 라우트 이동.",
-        caution: "잔여석 텍스트는 정적 문자열이라 실제 신청 수와 동기화되지 않음. 신청 흐름 도입 전까지 '안내용'임을 인지.",
+        techSpec: "`WSD_LECTURES.listAll() / getLecture / getSeats`. 시드는 `WANGSADEUL_DATA.lectures`, 관리자가 수정한 항목은 `WSD_STORES.lectureOverrides`에 저장 후 머지.",
+        caution: "잔여석은 `capacity - 활성(취소 제외) 비대기 등록 합` 으로 즉시 계산하므로 시드의 `seats` 텍스트는 더 이상 운영 수치로 사용하지 않음(표시 폴백용).",
         issues: [],
       },
       {
-        name: "투어 페이지 강연 통합 노출",
-        status: "부분 구현",
-        summary: "투어와 같은 페이지에서 강연 상세도 함께 노출.",
-        elements: ["프로그램 헤더", "강연/투어 혼합 카드"],
-        techSpec: "`WangsanamTourPage` 단일 페이지에서 `data.lectures`와 `data.tours`를 같이 다룸.",
-        caution: "사용자가 별도 강연 라우트가 있다고 오해할 수 있음. 신청 흐름 도입 시점에 페이지 분리 결정 필요.",
-        issues: ["라우트가 `tour` 하나뿐인데 강연이 함께 노출되어, 마이페이지 등에서 강연 진입 동선이 어색"],
+        name: "강연 신청 — 무료 즉시 확정 / 유료 무통장 입금",
+        status: "구현됨",
+        summary: "회원만 신청 가능. 정원이 남으면 무료는 즉시 `confirmed`, 유료는 `pending_payment`. 정원이 차면 `waitlist`.",
+        elements: [
+          "이름 / 이메일 / 연락처 / 인원 / 메모",
+          "합계 표시(인원 × 참가비)",
+          "정원 부족 시 대기자 자동 안내",
+          "비로그인 시 회원가입·로그인 진입 카드",
+          "신청 후 본인 상태 카드 + 입금 안내(유료) + .ics 다운로드 + 신청 취소",
+        ],
+        techSpec: "`WSD_LECTURES.register({lectureId, userId, name, email, phone, count, note})`. 같은 사용자가 같은 강연에 두 번 신청 못 하도록 `hasUserRegistered`로 가드. 취소 시 `_promoteWaitlist`가 자동 실행되어 가장 오래된 대기자를 승격.",
+        caution: "한 사용자가 한 강연에 한 건만 가질 수 있다(취소 후 재신청은 가능). 인원 수는 1 이상, 정원 이하.",
+        issues: ["기존 시드 데이터의 'seats' 텍스트는 실제 정원/잔여 계산과 무관하므로 운영자에게는 혼선이 될 수 있음 — 관리자 강연 탭에서 직접 capacity 값을 수정하도록 안내 필요"],
       },
       {
-        name: "마이페이지 예정 강연 카드",
-        status: "부분 구현",
-        summary: "로그인 사용자에게 다음 강연을 보여줌.",
-        elements: ["다음 강연 카드(`data.lectures[0]`)"],
-        techSpec: "`data.lectures[0]`을 그대로 표시. 사용자 신청 이력과 무관.",
-        caution: "사용자가 '내가 신청한 강연'으로 오해할 수 있어 라벨에 '다가오는 강연'임을 명확히 유지.",
-        issues: ["개인화가 없어 마이페이지 본질에 어긋난다는 한계 — 신청 흐름 도입 시 우선 교체 대상"],
+        name: "관리자 입금 확인 → 참가 확정",
+        status: "구현됨",
+        summary: "관리자 콘텐츠 메뉴 `강연` 탭에서 신청 명단을 보고 입금 확인 / 확정 취소 / 신청 취소를 직접 처리.",
+        elements: [
+          "강연별 헤더(잔여 / 대기 / 가격)",
+          "강연 정보 수정(제목·주제·장소·진행·시작·소요·정원·가격·메모)",
+          "참가자 표(이름·이메일·연락처·인원·상태·입금 여부)",
+          "액션: `입금 확인 → 확정` / `확정 취소` / `취소`",
+        ],
+        techSpec: "`WSD_LECTURES.confirmPayment(lectureId, registrationId)` → `paid: true`, `status: 'confirmed'`. `unconfirmPayment`로 되돌릴 수 있음. `cancelRegistration`은 좌석을 돌려놓고 `_promoteWaitlist` 실행.",
+        caution: "확정 취소 후 좌석은 즉시 풀려 다음 대기자가 자동 승격됨. 의도치 않은 환불 분쟁을 막으려면 입금 환불 후에만 확정 취소를 누를 것.",
+        issues: [],
+      },
+      {
+        name: "관리자 계좌번호 설정 (관리자 > 설정)",
+        status: "구현됨",
+        summary: "강연 신청 시 사용자에게 노출되는 무통장 입금 계좌를 관리자 콘솔에서 입력.",
+        elements: [
+          "은행 / 계좌번호 / 예금주",
+          "안내 메모(입금자명 규칙 등)",
+          "저장 즉시 사용자 신청 화면에 반영",
+        ],
+        techSpec: "`WSD_LECTURES.getBankAccount() / saveBankAccount(payload)` → `WSD_STORES.bankAccount`. 비어 있으면 사용자 신청 시 '운영자에게 문의' 안내.",
+        caution: "민감 정보(계좌)이므로 관리자 외에는 접근하지 못해야 함. 현재는 관리자 라우트 자체가 `user.isAdmin` 가드.",
+        issues: [],
+      },
+      {
+        name: "마이페이지 내 신청 강연",
+        status: "구현됨",
+        summary: "로그인 사용자에게 본인이 신청한 강연을 상태별로 카드 리스트로 노출.",
+        elements: [
+          "강연 주제 / 다음 일정 / 인원 / 상태(입금 대기 / 참가 확정 / 대기자 / 취소)",
+          "카드 클릭 → 강연 상세로 이동",
+          "최대 4건 + '외 N건'",
+        ],
+        techSpec: "`WSD_LECTURES.listMyRegistrations(user.id)`로 모든 강연을 가로지르며 본인 등록만 모음. 강연 점프는 `sessionStorage.wsd_pending_lecture_id` 패턴 사용.",
+        caution: "신청 후 강연이 삭제되면 카드의 강연 정보가 비어 보일 수 있음.",
+        issues: [],
+      },
+      {
+        name: ".ics 캘린더 다운로드",
+        status: "구현됨",
+        summary: "강연 시작 시각·소요 시간·장소·메모를 담은 표준 .ics 파일을 즉시 내려받기.",
+        elements: [
+          "상세에서 `캘린더 추가 (.ics)` 버튼",
+          "신청 후 본인 상태 카드에서도 다운로드 가능",
+        ],
+        techSpec: "`WSD_LECTURES.generateIcs(lecture)` → RFC 5545 형식 문자열. `downloadIcs(lectureId)`가 Blob을 만들어 클릭 다운로드.",
+        caution: "`startsAt` ISO + `durationMinutes`가 있어야 정상 생성됨. 운영자가 강연을 새로 만들 때 두 필드를 채우도록 강제할 것.",
+        issues: [],
+      },
+      {
+        name: "URL 해시 딥 링크 / 홈 카드 연결",
+        status: "구현됨",
+        summary: "`#lecture-{id}`로 강연 상세를 외부 공유. 홈 강연 카드 클릭은 `lectures` 라우트로 직접 점프.",
+        elements: [
+          "App `applyHash`가 `#lecture-{id}` 매칭 시 `lectures` 라우트로 이동 + sessionStorage 셋",
+          "홈 강연 카드 onClick → `wsd_pending_lecture_id` + `go('lectures')`",
+        ],
+        techSpec: "`index.html` App `useEffect` 라우트 해시 + `sessionStorage` 페치. 강연 페이지 mount에서 pending id 읽고 setSelectedId.",
+        caution: "라우트가 글로벌 App 상태에 묶여 있어 외부 진입은 sessionStorage 패턴을 그대로 따른다.",
+        issues: [],
       },
     ],
-    techSpec: "`WANGSADEUL_DATA.lectures` 정적 배열에만 의존. 신청·결제·정원 helper 미존재. 강연 도메인 모델은 아직 정의되지 않은 상태.",
+    techSpec: "`WSD_LECTURES` helper + `WANGSADEUL_DATA.lectures`(시드) + `WSD_STORES.lectureOverrides`(관리자 수정분 머지) + `WSD_STORES.lectureRegistrations`(`{lectureId: registration[]}`) + `WSD_STORES.bankAccount`. 회원 식별은 `user.id`, 결제 정책은 `price === 0` 분기.",
     cautions: [
-      "강연이 마치 신청 가능한 것처럼 보이지만 실제 등록 흐름이 없음 → 안내 카드에 '신청은 별도 채널' 같은 설명 권장",
-      "잔여석 등 운영 수치는 정적 문자열이라 운영자가 직접 갱신하지 않으면 어긋남",
+      "회원만 신청 가능 — 비회원에게는 회원가입/로그인 진입 카드를 노출하고 폼 자체를 막음",
+      "결제 도입은 '무통장 입금 → 관리자 입금 확인 → 참가 확정' 단계까지만 (PG는 후속)",
+      "정원·대기열은 클라이언트에서 즉시 계산되므로, 외부 DB 도입 시 서버 측 동시성 처리(예: 행 잠금)가 추가로 필요",
+      "계좌번호는 관리자 외 노출 금지. `BankAccountPanel`은 관리자 라우트 안에서만 렌더",
     ],
     issues: [
-      "강연이 별도 도메인 모델 없이 카탈로그 데이터로만 정의되어 있어, 신청 기능 추가 시 모델·저장소·관리자 화면을 동시에 설계해야 함",
-      "투어와 한 페이지에 묶여 있어 라우팅·정보 구조 결정이 필요한 상태",
+      "기존 seed `seats` 텍스트는 실제 잔여와 어긋날 수 있음 — 운영자는 관리자 강연 탭에서 capacity 직접 관리",
+      "예약 발행 칼럼처럼, 강연 일정도 진입 시점에 자동 정리(`_promoteWaitlist`)가 돌므로 사이트 미진입 기간에는 대기 → 확정 자동 승격이 지연될 수 있음",
     ],
   },
   {
@@ -1426,6 +1499,260 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
   );
 };
 
+// === Lecture Admin Panel ==========================================
+const LectureAdminPanel = ({ go }) => {
+  const [tick, setTick] = React.useState(0);
+  const [editingId, setEditingId] = React.useState(null);
+  const [draft, setDraft] = React.useState({ title: '', topic: '', venue: '', host: '', startsAt: '', durationMinutes: 90, capacity: 30, price: 0, note: '' });
+
+  const lectures = React.useMemo(() => window.WSD_LECTURES.listAll(), [tick]);
+
+  const refresh = () => setTick((v) => v + 1);
+
+  const startEdit = (l) => {
+    const startsAtLocal = (() => {
+      if (!l.startsAt) return '';
+      const d = new Date(l.startsAt);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    })();
+    setEditingId(l.id);
+    setDraft({
+      title: l.title || '',
+      topic: l.topic || '',
+      venue: l.venue || '',
+      host: l.host || '',
+      next: l.next || '',
+      startsAt: startsAtLocal,
+      durationMinutes: l.durationMinutes || 90,
+      capacity: l.capacity || 30,
+      price: l.price || 0,
+      note: l.note || '',
+    });
+  };
+
+  const saveEdit = () => {
+    if (editingId == null) return;
+    const lecture = window.WSD_LECTURES.getLecture(editingId);
+    if (!lecture) return;
+    const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : lecture.startsAt;
+    const next = draft.next || lecture.next;
+    window.WSD_LECTURES.saveLecture({
+      id: lecture.id,
+      title: draft.title,
+      topic: draft.topic,
+      venue: draft.venue,
+      host: draft.host,
+      next,
+      startsAt: startsAtIso,
+      durationMinutes: Number(draft.durationMinutes) || 90,
+      capacity: Number(draft.capacity) || lecture.capacity,
+      price: Number(draft.price) || 0,
+      note: draft.note,
+    });
+    setEditingId(null);
+    refresh();
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        강연 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
+        결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다.
+        계좌번호는 <button type="button" className="btn-ghost" style={{color:'var(--gold)'}} onClick={() => alert('관리자 메뉴 → 시스템 → 설정 으로 이동해 입력하세요.')}>설정 탭</button>에서 등록합니다.
+      </p>
+
+      {lectures.length === 0 ? (
+        <div className="card dim" style={{padding:32, textAlign:'center'}}>관리할 강연이 없습니다.</div>
+      ) : (
+        <div style={{display:'grid', gap:14}}>
+          {lectures.map((l) => {
+            const seats = window.WSD_LECTURES.getSeats(l.id);
+            const regs = window.WSD_LECTURES.listRegistrations(l.id);
+            const active = regs.filter((r) => r.status !== 'cancelled');
+            const isEditing = editingId === l.id;
+            return (
+              <article key={l.id} className="card" style={{padding:20}}>
+                <header style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:10}}>
+                  <div>
+                    <h3 className="ko-serif" style={{fontSize:18}}>
+                      <span className="dim-2 mono" style={{fontSize:11, marginRight:8}}>#{String(l.id).padStart(2,'0')}</span>
+                      {l.title} — {l.topic}
+                    </h3>
+                    <div className="mono dim-2" style={{fontSize:11, marginTop:4, letterSpacing:'0.12em'}}>
+                      {l.next} · {l.venue} · 진행 {l.host}
+                    </div>
+                  </div>
+                  <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                    <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: seats.remaining <= 0 ? 'var(--danger)' : 'var(--gold)'}}>
+                      잔여 {seats.remaining} / {seats.capacity}
+                    </span>
+                    {seats.waitlist > 0 && <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)'}}>대기 {seats.waitlist}</span>}
+                    {l.price > 0
+                      ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>유료 {l.price.toLocaleString()}원</span>
+                      : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--gold)', border:'1px solid var(--gold-dim)', padding:'1px 6px'}}>FREE</span>}
+                  </div>
+                </header>
+
+                {isEditing ? (
+                  <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10, padding:'14px 0', borderTop:'1px solid var(--line)'}}>
+                    {[
+                      { k: 'title',     l: '제목',           type: 'text' },
+                      { k: 'topic',     l: '주제',           type: 'text' },
+                      { k: 'venue',     l: '장소',           type: 'text' },
+                      { k: 'host',      l: '진행',           type: 'text' },
+                      { k: 'next',      l: '표시용 일정 문구', type: 'text', placeholder: '2026.05.02 · 토 19:00' },
+                      { k: 'startsAt',  l: '실제 시작(로컬)', type: 'datetime-local' },
+                      { k: 'durationMinutes', l: '소요(분)', type: 'number' },
+                      { k: 'capacity',  l: '정원',           type: 'number' },
+                      { k: 'price',     l: '참가비(원)',     type: 'number' },
+                    ].map((f) => (
+                      <div key={f.k} className="field" style={{margin:0}}>
+                        <label className="field-label">{f.l}</label>
+                        <input className="field-input" type={f.type} placeholder={f.placeholder || ''}
+                          value={draft[f.k] ?? ''}
+                          onChange={(e) => setDraft({ ...draft, [f.k]: e.target.value })}/>
+                      </div>
+                    ))}
+                    <div className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                      <label className="field-label">메모</label>
+                      <textarea className="field-input" rows={2} value={draft.note}
+                        onChange={(e) => setDraft({ ...draft, note: e.target.value })}/>
+                    </div>
+                    <div style={{gridColumn:'1 / -1', display:'flex', justifyContent:'flex-end', gap:8}}>
+                      <button type="button" className="btn btn-small" onClick={() => setEditingId(null)}>취소</button>
+                      <button type="button" className="btn btn-gold btn-small" onClick={saveEdit}>저장</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10}}>
+                    <button type="button" className="btn btn-small" onClick={() => startEdit(l)}>강연 정보 수정</button>
+                  </div>
+                )}
+
+                {/* Roster */}
+                <section style={{marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>참가자 명단 · {active.length}명</div>
+                  {active.length === 0 ? (
+                    <p className="dim" style={{fontSize:13}}>아직 신청자가 없습니다.</p>
+                  ) : (
+                    <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+                      <thead>
+                        <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:9, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
+                          <th scope="col" style={{padding:10, textAlign:'left'}}>이름</th>
+                          <th scope="col" style={{padding:10, textAlign:'left'}}>이메일</th>
+                          <th scope="col" style={{padding:10, textAlign:'left'}}>연락처</th>
+                          <th scope="col" style={{padding:10, textAlign:'right'}}>인원</th>
+                          <th scope="col" style={{padding:10, textAlign:'left'}}>상태</th>
+                          <th scope="col" style={{padding:10, textAlign:'right'}}>액션</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {active.map((r) => (
+                          <tr key={r.id} style={{borderBottom:'1px solid var(--line)'}}>
+                            <td style={{padding:10}}>{r.name}</td>
+                            <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.email}</td>
+                            <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.phone || '-'}</td>
+                            <td className="mono" style={{padding:10, textAlign:'right'}}>{r.count}</td>
+                            <td className="mono" style={{padding:10, fontSize:10, letterSpacing:'0.18em', color:
+                              r.status === 'confirmed' ? 'var(--gold)' :
+                              r.status === 'waitlist' ? 'var(--ink-2)' :
+                              r.status === 'pending_payment' ? 'var(--ink-2)' : 'var(--danger)'}}>
+                              {r.status === 'pending_payment' ? '입금 대기' :
+                                r.status === 'confirmed' ? '참가 확정' :
+                                r.status === 'waitlist' ? '대기자' : r.status}
+                              {r.paid && r.status === 'confirmed' && <span className="dim-2 mono" style={{marginLeft:6, fontSize:9}}>입금 ✓</span>}
+                            </td>
+                            <td style={{padding:10, textAlign:'right'}}>
+                              <div style={{display:'flex', justifyContent:'flex-end', gap:6, flexWrap:'wrap'}}>
+                                {r.status === 'pending_payment' && (
+                                  <button type="button" className="btn btn-small"
+                                    onClick={() => { window.WSD_LECTURES.confirmPayment(l.id, r.id); refresh(); }}>
+                                    입금 확인 → 확정
+                                  </button>
+                                )}
+                                {r.status === 'confirmed' && r.price > 0 && (
+                                  <button type="button" className="btn btn-small"
+                                    onClick={() => { window.WSD_LECTURES.unconfirmPayment(l.id, r.id); refresh(); }}>
+                                    확정 취소
+                                  </button>
+                                )}
+                                <button type="button" className="btn btn-small"
+                                  onClick={() => {
+                                    if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
+                                    window.WSD_LECTURES.cancelRegistration(l.id, r.id);
+                                    refresh();
+                                  }}
+                                  style={{borderColor:'var(--danger)', color:'var(--danger)'}}>취소</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </section>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// === Bank Account Settings Panel ==================================
+const BankAccountPanel = () => {
+  const [bank, setBank] = React.useState(() => window.WSD_LECTURES.getBankAccount());
+  const [msg, setMsg] = React.useState("");
+
+  const save = (e) => {
+    e.preventDefault();
+    window.WSD_LECTURES.saveBankAccount(bank);
+    setMsg("계좌 정보를 저장했습니다.");
+    setTimeout(() => setMsg(""), 2000);
+  };
+
+  return (
+    <form onSubmit={save} className="card" style={{padding:24, maxWidth:640}}>
+      <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>BANK ACCOUNT</div>
+      <h2 className="ko-serif" style={{fontSize:20, marginBottom:6}}>강연 무통장 입금 계좌</h2>
+      <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:18}}>
+        강연 신청 시 사용자에게 노출되는 입금 계좌입니다. 변경하면 새로 신청하는 사용자부터 즉시 반영됩니다.
+      </p>
+      <div style={{display:'grid', gap:12}}>
+        {[
+          { k: 'bankName',      l: '은행',     placeholder: '예) 국민은행' },
+          { k: 'accountNumber', l: '계좌번호', placeholder: '예) 123-456-7890123' },
+          { k: 'holder',        l: '예금주',   placeholder: '예) 왕사들 협동조합' },
+        ].map((f) => (
+          <div key={f.k} className="field" style={{margin:0}}>
+            <label className="field-label">{f.l}</label>
+            <input className="field-input" placeholder={f.placeholder}
+              value={bank[f.k] || ''}
+              onChange={(e) => setBank({ ...bank, [f.k]: e.target.value })}/>
+          </div>
+        ))}
+        <div className="field" style={{margin:0}}>
+          <label className="field-label">안내 메모 (선택)</label>
+          <textarea className="field-input" rows={2}
+            value={bank.memo || ''}
+            placeholder="입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요."
+            onChange={(e) => setBank({ ...bank, memo: e.target.value })}/>
+        </div>
+      </div>
+      {msg && (
+        <div role="status" className="mono gold" style={{fontSize:12, marginTop:14, padding:'8px 12px', border:'1px solid var(--gold-dim)', background:'rgba(212,175,55,0.06)'}}>
+          {msg}
+        </div>
+      )}
+      <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:18, paddingTop:14, borderTop:'1px solid var(--line)'}}>
+        <button type="submit" className="btn btn-gold">저장</button>
+      </div>
+    </form>
+  );
+};
+
 // === Admin Page ===================================================
 const AdminPage = ({ go }) => {
   const data = window.WANGSADEUL_DATA;
@@ -1462,7 +1789,7 @@ const AdminPage = ({ go }) => {
 
   const tabGroups = [
     { group: "요약",     items: ["대시보드"] },
-    { group: "콘텐츠",   items: ["게시글", "신고", "칼럼", "칼럼 작성", "투어"] },
+    { group: "콘텐츠",   items: ["게시글", "신고", "칼럼", "칼럼 작성", "강연", "투어"] },
     { group: "회원/주문", items: ["회원", "주문"] },
     { group: "운영 설정", items: ["카테고리", "회원 등급"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
@@ -2019,6 +2346,9 @@ const AdminPage = ({ go }) => {
           </div>
         )}
 
+        {/* 강연 */}
+        {tab === "강연" && <LectureAdminPanel go={go}/>}
+
         {/* 투어 */}
         {tab === "투어" && (
           <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
@@ -2387,15 +2717,19 @@ const AdminPage = ({ go }) => {
 
         {/* 설정 */}
         {tab === "설정" && (
-          <div className="card">
-            <h2 className="ko-serif" style={{fontSize:20, marginBottom:16}}>사이트 설정</h2>
-            <dl style={{display:'grid', gridTemplateColumns:'200px 1fr', gap:'8px 24px', fontSize:13, lineHeight:1.8}}>
-              <dt className="dim-2 mono" style={{fontSize:11}}>DPO</dt><dd>dpo@wangsadeul.kr · 02-0000-0001</dd>
-              <dt className="dim-2 mono" style={{fontSize:11}}>개인정보 책임자</dt><dd>뱅기노자 / banginoja@wangsadeul.kr</dd>
-              <dt className="dim-2 mono" style={{fontSize:11}}>최근 DPIA</dt><dd>2026-03-02</dd>
-              <dt className="dim-2 mono" style={{fontSize:11}}>적용 법역</dt><dd>대한민국(PIPA) · 유럽연합(GDPR)</dd>
-              <dt className="dim-2 mono" style={{fontSize:11}}>감독기관</dt><dd>개인정보보호위원회 / 관할 EU DPA</dd>
-            </dl>
+          <div style={{display:'grid', gap:24}}>
+            <BankAccountPanel/>
+
+            <div className="card">
+              <h2 className="ko-serif" style={{fontSize:20, marginBottom:16}}>사이트 설정</h2>
+              <dl style={{display:'grid', gridTemplateColumns:'200px 1fr', gap:'8px 24px', fontSize:13, lineHeight:1.8}}>
+                <dt className="dim-2 mono" style={{fontSize:11}}>DPO</dt><dd>dpo@wangsadeul.kr · 02-0000-0001</dd>
+                <dt className="dim-2 mono" style={{fontSize:11}}>개인정보 책임자</dt><dd>뱅기노자 / banginoja@wangsadeul.kr</dd>
+                <dt className="dim-2 mono" style={{fontSize:11}}>최근 DPIA</dt><dd>2026-03-02</dd>
+                <dt className="dim-2 mono" style={{fontSize:11}}>적용 법역</dt><dd>대한민국(PIPA) · 유럽연합(GDPR)</dd>
+                <dt className="dim-2 mono" style={{fontSize:11}}>감독기관</dt><dd>개인정보보호위원회 / 관할 EU DPA</dd>
+              </dl>
+            </div>
           </div>
         )}
       </div>
@@ -2910,4 +3244,4 @@ const AdminDenied = ({ go, user }) => (
   </div>
 );
 
-Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied });
+Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel });

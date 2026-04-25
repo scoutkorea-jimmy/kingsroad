@@ -14,11 +14,30 @@ const MyPage = ({ go, user, cart }) => {
     ? (window.WSD_COMMUNITY?.listNotifications?.(user.id) || [])
     : [];
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const myLectureRegs = user
+    ? (window.WSD_LECTURES?.listMyRegistrations?.(user.id) || [])
+    : [];
 
   const goToPost = (postId) => {
     try { sessionStorage.setItem('wsd_pending_post_id', String(postId)); } catch {}
     go('community');
   };
+  const goToLecture = (lectureId) => {
+    try { sessionStorage.setItem('wsd_pending_lecture_id', String(lectureId)); } catch {}
+    go('lectures');
+  };
+  const lectureStatusLabel = (s) => ({
+    pending_payment: '입금 대기',
+    confirmed: '참가 확정',
+    waitlist: '대기자',
+    cancelled: '취소됨',
+  }[s] || s);
+  const lectureStatusTone = (s) => ({
+    confirmed: 'var(--gold)',
+    waitlist: 'var(--ink-2)',
+    cancelled: 'var(--danger)',
+    pending_payment: 'var(--ink-2)',
+  }[s] || 'var(--ink-2)');
 
   if (!user) {
     return (
@@ -98,12 +117,44 @@ const MyPage = ({ go, user, cart }) => {
 
         <div className="grid grid-3" style={{ marginBottom: 32 }}>
           <article className="card">
-            <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>UPCOMING LECTURE</div>
-            <h3 className="ko-serif" style={{ fontSize: 20, marginBottom: 10 }}>{upcomingLecture?.topic || "예정 강연 없음"}</h3>
-            <p className="dim" style={{ fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>
-              {upcomingLecture ? `${upcomingLecture.next} · ${upcomingLecture.venue}` : "등록된 강연 일정이 없습니다."}
-            </p>
-            <button type="button" className="btn btn-small" onClick={() => go("home")}>홈에서 일정 보기</button>
+            <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>MY LECTURES</div>
+            <h3 className="ko-serif" style={{ fontSize: 20, marginBottom: 10 }}>
+              내 신청 강연 <span className="dim-2 mono" style={{ fontSize: 12 }}>{myLectureRegs.length}건</span>
+            </h3>
+            {myLectureRegs.length === 0 ? (
+              <>
+                <p className="dim" style={{ fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>아직 신청한 강연이 없습니다. 강연 페이지에서 신청해 보세요.</p>
+                <button type="button" className="btn btn-small" onClick={() => go("lectures")}>강연 일정 보기</button>
+              </>
+            ) : (
+              <>
+                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10, marginBottom: 14 }}>
+                  {myLectureRegs.slice(0, 4).map((r) => (
+                    <li key={r.id}>
+                      <button type="button" onClick={() => goToLecture(r.lectureId)}
+                        style={{
+                          all: 'unset', cursor: 'pointer', width: '100%',
+                          padding: '10px 12px',
+                          borderLeft: `2px solid ${lectureStatusTone(r.status)}`,
+                          background: 'rgba(212,175,55,0.04)',
+                        }}>
+                        <div style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
+                          {r.lecture?.topic || '강연'}
+                        </div>
+                        <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.1em' }}>
+                          {r.lecture?.next || ''} · {r.count}명 ·{' '}
+                          <span style={{ color: lectureStatusTone(r.status) }}>{lectureStatusLabel(r.status)}</span>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {myLectureRegs.length > 4 && (
+                  <div className="dim-2 mono" style={{ fontSize: 11, textAlign: 'right', marginBottom: 8 }}>외 {myLectureRegs.length - 4}건</div>
+                )}
+                <button type="button" className="btn btn-small" onClick={() => go("lectures")}>강연 전체 보기</button>
+              </>
+            )}
           </article>
 
           <article className="card">

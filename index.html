@@ -44,6 +44,7 @@
 <script type="text/babel" src="pages/ColumnPage.jsx"></script>
 <script type="text/babel" src="pages/BookCheckoutPage.jsx"></script>
 <script type="text/babel" src="pages/AuthAdminPage.jsx"></script>
+<script type="text/babel" src="pages/LecturesPage.jsx"></script>
 <script type="text/babel" src="pages/MyPage.jsx"></script>
 
 <script type="text/babel">
@@ -106,6 +107,7 @@ const App = () => {
       const h = window.location.hash || '';
       const colMatch = h.match(/^#col-(.+)$/);
       const postMatch = h.match(/^#post-(.+)$/);
+      const lectureMatch = h.match(/^#lecture-(.+)$/);
       if (colMatch) {
         try { sessionStorage.setItem('wsd_pending_column_id', decodeURIComponent(colMatch[1])); } catch {}
         setRoute('column');
@@ -114,6 +116,10 @@ const App = () => {
         try { sessionStorage.setItem('wsd_pending_post_id', decodeURIComponent(postMatch[1])); } catch {}
         setRoute('community');
         try { localStorage.setItem('wsd_route', 'community'); } catch {}
+      } else if (lectureMatch) {
+        try { sessionStorage.setItem('wsd_pending_lecture_id', decodeURIComponent(lectureMatch[1])); } catch {}
+        setRoute('lectures');
+        try { localStorage.setItem('wsd_route', 'lectures'); } catch {}
       }
     };
     applyHash();
@@ -132,6 +138,7 @@ const App = () => {
       case "home": return <HomePage go={go} tweaks={tweaks}/>;
       case "community": return <CommunityPage go={go} postId={postId} setPostId={setPostId} user={user}/>;
       case "tour": return <TourPage go={go}/>;
+      case "lectures": return <LecturesPage go={go} user={user}/>;
       case "column": return <ColumnPage go={go} user={user}/>;
       case "book": return <BookPage go={go} cart={cart} setCart={setCart}/>;
       case "checkout": return <CheckoutPage go={go} cart={cart}/>;
