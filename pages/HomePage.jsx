@@ -165,43 +165,6 @@ const HomePage = ({ go, tweaks }) => {
         </div>
       </section>
 
-      {/* 왕사남 소개 */}
-      <section className="section" style={{borderBottom:'1px solid var(--line)'}}>
-        <div className="container">
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1.3fr', gap:80, alignItems:'center'}} className="wangsanam-grid">
-            <div style={{position:'relative'}}>
-              <div className="placeholder" style={{aspectRatio:'3/4'}}
-                role="img" aria-label="왕사남 초상 자리 (이미지 준비 중)">
-                <span aria-hidden="true">WANGSANAM · PORTRAIT<br/>750 × 1000</span>
-              </div>
-              <div aria-hidden="true" style={{position:'absolute', top:-1, left:-1, right:-1, bottom:-1, border:'1px solid var(--gold-dim)', pointerEvents:'none', transform:'translate(16px, 16px)'}}/>
-            </div>
-            <div>
-              <div className="section-eyebrow">ABOUT · 왕사남</div>
-              <h2 className="section-title">
-                왕의 사나이.<br/>
-                <span className="accent">궁궐을 걷는 사람.</span>
-              </h2>
-              <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:24}}>
-                '왕사남'은 왕사들 커뮤니티를 이끄는 운영진이자 각 분야의 답사 가이드입니다. 역사, 건축, 철학, 문학에 뿌리내린 다섯 명의 연구자가 뱅기노자와 함께 조선의 길을 안내합니다.
-              </p>
-              <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>
-                그들은 단순히 해설하지 않습니다. 답사자 스스로 질문하게 만드는 것 — 왕사남이 가장 중요하게 여기는 것입니다.
-              </p>
-              <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:12, marginBottom:32}}>
-                {["뱅기노자", "이공", "정사관", "여백", "묘유"].map((name, i) => (
-                  <div key={i} style={{textAlign:'center'}}>
-                    <div className="placeholder" style={{aspectRatio:'1', marginBottom:8, fontSize:9}}>{i === 0 ? "★" : "○"}</div>
-                    <div className="mono" style={{fontSize:10, letterSpacing:'0.1em', color: i === 0 ? 'var(--gold)' : 'var(--ink-2)'}}>{name}</div>
-                  </div>
-                ))}
-              </div>
-              <button className="btn" onClick={() => go("wangsanam")}>왕사남 전체 소개 →</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 왕사남 강연 일정 */}
       <section className="section" style={{borderBottom:'1px solid var(--line)'}}>
         <div className="container">
@@ -209,14 +172,14 @@ const HomePage = ({ go, tweaks }) => {
             eyebrow="LECTURE SCHEDULE · 왕사남 강연"
             title={<>이번 달 <span className="accent">왕사남 강연 일정</span></>}
             subtitle="메인 홈에서 바로 확인할 수 있도록, 가장 가까운 왕사남 강연 일정을 먼저 보여줍니다."
-            action={<button type="button" className="btn-ghost" onClick={() => go("wangsanam")}>왕사남 소개 →</button>}
+            action={<button type="button" className="btn-ghost" onClick={() => go("tour")}>투어 프로그램 →</button>}
           />
           <div className="grid grid-3">
             {(data.lectures || []).map((lecture, i) => (
               <article
                 key={lecture.id}
                 className={`card ${i === 0 ? 'card-gold' : ''}`}
-                {...clickable(() => go("wangsanam"), `강연: ${lecture.topic}, 일정 ${lecture.next}`)}
+                {...clickable(() => go("tour"), `강연: ${lecture.topic}, 일정 ${lecture.next}`)}
                 style={{cursor:'pointer'}}
               >
                 <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', marginBottom:14}}>

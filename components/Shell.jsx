@@ -17,7 +17,6 @@ const Nav = ({ route, go, user, onLogout, readFont, setReadFont }) => {
   const items = [
     { key: "home", label: "홈" },
     { key: "community", label: "커뮤니티" },
-    { key: "wangsanam", label: "왕사남 소개" },
     { key: "tour", label: "투어 프로그램" },
     { key: "column", label: "뱅기노자 칼럼" },
     { key: "book", label: "왕의길" },
@@ -98,7 +97,7 @@ const Footer = ({ go }) => (
         <nav aria-label="정보 바로가기">
           <h4 id="ft-info">정보</h4>
           <ul aria-labelledby="ft-info">
-            <li><button type="button" onClick={() => go("wangsanam")}>왕사남 소개</button></li>
+            <li><button type="button" onClick={() => go("home")}>강연 일정</button></li>
             <li><button type="button" onClick={() => go("community")}>공지사항</button></li>
             <li><button type="button">자주 묻는 질문</button></li>
             <li><button type="button">이용약관</button></li>

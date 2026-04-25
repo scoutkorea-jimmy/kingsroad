@@ -397,6 +397,17 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.009.000",
+    date: "2026-04-25",
+    summary: "관리자 대시보드를 실제 저장소 수치 기준으로 다시 연결했고, 사용자 화면에서는 왕사남 소개 영역과 진입점을 제거했습니다. KMS는 실제 페이지 기준 기능정의서로 개선하고, KMS 내부에 `기능정의서`, `디자인`, `운영 원칙` 탭을 둬 필요한 기준을 바로 찾아볼 수 있게 재구성했습니다.",
+    details: [
+      "대시보드가 `WSD_AUTH`, `WSD_COMMUNITY`, `WSD_STORES`, `WANGSADEUL_DATA`를 기준으로 실제 수치를 보여주도록 바뀌었습니다.",
+      "내비게이션, 홈, 라우트에서 왕사남 소개 진입점을 제거하고 홈에는 강연 일정만 남겼습니다.",
+      "KMS 내부에서 기능정의서와 디자인 기준을 분리해 실제 페이지 구성과 작업 원칙을 더 명확히 확인할 수 있게 했습니다.",
+    ],
+    context: "관리자에서 보는 숫자가 하드코딩이면 운영 판단 기준으로 쓰기 어렵고, KMS도 실제 페이지 구조보다 추상적인 설명이 많으면 다음 작업자의 판단 속도가 느려집니다. 그래서 이번에는 운영 화면과 문서 둘 다 실제 구성 기준으로 다시 정리했습니다.",
+  },
+  {
     version: "00.008.000",
     date: "2026-04-25",
     summary: "KMS를 기능정의서 중심 문서로 재정리해 현재 홈페이지 기준 전체 기능 범위를 더 자세히 기록했고, 관리자 페이지에는 `디자인` 탭을 신설해 화면 작업 시 참고할 디자인 원칙을 별도로 볼 수 있게 했습니다.",
@@ -520,7 +531,7 @@ const ADMIN_KMS_SECTIONS = [
   },
   {
     title: "사이트 기능 인벤토리",
-    what: "KMS는 홈, 인증, 마이페이지, 커뮤니티, 왕사남/투어, 칼럼, 책/주문, 관리자 기능을 페이지별로 정리하는 기능정의서 역할을 수행합니다.",
+    what: "KMS는 홈, 인증, 마이페이지, 커뮤니티, 투어/강연, 칼럼, 책/주문, 관리자 기능을 페이지별로 정리하는 기능정의서 역할을 수행합니다.",
     why: "다른 개발자가 코드를 직접 읽지 않아도 현재 사이트 구조와 구현 상태를 빠르게 파악할 수 있어야 하기 때문입니다.",
     background: "기존 KMS는 규칙 중심이라 실제 기능 구성이 어디까지 구현됐는지 문서만 보고 이해하기 어려웠습니다.",
     next: "앞으로 기능이 추가되거나 상태가 바뀌면 KMS 기능 인벤토리도 함께 갱신해야 합니다.",
@@ -538,6 +549,13 @@ const ADMIN_KMS_SECTIONS = [
     why: "사용자 화면과 관리자 화면이 같은 게시글 데이터를 보지 않으면 운영 기능이 계속 데모 수준에 머무를 수 있기 때문입니다.",
     background: "기존 커뮤니티는 글쓰기와 댓글 저장은 있었지만, 수정/삭제와 관리자 연결이 약해 실서비스 구조로 보기 어려웠습니다.",
     next: "다음 단계에서는 권한 정책, 회원 운영, 투어/주문 운영 기능도 같은 방식으로 실제 저장소와 연결합니다.",
+  },
+  {
+    title: "실페이지 기준 KMS 원칙",
+    what: "기능정의서는 기획상 이름이 아니라 현재 실제로 노출되는 페이지와 콘텐츠를 기준으로 기록합니다.",
+    why: "제거된 영역이나 사용하지 않는 진입점이 문서에 남아 있으면 다음 작업자가 현재 구조를 오해하기 쉽기 때문입니다.",
+    background: "왕사남 소개 영역처럼 과거에 있었지만 지금은 제거되는 기능도 생기기 때문에, KMS는 항상 실제 화면 기준으로 업데이트되어야 했습니다.",
+    next: "페이지가 추가되거나 제거되면 KMS 기능정의서와 관리자 KMS 탭도 같은 시점에 갱신합니다.",
   },
 ];
 
@@ -586,16 +604,150 @@ const ADMIN_DESIGN_SECTIONS = [
   },
 ];
 
+const ADMIN_FEATURE_DEFINITION_SECTIONS = [
+  {
+    title: "홈",
+    route: "home",
+    purpose: "첫 방문자가 서비스 정체성과 최신 콘텐츠를 가장 빠르게 이해하도록 돕는 랜딩 페이지입니다.",
+    actualContent: [
+      "히어로 섹션",
+      "공지사항",
+      "왕사남 강연 일정",
+      "투어 프로그램",
+      "추천 칼럼",
+      "파트너십",
+      "하단 배포 버전 표시",
+    ],
+    dataSources: ["`WANGSADEUL_DATA.notices`", "`WANGSADEUL_DATA.lectures`", "`WANGSADEUL_DATA.tours`", "`WANGSADEUL_DATA.columns` + `userColumns`"],
+    notes: "왕사남 소개 섹션은 제거되었고, 강연 일정은 홈에서 바로 노출됩니다.",
+  },
+  {
+    title: "인증",
+    route: "login / signup",
+    purpose: "회원과 관리자가 같은 입구에서 계정을 만들고 로그인 상태를 유지하도록 하는 영역입니다.",
+    actualContent: [
+      "로그인",
+      "회원가입",
+      "관리자 고정 계정 로그인",
+      "로그아웃",
+      "세션 유지",
+    ],
+    dataSources: ["`WSD_AUTH`", "`WSD_STORES.users`", "`WSD_STORES.session`"],
+    notes: "현재는 GitHub Pages 기준 local-first 인증 구조이며, 관리자 계정은 `admin@admin.admin / admin`입니다.",
+  },
+  {
+    title: "마이페이지",
+    route: "mypage",
+    purpose: "로그인한 사용자가 자신의 계정 상태와 최근 활동을 확인하는 페이지입니다.",
+    actualContent: [
+      "계정 정보",
+      "등급 정보",
+      "예정 강연",
+      "예정 투어",
+      "주문 상태",
+      "최근 커뮤니티 활동",
+    ],
+    dataSources: ["`user` 세션", "`WSD_STORES.grades`", "`WSD_COMMUNITY.listPosts()`", "`WANGSADEUL_DATA.lectures`", "`WANGSADEUL_DATA.tours`"],
+    notes: "주문/예약은 아직 실제 DB 연동이 아닌 현재 상태 요약 중심입니다.",
+  },
+  {
+    title: "커뮤니티",
+    route: "community",
+    purpose: "회원이 질문, 후기, 정보를 남기고 운영자가 같은 흐름에서 관리하는 핵심 참여 영역입니다.",
+    actualContent: [
+      "게시글 목록과 검색",
+      "카테고리 접근 제어",
+      "게시글 작성/수정/삭제",
+      "댓글 등록/삭제",
+      "조회수 저장",
+      "이미지 첨부",
+    ],
+    dataSources: ["`WSD_COMMUNITY`", "`WSD_STORES.communityPosts`", "`WSD_STORES.comments`", "`WSD_STORES.categories`"],
+    notes: "현재는 local-first 저장 구조이며, 이후 외부 DB로 교체하더라도 helper 계층은 유지하는 것을 기준으로 합니다.",
+  },
+  {
+    title: "투어 프로그램",
+    route: "tour",
+    purpose: "답사 프로그램을 소개하고 예약 관심을 유도하는 소개형 페이지입니다.",
+    actualContent: [
+      "프로그램 목록",
+      "투어 상세 소개",
+      "예약 버튼",
+      "대기자 등록 버튼",
+    ],
+    dataSources: ["`WANGSADEUL_DATA.tours`"],
+    notes: "예약 접수와 대기자 처리 로직은 아직 실제 저장소와 연결되지 않았습니다.",
+  },
+  {
+    title: "뱅기노자 칼럼",
+    route: "column",
+    purpose: "브랜드 신뢰와 깊이를 만드는 공개 콘텐츠 영역입니다.",
+    actualContent: [
+      "칼럼 목록",
+      "칼럼 상세 보기",
+      "관리자 발행 칼럼 공개 반영",
+    ],
+    dataSources: ["`WANGSADEUL_DATA.columns`", "`WSD_STORES.userColumns`"],
+    notes: "기본 칼럼과 관리자 발행 칼럼을 병합해 노출합니다.",
+  },
+  {
+    title: "왕의길 / 체크아웃",
+    route: "book / checkout",
+    purpose: "책 정보를 보여주고 구매 흐름으로 연결하는 판매 영역입니다.",
+    actualContent: [
+      "책 정보 노출",
+      "판본 선택",
+      "수량 선택",
+      "장바구니 상태",
+      "체크아웃 UI",
+    ],
+    dataSources: ["`WANGSADEUL_DATA.book`", "`cart` 상태"],
+    notes: "실제 주문 저장과 결제 연동은 아직 후속 작업입니다.",
+  },
+  {
+    title: "관리자",
+    route: "admin",
+    purpose: "운영자가 콘텐츠, 회원, 문서, 개인정보 처리 상태를 한 화면에서 관리하는 백오피스입니다.",
+    actualContent: [
+      "대시보드",
+      "게시글 관리",
+      "칼럼 관리/작성",
+      "카테고리 관리",
+      "회원 등급 관리",
+      "개인정보/GDPR/PIPA 관리",
+      "버전 기록",
+      "KMS",
+    ],
+    dataSources: ["`WSD_COMMUNITY`", "`WSD_STORES`", "`WANGSADEUL_DATA`", "`PRIVACY_DATA`"],
+    notes: "KMS 안에서 `기능정의서`, `디자인`, `운영 원칙`을 나눠 볼 수 있도록 재구성됩니다.",
+  },
+];
+
 // === Admin Page ===================================================
 const AdminPage = ({ go }) => {
   const data = window.WANGSADEUL_DATA;
   const [tab, setTab] = React.useState("대시보드");
   const [selectedMember, setSelectedMember] = React.useState(null);
+  const [kmsTab, setKmsTab] = React.useState("기능정의서");
   const [postSearch, setPostSearch] = React.useState("");
   const [postFilter, setPostFilter] = React.useState("all");
   const [postRefreshKey, setPostRefreshKey] = React.useState(0);
 
   const allCommunityPosts = React.useMemo(() => window.WSD_COMMUNITY.listPosts(), [postRefreshKey]);
+  const allUsers = React.useMemo(() => window.WSD_AUTH.listUsers(), [postRefreshKey]);
+  const allColumns = React.useMemo(() => [...(window.WSD_STORES.userColumns || []), ...data.columns], [postRefreshKey]);
+  const totalComments = React.useMemo(
+    () => Object.values(window.WSD_STORES.comments || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0),
+    [postRefreshKey]
+  );
+  const dashboardStats = React.useMemo(() => ([
+    { l: "전체 회원", v: String(allUsers.length), d: `관리자 ${allUsers.filter((user) => user.isAdmin).length}명 포함`, p: true },
+    { l: "커뮤니티 게시글", v: String(allCommunityPosts.length), d: `댓글 ${totalComments}개 누적`, p: true },
+    { l: "공개 칼럼", v: String(allColumns.length), d: `관리자 발행 ${window.WSD_STORES.userColumns.length}건`, p: true },
+    { l: "운영 카테고리", v: String(window.WSD_STORES.categories.length), d: `강연 ${data.lectures.length}건 · 투어 ${data.tours.length}건`, p: true },
+  ]), [allUsers, allCommunityPosts, totalComments, allColumns, data]);
+  const latestCommunityPost = allCommunityPosts[0] || null;
+  const latestColumn = allColumns[0] || null;
   const visibleCommunityPosts = React.useMemo(() => allCommunityPosts.filter((post) => {
     const search = postSearch.trim().toLowerCase();
     const matchesSearch = !search
@@ -611,7 +763,7 @@ const AdminPage = ({ go }) => {
     { group: "회원/주문", items: ["회원", "주문"] },
     { group: "운영 설정", items: ["카테고리", "회원 등급"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템",   items: ["버전 기록", "KMS", "디자인", "설정"] },
+    { group: "시스템",   items: ["버전 기록", "KMS", "설정"] },
   ];
 
   const exportMemberData = (m) => {
@@ -707,10 +859,7 @@ const AdminPage = ({ go }) => {
           <>
             <div className="grid grid-4" style={{marginBottom:32}}>
               {[
-                { l: "오늘 방문자", v: "2,847", d: "+12%", p: true },
-                { l: "신규 회원", v: "38", d: "+4", p: true },
-                { l: "DSR 대기", v: String(PRIVACY_DATA.dsrRequests.filter(r=>r.status!=='done').length), d: "3건 기한 임박", p: false },
-                { l: "매출", v: "1,842,000", d: "-3%", p: false, unit: "원" },
+                ...dashboardStats,
               ].map((s, i) => (
                 <div key={i} className="card">
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{s.l}</div>
@@ -719,17 +868,42 @@ const AdminPage = ({ go }) => {
                 </div>
               ))}
             </div>
-            <div className="card card-gold">
-              <h2 className="ko-serif" style={{fontSize:18, marginBottom:12}}>개인정보 처리 요약</h2>
-              <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
-                본 서비스는 <strong className="gold">GDPR</strong> 및 <strong className="gold">개인정보보호법(PIPA)</strong>을 동시에 준수합니다.
-                정보주체는 언제든 열람·정정·삭제·이동·처리정지를 요청할 수 있으며, 72시간 내 1차 응답을 목표로 합니다.
-              </p>
-              <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
-                <button type="button" className="btn btn-small" onClick={() => setTab("정보주체 권리")}>권리 요청 처리</button>
-                <button type="button" className="btn btn-small" onClick={() => setTab("처리활동(ROPA)")}>ROPA 보기</button>
-                <button type="button" className="btn btn-small" onClick={() => setTab("감사 로그")}>감사 로그</button>
-              </div>
+            <div className="grid grid-2">
+              <article className="card card-gold">
+                <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>LATEST COMMUNITY</div>
+                <h2 className="ko-serif" style={{fontSize:20, marginBottom:12}}>가장 최근 커뮤니티 글</h2>
+                {latestCommunityPost ? (
+                  <>
+                    <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:10}}>
+                      <span className="badge badge-gold">{latestCommunityPost.category}</span>
+                      <span className="mono dim-2" style={{fontSize:11}}>{latestCommunityPost.date}</span>
+                    </div>
+                    <p style={{fontSize:16, marginBottom:10}}>{latestCommunityPost.title}</p>
+                    <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+                      작성자 {latestCommunityPost.author} · 조회 {latestCommunityPost.views} · 댓글 {latestCommunityPost.replies}
+                    </p>
+                  </>
+                ) : (
+                  <p className="dim">등록된 게시글이 없습니다.</p>
+                )}
+                <button type="button" className="btn btn-small" onClick={() => setTab("게시글")}>게시글 관리로 이동</button>
+              </article>
+
+              <article className="card">
+                <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>OPERATIONS SNAPSHOT</div>
+                <h2 className="ko-serif" style={{fontSize:20, marginBottom:12}}>운영 요약</h2>
+                <div style={{display:'grid', gap:12, marginBottom:18}}>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">최근 칼럼</span><span>{latestColumn?.title || "없음"}</span></div>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 강연</span><span>{data.lectures[0]?.next || "없음"}</span></div>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 투어</span><span>{data.tours[0]?.next || "없음"}</span></div>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">DSR 대기</span><span>{PRIVACY_DATA.dsrRequests.filter(r => r.status !== 'done').length}건</span></div>
+                </div>
+                <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
+                  <button type="button" className="btn btn-small" onClick={() => setTab("칼럼")}>칼럼 관리</button>
+                  <button type="button" className="btn btn-small" onClick={() => setTab("투어")}>투어 관리</button>
+                  <button type="button" className="btn btn-small" onClick={() => setTab("정보주체 권리")}>권리 요청 처리</button>
+                </div>
+              </article>
             </div>
           </>
         )}
@@ -787,12 +961,84 @@ const AdminPage = ({ go }) => {
                 </div>
                 <div className="card" style={{padding:14}}>
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>디자인 기준</div>
-                  <div>`디자인` 탭</div>
+                  <div>KMS 내부 `디자인` 탭</div>
                 </div>
               </div>
             </div>
 
-            {ADMIN_KMS_SECTIONS.map((section) => (
+            <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+              {["기능정의서", "디자인", "운영 원칙"].map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  className="btn btn-small"
+                  onClick={() => setKmsTab(item)}
+                  style={{
+                    borderColor: kmsTab === item ? 'var(--gold)' : 'var(--line)',
+                    color: kmsTab === item ? 'var(--gold)' : 'var(--ink-2)',
+                    background: kmsTab === item ? 'rgba(212,175,55,0.06)' : 'transparent',
+                  }}>
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            {kmsTab === "기능정의서" && ADMIN_FEATURE_DEFINITION_SECTIONS.map((section) => (
+              <article key={section.title} className="card" style={{padding:24}}>
+                <div style={{display:'flex', justifyContent:'space-between', gap:16, marginBottom:14, flexWrap:'wrap'}}>
+                  <h2 className="ko-serif" style={{fontSize:22}}>{section.title}</h2>
+                  <span className="mono dim-2" style={{fontSize:11}}>route: {section.route}</span>
+                </div>
+                <div style={{display:'grid', gap:12}}>
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>목적</div>
+                    <div className="card" style={{padding:14}}>{section.purpose}</div>
+                  </div>
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>실제 구성 기능</div>
+                    <div style={{display:'grid', gap:8}}>
+                      {section.actualContent.map((item) => <div key={item} className="card" style={{padding:14}}>{item}</div>)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>실제 데이터 기준</div>
+                    <div style={{display:'grid', gap:8}}>
+                      {section.dataSources.map((item) => <div key={item} className="card" style={{padding:14}}>{item}</div>)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>운영 메모</div>
+                    <div className="card" style={{padding:14}}>{section.notes}</div>
+                  </div>
+                </div>
+              </article>
+            ))}
+
+            {kmsTab === "디자인" && (
+              <div style={{display:'grid', gap:16}}>
+                <div className="card card-gold" style={{padding:24}}>
+                  <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>DESIGN PRINCIPLES</div>
+                  <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>디자인 작업 기준</h2>
+                  <p className="dim" style={{fontSize:13, lineHeight:1.8}}>
+                    새 페이지를 만들거나 기존 UI를 바꿀 때는 이 탭의 원칙을 먼저 확인합니다.
+                    왕사들 화면은 일반적인 밝은 SaaS UI가 아니라, 조선 왕실과 전시 도록의 분위기를 유지하는 방향으로 작업해야 합니다.
+                  </p>
+                </div>
+
+                {ADMIN_DESIGN_SECTIONS.map((section) => (
+                  <article key={section.title} className="card" style={{padding:24}}>
+                    <h2 className="ko-serif" style={{fontSize:22, marginBottom:14}}>{section.title}</h2>
+                    <div style={{display:'grid', gap:8}}>
+                      {section.points.map((point) => (
+                        <div key={point} className="card" style={{padding:14}}>{point}</div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            {kmsTab === "운영 원칙" && ADMIN_KMS_SECTIONS.map((section) => (
               <article key={section.title} className="card" style={{padding:24}}>
                 <h2 className="ko-serif" style={{fontSize:22, marginBottom:14}}>{section.title}</h2>
                 <div style={{display:'grid', gap:12}}>
@@ -812,30 +1058,6 @@ const AdminPage = ({ go }) => {
                     <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>이후 어떤 작업과 연결되는가</div>
                     <div className="card" style={{padding:14}}>{section.next}</div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-
-        {tab === "디자인" && (
-          <div style={{display:'grid', gap:16}}>
-            <div className="card card-gold" style={{padding:24}}>
-              <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>DESIGN PRINCIPLES</div>
-              <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>디자인 작업 기준</h2>
-              <p className="dim" style={{fontSize:13, lineHeight:1.8}}>
-                새 페이지를 만들거나 기존 UI를 바꿀 때는 이 탭의 원칙을 먼저 확인합니다.
-                왕사들 화면은 일반적인 밝은 SaaS UI가 아니라, 조선 왕실과 전시 도록의 분위기를 유지하는 방향으로 작업해야 합니다.
-              </p>
-            </div>
-
-            {ADMIN_DESIGN_SECTIONS.map((section) => (
-              <article key={section.title} className="card" style={{padding:24}}>
-                <h2 className="ko-serif" style={{fontSize:22, marginBottom:14}}>{section.title}</h2>
-                <div style={{display:'grid', gap:8}}>
-                  {section.points.map((point) => (
-                    <div key={point} className="card" style={{padding:14}}>{point}</div>
-                  ))}
                 </div>
               </article>
             ))}
