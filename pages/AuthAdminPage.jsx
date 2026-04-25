@@ -397,6 +397,32 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.011.000",
+    date: "2026-04-25",
+    summary: "기능정의서를 사이트의 5가지 미션(왕사들 커뮤니티 / 뱅기노자 강연 일정 / 뱅기노자 칼럼 / 뱅기노자 투어 프로그램 / 뱅기노자 책 판매) + 공통 기반(BASE) 영역 단위로 재정렬하고, 각 영역에 `현재 평가 / 없는 기능 / 기능별(요소·기술 스펙·유의할 점·개발 이슈) / 영역 차원 기술 스펙·유의할 점·개발 이슈` 표준 블록을 도입했습니다. 관리자 KMS 화면에는 우측 스티키 목차(TOC)를 추가해 영역 간 이동을 빠르게 만들었습니다.",
+    details: [
+      "기능정의서를 페이지 단위에서 미션 단위로 재구성: 공통 기반(00) + 커뮤니티(01) + 강연 일정(02) + 칼럼(03) + 투어(04) + 책 판매(05) 6개 영역.",
+      "각 미션마다 현재 평가와 '완성도를 높이려면 필요한 것'(없는 기능) 목록을 명시.",
+      "각 영역의 기능을 단일 카드로 정리하고 `요소 / 기술 스펙 / 유의할 점 / 개발 이슈` 4축으로 표준화.",
+      "영역 헤더에 라우트, 상태 배지, 진입 시 평가 카드를 추가해 한 영역의 구도를 한 화면에서 파악할 수 있게 함.",
+      "관리자 KMS 화면 오른쪽에 240px 스티키 목차를 추가해 6개 영역 + 평가 요약을 빠르게 이동할 수 있게 함. 좁은 화면에서는 위로 이동.",
+      "최상단에 5가지 미션 평가 요약 카드를 두어 사이트 전체 완성도를 한눈에 보여줌(상태·커버리지·평가).",
+    ],
+    context: "KMS를 누르는 사람이든 AI든 가장 먼저 던지는 질문은 '이 사이트가 무엇을 위해 만들어졌고, 그 기능이 어디까지 와 있는가'입니다. 그래서 기능정의서를 페이지 단위로 나열하던 방식에서 사이트가 존재하는 5가지 미션 단위로 바꾸고, 각 미션마다 평가와 빈 칸을 명시해 다음 작업의 우선순위가 자연스럽게 보이도록 만들었습니다. 우측 목차는 영역이 늘어날수록 아래로 길어지는 본문 안에서 길을 잃지 않도록 도와줍니다.",
+  },
+  {
+    version: "00.010.000",
+    date: "2026-04-25",
+    summary: "KMS 내부 구조를 `기능정의서`와 `디자인` 두 탭으로 재정리하고, 진입 시 기본 탭을 `기능정의서`로 고정했습니다. 기능정의서는 실제 라우트 기준으로 진입 경로, 접근 권한, 실제 화면 구성, 사용자 가능 동작, 데이터 출처, 구현 상태, 알려진 미구현 항목까지 페이지별로 깊이 있게 다시 작성했습니다.",
+    details: [
+      "KMS의 `운영 원칙` 탭을 제거하고 `기능정의서`와 `디자인` 두 탭만 남겼습니다.",
+      "기능정의서 항목 구조를 `진입 경로 / 접근 권한 / 목적 / 실제 화면 구성 / 사용자 가능 동작 / 실제 데이터 기준 / 알려진 미구현 / 운영 메모 / 구현 상태` 9개 축으로 표준화했습니다.",
+      "각 페이지(홈, 인증, 마이페이지, 커뮤니티, 투어/강연, 칼럼, 책/체크아웃, 관리자)의 화면 섹션과 사용자 동작을 현재 코드 기준으로 다시 정리했습니다.",
+      "KMS 요약 카드를 두 탭 중심 안내(기본 = 기능정의서)로 다시 썼습니다.",
+    ],
+    context: "KMS를 누르면 사람이든 AI든 가장 먼저 봐야 할 것이 `이 사이트가 지금 어떤 기능을 갖고 있는지`라는 점이 명확해졌습니다. 그래서 운영 원칙 탭은 KMS 화면에서는 빼고 기능정의서와 디자인만 남겨, 무엇이 만들어져 있고 어떤 기준으로 손대야 하는지를 한 호흡에 확인할 수 있게 정리했습니다. 운영 원칙은 `kms.md` 문서 본문과 버전 기록에서 계속 관리합니다.",
+  },
+  {
     version: "00.009.000",
     date: "2026-04-25",
     summary: "관리자 대시보드를 실제 저장소 수치 기준으로 다시 연결했고, 사용자 화면에서는 왕사남 소개 영역과 진입점을 제거했습니다. KMS는 실제 페이지 기준 기능정의서로 개선하고, KMS 내부에 `기능정의서`, `디자인`, `운영 원칙` 탭을 둬 필요한 기준을 바로 찾아볼 수 있게 재구성했습니다.",
@@ -486,79 +512,6 @@ const ADMIN_VERSION_HISTORY = [
   },
 ];
 
-const ADMIN_KMS_SECTIONS = [
-  {
-    title: "기능정의서 우선 원칙",
-    what: "KMS의 제1 기능은 현재 홈페이지 기준 기능정의서다. 다른 개발자는 KMS만 읽고도 어떤 페이지에 어떤 기능이 있고, 어디까지 구현되었는지 먼저 이해할 수 있어야 한다.",
-    why: "운영 규칙보다 기능 범위 파악이 먼저 되어야 실제 개발 착수가 빨라지기 때문이다.",
-    background: "AI와 사람이 함께 작업하는 구조에서는 코드보다 문서를 먼저 읽고 방향을 잡는 경우가 많아, 기능정의서가 KMS의 첫 역할이 되어야 했다.",
-    next: "새 기능을 추가하거나 상태가 바뀌면 KMS 기능정의서를 가장 먼저 갱신한다.",
-  },
-  {
-    title: "AI 작업 기본 원칙",
-    what: "모든 AI는 작업 전에 `ai-development-rules.md`, `project-priority-table.md`, `kms.md`를 먼저 읽고 시작합니다.",
-    why: "AI마다 판단 방식이 달라지면 같은 프로젝트 안에서 규칙 충돌이 생기기 쉽기 때문입니다.",
-    background: "ChatGPT와 Claude가 같이 개발을 진행하는 전제가 생기면서, 선독 원칙을 강하게 고정할 필요가 생겼습니다.",
-    next: "관리자 페이지 KMS도 저장소 문서와 같은 내용을 계속 유지해야 합니다.",
-  },
-  {
-    title: "배포 검토 원칙",
-    what: "모든 수정사항은 가능하면 커밋, 푸시, 배포 반영까지 진행해 사용자가 실제 화면으로 검토할 수 있게 합니다.",
-    why: "로컬 코드만 바뀐 상태는 사용자 입장에서는 검토 가능한 결과물이 아니기 때문입니다.",
-    background: "GitHub Pages 프리뷰를 기준으로 검토하는 운영 흐름이 이미 존재하기 때문에, 개발 완료 기준에 배포 반영을 포함해야 했습니다.",
-    next: "푸시 또는 배포가 막히면 그 이유를 문서와 작업 결과에 함께 남깁니다.",
-  },
-  {
-    title: "비개발자 설명 원칙",
-    what: "설명이 필요할 때는 개발자인 박지민도 바로 이해할 수 있도록 쉬운 표현으로 먼저 설명합니다.",
-    why: "기술 용어 중심 설명은 실제 의사결정과 검토를 어렵게 만들기 때문입니다.",
-    background: "프로젝트 운영자가 비개발자에 가깝다는 전제를 명확히 반영해, 결과 설명 방식까지 규칙으로 묶었습니다.",
-    next: "무엇이 바뀌는지, 왜 필요한지, 어떤 영향이 있는지를 먼저 설명하는 형식으로 유지합니다.",
-  },
-  {
-    title: "계획 문서 원칙",
-    what: "범위가 있는 작업은 시작 전에 계획 문서를 만들고, 완료되면 삭제합니다.",
-    why: "작업 중간의 판단 기준은 남기되, 완료 후에는 운영 문서만 남겨 저장소를 깔끔하게 유지하기 위해서입니다.",
-    background: "컨텍스트 분실을 막으면서도 불필요한 임시 문서가 쌓이지 않게 하려는 운영 방식이 필요했습니다.",
-    next: "장기적으로 남길 내용은 계획 문서가 아니라 KMS나 우선순위 문서로 옮깁니다.",
-  },
-  {
-    title: "KMS 기록 원칙",
-    what: "KMS를 수정할 때는 결과뿐 아니라 수정 계기와 배경도 함께 기록합니다.",
-    why: "나중에 다른 AI나 사람이 문서를 봤을 때, 왜 그런 규칙이 생겼는지 모르면 같은 논의를 반복하게 되기 때문입니다.",
-    background: "향후 여러 사람이 이어서 개발할 가능성을 고려해, 단순 결과 로그가 아니라 맥락 복원형 문서가 필요해졌습니다.",
-    next: "KMS 항목은 `무엇이 바뀌었는가 / 왜 바뀌었는가 / 어떤 배경이 있었는가 / 이후 무엇과 연결되는가` 구조를 기본으로 합니다.",
-  },
-  {
-    title: "사이트 기능 인벤토리",
-    what: "KMS는 홈, 인증, 마이페이지, 커뮤니티, 투어/강연, 칼럼, 책/주문, 관리자 기능을 페이지별로 정리하는 기능정의서 역할을 수행합니다.",
-    why: "다른 개발자가 코드를 직접 읽지 않아도 현재 사이트 구조와 구현 상태를 빠르게 파악할 수 있어야 하기 때문입니다.",
-    background: "기존 KMS는 규칙 중심이라 실제 기능 구성이 어디까지 구현됐는지 문서만 보고 이해하기 어려웠습니다.",
-    next: "앞으로 기능이 추가되거나 상태가 바뀌면 KMS 기능 인벤토리도 함께 갱신해야 합니다.",
-  },
-  {
-    title: "P1 로컬 우선 인증 구조",
-    what: "현재 배포 환경에서는 `WSD_AUTH`와 `WSD_DB`를 중심으로 회원 저장소, 세션 저장소, 권한 계산을 분리한 local-first 구조를 기본 인증 계층으로 사용합니다.",
-    why: "GitHub Pages 정적 배포에서도 계정 흐름을 임시 목업이 아니라 실제 저장 구조 위에서 운영해야 이후 외부 DB로 옮길 때 충돌이 줄어들기 때문입니다.",
-    background: "기존 로그인은 화면에서 사용자 객체만 즉석 생성하는 수준이어서, P1의 인증/저장 구조 항목을 완료로 보기 어려웠습니다.",
-    next: "이후 외부 DB를 붙이더라도 엔티티 이름과 책임은 유지하고, 저장소 구현만 교체하는 방향으로 확장합니다.",
-  },
-  {
-    title: "P2 커뮤니티 운영 구조",
-    what: "커뮤니티는 이제 `communityPosts`와 `WSD_COMMUNITY`를 기준으로 게시글 목록, 수정/삭제, 댓글, 조회수, 관리자 게시글 운영을 같은 저장소 위에서 처리합니다.",
-    why: "사용자 화면과 관리자 화면이 같은 게시글 데이터를 보지 않으면 운영 기능이 계속 데모 수준에 머무를 수 있기 때문입니다.",
-    background: "기존 커뮤니티는 글쓰기와 댓글 저장은 있었지만, 수정/삭제와 관리자 연결이 약해 실서비스 구조로 보기 어려웠습니다.",
-    next: "다음 단계에서는 권한 정책, 회원 운영, 투어/주문 운영 기능도 같은 방식으로 실제 저장소와 연결합니다.",
-  },
-  {
-    title: "실페이지 기준 KMS 원칙",
-    what: "기능정의서는 기획상 이름이 아니라 현재 실제로 노출되는 페이지와 콘텐츠를 기준으로 기록합니다.",
-    why: "제거된 영역이나 사용하지 않는 진입점이 문서에 남아 있으면 다음 작업자가 현재 구조를 오해하기 쉽기 때문입니다.",
-    background: "왕사남 소개 영역처럼 과거에 있었지만 지금은 제거되는 기능도 생기기 때문에, KMS는 항상 실제 화면 기준으로 업데이트되어야 했습니다.",
-    next: "페이지가 추가되거나 제거되면 KMS 기능정의서와 관리자 KMS 탭도 같은 시점에 갱신합니다.",
-  },
-];
-
 const ADMIN_DESIGN_SECTIONS = [
   {
     title: "브랜드 무드",
@@ -604,122 +557,655 @@ const ADMIN_DESIGN_SECTIONS = [
   },
 ];
 
-const ADMIN_FEATURE_DEFINITION_SECTIONS = [
+// === KMS 기능정의서: 5가지 미션 + 공통 기반 ===
+// 사이트가 존재하는 이유:
+//   1) 왕사들 커뮤니티 운영
+//   2) 뱅기노자 강연 일정 안내
+//   3) 뱅기노자 칼럼 공유
+//   4) 뱅기노자 투어 프로그램 판매·운영
+//   5) 뱅기노자 책 판매
+const MISSION_OVERVIEW = [
   {
-    title: "홈",
-    route: "home",
-    purpose: "첫 방문자가 서비스 정체성과 최신 콘텐츠를 가장 빠르게 이해하도록 돕는 랜딩 페이지입니다.",
-    actualContent: [
-      "히어로 섹션",
-      "공지사항",
-      "왕사남 강연 일정",
-      "투어 프로그램",
-      "추천 칼럼",
-      "파트너십",
-      "하단 배포 버전 표시",
-    ],
-    dataSources: ["`WANGSADEUL_DATA.notices`", "`WANGSADEUL_DATA.lectures`", "`WANGSADEUL_DATA.tours`", "`WANGSADEUL_DATA.columns` + `userColumns`"],
-    notes: "왕사남 소개 섹션은 제거되었고, 강연 일정은 홈에서 바로 노출됩니다.",
+    id: "community",
+    number: "01",
+    title: "왕사들 커뮤니티",
+    short: "회원이 글·댓글·후기를 나누는 핵심 참여 공간.",
+    state: "P2 1차 가동",
+    coverage: "기능 70% / 운영 신호 30%",
+    verdict: "기본 게시판 흐름은 갖췄으나 좋아요·신고·알림·등급 가시화가 없어 '커뮤니티'라기보다 '게시판'에 머물러 있다.",
   },
   {
-    title: "인증",
-    route: "login / signup",
-    purpose: "회원과 관리자가 같은 입구에서 계정을 만들고 로그인 상태를 유지하도록 하는 영역입니다.",
-    actualContent: [
-      "로그인",
-      "회원가입",
-      "관리자 고정 계정 로그인",
-      "로그아웃",
-      "세션 유지",
-    ],
-    dataSources: ["`WSD_AUTH`", "`WSD_STORES.users`", "`WSD_STORES.session`"],
-    notes: "현재는 GitHub Pages 기준 local-first 인증 구조이며, 관리자 계정은 `admin@admin.admin / admin`입니다.",
+    id: "lecture",
+    number: "02",
+    title: "뱅기노자 강연 일정 안내",
+    short: "공개·심화·현장 강연을 알리고 신청을 유도.",
+    state: "정보 노출만",
+    coverage: "기능 25%",
+    verdict: "강연을 '알리는' 단계에서 멈춰 있다. 신청·정원·결제·후기·자료 보관 어느 것도 연결되어 있지 않다.",
   },
   {
-    title: "마이페이지",
-    route: "mypage",
-    purpose: "로그인한 사용자가 자신의 계정 상태와 최근 활동을 확인하는 페이지입니다.",
-    actualContent: [
-      "계정 정보",
-      "등급 정보",
-      "예정 강연",
-      "예정 투어",
-      "주문 상태",
-      "최근 커뮤니티 활동",
-    ],
-    dataSources: ["`user` 세션", "`WSD_STORES.grades`", "`WSD_COMMUNITY.listPosts()`", "`WANGSADEUL_DATA.lectures`", "`WANGSADEUL_DATA.tours`"],
-    notes: "주문/예약은 아직 실제 DB 연동이 아닌 현재 상태 요약 중심입니다.",
+    id: "column",
+    number: "03",
+    title: "뱅기노자 칼럼 공유",
+    short: "정기 칼럼 발행과 공개 노출.",
+    state: "기본 구동",
+    coverage: "기능 50%",
+    verdict: "관리자 발행 → 공개 반영 흐름은 완성. 다만 댓글·공유·구독·검색이 없어 콘텐츠가 일회성으로 소비된다.",
   },
   {
-    title: "커뮤니티",
-    route: "community",
-    purpose: "회원이 질문, 후기, 정보를 남기고 운영자가 같은 흐름에서 관리하는 핵심 참여 영역입니다.",
-    actualContent: [
-      "게시글 목록과 검색",
-      "카테고리 접근 제어",
-      "게시글 작성/수정/삭제",
-      "댓글 등록/삭제",
-      "조회수 저장",
-      "이미지 첨부",
-    ],
-    dataSources: ["`WSD_COMMUNITY`", "`WSD_STORES.communityPosts`", "`WSD_STORES.comments`", "`WSD_STORES.categories`"],
-    notes: "현재는 local-first 저장 구조이며, 이후 외부 DB로 교체하더라도 helper 계층은 유지하는 것을 기준으로 합니다.",
+    id: "tour",
+    number: "04",
+    title: "뱅기노자 투어 프로그램 판매·운영",
+    short: "답사 프로그램 카탈로그와 예약 진입.",
+    state: "카탈로그",
+    coverage: "기능 20%",
+    verdict: "5개 미션 중 가장 약하다. 예약·결제·정원·환불·관리자 운영 모두 부재하여 '판매'라고 부를 수 없다.",
   },
   {
-    title: "투어 프로그램",
-    route: "tour",
-    purpose: "답사 프로그램을 소개하고 예약 관심을 유도하는 소개형 페이지입니다.",
-    actualContent: [
-      "프로그램 목록",
-      "투어 상세 소개",
-      "예약 버튼",
-      "대기자 등록 버튼",
+    id: "book",
+    number: "05",
+    title: "뱅기노자 책 판매",
+    short: "『왕의길』 소개와 구매 흐름 진입.",
+    state: "UI 흐름까지",
+    coverage: "기능 25%",
+    verdict: "체크아웃 UI까지는 그려져 있으나 주문 저장·결제·배송·재고·영수증·환불이 모두 없어 실제 판매 불가.",
+  },
+];
+
+const FEATURE_DOMAINS = [
+  {
+    id: "infra",
+    number: "00",
+    label: "공통 기반",
+    title: "공통 기반 — 5개 미션의 받침",
+    role: "5개 미션이 공통으로 의지하는 진입점, 인증, 운영자 콘솔, 운영 문서.",
+    routes: ["home", "login / signup", "mypage", "admin", "documents"],
+    status: "기본 구현",
+    evaluation: "랜딩 → 가입/로그인 → 마이페이지 → 관리자 콘솔까지의 뼈대는 모두 살아 있다. 다만 회원 식별 후 무엇을 할 수 있는지(주문·예약·구독)가 비어 있어 사용자에게 '계정의 의미'가 약하다.",
+    missing: [
+      "외부 DB / 서버 인증으로의 전환(현재 local-first)",
+      "이메일 인증·비밀번호 재설정·소셜 로그인",
+      "마이페이지 프로필 수정·비밀번호 변경",
+      "히어로 통계(2,847 회원 등)의 실수치 연결",
+      "검색·전역 알림 센터",
     ],
-    dataSources: ["`WANGSADEUL_DATA.tours`"],
-    notes: "예약 접수와 대기자 처리 로직은 아직 실제 저장소와 연결되지 않았습니다.",
+    features: [
+      {
+        name: "홈 랜딩",
+        status: "구현됨",
+        summary: "첫 방문자에게 사이트 정체성과 최신 콘텐츠를 가장 빠르게 보여주는 입구.",
+        elements: [
+          "히어로(일월오봉도 SVG, 슬로건, CTA) — 레이아웃 토글 center / split / fullbleed",
+          "공지사항(`data.notices` 상위 2건 강조 + 행 리스트)",
+          "왕사남 강연 일정(3열 카드)",
+          "투어 프로그램(2열 카드)",
+          "뱅기노자 칼럼(피처 1 + 사이드 4)",
+          "파트너십(3열)",
+          "책 구매 CTA",
+          "푸터 배포 버전 카드",
+        ],
+        techSpec: "`HomePage` 단일 컴포넌트. 데이터는 `WANGSADEUL_DATA` 정적 + `WSD_STORES.userColumns` 병합. 레이아웃은 `tweaks.heroLayout`으로 토글.",
+        caution: "히어로 통계 수치는 하드코딩이라 실제 운영 수치와 어긋날 수 있음. 운영 화면(대시보드)과 동기화하기 전에는 '데모'로 봐야 함.",
+        issues: ["fullbleed 모드에서 일월오봉도 SVG가 과하게 강조되어 본문 가독성을 해치는 케이스 → radial-gradient 마스크로 완화"],
+      },
+      {
+        name: "인증 / 계정",
+        status: "부분 구현",
+        summary: "회원과 관리자가 같은 입구에서 계정을 만들고 세션을 유지.",
+        elements: [
+          "로그인 / 회원가입 토글",
+          "현재 인증 방식 안내 카드",
+          "약관·개인정보 동의 체크박스",
+          "관리자 임시 계정 (`admin@admin.admin / admin`)",
+          "비밀번호 해시 저장",
+          "세션 유지(브라우저 새로고침 후 로그인 상태)",
+          "내비게이션 로그아웃",
+        ],
+        techSpec: "`WSD_AUTH` helper + `WSD_STORES.users` / `WSD_STORES.session` localStorage. 비밀번호는 브라우저 내 해시.",
+        caution: "local-first 인증이라 정적 배포 위에서만 동작. 외부 DB 연동 시 저장소만 교체하는 방향으로 설계되었으므로 계층 분리를 깨지 말 것.",
+        issues: [
+          "P1 초기에는 화면에서 즉석 user 객체를 만드는 수준이었음 → `WSD_AUTH` / `WSD_DB` 분리로 통합",
+          "Babel standalone + React UMD 환경이라 ESM import가 막혀 Tiptap·해시 라이브러리는 window 글로벌로 주입",
+        ],
+      },
+      {
+        name: "마이페이지",
+        status: "부분 구현",
+        summary: "로그인 사용자가 자신의 계정·예정 일정·주문 상태를 한 화면에서 확인.",
+        elements: [
+          "비로그인 시 안내 카드",
+          "계정 카드(이메일·등급·권한·가입 시각)",
+          "등급 / 혜택 카드",
+          "예정 강연 카드",
+          "예정 투어 카드",
+          "주문 상태 카드(`cart` 기준)",
+          "최근 커뮤니티 활동",
+        ],
+        techSpec: "`MyPage` 단일 컴포넌트. `user` 세션 + `WSD_STORES.grades` + `WSD_COMMUNITY.listPosts()` + `WANGSADEUL_DATA.lectures/tours` + `cart` 상태.",
+        caution: "예정 강연/투어가 사용자 신청 내역이 아니라 사이트 다음 일정이므로, 사용자 입장에서는 '내가 신청한 것처럼' 보일 수 있음. 신청 흐름이 붙기 전까지 라벨링 주의.",
+        issues: ["주문/예약 저장소가 없어 마이페이지에서 진짜 보여줄 데이터가 거의 없음"],
+      },
+      {
+        name: "관리자 콘솔",
+        status: "부분 구현",
+        summary: "운영자가 콘텐츠·회원·주문·문서·개인정보를 한 화면에서 운영.",
+        elements: [
+          "사이드바 6개 그룹(요약 / 콘텐츠 / 회원·주문 / 운영 설정 / 개인정보 / 시스템)",
+          "대시보드(실수치 4개 + 최근 게시글/칼럼 + 빠른 이동)",
+          "게시글 관리(검색·필터·CSV·삭제)",
+          "칼럼 / 칼럼 작성(Tiptap)",
+          "투어 / 회원 / 주문",
+          "카테고리 / 회원 등급",
+          "개인정보 8개 탭(GDPR / PIPA)",
+          "버전 기록 / KMS / 설정",
+        ],
+        techSpec: "`AdminPage` 단일 컴포넌트. `WSD_COMMUNITY` / `WSD_AUTH` / `WSD_STORES` / `WANGSADEUL_DATA` / `PRIVACY_DATA` 동시 참조. 비관리자는 `AdminDenied` 화면.",
+        caution: "관리자 콘솔이 단일 컴포넌트라 1900줄을 넘는다. 새 탭 추가 시 분할을 고려할 것.",
+        issues: [
+          "P1까지는 관리자 게시글 탭이 사용자 게시판과 다른 mock 배열을 봤음 → P2에서 `WSD_COMMUNITY`로 통합",
+          "Tiptap이 ESM으로만 제공되어 첫 마운트 전에 `wsd-tiptap-ready` 이벤트를 기다려야 했음",
+        ],
+      },
+      {
+        name: "운영 문서 / KMS / 버전 기록",
+        status: "구현됨",
+        summary: "여러 AI와 사람이 같은 규칙·기능·이력 위에서 일하도록 운영 문서를 노출.",
+        elements: [
+          "`kms.md` 본문",
+          "`ai-development-rules.md`",
+          "`project-priority-table.md`",
+          "관리자 KMS 탭(기능정의서 + 디자인)",
+          "관리자 버전 기록 탭",
+          "푸터 배포 버전 카드",
+        ],
+        techSpec: "문서는 정적 마크다운 + 관리자 화면이 같은 내용을 컴포넌트로 표시. `window.WSD_VERSION`이 푸터·관리자 빌드 표시의 단일 출처.",
+        caution: "문서와 화면이 어긋나면 다음 작업자가 혼선을 일으킨다. KMS 화면 = `kms.md` 본문 = 같은 기준으로 동기화 유지.",
+        issues: [],
+      },
+    ],
+    techSpec: "프론트 단일 SPA(React UMD + Babel standalone) + localStorage 기반 저장소(`WSD_STORES`) + helper 계층(`WSD_AUTH`, `WSD_COMMUNITY`, `WSD_SAVE`). 외부 DB 연동 시 helper는 유지하고 저장소 구현만 교체하는 구조.",
+    cautions: [
+      "정적 배포(GitHub Pages) 환경이라 서버 측 권한 검증이 없으므로, 모든 권한 검사가 클라이언트 단에 그친다는 점을 잊지 말 것.",
+      "Babel standalone로 JSX를 런타임 컴파일하므로 첫 페인트가 느릴 수 있다. 본격적인 트래픽 단계에서는 빌드 파이프라인 도입이 필요.",
+    ],
+    issues: [
+      "여러 AI가 함께 작업하는 구조에서 같은 mock 데이터가 여러 곳에 흩어져 있던 P1 초기 → 단일 helper로 수렴",
+      "정적 배포 환경에서 Tiptap·해시 등 ESM 라이브러리를 끌어오는 패턴이 깨지기 쉬워, window 글로벌 + ready 이벤트 패턴으로 고정",
+    ],
   },
   {
-    title: "뱅기노자 칼럼",
-    route: "column",
-    purpose: "브랜드 신뢰와 깊이를 만드는 공개 콘텐츠 영역입니다.",
-    actualContent: [
-      "칼럼 목록",
-      "칼럼 상세 보기",
-      "관리자 발행 칼럼 공개 반영",
+    id: "community",
+    number: "01",
+    label: "왕사들 커뮤니티",
+    title: "미션 1 — 왕사들 커뮤니티 운영",
+    role: "회원이 질문·후기·정보를 남기고 운영자가 같은 흐름에서 관리하는 핵심 참여 영역.",
+    routes: ["community", "mypage(최근 활동)", "admin > 게시글"],
+    status: "P2 1차 가동(부분 구현)",
+    evaluation: "사용자 화면과 관리자 화면이 같은 `communityPosts` 저장소를 보는 데까지 정리되어, '게시판으로서의' 흐름은 작동한다. 그러나 좋아요/신고/알림/등급 가시화처럼 회원이 '커뮤니티답다'고 느낄 사회적 신호가 없어, 외부에서 봤을 때 단순 게시판처럼 보인다.",
+    missing: [
+      "좋아요 · 공감 · 북마크",
+      "신고 · 차단 · 블랙리스트 운영 큐",
+      "댓글 답글(트리 구조) · 멘션 · 댓글 알림",
+      "회원 등급/배지 가시화(작성자 프로필 카드)",
+      "해시태그 / 인기글 / 주간 트렌드",
+      "이미지 외부 스토리지 업로드 (현재는 base64 in-localStorage)",
+      "검색 결과 정렬·페이지네이션·기간 필터",
+      "본문 검색(현재는 제목·작성자 부분 일치만)",
+      "회원 활동 요약(글 수, 댓글 수, 활동 기간)",
     ],
-    dataSources: ["`WANGSADEUL_DATA.columns`", "`WSD_STORES.userColumns`"],
-    notes: "기본 칼럼과 관리자 발행 칼럼을 병합해 노출합니다.",
+    features: [
+      {
+        name: "게시글 목록 / 검색 / 카테고리 필터",
+        status: "부분 구현",
+        summary: "전체 게시글을 카테고리·검색어로 좁혀 보기.",
+        elements: [
+          "검색 입력(제목·작성자)",
+          "카테고리 탭(자유 / 질문 / 정보 등)",
+          "정렬 영역",
+          "카드 또는 행 리스트",
+          "페이지네이션 / 더보기 (미구현)",
+        ],
+        techSpec: "`WSD_COMMUNITY.listPosts()` → `WSD_STORES.communityPosts` localStorage. 카테고리 정의는 `WSD_STORES.categories` 중 `boardType === 'community'`.",
+        caution: "검색은 본문 검색이 빠져 있고, 정렬은 최신순 한 가지뿐. 데이터가 늘어나면 페이지네이션부터 붙여야 함.",
+        issues: ["사용자 작성 글과 시드 글이 다른 키에 저장되어 있던 P1 → `ensureCommunityPostsSeeded`로 단일 키 통합"],
+      },
+      {
+        name: "게시글 작성 / 수정 / 삭제",
+        status: "구현됨",
+        summary: "본인 또는 관리자가 글을 만들고 고치고 지움.",
+        elements: [
+          "Tiptap 본문 에디터(StarterKit + Image + Link + Typography)",
+          "카테고리 선택",
+          "이미지 첨부",
+          "임시 저장 (미구현)",
+          "수정 / 삭제 버튼(작성자·관리자)",
+        ],
+        techSpec: "`WSD_COMMUNITY.createPost / updatePost / deletePost`. 권한은 작성자 본인 혹은 `user.isAdmin`. Tiptap은 `window.WSD_TIPTAP`으로 ESM 주입.",
+        caution: "삭제는 즉시 영구 삭제. 운영 중 실수 방지를 위해 confirm() 한 번을 반드시 거치도록 유지.",
+        issues: [
+          "Tiptap이 첫 마운트보다 늦게 로드될 수 있어 `wsd-tiptap-ready` 이벤트를 기다리는 fallback을 추가",
+          "임시 저장이 없어 작성 중 새로고침 시 본문 손실",
+        ],
+      },
+      {
+        name: "댓글 등록 / 삭제",
+        status: "부분 구현",
+        summary: "게시글에 댓글을 달고 본인/관리자 권한으로 삭제.",
+        elements: [
+          "입력 폼",
+          "댓글 리스트",
+          "삭제 버튼",
+          "답글(트리) — 미구현",
+          "멘션 — 미구현",
+        ],
+        techSpec: "`WSD_STORES.comments[postId]` 배열. push / filter로 처리.",
+        caution: "포스트 ID당 단일 배열이라 댓글 수가 많아지면 페이지네이션 구조 확장 필요.",
+        issues: ["게시글의 `replies` 카운트가 댓글 배열 길이와 어긋날 수 있어 normalize 시점에 동기화"],
+      },
+      {
+        name: "조회수 저장",
+        status: "부분 구현",
+        summary: "게시글 상세 진입 시 조회수 카운트.",
+        elements: [
+          "조회수 카드",
+          "본인 자동 카운트 방지 — 미구현",
+          "유닛 테스트 — 미구현",
+        ],
+        techSpec: "상세 진입 시 `views += 1` 후 `WSD_SAVE.communityPosts()` 호출.",
+        caution: "동일 사용자 새로고침 시 중복 카운트 발생. 운영 수치로는 신뢰도가 낮음.",
+        issues: [],
+      },
+      {
+        name: "이미지 첨부",
+        status: "부분 구현",
+        summary: "본문에 이미지를 끼워 넣음.",
+        elements: [
+          "드롭존",
+          "Tiptap Image 확장",
+          "Dropcursor",
+        ],
+        techSpec: "이미지를 base64로 인코딩해 본문 HTML에 직접 삽입. localStorage에 같이 저장됨.",
+        caution: "1~2MB 이미지 몇 개만 올려도 localStorage quota(5~10MB)에 빠르게 도달 → 외부 스토리지 필요.",
+        issues: ["base64 저장으로 운영 중 quota 초과 케이스가 보고됨"],
+      },
+      {
+        name: "카테고리 접근 제한",
+        status: "부분 구현",
+        summary: "특정 카테고리(예: 운영진 공지)는 권한이 있는 사용자만 글을 쓰거나 보도록 제한.",
+        elements: [
+          "카테고리 정의(`boardType`, `requiresLogin`, `requiresAdmin`)",
+          "게이트 컴포넌트",
+        ],
+        techSpec: "`WSD_STORES.categories` 메타에 권한 플래그 보유, 컴포넌트 단에서 검사.",
+        caution: "클라이언트 단 검사라 외부 DB 도입 시 서버 측 권한 정책을 별도로 가져가야 함.",
+        issues: [],
+      },
+      {
+        name: "관리자 게시글 운영",
+        status: "구현됨",
+        summary: "관리자 화면에서 같은 저장소를 검색/필터/CSV/삭제로 운영.",
+        elements: [
+          "검색 입력",
+          "분류 필터(카테고리)",
+          "CSV 다운로드",
+          "행 단위 열기·삭제",
+        ],
+        techSpec: "`WSD_COMMUNITY.exportCsv()` + `WSD_COMMUNITY.deletePost(id)`. 사용자 화면과 동일 저장소.",
+        caution: "관리자 삭제는 즉시 사용자 화면에 반영되므로 confirm 필수.",
+        issues: ["P1 시점에 관리자 탭이 mock 배열을 보던 문제 → P2에서 통합"],
+      },
+    ],
+    techSpec: "`WSD_COMMUNITY` helper + `WSD_STORES.communityPosts / comments / categories` localStorage. 외부 DB 교체 시 helper는 유지하고 저장소 구현만 교체.",
+    cautions: [
+      "localStorage 한계 → 이미지·대량 데이터 누적 시 quota 초과",
+      "권한 검사가 클라이언트 단 → 외부 DB 도입 시 서버 측 정책 필수",
+      "사용자 화면 ↔ 관리자 화면이 같은 저장소를 본다는 가정이 P2 통합의 핵심이므로 깨지지 않게 유지",
+    ],
+    issues: [
+      "사용자 작성 글 / 시드 글이 다른 키에 저장되어 있던 P1 → `ensureCommunityPostsSeeded`로 마이그레이션",
+      "관리자와 사용자 화면이 다른 mock 배열을 보던 P1 → `WSD_COMMUNITY` 단일 helper로 수렴",
+    ],
   },
   {
-    title: "왕의길 / 체크아웃",
-    route: "book / checkout",
-    purpose: "책 정보를 보여주고 구매 흐름으로 연결하는 판매 영역입니다.",
-    actualContent: [
-      "책 정보 노출",
-      "판본 선택",
-      "수량 선택",
-      "장바구니 상태",
-      "체크아웃 UI",
+    id: "lecture",
+    number: "02",
+    label: "강연 일정",
+    title: "미션 2 — 뱅기노자 강연 일정 안내",
+    role: "공개 / 심화 / 현장 강연 일정을 알리고 신청을 유도.",
+    routes: ["home(노출)", "tour(상세 영역)", "mypage(예정 강연)"],
+    status: "정보 노출만(부분 구현)",
+    evaluation: "현재는 `data.lectures` 정적 데이터를 홈에 카드로 보여주는 것이 전부다. '알리는' 단계에서 멈춰 있어 신청 → 결제 → 참가 → 후기로 이어지는 사이클이 비어 있다. 강연이 자산으로 누적되지 못한다.",
+    missing: [
+      "강연 신청 폼(회차 · 인원 · 대표자)",
+      "정원 / 대기열 / 잔여석 실시간",
+      "유료 강연 결제 / 무료 강연 등록 분기",
+      "캘린더 다운로드(.ics) · 구글 캘린더 추가",
+      "D-1 알림 · 변경 알림(이메일/푸시)",
+      "참가자 명단 · 체크인 · 출석 이력",
+      "강연 후 자료 보관함(영상 · PDF · 발표자료)",
+      "마이페이지 신청 내역 / 출석 이력",
+      "강연자 프로필 페이지 / 시리즈 묶음",
+      "강연 후기 / 평점",
+      "관리자 강연 운영 화면(현재는 투어 탭에 정보만 있음)",
     ],
-    dataSources: ["`WANGSADEUL_DATA.book`", "`cart` 상태"],
-    notes: "실제 주문 저장과 결제 연동은 아직 후속 작업입니다.",
+    features: [
+      {
+        name: "홈 강연 일정 노출",
+        status: "구현됨",
+        summary: "메인 홈에 가까운 강연 일정을 3열 카드로 노출.",
+        elements: [
+          "프로그램 라벨(왕사남)",
+          "주제(`topic`)",
+          "강연자(`host`)",
+          "장소(`venue`)",
+          "다음 일정(`next`)",
+          "잔여석 텍스트(`seats`)",
+        ],
+        techSpec: "`HomePage` 안에서 `data.lectures` map. 첫 카드 강조 + 클릭 시 `tour` 라우트 이동.",
+        caution: "잔여석 텍스트는 정적 문자열이라 실제 신청 수와 동기화되지 않음. 신청 흐름 도입 전까지 '안내용'임을 인지.",
+        issues: [],
+      },
+      {
+        name: "투어 페이지 강연 통합 노출",
+        status: "부분 구현",
+        summary: "투어와 같은 페이지에서 강연 상세도 함께 노출.",
+        elements: ["프로그램 헤더", "강연/투어 혼합 카드"],
+        techSpec: "`WangsanamTourPage` 단일 페이지에서 `data.lectures`와 `data.tours`를 같이 다룸.",
+        caution: "사용자가 별도 강연 라우트가 있다고 오해할 수 있음. 신청 흐름 도입 시점에 페이지 분리 결정 필요.",
+        issues: ["라우트가 `tour` 하나뿐인데 강연이 함께 노출되어, 마이페이지 등에서 강연 진입 동선이 어색"],
+      },
+      {
+        name: "마이페이지 예정 강연 카드",
+        status: "부분 구현",
+        summary: "로그인 사용자에게 다음 강연을 보여줌.",
+        elements: ["다음 강연 카드(`data.lectures[0]`)"],
+        techSpec: "`data.lectures[0]`을 그대로 표시. 사용자 신청 이력과 무관.",
+        caution: "사용자가 '내가 신청한 강연'으로 오해할 수 있어 라벨에 '다가오는 강연'임을 명확히 유지.",
+        issues: ["개인화가 없어 마이페이지 본질에 어긋난다는 한계 — 신청 흐름 도입 시 우선 교체 대상"],
+      },
+    ],
+    techSpec: "`WANGSADEUL_DATA.lectures` 정적 배열에만 의존. 신청·결제·정원 helper 미존재. 강연 도메인 모델은 아직 정의되지 않은 상태.",
+    cautions: [
+      "강연이 마치 신청 가능한 것처럼 보이지만 실제 등록 흐름이 없음 → 안내 카드에 '신청은 별도 채널' 같은 설명 권장",
+      "잔여석 등 운영 수치는 정적 문자열이라 운영자가 직접 갱신하지 않으면 어긋남",
+    ],
+    issues: [
+      "강연이 별도 도메인 모델 없이 카탈로그 데이터로만 정의되어 있어, 신청 기능 추가 시 모델·저장소·관리자 화면을 동시에 설계해야 함",
+      "투어와 한 페이지에 묶여 있어 라우팅·정보 구조 결정이 필요한 상태",
+    ],
   },
   {
-    title: "관리자",
-    route: "admin",
-    purpose: "운영자가 콘텐츠, 회원, 문서, 개인정보 처리 상태를 한 화면에서 관리하는 백오피스입니다.",
-    actualContent: [
-      "대시보드",
-      "게시글 관리",
-      "칼럼 관리/작성",
-      "카테고리 관리",
-      "회원 등급 관리",
-      "개인정보/GDPR/PIPA 관리",
-      "버전 기록",
-      "KMS",
+    id: "column",
+    number: "03",
+    label: "뱅기노자 칼럼",
+    title: "미션 3 — 뱅기노자 칼럼 공유",
+    role: "뱅기노자의 글을 공개해 브랜드 신뢰와 깊이를 만드는 콘텐츠 영역.",
+    routes: ["column(공개)", "home(추천)", "admin > 칼럼 / 칼럼 작성(운영)"],
+    status: "기본 구동(부분 구현)",
+    evaluation: "관리자 발행 → 공개 사이트 즉시 반영이라는 P1 핵심 연결은 완성. 다만 독자가 칼럼과 상호작용하는 흐름(공유·구독·북마크·검색)이 없어 콘텐츠가 일회성으로 소비된다. 시리즈/카테고리 인덱스가 없어 아카이브로의 가치도 낮음.",
+    missing: [
+      "댓글 / 좋아요 / 공유",
+      "이메일 · 웹 푸시 구독, 신규 칼럼 알림",
+      "칼럼 검색 / 카테고리 아카이브 / 시리즈 인덱스",
+      "예약 발행 / 임시 저장 / 발행 취소",
+      "추정 읽기 시간 자동 계산(현재 수동 입력)",
+      "작성자 프로필 카드 · 관련 글 자동 추천",
+      "열람 통계 / 좋아요 통계 운영 화면",
+      "RSS / Atom 피드",
     ],
-    dataSources: ["`WSD_COMMUNITY`", "`WSD_STORES`", "`WANGSADEUL_DATA`", "`PRIVACY_DATA`"],
-    notes: "KMS 안에서 `기능정의서`, `디자인`, `운영 원칙`을 나눠 볼 수 있도록 재구성됩니다.",
+    features: [
+      {
+        name: "공개 칼럼 목록",
+        status: "부분 구현",
+        summary: "기본 칼럼과 관리자 발행 칼럼을 병합해 카드 그리드로 노출.",
+        elements: [
+          "피처 칼럼 1건 + 보조 칼럼 4건(홈)",
+          "전체 카드 그리드(칼럼 페이지)",
+          "카테고리 필터(미구현)",
+        ],
+        techSpec: "`[...WSD_STORES.userColumns, ...WANGSADEUL_DATA.columns]` 병합. 사용자 발행 글이 위에 오도록 spread 순서 유지.",
+        caution: "정렬 기준이 명시적이지 않고 spread 순서에 의존 → 정책으로 명문화 필요.",
+        issues: [],
+      },
+      {
+        name: "칼럼 상세",
+        status: "부분 구현",
+        summary: "제목 / 카테고리 / 날짜 / 본문 표시.",
+        elements: [
+          "제목 / 카테고리 / 날짜 / 추정 읽기 시간",
+          "본문 HTML",
+          "관련 글(미구현)",
+          "공유 / 좋아요(미구현)",
+        ],
+        techSpec: "본문은 HTML 문자열 그대로 dangerouslySetInnerHTML.",
+        caution: "관리자가 임의의 HTML/script를 넣을 수 있으므로 에디터 정책으로 차단. 사용자 입력에는 절대 적용하지 않기.",
+        issues: ["Tiptap 본문이 HTML로 직렬화되어 저장되므로 어떤 확장이 활성화돼 있는지를 같이 관리해야 함"],
+      },
+      {
+        name: "관리자 칼럼 작성",
+        status: "구현됨",
+        summary: "Tiptap 에디터로 본문을 작성해 즉시 발행.",
+        elements: [
+          "Tiptap StarterKit + Image + Link + Typography",
+          "카테고리 입력",
+          "발행 버튼",
+          "임시 저장(미구현)",
+          "예약 발행(미구현)",
+        ],
+        techSpec: "`WSD_STORES.userColumns`에 push 후 `WSD_SAVE.userColumns()` 호출.",
+        caution: "발행이 곧 공개라 임시 저장이 없으면 작성 중 새로고침 시 본문 손실 위험.",
+        issues: ["수동 ID 부여 시 시드 칼럼과 ID 충돌 가능성 → 충돌 검사 필요"],
+      },
+      {
+        name: "홈 추천 칼럼",
+        status: "구현됨",
+        summary: "메인 홈에 피처 1건 + 사이드 4건의 칼럼을 노출.",
+        elements: ["피처 카드 1", "사이드 4건"],
+        techSpec: "공개 칼럼 병합 결과의 상위 항목을 그대로 사용.",
+        caution: "추천 알고리즘이 없어 항상 최신 5건이 노출됨.",
+        issues: [],
+      },
+    ],
+    techSpec: "`WANGSADEUL_DATA.columns`(시드) + `WSD_STORES.userColumns`(관리자 발행) 병합. 본문은 Tiptap이 HTML로 직렬화한 문자열.",
+    cautions: [
+      "공개 칼럼 정렬 기준이 명시적이지 않다는 점 → 정책으로 명문화 필요",
+      "본문 HTML 신뢰 범위는 '관리자 입력에 한함'으로 유지(사용자 입력에 dangerouslySetInnerHTML 절대 금지)",
+    ],
+    issues: [
+      "Tiptap 확장 변경이 본문 저장 호환성에 영향을 주므로, 확장 추가/제거 시 기존 본문 호환성 테스트 필요",
+      "관리자 칼럼과 시드 칼럼 ID 충돌 가능성",
+    ],
+  },
+  {
+    id: "tour",
+    number: "04",
+    label: "투어 프로그램",
+    title: "미션 4 — 뱅기노자 투어 프로그램 판매·운영",
+    role: "뱅기노자가 진행하는 궁궐 답사·역사 답사 프로그램을 판매하고 운영.",
+    routes: ["tour(목록·상세)", "home(노출)", "admin > 투어(운영)"],
+    status: "카탈로그(부분 구현 — 판매 흐름 부재)",
+    evaluation: "5개 미션 중 가장 약한 영역. 카드형 카탈로그까지는 그려져 있지만 예약·결제·정원·환불·관리자 운영 어느 것도 동작하지 않는다. 사용자가 누르는 '예약' 버튼이 실제로는 아무 일도 일어나지 않아 운영자에게 잘못된 신호를 줄 수 있다.",
+    missing: [
+      "투어 신청 폼(회차 · 인원 · 대표자 · 동행자)",
+      "결제 게이트웨이 연동",
+      "회차별 좌석 / 대기열 관리",
+      "참가자 명단 · 체크인",
+      "환불 · 취소 정책 · 환불 처리",
+      "관리자 예약 운영(승인 / 거절 / 메모)",
+      "마이페이지 예약 내역 · 이메일 영수증",
+      "외국어 안내(영문) 옵션",
+      "프로그램 후기 · 평점",
+      "이미지 갤러리(현재 카드 한 장)",
+      "지도 · 집결지 안내 · 우천 시 운영 정책",
+    ],
+    features: [
+      {
+        name: "투어 목록",
+        status: "구현됨",
+        summary: "전체 답사 프로그램을 카드형으로 노출.",
+        elements: [
+          "난이도 배지",
+          "기간 / 인원 / 가격",
+          "다음 일정(`next`)",
+          "프로그램 설명",
+        ],
+        techSpec: "`WANGSADEUL_DATA.tours` 정적 배열을 `WangsanamTourPage`가 카드로 렌더.",
+        caution: "데이터가 정적이므로 다음 일정 갱신은 운영자가 직접 코드/문서로 반영해야 함.",
+        issues: [],
+      },
+      {
+        name: "투어 상세 카드",
+        status: "부분 구현",
+        summary: "프로그램 한 건의 상세 정보를 보여줌.",
+        elements: [
+          "기간 / 인원 / 난이도",
+          "다음 일정",
+          "가격",
+          "설명",
+          "이미지 갤러리(미구현)",
+          "회차별 일정 캘린더(미구현)",
+        ],
+        techSpec: "`WangsanamTourPage` 안에서 같은 카드를 사용.",
+        caution: "이미지 갤러리·일정 캘린더 부재로 의사결정에 필요한 정보가 부족함.",
+        issues: [],
+      },
+      {
+        name: "예약 / 대기자 버튼",
+        status: "UI만(미구현)",
+        summary: "사용자가 예약 또는 대기자 등록을 시도.",
+        elements: ["예약 버튼", "대기자 버튼"],
+        techSpec: "현재는 클릭 핸들러가 비어 있거나 정적 알림만 노출.",
+        caution: "기능 없는 버튼이 노출되면 사용자 신뢰가 떨어짐. MVP 전까지는 '예약 문의' 형태로 안내하는 것이 안전.",
+        issues: ["사용자가 클릭 후 아무 일도 일어나지 않아 운영자에게 잘못된 '관심도' 신호를 줄 수 있음"],
+      },
+      {
+        name: "관리자 투어 탭",
+        status: "부분 구현",
+        summary: "관리자 콘솔에서 투어 일정을 표 형태로 확인.",
+        elements: ["투어 표(목록)"],
+        techSpec: "현재는 `data.tours` 동일 데이터를 표로 보여주는 수준.",
+        caution: "예약 데이터가 없으므로 운영 화면이 카탈로그와 같은 정보만 갖고 있음.",
+        issues: [],
+      },
+    ],
+    techSpec: "`WANGSADEUL_DATA.tours` 정적 데이터에만 의존. 예약 / 결제 / 정원 / 명단 helper 미존재. 도메인 모델 미정의.",
+    cautions: [
+      "'판매'라는 말이 작동하려면 결제 · 정원 · 환불 셋이 동시에 필요함을 잊지 말 것",
+      "결제 도입 전까지는 사용자에게 '문의 접수' 흐름임을 명확히 표시",
+      "강연과 한 페이지에 묶여 있다는 점이 신청 흐름 설계에 영향을 줌 → 페이지 분리 결정 선행",
+    ],
+    issues: [
+      "예약 데이터가 없으므로 마이페이지·관리자에서 보여줄 진짜 데이터가 부재",
+      "투어와 강연이 같은 페이지를 공유 → 정보 구조 결정이 후속 기능 설계의 전제조건",
+    ],
+  },
+  {
+    id: "book",
+    number: "05",
+    label: "책 판매",
+    title: "미션 5 — 뱅기노자 책 판매",
+    role: "뱅기노자의 책 『왕의길』을 소개하고 판매.",
+    routes: ["book(상세)", "checkout(주문)", "home(CTA)", "admin > 주문(운영)"],
+    status: "UI 흐름까지(부분 구현)",
+    evaluation: "책 정보 → 판본·수량 → 장바구니 → 체크아웃 UI까지의 화면은 그려져 있지만 주문 저장 / 결제 / 배송 / 영수증 / 재고 / 환불 어느 것도 작동하지 않아 실제 판매가 불가능하다. 도메인 4(투어)와 같은 한계.",
+    missing: [
+      "주문 저장소 / 주문 ID 발급",
+      "결제 게이트웨이 연동(KR / EN 가격 분기)",
+      "배송 정보 입력 · 송장 연동",
+      "영수증 / 세금계산서",
+      "재고 관리 · 품절 표시",
+      "주문 상태 추적(주문확인 / 결제완료 / 배송중 / 도착)",
+      "마이페이지 주문 내역 · 재구매",
+      "환불 · 교환 흐름",
+      "독자 리뷰 · 평점",
+      "교차 판매(투어 / 강연 패키지)",
+      "쿠폰 · 회원 등급 할인",
+      "장바구니 영속성(현재 메모리 휘발성)",
+    ],
+    features: [
+      {
+        name: "책 상세",
+        status: "구현됨",
+        summary: "책 한 권의 모든 메타 정보를 한 화면에서 노출.",
+        elements: [
+          "표지 / 저자 / 출판사 / ISBN / 페이지 수",
+          "국문 / 영문 가격",
+          "챕터 목차",
+          "설명 본문",
+        ],
+        techSpec: "`WANGSADEUL_DATA.book` 정적 객체를 `BookCheckoutPage`가 렌더.",
+        caution: "ISBN과 가격은 정적이라 출판사 정책 변경 시 코드 갱신 필요.",
+        issues: [],
+      },
+      {
+        name: "판본 · 수량 선택",
+        status: "부분 구현",
+        summary: "국문판/영문판 토글과 수량 입력.",
+        elements: [
+          "판본 토글",
+          "수량 ±",
+          "합계 표시",
+        ],
+        techSpec: "`React.useState`로 `cart` 메모리 상태 보관.",
+        caution: "장바구니가 메모리 상태라 새로고침 / 다른 페이지 → 돌아오기 시 사라짐. localStorage 영속화 필요.",
+        issues: ["사용자가 '담기 → 다른 페이지 → 돌아오기' 시 사라지는 케이스가 운영 검토에서 자주 보고됨"],
+      },
+      {
+        name: "장바구니",
+        status: "부분 구현",
+        summary: "선택한 판본과 수량을 메모리상으로 보관.",
+        elements: [
+          "선택 항목 카드",
+          "수량 변경",
+          "삭제",
+          "합계",
+        ],
+        techSpec: "App 컴포넌트의 `cart` 상태(`React.useState`)를 prop drilling으로 전달.",
+        caution: "Context / Reducer 도입 전까지는 prop chain이 길어지지 않게 페이지 단위 유지.",
+        issues: [],
+      },
+      {
+        name: "체크아웃 UI",
+        status: "부분 구현",
+        summary: "주문 요약, 배송지/결제 입력 화면.",
+        elements: [
+          "주문 요약(판본·수량·합계)",
+          "배송지 폼",
+          "결제 폼",
+          "주문 완료 화면(미구현)",
+        ],
+        techSpec: "현재는 폼 UI만 존재. 제출 시 실제 처리는 없음.",
+        caution: "결제 연동 도입 시 PCI / 카드 정보 비저장 / PII 처리 정책이 같이 따라옴 → 개인정보(GDPR/PIPA) 모듈과 동기화 필요.",
+        issues: ["결제 도입 시 카드 정보 입력을 '직접' 받지 않도록 처음부터 게이트웨이 위임 구조로 설계할 것"],
+      },
+      {
+        name: "마이페이지 주문 상태",
+        status: "부분 구현",
+        summary: "현재 장바구니 / 주문 상태 카드.",
+        elements: ["주문 상태 카드"],
+        techSpec: "`cart` 상태만 참조. 저장된 주문이 없어 항상 빈 상태 또는 mock.",
+        caution: "주문 저장소 도입 전까지는 카드 라벨에 '진행 중인 주문'임을 명시.",
+        issues: [],
+      },
+      {
+        name: "관리자 주문 탭",
+        status: "미구현",
+        summary: "관리자 콘솔의 주문 운영 화면.",
+        elements: ["주문 목록(미구현)", "주문 상세(미구현)", "환불 / 교환(미구현)"],
+        techSpec: "주문 저장소가 없어 현재는 화면 골격만 존재.",
+        caution: "주문 저장 도입 시 회원 등급/쿠폰 등 모듈과 동시에 설계해야 함.",
+        issues: [],
+      },
+    ],
+    techSpec: "`WANGSADEUL_DATA.book` + `cart` 메모리 상태. 주문 / 결제 / 재고 / 환불 helper 미존재.",
+    cautions: [
+      "장바구니가 휘발성이라 사용자 흐름이 짧게만 유지됨 → localStorage 영속화가 1순위",
+      "국문/영문 가격이 분리되어 결제 게이트웨이가 통화별로 별도 계약될 수 있음",
+      "결제 도입 시 PCI/PII 책임이 발생 → 직접 카드정보를 받지 않는 게이트웨이 위임 구조로 설계",
+    ],
+    issues: [
+      "결제·배송·재고·환불을 한 번에 도입하기 어려움 → 단계: 주문 저장 → 결제 위임 → 배송 → 영수증 → 재고 → 환불 순으로 점진 도입 권장",
+    ],
   },
 ];
 
@@ -949,25 +1435,27 @@ const AdminPage = ({ go }) => {
           <div style={{display:'grid', gap:16}}>
             <div className="card card-gold" style={{padding:24}}>
               <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>KMS SUMMARY</div>
-              <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>기능정의서 기준 요약</h2>
+              <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>KMS는 두 개의 탭으로 구성됩니다</h2>
               <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:14}}>
-                KMS의 제1 기능은 기능정의서입니다. 현재 홈페이지에 어떤 기능이 있고, 어느 수준까지 구현되었는지 먼저 이해할 수 있어야 하며,
-                그 위에 규칙과 변경 맥락이 쌓이는 구조를 유지합니다.
+                KMS의 제1 기능은 기능정의서입니다. 사이트가 존재하는 5가지 미션(왕사들 커뮤니티 / 강연 일정 / 칼럼 / 투어 프로그램 / 책 판매)을 기준으로 현재 어떤 기능이 있고
+                무엇이 비어 있는지를 먼저 보여주고, 그 위에 디자인 원칙을 함께 둡니다. KMS에 진입하면 기본은 `기능정의서` 탭입니다.
               </p>
               <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12}} className="stats-grid">
                 <div className="card" style={{padding:14}}>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>KMS 제1 기준</div>
-                  <div>기능정의서</div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>탭 1 · 기본</div>
+                  <div className="ko-serif" style={{fontSize:18}}>기능정의서</div>
+                  <div className="dim" style={{fontSize:12, marginTop:6, lineHeight:1.6}}>5개 미션 + 공통 기반을 영역 단위로 정리하고, 영역마다 기능 / 기술 스펙 / 유의할 점 / 개발 이슈를 함께 기록합니다.</div>
                 </div>
                 <div className="card" style={{padding:14}}>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>디자인 기준</div>
-                  <div>KMS 내부 `디자인` 탭</div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>탭 2</div>
+                  <div className="ko-serif" style={{fontSize:18}}>디자인</div>
+                  <div className="dim" style={{fontSize:12, marginTop:6, lineHeight:1.6}}>새 화면을 만들거나 기존 UI를 바꿀 때 먼저 확인하는 브랜드 무드, 컬러, 타이포, 레이아웃, 금지 원칙입니다.</div>
                 </div>
               </div>
             </div>
 
             <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-              {["기능정의서", "디자인", "운영 원칙"].map((item) => (
+              {["기능정의서", "디자인"].map((item) => (
                 <button
                   key={item}
                   type="button"
@@ -983,36 +1471,233 @@ const AdminPage = ({ go }) => {
               ))}
             </div>
 
-            {kmsTab === "기능정의서" && ADMIN_FEATURE_DEFINITION_SECTIONS.map((section) => (
-              <article key={section.title} className="card" style={{padding:24}}>
-                <div style={{display:'flex', justifyContent:'space-between', gap:16, marginBottom:14, flexWrap:'wrap'}}>
-                  <h2 className="ko-serif" style={{fontSize:22}}>{section.title}</h2>
-                  <span className="mono dim-2" style={{fontSize:11}}>route: {section.route}</span>
+            {kmsTab === "기능정의서" && (
+              <div style={{display:'grid', gridTemplateColumns:'minmax(0, 1fr) 240px', gap:24, alignItems:'start'}} className="kms-fdef-layout">
+                <div style={{display:'grid', gap:16, minWidth:0}}>
+                  <article id="fdef-overview" className="card card-gold" style={{padding:24, scrollMarginTop:24}}>
+                    <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>MISSION OVERVIEW</div>
+                    <h2 className="ko-serif" style={{fontSize:22, marginBottom:10}}>5가지 미션 평가 요약</h2>
+                    <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:18}}>
+                      이 사이트가 존재하는 이유는 다음 다섯 가지입니다.
+                      각 미션은 아래 영역으로 이어지며, 각 영역의 평가와 빈 칸은 본 기능정의서 본문에서 영역별로 자세히 기록합니다.
+                    </p>
+                    <div style={{display:'grid', gap:10}}>
+                      {MISSION_OVERVIEW.map((m) => (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById(`fdef-${m.id}`);
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }}
+                          className="card"
+                          style={{padding:14, textAlign:'left', cursor:'pointer', background:'transparent'}}>
+                          <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:6}}>
+                            <div style={{display:'flex', gap:10, alignItems:'baseline'}}>
+                              <span className="mono dim-2" style={{fontSize:11, letterSpacing:'0.18em'}}>MISSION {m.number}</span>
+                              <span className="ko-serif" style={{fontSize:16}}>{m.title}</span>
+                            </div>
+                            <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--gold)'}}>{m.state} · {m.coverage}</span>
+                          </div>
+                          <div className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:6}}>{m.short}</div>
+                          <div style={{fontSize:12, lineHeight:1.7, color:'var(--ink-2)'}}>{m.verdict}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </article>
+
+                  {FEATURE_DOMAINS.map((domain) => {
+                    const statusTone = domain.status?.includes('미구현')
+                      ? 'var(--danger)'
+                      : domain.status?.includes('부분') || domain.status?.includes('카탈로그') || domain.status?.includes('UI')
+                        ? 'var(--ink-2)'
+                        : 'var(--gold)';
+                    return (
+                      <article id={`fdef-${domain.id}`} key={domain.id} className="card" style={{padding:24, scrollMarginTop:24}}>
+                        <header style={{borderBottom:'1px solid var(--line)', paddingBottom:16, marginBottom:18}}>
+                          <div style={{display:'flex', justifyContent:'space-between', gap:16, alignItems:'baseline', flexWrap:'wrap', marginBottom:10}}>
+                            <div style={{display:'flex', gap:12, alignItems:'baseline'}}>
+                              <span className="mono dim-2" style={{fontSize:11, letterSpacing:'0.22em'}}>{domain.id === 'infra' ? 'BASE' : `MISSION ${domain.number}`}</span>
+                              <h2 className="ko-serif" style={{fontSize:24}}>{domain.title}</h2>
+                            </div>
+                            <span className="mono" style={{fontSize:11, letterSpacing:'0.2em', color: statusTone}}>STATUS · {domain.status}</span>
+                          </div>
+                          <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:10}}>{domain.role}</p>
+                          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em'}}>routes: {domain.routes.join(' · ')}</div>
+                        </header>
+
+                        <div style={{display:'grid', gap:18}}>
+                          <section>
+                            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>현재 평가</div>
+                            <div className="card" style={{padding:14, lineHeight:1.8}}>{domain.evaluation}</div>
+                          </section>
+
+                          {domain.missing && domain.missing.length > 0 && (
+                            <section>
+                              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>없는 기능 / 완성도를 높이려면 필요한 것</div>
+                              <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
+                                {domain.missing.map((item) => (
+                                  <li key={item} style={{padding:'8px 12px', borderLeft:'2px solid var(--gold-dim)', background:'rgba(212,175,55,0.04)', fontSize:13, lineHeight:1.7}}>
+                                    {item}
+                                  </li>
+                                ))}
+                              </ul>
+                            </section>
+                          )}
+
+                          <section>
+                            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>기능 ({domain.features.length})</div>
+                            <div style={{display:'grid', gap:12}}>
+                              {domain.features.map((feature) => {
+                                const fTone = feature.status === '구현됨'
+                                  ? 'var(--gold)'
+                                  : feature.status === '미구현' || feature.status?.startsWith('UI만')
+                                    ? 'var(--danger)'
+                                    : 'var(--ink-2)';
+                                return (
+                                  <div key={feature.name} className="card" style={{padding:16, borderColor:'var(--line-2)'}}>
+                                    <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:8}}>
+                                      <h3 className="ko-serif" style={{fontSize:17}}>{feature.name}</h3>
+                                      <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: fTone}}>{feature.status}</span>
+                                    </div>
+                                    {feature.summary && (
+                                      <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:12}}>{feature.summary}</p>
+                                    )}
+                                    {feature.elements && feature.elements.length > 0 && (
+                                      <div style={{marginBottom:12}}>
+                                        <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>요소</div>
+                                        <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:4}}>
+                                          {feature.elements.map((el) => (
+                                            <li key={el} style={{fontSize:12, lineHeight:1.7, paddingLeft:14, position:'relative'}}>
+                                              <span style={{position:'absolute', left:0, color:'var(--gold-dim)'}}>·</span>
+                                              {el}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                    {feature.techSpec && (
+                                      <div style={{marginBottom:10}}>
+                                        <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:4}}>기술 스펙</div>
+                                        <div style={{fontSize:12, lineHeight:1.7, color:'var(--ink-2)'}}>{feature.techSpec}</div>
+                                      </div>
+                                    )}
+                                    {feature.caution && (
+                                      <div style={{marginBottom:10}}>
+                                        <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:4}}>유의할 점</div>
+                                        <div style={{fontSize:12, lineHeight:1.7, color:'var(--ink-2)'}}>{feature.caution}</div>
+                                      </div>
+                                    )}
+                                    {feature.issues && feature.issues.length > 0 && (
+                                      <div>
+                                        <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:4}}>개발 이슈</div>
+                                        <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:3}}>
+                                          {feature.issues.map((issue) => (
+                                            <li key={issue} style={{fontSize:12, lineHeight:1.7, paddingLeft:14, position:'relative', color:'var(--ink-2)'}}>
+                                              <span style={{position:'absolute', left:0, color:'var(--danger)'}}>!</span>
+                                              {issue}
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </section>
+
+                          {domain.techSpec && (
+                            <section>
+                              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>영역 차원 · 기술 스펙</div>
+                              <div className="card" style={{padding:14, lineHeight:1.8, fontSize:13}}>{domain.techSpec}</div>
+                            </section>
+                          )}
+
+                          {domain.cautions && domain.cautions.length > 0 && (
+                            <section>
+                              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>영역 차원 · 유의할 점</div>
+                              <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
+                                {domain.cautions.map((c) => (
+                                  <li key={c} style={{padding:'8px 12px', borderLeft:'2px solid var(--ink-3)', fontSize:13, lineHeight:1.7}}>{c}</li>
+                                ))}
+                              </ul>
+                            </section>
+                          )}
+
+                          {domain.issues && domain.issues.length > 0 && (
+                            <section>
+                              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>영역 차원 · 개발과정에서 마주한 이슈</div>
+                              <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
+                                {domain.issues.map((iss) => (
+                                  <li key={iss} style={{padding:'8px 12px', borderLeft:'2px solid var(--danger)', fontSize:13, lineHeight:1.7}}>{iss}</li>
+                                ))}
+                              </ul>
+                            </section>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
-                <div style={{display:'grid', gap:12}}>
-                  <div>
-                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>목적</div>
-                    <div className="card" style={{padding:14}}>{section.purpose}</div>
-                  </div>
-                  <div>
-                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>실제 구성 기능</div>
-                    <div style={{display:'grid', gap:8}}>
-                      {section.actualContent.map((item) => <div key={item} className="card" style={{padding:14}}>{item}</div>)}
+
+                <aside aria-label="기능정의서 목차" style={{position:'sticky', top:24, alignSelf:'start'}} className="kms-fdef-toc">
+                  <div className="card" style={{padding:16}}>
+                    <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:12}}>TABLE OF CONTENTS</div>
+                    <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:4}}>
+                      <li>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById('fdef-overview');
+                            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }}
+                          style={{
+                            width:'100%', textAlign:'left', padding:'8px 10px',
+                            background:'transparent', border:'1px solid transparent',
+                            color:'var(--ink-2)', fontSize:12, lineHeight:1.5, cursor:'pointer',
+                            borderLeft:'2px solid var(--gold)',
+                          }}>
+                          5가지 미션 평가
+                        </button>
+                      </li>
+                      {FEATURE_DOMAINS.map((d) => (
+                        <li key={d.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const el = document.getElementById(`fdef-${d.id}`);
+                              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }}
+                            style={{
+                              width:'100%', textAlign:'left', padding:'8px 10px',
+                              background:'transparent', border:'1px solid transparent',
+                              color:'var(--ink-2)', fontSize:12, lineHeight:1.5, cursor:'pointer',
+                              borderLeft:'2px solid var(--line-2)',
+                            }}>
+                            <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.2em', marginBottom:2}}>
+                              {d.id === 'infra' ? 'BASE' : `MISSION ${d.number}`}
+                            </div>
+                            {d.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    <div style={{borderTop:'1px solid var(--line)', marginTop:14, paddingTop:12}}>
+                      <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>구성</div>
+                      <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:4, fontSize:11, lineHeight:1.7, color:'var(--ink-3)'}}>
+                        <li>· 영역 평가</li>
+                        <li>· 없는 기능 정리</li>
+                        <li>· 기능 + 요소</li>
+                        <li>· 기술 스펙</li>
+                        <li>· 유의할 점</li>
+                        <li>· 개발 이슈</li>
+                      </ul>
                     </div>
                   </div>
-                  <div>
-                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>실제 데이터 기준</div>
-                    <div style={{display:'grid', gap:8}}>
-                      {section.dataSources.map((item) => <div key={item} className="card" style={{padding:14}}>{item}</div>)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>운영 메모</div>
-                    <div className="card" style={{padding:14}}>{section.notes}</div>
-                  </div>
-                </div>
-              </article>
-            ))}
+                </aside>
+              </div>
+            )}
 
             {kmsTab === "디자인" && (
               <div style={{display:'grid', gap:16}}>
@@ -1038,29 +1723,6 @@ const AdminPage = ({ go }) => {
               </div>
             )}
 
-            {kmsTab === "운영 원칙" && ADMIN_KMS_SECTIONS.map((section) => (
-              <article key={section.title} className="card" style={{padding:24}}>
-                <h2 className="ko-serif" style={{fontSize:22, marginBottom:14}}>{section.title}</h2>
-                <div style={{display:'grid', gap:12}}>
-                  <div>
-                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>무엇이 바뀌었는가</div>
-                    <div className="card" style={{padding:14}}>{section.what}</div>
-                  </div>
-                  <div>
-                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>왜 바뀌었는가</div>
-                    <div className="card" style={{padding:14}}>{section.why}</div>
-                  </div>
-                  <div>
-                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>어떤 배경이 있었는가</div>
-                    <div className="card" style={{padding:14}}>{section.background}</div>
-                  </div>
-                  <div>
-                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>이후 어떤 작업과 연결되는가</div>
-                    <div className="card" style={{padding:14}}>{section.next}</div>
-                  </div>
-                </div>
-              </article>
-            ))}
           </div>
         )}
 

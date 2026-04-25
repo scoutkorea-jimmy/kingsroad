@@ -967,3 +967,21 @@ main time, main .section-eyebrow {
   text-transform: uppercase;
   aspect-ratio: 4/3;
 }
+
+/* === KMS 기능정의서 — TOC layout === */
+.kms-fdef-layout {
+  /* desktop: 본문 + 240px TOC */
+}
+@media (max-width: 960px) {
+  .kms-fdef-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .kms-fdef-toc {
+    position: static !important;
+    order: -1;
+  }
+}
+.kms-fdef-toc button:hover {
+  background: rgba(212,175,55,0.06) !important;
+  color: var(--gold) !important;
+}
