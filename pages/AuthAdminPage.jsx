@@ -397,6 +397,17 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.008.000",
+    date: "2026-04-25",
+    summary: "KMS를 기능정의서 중심 문서로 재정리해 현재 홈페이지 기준 전체 기능 범위를 더 자세히 기록했고, 관리자 페이지에는 `디자인` 탭을 신설해 화면 작업 시 참고할 디자인 원칙을 별도로 볼 수 있게 했습니다.",
+    details: [
+      "KMS 문서에 기능정의서 우선 원칙을 추가하고, 페이지별 기능 목적과 상태를 더 자세히 정리했습니다.",
+      "디자인 원칙서를 별도 섹션으로 추가해 브랜드 무드, 컬러, 타이포그래피, 레이아웃, 금지 원칙을 정리했습니다.",
+      "관리자 페이지 시스템 메뉴에 `디자인` 탭을 추가해 실제 작업 화면에서 디자인 기준을 바로 확인할 수 있게 했습니다.",
+    ],
+    context: "여러 개발자가 KMS를 먼저 참고하는 흐름에서는 규칙보다 기능 범위와 디자인 기준이 먼저 눈에 들어와야 다음 작업이 빨라집니다. 그래서 KMS의 제1 기능을 기능정의서로 명확히 고정하고, 디자인 기준도 별도 탭으로 분리했습니다.",
+  },
+  {
     version: "00.007.000",
     date: "2026-04-25",
     summary: "P2 첫 단계로 커뮤니티 게시글과 댓글을 local-first 단일 저장소로 통합하고, 글 수정·삭제·조회수 저장을 붙였습니다. 관리자 게시글 화면도 같은 데이터를 읽도록 바꿔 검색, 분류 필터, CSV 다운로드, 삭제 기능을 실제 운영 흐름으로 연결했습니다.",
@@ -466,6 +477,13 @@ const ADMIN_VERSION_HISTORY = [
 
 const ADMIN_KMS_SECTIONS = [
   {
+    title: "기능정의서 우선 원칙",
+    what: "KMS의 제1 기능은 현재 홈페이지 기준 기능정의서다. 다른 개발자는 KMS만 읽고도 어떤 페이지에 어떤 기능이 있고, 어디까지 구현되었는지 먼저 이해할 수 있어야 한다.",
+    why: "운영 규칙보다 기능 범위 파악이 먼저 되어야 실제 개발 착수가 빨라지기 때문이다.",
+    background: "AI와 사람이 함께 작업하는 구조에서는 코드보다 문서를 먼저 읽고 방향을 잡는 경우가 많아, 기능정의서가 KMS의 첫 역할이 되어야 했다.",
+    next: "새 기능을 추가하거나 상태가 바뀌면 KMS 기능정의서를 가장 먼저 갱신한다.",
+  },
+  {
     title: "AI 작업 기본 원칙",
     what: "모든 AI는 작업 전에 `ai-development-rules.md`, `project-priority-table.md`, `kms.md`를 먼저 읽고 시작합니다.",
     why: "AI마다 판단 방식이 달라지면 같은 프로젝트 안에서 규칙 충돌이 생기기 쉽기 때문입니다.",
@@ -502,7 +520,7 @@ const ADMIN_KMS_SECTIONS = [
   },
   {
     title: "사이트 기능 인벤토리",
-    what: "KMS는 이제 홈, 인증, 마이페이지, 커뮤니티, 왕사남/투어, 칼럼, 책/주문, 관리자 기능을 페이지별로 정리하는 기능 사전 역할도 수행합니다.",
+    what: "KMS는 홈, 인증, 마이페이지, 커뮤니티, 왕사남/투어, 칼럼, 책/주문, 관리자 기능을 페이지별로 정리하는 기능정의서 역할을 수행합니다.",
     why: "다른 개발자가 코드를 직접 읽지 않아도 현재 사이트 구조와 구현 상태를 빠르게 파악할 수 있어야 하기 때문입니다.",
     background: "기존 KMS는 규칙 중심이라 실제 기능 구성이 어디까지 구현됐는지 문서만 보고 이해하기 어려웠습니다.",
     next: "앞으로 기능이 추가되거나 상태가 바뀌면 KMS 기능 인벤토리도 함께 갱신해야 합니다.",
@@ -520,6 +538,51 @@ const ADMIN_KMS_SECTIONS = [
     why: "사용자 화면과 관리자 화면이 같은 게시글 데이터를 보지 않으면 운영 기능이 계속 데모 수준에 머무를 수 있기 때문입니다.",
     background: "기존 커뮤니티는 글쓰기와 댓글 저장은 있었지만, 수정/삭제와 관리자 연결이 약해 실서비스 구조로 보기 어려웠습니다.",
     next: "다음 단계에서는 권한 정책, 회원 운영, 투어/주문 운영 기능도 같은 방식으로 실제 저장소와 연결합니다.",
+  },
+];
+
+const ADMIN_DESIGN_SECTIONS = [
+  {
+    title: "브랜드 무드",
+    points: [
+      "조선 왕실, 궁궐, 기록물, 전시 도록의 분위기를 기본으로 유지합니다.",
+      "장식적인 동양풍보다 절제된 권위와 정적 긴장을 우선합니다.",
+      "화려함보다 깊이와 밀도를 느끼게 하는 방향을 기본으로 합니다.",
+    ],
+  },
+  {
+    title: "컬러 원칙",
+    points: [
+      "짙은 먹색 계열 배경을 기본으로 사용합니다.",
+      "금색은 강조용 포인트로만 사용하고 남용하지 않습니다.",
+      "본문은 높은 가독성을 유지하는 밝은 중성 톤으로 구성합니다.",
+      "경고/삭제 색상은 금색과 명확히 구분되게 유지합니다.",
+    ],
+  },
+  {
+    title: "타이포그래피 원칙",
+    points: [
+      "제목은 세리프 중심으로 품격 있게 보이도록 유지합니다.",
+      "본문은 읽기 쉬운 한글 폰트를 사용합니다.",
+      "메타 정보와 라벨은 모노 계열로 구조를 또렷하게 만듭니다.",
+    ],
+  },
+  {
+    title: "레이아웃 원칙",
+    points: [
+      "여백은 넉넉하게 두고 카드와 표는 편집 디자인처럼 정렬감 있게 구성합니다.",
+      "모바일에서도 정보 밀도가 무너지지 않도록 한 줄 정보량을 조절합니다.",
+      "기능이 많아도 화면은 차분하고 조용하게 읽혀야 합니다.",
+    ],
+  },
+  {
+    title: "디자인 금지 원칙",
+    points: [
+      "밝은 흰색 바탕 중심의 일반 SaaS 느낌으로 바꾸지 않습니다.",
+      "보라색 계열을 브랜드 주색처럼 사용하지 않습니다.",
+      "과한 그라데이션과 유행형 마이크로 인터랙션을 남발하지 않습니다.",
+      "기존 분위기와 맞지 않는 귀여운 아이콘 중심 화면으로 흐르지 않게 합니다.",
+    ],
   },
 ];
 
@@ -548,7 +611,7 @@ const AdminPage = ({ go }) => {
     { group: "회원/주문", items: ["회원", "주문"] },
     { group: "운영 설정", items: ["카테고리", "회원 등급"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템",   items: ["버전 기록", "KMS", "설정"] },
+    { group: "시스템",   items: ["버전 기록", "KMS", "디자인", "설정"] },
   ];
 
   const exportMemberData = (m) => {
@@ -712,19 +775,19 @@ const AdminPage = ({ go }) => {
           <div style={{display:'grid', gap:16}}>
             <div className="card card-gold" style={{padding:24}}>
               <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>KMS SUMMARY</div>
-              <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>운영 기준 요약</h2>
+              <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>기능정의서 기준 요약</h2>
               <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:14}}>
-                KMS는 단순 결과 로그가 아니라, 현재 규칙과 그 규칙이 생긴 이유까지 함께 보는 운영 문서입니다.
-                관리자 화면에서도 저장소 문서와 같은 기준으로 확인할 수 있어야 합니다.
+                KMS의 제1 기능은 기능정의서입니다. 현재 홈페이지에 어떤 기능이 있고, 어느 수준까지 구현되었는지 먼저 이해할 수 있어야 하며,
+                그 위에 규칙과 변경 맥락이 쌓이는 구조를 유지합니다.
               </p>
               <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12}} className="stats-grid">
                 <div className="card" style={{padding:14}}>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>우선순위 기준</div>
-                  <div>`project-priority-table.md`</div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>KMS 제1 기준</div>
+                  <div>기능정의서</div>
                 </div>
                 <div className="card" style={{padding:14}}>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>AI 작업 기준</div>
-                  <div>`ai-development-rules.md`</div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>디자인 기준</div>
+                  <div>`디자인` 탭</div>
                 </div>
               </div>
             </div>
@@ -749,6 +812,30 @@ const AdminPage = ({ go }) => {
                     <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>이후 어떤 작업과 연결되는가</div>
                     <div className="card" style={{padding:14}}>{section.next}</div>
                   </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {tab === "디자인" && (
+          <div style={{display:'grid', gap:16}}>
+            <div className="card card-gold" style={{padding:24}}>
+              <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>DESIGN PRINCIPLES</div>
+              <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>디자인 작업 기준</h2>
+              <p className="dim" style={{fontSize:13, lineHeight:1.8}}>
+                새 페이지를 만들거나 기존 UI를 바꿀 때는 이 탭의 원칙을 먼저 확인합니다.
+                왕사들 화면은 일반적인 밝은 SaaS UI가 아니라, 조선 왕실과 전시 도록의 분위기를 유지하는 방향으로 작업해야 합니다.
+              </p>
+            </div>
+
+            {ADMIN_DESIGN_SECTIONS.map((section) => (
+              <article key={section.title} className="card" style={{padding:24}}>
+                <h2 className="ko-serif" style={{fontSize:22, marginBottom:14}}>{section.title}</h2>
+                <div style={{display:'grid', gap:8}}>
+                  {section.points.map((point) => (
+                    <div key={point} className="card" style={{padding:14}}>{point}</div>
+                  ))}
                 </div>
               </article>
             ))}
