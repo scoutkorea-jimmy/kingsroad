@@ -1,4 +1,11 @@
 // 로그인, 회원가입, 관리자 페이지
+const AUTH_CONFIG = {
+  mode: "temporary-demo",
+  adminEmail: "admin@admin.admin",
+  adminPassword: "admin",
+  note: "현재 인증은 임시 운영용 데모 방식입니다. 관리자만 고정 계정으로 검증하고, 일반 회원 로그인은 임시 상태 저장 방식으로 동작합니다.",
+};
+
 const LoginPage = ({ go, setUser }) => {
   const [mode, setMode] = React.useState("login"); // login | signup
   const [form, setForm] = React.useState({
@@ -11,16 +18,46 @@ const LoginPage = ({ go, setUser }) => {
 
   const submit = () => {
     const normalizedEmail = (form.email || "").trim().toLowerCase();
+    const password = form.password || "";
     const isAdminLogin = mode === "login"
       && normalizedEmail === "admin@admin.admin"
-      && form.password === "admin";
+      && password === "admin";
     const isBlockedAdminAttempt = mode === "login"
       && normalizedEmail === "admin@admin.admin"
-      && form.password !== "admin";
+      && password !== "admin";
+
+    if (!normalizedEmail) {
+      alert("이메일을 입력해주세요.");
+      return;
+    }
+
+    if (!password) {
+      alert("비밀번호를 입력해주세요.");
+      return;
+    }
 
     if (isBlockedAdminAttempt) {
       alert("임시 관리자 계정 비밀번호가 올바르지 않습니다.");
       return;
+    }
+
+    if (mode === "signup") {
+      if (!form.name.trim()) {
+        alert("회원가입 시 이름을 입력해주세요.");
+        return;
+      }
+      if (password.length < 8) {
+        alert("비밀번호는 8자 이상으로 입력해주세요.");
+        return;
+      }
+      if (password !== form.password2) {
+        alert("비밀번호 확인이 일치하지 않습니다.");
+        return;
+      }
+      if (!form.consentTerms) {
+        alert("이용약관 및 개인정보 처리방침 동의가 필요합니다.");
+        return;
+      }
     }
 
     const name = mode === "signup"
@@ -63,6 +100,15 @@ const LoginPage = ({ go, setUser }) => {
           <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginTop:24}}>WANGSADEUL · 王사들</div>
         </div>
         <div style={{maxWidth:480}}>
+          <div className="card" style={{padding:'14px 16px', marginBottom:24, background:'rgba(212,175,55,0.05)'}}>
+            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>AUTH STATUS</div>
+            <p className="dim" style={{fontSize:12, lineHeight:1.8, marginBottom:10}}>
+              {AUTH_CONFIG.note}
+            </p>
+            <div className="mono dim-2" style={{fontSize:11}}>
+              관리자 임시 계정: {AUTH_CONFIG.adminEmail} / {AUTH_CONFIG.adminPassword}
+            </div>
+          </div>
           <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:16}}>
             {mode === "login" ? "— WELCOME BACK" : "— JOIN US"}
           </div>
@@ -246,9 +292,9 @@ const LoginPage = ({ go, setUser }) => {
                 <label htmlFor="keep-login" style={{display:'flex', gap:8, alignItems:'center', color:'var(--ink-2)'}}>
                   <input id="keep-login" type="checkbox" style={{accentColor:'var(--gold)'}}/>로그인 유지
                 </label>
-                <button type="button" className="btn-ghost" style={{color:'var(--gold)'}}>비밀번호 찾기</button>
-              </div>
-            )}
+              <button type="button" className="btn-ghost" style={{color:'var(--gold)'}}>비밀번호 찾기</button>
+            </div>
+          )}
             <button type="submit" className="btn btn-gold btn-block">
               {mode === "login" ? "입장하기 →" : "회원가입 →"}
             </button>
@@ -354,6 +400,17 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.005.001",
+    date: "2026-04-25",
+    summary: "KMS를 사이트 전체 기능 인벤토리 기준으로 확장해 다른 개발자가 코드 없이도 구조를 파악할 수 있게 정리했고, 로그인/회원가입 흐름에 기본 검증과 인증 상태 안내를 추가해 현재 인증 방식이 임시 운영 구조임을 더 명확하게 표시했습니다.",
+    details: [
+      "KMS 문서에 홈, 인증, 마이페이지, 커뮤니티, 투어, 칼럼, 책, 관리자 기능 목록과 구현 상태를 정리했습니다.",
+      "로그인/회원가입에 이메일, 비밀번호, 약관 동의, 비밀번호 확인 검증을 추가했습니다.",
+      "인증 페이지에 현재 인증 방식과 임시 관리자 계정을 설명하는 안내 카드를 추가했습니다.",
+    ],
+    context: "KMS가 규칙만 있고 기능 사전 역할은 부족했고, P1 인증/권한 흐름도 사용자가 현재 상태를 명확히 이해하기 어려운 점이 있어 구조와 안내를 함께 정리할 필요가 있었습니다.",
+  },
+  {
     version: "00.005.000",
     date: "2026-04-25",
     summary: "하단 푸터에서 현재 배포 버전과 빌드를 더 눈에 띄게 표시해 검토 상태를 바로 확인할 수 있게 했고, 우선순위 P1에 맞춰 관리자에서 발행한 칼럼이 공개 칼럼 페이지와 홈 화면에도 노출되도록 연결했습니다.",
@@ -423,6 +480,13 @@ const ADMIN_KMS_SECTIONS = [
     why: "나중에 다른 AI나 사람이 문서를 봤을 때, 왜 그런 규칙이 생겼는지 모르면 같은 논의를 반복하게 되기 때문입니다.",
     background: "향후 여러 사람이 이어서 개발할 가능성을 고려해, 단순 결과 로그가 아니라 맥락 복원형 문서가 필요해졌습니다.",
     next: "KMS 항목은 `무엇이 바뀌었는가 / 왜 바뀌었는가 / 어떤 배경이 있었는가 / 이후 무엇과 연결되는가` 구조를 기본으로 합니다.",
+  },
+  {
+    title: "사이트 기능 인벤토리",
+    what: "KMS는 이제 홈, 인증, 마이페이지, 커뮤니티, 왕사남/투어, 칼럼, 책/주문, 관리자 기능을 페이지별로 정리하는 기능 사전 역할도 수행합니다.",
+    why: "다른 개발자가 코드를 직접 읽지 않아도 현재 사이트 구조와 구현 상태를 빠르게 파악할 수 있어야 하기 때문입니다.",
+    background: "기존 KMS는 규칙 중심이라 실제 기능 구성이 어디까지 구현됐는지 문서만 보고 이해하기 어려웠습니다.",
+    next: "앞으로 기능이 추가되거나 상태가 바뀌면 KMS 기능 인벤토리도 함께 갱신해야 합니다.",
   },
 ];
 
