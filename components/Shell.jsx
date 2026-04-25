@@ -114,6 +114,18 @@ const Footer = ({ go }) => (
           </ul>
         </address>
       </div>
+      <div
+        className="card card-gold"
+        style={{marginTop:24, padding:'14px 16px', display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', flexWrap:'wrap'}}
+        aria-label="현재 배포 버전 정보">
+        <div>
+          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:6}}>CURRENT DEPLOY VERSION</div>
+          <div className="ko-serif" style={{fontSize:22, color:'var(--gold-2)'}}>v{window.WSD_VERSION?.version || '0.0.0'}</div>
+        </div>
+        <div className="mono" style={{fontSize:11, letterSpacing:'0.16em', color:'var(--gold)'}}>
+          build {window.WSD_VERSION?.build || '—'} · {window.WSD_VERSION?.channel || ''}
+        </div>
+      </div>
       <div className="footer-bottom">
         <span>© 2026 WANGSADEUL — ALL RIGHTS RESERVED</span>
         <span className="mono" style={{color:'var(--gold-dim)'}}>

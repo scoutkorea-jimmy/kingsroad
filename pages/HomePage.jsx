@@ -1,6 +1,9 @@
 // 메인 페이지
 const HomePage = ({ go, tweaks }) => {
   const data = window.WANGSADEUL_DATA;
+  const publicColumns = [...(window.WSD_STORES?.userColumns || []), ...data.columns];
+  const featuredColumn = publicColumns[0];
+  const secondaryColumns = publicColumns.slice(1, 5);
   const heroLayout = tweaks.heroLayout;
 
   // Keyboard-activatable wrapper for visually-clickable regions.
@@ -302,21 +305,21 @@ const HomePage = ({ go, tweaks }) => {
               <div className="placeholder" style={{aspectRatio:'16/9', borderLeft:'none', borderRight:'none', borderTop:'none'}}>FEATURE IMAGE · 1600×900</div>
               <div style={{padding:36}}>
                 <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:16}}>
-                  <span className="pill">{data.columns[0].category}</span>
-                  <span className="mono dim-2" style={{fontSize:11}}>{data.columns[0].date}</span>
-                  <span className="mono dim-2" style={{fontSize:11}}>· {data.columns[0].readTime}</span>
+                  <span className="pill">{featuredColumn.category}</span>
+                  <span className="mono dim-2" style={{fontSize:11}}>{featuredColumn.date}</span>
+                  <span className="mono dim-2" style={{fontSize:11}}>· {featuredColumn.readTime}</span>
                 </div>
                 <h3 className="ko-serif" style={{fontSize:32, fontWeight:500, lineHeight:1.25, marginBottom:16}}>
-                  {data.columns[0].title}
+                  {featuredColumn.title}
                 </h3>
-                <p className="dim" style={{fontSize:15, lineHeight:1.8}}>{data.columns[0].excerpt}</p>
+                <p className="dim" style={{fontSize:15, lineHeight:1.8}}>{featuredColumn.excerpt}</p>
                 <div className="gold mono" style={{fontSize:11, letterSpacing:'0.2em', marginTop:24}}>
                   READ MORE →
                 </div>
               </div>
             </div>
             <div>
-              {data.columns.slice(1, 5).map(c => (
+              {secondaryColumns.map(c => (
                 <div key={c.id} onClick={() => go("column")}
                   style={{padding:'20px 0', borderBottom:'1px solid var(--line)', cursor:'pointer'}}>
                   <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:8}}>
