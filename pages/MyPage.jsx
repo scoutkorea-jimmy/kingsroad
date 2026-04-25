@@ -270,6 +270,13 @@ const MyPage = ({ go, user, cart }) => {
                       {o.tracking && (
                         <div className="dim-2 mono" style={{ fontSize: 10, marginTop: 4 }}>송장 {o.tracking}</div>
                       )}
+                      <div style={{ marginTop: 6 }}>
+                        <button type="button" className="btn-ghost"
+                          onClick={() => window.WSD_BOOK_ORDERS.downloadReceipt(o.id)}
+                          style={{ fontSize: 11, color: 'var(--gold)' }}>
+                          영수증 다운로드 ↓
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>

@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.018.000",
-  build: "2026.04.25",
+  version: "00.019.000",
+  build: "2026.04.26",
   channel: "preview",
 };
 
@@ -132,6 +132,8 @@ window.WSD_STORES = {
     privacy: { title: "개인정보 처리방침", body: "<p>왕사들 사이트는 회원 가입과 운영을 위해 최소한의 개인정보를 수집·이용합니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
     terms:   { title: "이용약관",          body: "<p>왕사들 사이트의 이용약관입니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
   }),
+  lectureReviews: _lsGet('wsd_lecture_reviews', {}),
+  auditLog: _lsGet('wsd_audit_log', []),
   faqs: _lsGet('wsd_faqs', [
     { id: 'faq-1', question: "회원가입은 어떻게 하나요?", answer: "상단 로그인 화면에서 '회원가입' 탭을 눌러 이메일과 비밀번호를 등록하면 즉시 가입됩니다.", category: '계정', order: 0 },
     { id: 'faq-2', question: "강연·답사 결제는 어떻게 진행되나요?", answer: "현재는 무통장 입금만 지원합니다. 신청 → 안내 계좌로 입금 → 운영자 입금 확인 → 참가 확정 순으로 진행됩니다.", category: '결제', order: 1 },
@@ -160,6 +162,8 @@ window.WSD_SAVE = {
   tourReviews: () => _lsSet('wsd_tour_reviews', window.WSD_STORES.tourReviews),
   legalDocs: () => _lsSet('wsd_legal_docs', window.WSD_STORES.legalDocs),
   faqs: () => _lsSet('wsd_faqs', window.WSD_STORES.faqs),
+  lectureReviews: () => _lsSet('wsd_lecture_reviews', window.WSD_STORES.lectureReviews),
+  auditLog: () => _lsSet('wsd_audit_log', window.WSD_STORES.auditLog),
   resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
   resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
 };
@@ -167,7 +171,7 @@ window.WSD_SAVE = {
 window.WSD_DB = {
   version: WSD_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders", "tourOverrides", "tourReservations", "tourReviews", "legalDocs", "faqs"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders", "tourOverrides", "tourReservations", "tourReviews", "lectureReviews", "auditLog", "legalDocs", "faqs"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -214,6 +218,7 @@ window.WSD_AUTH = {
 
   // ── 관리자 운영 ─────────────────────────────────────────────
   setGrade(userId, gradeId) {
+    const before = (window.WSD_STORES.users || []).find((u) => u.id === userId);
     window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
       u.id === userId ? { ...u, gradeId, gradeChangedAt: new Date().toISOString() } : u
     ));
@@ -222,9 +227,42 @@ window.WSD_AUTH = {
       window.WSD_STORES.session = { ...window.WSD_STORES.session, gradeId };
       window.WSD_SAVE.session();
     }
+    if (before && before.gradeId !== gradeId) {
+      window.WSD_AUDIT?.log({ action: 'member.grade_change', target: `user:${userId}`, details: { from: before.gradeId, to: gradeId } });
+    }
     return window.WSD_STORES.users.find((u) => u.id === userId) || null;
   },
+  suspendUser(userId, reason) {
+    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
+      u.id === userId ? { ...u, suspended: true, suspendedReason: reason || '', suspendedAt: new Date().toISOString() } : u
+    ));
+    window.WSD_SAVE.users();
+    if (window.WSD_STORES.session?.id === userId) {
+      window.WSD_STORES.session = null;
+      window.WSD_SAVE.session();
+    }
+    window.WSD_AUDIT?.log({ action: 'member.suspend', target: `user:${userId}`, details: { reason: reason || '' } });
+    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
+  },
+  unsuspendUser(userId) {
+    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
+      u.id === userId ? { ...u, suspended: false, suspendedReason: '', unsuspendedAt: new Date().toISOString() } : u
+    ));
+    window.WSD_SAVE.users();
+    window.WSD_AUDIT?.log({ action: 'member.unsuspend', target: `user:${userId}` });
+    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
+  },
+  removeUser(userId) {
+    window.WSD_STORES.users = window.WSD_STORES.users.filter((u) => u.id !== userId);
+    window.WSD_SAVE.users();
+    if (window.WSD_STORES.session?.id === userId) {
+      window.WSD_STORES.session = null;
+      window.WSD_SAVE.session();
+    }
+    window.WSD_AUDIT?.log({ action: 'member.remove', target: `user:${userId}` });
+  },
   toggleAdmin(userId) {
+    const before = (window.WSD_STORES.users || []).find((u) => u.id === userId);
     let next = null;
     window.WSD_STORES.users = window.WSD_STORES.users.map((u) => {
       if (u.id !== userId) return u;
@@ -236,33 +274,10 @@ window.WSD_AUTH = {
       window.WSD_STORES.session = { ...window.WSD_STORES.session, isAdmin: next.isAdmin };
       window.WSD_SAVE.session();
     }
+    if (before && next) {
+      window.WSD_AUDIT?.log({ action: 'member.admin_toggle', target: `user:${userId}`, details: { from: !!before.isAdmin, to: !!next.isAdmin } });
+    }
     return next;
-  },
-  suspendUser(userId, reason) {
-    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
-      u.id === userId ? { ...u, suspended: true, suspendedReason: reason || '', suspendedAt: new Date().toISOString() } : u
-    ));
-    window.WSD_SAVE.users();
-    if (window.WSD_STORES.session?.id === userId) {
-      window.WSD_STORES.session = null;
-      window.WSD_SAVE.session();
-    }
-    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
-  },
-  unsuspendUser(userId) {
-    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
-      u.id === userId ? { ...u, suspended: false, suspendedReason: '', unsuspendedAt: new Date().toISOString() } : u
-    ));
-    window.WSD_SAVE.users();
-    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
-  },
-  removeUser(userId) {
-    window.WSD_STORES.users = window.WSD_STORES.users.filter((u) => u.id !== userId);
-    window.WSD_SAVE.users();
-    if (window.WSD_STORES.session?.id === userId) {
-      window.WSD_STORES.session = null;
-      window.WSD_SAVE.session();
-    }
   },
   getActivity(userId) {
     if (!userId) return null;
@@ -338,6 +353,9 @@ window.WSD_COMMUNITY = {
       _new: true,
     });
     this.savePosts([nextPost, ...this.listPosts()]);
+    if (payload.authorId) {
+      try { window.WSD_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
+    }
     return nextPost;
   },
   updatePost(postId, patch) {
@@ -374,6 +392,9 @@ window.WSD_COMMUNITY = {
   addComment(postId, payload) {
     const nextComments = [...this.getComments(postId), payload];
     this.saveComments(postId, nextComments);
+    if (payload.authorId) {
+      try { window.WSD_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
+    }
     return nextComments;
   },
   deleteComment(postId, commentId) {
@@ -767,6 +788,7 @@ window.WSD_LECTURES = {
         fromName: '운영자',
         message: '강연 입금이 확인되어 참가가 확정되었습니다.',
       });
+      window.WSD_AUDIT?.log({ action: 'lecture.confirm_payment', target: `lecture:${lectureId}`, details: { reg: registrationId, user: updated.userId } });
     }
     return updated;
   },
@@ -864,6 +886,41 @@ window.WSD_LECTURES = {
     a.click();
     URL.revokeObjectURL(url);
     return true;
+  },
+  // ── 후기 ──────────────────────────────────────────────────────
+  listReviews(lectureId) {
+    const map = window.WSD_STORES.lectureReviews || {};
+    return Array.isArray(map[String(lectureId)]) ? map[String(lectureId)].slice() : [];
+  },
+  _saveReviews(lectureId, list) {
+    const map = window.WSD_STORES.lectureReviews || {};
+    map[String(lectureId)] = list;
+    window.WSD_STORES.lectureReviews = map;
+    window.WSD_SAVE.lectureReviews();
+  },
+  canReview(lectureId, userId) {
+    if (!userId) return false;
+    const my = this.listRegistrations(lectureId).find((r) => r.userId === userId && r.status === 'confirmed');
+    return !!my;
+  },
+  addReview(lectureId, payload) {
+    const review = {
+      id: `lec-rev-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+      lectureId: String(lectureId),
+      userId: payload.userId || null,
+      author: payload.author || '익명',
+      rating: Math.max(1, Math.min(5, Number(payload.rating) || 5)),
+      text: String(payload.text || '').trim(),
+      createdAt: new Date().toISOString(),
+    };
+    if (!review.text) return null;
+    this._saveReviews(lectureId, [review, ...this.listReviews(lectureId)]);
+    return review;
+  },
+  deleteReview(lectureId, reviewId) {
+    const next = this.listReviews(lectureId).filter((r) => r.id !== reviewId);
+    this._saveReviews(lectureId, next);
+    return next;
   },
   // ── 계좌번호 ──────────────────────────────────────────────────
   getBankAccount() {
@@ -969,6 +1026,7 @@ window.WSD_BOOK_ORDERS = {
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_paid', '입금이 확인되어 발송 준비를 시작합니다.');
+    if (updated) window.WSD_AUDIT?.log({ action: 'book.confirm_payment', target: `order:${updated.orderNo}` });
     return updated;
   },
   unconfirmPayment(id) {
@@ -986,6 +1044,7 @@ window.WSD_BOOK_ORDERS = {
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_shipped',
       updated?.tracking ? `발송이 시작되었습니다. 송장 번호 ${updated.tracking}.` : '발송이 시작되었습니다.');
+    if (updated) window.WSD_AUDIT?.log({ action: 'book.ship', target: `order:${updated.orderNo}`, details: { tracking: updated.tracking || '' } });
     return updated;
   },
   markDelivered(id) {
@@ -995,6 +1054,7 @@ window.WSD_BOOK_ORDERS = {
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_delivered', '배송이 완료되었습니다. 즐거운 독서 되세요.');
+    if (updated) window.WSD_AUDIT?.log({ action: 'book.deliver', target: `order:${updated.orderNo}` });
     return updated;
   },
   cancelOrder(id) {
@@ -1004,8 +1064,63 @@ window.WSD_BOOK_ORDERS = {
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_cancelled', '주문이 취소되었습니다.');
+    if (updated) window.WSD_AUDIT?.log({ action: 'book.cancel', target: `order:${updated.orderNo}` });
     return updated;
   },
+  // ── 영수증 ──────────────────────────────────────────────────
+  generateReceipt(id) {
+    const order = this.getOrder(id);
+    if (!order) return null;
+    const bank = window.WSD_LECTURES?.getBankAccount?.() || {};
+    const formatPrice = (p) => `${(p || 0).toLocaleString()}원`;
+    const lines = [
+      '╔════════════════════════════════════════════╗',
+      '║         왕사들 · WANGSADEUL 주문 영수증     ║',
+      '╚════════════════════════════════════════════╝',
+      '',
+      `주문번호      ${order.orderNo}`,
+      `주문 일시     ${new Date(order.createdAt).toLocaleString('ko-KR')}`,
+      `상태          ${ ({pending_payment:'입금 대기', paid:'입금 확인', shipped:'배송중', delivered:'배송 완료', cancelled:'취소'})[order.status] || order.status }`,
+      order.tracking ? `송장번호      ${order.tracking}` : '',
+      '',
+      '--- 주문 상품 ----------------------------',
+      `『왕의길』 ${order.version === 'KR' ? '국문판' : '영문판'} × ${order.qty}    ${formatPrice(order.subtotal)}`,
+      `배송비                                ${order.shipping === 0 ? '무료' : formatPrice(order.shipping)}`,
+      '─────────────────────────────────────────',
+      `합계                              ${formatPrice(order.total)}`,
+      '',
+      '--- 받는 분 -----------------------------',
+      `${order.recipient}  /  ${order.phone}`,
+      `${order.address}${order.addressDetail ? ' ' + order.addressDetail : ''}`,
+      order.memo ? `메모: ${order.memo}` : '',
+      '',
+    ];
+    if (order.status === 'pending_payment' && bank.accountNumber) {
+      lines.push('--- 무통장 입금 안내 -------------------');
+      lines.push(`은행          ${bank.bankName || '-'}`);
+      lines.push(`계좌          ${bank.accountNumber}`);
+      lines.push(`예금주        ${bank.holder || '-'}`);
+      lines.push(`입금자명      ${order.recipient} 또는 ${order.orderNo}`);
+      lines.push('');
+    }
+    lines.push('운영 문의 · hello@wangsadeul.kr');
+    lines.push('영수증 발행 · ' + new Date().toLocaleString('ko-KR'));
+    return lines.filter((l) => l != null).join('\n');
+  },
+  downloadReceipt(id) {
+    const text = this.generateReceipt(id);
+    if (!text) return false;
+    const order = this.getOrder(id);
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `receipt-${order.orderNo}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
+  },
+
   exportCsv() {
     const header = ['orderNo', 'date', 'userId', 'recipient', 'phone', 'address', 'version', 'qty', 'total', 'status', 'paid', 'tracking'];
     const rows = this.listAll().map((o) => [
@@ -1148,6 +1263,7 @@ window.WSD_TOURS = {
         fromName: '운영자',
         message: '답사 입금이 확인되어 참가가 확정되었습니다.',
       });
+      window.WSD_AUDIT?.log({ action: 'tour.confirm_payment', target: `tour:${tourId}`, details: { reg: reservationId, user: updated.userId } });
     }
     return updated;
   },
@@ -1281,6 +1397,92 @@ window.WSD_TOURS = {
     const next = this.listReviews(tourId).filter((r) => r.id !== reviewId);
     this._saveReviews(tourId, next);
     return next;
+  },
+};
+
+// === 운영 감사 로그(WSD_AUDIT) ============================================
+// 운영자(혹은 시스템)가 데이터를 변경할 때마다 한 줄 기록한다. 최근 500건 유지.
+window.WSD_AUDIT = {
+  log({ action, target, details, by }) {
+    const entry = {
+      id: `audit-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+      action: String(action || '').trim(),
+      target: String(target || ''),
+      details: details || null,
+      by: by || (window.WSD_STORES.session?.name) || 'system',
+      byId: window.WSD_STORES.session?.id || null,
+      ts: new Date().toISOString(),
+    };
+    const list = [entry, ...(window.WSD_STORES.auditLog || [])].slice(0, 500);
+    window.WSD_STORES.auditLog = list;
+    window.WSD_SAVE.auditLog();
+    return entry;
+  },
+  list({ search = '', limit = 200 } = {}) {
+    const all = (window.WSD_STORES.auditLog || []).slice();
+    if (!search) return all.slice(0, limit);
+    const q = String(search).toLowerCase();
+    return all.filter((e) =>
+      String(e.action || '').toLowerCase().includes(q)
+      || String(e.target || '').toLowerCase().includes(q)
+      || String(e.by || '').toLowerCase().includes(q)
+    ).slice(0, limit);
+  },
+  clear() {
+    window.WSD_STORES.auditLog = [];
+    window.WSD_SAVE.auditLog();
+  },
+};
+
+// === 자동 등급 승격(WSD_GRADE_PROMO) ====================================
+// 활동(글 + 댓글 가중치)을 기준으로 사용자의 자격 등급을 평가.
+// 운영자는 admin / wangsanam 등급은 자동 변경하지 않으며, 기본 흐름은 회원이 활동을
+// 쌓을 때만 더 높은 등급으로 '승격'한다(강등은 없음).
+window.WSD_GRADE_RULES = {
+  reader:  { posts: 0,  comments: 5  },   // 댓글 5개 이상 → 독자
+  scholar: { posts: 3,  comments: 15 },   // 글 3개 + 댓글 15개 → 사관
+};
+const PROMOTION_PROTECTED = new Set(['admin', 'wangsanam']);
+
+window.WSD_GRADE_PROMO = {
+  evaluate(userId) {
+    const a = window.WSD_AUTH.getActivity(userId);
+    if (!a) return null;
+    const post = a.postCount || 0;
+    const comment = a.commentCount || 0;
+    let qualified = 'member';
+    Object.entries(window.WSD_GRADE_RULES || {}).forEach(([gid, rule]) => {
+      if (post >= (rule.posts || 0) && comment >= (rule.comments || 0)) {
+        qualified = gid;
+      }
+    });
+    return qualified;
+  },
+  // 사용자 행동 후 호출 — 새 등급이 더 높을 때만 승격
+  maybePromote(userId) {
+    const user = (window.WSD_STORES.users || []).find((u) => u.id === userId);
+    if (!user) return null;
+    if (user.isAdmin) return null;
+    if (PROMOTION_PROTECTED.has(user.gradeId)) return null;
+    const grades = window.WSD_STORES.grades || [];
+    const currentLv = grades.find((g) => g.id === user.gradeId)?.level ?? 0;
+    const targetId = this.evaluate(userId);
+    const targetLv = grades.find((g) => g.id === targetId)?.level ?? 0;
+    if (targetLv <= currentLv) return null;
+    window.WSD_AUTH.setGrade(userId, targetId);
+    window.WSD_AUDIT?.log({
+      action: 'grade.auto_promote',
+      target: `user:${userId}`,
+      details: { from: user.gradeId, to: targetId },
+      by: 'system',
+    });
+    window.WSD_COMMUNITY?.addNotification(userId, {
+      type: 'grade_promoted',
+      postTitle: '회원 등급 안내',
+      fromName: '운영자',
+      message: `활동을 기반으로 등급이 ${grades.find((g) => g.id === targetId)?.label || targetId}(으)로 승격되었습니다.`,
+    });
+    return targetId;
   },
 };
 

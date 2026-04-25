@@ -181,6 +181,77 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
   );
 };
 
+// === Comment tree (1단계 답글) ============================================
+const CommentTree = ({ comments, user, onDelete, onReply }) => {
+  const topLevel = (comments || []).filter((c) => !c.parentId);
+  const repliesOf = (parentId) => (comments || []).filter((c) => c.parentId === parentId);
+  const [openReplyTo, setOpenReplyTo] = React.useState(null);
+  const [draft, setDraft] = React.useState('');
+
+  const submitReply = (parentId) => {
+    onReply?.(parentId, draft);
+    setDraft('');
+    setOpenReplyTo(null);
+  };
+
+  const renderItem = (c, depth = 0) => (
+    <li key={c.id} style={{padding:'18px 0', borderBottom: depth === 0 ? '1px solid var(--line)' : 'none', marginLeft: depth * 24}}>
+      <div style={{display:'flex', gap:16, alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
+        <div style={{display:'flex', gap:14, alignItems:'center', flexWrap:'wrap'}}>
+          {depth > 0 && <span className="dim-2 mono" style={{fontSize:11}}>↳</span>}
+          <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em', display:'inline-flex', alignItems:'center'}}>
+            {c.author}
+            <AuthorGradeBadge authorId={c.authorId} author={c.author} authorEmail={c.authorEmail}/>
+          </span>
+          <time className="mono dim-2" style={{fontSize:11}}>{c.date}</time>
+        </div>
+        <div style={{display:'flex', gap:6, alignItems:'center'}}>
+          {!!user && depth === 0 && (
+            <button type="button" className="btn-ghost"
+              onClick={() => { setOpenReplyTo(openReplyTo === c.id ? null : c.id); setDraft(''); }}
+              style={{fontSize:11, color:'var(--ink-2)'}}>
+              {openReplyTo === c.id ? '취소' : '답글'}
+            </button>
+          )}
+          {!!user && (user.isAdmin || c.authorId === user.id || c.author === user.name) && (
+            <button type="button" className="btn-ghost" onClick={() => onDelete?.(c.id)}
+              style={{fontSize:11, color:'var(--danger)'}}>삭제</button>
+          )}
+        </div>
+      </div>
+      <p style={{fontFamily:'var(--font-reading)', fontSize: depth > 0 ? 14 : 15, lineHeight:1.8, color:'var(--ink)', whiteSpace:'pre-wrap'}}>{c.text}</p>
+
+      {/* 답글 입력 폼 */}
+      {openReplyTo === c.id && (
+        <form onSubmit={(e) => { e.preventDefault(); submitReply(c.id); }}
+          style={{marginTop:10, paddingLeft:24, borderLeft:'2px solid var(--gold-dim)'}}>
+          <textarea className="field-input" rows={2} value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={`@${c.author}에게 답글...`}
+            style={{marginBottom:8}}/>
+          <div style={{display:'flex', justifyContent:'flex-end', gap:6}}>
+            <button type="button" className="btn btn-small" onClick={() => { setOpenReplyTo(null); setDraft(''); }}>취소</button>
+            <button type="submit" className="btn btn-gold btn-small" disabled={!draft.trim()}>답글 등록</button>
+          </div>
+        </form>
+      )}
+
+      {/* 자식 답글들 */}
+      {depth === 0 && repliesOf(c.id).length > 0 && (
+        <ol style={{listStyle:'none', padding:0, margin:'12px 0 0', borderLeft:'2px solid var(--line)', paddingLeft:14}}>
+          {repliesOf(c.id).map((r) => renderItem(r, depth + 1))}
+        </ol>
+      )}
+    </li>
+  );
+
+  return (
+    <ol style={{listStyle:'none', padding:0, margin:0}}>
+      {topLevel.map((c) => renderItem(c, 0))}
+    </ol>
+  );
+};
+
 // === Community Page ======================================================
 const POSTS_PER_PAGE = 10;
 
@@ -791,32 +862,41 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
             </div>
           )}
 
-          <ol style={{listStyle:'none', padding:0, margin:0}}>
-            {commentsList.map((c, i) => (
-              <li key={c.id || i} style={{padding:'24px 0', borderBottom:'1px solid var(--line)'}}>
-                <div style={{display:'flex', gap:16, alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
-                  <div style={{display:'flex', gap:16, alignItems:'center'}}>
-                    <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em', display:'inline-flex', alignItems:'center'}}>
-                      {c.author}
-                      <AuthorGradeBadge authorId={c.authorId} author={c.author} authorEmail={c.authorEmail}/>
-                    </span>
-                    <time className="mono dim-2" style={{fontSize:11}}>{c.date}</time>
-                  </div>
-                  {!!user && (user.isAdmin || c.authorId === user.id || c.author === user.name) && (
-                    <button type="button" className="btn-ghost" onClick={() => deleteComment(c.id)}
-                      style={{fontSize:11, color:'var(--danger)'}}>
-                      삭제
-                    </button>
-                  )}
-                </div>
-                <p style={{fontFamily:'var(--font-reading)', fontSize:15, lineHeight:1.8, color:'var(--ink)'}}>{c.text}</p>
-              </li>
-            ))}
-          </ol>
+          <CommentTree
+            comments={commentsList}
+            user={user}
+            onDelete={deleteComment}
+            onReply={(parentId, text) => {
+              if (!user || !text.trim()) return;
+              const now = new Date();
+              const pad = (n) => String(n).padStart(2, '0');
+              const next = window.WSD_COMMUNITY.addComment(post.id, {
+                id: `comment-${Date.now()}-${Math.random().toString(36).slice(2,4)}`,
+                author: user.name,
+                authorId: user.id,
+                authorEmail: user.email,
+                date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+                text: text.trim(),
+                parentId,
+              });
+              setCommentsList(next);
+              const isMyOwnPost = post.authorId === user.id || post.author === user.name;
+              if (!isMyOwnPost && post.authorId) {
+                window.WSD_COMMUNITY.addNotification(post.authorId, {
+                  type: 'comment',
+                  postId: post.id,
+                  postTitle: post.title,
+                  fromName: user.name,
+                  message: '내 글에 새 답글이 달렸습니다.',
+                });
+              }
+              onRefresh?.();
+            }}
+          />
         </section>
       </div>
     </article>
   );
 };
 
-Object.assign(window, { CommunityPage, ImageSlider, HashtagInput, ImageAttacher });
+Object.assign(window, { CommunityPage, ImageSlider, HashtagInput, ImageAttacher, CommentTree });

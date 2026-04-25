@@ -397,6 +397,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.019.000",
+    date: "2026-04-26",
+    summary: "기능 정상화 묶음. 댓글 답글 트리·강연/투어 신규 등록·강연 후기·주문 영수증·운영 감사 로그·활동 기반 자동 등급 승격을 한 번에 도입했습니다. 운영자가 한 사이트 안에서 컨텐츠를 추가·관리·기록하는 흐름이 모두 닫혔습니다.",
+    details: [
+      "댓글 답글 트리(`CommentTree`) — 커뮤니티/칼럼 모두 1단계 들여쓰기 답글, 글 작성자 자동 알림 발화, 사이드 들여쓰기 표시.",
+      "강연 후기 섹션(`LectureReviewsSection`) — 투어 후기와 같은 패턴으로 별점 + 본문, 참가 확정 회원만 작성. `WSD_LECTURES.canReview / addReview / listReviews / deleteReview` 추가, `WSD_STORES.lectureReviews` 신규.",
+      "강연/투어 신규 등록 — 관리자 콘텐츠 메뉴의 강연·투어 탭에 `+ 새 강연 추가` / `+ 새 투어 추가` 버튼. 추가하면 즉시 편집 폼이 열려 정원·일정·가격을 채울 수 있고, 카드 헤더에는 삭제 버튼이 함께 노출.",
+      "주문 영수증 다운로드 — `WSD_BOOK_ORDERS.generateReceipt / downloadReceipt`로 텍스트 영수증을 발급. 마이페이지 내 주문 카드와 관리자 왕의길 탭에서 `영수증 ↓` 버튼으로 다운로드.",
+      "운영 감사 로그(`WSD_AUDIT` + `AuditLogPanel`) — 회원 등급 변경/정지/삭제, 관리자 권한 토글, 강연/투어/책 입금 확인·발송·배송 완료·취소가 모두 자동 기록. 관리자 시스템 메뉴 `감사 로그` 탭에 검색·CSV·전체 삭제와 함께 노출.",
+      "활동 기반 자동 등급 승격(`WSD_GRADE_PROMO`) — 댓글 5개 이상이면 독자, 글 3개 + 댓글 15개 이상이면 사관으로 자동 승격(승격은 일어나도 강등은 없음). 승격 시 본인에게 알림이 자동 발화되고 감사 로그에도 기록됨. createPost / addComment 시점에 트리거.",
+    ],
+    context: "5개 미션 운영 사이클이 모두 닫힌 뒤, 사용자 입장에서는 답글이 안 달리고 후기가 한 영역만 있고 영수증이 없는 식의 작은 빈 칸이 눈에 띄었습니다. 운영자 입장에서도 강연/투어를 새로 만드는 흐름이 코드를 건드려야 가능했고, 어떤 운영 액션이 언제 일어났는지 추적이 어렵다는 한계가 있었습니다. 이번 PR은 그 빈 칸들을 한꺼번에 메우면서, 각 액션이 감사 로그로 자동 기록되도록 흐름을 일치시켰습니다.",
+  },
+  {
     version: "00.018.000",
     date: "2026-04-26",
     summary: "회원·게시판·권한·약관·FAQ·강연 UI·투어 후기까지 한 번에 정리한 운영 인프라 PR입니다. 관리자가 실제 등록 회원의 등급·정지·삭제를 직접 다루고, 게시판은 카드형 추가 + 순서/글 수/권한 매트릭스로 한 화면에서 정비할 수 있게 됐습니다. 약관/개인정보 처리방침과 자주 묻는 질문은 별도 라우트로 노출되며 관리자에서 본문을 직접 편집합니다. 강연 페이지는 투어와 같은 탭+스티키 사이드바 UI로 재구조됐고, 투어 페이지에는 참여 후기 영역이 도입됐습니다.",
@@ -1635,13 +1649,40 @@ const LectureAdminPanel = ({ go }) => {
     refresh();
   };
 
+  const addNewLecture = () => {
+    const id = `lecture-${Date.now()}`;
+    const now = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // +1주
+    const pad = (n) => String(n).padStart(2, '0');
+    const startsAt = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T19:00:00+09:00`;
+    const next = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} 19:00`;
+    window.WSD_LECTURES.saveLecture({
+      id,
+      title: '새 강연',
+      topic: '강연 주제를 입력하세요',
+      venue: '장소',
+      host: '뱅기노자',
+      next,
+      startsAt,
+      durationMinutes: 90,
+      capacity: 30,
+      price: 0,
+      note: '강연 안내를 입력하세요.',
+    });
+    window.WSD_AUDIT?.log({ action: 'lecture.create', target: `lecture:${id}` });
+    refresh();
+    startEdit(window.WSD_LECTURES.getLecture(id));
+  };
+
   return (
     <div>
-      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
-        강연 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
-        결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다.
-        계좌번호는 <button type="button" className="btn-ghost" style={{color:'var(--gold)'}} onClick={() => alert('관리자 메뉴 → 시스템 → 설정 으로 이동해 입력하세요.')}>설정 탭</button>에서 등록합니다.
-      </p>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, flexWrap:'wrap', marginBottom:18}}>
+        <p className="dim" style={{fontSize:13, lineHeight:1.8, margin:0, flex:1, minWidth:280}}>
+          강연 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
+          결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다.
+          계좌번호는 <strong className="gold">시스템 → 설정</strong> 탭에서 등록합니다.
+        </p>
+        <button type="button" className="btn btn-gold btn-small" onClick={addNewLecture}>＋ 새 강연 추가</button>
+      </div>
 
       {lectures.length === 0 ? (
         <div className="card dim" style={{padding:32, textAlign:'center'}}>관리할 강연이 없습니다.</div>
@@ -1708,6 +1749,14 @@ const LectureAdminPanel = ({ go }) => {
                 ) : (
                   <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10}}>
                     <button type="button" className="btn btn-small" onClick={() => startEdit(l)}>강연 정보 수정</button>
+                    <button type="button" className="btn btn-small"
+                      onClick={() => {
+                        if (!confirm('이 강연을 삭제하시겠어요? 관련 신청 정보도 함께 정리됩니다.')) return;
+                        window.WSD_LECTURES.deleteLecture(l.id);
+                        window.WSD_AUDIT?.log({ action: 'lecture.remove', target: `lecture:${l.id}` });
+                        refresh();
+                      }}
+                      style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>삭제</button>
                   </div>
                 )}
 
@@ -1835,12 +1884,47 @@ const TourAdminPanel = ({ go }) => {
     refresh();
   };
 
+  const addNewTour = () => {
+    const id = `tour-${Date.now()}`;
+    const now = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // +2주
+    const pad = (n) => String(n).padStart(2, '0');
+    const startsAt = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T10:00:00+09:00`;
+    const next = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} 10:00`;
+    window.WSD_TOURS.saveTour({
+      id,
+      title: '새 답사 — 부제',
+      level: '입문',
+      duration: '3시간',
+      group: '12인 이하',
+      next,
+      startsAt,
+      durationMinutes: 180,
+      capacity: 12,
+      priceNumber: 80000,
+      price: '80,000원',
+      desc: '답사 안내를 입력하세요.',
+    });
+    window.WSD_AUDIT?.log({ action: 'tour.create', target: `tour:${id}` });
+    refresh();
+    startEdit(window.WSD_TOURS.getTour(id));
+  };
+
+  const removeTour = (id) => {
+    if (!confirm('이 투어를 삭제하시겠어요? 관련 예약 정보도 함께 정리됩니다.')) return;
+    window.WSD_TOURS.deleteTour(id);
+    window.WSD_AUDIT?.log({ action: 'tour.remove', target: `tour:${id}` });
+    refresh();
+  };
+
   return (
     <div>
-      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
-        투어 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
-        결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다(강연과 같은 계좌 사용).
-      </p>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, flexWrap:'wrap', marginBottom:18}}>
+        <p className="dim" style={{fontSize:13, lineHeight:1.8, margin:0, flex:1, minWidth:280}}>
+          투어 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
+          결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다(강연과 같은 계좌 사용).
+        </p>
+        <button type="button" className="btn btn-gold btn-small" onClick={addNewTour}>＋ 새 투어 추가</button>
+      </div>
 
       {tours.length === 0 ? (
         <div className="card dim" style={{padding:32, textAlign:'center'}}>관리할 투어가 없습니다.</div>
@@ -1907,6 +1991,8 @@ const TourAdminPanel = ({ go }) => {
                 ) : (
                   <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10}}>
                     <button type="button" className="btn btn-small" onClick={() => startEdit(t)}>투어 정보 수정</button>
+                    <button type="button" className="btn btn-small" onClick={() => removeTour(t.id)}
+                      style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>삭제</button>
                   </div>
                 )}
 
@@ -2147,6 +2233,8 @@ const BookOrderAdminPanel = ({ go }) => {
               </div>
 
               <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', borderTop:'1px solid var(--line)', paddingTop:12}}>
+                <button type="button" className="btn btn-small"
+                  onClick={() => window.WSD_BOOK_ORDERS.downloadReceipt(o.id)}>영수증 ↓</button>
                 {o.status === 'pending_payment' && (
                   <button type="button" className="btn btn-small"
                     onClick={() => { window.WSD_BOOK_ORDERS.confirmPayment(o.id); refresh(); }}>
@@ -2375,6 +2463,80 @@ const FaqAdminPanel = () => {
           ))}
         </div>
       )}
+    </div>
+  );
+};
+
+// === Audit Log Panel ==============================================
+const AuditLogPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const [search, setSearch] = React.useState('');
+  const refresh = () => setTick((v) => v + 1);
+  const list = React.useMemo(() => window.WSD_AUDIT?.list?.({ search, limit: 200 }) || [], [search, tick]);
+
+  const exportCsv = () => {
+    const all = window.WSD_AUDIT.list({ limit: 1000 });
+    const header = ['id', 'ts', 'action', 'target', 'by', 'details'];
+    const rows = all.map((e) => [e.id, e.ts, e.action, e.target, e.by, e.details ? JSON.stringify(e.details) : '']);
+    const csv = [header, ...rows].map((row) => row.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `audit-log-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const clear = () => {
+    if (!confirm('감사 로그 전체를 삭제하시겠어요? 되돌릴 수 없습니다.')) return;
+    window.WSD_AUDIT.clear();
+    refresh();
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:14}}>
+        운영자가 회원·강연·투어·책 주문에 대해 행한 변경 내역이 시각순으로 기록됩니다.
+        최근 500건까지 보관되며, 정지·삭제·입금 확인·발송·등급 변경 같은 핵심 액션이 자동으로 남습니다.
+      </p>
+      <div style={{display:'flex', gap:10, marginBottom:14, alignItems:'center', flexWrap:'wrap'}}>
+        <input className="field-input" placeholder="액션 / 대상 / 작업자 검색..." style={{flex:1, minWidth:240}}
+          value={search} onChange={(e) => setSearch(e.target.value)}/>
+        <button type="button" className="btn btn-small" onClick={exportCsv}>CSV 다운로드</button>
+        <button type="button" className="btn btn-small" onClick={clear}
+          style={{borderColor:'var(--danger)', color:'var(--danger)'}}>전체 삭제</button>
+      </div>
+
+      {list.length === 0 ? (
+        <div className="card dim" style={{padding:32, textAlign:'center'}}>표시할 감사 로그가 없습니다.</div>
+      ) : (
+        <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+          <thead>
+            <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
+              <th scope="col" style={{padding:10, textAlign:'left', width:160}}>시각</th>
+              <th scope="col" style={{padding:10, textAlign:'left', width:200}}>액션</th>
+              <th scope="col" style={{padding:10, textAlign:'left'}}>대상</th>
+              <th scope="col" style={{padding:10, textAlign:'left'}}>작업자</th>
+              <th scope="col" style={{padding:10, textAlign:'left'}}>세부</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((e) => (
+              <tr key={e.id} style={{borderBottom:'1px solid var(--line)'}}>
+                <td className="mono dim-2" style={{padding:10, fontSize:11}}>{new Date(e.ts).toLocaleString('ko-KR')}</td>
+                <td className="mono gold" style={{padding:10, fontSize:11}}>{e.action}</td>
+                <td className="mono" style={{padding:10, fontSize:11}}>{e.target}</td>
+                <td style={{padding:10, fontSize:12}}>{e.by}</td>
+                <td className="mono dim-2" style={{padding:10, fontSize:10, lineHeight:1.5}}>
+                  {e.details ? JSON.stringify(e.details) : '-'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <div className="dim-2 mono" style={{fontSize:11, marginTop:12, textAlign:'right'}}>
+        표시 {list.length}건 (전체 최근 500건 중)
+      </div>
     </div>
   );
 };
@@ -2727,7 +2889,7 @@ const AdminPage = ({ go }) => {
     { group: "회원",     items: ["회원"] },
     { group: "운영 설정", items: ["카테고리", "회원 등급", "약관/개인정보", "자주 묻는 질문"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템",   items: ["버전 기록", "KMS", "설정"] },
+    { group: "시스템",   items: ["버전 기록", "감사 로그", "KMS", "설정"] },
   ];
 
   const exportMemberData = (m) => {
@@ -3602,6 +3764,7 @@ const AdminPage = ({ go }) => {
         {tab === "카테고리" && <AdminCategoryPanel/>}
         {tab === "약관/개인정보" && <LegalAdminPanel/>}
         {tab === "자주 묻는 질문" && <FaqAdminPanel/>}
+        {tab === "감사 로그" && <AuditLogPanel/>}
 
         {/* 회원 등급 CRUD */}
         {tab === "회원 등급" && <AdminGradePanel/>}
@@ -4235,4 +4398,4 @@ const AdminDenied = ({ go, user }) => (
   </div>
 );
 
-Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel });
+Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel, AuditLogPanel });

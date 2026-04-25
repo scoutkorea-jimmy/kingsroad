@@ -113,12 +113,14 @@ const LecturesPage = ({ go, user }) => {
             <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
               참고
             </h3>
-            <ul style={{paddingLeft:20, color:'var(--ink-2)', lineHeight:2, fontSize:14}}>
+            <ul style={{paddingLeft:20, color:'var(--ink-2)', lineHeight:2, fontSize:14, marginBottom:48}}>
               <li>회원 가입 후 신청 가능 — 비회원은 자동 차단</li>
               <li>유료 강연은 안내된 계좌로 입금 후 운영자 확인 → 참가 확정</li>
               <li>정원이 차면 자동 대기자 등록 → 자리가 나면 자동 승격</li>
               <li>취소는 마이페이지 또는 강연 사이드바에서 가능</li>
             </ul>
+
+            <LectureReviewsSection lecture={lecture} user={user} go={go} onRefresh={refresh}/>
           </div>
 
           {/* Sidebar — booking */}
@@ -356,4 +358,138 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
   );
 };
 
-Object.assign(window, { LecturesPage, LectureBookingPanel });
+// === 강연 후기 섹션 (투어 후기와 같은 패턴) ===============================
+const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
+  const reviews = window.WSD_LECTURES.listReviews(lecture.id);
+  const canReview = user ? window.WSD_LECTURES.canReview(lecture.id, user.id) : false;
+  const [rating, setRating] = React.useState(5);
+  const [text, setText] = React.useState("");
+  const [error, setError] = React.useState("");
+
+  const submit = (e) => {
+    e.preventDefault();
+    setError("");
+    if (!user) {
+      if (confirm("후기 작성은 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?")) {
+        go("login");
+      }
+      return;
+    }
+    if (!canReview) { setError("참가 확정된 분만 후기를 작성할 수 있습니다."); return; }
+    if (!text.trim()) { setError("후기 내용을 입력해 주세요."); return; }
+    window.WSD_LECTURES.addReview(lecture.id, {
+      userId: user.id,
+      author: user.name,
+      rating,
+      text: text.trim(),
+    });
+    setText(""); setRating(5);
+    onRefresh?.();
+  };
+
+  const remove = (id) => {
+    if (!confirm("이 후기를 삭제하시겠어요?")) return;
+    window.WSD_LECTURES.deleteReview(lecture.id, id);
+    onRefresh?.();
+  };
+
+  const avgRating = reviews.length === 0 ? 0
+    : (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length);
+  const stars = (n) => "★".repeat(Math.round(n)) + "☆".repeat(5 - Math.round(n));
+
+  return (
+    <section aria-labelledby="lecture-reviews">
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:12, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
+        <h3 id="lecture-reviews" className="ko-serif" style={{fontSize:20}}>
+          참여 후기 <span className="dim-2 mono" style={{fontSize:12, marginLeft:6}}>{reviews.length}건</span>
+        </h3>
+        {reviews.length > 0 && (
+          <span className="gold mono" style={{fontSize:12, letterSpacing:'0.16em'}}>
+            평균 {avgRating.toFixed(1)} {stars(avgRating)}
+          </span>
+        )}
+      </div>
+
+      {user ? (
+        canReview ? (
+          <form onSubmit={submit} className="card" style={{padding:16, marginBottom:24}}>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:10}}>WRITE A REVIEW</div>
+            <div style={{display:'flex', gap:14, alignItems:'center', marginBottom:10, flexWrap:'wrap'}}>
+              <span className="dim" style={{fontSize:12}}>평점</span>
+              <div style={{display:'flex', gap:2}}>
+                {[1,2,3,4,5].map((n) => (
+                  <button key={n} type="button"
+                    onClick={() => setRating(n)}
+                    aria-label={`${n}점`}
+                    style={{
+                      background:'transparent', border:'none', cursor:'pointer',
+                      color: n <= rating ? 'var(--gold)' : 'var(--ink-3)',
+                      fontSize:18, padding:'2px 4px',
+                    }}>
+                    {n <= rating ? '★' : '☆'}
+                  </button>
+                ))}
+              </div>
+              <span className="mono dim-2" style={{fontSize:11}}>{rating}.0</span>
+            </div>
+            <textarea className="field-input" rows={3} value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="강연이 어땠는지 짧게 남겨 주세요." style={{marginBottom:10}}/>
+            {error && (
+              <div role="alert" style={{padding:'8px 10px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:12, marginBottom:10}}>
+                {error}
+              </div>
+            )}
+            <div style={{display:'flex', justifyContent:'flex-end'}}>
+              <button type="submit" className="btn btn-gold btn-small" disabled={!text.trim()}>등록</button>
+            </div>
+          </form>
+        ) : (
+          <div className="card dim" style={{padding:16, marginBottom:24, fontSize:13, lineHeight:1.7}}>
+            후기는 <strong className="gold">참가 확정</strong>된 회원만 작성할 수 있습니다.
+            아직 신청 전이라면 사이드바에서 강연을 신청하고 운영자 입금 확인을 받은 뒤 다시 와 주세요.
+          </div>
+        )
+      ) : (
+        <div className="card" style={{padding:16, marginBottom:24, textAlign:'center', background:'rgba(212,175,55,0.04)'}}>
+          <p className="dim" style={{fontSize:13, marginBottom:10}}>후기 작성은 회원 전용입니다.</p>
+          <div style={{display:'flex', gap:8, justifyContent:'center'}}>
+            <button type="button" className="btn btn-gold btn-small" onClick={() => go('login')}>로그인</button>
+            <button type="button" className="btn btn-small" onClick={() => go('signup')}>회원가입</button>
+          </div>
+        </div>
+      )}
+
+      {reviews.length === 0 ? (
+        <div className="dim" style={{fontSize:13, padding:'24px 0', textAlign:'center'}}>
+          아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.
+        </div>
+      ) : (
+        <ol style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:12}}>
+          {reviews.map((r) => (
+            <li key={r.id} className="card" style={{padding:16}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10, marginBottom:8}}>
+                <div style={{display:'flex', alignItems:'center', gap:10, flexWrap:'wrap'}}>
+                  <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em'}}>
+                    {r.author}
+                    <AuthorGradeBadge authorId={r.userId} author={r.author}/>
+                  </span>
+                  <span className="gold" style={{fontSize:14}}>{stars(r.rating)}</span>
+                  <span className="dim-2 mono" style={{fontSize:11}}>{new Date(r.createdAt).toLocaleDateString('ko-KR')}</span>
+                </div>
+                {!!user && (user.isAdmin || r.userId === user.id) && (
+                  <button type="button" className="btn-ghost"
+                    onClick={() => remove(r.id)}
+                    style={{fontSize:11, color:'var(--danger)'}}>삭제</button>
+                )}
+              </div>
+              <p style={{fontFamily:'var(--font-reading)', fontSize:14, lineHeight:1.8, color:'var(--ink)', whiteSpace:'pre-wrap'}}>{r.text}</p>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+};
+
+Object.assign(window, { LecturesPage, LectureBookingPanel, LectureReviewsSection });

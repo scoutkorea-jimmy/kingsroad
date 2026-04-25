@@ -216,27 +216,26 @@ const ColumnPage = ({ go, user }) => {
               </div>
             )}
 
-            <ol style={{listStyle:'none', padding:0, margin:0}}>
-              {comments.map((cm, i) => (
-                <li key={cm.id || i} style={{padding:'24px 0', borderBottom:'1px solid var(--line)'}}>
-                  <div style={{display:'flex', gap:16, alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
-                    <div style={{display:'flex', gap:16, alignItems:'center'}}>
-                      <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em', display:'inline-flex', alignItems:'center'}}>
-                        {cm.author}
-                        <AuthorGradeBadge authorId={cm.authorId} author={cm.author} authorEmail={cm.authorEmail}/>
-                      </span>
-                      <time className="mono dim-2" style={{fontSize:11}}>{cm.date}</time>
-                    </div>
-                    {!!user && (user.isAdmin || cm.authorId === user.id || cm.author === user.name) && (
-                      <button type="button" className="btn-ghost"
-                        onClick={() => removeComment(cm.id)}
-                        style={{fontSize:11, color:'var(--danger)'}}>삭제</button>
-                    )}
-                  </div>
-                  <p style={{fontFamily:'var(--font-reading)', fontSize:15, lineHeight:1.8, color:'var(--ink)'}}>{cm.text}</p>
-                </li>
-              ))}
-            </ol>
+            <CommentTree
+              comments={comments}
+              user={user}
+              onDelete={removeComment}
+              onReply={(parentId, text) => {
+                if (!user || !text.trim()) return;
+                const now = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+                window.WSD_COLUMNS.addComment(c.id, {
+                  id: `comment-${Date.now()}-${Math.random().toString(36).slice(2,4)}`,
+                  author: user.name,
+                  authorId: user.id,
+                  authorEmail: user.email,
+                  date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+                  text: text.trim(),
+                  parentId,
+                });
+                refresh();
+              }}
+            />
           </section>
 
           {/* prev / next */}
