@@ -985,3 +985,43 @@ main time, main .section-eyebrow {
   background: rgba(212,175,55,0.06) !important;
   color: var(--gold) !important;
 }
+
+/* === Navigation mega menu (커뮤니티 hover) === */
+.nav-has-mega:hover .nav-mega,
+.nav-has-mega:focus-within .nav-mega {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* === 전역 본문 폰트 토글 (고딕 / 명조) ============================
+   .app(루트)에서 --font-serif / --font-sans / --font-display / --font-reading
+   네 변수를 한 번에 명조로 바꿔, 인라인 style={{fontFamily:"var(--font-serif)"}}
+   까지 모두 따라오게 만든다. nav/footer/모노는 여전히 모노/명조 가독성 유지. */
+.app.reading-myungjo {
+  --font-serif: 'Nanum Myeongjo', 'ChosunIlboMyungjo', 'Noto Serif KR', serif;
+  --font-sans: 'Nanum Myeongjo', 'ChosunIlboMyungjo', 'Noto Serif KR', serif;
+  --font-display: 'Nanum Myeongjo', 'ChosunIlboMyungjo', 'Noto Serif KR', serif;
+  --font-reading: 'Nanum Myeongjo', 'ChosunIlboMyungjo', 'Noto Serif KR', serif;
+}
+/* 직접 font-family를 잡아둔 곳까지 보장하기 위한 보조 규칙 — nav/footer 포함 */
+.app.reading-myungjo .nav,
+.app.reading-myungjo .nav-link,
+.app.reading-myungjo .footer,
+.app.reading-myungjo .card,
+.app.reading-myungjo p,
+.app.reading-myungjo li,
+.app.reading-myungjo dd,
+.app.reading-myungjo dt,
+.app.reading-myungjo .field-input,
+.app.reading-myungjo .ko-serif {
+  font-family: var(--font-serif) !important;
+}
+/* 모노 라벨 / 브랜드 / 명조 토글 자체는 유지 */
+.app.reading-myungjo .mono,
+.app.reading-myungjo .brand,
+.app.reading-myungjo .read-toggle button {
+  font-family: var(--font-mono) !important;
+}
+.app.reading-myungjo .read-toggle button[style*="ChosunIlboMyungjo"] {
+  font-family: 'ChosunIlboMyungjo', serif !important;
+}

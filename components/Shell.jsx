@@ -1,4 +1,62 @@
-// 공통 컴포넌트: Nav, Footer, Tweaks, Brand, AuthorGradeBadge, NotificationBell
+// 공통 컴포넌트: Nav, Footer, Tweaks, Brand, AuthorGradeBadge, NotificationBell, ScrollToTop
+
+// 페이지 우하단 '맨 위로' 플로팅 버튼 — 일정 거리 이상 스크롤된 후 노출
+const ScrollToTop = () => {
+  const [visible, setVisible] = React.useState(false);
+  const findScroller = () => {
+    // 관리자 페이지는 내부 컨테이너가 따로 스크롤되므로 그쪽도 함께 감시
+    return document.querySelector('main')?.closest('main') || document.documentElement;
+  };
+  const getScrollY = () => {
+    const adminScroller = document.querySelector('div[aria-label="관리자 메뉴"] + div');
+    if (adminScroller) {
+      return Math.max(adminScroller.scrollTop || 0, window.scrollY || 0);
+    }
+    return window.scrollY || 0;
+  };
+  React.useEffect(() => {
+    const onScroll = () => setVisible(getScrollY() > 320);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const adminScroller = document.querySelector('div[aria-label="관리자 메뉴"] + div');
+    if (adminScroller) adminScroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (adminScroller) adminScroller.removeEventListener('scroll', onScroll);
+    };
+  }, []);
+
+  const goTop = () => {
+    const adminScroller = document.querySelector('div[aria-label="관리자 메뉴"] + div');
+    if (adminScroller && adminScroller.scrollTop > 0) {
+      adminScroller.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (!visible) return null;
+  return (
+    <button
+      type="button"
+      onClick={goTop}
+      aria-label="맨 위로"
+      title="맨 위로"
+      style={{
+        position: 'fixed', right: 24, bottom: 28, zIndex: 60,
+        width: 48, height: 48,
+        background: 'var(--bg-2)', color: 'var(--gold)',
+        border: '1px solid var(--gold-dim)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+        cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: 'var(--font-serif)',
+        fontSize: 22,
+      }}>
+      ↑
+    </button>
+  );
+};
+
 
 // 작성자 등급 배지 — 게시글/댓글 작성자 옆에 인라인으로 표시
 const AuthorGradeBadge = ({ authorId, author, authorEmail, size = "sm" }) => {
@@ -165,23 +223,75 @@ const Brand = ({ onClick }) => (
 const Nav = ({ route, go, user, onLogout, readFont, setReadFont }) => {
   const items = [
     { key: "home", label: "홈" },
-    { key: "community", label: "커뮤니티" },
+    { key: "community", label: "커뮤니티", subRouteKey: "community" },
+    { key: "lectures", label: "강연" },
     { key: "tour", label: "투어 프로그램" },
     { key: "column", label: "뱅기노자 칼럼" },
     { key: "book", label: "왕의길" },
   ];
+  // 커뮤니티 메가메뉴: WSD_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
+  const userLevel = window.WSD_USER_LEVEL ? window.WSD_USER_LEVEL(user) : (user ? 10 : 0);
+  const communityBoards = (window.WSD_STORES?.categories || [])
+    .filter((c) => c.boardType === 'community' && userLevel >= (c.minLevel ?? 0));
+
+  const goBoard = (boardId) => {
+    try { sessionStorage.setItem('wsd_pending_board_id', boardId); } catch {}
+    go('community');
+  };
+
   return (
     <nav className="nav" aria-label="주 메뉴">
       <div className="container nav-inner">
         <Brand onClick={() => go("home")} />
         <ul className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>
           {items.map(it => (
-            <li key={it.key}>
+            <li key={it.key} style={{position:'relative'}} className={it.key === 'community' ? 'nav-has-mega' : ''}>
               <button
                 type="button"
                 className={`nav-link ${route === it.key ? "active" : ""}`}
                 aria-current={route === it.key ? "page" : undefined}
                 onClick={() => go(it.key)}>{it.label}</button>
+              {it.key === 'community' && communityBoards.length > 0 && (
+                <div className="nav-mega" role="menu" aria-label="게시판 목록"
+                  style={{
+                    position:'absolute', top:'100%', left:'50%', transform:'translateX(-50%)',
+                    minWidth:220, padding:'10px 0',
+                    background:'var(--bg-2)', border:'1px solid var(--line)',
+                    boxShadow:'0 16px 40px rgba(0,0,0,0.55)',
+                    visibility:'hidden', opacity:0, transition:'opacity .12s ease',
+                    zIndex:50,
+                  }}>
+                  <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>BOARDS</div>
+                  <ul style={{listStyle:'none', margin:0, padding:0}}>
+                    {communityBoards.map((b) => (
+                      <li key={b.id}>
+                        <button type="button" role="menuitem"
+                          onClick={() => goBoard(b.id)}
+                          style={{
+                            display:'block', width:'100%', textAlign:'left',
+                            padding:'8px 16px', fontSize:13,
+                            background:'transparent', color:'var(--ink-2)', border:'none', cursor:'pointer',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(212,175,55,0.06)'; e.currentTarget.style.color = 'var(--gold)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-2)'; }}>
+                          <span>{b.label}</span>
+                          {b.desc && <span className="dim-2 mono" style={{display:'block', fontSize:10, marginTop:2, letterSpacing:'0.05em'}}>{b.desc}</span>}
+                        </button>
+                      </li>
+                    ))}
+                    <li style={{borderTop:'1px solid var(--line)', marginTop:6, paddingTop:6}}>
+                      <button type="button" role="menuitem"
+                        onClick={() => go('community')}
+                        style={{
+                          display:'block', width:'100%', textAlign:'left',
+                          padding:'8px 16px', fontSize:12, letterSpacing:'0.18em',
+                          background:'transparent', color:'var(--gold)', border:'none', cursor:'pointer',
+                          fontFamily:'var(--font-mono)',
+                        }}>전체 보기 →</button>
+                    </li>
+                  </ul>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -360,4 +470,4 @@ const Tweaks = ({ tweaks, setTweaks, visible }) => {
   );
 };
 
-Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell });
+Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell, ScrollToTop });

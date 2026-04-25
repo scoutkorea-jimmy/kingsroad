@@ -158,6 +158,7 @@ const App = () => {
       <main id="main" tabIndex="-1" style={{flex:1, outline:'none'}} aria-label={`${route} 페이지 본문`}>{page}</main>
       {!hideNav && <Footer go={go}/>}
       <Tweaks tweaks={tweaks} setTweaks={updateTweaks} visible={editMode}/>
+      <ScrollToTop/>
     </div>
   );
 };

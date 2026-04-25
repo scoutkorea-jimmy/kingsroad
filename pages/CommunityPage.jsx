@@ -201,6 +201,13 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       try { sessionStorage.removeItem('wsd_pending_post_id'); } catch {}
       setPostId(pending);
     }
+    // 내비 메가메뉴에서 들어온 게시판 ID
+    let pendingBoard = null;
+    try { pendingBoard = sessionStorage.getItem('wsd_pending_board_id'); } catch {}
+    if (pendingBoard) {
+      try { sessionStorage.removeItem('wsd_pending_board_id'); } catch {}
+      setTab(pendingBoard);
+    }
   }, []);
 
   const allPosts = React.useMemo(() => {

@@ -397,6 +397,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.015.000",
+    date: "2026-04-25",
+    summary: "사이트 전반의 UX 개선 묶음을 출시했습니다. 관리자 버전 기록을 10건씩 페이지네이션하고 총 개수 요약을 상단에 노출, 우하단 '맨 위로' 플로팅 버튼 추가, 내비 `커뮤니티`에 마우스를 올리면 게시판 서브메뉴가 펼쳐지고, 헤더의 `고딕 / 명조` 토글이 사이트 전체(헤더·푸터·카드 포함) 본문 폰트에 적용되도록 확장했습니다. 카테고리 관리 화면에서는 게시판 제목과 설명을 인라인으로 직접 수정할 수 있습니다.",
+    details: [
+      "관리자 버전 기록 탭에 10건/페이지 페이지네이션 추가 + 상단에 총 N개 요약 / 최신 버전 표시.",
+      "공통 ScrollToTop 컴포넌트 신설 — 320px 이상 스크롤 시 우하단 ↑ 플로팅 버튼 노출. 일반 화면과 관리자 내부 스크롤 컨테이너를 모두 감지.",
+      "내비 `커뮤니티` 항목에 hover/포커스 시 게시판 서브메뉴(메가메뉴) 표시. WSD_STORES.categories 중 사용자 등급으로 볼 수 있는 항목을 자동 노출하고 클릭 시 sessionStorage(`wsd_pending_board_id`) 경유로 해당 게시판 탭이 선택됨.",
+      "관리자 카테고리 패널에서 게시판 설명(desc)도 인라인 편집 가능. 제목(label)은 기존대로 인라인 수정.",
+      "`고딕 / 명조` 토글이 .app 루트의 `--font-serif` / `--font-sans` / `--font-display` / `--font-reading` 네 변수를 동시에 명조로 바꿔 nav·footer·카드·홈·강연 등 인라인 style의 var(--font-serif)까지 따라오도록 확장. 모노 / 브랜드 / 토글 자체는 유지.",
+      "내비 menu에 `강연` 진입점을 추가해 강연 라우트 접근성을 높임.",
+    ],
+    context: "Cycle 3 출시 직후 사용자가 다섯 가지 UX 개선을 한 번에 요청해, 결제 인프라처럼 깊이 작업할 거리는 아니지만 사이트 전반에 영향을 주는 항목들을 한 PR로 묶어 처리했습니다. 특히 폰트 토글은 기존에 main 안쪽만 적용되던 한계가 있어 CSS 변수 단위에서 갈아끼우는 방식으로 바꿔, 향후 인라인 style을 추가해도 자동으로 따라오게 만들었습니다.",
+  },
+  {
     version: "00.014.000",
     date: "2026-04-25",
     summary: "Cycle 3(뱅기노자 강연 운영) 출시. 회원 전용 강연 신청, 무통장 입금 결제(PG 도입 전 임시), 관리자 입금 확인 → 참가 확정, 정원/대기열 자동 처리, .ics 캘린더 다운로드, 마이페이지 내 신청 내역, 관리자 강연 탭 + 계좌번호 설정까지 한 PR에 묶었습니다.",
@@ -1762,6 +1776,7 @@ const AdminPage = ({ go }) => {
   const [postSearch, setPostSearch] = React.useState("");
   const [postFilter, setPostFilter] = React.useState("all");
   const [postRefreshKey, setPostRefreshKey] = React.useState(0);
+  const [versionPage, setVersionPage] = React.useState(1);
 
   const allCommunityPosts = React.useMemo(() => window.WSD_COMMUNITY.listPosts(), [postRefreshKey]);
   const allUsers = React.useMemo(() => window.WSD_AUTH.listUsers(), [postRefreshKey]);
@@ -1938,42 +1953,86 @@ const AdminPage = ({ go }) => {
           </>
         )}
 
-        {tab === "버전 기록" && (
-          <div style={{display:'grid', gap:16}}>
-            {ADMIN_VERSION_HISTORY.map((entry) => (
-              <article key={entry.version} className="card card-gold" style={{padding:24}}>
-                <div style={{display:'flex', justifyContent:'space-between', gap:16, alignItems:'start', marginBottom:16, flexWrap:'wrap'}}>
-                  <div>
-                    <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>VERSION LOG</div>
-                    <h2 className="ko-serif" style={{fontSize:24}}>{entry.version}</h2>
-                  </div>
-                  <div className="mono dim-2" style={{fontSize:11}}>{entry.date}</div>
-                </div>
-
-                <div style={{marginBottom:18}}>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>핵심 수정사항</div>
-                  <p className="dim" style={{fontSize:13, lineHeight:1.8}}>{entry.summary}</p>
-                </div>
-
-                <div style={{marginBottom:18}}>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>세부 업데이트 내역</div>
-                  <div style={{display:'grid', gap:8}}>
-                    {entry.details.map((detail) => (
-                      <div key={detail} className="card" style={{padding:14}}>{detail}</div>
-                    ))}
-                  </div>
-                </div>
-
+        {tab === "버전 기록" && (() => {
+          const VERSIONS_PER_PAGE = 10;
+          const total = ADMIN_VERSION_HISTORY.length;
+          const totalPages = Math.max(1, Math.ceil(total / VERSIONS_PER_PAGE));
+          const safePage = Math.min(versionPage, totalPages);
+          const start = (safePage - 1) * VERSIONS_PER_PAGE;
+          const slice = ADMIN_VERSION_HISTORY.slice(start, start + VERSIONS_PER_PAGE);
+          const latest = ADMIN_VERSION_HISTORY[0];
+          return (
+            <div style={{display:'grid', gap:16}}>
+              <div className="card" style={{padding:18, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16, flexWrap:'wrap'}}>
                 <div>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>수정 계기와 배경</div>
-                  <div className="card" style={{padding:14}}>
-                    <p className="dim" style={{fontSize:13, lineHeight:1.8}}>{entry.context}</p>
+                  <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:6}}>VERSION HISTORY</div>
+                  <div style={{fontSize:14, lineHeight:1.6}}>
+                    총 <span className="ko-serif gold-2" style={{fontSize:20}}>{total}</span>개 버전 기록
+                    {latest && <span className="dim-2 mono" style={{fontSize:11, marginLeft:10}}>최신 {latest.version} · {latest.date}</span>}
                   </div>
                 </div>
-              </article>
-            ))}
-          </div>
-        )}
+                <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.16em'}}>
+                  {safePage} / {totalPages} 페이지 · {start + 1}–{Math.min(start + VERSIONS_PER_PAGE, total)}건 표시
+                </div>
+              </div>
+
+              {slice.map((entry) => (
+                <article key={entry.version} className="card card-gold" style={{padding:24}}>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:16, alignItems:'start', marginBottom:16, flexWrap:'wrap'}}>
+                    <div>
+                      <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>VERSION LOG</div>
+                      <h2 className="ko-serif" style={{fontSize:24}}>{entry.version}</h2>
+                    </div>
+                    <div className="mono dim-2" style={{fontSize:11}}>{entry.date}</div>
+                  </div>
+
+                  <div style={{marginBottom:18}}>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>핵심 수정사항</div>
+                    <p className="dim" style={{fontSize:13, lineHeight:1.8}}>{entry.summary}</p>
+                  </div>
+
+                  <div style={{marginBottom:18}}>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>세부 업데이트 내역</div>
+                    <div style={{display:'grid', gap:8}}>
+                      {entry.details.map((detail) => (
+                        <div key={detail} className="card" style={{padding:14}}>{detail}</div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>수정 계기와 배경</div>
+                    <div className="card" style={{padding:14}}>
+                      <p className="dim" style={{fontSize:13, lineHeight:1.8}}>{entry.context}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+
+              {totalPages > 1 && (
+                <nav aria-label="버전 기록 페이지 이동" style={{display:'flex', justifyContent:'center', alignItems:'center', gap:6, marginTop:8, flexWrap:'wrap'}}>
+                  <button type="button" className="btn btn-small"
+                    onClick={() => setVersionPage(Math.max(1, safePage - 1))}
+                    disabled={safePage <= 1}>← 이전</button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                    <button key={n} type="button" className="btn btn-small"
+                      aria-current={n === safePage ? 'page' : undefined}
+                      onClick={() => setVersionPage(n)}
+                      style={{
+                        borderColor: n === safePage ? 'var(--gold)' : 'var(--line)',
+                        color: n === safePage ? 'var(--gold)' : 'var(--ink-2)',
+                        background: n === safePage ? 'rgba(212,175,55,0.08)' : 'transparent',
+                        minWidth: 36,
+                      }}>{n}</button>
+                  ))}
+                  <button type="button" className="btn btn-small"
+                    onClick={() => setVersionPage(Math.min(totalPages, safePage + 1))}
+                    disabled={safePage >= totalPages}>다음 →</button>
+                </nav>
+              )}
+            </div>
+          );
+        })()}
 
         {tab === "KMS" && (
           <div style={{display:'grid', gap:16}}>
@@ -2841,7 +2900,10 @@ const AdminCategoryPanel = () => {
                 <input type="number" className="field-input" style={{padding:'4px 8px', width:70, textAlign:'right'}}
                   value={c.postMinLevel ?? 0} onChange={e => update(i, 'postMinLevel', e.target.value)}/>
               </td>
-              <td style={{padding:10, fontSize:11}} className="dim">{c.desc}</td>
+              <td style={{padding:10}}>
+                <input className="field-input" style={{padding:'4px 8px'}} value={c.desc || ''}
+                  onChange={e => update(i, 'desc', e.target.value)} placeholder="설명"/>
+              </td>
               <td style={{padding:10, textAlign:'right'}}>
                 <button type="button" className="btn btn-small" onClick={() => remove(i)}
                   style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
