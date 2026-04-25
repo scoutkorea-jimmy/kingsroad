@@ -397,6 +397,23 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.018.000",
+    date: "2026-04-26",
+    summary: "회원·게시판·권한·약관·FAQ·강연 UI·투어 후기까지 한 번에 정리한 운영 인프라 PR입니다. 관리자가 실제 등록 회원의 등급·정지·삭제를 직접 다루고, 게시판은 카드형 추가 + 순서/글 수/권한 매트릭스로 한 화면에서 정비할 수 있게 됐습니다. 약관/개인정보 처리방침과 자주 묻는 질문은 별도 라우트로 노출되며 관리자에서 본문을 직접 편집합니다. 강연 페이지는 투어와 같은 탭+스티키 사이드바 UI로 재구조됐고, 투어 페이지에는 참여 후기 영역이 도입됐습니다.",
+    details: [
+      "`WSD_AUTH` 확장 — `setGrade(userId, gradeId)`, `toggleAdmin`, `suspendUser(reason)`, `unsuspendUser`, `removeUser`, `getActivity`. 정지된 사용자는 `signIn`이 거부.",
+      "`MemberAdminPanel` 신설 — 실제 등록 회원 목록(검색·등급 필터·CSV) + 상세에서 등급 즉시 변경(셀렉트), 관리자 권한 토글, 정지/해제, 계정 삭제, 게시글·댓글·북마크·강연·답사·주문 활동 요약과 최근 게시글/주문/강연/답사 리스트.",
+      "`AdminCategoryPanel` 개선 — 카드형 추가 폼(이름 입력 시 ID 자동 생성), 순서 ▲▼ 이동, 게시판별 글 수, 설명 인라인 수정 + `등급 × 게시판` 권한 매트릭스 뷰(읽기/쓰기 ✓/·).",
+      "`WSD_LEGAL` + `LegalAdminPanel` + `LegalPage` 신설 — 개인정보 처리방침/이용약관을 Tiptap 에디터로 편집, `wsd_legal_docs` 저장소. 푸터 버튼이 `privacy` / `terms` 라우트로 연결.",
+      "`WSD_FAQ` + `FaqAdminPanel` + `FaqPage` 신설 — FAQ 추가/수정/삭제/순서 변경, 카테고리별 그룹·검색 + 아코디언 형태로 공개. 푸터 `자주 묻는 질문` 버튼이 `faq` 라우트로 연결.",
+      "`LecturesPage` 전면 재구조 — `TourPage`와 동일한 탭 + 좌측 본문(이미지·진행 흐름·참고) + 우측 스티키 `LectureBookingPanel`(잔여/대기 + 신청 폼 + 무통장 입금 안내 + 본인 상태 카드 + .ics).",
+      "`TourPage` 하단에 `TourReviewsSection` 추가 — 참가 확정 회원만 별점 + 후기 작성, 평균 평점 + 별 표시, 본인/관리자 삭제 가능.",
+      "`CommunityPage` 상단에 `MY ACCESS` 배너 — 현재 등급(컬러 배지)·레벨·읽기 가능/쓰기 가능 게시판 수와 이름 노출(비로그인은 비로그인 안내).",
+      "관리자 사이드바 운영 설정 그룹에 `약관/개인정보` · `자주 묻는 질문` 탭 추가. KMS 미션 영역들도 새 운영 자산을 반영하도록 업데이트.",
+    ],
+    context: "Cycle 1~5에서 5개 미션의 운영 사이클이 모두 닫혔으니, 다음 자연스러운 단계는 운영자가 실제로 매일 만지는 '회원/게시판/약관/FAQ' 관리 흐름을 정리하는 것이었습니다. 회원 패널이 가짜 PRIVACY 목 데이터에 묶여 있던 한계를 풀고, 게시판은 추가/삭제/순서 변경·권한 매트릭스를 한 화면에서 제공하도록 개선했습니다. 약관/개인정보 처리방침과 FAQ는 코드 수정 없이 운영자가 직접 갱신할 수 있어야 운영 신뢰가 누적되므로 별도 저장소와 편집기를 도입했습니다. 강연 UI는 투어와 같은 패턴이 더 일관된다는 판단으로 통일했고, 투어 후기는 신청 → 참가 → 후기로 이어지는 사이클의 마지막 고리를 메우는 작업입니다.",
+  },
+  {
     version: "00.017.000",
     date: "2026-04-25",
     summary: "Cycle 5(투어 판매·운영) 출시와 공통 인프라 강화를 한 묶음으로 진행했습니다. 투어가 카탈로그였던 상태에서 회원 전용 신청 → 무통장 입금 → 관리자 입금 확인 → 참가 확정 사이클로 닫혔고, 정원·대기열·.ics·URL 해시 딥 링크까지 강연/책과 같은 패턴으로 정렬됐습니다. 동시에 강연/책/투어의 상태 변화가 사용자에게 자동 알림으로 전달되는 통합 알림 인프라가 도입됐고, 장바구니가 새로고침에도 유지되도록 localStorage 영속화가 들어갔습니다.",
@@ -2189,11 +2206,488 @@ const BookOrderAdminPanel = ({ go }) => {
   );
 };
 
+// === Legal Documents Admin Panel (Privacy / Terms) ================
+const LegalAdminPanel = () => {
+  const [slug, setSlug] = React.useState('privacy');
+  const [tick, setTick] = React.useState(0);
+  const doc = React.useMemo(() => window.WSD_LEGAL.get(slug) || { title: '', body: '' }, [slug, tick]);
+  const [title, setTitle] = React.useState(doc.title);
+  const [body, setBody] = React.useState(doc.body);
+  const [editorKey, setEditorKey] = React.useState(0);
+  const [msg, setMsg] = React.useState('');
+
+  React.useEffect(() => {
+    setTitle(doc.title || '');
+    setBody(doc.body || '');
+    setEditorKey((k) => k + 1);
+    setMsg('');
+  }, [slug, tick]);
+
+  const save = (e) => {
+    e.preventDefault();
+    if (!title.trim()) { setMsg('제목을 입력해 주세요.'); return; }
+    window.WSD_LEGAL.save(slug, { title: title.trim(), body });
+    setMsg('저장되었습니다.');
+    setTick((v) => v + 1);
+    setTimeout(() => setMsg(''), 2000);
+  };
+
+  const SLUG_LABEL = { privacy: '개인정보 처리방침', terms: '이용약관' };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        사이트 푸터의 <strong className="gold">이용약관</strong>·<strong className="gold">개인정보 처리방침</strong> 페이지에 그대로 노출되는 본문을 직접 편집합니다.
+      </p>
+
+      <div style={{display:'flex', gap:8, marginBottom:18, flexWrap:'wrap'}}>
+        {window.WSD_LEGAL.listSlugs().map((s) => (
+          <button key={s} type="button" className="btn btn-small"
+            onClick={() => setSlug(s)}
+            style={{
+              borderColor: slug === s ? 'var(--gold)' : 'var(--line)',
+              color: slug === s ? 'var(--gold)' : 'var(--ink-2)',
+              background: slug === s ? 'rgba(212,175,55,0.06)' : 'transparent',
+            }}>
+            {SLUG_LABEL[s] || s}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={save} className="card" style={{padding:20}}>
+        <div className="field">
+          <label className="field-label" htmlFor="legal-title">문서 제목</label>
+          <input id="legal-title" className="field-input" value={title}
+            onChange={(e) => setTitle(e.target.value)}/>
+        </div>
+        <div className="field">
+          <label className="field-label">본문</label>
+          <TiptapEditor key={editorKey} preset="column"
+            content={doc.body || ''}
+            onUpdate={(html) => setBody(html)}
+            placeholder="문서 본문을 입력합니다. 이미지·링크·인용·목록을 지원합니다."/>
+        </div>
+        {doc.updatedAt && (
+          <div className="dim-2 mono" style={{fontSize:11, marginBottom:14}}>최근 수정 · {new Date(doc.updatedAt).toLocaleString('ko-KR')}</div>
+        )}
+        {msg && (
+          <div role="status" className="mono gold" style={{fontSize:12, marginBottom:14, padding:'8px 12px', border:'1px solid var(--gold-dim)', background:'rgba(212,175,55,0.06)'}}>
+            {msg}
+          </div>
+        )}
+        <div style={{display:'flex', gap:8, justifyContent:'flex-end', borderTop:'1px solid var(--line)', paddingTop:14}}>
+          <button type="submit" className="btn btn-gold">저장</button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+// === FAQ Admin Panel ==============================================
+const FaqAdminPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const [draft, setDraft] = React.useState({ question:'', answer:'', category:'일반' });
+  const [error, setError] = React.useState('');
+  const refresh = () => setTick((v) => v + 1);
+  const faqs = React.useMemo(() => window.WSD_FAQ.listAll(), [tick]);
+
+  const add = (e) => {
+    e.preventDefault();
+    setError('');
+    const next = window.WSD_FAQ.add(draft);
+    if (!next) { setError('질문과 답변은 필수입니다.'); return; }
+    setDraft({ question:'', answer:'', category: draft.category || '일반' });
+    refresh();
+  };
+
+  const update = (id, patch) => { window.WSD_FAQ.update(id, patch); refresh(); };
+  const move = (id, dir) => { window.WSD_FAQ.reorder(id, dir); refresh(); };
+  const remove = (id) => {
+    if (!confirm('이 FAQ를 삭제하시겠어요?')) return;
+    window.WSD_FAQ.remove(id);
+    refresh();
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        자주 묻는 질문(FAQ)을 추가·수정·정렬합니다. 푸터의 <strong className="gold">자주 묻는 질문</strong>에 카테고리별로 묶여 노출됩니다.
+      </p>
+
+      <article className="card" style={{padding:18, marginBottom:20}}>
+        <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>NEW FAQ</div>
+        <form onSubmit={add} style={{display:'grid', gap:10}}>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 200px', gap:10}}>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">질문 <span className="gold" aria-hidden="true">*</span></label>
+              <input className="field-input" value={draft.question}
+                onChange={(e) => setDraft({ ...draft, question: e.target.value })}/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">카테고리</label>
+              <input className="field-input" value={draft.category}
+                onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+                placeholder="계정 / 결제 / 강연 / 답사 ..."/>
+            </div>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">답변 <span className="gold" aria-hidden="true">*</span></label>
+            <textarea className="field-input" rows={3} value={draft.answer}
+              onChange={(e) => setDraft({ ...draft, answer: e.target.value })}/>
+          </div>
+          {error && <div role="alert" className="mono" style={{color:'var(--danger)', fontSize:11}}>{error}</div>}
+          <div style={{display:'flex', justifyContent:'flex-end'}}>
+            <button type="submit" className="btn btn-gold btn-small">＋ FAQ 추가</button>
+          </div>
+        </form>
+      </article>
+
+      {faqs.length === 0 ? (
+        <div className="card dim" style={{padding:32, textAlign:'center'}}>등록된 FAQ가 없습니다.</div>
+      ) : (
+        <div style={{display:'grid', gap:10}}>
+          {faqs.map((f, i) => (
+            <article key={f.id} className="card" style={{padding:16}}>
+              <div style={{display:'flex', justifyContent:'space-between', gap:10, alignItems:'baseline', flexWrap:'wrap', marginBottom:8}}>
+                <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em'}}>#{String(i+1).padStart(2,'0')} · {f.category || '일반'}</span>
+                <div style={{display:'flex', gap:4, alignItems:'center'}}>
+                  <button type="button" className="btn btn-small" onClick={() => move(f.id, -1)} disabled={i === 0}
+                    style={{padding:'2px 6px', minHeight:0, fontSize:11}} aria-label="위로">▲</button>
+                  <button type="button" className="btn btn-small" onClick={() => move(f.id, 1)} disabled={i === faqs.length - 1}
+                    style={{padding:'2px 6px', minHeight:0, fontSize:11}} aria-label="아래로">▼</button>
+                  <button type="button" className="btn btn-small" onClick={() => remove(f.id)}
+                    style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:6}}>삭제</button>
+                </div>
+              </div>
+              <div className="field" style={{marginBottom:8}}>
+                <input className="field-input" value={f.question}
+                  onChange={(e) => update(f.id, { question: e.target.value })} placeholder="질문"/>
+              </div>
+              <div className="field" style={{margin:0}}>
+                <textarea className="field-input" rows={2} value={f.answer}
+                  onChange={(e) => update(f.id, { answer: e.target.value })} placeholder="답변"/>
+              </div>
+              <div className="field" style={{margin:'8px 0 0', maxWidth:240}}>
+                <input className="field-input" value={f.category || ''}
+                  onChange={(e) => update(f.id, { category: e.target.value })} placeholder="카테고리"/>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// === Member Admin Panel ===========================================
+const MemberAdminPanel = ({ go }) => {
+  const [tick, setTick] = React.useState(0);
+  const [selectedId, setSelectedId] = React.useState(null);
+  const [search, setSearch] = React.useState("");
+  const [gradeFilter, setGradeFilter] = React.useState('all');
+  const refresh = () => setTick((v) => v + 1);
+
+  const users = React.useMemo(() => window.WSD_AUTH.listUsers(), [tick]);
+  const grades = (window.WSD_STORES?.grades || []);
+  const filtered = users.filter((u) => {
+    if (gradeFilter !== 'all') {
+      const isAdminFilter = gradeFilter === 'admin';
+      if (isAdminFilter && !u.isAdmin) return false;
+      if (!isAdminFilter && u.gradeId !== gradeFilter) return false;
+    }
+    if (search) {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return String(u.name || '').toLowerCase().includes(q)
+        || String(u.email || '').toLowerCase().includes(q)
+        || String(u.id || '').toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const selected = users.find((u) => u.id === selectedId) || null;
+  const activity = selected ? window.WSD_AUTH.getActivity(selected.id) : null;
+
+  const exportCsv = () => {
+    const header = ['id','name','email','gradeId','isAdmin','suspended','joinedAt','postCount','commentCount','bookOrders','lectures','tours'];
+    const rows = users.map((u) => {
+      const a = window.WSD_AUTH.getActivity(u.id) || {};
+      return [u.id, u.name, u.email, u.gradeId, u.isAdmin ? 'Y' : 'N', u.suspended ? 'Y' : 'N', u.joinedAt || '', a.postCount || 0, a.commentCount || 0, (a.bookOrders||[]).length, (a.lectures||[]).length, (a.tours||[]).length];
+    });
+    const csv = [header, ...rows].map((row) => row.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `members-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const changeGrade = (user, gradeId) => {
+    window.WSD_AUTH.setGrade(user.id, gradeId);
+    refresh();
+  };
+  const toggleAdmin = (user) => {
+    if (!confirm(`${user.name} 님의 관리자 권한을 ${user.isAdmin ? '해제' : '부여'}하시겠어요?`)) return;
+    window.WSD_AUTH.toggleAdmin(user.id);
+    refresh();
+  };
+  const suspendUser = (user) => {
+    const reason = prompt('정지 사유 (선택)', '');
+    if (reason === null) return;
+    window.WSD_AUTH.suspendUser(user.id, reason || '');
+    refresh();
+  };
+  const unsuspend = (user) => {
+    if (!confirm(`${user.name} 님의 정지를 해제하시겠어요?`)) return;
+    window.WSD_AUTH.unsuspendUser(user.id);
+    refresh();
+  };
+  const deleteUser = (user) => {
+    if (user.email === 'admin@admin.admin') { alert('기본 관리자 계정은 삭제할 수 없습니다.'); return; }
+    if (!confirm(`${user.name} (${user.email}) 계정을 정말 삭제하시겠어요? 이 작업은 되돌릴 수 없습니다.`)) return;
+    window.WSD_AUTH.removeUser(user.id);
+    setSelectedId(null);
+    refresh();
+  };
+
+  const gradeOf = (id) => grades.find((g) => g.id === id);
+  const formatDate = (iso) => {
+    if (!iso) return '-';
+    try { return new Date(iso).toLocaleString('ko-KR'); } catch { return iso; }
+  };
+
+  // ── 상세 ──
+  if (selected && activity) {
+    return (
+      <div>
+        <button type="button" className="btn btn-small" onClick={() => setSelectedId(null)} style={{marginBottom:20}}>← 회원 목록</button>
+
+        <article className="card" style={{padding:24, marginBottom:18}}>
+          <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:12}}>
+            <div>
+              <h2 className="ko-serif" style={{fontSize:24, marginBottom:4}}>
+                {selected.name}
+                <AuthorGradeBadge authorId={selected.id} author={selected.name} authorEmail={selected.email}/>
+              </h2>
+              <div className="mono dim-2" style={{fontSize:11}}>#{selected.id} · {selected.email}</div>
+            </div>
+            <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+              {selected.isAdmin && <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--gold)', border:'1px solid var(--gold-dim)', padding:'2px 8px'}}>ADMIN</span>}
+              {selected.suspended && <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--danger)', border:'1px solid var(--danger)', padding:'2px 8px'}}>SUSPENDED</span>}
+            </div>
+          </div>
+
+          <div style={{display:'grid', gridTemplateColumns:'180px 1fr', gap:'8px 24px', fontSize:13, lineHeight:1.8}}>
+            <dt className="dim-2 mono" style={{fontSize:11}}>가입일</dt><dd>{formatDate(selected.joinedAt)}</dd>
+            <dt className="dim-2 mono" style={{fontSize:11}}>회원 등급</dt>
+            <dd>
+              <select className="field-input" style={{maxWidth:240, padding:'4px 8px'}} value={selected.gradeId || ''}
+                onChange={(e) => changeGrade(selected, e.target.value)}>
+                {grades.map((g) => (
+                  <option key={g.id} value={g.id}>{g.label} (Lv {g.level})</option>
+                ))}
+              </select>
+              {selected.gradeChangedAt && <span className="dim-2 mono" style={{fontSize:10, marginLeft:8}}>최근 변경 {formatDate(selected.gradeChangedAt)}</span>}
+            </dd>
+            <dt className="dim-2 mono" style={{fontSize:11}}>관리자 권한</dt>
+            <dd>
+              <button type="button" className="btn btn-small" onClick={() => toggleAdmin(selected)}>
+                {selected.isAdmin ? '관리자 권한 해제' : '관리자 권한 부여'}
+              </button>
+            </dd>
+            <dt className="dim-2 mono" style={{fontSize:11}}>활성 동의</dt>
+            <dd>{selected.consents ? Object.entries(selected.consents).filter(([, v]) => v).map(([k]) => (
+              <span key={k} className="badge" style={{marginRight:6}}>{k}</span>
+            )) : '-'}</dd>
+            {selected.profile && Object.keys(selected.profile).length > 0 && (
+              <>
+                <dt className="dim-2 mono" style={{fontSize:11}}>프로필</dt>
+                <dd>
+                  <pre style={{fontSize:11, lineHeight:1.6, fontFamily:'var(--font-mono)', background:'var(--bg-2)', padding:10, overflow:'auto'}}>
+                    {JSON.stringify(selected.profile, null, 2)}
+                  </pre>
+                </dd>
+              </>
+            )}
+            {selected.suspended && selected.suspendedReason && (
+              <>
+                <dt className="dim-2 mono" style={{fontSize:11}}>정지 사유</dt>
+                <dd className="dim">{selected.suspendedReason}</dd>
+              </>
+            )}
+          </div>
+
+          <div style={{marginTop:24, display:'flex', gap:8, flexWrap:'wrap'}}>
+            {selected.suspended ? (
+              <button type="button" className="btn btn-small" onClick={() => unsuspend(selected)}>정지 해제</button>
+            ) : (
+              <button type="button" className="btn btn-small" onClick={() => suspendUser(selected)}
+                style={{borderColor:'var(--danger)', color:'var(--danger)'}}>계정 정지</button>
+            )}
+            <button type="button" className="btn btn-small" onClick={() => deleteUser(selected)}
+              style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>계정 삭제</button>
+          </div>
+        </article>
+
+        {/* 활동 요약 */}
+        <article className="card" style={{padding:20, marginBottom:18}}>
+          <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>ACTIVITY</div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:12}}>
+            {[
+              { l: '게시글', v: activity.postCount },
+              { l: '댓글', v: activity.commentCount },
+              { l: '북마크', v: activity.bookmarkCount },
+              { l: '책 주문', v: activity.bookOrders.length },
+              { l: '강연 신청', v: activity.lectures.length },
+              { l: '답사 신청', v: activity.tours.length },
+              { l: '받은 알림', v: activity.notifications.length },
+            ].map((s) => (
+              <div key={s.l} className="card" style={{padding:12}}>
+                <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:4}}>{s.l}</div>
+                <div className="ko-serif gold-2" style={{fontSize:24}}>{s.v}</div>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        {/* 활동 상세 — 게시글 */}
+        {activity.postCount > 0 && (
+          <article className="card" style={{padding:20, marginBottom:18}}>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>POSTS · {activity.postCount}</div>
+            <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
+              {activity.posts.slice(0, 8).map((p) => (
+                <li key={p.id} style={{display:'flex', justifyContent:'space-between', gap:12, fontSize:12, padding:'6px 0', borderBottom:'1px solid var(--line)'}}>
+                  <span className="ko-serif">{p.title}</span>
+                  <span className="mono dim-2">{p.date}</span>
+                </li>
+              ))}
+              {activity.posts.length > 8 && (
+                <li className="dim-2 mono" style={{fontSize:11, textAlign:'right'}}>외 {activity.posts.length - 8}건</li>
+              )}
+            </ul>
+          </article>
+        )}
+
+        {activity.bookOrders.length > 0 && (
+          <article className="card" style={{padding:20, marginBottom:18}}>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>BOOK ORDERS · {activity.bookOrders.length}</div>
+            <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
+              {activity.bookOrders.slice(0, 8).map((o) => (
+                <li key={o.id} style={{display:'flex', justifyContent:'space-between', gap:12, fontSize:12, padding:'6px 0', borderBottom:'1px solid var(--line)'}}>
+                  <span className="mono">{o.orderNo}</span>
+                  <span>{o.version === 'KR' ? '국문' : '영문'} × {o.qty} · <span className="gold">{o.total.toLocaleString()}원</span></span>
+                  <span className="mono dim-2">{o.status}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        )}
+
+        {(activity.lectures.length > 0 || activity.tours.length > 0) && (
+          <article className="card" style={{padding:20}}>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>LECTURES & TOURS</div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:14}} className="member-act-grid">
+              <div>
+                <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.18em', marginBottom:6}}>강연 신청 · {activity.lectures.length}</div>
+                <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:4}}>
+                  {activity.lectures.slice(0, 6).map((r) => (
+                    <li key={r.id} style={{fontSize:12, lineHeight:1.6}}>· {r.lecture?.topic || '강연'} <span className="dim-2 mono" style={{fontSize:10}}>· {r.status}</span></li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.18em', marginBottom:6}}>답사 신청 · {activity.tours.length}</div>
+                <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:4}}>
+                  {activity.tours.slice(0, 6).map((r) => (
+                    <li key={r.id} style={{fontSize:12, lineHeight:1.6}}>· {r.tour?.title || '답사'} <span className="dim-2 mono" style={{fontSize:10}}>· {r.status}</span></li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </article>
+        )}
+      </div>
+    );
+  }
+
+  // ── 목록 ──
+  return (
+    <div>
+      <div style={{display:'flex', gap:12, marginBottom:16, alignItems:'center', flexWrap:'wrap'}}>
+        <input className="field-input" placeholder="이름·이메일 검색..." style={{flex:1, minWidth:240}}
+          value={search} onChange={(e) => setSearch(e.target.value)}/>
+        <select className="field-input" style={{maxWidth:200}}
+          value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value)}>
+          <option value="all">전체 등급</option>
+          <option value="admin">관리자만</option>
+          {grades.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
+        </select>
+        <span className="mono dim-2" style={{fontSize:11}}>총 {users.length}명 · 표시 {filtered.length}명</span>
+        <button type="button" className="btn btn-small" onClick={exportCsv}>CSV 다운로드</button>
+      </div>
+
+      <p className="dim" style={{fontSize:12, marginBottom:14}}>
+        회원 이메일/이름은 <strong className="gold">개인식별정보(PII)</strong>입니다. 등급 변경·정지·삭제는 즉시 반영되며,
+        본인이 로그인 중이면 세션도 자동으로 갱신/종료됩니다.
+      </p>
+
+      <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+        <thead>
+          <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>이름</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>이메일</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>등급</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>가입일</th>
+            <th scope="col" style={{padding:12, textAlign:'right'}}>활동</th>
+            <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((u) => {
+            const g = gradeOf(u.gradeId);
+            const a = window.WSD_AUTH.getActivity(u.id) || {};
+            const activitySummary = `글 ${a.postCount || 0} · 댓글 ${a.commentCount || 0} · 주문 ${(a.bookOrders||[]).length} · 강연 ${(a.lectures||[]).length} · 답사 ${(a.tours||[]).length}`;
+            return (
+              <tr key={u.id} style={{borderBottom:'1px solid var(--line)'}}>
+                <td style={{padding:12}}>
+                  <button type="button" onClick={() => setSelectedId(u.id)}
+                    style={{all:'unset', cursor:'pointer'}}>
+                    <span className="ko-serif" style={{fontSize:14}}>{u.name}</span>
+                    {u.isAdmin && <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color:'var(--gold)', marginLeft:8}}>ADMIN</span>}
+                    {u.suspended && <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color:'var(--danger)', marginLeft:8}}>정지</span>}
+                  </button>
+                </td>
+                <td className="mono dim-2" style={{padding:12, fontSize:11}}>{u.email}</td>
+                <td style={{padding:12}}>
+                  {g && (
+                    <span className="mono" style={{fontSize:10, letterSpacing:'0.14em', color: g.color || 'var(--gold)', border:`1px solid ${g.color || 'var(--gold-dim)'}`, padding:'1px 6px'}}>
+                      {g.label}
+                    </span>
+                  )}
+                </td>
+                <td className="mono dim-2" style={{padding:12, fontSize:11}}>{u.joinedAt ? new Date(u.joinedAt).toLocaleDateString('ko-KR') : '-'}</td>
+                <td className="mono dim-2" style={{padding:12, fontSize:10, textAlign:'right'}}>{activitySummary}</td>
+                <td style={{padding:12, textAlign:'right'}}>
+                  <button type="button" className="btn btn-small" onClick={() => setSelectedId(u.id)}>상세</button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {filtered.length === 0 && (
+        <div className="card dim" style={{padding:32, textAlign:'center', marginTop:14}}>
+          조건에 맞는 회원이 없습니다.
+        </div>
+      )}
+    </div>
+  );
+};
+
 // === Admin Page ===================================================
 const AdminPage = ({ go }) => {
   const data = window.WANGSADEUL_DATA;
   const [tab, setTab] = React.useState("대시보드");
-  const [selectedMember, setSelectedMember] = React.useState(null);
   const [kmsTab, setKmsTab] = React.useState("기능정의서");
   const [postSearch, setPostSearch] = React.useState("");
   const [postFilter, setPostFilter] = React.useState("all");
@@ -2231,7 +2725,7 @@ const AdminPage = ({ go }) => {
     // 홈페이지 내비 순서와 동일하게 정렬: 커뮤니티 → 강연 → 투어 프로그램 → 뱅기노자 칼럼 → 왕의길
     { group: "콘텐츠",   items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성", "왕의길"] },
     { group: "회원",     items: ["회원"] },
-    { group: "운영 설정", items: ["카테고리", "회원 등급"] },
+    { group: "운영 설정", items: ["카테고리", "회원 등급", "약관/개인정보", "자주 묻는 질문"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템",   items: ["버전 기록", "KMS", "설정"] },
   ];
@@ -2294,7 +2788,7 @@ const AdminPage = ({ go }) => {
                 <li key={t}>
                   <button
                     type="button"
-                    onClick={() => { setTab(t); setSelectedMember(null); }}
+                    onClick={() => { setTab(t); }}
                     aria-current={tab === t ? "page" : undefined}
                     style={{
                       width:'100%', textAlign:'left',
@@ -2837,65 +3331,7 @@ const AdminPage = ({ go }) => {
         {tab === "투어 프로그램" && <TourAdminPanel go={go}/>}
 
         {/* 회원 */}
-        {tab === "회원" && (
-          <div>
-            {!selectedMember ? (
-              <>
-                <p className="dim" style={{fontSize:12, marginBottom:16}}>
-                  회원 이메일/이름은 <strong className="gold">개인식별정보(PII)</strong>입니다. 열람 이력은 감사 로그에 자동 기록됩니다.
-                </p>
-                <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
-                  <caption className="sr-only">회원 목록 — 클릭 시 상세 및 개인정보 내보내기</caption>
-                  <thead>
-                    <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
-                      <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
-                      <th scope="col" style={{padding:12, textAlign:'left'}}>닉네임</th>
-                      <th scope="col" style={{padding:12, textAlign:'left'}}>이메일</th>
-                      <th scope="col" style={{padding:12, textAlign:'left'}}>지역(관할법)</th>
-                      <th scope="col" style={{padding:12, textAlign:'left'}}>가입일</th>
-                      <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {PRIVACY_DATA.members.map(m => (
-                      <tr key={m.id} style={{borderBottom:'1px solid var(--line)'}}>
-                        <td className="mono dim-2" style={{padding:14}}>#{m.id}</td>
-                        <td className="ko-serif" style={{padding:14}}>{m.handle}</td>
-                        <td className="mono" style={{padding:14}}>{m.email}</td>
-                        <td style={{padding:14}}><span className="badge" style={{borderColor: m.region==='EU' ? 'var(--gold)' : 'var(--line-2)', color: m.region==='EU' ? 'var(--gold)' : 'var(--ink-2)'}}>{m.region === 'EU' ? 'EU · GDPR' : 'KR · PIPA'}</span></td>
-                        <td className="mono dim-2" style={{padding:14}}>{m.joined}</td>
-                        <td style={{padding:14, textAlign:'right'}}>
-                          <button type="button" className="btn btn-small" onClick={() => setSelectedMember(m)}>상세</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </>
-            ) : (
-              <div className="card">
-                <button type="button" className="btn btn-small" onClick={() => setSelectedMember(null)} style={{marginBottom:20}}>← 목록</button>
-                <h2 className="ko-serif" style={{fontSize:22, marginBottom:4}}>{selectedMember.handle}</h2>
-                <div className="mono dim-2" style={{fontSize:11, marginBottom:24}}>#{selectedMember.id} · {selectedMember.email} · {selectedMember.region === 'EU' ? 'GDPR 관할' : 'PIPA 관할'}</div>
-                <dl style={{display:'grid', gridTemplateColumns:'180px 1fr', gap:'8px 24px', fontSize:13, lineHeight:1.8}}>
-                  <dt className="dim-2 mono" style={{fontSize:11}}>가입일</dt><dd>{selectedMember.joined}</dd>
-                  <dt className="dim-2 mono" style={{fontSize:11}}>활성 동의</dt>
-                  <dd>{selectedMember.consents.map(k => {
-                    const d = PRIVACY_DATA.consentDefs.find(c => c.key === k);
-                    return d ? <span key={k} className="badge" style={{marginRight:6}}>{d.label} {d.version}</span> : null;
-                  })}</dd>
-                </dl>
-                <div style={{marginTop:32, display:'flex', gap:10, flexWrap:'wrap'}}>
-                  <button type="button" className="btn btn-gold btn-small" onClick={() => exportMemberData(selectedMember)}>
-                    개인정보 스냅샷 다운로드 (Art.15 / §35)
-                  </button>
-                  <button type="button" className="btn btn-small">정정 요청 생성</button>
-                  <button type="button" className="btn btn-small" style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제(잊혀질 권리) 처리</button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {tab === "회원" && <MemberAdminPanel go={go}/>}
 
         {/* 왕의길 (책 주문 운영) */}
         {tab === "왕의길" && <BookOrderAdminPanel go={go}/>}
@@ -3164,6 +3600,8 @@ const AdminPage = ({ go }) => {
 
         {/* 카테고리 CRUD */}
         {tab === "카테고리" && <AdminCategoryPanel/>}
+        {tab === "약관/개인정보" && <LegalAdminPanel/>}
+        {tab === "자주 묻는 질문" && <FaqAdminPanel/>}
 
         {/* 회원 등급 CRUD */}
         {tab === "회원 등급" && <AdminGradePanel/>}
@@ -3204,12 +3642,15 @@ const AdminCategoryPanel = () => {
     window.WSD_SAVE.categories();
     setCats(next);
   };
+  const slugify = (s) => String(s || '').trim().toLowerCase()
+    .replace(/[^a-z0-9-_가-힣]+/g, '-').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
   const add = (e) => {
     e.preventDefault();
     setError("");
-    if (!draft.id || !draft.label) return setError("ID와 이름은 필수입니다.");
-    if (cats.find(c => c.id === draft.id)) return setError("이미 존재하는 ID입니다.");
-    save([...cats, { ...draft, minLevel: Number(draft.minLevel), postMinLevel: Number(draft.postMinLevel) }]);
+    let id = draft.id || slugify(draft.label);
+    if (!id || !draft.label) return setError("ID와 이름은 필수입니다.");
+    if (cats.find(c => c.id === id)) return setError("이미 존재하는 ID입니다.");
+    save([...cats, { ...draft, id, minLevel: Number(draft.minLevel), postMinLevel: Number(draft.postMinLevel) }]);
     setDraft({ id:"", label:"", boardType:"community", minLevel:10, postMinLevel:10, desc:"" });
   };
   const update = (i, key, val) => {
@@ -3217,89 +3658,133 @@ const AdminCategoryPanel = () => {
     next[i] = { ...next[i], [key]: key.endsWith("Level") ? Number(val) : val };
     save(next);
   };
+  const move = (i, dir) => {
+    const j = i + dir;
+    if (j < 0 || j >= cats.length) return;
+    const next = cats.slice();
+    [next[i], next[j]] = [next[j], next[i]];
+    save(next);
+  };
   const remove = (i) => {
-    if (!confirm(`"${cats[i].label}" 분류를 삭제하시겠어요? 기존 게시글 분류가 비게 될 수 있습니다.`)) return;
+    const used = postCount(cats[i].id);
+    const note = used > 0 ? `\n현재 이 게시판에 ${used}개의 글이 있습니다. 삭제 후에도 게시글은 남되 분류가 비게 됩니다.` : '';
+    if (!confirm(`"${cats[i].label}" 게시판을 삭제하시겠어요?${note}`)) return;
     save(cats.filter((_, j) => j !== i));
   };
+
+  // 게시판별 글 수
+  const postCount = (catId) => {
+    const posts = window.WSD_COMMUNITY?.listPosts?.() || [];
+    return posts.filter((p) => p.categoryId === catId).length;
+  };
+
+  const grades = (window.WSD_STORES?.grades || []).slice().sort((a, b) => (a.level || 0) - (b.level || 0));
+  const communityCats = cats.filter((c) => c.boardType === 'community');
 
   return (
     <>
       <p className="dim" style={{fontSize:13, marginBottom:16, lineHeight:1.8}}>
-        게시판 분류를 추가/삭제하고, 각 분류의 <strong className="gold">읽기 최소 등급(minLevel)</strong>·
-        <strong className="gold">쓰기 최소 등급(postMinLevel)</strong>을 설정합니다.
+        게시판을 추가/삭제하고, 각 게시판의 <strong className="gold">읽기 최소 등급</strong> · <strong className="gold">쓰기 최소 등급</strong>을 설정합니다.
+        순서를 바꾸면 사이트 내비 메가메뉴와 커뮤니티 탭에 그대로 반영됩니다.
       </p>
-      <div className="card" style={{marginBottom:20}}>
-        <form onSubmit={add} style={{display:'grid', gridTemplateColumns:'1fr 1fr 120px 90px 90px 1fr auto', gap:10, alignItems:'end'}}>
+
+      {/* 게시판 추가 — 카드형 폼 */}
+      <article className="card" style={{padding:18, marginBottom:20}}>
+        <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>NEW BOARD</div>
+        <form onSubmit={add} style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))', gap:10, alignItems:'end'}}>
           <div className="field" style={{margin:0}}>
-            <label className="field-label" htmlFor="cat-id">ID</label>
-            <input id="cat-id" className="field-input" value={draft.id} onChange={e => setDraft({...draft, id:e.target.value.replace(/\s+/g,'-').toLowerCase()})} placeholder="slug (영문)"/>
+            <label className="field-label" htmlFor="cat-label">이름 <span className="gold" aria-hidden="true">*</span></label>
+            <input id="cat-label" className="field-input" value={draft.label}
+              onChange={(e) => setDraft({ ...draft, label: e.target.value, id: draft.id || slugify(e.target.value) })}
+              placeholder="자유 / 질문 / 정보 ..."/>
           </div>
           <div className="field" style={{margin:0}}>
-            <label className="field-label" htmlFor="cat-label">이름</label>
-            <input id="cat-label" className="field-input" value={draft.label} onChange={e => setDraft({...draft, label:e.target.value})} placeholder="분류 이름"/>
+            <label className="field-label" htmlFor="cat-id">ID (slug)</label>
+            <input id="cat-id" className="field-input" value={draft.id}
+              onChange={(e) => setDraft({ ...draft, id: slugify(e.target.value) })}
+              placeholder="자동 생성"/>
           </div>
           <div className="field" style={{margin:0}}>
-            <label className="field-label" htmlFor="cat-type">게시판</label>
-            <select id="cat-type" className="field-input" value={draft.boardType} onChange={e => setDraft({...draft, boardType:e.target.value})}>
+            <label className="field-label" htmlFor="cat-type">유형</label>
+            <select id="cat-type" className="field-input" value={draft.boardType}
+              onChange={(e) => setDraft({ ...draft, boardType: e.target.value })}>
               <option value="community">커뮤니티</option>
               <option value="column">칼럼</option>
             </select>
           </div>
           <div className="field" style={{margin:0}}>
-            <label className="field-label" htmlFor="cat-min">읽기≥</label>
-            <input id="cat-min" type="number" className="field-input" value={draft.minLevel} onChange={e => setDraft({...draft, minLevel:e.target.value})}/>
+            <label className="field-label" htmlFor="cat-min">읽기 최소 Lv</label>
+            <input id="cat-min" type="number" className="field-input" value={draft.minLevel}
+              onChange={(e) => setDraft({ ...draft, minLevel: e.target.value })}/>
           </div>
           <div className="field" style={{margin:0}}>
-            <label className="field-label" htmlFor="cat-post">쓰기≥</label>
-            <input id="cat-post" type="number" className="field-input" value={draft.postMinLevel} onChange={e => setDraft({...draft, postMinLevel:e.target.value})}/>
+            <label className="field-label" htmlFor="cat-post">쓰기 최소 Lv</label>
+            <input id="cat-post" type="number" className="field-input" value={draft.postMinLevel}
+              onChange={(e) => setDraft({ ...draft, postMinLevel: e.target.value })}/>
           </div>
-          <div className="field" style={{margin:0}}>
+          <div className="field" style={{margin:0, gridColumn:'span 2'}}>
             <label className="field-label" htmlFor="cat-desc">설명</label>
-            <input id="cat-desc" className="field-input" value={draft.desc} onChange={e => setDraft({...draft, desc:e.target.value})}/>
+            <input id="cat-desc" className="field-input" value={draft.desc}
+              onChange={(e) => setDraft({ ...draft, desc: e.target.value })}
+              placeholder="게시판 안내 (선택)"/>
           </div>
-          <button type="submit" className="btn btn-gold btn-small">추가</button>
+          <button type="submit" className="btn btn-gold btn-small">＋ 추가</button>
         </form>
         {error && <div role="alert" className="mono" style={{color:'var(--danger)', fontSize:11, marginTop:10}}>{error}</div>}
-      </div>
+      </article>
 
+      {/* 게시판 목록 */}
       <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
         <thead>
           <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>이름</th>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>게시판</th>
-            <th scope="col" style={{padding:12, textAlign:'right'}}>읽기≥</th>
-            <th scope="col" style={{padding:12, textAlign:'right'}}>쓰기≥</th>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>설명</th>
-            <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
+            <th scope="col" style={{padding:10, textAlign:'center', width:80}}>순서</th>
+            <th scope="col" style={{padding:10, textAlign:'left'}}>ID</th>
+            <th scope="col" style={{padding:10, textAlign:'left'}}>이름</th>
+            <th scope="col" style={{padding:10, textAlign:'left'}}>유형</th>
+            <th scope="col" style={{padding:10, textAlign:'right'}}>읽기≥</th>
+            <th scope="col" style={{padding:10, textAlign:'right'}}>쓰기≥</th>
+            <th scope="col" style={{padding:10, textAlign:'right'}}>글 수</th>
+            <th scope="col" style={{padding:10, textAlign:'left'}}>설명</th>
+            <th scope="col" style={{padding:10, textAlign:'right'}}>액션</th>
           </tr>
         </thead>
         <tbody>
           {cats.map((c, i) => (
             <tr key={c.id} style={{borderBottom:'1px solid var(--line)'}}>
-              <td className="mono gold" style={{padding:10}}>{c.id}</td>
+              <td style={{padding:8, textAlign:'center'}}>
+                <div style={{display:'inline-flex', gap:4}}>
+                  <button type="button" className="btn btn-small" onClick={() => move(i, -1)} disabled={i === 0}
+                    style={{padding:'2px 6px', minHeight:0, fontSize:11}} aria-label="위로">▲</button>
+                  <button type="button" className="btn btn-small" onClick={() => move(i, 1)} disabled={i === cats.length - 1}
+                    style={{padding:'2px 6px', minHeight:0, fontSize:11}} aria-label="아래로">▼</button>
+                </div>
+              </td>
+              <td className="mono gold" style={{padding:10, fontSize:11}}>{c.id}</td>
               <td style={{padding:10}}>
                 <input className="field-input" style={{padding:'4px 8px'}} value={c.label}
-                  onChange={e => update(i, 'label', e.target.value)}/>
+                  onChange={(e) => update(i, 'label', e.target.value)}/>
               </td>
               <td style={{padding:10}}>
                 <select className="field-input" style={{padding:'4px 8px'}} value={c.boardType}
-                  onChange={e => update(i, 'boardType', e.target.value)}>
+                  onChange={(e) => update(i, 'boardType', e.target.value)}>
                   <option value="community">커뮤니티</option>
                   <option value="column">칼럼</option>
                 </select>
               </td>
               <td style={{padding:10, textAlign:'right'}}>
-                <input type="number" className="field-input" style={{padding:'4px 8px', width:70, textAlign:'right'}}
-                  value={c.minLevel ?? 0} onChange={e => update(i, 'minLevel', e.target.value)}/>
+                <input type="number" className="field-input" style={{padding:'4px 8px', width:64, textAlign:'right'}}
+                  value={c.minLevel ?? 0} onChange={(e) => update(i, 'minLevel', e.target.value)}/>
               </td>
               <td style={{padding:10, textAlign:'right'}}>
-                <input type="number" className="field-input" style={{padding:'4px 8px', width:70, textAlign:'right'}}
-                  value={c.postMinLevel ?? 0} onChange={e => update(i, 'postMinLevel', e.target.value)}/>
+                <input type="number" className="field-input" style={{padding:'4px 8px', width:64, textAlign:'right'}}
+                  value={c.postMinLevel ?? 0} onChange={(e) => update(i, 'postMinLevel', e.target.value)}/>
+              </td>
+              <td className="mono dim-2" style={{padding:10, textAlign:'right', fontSize:11}}>
+                {c.boardType === 'community' ? postCount(c.id) : '-'}
               </td>
               <td style={{padding:10}}>
                 <input className="field-input" style={{padding:'4px 8px'}} value={c.desc || ''}
-                  onChange={e => update(i, 'desc', e.target.value)} placeholder="설명"/>
+                  onChange={(e) => update(i, 'desc', e.target.value)} placeholder="설명"/>
               </td>
               <td style={{padding:10, textAlign:'right'}}>
                 <button type="button" className="btn btn-small" onClick={() => remove(i)}
@@ -3314,6 +3799,53 @@ const AdminCategoryPanel = () => {
         onClick={() => { if (confirm("기본값으로 되돌립니다. 진행할까요?")) { window.WSD_SAVE.resetCategories(); setCats(window.WSD_STORES.categories.slice()); } }}>
         기본값 복원
       </button>
+
+      {/* 권한 매트릭스 — 등급 × 게시판 */}
+      <article className="card" style={{padding:20, marginTop:32}}>
+        <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>PERMISSION MATRIX</div>
+        <h3 className="ko-serif" style={{fontSize:18, marginBottom:8}}>등급 × 게시판 권한</h3>
+        <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:16}}>
+          ✓ = 가능 / · = 불가. 이 매트릭스는 위 표의 등급 기준이 바뀌면 즉시 반영됩니다.
+        </p>
+        <div style={{overflow:'auto'}}>
+          <table style={{width:'100%', borderCollapse:'collapse', fontSize:12, minWidth:540}}>
+            <thead>
+              <tr style={{background:'var(--bg-2)'}}>
+                <th scope="col" style={{padding:10, textAlign:'left', position:'sticky', left:0, background:'var(--bg-2)', zIndex:1}}>등급</th>
+                {communityCats.map((c) => (
+                  <th key={c.id} scope="col" style={{padding:10, textAlign:'center', fontFamily:'var(--font-mono)', fontSize:9, letterSpacing:'0.18em', color:'var(--ink-3)'}}>
+                    {c.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {grades.map((g) => {
+                const lv = g.id === 'admin' ? 100 : (g.level || 0);
+                return (
+                  <tr key={g.id} style={{borderTop:'1px solid var(--line)'}}>
+                    <td style={{padding:10, position:'sticky', left:0, background:'var(--bg)', zIndex:1}}>
+                      <span className="mono" style={{fontSize:10, letterSpacing:'0.14em', color: g.color || 'var(--gold)', border:`1px solid ${g.color || 'var(--gold-dim)'}`, padding:'1px 6px', marginRight:8}}>{g.label}</span>
+                      <span className="dim-2 mono" style={{fontSize:10}}>Lv {lv}</span>
+                    </td>
+                    {communityCats.map((c) => {
+                      const canRead = lv >= (c.minLevel ?? 0);
+                      const canWrite = lv >= (c.postMinLevel ?? c.minLevel ?? 0);
+                      return (
+                        <td key={c.id} style={{padding:10, textAlign:'center', fontSize:11}}>
+                          <span className="mono" style={{color: canRead ? 'var(--gold)' : 'var(--ink-3)'}}>읽 {canRead ? '✓' : '·'}</span>
+                          {' / '}
+                          <span className="mono" style={{color: canWrite ? 'var(--gold)' : 'var(--ink-3)'}}>쓰 {canWrite ? '✓' : '·'}</span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </article>
     </>
   );
 };
@@ -3703,4 +4235,4 @@ const AdminDenied = ({ go, user }) => (
   </div>
 );
 
-Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel });
+Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel });

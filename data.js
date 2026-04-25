@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.017.000",
+  version: "00.018.000",
   build: "2026.04.25",
   channel: "preview",
 };
@@ -127,6 +127,16 @@ window.WSD_STORES = {
   bookOrders: _lsGet('wsd_book_orders', []),
   tourOverrides: _lsGet('wsd_tour_overrides', {}),
   tourReservations: _lsGet('wsd_tour_reservations', {}),
+  tourReviews: _lsGet('wsd_tour_reviews', {}),
+  legalDocs: _lsGet('wsd_legal_docs', {
+    privacy: { title: "개인정보 처리방침", body: "<p>왕사들 사이트는 회원 가입과 운영을 위해 최소한의 개인정보를 수집·이용합니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
+    terms:   { title: "이용약관",          body: "<p>왕사들 사이트의 이용약관입니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
+  }),
+  faqs: _lsGet('wsd_faqs', [
+    { id: 'faq-1', question: "회원가입은 어떻게 하나요?", answer: "상단 로그인 화면에서 '회원가입' 탭을 눌러 이메일과 비밀번호를 등록하면 즉시 가입됩니다.", category: '계정', order: 0 },
+    { id: 'faq-2', question: "강연·답사 결제는 어떻게 진행되나요?", answer: "현재는 무통장 입금만 지원합니다. 신청 → 안내 계좌로 입금 → 운영자 입금 확인 → 참가 확정 순으로 진행됩니다.", category: '결제', order: 1 },
+    { id: 'faq-3', question: "주문 취소 / 환불은 가능한가요?", answer: "마이페이지에서 입금 확인 전 단계의 주문은 직접 취소할 수 있습니다. 환불 처리는 운영자에게 문의해 주세요.", category: '결제', order: 2 },
+  ]),
 };
 window.WSD_SAVE = {
   grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
@@ -147,6 +157,9 @@ window.WSD_SAVE = {
   bookOrders: () => _lsSet('wsd_book_orders', window.WSD_STORES.bookOrders),
   tourOverrides: () => _lsSet('wsd_tour_overrides', window.WSD_STORES.tourOverrides),
   tourReservations: () => _lsSet('wsd_tour_reservations', window.WSD_STORES.tourReservations),
+  tourReviews: () => _lsSet('wsd_tour_reviews', window.WSD_STORES.tourReviews),
+  legalDocs: () => _lsSet('wsd_legal_docs', window.WSD_STORES.legalDocs),
+  faqs: () => _lsSet('wsd_faqs', window.WSD_STORES.faqs),
   resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
   resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
 };
@@ -154,7 +167,7 @@ window.WSD_SAVE = {
 window.WSD_DB = {
   version: WSD_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders", "tourOverrides", "tourReservations"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders", "tourOverrides", "tourReservations", "tourReviews", "legalDocs", "faqs"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -181,6 +194,9 @@ window.WSD_AUTH = {
     if (found.passwordHash !== passwordHash) {
       return { ok: false, message: "비밀번호가 올바르지 않습니다." };
     }
+    if (found.suspended) {
+      return { ok: false, message: `이 계정은 정지 상태입니다.${found.suspendedReason ? ` (${found.suspendedReason})` : ''}` };
+    }
     const sessionUser = {
       id: found.id,
       name: found.name,
@@ -194,6 +210,80 @@ window.WSD_AUTH = {
     window.WSD_STORES.session = sessionUser;
     window.WSD_SAVE.session();
     return { ok: true, user: sessionUser };
+  },
+
+  // ── 관리자 운영 ─────────────────────────────────────────────
+  setGrade(userId, gradeId) {
+    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
+      u.id === userId ? { ...u, gradeId, gradeChangedAt: new Date().toISOString() } : u
+    ));
+    window.WSD_SAVE.users();
+    if (window.WSD_STORES.session?.id === userId) {
+      window.WSD_STORES.session = { ...window.WSD_STORES.session, gradeId };
+      window.WSD_SAVE.session();
+    }
+    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
+  },
+  toggleAdmin(userId) {
+    let next = null;
+    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => {
+      if (u.id !== userId) return u;
+      next = { ...u, isAdmin: !u.isAdmin };
+      return next;
+    });
+    window.WSD_SAVE.users();
+    if (window.WSD_STORES.session?.id === userId && next) {
+      window.WSD_STORES.session = { ...window.WSD_STORES.session, isAdmin: next.isAdmin };
+      window.WSD_SAVE.session();
+    }
+    return next;
+  },
+  suspendUser(userId, reason) {
+    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
+      u.id === userId ? { ...u, suspended: true, suspendedReason: reason || '', suspendedAt: new Date().toISOString() } : u
+    ));
+    window.WSD_SAVE.users();
+    if (window.WSD_STORES.session?.id === userId) {
+      window.WSD_STORES.session = null;
+      window.WSD_SAVE.session();
+    }
+    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
+  },
+  unsuspendUser(userId) {
+    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
+      u.id === userId ? { ...u, suspended: false, suspendedReason: '', unsuspendedAt: new Date().toISOString() } : u
+    ));
+    window.WSD_SAVE.users();
+    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
+  },
+  removeUser(userId) {
+    window.WSD_STORES.users = window.WSD_STORES.users.filter((u) => u.id !== userId);
+    window.WSD_SAVE.users();
+    if (window.WSD_STORES.session?.id === userId) {
+      window.WSD_STORES.session = null;
+      window.WSD_SAVE.session();
+    }
+  },
+  getActivity(userId) {
+    if (!userId) return null;
+    const posts = (window.WSD_COMMUNITY?.listPosts?.() || []).filter((p) => p.authorId === userId);
+    const comments = Object.values(window.WSD_STORES.comments || {})
+      .reduce((sum, list) => sum + (Array.isArray(list) ? list.filter((c) => c.authorId === userId).length : 0), 0);
+    const bookOrders = (window.WSD_BOOK_ORDERS?.listMine?.(userId) || []);
+    const lectures = (window.WSD_LECTURES?.listMyRegistrations?.(userId) || []);
+    const tours = (window.WSD_TOURS?.listMyReservations?.(userId) || []);
+    const bookmarks = (window.WSD_COMMUNITY?.getBookmarks?.(userId) || []);
+    const notifications = (window.WSD_COMMUNITY?.listNotifications?.(userId) || []);
+    return {
+      postCount: posts.length,
+      posts,
+      commentCount: comments,
+      bookOrders,
+      lectures,
+      tours,
+      bookmarkCount: bookmarks.length,
+      notifications,
+    };
   },
   signUp(payload) {
     const normalizedEmail = String(payload.email || "").trim().toLowerCase();
@@ -1155,6 +1245,111 @@ window.WSD_TOURS = {
     a.click();
     URL.revokeObjectURL(url);
     return true;
+  },
+
+  // ── 후기 ──────────────────────────────────────────────────────
+  listReviews(tourId) {
+    const map = window.WSD_STORES.tourReviews || {};
+    return Array.isArray(map[String(tourId)]) ? map[String(tourId)].slice() : [];
+  },
+  _saveReviews(tourId, list) {
+    const map = window.WSD_STORES.tourReviews || {};
+    map[String(tourId)] = list;
+    window.WSD_STORES.tourReviews = map;
+    window.WSD_SAVE.tourReviews();
+  },
+  canReview(tourId, userId) {
+    if (!userId) return false;
+    const my = this.listReservations(tourId).find((r) => r.userId === userId && r.status === 'confirmed');
+    return !!my;
+  },
+  addReview(tourId, payload) {
+    const review = {
+      id: `tour-rev-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+      tourId: String(tourId),
+      userId: payload.userId || null,
+      author: payload.author || '익명',
+      rating: Math.max(1, Math.min(5, Number(payload.rating) || 5)),
+      text: String(payload.text || '').trim(),
+      createdAt: new Date().toISOString(),
+    };
+    if (!review.text) return null;
+    this._saveReviews(tourId, [review, ...this.listReviews(tourId)]);
+    return review;
+  },
+  deleteReview(tourId, reviewId) {
+    const next = this.listReviews(tourId).filter((r) => r.id !== reviewId);
+    this._saveReviews(tourId, next);
+    return next;
+  },
+};
+
+// === 약관 / 개인정보 처리방침(WSD_LEGAL) helper ==========================
+window.WSD_LEGAL = {
+  get(slug) {
+    const docs = window.WSD_STORES.legalDocs || {};
+    return docs[slug] || null;
+  },
+  save(slug, payload) {
+    const docs = window.WSD_STORES.legalDocs || {};
+    docs[slug] = { ...(docs[slug] || {}), ...payload, updatedAt: new Date().toISOString() };
+    window.WSD_STORES.legalDocs = docs;
+    window.WSD_SAVE.legalDocs();
+    return docs[slug];
+  },
+  listSlugs() { return ['privacy', 'terms']; },
+};
+
+// === FAQ(WSD_FAQ) helper ================================================
+window.WSD_FAQ = {
+  listAll() {
+    return (window.WSD_STORES.faqs || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  },
+  listCategories() {
+    const set = new Set(this.listAll().map((f) => f.category || '일반'));
+    return ['전체', ...Array.from(set)];
+  },
+  search(query, category) {
+    const q = String(query || '').trim().toLowerCase();
+    return this.listAll().filter((f) => {
+      if (category && category !== '전체' && (f.category || '일반') !== category) return false;
+      if (!q) return true;
+      return String(f.question || '').toLowerCase().includes(q)
+        || String(f.answer || '').toLowerCase().includes(q);
+    });
+  },
+  add(payload) {
+    const next = {
+      id: `faq-${Date.now()}-${Math.random().toString(36).slice(2,4)}`,
+      question: String(payload.question || '').trim(),
+      answer: String(payload.answer || '').trim(),
+      category: String(payload.category || '일반').trim() || '일반',
+      order: typeof payload.order === 'number' ? payload.order : (window.WSD_STORES.faqs || []).length,
+    };
+    if (!next.question || !next.answer) return null;
+    window.WSD_STORES.faqs = [...(window.WSD_STORES.faqs || []), next];
+    window.WSD_SAVE.faqs();
+    return next;
+  },
+  update(id, patch) {
+    window.WSD_STORES.faqs = (window.WSD_STORES.faqs || []).map((f) => f.id === id ? { ...f, ...patch } : f);
+    window.WSD_SAVE.faqs();
+    return (window.WSD_STORES.faqs || []).find((f) => f.id === id) || null;
+  },
+  remove(id) {
+    window.WSD_STORES.faqs = (window.WSD_STORES.faqs || []).filter((f) => f.id !== id);
+    window.WSD_SAVE.faqs();
+  },
+  reorder(id, dir) {
+    const list = this.listAll();
+    const idx = list.findIndex((f) => f.id === id);
+    const j = idx + dir;
+    if (idx < 0 || j < 0 || j >= list.length) return;
+    const next = list.slice();
+    [next[idx], next[j]] = [next[j], next[idx]];
+    next.forEach((f, i) => { f.order = i; });
+    window.WSD_STORES.faqs = next;
+    window.WSD_SAVE.faqs();
   },
 };
 

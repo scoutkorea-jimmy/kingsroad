@@ -280,11 +280,42 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   return (
     <div className="section">
       <div className="container">
-        <header style={{marginBottom:40}}>
+        <header style={{marginBottom:24}}>
           <div className="section-eyebrow" aria-hidden="true">COMMUNITY · 커뮤니티</div>
           <h1 className="section-title">다섯 봉우리 <span className="accent">광장</span></h1>
           <p className="section-subtitle">왕사들이 모여 나누는 이야기. 질문도 답도 환영합니다.</p>
         </header>
+
+        {/* 내 등급 / 쓰기 가능 게시판 안내 배너 */}
+        {(() => {
+          const myGrade = window.WSD_USER_GRADE?.(user) || null;
+          const readable = categories.filter((c) => userLevel >= (c.minLevel ?? 0));
+          const writable = categories.filter((c) => userLevel >= (c.postMinLevel ?? c.minLevel ?? 0));
+          const writableLabels = writable.map((c) => c.label).join(' · ') || '없음';
+          return (
+            <div className="card" style={{padding:14, marginBottom:24, display:'flex', justifyContent:'space-between', alignItems:'center', gap:14, flexWrap:'wrap'}}>
+              <div style={{display:'flex', alignItems:'baseline', gap:10, flexWrap:'wrap'}}>
+                <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em'}}>MY ACCESS</span>
+                {user ? (
+                  <>
+                    <span className="ko-serif" style={{fontSize:14}}>
+                      {user.name}
+                      {myGrade && (
+                        <span className="mono" style={{fontSize:10, letterSpacing:'0.14em', color: myGrade.color || 'var(--gold)', border:`1px solid ${myGrade.color || 'var(--gold-dim)'}`, padding:'1px 6px', marginLeft:8}}>{myGrade.label}</span>
+                      )}
+                      <span className="dim-2 mono" style={{fontSize:10, marginLeft:8}}>Lv {userLevel}</span>
+                    </span>
+                  </>
+                ) : (
+                  <span className="dim" style={{fontSize:13}}>비로그인 · 일부 게시판만 읽기 가능</span>
+                )}
+              </div>
+              <div className="dim mono" style={{fontSize:11, letterSpacing:'0.05em'}}>
+                읽기 가능 {readable.length}개 · 쓰기 가능 {writable.length}개{writable.length > 0 ? ` (${writableLabels})` : ''}
+              </div>
+            </div>
+          );
+        })()}
 
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, gap:24, flexWrap:'wrap'}}>
           <div role="tablist" aria-label="게시판 분류"

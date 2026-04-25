@@ -45,6 +45,7 @@
 <script type="text/babel" src="pages/BookCheckoutPage.jsx"></script>
 <script type="text/babel" src="pages/AuthAdminPage.jsx"></script>
 <script type="text/babel" src="pages/LecturesPage.jsx"></script>
+<script type="text/babel" src="pages/LegalFaqPages.jsx"></script>
 <script type="text/babel" src="pages/MyPage.jsx"></script>
 
 <script type="text/babel">
@@ -157,6 +158,9 @@ const App = () => {
       case "community": return <CommunityPage go={go} postId={postId} setPostId={setPostId} user={user}/>;
       case "tour": return <TourPage go={go} user={user}/>;
       case "lectures": return <LecturesPage go={go} user={user}/>;
+      case "privacy": return <LegalPage go={go} slug="privacy"/>;
+      case "terms":   return <LegalPage go={go} slug="terms"/>;
+      case "faq":     return <FaqPage go={go}/>;
       case "column": return <ColumnPage go={go} user={user}/>;
       case "book": return <BookPage go={go} cart={cart} setCart={setCart}/>;
       case "checkout": return <CheckoutPage go={go} cart={cart} user={user}/>;

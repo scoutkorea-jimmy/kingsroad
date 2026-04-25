@@ -383,9 +383,9 @@ const Footer = ({ go }) => (
           <ul aria-labelledby="ft-info">
             <li><button type="button" onClick={() => go("home")}>강연 일정</button></li>
             <li><button type="button" onClick={() => go("community")}>공지사항</button></li>
-            <li><button type="button">자주 묻는 질문</button></li>
-            <li><button type="button">이용약관</button></li>
-            <li><button type="button">개인정보 처리방침</button></li>
+            <li><button type="button" onClick={() => go("faq")}>자주 묻는 질문</button></li>
+            <li><button type="button" onClick={() => go("terms")}>이용약관</button></li>
+            <li><button type="button" onClick={() => go("privacy")}>개인정보 처리방침</button></li>
           </ul>
         </nav>
         <address style={{fontStyle:'normal'}}>
