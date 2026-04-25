@@ -41,6 +41,26 @@ This document fixes the current implementation priority order so context is not 
 6. Book ordering and payment
 7. Supporting features
 
+## P1 Status
+
+P1 is not fully completed yet.
+
+### P1 Completed Or Partially Completed
+
+- Authentication and authorization: partially completed
+- Admin-to-public content connection: partially completed
+
+### P1 Still Remaining
+
+- Data storage architecture: not completed
+- Real authentication backend: not completed
+- Production-ready persistence for members, posts, columns, and orders: not completed
+
+### Why P2 Should Not Start Yet
+
+Even though some P1 items have progressed, the project still depends on unresolved P1 decisions around backend and persistent storage.
+Because of that, moving to P2 now would break the agreed priority rule.
+
 ## File Naming Rule
 
 - English file names are the default rule.
