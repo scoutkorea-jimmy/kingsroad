@@ -100,6 +100,27 @@ const App = () => {
     return () => window.removeEventListener('message', onMsg);
   }, []);
 
+  // URL 해시 딥 링크: #col-{id} → 칼럼 상세, #post-{id} → 커뮤니티 상세
+  React.useEffect(() => {
+    const applyHash = () => {
+      const h = window.location.hash || '';
+      const colMatch = h.match(/^#col-(.+)$/);
+      const postMatch = h.match(/^#post-(.+)$/);
+      if (colMatch) {
+        try { sessionStorage.setItem('wsd_pending_column_id', decodeURIComponent(colMatch[1])); } catch {}
+        setRoute('column');
+        try { localStorage.setItem('wsd_route', 'column'); } catch {}
+      } else if (postMatch) {
+        try { sessionStorage.setItem('wsd_pending_post_id', decodeURIComponent(postMatch[1])); } catch {}
+        setRoute('community');
+        try { localStorage.setItem('wsd_route', 'community'); } catch {}
+      }
+    };
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
+  }, []);
+
   const updateTweaks = (next) => {
     setTweaks(next);
     window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
@@ -111,7 +132,7 @@ const App = () => {
       case "home": return <HomePage go={go} tweaks={tweaks}/>;
       case "community": return <CommunityPage go={go} postId={postId} setPostId={setPostId} user={user}/>;
       case "tour": return <TourPage go={go}/>;
-      case "column": return <ColumnPage go={go}/>;
+      case "column": return <ColumnPage go={go} user={user}/>;
       case "book": return <BookPage go={go} cart={cart} setCart={setCart}/>;
       case "checkout": return <CheckoutPage go={go} cart={cart}/>;
       case "mypage": return <MyPage go={go} user={user} cart={cart}/>;

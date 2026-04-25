@@ -397,6 +397,22 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.013.000",
+    date: "2026-04-25",
+    summary: "Cycle 2(뱅기노자 칼럼 운영 강화)를 한 PR에 묶었습니다. 임시 저장 / 예약 발행 / 발행 취소 / 수정 흐름과 좋아요 / 공유 링크 / 댓글 / 검색 / 카테고리 아카이브 / 추정 읽기 시간 자동 계산을 모두 도입해 칼럼이 단순 발행물에서 운영 가능한 콘텐츠 자산으로 전환되었습니다. URL 해시 딥 링크(`#col-{id}`, `#post-{id}`)도 함께 추가되어 외부 공유가 가능해졌습니다.",
+    details: [
+      "`WSD_COLUMNS` helper 신설 — listAll / listPublic / getColumn / saveColumn / deleteColumn / searchPublic / estimateReadTime / 자동 promote.",
+      "콘텐츠는 `WSD_STORES.userColumns`(`status` = draft / scheduled / published)에 통합 저장. 좋아요·조회수는 `WSD_STORES.columnEngagement` 맵으로 분리(시드 칼럼도 동일).",
+      "관리자 칼럼 에디터에 `임시 저장 / 예약 발행 / 즉시 발행 / 발행 취소 / 수정` 버튼과 상태 필터(전체/발행/예약/임시) 추가. DRAFT / SCHEDULED / PUBLISHED 배지로 상태 가시화.",
+      "공개 칼럼 페이지에 검색 입력 / 카테고리 토글 / 카드별 ♥·조회수 인디케이터 / 추정 읽기 시간 자동 계산 도입.",
+      "칼럼 상세에 ♥ 공감 토글 + 공유 링크 복사(`#col-{id}` 해시) + 댓글(등록 / 삭제 / 등급 배지) + 이전/다음 네비게이션 추가.",
+      "App에 URL 해시 라우팅 추가: `#col-{id}` → 칼럼 상세, `#post-{id}` → 커뮤니티 상세.",
+      "홈 추천 칼럼과 관리자 대시보드 카운트가 `WSD_COLUMNS.listPublic()`을 사용하도록 정리 — draft/scheduled은 더 이상 공개 화면에 새지 않음.",
+      "KMS 기능정의서 미션 3(칼럼) 영역을 위 변경에 맞게 재기록.",
+    ],
+    context: "Cycle 2의 목표는 '칼럼이 한 번 발행되고 끝나는 일회성 흐름'을 닫는 것이었습니다. 발행 사이클(임시→예약→발행→발행취소)과 독자 상호작용(공감·공유·댓글)이 같이 들어와야 비로소 콘텐츠가 자산으로 누적되기 때문에, 두 흐름을 한 PR에 묶었습니다. RSS와 이메일 구독은 외부 인프라가 필요해 후속 사이클로 미뤘고, 대신 URL 해시 딥 링크를 도입해 단기 공유는 작동하게 했습니다.",
+  },
+  {
     version: "00.012.000",
     date: "2026-04-25",
     summary: "Cycle 1(왕사들 커뮤니티 마무리)을 한 PR에 묶었습니다. 좋아요·북마크·신고·댓글 알림·작성자 등급 배지·게시글 페이지네이션을 모두 도입해 단순 게시판이었던 흐름을 '커뮤니티'로 끌어올렸습니다. 관리자 콘솔에는 신고 운영 큐 탭이 새로 들어왔고, 마이페이지에는 북마크와 알림 카드가 추가됐습니다.",
@@ -605,9 +621,9 @@ const MISSION_OVERVIEW = [
     number: "03",
     title: "뱅기노자 칼럼 공유",
     short: "정기 칼럼 발행과 공개 노출.",
-    state: "기본 구동",
-    coverage: "기능 50%",
-    verdict: "관리자 발행 → 공개 반영 흐름은 완성. 다만 댓글·공유·구독·검색이 없어 콘텐츠가 일회성으로 소비된다.",
+    state: "Cycle 2 마무리",
+    coverage: "기능 ~80%",
+    verdict: "임시 저장 / 예약 발행 / 좋아요 / 공유 링크 / 댓글 / 검색 / 카테고리 아카이브 / 추정 읽기 시간 자동 계산을 도입해 콘텐츠 운영의 일상적 흐름이 닫혔다. 남은 큰 항목은 RSS / 이메일 구독 / 작성자 프로필 카드 / 추천 알고리즘.",
   },
   {
     id: "tour",
@@ -1030,79 +1046,87 @@ const FEATURE_DOMAINS = [
     title: "미션 3 — 뱅기노자 칼럼 공유",
     role: "뱅기노자의 글을 공개해 브랜드 신뢰와 깊이를 만드는 콘텐츠 영역.",
     routes: ["column(공개)", "home(추천)", "admin > 칼럼 / 칼럼 작성(운영)"],
-    status: "기본 구동(부분 구현)",
-    evaluation: "관리자 발행 → 공개 사이트 즉시 반영이라는 P1 핵심 연결은 완성. 다만 독자가 칼럼과 상호작용하는 흐름(공유·구독·북마크·검색)이 없어 콘텐츠가 일회성으로 소비된다. 시리즈/카테고리 인덱스가 없어 아카이브로의 가치도 낮음.",
+    status: "Cycle 2 마무리(기능 ~80%)",
+    evaluation: "Cycle 2에서 칼럼 운영의 일상 흐름을 닫았다. 임시 저장·예약 발행·발행 취소로 작성 사이클을 안전하게 가져갈 수 있고, 좋아요·공유 링크·댓글로 독자와의 상호작용이 생겼으며, 검색·카테고리 아카이브와 추정 읽기 시간 자동 계산으로 아카이브로서의 가치가 올라갔다. URL 해시 딥 링크(`#col-{id}`)로 칼럼이 외부 공유 가능한 자산이 되었다.",
     missing: [
-      "댓글 / 좋아요 / 공유",
-      "이메일 · 웹 푸시 구독, 신규 칼럼 알림",
-      "칼럼 검색 / 카테고리 아카이브 / 시리즈 인덱스",
-      "예약 발행 / 임시 저장 / 발행 취소",
-      "추정 읽기 시간 자동 계산(현재 수동 입력)",
+      "이메일 · 웹 푸시 구독, 신규 칼럼 알림 (외부 발송 인프라 필요)",
+      "RSS / Atom 피드 (정적 배포 빌드 파이프라인이 들어와야 가능)",
       "작성자 프로필 카드 · 관련 글 자동 추천",
-      "열람 통계 / 좋아요 통계 운영 화면",
-      "RSS / Atom 피드",
+      "열람 통계 / 좋아요 통계 운영 화면 (대시보드 연결)",
+      "시리즈 묶음 인덱스",
+      "북마크 (커뮤니티에는 있으나 칼럼은 미적용)",
     ],
     features: [
       {
-        name: "공개 칼럼 목록",
-        status: "부분 구현",
-        summary: "기본 칼럼과 관리자 발행 칼럼을 병합해 카드 그리드로 노출.",
+        name: "공개 칼럼 목록 / 검색 / 카테고리 아카이브",
+        status: "구현됨",
+        summary: "기본 칼럼 + 관리자 발행(published) 칼럼을 병합해 카드 그리드로 노출. 제목·발췌·본문 검색과 카테고리 필터로 좁혀 보기.",
         elements: [
-          "피처 칼럼 1건 + 보조 칼럼 4건(홈)",
-          "전체 카드 그리드(칼럼 페이지)",
-          "카테고리 필터(미구현)",
+          "검색 입력(제목·발췌·본문 부분 일치)",
+          "카테고리 토글 버튼(전체 + 데이터에서 자동 추출)",
+          "카드(카테고리·읽기시간·♥ 카운트·조회수)",
+          "총 N개 / 카테고리 / 검색어 인디케이터",
+          "피처 칼럼 1건 + 보조 4건(홈)",
         ],
-        techSpec: "`[...WSD_STORES.userColumns, ...WANGSADEUL_DATA.columns]` 병합. 사용자 발행 글이 위에 오도록 spread 순서 유지.",
-        caution: "정렬 기준이 명시적이지 않고 spread 순서에 의존 → 정책으로 명문화 필요.",
+        techSpec: "`WSD_COLUMNS.searchPublic({query, category})` → `WSD_COLUMNS.listPublic()`(자동 promote 후 published만) + 검색 필터. 시드 + 사용자 발행 모두 동일 객체 형태.",
+        caution: "검색은 본문 텍스트 기준이며 HTML 태그는 비교에서 제외됨 (`body.text`).",
         issues: [],
       },
       {
-        name: "칼럼 상세",
-        status: "부분 구현",
-        summary: "제목 / 카테고리 / 날짜 / 본문 표시.",
+        name: "칼럼 상세 — 본문 / 공감 / 공유 / 댓글",
+        status: "구현됨",
+        summary: "제목·메타·본문·공감·공유 링크·댓글 흐름을 단일 페이지에서 처리.",
         elements: [
-          "제목 / 카테고리 / 날짜 / 추정 읽기 시간",
-          "본문 HTML",
-          "관련 글(미구현)",
-          "공유 / 좋아요(미구현)",
+          "제목 / 카테고리 / 날짜 / 추정 읽기 시간(자동) / 조회 / 공감 / 댓글 카운트",
+          "본문 HTML(에디터 직렬화 결과 또는 시드 fallback)",
+          "♥ 공감 토글(로그인 사용자별, 시드 칼럼도 가능)",
+          "공유 링크 복사(`#col-{id}` 해시 포함, 클립보드 + 토스트)",
+          "댓글 등록 / 삭제(작성자·관리자) / 등급 배지",
+          "이전·다음 칼럼 네비게이션",
         ],
-        techSpec: "본문은 HTML 문자열 그대로 dangerouslySetInnerHTML.",
-        caution: "관리자가 임의의 HTML/script를 넣을 수 있으므로 에디터 정책으로 차단. 사용자 입력에는 절대 적용하지 않기.",
-        issues: ["Tiptap 본문이 HTML로 직렬화되어 저장되므로 어떤 확장이 활성화돼 있는지를 같이 관리해야 함"],
+        techSpec: "`WSD_COLUMNS.getColumn / getLikes / hasLiked / toggleLike / getViews / incrementViews / listComments / addComment / deleteComment`. 좋아요·조회수는 `WSD_STORES.columnEngagement` 맵에 통합 저장. 댓글은 `WSD_COMMUNITY.comments`를 `col-{id}` 키로 재사용.",
+        caution: "관리자가 임의 HTML을 넣을 수 있으므로 에디터 정책으로 차단. 사용자 입력에는 절대 dangerouslySetInnerHTML 적용 금지.",
+        issues: [
+          "Tiptap 본문이 HTML로 직렬화되어 저장되므로 어떤 확장이 활성화돼 있는지를 같이 관리해야 함",
+          "라우팅이 글로벌 App 상태에 묶여 있어 외부 진입은 `sessionStorage.wsd_pending_column_id` + `#col-{id}` 해시 조합 사용",
+        ],
       },
       {
-        name: "관리자 칼럼 작성",
+        name: "관리자 칼럼 작성 — 임시 저장 / 예약 발행 / 즉시 발행 / 발행 취소 / 수정",
         status: "구현됨",
-        summary: "Tiptap 에디터로 본문을 작성해 즉시 발행.",
+        summary: "Tiptap 에디터에 임시 저장·예약 발행·즉시 발행 흐름을 붙이고, 기존 칼럼을 수정 폼으로 다시 불러오기.",
         elements: [
-          "Tiptap StarterKit + Image + Link + Typography",
-          "카테고리 입력",
-          "발행 버튼",
-          "임시 저장(미구현)",
-          "예약 발행(미구현)",
+          "Tiptap StarterKit + Image + Link + Typography (column preset)",
+          "카테고리 select",
+          "발췌 textarea(비우면 본문 앞부분 자동 추출)",
+          "예약 시각(datetime-local)",
+          "추정 읽기 시간 + 본문 자수 미터",
+          "버튼: 초기화 / 임시 저장 / 예약 발행 / 즉시 발행",
+          "필터(전체/발행/예약/임시) + 상태 배지(DRAFT/SCHEDULED/PUBLISHED) + 수정 / 발행 취소 / 삭제",
         ],
-        techSpec: "`WSD_STORES.userColumns`에 push 후 `WSD_SAVE.userColumns()` 호출.",
-        caution: "발행이 곧 공개라 임시 저장이 없으면 작성 중 새로고침 시 본문 손실 위험.",
-        issues: ["수동 ID 부여 시 시드 칼럼과 ID 충돌 가능성 → 충돌 검사 필요"],
+        techSpec: "`WSD_COLUMNS.saveColumn(payload)` — `id`(신규/기존 동일 키), `status`('draft'|'scheduled'|'published'), `publishAt`(예약 시), `publishedAt`(즉시 발행 시), `updatedAt` 자동. 페이지 진입마다 `_autoPromote()`가 시간 지난 예약을 published로 승격.",
+        caution: "예약 시각은 현재보다 미래여야 하며, datetime-local은 로컬 타임존을 그대로 저장하므로 운영자 PC 시계 기준으로 동작함을 명심.",
+        issues: ["발행 취소는 임시 저장 상태로 되돌리며, 칼럼 콘텐츠는 보존되지만 공개에서는 즉시 사라짐"],
       },
       {
         name: "홈 추천 칼럼",
         status: "구현됨",
-        summary: "메인 홈에 피처 1건 + 사이드 4건의 칼럼을 노출.",
+        summary: "메인 홈에 published 사용자 칼럼 + 시드를 묶어 피처 1 + 사이드 4 노출.",
         elements: ["피처 카드 1", "사이드 4건"],
-        techSpec: "공개 칼럼 병합 결과의 상위 항목을 그대로 사용.",
+        techSpec: "`WSD_COLUMNS.listPublic()`의 상위 항목 사용. draft/scheduled은 자동 제외.",
         caution: "추천 알고리즘이 없어 항상 최신 5건이 노출됨.",
         issues: [],
       },
     ],
-    techSpec: "`WANGSADEUL_DATA.columns`(시드) + `WSD_STORES.userColumns`(관리자 발행) 병합. 본문은 Tiptap이 HTML로 직렬화한 문자열.",
+    techSpec: "`WSD_COLUMNS` helper + `WSD_STORES.userColumns`(콘텐츠) + `WSD_STORES.columnEngagement`(좋아요·조회수) + `WSD_STORES.comments['col-{id}']`(댓글). 시드는 `WANGSADEUL_DATA.columns`에서 병합.",
     cautions: [
-      "공개 칼럼 정렬 기준이 명시적이지 않다는 점 → 정책으로 명문화 필요",
-      "본문 HTML 신뢰 범위는 '관리자 입력에 한함'으로 유지(사용자 입력에 dangerouslySetInnerHTML 절대 금지)",
+      "공개 정렬은 사용자 발행 → 시드 순서로 spread (사용자 발행 글이 위로)",
+      "본문 HTML 신뢰 범위는 '관리자 입력에 한함'으로 유지",
+      "예약 발행은 클라이언트 시계 기준 — 외부 DB 도입 시 서버 시계로 옮겨야 함",
     ],
     issues: [
       "Tiptap 확장 변경이 본문 저장 호환성에 영향을 주므로, 확장 추가/제거 시 기존 본문 호환성 테스트 필요",
-      "관리자 칼럼과 시드 칼럼 ID 충돌 가능성",
+      "예약 발행 promote가 클라이언트 진입 시점에 실행되므로 사용자가 사이트에 들어와야 비로소 공개됨 (서버 크론 부재)",
     ],
   },
   {
@@ -1414,7 +1438,7 @@ const AdminPage = ({ go }) => {
 
   const allCommunityPosts = React.useMemo(() => window.WSD_COMMUNITY.listPosts(), [postRefreshKey]);
   const allUsers = React.useMemo(() => window.WSD_AUTH.listUsers(), [postRefreshKey]);
-  const allColumns = React.useMemo(() => [...(window.WSD_STORES.userColumns || []), ...data.columns], [postRefreshKey]);
+  const allColumns = React.useMemo(() => window.WSD_COLUMNS?.listPublic?.() || [...(window.WSD_STORES.userColumns || []), ...data.columns], [postRefreshKey]);
   const totalComments = React.useMemo(
     () => Object.values(window.WSD_STORES.comments || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0),
     [postRefreshKey]
@@ -1422,7 +1446,7 @@ const AdminPage = ({ go }) => {
   const dashboardStats = React.useMemo(() => ([
     { l: "전체 회원", v: String(allUsers.length), d: `관리자 ${allUsers.filter((user) => user.isAdmin).length}명 포함`, p: true },
     { l: "커뮤니티 게시글", v: String(allCommunityPosts.length), d: `댓글 ${totalComments}개 누적`, p: true },
-    { l: "공개 칼럼", v: String(allColumns.length), d: `관리자 발행 ${window.WSD_STORES.userColumns.length}건`, p: true },
+    { l: "공개 칼럼", v: String(allColumns.length), d: `관리자 발행 ${(window.WSD_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published').length}건 · 임시/예약 ${(window.WSD_STORES.userColumns || []).filter((c) => c.status === 'draft' || c.status === 'scheduled').length}건`, p: true },
     { l: "운영 카테고리", v: String(window.WSD_STORES.categories.length), d: `강연 ${data.lectures.length}건 · 투어 ${data.tours.length}건`, p: true },
   ]), [allUsers, allCommunityPosts, totalComments, allColumns, data]);
   const latestCommunityPost = allCommunityPosts[0] || null;
@@ -2626,51 +2650,140 @@ const AdminGradePanel = () => {
 
 // === Admin: Column Editor (Tiptap column preset — inline draggable images)
 const AdminColumnEditor = () => {
+  const [editingId, setEditingId] = React.useState(null);
   const [title, setTitle] = React.useState("");
   const [category, setCategory] = React.useState("왕의 미학");
   const [excerpt, setExcerpt] = React.useState("");
   const [html, setHtml] = React.useState("");
   const [text, setText] = React.useState("");
-  const [published, setPublished] = React.useState([...(window.WSD_STORES.userColumns || [])]);
+  const [publishAt, setPublishAt] = React.useState("");
+  const [editorKey, setEditorKey] = React.useState(0);
+  const [statusFilter, setStatusFilter] = React.useState("all");
+  const [tick, setTick] = React.useState(0);
   const [msg, setMsg] = React.useState("");
 
-  const publish = (e) => {
-    e.preventDefault();
-    if (!title.trim() || !text.trim()) { setMsg("제목과 본문은 필수입니다."); return; }
+  const all = React.useMemo(() => window.WSD_COLUMNS.listAll(), [tick]);
+  const filtered = statusFilter === 'all' ? all : all.filter((c) => (c.status || 'published') === statusFilter);
+  const counts = {
+    all: all.length,
+    draft: all.filter((c) => c.status === 'draft').length,
+    scheduled: all.filter((c) => c.status === 'scheduled').length,
+    published: all.filter((c) => (c.status || 'published') === 'published').length,
+  };
+
+  const reset = () => {
+    setEditingId(null);
+    setTitle(""); setExcerpt(""); setHtml(""); setText("");
+    setPublishAt("");
+    setEditorKey((k) => k + 1);
+  };
+
+  const startEdit = (col) => {
+    setEditingId(col.id);
+    setTitle(col.title || "");
+    setCategory(col.category || "왕의 미학");
+    setExcerpt(col.excerpt || "");
+    setHtml(col.body?.html || "");
+    setText(col.body?.text || "");
+    setPublishAt(col.publishAt || "");
+    setEditorKey((k) => k + 1);
+    setMsg("");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const buildPayload = (status) => {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const col = {
-      id: `c-${Date.now()}`,
+    const id = editingId || `c-${Date.now()}`;
+    const base = {
+      id,
       title: title.trim(),
       category,
       excerpt: excerpt.trim() || text.slice(0, 100),
       date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`,
-      readTime: `${Math.max(3, Math.ceil(text.length / 500))}분`,
+      readTime: window.WSD_COLUMNS.estimateReadTime(text),
       body: { html, text },
-      publishedAt: now.toISOString(),
+      status,
+      authorId: 'user-admin',
+      author: '뱅기노자',
     };
-    window.WSD_STORES.userColumns = [col, ...window.WSD_STORES.userColumns];
-    window.WSD_SAVE.userColumns();
-    setPublished([...window.WSD_STORES.userColumns]);
-    setTitle(""); setExcerpt(""); setHtml(""); setText("");
-    setMsg(`"${col.title}" 발행 완료.`);
+    if (status === 'published') {
+      base.publishedAt = base.publishedAt || now.toISOString();
+      base.publishAt = null;
+    } else if (status === 'scheduled') {
+      base.publishAt = publishAt || null;
+    } else if (status === 'draft') {
+      base.publishAt = null;
+    }
+    return base;
+  };
+
+  const validate = (status) => {
+    if (!title.trim()) { setMsg("제목을 입력해 주세요."); return false; }
+    if (!text.trim()) { setMsg("본문을 입력해 주세요."); return false; }
+    if (status === 'scheduled') {
+      if (!publishAt) { setMsg("예약 발행은 발행 시각을 입력해야 합니다."); return false; }
+      if (new Date(publishAt).getTime() <= Date.now()) { setMsg("예약 시각은 현재보다 미래여야 합니다."); return false; }
+    }
+    return true;
+  };
+
+  const save = (status) => {
+    setMsg("");
+    if (!validate(status)) return;
+    const payload = buildPayload(status);
+    window.WSD_COLUMNS.saveColumn(payload);
+    setTick((v) => v + 1);
+    const label = status === 'published' ? '발행' : status === 'scheduled' ? '예약 발행' : '임시 저장';
+    setMsg(`"${payload.title}" ${label} 완료.`);
+    if (status === 'published') reset();
+    else setEditingId(payload.id);
   };
 
   const remove = (id) => {
     if (!confirm("이 칼럼을 삭제하시겠어요?")) return;
-    window.WSD_STORES.userColumns = window.WSD_STORES.userColumns.filter(c => c.id !== id);
-    window.WSD_SAVE.userColumns();
-    setPublished([...window.WSD_STORES.userColumns]);
+    window.WSD_COLUMNS.deleteColumn(id);
+    setTick((v) => v + 1);
+    if (editingId === id) reset();
+  };
+
+  const unpublish = (id) => {
+    if (!confirm("이 칼럼을 발행 취소(임시 저장으로 되돌림)하시겠어요?")) return;
+    const col = window.WSD_COLUMNS.getColumn(id);
+    if (!col) return;
+    window.WSD_COLUMNS.saveColumn({ ...col, status: 'draft', publishAt: null, publishedAt: null });
+    setTick((v) => v + 1);
+  };
+
+  const statusBadge = (s) => {
+    const map = {
+      draft: { label: 'DRAFT', color: 'var(--ink-3)' },
+      scheduled: { label: 'SCHEDULED', color: 'var(--ink-2)' },
+      published: { label: 'PUBLISHED', color: 'var(--gold)' },
+    };
+    const m = map[s || 'published'];
+    return (
+      <span className="mono" style={{fontSize:9, letterSpacing:'0.22em', color: m.color, border:`1px solid ${m.color}`, padding:'1px 6px'}}>{m.label}</span>
+    );
   };
 
   return (
     <div>
       <p className="dim" style={{fontSize:13, marginBottom:24, lineHeight:1.8}}>
         <strong className="gold">뱅기노자 칼럼</strong>은 관리자만 작성할 수 있습니다.
-        본문에 이미지를 삽입한 뒤 드래그로 자유롭게 위치를 바꿀 수 있습니다.
+        임시 저장으로 본문을 보관하거나 예약 발행 시각을 지정할 수 있습니다.
       </p>
 
-      <form onSubmit={publish} style={{marginBottom:40}}>
+      <form onSubmit={(e) => { e.preventDefault(); save('published'); }} style={{marginBottom:40}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14, gap:12, flexWrap:'wrap'}}>
+          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em'}}>
+            {editingId ? `EDIT · ${editingId}` : 'NEW COLUMN'}
+          </div>
+          {editingId && (
+            <button type="button" className="btn btn-small" onClick={reset}>새 칼럼으로 전환</button>
+          )}
+        </div>
+
         <div style={{display:'grid', gridTemplateColumns:'1fr 200px', gap:12, marginBottom:16}}>
           <div className="field" style={{margin:0}}>
             <label className="field-label" htmlFor="col-title">제목 <span className="gold" aria-hidden="true">*</span></label>
@@ -2697,33 +2810,75 @@ const AdminColumnEditor = () => {
         </div>
         <div className="field">
           <label className="field-label">본문 <span className="gold" aria-hidden="true">*</span></label>
-          <TiptapEditor preset="column"
+          <TiptapEditor key={editorKey} preset="column"
+            content={html}
             onUpdate={(h, _j, t) => { setHtml(h); setText(t); }}
             placeholder="칼럼 본문을 작성하세요. 툴바의 🖼 본문 이미지 버튼으로 이미지를 삽입하고, 드래그로 이동할 수 있습니다."/>
+          <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em', marginTop:6}}>
+            추정 읽기 시간 · {window.WSD_COLUMNS.estimateReadTime(text)} · 본문 {text.length}자
+          </div>
+        </div>
+        <div className="field">
+          <label className="field-label" htmlFor="col-publishAt">예약 발행 시각 (선택 — 비우면 즉시 발행)</label>
+          <input id="col-publishAt" type="datetime-local" className="field-input"
+            value={publishAt} onChange={(e) => setPublishAt(e.target.value)}/>
         </div>
         {msg && <div role="status" className="mono gold" style={{fontSize:12, padding:10, border:'1px solid var(--gold-dim)', background:'rgba(212,175,55,0.06)', marginBottom:16}}>{msg}</div>}
-        <div style={{display:'flex', gap:12, justifyContent:'flex-end', paddingTop:20, borderTop:'1px solid var(--line)'}}>
-          <button type="button" className="btn" onClick={() => { setTitle(""); setExcerpt(""); setHtml(""); setText(""); }}>초기화</button>
-          <button type="submit" className="btn btn-gold">발행하기 →</button>
+        <div style={{display:'flex', gap:12, justifyContent:'flex-end', paddingTop:20, borderTop:'1px solid var(--line)', flexWrap:'wrap'}}>
+          <button type="button" className="btn" onClick={reset}>초기화</button>
+          <button type="button" className="btn" onClick={() => save('draft')}>임시 저장</button>
+          <button type="button" className="btn" onClick={() => save('scheduled')} disabled={!publishAt}>예약 발행</button>
+          <button type="submit" className="btn btn-gold">즉시 발행 →</button>
         </div>
       </form>
 
       <div>
-        <h2 className="ko-serif" style={{fontSize:20, marginBottom:16}}>최근 발행 칼럼 ({published.length})</h2>
-        {published.length === 0 ? (
-          <p className="dim">아직 발행된 칼럼이 없습니다.</p>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, gap:12, flexWrap:'wrap'}}>
+          <h2 className="ko-serif" style={{fontSize:20}}>관리 중인 칼럼 ({counts.all})</h2>
+          <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+            {[
+              { key:'all',       label:'전체' },
+              { key:'published', label:'발행' },
+              { key:'scheduled', label:'예약' },
+              { key:'draft',     label:'임시' },
+            ].map((f) => (
+              <button key={f.key} type="button" className="btn btn-small"
+                onClick={() => setStatusFilter(f.key)}
+                style={{
+                  borderColor: statusFilter === f.key ? 'var(--gold)' : 'var(--line)',
+                  color: statusFilter === f.key ? 'var(--gold)' : 'var(--ink-2)',
+                  background: statusFilter === f.key ? 'rgba(212,175,55,0.06)' : 'transparent',
+                }}>
+                {f.label} <span className="mono dim-2" style={{fontSize:10, marginLeft:4}}>{counts[f.key] ?? 0}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        {filtered.length === 0 ? (
+          <p className="dim">해당 상태의 칼럼이 없습니다.</p>
         ) : (
           <div className="grid grid-2">
-            {published.map(c => (
+            {filtered.map(c => (
               <article key={c.id} className="card">
-                <div style={{display:'flex', justifyContent:'space-between', marginBottom:10}}>
-                  <span className="pill">{c.category}</span>
+                <div style={{display:'flex', justifyContent:'space-between', marginBottom:10, alignItems:'center', gap:8, flexWrap:'wrap'}}>
+                  <div style={{display:'flex', gap:8, alignItems:'center'}}>
+                    <span className="pill">{c.category}</span>
+                    {statusBadge(c.status)}
+                  </div>
                   <time className="mono dim-2" style={{fontSize:10}}>{c.date}</time>
                 </div>
                 <h3 className="ko-serif" style={{fontSize:17, marginBottom:8}}>{c.title}</h3>
-                <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:16}}>{c.excerpt}</p>
-                <div style={{display:'flex', gap:8}}>
-                  <button type="button" className="btn btn-small">수정</button>
+                <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:8}}>{c.excerpt}</p>
+                {c.status === 'scheduled' && c.publishAt && (
+                  <div className="mono" style={{fontSize:11, color:'var(--ink-2)', marginBottom:12}}>
+                    예약 시각 · {new Date(c.publishAt).toLocaleString('ko-KR')}
+                  </div>
+                )}
+                <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                  <button type="button" className="btn btn-small" onClick={() => startEdit(c)}>수정</button>
+                  {c.status === 'published' && (
+                    <button type="button" className="btn btn-small" onClick={() => unpublish(c.id)}>발행 취소</button>
+                  )}
                   <button type="button" className="btn btn-small" onClick={() => remove(c.id)}
                     style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>삭제</button>
                 </div>

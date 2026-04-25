@@ -1,18 +1,126 @@
 // 뱅기노자 칼럼 아카이브
-const ColumnPage = ({ go }) => {
-  const data = window.WANGSADEUL_DATA;
-  const publicColumns = [...(window.WSD_STORES?.userColumns || []), ...data.columns];
+const ColumnPage = ({ go, user }) => {
+  const [tick, setTick] = React.useState(0);
+  const [selectedId, setSelectedId] = React.useState(null);
+  const [search, setSearch] = React.useState("");
   const [category, setCategory] = React.useState("전체");
-  const categories = ["전체", ...new Set(publicColumns.map(c => c.category))];
-  const filtered = category === "전체" ? publicColumns : publicColumns.filter(c => c.category === category);
-  const [selected, setSelected] = React.useState(null);
+  const [comment, setComment] = React.useState("");
+  const [shareMsg, setShareMsg] = React.useState("");
 
-  if (selected !== null) {
-    const c = publicColumns[selected];
+  const refresh = () => setTick((v) => v + 1);
+
+  const publicColumns = React.useMemo(
+    () => window.WSD_COLUMNS.listPublic(),
+    [tick]
+  );
+  const categories = React.useMemo(
+    () => ["전체", ...Array.from(new Set(publicColumns.map((c) => c.category)))],
+    [publicColumns]
+  );
+  const filtered = React.useMemo(
+    () => window.WSD_COLUMNS.searchPublic({ query: search, category }),
+    [search, category, tick]
+  );
+
+  // 외부 진입 (해시 / 마이페이지 / 알림 등)으로 들어오는 칼럼 ID
+  React.useEffect(() => {
+    let pending = null;
+    try { pending = sessionStorage.getItem("wsd_pending_column_id"); } catch {}
+    if (pending) {
+      try { sessionStorage.removeItem("wsd_pending_column_id"); } catch {}
+      setSelectedId(pending);
+    }
+  }, []);
+
+  // 상세 진입 시 조회수 증가 (세션당 1회)
+  React.useEffect(() => {
+    if (!selectedId) return;
+    const key = `wsd_viewed_col_${selectedId}`;
+    try {
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, "1");
+        window.WSD_COLUMNS.incrementViews(selectedId);
+        refresh();
+      }
+    } catch {}
+  }, [selectedId]);
+
+  const requireLogin = (label) => {
+    if (confirm(`${label}은(는) 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?`)) {
+      go("login");
+    }
+  };
+
+  const handleLike = () => {
+    if (!user) return requireLogin("공감");
+    window.WSD_COLUMNS.toggleLike(selectedId, user.id);
+    refresh();
+  };
+
+  const handleShare = async () => {
+    const url = `${location.origin}${location.pathname}#col-${selectedId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareMsg("공유 링크가 복사되었습니다.");
+    } catch {
+      setShareMsg(url);
+    }
+    setTimeout(() => setShareMsg(""), 2400);
+  };
+
+  const submitComment = (e) => {
+    e.preventDefault();
+    if (!user) return requireLogin("댓글 작성");
+    const trimmed = comment.trim();
+    if (!trimmed) return;
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    window.WSD_COLUMNS.addComment(selectedId, {
+      id: `comment-${Date.now()}`,
+      author: user.name,
+      authorId: user.id,
+      authorEmail: user.email,
+      date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+      text: trimmed,
+    });
+    setComment("");
+    refresh();
+  };
+
+  const removeComment = (commentId) => {
+    window.WSD_COLUMNS.deleteComment(selectedId, commentId);
+    refresh();
+  };
+
+  // ── 상세 보기 ─────────────────────────────────────────────────
+  if (selectedId !== null) {
+    const c = window.WSD_COLUMNS.getColumn(selectedId);
+    if (!c) {
+      return (
+        <div className="section">
+          <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
+            <p className="dim" style={{fontSize:14, marginBottom:16}}>해당 칼럼을 찾을 수 없습니다.</p>
+            <button type="button" className="btn" onClick={() => setSelectedId(null)}>아카이브로</button>
+          </div>
+        </div>
+      );
+    }
+
+    const idx = publicColumns.findIndex((x) => String(x.id) === String(c.id));
+    const prevCol = idx > 0 ? publicColumns[idx - 1] : null;
+    const nextCol = idx >= 0 && idx < publicColumns.length - 1 ? publicColumns[idx + 1] : null;
+    const likes = window.WSD_COLUMNS.getLikes(c.id);
+    const liked = !!user && likes.includes(user.id);
+    const views = window.WSD_COLUMNS.getViews(c.id);
+    const comments = window.WSD_COLUMNS.listComments(c.id);
+    const readTime = c.body?.text
+      ? window.WSD_COLUMNS.estimateReadTime(c.body.text)
+      : c.readTime;
+
     return (
       <div className="section">
         <div className="container" style={{maxWidth:760}}>
-          <button className="btn-ghost" onClick={() => setSelected(null)}
+          <button className="btn-ghost" onClick={() => setSelectedId(null)}
             style={{marginBottom:32, cursor:'pointer', color:'var(--ink-2)', fontSize:12, letterSpacing:'0.1em'}}>
             ← 아카이브로
           </button>
@@ -21,15 +129,20 @@ const ColumnPage = ({ go }) => {
             <h1 style={{fontFamily:'var(--font-serif)', fontSize:48, fontWeight:500, lineHeight:1.2, margin:'20px 0 16px'}}>
               {c.title}
             </h1>
-            <div style={{display:'flex', gap:20, justifyContent:'center', fontFamily:'var(--font-mono)', fontSize:12, color:'var(--ink-3)'}}>
+            <div style={{display:'flex', gap:20, justifyContent:'center', fontFamily:'var(--font-mono)', fontSize:12, color:'var(--ink-3)', flexWrap:'wrap'}}>
               <span className="gold">뱅기노자</span>
               <span>{c.date}</span>
-              <span>읽는 시간 · {c.readTime}</span>
+              <span>읽는 시간 · {readTime}</span>
+              <span>조회 {views}</span>
+              <span>공감 {likes.length}</span>
+              <span>댓글 {comments.length}</span>
             </div>
           </div>
-          <div className="placeholder" style={{aspectRatio:'16/9', marginBottom:40, fontSize:11}}>
-            COLUMN HERO IMAGE · 1600×900
-          </div>
+          {!c.body?.html && (
+            <div className="placeholder" style={{aspectRatio:'16/9', marginBottom:40, fontSize:11}}>
+              COLUMN HERO IMAGE · 1600×900
+            </div>
+          )}
           <article style={{fontFamily:'var(--font-serif)', fontSize:18, lineHeight:2, color:'var(--ink)'}}>
             <p style={{fontSize:22, lineHeight:1.7, color:'var(--gold-ink)', marginBottom:32, fontStyle:'italic'}}>
               {c.excerpt}
@@ -58,17 +171,86 @@ const ColumnPage = ({ go }) => {
               </>
             )}
           </article>
-          <div style={{marginTop:60, paddingTop:40, borderTop:'1px solid var(--line-2)', display:'flex', justifyContent:'space-between', gap:24, flexWrap:'wrap'}}>
-            {selected > 0 && (
-              <div style={{cursor:'pointer', flex:1, minWidth:240}} onClick={() => setSelected(selected - 1)}>
-                <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>← 이전 칼럼</div>
-                <div className="ko-serif gold" style={{fontSize:16}}>{data.columns[selected-1].title}</div>
+
+          {/* 액션 — 공감 / 공유 */}
+          <div style={{display:'flex', gap:12, justifyContent:'center', margin:'60px 0 32px', paddingTop:32, borderTop:'1px solid var(--line)', flexWrap:'wrap'}}>
+            <button type="button" className="btn" aria-pressed={liked} onClick={handleLike}
+              style={{borderColor: liked ? 'var(--gold)' : undefined, color: liked ? 'var(--gold)' : undefined}}>
+              <span aria-hidden="true">♥</span> 공감 <span aria-live="polite">{likes.length}</span>
+            </button>
+            <button type="button" className="btn" onClick={handleShare}>공유 (링크 복사)</button>
+          </div>
+          {shareMsg && (
+            <div role="status" className="mono gold" style={{fontSize:12, textAlign:'center', marginBottom:32, letterSpacing:'0.1em'}}>
+              {shareMsg}
+            </div>
+          )}
+
+          {/* 댓글 */}
+          <section aria-labelledby="col-comments" style={{marginTop:32}}>
+            <h2 id="col-comments" className="ko-serif" style={{fontSize:22, marginBottom:24}}>
+              댓글 <span className="gold">{comments.length}</span>
+            </h2>
+
+            {user ? (
+              <form onSubmit={submitComment} style={{marginBottom:32}}>
+                <label htmlFor="col-comment-input" className="sr-only">댓글 입력</label>
+                <textarea id="col-comment-input" className="field-input"
+                  placeholder="이 글에 대한 생각을 나누어 주세요..."
+                  value={comment} onChange={(e) => setComment(e.target.value)}
+                  style={{minHeight:100, resize:'vertical', marginBottom:12}}/>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                  <span className="dim-2 mono" style={{fontSize:11}}>{user.name}(으)로 등록</span>
+                  <button type="submit" className="btn btn-gold btn-small" disabled={!comment.trim()}>등록</button>
+                </div>
+              </form>
+            ) : (
+              <div className="card" style={{padding:24, textAlign:'center', marginBottom:32, background:'rgba(212,175,55,0.04)'}}>
+                <p className="dim" style={{fontSize:14, marginBottom:16}}>
+                  댓글 작성은 <strong className="gold">로그인한 회원</strong>만 가능합니다.
+                </p>
+                <div style={{display:'flex', gap:10, justifyContent:'center'}}>
+                  <button type="button" className="btn btn-gold btn-small" onClick={() => go("login")}>로그인</button>
+                  <button type="button" className="btn btn-small" onClick={() => go("signup")}>회원가입</button>
+                </div>
               </div>
             )}
-            {selected < data.columns.length - 1 && (
-              <div style={{cursor:'pointer', textAlign:'right', flex:1, minWidth:240}} onClick={() => setSelected(selected + 1)}>
+
+            <ol style={{listStyle:'none', padding:0, margin:0}}>
+              {comments.map((cm, i) => (
+                <li key={cm.id || i} style={{padding:'24px 0', borderBottom:'1px solid var(--line)'}}>
+                  <div style={{display:'flex', gap:16, alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
+                    <div style={{display:'flex', gap:16, alignItems:'center'}}>
+                      <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em', display:'inline-flex', alignItems:'center'}}>
+                        {cm.author}
+                        <AuthorGradeBadge authorId={cm.authorId} author={cm.author} authorEmail={cm.authorEmail}/>
+                      </span>
+                      <time className="mono dim-2" style={{fontSize:11}}>{cm.date}</time>
+                    </div>
+                    {!!user && (user.isAdmin || cm.authorId === user.id || cm.author === user.name) && (
+                      <button type="button" className="btn-ghost"
+                        onClick={() => removeComment(cm.id)}
+                        style={{fontSize:11, color:'var(--danger)'}}>삭제</button>
+                    )}
+                  </div>
+                  <p style={{fontFamily:'var(--font-reading)', fontSize:15, lineHeight:1.8, color:'var(--ink)'}}>{cm.text}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* prev / next */}
+          <div style={{marginTop:60, paddingTop:40, borderTop:'1px solid var(--line-2)', display:'flex', justifyContent:'space-between', gap:24, flexWrap:'wrap'}}>
+            {prevCol && (
+              <div style={{cursor:'pointer', flex:1, minWidth:240}} onClick={() => setSelectedId(prevCol.id)}>
+                <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>← 이전 칼럼</div>
+                <div className="ko-serif gold" style={{fontSize:16}}>{prevCol.title}</div>
+              </div>
+            )}
+            {nextCol && (
+              <div style={{cursor:'pointer', textAlign:'right', flex:1, minWidth:240}} onClick={() => setSelectedId(nextCol.id)}>
                 <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>다음 칼럼 →</div>
-                <div className="ko-serif gold" style={{fontSize:16}}>{data.columns[selected+1].title}</div>
+                <div className="ko-serif gold" style={{fontSize:16}}>{nextCol.title}</div>
               </div>
             )}
           </div>
@@ -77,10 +259,11 @@ const ColumnPage = ({ go }) => {
     );
   }
 
+  // ── 아카이브 (목록) ────────────────────────────────────────────
   return (
     <div className="section">
       <div className="container">
-        <div style={{textAlign:'center', marginBottom:60}}>
+        <div style={{textAlign:'center', marginBottom:48}}>
           <div className="section-eyebrow" style={{justifyContent:'center'}}>COLUMN · 뱅기노자의 글</div>
           <h1 className="section-title">
             <span className="accent">뱅기노자</span>가 쓰다
@@ -90,51 +273,80 @@ const ColumnPage = ({ go }) => {
           </p>
         </div>
 
-        <div style={{display:'flex', justifyContent:'center', gap:16, marginBottom:60, flexWrap:'wrap'}}>
-          {categories.map(c => (
+        {/* 검색 + 카테고리 */}
+        <div style={{display:'flex', justifyContent:'center', alignItems:'center', gap:16, marginBottom:24, flexWrap:'wrap'}}>
+          <label htmlFor="col-search" className="sr-only">칼럼 검색</label>
+          <input id="col-search" className="field-input"
+            placeholder="제목 · 발췌 · 본문 검색..."
+            value={search} onChange={(e) => setSearch(e.target.value)}
+            style={{width:280, padding:'10px 14px'}}/>
+        </div>
+        <div style={{display:'flex', justifyContent:'center', gap:12, marginBottom:48, flexWrap:'wrap'}}>
+          {categories.map((c) => (
             <button key={c}
+              type="button"
               onClick={() => setCategory(c)}
               style={{
                 padding:'10px 20px',
                 border: category === c ? '1px solid var(--gold)' : '1px solid var(--line-2)',
                 color: category === c ? 'var(--gold)' : 'var(--ink-2)',
+                background: 'transparent',
                 fontSize:12,
                 letterSpacing:'0.1em',
+                cursor:'pointer',
               }}>{c}</button>
           ))}
         </div>
 
-        <div className="grid grid-3">
-          {filtered.map((c, i) => {
-            const idx = publicColumns.findIndex(x => x.id === c.id);
-            return (
-              <div key={c.id}
-                onClick={() => setSelected(idx)}
-                className="card"
-                style={{padding:0, cursor:'pointer', overflow:'hidden'}}>
-                <div className="placeholder" style={{aspectRatio:'4/3', borderLeft:'none', borderRight:'none', borderTop:'none', fontSize:9}}>
-                  0{idx+1}
-                </div>
-                <div style={{padding:28}}>
-                  <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:12}}>
-                    <span className="pill">{c.category}</span>
-                    <span className="mono dim-2" style={{fontSize:10}}>{c.readTime}</span>
+        {filtered.length === 0 ? (
+          <div className="card" style={{padding:48, textAlign:'center'}}>
+            <p className="dim" style={{fontSize:14}}>조건에 맞는 칼럼이 없습니다.</p>
+          </div>
+        ) : (
+          <div className="grid grid-3">
+            {filtered.map((c, i) => {
+              const likes = window.WSD_COLUMNS.getLikes(c.id);
+              const views = window.WSD_COLUMNS.getViews(c.id);
+              const readTime = c.body?.text
+                ? window.WSD_COLUMNS.estimateReadTime(c.body.text)
+                : c.readTime;
+              return (
+                <div key={c.id}
+                  onClick={() => setSelectedId(c.id)}
+                  className="card"
+                  style={{padding:0, cursor:'pointer', overflow:'hidden'}}>
+                  <div className="placeholder" style={{aspectRatio:'4/3', borderLeft:'none', borderRight:'none', borderTop:'none', fontSize:9}}>
+                    0{i+1}
                   </div>
-                  <h3 className="ko-serif" style={{fontSize:19, fontWeight:500, lineHeight:1.35, marginBottom:10, minHeight:50}}>
-                    {c.title}
-                  </h3>
-                  <p className="dim" style={{fontSize:13, lineHeight:1.6, marginBottom:16}}>
-                    {c.excerpt.slice(0, 90)}…
-                  </p>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:16, borderTop:'1px solid var(--line)'}}>
-                    <span className="mono dim-2" style={{fontSize:10}}>{c.date}</span>
-                    <span className="gold mono" style={{fontSize:10, letterSpacing:'0.2em'}}>READ →</span>
+                  <div style={{padding:28}}>
+                    <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:12, flexWrap:'wrap'}}>
+                      <span className="pill">{c.category}</span>
+                      <span className="mono dim-2" style={{fontSize:10}}>{readTime}</span>
+                      {likes.length > 0 && <span className="gold mono" style={{fontSize:10}}>♥{likes.length}</span>}
+                      {views > 0 && <span className="dim-2 mono" style={{fontSize:10}}>조회 {views}</span>}
+                    </div>
+                    <h3 className="ko-serif" style={{fontSize:19, fontWeight:500, lineHeight:1.35, marginBottom:10, minHeight:50}}>
+                      {c.title}
+                    </h3>
+                    <p className="dim" style={{fontSize:13, lineHeight:1.6, marginBottom:16}}>
+                      {String(c.excerpt || '').slice(0, 90)}…
+                    </p>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:16, borderTop:'1px solid var(--line)'}}>
+                      <span className="mono dim-2" style={{fontSize:10}}>{c.date}</span>
+                      <span className="gold mono" style={{fontSize:10, letterSpacing:'0.2em'}}>READ →</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
+
+        {filtered.length > 0 && (
+          <div className="mono dim-2" style={{textAlign:'center', fontSize:10, letterSpacing:'0.2em', marginTop:32}}>
+            총 {filtered.length}개 칼럼 · {category} {search && `· "${search}"`}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.012.000",
+  version: "00.013.000",
   build: "2026.04.25",
   channel: "preview",
 };
@@ -120,6 +120,7 @@ window.WSD_STORES = {
   bookmarks: _lsGet('wsd_bookmarks', {}),
   reports: _lsGet('wsd_reports', []),
   notifications: _lsGet('wsd_notifications', {}),
+  columnEngagement: _lsGet('wsd_column_engagement', {}),
 };
 window.WSD_SAVE = {
   grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
@@ -133,6 +134,7 @@ window.WSD_SAVE = {
   bookmarks: () => _lsSet('wsd_bookmarks', window.WSD_STORES.bookmarks),
   reports: () => _lsSet('wsd_reports', window.WSD_STORES.reports),
   notifications: () => _lsSet('wsd_notifications', window.WSD_STORES.notifications),
+  columnEngagement: () => _lsSet('wsd_column_engagement', window.WSD_STORES.columnEngagement),
   resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
   resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
 };
@@ -140,7 +142,7 @@ window.WSD_SAVE = {
 window.WSD_DB = {
   version: WSD_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -413,6 +415,121 @@ window.WSD_COMMUNITY = {
     window.WSD_SAVE.notifications();
     return [];
   },
+};
+
+// === 칼럼(WSD_COLUMNS) helper ===========================================
+// 운영 정책:
+//   - userColumns 저장소가 콘텐츠(본문/메타) 단일 출처. 시드 칼럼은 WANGSADEUL_DATA.columns.
+//   - status: 'draft' | 'scheduled' | 'published' (시드는 항상 published).
+//   - 좋아요/조회수는 columnEngagement 맵으로 분리 — 시드 칼럼도 동일하게 저장.
+//   - 댓글은 WSD_COMMUNITY.comments 저장소를 `col-{id}` 키로 재사용.
+window.WSD_COLUMNS = {
+  estimateReadTime(text) {
+    const len = String(text || '').length;
+    const minutes = Math.max(3, Math.ceil(len / 600));
+    return `${minutes}분`;
+  },
+  _engage(id) {
+    const map = window.WSD_STORES.columnEngagement || {};
+    const entry = map[String(id)] || {};
+    return { likes: Array.isArray(entry.likes) ? entry.likes : [], views: entry.views || 0 };
+  },
+  _setEngage(id, next) {
+    const map = window.WSD_STORES.columnEngagement || {};
+    map[String(id)] = next;
+    window.WSD_STORES.columnEngagement = map;
+    window.WSD_SAVE.columnEngagement();
+  },
+  getLikes(id) { return this._engage(id).likes.slice(); },
+  hasLiked(id, userId) { return !!userId && this.getLikes(id).includes(userId); },
+  toggleLike(id, userId) {
+    if (!userId) return null;
+    const e = this._engage(id);
+    const likes = e.likes;
+    const next = likes.includes(userId) ? likes.filter(x => x !== userId) : [...likes, userId];
+    this._setEngage(id, { ...e, likes: next });
+    return next;
+  },
+  getViews(id) { return this._engage(id).views || 0; },
+  incrementViews(id) {
+    const e = this._engage(id);
+    const next = (e.views || 0) + 1;
+    this._setEngage(id, { ...e, views: next });
+    return next;
+  },
+  // 예약 발행이 시간 지났으면 자동으로 published로 승격
+  _autoPromote() {
+    const now = Date.now();
+    const list = (window.WSD_STORES.userColumns || []);
+    let mutated = false;
+    const next = list.map((c) => {
+      if (c.status === 'scheduled' && c.publishAt && new Date(c.publishAt).getTime() <= now) {
+        mutated = true;
+        return { ...c, status: 'published', publishedAt: c.publishedAt || new Date().toISOString() };
+      }
+      return c;
+    });
+    if (mutated) {
+      window.WSD_STORES.userColumns = next;
+      window.WSD_SAVE.userColumns();
+    }
+  },
+  listAll() {
+    this._autoPromote();
+    return (window.WSD_STORES.userColumns || []).map((c) => ({
+      ...c, status: c.status || 'published',
+    }));
+  },
+  // 공개 노출용 — published 사용자 칼럼 + 시드 칼럼
+  listPublic() {
+    this._autoPromote();
+    const userPub = (window.WSD_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published');
+    const seed = (window.WANGSADEUL_DATA?.columns || []).map((c) => ({ ...c, status: 'published' }));
+    return [...userPub, ...seed];
+  },
+  getColumn(id) {
+    this._autoPromote();
+    const fromUser = (window.WSD_STORES.userColumns || []).find((c) => String(c.id) === String(id));
+    if (fromUser) return { ...fromUser, status: fromUser.status || 'published' };
+    const seed = (window.WANGSADEUL_DATA?.columns || []).find((c) => String(c.id) === String(id));
+    return seed ? { ...seed, status: 'published' } : null;
+  },
+  saveColumn(payload) {
+    const list = window.WSD_STORES.userColumns || [];
+    const idx = list.findIndex((c) => String(c.id) === String(payload.id));
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], ...payload, updatedAt: new Date().toISOString() };
+    } else {
+      list.unshift({ ...payload, createdAt: new Date().toISOString() });
+    }
+    window.WSD_STORES.userColumns = list;
+    window.WSD_SAVE.userColumns();
+    return payload;
+  },
+  deleteColumn(id) {
+    window.WSD_STORES.userColumns = (window.WSD_STORES.userColumns || []).filter((c) => String(c.id) !== String(id));
+    window.WSD_SAVE.userColumns();
+    const map = window.WSD_STORES.columnEngagement || {};
+    delete map[String(id)];
+    window.WSD_STORES.columnEngagement = map;
+    window.WSD_SAVE.columnEngagement();
+  },
+  // 검색 + 카테고리 필터
+  searchPublic({ query = '', category = '전체' } = {}) {
+    const q = String(query || '').trim().toLowerCase();
+    return this.listPublic().filter((c) => {
+      if (category !== '전체' && c.category !== category) return false;
+      if (!q) return true;
+      const inTitle = String(c.title || '').toLowerCase().includes(q);
+      const inExcerpt = String(c.excerpt || '').toLowerCase().includes(q);
+      const inBodyText = String(c.body?.text || '').toLowerCase().includes(q);
+      return inTitle || inExcerpt || inBodyText;
+    });
+  },
+  // 댓글은 WSD_COMMUNITY 저장소 재사용 (`col-{id}` 키)
+  listComments(id) { return window.WSD_COMMUNITY.getComments(`col-${id}`); },
+  addComment(id, payload) { return window.WSD_COMMUNITY.addComment(`col-${id}`, payload); },
+  deleteComment(id, commentId) { return window.WSD_COMMUNITY.deleteComment(`col-${id}`, commentId); },
 };
 
 // 사용자 등급 레벨 계산

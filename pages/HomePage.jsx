@@ -1,7 +1,7 @@
 // 메인 페이지
 const HomePage = ({ go, tweaks }) => {
   const data = window.WANGSADEUL_DATA;
-  const publicColumns = [...(window.WSD_STORES?.userColumns || []), ...data.columns];
+  const publicColumns = window.WSD_COLUMNS?.listPublic?.() || [...(window.WSD_STORES?.userColumns || []), ...data.columns];
   const featuredColumn = publicColumns[0];
   const secondaryColumns = publicColumns.slice(1, 5);
   const heroLayout = tweaks.heroLayout;
