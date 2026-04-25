@@ -10,15 +10,27 @@ const LoginPage = ({ go, setUser }) => {
   const set = (k, v) => setForm({ ...form, [k]: v });
 
   const submit = () => {
-    const isAdmin = /admin@|banginoja@/i.test(form.email || "banginoja@wangsadeul.kr");
+    const normalizedEmail = (form.email || "").trim().toLowerCase();
+    const isAdminLogin = mode === "login"
+      && normalizedEmail === "admin@admin.admin"
+      && form.password === "admin";
+    const isBlockedAdminAttempt = mode === "login"
+      && normalizedEmail === "admin@admin.admin"
+      && form.password !== "admin";
+
+    if (isBlockedAdminAttempt) {
+      alert("임시 관리자 계정 비밀번호가 올바르지 않습니다.");
+      return;
+    }
+
     const name = mode === "signup"
       ? (form.name || "새로운 왕사")
-      : "뱅기노자";
+      : (isAdminLogin ? "관리자" : "왕사들 회원");
     setUser({
       name,
-      email: form.email || "hello@wangsadeul.kr",
-      isAdmin,
-      gradeId: isAdmin ? "admin" : (mode === "signup" ? "member" : "scholar"),
+      email: normalizedEmail || "hello@wangsadeul.kr",
+      isAdmin: isAdminLogin,
+      gradeId: isAdminLogin ? "admin" : (mode === "signup" ? "member" : "scholar"),
       profile: mode === "signup" ? {
         birthdate: form.birthdate, phone: form.phone,
         zip: form.zip, addr1: form.addr1, addr2: form.addr2,
@@ -32,7 +44,7 @@ const LoginPage = ({ go, setUser }) => {
       },
       joinedAt: new Date().toISOString(),
     });
-    go(isAdmin ? "admin" : "home");
+    go(isAdminLogin ? "admin" : "home");
   };
 
   return (
