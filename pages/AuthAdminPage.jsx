@@ -397,6 +397,17 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.007.000",
+    date: "2026-04-25",
+    summary: "P2 첫 단계로 커뮤니티 게시글과 댓글을 local-first 단일 저장소로 통합하고, 글 수정·삭제·조회수 저장을 붙였습니다. 관리자 게시글 화면도 같은 데이터를 읽도록 바꿔 검색, 분류 필터, CSV 다운로드, 삭제 기능을 실제 운영 흐름으로 연결했습니다.",
+    details: [
+      "`communityPosts` 저장소와 `WSD_COMMUNITY` helper를 추가해 게시글/댓글 흐름을 한 계층으로 묶었습니다.",
+      "커뮤니티 상세에서 작성자 또는 관리자가 글과 댓글을 직접 수정·삭제할 수 있게 했습니다.",
+      "관리자 게시글 탭이 실제 저장소를 읽고 검색, 필터, CSV 다운로드, 삭제를 수행하도록 연결했습니다.",
+    ],
+    context: "P2에서 가장 체감이 큰 영역은 커뮤니티였고, 사용자 화면과 관리자 화면이 서로 다른 게시글 데이터를 보면 운영 기능이 계속 목업 상태에 머물 위험이 컸습니다. 그래서 먼저 게시글과 댓글을 단일 저장소로 통합하는 작업을 우선 진행했습니다.",
+  },
+  {
     version: "00.006.000",
     date: "2026-04-25",
     summary: "P1 기준으로 local-first 인증/데이터 저장 구조를 분리해 회원 저장소와 세션 저장소를 실제로 연결했고, 로그인·회원가입·로그아웃이 같은 인증 계층을 보도록 정리했습니다. 현재 GitHub Pages 환경에서도 확장 가능한 구조로 운영 기준을 명확히 잡았습니다.",
@@ -503,6 +514,13 @@ const ADMIN_KMS_SECTIONS = [
     background: "기존 로그인은 화면에서 사용자 객체만 즉석 생성하는 수준이어서, P1의 인증/저장 구조 항목을 완료로 보기 어려웠습니다.",
     next: "이후 외부 DB를 붙이더라도 엔티티 이름과 책임은 유지하고, 저장소 구현만 교체하는 방향으로 확장합니다.",
   },
+  {
+    title: "P2 커뮤니티 운영 구조",
+    what: "커뮤니티는 이제 `communityPosts`와 `WSD_COMMUNITY`를 기준으로 게시글 목록, 수정/삭제, 댓글, 조회수, 관리자 게시글 운영을 같은 저장소 위에서 처리합니다.",
+    why: "사용자 화면과 관리자 화면이 같은 게시글 데이터를 보지 않으면 운영 기능이 계속 데모 수준에 머무를 수 있기 때문입니다.",
+    background: "기존 커뮤니티는 글쓰기와 댓글 저장은 있었지만, 수정/삭제와 관리자 연결이 약해 실서비스 구조로 보기 어려웠습니다.",
+    next: "다음 단계에서는 권한 정책, 회원 운영, 투어/주문 운영 기능도 같은 방식으로 실제 저장소와 연결합니다.",
+  },
 ];
 
 // === Admin Page ===================================================
@@ -510,6 +528,19 @@ const AdminPage = ({ go }) => {
   const data = window.WANGSADEUL_DATA;
   const [tab, setTab] = React.useState("대시보드");
   const [selectedMember, setSelectedMember] = React.useState(null);
+  const [postSearch, setPostSearch] = React.useState("");
+  const [postFilter, setPostFilter] = React.useState("all");
+  const [postRefreshKey, setPostRefreshKey] = React.useState(0);
+
+  const allCommunityPosts = React.useMemo(() => window.WSD_COMMUNITY.listPosts(), [postRefreshKey]);
+  const visibleCommunityPosts = React.useMemo(() => allCommunityPosts.filter((post) => {
+    const search = postSearch.trim().toLowerCase();
+    const matchesSearch = !search
+      || post.title.toLowerCase().includes(search)
+      || String(post.author || "").toLowerCase().includes(search);
+    const matchesFilter = postFilter === "all" || post.categoryId === postFilter;
+    return matchesSearch && matchesFilter;
+  }), [allCommunityPosts, postSearch, postFilter]);
 
   const tabGroups = [
     { group: "요약",     items: ["대시보드"] },
@@ -536,6 +567,22 @@ const AdminPage = ({ go }) => {
     a.download = `dsr-access-${m.id}-${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportCommunityPosts = () => {
+    const blob = new Blob([window.WSD_COMMUNITY.exportCsv()], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `community-posts-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const deleteCommunityPost = (post) => {
+    if (!confirm(`"${post.title}" 게시글을 삭제하시겠어요?`)) return;
+    window.WSD_COMMUNITY.deletePost(post.id);
+    setPostRefreshKey((value) => value + 1);
   };
 
   return (
@@ -713,9 +760,15 @@ const AdminPage = ({ go }) => {
           <div>
             <div style={{display:'flex', gap:12, marginBottom:20}}>
               <label htmlFor="post-search" className="sr-only">게시글 검색</label>
-              <input id="post-search" className="field-input" placeholder="검색..." style={{flex:1}}/>
-              <button type="button" className="btn btn-gold btn-small">필터</button>
-              <button type="button" className="btn btn-small">CSV 다운로드</button>
+              <input id="post-search" className="field-input" placeholder="제목 또는 작성자 검색..." style={{flex:1}}
+                value={postSearch} onChange={(e) => setPostSearch(e.target.value)}/>
+              <select className="field-input" style={{maxWidth:180}} value={postFilter} onChange={(e) => setPostFilter(e.target.value)}>
+                <option value="all">전체 분류</option>
+                {window.WSD_STORES.categories.filter((item) => item.boardType === "community").map((item) => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
+              <button type="button" className="btn btn-small" onClick={exportCommunityPosts}>CSV 다운로드</button>
             </div>
             <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
               <thead>
@@ -729,18 +782,27 @@ const AdminPage = ({ go }) => {
                 </tr>
               </thead>
               <tbody>
-                {data.posts.map(p => (
+                {visibleCommunityPosts.map(p => (
                   <tr key={p.id} style={{borderBottom:'1px solid var(--line)'}}>
                     <td className="mono dim-2" style={{padding:14}}>#{String(p.id).padStart(4,'0')}</td>
                     <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{p.category}</span></td>
                     <td className="ko-serif" style={{padding:14, fontSize:14}}>{p.title}</td>
                     <td className="dim mono" style={{padding:14}}>{p.author}</td>
                     <td className="mono dim-2" style={{padding:14}}>{p.date}</td>
-                    <td style={{padding:14, textAlign:'right'}}><button type="button" className="btn btn-small">편집</button></td>
+                    <td style={{padding:14, textAlign:'right', display:'flex', justifyContent:'flex-end', gap:8}}>
+                      <button type="button" className="btn btn-small" onClick={() => go("community")}>열기</button>
+                      <button type="button" className="btn btn-small" onClick={() => deleteCommunityPost(p)}
+                        style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            {visibleCommunityPosts.length === 0 && (
+              <div className="card" style={{padding:24, marginTop:16, textAlign:'center'}}>
+                조건에 맞는 게시글이 없습니다.
+              </div>
+            )}
           </div>
         )}
 

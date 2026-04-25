@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.006.000",
+  version: "00.007.000",
   build: "2026.04.25",
   channel: "preview",
 };
@@ -46,6 +46,17 @@ const DEFAULT_CATEGORIES = [
   { id: "column",   label: "칼럼",  boardType: "column",    minLevel: 0,  postMinLevel: 100, desc: "뱅기노자 칼럼 (쓰기: 관리자)" },
 ];
 
+const DEFAULT_COMMUNITY_POSTS = [
+  { id: 1, categoryId: "free", category: "자유", title: "첫 답사 후기 — 창덕궁 후원 야간 프로그램", author: "돌담아래", replies: 24, views: 512, date: "2026.04.17", hot: true },
+  { id: 2, categoryId: "question", category: "질문", title: "『왕의길』 2장에 나오는 '측근 정치'에 대해 여쭙니다", author: "역사애호", replies: 18, views: 342, date: "2026.04.16" },
+  { id: 3, categoryId: "info", category: "정보", title: "국립고궁박물관 특별전 — 일월오봉도 원본 공개", author: "고궁지기", replies: 41, views: 1203, date: "2026.04.15", hot: true },
+  { id: 4, categoryId: "free", category: "자유", title: "뱅기노자 선생님 강연 들은 후기 (긴 글 주의)", author: "봄밤의자", replies: 33, views: 876, date: "2026.04.14" },
+  { id: 5, categoryId: "question", category: "질문", title: "세종실록과 성종실록, 초심자는 어디부터?", author: "입문자", replies: 12, views: 245, date: "2026.04.13" },
+  { id: 6, categoryId: "info", category: "정보", title: "4월 답사 일정 총정리", author: "운영진", replies: 8, views: 612, date: "2026.04.12" },
+  { id: 7, categoryId: "free", category: "자유", title: "어좌 뒤 병풍 — 왜 하필 다섯 봉우리일까", author: "고요한아침", replies: 27, views: 453, date: "2026.04.11" },
+  { id: 8, categoryId: "question", category: "질문", title: "영문판 구매 시 해외 배송 가능한가요?", author: "overseas_reader", replies: 5, views: 189, date: "2026.04.10" },
+];
+
 const DEFAULT_USERS = [
   {
     id: "user-admin",
@@ -68,10 +79,39 @@ const ensureUsersSeeded = (users) => {
   return list;
 };
 
+const normalizeCommunityPost = (post) => {
+  const categoryId = post.categoryId
+    || ({ "공지": "notice", "자유": "free", "질문": "question", "정보": "info" }[post.category])
+    || "free";
+  const category = post.category
+    || (DEFAULT_CATEGORIES.find((item) => item.id === categoryId)?.label || "자유");
+  return {
+    ...post,
+    categoryId,
+    category,
+    replies: post.replies ?? 0,
+    views: post.views ?? 0,
+  };
+};
+
+const ensureCommunityPostsSeeded = (posts, legacyUserPosts) => {
+  const seeded = Array.isArray(posts) && posts.length
+    ? posts.map(normalizeCommunityPost)
+    : DEFAULT_COMMUNITY_POSTS.map(normalizeCommunityPost);
+  const next = seeded.slice();
+  (Array.isArray(legacyUserPosts) ? legacyUserPosts : []).map(normalizeCommunityPost).forEach((post) => {
+    if (!next.find((item) => String(item.id) === String(post.id))) {
+      next.unshift(post);
+    }
+  });
+  return next;
+};
+
 window.WSD_STORES = {
   storageVersion: WSD_STORAGE_VERSION,
   grades: _lsGet('wsd_grades', DEFAULT_GRADES),
   categories: _lsGet('wsd_categories', DEFAULT_CATEGORIES),
+  communityPosts: ensureCommunityPostsSeeded(_lsGet('wsd_community_posts', []), _lsGet('wsd_user_posts', [])),
   userPosts: _lsGet('wsd_user_posts', []),
   comments: _lsGet('wsd_comments', {}),
   userColumns: _lsGet('wsd_user_columns', []),
@@ -81,6 +121,7 @@ window.WSD_STORES = {
 window.WSD_SAVE = {
   grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
   categories: () => _lsSet('wsd_categories', window.WSD_STORES.categories),
+  communityPosts: () => _lsSet('wsd_community_posts', window.WSD_STORES.communityPosts),
   userPosts: () => _lsSet('wsd_user_posts', window.WSD_STORES.userPosts),
   comments: () => _lsSet('wsd_comments', window.WSD_STORES.comments),
   userColumns: () => _lsSet('wsd_user_columns', window.WSD_STORES.userColumns),
@@ -93,7 +134,7 @@ window.WSD_SAVE = {
 window.WSD_DB = {
   version: WSD_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "userPosts", "comments", "userColumns", "grades", "categories"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -168,6 +209,85 @@ window.WSD_AUTH = {
   },
 };
 
+window.WSD_COMMUNITY = {
+  listPosts() {
+    return (window.WSD_STORES.communityPosts || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  },
+  getPost(postId) {
+    return (window.WSD_STORES.communityPosts || []).find((post) => String(post.id) === String(postId)) || null;
+  },
+  savePosts(posts) {
+    window.WSD_STORES.communityPosts = posts.map(normalizeCommunityPost);
+    window.WSD_SAVE.communityPosts();
+  },
+  createPost(payload) {
+    const nextPost = normalizeCommunityPost({
+      ...payload,
+      id: `post-${Date.now()}`,
+      _userCreated: true,
+      _new: true,
+    });
+    this.savePosts([nextPost, ...this.listPosts()]);
+    return nextPost;
+  },
+  updatePost(postId, patch) {
+    const posts = this.listPosts().map((post) => (
+      String(post.id) === String(postId)
+        ? normalizeCommunityPost({ ...post, ...patch, updatedAt: new Date().toISOString() })
+        : post
+    ));
+    this.savePosts(posts);
+    return this.getPost(postId);
+  },
+  deletePost(postId) {
+    const nextPosts = this.listPosts().filter((post) => String(post.id) !== String(postId));
+    this.savePosts(nextPosts);
+    delete window.WSD_STORES.comments[postId];
+    window.WSD_SAVE.comments();
+  },
+  incrementViews(postId) {
+    const post = this.getPost(postId);
+    if (!post) return null;
+    return this.updatePost(postId, { views: (post.views || 0) + 1 });
+  },
+  getComments(postId) {
+    return (window.WSD_STORES.comments[String(postId)] || []).slice();
+  },
+  saveComments(postId, comments) {
+    window.WSD_STORES.comments[String(postId)] = comments.slice();
+    window.WSD_SAVE.comments();
+    const post = this.getPost(postId);
+    if (post) {
+      this.updatePost(postId, { replies: comments.length });
+    }
+  },
+  addComment(postId, payload) {
+    const nextComments = [...this.getComments(postId), payload];
+    this.saveComments(postId, nextComments);
+    return nextComments;
+  },
+  deleteComment(postId, commentId) {
+    const nextComments = this.getComments(postId).filter((comment) => String(comment.id) !== String(commentId));
+    this.saveComments(postId, nextComments);
+    return nextComments;
+  },
+  exportCsv() {
+    const header = ["id", "category", "title", "author", "date", "views", "replies"];
+    const rows = this.listPosts().map((post) => [
+      post.id,
+      post.category,
+      post.title,
+      post.author,
+      post.date,
+      post.views || 0,
+      post.replies || 0,
+    ]);
+    return [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+  },
+};
+
 // 사용자 등급 레벨 계산
 window.WSD_USER_LEVEL = (user) => {
   if (!user) return 0;
@@ -203,16 +323,7 @@ window.WANGSADEUL_DATA = {
     { id: 2, title: "왕사남 심화 강연", topic: "세종의 침묵과 정조의 질문", venue: "온라인 라이브", next: "2026.05.09 · 토 20:00", host: "뱅기노자", seats: "잔여 42석", note: "실록 문장을 중심으로 두 군주의 사고법을 비교합니다." },
     { id: 3, title: "왕사남 현장 강연", topic: "창덕궁 후원과 왕의 사유", venue: "창덕궁 권역", next: "2026.05.16 · 토 18:30", host: "왕사남 팀", seats: "대기 접수", note: "답사와 강연이 결합된 현장형 프로그램입니다." },
   ],
-  posts: [
-    { id: 1, category: "자유", title: "첫 답사 후기 — 창덕궁 후원 야간 프로그램", author: "돌담아래", replies: 24, views: 512, date: "2026.04.17", hot: true },
-    { id: 2, category: "질문", title: "『왕의길』 2장에 나오는 '측근 정치'에 대해 여쭙니다", author: "역사애호", replies: 18, views: 342, date: "2026.04.16" },
-    { id: 3, category: "정보", title: "국립고궁박물관 특별전 — 일월오봉도 원본 공개", author: "고궁지기", replies: 41, views: 1203, date: "2026.04.15", hot: true },
-    { id: 4, category: "자유", title: "뱅기노자 선생님 강연 들은 후기 (긴 글 주의)", author: "봄밤의자", replies: 33, views: 876, date: "2026.04.14" },
-    { id: 5, category: "질문", title: "세종실록과 성종실록, 초심자는 어디부터?", author: "입문자", replies: 12, views: 245, date: "2026.04.13" },
-    { id: 6, category: "정보", title: "4월 답사 일정 총정리", author: "운영진", replies: 8, views: 612, date: "2026.04.12" },
-    { id: 7, category: "자유", title: "어좌 뒤 병풍 — 왜 하필 다섯 봉우리일까", author: "고요한아침", replies: 27, views: 453, date: "2026.04.11" },
-    { id: 8, category: "질문", title: "영문판 구매 시 해외 배송 가능한가요?", author: "overseas_reader", replies: 5, views: 189, date: "2026.04.10" },
-  ],
+  posts: DEFAULT_COMMUNITY_POSTS.map((post) => ({ ...post })),
   partners: [
     { name: "국립고궁박물관", type: "문화기관", note: "공동 기획전" },
     { name: "한국고전번역원", type: "학술기관", note: "사료 번역 자문" },

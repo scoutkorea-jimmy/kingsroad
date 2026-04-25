@@ -69,6 +69,25 @@ This document fixes the current implementation priority order so context is not 
 - 커뮤니티 실서비스화
 - 관리자 운영 기능 고도화
 
+## P2 Status
+
+현재 기준으로 P2는 `진행 중` 상태다.
+
+### 현재까지 진행된 P2
+
+- 커뮤니티 실서비스화
+  - local-first 게시글 저장소와 댓글 저장소를 단일 흐름으로 연결함
+  - 게시글 작성/수정/삭제, 댓글 등록/삭제, 조회수 저장을 같은 계층에서 처리함
+- 관리자 운영 기능 고도화
+  - 관리자 게시글 탭이 실제 커뮤니티 저장소를 읽도록 연결됨
+  - 검색, 분류 필터, CSV 다운로드, 삭제 기능을 실제 데이터 기준으로 연결함
+
+### P2에서 이어서 남은 항목
+
+- 커뮤니티 권한 정책 추가 고도화
+- 관리자 회원/투어/주문 운영 기능 실동작 확장
+- 운영 로그와 통계 화면 고도화
+
 ## File Naming Rule
 
 - English file names are the default rule.

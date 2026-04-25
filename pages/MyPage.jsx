@@ -5,7 +5,8 @@ const MyPage = ({ go, user, cart }) => {
   const grade = grades.find((item) => item.id === user?.gradeId);
   const upcomingLecture = data.lectures?.[0];
   const upcomingTour = data.tours?.[0];
-  const recentPost = data.posts?.find((post) => post.author === user?.name) || data.posts?.[0];
+  const communityPosts = window.WSD_COMMUNITY?.listPosts?.() || data.posts || [];
+  const recentPost = communityPosts.find((post) => post.authorId === user?.id || post.author === user?.name) || communityPosts[0];
 
   if (!user) {
     return (

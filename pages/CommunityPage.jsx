@@ -183,36 +183,45 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
 
 // === Community Page ======================================================
 const CommunityPage = ({ go, postId, setPostId, user }) => {
-  const data = window.WANGSADEUL_DATA;
   const userLevel = useUserLevel(user);
   const categories = React.useMemo(() => getCategoriesForBoard("community"), [postId]);
-
+  const [refreshKey, setRefreshKey] = React.useState(0);
   const [tab, setTab] = React.useState("all");
   const [search, setSearch] = React.useState("");
-  const [writing, setWriting] = React.useState(false);
+  const [writing, setWriting] = React.useState(null);
 
   const allPosts = React.useMemo(() => {
-    const userPosts = window.WSD_STORES.userPosts || [];
-    // Merge mock posts with user-created
-    const mockPosts = data.posts.map(p => ({
-      ...p,
-      categoryId: ({ "공지": "notice", "자유": "free", "질문": "question", "정보": "info" }[p.category]) || "free",
-    }));
-    return [...userPosts, ...mockPosts];
-  }, [writing, postId]);
+    return window.WSD_COMMUNITY.listPosts();
+  }, [refreshKey]);
 
   if (writing) {
-    return <PostCompose user={user} onCancel={() => setWriting(false)} onPublish={(p) => {
-      window.WSD_STORES.userPosts = [p, ...window.WSD_STORES.userPosts];
-      window.WSD_SAVE.userPosts();
-      setWriting(false);
-      setPostId(p.id);
-    }} categories={categories} userLevel={userLevel}/>;
+    return <PostCompose
+      user={user}
+      initialPost={writing === true ? null : writing}
+      onCancel={() => setWriting(null)}
+      onPublish={(payload) => {
+        const savedPost = writing === true
+          ? window.WSD_COMMUNITY.createPost(payload)
+          : window.WSD_COMMUNITY.updatePost(writing.id, payload);
+        setWriting(null);
+        setRefreshKey((value) => value + 1);
+        setPostId(savedPost.id);
+      }}
+      categories={categories}
+      userLevel={userLevel}
+    />;
   }
 
   if (postId) {
     const post = allPosts.find(p => p.id === postId) || allPosts[0];
-    return <PostDetail post={post} go={go} setPostId={setPostId} user={user}/>;
+    return <PostDetail
+      post={post}
+      go={go}
+      setPostId={setPostId}
+      user={user}
+      onRefresh={() => setRefreshKey((value) => value + 1)}
+      onEdit={(nextPost) => setWriting(nextPost)}
+    />;
   }
 
   const visibleCats = categories.filter(c => userLevel >= (c.minLevel ?? 0));
@@ -329,15 +338,16 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
 };
 
 // === Post Compose =======================================================
-const PostCompose = ({ user, onCancel, onPublish, categories, userLevel }) => {
+const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userLevel }) => {
   const writable = categories.filter(c => userLevel >= (c.postMinLevel ?? c.minLevel ?? 0));
-  const [categoryId, setCategoryId] = React.useState(writable[0]?.id || categories[0]?.id);
-  const [title, setTitle] = React.useState("");
-  const [tags, setTags] = React.useState([]);
-  const [images, setImages] = React.useState([]);
-  const [bodyHtml, setBodyHtml] = React.useState("");
-  const [bodyText, setBodyText] = React.useState("");
+  const [categoryId, setCategoryId] = React.useState(initialPost?.categoryId || writable[0]?.id || categories[0]?.id);
+  const [title, setTitle] = React.useState(initialPost?.title || "");
+  const [tags, setTags] = React.useState(initialPost?.tags || []);
+  const [images, setImages] = React.useState(initialPost?.images || []);
+  const [bodyHtml, setBodyHtml] = React.useState(initialPost?.body?.html || "");
+  const [bodyText, setBodyText] = React.useState(initialPost?.body?.text || "");
   const [error, setError] = React.useState("");
+  const isEditing = !!initialPost;
 
   const submit = () => {
     setError("");
@@ -347,13 +357,14 @@ const PostCompose = ({ user, onCancel, onPublish, categories, userLevel }) => {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     onPublish({
-      id: `u-${Date.now()}`,
       categoryId: cat.id,
       category: cat.label,
       title: title.trim(),
       author: user?.name || "익명",
-      replies: 0,
-      views: 0,
+      authorId: user?.id || null,
+      authorEmail: user?.email || null,
+      replies: initialPost?.replies ?? 0,
+      views: initialPost?.views ?? 0,
       date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`,
       tags,
       images,
@@ -368,7 +379,7 @@ const PostCompose = ({ user, onCancel, onPublish, categories, userLevel }) => {
       <div className="container" style={{maxWidth:960}}>
         <header style={{marginBottom:32}}>
           <div className="section-eyebrow" aria-hidden="true">COMPOSE · 글쓰기</div>
-          <h1 className="section-title" style={{fontSize:36}}>새 글 작성</h1>
+          <h1 className="section-title" style={{fontSize:36}}>{isEditing ? "게시글 수정" : "새 글 작성"}</h1>
           <p className="dim" style={{fontSize:13, marginTop:8}}>
             작성자: <span className="gold">{user?.name || '익명'}</span>
           </p>
@@ -402,12 +413,13 @@ const PostCompose = ({ user, onCancel, onPublish, categories, userLevel }) => {
           </div>
 
           {/* Tiptap editor */}
-          <div className="field">
-            <div className="field-label">본문 <span className="gold" aria-hidden="true">*</span></div>
-            <TiptapEditor preset="simple"
-              onUpdate={(html, _json, text) => { setBodyHtml(html); setBodyText(text); }}
-              placeholder="본문을 입력하세요..."/>
-          </div>
+            <div className="field">
+              <div className="field-label">본문 <span className="gold" aria-hidden="true">*</span></div>
+              <TiptapEditor preset="simple"
+                content={initialPost?.body?.html || ""}
+                onUpdate={(html, _json, text) => { setBodyHtml(html); setBodyText(text); }}
+                placeholder="본문을 입력하세요..."/>
+            </div>
 
           {/* Image attachments */}
           <div className="field">
@@ -422,7 +434,7 @@ const PostCompose = ({ user, onCancel, onPublish, categories, userLevel }) => {
 
           <div style={{display:'flex', gap:12, justifyContent:'flex-end', paddingTop:20, borderTop:'1px solid var(--line)'}}>
             <button type="button" className="btn" onClick={onCancel}>취소</button>
-            <button type="submit" className="btn btn-gold">게시하기 →</button>
+            <button type="submit" className="btn btn-gold">{isEditing ? "수정 저장 →" : "게시하기 →"}</button>
           </div>
         </form>
       </div>
@@ -431,18 +443,26 @@ const PostCompose = ({ user, onCancel, onPublish, categories, userLevel }) => {
 };
 
 // === Post Detail =========================================================
-const PostDetail = ({ post, go, setPostId, user }) => {
+const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
   const [comment, setComment] = React.useState("");
   const [likes, setLikes] = React.useState(post._userCreated ? 0 : 42);
   const [liked, setLiked] = React.useState(false);
-  const [commentsList, setCommentsList] = React.useState(() => {
-    if (window.WSD_STORES.comments[post.id]) return window.WSD_STORES.comments[post.id];
-    if (post._userCreated) return [];
-    return [
-      { author: "돌담아래",  date: "2026.04.17 14:22", text: "깊이 있는 글 감사합니다." },
-      { author: "고궁지기",  date: "2026.04.17 16:05", text: "창덕궁 후원 답사 후 다시 읽으니 완전히 다르게 보입니다." },
-    ];
-  });
+  const [commentsList, setCommentsList] = React.useState(() => window.WSD_COMMUNITY.getComments(post.id));
+  const canManagePost = !!user && (user.isAdmin || post.authorId === user.id || post.author === user.name);
+
+  React.useEffect(() => {
+    setCommentsList(window.WSD_COMMUNITY.getComments(post.id));
+  }, [post.id]);
+
+  React.useEffect(() => {
+    const key = `wsd_viewed_post_${post.id}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {}
+    window.WSD_COMMUNITY.incrementViews(post.id);
+    onRefresh?.();
+  }, [post.id]);
 
   const submitComment = (e) => {
     e.preventDefault();
@@ -451,15 +471,29 @@ const PostDetail = ({ post, go, setPostId, user }) => {
     if (!trimmed) return;
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const next = [...commentsList, {
+    const next = window.WSD_COMMUNITY.addComment(post.id, {
+      id: `comment-${Date.now()}`,
       author: user.name,
+      authorId: user.id,
       date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
       text: trimmed,
-    }];
+    });
     setCommentsList(next);
-    window.WSD_STORES.comments[post.id] = next;
-    window.WSD_SAVE.comments();
+    onRefresh?.();
     setComment("");
+  };
+
+  const deletePost = () => {
+    if (!confirm(`"${post.title}" 글을 삭제하시겠어요?`)) return;
+    window.WSD_COMMUNITY.deletePost(post.id);
+    onRefresh?.();
+    setPostId(null);
+  };
+
+  const deleteComment = (commentId) => {
+    const next = window.WSD_COMMUNITY.deleteComment(post.id, commentId);
+    setCommentsList(next);
+    onRefresh?.();
   };
 
   return (
@@ -497,7 +531,7 @@ const PostDetail = ({ post, go, setPostId, user }) => {
           </div>
         </header>
 
-        {post._userCreated && post.body?.html ? (
+        {post.body?.html ? (
           <div className="post-body" dangerouslySetInnerHTML={{__html: post.body.html}}/>
         ) : (
           <div className="post-body">
@@ -528,6 +562,13 @@ const PostDetail = ({ post, go, setPostId, user }) => {
           </button>
           <button type="button" className="btn">공유</button>
           <button type="button" className="btn">신고</button>
+          {canManagePost && (
+            <>
+              <button type="button" className="btn" onClick={() => onEdit(post)}>수정</button>
+              <button type="button" className="btn" onClick={deletePost}
+                style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+            </>
+          )}
         </div>
 
         {/* Comments */}
@@ -562,10 +603,18 @@ const PostDetail = ({ post, go, setPostId, user }) => {
 
           <ol style={{listStyle:'none', padding:0, margin:0}}>
             {commentsList.map((c, i) => (
-              <li key={i} style={{padding:'24px 0', borderBottom:'1px solid var(--line)'}}>
-                <div style={{display:'flex', gap:16, alignItems:'center', marginBottom:10}}>
-                  <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em'}}>{c.author}</span>
-                  <time className="mono dim-2" style={{fontSize:11}}>{c.date}</time>
+              <li key={c.id || i} style={{padding:'24px 0', borderBottom:'1px solid var(--line)'}}>
+                <div style={{display:'flex', gap:16, alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
+                  <div style={{display:'flex', gap:16, alignItems:'center'}}>
+                    <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em'}}>{c.author}</span>
+                    <time className="mono dim-2" style={{fontSize:11}}>{c.date}</time>
+                  </div>
+                  {!!user && (user.isAdmin || c.authorId === user.id || c.author === user.name) && (
+                    <button type="button" className="btn-ghost" onClick={() => deleteComment(c.id)}
+                      style={{fontSize:11, color:'var(--danger)'}}>
+                      삭제
+                    </button>
+                  )}
                 </div>
                 <p style={{fontFamily:'var(--font-reading)', fontSize:15, lineHeight:1.8, color:'var(--ink)'}}>{c.text}</p>
               </li>
