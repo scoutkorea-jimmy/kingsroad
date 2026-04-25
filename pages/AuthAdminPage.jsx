@@ -397,6 +397,23 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.012.000",
+    date: "2026-04-25",
+    summary: "Cycle 1(왕사들 커뮤니티 마무리)을 한 PR에 묶었습니다. 좋아요·북마크·신고·댓글 알림·작성자 등급 배지·게시글 페이지네이션을 모두 도입해 단순 게시판이었던 흐름을 '커뮤니티'로 끌어올렸습니다. 관리자 콘솔에는 신고 운영 큐 탭이 새로 들어왔고, 마이페이지에는 북마크와 알림 카드가 추가됐습니다.",
+    details: [
+      "커뮤니티 글 상세에 `좋아요(♥)` 토글 도입 — 누른 사용자 ID를 글에 보존하고, 상세/액션/목록에서 수치를 모두 같은 값으로 표시.",
+      "글 상세에 `북마크(★/☆)` 토글과 마이페이지 BOOKMARKS 카드 도입(`WSD_STORES.bookmarks` 신설).",
+      "글 상세 `신고` 버튼을 사유 입력 폼으로 확장하고, 관리자 콘텐츠 메뉴에 `신고` 탭 신설(필터: 미처리/처리 완료/반려/전체, 액션: 게시글 열기 / 처리 완료 / 반려 / 게시글 삭제+처리).",
+      "댓글 등록 시 본인 글이 아니면 작성자에게 알림이 쌓이도록 연결(`WSD_STORES.notifications`). 내비게이션에 ◇ 알림 벨과 미읽음 배지·드롭다운 추가, 마이페이지 NOTIFICATIONS 카드도 동시 노출.",
+      "글 목록 / 글 상세 / 댓글 작성자에 회원 등급 배지(`AuthorGradeBadge`)를 인라인 표시. `WSD_USER_GRADE` / `WSD_AUTHOR_GRADE` helper 신설.",
+      "커뮤니티 글 목록에 페이지네이션(10건/페이지) 추가. 검색·탭이 바뀌면 1페이지로 리셋.",
+      "관리자 CSV 다운로드 헤더에 `likes` 컬럼 추가.",
+      "외부 진입(알림 클릭 / 신고 큐 / 마이페이지 카드)에서 글 상세로 점프할 때 `sessionStorage.wsd_pending_post_id` 패턴을 도입.",
+      "KMS 기능정의서 미션 1(커뮤니티) 영역을 위 변경에 맞게 재기록.",
+    ],
+    context: "Cycle 1의 목표는 '커뮤니티가 게시판처럼 보이는 문제'를 닫는 것이었습니다. 글의 흐름은 이미 살아 있었지만 사용자가 다른 사람의 반응(좋아요/등급/알림)을 거의 느끼지 못해 참여 동기가 약했습니다. 이번 PR은 그 사회적 신호를 한 번에 깔고, 운영자가 신고를 처리할 수 있는 큐까지 같이 붙였습니다. 결제 의존이 없는 영역이라 한 사이클에 묶어 끝내는 것이 ROI가 가장 컸습니다.",
+  },
+  {
     version: "00.011.000",
     date: "2026-04-25",
     summary: "기능정의서를 사이트의 5가지 미션(왕사들 커뮤니티 / 뱅기노자 강연 일정 / 뱅기노자 칼럼 / 뱅기노자 투어 프로그램 / 뱅기노자 책 판매) + 공통 기반(BASE) 영역 단위로 재정렬하고, 각 영역에 `현재 평가 / 없는 기능 / 기능별(요소·기술 스펙·유의할 점·개발 이슈) / 영역 차원 기술 스펙·유의할 점·개발 이슈` 표준 블록을 도입했습니다. 관리자 KMS 화면에는 우측 스티키 목차(TOC)를 추가해 영역 간 이동을 빠르게 만들었습니다.",
@@ -570,9 +587,9 @@ const MISSION_OVERVIEW = [
     number: "01",
     title: "왕사들 커뮤니티",
     short: "회원이 글·댓글·후기를 나누는 핵심 참여 공간.",
-    state: "P2 1차 가동",
-    coverage: "기능 70% / 운영 신호 30%",
-    verdict: "기본 게시판 흐름은 갖췄으나 좋아요·신고·알림·등급 가시화가 없어 '커뮤니티'라기보다 '게시판'에 머물러 있다.",
+    state: "Cycle 1 마무리",
+    coverage: "기능 ~85%",
+    verdict: "좋아요·북마크·신고·댓글 알림·등급 배지·페이지네이션을 도입해 '커뮤니티답다'고 느낄 사회적 신호를 갖췄다. 남은 큰 항목은 답글 트리·외부 스토리지 이미지·외부 DB 전환.",
   },
   {
     id: "lecture",
@@ -739,34 +756,32 @@ const FEATURE_DOMAINS = [
     label: "왕사들 커뮤니티",
     title: "미션 1 — 왕사들 커뮤니티 운영",
     role: "회원이 질문·후기·정보를 남기고 운영자가 같은 흐름에서 관리하는 핵심 참여 영역.",
-    routes: ["community", "mypage(최근 활동)", "admin > 게시글"],
-    status: "P2 1차 가동(부분 구현)",
-    evaluation: "사용자 화면과 관리자 화면이 같은 `communityPosts` 저장소를 보는 데까지 정리되어, '게시판으로서의' 흐름은 작동한다. 그러나 좋아요/신고/알림/등급 가시화처럼 회원이 '커뮤니티답다'고 느낄 사회적 신호가 없어, 외부에서 봤을 때 단순 게시판처럼 보인다.",
+    routes: ["community", "mypage(북마크 / 알림)", "admin > 게시글", "admin > 신고"],
+    status: "Cycle 1 마무리(기능 ~85%)",
+    evaluation: "Cycle 1에서 좋아요·북마크·신고·댓글 알림·작성자 등급 배지·페이지네이션을 모두 도입해 단순 게시판이 아니라 '커뮤니티'로 느낄 사회적 신호를 갖추게 되었다. 사용자/관리자 화면이 같은 저장소를 보는 P2 통합과 위 기능들이 결합되어, 외부 DB 도입 전에도 운영 가능한 구조가 되었다.",
     missing: [
-      "좋아요 · 공감 · 북마크",
-      "신고 · 차단 · 블랙리스트 운영 큐",
-      "댓글 답글(트리 구조) · 멘션 · 댓글 알림",
-      "회원 등급/배지 가시화(작성자 프로필 카드)",
+      "댓글 답글(트리 구조) · 멘션",
+      "차단 · 블랙리스트 운영 정책",
       "해시태그 / 인기글 / 주간 트렌드",
       "이미지 외부 스토리지 업로드 (현재는 base64 in-localStorage)",
-      "검색 결과 정렬·페이지네이션·기간 필터",
       "본문 검색(현재는 제목·작성자 부분 일치만)",
       "회원 활동 요약(글 수, 댓글 수, 활동 기간)",
+      "외부 DB / 서버 권한 검증으로 전환",
     ],
     features: [
       {
-        name: "게시글 목록 / 검색 / 카테고리 필터",
-        status: "부분 구현",
-        summary: "전체 게시글을 카테고리·검색어로 좁혀 보기.",
+        name: "게시글 목록 / 검색 / 카테고리 필터 / 페이지네이션",
+        status: "구현됨",
+        summary: "전체 게시글을 카테고리·검색어로 좁혀 보고 페이지 단위로 탐색.",
         elements: [
-          "검색 입력(제목·작성자)",
+          "검색 입력(제목 부분 일치)",
           "카테고리 탭(자유 / 질문 / 정보 등)",
-          "정렬 영역",
-          "카드 또는 행 리스트",
-          "페이지네이션 / 더보기 (미구현)",
+          "행 리스트(번호 / 분류 / 제목 / 작성자+등급 / 조회 / 날짜)",
+          "페이지네이션(10건/페이지, 이전·다음·번호)",
+          "북마크 / 좋아요 카운트 인디케이터(제목 옆)",
         ],
-        techSpec: "`WSD_COMMUNITY.listPosts()` → `WSD_STORES.communityPosts` localStorage. 카테고리 정의는 `WSD_STORES.categories` 중 `boardType === 'community'`.",
-        caution: "검색은 본문 검색이 빠져 있고, 정렬은 최신순 한 가지뿐. 데이터가 늘어나면 페이지네이션부터 붙여야 함.",
+        techSpec: "`WSD_COMMUNITY.listPosts()` → `WSD_STORES.communityPosts` localStorage. 카테고리는 `WSD_STORES.categories` 중 `boardType === 'community'`. 페이지 상태(`page`)는 검색·탭 변경 시 1로 리셋.",
+        caution: "검색은 제목 부분 일치이고 본문 검색은 미구현. 정렬은 최신순 한 가지.",
         issues: ["사용자 작성 글과 시드 글이 다른 키에 저장되어 있던 P1 → `ensureCommunityPostsSeeded`로 단일 키 통합"],
       },
       {
@@ -847,23 +862,97 @@ const FEATURE_DOMAINS = [
         elements: [
           "검색 입력",
           "분류 필터(카테고리)",
-          "CSV 다운로드",
+          "CSV 다운로드(좋아요 수 포함)",
           "행 단위 열기·삭제",
         ],
         techSpec: "`WSD_COMMUNITY.exportCsv()` + `WSD_COMMUNITY.deletePost(id)`. 사용자 화면과 동일 저장소.",
         caution: "관리자 삭제는 즉시 사용자 화면에 반영되므로 confirm 필수.",
         issues: ["P1 시점에 관리자 탭이 mock 배열을 보던 문제 → P2에서 통합"],
       },
+      {
+        name: "좋아요 / 공감",
+        status: "구현됨",
+        summary: "글 상세에서 ♥ 버튼으로 공감을 누르고 누른 사람 목록을 글에 보존.",
+        elements: [
+          "♥ 토글 버튼(상태별 골드 강조)",
+          "공감 카운트(헤더 + 액션 영역 + 목록 인디케이터)",
+          "비로그인 시 로그인 유도 confirm",
+          "본인 두 번 누름 → 취소(토글)",
+        ],
+        techSpec: "`WSD_COMMUNITY.toggleLike(postId, userId)` → `post.likes`(userId 배열). `hasLiked / getLikes`로 상태 조회. 글 저장 시 같이 직렬화.",
+        caution: "좋아요 카운트는 배열 길이로 계산하므로 동일 userId가 중복으로 들어가지 않도록 toggleLike에서 보호.",
+        issues: [],
+      },
+      {
+        name: "북마크",
+        status: "구현됨",
+        summary: "글 상세에서 ☆ 버튼으로 북마크하고 마이페이지에서 모아 보기.",
+        elements: [
+          "☆/★ 토글 버튼",
+          "목록 제목 옆 ★ 인디케이터(본인 북마크된 글)",
+          "마이페이지 BOOKMARKS 카드(최대 8건 + 외 N건 표시)",
+          "비로그인 시 로그인 유도 confirm",
+        ],
+        techSpec: "`WSD_STORES.bookmarks` = `{ userId: [postId, ...] }`. `WSD_COMMUNITY.toggleBookmark / isBookmarked / getBookmarks / listBookmarkedPosts`.",
+        caution: "북마크된 글이 삭제되면 ID는 남되 `getPost`에서 null이 반환되어 마이페이지에서는 자동으로 누락됨.",
+        issues: [],
+      },
+      {
+        name: "신고 운영 큐",
+        status: "구현됨",
+        summary: "사용자가 글을 신고하면 관리자 콘텐츠 메뉴 `신고` 탭에서 처리.",
+        elements: [
+          "글 상세 신고 버튼(클릭 시 사유 입력 폼 펼침)",
+          "사유 textarea + 접수 confirmation",
+          "관리자 신고 탭(필터: 미처리 / 처리 완료 / 반려 / 전체)",
+          "신고 카드(제목 / 사유 / 신고자 / 시각 / 상태 배지)",
+          "액션 버튼: 게시글 열기 / 처리 완료 / 반려 / 게시글 삭제+처리",
+        ],
+        techSpec: "`WSD_STORES.reports` 배열. `WSD_COMMUNITY.addReport / listReports(filter) / updateReportStatus / countOpenReports`. 상태: open / resolved / dismissed.",
+        caution: "신고된 후 게시글을 직접 삭제해도 신고 레코드는 남는다(이력 보존). 게시글이 사라지면 '게시글 열기' 버튼은 빈 상세를 보여줄 수 있음.",
+        issues: [],
+      },
+      {
+        name: "댓글 알림 / 알림 벨",
+        status: "구현됨",
+        summary: "내 글에 다른 사람이 댓글을 달면 알림이 쌓이고 내비게이션 ◇ 벨에 미읽음 카운트가 표시.",
+        elements: [
+          "내비게이션 ◇ 벨 버튼(미읽음 배지)",
+          "벨 드롭다운(최근 50건, 미읽음 강조)",
+          "모두 읽음 버튼",
+          "알림 클릭 → 게시글로 이동(읽음 처리)",
+          "마이페이지 NOTIFICATIONS 카드(최근 6건 + 외 N건)",
+        ],
+        techSpec: "`WSD_STORES.notifications` = `{ userId: [ {id, type, postId, postTitle, fromName, message, createdAt, read} ] }`. 댓글 등록 시 `addNotification(post.authorId, ...)` 호출(본인 글 제외, authorId 있을 때만). 게시글 점프는 `sessionStorage.wsd_pending_post_id` 후 `go('community')`.",
+        caution: "본인 글에는 알림이 가지 않도록 commenter ↔ author 비교 필수. 시드 글처럼 authorId가 없는 글에는 알림이 발행되지 않음.",
+        issues: ["라우팅이 글로벌 App 상태에 묶여 있어 외부 진입 시 sessionStorage 경유 패턴을 사용"],
+      },
+      {
+        name: "회원 등급 배지",
+        status: "구현됨",
+        summary: "글 목록 / 글 상세 / 댓글의 작성자 옆에 등급 라벨을 컬러 배지로 표시.",
+        elements: [
+          "AuthorGradeBadge 공통 컴포넌트(`Shell.jsx`)",
+          "글 목록 작성자 컬럼",
+          "글 상세 작성자 메타",
+          "댓글 작성자 라벨",
+        ],
+        techSpec: "`WSD_USER_GRADE(user)` + `WSD_AUTHOR_GRADE({authorId, author, authorEmail})`. 등급 색상은 `WSD_STORES.grades`의 `color`.",
+        caution: "시드 글 작성자(돌담아래 등)는 가입 사용자가 아니므로 배지가 표시되지 않음. 추후 시드 데이터를 가입 회원과 매칭하면 자동으로 채워짐.",
+        issues: [],
+      },
     ],
-    techSpec: "`WSD_COMMUNITY` helper + `WSD_STORES.communityPosts / comments / categories` localStorage. 외부 DB 교체 시 helper는 유지하고 저장소 구현만 교체.",
+    techSpec: "`WSD_COMMUNITY` helper + `WSD_STORES.communityPosts / comments / categories / bookmarks / reports / notifications` localStorage. 외부 DB 교체 시 helper는 유지하고 저장소 구현만 교체.",
     cautions: [
-      "localStorage 한계 → 이미지·대량 데이터 누적 시 quota 초과",
+      "localStorage 한계 → 이미지·알림·신고 누적 시 quota 초과",
       "권한 검사가 클라이언트 단 → 외부 DB 도입 시 서버 측 정책 필수",
       "사용자 화면 ↔ 관리자 화면이 같은 저장소를 본다는 가정이 P2 통합의 핵심이므로 깨지지 않게 유지",
+      "라우팅은 글로벌 App 상태에 묶여 있어 외부 진입 시 `sessionStorage.wsd_pending_post_id` 패턴을 사용",
     ],
     issues: [
       "사용자 작성 글 / 시드 글이 다른 키에 저장되어 있던 P1 → `ensureCommunityPostsSeeded`로 마이그레이션",
       "관리자와 사용자 화면이 다른 mock 배열을 보던 P1 → `WSD_COMMUNITY` 단일 helper로 수렴",
+      "Cycle 1에서 좋아요/북마크/신고/알림/등급 배지/페이지네이션을 한 PR에 묶음. 데이터 모델 6개를 동시에 도입하느라 helper 수가 크게 늘어났으므로, 다음 도메인 작업에서는 helper 명명을 `WSD_<DOMAIN>` 단위로 묶을지 재검토 필요",
     ],
   },
   {
@@ -1209,6 +1298,110 @@ const FEATURE_DOMAINS = [
   },
 ];
 
+// === Report Queue Panel ===========================================
+const ReportQueuePanel = ({ onRefresh, go }) => {
+  const [filter, setFilter] = React.useState("open");
+  const [tick, setTick] = React.useState(0);
+  const reports = React.useMemo(() => window.WSD_COMMUNITY.listReports(filter), [filter, tick]);
+  const counts = React.useMemo(() => ({
+    open: window.WSD_COMMUNITY.listReports('open').length,
+    resolved: window.WSD_COMMUNITY.listReports('resolved').length,
+    dismissed: window.WSD_COMMUNITY.listReports('dismissed').length,
+    all: window.WSD_COMMUNITY.listReports('all').length,
+  }), [tick]);
+
+  const setStatus = (id, status) => {
+    window.WSD_COMMUNITY.updateReportStatus(id, status);
+    setTick((v) => v + 1);
+  };
+
+  const removePostFromReport = (report) => {
+    if (!report.postId) return;
+    if (!confirm(`"${report.postTitle}" 게시글을 삭제하고 신고를 처리 완료로 표시하시겠어요?`)) return;
+    window.WSD_COMMUNITY.deletePost(report.postId);
+    window.WSD_COMMUNITY.updateReportStatus(report.id, 'resolved');
+    setTick((v) => v + 1);
+    onRefresh?.();
+  };
+
+  return (
+    <div>
+      <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap'}}>
+        {[
+          { key: 'open', label: '미처리' },
+          { key: 'resolved', label: '처리 완료' },
+          { key: 'dismissed', label: '반려' },
+          { key: 'all', label: '전체' },
+        ].map((f) => (
+          <button key={f.key} type="button" className="btn btn-small"
+            onClick={() => setFilter(f.key)}
+            style={{
+              borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
+              color: filter === f.key ? 'var(--gold)' : 'var(--ink-2)',
+              background: filter === f.key ? 'rgba(212,175,55,0.06)' : 'transparent',
+            }}>
+            {f.label} <span className="mono dim-2" style={{ fontSize: 10, marginLeft: 4 }}>{counts[f.key] ?? 0}</span>
+          </button>
+        ))}
+      </div>
+
+      {reports.length === 0 ? (
+        <div className="card dim" style={{padding:32, textAlign:'center'}}>
+          해당 상태의 신고가 없습니다.
+        </div>
+      ) : (
+        <div style={{display:'grid', gap:12}}>
+          {reports.map((r) => {
+            const tone = r.status === 'open'
+              ? 'var(--danger)'
+              : r.status === 'resolved'
+                ? 'var(--gold)'
+                : 'var(--ink-3)';
+            const statusLabel = r.status === 'open' ? '미처리' : r.status === 'resolved' ? '처리 완료' : '반려';
+            return (
+              <article key={r.id} className="card" style={{padding:18}}>
+                <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:10}}>
+                  <div className="ko-serif" style={{fontSize:16}}>{r.postTitle}</div>
+                  <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: tone}}>{statusLabel.toUpperCase()}</span>
+                </div>
+                <div style={{display:'grid', gap:6, marginBottom:12}}>
+                  <div style={{fontSize:13, lineHeight:1.7}}>
+                    <span className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.2em', marginRight:8}}>사유</span>
+                    {r.reason}
+                  </div>
+                  <div className="dim-2 mono" style={{fontSize:11}}>
+                    신고자 {r.reporterName} · {new Date(r.createdAt).toLocaleString('ko-KR')}
+                  </div>
+                </div>
+                <div style={{display:'flex', gap:8, justifyContent:'flex-end', flexWrap:'wrap'}}>
+                  {r.postId && (
+                    <button type="button" className="btn btn-small"
+                      onClick={() => {
+                        try { sessionStorage.setItem('wsd_pending_post_id', String(r.postId)); } catch {}
+                        go('community');
+                      }}>게시글 열기</button>
+                  )}
+                  {r.status !== 'resolved' && (
+                    <button type="button" className="btn btn-small" onClick={() => setStatus(r.id, 'resolved')}>처리 완료</button>
+                  )}
+                  {r.status !== 'dismissed' && (
+                    <button type="button" className="btn btn-small" onClick={() => setStatus(r.id, 'dismissed')}>반려</button>
+                  )}
+                  {r.status === 'open' && r.postId && (
+                    <button type="button" className="btn btn-small"
+                      onClick={() => removePostFromReport(r)}
+                      style={{borderColor:'var(--danger)', color:'var(--danger)'}}>게시글 삭제 + 처리</button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // === Admin Page ===================================================
 const AdminPage = ({ go }) => {
   const data = window.WANGSADEUL_DATA;
@@ -1245,7 +1438,7 @@ const AdminPage = ({ go }) => {
 
   const tabGroups = [
     { group: "요약",     items: ["대시보드"] },
-    { group: "콘텐츠",   items: ["게시글", "칼럼", "칼럼 작성", "투어"] },
+    { group: "콘텐츠",   items: ["게시글", "신고", "칼럼", "칼럼 작성", "투어"] },
     { group: "회원/주문", items: ["회원", "주문"] },
     { group: "운영 설정", items: ["카테고리", "회원 등급"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
@@ -1775,6 +1968,11 @@ const AdminPage = ({ go }) => {
               </div>
             )}
           </div>
+        )}
+
+        {/* 신고 큐 */}
+        {tab === "신고" && (
+          <ReportQueuePanel onRefresh={() => setPostRefreshKey((v) => v + 1)} go={go}/>
         )}
 
         {/* 칼럼 */}

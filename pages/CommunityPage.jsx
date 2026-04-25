@@ -182,6 +182,8 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
 };
 
 // === Community Page ======================================================
+const POSTS_PER_PAGE = 10;
+
 const CommunityPage = ({ go, postId, setPostId, user }) => {
   const userLevel = useUserLevel(user);
   const categories = React.useMemo(() => getCategoriesForBoard("community"), [postId]);
@@ -189,6 +191,17 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const [tab, setTab] = React.useState("all");
   const [search, setSearch] = React.useState("");
   const [writing, setWriting] = React.useState(null);
+  const [page, setPage] = React.useState(1);
+
+  // 알림 벨 / 외부 진입에서 stash해 둔 postId가 있으면 자동으로 상세로 이동
+  React.useEffect(() => {
+    let pending = null;
+    try { pending = sessionStorage.getItem('wsd_pending_post_id'); } catch {}
+    if (pending) {
+      try { sessionStorage.removeItem('wsd_pending_post_id'); } catch {}
+      setPostId(pending);
+    }
+  }, []);
 
   const allPosts = React.useMemo(() => {
     return window.WSD_COMMUNITY.listPosts();
@@ -232,6 +245,14 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  // 검색어/탭이 바뀌면 페이지를 1로 되돌림
+  React.useEffect(() => { setPage(1); }, [tab, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * POSTS_PER_PAGE;
+  const pagePosts = filtered.slice(pageStart, pageStart + POSTS_PER_PAGE);
 
   const handleWrite = () => {
     if (!user) {
@@ -304,25 +325,32 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
               <tr><td colSpan={6} style={{padding:48, textAlign:'center'}} className="dim">
                 조건에 맞는 게시글이 없습니다.
               </td></tr>
-            ) : filtered.map((p, i) => {
+            ) : pagePosts.map((p, i) => {
               const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category) || { label: p.category };
+              const likesCount = Array.isArray(p.likes) ? p.likes.length : 0;
+              const bookmarked = user && window.WSD_COMMUNITY.isBookmarked(user.id, p.id);
               return (
                 <tr key={p.id} style={{borderBottom:'1px solid var(--line)', transition:'background .2s'}}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.03)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <td className="mono dim-2" style={{padding:'18px 8px', fontSize:12}}>{String(filtered.length - i).padStart(3, '0')}</td>
+                  <td className="mono dim-2" style={{padding:'18px 8px', fontSize:12}}>{String(filtered.length - (pageStart + i)).padStart(3, '0')}</td>
                   <td style={{padding:'18px 8px'}}><span className="badge">{cat.label}</span></td>
                   <td style={{padding:'18px 8px', fontSize:15}} className="row-title">
                     <button type="button" onClick={() => setPostId(p.id)}
                       style={{all:'unset', cursor:'pointer', textAlign:'left'}}>
+                      {bookmarked && <span className="gold" style={{marginRight:6, fontSize:11}} aria-label="북마크">★</span>}
                       {p.title}
                       {p.images?.length > 0 && <span className="gold mono" style={{marginLeft:8, fontSize:10}} aria-label="이미지 첨부">📷{p.images.length}</span>}
+                      {likesCount > 0 && <span className="gold mono" style={{marginLeft:8, fontSize:10}} aria-label="공감 수">♥{likesCount}</span>}
                       {p.tags?.length > 0 && <span className="dim-2 mono" style={{marginLeft:8, fontSize:10}}>{p.tags.slice(0,3).map(t => `#${t}`).join(' ')}</span>}
                       {p.hot && <span className="gold" style={{marginLeft:8, fontSize:10}}>HOT</span>}
                       {p._new && <span className="gold" style={{marginLeft:8, fontSize:10}}>NEW</span>}
                     </button>
                   </td>
-                  <td className="mono dim" style={{padding:'18px 8px', fontSize:12}}>{p.author}</td>
+                  <td className="mono dim" style={{padding:'18px 8px', fontSize:12}}>
+                    {p.author}
+                    <AuthorGradeBadge authorId={p.authorId} author={p.author} authorEmail={p.authorEmail}/>
+                  </td>
                   <td className="mono dim-2" style={{padding:'18px 8px', fontSize:12, textAlign:'right'}}>{p.views ?? 0}</td>
                   <td className="mono dim-2" style={{padding:'18px 8px', fontSize:11, textAlign:'right'}}>
                     <time dateTime={p.date.replace(/\./g,'-')}>{p.date}</time>
@@ -332,6 +360,35 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
             })}
           </tbody>
         </table>
+
+        {/* Pagination */}
+        {filtered.length > 0 && totalPages > 1 && (
+          <nav aria-label="게시글 페이지 이동" style={{display:'flex', justifyContent:'center', alignItems:'center', gap:6, marginTop:32, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-small"
+              onClick={() => setPage(Math.max(1, safePage - 1))}
+              disabled={safePage <= 1}>← 이전</button>
+            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((n) => (
+              <button key={n} type="button" className="btn btn-small"
+                aria-current={n === safePage ? 'page' : undefined}
+                onClick={() => setPage(n)}
+                style={{
+                  borderColor: n === safePage ? 'var(--gold)' : 'var(--line)',
+                  color: n === safePage ? 'var(--gold)' : 'var(--ink-2)',
+                  background: n === safePage ? 'rgba(212,175,55,0.08)' : 'transparent',
+                  minWidth: 36,
+                }}>{n}</button>
+            ))}
+            <button type="button" className="btn btn-small"
+              onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+              disabled={safePage >= totalPages}>다음 →</button>
+          </nav>
+        )}
+
+        {filtered.length > 0 && (
+          <div className="mono dim-2" style={{textAlign:'center', fontSize:10, letterSpacing:'0.2em', marginTop:12}}>
+            전체 {filtered.length}건 · {safePage}/{totalPages} 페이지
+          </div>
+        )}
       </div>
     </div>
   );
@@ -445,10 +502,17 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
 // === Post Detail =========================================================
 const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
   const [comment, setComment] = React.useState("");
-  const [likes, setLikes] = React.useState(post._userCreated ? 0 : 42);
-  const [liked, setLiked] = React.useState(false);
   const [commentsList, setCommentsList] = React.useState(() => window.WSD_COMMUNITY.getComments(post.id));
+  const [reportOpen, setReportOpen] = React.useState(false);
+  const [reportReason, setReportReason] = React.useState("");
+  const [reportSubmitted, setReportSubmitted] = React.useState(false);
   const canManagePost = !!user && (user.isAdmin || post.authorId === user.id || post.author === user.name);
+
+  // 좋아요 / 북마크 — 저장소 기반
+  const likes = Array.isArray(post.likes) ? post.likes : [];
+  const liked = !!user && likes.includes(user.id);
+  const likesCount = likes.length;
+  const bookmarked = !!user && window.WSD_COMMUNITY.isBookmarked(user.id, post.id);
 
   React.useEffect(() => {
     setCommentsList(window.WSD_COMMUNITY.getComments(post.id));
@@ -464,6 +528,38 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     onRefresh?.();
   }, [post.id]);
 
+  const requireLogin = (label) => {
+    if (confirm(`${label}은(는) 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?`)) {
+      go('login');
+    }
+  };
+
+  const handleLike = () => {
+    if (!user) return requireLogin('공감');
+    window.WSD_COMMUNITY.toggleLike(post.id, user.id);
+    onRefresh?.();
+  };
+
+  const handleBookmark = () => {
+    if (!user) return requireLogin('북마크');
+    window.WSD_COMMUNITY.toggleBookmark(user.id, post.id);
+    onRefresh?.();
+  };
+
+  const handleReportSubmit = (e) => {
+    e.preventDefault();
+    window.WSD_COMMUNITY.addReport({
+      postId: post.id,
+      postTitle: post.title,
+      reporterId: user?.id || null,
+      reporterName: user?.name || '익명',
+      reason: reportReason,
+    });
+    setReportSubmitted(true);
+    setReportReason("");
+    setTimeout(() => { setReportOpen(false); setReportSubmitted(false); }, 1800);
+  };
+
   const submitComment = (e) => {
     e.preventDefault();
     if (!user) return;
@@ -475,10 +571,24 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
       id: `comment-${Date.now()}`,
       author: user.name,
       authorId: user.id,
+      authorEmail: user.email,
       date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
       text: trimmed,
     });
     setCommentsList(next);
+
+    // 본인 글이 아니면 작성자에게 알림. authorId가 있어야 푸시 가능.
+    const isMyOwnPost = post.authorId === user.id || post.author === user.name;
+    if (!isMyOwnPost && post.authorId) {
+      window.WSD_COMMUNITY.addNotification(post.authorId, {
+        type: 'comment',
+        postId: post.id,
+        postTitle: post.title,
+        fromName: user.name,
+        message: '내 글에 새 댓글이 달렸습니다.',
+      });
+    }
+
     onRefresh?.();
     setComment("");
   };
@@ -524,10 +634,14 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
           )}
 
           <div style={{display:'flex', gap:24, alignItems:'center', fontFamily:'var(--font-mono)', fontSize:12, color:'var(--ink-3)', flexWrap:'wrap'}}>
-            <span className="gold">{post.author}</span>
+            <span className="gold" style={{display:'inline-flex', alignItems:'center'}}>
+              {post.author}
+              <AuthorGradeBadge authorId={post.authorId} author={post.author} authorEmail={post.authorEmail}/>
+            </span>
             <time dateTime={post.date.replace(/\./g,'-')}>{post.date}</time>
             <span>조회 {post.views ?? 0}</span>
             <span>댓글 {commentsList.length}</span>
+            <span>공감 {likesCount}</span>
           </div>
         </header>
 
@@ -554,20 +668,58 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
         )}
 
         {/* Actions */}
-        <div style={{display:'flex', gap:12, justifyContent:'center', margin:'60px 0', paddingTop:32, borderTop:'1px solid var(--line)'}}>
-          <button type="button" className="btn" aria-pressed={liked}
-            onClick={() => { setLiked(!liked); setLikes(liked ? likes - 1 : likes + 1); }}
-            style={{borderColor: liked ? 'var(--gold)' : undefined, color: liked ? 'var(--gold)' : undefined}}>
-            <span aria-hidden="true">♥</span> 공감 <span aria-live="polite">{likes}</span>
-          </button>
-          <button type="button" className="btn">공유</button>
-          <button type="button" className="btn">신고</button>
-          {canManagePost && (
-            <>
-              <button type="button" className="btn" onClick={() => onEdit(post)}>수정</button>
-              <button type="button" className="btn" onClick={deletePost}
-                style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
-            </>
+        <div style={{margin:'60px 0', paddingTop:32, borderTop:'1px solid var(--line)'}}>
+          <div style={{display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap'}}>
+            <button type="button" className="btn" aria-pressed={liked}
+              onClick={handleLike}
+              style={{borderColor: liked ? 'var(--gold)' : undefined, color: liked ? 'var(--gold)' : undefined}}>
+              <span aria-hidden="true">♥</span> 공감 <span aria-live="polite">{likesCount}</span>
+            </button>
+            <button type="button" className="btn" aria-pressed={bookmarked}
+              onClick={handleBookmark}
+              style={{borderColor: bookmarked ? 'var(--gold)' : undefined, color: bookmarked ? 'var(--gold)' : undefined}}>
+              <span aria-hidden="true">{bookmarked ? '★' : '☆'}</span> 북마크
+            </button>
+            <button type="button" className="btn"
+              onClick={() => {
+                if (!user) return requireLogin('신고');
+                setReportOpen((v) => !v);
+              }}>
+              신고
+            </button>
+            {canManagePost && (
+              <>
+                <button type="button" className="btn" onClick={() => onEdit(post)}>수정</button>
+                <button type="button" className="btn" onClick={deletePost}
+                  style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+              </>
+            )}
+          </div>
+
+          {reportOpen && (
+            <form onSubmit={handleReportSubmit}
+              style={{maxWidth:560, margin:'24px auto 0', padding:20, border:'1px solid var(--line)', background:'rgba(194,74,61,0.04)'}}>
+              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>REPORT · 신고 사유</div>
+              {reportSubmitted ? (
+                <div className="dim" style={{fontSize:13, lineHeight:1.7, padding:'8px 0', color:'var(--gold)'}}>
+                  신고가 접수되었습니다. 운영자가 확인 후 처리합니다.
+                </div>
+              ) : (
+                <>
+                  <textarea
+                    className="field-input"
+                    placeholder="어떤 점이 문제인지 간단히 적어 주세요."
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    style={{minHeight:80, resize:'vertical', marginBottom:12}}/>
+                  <div style={{display:'flex', justifyContent:'flex-end', gap:8}}>
+                    <button type="button" className="btn btn-small" onClick={() => setReportOpen(false)}>취소</button>
+                    <button type="submit" className="btn btn-small"
+                      style={{borderColor:'var(--danger)', color:'var(--danger)'}}>신고 접수</button>
+                  </div>
+                </>
+              )}
+            </form>
           )}
         </div>
 
@@ -606,7 +758,10 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
               <li key={c.id || i} style={{padding:'24px 0', borderBottom:'1px solid var(--line)'}}>
                 <div style={{display:'flex', gap:16, alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
                   <div style={{display:'flex', gap:16, alignItems:'center'}}>
-                    <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em'}}>{c.author}</span>
+                    <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em', display:'inline-flex', alignItems:'center'}}>
+                      {c.author}
+                      <AuthorGradeBadge authorId={c.authorId} author={c.author} authorEmail={c.authorEmail}/>
+                    </span>
                     <time className="mono dim-2" style={{fontSize:11}}>{c.date}</time>
                   </div>
                   {!!user && (user.isAdmin || c.authorId === user.id || c.author === user.name) && (

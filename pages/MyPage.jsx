@@ -7,6 +7,18 @@ const MyPage = ({ go, user, cart }) => {
   const upcomingTour = data.tours?.[0];
   const communityPosts = window.WSD_COMMUNITY?.listPosts?.() || data.posts || [];
   const recentPost = communityPosts.find((post) => post.authorId === user?.id || post.author === user?.name) || communityPosts[0];
+  const bookmarkedPosts = user
+    ? (window.WSD_COMMUNITY?.listBookmarkedPosts?.(user.id) || [])
+    : [];
+  const notifications = user
+    ? (window.WSD_COMMUNITY?.listNotifications?.(user.id) || [])
+    : [];
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const goToPost = (postId) => {
+    try { sessionStorage.setItem('wsd_pending_post_id', String(postId)); } catch {}
+    go('community');
+  };
 
   if (!user) {
     return (
@@ -143,6 +155,82 @@ const MyPage = ({ go, user, cart }) => {
               <button type="button" className="btn btn-small" onClick={() => go("column")}>뱅기노자 칼럼 읽기</button>
               <button type="button" className="btn btn-small" onClick={() => go("community")}>커뮤니티 참여하기</button>
             </div>
+          </article>
+        </div>
+
+        <div className="grid grid-2" style={{ alignItems: "start", marginTop: 32 }}>
+          <article className="card">
+            <div className="mono gold" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 }}>BOOKMARKS</div>
+            <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 12 }}>북마크한 글 <span className="dim-2 mono" style={{ fontSize: 12 }}>{bookmarkedPosts.length}건</span></h3>
+            {bookmarkedPosts.length === 0 ? (
+              <p className="dim" style={{ fontSize: 13, lineHeight: 1.8 }}>커뮤니티 글 상세에서 ☆ 북마크 버튼을 눌러 보관할 수 있어요.</p>
+            ) : (
+              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
+                {bookmarkedPosts.slice(0, 8).map((post) => (
+                  <li key={post.id}>
+                    <button type="button" onClick={() => goToPost(post.id)}
+                      style={{
+                        all: 'unset', cursor: 'pointer', width: '100%',
+                        padding: '10px 12px', borderLeft: '2px solid var(--gold-dim)',
+                        background: 'rgba(212,175,55,0.04)',
+                      }}>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
+                        <span className="pill" style={{ fontSize: 9 }}>{post.category}</span>
+                        <span className="mono dim-2" style={{ fontSize: 10 }}>{post.date}</span>
+                      </div>
+                      <div style={{ fontSize: 14, lineHeight: 1.5 }}>{post.title}</div>
+                    </button>
+                  </li>
+                ))}
+                {bookmarkedPosts.length > 8 && (
+                  <li className="dim-2 mono" style={{ fontSize: 11, textAlign: 'right' }}>외 {bookmarkedPosts.length - 8}건</li>
+                )}
+              </ul>
+            )}
+          </article>
+
+          <article className="card">
+            <div className="mono gold" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 }}>NOTIFICATIONS</div>
+            <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 12 }}>
+              알림 <span className="dim-2 mono" style={{ fontSize: 12 }}>{notifications.length}건</span>
+              {unreadCount > 0 && <span className="gold mono" style={{ fontSize: 11, marginLeft: 8 }}>· 안 읽음 {unreadCount}</span>}
+            </h3>
+            {notifications.length === 0 ? (
+              <p className="dim" style={{ fontSize: 13, lineHeight: 1.8 }}>아직 받은 알림이 없습니다. 내가 작성한 글에 댓글이 달리면 여기에서 확인할 수 있어요.</p>
+            ) : (
+              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
+                {notifications.slice(0, 6).map((n) => (
+                  <li key={n.id}>
+                    <button type="button" onClick={() => {
+                        window.WSD_COMMUNITY.markNotificationRead(user.id, n.id);
+                        if (n.postId) goToPost(n.postId);
+                      }}
+                      style={{
+                        all: 'unset', cursor: 'pointer', width: '100%',
+                        padding: '10px 12px',
+                        borderLeft: '2px solid ' + (n.read ? 'var(--line)' : 'var(--gold)'),
+                        background: n.read ? 'transparent' : 'rgba(212,175,55,0.04)',
+                      }}>
+                      <div style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
+                        <span className="gold">{n.fromName}</span>
+                        <span className="dim"> · {n.message || '새 알림'}</span>
+                      </div>
+                      {n.postTitle && (
+                        <div className="dim" style={{ fontSize: 12, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          ▸ {n.postTitle}
+                        </div>
+                      )}
+                      <div className="mono dim-2" style={{ fontSize: 10, marginTop: 4, letterSpacing: '0.1em' }}>
+                        {new Date(n.createdAt).toLocaleString('ko-KR')}
+                      </div>
+                    </button>
+                  </li>
+                ))}
+                {notifications.length > 6 && (
+                  <li className="dim-2 mono" style={{ fontSize: 11, textAlign: 'right' }}>외 {notifications.length - 6}건</li>
+                )}
+              </ul>
+            )}
           </article>
         </div>
       </div>

@@ -1,4 +1,153 @@
-// 공통 컴포넌트: Nav, Footer, Tweaks, Brand
+// 공통 컴포넌트: Nav, Footer, Tweaks, Brand, AuthorGradeBadge, NotificationBell
+
+// 작성자 등급 배지 — 게시글/댓글 작성자 옆에 인라인으로 표시
+const AuthorGradeBadge = ({ authorId, author, authorEmail, size = "sm" }) => {
+  const grade = window.WSD_AUTHOR_GRADE?.({ authorId, author, authorEmail });
+  if (!grade) return null;
+  const small = size === "sm";
+  return (
+    <span
+      className="mono"
+      title={`${grade.label} · ${grade.desc || ''}`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        marginLeft: 6,
+        padding: small ? '1px 6px' : '2px 8px',
+        fontSize: small ? 9 : 10,
+        letterSpacing: '0.14em',
+        color: grade.color || 'var(--gold)',
+        border: `1px solid ${grade.color || 'var(--gold-dim)'}`,
+        borderRadius: 2,
+        textTransform: 'uppercase',
+        verticalAlign: 'middle',
+      }}>
+      {grade.label}
+    </span>
+  );
+};
+
+// 알림 벨 — 우상단 내비게이션에 노출
+const NotificationBell = ({ user, onPick }) => {
+  const [open, setOpen] = React.useState(false);
+  const [tick, setTick] = React.useState(0);
+  const ref = React.useRef(null);
+
+  // 다른 탭/세션에서 알림이 추가되면 storage 이벤트로 갱신
+  React.useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'wsd_notifications') setTick((t) => t + 1);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  // 외부 클릭으로 닫기
+  React.useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  if (!user) return null;
+  const list = window.WSD_COMMUNITY?.listNotifications(user.id) || [];
+  const unread = list.filter((n) => !n.read).length;
+
+  const pick = (n) => {
+    window.WSD_COMMUNITY.markNotificationRead(user.id, n.id);
+    setOpen(false);
+    if (n.postId && onPick) onPick(n.postId);
+    setTick((t) => t + 1);
+  };
+
+  const markAll = () => {
+    window.WSD_COMMUNITY.markAllNotificationsRead(user.id);
+    setTick((t) => t + 1);
+  };
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        className="btn btn-small"
+        aria-label={`알림 ${unread > 0 ? `${unread}건 안 읽음` : ''}`}
+        onClick={() => setOpen((v) => !v)}
+        style={{ position: 'relative', padding: '6px 10px', minWidth: 36 }}>
+        <span aria-hidden="true">◇</span>
+        {unread > 0 && (
+          <span
+            aria-hidden="true"
+            style={{
+              position: 'absolute', top: -4, right: -4,
+              background: 'var(--gold)', color: 'var(--bg)',
+              borderRadius: 999, fontSize: 9, fontWeight: 700,
+              padding: '1px 5px', letterSpacing: 0,
+              minWidth: 14, textAlign: 'center', lineHeight: 1.4,
+            }}>
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </button>
+      {open && (
+        <div
+          role="dialog"
+          aria-label="알림 목록"
+          style={{
+            position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+            width: 320, maxHeight: 400, overflow: 'auto',
+            background: 'var(--bg-2)', border: '1px solid var(--line)',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+            zIndex: 50,
+          }}>
+          <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="mono gold" style={{ fontSize: 10, letterSpacing: '0.22em' }}>알림 · {list.length}</span>
+            {unread > 0 && (
+              <button type="button" onClick={markAll} className="btn-ghost"
+                style={{ fontSize: 11, color: 'var(--ink-2)' }}>모두 읽음</button>
+            )}
+          </div>
+          {list.length === 0 ? (
+            <div className="dim" style={{ padding: 24, textAlign: 'center', fontSize: 13 }}>
+              아직 받은 알림이 없습니다.
+            </div>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {list.map((n) => (
+                <li key={n.id}>
+                  <button type="button" onClick={() => pick(n)}
+                    style={{
+                      width: '100%', textAlign: 'left',
+                      padding: '12px 14px',
+                      background: n.read ? 'transparent' : 'rgba(212,175,55,0.06)',
+                      borderBottom: '1px solid var(--line)',
+                      cursor: 'pointer',
+                    }}>
+                    <div style={{ fontSize: 12, color: 'var(--ink)', marginBottom: 4, lineHeight: 1.5 }}>
+                      <span className="gold">{n.fromName}</span>
+                      <span className="dim"> · {n.message || '새 알림'}</span>
+                    </div>
+                    {n.postTitle && (
+                      <div className="dim" style={{ fontSize: 11, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        ▸ {n.postTitle}
+                      </div>
+                    )}
+                    <div className="mono dim-2" style={{ fontSize: 10, marginTop: 4, letterSpacing: '0.1em' }}>
+                      {new Date(n.createdAt).toLocaleString('ko-KR')}
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Brand = ({ onClick }) => (
   <button
     className="brand"
@@ -54,6 +203,10 @@ const Nav = ({ route, go, user, onLogout, readFont, setReadFont }) => {
             <>
               <span className="mono" aria-label={`로그인: ${user.name}`}
                 style={{fontSize:11, letterSpacing:'0.15em', color:'var(--gold)'}}>{user.name}</span>
+              <NotificationBell user={user} onPick={(postId) => {
+                try { sessionStorage.setItem('wsd_pending_post_id', String(postId)); } catch {}
+                go("community");
+              }}/>
               <button className="btn btn-small" onClick={() => go("mypage")}>마이페이지</button>
               {user.isAdmin && (
                 <button className="btn btn-small" onClick={() => go("admin")}>관리</button>
@@ -207,4 +360,4 @@ const Tweaks = ({ tweaks, setTweaks, visible }) => {
   );
 };
 
-Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks });
+Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell });

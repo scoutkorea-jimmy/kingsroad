@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.011.000",
+  version: "00.012.000",
   build: "2026.04.25",
   channel: "preview",
 };
@@ -117,6 +117,9 @@ window.WSD_STORES = {
   userColumns: _lsGet('wsd_user_columns', []),
   users: ensureUsersSeeded(_lsGet('wsd_users', DEFAULT_USERS)),
   session: _lsGet('wsd_session', null),
+  bookmarks: _lsGet('wsd_bookmarks', {}),
+  reports: _lsGet('wsd_reports', []),
+  notifications: _lsGet('wsd_notifications', {}),
 };
 window.WSD_SAVE = {
   grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
@@ -127,6 +130,9 @@ window.WSD_SAVE = {
   userColumns: () => _lsSet('wsd_user_columns', window.WSD_STORES.userColumns),
   users: () => _lsSet('wsd_users', window.WSD_STORES.users),
   session: () => _lsSet('wsd_session', window.WSD_STORES.session),
+  bookmarks: () => _lsSet('wsd_bookmarks', window.WSD_STORES.bookmarks),
+  reports: () => _lsSet('wsd_reports', window.WSD_STORES.reports),
+  notifications: () => _lsSet('wsd_notifications', window.WSD_STORES.notifications),
   resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
   resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
 };
@@ -134,7 +140,7 @@ window.WSD_SAVE = {
 window.WSD_DB = {
   version: WSD_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -272,7 +278,7 @@ window.WSD_COMMUNITY = {
     return nextComments;
   },
   exportCsv() {
-    const header = ["id", "category", "title", "author", "date", "views", "replies"];
+    const header = ["id", "category", "title", "author", "date", "views", "replies", "likes"];
     const rows = this.listPosts().map((post) => [
       post.id,
       post.category,
@@ -281,10 +287,131 @@ window.WSD_COMMUNITY = {
       post.date,
       post.views || 0,
       post.replies || 0,
+      Array.isArray(post.likes) ? post.likes.length : 0,
     ]);
     return [header, ...rows]
       .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
       .join("\n");
+  },
+
+  // ── 좋아요 (per-post user list) ───────────────────────────────────
+  getLikes(postId) {
+    const post = this.getPost(postId);
+    return Array.isArray(post?.likes) ? post.likes.slice() : [];
+  },
+  hasLiked(postId, userId) {
+    return !!userId && this.getLikes(postId).includes(userId);
+  },
+  toggleLike(postId, userId) {
+    if (!userId) return null;
+    const likes = this.getLikes(postId);
+    const next = likes.includes(userId) ? likes.filter((id) => id !== userId) : [...likes, userId];
+    return this.updatePost(postId, { likes: next });
+  },
+
+  // ── 북마크 (per-user post list) ───────────────────────────────────
+  getBookmarks(userId) {
+    if (!userId) return [];
+    const map = window.WSD_STORES.bookmarks || {};
+    return Array.isArray(map[userId]) ? map[userId].slice() : [];
+  },
+  isBookmarked(userId, postId) {
+    return this.getBookmarks(userId).includes(postId);
+  },
+  toggleBookmark(userId, postId) {
+    if (!userId) return [];
+    const map = window.WSD_STORES.bookmarks || {};
+    const list = Array.isArray(map[userId]) ? map[userId] : [];
+    const next = list.includes(postId) ? list.filter((x) => x !== postId) : [postId, ...list];
+    map[userId] = next;
+    window.WSD_STORES.bookmarks = map;
+    window.WSD_SAVE.bookmarks();
+    return next;
+  },
+  listBookmarkedPosts(userId) {
+    return this.getBookmarks(userId).map((id) => this.getPost(id)).filter(Boolean);
+  },
+
+  // ── 신고 큐 ───────────────────────────────────────────────────────
+  addReport({ postId, postTitle, reporterId, reporterName, reason }) {
+    const report = {
+      id: `report-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      postId: postId ?? null,
+      postTitle: postTitle ?? "(제목 없음)",
+      reporterId: reporterId || null,
+      reporterName: reporterName || "익명",
+      reason: String(reason || "").trim() || "(사유 미기재)",
+      createdAt: new Date().toISOString(),
+      status: "open",
+    };
+    window.WSD_STORES.reports = [report, ...(window.WSD_STORES.reports || [])];
+    window.WSD_SAVE.reports();
+    return report;
+  },
+  listReports(filter) {
+    const all = (window.WSD_STORES.reports || []).slice();
+    if (!filter || filter === "all") return all;
+    return all.filter((r) => r.status === filter);
+  },
+  updateReportStatus(id, status) {
+    const next = (window.WSD_STORES.reports || []).map((r) =>
+      r.id === id ? { ...r, status, updatedAt: new Date().toISOString() } : r
+    );
+    window.WSD_STORES.reports = next;
+    window.WSD_SAVE.reports();
+    return next.find((r) => r.id === id) || null;
+  },
+  countOpenReports() {
+    return (window.WSD_STORES.reports || []).filter((r) => r.status === "open").length;
+  },
+
+  // ── 알림 (per-user) ───────────────────────────────────────────────
+  addNotification(userId, payload) {
+    if (!userId) return null;
+    const map = window.WSD_STORES.notifications || {};
+    const list = Array.isArray(map[userId]) ? map[userId] : [];
+    const entry = {
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      createdAt: new Date().toISOString(),
+      read: false,
+      ...payload,
+    };
+    map[userId] = [entry, ...list].slice(0, 50);
+    window.WSD_STORES.notifications = map;
+    window.WSD_SAVE.notifications();
+    return entry;
+  },
+  listNotifications(userId) {
+    if (!userId) return [];
+    const map = window.WSD_STORES.notifications || {};
+    return Array.isArray(map[userId]) ? map[userId].slice() : [];
+  },
+  unreadNotificationCount(userId) {
+    return this.listNotifications(userId).filter((n) => !n.read).length;
+  },
+  markNotificationRead(userId, id) {
+    if (!userId) return [];
+    const map = window.WSD_STORES.notifications || {};
+    map[userId] = (map[userId] || []).map((n) => (n.id === id ? { ...n, read: true } : n));
+    window.WSD_STORES.notifications = map;
+    window.WSD_SAVE.notifications();
+    return map[userId];
+  },
+  markAllNotificationsRead(userId) {
+    if (!userId) return [];
+    const map = window.WSD_STORES.notifications || {};
+    map[userId] = (map[userId] || []).map((n) => ({ ...n, read: true }));
+    window.WSD_STORES.notifications = map;
+    window.WSD_SAVE.notifications();
+    return map[userId];
+  },
+  clearNotifications(userId) {
+    if (!userId) return [];
+    const map = window.WSD_STORES.notifications || {};
+    map[userId] = [];
+    window.WSD_STORES.notifications = map;
+    window.WSD_SAVE.notifications();
+    return [];
   },
 };
 
@@ -294,6 +421,25 @@ window.WSD_USER_LEVEL = (user) => {
   if (user.isAdmin) return 100;
   const g = window.WSD_STORES.grades.find(x => x.id === user.gradeId);
   return g ? g.level : 10;
+};
+
+// 사용자 등급 메타 (label / color / level) 반환
+window.WSD_USER_GRADE = (user) => {
+  if (!user) return null;
+  const grades = window.WSD_STORES.grades || [];
+  if (user.isAdmin) return grades.find(g => g.id === 'admin') || null;
+  return grades.find(g => g.id === user.gradeId) || null;
+};
+
+// 작성자 식별자(id / 이름 / 이메일) 중 가능한 것으로 등급을 찾아 반환
+window.WSD_AUTHOR_GRADE = ({ authorId, author, authorEmail } = {}) => {
+  const users = window.WSD_STORES.users || [];
+  const found = users.find((u) =>
+    (authorId && u.id === authorId) ||
+    (authorEmail && u.email === authorEmail) ||
+    (author && u.name === author)
+  );
+  return found ? window.WSD_USER_GRADE(found) : null;
 };
 
 window.WANGSADEUL_DATA = {
