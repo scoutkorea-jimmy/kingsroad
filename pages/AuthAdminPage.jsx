@@ -1,9 +1,9 @@
 // 로그인, 회원가입, 관리자 페이지
 const AUTH_CONFIG = {
-  mode: "temporary-demo",
+  mode: "local-first",
   adminEmail: "admin@admin.admin",
   adminPassword: "admin",
-  note: "현재 인증은 임시 운영용 데모 방식입니다. 관리자만 고정 계정으로 검증하고, 일반 회원 로그인은 임시 상태 저장 방식으로 동작합니다.",
+  note: "현재 인증은 GitHub Pages 정적 배포에 맞춘 local-first 구조입니다. 회원 정보와 세션은 브라우저에 저장되지만, 이후 외부 DB로 확장할 수 있도록 계정 저장소와 세션 저장소를 분리해두었습니다.",
 };
 
 const LoginPage = ({ go, setUser }) => {
@@ -19,12 +19,6 @@ const LoginPage = ({ go, setUser }) => {
   const submit = () => {
     const normalizedEmail = (form.email || "").trim().toLowerCase();
     const password = form.password || "";
-    const isAdminLogin = mode === "login"
-      && normalizedEmail === "admin@admin.admin"
-      && password === "admin";
-    const isBlockedAdminAttempt = mode === "login"
-      && normalizedEmail === "admin@admin.admin"
-      && password !== "admin";
 
     if (!normalizedEmail) {
       alert("이메일을 입력해주세요.");
@@ -33,11 +27,6 @@ const LoginPage = ({ go, setUser }) => {
 
     if (!password) {
       alert("비밀번호를 입력해주세요.");
-      return;
-    }
-
-    if (isBlockedAdminAttempt) {
-      alert("임시 관리자 계정 비밀번호가 올바르지 않습니다.");
       return;
     }
 
@@ -60,28 +49,36 @@ const LoginPage = ({ go, setUser }) => {
       }
     }
 
-    const name = mode === "signup"
-      ? (form.name || "새로운 왕사")
-      : (isAdminLogin ? "관리자" : "왕사들 회원");
-    setUser({
-      name,
-      email: normalizedEmail || "hello@wangsadeul.kr",
-      isAdmin: isAdminLogin,
-      gradeId: isAdminLogin ? "admin" : (mode === "signup" ? "member" : "scholar"),
-      profile: mode === "signup" ? {
-        birthdate: form.birthdate, phone: form.phone,
-        zip: form.zip, addr1: form.addr1, addr2: form.addr2,
-        gender: form.gender, interest: form.interest,
-        recommender: form.recommender,
-      } : null,
-      consents: {
-        terms: true,
-        marketing: form.consentMarketing,
-        thirdParty: form.consentThirdParty,
-      },
-      joinedAt: new Date().toISOString(),
-    });
-    go(isAdminLogin ? "admin" : "home");
+    const authResult = mode === "login"
+      ? window.WSD_AUTH.signIn({ email: normalizedEmail, password })
+      : window.WSD_AUTH.signUp({
+          name: form.name.trim(),
+          email: normalizedEmail,
+          password,
+          profile: {
+            birthdate: form.birthdate,
+            phone: form.phone,
+            zip: form.zip,
+            addr1: form.addr1,
+            addr2: form.addr2,
+            gender: form.gender,
+            interest: form.interest,
+            recommender: form.recommender,
+          },
+          consents: {
+            terms: true,
+            marketing: form.consentMarketing,
+            thirdParty: form.consentThirdParty,
+          },
+        });
+
+    if (!authResult.ok) {
+      alert(authResult.message);
+      return;
+    }
+
+    setUser(authResult.user);
+    go(authResult.user.isAdmin ? "admin" : "home");
   };
 
   return (
@@ -400,6 +397,17 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.006.000",
+    date: "2026-04-25",
+    summary: "P1 기준으로 local-first 인증/데이터 저장 구조를 분리해 회원 저장소와 세션 저장소를 실제로 연결했고, 로그인·회원가입·로그아웃이 같은 인증 계층을 보도록 정리했습니다. 현재 GitHub Pages 환경에서도 확장 가능한 구조로 운영 기준을 명확히 잡았습니다.",
+    details: [
+      "`WSD_AUTH`, `WSD_DB`, `WSD_STORES.session`, `WSD_STORES.users`를 도입해 인증과 데이터 저장 구조를 분리했습니다.",
+      "회원가입 시 실제 사용자 레코드를 저장하고, 로그인 시 저장된 사용자와 비밀번호 해시를 검증하도록 바꿨습니다.",
+      "앱 전역 로그아웃과 로그인 상태 유지가 동일한 세션 저장소를 바라보도록 정리했습니다.",
+    ],
+    context: "P1을 계속 부분 완료 상태로 두면 이후 기능이 다시 임시 구조 위에 쌓일 위험이 컸습니다. 정적 배포 환경 안에서도 인증과 데이터 저장 구조를 분리한 기반을 먼저 세워야 다음 단계 확장이 흔들리지 않는다고 판단했습니다.",
+  },
+  {
     version: "00.005.001",
     date: "2026-04-25",
     summary: "KMS를 사이트 전체 기능 인벤토리 기준으로 확장해 다른 개발자가 코드 없이도 구조를 파악할 수 있게 정리했고, 로그인/회원가입 흐름에 기본 검증과 인증 상태 안내를 추가해 현재 인증 방식이 임시 운영 구조임을 더 명확하게 표시했습니다.",
@@ -487,6 +495,13 @@ const ADMIN_KMS_SECTIONS = [
     why: "다른 개발자가 코드를 직접 읽지 않아도 현재 사이트 구조와 구현 상태를 빠르게 파악할 수 있어야 하기 때문입니다.",
     background: "기존 KMS는 규칙 중심이라 실제 기능 구성이 어디까지 구현됐는지 문서만 보고 이해하기 어려웠습니다.",
     next: "앞으로 기능이 추가되거나 상태가 바뀌면 KMS 기능 인벤토리도 함께 갱신해야 합니다.",
+  },
+  {
+    title: "P1 로컬 우선 인증 구조",
+    what: "현재 배포 환경에서는 `WSD_AUTH`와 `WSD_DB`를 중심으로 회원 저장소, 세션 저장소, 권한 계산을 분리한 local-first 구조를 기본 인증 계층으로 사용합니다.",
+    why: "GitHub Pages 정적 배포에서도 계정 흐름을 임시 목업이 아니라 실제 저장 구조 위에서 운영해야 이후 외부 DB로 옮길 때 충돌이 줄어들기 때문입니다.",
+    background: "기존 로그인은 화면에서 사용자 객체만 즉석 생성하는 수준이어서, P1의 인증/저장 구조 항목을 완료로 보기 어려웠습니다.",
+    next: "이후 외부 DB를 붙이더라도 엔티티 이름과 책임은 유지하고, 저장소 구현만 교체하는 방향으로 확장합니다.",
   },
 ];
 

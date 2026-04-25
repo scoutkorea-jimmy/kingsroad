@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.005.001",
+  version: "00.006.000",
   build: "2026.04.25",
   channel: "preview",
 };
@@ -15,6 +15,17 @@ const _lsGet = (k, fallback) => {
   } catch { return fallback; }
 };
 const _lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+const WSD_STORAGE_VERSION = "v1-local-first";
+const hashPassword = (input) => {
+  const value = String(input || "");
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash) + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return `wsd_${Math.abs(hash).toString(16)}`;
+};
 
 // 회원 등급 — 번호가 낮을수록 권한 낮음. admin > …
 const DEFAULT_GRADES = [
@@ -35,12 +46,37 @@ const DEFAULT_CATEGORIES = [
   { id: "column",   label: "칼럼",  boardType: "column",    minLevel: 0,  postMinLevel: 100, desc: "뱅기노자 칼럼 (쓰기: 관리자)" },
 ];
 
+const DEFAULT_USERS = [
+  {
+    id: "user-admin",
+    name: "관리자",
+    email: "admin@admin.admin",
+    passwordHash: hashPassword("admin"),
+    isAdmin: true,
+    gradeId: "admin",
+    profile: null,
+    consents: { terms: true, marketing: false, thirdParty: false },
+    joinedAt: "2026-04-25T00:00:00.000Z",
+  },
+];
+
+const ensureUsersSeeded = (users) => {
+  const list = Array.isArray(users) ? users.slice() : [];
+  if (!list.find((user) => user.email === "admin@admin.admin")) {
+    list.unshift(DEFAULT_USERS[0]);
+  }
+  return list;
+};
+
 window.WSD_STORES = {
+  storageVersion: WSD_STORAGE_VERSION,
   grades: _lsGet('wsd_grades', DEFAULT_GRADES),
   categories: _lsGet('wsd_categories', DEFAULT_CATEGORIES),
   userPosts: _lsGet('wsd_user_posts', []),
   comments: _lsGet('wsd_comments', {}),
   userColumns: _lsGet('wsd_user_columns', []),
+  users: ensureUsersSeeded(_lsGet('wsd_users', DEFAULT_USERS)),
+  session: _lsGet('wsd_session', null),
 };
 window.WSD_SAVE = {
   grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
@@ -48,8 +84,88 @@ window.WSD_SAVE = {
   userPosts: () => _lsSet('wsd_user_posts', window.WSD_STORES.userPosts),
   comments: () => _lsSet('wsd_comments', window.WSD_STORES.comments),
   userColumns: () => _lsSet('wsd_user_columns', window.WSD_STORES.userColumns),
+  users: () => _lsSet('wsd_users', window.WSD_STORES.users),
+  session: () => _lsSet('wsd_session', window.WSD_STORES.session),
   resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
   resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
+};
+
+window.WSD_DB = {
+  version: WSD_STORAGE_VERSION,
+  mode: "local-first",
+  entities: ["users", "session", "userPosts", "comments", "userColumns", "grades", "categories"],
+  note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
+};
+
+window.WSD_AUTH = {
+  hashPassword,
+  getSessionUser() {
+    return window.WSD_STORES.session || null;
+  },
+  listUsers() {
+    return window.WSD_STORES.users.slice();
+  },
+  signOut() {
+    window.WSD_STORES.session = null;
+    window.WSD_SAVE.session();
+    return null;
+  },
+  signIn({ email, password }) {
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const passwordHash = hashPassword(password);
+    const found = window.WSD_STORES.users.find((user) => user.email === normalizedEmail);
+    if (!found) {
+      return { ok: false, message: "등록되지 않은 이메일입니다." };
+    }
+    if (found.passwordHash !== passwordHash) {
+      return { ok: false, message: "비밀번호가 올바르지 않습니다." };
+    }
+    const sessionUser = {
+      id: found.id,
+      name: found.name,
+      email: found.email,
+      isAdmin: found.isAdmin,
+      gradeId: found.gradeId,
+      profile: found.profile,
+      consents: found.consents,
+      joinedAt: found.joinedAt,
+    };
+    window.WSD_STORES.session = sessionUser;
+    window.WSD_SAVE.session();
+    return { ok: true, user: sessionUser };
+  },
+  signUp(payload) {
+    const normalizedEmail = String(payload.email || "").trim().toLowerCase();
+    if (window.WSD_STORES.users.find((user) => user.email === normalizedEmail)) {
+      return { ok: false, message: "이미 가입된 이메일입니다." };
+    }
+    const nextUser = {
+      id: `user-${Date.now()}`,
+      name: payload.name,
+      email: normalizedEmail,
+      passwordHash: hashPassword(payload.password),
+      isAdmin: false,
+      gradeId: "member",
+      profile: payload.profile || null,
+      consents: payload.consents || { terms: true, marketing: false, thirdParty: false },
+      joinedAt: new Date().toISOString(),
+    };
+    window.WSD_STORES.users = [nextUser, ...window.WSD_STORES.users];
+    window.WSD_SAVE.users();
+    const sessionUser = {
+      id: nextUser.id,
+      name: nextUser.name,
+      email: nextUser.email,
+      isAdmin: nextUser.isAdmin,
+      gradeId: nextUser.gradeId,
+      profile: nextUser.profile,
+      consents: nextUser.consents,
+      joinedAt: nextUser.joinedAt,
+    };
+    window.WSD_STORES.session = sessionUser;
+    window.WSD_SAVE.session();
+    return { ok: true, user: sessionUser };
+  },
 };
 
 // 사용자 등급 레벨 계산

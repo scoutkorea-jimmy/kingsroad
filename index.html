@@ -59,14 +59,7 @@ const App = () => {
     try { return localStorage.getItem('wsd_route') || 'home'; } catch { return 'home'; }
   });
   const [postId, setPostId] = React.useState(null);
-  const [user, setUser] = React.useState(() => {
-    try {
-      const saved = localStorage.getItem('wsd_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = React.useState(() => window.WSD_AUTH.getSessionUser());
   const [cart, setCart] = React.useState(null);
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = React.useState(false);
@@ -76,12 +69,6 @@ const App = () => {
   React.useEffect(() => {
     try { localStorage.setItem('wsd_readfont', readFont); } catch {}
   }, [readFont]);
-  React.useEffect(() => {
-    try {
-      if (user) localStorage.setItem('wsd_user', JSON.stringify(user));
-      else localStorage.removeItem('wsd_user');
-    } catch {}
-  }, [user]);
 
   const go = (r) => {
     setRoute(r);
@@ -91,11 +78,11 @@ const App = () => {
   };
 
   const logout = () => {
+    window.WSD_AUTH.signOut();
     setUser(null);
     setPostId(null);
     setRoute("home");
     try {
-      localStorage.removeItem('wsd_user');
       localStorage.setItem('wsd_route', 'home');
     } catch {}
     window.scrollTo(0, 0);

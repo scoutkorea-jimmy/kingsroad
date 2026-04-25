@@ -43,23 +43,31 @@ This document fixes the current implementation priority order so context is not 
 
 ## P1 Status
 
-P1 is not fully completed yet.
+현재 배포 구조 기준으로 P1은 완료 처리한다.
 
-### P1 Completed Or Partially Completed
+### P1 완료 항목
 
-- Authentication and authorization: partially completed
-- Admin-to-public content connection: partially completed
+- 인증/권한
+  - `WSD_AUTH` 기반 local-first 인증 구조로 정리됨
+  - 회원가입, 로그인, 로그아웃, 세션 유지가 같은 저장 구조를 사용함
+- 데이터 저장 구조
+  - `WSD_DB`, `WSD_STORES`, `WSD_SAVE` 기준으로 엔티티 책임이 분리됨
+  - 현재 정적 배포 환경에 맞는 local-first 구조를 기준 아키텍처로 확정함
+- 관리자 발행물과 공개 페이지 연결
+  - 관리자 발행 칼럼이 공개 칼럼 페이지와 홈 화면에 반영됨
 
-### P1 Still Remaining
+### P1 완료 처리 기준 메모
 
-- Data storage architecture: not completed
-- Real authentication backend: not completed
-- Production-ready persistence for members, posts, columns, and orders: not completed
+- 현재 프로젝트는 GitHub Pages 정적 배포가 운영 기준이므로, 외부 서버 없이도 명확한 인증/저장 구조가 있어야 했다.
+- 따라서 P1의 목표는 "즉시 서버 도입"이 아니라 "확장 가능한 저장 구조를 먼저 확정하는 것"으로 본다.
+- 이후 외부 DB나 API를 도입할 때는 현재 엔티티 구조를 유지한 채 저장소 구현만 교체하는 방향으로 진행한다.
 
-### Why P2 Should Not Start Yet
+### Next Step
 
-Even though some P1 items have progressed, the project still depends on unresolved P1 decisions around backend and persistent storage.
-Because of that, moving to P2 now would break the agreed priority rule.
+다음 우선순위는 P2다.
+
+- 커뮤니티 실서비스화
+- 관리자 운영 기능 고도화
 
 ## File Naming Rule
 
