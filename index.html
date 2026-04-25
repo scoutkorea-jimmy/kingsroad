@@ -44,6 +44,7 @@
 <script type="text/babel" src="pages/ColumnPage.jsx"></script>
 <script type="text/babel" src="pages/BookCheckoutPage.jsx"></script>
 <script type="text/babel" src="pages/AuthAdminPage.jsx"></script>
+<script type="text/babel" src="pages/MyPage.jsx"></script>
 
 <script type="text/babel">
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -58,7 +59,14 @@ const App = () => {
     try { return localStorage.getItem('wsd_route') || 'home'; } catch { return 'home'; }
   });
   const [postId, setPostId] = React.useState(null);
-  const [user, setUser] = React.useState(null);
+  const [user, setUser] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('wsd_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [cart, setCart] = React.useState(null);
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = React.useState(false);
@@ -68,11 +76,28 @@ const App = () => {
   React.useEffect(() => {
     try { localStorage.setItem('wsd_readfont', readFont); } catch {}
   }, [readFont]);
+  React.useEffect(() => {
+    try {
+      if (user) localStorage.setItem('wsd_user', JSON.stringify(user));
+      else localStorage.removeItem('wsd_user');
+    } catch {}
+  }, [user]);
 
   const go = (r) => {
     setRoute(r);
     setPostId(null);
     try { localStorage.setItem('wsd_route', r); } catch {}
+    window.scrollTo(0, 0);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setPostId(null);
+    setRoute("home");
+    try {
+      localStorage.removeItem('wsd_user');
+      localStorage.setItem('wsd_route', 'home');
+    } catch {}
     window.scrollTo(0, 0);
   };
 
@@ -103,6 +128,7 @@ const App = () => {
       case "column": return <ColumnPage go={go}/>;
       case "book": return <BookPage go={go} cart={cart} setCart={setCart}/>;
       case "checkout": return <CheckoutPage go={go} cart={cart}/>;
+      case "mypage": return <MyPage go={go} user={user} cart={cart}/>;
       case "login":
       case "signup": return <LoginPage go={go} setUser={setUser}/>;
       case "admin": return user?.isAdmin
@@ -114,7 +140,7 @@ const App = () => {
 
   return (
     <div className={`app ${readFont === 'serif' ? 'reading-myungjo' : ''}`}>
-      <Nav route={route} go={go} user={user} readFont={readFont} setReadFont={setReadFont}/>
+      <Nav route={route} go={go} user={user} onLogout={logout} readFont={readFont} setReadFont={setReadFont}/>
       <main id="main" tabIndex="-1" style={{flex:1, outline:'none'}} aria-label={`${route} 페이지 본문`}>{page}</main>
       {!hideNav && <Footer go={go}/>}
       <Tweaks tweaks={tweaks} setTweaks={updateTweaks} visible={editMode}/>

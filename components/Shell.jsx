@@ -13,7 +13,7 @@ const Brand = ({ onClick }) => (
   </button>
 );
 
-const Nav = ({ route, go, user, readFont, setReadFont }) => {
+const Nav = ({ route, go, user, onLogout, readFont, setReadFont }) => {
   const items = [
     { key: "home", label: "홈" },
     { key: "community", label: "커뮤니티" },
@@ -55,9 +55,11 @@ const Nav = ({ route, go, user, readFont, setReadFont }) => {
             <>
               <span className="mono" aria-label={`로그인: ${user.name}`}
                 style={{fontSize:11, letterSpacing:'0.15em', color:'var(--gold)'}}>{user.name}</span>
+              <button className="btn btn-small" onClick={() => go("mypage")}>마이페이지</button>
               {user.isAdmin && (
                 <button className="btn btn-small" onClick={() => go("admin")}>관리</button>
               )}
+              <button className="btn btn-small" onClick={onLogout}>로그아웃</button>
             </>
           ) : (
             <>

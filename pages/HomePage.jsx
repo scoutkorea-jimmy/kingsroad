@@ -199,6 +199,53 @@ const HomePage = ({ go, tweaks }) => {
         </div>
       </section>
 
+      {/* 왕사남 강연 일정 */}
+      <section className="section" style={{borderBottom:'1px solid var(--line)'}}>
+        <div className="container">
+          <SectionHead
+            eyebrow="LECTURE SCHEDULE · 왕사남 강연"
+            title={<>이번 달 <span className="accent">왕사남 강연 일정</span></>}
+            subtitle="메인 홈에서 바로 확인할 수 있도록, 가장 가까운 왕사남 강연 일정을 먼저 보여줍니다."
+            action={<button type="button" className="btn-ghost" onClick={() => go("wangsanam")}>왕사남 소개 →</button>}
+          />
+          <div className="grid grid-3">
+            {(data.lectures || []).map((lecture, i) => (
+              <article
+                key={lecture.id}
+                className={`card ${i === 0 ? 'card-gold' : ''}`}
+                {...clickable(() => go("wangsanam"), `강연: ${lecture.topic}, 일정 ${lecture.next}`)}
+                style={{cursor:'pointer'}}
+              >
+                <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', marginBottom:14}}>
+                  <span className="badge badge-gold">왕사남</span>
+                  <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.16em'}}>{lecture.seats}</span>
+                </div>
+                <h3 className="ko-serif" style={{fontSize:24, marginBottom:10}}>{lecture.topic}</h3>
+                <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:18}}>{lecture.note}</p>
+                <div style={{display:'grid', gap:10}}>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}>
+                    <span className="dim">프로그램</span>
+                    <span>{lecture.title}</span>
+                  </div>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}>
+                    <span className="dim">강연자</span>
+                    <span>{lecture.host}</span>
+                  </div>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}>
+                    <span className="dim">장소</span>
+                    <span>{lecture.venue}</span>
+                  </div>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12, borderTop:'1px solid var(--line)', paddingTop:12, marginTop:4}}>
+                    <span className="dim">일정</span>
+                    <span className="gold">{lecture.next}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* 투어 프로그램 */}
       <section className="section" style={{borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
         <div className="container">
