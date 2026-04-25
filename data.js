@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.016.000",
+  version: "00.017.000",
   build: "2026.04.25",
   channel: "preview",
 };
@@ -125,6 +125,8 @@ window.WSD_STORES = {
   lectureRegistrations: _lsGet('wsd_lecture_registrations', {}),
   bankAccount: _lsGet('wsd_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
   bookOrders: _lsGet('wsd_book_orders', []),
+  tourOverrides: _lsGet('wsd_tour_overrides', {}),
+  tourReservations: _lsGet('wsd_tour_reservations', {}),
 };
 window.WSD_SAVE = {
   grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
@@ -143,6 +145,8 @@ window.WSD_SAVE = {
   lectureRegistrations: () => _lsSet('wsd_lecture_registrations', window.WSD_STORES.lectureRegistrations),
   bankAccount: () => _lsSet('wsd_bank_account', window.WSD_STORES.bankAccount),
   bookOrders: () => _lsSet('wsd_book_orders', window.WSD_STORES.bookOrders),
+  tourOverrides: () => _lsSet('wsd_tour_overrides', window.WSD_STORES.tourOverrides),
+  tourReservations: () => _lsSet('wsd_tour_reservations', window.WSD_STORES.tourReservations),
   resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
   resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
 };
@@ -150,7 +154,7 @@ window.WSD_SAVE = {
 window.WSD_DB = {
   version: WSD_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders", "tourOverrides", "tourReservations"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -663,7 +667,18 @@ window.WSD_LECTURES = {
         : r
     ));
     this._saveRegistrations(lectureId, next);
-    return next.find((r) => r.id === registrationId) || null;
+    const updated = next.find((r) => r.id === registrationId) || null;
+    if (updated && updated.userId) {
+      const lecture = this.getLecture(lectureId);
+      window.WSD_COMMUNITY.addNotification(updated.userId, {
+        type: 'lecture_confirmed',
+        lectureId: String(lectureId),
+        postTitle: lecture?.topic || lecture?.title || '강연',
+        fromName: '운영자',
+        message: '강연 입금이 확인되어 참가가 확정되었습니다.',
+      });
+    }
+    return updated;
   },
   unconfirmPayment(lectureId, registrationId) {
     const list = this.listRegistrations(lectureId);
@@ -682,15 +697,29 @@ window.WSD_LECTURES = {
     const seats = this.getSeats(lectureId);
     let remaining = seats.remaining;
     const next = list.slice();
+    const promotedUsers = [];
     for (let i = 0; i < next.length && remaining > 0; i += 1) {
       const r = next[i];
       if (r.status !== 'waitlist') continue;
       if (r.count > remaining) continue;
       const promoted = (lecture.price || 0) === 0 ? 'confirmed' : 'pending_payment';
       next[i] = { ...r, status: promoted, promotedAt: new Date().toISOString() };
+      promotedUsers.push({ userId: r.userId, status: promoted });
       remaining -= r.count;
     }
     this._saveRegistrations(lectureId, next);
+    promotedUsers.forEach(({ userId, status }) => {
+      if (!userId) return;
+      window.WSD_COMMUNITY.addNotification(userId, {
+        type: 'lecture_promoted',
+        lectureId: String(lectureId),
+        postTitle: lecture.topic || lecture.title || '강연',
+        fromName: '운영자',
+        message: status === 'confirmed'
+          ? '대기자에서 참가가 확정되었습니다.'
+          : '대기자에서 입금 대기로 전환되었습니다. 안내 계좌로 입금해 주세요.',
+      });
+    });
   },
   listMyRegistrations(userId) {
     if (!userId) return [];
@@ -832,12 +861,25 @@ window.WSD_BOOK_ORDERS = {
     this._save([order, ...(window.WSD_STORES.bookOrders || [])]);
     return { ok: true, order };
   },
+  _notify(order, type, message) {
+    if (!order || !order.userId) return;
+    window.WSD_COMMUNITY.addNotification(order.userId, {
+      type,
+      orderId: order.id,
+      orderNo: order.orderNo,
+      postTitle: `『왕의길』 주문 ${order.orderNo}`,
+      fromName: '운영자',
+      message,
+    });
+  },
   confirmPayment(id) {
     const list = (window.WSD_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, paid: true, status: 'paid', paidAt: new Date().toISOString() } : o
     );
     this._save(list);
-    return list.find((o) => o.id === id) || null;
+    const updated = list.find((o) => o.id === id) || null;
+    this._notify(updated, 'order_paid', '입금이 확인되어 발송 준비를 시작합니다.');
+    return updated;
   },
   unconfirmPayment(id) {
     const list = (window.WSD_STORES.bookOrders || []).map((o) =>
@@ -851,21 +893,28 @@ window.WSD_BOOK_ORDERS = {
       o.id === id ? { ...o, status: 'shipped', tracking: tracking || o.tracking || '', shippedAt: new Date().toISOString() } : o
     );
     this._save(list);
-    return list.find((o) => o.id === id) || null;
+    const updated = list.find((o) => o.id === id) || null;
+    this._notify(updated, 'order_shipped',
+      updated?.tracking ? `발송이 시작되었습니다. 송장 번호 ${updated.tracking}.` : '발송이 시작되었습니다.');
+    return updated;
   },
   markDelivered(id) {
     const list = (window.WSD_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, status: 'delivered', deliveredAt: new Date().toISOString() } : o
     );
     this._save(list);
-    return list.find((o) => o.id === id) || null;
+    const updated = list.find((o) => o.id === id) || null;
+    this._notify(updated, 'order_delivered', '배송이 완료되었습니다. 즐거운 독서 되세요.');
+    return updated;
   },
   cancelOrder(id) {
     const list = (window.WSD_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, status: 'cancelled', cancelledAt: new Date().toISOString() } : o
     );
     this._save(list);
-    return list.find((o) => o.id === id) || null;
+    const updated = list.find((o) => o.id === id) || null;
+    this._notify(updated, 'order_cancelled', '주문이 취소되었습니다.');
+    return updated;
   },
   exportCsv() {
     const header = ['orderNo', 'date', 'userId', 'recipient', 'phone', 'address', 'version', 'qty', 'total', 'status', 'paid', 'tracking'];
@@ -876,6 +925,236 @@ window.WSD_BOOK_ORDERS = {
     return [header, ...rows]
       .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
       .join('\n');
+  },
+};
+
+// === 투어(WSD_TOURS) helper ============================================
+// 운영 정책:
+//   - 시드는 WANGSADEUL_DATA.tours. 관리자가 capacity / startsAt / 가격 등을 수정하면
+//     `tourOverrides`(같은 id 키)에 저장하고 listAll에서 머지.
+//   - 신청은 회원 전용. 한 회원당 한 투어에 한 건만(취소 후 재신청은 가능).
+//   - 결제는 무통장 입금만(같은 bankAccount 저장소 사용).
+//   - 정원/대기열/입금 확인/.ics는 강연 helper와 같은 패턴.
+window.WSD_TOURS = {
+  _seed() { return (window.WANGSADEUL_DATA?.tours || []).slice(); },
+  _override(id) {
+    const map = window.WSD_STORES.tourOverrides || {};
+    return map[String(id)] || null;
+  },
+  _merge(seed) {
+    const ov = this._override(seed.id);
+    return ov ? { ...seed, ...ov } : { ...seed };
+  },
+  listAll() {
+    const seedIds = new Set(this._seed().map((t) => String(t.id)));
+    const merged = this._seed().map((t) => this._merge(t));
+    const map = window.WSD_STORES.tourOverrides || {};
+    Object.entries(map).forEach(([id, ov]) => {
+      if (!seedIds.has(String(id))) merged.push({ id, ...ov });
+    });
+    return merged;
+  },
+  getTour(id) {
+    return this.listAll().find((t) => String(t.id) === String(id)) || null;
+  },
+  saveTour(payload) {
+    const map = window.WSD_STORES.tourOverrides || {};
+    map[String(payload.id)] = { ...(map[String(payload.id)] || {}), ...payload, updatedAt: new Date().toISOString() };
+    window.WSD_STORES.tourOverrides = map;
+    window.WSD_SAVE.tourOverrides();
+    return this.getTour(payload.id);
+  },
+  deleteTour(id) {
+    const map = window.WSD_STORES.tourOverrides || {};
+    delete map[String(id)];
+    window.WSD_STORES.tourOverrides = map;
+    window.WSD_SAVE.tourOverrides();
+    const reg = window.WSD_STORES.tourReservations || {};
+    delete reg[String(id)];
+    window.WSD_STORES.tourReservations = reg;
+    window.WSD_SAVE.tourReservations();
+  },
+  // ── 예약 ──────────────────────────────────────────────────────
+  listReservations(tourId) {
+    const map = window.WSD_STORES.tourReservations || {};
+    return Array.isArray(map[String(tourId)]) ? map[String(tourId)].slice() : [];
+  },
+  _saveReservations(tourId, list) {
+    const map = window.WSD_STORES.tourReservations || {};
+    map[String(tourId)] = list;
+    window.WSD_STORES.tourReservations = map;
+    window.WSD_SAVE.tourReservations();
+  },
+  getSeats(tourId) {
+    const tour = this.getTour(tourId);
+    const cap = tour?.capacity || 0;
+    const list = this.listReservations(tourId);
+    const active = list.filter((r) => r.status !== 'cancelled');
+    const taken = active.filter((r) => r.status !== 'waitlist').reduce((s, r) => s + (r.count || 1), 0);
+    const waitlist = active.filter((r) => r.status === 'waitlist').reduce((s, r) => s + (r.count || 1), 0);
+    const remaining = Math.max(0, cap - taken);
+    return { capacity: cap, taken, waitlist, remaining };
+  },
+  hasUserReserved(tourId, userId) {
+    if (!userId) return null;
+    return this.listReservations(tourId).find((r) => r.userId === userId && r.status !== 'cancelled') || null;
+  },
+  reserve(tourId, payload) {
+    const userId = payload.userId;
+    if (!userId) return { ok: false, message: "회원 가입 후 로그인해 주세요." };
+    const existing = this.hasUserReserved(tourId, userId);
+    if (existing) return { ok: false, message: "이미 신청된 답사입니다.", reservation: existing };
+    const tour = this.getTour(tourId);
+    if (!tour) return { ok: false, message: "투어 정보를 찾을 수 없습니다." };
+    const count = Math.max(1, Number(payload.count) || 1);
+    const price = tour.priceNumber || 0;
+    const seats = this.getSeats(tourId);
+    let status;
+    if (seats.remaining >= count) {
+      status = price === 0 ? 'confirmed' : 'pending_payment';
+    } else {
+      status = 'waitlist';
+    }
+    const reg = {
+      id: `tour-reg-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+      tourId: String(tourId),
+      userId,
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone || "",
+      count,
+      note: String(payload.note || "").trim(),
+      price,
+      paid: false,
+      status,
+      createdAt: new Date().toISOString(),
+    };
+    const list = this.listReservations(tourId);
+    this._saveReservations(tourId, [...list, reg]);
+    return { ok: true, reservation: reg };
+  },
+  cancelReservation(tourId, reservationId) {
+    const list = this.listReservations(tourId);
+    const next = list.map((r) => r.id === reservationId ? { ...r, status: 'cancelled', cancelledAt: new Date().toISOString() } : r);
+    this._saveReservations(tourId, next);
+    this._promoteWaitlist(tourId);
+    return next.find((r) => r.id === reservationId) || null;
+  },
+  confirmPayment(tourId, reservationId) {
+    const list = this.listReservations(tourId);
+    const next = list.map((r) => (
+      r.id === reservationId
+        ? { ...r, paid: true, status: 'confirmed', confirmedAt: new Date().toISOString() }
+        : r
+    ));
+    this._saveReservations(tourId, next);
+    const updated = next.find((r) => r.id === reservationId) || null;
+    if (updated && updated.userId) {
+      const tour = this.getTour(tourId);
+      window.WSD_COMMUNITY.addNotification(updated.userId, {
+        type: 'tour_confirmed',
+        tourId: String(tourId),
+        postTitle: tour?.title || '답사',
+        fromName: '운영자',
+        message: '답사 입금이 확인되어 참가가 확정되었습니다.',
+      });
+    }
+    return updated;
+  },
+  unconfirmPayment(tourId, reservationId) {
+    const list = this.listReservations(tourId);
+    const next = list.map((r) => (
+      r.id === reservationId
+        ? { ...r, paid: false, status: 'pending_payment', confirmedAt: null }
+        : r
+    ));
+    this._saveReservations(tourId, next);
+    return next.find((r) => r.id === reservationId) || null;
+  },
+  _promoteWaitlist(tourId) {
+    const tour = this.getTour(tourId);
+    if (!tour) return;
+    const list = this.listReservations(tourId);
+    const seats = this.getSeats(tourId);
+    let remaining = seats.remaining;
+    const next = list.slice();
+    const promotedUsers = [];
+    for (let i = 0; i < next.length && remaining > 0; i += 1) {
+      const r = next[i];
+      if (r.status !== 'waitlist') continue;
+      if (r.count > remaining) continue;
+      const promoted = (tour.priceNumber || 0) === 0 ? 'confirmed' : 'pending_payment';
+      next[i] = { ...r, status: promoted, promotedAt: new Date().toISOString() };
+      promotedUsers.push({ userId: r.userId, status: promoted });
+      remaining -= r.count;
+    }
+    this._saveReservations(tourId, next);
+    promotedUsers.forEach(({ userId, status }) => {
+      if (!userId) return;
+      window.WSD_COMMUNITY.addNotification(userId, {
+        type: 'tour_promoted',
+        tourId: String(tourId),
+        postTitle: tour.title || '답사',
+        fromName: '운영자',
+        message: status === 'confirmed'
+          ? '대기자에서 참가가 확정되었습니다.'
+          : '대기자에서 입금 대기로 전환되었습니다. 안내 계좌로 입금해 주세요.',
+      });
+    });
+  },
+  listMyReservations(userId) {
+    if (!userId) return [];
+    const map = window.WSD_STORES.tourReservations || {};
+    const out = [];
+    Object.keys(map).forEach((tourId) => {
+      (map[tourId] || []).forEach((r) => {
+        if (r.userId === userId) out.push({ ...r, tour: this.getTour(tourId) });
+      });
+    });
+    return out.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  },
+  // ── .ics ──────────────────────────────────────────────────────
+  generateIcs(tour) {
+    if (!tour?.startsAt) return null;
+    const start = new Date(tour.startsAt);
+    const dur = (tour.durationMinutes || 180) * 60 * 1000;
+    const end = new Date(start.getTime() + dur);
+    const fmt = (d) => {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+    };
+    const escape = (s) => String(s || '').replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Wangsadeul//Tour//KO',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:tour-${tour.id}@wangsadeul`,
+      `DTSTAMP:${fmt(new Date())}`,
+      `DTSTART:${fmt(start)}`,
+      `DTEND:${fmt(end)}`,
+      `SUMMARY:${escape(tour.title || '답사')}`,
+      `LOCATION:${escape(tour.title || '')}`,
+      `DESCRIPTION:${escape(tour.desc || '')}`,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ];
+    return lines.join('\r\n');
+  },
+  downloadIcs(tourId) {
+    const tour = this.getTour(tourId);
+    const ics = this.generateIcs(tour);
+    if (!ics) return false;
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tour-${tour.id}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return true;
   },
 };
 
@@ -923,10 +1202,10 @@ window.WANGSADEUL_DATA = {
     { id: 6, title: "어좌는 어디를 바라보는가", excerpt: "남향이라는 답은 절반만 맞다. 왕의 시선은 자연을 향하지 않았다. 그것은 백성을 향한 각도였다.", date: "2026.03.12", readTime: "9분", category: "공간의 철학" },
   ],
   tours: [
-    { id: 1, title: "경복궁 — 권력의 좌표를 읽다", duration: "3시간", group: "12인 이하", price: "85,000원", next: "2026.05.04 · 토", level: "입문", desc: "근정전부터 경회루까지, 조선 건국의 설계도를 공간으로 따라갑니다." },
-    { id: 2, title: "창덕궁 후원 — 왕의 사유", duration: "4시간", group: "8인 이하", price: "130,000원", next: "2026.05.11 · 토", level: "심화", desc: "공적 공간 너머, 왕이 스스로를 마주하던 자리. 야간 답사 한정." },
-    { id: 3, title: "종묘 — 침묵의 건축", duration: "2.5시간", group: "15인 이하", price: "70,000원", next: "2026.05.18 · 일", level: "입문", desc: "세계에서 가장 긴 목조 건축이 왜 비어 있어야 했는가." },
-    { id: 4, title: "수원 화성 — 정조의 기획", duration: "5시간", group: "10인 이하", price: "150,000원", next: "2026.05.25 · 토", level: "심화", desc: "개혁 군주가 남긴 도시. 근대 이전의 가장 급진적 실험." },
+    { id: 1, title: "경복궁 — 권력의 좌표를 읽다", duration: "3시간", group: "12인 이하", price: "85,000원", priceNumber: 85000, capacity: 12, startsAt: "2026-05-04T10:00:00+09:00", durationMinutes: 180, next: "2026.05.04 · 토", level: "입문", desc: "근정전부터 경회루까지, 조선 건국의 설계도를 공간으로 따라갑니다." },
+    { id: 2, title: "창덕궁 후원 — 왕의 사유", duration: "4시간", group: "8인 이하", price: "130,000원", priceNumber: 130000, capacity: 8, startsAt: "2026-05-11T18:00:00+09:00", durationMinutes: 240, next: "2026.05.11 · 토", level: "심화", desc: "공적 공간 너머, 왕이 스스로를 마주하던 자리. 야간 답사 한정." },
+    { id: 3, title: "종묘 — 침묵의 건축", duration: "2.5시간", group: "15인 이하", price: "70,000원", priceNumber: 70000, capacity: 15, startsAt: "2026-05-18T10:00:00+09:00", durationMinutes: 150, next: "2026.05.18 · 일", level: "입문", desc: "세계에서 가장 긴 목조 건축이 왜 비어 있어야 했는가." },
+    { id: 4, title: "수원 화성 — 정조의 기획", duration: "5시간", group: "10인 이하", price: "150,000원", priceNumber: 150000, capacity: 10, startsAt: "2026-05-25T09:00:00+09:00", durationMinutes: 300, next: "2026.05.25 · 토", level: "심화", desc: "개혁 군주가 남긴 도시. 근대 이전의 가장 급진적 실험." },
   ],
   lectures: [
     { id: 1, title: "왕사남 월간 공개 강연", topic: "왕의 자리는 어떻게 설계되었는가", venue: "서울 종로 강연실", next: "2026.05.02 · 토 19:00", startsAt: "2026-05-02T19:00:00+09:00", durationMinutes: 90, capacity: 30, price: 0, host: "뱅기노자", seats: "잔여 18석", note: "왕권, 공간, 상징 체계를 입문자 관점에서 풀어냅니다." },

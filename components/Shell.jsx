@@ -117,7 +117,7 @@ const NotificationBell = ({ user, onPick }) => {
   const pick = (n) => {
     window.WSD_COMMUNITY.markNotificationRead(user.id, n.id);
     setOpen(false);
-    if (n.postId && onPick) onPick(n.postId);
+    if (onPick) onPick(n);
     setTick((t) => t + 1);
   };
 
@@ -313,9 +313,30 @@ const Nav = ({ route, go, user, onLogout, readFont, setReadFont }) => {
             <>
               <span className="mono" aria-label={`로그인: ${user.name}`}
                 style={{fontSize:11, letterSpacing:'0.15em', color:'var(--gold)'}}>{user.name}</span>
-              <NotificationBell user={user} onPick={(postId) => {
-                try { sessionStorage.setItem('wsd_pending_post_id', String(postId)); } catch {}
-                go("community");
+              <NotificationBell user={user} onPick={(n) => {
+                // 알림 타입별 라우팅 — 강연/투어/주문/댓글
+                try {
+                  if (n.type === 'comment' && n.postId) {
+                    sessionStorage.setItem('wsd_pending_post_id', String(n.postId));
+                    go('community'); return;
+                  }
+                  if (n.type === 'lecture_confirmed' || n.type === 'lecture_promoted') {
+                    if (n.lectureId) sessionStorage.setItem('wsd_pending_lecture_id', String(n.lectureId));
+                    go('lectures'); return;
+                  }
+                  if (n.type === 'tour_confirmed' || n.type === 'tour_promoted') {
+                    if (n.tourId) sessionStorage.setItem('wsd_pending_tour_id', String(n.tourId));
+                    go('tour'); return;
+                  }
+                  if (String(n.type || '').startsWith('order_')) {
+                    go('mypage'); return;
+                  }
+                  // 폴백 — postId가 있으면 커뮤니티
+                  if (n.postId) {
+                    sessionStorage.setItem('wsd_pending_post_id', String(n.postId));
+                    go('community');
+                  }
+                } catch {}
               }}/>
               <button className="btn btn-small" onClick={() => go("mypage")}>마이페이지</button>
               {user.isAdmin && (

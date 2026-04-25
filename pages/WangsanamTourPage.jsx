@@ -56,48 +56,93 @@ const WangsanamPage = ({ go }) => {
   );
 };
 
-const TourPage = ({ go }) => {
-  const data = window.WANGSADEUL_DATA;
-  const [selected, setSelected] = React.useState(0);
-  const tour = data.tours[selected];
+const TourPage = ({ go, user }) => {
+  const [tick, setTick] = React.useState(0);
+  const tours = React.useMemo(() => window.WSD_TOURS.listAll(), [tick]);
+  const bank = React.useMemo(() => (window.WSD_LECTURES?.getBankAccount?.() || window.WSD_STORES.bankAccount || {}), [tick]);
+  const refresh = () => setTick((v) => v + 1);
+
+  const [selectedIdx, setSelectedIdx] = React.useState(0);
+
+  // 외부 진입(해시 / 마이페이지 알림 등)으로 들어온 투어 ID 처리
+  React.useEffect(() => {
+    let pending = null;
+    try { pending = sessionStorage.getItem('wsd_pending_tour_id'); } catch {}
+    if (pending) {
+      try { sessionStorage.removeItem('wsd_pending_tour_id'); } catch {}
+      const idx = tours.findIndex((t) => String(t.id) === String(pending));
+      if (idx >= 0) setSelectedIdx(idx);
+    }
+  }, []);
+
+  if (!tours.length) {
+    return (
+      <div className="section">
+        <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
+          <p className="dim">예정된 답사 프로그램이 없습니다.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const safeIdx = Math.min(selectedIdx, tours.length - 1);
+  const tour = tours[safeIdx];
+  const seats = window.WSD_TOURS.getSeats(tour.id);
+  const myReg = user ? window.WSD_TOURS.hasUserReserved(tour.id, user.id) : null;
+  const formatPrice = (p) => (p === 0 || p == null) ? "무료" : `${p.toLocaleString()}원`;
+
+  const labelStatus = (s) => ({
+    pending_payment: '입금 대기',
+    confirmed: '참가 확정',
+    waitlist: '대기자',
+    cancelled: '취소됨',
+  }[s] || s);
+  const tone = (s) => ({
+    confirmed: 'var(--gold)',
+    waitlist: 'var(--ink-2)',
+    cancelled: 'var(--danger)',
+    pending_payment: 'var(--ink-2)',
+  }[s] || 'var(--ink-2)');
 
   return (
     <div className="section">
       <div className="container">
-        <div style={{marginBottom:60}}>
+        <div style={{marginBottom:48}}>
           <div className="section-eyebrow">TOUR · 답사</div>
           <h1 className="section-title">발로 읽는 <span className="accent">조선</span></h1>
-          <p className="section-subtitle">뱅기노자와 왕사남이 직접 운영하는 프로그램. 한 회 최대 15인, 깊이 있는 독법.</p>
+          <p className="section-subtitle">뱅기노자와 왕사남이 직접 운영하는 프로그램. 회원 전용 신청 · 무통장 입금 결제.</p>
         </div>
 
         {/* Tabs */}
         <div style={{display:'flex', gap:0, borderBottom:'1px solid var(--line-2)', marginBottom:40, overflowX:'auto'}}>
-          {data.tours.map((t, i) => (
+          {tours.map((t, i) => (
             <button key={t.id}
-              onClick={() => setSelected(i)}
+              onClick={() => setSelectedIdx(i)}
               style={{
                 padding:'20px 28px',
                 fontSize:13,
                 whiteSpace:'nowrap',
                 fontFamily:'var(--font-serif)',
-                color: selected === i ? 'var(--gold)' : 'var(--ink-2)',
-                borderBottom: selected === i ? '2px solid var(--gold)' : '2px solid transparent',
-                marginBottom:-1,
+                color: safeIdx === i ? 'var(--gold)' : 'var(--ink-2)',
+                background: 'transparent', border: 'none',
+                borderBottom: safeIdx === i ? '2px solid var(--gold)' : '2px solid transparent',
+                marginBottom:-1, cursor:'pointer',
               }}>
-              0{i+1} · {t.title.split(' — ')[0]}
+              0{i+1} · {String(t.title || '').split(' — ')[0]}
             </button>
           ))}
         </div>
 
-        <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:60}}>
+        <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:60}} className="tour-grid">
           <div>
             <div className="placeholder" style={{aspectRatio:'16/10', marginBottom:32, fontSize:11}}>
-              {tour.title.toUpperCase()} · 1600×1000
+              {String(tour.title || '').toUpperCase()} · 1600×1000
             </div>
-            <div style={{display:'flex', gap:8, marginBottom:20}}>
+            <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap'}}>
               <span className="badge badge-gold">{tour.level}</span>
               <span className="badge">{tour.duration}</span>
               <span className="badge">{tour.group}</span>
+              <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>
             </div>
             <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24}}>{tour.title}</h2>
             <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{tour.desc}</p>
@@ -133,35 +178,18 @@ const TourPage = ({ go }) => {
 
           {/* Sidebar — booking */}
           <div>
-            <div className="card card-gold" style={{position:'sticky', top:100}}>
-              <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.3em'}}>NEXT SCHEDULE</div>
-              <div className="gold-2 ko-serif" style={{fontSize:24, margin:'8px 0 24px'}}>{tour.next}</div>
-
-              <div style={{display:'flex', justifyContent:'space-between', padding:'16px 0', borderTop:'1px solid var(--line)'}}>
-                <span className="dim">참가비</span>
-                <span className="gold-2 ko-serif" style={{fontSize:22}}>{tour.price}</span>
-              </div>
-              <div style={{display:'flex', justifyContent:'space-between', padding:'16px 0', borderTop:'1px solid var(--line)'}}>
-                <span className="dim">소요 시간</span>
-                <span>{tour.duration}</span>
-              </div>
-              <div style={{display:'flex', justifyContent:'space-between', padding:'16px 0', borderTop:'1px solid var(--line)'}}>
-                <span className="dim">정원</span>
-                <span>{tour.group}</span>
-              </div>
-              <div style={{display:'flex', justifyContent:'space-between', padding:'16px 0', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)', marginBottom:24}}>
-                <span className="dim">난이도</span>
-                <span className="gold">{tour.level}</span>
-              </div>
-
-              <button className="btn btn-gold btn-block" style={{marginBottom:12}}>예약 신청</button>
-              <button className="btn btn-block">대기자 등록</button>
-
-              <p className="dim-2" style={{fontSize:11, lineHeight:1.7, marginTop:20, textAlign:'center'}}>
-                정원 마감 시 자동 대기 전환.<br/>
-                취소는 답사 3일 전까지 가능합니다.
-              </p>
-            </div>
+            <TourBookingPanel
+              tour={tour}
+              user={user}
+              bank={bank}
+              myReg={myReg}
+              seats={seats}
+              labelStatus={labelStatus}
+              tone={tone}
+              formatPrice={formatPrice}
+              onRefresh={refresh}
+              go={go}
+            />
           </div>
         </div>
       </div>
@@ -169,4 +197,223 @@ const TourPage = ({ go }) => {
   );
 };
 
-Object.assign(window, { WangsanamPage, TourPage });
+const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, formatPrice, onRefresh, go }) => {
+  const [open, setOpen] = React.useState(false);
+  const [name, setName] = React.useState(user?.name || "");
+  const [email, setEmail] = React.useState(user?.email || "");
+  const [phone, setPhone] = React.useState("");
+  const [count, setCount] = React.useState(1);
+  const [note, setNote] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [submitted, setSubmitted] = React.useState(null);
+
+  // 투어가 바뀌면 폼 초기화
+  React.useEffect(() => {
+    setOpen(false); setSubmitted(null); setError(""); setCount(1); setNote("");
+    setName(user?.name || ""); setEmail(user?.email || "");
+  }, [tour.id, user?.id]);
+
+  const requireLogin = (label) => {
+    if (confirm(`${label}은(는) 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?`)) {
+      go("login");
+    }
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    setError("");
+    if (!user) return requireLogin('답사 신청');
+    if (!name.trim() || !email.trim()) { setError("이름과 이메일은 필수입니다."); return; }
+    if ((tour.priceNumber || 0) > 0 && !bank.accountNumber) {
+      setError("운영자 계좌번호가 아직 등록되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+    const result = window.WSD_TOURS.reserve(tour.id, {
+      userId: user.id,
+      name: name.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      count: Math.max(1, Number(count) || 1),
+      note: note.trim(),
+    });
+    if (!result.ok) { setError(result.message || "신청 처리에 실패했습니다."); return; }
+    setSubmitted(result.reservation);
+    onRefresh();
+    setOpen(false);
+  };
+
+  const cancelMyReg = () => {
+    if (!myReg) return;
+    if (!confirm("이 답사 신청을 취소하시겠어요?")) return;
+    window.WSD_TOURS.cancelReservation(tour.id, myReg.id);
+    onRefresh();
+    setSubmitted(null);
+  };
+
+  const downloadIcs = () => window.WSD_TOURS.downloadIcs(tour.id);
+  const showPaymentInfo = (tour.priceNumber || 0) > 0 && (myReg?.status === 'pending_payment' || submitted?.status === 'pending_payment');
+  const isFull = seats.remaining <= 0;
+
+  return (
+    <div className="card card-gold" style={{position:'sticky', top:100}}>
+      <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.3em'}}>NEXT SCHEDULE</div>
+      <div className="gold-2 ko-serif" style={{fontSize:24, margin:'8px 0 20px'}}>{tour.next}</div>
+
+      <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)'}}>
+        <span className="dim">참가비</span>
+        <span className="gold-2 ko-serif" style={{fontSize:22}}>{formatPrice(tour.priceNumber)}</span>
+      </div>
+      <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)'}}>
+        <span className="dim">소요 시간</span>
+        <span>{tour.duration}</span>
+      </div>
+      <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)'}}>
+        <span className="dim">정원</span>
+        <span>{tour.capacity}명</span>
+      </div>
+      <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)'}}>
+        <span className="dim">잔여</span>
+        <span style={{ color: isFull ? 'var(--danger)' : 'var(--gold)' }}>
+          {isFull ? `대기 ${seats.waitlist}명` : `${seats.remaining}석`}
+        </span>
+      </div>
+      <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)', marginBottom:18}}>
+        <span className="dim">난이도</span>
+        <span className="gold">{tour.level}</span>
+      </div>
+
+      {/* 내 신청 상태 카드 */}
+      {myReg && (
+        <div style={{padding:14, background:'rgba(212,175,55,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
+          <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>MY RESERVATION</div>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8}}>
+            <span className="ko-serif" style={{fontSize:16}}>{labelStatus(myReg.status)}</span>
+            <span className="mono" style={{fontSize:11, letterSpacing:'0.2em', color: tone(myReg.status)}}>
+              {myReg.count}명 · {formatPrice((tour.priceNumber || 0) * (myReg.count || 1))}
+            </span>
+          </div>
+          {myReg.status === 'pending_payment' && (
+            <p className="dim" style={{fontSize:12, lineHeight:1.7, marginTop:8}}>
+              계좌로 입금 후 운영자가 확인하면 참가가 확정됩니다.
+            </p>
+          )}
+          {myReg.status === 'waitlist' && (
+            <p className="dim" style={{fontSize:12, lineHeight:1.7, marginTop:8}}>
+              정원이 차서 대기 등록되었습니다. 자리가 나면 자동으로 전환됩니다.
+            </p>
+          )}
+          <div style={{display:'flex', gap:6, marginTop:10, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-small" onClick={downloadIcs}>캘린더 추가 (.ics)</button>
+            <button type="button" className="btn btn-small" onClick={cancelMyReg}
+              style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>신청 취소</button>
+          </div>
+        </div>
+      )}
+
+      {!myReg && submitted && (
+        <div style={{padding:14, background:'rgba(212,175,55,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
+          <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>SUBMITTED</div>
+          <div className="ko-serif" style={{fontSize:16, marginBottom:6}}>
+            신청 접수 — {labelStatus(submitted.status)}
+          </div>
+          <p className="dim" style={{fontSize:12, lineHeight:1.7}}>
+            {submitted.status === 'pending_payment'
+              ? '아래 계좌로 입금 후 운영자가 확인하면 참가가 확정됩니다.'
+              : submitted.status === 'confirmed'
+                ? '참가가 확정되었습니다. 일정을 캘린더에 추가해 두세요.'
+                : '대기자로 등록되었습니다. 자리가 나면 자동 전환됩니다.'}
+          </p>
+        </div>
+      )}
+
+      {/* 무통장 입금 안내 */}
+      {showPaymentInfo && (
+        <div style={{padding:14, background:'rgba(212,175,55,0.04)', border:'1px dashed var(--gold-dim)', marginBottom:16, fontSize:12}}>
+          <div className="mono gold" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:8}}>BANK TRANSFER</div>
+          {bank.accountNumber ? (
+            <div style={{display:'grid', gap:6, lineHeight:1.6}}>
+              <div style={{display:'flex', justifyContent:'space-between'}}><span className="dim">은행</span><span>{bank.bankName || '-'}</span></div>
+              <div style={{display:'flex', justifyContent:'space-between'}}><span className="dim">계좌</span><span className="gold mono">{bank.accountNumber}</span></div>
+              <div style={{display:'flex', justifyContent:'space-between'}}><span className="dim">예금주</span><span>{bank.holder || '-'}</span></div>
+              <div style={{display:'flex', justifyContent:'space-between'}}>
+                <span className="dim">금액</span>
+                <span className="gold ko-serif" style={{fontSize:15}}>
+                  {formatPrice((tour.priceNumber || 0) * (myReg?.count || submitted?.count || 1))}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="dim" style={{fontSize:12, color:'var(--danger)'}}>계좌번호가 등록되지 않았습니다. 운영자에게 문의해 주세요.</p>
+          )}
+        </div>
+      )}
+
+      {/* 신청 폼 진입 */}
+      {!myReg && !submitted && (
+        <>
+          {!open ? (
+            <>
+              <button type="button" className="btn btn-gold btn-block" style={{marginBottom:10}}
+                onClick={() => { if (!user) { requireLogin('답사 신청'); return; } setOpen(true); setError(""); }}>
+                {isFull ? '대기자 등록' : '답사 신청'}
+              </button>
+              <button type="button" className="btn btn-block" onClick={downloadIcs}>캘린더에 추가 (.ics)</button>
+            </>
+          ) : (
+            <form onSubmit={submit}>
+              <div style={{display:'grid', gap:10, marginBottom:10}}>
+                <div className="field" style={{margin:0}}>
+                  <label className="field-label">이름</label>
+                  <input className="field-input" value={name} onChange={(e) => setName(e.target.value)}/>
+                </div>
+                <div className="field" style={{margin:0}}>
+                  <label className="field-label">이메일</label>
+                  <input type="email" className="field-input" value={email} onChange={(e) => setEmail(e.target.value)}/>
+                </div>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 100px', gap:10}}>
+                  <div className="field" style={{margin:0}}>
+                    <label className="field-label">연락처</label>
+                    <input className="field-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-..."/>
+                  </div>
+                  <div className="field" style={{margin:0}}>
+                    <label className="field-label">인원</label>
+                    <input type="number" min={1} max={Math.max(1, tour.capacity)} className="field-input"
+                      value={count} onChange={(e) => setCount(e.target.value)}/>
+                  </div>
+                </div>
+                <div className="field" style={{margin:0}}>
+                  <label className="field-label">메모</label>
+                  <textarea className="field-input" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="동행자 / 특이사항"/>
+                </div>
+              </div>
+              {error && (
+                <div role="alert" style={{padding:'8px 10px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:12, marginBottom:10}}>
+                  {error}
+                </div>
+              )}
+              <div className="dim mono" style={{fontSize:10, lineHeight:1.7, marginBottom:10, letterSpacing:'0.05em'}}>
+                {(tour.priceNumber || 0) === 0
+                  ? '무료 답사라 신청 즉시 참가 확정됩니다.'
+                  : `합계 ${formatPrice((tour.priceNumber || 0) * (Number(count) || 1))} · 신청 → 입금 → 운영자 확인 → 참가 확정`}
+                {isFull && ' · 정원이 차서 자동 대기자 등록됩니다.'}
+              </div>
+              <div style={{display:'flex', gap:6, justifyContent:'flex-end'}}>
+                <button type="button" className="btn btn-small" onClick={() => setOpen(false)}>취소</button>
+                <button type="submit" className="btn btn-gold btn-small">신청 접수</button>
+              </div>
+            </form>
+          )}
+        </>
+      )}
+
+      {/* 비로그인 안내 */}
+      {!user && (
+        <p className="dim-2" style={{fontSize:11, lineHeight:1.7, marginTop:14, textAlign:'center'}}>
+          답사 신청은 회원가입한 분만 가능합니다.
+        </p>
+      )}
+    </div>
+  );
+};
+
+Object.assign(window, { WangsanamPage, TourPage, TourBookingPanel });

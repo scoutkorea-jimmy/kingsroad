@@ -397,6 +397,23 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.017.000",
+    date: "2026-04-25",
+    summary: "Cycle 5(투어 판매·운영) 출시와 공통 인프라 강화를 한 묶음으로 진행했습니다. 투어가 카탈로그였던 상태에서 회원 전용 신청 → 무통장 입금 → 관리자 입금 확인 → 참가 확정 사이클로 닫혔고, 정원·대기열·.ics·URL 해시 딥 링크까지 강연/책과 같은 패턴으로 정렬됐습니다. 동시에 강연/책/투어의 상태 변화가 사용자에게 자동 알림으로 전달되는 통합 알림 인프라가 도입됐고, 장바구니가 새로고침에도 유지되도록 localStorage 영속화가 들어갔습니다.",
+    details: [
+      "`WSD_TOURS` helper 신설 — listAll / getTour / saveTour / deleteTour / reserve / cancelReservation / confirmPayment / unconfirmPayment / getSeats / hasUserReserved / listMyReservations / generateIcs / downloadIcs.",
+      "`WSD_STORES`에 `tourOverrides` / `tourReservations` 신설. 시드 투어(`WANGSADEUL_DATA.tours`)에 `capacity` / `priceNumber` / `startsAt` / `durationMinutes` 필드 추가.",
+      "`TourPage` 전면 개조 — 사이드바 `예약 신청` / `대기자 등록` mock을 실제 신청 폼(`TourBookingPanel`)로 교체. 본인 상태 카드 + 무통장 입금 안내 + .ics 다운로드 + 신청 취소까지 같은 위치에서 처리.",
+      "관리자 콘텐츠 메뉴 `투어 프로그램` 탭을 mock 표 → `TourAdminPanel`로 교체 — 잔여/대기 표시 + 투어 정보 수정(capacity·일정·가격) + 참가자 명단 + 입금 확인 토글 + 신청 취소.",
+      "App에 `#tour-{id}` 해시 라우팅 추가, 홈 알림/마이페이지에서 `sessionStorage.wsd_pending_tour_id` 경유로 투어 상세 점프.",
+      "마이페이지 `예정 답사` 정적 카드를 `MY TOURS — 내 답사 신청` 개인화 카드로 교체(상태별 컬러 라벨).",
+      "통합 알림 인프라 — `WSD_LECTURES.confirmPayment / _promoteWaitlist`, `WSD_BOOK_ORDERS.confirmPayment / markShipped / markDelivered / cancelOrder`, `WSD_TOURS.confirmPayment / _promoteWaitlist`가 상태 변경 시 본인에게 알림을 자동 push. 헤더 ◇ 알림 벨이 알림 타입별로 강연 / 투어 / 마이페이지 / 커뮤니티 라우트로 라우팅.",
+      "장바구니 localStorage 영속화 — App `cart` 상태가 `wsd_cart` 키로 저장/복원되어 새로고침과 페이지 이동 사이에서도 유지됨.",
+      "KMS 미션 4(투어) 영역을 위 변경에 맞게 재기록. 미션 평가 카드 20% → ~70%.",
+    ],
+    context: "Cycle 3(강연), Cycle 4(책)에서 검증된 무통장 입금 + 정원·대기열 + 입금 확인 패턴을 그대로 투어에도 적용했습니다. 같은 helper 형태와 같은 `bankAccount` 저장소를 공유하므로 운영자가 한 번 익히면 세 영역 모두 같은 방식으로 운영할 수 있습니다. 동시에 결제 사이클이 닫힌 세 영역 모두에서 상태 변경이 사용자에게 보이지 않으면 의미가 없어, 알림 인프라를 한 PR에 묶어 통합했고 장바구니 손실을 막기 위한 localStorage 영속화도 같이 넣었습니다.",
+  },
+  {
     version: "00.016.000",
     date: "2026-04-25",
     summary: "Cycle 4(뱅기노자 책 판매) 출시. 회원 전용 무통장 입금 단일 흐름으로 책 주문 → 입금 → 발송 → 배송 완료 사이클을 닫고, 관리자 콘솔의 메뉴 명칭을 홈페이지 내비와 일치시켰습니다(커뮤니티 / 강연 / 투어 프로그램 / 뱅기노자 칼럼 / 왕의길).",
@@ -677,10 +694,10 @@ const MISSION_OVERVIEW = [
     id: "tour",
     number: "04",
     title: "뱅기노자 투어 프로그램 판매·운영",
-    short: "답사 프로그램 카탈로그와 예약 진입.",
-    state: "카탈로그",
-    coverage: "기능 20%",
-    verdict: "5개 미션 중 가장 약하다. 예약·결제·정원·환불·관리자 운영 모두 부재하여 '판매'라고 부를 수 없다.",
+    short: "답사 프로그램 신청·운영(무통장 입금).",
+    state: "Cycle 5 마무리",
+    coverage: "기능 ~70%",
+    verdict: "회원 전용 신청·무통장 입금·관리자 입금 확인 → 참가 확정·정원/대기열·.ics·내 답사 내역까지 닫혔다. 강연·책과 같은 결제·알림 인프라를 공유.",
   },
   {
     id: "book",
@@ -1239,82 +1256,105 @@ const FEATURE_DOMAINS = [
     number: "04",
     label: "투어 프로그램",
     title: "미션 4 — 뱅기노자 투어 프로그램 판매·운영",
-    role: "뱅기노자가 진행하는 궁궐 답사·역사 답사 프로그램을 판매하고 운영.",
-    routes: ["tour(목록·상세)", "home(노출)", "admin > 투어(운영)"],
-    status: "카탈로그(부분 구현 — 판매 흐름 부재)",
-    evaluation: "5개 미션 중 가장 약한 영역. 카드형 카탈로그까지는 그려져 있지만 예약·결제·정원·환불·관리자 운영 어느 것도 동작하지 않는다. 사용자가 누르는 '예약' 버튼이 실제로는 아무 일도 일어나지 않아 운영자에게 잘못된 신호를 줄 수 있다.",
+    role: "뱅기노자가 진행하는 궁궐 답사·역사 답사 프로그램을 신청·운영.",
+    routes: ["tour(목록·상세·예약)", "home(노출)", "mypage(내 답사 내역)", "admin > 투어 프로그램(운영 명단)", "admin > 설정(계좌번호)"],
+    status: "Cycle 5 마무리(기능 ~70%)",
+    evaluation: "Cycle 5에서 카탈로그였던 투어가 회원 전용 신청 → 무통장 입금 → 관리자 입금 확인 → 참가 확정 사이클로 닫혔다. 강연과 같은 패턴(`WSD_TOURS` 신설)으로 정원/대기열 자동 처리, .ics 캘린더 다운로드, URL 해시 딥 링크(`#tour-{id}`)까지 동시에 도입. 결제·계좌 저장소는 강연/책과 모두 공유.",
     missing: [
-      "투어 신청 폼(회차 · 인원 · 대표자 · 동행자)",
-      "결제 게이트웨이 연동",
-      "회차별 좌석 / 대기열 관리",
-      "참가자 명단 · 체크인",
-      "환불 · 취소 정책 · 환불 처리",
-      "관리자 예약 운영(승인 / 거절 / 메모)",
-      "마이페이지 예약 내역 · 이메일 영수증",
-      "외국어 안내(영문) 옵션",
-      "프로그램 후기 · 평점",
+      "PG 결제(현재는 무통장 입금만)",
+      "환불·취소 정책 자동화",
+      "체크인 · 출석 이력",
       "이미지 갤러리(현재 카드 한 장)",
       "지도 · 집결지 안내 · 우천 시 운영 정책",
+      "프로그램 후기 · 평점",
+      "외국어 안내(영문) 옵션",
+      "관리자 신규 투어 등록(현재는 시드 투어 수정만)",
+      "이메일/문자 알림(현재는 사이트 내 알림만)",
     ],
     features: [
       {
-        name: "투어 목록",
+        name: "투어 목록 / 탭 / 잔여 좌석 표시",
         status: "구현됨",
-        summary: "전체 답사 프로그램을 카드형으로 노출.",
+        summary: "프로그램별 탭 + 카드형 목록. 잔여석/대기 인원이 실시간 계산.",
         elements: [
-          "난이도 배지",
-          "기간 / 인원 / 가격",
-          "다음 일정(`next`)",
-          "프로그램 설명",
+          "탭(프로그램명 분리) / 강조",
+          "상세(기간 · 인원 · 난이도 · 다음 일정 · 가격 · 설명 · 답사 일정 · 준비물)",
+          "FREE / 무통장 입금 배지",
         ],
-        techSpec: "`WANGSADEUL_DATA.tours` 정적 배열을 `WangsanamTourPage`가 카드로 렌더.",
-        caution: "데이터가 정적이므로 다음 일정 갱신은 운영자가 직접 코드/문서로 반영해야 함.",
+        techSpec: "`WSD_TOURS.listAll()` (시드 + `WSD_STORES.tourOverrides` 머지). 잔여는 `getSeats(tourId)`로 즉시 계산.",
+        caution: "기존 시드의 `group` 텍스트('12인 이하')와 신규 `capacity` 숫자가 분리되어 있으니 운영자는 capacity 수정에 주의.",
         issues: [],
       },
       {
-        name: "투어 상세 카드",
-        status: "부분 구현",
-        summary: "프로그램 한 건의 상세 정보를 보여줌.",
+        name: "투어 신청 — 무료 즉시 확정 / 유료 무통장 입금",
+        status: "구현됨",
+        summary: "회원 전용. 정원이 남으면 무료는 즉시 confirmed, 유료는 pending_payment. 정원이 차면 waitlist 자동 등록.",
         elements: [
-          "기간 / 인원 / 난이도",
-          "다음 일정",
-          "가격",
-          "설명",
-          "이미지 갤러리(미구현)",
-          "회차별 일정 캘린더(미구현)",
+          "이름 / 이메일 / 연락처 / 인원 / 메모 폼(사이드바)",
+          "합계 표시 + 정원 부족 시 대기자 안내",
+          "본인 상태 카드(취소 / .ics 다운로드 + 무통장 입금 안내)",
+          "비로그인 시 회원가입 진입 안내",
         ],
-        techSpec: "`WangsanamTourPage` 안에서 같은 카드를 사용.",
-        caution: "이미지 갤러리·일정 캘린더 부재로 의사결정에 필요한 정보가 부족함.",
+        techSpec: "`WSD_TOURS.reserve(tourId, payload)`. `hasUserReserved`로 중복 방지. 취소 시 `_promoteWaitlist`가 자동 실행되어 대기자 자동 승격(승격 시 본인에게 알림 푸시).",
+        caution: "한 회원 = 한 투어 = 한 건. 취소 후 재신청은 가능. 인원은 1~capacity 범위.",
+        issues: ["기존 시드 `group` 텍스트는 운영 정원과 무관 — 관리자 투어 탭에서 capacity를 직접 관리할 것"],
+      },
+      {
+        name: "관리자 입금 확인 → 참가 확정",
+        status: "구현됨",
+        summary: "관리자 콘텐츠 메뉴 `투어 프로그램` 탭에서 신청 명단을 보고 입금 확인 / 확정 취소 / 신청 취소.",
+        elements: [
+          "투어별 헤더(잔여 / 대기 / 가격)",
+          "투어 정보 수정(제목·일정·소요·정원·가격·메모·설명)",
+          "참가자 표(이름·이메일·연락처·인원·상태·입금 여부)",
+          "액션: `입금 확인 → 확정` / `확정 취소` / `취소`",
+        ],
+        techSpec: "`WSD_TOURS.confirmPayment / unconfirmPayment / cancelReservation`. 확정 시 본인에게 자동 알림 푸시.",
+        caution: "확정 취소 후 좌석은 즉시 풀려 다음 대기자가 자동 승격됨. 환불 후에만 누를 것.",
         issues: [],
       },
       {
-        name: "예약 / 대기자 버튼",
-        status: "UI만(미구현)",
-        summary: "사용자가 예약 또는 대기자 등록을 시도.",
-        elements: ["예약 버튼", "대기자 버튼"],
-        techSpec: "현재는 클릭 핸들러가 비어 있거나 정적 알림만 노출.",
-        caution: "기능 없는 버튼이 노출되면 사용자 신뢰가 떨어짐. MVP 전까지는 '예약 문의' 형태로 안내하는 것이 안전.",
-        issues: ["사용자가 클릭 후 아무 일도 일어나지 않아 운영자에게 잘못된 '관심도' 신호를 줄 수 있음"],
+        name: "마이페이지 내 답사 신청",
+        status: "구현됨",
+        summary: "로그인 사용자에게 본인이 신청한 답사를 상태별 카드 리스트로 노출.",
+        elements: [
+          "프로그램 / 다음 일정 / 인원 / 상태(입금 대기 / 참가 확정 / 대기자 / 취소)",
+          "카드 클릭 → 투어 상세로 이동",
+          "최대 4건 + '외 N건'",
+        ],
+        techSpec: "`WSD_TOURS.listMyReservations(user.id)`로 모든 투어를 가로지르며 본인 신청만 모음. 점프는 `sessionStorage.wsd_pending_tour_id` 패턴 사용.",
+        caution: "투어가 삭제되면 카드의 투어 정보가 비어 보일 수 있음.",
+        issues: [],
       },
       {
-        name: "관리자 투어 탭",
-        status: "부분 구현",
-        summary: "관리자 콘솔에서 투어 일정을 표 형태로 확인.",
-        elements: ["투어 표(목록)"],
-        techSpec: "현재는 `data.tours` 동일 데이터를 표로 보여주는 수준.",
-        caution: "예약 데이터가 없으므로 운영 화면이 카탈로그와 같은 정보만 갖고 있음.",
+        name: ".ics 캘린더 다운로드",
+        status: "구현됨",
+        summary: "투어 시작 시각·소요 시간·장소·설명을 담은 표준 .ics 파일 다운로드.",
+        elements: ["투어 사이드바 `캘린더에 추가 (.ics)` 버튼", "본인 상태 카드에서도 가능"],
+        techSpec: "`WSD_TOURS.generateIcs(tour)` → RFC 5545 형식. `downloadIcs(tourId)`가 Blob을 만들어 클릭 다운로드.",
+        caution: "`startsAt` ISO + `durationMinutes`가 있어야 정상 생성됨.",
+        issues: [],
+      },
+      {
+        name: "URL 해시 딥 링크 / 마이페이지 점프",
+        status: "구현됨",
+        summary: "`#tour-{id}`로 투어 상세를 외부 공유. 마이페이지·알림에서 sessionStorage 경유로 점프.",
+        elements: ["App `applyHash`가 `#tour-{id}` 매칭 시 `tour` 라우트 + sessionStorage 셋"],
+        techSpec: "`index.html` App `useEffect` 라우트 해시 + `sessionStorage`. TourPage mount에서 pending id 읽고 selectedIdx 복원.",
+        caution: "라우트가 글로벌 App 상태에 묶여 있어 외부 진입은 sessionStorage 패턴을 그대로 따른다.",
         issues: [],
       },
     ],
-    techSpec: "`WANGSADEUL_DATA.tours` 정적 데이터에만 의존. 예약 / 결제 / 정원 / 명단 helper 미존재. 도메인 모델 미정의.",
+    techSpec: "`WSD_TOURS` helper + `WANGSADEUL_DATA.tours`(시드) + `WSD_STORES.tourOverrides`(관리자 수정분 머지) + `WSD_STORES.tourReservations`(`{tourId: reservation[]}`) + `WSD_STORES.bankAccount`(강연·책과 공유). 결제 정책은 `priceNumber === 0` 분기.",
     cautions: [
-      "'판매'라는 말이 작동하려면 결제 · 정원 · 환불 셋이 동시에 필요함을 잊지 말 것",
-      "결제 도입 전까지는 사용자에게 '문의 접수' 흐름임을 명확히 표시",
-      "강연과 한 페이지에 묶여 있다는 점이 신청 흐름 설계에 영향을 줌 → 페이지 분리 결정 선행",
+      "회원 전용 — 비로그인은 신청 폼에 진입할 수 없음(로그인 진입 confirm)",
+      "결제는 무통장 입금만 (PG는 후속 사이클)",
+      "정원·대기열은 클라이언트에서 즉시 계산되므로, 외부 DB 도입 시 서버 측 동시성 처리 필요",
+      "강연·책과 같은 계좌 저장소를 공유하므로 한 곳에서 변경하면 모든 결제 경로에 반영",
     ],
     issues: [
-      "예약 데이터가 없으므로 마이페이지·관리자에서 보여줄 진짜 데이터가 부재",
-      "투어와 강연이 같은 페이지를 공유 → 정보 구조 결정이 후속 기능 설계의 전제조건",
+      "기존 seed `group` 텍스트(예: '12인 이하')는 capacity와 별도로 표시 — 자동 동기화는 미구현",
+      "예약 시각이 운영자 PC 시계 기준이라, 외부 DB 도입 시 서버 시계로 옮겨야 함",
     ],
   },
   {
@@ -1705,6 +1745,205 @@ const LectureAdminPanel = ({ go }) => {
                                   onClick={() => {
                                     if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
                                     window.WSD_LECTURES.cancelRegistration(l.id, r.id);
+                                    refresh();
+                                  }}
+                                  style={{borderColor:'var(--danger)', color:'var(--danger)'}}>취소</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </section>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// === Tour Admin Panel =============================================
+const TourAdminPanel = ({ go }) => {
+  const [tick, setTick] = React.useState(0);
+  const [editingId, setEditingId] = React.useState(null);
+  const [draft, setDraft] = React.useState({});
+  const refresh = () => setTick((v) => v + 1);
+  const tours = React.useMemo(() => window.WSD_TOURS.listAll(), [tick]);
+
+  const startEdit = (t) => {
+    const startsAtLocal = (() => {
+      if (!t.startsAt) return '';
+      const d = new Date(t.startsAt);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    })();
+    setEditingId(t.id);
+    setDraft({
+      title: t.title || '',
+      level: t.level || '입문',
+      duration: t.duration || '',
+      group: t.group || '',
+      next: t.next || '',
+      startsAt: startsAtLocal,
+      durationMinutes: t.durationMinutes || 180,
+      capacity: t.capacity || 12,
+      priceNumber: t.priceNumber || 0,
+      desc: t.desc || '',
+    });
+  };
+
+  const saveEdit = () => {
+    if (editingId == null) return;
+    const tour = window.WSD_TOURS.getTour(editingId);
+    if (!tour) return;
+    const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : tour.startsAt;
+    window.WSD_TOURS.saveTour({
+      id: tour.id,
+      title: draft.title,
+      level: draft.level,
+      duration: draft.duration,
+      group: draft.group,
+      next: draft.next || tour.next,
+      startsAt: startsAtIso,
+      durationMinutes: Number(draft.durationMinutes) || 180,
+      capacity: Number(draft.capacity) || tour.capacity,
+      priceNumber: Number(draft.priceNumber) || 0,
+      price: `${(Number(draft.priceNumber) || 0).toLocaleString()}원`,
+      desc: draft.desc,
+    });
+    setEditingId(null);
+    refresh();
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        투어 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
+        결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다(강연과 같은 계좌 사용).
+      </p>
+
+      {tours.length === 0 ? (
+        <div className="card dim" style={{padding:32, textAlign:'center'}}>관리할 투어가 없습니다.</div>
+      ) : (
+        <div style={{display:'grid', gap:14}}>
+          {tours.map((t) => {
+            const seats = window.WSD_TOURS.getSeats(t.id);
+            const regs = window.WSD_TOURS.listReservations(t.id);
+            const active = regs.filter((r) => r.status !== 'cancelled');
+            const isEditing = editingId === t.id;
+            return (
+              <article key={t.id} className="card" style={{padding:20}}>
+                <header style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:10}}>
+                  <div>
+                    <h3 className="ko-serif" style={{fontSize:18}}>
+                      <span className="dim-2 mono" style={{fontSize:11, marginRight:8}}>#{String(t.id).padStart(2,'0')}</span>
+                      {t.title}
+                    </h3>
+                    <div className="mono dim-2" style={{fontSize:11, marginTop:4, letterSpacing:'0.12em'}}>
+                      {t.next} · {t.duration} · {t.group} · {t.level}
+                    </div>
+                  </div>
+                  <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                    <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: seats.remaining <= 0 ? 'var(--danger)' : 'var(--gold)'}}>
+                      잔여 {seats.remaining} / {seats.capacity}
+                    </span>
+                    {seats.waitlist > 0 && <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)'}}>대기 {seats.waitlist}</span>}
+                    <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>
+                      {(t.priceNumber || 0).toLocaleString()}원
+                    </span>
+                  </div>
+                </header>
+
+                {isEditing ? (
+                  <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10, padding:'14px 0', borderTop:'1px solid var(--line)'}}>
+                    {[
+                      { k: 'title',           l: '제목',           type: 'text' },
+                      { k: 'level',           l: '난이도',         type: 'text', placeholder: '입문 / 심화' },
+                      { k: 'duration',        l: '소요(표시)',     type: 'text', placeholder: '3시간' },
+                      { k: 'group',           l: '정원(표시)',     type: 'text', placeholder: '12인 이하' },
+                      { k: 'next',            l: '표시용 일정 문구', type: 'text', placeholder: '2026.05.04 · 토' },
+                      { k: 'startsAt',        l: '실제 시작(로컬)', type: 'datetime-local' },
+                      { k: 'durationMinutes', l: '소요(분)',       type: 'number' },
+                      { k: 'capacity',        l: '정원(숫자)',     type: 'number' },
+                      { k: 'priceNumber',     l: '참가비(원)',     type: 'number' },
+                    ].map((f) => (
+                      <div key={f.k} className="field" style={{margin:0}}>
+                        <label className="field-label">{f.l}</label>
+                        <input className="field-input" type={f.type} placeholder={f.placeholder || ''}
+                          value={draft[f.k] ?? ''}
+                          onChange={(e) => setDraft({ ...draft, [f.k]: e.target.value })}/>
+                      </div>
+                    ))}
+                    <div className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                      <label className="field-label">설명</label>
+                      <textarea className="field-input" rows={2} value={draft.desc}
+                        onChange={(e) => setDraft({ ...draft, desc: e.target.value })}/>
+                    </div>
+                    <div style={{gridColumn:'1 / -1', display:'flex', justifyContent:'flex-end', gap:8}}>
+                      <button type="button" className="btn btn-small" onClick={() => setEditingId(null)}>취소</button>
+                      <button type="button" className="btn btn-gold btn-small" onClick={saveEdit}>저장</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10}}>
+                    <button type="button" className="btn btn-small" onClick={() => startEdit(t)}>투어 정보 수정</button>
+                  </div>
+                )}
+
+                {/* Roster */}
+                <section style={{marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>참가자 명단 · {active.length}명</div>
+                  {active.length === 0 ? (
+                    <p className="dim" style={{fontSize:13}}>아직 신청자가 없습니다.</p>
+                  ) : (
+                    <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+                      <thead>
+                        <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:9, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
+                          <th scope="col" style={{padding:10, textAlign:'left'}}>이름</th>
+                          <th scope="col" style={{padding:10, textAlign:'left'}}>이메일</th>
+                          <th scope="col" style={{padding:10, textAlign:'left'}}>연락처</th>
+                          <th scope="col" style={{padding:10, textAlign:'right'}}>인원</th>
+                          <th scope="col" style={{padding:10, textAlign:'left'}}>상태</th>
+                          <th scope="col" style={{padding:10, textAlign:'right'}}>액션</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {active.map((r) => (
+                          <tr key={r.id} style={{borderBottom:'1px solid var(--line)'}}>
+                            <td style={{padding:10}}>{r.name}</td>
+                            <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.email}</td>
+                            <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.phone || '-'}</td>
+                            <td className="mono" style={{padding:10, textAlign:'right'}}>{r.count}</td>
+                            <td className="mono" style={{padding:10, fontSize:10, letterSpacing:'0.18em', color:
+                              r.status === 'confirmed' ? 'var(--gold)' :
+                              r.status === 'waitlist' ? 'var(--ink-2)' :
+                              r.status === 'pending_payment' ? 'var(--ink-2)' : 'var(--danger)'}}>
+                              {r.status === 'pending_payment' ? '입금 대기' :
+                                r.status === 'confirmed' ? '참가 확정' :
+                                r.status === 'waitlist' ? '대기자' : r.status}
+                              {r.paid && r.status === 'confirmed' && <span className="dim-2 mono" style={{marginLeft:6, fontSize:9}}>입금 ✓</span>}
+                            </td>
+                            <td style={{padding:10, textAlign:'right'}}>
+                              <div style={{display:'flex', justifyContent:'flex-end', gap:6, flexWrap:'wrap'}}>
+                                {r.status === 'pending_payment' && (
+                                  <button type="button" className="btn btn-small"
+                                    onClick={() => { window.WSD_TOURS.confirmPayment(t.id, r.id); refresh(); }}>
+                                    입금 확인 → 확정
+                                  </button>
+                                )}
+                                {r.status === 'confirmed' && r.price > 0 && (
+                                  <button type="button" className="btn btn-small"
+                                    onClick={() => { window.WSD_TOURS.unconfirmPayment(t.id, r.id); refresh(); }}>
+                                    확정 취소
+                                  </button>
+                                )}
+                                <button type="button" className="btn btn-small"
+                                  onClick={() => {
+                                    if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
+                                    window.WSD_TOURS.cancelReservation(t.id, r.id);
                                     refresh();
                                   }}
                                   style={{borderColor:'var(--danger)', color:'var(--danger)'}}>취소</button>
@@ -2594,31 +2833,8 @@ const AdminPage = ({ go }) => {
         {/* 강연 */}
         {tab === "강연" && <LectureAdminPanel go={go}/>}
 
-        {/* 투어 */}
-        {tab === "투어 프로그램" && (
-          <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
-            <thead>
-              <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
-                <th scope="col" style={{padding:12, textAlign:'left'}}>프로그램</th>
-                <th scope="col" style={{padding:12, textAlign:'left'}}>난이도</th>
-                <th scope="col" style={{padding:12, textAlign:'left'}}>다음 일정</th>
-                <th scope="col" style={{padding:12, textAlign:'right'}}>가격</th>
-                <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.tours.map(t => (
-                <tr key={t.id} style={{borderBottom:'1px solid var(--line)'}}>
-                  <td className="ko-serif" style={{padding:14, fontSize:14}}>{t.title}</td>
-                  <td style={{padding:14}}><span className="badge">{t.level}</span></td>
-                  <td className="mono gold" style={{padding:14}}>{t.next}</td>
-                  <td className="ko-serif gold-2" style={{padding:14, textAlign:'right'}}>{t.price}</td>
-                  <td style={{padding:14, textAlign:'right'}}><button type="button" className="btn btn-small">편집</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        {/* 투어 프로그램 */}
+        {tab === "투어 프로그램" && <TourAdminPanel go={go}/>}
 
         {/* 회원 */}
         {tab === "회원" && (
@@ -3487,4 +3703,4 @@ const AdminDenied = ({ go, user }) => (
   </div>
 );
 
-Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel });
+Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel });

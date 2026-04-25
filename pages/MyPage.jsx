@@ -20,6 +20,25 @@ const MyPage = ({ go, user, cart }) => {
   const myOrders = user
     ? (window.WSD_BOOK_ORDERS?.listMine?.(user.id) || [])
     : [];
+  const myTourRegs = user
+    ? (window.WSD_TOURS?.listMyReservations?.(user.id) || [])
+    : [];
+  const tourStatusLabel = (s) => ({
+    pending_payment: '입금 대기',
+    confirmed: '참가 확정',
+    waitlist: '대기자',
+    cancelled: '취소됨',
+  }[s] || s);
+  const tourStatusTone = (s) => ({
+    confirmed: 'var(--gold)',
+    waitlist: 'var(--ink-2)',
+    cancelled: 'var(--danger)',
+    pending_payment: 'var(--ink-2)',
+  }[s] || 'var(--ink-2)');
+  const goToTour = (tourId) => {
+    try { sessionStorage.setItem('wsd_pending_tour_id', String(tourId)); } catch {}
+    go('tour');
+  };
   const orderStatusLabel = (s) => ({
     pending_payment: '입금 대기',
     paid: '입금 확인 · 발송 준비',
@@ -175,12 +194,46 @@ const MyPage = ({ go, user, cart }) => {
           </article>
 
           <article className="card">
-            <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>UPCOMING TOUR</div>
-            <h3 className="ko-serif" style={{ fontSize: 20, marginBottom: 10 }}>{upcomingTour?.title || "예정 답사 없음"}</h3>
-            <p className="dim" style={{ fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>
-              {upcomingTour ? `${upcomingTour.next} · ${upcomingTour.price}` : "등록된 답사 일정이 없습니다."}
-            </p>
-            <button type="button" className="btn btn-small" onClick={() => go("tour")}>답사 프로그램 보기</button>
+            <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>MY TOURS</div>
+            <h3 className="ko-serif" style={{ fontSize: 20, marginBottom: 10 }}>
+              내 답사 신청 <span className="dim-2 mono" style={{ fontSize: 12 }}>{myTourRegs.length}건</span>
+            </h3>
+            {myTourRegs.length === 0 ? (
+              <>
+                <p className="dim" style={{ fontSize: 13, lineHeight: 1.8, marginBottom: 14 }}>
+                  아직 신청한 답사가 없습니다. 투어 프로그램에서 신청해 보세요.
+                </p>
+                <button type="button" className="btn btn-small" onClick={() => go("tour")}>투어 프로그램 보기</button>
+              </>
+            ) : (
+              <>
+                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10, marginBottom: 14 }}>
+                  {myTourRegs.slice(0, 4).map((r) => (
+                    <li key={r.id}>
+                      <button type="button" onClick={() => goToTour(r.tourId)}
+                        style={{
+                          all: 'unset', cursor: 'pointer', width: '100%',
+                          padding: '10px 12px',
+                          borderLeft: `2px solid ${tourStatusTone(r.status)}`,
+                          background: 'rgba(212,175,55,0.04)',
+                        }}>
+                        <div style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
+                          {r.tour?.title || '답사'}
+                        </div>
+                        <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.1em' }}>
+                          {r.tour?.next || ''} · {r.count}명 ·{' '}
+                          <span style={{ color: tourStatusTone(r.status) }}>{tourStatusLabel(r.status)}</span>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {myTourRegs.length > 4 && (
+                  <div className="dim-2 mono" style={{ fontSize: 11, textAlign: 'right', marginBottom: 8 }}>외 {myTourRegs.length - 4}건</div>
+                )}
+                <button type="button" className="btn btn-small" onClick={() => go("tour")}>투어 전체 보기</button>
+              </>
+            )}
           </article>
 
           <article className="card">

@@ -61,7 +61,18 @@ const App = () => {
   });
   const [postId, setPostId] = React.useState(null);
   const [user, setUser] = React.useState(() => window.WSD_AUTH.getSessionUser());
-  const [cart, setCart] = React.useState(null);
+  const [cart, setCart] = React.useState(() => {
+    try {
+      const raw = localStorage.getItem('wsd_cart');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  React.useEffect(() => {
+    try {
+      if (cart) localStorage.setItem('wsd_cart', JSON.stringify(cart));
+      else localStorage.removeItem('wsd_cart');
+    } catch {}
+  }, [cart]);
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = React.useState(false);
   const [readFont, setReadFont] = React.useState(() => {
@@ -120,6 +131,13 @@ const App = () => {
         try { sessionStorage.setItem('wsd_pending_lecture_id', decodeURIComponent(lectureMatch[1])); } catch {}
         setRoute('lectures');
         try { localStorage.setItem('wsd_route', 'lectures'); } catch {}
+      } else {
+        const tourMatch = h.match(/^#tour-(.+)$/);
+        if (tourMatch) {
+          try { sessionStorage.setItem('wsd_pending_tour_id', decodeURIComponent(tourMatch[1])); } catch {}
+          setRoute('tour');
+          try { localStorage.setItem('wsd_route', 'tour'); } catch {}
+        }
       }
     };
     applyHash();
@@ -137,7 +155,7 @@ const App = () => {
     switch (route) {
       case "home": return <HomePage go={go} tweaks={tweaks}/>;
       case "community": return <CommunityPage go={go} postId={postId} setPostId={setPostId} user={user}/>;
-      case "tour": return <TourPage go={go}/>;
+      case "tour": return <TourPage go={go} user={user}/>;
       case "lectures": return <LecturesPage go={go} user={user}/>;
       case "column": return <ColumnPage go={go} user={user}/>;
       case "book": return <BookPage go={go} cart={cart} setCart={setCart}/>;
