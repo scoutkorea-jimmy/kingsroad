@@ -397,6 +397,24 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.016.000",
+    date: "2026-04-25",
+    summary: "Cycle 4(뱅기노자 책 판매) 출시. 회원 전용 무통장 입금 단일 흐름으로 책 주문 → 입금 → 발송 → 배송 완료 사이클을 닫고, 관리자 콘솔의 메뉴 명칭을 홈페이지 내비와 일치시켰습니다(커뮤니티 / 강연 / 투어 프로그램 / 뱅기노자 칼럼 / 왕의길).",
+    details: [
+      "`WSD_BOOK_ORDERS` helper 신설 — listAll / listByStatus / listMine / getOrder / createOrder / confirmPayment / unconfirmPayment / markShipped(tracking) / markDelivered / cancelOrder / exportCsv. 주문번호는 `WSD-YYYYMMDD-NNN` 시퀀스로 자동 생성.",
+      "`WSD_STORES.bookOrders` 신설 — 단일 배열에 모든 주문 보관(상태 머신: pending_payment → paid → shipped → delivered, 또는 cancelled).",
+      "`CheckoutPage` 전면 개조 — 비로그인 차단 + 회원 전용 + 무통장 입금 안내 단일 흐름. 다단계 mock(카드/계좌이체/간편결제)을 모두 제거하고 배송 정보 한 폼으로 단순화. 운영자 계좌가 비어 있으면 결제 버튼 비활성화.",
+      "주문 완료 화면 — 주문번호 · 계좌 안내 · 결제 금액 · 배송지를 한 페이지에 요약. 입금자명 가이드 자동 노출.",
+      "관리자 콘텐츠 메뉴에 `왕의길` 탭 신설(`BookOrderAdminPanel`) — 상태별 필터 + 카드 + 입금 확인 → 발송 → 배송 완료 액션 + 송장 입력 + CSV 다운로드.",
+      "관리자 사이드바 메뉴 명칭을 홈페이지와 일치 — `게시글` → `커뮤니티`, `칼럼` → `뱅기노자 칼럼`, `투어` → `투어 프로그램`, `주문` 제거 + `왕의길` 추가, 그룹 명 `회원/주문` → `회원`.",
+      "관리자 대시보드 4번째 KPI를 `왕의길 주문` 카드로 교체(전체 주문 수 + 입금 대기 카운트, 대기 0이면 골드 / 있으면 경고 색).",
+      "마이페이지 `ORDER STATUS` 카드를 `내 주문 내역` 카드로 교체 — 본인 주문 4건 + 외 N건, 상태별 컬러 라벨, 송장 표시.",
+      "강연/책 결제는 같은 `bankAccount` 저장소를 공유하므로 시스템 → 설정 한 곳에서 변경하면 양쪽 모두 반영.",
+      "KMS 미션 5(책 판매) 영역을 위 변경에 맞게 재기록. 미션 평가 카드 25% → ~65%.",
+    ],
+    context: "PG 도입 전이라도 운영 사이클을 닫는 것이 우선이라, 강연 Cycle 3에서 검증된 무통장 입금 패턴을 책 판매에도 그대로 옮겨 왔습니다. 같은 `bankAccount` 저장소를 공유하도록 만들어 운영자가 한 곳에서만 입력하도록 했고, 관리자 메뉴 명칭은 홈페이지 내비와 같은 단어를 쓰도록 통일해 사용자/운영자 사이의 인지 비용을 줄였습니다.",
+  },
+  {
     version: "00.015.000",
     date: "2026-04-25",
     summary: "사이트 전반의 UX 개선 묶음을 출시했습니다. 관리자 버전 기록을 10건씩 페이지네이션하고 총 개수 요약을 상단에 노출, 우하단 '맨 위로' 플로팅 버튼 추가, 내비 `커뮤니티`에 마우스를 올리면 게시판 서브메뉴가 펼쳐지고, 헤더의 `고딕 / 명조` 토글이 사이트 전체(헤더·푸터·카드 포함) 본문 폰트에 적용되도록 확장했습니다. 카테고리 관리 화면에서는 게시판 제목과 설명을 인라인으로 직접 수정할 수 있습니다.",
@@ -668,10 +686,10 @@ const MISSION_OVERVIEW = [
     id: "book",
     number: "05",
     title: "뱅기노자 책 판매",
-    short: "『왕의길』 소개와 구매 흐름 진입.",
-    state: "UI 흐름까지",
-    coverage: "기능 25%",
-    verdict: "체크아웃 UI까지는 그려져 있으나 주문 저장·결제·배송·재고·영수증·환불이 모두 없어 실제 판매 불가.",
+    short: "『왕의길』 소개와 무통장 입금 주문 운영.",
+    state: "Cycle 4 마무리",
+    coverage: "기능 ~65%",
+    verdict: "회원 전용 주문 → 무통장 입금 → 관리자 입금 확인 → 발송 → 배송 완료 사이클이 운영 가능 상태로 닫혔다. PG 결제·재고 관리·영수증·환불·리뷰는 다음 단계.",
   },
 ];
 
@@ -1302,109 +1320,101 @@ const FEATURE_DOMAINS = [
   {
     id: "book",
     number: "05",
-    label: "책 판매",
+    label: "왕의길",
     title: "미션 5 — 뱅기노자 책 판매",
-    role: "뱅기노자의 책 『왕의길』을 소개하고 판매.",
-    routes: ["book(상세)", "checkout(주문)", "home(CTA)", "admin > 주문(운영)"],
-    status: "UI 흐름까지(부분 구현)",
-    evaluation: "책 정보 → 판본·수량 → 장바구니 → 체크아웃 UI까지의 화면은 그려져 있지만 주문 저장 / 결제 / 배송 / 영수증 / 재고 / 환불 어느 것도 작동하지 않아 실제 판매가 불가능하다. 도메인 4(투어)와 같은 한계.",
+    role: "뱅기노자의 책 『왕의길』을 소개하고 회원 전용 무통장 입금으로 판매·발송 운영.",
+    routes: ["book(상세)", "checkout(주문)", "home(CTA)", "mypage(내 주문 내역)", "admin > 왕의길(주문 운영)", "admin > 설정(계좌번호)"],
+    status: "Cycle 4 마무리(기능 ~65%)",
+    evaluation: "Cycle 4에서 책이 '카탈로그+체크아웃 UI'에서 '실제 주문 → 입금 → 발송 → 배송 완료' 사이클로 닫혔다. 회원만 주문 가능하며, 무통장 입금 후 관리자가 입금을 확인하면 발송 준비로 넘어가고, 송장 입력 후 배송중 → 배송 완료까지 단계가 진행된다. 강연과 동일한 계좌(`bankAccount`) 저장소를 공유하므로 설정이 통합돼 있다. 결제 게이트웨이·재고·영수증·환불은 다음 단계.",
     missing: [
-      "주문 저장소 / 주문 ID 발급",
-      "결제 게이트웨이 연동(KR / EN 가격 분기)",
-      "배송 정보 입력 · 송장 연동",
-      "영수증 / 세금계산서",
+      "결제 게이트웨이(PG) 연동",
       "재고 관리 · 품절 표시",
-      "주문 상태 추적(주문확인 / 결제완료 / 배송중 / 도착)",
-      "마이페이지 주문 내역 · 재구매",
-      "환불 · 교환 흐름",
+      "영수증 / 세금계산서 발행",
+      "환불 · 교환 자동 흐름",
       "독자 리뷰 · 평점",
       "교차 판매(투어 / 강연 패키지)",
       "쿠폰 · 회원 등급 할인",
-      "장바구니 영속성(현재 메모리 휘발성)",
+      "장바구니 영속성(현재 메모리 → 결제 진입 직전까지만 유지)",
+      "이메일 영수증 / 발송 알림",
     ],
     features: [
       {
         name: "책 상세",
         status: "구현됨",
-        summary: "책 한 권의 모든 메타 정보를 한 화면에서 노출.",
+        summary: "책 한 권의 모든 메타 정보를 한 화면에서 노출 + 판본·수량 선택 후 결제로 진입.",
         elements: [
           "표지 / 저자 / 출판사 / ISBN / 페이지 수",
-          "국문 / 영문 가격",
-          "챕터 목차",
-          "설명 본문",
+          "국문 / 영문 가격, 판본 토글, 수량 ±",
+          "챕터 목차 / 저자 / 리뷰 탭",
+          "바로 구매 → 체크아웃 라우트로 이동",
         ],
-        techSpec: "`WANGSADEUL_DATA.book` 정적 객체를 `BookCheckoutPage`가 렌더.",
+        techSpec: "`WANGSADEUL_DATA.book` 정적 객체를 `BookPage`가 렌더. 판본/수량은 메모리 `cart` 상태로 보관 후 결제 페이지에 전달.",
         caution: "ISBN과 가격은 정적이라 출판사 정책 변경 시 코드 갱신 필요.",
         issues: [],
       },
       {
-        name: "판본 · 수량 선택",
-        status: "부분 구현",
-        summary: "국문판/영문판 토글과 수량 입력.",
+        name: "체크아웃 — 회원 전용 + 무통장 입금 단일 흐름",
+        status: "구현됨",
+        summary: "비회원은 차단되고, 회원은 배송 정보 입력 후 주문 접수. 결제 수단은 무통장 입금만.",
         elements: [
-          "판본 토글",
-          "수량 ±",
-          "합계 표시",
+          "비로그인 안내 카드(로그인/회원가입 진입)",
+          "받는 분 / 연락처 / 주소 / 상세 주소 / 배송 메모",
+          "결제 수단 카드 — 무통장 입금 안내 + 운영자 계좌(없으면 차단)",
+          "주문 요약 사이드바(상품·배송비·총액·운영 안내)",
+          "주문 완료 화면(주문번호·계좌·금액·배송지 한 페이지 요약)",
         ],
-        techSpec: "`React.useState`로 `cart` 메모리 상태 보관.",
-        caution: "장바구니가 메모리 상태라 새로고침 / 다른 페이지 → 돌아오기 시 사라짐. localStorage 영속화 필요.",
-        issues: ["사용자가 '담기 → 다른 페이지 → 돌아오기' 시 사라지는 케이스가 운영 검토에서 자주 보고됨"],
+        techSpec: "`WSD_BOOK_ORDERS.createOrder({userId, version, qty, recipient, phone, address, addressDetail, memo})` → 주문 생성 시 `WSD_STORES.bookOrders`에 push. 계좌는 `WSD_LECTURES.getBankAccount()`로 강연과 공유. 주문번호는 `WSD-YYYYMMDD-NNN` 시퀀스.",
+        caution: "운영자 계좌가 비어 있으면 주문 버튼이 비활성화되어 결제 자체가 막힌다. 강연과 같은 계좌 저장소이므로 강연·책 어느 한 곳에서 설정해도 양쪽에 반영됨.",
+        issues: ["장바구니가 휘발성 메모리이므로 결제 진입 후 새로고침하면 cart가 사라짐 — 다음 단계에서 localStorage 영속화 예정"],
       },
       {
-        name: "장바구니",
-        status: "부분 구현",
-        summary: "선택한 판본과 수량을 메모리상으로 보관.",
+        name: "관리자 왕의길 운영 (콘텐츠 > 왕의길 탭)",
+        status: "구현됨",
+        summary: "주문 상태별 필터 + 입금 확인 / 송장 입력 / 발송 / 배송 완료 / 취소 + CSV 다운로드.",
         elements: [
-          "선택 항목 카드",
-          "수량 변경",
-          "삭제",
-          "합계",
+          "필터(입금 대기/입금 확인/배송중/배송 완료/취소/전체) + 카운트",
+          "주문 카드(주문번호·시각·상태 배지·상품·금액·받는 분·주소)",
+          "액션: 입금 확인 → 발송 준비 / 송장 입력 + 발송 처리 / 배송 완료 / 입금 확인 취소 / 주문 취소",
+          "CSV 다운로드(주문 / 회원 / 주소 / 상태 / 송장)",
         ],
-        techSpec: "App 컴포넌트의 `cart` 상태(`React.useState`)를 prop drilling으로 전달.",
-        caution: "Context / Reducer 도입 전까지는 prop chain이 길어지지 않게 페이지 단위 유지.",
+        techSpec: "`WSD_BOOK_ORDERS.confirmPayment(id) / unconfirmPayment(id) / markShipped(id, tracking) / markDelivered(id) / cancelOrder(id) / exportCsv()`. 상태 머신: pending_payment → paid → shipped → delivered (혹은 cancelled).",
+        caution: "각 단계는 운영자가 직접 클릭해야 진행됨(자동 진행 없음). 송장 번호는 발송 시 입력하고 이후 변경 불가(필요 시 코드 수정 또는 마지막 액션 reset 흐름 추가).",
         issues: [],
       },
       {
-        name: "체크아웃 UI",
-        status: "부분 구현",
-        summary: "주문 요약, 배송지/결제 입력 화면.",
+        name: "마이페이지 내 주문 내역",
+        status: "구현됨",
+        summary: "로그인 사용자에게 자신의 주문을 상태별 컬러 라벨로 표시.",
         elements: [
-          "주문 요약(판본·수량·합계)",
-          "배송지 폼",
-          "결제 폼",
-          "주문 완료 화면(미구현)",
+          "주문번호 / 판본 / 수량 / 총액 / 상태(입금 대기·입금 확인·배송중·배송 완료·취소)",
+          "송장 번호(발송된 주문)",
+          "최대 4건 + '외 N건'",
         ],
-        techSpec: "현재는 폼 UI만 존재. 제출 시 실제 처리는 없음.",
-        caution: "결제 연동 도입 시 PCI / 카드 정보 비저장 / PII 처리 정책이 같이 따라옴 → 개인정보(GDPR/PIPA) 모듈과 동기화 필요.",
-        issues: ["결제 도입 시 카드 정보 입력을 '직접' 받지 않도록 처음부터 게이트웨이 위임 구조로 설계할 것"],
-      },
-      {
-        name: "마이페이지 주문 상태",
-        status: "부분 구현",
-        summary: "현재 장바구니 / 주문 상태 카드.",
-        elements: ["주문 상태 카드"],
-        techSpec: "`cart` 상태만 참조. 저장된 주문이 없어 항상 빈 상태 또는 mock.",
-        caution: "주문 저장소 도입 전까지는 카드 라벨에 '진행 중인 주문'임을 명시.",
+        techSpec: "`WSD_BOOK_ORDERS.listMine(user.id)`로 본인 주문만 모음.",
+        caution: "주문이 cancelled 상태로 바뀌면 카드는 남되 컬러로 구분.",
         issues: [],
       },
       {
-        name: "관리자 주문 탭",
-        status: "미구현",
-        summary: "관리자 콘솔의 주문 운영 화면.",
-        elements: ["주문 목록(미구현)", "주문 상세(미구현)", "환불 / 교환(미구현)"],
-        techSpec: "주문 저장소가 없어 현재는 화면 골격만 존재.",
-        caution: "주문 저장 도입 시 회원 등급/쿠폰 등 모듈과 동시에 설계해야 함.",
+        name: "관리자 대시보드 카운트",
+        status: "구현됨",
+        summary: "관리자 대시보드 4개 KPI 중 마지막 슬롯을 '왕의길 주문'으로 교체. 입금 대기 건수 표시.",
+        elements: ["전체 주문 수", "입금 대기 카운트(미처리 시 경고 색)"],
+        techSpec: "`window.WSD_BOOK_ORDERS.listAll()` + 상태 필터.",
+        caution: "필요 시 5번째 슬롯으로 카테고리/투어 등 다시 추가할 수 있음.",
         issues: [],
       },
     ],
-    techSpec: "`WANGSADEUL_DATA.book` + `cart` 메모리 상태. 주문 / 결제 / 재고 / 환불 helper 미존재.",
+    techSpec: "`WSD_BOOK_ORDERS` helper + `WSD_STORES.bookOrders`(주문 단일 배열) + `WSD_STORES.bankAccount`(강연과 공유). 주문번호는 `WSD-YYYYMMDD-NNN`. 회원 식별은 `user.id`.",
     cautions: [
-      "장바구니가 휘발성이라 사용자 흐름이 짧게만 유지됨 → localStorage 영속화가 1순위",
-      "국문/영문 가격이 분리되어 결제 게이트웨이가 통화별로 별도 계약될 수 있음",
-      "결제 도입 시 PCI/PII 책임이 발생 → 직접 카드정보를 받지 않는 게이트웨이 위임 구조로 설계",
+      "회원 전용 — 비로그인은 결제 진입 자체를 막음",
+      "결제는 무통장 입금만 (PG는 후속 사이클)",
+      "강연과 같은 계좌 저장소를 공유하므로 한 곳에서 바꾸면 양쪽 모두 반영됨",
+      "주문 상태는 운영자가 직접 진행 — 입금 확인은 관리자 콘솔에서만 가능",
+      "현재 재고 차감이 없어 판매 수량과 무관하게 주문이 계속 생성됨 → 재고 도입 시 lock 필요",
     ],
     issues: [
-      "결제·배송·재고·환불을 한 번에 도입하기 어려움 → 단계: 주문 저장 → 결제 위임 → 배송 → 영수증 → 재고 → 환불 순으로 점진 도입 권장",
+      "장바구니가 휘발성이라 결제 도중 새로고침 시 cart 손실 — 다음 단계에서 localStorage 영속화",
+      "국문/영문 가격이 분리되어 있어 PG 도입 시 통화별 계약을 동시에 진행해야 함",
     ],
   },
 ];
@@ -1767,6 +1777,179 @@ const BankAccountPanel = () => {
   );
 };
 
+// === Book Orders Admin Panel ======================================
+const BookOrderAdminPanel = ({ go }) => {
+  const [tick, setTick] = React.useState(0);
+  const [filter, setFilter] = React.useState('pending_payment');
+  const [trackingDraft, setTrackingDraft] = React.useState({});
+  const refresh = () => setTick((v) => v + 1);
+
+  const orders = React.useMemo(() => window.WSD_BOOK_ORDERS.listByStatus(filter), [filter, tick]);
+  const counts = React.useMemo(() => ({
+    all: window.WSD_BOOK_ORDERS.listAll().length,
+    pending_payment: window.WSD_BOOK_ORDERS.listByStatus('pending_payment').length,
+    paid: window.WSD_BOOK_ORDERS.listByStatus('paid').length,
+    shipped: window.WSD_BOOK_ORDERS.listByStatus('shipped').length,
+    delivered: window.WSD_BOOK_ORDERS.listByStatus('delivered').length,
+    cancelled: window.WSD_BOOK_ORDERS.listByStatus('cancelled').length,
+  }), [tick]);
+
+  const downloadCsv = () => {
+    const csv = window.WSD_BOOK_ORDERS.exportCsv();
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `book-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const statusLabel = (s) => ({
+    pending_payment: '입금 대기',
+    paid: '입금 확인',
+    shipped: '배송중',
+    delivered: '배송 완료',
+    cancelled: '취소됨',
+  }[s] || s);
+
+  const statusTone = (s) => ({
+    pending_payment: 'var(--ink-2)',
+    paid: 'var(--gold)',
+    shipped: 'var(--gold)',
+    delivered: 'var(--gold-2)',
+    cancelled: 'var(--danger)',
+  }[s] || 'var(--ink-2)');
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        『왕의길』 주문은 회원 전용·무통장 입금 단일 흐름입니다.
+        주문 → 입금 확인 → 발송 → 배송 완료 순으로 상태를 직접 진행하세요.
+        계좌번호는 <strong className="gold">시스템 → 설정</strong> 탭에서 등록·수정합니다.
+      </p>
+
+      <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', flexWrap:'wrap', marginBottom:18}}>
+        <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+          {[
+            { key: 'pending_payment', label: '입금 대기' },
+            { key: 'paid',            label: '입금 확인' },
+            { key: 'shipped',         label: '배송중' },
+            { key: 'delivered',       label: '배송 완료' },
+            { key: 'cancelled',       label: '취소' },
+            { key: 'all',             label: '전체' },
+          ].map((f) => (
+            <button key={f.key} type="button" className="btn btn-small"
+              onClick={() => setFilter(f.key)}
+              style={{
+                borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
+                color: filter === f.key ? 'var(--gold)' : 'var(--ink-2)',
+                background: filter === f.key ? 'rgba(212,175,55,0.06)' : 'transparent',
+              }}>
+              {f.label} <span className="mono dim-2" style={{ fontSize: 10, marginLeft: 4 }}>{counts[f.key] ?? 0}</span>
+            </button>
+          ))}
+        </div>
+        <button type="button" className="btn btn-small" onClick={downloadCsv}>CSV 다운로드</button>
+      </div>
+
+      {orders.length === 0 ? (
+        <div className="card dim" style={{padding:32, textAlign:'center'}}>해당 상태의 주문이 없습니다.</div>
+      ) : (
+        <div style={{display:'grid', gap:12}}>
+          {orders.map((o) => (
+            <article key={o.id} className="card" style={{padding:18}}>
+              <header style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:10}}>
+                <div style={{display:'flex', gap:10, alignItems:'baseline', flexWrap:'wrap'}}>
+                  <span className="mono gold" style={{fontSize:12, letterSpacing:'0.16em'}}>{o.orderNo}</span>
+                  <span className="mono dim-2" style={{fontSize:11}}>{new Date(o.createdAt).toLocaleString('ko-KR')}</span>
+                </div>
+                <span className="mono" style={{fontSize:10, letterSpacing:'0.22em', color: statusTone(o.status)}}>
+                  {statusLabel(o.status).toUpperCase()}{o.paid && o.status === 'paid' && ' · 입금 ✓'}
+                </span>
+              </header>
+
+              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:12, marginBottom:14}}>
+                <div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:4}}>BOOK</div>
+                  <div style={{fontSize:13}}>『왕의길』 · {o.version === 'KR' ? '국문판' : '영문판'} × {o.qty}</div>
+                </div>
+                <div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:4}}>AMOUNT</div>
+                  <div className="gold ko-serif" style={{fontSize:18}}>{o.total.toLocaleString()}원</div>
+                  <div className="dim-2 mono" style={{fontSize:10}}>상품 {o.subtotal.toLocaleString()} + 배송 {o.shipping.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:4}}>RECIPIENT</div>
+                  <div style={{fontSize:13, lineHeight:1.6}}>{o.recipient} · {o.phone}</div>
+                </div>
+                <div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:4}}>SHIP TO</div>
+                  <div style={{fontSize:12, lineHeight:1.6}}>{o.address} {o.addressDetail}</div>
+                  {o.memo && <div className="dim-2" style={{fontSize:11, marginTop:2}}>· {o.memo}</div>}
+                </div>
+              </div>
+
+              <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', borderTop:'1px solid var(--line)', paddingTop:12}}>
+                {o.status === 'pending_payment' && (
+                  <button type="button" className="btn btn-small"
+                    onClick={() => { window.WSD_BOOK_ORDERS.confirmPayment(o.id); refresh(); }}>
+                    입금 확인 → 발송 준비
+                  </button>
+                )}
+                {o.status === 'paid' && (
+                  <>
+                    <input
+                      className="field-input"
+                      placeholder="송장 번호 (선택)"
+                      style={{padding:'6px 10px', maxWidth:200}}
+                      value={trackingDraft[o.id] || ''}
+                      onChange={(e) => setTrackingDraft({ ...trackingDraft, [o.id]: e.target.value })}/>
+                    <button type="button" className="btn btn-small"
+                      onClick={() => {
+                        window.WSD_BOOK_ORDERS.markShipped(o.id, trackingDraft[o.id] || '');
+                        refresh();
+                      }}>
+                      발송 처리
+                    </button>
+                    <button type="button" className="btn btn-small"
+                      onClick={() => { window.WSD_BOOK_ORDERS.unconfirmPayment(o.id); refresh(); }}>
+                      입금 확인 취소
+                    </button>
+                  </>
+                )}
+                {o.status === 'shipped' && (
+                  <>
+                    {o.tracking && <span className="mono dim-2" style={{fontSize:11}}>송장 {o.tracking}</span>}
+                    <button type="button" className="btn btn-small"
+                      onClick={() => { window.WSD_BOOK_ORDERS.markDelivered(o.id); refresh(); }}>
+                      배송 완료 처리
+                    </button>
+                  </>
+                )}
+                {o.status === 'delivered' && o.tracking && (
+                  <span className="mono dim-2" style={{fontSize:11}}>송장 {o.tracking} · 도착 {o.deliveredAt ? new Date(o.deliveredAt).toLocaleDateString('ko-KR') : ''}</span>
+                )}
+                {(o.status === 'pending_payment' || o.status === 'paid') && (
+                  <button type="button" className="btn btn-small"
+                    onClick={() => {
+                      if (!confirm(`주문 ${o.orderNo}을(를) 취소 처리하시겠어요?`)) return;
+                      window.WSD_BOOK_ORDERS.cancelOrder(o.id);
+                      refresh();
+                    }}
+                    style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>
+                    주문 취소
+                  </button>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // === Admin Page ===================================================
 const AdminPage = ({ go }) => {
   const data = window.WANGSADEUL_DATA;
@@ -1785,12 +1968,14 @@ const AdminPage = ({ go }) => {
     () => Object.values(window.WSD_STORES.comments || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0),
     [postRefreshKey]
   );
+  const allBookOrders = React.useMemo(() => window.WSD_BOOK_ORDERS?.listAll?.() || [], [postRefreshKey]);
+  const pendingBookOrders = allBookOrders.filter((o) => o.status === 'pending_payment').length;
   const dashboardStats = React.useMemo(() => ([
     { l: "전체 회원", v: String(allUsers.length), d: `관리자 ${allUsers.filter((user) => user.isAdmin).length}명 포함`, p: true },
     { l: "커뮤니티 게시글", v: String(allCommunityPosts.length), d: `댓글 ${totalComments}개 누적`, p: true },
     { l: "공개 칼럼", v: String(allColumns.length), d: `관리자 발행 ${(window.WSD_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published').length}건 · 임시/예약 ${(window.WSD_STORES.userColumns || []).filter((c) => c.status === 'draft' || c.status === 'scheduled').length}건`, p: true },
-    { l: "운영 카테고리", v: String(window.WSD_STORES.categories.length), d: `강연 ${data.lectures.length}건 · 투어 ${data.tours.length}건`, p: true },
-  ]), [allUsers, allCommunityPosts, totalComments, allColumns, data]);
+    { l: "왕의길 주문", v: String(allBookOrders.length), d: `입금 대기 ${pendingBookOrders}건`, p: pendingBookOrders === 0 },
+  ]), [allUsers, allCommunityPosts, totalComments, allColumns, data, allBookOrders, pendingBookOrders]);
   const latestCommunityPost = allCommunityPosts[0] || null;
   const latestColumn = allColumns[0] || null;
   const visibleCommunityPosts = React.useMemo(() => allCommunityPosts.filter((post) => {
@@ -1804,8 +1989,9 @@ const AdminPage = ({ go }) => {
 
   const tabGroups = [
     { group: "요약",     items: ["대시보드"] },
-    { group: "콘텐츠",   items: ["게시글", "신고", "칼럼", "칼럼 작성", "강연", "투어"] },
-    { group: "회원/주문", items: ["회원", "주문"] },
+    // 홈페이지 내비 순서와 동일하게 정렬: 커뮤니티 → 강연 → 투어 프로그램 → 뱅기노자 칼럼 → 왕의길
+    { group: "콘텐츠",   items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성", "왕의길"] },
+    { group: "회원",     items: ["회원"] },
     { group: "운영 설정", items: ["카테고리", "회원 등급"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템",   items: ["버전 기록", "KMS", "설정"] },
@@ -1931,7 +2117,7 @@ const AdminPage = ({ go }) => {
                 ) : (
                   <p className="dim">등록된 게시글이 없습니다.</p>
                 )}
-                <button type="button" className="btn btn-small" onClick={() => setTab("게시글")}>게시글 관리로 이동</button>
+                <button type="button" className="btn btn-small" onClick={() => setTab("커뮤니티")}>커뮤니티 관리로 이동</button>
               </article>
 
               <article className="card">
@@ -1944,8 +2130,8 @@ const AdminPage = ({ go }) => {
                   <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">DSR 대기</span><span>{PRIVACY_DATA.dsrRequests.filter(r => r.status !== 'done').length}건</span></div>
                 </div>
                 <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
-                  <button type="button" className="btn btn-small" onClick={() => setTab("칼럼")}>칼럼 관리</button>
-                  <button type="button" className="btn btn-small" onClick={() => setTab("투어")}>투어 관리</button>
+                  <button type="button" className="btn btn-small" onClick={() => setTab("뱅기노자 칼럼")}>칼럼 관리</button>
+                  <button type="button" className="btn btn-small" onClick={() => setTab("투어 프로그램")}>투어 관리</button>
                   <button type="button" className="btn btn-small" onClick={() => setTab("정보주체 권리")}>권리 요청 처리</button>
                 </div>
               </article>
@@ -2330,7 +2516,7 @@ const AdminPage = ({ go }) => {
         )}
 
         {/* 게시글 */}
-        {tab === "게시글" && (
+        {tab === "커뮤니티" && (
           <div>
             <div style={{display:'flex', gap:12, marginBottom:20}}>
               <label htmlFor="post-search" className="sr-only">게시글 검색</label>
@@ -2386,7 +2572,7 @@ const AdminPage = ({ go }) => {
         )}
 
         {/* 칼럼 */}
-        {tab === "칼럼" && (
+        {tab === "뱅기노자 칼럼" && (
           <div className="grid grid-2">
             {data.columns.map(c => (
               <article key={c.id} className="card">
@@ -2409,7 +2595,7 @@ const AdminPage = ({ go }) => {
         {tab === "강연" && <LectureAdminPanel go={go}/>}
 
         {/* 투어 */}
-        {tab === "투어" && (
+        {tab === "투어 프로그램" && (
           <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
             <thead>
               <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
@@ -2495,13 +2681,8 @@ const AdminPage = ({ go }) => {
           </div>
         )}
 
-        {/* 주문 */}
-        {tab === "주문" && (
-          <div className="card" style={{padding:24}}>
-            <h2 className="ko-serif" style={{fontSize:18, marginBottom:16}}>주문 목록</h2>
-            <p className="dim" style={{fontSize:12}}>전자상거래법에 따라 5년간 보관됩니다. 상세 구현 예정.</p>
-          </div>
-        )}
+        {/* 왕의길 (책 주문 운영) */}
+        {tab === "왕의길" && <BookOrderAdminPanel go={go}/>}
 
         {/* 정보주체 권리 */}
         {tab === "정보주체 권리" && (
@@ -3306,4 +3487,4 @@ const AdminDenied = ({ go, user }) => (
   </div>
 );
 
-Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel });
+Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel });

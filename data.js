@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.015.000",
+  version: "00.016.000",
   build: "2026.04.25",
   channel: "preview",
 };
@@ -124,6 +124,7 @@ window.WSD_STORES = {
   lectureOverrides: _lsGet('wsd_lecture_overrides', {}),
   lectureRegistrations: _lsGet('wsd_lecture_registrations', {}),
   bankAccount: _lsGet('wsd_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
+  bookOrders: _lsGet('wsd_book_orders', []),
 };
 window.WSD_SAVE = {
   grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
@@ -141,6 +142,7 @@ window.WSD_SAVE = {
   lectureOverrides: () => _lsSet('wsd_lecture_overrides', window.WSD_STORES.lectureOverrides),
   lectureRegistrations: () => _lsSet('wsd_lecture_registrations', window.WSD_STORES.lectureRegistrations),
   bankAccount: () => _lsSet('wsd_bank_account', window.WSD_STORES.bankAccount),
+  bookOrders: () => _lsSet('wsd_book_orders', window.WSD_STORES.bookOrders),
   resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
   resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
 };
@@ -148,7 +150,7 @@ window.WSD_SAVE = {
 window.WSD_DB = {
   version: WSD_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -752,6 +754,128 @@ window.WSD_LECTURES = {
     window.WSD_STORES.bankAccount = { ...(window.WSD_STORES.bankAccount || {}), ...payload };
     window.WSD_SAVE.bankAccount();
     return this.getBankAccount();
+  },
+};
+
+// === 책 주문(WSD_BOOK_ORDERS) helper ====================================
+// 운영 정책:
+//   - 회원 전용 주문. 비로그인은 결제 진입 자체를 막음.
+//   - 결제는 무통장 입금만. PG는 별도 단계에서 도입.
+//   - 상태: pending_payment → paid → shipped → delivered. 운영자가 단계별로 진행.
+//   - 'cancelled' 는 운영자/사용자가 명시적으로 취소.
+//   - 계좌번호는 강연과 동일한 `WSD_STORES.bankAccount` 재사용.
+window.WSD_BOOK_ORDERS = {
+  ORDER_STATUSES: ['pending_payment', 'paid', 'shipped', 'delivered', 'cancelled'],
+
+  listAll() {
+    return (window.WSD_STORES.bookOrders || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  },
+  listByStatus(status) {
+    if (!status || status === 'all') return this.listAll();
+    return this.listAll().filter((o) => o.status === status);
+  },
+  listMine(userId) {
+    if (!userId) return [];
+    return this.listAll().filter((o) => o.userId === userId);
+  },
+  getOrder(id) {
+    return this.listAll().find((o) => o.id === id) || null;
+  },
+  _save(list) {
+    window.WSD_STORES.bookOrders = list;
+    window.WSD_SAVE.bookOrders();
+  },
+  countOpenOrders() {
+    return (window.WSD_STORES.bookOrders || []).filter((o) => o.status === 'pending_payment').length;
+  },
+  generateOrderNo(now) {
+    const d = now || new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const stamp = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+    const seq = (window.WSD_STORES.bookOrders || []).filter((o) => String(o.orderNo || '').includes(stamp)).length + 1;
+    return `WSD-${stamp}-${String(seq).padStart(3, '0')}`;
+  },
+  createOrder(payload) {
+    if (!payload.userId) return { ok: false, message: "회원 가입 후 로그인해 주세요." };
+    if (!payload.recipient || !payload.phone || !payload.address) {
+      return { ok: false, message: "받는 분, 연락처, 주소는 필수입니다." };
+    }
+    const book = window.WANGSADEUL_DATA?.book;
+    if (!book) return { ok: false, message: "책 정보가 없습니다." };
+    const qty = Math.max(1, Number(payload.qty) || 1);
+    const version = payload.version === 'EN' ? 'EN' : 'KR';
+    const unit = version === 'EN' ? book.priceEN : book.priceKR;
+    const subtotal = unit * qty;
+    const shipping = subtotal >= 30000 ? 0 : 3000;
+    const total = subtotal + shipping;
+    const now = new Date();
+    const order = {
+      id: `order-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      orderNo: this.generateOrderNo(now),
+      userId: payload.userId,
+      version,
+      qty,
+      unit,
+      subtotal,
+      shipping,
+      total,
+      recipient: String(payload.recipient || '').trim(),
+      phone: String(payload.phone || '').trim(),
+      address: String(payload.address || '').trim(),
+      addressDetail: String(payload.addressDetail || '').trim(),
+      memo: String(payload.memo || '').trim(),
+      status: 'pending_payment',
+      paid: false,
+      tracking: '',
+      createdAt: now.toISOString(),
+    };
+    this._save([order, ...(window.WSD_STORES.bookOrders || [])]);
+    return { ok: true, order };
+  },
+  confirmPayment(id) {
+    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+      o.id === id ? { ...o, paid: true, status: 'paid', paidAt: new Date().toISOString() } : o
+    );
+    this._save(list);
+    return list.find((o) => o.id === id) || null;
+  },
+  unconfirmPayment(id) {
+    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+      o.id === id ? { ...o, paid: false, status: 'pending_payment', paidAt: null, shippedAt: null, tracking: '' } : o
+    );
+    this._save(list);
+    return list.find((o) => o.id === id) || null;
+  },
+  markShipped(id, tracking) {
+    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+      o.id === id ? { ...o, status: 'shipped', tracking: tracking || o.tracking || '', shippedAt: new Date().toISOString() } : o
+    );
+    this._save(list);
+    return list.find((o) => o.id === id) || null;
+  },
+  markDelivered(id) {
+    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+      o.id === id ? { ...o, status: 'delivered', deliveredAt: new Date().toISOString() } : o
+    );
+    this._save(list);
+    return list.find((o) => o.id === id) || null;
+  },
+  cancelOrder(id) {
+    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+      o.id === id ? { ...o, status: 'cancelled', cancelledAt: new Date().toISOString() } : o
+    );
+    this._save(list);
+    return list.find((o) => o.id === id) || null;
+  },
+  exportCsv() {
+    const header = ['orderNo', 'date', 'userId', 'recipient', 'phone', 'address', 'version', 'qty', 'total', 'status', 'paid', 'tracking'];
+    const rows = this.listAll().map((o) => [
+      o.orderNo, o.createdAt, o.userId, o.recipient, o.phone,
+      `${o.address} ${o.addressDetail || ''}`.trim(), o.version, o.qty, o.total, o.status, o.paid ? 'Y' : 'N', o.tracking || '',
+    ]);
+    return [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
   },
 };
 

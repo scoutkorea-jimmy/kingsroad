@@ -204,195 +204,208 @@ const BookPage = ({ go, cart, setCart }) => {
   );
 };
 
-// 결제 페이지
-const CheckoutPage = ({ go, cart }) => {
+// 결제 페이지 — 회원 전용 + 무통장 입금 단일 흐름
+const CheckoutPage = ({ go, cart, user }) => {
   const book = window.WANGSADEUL_DATA.book;
-  const price = cart ? cart.price : book.priceKR;
-  const qty = cart ? cart.qty : 1;
   const version = cart ? cart.version : "KR";
-  const subtotal = price * qty;
+  const qty = cart ? cart.qty : 1;
+  const unit = version === "EN" ? book.priceEN : book.priceKR;
+  const subtotal = unit * qty;
   const shipping = subtotal >= 30000 ? 0 : 3000;
   const total = subtotal + shipping;
 
-  const [step, setStep] = React.useState(1);
-  const [method, setMethod] = React.useState("카드");
-  const [complete, setComplete] = React.useState(false);
+  const bank = (window.WSD_LECTURES?.getBankAccount?.() || window.WSD_STORES.bankAccount || {});
+  const [recipient, setRecipient] = React.useState(user?.name || "");
+  const [phone, setPhone] = React.useState("");
+  const [address, setAddress] = React.useState("");
+  const [addressDetail, setAddressDetail] = React.useState("");
+  const [memo, setMemo] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [submittedOrder, setSubmittedOrder] = React.useState(null);
 
-  if (complete) {
+  // 비로그인 차단 안내
+  if (!user) {
     return (
       <div className="section">
-        <div className="container" style={{maxWidth:600, textAlign:'center'}}>
-          <div style={{marginBottom:40, display:'inline-block'}}>
-            <IlwolMark size={60}/>
-          </div>
-          <div className="mono gold" style={{fontSize:12, letterSpacing:'0.3em', marginBottom:16}}>ORDER COMPLETE</div>
-          <h1 style={{fontFamily:'var(--font-serif)', fontSize:44, fontWeight:500, marginBottom:20}}>
-            주문이 <span className="accent">접수</span>되었습니다
-          </h1>
-          <p className="dim" style={{fontSize:15, lineHeight:1.8, marginBottom:40}}>
-            주문번호 <span className="gold mono">WSD-2026-04-{Math.floor(Math.random()*9000+1000)}</span><br/>
-            영수증이 이메일로 발송되었습니다. 평일 기준 1-2일 내 발송됩니다.
+        <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
+          <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:16}}>CHECKOUT · 결제</div>
+          <h1 className="ko-serif" style={{fontSize:32, marginBottom:20}}>회원 전용 주문</h1>
+          <p className="dim" style={{fontSize:15, lineHeight:1.8, marginBottom:32}}>
+            『왕의길』 주문은 <strong className="gold">회원가입한 분</strong>만 가능합니다.
+            로그인 후 다시 시도해 주세요.
           </p>
-          <div className="card card-gold" style={{textAlign:'left', marginBottom:32}}>
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
-              <span className="dim">『왕의길』 ({version === "KR" ? "국문판" : "영문판"}) × {qty}</span>
-              <span>{subtotal.toLocaleString()}원</span>
-            </div>
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:16}}>
-              <span className="dim">배송비</span>
-              <span>{shipping === 0 ? "무료" : `${shipping.toLocaleString()}원`}</span>
-            </div>
-            <div style={{display:'flex', justifyContent:'space-between', paddingTop:16, borderTop:'1px solid var(--line)'}}>
-              <span>결제금액</span>
-              <span className="gold-2 ko-serif" style={{fontSize:22}}>{total.toLocaleString()}원</span>
-            </div>
-          </div>
-          <div style={{display:'flex', gap:12, justifyContent:'center'}}>
-            <button className="btn" onClick={() => go("home")}>홈으로</button>
-            <button className="btn btn-gold">주문 상세 보기</button>
+          <div style={{display:'flex', gap:10, justifyContent:'center'}}>
+            <button className="btn btn-gold" onClick={() => go('login')}>로그인</button>
+            <button className="btn" onClick={() => go('signup')}>회원가입</button>
+            <button className="btn btn-ghost" onClick={() => go('book')}>책 정보로 돌아가기</button>
           </div>
         </div>
       </div>
     );
   }
 
+  // 주문 완료 화면
+  if (submittedOrder) {
+    return (
+      <div className="section">
+        <div className="container" style={{maxWidth:600, textAlign:'center'}}>
+          <div style={{marginBottom:40, display:'inline-block'}}>
+            <IlwolMark size={60}/>
+          </div>
+          <div className="mono gold" style={{fontSize:12, letterSpacing:'0.3em', marginBottom:16}}>ORDER RECEIVED</div>
+          <h1 style={{fontFamily:'var(--font-serif)', fontSize:40, fontWeight:500, marginBottom:20}}>
+            주문이 <span className="accent">접수</span>되었습니다
+          </h1>
+          <p className="dim" style={{fontSize:15, lineHeight:1.8, marginBottom:32}}>
+            주문번호 <span className="gold mono">{submittedOrder.orderNo}</span><br/>
+            아래 계좌로 입금이 확인되면 발송 준비를 시작합니다.
+          </p>
+
+          {/* 무통장 입금 안내 */}
+          <div className="card card-gold" style={{textAlign:'left', marginBottom:24, padding:24}}>
+            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>BANK TRANSFER</div>
+            {bank.accountNumber ? (
+              <div style={{display:'grid', gap:8}}>
+                <div style={{display:'flex', justifyContent:'space-between', gap:12, paddingBottom:8, borderBottom:'1px dashed var(--line)'}}>
+                  <span className="dim">은행</span><span>{bank.bankName || '-'}</span>
+                </div>
+                <div style={{display:'flex', justifyContent:'space-between', gap:12, paddingBottom:8, borderBottom:'1px dashed var(--line)'}}>
+                  <span className="dim">계좌번호</span><span className="gold mono">{bank.accountNumber}</span>
+                </div>
+                <div style={{display:'flex', justifyContent:'space-between', gap:12, paddingBottom:8, borderBottom:'1px dashed var(--line)'}}>
+                  <span className="dim">예금주</span><span>{bank.holder || '-'}</span>
+                </div>
+                <div style={{display:'flex', justifyContent:'space-between', gap:12, paddingBottom:8, borderBottom:'1px dashed var(--line)'}}>
+                  <span className="dim">금액</span>
+                  <span className="gold ko-serif" style={{fontSize:22}}>{submittedOrder.total.toLocaleString()}원</span>
+                </div>
+                <p className="dim" style={{fontSize:12, lineHeight:1.7, marginTop:6}}>
+                  입금자명에 <strong className="gold">{submittedOrder.recipient}</strong> 또는 주문번호 <strong className="gold">{submittedOrder.orderNo}</strong>를 남겨 주세요.
+                </p>
+              </div>
+            ) : (
+              <p className="dim" style={{fontSize:13, color:'var(--danger)'}}>
+                계좌번호가 아직 등록되지 않았습니다. 운영자에게 문의해 주세요.
+              </p>
+            )}
+          </div>
+
+          <div className="card" style={{textAlign:'left', marginBottom:32, padding:20}}>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:12}}>ORDER SUMMARY</div>
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
+              <span className="dim">『왕의길』 ({submittedOrder.version === "KR" ? "국문판" : "영문판"}) × {submittedOrder.qty}</span>
+              <span>{submittedOrder.subtotal.toLocaleString()}원</span>
+            </div>
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
+              <span className="dim">배송비</span>
+              <span>{submittedOrder.shipping === 0 ? '무료' : `${submittedOrder.shipping.toLocaleString()}원`}</span>
+            </div>
+            <div style={{display:'flex', justifyContent:'space-between', paddingTop:12, borderTop:'1px solid var(--line)', marginTop:6}}>
+              <span>결제 금액</span>
+              <span className="gold-2 ko-serif" style={{fontSize:22}}>{submittedOrder.total.toLocaleString()}원</span>
+            </div>
+            <div style={{marginTop:14, paddingTop:12, borderTop:'1px dashed var(--line)', fontSize:13, lineHeight:1.7}}>
+              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>SHIPPING TO</div>
+              {submittedOrder.recipient} · {submittedOrder.phone}<br/>
+              {submittedOrder.address}{submittedOrder.addressDetail && ` ${submittedOrder.addressDetail}`}
+              {submittedOrder.memo && <div className="dim-2" style={{fontSize:12, marginTop:4}}>· {submittedOrder.memo}</div>}
+            </div>
+          </div>
+
+          <div style={{display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap'}}>
+            <button className="btn" onClick={() => go("home")}>홈으로</button>
+            <button className="btn btn-gold" onClick={() => go("mypage")}>주문 내역 보기</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const submit = (e) => {
+    e.preventDefault();
+    setError("");
+    if (!recipient.trim()) return setError("받는 분 이름을 입력해 주세요.");
+    if (!phone.trim()) return setError("연락처를 입력해 주세요.");
+    if (!address.trim()) return setError("기본 주소를 입력해 주세요.");
+    const result = window.WSD_BOOK_ORDERS.createOrder({
+      userId: user.id,
+      version,
+      qty,
+      recipient: recipient.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+      addressDetail: addressDetail.trim(),
+      memo: memo.trim(),
+    });
+    if (!result.ok) return setError(result.message || "주문 처리에 실패했습니다.");
+    setSubmittedOrder(result.order);
+  };
+
   return (
     <div className="section">
       <div className="container">
-        <div style={{marginBottom:40}}>
+        <div style={{marginBottom:32}}>
           <div className="section-eyebrow">CHECKOUT · 결제</div>
           <h1 className="section-title">주문 / <span className="accent">결제</span></h1>
+          <p className="dim" style={{fontSize:13, lineHeight:1.8, marginTop:14, maxWidth:680}}>
+            현재 결제 수단은 <strong className="gold">무통장 입금</strong>만 지원합니다. 주문 후 안내된 계좌로 입금하시면 운영자가 확인 후 발송을 시작합니다.
+          </p>
         </div>
 
-        {/* Step indicator */}
-        <div style={{display:'flex', gap:0, marginBottom:60, borderBottom:'1px solid var(--line)'}}>
-          {["배송 정보", "결제 수단", "최종 확인"].map((s, i) => (
-            <div key={i}
-              onClick={() => setStep(i+1)}
-              style={{
-                flex:1, padding:'20px', textAlign:'center', cursor:'pointer',
-                borderBottom: step === i+1 ? '2px solid var(--gold)' : '2px solid transparent',
-                marginBottom:-1,
-              }}>
-              <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', color: step >= i+1 ? 'var(--gold)' : 'var(--ink-3)'}}>
-                STEP 0{i+1}
+        <form onSubmit={submit} style={{display:'grid', gridTemplateColumns:'1.4fr 1fr', gap:60}}>
+          <div>
+            <h3 className="ko-serif" style={{fontSize:22, marginBottom:20}}>배송 정보</h3>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:20}}>
+              <div className="field">
+                <label className="field-label" htmlFor="ck-name">받는 분 <span className="gold" aria-hidden="true">*</span></label>
+                <input id="ck-name" className="field-input" value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="이름"/>
               </div>
-              <div className="ko-serif" style={{fontSize:17, color: step === i+1 ? 'var(--gold)' : step > i+1 ? 'var(--ink)' : 'var(--ink-3)', marginTop:4}}>
-                {s}
+              <div className="field">
+                <label className="field-label" htmlFor="ck-phone">연락처 <span className="gold" aria-hidden="true">*</span></label>
+                <input id="ck-phone" className="field-input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000"/>
               </div>
             </div>
-          ))}
-        </div>
+            <div className="field">
+              <label className="field-label" htmlFor="ck-addr">기본 주소 <span className="gold" aria-hidden="true">*</span></label>
+              <input id="ck-addr" className="field-input" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="우편번호 + 기본 주소"/>
+            </div>
+            <div className="field">
+              <label className="field-label" htmlFor="ck-addr2">상세 주소</label>
+              <input id="ck-addr2" className="field-input" value={addressDetail} onChange={(e) => setAddressDetail(e.target.value)} placeholder="동/호수 등"/>
+            </div>
+            <div className="field">
+              <label className="field-label" htmlFor="ck-memo">배송 메모</label>
+              <textarea id="ck-memo" className="field-input" value={memo} onChange={(e) => setMemo(e.target.value)}
+                placeholder="부재 시 경비실에 맡겨주세요" style={{minHeight:80, resize:'vertical'}}/>
+            </div>
 
-        <div style={{display:'grid', gridTemplateColumns:'1.4fr 1fr', gap:60}}>
-          <div>
-            {step === 1 && (
-              <div>
-                <h3 className="ko-serif" style={{fontSize:22, marginBottom:24}}>배송 정보</h3>
-                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:20}}>
-                  <div className="field">
-                    <div className="field-label">받는 분</div>
-                    <input className="field-input" placeholder="이름"/>
-                  </div>
-                  <div className="field">
-                    <div className="field-label">연락처</div>
-                    <input className="field-input" placeholder="010-0000-0000"/>
-                  </div>
+            <h3 className="ko-serif" style={{fontSize:22, marginTop:24, marginBottom:14}}>결제 수단</h3>
+            <div className="card" style={{padding:18}}>
+              <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:10}}>
+                <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--gold)', border:'1px solid var(--gold-dim)', padding:'1px 6px'}}>BANK TRANSFER</span>
+                <span className="ko-serif" style={{fontSize:16}}>무통장 입금</span>
+              </div>
+              {bank.accountNumber ? (
+                <div className="dim" style={{fontSize:13, lineHeight:1.8}}>
+                  주문 접수 후 <strong className="gold">{bank.bankName} {bank.accountNumber} ({bank.holder})</strong> 계좌로 입금하시면 운영자가 확인 후 발송을 시작합니다.
                 </div>
-                <div className="field">
-                  <div className="field-label">주소</div>
-                  <input className="field-input" placeholder="우편번호" style={{marginBottom:10}}/>
-                  <input className="field-input" placeholder="기본 주소" style={{marginBottom:10}}/>
-                  <input className="field-input" placeholder="상세 주소"/>
+              ) : (
+                <div style={{fontSize:13, lineHeight:1.8, color:'var(--danger)'}}>
+                  운영자 계좌번호가 아직 등록되지 않았습니다. 잠시 후 다시 시도해 주세요.
                 </div>
-                <div className="field">
-                  <div className="field-label">배송 메모</div>
-                  <textarea className="field-input" placeholder="부재 시 경비실에 맡겨주세요" style={{minHeight:80, resize:'vertical'}}/>
-                </div>
-                <button className="btn btn-gold btn-block" onClick={() => setStep(2)}>다음 단계 →</button>
+              )}
+            </div>
+
+            {error && (
+              <div role="alert" style={{padding:'12px 16px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:13, marginTop:20}}>
+                {error}
               </div>
             )}
 
-            {step === 2 && (
-              <div>
-                <h3 className="ko-serif" style={{fontSize:22, marginBottom:24}}>결제 수단</h3>
-                <div style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:12, marginBottom:32}}>
-                  {["카드", "계좌이체", "간편결제", "무통장"].map(m => (
-                    <button key={m}
-                      onClick={() => setMethod(m)}
-                      style={{
-                        padding:'24px 12px',
-                        border: method === m ? '1px solid var(--gold)' : '1px solid var(--line-2)',
-                        background: method === m ? 'rgba(212,175,55,0.05)' : 'transparent',
-                        color: method === m ? 'var(--gold)' : 'var(--ink-2)',
-                        fontFamily:'var(--font-serif)',
-                        fontSize:16,
-                      }}>{m}</button>
-                  ))}
-                </div>
-                {method === "카드" && (
-                  <>
-                    <div className="field">
-                      <div className="field-label">카드 번호</div>
-                      <input className="field-input" placeholder="0000  0000  0000  0000"/>
-                    </div>
-                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:20}}>
-                      <div className="field">
-                        <div className="field-label">유효기간</div>
-                        <input className="field-input" placeholder="MM/YY"/>
-                      </div>
-                      <div className="field">
-                        <div className="field-label">CVC</div>
-                        <input className="field-input" placeholder="•••"/>
-                      </div>
-                      <div className="field">
-                        <div className="field-label">할부</div>
-                        <select className="field-input">
-                          <option>일시불</option>
-                          <option>3개월</option>
-                          <option>6개월</option>
-                        </select>
-                      </div>
-                    </div>
-                  </>
-                )}
-                {method !== "카드" && (
-                  <div style={{padding:40, border:'1px dashed var(--line-2)', textAlign:'center', color:'var(--ink-3)', fontSize:13}}>
-                    <div className="mono" style={{letterSpacing:'0.2em'}}>{method.toUpperCase()} 결제 창이 열립니다</div>
-                  </div>
-                )}
-                <div style={{display:'flex', gap:12, marginTop:32}}>
-                  <button className="btn btn-block" onClick={() => setStep(1)}>← 이전</button>
-                  <button className="btn btn-gold btn-block" onClick={() => setStep(3)}>다음 단계 →</button>
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div>
-                <h3 className="ko-serif" style={{fontSize:22, marginBottom:24}}>최종 확인</h3>
-                <div className="card" style={{marginBottom:20}}>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>SHIPPING TO</div>
-                  <div className="ko-serif" style={{fontSize:15, lineHeight:1.7}}>
-                    홍길동 · 010-0000-0000<br/>
-                    서울 종로구 사직로 102, 1층<br/>
-                    <span className="dim-2" style={{fontSize:12}}>부재 시 경비실에 맡겨주세요</span>
-                  </div>
-                </div>
-                <div className="card" style={{marginBottom:20}}>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>PAYMENT</div>
-                  <div className="ko-serif" style={{fontSize:15}}>{method} · 일시불</div>
-                </div>
-                <label style={{display:'flex', gap:12, alignItems:'center', padding:'16px 0', fontSize:13, color:'var(--ink-2)'}}>
-                  <input type="checkbox" defaultChecked style={{accentColor:'var(--gold)'}}/>
-                  주문 내용을 확인하였으며 결제에 동의합니다
-                </label>
-                <div style={{display:'flex', gap:12, marginTop:24}}>
-                  <button className="btn btn-block" onClick={() => setStep(2)}>← 이전</button>
-                  <button className="btn btn-gold btn-block" onClick={() => setComplete(true)}>결제하기 · {total.toLocaleString()}원</button>
-                </div>
-              </div>
-            )}
+            <div style={{display:'flex', gap:12, marginTop:24}}>
+              <button type="button" className="btn btn-block" onClick={() => go("book")}>← 책 정보</button>
+              <button type="submit" className="btn btn-gold btn-block" disabled={!bank.accountNumber}>주문 접수 · {total.toLocaleString()}원</button>
+            </div>
           </div>
 
           {/* Summary */}
@@ -404,7 +417,7 @@ const CheckoutPage = ({ go, cart }) => {
                 <div>
                   <div className="ko-serif" style={{fontSize:17, marginBottom:4}}>『왕의길』</div>
                   <div className="dim-2 mono" style={{fontSize:11}}>{version === "KR" ? "국문판" : "영문판"} · {qty}권</div>
-                  <div className="gold ko-serif" style={{fontSize:16, marginTop:8}}>{(price * qty).toLocaleString()}원</div>
+                  <div className="gold ko-serif" style={{fontSize:16, marginTop:8}}>{subtotal.toLocaleString()}원</div>
                 </div>
               </div>
               <div style={{display:'flex', justifyContent:'space-between', padding:'10px 0', color:'var(--ink-2)'}}>
@@ -421,16 +434,16 @@ const CheckoutPage = ({ go, cart }) => {
               </div>
 
               <div style={{marginTop:24, padding:'16px', background:'rgba(212,175,55,0.04)', border:'1px dashed var(--gold-dim)'}}>
-                <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>◆ 회원 혜택</div>
+                <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>◆ 운영 안내</div>
                 <div className="dim" style={{fontSize:12, lineHeight:1.7}}>
-                  · 10% 포인트 적립<br/>
-                  · 사인본 우선 배정<br/>
-                  · 답사 프로그램 우선 예약
+                  · 입금 확인 후 평일 1-2일 내 발송<br/>
+                  · 3만원 이상 무료배송<br/>
+                  · 주문 취소·환불은 마이페이지에서 요청
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

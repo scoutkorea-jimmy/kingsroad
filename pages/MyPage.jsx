@@ -17,6 +17,23 @@ const MyPage = ({ go, user, cart }) => {
   const myLectureRegs = user
     ? (window.WSD_LECTURES?.listMyRegistrations?.(user.id) || [])
     : [];
+  const myOrders = user
+    ? (window.WSD_BOOK_ORDERS?.listMine?.(user.id) || [])
+    : [];
+  const orderStatusLabel = (s) => ({
+    pending_payment: '입금 대기',
+    paid: '입금 확인 · 발송 준비',
+    shipped: '배송중',
+    delivered: '배송 완료',
+    cancelled: '취소됨',
+  }[s] || s);
+  const orderStatusTone = (s) => ({
+    pending_payment: 'var(--ink-2)',
+    paid: 'var(--gold)',
+    shipped: 'var(--gold)',
+    delivered: 'var(--gold)',
+    cancelled: 'var(--danger)',
+  }[s] || 'var(--ink-2)');
 
   const goToPost = (postId) => {
     try { sessionStorage.setItem('wsd_pending_post_id', String(postId)); } catch {}
@@ -167,14 +184,48 @@ const MyPage = ({ go, user, cart }) => {
           </article>
 
           <article className="card">
-            <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>ORDER STATUS</div>
-            <h3 className="ko-serif" style={{ fontSize: 20, marginBottom: 10 }}>{cart ? "주문 진행 중" : "주문 없음"}</h3>
-            <p className="dim" style={{ fontSize: 13, lineHeight: 1.8, marginBottom: 16 }}>
-              {cart ? `${cart.title} · ${cart.option} · ${cart.qty}권` : "현재 장바구니 또는 진행 중인 주문이 없습니다."}
-            </p>
-            <button type="button" className="btn btn-small" onClick={() => go(cart ? "checkout" : "book")}>
-              {cart ? "주문 계속하기" : "책 보러 가기"}
-            </button>
+            <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>『왕의길』 ORDERS</div>
+            <h3 className="ko-serif" style={{ fontSize: 20, marginBottom: 10 }}>
+              내 주문 내역 <span className="dim-2 mono" style={{ fontSize: 12 }}>{myOrders.length}건</span>
+            </h3>
+            {myOrders.length === 0 ? (
+              <>
+                <p className="dim" style={{ fontSize: 13, lineHeight: 1.8, marginBottom: 14 }}>
+                  {cart ? '결제 단계로 이동해 주문을 마무리하세요.' : '아직 주문 내역이 없습니다.'}
+                </p>
+                <button type="button" className="btn btn-small" onClick={() => go(cart ? "checkout" : "book")}>
+                  {cart ? "주문 계속하기" : "책 보러 가기"}
+                </button>
+              </>
+            ) : (
+              <>
+                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10, marginBottom: 14 }}>
+                  {myOrders.slice(0, 4).map((o) => (
+                    <li key={o.id}
+                      style={{
+                        padding: '10px 12px',
+                        borderLeft: `2px solid ${orderStatusTone(o.status)}`,
+                        background: 'rgba(212,175,55,0.04)',
+                      }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline', marginBottom: 4 }}>
+                        <span className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.16em' }}>{o.orderNo}</span>
+                        <span className="mono" style={{ fontSize: 10, letterSpacing: '0.16em', color: orderStatusTone(o.status) }}>{orderStatusLabel(o.status)}</span>
+                      </div>
+                      <div style={{ fontSize: 13, lineHeight: 1.5 }}>
+                        『왕의길』 · {o.version === 'KR' ? '국문판' : '영문판'} × {o.qty} · <span className="gold">{o.total.toLocaleString()}원</span>
+                      </div>
+                      {o.tracking && (
+                        <div className="dim-2 mono" style={{ fontSize: 10, marginTop: 4 }}>송장 {o.tracking}</div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                {myOrders.length > 4 && (
+                  <div className="dim-2 mono" style={{ fontSize: 11, textAlign: 'right', marginBottom: 8 }}>외 {myOrders.length - 4}건</div>
+                )}
+                <button type="button" className="btn btn-small" onClick={() => go("book")}>책 정보 다시 보기</button>
+              </>
+            )}
           </article>
         </div>
 
