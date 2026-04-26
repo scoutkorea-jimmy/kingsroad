@@ -13,34 +13,33 @@ This document fixes the current implementation priority order so context is not 
 | P1 | Admin publishing to public site connection | ✅ 완료 | Admin actions must appear on the public site to be meaningful | Admin-created columns and managed content appear on public pages |
 | P2 | Community serverization | ✅ 완료 | This area already has the most UI and interaction work done | Posts, comments, replies, likes, bookmarks, reports, notifications, badges |
 | P2 | Admin operational tooling | ✅ 완료 | Some actions are named but not truly functional yet | Member management, audit log, auto-grade promotion, legal/FAQ editing |
-| P3 | External DB + server auth migration | 미착수 | local-first is the single biggest blocker to real operations | Real users can register and data persists across devices/browsers |
-| P3 | PG payment integration | 미착수 | Bank transfer is a temporary workaround for lectures, tours, and books | Actual payment gateway wired to all three purchase flows |
-| P4 | Image external storage | 미착수 | base64 in localStorage will hit quota in real operations | Images stored outside localStorage (S3 / Cloudflare R2 or similar) |
-| P4 | Email notifications | 미착수 | D-1 reminders and status-change emails are expected by users | Lecture/tour D-1 alert, order status change email |
-| P5 | Refund / cancellation flow | ✅ 완료 | Cancellation exists but actual refund processing is manual | Refund request + admin processing + status tracking |
+| P3 | External DB + server auth migration | 🔜 착수 예정 — Cloudflare | local-first is the single biggest blocker to real operations | Real users can register and data persists across devices/browsers |
+| P3 | PG payment integration | 🔜 스켈레톤 추가 예정 (비활성화) | Bank transfer is a temporary workaround for lectures, tours, and books | UI skeleton wired, payment disabled until provider is contracted |
+| P4 | Image external storage | 미착수 | base64 in localStorage will hit quota in real operations | Images stored outside localStorage (Cloudflare R2) |
+| P4 | Email notifications | 🔜 비활성화 상태로 착수 예정 | D-1 reminders and status-change emails are expected by users | Infrastructure wired but sending disabled; activate when provider is ready |
+| P5 | Refund / cancellation flow (book) | ✅ 완료 | Cancellation exists but actual refund processing is manual | Refund request + admin processing + status tracking — books only |
+| P5 | Refund / cancellation flow (lecture/tour) | ⚠️ 미완 | Book has refund flow but lectures/tours still lack request→approve cycle | Same requestRefund/approveRefund/rejectRefund pattern applied to lectures and tours |
 | P5 | Full-text search + sort options | ✅ 완료 | Community search is title-only, no sort options | Search body text, sort by popularity/comments |
 | P5 | Book reader reviews | ✅ 완료 | Book detail page has hardcoded dummy reviews | Real user reviews wired to `WSD_BOOK_ORDERS` confirmed orders |
 
-## Decisions Needed From User
+## Decisions Made
 
-| Topic | Decisions Needed |
-|---|---|
-| Authentication | External auth provider (Firebase / Supabase / custom) or keep extending local-first |
-| Database | Backend approach — Firebase Firestore, Supabase, or custom API |
-| Payment | PG provider (KG이니시스, 토스페이먼츠, 포트원 등) and currency handling for EN edition |
-| Image storage | S3 / Cloudflare R2 / Supabase Storage — pick one before image quota hits |
-| Email | Email service provider for transactional emails (Resend, SendGrid, etc.) |
-| Refund policy | How refunds are processed and who approves |
+| Topic | Decision | Date |
+|---|---|---|
+| Authentication | Cloudflare (Workers + D1 or KV) — migrate from local-first | 2026-04-27 |
+| Database | Cloudflare D1 (SQLite-compatible) — same ecosystem as Workers | 2026-04-27 |
+| Payment | PG 스켈레톤 먼저 추가, 실제 연동은 제공사 계약 후 활성화 | 2026-04-27 |
+| Image storage | Cloudflare R2 — consistent with CF ecosystem decision | 2026-04-27 |
+| Email | 비활성화 상태로 인프라 준비, 제공사 미결정 | 2026-04-27 |
+| Refund policy | 관리자 수동 승인(책 구현됨). 강연/투어 동일 패턴 적용 예정 | 2026-04-27 |
 
-## Recommended Order
+## Recommended Order (Updated)
 
-1. External DB + server auth (unblocks everything else)
-2. PG payment integration
-3. Image external storage
-4. Email notifications
-5. Refund / cancellation flow
-6. Full-text search + sort
-7. Book reader reviews
+1. **Cloudflare 마이그레이션** — Workers + D1 + KV + R2 통합 설계
+2. **PG 결제 스켈레톤** — UI 먼저, 실결제는 비활성화
+3. **강연/투어 환불 신청 흐름** — 책과 동일한 requestRefund 패턴
+4. **이메일 알림 인프라** — 비활성화 상태로 hook 먼저 추가
+5. **마이페이지 프로필 수정 / 비밀번호 변경** — Cloudflare 인증 후 의미 있어짐
 
 ## P1 Status
 
@@ -61,7 +60,7 @@ This document fixes the current implementation priority order so context is not 
 
 - 현재 프로젝트는 GitHub Pages 정적 배포가 운영 기준이므로, 외부 서버 없이도 명확한 인증/저장 구조가 있어야 했다.
 - P1의 목표는 "외부 서버 즉시 도입"이 아니라 "확장 가능한 저장 구조를 먼저 확정하는 것"이었다.
-- 이후 외부 DB나 API를 도입할 때는 현재 엔티티 구조를 유지한 채 저장소 구현만 교체하는 방향으로 진행한다.
+- Cloudflare 마이그레이션 시 helper 계층은 유지하고 저장소 구현만 교체하는 방향으로 진행한다.
 
 ## P2 Status
 
@@ -79,26 +78,29 @@ This document fixes the current implementation priority order so context is not 
   - `WSD_GRADE_PROMO` — 활동 기반 자동 등급 승격
   - `LegalAdminPanel / FaqAdminPanel` + 공개 `LegalPage / FaqPage`
 
-### P2 이후 미착수 항목 (추후 고도화)
+### P2 이후 완료된 항목 (P5)
 
-- 커뮤니티 본문 검색 (현재 제목만)
-- 정렬 다양화 (현재 최신순만)
+- 커뮤니티 본문+제목 검색 ✅
+- 정렬 다양화(최신·조회·댓글·좋아요순) ✅
+- 책 독자 리뷰 연동 ✅
+- 책 환불/취소 신청 흐름 ✅
+
+### P2 이후 미착수 항목
+
 - 인기글 / 주간 트렌드
-- 이미지 외부 스토리지 (현재 base64 in-localStorage)
+- 이미지 외부 스토리지 (P4 — Cloudflare R2)
 
 ## P3+ Status
 
 ### 진행 중 / 예정
 
-모든 P3+ 항목은 미착수 상태. 우선순위 순:
-
-1. 외부 DB + 서버 인증 전환 **(P3 — 1순위)**
-2. PG 결제 연동 **(P3 — 2순위)**
-3. 이미지 외부 스토리지 **(P4)**
-4. 이메일 알림 인프라 **(P4)**
-5. 환불 처리 흐름 **(P5 — ✅ 완료)**
-6. 본문 검색·정렬 다양화 **(P5 — ✅ 완료)**
-7. 독자 리뷰 연동 (책) **(P5 — ✅ 완료)**
+| # | 항목 | 상태 | 비고 |
+|---|------|------|------|
+| 1 | Cloudflare 마이그레이션 (DB + 인증 + 이미지) | 🔜 착수 예정 | Workers + D1 + R2 통합 설계 필요 |
+| 2 | PG 결제 스켈레톤 | 🔜 착수 예정 | UI만 추가, 실결제 비활성화 |
+| 3 | 강연/투어 환불 신청 흐름 | ⚠️ 누락 — 조기 착수 권장 | 책과 동일한 패턴, 단독 PR 가능 |
+| 4 | 이메일 알림 인프라 | 🔜 착수 예정 (비활성화) | hook 먼저, 발송은 제공사 결정 후 |
+| 5 | 마이페이지 프로필/비밀번호 수정 | 미착수 | Cloudflare 인증 후 의미 있어짐 |
 
 ## File Naming Rule
 
