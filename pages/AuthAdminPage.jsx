@@ -2127,12 +2127,14 @@ const BookOrderAdminPanel = ({ go }) => {
   const refresh = () => setTick((v) => v + 1);
 
   const orders = React.useMemo(() => window.WSD_BOOK_ORDERS.listByStatus(filter), [filter, tick]);
+  const [rejectNotes, setRejectNotes] = React.useState({});
   const counts = React.useMemo(() => ({
     all: window.WSD_BOOK_ORDERS.listAll().length,
     pending_payment: window.WSD_BOOK_ORDERS.listByStatus('pending_payment').length,
     paid: window.WSD_BOOK_ORDERS.listByStatus('paid').length,
     shipped: window.WSD_BOOK_ORDERS.listByStatus('shipped').length,
     delivered: window.WSD_BOOK_ORDERS.listByStatus('delivered').length,
+    refund_requested: window.WSD_BOOK_ORDERS.listByStatus('refund_requested').length,
     cancelled: window.WSD_BOOK_ORDERS.listByStatus('cancelled').length,
   }), [tick]);
 
@@ -2152,6 +2154,7 @@ const BookOrderAdminPanel = ({ go }) => {
     paid: '입금 확인',
     shipped: '배송중',
     delivered: '배송 완료',
+    refund_requested: '환불 신청',
     cancelled: '취소됨',
   }[s] || s);
 
@@ -2160,6 +2163,7 @@ const BookOrderAdminPanel = ({ go }) => {
     paid: 'var(--gold)',
     shipped: 'var(--gold)',
     delivered: 'var(--gold-2)',
+    refund_requested: '#e8a020',
     cancelled: 'var(--danger)',
   }[s] || 'var(--ink-2)');
 
@@ -2174,12 +2178,13 @@ const BookOrderAdminPanel = ({ go }) => {
       <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', flexWrap:'wrap', marginBottom:18}}>
         <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
           {[
-            { key: 'pending_payment', label: '입금 대기' },
-            { key: 'paid',            label: '입금 확인' },
-            { key: 'shipped',         label: '배송중' },
-            { key: 'delivered',       label: '배송 완료' },
-            { key: 'cancelled',       label: '취소' },
-            { key: 'all',             label: '전체' },
+            { key: 'pending_payment',  label: '입금 대기' },
+            { key: 'paid',             label: '입금 확인' },
+            { key: 'shipped',          label: '배송중' },
+            { key: 'delivered',        label: '배송 완료' },
+            { key: 'refund_requested', label: '환불 신청' },
+            { key: 'cancelled',        label: '취소' },
+            { key: 'all',              label: '전체' },
           ].map((f) => (
             <button key={f.key} type="button" className="btn btn-small"
               onClick={() => setFilter(f.key)}
@@ -2284,6 +2289,41 @@ const BookOrderAdminPanel = ({ go }) => {
                     style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>
                     주문 취소
                   </button>
+                )}
+                {o.status === 'refund_requested' && (
+                  <>
+                    <div style={{width:'100%', paddingTop:8, borderTop:'1px solid var(--line)', marginTop:4}}>
+                      <div style={{display:'flex', gap:6, alignItems:'center', marginBottom:6}}>
+                        <span className="mono" style={{fontSize:10, color:'#e8a020', letterSpacing:'0.2em'}}>REFUND REQUEST</span>
+                        <span className="dim" style={{fontSize:12}}>사유: {o.refundReason || '(미입력)'}</span>
+                      </div>
+                      <div style={{display:'flex', gap:6, alignItems:'center', flexWrap:'wrap'}}>
+                        <button type="button" className="btn btn-small"
+                          onClick={() => {
+                            if (!confirm(`환불을 승인하시겠어요? 주문 ${o.orderNo}이 취소됩니다.`)) return;
+                            window.WSD_BOOK_ORDERS.approveRefund(o.id);
+                            refresh();
+                          }}
+                          style={{borderColor:'var(--gold)', color:'var(--gold)'}}>
+                          환불 승인
+                        </button>
+                        <input className="field-input"
+                          placeholder="반려 사유 (선택)"
+                          style={{padding:'5px 8px', fontSize:12, maxWidth:200}}
+                          value={rejectNotes[o.id] || ''}
+                          onChange={(e) => setRejectNotes({ ...rejectNotes, [o.id]: e.target.value })}/>
+                        <button type="button" className="btn btn-small"
+                          onClick={() => {
+                            if (!confirm(`환불 신청을 반려하시겠어요?`)) return;
+                            window.WSD_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || '');
+                            refresh();
+                          }}
+                          style={{borderColor:'var(--danger)', color:'var(--danger)'}}>
+                          환불 반려
+                        </button>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </article>
@@ -2865,12 +2905,13 @@ const AdminPage = ({ go }) => {
   );
   const allBookOrders = React.useMemo(() => window.WSD_BOOK_ORDERS?.listAll?.() || [], [postRefreshKey]);
   const pendingBookOrders = allBookOrders.filter((o) => o.status === 'pending_payment').length;
+  const refundRequestedOrders = allBookOrders.filter((o) => o.status === 'refund_requested').length;
   const dashboardStats = React.useMemo(() => ([
     { l: "전체 회원", v: String(allUsers.length), d: `관리자 ${allUsers.filter((user) => user.isAdmin).length}명 포함`, p: true },
     { l: "커뮤니티 게시글", v: String(allCommunityPosts.length), d: `댓글 ${totalComments}개 누적`, p: true },
     { l: "공개 칼럼", v: String(allColumns.length), d: `관리자 발행 ${(window.WSD_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published').length}건 · 임시/예약 ${(window.WSD_STORES.userColumns || []).filter((c) => c.status === 'draft' || c.status === 'scheduled').length}건`, p: true },
-    { l: "왕의길 주문", v: String(allBookOrders.length), d: `입금 대기 ${pendingBookOrders}건`, p: pendingBookOrders === 0 },
-  ]), [allUsers, allCommunityPosts, totalComments, allColumns, data, allBookOrders, pendingBookOrders]);
+    { l: "왕의길 주문", v: String(allBookOrders.length), d: `입금 대기 ${pendingBookOrders}건${refundRequestedOrders > 0 ? ` · 환불 신청 ${refundRequestedOrders}건` : ''}`, p: pendingBookOrders === 0 && refundRequestedOrders === 0 },
+  ]), [allUsers, allCommunityPosts, totalComments, allColumns, data, allBookOrders, pendingBookOrders, refundRequestedOrders]);
   const latestCommunityPost = allCommunityPosts[0] || null;
   const latestColumn = allColumns[0] || null;
   const visibleCommunityPosts = React.useMemo(() => allCommunityPosts.filter((post) => {

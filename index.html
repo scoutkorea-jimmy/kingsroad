@@ -162,7 +162,7 @@ const App = () => {
       case "terms":   return <LegalPage go={go} slug="terms"/>;
       case "faq":     return <FaqPage go={go}/>;
       case "column": return <ColumnPage go={go} user={user}/>;
-      case "book": return <BookPage go={go} cart={cart} setCart={setCart}/>;
+      case "book": return <BookPage go={go} cart={cart} setCart={setCart} user={user}/>;
       case "checkout": return <CheckoutPage go={go} cart={cart} user={user}/>;
       case "mypage": return <MyPage go={go} user={user} cart={cart}/>;
       case "login":

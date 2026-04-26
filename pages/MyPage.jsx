@@ -1,6 +1,12 @@
 // 마이페이지
 const MyPage = ({ go, user, cart }) => {
   const data = window.WANGSADEUL_DATA;
+  const [orderTick, setOrderTick] = React.useState(0);
+  const [refundTarget, setRefundTarget] = React.useState(null);
+  const [refundReason, setRefundReason] = React.useState('');
+  const [refundError, setRefundError] = React.useState('');
+  const refreshOrders = () => setOrderTick((v) => v + 1);
+
   const grades = window.WSD_STORES?.grades || [];
   const grade = grades.find((item) => item.id === user?.gradeId);
   const upcomingLecture = data.lectures?.[0];
@@ -17,9 +23,9 @@ const MyPage = ({ go, user, cart }) => {
   const myLectureRegs = user
     ? (window.WSD_LECTURES?.listMyRegistrations?.(user.id) || [])
     : [];
-  const myOrders = user
-    ? (window.WSD_BOOK_ORDERS?.listMine?.(user.id) || [])
-    : [];
+  const myOrders = React.useMemo(() =>
+    user ? (window.WSD_BOOK_ORDERS?.listMine?.(user.id) || []) : [],
+    [user, orderTick]);
   const myTourRegs = user
     ? (window.WSD_TOURS?.listMyReservations?.(user.id) || [])
     : [];
@@ -44,6 +50,7 @@ const MyPage = ({ go, user, cart }) => {
     paid: '입금 확인 · 발송 준비',
     shipped: '배송중',
     delivered: '배송 완료',
+    refund_requested: '환불 신청 중',
     cancelled: '취소됨',
   }[s] || s);
   const orderStatusTone = (s) => ({
@@ -51,6 +58,7 @@ const MyPage = ({ go, user, cart }) => {
     paid: 'var(--gold)',
     shipped: 'var(--gold)',
     delivered: 'var(--gold)',
+    refund_requested: '#e8a020',
     cancelled: 'var(--danger)',
   }[s] || 'var(--ink-2)');
 
@@ -270,16 +278,72 @@ const MyPage = ({ go, user, cart }) => {
                       {o.tracking && (
                         <div className="dim-2 mono" style={{ fontSize: 10, marginTop: 4 }}>송장 {o.tracking}</div>
                       )}
-                      <div style={{ marginTop: 6 }}>
+                      {o.refundReason && o.status === 'refund_requested' && (
+                        <div className="dim-2" style={{ fontSize: 11, marginTop: 4 }}>환불 사유: {o.refundReason}</div>
+                      )}
+                      {o.refundAdminNote && o.status !== 'refund_requested' && (
+                        <div className="dim-2" style={{ fontSize: 11, marginTop: 4 }}>운영자 메모: {o.refundAdminNote}</div>
+                      )}
+                      <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                         <button type="button" className="btn-ghost"
                           onClick={() => window.WSD_BOOK_ORDERS.downloadReceipt(o.id)}
                           style={{ fontSize: 11, color: 'var(--gold)' }}>
-                          영수증 다운로드 ↓
+                          영수증 ↓
                         </button>
+                        {o.status === 'pending_payment' && (
+                          <button type="button" className="btn-ghost"
+                            onClick={() => {
+                              if (!confirm(`주문 ${o.orderNo}을(를) 취소하시겠어요?`)) return;
+                              window.WSD_BOOK_ORDERS.cancelOrder(o.id);
+                              refreshOrders();
+                            }}
+                            style={{ fontSize: 11, color: 'var(--danger)' }}>
+                            주문 취소
+                          </button>
+                        )}
+                        {['paid', 'shipped'].includes(o.status) && (
+                          <button type="button" className="btn-ghost"
+                            onClick={() => { setRefundTarget(o); setRefundReason(''); setRefundError(''); }}
+                            style={{ fontSize: 11, color: '#e8a020' }}>
+                            환불 신청
+                          </button>
+                        )}
                       </div>
                     </li>
                   ))}
                 </ul>
+                {/* 환불 신청 폼 모달 */}
+                {refundTarget && (
+                  <div style={{ padding: '16px', border: '1px solid #e8a020', borderRadius: 4, marginBottom: 14, background: 'rgba(232,160,32,0.06)' }}>
+                    <div className="mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: '#e8a020', marginBottom: 10 }}>REFUND REQUEST · {refundTarget.orderNo}</div>
+                    <p className="dim" style={{ fontSize: 12, lineHeight: 1.7, marginBottom: 10 }}>
+                      환불 신청 후 운영자 확인을 거쳐 처리됩니다. 이미 입금된 경우 환불 계좌를 메모란에 남겨 주세요.
+                    </p>
+                    <textarea value={refundReason} onChange={e => setRefundReason(e.target.value)}
+                      placeholder="환불 사유 (필수)"
+                      className="field-input" rows={2}
+                      style={{ width: '100%', padding: '8px 10px', fontSize: 13, resize: 'vertical', marginBottom: 8 }}/>
+                    {refundError && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{refundError}</p>}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" className="btn btn-small"
+                        style={{ borderColor: '#e8a020', color: '#e8a020' }}
+                        onClick={() => {
+                          setRefundError('');
+                          if (!refundReason.trim()) { setRefundError('환불 사유를 입력해 주세요.'); return; }
+                          const result = window.WSD_BOOK_ORDERS.requestRefund(refundTarget.id, refundReason);
+                          if (!result.ok) { setRefundError(result.message); return; }
+                          setRefundTarget(null); setRefundReason('');
+                          refreshOrders();
+                        }}>
+                        신청하기
+                      </button>
+                      <button type="button" className="btn btn-small"
+                        onClick={() => { setRefundTarget(null); setRefundReason(''); setRefundError(''); }}>
+                        취소
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {myOrders.length > 4 && (
                   <div className="dim-2 mono" style={{ fontSize: 11, textAlign: 'right', marginBottom: 8 }}>외 {myOrders.length - 4}건</div>
                 )}

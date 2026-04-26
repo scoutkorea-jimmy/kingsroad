@@ -1,7 +1,8 @@
 // 메인 페이지
 const HomePage = ({ go, tweaks }) => {
   const data = window.WANGSADEUL_DATA;
-  const publicColumns = window.WSD_COLUMNS?.listPublic?.() || [...(window.WSD_STORES?.userColumns || []), ...data.columns];
+  const _cols = window.WSD_COLUMNS?.listPublic?.();
+  const publicColumns = (_cols && _cols.length) ? _cols : [...(window.WSD_STORES?.userColumns || []), ...(data.columns || [])];
   const featuredColumn = publicColumns[0];
   const secondaryColumns = publicColumns.slice(1, 5);
   const heroLayout = tweaks.heroLayout;
@@ -35,10 +36,10 @@ const HomePage = ({ go, tweaks }) => {
               <div className="section-eyebrow" style={{justifyContent:'center'}}>
                 <span>日月五峯圖 · SINCE 2024</span>
               </div>
-              <h1 style={{fontFamily:'var(--font-serif)', fontSize:'clamp(48px, 7vw, 92px)', fontWeight:500,
-                lineHeight:1.05, letterSpacing:'-0.02em', marginBottom:24}}>
+              <h1 style={{fontFamily:'var(--font-hero)', fontSize:'clamp(48px, 7vw, 92px)', fontWeight:'normal',
+                lineHeight:1.05, letterSpacing:'-0.01em', marginBottom:24}}>
                 다섯 봉우리 아래,<br/>
-                <span style={{color:'var(--gold)', fontStyle:'italic'}}>왕의 길</span>을 다시 읽다
+                <span style={{color:'var(--gold)'}}>왕의 길</span>을 다시 읽다
               </h1>
               <p className="dim" style={{fontSize:17, lineHeight:1.8, maxWidth:560, margin:'0 auto 40px'}}>
                 조선 500년, 어좌 뒤에 펼쳐진 일월오봉도. 그 앞에 섰던 군주들의 질문을 오늘의 언어로 이어가는 커뮤니티.
@@ -58,10 +59,10 @@ const HomePage = ({ go, tweaks }) => {
           <div className="container" style={{display:'grid', gridTemplateColumns:'1fr 1.2fr', gap:60, alignItems:'center', minHeight:'80vh', paddingTop:40}}>
             <div>
               <div className="section-eyebrow">日月五峯圖 · SINCE 2024</div>
-              <h1 style={{fontFamily:'var(--font-serif)', fontSize:'clamp(42px, 5vw, 72px)', fontWeight:500,
-                lineHeight:1.08, letterSpacing:'-0.02em', marginBottom:24}}>
+              <h1 style={{fontFamily:'var(--font-hero)', fontSize:'clamp(42px, 5vw, 72px)', fontWeight:'normal',
+                lineHeight:1.08, letterSpacing:'-0.01em', marginBottom:24}}>
                 다섯 봉우리 아래,<br/>
-                <span style={{color:'var(--gold)', fontStyle:'italic'}}>왕의 길</span>을<br/>
+                <span style={{color:'var(--gold)'}}>왕의 길</span>을<br/>
                 다시 읽다
               </h1>
               <p className="dim" style={{fontSize:16, lineHeight:1.8, maxWidth:480, marginBottom:36}}>
@@ -107,10 +108,10 @@ const HomePage = ({ go, tweaks }) => {
             }}>
               <div className="container" style={{textAlign:'center'}}>
                 <div className="section-eyebrow" style={{justifyContent:'center'}}>日月五峯圖 · SINCE 2024</div>
-                <h1 style={{fontFamily:'var(--font-serif)', fontSize:'clamp(56px, 9vw, 120px)', fontWeight:500,
-                  lineHeight:1, letterSpacing:'-0.03em', marginBottom:24,
+                <h1 style={{fontFamily:'var(--font-hero)', fontSize:'clamp(56px, 9vw, 120px)', fontWeight:'normal',
+                  lineHeight:1, letterSpacing:'-0.01em', marginBottom:24,
                   textShadow:'0 4px 40px rgba(0,0,0,0.8)'}}>
-                  <span style={{color:'var(--gold)', fontStyle:'italic'}}>왕</span>의 길
+                  <span style={{color:'var(--gold)'}}>왕</span>의 길
                 </h1>
                 <p style={{fontSize:18, lineHeight:1.8, maxWidth:560, margin:'0 auto 40px', color:'var(--ink)'}}>
                   다섯 봉우리 아래 모인 사람들 — 조선의 왕들이 걸었던 길을<br/>오늘의 언어로 다시 읽습니다.
@@ -135,7 +136,7 @@ const HomePage = ({ go, tweaks }) => {
           />
           <div className="grid grid-2">
             <div>
-              {data.notices.slice(0, 2).map(n => (
+              {(data.notices || []).slice(0, 2).map(n => (
                 <article key={n.id} className="card card-gold"
                   {...clickable(() => go("community"), `공지: ${n.title}`)}
                   style={{marginBottom:16, cursor:'pointer'}}>
@@ -149,7 +150,7 @@ const HomePage = ({ go, tweaks }) => {
               ))}
             </div>
             <div>
-              {data.notices.slice(2).map((n, i) => (
+              {(data.notices || []).slice(2).map((n, i) => (
                 <div key={n.id} className="row" {...clickable(() => go("community"), n.title)}>
                   <div className="row-num">0{i + 3}</div>
                   <div>
@@ -225,7 +226,7 @@ const HomePage = ({ go, tweaks }) => {
             action={<button type="button" className="btn-ghost" onClick={() => go("tour")}>전체 프로그램 →</button>}
           />
           <div className="grid grid-2">
-            {data.tours.map((t, i) => (
+            {(data.tours || []).map((t, i) => (
               <article key={t.id} className="card"
                 {...clickable(() => go("tour"), `투어: ${t.title}, ${t.price}, 다음 일정 ${t.next}`)}
                 style={{position:'relative', cursor:'pointer'}}>
@@ -256,6 +257,7 @@ const HomePage = ({ go, tweaks }) => {
       </section>
 
       {/* 뱅기노자 칼럼 */}
+      {featuredColumn && (
       <section className="section" style={{borderBottom:'1px solid var(--line)'}}>
         <div className="container">
           <SectionHead
@@ -267,7 +269,7 @@ const HomePage = ({ go, tweaks }) => {
           <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:40}} className="col-grid">
             {/* Feature */}
             <div className="card card-gold" style={{padding:0, overflow:'hidden', cursor:'pointer'}}
-              onClick={() => go("column")}>
+              {...clickable(() => go("column"), `칼럼: ${featuredColumn.title}`)}>
               <div className="placeholder" style={{aspectRatio:'16/9', borderLeft:'none', borderRight:'none', borderTop:'none'}}>FEATURE IMAGE · 1600×900</div>
               <div style={{padding:36}}>
                 <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:16}}>
@@ -286,20 +288,22 @@ const HomePage = ({ go, tweaks }) => {
             </div>
             <div>
               {secondaryColumns.map(c => (
-                <div key={c.id} onClick={() => go("column")}
+                <div key={c.id}
+                  {...clickable(() => go("column"), `칼럼: ${c.title}`)}
                   style={{padding:'20px 0', borderBottom:'1px solid var(--line)', cursor:'pointer'}}>
                   <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:8}}>
                     <span className="pill" style={{fontSize:9, padding:'2px 8px'}}>{c.category}</span>
                     <span className="mono dim-2" style={{fontSize:10}}>{c.date}</span>
                   </div>
                   <h4 className="ko-serif" style={{fontSize:18, fontWeight:500, lineHeight:1.4, marginBottom:6}}>{c.title}</h4>
-                  <p className="dim" style={{fontSize:13, lineHeight:1.6, color:'var(--ink-3)'}}>{c.excerpt.slice(0, 65)}…</p>
+                  <p className="dim" style={{fontSize:13, lineHeight:1.6, color:'var(--ink-3)'}}>{c.excerpt?.slice(0, 65) ?? ''}…</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </section>
+      )}
 
       {/* 파트너십 */}
       <section className="section-tight" style={{borderBottom:'1px solid var(--line)'}}>
@@ -309,7 +313,7 @@ const HomePage = ({ go, tweaks }) => {
             title={<>함께 걷는 <span className="accent">기관들</span></>}
           />
           <div className="grid grid-3">
-            {data.partners.map((p, i) => (
+            {(data.partners || []).map((p, i) => (
               <div key={i} className="card" style={{textAlign:'center', padding:'40px 24px'}}>
                 <div style={{height:60, display:'grid', placeItems:'center', marginBottom:16}}>
                   <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>{p.type.toUpperCase()}</div>

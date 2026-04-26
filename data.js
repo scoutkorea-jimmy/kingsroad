@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.019.000",
-  build: "2026.04.26",
+  version: "00.020.000",
+  build: "2026.04.27",
   channel: "preview",
 };
 
@@ -125,6 +125,7 @@ window.WSD_STORES = {
   lectureRegistrations: _lsGet('wsd_lecture_registrations', {}),
   bankAccount: _lsGet('wsd_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
   bookOrders: _lsGet('wsd_book_orders', []),
+  bookReviews: _lsGet('wsd_book_reviews', []),
   tourOverrides: _lsGet('wsd_tour_overrides', {}),
   tourReservations: _lsGet('wsd_tour_reservations', {}),
   tourReviews: _lsGet('wsd_tour_reviews', {}),
@@ -157,6 +158,7 @@ window.WSD_SAVE = {
   lectureRegistrations: () => _lsSet('wsd_lecture_registrations', window.WSD_STORES.lectureRegistrations),
   bankAccount: () => _lsSet('wsd_bank_account', window.WSD_STORES.bankAccount),
   bookOrders: () => _lsSet('wsd_book_orders', window.WSD_STORES.bookOrders),
+  bookReviews: () => _lsSet('wsd_book_reviews', window.WSD_STORES.bookReviews),
   tourOverrides: () => _lsSet('wsd_tour_overrides', window.WSD_STORES.tourOverrides),
   tourReservations: () => _lsSet('wsd_tour_reservations', window.WSD_STORES.tourReservations),
   tourReviews: () => _lsSet('wsd_tour_reviews', window.WSD_STORES.tourReviews),
@@ -171,7 +173,7 @@ window.WSD_SAVE = {
 window.WSD_DB = {
   version: WSD_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders", "tourOverrides", "tourReservations", "tourReviews", "lectureReviews", "auditLog", "legalDocs", "faqs"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders", "bookReviews", "tourOverrides", "tourReservations", "tourReviews", "lectureReviews", "auditLog", "legalDocs", "faqs"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -941,7 +943,7 @@ window.WSD_LECTURES = {
 //   - 'cancelled' 는 운영자/사용자가 명시적으로 취소.
 //   - 계좌번호는 강연과 동일한 `WSD_STORES.bankAccount` 재사용.
 window.WSD_BOOK_ORDERS = {
-  ORDER_STATUSES: ['pending_payment', 'paid', 'shipped', 'delivered', 'cancelled'],
+  ORDER_STATUSES: ['pending_payment', 'paid', 'shipped', 'delivered', 'refund_requested', 'cancelled'],
 
   listAll() {
     return (window.WSD_STORES.bookOrders || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
@@ -1067,6 +1069,39 @@ window.WSD_BOOK_ORDERS = {
     if (updated) window.WSD_AUDIT?.log({ action: 'book.cancel', target: `order:${updated.orderNo}` });
     return updated;
   },
+  requestRefund(id, reason) {
+    const order = this.getOrder(id);
+    if (!order) return { ok: false, message: '주문을 찾을 수 없습니다.' };
+    if (!['paid', 'shipped'].includes(order.status)) return { ok: false, message: '입금 확인 또는 배송 중 단계에서만 환불 신청이 가능합니다.' };
+    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+      o.id === id ? { ...o, status: 'refund_requested', refundReason: String(reason || '').trim(), refundRequestedAt: new Date().toISOString(), _prevStatus: o.status } : o
+    );
+    this._save(list);
+    const updated = list.find((o) => o.id === id) || null;
+    this._notify(updated, 'order_refund_requested', '환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.');
+    if (updated) window.WSD_AUDIT?.log({ action: 'book.refund_request', target: `order:${updated.orderNo}`, details: { reason: updated.refundReason } });
+    return { ok: true, order: updated };
+  },
+  approveRefund(id) {
+    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+      o.id === id ? { ...o, status: 'cancelled', refundApprovedAt: new Date().toISOString(), cancelledAt: new Date().toISOString() } : o
+    );
+    this._save(list);
+    const updated = list.find((o) => o.id === id) || null;
+    this._notify(updated, 'order_cancelled', '환불 신청이 승인되어 처리되었습니다.');
+    if (updated) window.WSD_AUDIT?.log({ action: 'book.refund_approve', target: `order:${updated.orderNo}` });
+    return updated;
+  },
+  rejectRefund(id, adminNote) {
+    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+      o.id === id ? { ...o, status: o._prevStatus || 'paid', refundRejectedAt: new Date().toISOString(), refundAdminNote: String(adminNote || '').trim(), _prevStatus: undefined } : o
+    );
+    this._save(list);
+    const updated = list.find((o) => o.id === id) || null;
+    this._notify(updated, 'order_refund_rejected', `환불 신청이 반려되었습니다.${adminNote ? ' 사유: ' + adminNote : ''}`);
+    if (updated) window.WSD_AUDIT?.log({ action: 'book.refund_reject', target: `order:${updated.orderNo}`, details: { note: adminNote } });
+    return updated;
+  },
   // ── 영수증 ──────────────────────────────────────────────────
   generateReceipt(id) {
     const order = this.getOrder(id);
@@ -1130,6 +1165,44 @@ window.WSD_BOOK_ORDERS = {
     return [header, ...rows]
       .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
       .join('\n');
+  },
+
+  // ── 독자 리뷰 ──────────────────────────────────────────────────────────
+  _saveReviews(list) {
+    window.WSD_STORES.bookReviews = list;
+    window.WSD_SAVE.bookReviews();
+  },
+  listReviews() {
+    return (window.WSD_STORES.bookReviews || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  },
+  canReview(userId) {
+    if (!userId) return false;
+    return this.listMine(userId).some((o) => o.status === 'delivered');
+  },
+  hasReviewed(userId) {
+    if (!userId) return false;
+    return (window.WSD_STORES.bookReviews || []).some((r) => r.userId === userId);
+  },
+  addReview({ userId, userName, rating, text }) {
+    if (!userId) return { ok: false, message: "로그인 후 이용해 주세요." };
+    if (!this.canReview(userId)) return { ok: false, message: "배송 완료된 주문이 있어야 리뷰를 작성할 수 있습니다." };
+    if (this.hasReviewed(userId)) return { ok: false, message: "이미 리뷰를 작성하셨습니다." };
+    const r = Number(rating);
+    if (!r || r < 1 || r > 5) return { ok: false, message: "별점(1~5)을 선택해 주세요." };
+    if (!String(text || '').trim()) return { ok: false, message: "리뷰 내용을 입력해 주세요." };
+    const review = {
+      id: `br-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      userId,
+      userName: String(userName || ''),
+      rating: r,
+      text: String(text).trim(),
+      createdAt: new Date().toISOString(),
+    };
+    this._saveReviews([review, ...this.listReviews()]);
+    return { ok: true, review };
+  },
+  deleteReview(reviewId) {
+    this._saveReviews(this.listReviews().filter((r) => r.id !== reviewId));
   },
 };
 

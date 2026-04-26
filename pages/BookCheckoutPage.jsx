@@ -1,5 +1,95 @@
+// === 독자 리뷰 서브컴포넌트 ============================================
+const STARS = ['★', '★★', '★★★', '★★★★', '★★★★★'];
+
+const BookReviewSection = ({ user }) => {
+  const [reviews, setReviews] = React.useState(() => window.WSD_BOOK_ORDERS.listReviews());
+  const [rating, setRating] = React.useState(5);
+  const [text, setText] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [success, setSuccess] = React.useState('');
+
+  const canReview = user && window.WSD_BOOK_ORDERS.canReview(user.id);
+  const hasReviewed = user && window.WSD_BOOK_ORDERS.hasReviewed(user.id);
+
+  const submit = () => {
+    setError(''); setSuccess('');
+    const result = window.WSD_BOOK_ORDERS.addReview({ userId: user?.id, userName: user?.name, rating, text });
+    if (!result.ok) { setError(result.message); return; }
+    setReviews(window.WSD_BOOK_ORDERS.listReviews());
+    setText(''); setSuccess('리뷰가 등록되었습니다. 감사합니다.');
+  };
+
+  const remove = (reviewId) => {
+    if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
+    window.WSD_BOOK_ORDERS.deleteReview(reviewId);
+    setReviews(window.WSD_BOOK_ORDERS.listReviews());
+  };
+
+  const isAdmin = user?.isAdmin;
+
+  return (
+    <div>
+      {/* 작성 폼 */}
+      {canReview && !hasReviewed && (
+        <div className="card" style={{padding:24, marginBottom:28}}>
+          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:12}}>WRITE REVIEW · 리뷰 작성</div>
+          <div style={{display:'flex', gap:8, marginBottom:14, alignItems:'center'}}>
+            <span className="dim" style={{fontSize:13}}>별점</span>
+            {[1,2,3,4,5].map(n => (
+              <button key={n} type="button" onClick={() => setRating(n)}
+                style={{fontSize:20, color: n <= rating ? 'var(--gold)' : 'var(--line-2)', background:'none', border:'none', cursor:'pointer', padding:'0 2px'}}>
+                ★
+              </button>
+            ))}
+            <span className="gold mono" style={{fontSize:12, marginLeft:4}}>{rating}/5</span>
+          </div>
+          <textarea value={text} onChange={e => setText(e.target.value)}
+            placeholder="『왕의길』을 읽고 느낀 점을 자유롭게 써 주세요."
+            className="field-input" rows={3}
+            style={{width:'100%', resize:'vertical', padding:12, fontSize:14, lineHeight:1.7}}/>
+          {error && <p style={{color:'var(--danger)', fontSize:13, marginTop:8}}>{error}</p>}
+          {success && <p className="gold" style={{fontSize:13, marginTop:8}}>{success}</p>}
+          <button type="button" className="btn btn-gold" style={{marginTop:12}} onClick={submit}>리뷰 등록</button>
+        </div>
+      )}
+      {hasReviewed && (
+        <p className="dim" style={{fontSize:13, marginBottom:20}}>이미 리뷰를 작성하셨습니다.</p>
+      )}
+      {!user && (
+        <p className="dim" style={{fontSize:13, marginBottom:20}}>리뷰는 『왕의길』 배송 완료 회원만 작성할 수 있습니다.</p>
+      )}
+      {user && !canReview && !hasReviewed && (
+        <p className="dim" style={{fontSize:13, marginBottom:20}}>배송 완료된 주문이 확인되면 리뷰를 작성할 수 있습니다.</p>
+      )}
+
+      {/* 리뷰 목록 */}
+      {reviews.length === 0 ? (
+        <p className="dim" style={{fontSize:14, padding:'24px 0'}}>아직 등록된 리뷰가 없습니다. 첫 리뷰를 남겨 보세요.</p>
+      ) : (
+        reviews.map(r => (
+          <div key={r.id} style={{padding:'20px 0', borderBottom:'1px solid var(--line)'}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8}}>
+              <div style={{display:'flex', gap:12, alignItems:'center'}}>
+                <span className="gold" style={{fontSize:16}}>{STARS[r.rating - 1]}</span>
+                <span className="mono dim-2" style={{fontSize:11}}>{r.userName}</span>
+                <span className="mono dim-2" style={{fontSize:10}}>{new Date(r.createdAt).toLocaleDateString('ko-KR')}</span>
+              </div>
+              {(isAdmin || user?.id === r.userId) && (
+                <button type="button" className="btn-ghost"
+                  onClick={() => remove(r.id)}
+                  style={{fontSize:11, color:'var(--danger)'}}>삭제</button>
+              )}
+            </div>
+            <p className="ko-serif" style={{fontSize:15, lineHeight:1.8}}>{r.text}</p>
+          </div>
+        ))
+      )}
+    </div>
+  );
+};
+
 // 책 구매 페이지
-const BookPage = ({ go, cart, setCart }) => {
+const BookPage = ({ go, cart, setCart, user }) => {
   const book = window.WANGSADEUL_DATA.book;
   const [version, setVersion] = React.useState("KR");
   const [qty, setQty] = React.useState(1);
@@ -179,23 +269,7 @@ const BookPage = ({ go, cart, setCart }) => {
                   </div>
                 </div>
               )}
-              {tab === "리뷰" && (
-                <div>
-                  {[
-                    { n: "★★★★★", a: "돌담아래", t: "10년 만에 만난 진짜 조선 왕실 책입니다." },
-                    { n: "★★★★★", a: "고궁지기", t: "답사 전후로 두 번 읽었는데 완전히 다르게 읽힙니다." },
-                    { n: "★★★★☆", a: "역사애호", t: "중후반부로 갈수록 몰입감이 깊어집니다." },
-                  ].map((r, i) => (
-                    <div key={i} style={{padding:'20px 0', borderBottom:'1px solid var(--line)'}}>
-                      <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
-                        <span className="gold">{r.n}</span>
-                        <span className="mono dim-2" style={{fontSize:11}}>{r.a}</span>
-                      </div>
-                      <p className="ko-serif" style={{fontSize:15}}>{r.t}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {tab === "리뷰" && <BookReviewSection user={user} />}
             </div>
           </div>
         </div>

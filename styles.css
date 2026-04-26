@@ -8,6 +8,13 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'KblJumpExtended';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-5@1.0/KBLJump_EB_ExtendedTTF.woff2') format('woff2');
+  font-weight: normal;
+  font-display: swap;
+}
+
 :root {
   --bg: #0a0907;
   --bg-2: #111010;
@@ -28,6 +35,7 @@
   --font-serif: "Noto Serif KR", "Nanum Myeongjo", serif;
   --font-sans: "Wanted Sans Variable", "Wanted Sans", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "IBM Plex Mono", "D2 Coding", monospace;
+  --font-hero: 'KblJumpExtended', "Wanted Sans Variable", sans-serif;
   /* Reading font: swaps via toggle in header. Default = 고딕(Wanted Sans). */
   --font-reading: var(--font-sans);
   --font-display: var(--font-sans);

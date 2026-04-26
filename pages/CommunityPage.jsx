@@ -261,6 +261,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [tab, setTab] = React.useState("all");
   const [search, setSearch] = React.useState("");
+  const [sort, setSort] = React.useState("latest");
   const [writing, setWriting] = React.useState(null);
   const [page, setPage] = React.useState(1);
 
@@ -316,16 +317,23 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   }
 
   const visibleCats = categories.filter(c => userLevel >= (c.minLevel ?? 0));
-  const filtered = allPosts.filter(p => {
-    const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category);
-    if (cat && userLevel < (cat.minLevel ?? 0)) return false;
-    if (tab !== "all" && (p.categoryId !== tab && cat?.id !== tab)) return false;
-    if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const filtered = React.useMemo(() => {
+    const q = search.toLowerCase();
+    const base = allPosts.filter(p => {
+      const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category);
+      if (cat && userLevel < (cat.minLevel ?? 0)) return false;
+      if (tab !== "all" && (p.categoryId !== tab && cat?.id !== tab)) return false;
+      if (q && !p.title.toLowerCase().includes(q) && !String(p.body?.text || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+    if (sort === "views") return [...base].sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
+    if (sort === "replies") return [...base].sort((a, b) => (b.replies ?? 0) - (a.replies ?? 0));
+    if (sort === "likes") return [...base].sort((a, b) => (Array.isArray(b.likes) ? b.likes.length : 0) - (Array.isArray(a.likes) ? a.likes.length : 0));
+    return base; // latest: listPosts() already returns newest-first
+  }, [allPosts, categories, userLevel, tab, search, sort]);
 
-  // 검색어/탭이 바뀌면 페이지를 1로 되돌림
-  React.useEffect(() => { setPage(1); }, [tab, search]);
+  // 검색어/탭/정렬이 바뀌면 페이지를 1로 되돌림
+  React.useEffect(() => { setPage(1); }, [tab, search, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
@@ -406,11 +414,19 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                   marginBottom:-1}}>{c.label}</button>
             ))}
           </div>
-          <div style={{display:'flex', gap:12}}>
+          <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
             <label htmlFor="community-search" className="sr-only">게시글 검색</label>
-            <input id="community-search" placeholder="검색..."
+            <input id="community-search" placeholder="제목·본문 검색..."
               value={search} onChange={e => setSearch(e.target.value)}
-              className="field-input" style={{width:200, padding:'10px 14px'}}/>
+              className="field-input" style={{width:180, padding:'10px 14px'}}/>
+            <label htmlFor="community-sort" className="sr-only">정렬</label>
+            <select id="community-sort" value={sort} onChange={e => setSort(e.target.value)}
+              className="field-input" style={{padding:'10px 12px', fontSize:12, cursor:'pointer'}}>
+              <option value="latest">최신순</option>
+              <option value="views">조회순</option>
+              <option value="replies">댓글순</option>
+              <option value="likes">좋아요순</option>
+            </select>
             <button type="button" className="btn btn-gold btn-small" onClick={handleWrite}>
               {user ? '글쓰기 ＋' : '로그인 후 글쓰기'}
             </button>
