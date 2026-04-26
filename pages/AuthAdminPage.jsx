@@ -1599,6 +1599,7 @@ const LectureAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const [editingId, setEditingId] = React.useState(null);
   const [draft, setDraft] = React.useState({ title: '', topic: '', venue: '', host: '', startsAt: '', durationMinutes: 90, capacity: 30, price: 0, note: '' });
+  const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
 
   const lectures = React.useMemo(() => window.WSD_LECTURES.listAll(), [tick]);
 
@@ -1807,13 +1808,31 @@ const LectureAdminPanel = ({ go }) => {
                                     확정 취소
                                   </button>
                                 )}
-                                <button type="button" className="btn btn-small"
-                                  onClick={() => {
-                                    if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
-                                    window.WSD_LECTURES.cancelRegistration(l.id, r.id);
-                                    refresh();
-                                  }}
-                                  style={{borderColor:'var(--danger)', color:'var(--danger)'}}>취소</button>
+                                {r.status !== 'refund_requested' && (
+                                  <button type="button" className="btn btn-small"
+                                    onClick={() => {
+                                      if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
+                                      window.WSD_LECTURES.cancelRegistration(l.id, r.id);
+                                      refresh();
+                                    }}
+                                    style={{borderColor:'var(--danger)', color:'var(--danger)'}}>취소</button>
+                                )}
+                                {r.status === 'refund_requested' && (
+                                  <>
+                                    <span className="mono" style={{fontSize:9, color:'#e8a020', letterSpacing:'0.15em'}}>환불신청</span>
+                                    {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
+                                    <button type="button" className="btn btn-small"
+                                      onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.WSD_LECTURES.approveRefund(l.id, r.id); refresh(); }}
+                                      style={{borderColor:'var(--gold)', color:'var(--gold)'}}>승인</button>
+                                    <input className="field-input" placeholder="반려 사유"
+                                      style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
+                                      value={refundRejectNotes[r.id] || ''}
+                                      onChange={e => setRefundRejectNotes({...refundRejectNotes, [r.id]: e.target.value})}/>
+                                    <button type="button" className="btn btn-small"
+                                      onClick={() => { if (!confirm('환불 신청을 반려하시겠어요?')) return; window.WSD_LECTURES.rejectRefund(l.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
+                                      style={{borderColor:'var(--danger)', color:'var(--danger)'}}>반려</button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1836,6 +1855,7 @@ const TourAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const [editingId, setEditingId] = React.useState(null);
   const [draft, setDraft] = React.useState({});
+  const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
   const refresh = () => setTick((v) => v + 1);
   const tours = React.useMemo(() => window.WSD_TOURS.listAll(), [tick]);
 
@@ -2043,13 +2063,31 @@ const TourAdminPanel = ({ go }) => {
                                     확정 취소
                                   </button>
                                 )}
-                                <button type="button" className="btn btn-small"
-                                  onClick={() => {
-                                    if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
-                                    window.WSD_TOURS.cancelReservation(t.id, r.id);
-                                    refresh();
-                                  }}
-                                  style={{borderColor:'var(--danger)', color:'var(--danger)'}}>취소</button>
+                                {r.status !== 'refund_requested' && (
+                                  <button type="button" className="btn btn-small"
+                                    onClick={() => {
+                                      if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
+                                      window.WSD_TOURS.cancelReservation(t.id, r.id);
+                                      refresh();
+                                    }}
+                                    style={{borderColor:'var(--danger)', color:'var(--danger)'}}>취소</button>
+                                )}
+                                {r.status === 'refund_requested' && (
+                                  <>
+                                    <span className="mono" style={{fontSize:9, color:'#e8a020', letterSpacing:'0.15em'}}>환불신청</span>
+                                    {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
+                                    <button type="button" className="btn btn-small"
+                                      onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.WSD_TOURS.approveRefund(t.id, r.id); refresh(); }}
+                                      style={{borderColor:'var(--gold)', color:'var(--gold)'}}>승인</button>
+                                    <input className="field-input" placeholder="반려 사유"
+                                      style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
+                                      value={refundRejectNotes[r.id] || ''}
+                                      onChange={e => setRefundRejectNotes({...refundRejectNotes, [r.id]: e.target.value})}/>
+                                    <button type="button" className="btn btn-small"
+                                      onClick={() => { if (!confirm('환불 신청을 반려하시겠어요?')) return; window.WSD_TOURS.rejectRefund(t.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
+                                      style={{borderColor:'var(--danger)', color:'var(--danger)'}}>반려</button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>

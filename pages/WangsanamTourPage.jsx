@@ -95,6 +95,7 @@ const TourPage = ({ go, user }) => {
     pending_payment: '입금 대기',
     confirmed: '참가 확정',
     waitlist: '대기자',
+    refund_requested: '환불 신청 중',
     cancelled: '취소됨',
   }[s] || s);
   const tone = (s) => ({
@@ -102,6 +103,7 @@ const TourPage = ({ go, user }) => {
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
+    refund_requested: '#e8a020',
   }[s] || 'var(--ink-2)');
 
   return (
@@ -208,11 +210,15 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const [note, setNote] = React.useState("");
   const [error, setError] = React.useState("");
   const [submitted, setSubmitted] = React.useState(null);
+  const [refundMode, setRefundMode] = React.useState(false);
+  const [refundReason, setRefundReason] = React.useState("");
+  const [refundError, setRefundError] = React.useState("");
 
   // 투어가 바뀌면 폼 초기화
   React.useEffect(() => {
     setOpen(false); setSubmitted(null); setError(""); setCount(1); setNote("");
     setName(user?.name || ""); setEmail(user?.email || "");
+    setRefundMode(false); setRefundReason(""); setRefundError("");
   }, [tour.id, user?.id]);
 
   const requireLogin = (label) => {
@@ -252,9 +258,19 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
     setSubmitted(null);
   };
 
+  const submitRefund = () => {
+    setRefundError("");
+    if (!refundReason.trim()) { setRefundError("환불 사유를 입력해 주세요."); return; }
+    const result = window.WSD_TOURS.requestRefund(tour.id, myReg.id, refundReason);
+    if (!result.ok) { setRefundError(result.message); return; }
+    setRefundMode(false); setRefundReason("");
+    onRefresh();
+  };
+
   const downloadIcs = () => window.WSD_TOURS.downloadIcs(tour.id);
   const showPaymentInfo = (tour.priceNumber || 0) > 0 && (myReg?.status === 'pending_payment' || submitted?.status === 'pending_payment');
   const isFull = seats.remaining <= 0;
+  const isPaidConfirmed = myReg?.status === 'confirmed' && (tour.priceNumber || 0) > 0;
 
   return (
     <div className="card card-gold" style={{position:'sticky', top:100}}>
@@ -304,11 +320,49 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
               정원이 차서 대기 등록되었습니다. 자리가 나면 자동으로 전환됩니다.
             </p>
           )}
-          <div style={{display:'flex', gap:6, marginTop:10, flexWrap:'wrap'}}>
-            <button type="button" className="btn btn-small" onClick={downloadIcs}>캘린더 추가 (.ics)</button>
-            <button type="button" className="btn btn-small" onClick={cancelMyReg}
-              style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>신청 취소</button>
-          </div>
+          {myReg.status === 'refund_requested' && (
+            <p className="dim" style={{fontSize:12, lineHeight:1.7, marginTop:8}}>
+              환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.
+              {myReg.refundReason && <span className="dim-2"> · 사유: {myReg.refundReason}</span>}
+            </p>
+          )}
+          {myReg.refundAdminNote && myReg.status === 'confirmed' && (
+            <p style={{fontSize:11, color:'var(--danger)', marginTop:6}}>
+              환불 반려 메모: {myReg.refundAdminNote}
+            </p>
+          )}
+          {!refundMode && (
+            <div style={{display:'flex', gap:6, marginTop:10, flexWrap:'wrap'}}>
+              <button type="button" className="btn btn-small" onClick={downloadIcs}>캘린더 추가 (.ics)</button>
+              {myReg.status !== 'refund_requested' && (
+                isPaidConfirmed
+                  ? <button type="button" className="btn btn-small"
+                      onClick={() => setRefundMode(true)}
+                      style={{borderColor:'#e8a020', color:'#e8a020', marginLeft:'auto'}}>환불 신청</button>
+                  : <button type="button" className="btn btn-small" onClick={cancelMyReg}
+                      style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>신청 취소</button>
+              )}
+            </div>
+          )}
+          {refundMode && (
+            <div style={{marginTop:10, padding:12, background:'rgba(232,160,32,0.06)', border:'1px solid #e8a020', borderRadius:4}}>
+              <p className="dim" style={{fontSize:11, lineHeight:1.7, marginBottom:8}}>
+                환불 신청 후 운영자 확인을 거쳐 처리됩니다.
+              </p>
+              <textarea value={refundReason} onChange={e => setRefundReason(e.target.value)}
+                placeholder="환불 사유 (필수)"
+                className="field-input" rows={2}
+                style={{width:'100%', padding:'8px 10px', fontSize:12, resize:'vertical', marginBottom:6}}/>
+              {refundError && <p style={{color:'var(--danger)', fontSize:11, marginBottom:6}}>{refundError}</p>}
+              <div style={{display:'flex', gap:6}}>
+                <button type="button" className="btn btn-small"
+                  style={{borderColor:'#e8a020', color:'#e8a020'}}
+                  onClick={submitRefund}>신청하기</button>
+                <button type="button" className="btn btn-small"
+                  onClick={() => { setRefundMode(false); setRefundReason(''); setRefundError(''); }}>취소</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

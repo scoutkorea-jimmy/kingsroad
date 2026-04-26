@@ -18,7 +18,7 @@ This document fixes the current implementation priority order so context is not 
 | P4 | Image external storage | 미착수 | base64 in localStorage will hit quota in real operations | Images stored outside localStorage (Cloudflare R2) |
 | P4 | Email notifications | 🔜 비활성화 상태로 착수 예정 | D-1 reminders and status-change emails are expected by users | Infrastructure wired but sending disabled; activate when provider is ready |
 | P5 | Refund / cancellation flow (book) | ✅ 완료 | Cancellation exists but actual refund processing is manual | Refund request + admin processing + status tracking — books only |
-| P5 | Refund / cancellation flow (lecture/tour) | ⚠️ 미완 | Book has refund flow but lectures/tours still lack request→approve cycle | Same requestRefund/approveRefund/rejectRefund pattern applied to lectures and tours |
+| P5 | Refund / cancellation flow (lecture/tour) | ✅ 완료 | Book has refund flow but lectures/tours still lack request→approve cycle | Same requestRefund/approveRefund/rejectRefund pattern applied to lectures and tours |
 | P5 | Full-text search + sort options | ✅ 완료 | Community search is title-only, no sort options | Search body text, sort by popularity/comments |
 | P5 | Book reader reviews | ✅ 완료 | Book detail page has hardcoded dummy reviews | Real user reviews wired to `WSD_BOOK_ORDERS` confirmed orders |
 
@@ -98,7 +98,7 @@ This document fixes the current implementation priority order so context is not 
 |---|------|------|------|
 | 1 | Cloudflare 마이그레이션 (DB + 인증 + 이미지) | 🔜 착수 예정 | Workers + D1 + R2 통합 설계 필요 |
 | 2 | PG 결제 스켈레톤 | 🔜 착수 예정 | UI만 추가, 실결제 비활성화 |
-| 3 | 강연/투어 환불 신청 흐름 | ⚠️ 누락 — 조기 착수 권장 | 책과 동일한 패턴, 단독 PR 가능 |
+| 3 | 강연/투어 환불 신청 흐름 | ✅ 완료 (v00.021.000) | 책과 동일한 패턴 적용 완료 |
 | 4 | 이메일 알림 인프라 | 🔜 착수 예정 (비활성화) | hook 먼저, 발송은 제공사 결정 후 |
 | 5 | 마이페이지 프로필/비밀번호 수정 | 미착수 | Cloudflare 인증 후 의미 있어짐 |
 

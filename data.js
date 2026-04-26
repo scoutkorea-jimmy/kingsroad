@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.020.000",
+  version: "00.021.000",
   build: "2026.04.27",
   channel: "preview",
 };
@@ -772,6 +772,64 @@ window.WSD_LECTURES = {
     this._promoteWaitlist(lectureId);
     return next.find((r) => r.id === registrationId) || null;
   },
+  requestRefund(lectureId, registrationId, reason) {
+    const list = this.listRegistrations(lectureId);
+    const reg = list.find((r) => r.id === registrationId);
+    if (!reg) return { ok: false, message: '신청 내역을 찾을 수 없습니다.' };
+    if (reg.status !== 'confirmed') return { ok: false, message: '참가 확정 상태에서만 환불 신청이 가능합니다.' };
+    if (!String(reason || '').trim()) return { ok: false, message: '환불 사유를 입력해 주세요.' };
+    const next = list.map((r) => r.id === registrationId
+      ? { ...r, status: 'refund_requested', refundReason: String(reason).trim(), refundRequestedAt: new Date().toISOString(), _prevStatus: 'confirmed' }
+      : r);
+    this._saveRegistrations(lectureId, next);
+    if (reg.userId) {
+      const lecture = this.getLecture(lectureId);
+      window.WSD_COMMUNITY.addNotification(reg.userId, {
+        type: 'lecture_refund_requested', lectureId: String(lectureId),
+        postTitle: lecture?.topic || lecture?.title || '강연',
+        fromName: '운영자', message: '환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.',
+      });
+      window.WSD_AUDIT?.log({ action: 'lecture.refund_request', target: `lecture:${lectureId}`, details: { reg: registrationId, reason } });
+    }
+    return { ok: true, registration: next.find((r) => r.id === registrationId) };
+  },
+  approveRefund(lectureId, registrationId) {
+    const list = this.listRegistrations(lectureId);
+    const reg = list.find((r) => r.id === registrationId);
+    const next = list.map((r) => r.id === registrationId
+      ? { ...r, status: 'cancelled', refundApprovedAt: new Date().toISOString(), cancelledAt: new Date().toISOString() }
+      : r);
+    this._saveRegistrations(lectureId, next);
+    this._promoteWaitlist(lectureId);
+    if (reg?.userId) {
+      const lecture = this.getLecture(lectureId);
+      window.WSD_COMMUNITY.addNotification(reg.userId, {
+        type: 'lecture_refund_approved', lectureId: String(lectureId),
+        postTitle: lecture?.topic || lecture?.title || '강연',
+        fromName: '운영자', message: '환불 신청이 승인되어 처리되었습니다.',
+      });
+      window.WSD_AUDIT?.log({ action: 'lecture.refund_approve', target: `lecture:${lectureId}`, details: { reg: registrationId } });
+    }
+    return next.find((r) => r.id === registrationId) || null;
+  },
+  rejectRefund(lectureId, registrationId, adminNote) {
+    const list = this.listRegistrations(lectureId);
+    const reg = list.find((r) => r.id === registrationId);
+    const next = list.map((r) => r.id === registrationId
+      ? { ...r, status: 'confirmed', refundRejectedAt: new Date().toISOString(), refundAdminNote: String(adminNote || '').trim(), _prevStatus: undefined }
+      : r);
+    this._saveRegistrations(lectureId, next);
+    if (reg?.userId) {
+      const lecture = this.getLecture(lectureId);
+      window.WSD_COMMUNITY.addNotification(reg.userId, {
+        type: 'lecture_refund_rejected', lectureId: String(lectureId),
+        postTitle: lecture?.topic || lecture?.title || '강연',
+        fromName: '운영자', message: `환불 신청이 반려되었습니다.${adminNote ? ' 사유: ' + adminNote : ''}`,
+      });
+      window.WSD_AUDIT?.log({ action: 'lecture.refund_reject', target: `lecture:${lectureId}`, details: { reg: registrationId, note: adminNote } });
+    }
+    return next.find((r) => r.id === registrationId) || null;
+  },
   confirmPayment(lectureId, registrationId) {
     const list = this.listRegistrations(lectureId);
     const next = list.map((r) => (
@@ -1316,6 +1374,64 @@ window.WSD_TOURS = {
     const next = list.map((r) => r.id === reservationId ? { ...r, status: 'cancelled', cancelledAt: new Date().toISOString() } : r);
     this._saveReservations(tourId, next);
     this._promoteWaitlist(tourId);
+    return next.find((r) => r.id === reservationId) || null;
+  },
+  requestRefund(tourId, reservationId, reason) {
+    const list = this.listReservations(tourId);
+    const reg = list.find((r) => r.id === reservationId);
+    if (!reg) return { ok: false, message: '예약 내역을 찾을 수 없습니다.' };
+    if (reg.status !== 'confirmed') return { ok: false, message: '참가 확정 상태에서만 환불 신청이 가능합니다.' };
+    if (!String(reason || '').trim()) return { ok: false, message: '환불 사유를 입력해 주세요.' };
+    const next = list.map((r) => r.id === reservationId
+      ? { ...r, status: 'refund_requested', refundReason: String(reason).trim(), refundRequestedAt: new Date().toISOString(), _prevStatus: 'confirmed' }
+      : r);
+    this._saveReservations(tourId, next);
+    if (reg.userId) {
+      const tour = this.getTour(tourId);
+      window.WSD_COMMUNITY.addNotification(reg.userId, {
+        type: 'tour_refund_requested', tourId: String(tourId),
+        postTitle: tour?.title || '답사',
+        fromName: '운영자', message: '환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.',
+      });
+      window.WSD_AUDIT?.log({ action: 'tour.refund_request', target: `tour:${tourId}`, details: { reg: reservationId, reason } });
+    }
+    return { ok: true, reservation: next.find((r) => r.id === reservationId) };
+  },
+  approveRefund(tourId, reservationId) {
+    const list = this.listReservations(tourId);
+    const reg = list.find((r) => r.id === reservationId);
+    const next = list.map((r) => r.id === reservationId
+      ? { ...r, status: 'cancelled', refundApprovedAt: new Date().toISOString(), cancelledAt: new Date().toISOString() }
+      : r);
+    this._saveReservations(tourId, next);
+    this._promoteWaitlist(tourId);
+    if (reg?.userId) {
+      const tour = this.getTour(tourId);
+      window.WSD_COMMUNITY.addNotification(reg.userId, {
+        type: 'tour_refund_approved', tourId: String(tourId),
+        postTitle: tour?.title || '답사',
+        fromName: '운영자', message: '환불 신청이 승인되어 처리되었습니다.',
+      });
+      window.WSD_AUDIT?.log({ action: 'tour.refund_approve', target: `tour:${tourId}`, details: { reg: reservationId } });
+    }
+    return next.find((r) => r.id === reservationId) || null;
+  },
+  rejectRefund(tourId, reservationId, adminNote) {
+    const list = this.listReservations(tourId);
+    const reg = list.find((r) => r.id === reservationId);
+    const next = list.map((r) => r.id === reservationId
+      ? { ...r, status: 'confirmed', refundRejectedAt: new Date().toISOString(), refundAdminNote: String(adminNote || '').trim(), _prevStatus: undefined }
+      : r);
+    this._saveReservations(tourId, next);
+    if (reg?.userId) {
+      const tour = this.getTour(tourId);
+      window.WSD_COMMUNITY.addNotification(reg.userId, {
+        type: 'tour_refund_rejected', tourId: String(tourId),
+        postTitle: tour?.title || '답사',
+        fromName: '운영자', message: `환불 신청이 반려되었습니다.${adminNote ? ' 사유: ' + adminNote : ''}`,
+      });
+      window.WSD_AUDIT?.log({ action: 'tour.refund_reject', target: `tour:${tourId}`, details: { reg: reservationId, note: adminNote } });
+    }
     return next.find((r) => r.id === reservationId) || null;
   },
   confirmPayment(tourId, reservationId) {

@@ -33,6 +33,7 @@ const MyPage = ({ go, user, cart }) => {
     pending_payment: '입금 대기',
     confirmed: '참가 확정',
     waitlist: '대기자',
+    refund_requested: '환불 신청 중',
     cancelled: '취소됨',
   }[s] || s);
   const tourStatusTone = (s) => ({
@@ -40,6 +41,7 @@ const MyPage = ({ go, user, cart }) => {
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
+    refund_requested: '#e8a020',
   }[s] || 'var(--ink-2)');
   const goToTour = (tourId) => {
     try { sessionStorage.setItem('wsd_pending_tour_id', String(tourId)); } catch {}
@@ -74,6 +76,7 @@ const MyPage = ({ go, user, cart }) => {
     pending_payment: '입금 대기',
     confirmed: '참가 확정',
     waitlist: '대기자',
+    refund_requested: '환불 신청 중',
     cancelled: '취소됨',
   }[s] || s);
   const lectureStatusTone = (s) => ({
@@ -81,6 +84,7 @@ const MyPage = ({ go, user, cart }) => {
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
+    refund_requested: '#e8a020',
   }[s] || 'var(--ink-2)');
 
   if (!user) {
