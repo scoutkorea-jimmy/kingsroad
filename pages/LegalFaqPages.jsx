@@ -1,8 +1,8 @@
 // 약관 / 개인정보 처리방침 / FAQ 공개 페이지
 const LegalPage = ({ go, slug }) => {
-  const doc = window.WSD_LEGAL.get(slug) || { title: '', body: '' };
+  const doc = window.BGNJ_LEGAL.get(slug) || { title: '', body: '' };
   const otherSlug = slug === 'privacy' ? 'terms' : 'privacy';
-  const otherDoc = window.WSD_LEGAL.get(otherSlug);
+  const otherDoc = window.BGNJ_LEGAL.get(otherSlug);
   return (
     <div className="section">
       <div className="container" style={{maxWidth:760}}>
@@ -33,8 +33,8 @@ const FaqPage = ({ go }) => {
   const [category, setCategory] = React.useState('전체');
   const [openId, setOpenId] = React.useState(null);
 
-  const categories = window.WSD_FAQ.listCategories();
-  const filtered = window.WSD_FAQ.search(search, category);
+  const categories = window.BGNJ_FAQ.listCategories();
+  const filtered = window.BGNJ_FAQ.search(search, category);
 
   // 카테고리별 그룹핑
   const grouped = filtered.reduce((acc, f) => {

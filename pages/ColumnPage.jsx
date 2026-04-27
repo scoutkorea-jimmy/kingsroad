@@ -10,7 +10,7 @@ const ColumnPage = ({ go, user }) => {
   const refresh = () => setTick((v) => v + 1);
 
   const publicColumns = React.useMemo(
-    () => window.WSD_COLUMNS.listPublic(),
+    () => window.BGNJ_COLUMNS.listPublic(),
     [tick]
   );
   const categories = React.useMemo(
@@ -18,16 +18,16 @@ const ColumnPage = ({ go, user }) => {
     [publicColumns]
   );
   const filtered = React.useMemo(
-    () => window.WSD_COLUMNS.searchPublic({ query: search, category }),
+    () => window.BGNJ_COLUMNS.searchPublic({ query: search, category }),
     [search, category, tick]
   );
 
   // 외부 진입 (해시 / 마이페이지 / 알림 등)으로 들어오는 칼럼 ID
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem("wsd_pending_column_id"); } catch {}
+    try { pending = sessionStorage.getItem("bgnj_pending_column_id"); } catch {}
     if (pending) {
-      try { sessionStorage.removeItem("wsd_pending_column_id"); } catch {}
+      try { sessionStorage.removeItem("bgnj_pending_column_id"); } catch {}
       setSelectedId(pending);
     }
   }, []);
@@ -35,11 +35,11 @@ const ColumnPage = ({ go, user }) => {
   // 상세 진입 시 조회수 증가 (세션당 1회)
   React.useEffect(() => {
     if (!selectedId) return;
-    const key = `wsd_viewed_col_${selectedId}`;
+    const key = `bgnj_viewed_col_${selectedId}`;
     try {
       if (!sessionStorage.getItem(key)) {
         sessionStorage.setItem(key, "1");
-        window.WSD_COLUMNS.incrementViews(selectedId);
+        window.BGNJ_COLUMNS.incrementViews(selectedId);
         refresh();
       }
     } catch {}
@@ -53,7 +53,7 @@ const ColumnPage = ({ go, user }) => {
 
   const handleLike = () => {
     if (!user) return requireLogin("공감");
-    window.WSD_COLUMNS.toggleLike(selectedId, user.id);
+    window.BGNJ_COLUMNS.toggleLike(selectedId, user.id);
     refresh();
   };
 
@@ -75,7 +75,7 @@ const ColumnPage = ({ go, user }) => {
     if (!trimmed) return;
     const now = new Date();
     const pad = (n) => String(n).padStart(2, "0");
-    window.WSD_COLUMNS.addComment(selectedId, {
+    window.BGNJ_COLUMNS.addComment(selectedId, {
       id: `comment-${Date.now()}`,
       author: user.name,
       authorId: user.id,
@@ -88,13 +88,13 @@ const ColumnPage = ({ go, user }) => {
   };
 
   const removeComment = (commentId) => {
-    window.WSD_COLUMNS.deleteComment(selectedId, commentId);
+    window.BGNJ_COLUMNS.deleteComment(selectedId, commentId);
     refresh();
   };
 
   // ── 상세 보기 ─────────────────────────────────────────────────
   if (selectedId !== null) {
-    const c = window.WSD_COLUMNS.getColumn(selectedId);
+    const c = window.BGNJ_COLUMNS.getColumn(selectedId);
     if (!c) {
       return (
         <div className="section">
@@ -109,12 +109,12 @@ const ColumnPage = ({ go, user }) => {
     const idx = publicColumns.findIndex((x) => String(x.id) === String(c.id));
     const prevCol = idx > 0 ? publicColumns[idx - 1] : null;
     const nextCol = idx >= 0 && idx < publicColumns.length - 1 ? publicColumns[idx + 1] : null;
-    const likes = window.WSD_COLUMNS.getLikes(c.id);
+    const likes = window.BGNJ_COLUMNS.getLikes(c.id);
     const liked = !!user && likes.includes(user.id);
-    const views = window.WSD_COLUMNS.getViews(c.id);
-    const comments = window.WSD_COLUMNS.listComments(c.id);
+    const views = window.BGNJ_COLUMNS.getViews(c.id);
+    const comments = window.BGNJ_COLUMNS.listComments(c.id);
     const readTime = c.body?.text
-      ? window.WSD_COLUMNS.estimateReadTime(c.body.text)
+      ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text)
       : c.readTime;
 
     return (
@@ -224,7 +224,7 @@ const ColumnPage = ({ go, user }) => {
                 if (!user || !text.trim()) return;
                 const now = new Date();
                 const pad = (n) => String(n).padStart(2, '0');
-                window.WSD_COLUMNS.addComment(c.id, {
+                window.BGNJ_COLUMNS.addComment(c.id, {
                   id: `comment-${Date.now()}-${Math.random().toString(36).slice(2,4)}`,
                   author: user.name,
                   authorId: user.id,
@@ -304,10 +304,10 @@ const ColumnPage = ({ go, user }) => {
         ) : (
           <div className="grid grid-3">
             {filtered.map((c, i) => {
-              const likes = window.WSD_COLUMNS.getLikes(c.id);
-              const views = window.WSD_COLUMNS.getViews(c.id);
+              const likes = window.BGNJ_COLUMNS.getLikes(c.id);
+              const views = window.BGNJ_COLUMNS.getViews(c.id);
               const readTime = c.body?.text
-                ? window.WSD_COLUMNS.estimateReadTime(c.body.text)
+                ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text)
                 : c.readTime;
               return (
                 <div key={c.id}

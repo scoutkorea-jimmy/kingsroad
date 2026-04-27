@@ -4,15 +4,15 @@ const LecturesPage = ({ go, user }) => {
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   const refresh = () => setTick((v) => v + 1);
 
-  const lectures = React.useMemo(() => window.WSD_LECTURES.listAll(), [tick]);
-  const bank = React.useMemo(() => window.WSD_LECTURES.getBankAccount(), [tick]);
+  const lectures = React.useMemo(() => window.BGNJ_LECTURES.listAll(), [tick]);
+  const bank = React.useMemo(() => window.BGNJ_LECTURES.getBankAccount(), [tick]);
 
   // 외부 진입 — sessionStorage / 해시
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem('wsd_pending_lecture_id'); } catch {}
+    try { pending = sessionStorage.getItem('bgnj_pending_lecture_id'); } catch {}
     if (pending) {
-      try { sessionStorage.removeItem('wsd_pending_lecture_id'); } catch {}
+      try { sessionStorage.removeItem('bgnj_pending_lecture_id'); } catch {}
       const idx = lectures.findIndex((l) => String(l.id) === String(pending));
       if (idx >= 0) setSelectedIdx(idx);
     }
@@ -30,8 +30,8 @@ const LecturesPage = ({ go, user }) => {
 
   const safeIdx = Math.min(selectedIdx, lectures.length - 1);
   const lecture = lectures[safeIdx];
-  const seats = window.WSD_LECTURES.getSeats(lecture.id);
-  const myReg = user ? window.WSD_LECTURES.hasUserRegistered(lecture.id, user.id) : null;
+  const seats = window.BGNJ_LECTURES.getSeats(lecture.id);
+  const myReg = user ? window.BGNJ_LECTURES.hasUserRegistered(lecture.id, user.id) : null;
 
   const formatPrice = (p) => (p === 0 || p == null) ? "무료" : `${p.toLocaleString()}원`;
   const labelStatus = (s) => ({
@@ -180,7 +180,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       setError("운영자 계좌번호가 아직 등록되지 않았습니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
-    const result = window.WSD_LECTURES.register(lecture.id, {
+    const result = window.BGNJ_LECTURES.register(lecture.id, {
       userId: user.id,
       name: name.trim(),
       email: email.trim(),
@@ -197,7 +197,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
   const cancelMyReg = () => {
     if (!myReg) return;
     if (!confirm("이 강연 신청을 취소하시겠어요?")) return;
-    window.WSD_LECTURES.cancelRegistration(lecture.id, myReg.id);
+    window.BGNJ_LECTURES.cancelRegistration(lecture.id, myReg.id);
     onRefresh();
     setSubmitted(null);
   };
@@ -205,13 +205,13 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
   const submitRefund = () => {
     setRefundError("");
     if (!refundReason.trim()) { setRefundError("환불 사유를 입력해 주세요."); return; }
-    const result = window.WSD_LECTURES.requestRefund(lecture.id, myReg.id, refundReason);
+    const result = window.BGNJ_LECTURES.requestRefund(lecture.id, myReg.id, refundReason);
     if (!result.ok) { setRefundError(result.message); return; }
     setRefundMode(false); setRefundReason("");
     onRefresh();
   };
 
-  const downloadIcs = () => window.WSD_LECTURES.downloadIcs(lecture.id);
+  const downloadIcs = () => window.BGNJ_LECTURES.downloadIcs(lecture.id);
   const showPaymentInfo = (lecture.price || 0) > 0 && (myReg?.status === 'pending_payment' || submitted?.status === 'pending_payment');
   const isFull = seats.remaining <= 0;
   const isPaidConfirmed = myReg?.status === 'confirmed' && (lecture.price || 0) > 0;
@@ -414,8 +414,8 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
 
 // === 강연 후기 섹션 (투어 후기와 같은 패턴) ===============================
 const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
-  const reviews = window.WSD_LECTURES.listReviews(lecture.id);
-  const canReview = user ? window.WSD_LECTURES.canReview(lecture.id, user.id) : false;
+  const reviews = window.BGNJ_LECTURES.listReviews(lecture.id);
+  const canReview = user ? window.BGNJ_LECTURES.canReview(lecture.id, user.id) : false;
   const [rating, setRating] = React.useState(5);
   const [text, setText] = React.useState("");
   const [error, setError] = React.useState("");
@@ -431,7 +431,7 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
     }
     if (!canReview) { setError("참가 확정된 분만 후기를 작성할 수 있습니다."); return; }
     if (!text.trim()) { setError("후기 내용을 입력해 주세요."); return; }
-    window.WSD_LECTURES.addReview(lecture.id, {
+    window.BGNJ_LECTURES.addReview(lecture.id, {
       userId: user.id,
       author: user.name,
       rating,
@@ -443,7 +443,7 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
 
   const remove = (id) => {
     if (!confirm("이 후기를 삭제하시겠어요?")) return;
-    window.WSD_LECTURES.deleteReview(lecture.id, id);
+    window.BGNJ_LECTURES.deleteReview(lecture.id, id);
     onRefresh?.();
   };
 

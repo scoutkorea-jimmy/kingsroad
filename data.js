@@ -1,11 +1,44 @@
-// 왕사들 mock data
+// 뱅기노자 mock data
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
-window.WSD_VERSION = {
+window.BGNJ_VERSION = {
   version: "00.025.003",
   build: "2026.04.27",
   channel: "preview",
 };
+
+// === wsd_* → bgnj_* 일회성 마이그레이션 ===
+// 기존 사용자의 localStorage 키 이름이 'wsd_'로 시작했었으므로,
+// 대상 'bgnj_' 키가 비어있고 원본 'wsd_' 키가 있으면 한 번만 복사한다.
+// 원본은 보존(롤백 안전). 마커가 설정되면 다시 실행되지 않는다.
+(function migrateWsdToBgnj() {
+  try {
+    if (localStorage.getItem('bgnj_migration_v1') === 'done') return;
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('wsd_')) keys.push(k);
+    }
+    keys.forEach((oldKey) => {
+      const newKey = 'bgnj_' + oldKey.slice(4);
+      if (localStorage.getItem(newKey) == null) {
+        const v = localStorage.getItem(oldKey);
+        if (v != null) localStorage.setItem(newKey, v);
+      }
+    });
+    // sessionStorage도 같은 방식
+    for (let i = 0; i < sessionStorage.length; i += 1) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith('wsd_')) {
+        const newKey = 'bgnj_' + k.slice(4);
+        if (sessionStorage.getItem(newKey) == null) {
+          sessionStorage.setItem(newKey, sessionStorage.getItem(k));
+        }
+      }
+    }
+    localStorage.setItem('bgnj_migration_v1', 'done');
+  } catch {}
+})();
 
 // === 회원 등급/카테고리/해시태그 저장소 (localStorage 연동) ===
 const _lsGet = (k, fallback) => {
@@ -20,7 +53,7 @@ const _asRecord = (value, fallback = {}) => (
   value && typeof value === "object" && !Array.isArray(value) ? value : fallback
 );
 
-const WSD_STORAGE_VERSION = "v1-local-first";
+const BGNJ_STORAGE_VERSION = "v1-local-first";
 const hashPassword = (input) => {
   const value = String(input || "");
   let hash = 0;
@@ -28,7 +61,7 @@ const hashPassword = (input) => {
     hash = ((hash << 5) - hash) + value.charCodeAt(i);
     hash |= 0;
   }
-  return `wsd_${Math.abs(hash).toString(16)}`;
+  return `bgnj_${Math.abs(hash).toString(16)}`;
 };
 
 // 회원 등급 — 번호가 낮을수록 권한 낮음. admin > …
@@ -205,105 +238,105 @@ const ensureCommunityPostsSeeded = (posts, legacyUserPosts) => {
   return next;
 };
 
-window.WSD_STORES = {
-  storageVersion: WSD_STORAGE_VERSION,
+window.BGNJ_STORES = {
+  storageVersion: BGNJ_STORAGE_VERSION,
   grades: (() => {
-    const raw = _asArray(_lsGet('wsd_grades', DEFAULT_GRADES), DEFAULT_GRADES.slice());
+    const raw = _asArray(_lsGet('bgnj_grades', DEFAULT_GRADES), DEFAULT_GRADES.slice());
     const migrated = migrateLegacyGradeColors(raw);
     // 색상이 실제로 바뀐 경우에만 캐시 업데이트(한 번만 발생)
     if (raw.some((g, i) => g && migrated[i] && g.color !== migrated[i].color)) {
-      try { _lsSet('wsd_grades', migrated); } catch {}
+      try { _lsSet('bgnj_grades', migrated); } catch {}
     }
     return migrated;
   })(),
-  categories: _asArray(_lsGet('wsd_categories', DEFAULT_CATEGORIES), DEFAULT_CATEGORIES.slice()),
-  communityPosts: ensureCommunityPostsSeeded(_lsGet('wsd_community_posts', []), _lsGet('wsd_user_posts', [])),
-  userPosts: _asArray(_lsGet('wsd_user_posts', [])),
-  comments: _asRecord(_lsGet('wsd_comments', {})),
-  userColumns: _asArray(_lsGet('wsd_user_columns', [])),
-  users: ensureUsersSeeded(_lsGet('wsd_users', DEFAULT_USERS)),
-  session: _asRecord(_lsGet('wsd_session', null), null),
-  bookmarks: _asRecord(_lsGet('wsd_bookmarks', {})),
-  reports: _asArray(_lsGet('wsd_reports', [])),
-  notifications: _asRecord(_lsGet('wsd_notifications', {})),
-  columnEngagement: _asRecord(_lsGet('wsd_column_engagement', {})),
-  lectureOverrides: _asRecord(_lsGet('wsd_lecture_overrides', {})),
-  lectureRegistrations: _asRecord(_lsGet('wsd_lecture_registrations', {})),
-  bankAccount: _asRecord(_lsGet('wsd_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }), { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
-  bookOrders: _asArray(_lsGet('wsd_book_orders', [])),
-  bookReviews: _asArray(_lsGet('wsd_book_reviews', [])),
-  tourOverrides: _asRecord(_lsGet('wsd_tour_overrides', {})),
-  tourReservations: _asRecord(_lsGet('wsd_tour_reservations', {})),
-  tourReviews: _asRecord(_lsGet('wsd_tour_reviews', {})),
-  legalDocs: _asRecord(_lsGet('wsd_legal_docs', {
-    privacy: { title: "개인정보 처리방침", body: "<p>왕사들 사이트는 회원 가입과 운영을 위해 최소한의 개인정보를 수집·이용합니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
-    terms:   { title: "이용약관",          body: "<p>왕사들 사이트의 이용약관입니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
+  categories: _asArray(_lsGet('bgnj_categories', DEFAULT_CATEGORIES), DEFAULT_CATEGORIES.slice()),
+  communityPosts: ensureCommunityPostsSeeded(_lsGet('bgnj_community_posts', []), _lsGet('bgnj_user_posts', [])),
+  userPosts: _asArray(_lsGet('bgnj_user_posts', [])),
+  comments: _asRecord(_lsGet('bgnj_comments', {})),
+  userColumns: _asArray(_lsGet('bgnj_user_columns', [])),
+  users: ensureUsersSeeded(_lsGet('bgnj_users', DEFAULT_USERS)),
+  session: _asRecord(_lsGet('bgnj_session', null), null),
+  bookmarks: _asRecord(_lsGet('bgnj_bookmarks', {})),
+  reports: _asArray(_lsGet('bgnj_reports', [])),
+  notifications: _asRecord(_lsGet('bgnj_notifications', {})),
+  columnEngagement: _asRecord(_lsGet('bgnj_column_engagement', {})),
+  lectureOverrides: _asRecord(_lsGet('bgnj_lecture_overrides', {})),
+  lectureRegistrations: _asRecord(_lsGet('bgnj_lecture_registrations', {})),
+  bankAccount: _asRecord(_lsGet('bgnj_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }), { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
+  bookOrders: _asArray(_lsGet('bgnj_book_orders', [])),
+  bookReviews: _asArray(_lsGet('bgnj_book_reviews', [])),
+  tourOverrides: _asRecord(_lsGet('bgnj_tour_overrides', {})),
+  tourReservations: _asRecord(_lsGet('bgnj_tour_reservations', {})),
+  tourReviews: _asRecord(_lsGet('bgnj_tour_reviews', {})),
+  legalDocs: _asRecord(_lsGet('bgnj_legal_docs', {
+    privacy: { title: "개인정보 처리방침", body: "<p>뱅기노자 사이트는 회원 가입과 운영을 위해 최소한의 개인정보를 수집·이용합니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
+    terms:   { title: "이용약관",          body: "<p>뱅기노자 사이트의 이용약관입니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
   })),
-  lectureReviews: _asRecord(_lsGet('wsd_lecture_reviews', {})),
-  auditLog: _asArray(_lsGet('wsd_audit_log', [])),
-  siteContent: _asRecord(_lsGet('wsd_site_content', {}), {}),
-  books: _asArray(_lsGet('wsd_books', DEFAULT_BOOKS), DEFAULT_BOOKS.slice()),
-  faqs: _asArray(_lsGet('wsd_faqs', [
+  lectureReviews: _asRecord(_lsGet('bgnj_lecture_reviews', {})),
+  auditLog: _asArray(_lsGet('bgnj_audit_log', [])),
+  siteContent: _asRecord(_lsGet('bgnj_site_content', {}), {}),
+  books: _asArray(_lsGet('bgnj_books', DEFAULT_BOOKS), DEFAULT_BOOKS.slice()),
+  faqs: _asArray(_lsGet('bgnj_faqs', [
     { id: 'faq-1', question: "회원가입은 어떻게 하나요?", answer: "상단 로그인 화면에서 '회원가입' 탭을 눌러 이메일과 비밀번호를 등록하면 즉시 가입됩니다.", category: '계정', order: 0 },
     { id: 'faq-2', question: "강연·답사 결제는 어떻게 진행되나요?", answer: "현재는 무통장 입금만 지원합니다. 신청 → 안내 계좌로 입금 → 운영자 입금 확인 → 참가 확정 순으로 진행됩니다.", category: '결제', order: 1 },
     { id: 'faq-3', question: "주문 취소 / 환불은 가능한가요?", answer: "마이페이지에서 입금 확인 전 단계의 주문은 직접 취소할 수 있습니다. 환불 처리는 운영자에게 문의해 주세요.", category: '결제', order: 2 },
   ])),
 };
-window.WSD_SAVE = {
-  grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
-  categories: () => _lsSet('wsd_categories', window.WSD_STORES.categories),
-  communityPosts: () => _lsSet('wsd_community_posts', window.WSD_STORES.communityPosts),
-  userPosts: () => _lsSet('wsd_user_posts', window.WSD_STORES.userPosts),
-  comments: () => _lsSet('wsd_comments', window.WSD_STORES.comments),
-  userColumns: () => _lsSet('wsd_user_columns', window.WSD_STORES.userColumns),
-  users: () => _lsSet('wsd_users', window.WSD_STORES.users),
-  session: () => _lsSet('wsd_session', window.WSD_STORES.session),
-  bookmarks: () => _lsSet('wsd_bookmarks', window.WSD_STORES.bookmarks),
-  reports: () => _lsSet('wsd_reports', window.WSD_STORES.reports),
-  notifications: () => _lsSet('wsd_notifications', window.WSD_STORES.notifications),
-  columnEngagement: () => _lsSet('wsd_column_engagement', window.WSD_STORES.columnEngagement),
-  lectureOverrides: () => _lsSet('wsd_lecture_overrides', window.WSD_STORES.lectureOverrides),
-  lectureRegistrations: () => _lsSet('wsd_lecture_registrations', window.WSD_STORES.lectureRegistrations),
-  bankAccount: () => _lsSet('wsd_bank_account', window.WSD_STORES.bankAccount),
-  bookOrders: () => _lsSet('wsd_book_orders', window.WSD_STORES.bookOrders),
-  bookReviews: () => _lsSet('wsd_book_reviews', window.WSD_STORES.bookReviews),
-  tourOverrides: () => _lsSet('wsd_tour_overrides', window.WSD_STORES.tourOverrides),
-  tourReservations: () => _lsSet('wsd_tour_reservations', window.WSD_STORES.tourReservations),
-  tourReviews: () => _lsSet('wsd_tour_reviews', window.WSD_STORES.tourReviews),
-  legalDocs: () => _lsSet('wsd_legal_docs', window.WSD_STORES.legalDocs),
-  faqs: () => _lsSet('wsd_faqs', window.WSD_STORES.faqs),
-  siteContent: () => _lsSet('wsd_site_content', window.WSD_STORES.siteContent),
-  books: () => _lsSet('wsd_books', window.WSD_STORES.books),
-  lectureReviews: () => _lsSet('wsd_lecture_reviews', window.WSD_STORES.lectureReviews),
-  auditLog: () => _lsSet('wsd_audit_log', window.WSD_STORES.auditLog),
-  resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
-  resetCategories: () => { window.WSD_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('wsd_categories', window.WSD_STORES.categories); },
+window.BGNJ_SAVE = {
+  grades: () => _lsSet('bgnj_grades', window.BGNJ_STORES.grades),
+  categories: () => _lsSet('bgnj_categories', window.BGNJ_STORES.categories),
+  communityPosts: () => _lsSet('bgnj_community_posts', window.BGNJ_STORES.communityPosts),
+  userPosts: () => _lsSet('bgnj_user_posts', window.BGNJ_STORES.userPosts),
+  comments: () => _lsSet('bgnj_comments', window.BGNJ_STORES.comments),
+  userColumns: () => _lsSet('bgnj_user_columns', window.BGNJ_STORES.userColumns),
+  users: () => _lsSet('bgnj_users', window.BGNJ_STORES.users),
+  session: () => _lsSet('bgnj_session', window.BGNJ_STORES.session),
+  bookmarks: () => _lsSet('bgnj_bookmarks', window.BGNJ_STORES.bookmarks),
+  reports: () => _lsSet('bgnj_reports', window.BGNJ_STORES.reports),
+  notifications: () => _lsSet('bgnj_notifications', window.BGNJ_STORES.notifications),
+  columnEngagement: () => _lsSet('bgnj_column_engagement', window.BGNJ_STORES.columnEngagement),
+  lectureOverrides: () => _lsSet('bgnj_lecture_overrides', window.BGNJ_STORES.lectureOverrides),
+  lectureRegistrations: () => _lsSet('bgnj_lecture_registrations', window.BGNJ_STORES.lectureRegistrations),
+  bankAccount: () => _lsSet('bgnj_bank_account', window.BGNJ_STORES.bankAccount),
+  bookOrders: () => _lsSet('bgnj_book_orders', window.BGNJ_STORES.bookOrders),
+  bookReviews: () => _lsSet('bgnj_book_reviews', window.BGNJ_STORES.bookReviews),
+  tourOverrides: () => _lsSet('bgnj_tour_overrides', window.BGNJ_STORES.tourOverrides),
+  tourReservations: () => _lsSet('bgnj_tour_reservations', window.BGNJ_STORES.tourReservations),
+  tourReviews: () => _lsSet('bgnj_tour_reviews', window.BGNJ_STORES.tourReviews),
+  legalDocs: () => _lsSet('bgnj_legal_docs', window.BGNJ_STORES.legalDocs),
+  faqs: () => _lsSet('bgnj_faqs', window.BGNJ_STORES.faqs),
+  siteContent: () => _lsSet('bgnj_site_content', window.BGNJ_STORES.siteContent),
+  books: () => _lsSet('bgnj_books', window.BGNJ_STORES.books),
+  lectureReviews: () => _lsSet('bgnj_lecture_reviews', window.BGNJ_STORES.lectureReviews),
+  auditLog: () => _lsSet('bgnj_audit_log', window.BGNJ_STORES.auditLog),
+  resetGrades: () => { window.BGNJ_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('bgnj_grades', window.BGNJ_STORES.grades); },
+  resetCategories: () => { window.BGNJ_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('bgnj_categories', window.BGNJ_STORES.categories); },
 };
 
-window.WSD_DB = {
-  version: WSD_STORAGE_VERSION,
+window.BGNJ_DB = {
+  version: BGNJ_STORAGE_VERSION,
   mode: "local-first",
   entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders", "bookReviews", "tourOverrides", "tourReservations", "tourReviews", "lectureReviews", "auditLog", "legalDocs", "faqs"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
-window.WSD_AUTH = {
+window.BGNJ_AUTH = {
   hashPassword,
   getSessionUser() {
-    return window.WSD_STORES.session || null;
+    return window.BGNJ_STORES.session || null;
   },
   listUsers() {
-    return window.WSD_STORES.users.slice();
+    return window.BGNJ_STORES.users.slice();
   },
   signOut() {
-    window.WSD_STORES.session = null;
-    window.WSD_SAVE.session();
+    window.BGNJ_STORES.session = null;
+    window.BGNJ_SAVE.session();
     return null;
   },
   signIn({ email, password }) {
     const normalizedEmail = String(email || "").trim().toLowerCase();
     const passwordHash = hashPassword(password);
-    const found = window.WSD_STORES.users.find((user) => user.email === normalizedEmail);
+    const found = window.BGNJ_STORES.users.find((user) => user.email === normalizedEmail);
     if (!found) {
       return { ok: false, message: "등록되지 않은 이메일입니다." };
     }
@@ -323,84 +356,84 @@ window.WSD_AUTH = {
       consents: found.consents,
       joinedAt: found.joinedAt,
     };
-    window.WSD_STORES.session = sessionUser;
-    window.WSD_SAVE.session();
+    window.BGNJ_STORES.session = sessionUser;
+    window.BGNJ_SAVE.session();
     return { ok: true, user: sessionUser };
   },
 
   // ── 관리자 운영 ─────────────────────────────────────────────
   setGrade(userId, gradeId) {
-    const before = (window.WSD_STORES.users || []).find((u) => u.id === userId);
-    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
+    const before = (window.BGNJ_STORES.users || []).find((u) => u.id === userId);
+    window.BGNJ_STORES.users = window.BGNJ_STORES.users.map((u) => (
       u.id === userId ? { ...u, gradeId, gradeChangedAt: new Date().toISOString() } : u
     ));
-    window.WSD_SAVE.users();
-    if (window.WSD_STORES.session?.id === userId) {
-      window.WSD_STORES.session = { ...window.WSD_STORES.session, gradeId };
-      window.WSD_SAVE.session();
+    window.BGNJ_SAVE.users();
+    if (window.BGNJ_STORES.session?.id === userId) {
+      window.BGNJ_STORES.session = { ...window.BGNJ_STORES.session, gradeId };
+      window.BGNJ_SAVE.session();
     }
     if (before && before.gradeId !== gradeId) {
-      window.WSD_AUDIT?.log({ action: 'member.grade_change', target: `user:${userId}`, details: { from: before.gradeId, to: gradeId } });
+      window.BGNJ_AUDIT?.log({ action: 'member.grade_change', target: `user:${userId}`, details: { from: before.gradeId, to: gradeId } });
     }
-    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
+    return window.BGNJ_STORES.users.find((u) => u.id === userId) || null;
   },
   suspendUser(userId, reason) {
-    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
+    window.BGNJ_STORES.users = window.BGNJ_STORES.users.map((u) => (
       u.id === userId ? { ...u, suspended: true, suspendedReason: reason || '', suspendedAt: new Date().toISOString() } : u
     ));
-    window.WSD_SAVE.users();
-    if (window.WSD_STORES.session?.id === userId) {
-      window.WSD_STORES.session = null;
-      window.WSD_SAVE.session();
+    window.BGNJ_SAVE.users();
+    if (window.BGNJ_STORES.session?.id === userId) {
+      window.BGNJ_STORES.session = null;
+      window.BGNJ_SAVE.session();
     }
-    window.WSD_AUDIT?.log({ action: 'member.suspend', target: `user:${userId}`, details: { reason: reason || '' } });
-    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
+    window.BGNJ_AUDIT?.log({ action: 'member.suspend', target: `user:${userId}`, details: { reason: reason || '' } });
+    return window.BGNJ_STORES.users.find((u) => u.id === userId) || null;
   },
   unsuspendUser(userId) {
-    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => (
+    window.BGNJ_STORES.users = window.BGNJ_STORES.users.map((u) => (
       u.id === userId ? { ...u, suspended: false, suspendedReason: '', unsuspendedAt: new Date().toISOString() } : u
     ));
-    window.WSD_SAVE.users();
-    window.WSD_AUDIT?.log({ action: 'member.unsuspend', target: `user:${userId}` });
-    return window.WSD_STORES.users.find((u) => u.id === userId) || null;
+    window.BGNJ_SAVE.users();
+    window.BGNJ_AUDIT?.log({ action: 'member.unsuspend', target: `user:${userId}` });
+    return window.BGNJ_STORES.users.find((u) => u.id === userId) || null;
   },
   removeUser(userId) {
-    window.WSD_STORES.users = window.WSD_STORES.users.filter((u) => u.id !== userId);
-    window.WSD_SAVE.users();
-    if (window.WSD_STORES.session?.id === userId) {
-      window.WSD_STORES.session = null;
-      window.WSD_SAVE.session();
+    window.BGNJ_STORES.users = window.BGNJ_STORES.users.filter((u) => u.id !== userId);
+    window.BGNJ_SAVE.users();
+    if (window.BGNJ_STORES.session?.id === userId) {
+      window.BGNJ_STORES.session = null;
+      window.BGNJ_SAVE.session();
     }
-    window.WSD_AUDIT?.log({ action: 'member.remove', target: `user:${userId}` });
+    window.BGNJ_AUDIT?.log({ action: 'member.remove', target: `user:${userId}` });
   },
   toggleAdmin(userId) {
-    const before = (window.WSD_STORES.users || []).find((u) => u.id === userId);
+    const before = (window.BGNJ_STORES.users || []).find((u) => u.id === userId);
     let next = null;
-    window.WSD_STORES.users = window.WSD_STORES.users.map((u) => {
+    window.BGNJ_STORES.users = window.BGNJ_STORES.users.map((u) => {
       if (u.id !== userId) return u;
       next = { ...u, isAdmin: !u.isAdmin };
       return next;
     });
-    window.WSD_SAVE.users();
-    if (window.WSD_STORES.session?.id === userId && next) {
-      window.WSD_STORES.session = { ...window.WSD_STORES.session, isAdmin: next.isAdmin };
-      window.WSD_SAVE.session();
+    window.BGNJ_SAVE.users();
+    if (window.BGNJ_STORES.session?.id === userId && next) {
+      window.BGNJ_STORES.session = { ...window.BGNJ_STORES.session, isAdmin: next.isAdmin };
+      window.BGNJ_SAVE.session();
     }
     if (before && next) {
-      window.WSD_AUDIT?.log({ action: 'member.admin_toggle', target: `user:${userId}`, details: { from: !!before.isAdmin, to: !!next.isAdmin } });
+      window.BGNJ_AUDIT?.log({ action: 'member.admin_toggle', target: `user:${userId}`, details: { from: !!before.isAdmin, to: !!next.isAdmin } });
     }
     return next;
   },
   getActivity(userId) {
     if (!userId) return null;
-    const posts = (window.WSD_COMMUNITY?.listPosts?.() || []).filter((p) => p.authorId === userId);
-    const comments = Object.values(window.WSD_STORES.comments || {})
+    const posts = (window.BGNJ_COMMUNITY?.listPosts?.() || []).filter((p) => p.authorId === userId);
+    const comments = Object.values(window.BGNJ_STORES.comments || {})
       .reduce((sum, list) => sum + (Array.isArray(list) ? list.filter((c) => c.authorId === userId).length : 0), 0);
-    const bookOrders = (window.WSD_BOOK_ORDERS?.listMine?.(userId) || []);
-    const lectures = (window.WSD_LECTURES?.listMyRegistrations?.(userId) || []);
-    const tours = (window.WSD_TOURS?.listMyReservations?.(userId) || []);
-    const bookmarks = (window.WSD_COMMUNITY?.getBookmarks?.(userId) || []);
-    const notifications = (window.WSD_COMMUNITY?.listNotifications?.(userId) || []);
+    const bookOrders = (window.BGNJ_BOOK_ORDERS?.listMine?.(userId) || []);
+    const lectures = (window.BGNJ_LECTURES?.listMyRegistrations?.(userId) || []);
+    const tours = (window.BGNJ_TOURS?.listMyReservations?.(userId) || []);
+    const bookmarks = (window.BGNJ_COMMUNITY?.getBookmarks?.(userId) || []);
+    const notifications = (window.BGNJ_COMMUNITY?.listNotifications?.(userId) || []);
     return {
       postCount: posts.length,
       posts,
@@ -414,7 +447,7 @@ window.WSD_AUTH = {
   },
   signUp(payload) {
     const normalizedEmail = String(payload.email || "").trim().toLowerCase();
-    if (window.WSD_STORES.users.find((user) => user.email === normalizedEmail)) {
+    if (window.BGNJ_STORES.users.find((user) => user.email === normalizedEmail)) {
       return { ok: false, message: "이미 가입된 이메일입니다." };
     }
     const nextUser = {
@@ -428,8 +461,8 @@ window.WSD_AUTH = {
       consents: payload.consents || { terms: true, marketing: false, thirdParty: false },
       joinedAt: new Date().toISOString(),
     };
-    window.WSD_STORES.users = [nextUser, ...window.WSD_STORES.users];
-    window.WSD_SAVE.users();
+    window.BGNJ_STORES.users = [nextUser, ...window.BGNJ_STORES.users];
+    window.BGNJ_SAVE.users();
     const sessionUser = {
       id: nextUser.id,
       name: nextUser.name,
@@ -440,22 +473,22 @@ window.WSD_AUTH = {
       consents: nextUser.consents,
       joinedAt: nextUser.joinedAt,
     };
-    window.WSD_STORES.session = sessionUser;
-    window.WSD_SAVE.session();
+    window.BGNJ_STORES.session = sessionUser;
+    window.BGNJ_SAVE.session();
     return { ok: true, user: sessionUser };
   },
 };
 
-window.WSD_COMMUNITY = {
+window.BGNJ_COMMUNITY = {
   listPosts() {
-    return (window.WSD_STORES.communityPosts || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    return (window.BGNJ_STORES.communityPosts || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
   },
   getPost(postId) {
-    return (window.WSD_STORES.communityPosts || []).find((post) => String(post.id) === String(postId)) || null;
+    return (window.BGNJ_STORES.communityPosts || []).find((post) => String(post.id) === String(postId)) || null;
   },
   savePosts(posts) {
-    window.WSD_STORES.communityPosts = posts.map(normalizeCommunityPost);
-    window.WSD_SAVE.communityPosts();
+    window.BGNJ_STORES.communityPosts = posts.map(normalizeCommunityPost);
+    window.BGNJ_SAVE.communityPosts();
   },
   createPost(payload) {
     const nextPost = normalizeCommunityPost({
@@ -466,7 +499,7 @@ window.WSD_COMMUNITY = {
     });
     this.savePosts([nextPost, ...this.listPosts()]);
     if (payload.authorId) {
-      try { window.WSD_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
+      try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
     }
     return nextPost;
   },
@@ -482,8 +515,8 @@ window.WSD_COMMUNITY = {
   deletePost(postId) {
     const nextPosts = this.listPosts().filter((post) => String(post.id) !== String(postId));
     this.savePosts(nextPosts);
-    delete window.WSD_STORES.comments[postId];
-    window.WSD_SAVE.comments();
+    delete window.BGNJ_STORES.comments[postId];
+    window.BGNJ_SAVE.comments();
   },
   incrementViews(postId) {
     const post = this.getPost(postId);
@@ -491,11 +524,11 @@ window.WSD_COMMUNITY = {
     return this.updatePost(postId, { views: (post.views || 0) + 1 });
   },
   getComments(postId) {
-    return (window.WSD_STORES.comments[String(postId)] || []).slice();
+    return (window.BGNJ_STORES.comments[String(postId)] || []).slice();
   },
   saveComments(postId, comments) {
-    window.WSD_STORES.comments[String(postId)] = comments.slice();
-    window.WSD_SAVE.comments();
+    window.BGNJ_STORES.comments[String(postId)] = comments.slice();
+    window.BGNJ_SAVE.comments();
     const post = this.getPost(postId);
     if (post) {
       this.updatePost(postId, { replies: comments.length });
@@ -505,7 +538,7 @@ window.WSD_COMMUNITY = {
     const nextComments = [...this.getComments(postId), payload];
     this.saveComments(postId, nextComments);
     if (payload.authorId) {
-      try { window.WSD_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
+      try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
     }
     return nextComments;
   },
@@ -549,7 +582,7 @@ window.WSD_COMMUNITY = {
   // ── 북마크 (per-user post list) ───────────────────────────────────
   getBookmarks(userId) {
     if (!userId) return [];
-    const map = window.WSD_STORES.bookmarks || {};
+    const map = window.BGNJ_STORES.bookmarks || {};
     return Array.isArray(map[userId]) ? map[userId].slice() : [];
   },
   isBookmarked(userId, postId) {
@@ -557,12 +590,12 @@ window.WSD_COMMUNITY = {
   },
   toggleBookmark(userId, postId) {
     if (!userId) return [];
-    const map = window.WSD_STORES.bookmarks || {};
+    const map = window.BGNJ_STORES.bookmarks || {};
     const list = Array.isArray(map[userId]) ? map[userId] : [];
     const next = list.includes(postId) ? list.filter((x) => x !== postId) : [postId, ...list];
     map[userId] = next;
-    window.WSD_STORES.bookmarks = map;
-    window.WSD_SAVE.bookmarks();
+    window.BGNJ_STORES.bookmarks = map;
+    window.BGNJ_SAVE.bookmarks();
     return next;
   },
   listBookmarkedPosts(userId) {
@@ -581,31 +614,31 @@ window.WSD_COMMUNITY = {
       createdAt: new Date().toISOString(),
       status: "open",
     };
-    window.WSD_STORES.reports = [report, ...(window.WSD_STORES.reports || [])];
-    window.WSD_SAVE.reports();
+    window.BGNJ_STORES.reports = [report, ...(window.BGNJ_STORES.reports || [])];
+    window.BGNJ_SAVE.reports();
     return report;
   },
   listReports(filter) {
-    const all = (window.WSD_STORES.reports || []).slice();
+    const all = (window.BGNJ_STORES.reports || []).slice();
     if (!filter || filter === "all") return all;
     return all.filter((r) => r.status === filter);
   },
   updateReportStatus(id, status) {
-    const next = (window.WSD_STORES.reports || []).map((r) =>
+    const next = (window.BGNJ_STORES.reports || []).map((r) =>
       r.id === id ? { ...r, status, updatedAt: new Date().toISOString() } : r
     );
-    window.WSD_STORES.reports = next;
-    window.WSD_SAVE.reports();
+    window.BGNJ_STORES.reports = next;
+    window.BGNJ_SAVE.reports();
     return next.find((r) => r.id === id) || null;
   },
   countOpenReports() {
-    return (window.WSD_STORES.reports || []).filter((r) => r.status === "open").length;
+    return (window.BGNJ_STORES.reports || []).filter((r) => r.status === "open").length;
   },
 
   // ── 알림 (per-user) ───────────────────────────────────────────────
   addNotification(userId, payload) {
     if (!userId) return null;
-    const map = window.WSD_STORES.notifications || {};
+    const map = window.BGNJ_STORES.notifications || {};
     const list = Array.isArray(map[userId]) ? map[userId] : [];
     const entry = {
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -614,13 +647,13 @@ window.WSD_COMMUNITY = {
       ...payload,
     };
     map[userId] = [entry, ...list].slice(0, 50);
-    window.WSD_STORES.notifications = map;
-    window.WSD_SAVE.notifications();
+    window.BGNJ_STORES.notifications = map;
+    window.BGNJ_SAVE.notifications();
     return entry;
   },
   listNotifications(userId) {
     if (!userId) return [];
-    const map = window.WSD_STORES.notifications || {};
+    const map = window.BGNJ_STORES.notifications || {};
     return Array.isArray(map[userId]) ? map[userId].slice() : [];
   },
   unreadNotificationCount(userId) {
@@ -628,52 +661,52 @@ window.WSD_COMMUNITY = {
   },
   markNotificationRead(userId, id) {
     if (!userId) return [];
-    const map = window.WSD_STORES.notifications || {};
+    const map = window.BGNJ_STORES.notifications || {};
     map[userId] = (map[userId] || []).map((n) => (n.id === id ? { ...n, read: true } : n));
-    window.WSD_STORES.notifications = map;
-    window.WSD_SAVE.notifications();
+    window.BGNJ_STORES.notifications = map;
+    window.BGNJ_SAVE.notifications();
     return map[userId];
   },
   markAllNotificationsRead(userId) {
     if (!userId) return [];
-    const map = window.WSD_STORES.notifications || {};
+    const map = window.BGNJ_STORES.notifications || {};
     map[userId] = (map[userId] || []).map((n) => ({ ...n, read: true }));
-    window.WSD_STORES.notifications = map;
-    window.WSD_SAVE.notifications();
+    window.BGNJ_STORES.notifications = map;
+    window.BGNJ_SAVE.notifications();
     return map[userId];
   },
   clearNotifications(userId) {
     if (!userId) return [];
-    const map = window.WSD_STORES.notifications || {};
+    const map = window.BGNJ_STORES.notifications || {};
     map[userId] = [];
-    window.WSD_STORES.notifications = map;
-    window.WSD_SAVE.notifications();
+    window.BGNJ_STORES.notifications = map;
+    window.BGNJ_SAVE.notifications();
     return [];
   },
 };
 
-// === 칼럼(WSD_COLUMNS) helper ===========================================
+// === 칼럼(BGNJ_COLUMNS) helper ===========================================
 // 운영 정책:
-//   - userColumns 저장소가 콘텐츠(본문/메타) 단일 출처. 시드 칼럼은 WANGSADEUL_DATA.columns.
+//   - userColumns 저장소가 콘텐츠(본문/메타) 단일 출처. 시드 칼럼은 BANGINOJA_DATA.columns.
 //   - status: 'draft' | 'scheduled' | 'published' (시드는 항상 published).
 //   - 좋아요/조회수는 columnEngagement 맵으로 분리 — 시드 칼럼도 동일하게 저장.
-//   - 댓글은 WSD_COMMUNITY.comments 저장소를 `col-{id}` 키로 재사용.
-window.WSD_COLUMNS = {
+//   - 댓글은 BGNJ_COMMUNITY.comments 저장소를 `col-{id}` 키로 재사용.
+window.BGNJ_COLUMNS = {
   estimateReadTime(text) {
     const len = String(text || '').length;
     const minutes = Math.max(3, Math.ceil(len / 600));
     return `${minutes}분`;
   },
   _engage(id) {
-    const map = window.WSD_STORES.columnEngagement || {};
+    const map = window.BGNJ_STORES.columnEngagement || {};
     const entry = map[String(id)] || {};
     return { likes: Array.isArray(entry.likes) ? entry.likes : [], views: entry.views || 0 };
   },
   _setEngage(id, next) {
-    const map = window.WSD_STORES.columnEngagement || {};
+    const map = window.BGNJ_STORES.columnEngagement || {};
     map[String(id)] = next;
-    window.WSD_STORES.columnEngagement = map;
-    window.WSD_SAVE.columnEngagement();
+    window.BGNJ_STORES.columnEngagement = map;
+    window.BGNJ_SAVE.columnEngagement();
   },
   getLikes(id) { return this._engage(id).likes.slice(); },
   hasLiked(id, userId) { return !!userId && this.getLikes(id).includes(userId); },
@@ -695,7 +728,7 @@ window.WSD_COLUMNS = {
   // 예약 발행이 시간 지났으면 자동으로 published로 승격
   _autoPromote() {
     const now = Date.now();
-    const list = (window.WSD_STORES.userColumns || []);
+    const list = (window.BGNJ_STORES.userColumns || []);
     let mutated = false;
     const next = list.map((c) => {
       if (c.status === 'scheduled' && c.publishAt && new Date(c.publishAt).getTime() <= now) {
@@ -705,49 +738,49 @@ window.WSD_COLUMNS = {
       return c;
     });
     if (mutated) {
-      window.WSD_STORES.userColumns = next;
-      window.WSD_SAVE.userColumns();
+      window.BGNJ_STORES.userColumns = next;
+      window.BGNJ_SAVE.userColumns();
     }
   },
   listAll() {
     this._autoPromote();
-    return (window.WSD_STORES.userColumns || []).map((c) => ({
+    return (window.BGNJ_STORES.userColumns || []).map((c) => ({
       ...c, status: c.status || 'published',
     }));
   },
   // 공개 노출용 — published 사용자 칼럼 + 시드 칼럼
   listPublic() {
     this._autoPromote();
-    const userPub = (window.WSD_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published');
-    const seed = (window.WANGSADEUL_DATA?.columns || []).map((c) => ({ ...c, status: 'published' }));
+    const userPub = (window.BGNJ_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published');
+    const seed = (window.BANGINOJA_DATA?.columns || []).map((c) => ({ ...c, status: 'published' }));
     return [...userPub, ...seed];
   },
   getColumn(id) {
     this._autoPromote();
-    const fromUser = (window.WSD_STORES.userColumns || []).find((c) => String(c.id) === String(id));
+    const fromUser = (window.BGNJ_STORES.userColumns || []).find((c) => String(c.id) === String(id));
     if (fromUser) return { ...fromUser, status: fromUser.status || 'published' };
-    const seed = (window.WANGSADEUL_DATA?.columns || []).find((c) => String(c.id) === String(id));
+    const seed = (window.BANGINOJA_DATA?.columns || []).find((c) => String(c.id) === String(id));
     return seed ? { ...seed, status: 'published' } : null;
   },
   saveColumn(payload) {
-    const list = window.WSD_STORES.userColumns || [];
+    const list = window.BGNJ_STORES.userColumns || [];
     const idx = list.findIndex((c) => String(c.id) === String(payload.id));
     if (idx >= 0) {
       list[idx] = { ...list[idx], ...payload, updatedAt: new Date().toISOString() };
     } else {
       list.unshift({ ...payload, createdAt: new Date().toISOString() });
     }
-    window.WSD_STORES.userColumns = list;
-    window.WSD_SAVE.userColumns();
+    window.BGNJ_STORES.userColumns = list;
+    window.BGNJ_SAVE.userColumns();
     return payload;
   },
   deleteColumn(id) {
-    window.WSD_STORES.userColumns = (window.WSD_STORES.userColumns || []).filter((c) => String(c.id) !== String(id));
-    window.WSD_SAVE.userColumns();
-    const map = window.WSD_STORES.columnEngagement || {};
+    window.BGNJ_STORES.userColumns = (window.BGNJ_STORES.userColumns || []).filter((c) => String(c.id) !== String(id));
+    window.BGNJ_SAVE.userColumns();
+    const map = window.BGNJ_STORES.columnEngagement || {};
     delete map[String(id)];
-    window.WSD_STORES.columnEngagement = map;
-    window.WSD_SAVE.columnEngagement();
+    window.BGNJ_STORES.columnEngagement = map;
+    window.BGNJ_SAVE.columnEngagement();
   },
   // 검색 + 카테고리 필터
   searchPublic({ query = '', category = '전체' } = {}) {
@@ -761,71 +794,89 @@ window.WSD_COLUMNS = {
       return inTitle || inExcerpt || inBodyText;
     });
   },
-  // 댓글은 WSD_COMMUNITY 저장소 재사용 (`col-{id}` 키)
-  listComments(id) { return window.WSD_COMMUNITY.getComments(`col-${id}`); },
-  addComment(id, payload) { return window.WSD_COMMUNITY.addComment(`col-${id}`, payload); },
-  deleteComment(id, commentId) { return window.WSD_COMMUNITY.deleteComment(`col-${id}`, commentId); },
+  // 댓글은 BGNJ_COMMUNITY 저장소 재사용 (`col-{id}` 키)
+  listComments(id) { return window.BGNJ_COMMUNITY.getComments(`col-${id}`); },
+  addComment(id, payload) { return window.BGNJ_COMMUNITY.addComment(`col-${id}`, payload); },
+  deleteComment(id, commentId) { return window.BGNJ_COMMUNITY.deleteComment(`col-${id}`, commentId); },
 };
 
-// === 강연(WSD_LECTURES) helper ==========================================
+// === 강연(BGNJ_LECTURES) helper ==========================================
 // 운영 정책:
-//   - 시드는 WANGSADEUL_DATA.lectures. 관리자가 정원/일정/제목 등을 수정하면
+//   - 시드는 BANGINOJA_DATA.lectures. 관리자가 정원/일정/제목 등을 수정하면
 //     `lectureOverrides`(같은 id 키)에 변경분만 저장하고 listAll에서 머지.
 //   - 신청은 회원 전용. 한 회원당 한 강연에 한 번만 신청 가능 (중복 방지).
 //   - 결제 정책: price === 0 이면 즉시 'confirmed', price > 0 이면 'pending_payment'.
 //   - 정원 차면 'waitlist'. 신청 취소(또는 관리자 취소)로 인원이 남으면 가장 오래된
 //     waitlist를 'pending_payment'(유료) 또는 'confirmed'(무료)로 자동 승격.
 //   - 'cancelled' 레코드는 잔여 좌석 계산에서 제외.
-window.WSD_LECTURES = {
-  _seed() { return (window.WANGSADEUL_DATA?.lectures || []).slice(); },
+window.BGNJ_LECTURES = {
+  _seed() { return (window.BANGINOJA_DATA?.lectures || []).slice(); },
   _override(id) {
-    const map = window.WSD_STORES.lectureOverrides || {};
+    const map = window.BGNJ_STORES.lectureOverrides || {};
     return map[String(id)] || null;
   },
   _merge(seed) {
     const ov = this._override(seed.id);
     return ov ? { ...seed, ...ov } : { ...seed };
   },
-  listAll() {
+  // listAll({ includeHidden }) — 기본은 hidden=true 항목을 제외(공개 화면용).
+  // 관리자 화면에서는 includeHidden:true로 호출해 숨겨진 항목까지 본다.
+  listAll(opts = {}) {
     const seedIds = new Set(this._seed().map((l) => String(l.id)));
     const merged = this._seed().map((l) => this._merge(l));
-    // override-only(추가 강연)도 함께 노출
-    const map = window.WSD_STORES.lectureOverrides || {};
+    const map = window.BGNJ_STORES.lectureOverrides || {};
     Object.entries(map).forEach(([id, ov]) => {
       if (!seedIds.has(String(id))) merged.push({ id, ...ov });
     });
-    return merged;
+    if (opts.includeHidden) return merged;
+    return merged.filter((l) => !l.hidden);
   },
   getLecture(id) {
-    return this.listAll().find((l) => String(l.id) === String(id)) || null;
+    return this.listAll({ includeHidden: true }).find((l) => String(l.id) === String(id)) || null;
   },
   saveLecture(payload) {
-    const map = window.WSD_STORES.lectureOverrides || {};
+    const map = window.BGNJ_STORES.lectureOverrides || {};
     map[String(payload.id)] = { ...(map[String(payload.id)] || {}), ...payload, updatedAt: new Date().toISOString() };
-    window.WSD_STORES.lectureOverrides = map;
-    window.WSD_SAVE.lectureOverrides();
+    window.BGNJ_STORES.lectureOverrides = map;
+    window.BGNJ_SAVE.lectureOverrides();
     return this.getLecture(payload.id);
   },
+  // 숨김 토글 — 시드 항목은 절대 삭제되지 않고 hidden 플래그만 켠다.
+  // 비관리자 화면에서는 hidden 항목이 보이지 않는다.
+  setHidden(id, hidden) {
+    const map = window.BGNJ_STORES.lectureOverrides || {};
+    map[String(id)] = { ...(map[String(id)] || {}), hidden: !!hidden, updatedAt: new Date().toISOString() };
+    window.BGNJ_STORES.lectureOverrides = map;
+    window.BGNJ_SAVE.lectureOverrides();
+  },
+  // 삭제 — 시드 항목은 물리적으로 지울 수 없으므로 숨김 처리.
+  // override-only(관리자가 추가한) 항목만 완전 삭제. 신청 데이터는 함께 정리.
   deleteLecture(id) {
-    const map = window.WSD_STORES.lectureOverrides || {};
-    delete map[String(id)];
-    window.WSD_STORES.lectureOverrides = map;
-    window.WSD_SAVE.lectureOverrides();
-    const reg = window.WSD_STORES.lectureRegistrations || {};
+    const seedIds = new Set(this._seed().map((l) => String(l.id)));
+    const map = window.BGNJ_STORES.lectureOverrides || {};
+    if (seedIds.has(String(id))) {
+      // 시드 데이터는 hidden 처리만 가능
+      map[String(id)] = { ...(map[String(id)] || {}), hidden: true, updatedAt: new Date().toISOString() };
+    } else {
+      delete map[String(id)];
+    }
+    window.BGNJ_STORES.lectureOverrides = map;
+    window.BGNJ_SAVE.lectureOverrides();
+    const reg = window.BGNJ_STORES.lectureRegistrations || {};
     delete reg[String(id)];
-    window.WSD_STORES.lectureRegistrations = reg;
-    window.WSD_SAVE.lectureRegistrations();
+    window.BGNJ_STORES.lectureRegistrations = reg;
+    window.BGNJ_SAVE.lectureRegistrations();
   },
   // ── 신청 ──────────────────────────────────────────────────────
   listRegistrations(lectureId) {
-    const map = window.WSD_STORES.lectureRegistrations || {};
+    const map = window.BGNJ_STORES.lectureRegistrations || {};
     return Array.isArray(map[String(lectureId)]) ? map[String(lectureId)].slice() : [];
   },
   _saveRegistrations(lectureId, list) {
-    const map = window.WSD_STORES.lectureRegistrations || {};
+    const map = window.BGNJ_STORES.lectureRegistrations || {};
     map[String(lectureId)] = list;
-    window.WSD_STORES.lectureRegistrations = map;
-    window.WSD_SAVE.lectureRegistrations();
+    window.BGNJ_STORES.lectureRegistrations = map;
+    window.BGNJ_SAVE.lectureRegistrations();
   },
   getSeats(lectureId) {
     const lecture = this.getLecture(lectureId);
@@ -894,12 +945,12 @@ window.WSD_LECTURES = {
     this._saveRegistrations(lectureId, next);
     if (reg.userId) {
       const lecture = this.getLecture(lectureId);
-      window.WSD_COMMUNITY.addNotification(reg.userId, {
+      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
         type: 'lecture_refund_requested', lectureId: String(lectureId),
         postTitle: lecture?.topic || lecture?.title || '강연',
         fromName: '운영자', message: '환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.',
       });
-      window.WSD_AUDIT?.log({ action: 'lecture.refund_request', target: `lecture:${lectureId}`, details: { reg: registrationId, reason } });
+      window.BGNJ_AUDIT?.log({ action: 'lecture.refund_request', target: `lecture:${lectureId}`, details: { reg: registrationId, reason } });
     }
     return { ok: true, registration: next.find((r) => r.id === registrationId) };
   },
@@ -913,12 +964,12 @@ window.WSD_LECTURES = {
     this._promoteWaitlist(lectureId);
     if (reg?.userId) {
       const lecture = this.getLecture(lectureId);
-      window.WSD_COMMUNITY.addNotification(reg.userId, {
+      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
         type: 'lecture_refund_approved', lectureId: String(lectureId),
         postTitle: lecture?.topic || lecture?.title || '강연',
         fromName: '운영자', message: '환불 신청이 승인되어 처리되었습니다.',
       });
-      window.WSD_AUDIT?.log({ action: 'lecture.refund_approve', target: `lecture:${lectureId}`, details: { reg: registrationId } });
+      window.BGNJ_AUDIT?.log({ action: 'lecture.refund_approve', target: `lecture:${lectureId}`, details: { reg: registrationId } });
     }
     return next.find((r) => r.id === registrationId) || null;
   },
@@ -931,12 +982,12 @@ window.WSD_LECTURES = {
     this._saveRegistrations(lectureId, next);
     if (reg?.userId) {
       const lecture = this.getLecture(lectureId);
-      window.WSD_COMMUNITY.addNotification(reg.userId, {
+      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
         type: 'lecture_refund_rejected', lectureId: String(lectureId),
         postTitle: lecture?.topic || lecture?.title || '강연',
         fromName: '운영자', message: `환불 신청이 반려되었습니다.${adminNote ? ' 사유: ' + adminNote : ''}`,
       });
-      window.WSD_AUDIT?.log({ action: 'lecture.refund_reject', target: `lecture:${lectureId}`, details: { reg: registrationId, note: adminNote } });
+      window.BGNJ_AUDIT?.log({ action: 'lecture.refund_reject', target: `lecture:${lectureId}`, details: { reg: registrationId, note: adminNote } });
     }
     return next.find((r) => r.id === registrationId) || null;
   },
@@ -951,14 +1002,14 @@ window.WSD_LECTURES = {
     const updated = next.find((r) => r.id === registrationId) || null;
     if (updated && updated.userId) {
       const lecture = this.getLecture(lectureId);
-      window.WSD_COMMUNITY.addNotification(updated.userId, {
+      window.BGNJ_COMMUNITY.addNotification(updated.userId, {
         type: 'lecture_confirmed',
         lectureId: String(lectureId),
         postTitle: lecture?.topic || lecture?.title || '강연',
         fromName: '운영자',
         message: '강연 입금이 확인되어 참가가 확정되었습니다.',
       });
-      window.WSD_AUDIT?.log({ action: 'lecture.confirm_payment', target: `lecture:${lectureId}`, details: { reg: registrationId, user: updated.userId } });
+      window.BGNJ_AUDIT?.log({ action: 'lecture.confirm_payment', target: `lecture:${lectureId}`, details: { reg: registrationId, user: updated.userId } });
     }
     return updated;
   },
@@ -992,7 +1043,7 @@ window.WSD_LECTURES = {
     this._saveRegistrations(lectureId, next);
     promotedUsers.forEach(({ userId, status }) => {
       if (!userId) return;
-      window.WSD_COMMUNITY.addNotification(userId, {
+      window.BGNJ_COMMUNITY.addNotification(userId, {
         type: 'lecture_promoted',
         lectureId: String(lectureId),
         postTitle: lecture.topic || lecture.title || '강연',
@@ -1005,7 +1056,7 @@ window.WSD_LECTURES = {
   },
   listMyRegistrations(userId) {
     if (!userId) return [];
-    const map = window.WSD_STORES.lectureRegistrations || {};
+    const map = window.BGNJ_STORES.lectureRegistrations || {};
     const out = [];
     Object.keys(map).forEach((lectureId) => {
       (map[lectureId] || []).forEach((r) => {
@@ -1032,7 +1083,7 @@ window.WSD_LECTURES = {
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
       'BEGIN:VEVENT',
-      `UID:lecture-${lecture.id}@wangsadeul`,
+      `UID:lecture-${lecture.id}@bgnj`,
       `DTSTAMP:${fmt(new Date())}`,
       `DTSTART:${fmt(start)}`,
       `DTEND:${fmt(end)}`,
@@ -1059,14 +1110,14 @@ window.WSD_LECTURES = {
   },
   // ── 후기 ──────────────────────────────────────────────────────
   listReviews(lectureId) {
-    const map = window.WSD_STORES.lectureReviews || {};
+    const map = window.BGNJ_STORES.lectureReviews || {};
     return Array.isArray(map[String(lectureId)]) ? map[String(lectureId)].slice() : [];
   },
   _saveReviews(lectureId, list) {
-    const map = window.WSD_STORES.lectureReviews || {};
+    const map = window.BGNJ_STORES.lectureReviews || {};
     map[String(lectureId)] = list;
-    window.WSD_STORES.lectureReviews = map;
-    window.WSD_SAVE.lectureReviews();
+    window.BGNJ_STORES.lectureReviews = map;
+    window.BGNJ_SAVE.lectureReviews();
   },
   canReview(lectureId, userId) {
     if (!userId) return false;
@@ -1094,27 +1145,27 @@ window.WSD_LECTURES = {
   },
   // ── 계좌번호 ──────────────────────────────────────────────────
   getBankAccount() {
-    return { ...(window.WSD_STORES.bankAccount || {}) };
+    return { ...(window.BGNJ_STORES.bankAccount || {}) };
   },
   saveBankAccount(payload) {
-    window.WSD_STORES.bankAccount = { ...(window.WSD_STORES.bankAccount || {}), ...payload };
-    window.WSD_SAVE.bankAccount();
+    window.BGNJ_STORES.bankAccount = { ...(window.BGNJ_STORES.bankAccount || {}), ...payload };
+    window.BGNJ_SAVE.bankAccount();
     return this.getBankAccount();
   },
 };
 
-// === 책 주문(WSD_BOOK_ORDERS) helper ====================================
+// === 책 주문(BGNJ_BOOK_ORDERS) helper ====================================
 // 운영 정책:
 //   - 회원 전용 주문. 비로그인은 결제 진입 자체를 막음.
 //   - 결제는 무통장 입금만. PG는 별도 단계에서 도입.
 //   - 상태: pending_payment → paid → shipped → delivered. 운영자가 단계별로 진행.
 //   - 'cancelled' 는 운영자/사용자가 명시적으로 취소.
-//   - 계좌번호는 강연과 동일한 `WSD_STORES.bankAccount` 재사용.
-window.WSD_BOOK_ORDERS = {
+//   - 계좌번호는 강연과 동일한 `BGNJ_STORES.bankAccount` 재사용.
+window.BGNJ_BOOK_ORDERS = {
   ORDER_STATUSES: ['pending_payment', 'paid', 'shipped', 'delivered', 'refund_requested', 'cancelled'],
 
   listAll() {
-    return (window.WSD_STORES.bookOrders || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    return (window.BGNJ_STORES.bookOrders || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   },
   listByStatus(status) {
     if (!status || status === 'all') return this.listAll();
@@ -1128,17 +1179,17 @@ window.WSD_BOOK_ORDERS = {
     return this.listAll().find((o) => o.id === id) || null;
   },
   _save(list) {
-    window.WSD_STORES.bookOrders = list;
-    window.WSD_SAVE.bookOrders();
+    window.BGNJ_STORES.bookOrders = list;
+    window.BGNJ_SAVE.bookOrders();
   },
   countOpenOrders() {
-    return (window.WSD_STORES.bookOrders || []).filter((o) => o.status === 'pending_payment').length;
+    return (window.BGNJ_STORES.bookOrders || []).filter((o) => o.status === 'pending_payment').length;
   },
   generateOrderNo(now) {
     const d = now || new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const stamp = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-    const seq = (window.WSD_STORES.bookOrders || []).filter((o) => String(o.orderNo || '').includes(stamp)).length + 1;
+    const seq = (window.BGNJ_STORES.bookOrders || []).filter((o) => String(o.orderNo || '').includes(stamp)).length + 1;
     return `WSD-${stamp}-${String(seq).padStart(3, '0')}`;
   },
   createOrder(payload) {
@@ -1146,7 +1197,7 @@ window.WSD_BOOK_ORDERS = {
     if (!payload.recipient || !payload.phone || !payload.address) {
       return { ok: false, message: "받는 분, 연락처, 주소는 필수입니다." };
     }
-    const book = window.WANGSADEUL_DATA?.book;
+    const book = window.BANGINOJA_DATA?.book;
     if (!book) return { ok: false, message: "책 정보가 없습니다." };
     const qty = Math.max(1, Number(payload.qty) || 1);
     const version = payload.version === 'EN' ? 'EN' : 'KR';
@@ -1175,12 +1226,12 @@ window.WSD_BOOK_ORDERS = {
       tracking: '',
       createdAt: now.toISOString(),
     };
-    this._save([order, ...(window.WSD_STORES.bookOrders || [])]);
+    this._save([order, ...(window.BGNJ_STORES.bookOrders || [])]);
     return { ok: true, order };
   },
   _notify(order, type, message) {
     if (!order || !order.userId) return;
-    window.WSD_COMMUNITY.addNotification(order.userId, {
+    window.BGNJ_COMMUNITY.addNotification(order.userId, {
       type,
       orderId: order.id,
       orderNo: order.orderNo,
@@ -1190,95 +1241,95 @@ window.WSD_BOOK_ORDERS = {
     });
   },
   confirmPayment(id) {
-    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, paid: true, status: 'paid', paidAt: new Date().toISOString() } : o
     );
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_paid', '입금이 확인되어 발송 준비를 시작합니다.');
-    if (updated) window.WSD_AUDIT?.log({ action: 'book.confirm_payment', target: `order:${updated.orderNo}` });
+    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.confirm_payment', target: `order:${updated.orderNo}` });
     return updated;
   },
   unconfirmPayment(id) {
-    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, paid: false, status: 'pending_payment', paidAt: null, shippedAt: null, tracking: '' } : o
     );
     this._save(list);
     return list.find((o) => o.id === id) || null;
   },
   markShipped(id, tracking) {
-    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, status: 'shipped', tracking: tracking || o.tracking || '', shippedAt: new Date().toISOString() } : o
     );
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_shipped',
       updated?.tracking ? `발송이 시작되었습니다. 송장 번호 ${updated.tracking}.` : '발송이 시작되었습니다.');
-    if (updated) window.WSD_AUDIT?.log({ action: 'book.ship', target: `order:${updated.orderNo}`, details: { tracking: updated.tracking || '' } });
+    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.ship', target: `order:${updated.orderNo}`, details: { tracking: updated.tracking || '' } });
     return updated;
   },
   markDelivered(id) {
-    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, status: 'delivered', deliveredAt: new Date().toISOString() } : o
     );
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_delivered', '배송이 완료되었습니다. 즐거운 독서 되세요.');
-    if (updated) window.WSD_AUDIT?.log({ action: 'book.deliver', target: `order:${updated.orderNo}` });
+    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.deliver', target: `order:${updated.orderNo}` });
     return updated;
   },
   cancelOrder(id) {
-    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, status: 'cancelled', cancelledAt: new Date().toISOString() } : o
     );
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_cancelled', '주문이 취소되었습니다.');
-    if (updated) window.WSD_AUDIT?.log({ action: 'book.cancel', target: `order:${updated.orderNo}` });
+    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.cancel', target: `order:${updated.orderNo}` });
     return updated;
   },
   requestRefund(id, reason) {
     const order = this.getOrder(id);
     if (!order) return { ok: false, message: '주문을 찾을 수 없습니다.' };
     if (!['paid', 'shipped'].includes(order.status)) return { ok: false, message: '입금 확인 또는 배송 중 단계에서만 환불 신청이 가능합니다.' };
-    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, status: 'refund_requested', refundReason: String(reason || '').trim(), refundRequestedAt: new Date().toISOString(), _prevStatus: o.status } : o
     );
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_refund_requested', '환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.');
-    if (updated) window.WSD_AUDIT?.log({ action: 'book.refund_request', target: `order:${updated.orderNo}`, details: { reason: updated.refundReason } });
+    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.refund_request', target: `order:${updated.orderNo}`, details: { reason: updated.refundReason } });
     return { ok: true, order: updated };
   },
   approveRefund(id) {
-    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, status: 'cancelled', refundApprovedAt: new Date().toISOString(), cancelledAt: new Date().toISOString() } : o
     );
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_cancelled', '환불 신청이 승인되어 처리되었습니다.');
-    if (updated) window.WSD_AUDIT?.log({ action: 'book.refund_approve', target: `order:${updated.orderNo}` });
+    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.refund_approve', target: `order:${updated.orderNo}` });
     return updated;
   },
   rejectRefund(id, adminNote) {
-    const list = (window.WSD_STORES.bookOrders || []).map((o) =>
+    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
       o.id === id ? { ...o, status: o._prevStatus || 'paid', refundRejectedAt: new Date().toISOString(), refundAdminNote: String(adminNote || '').trim(), _prevStatus: undefined } : o
     );
     this._save(list);
     const updated = list.find((o) => o.id === id) || null;
     this._notify(updated, 'order_refund_rejected', `환불 신청이 반려되었습니다.${adminNote ? ' 사유: ' + adminNote : ''}`);
-    if (updated) window.WSD_AUDIT?.log({ action: 'book.refund_reject', target: `order:${updated.orderNo}`, details: { note: adminNote } });
+    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.refund_reject', target: `order:${updated.orderNo}`, details: { note: adminNote } });
     return updated;
   },
   // ── 영수증 ──────────────────────────────────────────────────
   generateReceipt(id) {
     const order = this.getOrder(id);
     if (!order) return null;
-    const bank = window.WSD_LECTURES?.getBankAccount?.() || {};
+    const bank = window.BGNJ_LECTURES?.getBankAccount?.() || {};
     const formatPrice = (p) => `${(p || 0).toLocaleString()}원`;
     const lines = [
       '╔════════════════════════════════════════════╗',
-      '║         왕사들 · WANGSADEUL 주문 영수증     ║',
+      '║         뱅기노자 · BANGINOJA 주문 영수증     ║',
       '╚════════════════════════════════════════════╝',
       '',
       `주문번호      ${order.orderNo}`,
@@ -1306,7 +1357,7 @@ window.WSD_BOOK_ORDERS = {
       lines.push(`입금자명      ${order.recipient} 또는 ${order.orderNo}`);
       lines.push('');
     }
-    lines.push('운영 문의 · hello@wangsadeul.kr');
+    lines.push('운영 문의 · hello@bgnj.net');
     lines.push('영수증 발행 · ' + new Date().toLocaleString('ko-KR'));
     return lines.filter((l) => l != null).join('\n');
   },
@@ -1337,11 +1388,11 @@ window.WSD_BOOK_ORDERS = {
 
   // ── 독자 리뷰 ──────────────────────────────────────────────────────────
   _saveReviews(list) {
-    window.WSD_STORES.bookReviews = list;
-    window.WSD_SAVE.bookReviews();
+    window.BGNJ_STORES.bookReviews = list;
+    window.BGNJ_SAVE.bookReviews();
   },
   listReviews() {
-    return (window.WSD_STORES.bookReviews || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    return (window.BGNJ_STORES.bookReviews || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   },
   canReview(userId) {
     if (!userId) return false;
@@ -1349,7 +1400,7 @@ window.WSD_BOOK_ORDERS = {
   },
   hasReviewed(userId) {
     if (!userId) return false;
-    return (window.WSD_STORES.bookReviews || []).some((r) => r.userId === userId);
+    return (window.BGNJ_STORES.bookReviews || []).some((r) => r.userId === userId);
   },
   addReview({ userId, userName, rating, text }) {
     if (!userId) return { ok: false, message: "로그인 후 이용해 주세요." };
@@ -1374,17 +1425,17 @@ window.WSD_BOOK_ORDERS = {
   },
 };
 
-// === 투어(WSD_TOURS) helper ============================================
+// === 투어(BGNJ_TOURS) helper ============================================
 // 운영 정책:
-//   - 시드는 WANGSADEUL_DATA.tours. 관리자가 capacity / startsAt / 가격 등을 수정하면
+//   - 시드는 BANGINOJA_DATA.tours. 관리자가 capacity / startsAt / 가격 등을 수정하면
 //     `tourOverrides`(같은 id 키)에 저장하고 listAll에서 머지.
 //   - 신청은 회원 전용. 한 회원당 한 투어에 한 건만(취소 후 재신청은 가능).
 //   - 결제는 무통장 입금만(같은 bankAccount 저장소 사용).
 //   - 정원/대기열/입금 확인/.ics는 강연 helper와 같은 패턴.
-window.WSD_TOURS = {
-  _seed() { return (window.WANGSADEUL_DATA?.tours || []).slice(); },
+window.BGNJ_TOURS = {
+  _seed() { return (window.BANGINOJA_DATA?.tours || []).slice(); },
   _override(id) {
-    const map = window.WSD_STORES.tourOverrides || {};
+    const map = window.BGNJ_STORES.tourOverrides || {};
     return map[String(id)] || null;
   },
   _merge(seed) {
@@ -1394,42 +1445,56 @@ window.WSD_TOURS = {
   listAll() {
     const seedIds = new Set(this._seed().map((t) => String(t.id)));
     const merged = this._seed().map((t) => this._merge(t));
-    const map = window.WSD_STORES.tourOverrides || {};
+    const map = window.BGNJ_STORES.tourOverrides || {};
     Object.entries(map).forEach(([id, ov]) => {
       if (!seedIds.has(String(id))) merged.push({ id, ...ov });
     });
-    return merged;
+    if (arguments[0] && arguments[0].includeHidden) return merged;
+    return merged.filter((t) => !t.hidden);
   },
   getTour(id) {
-    return this.listAll().find((t) => String(t.id) === String(id)) || null;
+    return this.listAll({ includeHidden: true }).find((t) => String(t.id) === String(id)) || null;
   },
   saveTour(payload) {
-    const map = window.WSD_STORES.tourOverrides || {};
+    const map = window.BGNJ_STORES.tourOverrides || {};
     map[String(payload.id)] = { ...(map[String(payload.id)] || {}), ...payload, updatedAt: new Date().toISOString() };
-    window.WSD_STORES.tourOverrides = map;
-    window.WSD_SAVE.tourOverrides();
+    window.BGNJ_STORES.tourOverrides = map;
+    window.BGNJ_SAVE.tourOverrides();
     return this.getTour(payload.id);
   },
+  // 숨김 토글 — 시드 항목은 hidden 플래그만 켜고 데이터는 보존.
+  setHidden(id, hidden) {
+    const map = window.BGNJ_STORES.tourOverrides || {};
+    map[String(id)] = { ...(map[String(id)] || {}), hidden: !!hidden, updatedAt: new Date().toISOString() };
+    window.BGNJ_STORES.tourOverrides = map;
+    window.BGNJ_SAVE.tourOverrides();
+  },
+  // 삭제 — 시드 항목은 hidden 처리, override-only는 완전 삭제.
   deleteTour(id) {
-    const map = window.WSD_STORES.tourOverrides || {};
-    delete map[String(id)];
-    window.WSD_STORES.tourOverrides = map;
-    window.WSD_SAVE.tourOverrides();
-    const reg = window.WSD_STORES.tourReservations || {};
+    const seedIds = new Set(this._seed().map((t) => String(t.id)));
+    const map = window.BGNJ_STORES.tourOverrides || {};
+    if (seedIds.has(String(id))) {
+      map[String(id)] = { ...(map[String(id)] || {}), hidden: true, updatedAt: new Date().toISOString() };
+    } else {
+      delete map[String(id)];
+    }
+    window.BGNJ_STORES.tourOverrides = map;
+    window.BGNJ_SAVE.tourOverrides();
+    const reg = window.BGNJ_STORES.tourReservations || {};
     delete reg[String(id)];
-    window.WSD_STORES.tourReservations = reg;
-    window.WSD_SAVE.tourReservations();
+    window.BGNJ_STORES.tourReservations = reg;
+    window.BGNJ_SAVE.tourReservations();
   },
   // ── 예약 ──────────────────────────────────────────────────────
   listReservations(tourId) {
-    const map = window.WSD_STORES.tourReservations || {};
+    const map = window.BGNJ_STORES.tourReservations || {};
     return Array.isArray(map[String(tourId)]) ? map[String(tourId)].slice() : [];
   },
   _saveReservations(tourId, list) {
-    const map = window.WSD_STORES.tourReservations || {};
+    const map = window.BGNJ_STORES.tourReservations || {};
     map[String(tourId)] = list;
-    window.WSD_STORES.tourReservations = map;
-    window.WSD_SAVE.tourReservations();
+    window.BGNJ_STORES.tourReservations = map;
+    window.BGNJ_SAVE.tourReservations();
   },
   getSeats(tourId) {
     const tour = this.getTour(tourId);
@@ -1498,12 +1563,12 @@ window.WSD_TOURS = {
     this._saveReservations(tourId, next);
     if (reg.userId) {
       const tour = this.getTour(tourId);
-      window.WSD_COMMUNITY.addNotification(reg.userId, {
+      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
         type: 'tour_refund_requested', tourId: String(tourId),
         postTitle: tour?.title || '답사',
         fromName: '운영자', message: '환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.',
       });
-      window.WSD_AUDIT?.log({ action: 'tour.refund_request', target: `tour:${tourId}`, details: { reg: reservationId, reason } });
+      window.BGNJ_AUDIT?.log({ action: 'tour.refund_request', target: `tour:${tourId}`, details: { reg: reservationId, reason } });
     }
     return { ok: true, reservation: next.find((r) => r.id === reservationId) };
   },
@@ -1517,12 +1582,12 @@ window.WSD_TOURS = {
     this._promoteWaitlist(tourId);
     if (reg?.userId) {
       const tour = this.getTour(tourId);
-      window.WSD_COMMUNITY.addNotification(reg.userId, {
+      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
         type: 'tour_refund_approved', tourId: String(tourId),
         postTitle: tour?.title || '답사',
         fromName: '운영자', message: '환불 신청이 승인되어 처리되었습니다.',
       });
-      window.WSD_AUDIT?.log({ action: 'tour.refund_approve', target: `tour:${tourId}`, details: { reg: reservationId } });
+      window.BGNJ_AUDIT?.log({ action: 'tour.refund_approve', target: `tour:${tourId}`, details: { reg: reservationId } });
     }
     return next.find((r) => r.id === reservationId) || null;
   },
@@ -1535,12 +1600,12 @@ window.WSD_TOURS = {
     this._saveReservations(tourId, next);
     if (reg?.userId) {
       const tour = this.getTour(tourId);
-      window.WSD_COMMUNITY.addNotification(reg.userId, {
+      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
         type: 'tour_refund_rejected', tourId: String(tourId),
         postTitle: tour?.title || '답사',
         fromName: '운영자', message: `환불 신청이 반려되었습니다.${adminNote ? ' 사유: ' + adminNote : ''}`,
       });
-      window.WSD_AUDIT?.log({ action: 'tour.refund_reject', target: `tour:${tourId}`, details: { reg: reservationId, note: adminNote } });
+      window.BGNJ_AUDIT?.log({ action: 'tour.refund_reject', target: `tour:${tourId}`, details: { reg: reservationId, note: adminNote } });
     }
     return next.find((r) => r.id === reservationId) || null;
   },
@@ -1555,14 +1620,14 @@ window.WSD_TOURS = {
     const updated = next.find((r) => r.id === reservationId) || null;
     if (updated && updated.userId) {
       const tour = this.getTour(tourId);
-      window.WSD_COMMUNITY.addNotification(updated.userId, {
+      window.BGNJ_COMMUNITY.addNotification(updated.userId, {
         type: 'tour_confirmed',
         tourId: String(tourId),
         postTitle: tour?.title || '답사',
         fromName: '운영자',
         message: '답사 입금이 확인되어 참가가 확정되었습니다.',
       });
-      window.WSD_AUDIT?.log({ action: 'tour.confirm_payment', target: `tour:${tourId}`, details: { reg: reservationId, user: updated.userId } });
+      window.BGNJ_AUDIT?.log({ action: 'tour.confirm_payment', target: `tour:${tourId}`, details: { reg: reservationId, user: updated.userId } });
     }
     return updated;
   },
@@ -1596,7 +1661,7 @@ window.WSD_TOURS = {
     this._saveReservations(tourId, next);
     promotedUsers.forEach(({ userId, status }) => {
       if (!userId) return;
-      window.WSD_COMMUNITY.addNotification(userId, {
+      window.BGNJ_COMMUNITY.addNotification(userId, {
         type: 'tour_promoted',
         tourId: String(tourId),
         postTitle: tour.title || '답사',
@@ -1609,7 +1674,7 @@ window.WSD_TOURS = {
   },
   listMyReservations(userId) {
     if (!userId) return [];
-    const map = window.WSD_STORES.tourReservations || {};
+    const map = window.BGNJ_STORES.tourReservations || {};
     const out = [];
     Object.keys(map).forEach((tourId) => {
       (map[tourId] || []).forEach((r) => {
@@ -1636,7 +1701,7 @@ window.WSD_TOURS = {
       'CALSCALE:GREGORIAN',
       'METHOD:PUBLISH',
       'BEGIN:VEVENT',
-      `UID:tour-${tour.id}@wangsadeul`,
+      `UID:tour-${tour.id}@bgnj`,
       `DTSTAMP:${fmt(new Date())}`,
       `DTSTART:${fmt(start)}`,
       `DTEND:${fmt(end)}`,
@@ -1664,14 +1729,14 @@ window.WSD_TOURS = {
 
   // ── 후기 ──────────────────────────────────────────────────────
   listReviews(tourId) {
-    const map = window.WSD_STORES.tourReviews || {};
+    const map = window.BGNJ_STORES.tourReviews || {};
     return Array.isArray(map[String(tourId)]) ? map[String(tourId)].slice() : [];
   },
   _saveReviews(tourId, list) {
-    const map = window.WSD_STORES.tourReviews || {};
+    const map = window.BGNJ_STORES.tourReviews || {};
     map[String(tourId)] = list;
-    window.WSD_STORES.tourReviews = map;
-    window.WSD_SAVE.tourReviews();
+    window.BGNJ_STORES.tourReviews = map;
+    window.BGNJ_SAVE.tourReviews();
   },
   canReview(tourId, userId) {
     if (!userId) return false;
@@ -1699,26 +1764,26 @@ window.WSD_TOURS = {
   },
 };
 
-// === 운영 감사 로그(WSD_AUDIT) ============================================
+// === 운영 감사 로그(BGNJ_AUDIT) ============================================
 // 운영자(혹은 시스템)가 데이터를 변경할 때마다 한 줄 기록한다. 최근 500건 유지.
-window.WSD_AUDIT = {
+window.BGNJ_AUDIT = {
   log({ action, target, details, by }) {
     const entry = {
       id: `audit-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
       action: String(action || '').trim(),
       target: String(target || ''),
       details: details || null,
-      by: by || (window.WSD_STORES.session?.name) || 'system',
-      byId: window.WSD_STORES.session?.id || null,
+      by: by || (window.BGNJ_STORES.session?.name) || 'system',
+      byId: window.BGNJ_STORES.session?.id || null,
       ts: new Date().toISOString(),
     };
-    const list = [entry, ...(window.WSD_STORES.auditLog || [])].slice(0, 500);
-    window.WSD_STORES.auditLog = list;
-    window.WSD_SAVE.auditLog();
+    const list = [entry, ...(window.BGNJ_STORES.auditLog || [])].slice(0, 500);
+    window.BGNJ_STORES.auditLog = list;
+    window.BGNJ_SAVE.auditLog();
     return entry;
   },
   list({ search = '', limit = 200 } = {}) {
-    const all = (window.WSD_STORES.auditLog || []).slice();
+    const all = (window.BGNJ_STORES.auditLog || []).slice();
     if (!search) return all.slice(0, limit);
     const q = String(search).toLowerCase();
     return all.filter((e) =>
@@ -1728,29 +1793,29 @@ window.WSD_AUDIT = {
     ).slice(0, limit);
   },
   clear() {
-    window.WSD_STORES.auditLog = [];
-    window.WSD_SAVE.auditLog();
+    window.BGNJ_STORES.auditLog = [];
+    window.BGNJ_SAVE.auditLog();
   },
 };
 
-// === 자동 등급 승격(WSD_GRADE_PROMO) ====================================
+// === 자동 등급 승격(BGNJ_GRADE_PROMO) ====================================
 // 활동(글 + 댓글 가중치)을 기준으로 사용자의 자격 등급을 평가.
 // 운영자는 admin / wangsanam 등급은 자동 변경하지 않으며, 기본 흐름은 회원이 활동을
 // 쌓을 때만 더 높은 등급으로 '승격'한다(강등은 없음).
-window.WSD_GRADE_RULES = {
+window.BGNJ_GRADE_RULES = {
   reader:  { posts: 0,  comments: 5  },   // 댓글 5개 이상 → 독자
   scholar: { posts: 3,  comments: 15 },   // 글 3개 + 댓글 15개 → 사관
 };
 const PROMOTION_PROTECTED = new Set(['admin', 'wangsanam']);
 
-window.WSD_GRADE_PROMO = {
+window.BGNJ_GRADE_PROMO = {
   evaluate(userId) {
-    const a = window.WSD_AUTH.getActivity(userId);
+    const a = window.BGNJ_AUTH.getActivity(userId);
     if (!a) return null;
     const post = a.postCount || 0;
     const comment = a.commentCount || 0;
     let qualified = 'member';
-    Object.entries(window.WSD_GRADE_RULES || {}).forEach(([gid, rule]) => {
+    Object.entries(window.BGNJ_GRADE_RULES || {}).forEach(([gid, rule]) => {
       if (post >= (rule.posts || 0) && comment >= (rule.comments || 0)) {
         qualified = gid;
       }
@@ -1759,23 +1824,23 @@ window.WSD_GRADE_PROMO = {
   },
   // 사용자 행동 후 호출 — 새 등급이 더 높을 때만 승격
   maybePromote(userId) {
-    const user = (window.WSD_STORES.users || []).find((u) => u.id === userId);
+    const user = (window.BGNJ_STORES.users || []).find((u) => u.id === userId);
     if (!user) return null;
     if (user.isAdmin) return null;
     if (PROMOTION_PROTECTED.has(user.gradeId)) return null;
-    const grades = window.WSD_STORES.grades || [];
+    const grades = window.BGNJ_STORES.grades || [];
     const currentLv = grades.find((g) => g.id === user.gradeId)?.level ?? 0;
     const targetId = this.evaluate(userId);
     const targetLv = grades.find((g) => g.id === targetId)?.level ?? 0;
     if (targetLv <= currentLv) return null;
-    window.WSD_AUTH.setGrade(userId, targetId);
-    window.WSD_AUDIT?.log({
+    window.BGNJ_AUTH.setGrade(userId, targetId);
+    window.BGNJ_AUDIT?.log({
       action: 'grade.auto_promote',
       target: `user:${userId}`,
       details: { from: user.gradeId, to: targetId },
       by: 'system',
     });
-    window.WSD_COMMUNITY?.addNotification(userId, {
+    window.BGNJ_COMMUNITY?.addNotification(userId, {
       type: 'grade_promoted',
       postTitle: '회원 등급 안내',
       fromName: '운영자',
@@ -1785,13 +1850,13 @@ window.WSD_GRADE_PROMO = {
   },
 };
 
-// === 사이트 콘텐츠(WSD_SITE_CONTENT) helper =============================
+// === 사이트 콘텐츠(BGNJ_SITE_CONTENT) helper =============================
 // 메뉴 라벨, 히어로/푸터 텍스트, 로고/파비콘, OG 메타를 묶어 관리한다.
 // `get()`은 항상 기본값과 사용자 편집값을 섹션 단위로 얕은 병합해 반환한다.
-window.WSD_SITE_CONTENT = {
+window.BGNJ_SITE_CONTENT = {
   defaults: DEFAULT_SITE_CONTENT,
   get() {
-    const stored = window.WSD_STORES.siteContent || {};
+    const stored = window.BGNJ_STORES.siteContent || {};
     const merged = {};
     for (const key of Object.keys(DEFAULT_SITE_CONTENT)) {
       merged[key] = { ...DEFAULT_SITE_CONTENT[key], ...((stored[key] && typeof stored[key] === 'object') ? stored[key] : {}) };
@@ -1799,19 +1864,19 @@ window.WSD_SITE_CONTENT = {
     return merged;
   },
   saveSection(section, patch) {
-    const cur = window.WSD_STORES.siteContent || {};
+    const cur = window.BGNJ_STORES.siteContent || {};
     const next = { ...cur, [section]: { ...(cur[section] || {}), ...patch } };
-    window.WSD_STORES.siteContent = next;
-    window.WSD_SAVE.siteContent();
+    window.BGNJ_STORES.siteContent = next;
+    window.BGNJ_SAVE.siteContent();
     this.applyHead();
     return next;
   },
   resetSection(section) {
-    const cur = window.WSD_STORES.siteContent || {};
+    const cur = window.BGNJ_STORES.siteContent || {};
     const next = { ...cur };
     delete next[section];
-    window.WSD_STORES.siteContent = next;
-    window.WSD_SAVE.siteContent();
+    window.BGNJ_STORES.siteContent = next;
+    window.BGNJ_SAVE.siteContent();
     this.applyHead();
     return next;
   },
@@ -1853,20 +1918,20 @@ window.WSD_SITE_CONTENT = {
   },
 };
 // 페이지 로드 직후 한 번 적용
-try { window.WSD_SITE_CONTENT.applyHead(); } catch {}
+try { window.BGNJ_SITE_CONTENT.applyHead(); } catch {}
 
-// === 책 카탈로그(WSD_BOOKS) helper =======================================
+// === 책 카탈로그(BGNJ_BOOKS) helper =======================================
 // 다양한 책을 관리하고 표지(PNG)/본문 미리보기(PDF)를 dataURI로 보관한다.
-// 책마다 독립된 reviews 배열을 갖는다 — 기존 WSD_BOOK_ORDERS의 글로벌 리뷰와 별개.
-window.WSD_BOOKS = {
+// 책마다 독립된 reviews 배열을 갖는다 — 기존 BGNJ_BOOK_ORDERS의 글로벌 리뷰와 별개.
+window.BGNJ_BOOKS = {
   list({ status } = {}) {
-    const all = (window.WSD_STORES.books || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const all = (window.BGNJ_STORES.books || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     if (status) return all.filter((b) => (b.status || 'published') === status);
     return all;
   },
   get(id) {
     if (!id) return null;
-    return (window.WSD_STORES.books || []).find((b) => b.id === id) || null;
+    return (window.BGNJ_STORES.books || []).find((b) => b.id === id) || null;
   },
   // primary=true 표시된 책 또는 첫 번째 published 책 반환. 없으면 null.
   primary() {
@@ -1876,12 +1941,12 @@ window.WSD_BOOKS = {
       || null;
   },
   _persist(next) {
-    window.WSD_STORES.books = next;
-    window.WSD_SAVE.books();
+    window.BGNJ_STORES.books = next;
+    window.BGNJ_SAVE.books();
   },
   create(payload = {}) {
     const id = payload.id || `book-${Date.now()}-${Math.random().toString(36).slice(2,5)}`;
-    const next = (window.WSD_STORES.books || []).slice();
+    const next = (window.BGNJ_STORES.books || []).slice();
     next.push({
       id,
       slug: payload.slug || id,
@@ -1910,7 +1975,7 @@ window.WSD_BOOKS = {
     return this.get(id);
   },
   update(id, patch = {}) {
-    const next = (window.WSD_STORES.books || []).slice();
+    const next = (window.BGNJ_STORES.books || []).slice();
     const idx = next.findIndex((b) => b.id === id);
     if (idx < 0) return null;
     next[idx] = { ...next[idx], ...patch };
@@ -1922,11 +1987,11 @@ window.WSD_BOOKS = {
     return next[idx];
   },
   remove(id) {
-    const next = (window.WSD_STORES.books || []).filter((b) => b.id !== id);
+    const next = (window.BGNJ_STORES.books || []).filter((b) => b.id !== id);
     this._persist(next);
   },
   reorder(ids) {
-    const map = Object.fromEntries((window.WSD_STORES.books || []).map((b) => [b.id, b]));
+    const map = Object.fromEntries((window.BGNJ_STORES.books || []).map((b) => [b.id, b]));
     const next = ids.map((id, i) => map[id] && { ...map[id], order: i }).filter(Boolean);
     if (next.length) this._persist(next);
   },
@@ -1951,26 +2016,26 @@ window.WSD_BOOKS = {
   },
 };
 
-// === 약관 / 개인정보 처리방침(WSD_LEGAL) helper ==========================
-window.WSD_LEGAL = {
+// === 약관 / 개인정보 처리방침(BGNJ_LEGAL) helper ==========================
+window.BGNJ_LEGAL = {
   get(slug) {
-    const docs = window.WSD_STORES.legalDocs || {};
+    const docs = window.BGNJ_STORES.legalDocs || {};
     return docs[slug] || null;
   },
   save(slug, payload) {
-    const docs = window.WSD_STORES.legalDocs || {};
+    const docs = window.BGNJ_STORES.legalDocs || {};
     docs[slug] = { ...(docs[slug] || {}), ...payload, updatedAt: new Date().toISOString() };
-    window.WSD_STORES.legalDocs = docs;
-    window.WSD_SAVE.legalDocs();
+    window.BGNJ_STORES.legalDocs = docs;
+    window.BGNJ_SAVE.legalDocs();
     return docs[slug];
   },
   listSlugs() { return ['privacy', 'terms']; },
 };
 
-// === FAQ(WSD_FAQ) helper ================================================
-window.WSD_FAQ = {
+// === FAQ(BGNJ_FAQ) helper ================================================
+window.BGNJ_FAQ = {
   listAll() {
-    return (window.WSD_STORES.faqs || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return (window.BGNJ_STORES.faqs || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   },
   listCategories() {
     const set = new Set(this.listAll().map((f) => f.category || '일반'));
@@ -1991,21 +2056,21 @@ window.WSD_FAQ = {
       question: String(payload.question || '').trim(),
       answer: String(payload.answer || '').trim(),
       category: String(payload.category || '일반').trim() || '일반',
-      order: typeof payload.order === 'number' ? payload.order : (window.WSD_STORES.faqs || []).length,
+      order: typeof payload.order === 'number' ? payload.order : (window.BGNJ_STORES.faqs || []).length,
     };
     if (!next.question || !next.answer) return null;
-    window.WSD_STORES.faqs = [...(window.WSD_STORES.faqs || []), next];
-    window.WSD_SAVE.faqs();
+    window.BGNJ_STORES.faqs = [...(window.BGNJ_STORES.faqs || []), next];
+    window.BGNJ_SAVE.faqs();
     return next;
   },
   update(id, patch) {
-    window.WSD_STORES.faqs = (window.WSD_STORES.faqs || []).map((f) => f.id === id ? { ...f, ...patch } : f);
-    window.WSD_SAVE.faqs();
-    return (window.WSD_STORES.faqs || []).find((f) => f.id === id) || null;
+    window.BGNJ_STORES.faqs = (window.BGNJ_STORES.faqs || []).map((f) => f.id === id ? { ...f, ...patch } : f);
+    window.BGNJ_SAVE.faqs();
+    return (window.BGNJ_STORES.faqs || []).find((f) => f.id === id) || null;
   },
   remove(id) {
-    window.WSD_STORES.faqs = (window.WSD_STORES.faqs || []).filter((f) => f.id !== id);
-    window.WSD_SAVE.faqs();
+    window.BGNJ_STORES.faqs = (window.BGNJ_STORES.faqs || []).filter((f) => f.id !== id);
+    window.BGNJ_SAVE.faqs();
   },
   reorder(id, dir) {
     const list = this.listAll();
@@ -2015,39 +2080,39 @@ window.WSD_FAQ = {
     const next = list.slice();
     [next[idx], next[j]] = [next[j], next[idx]];
     next.forEach((f, i) => { f.order = i; });
-    window.WSD_STORES.faqs = next;
-    window.WSD_SAVE.faqs();
+    window.BGNJ_STORES.faqs = next;
+    window.BGNJ_SAVE.faqs();
   },
 };
 
 // 사용자 등급 레벨 계산
-window.WSD_USER_LEVEL = (user) => {
+window.BGNJ_USER_LEVEL = (user) => {
   if (!user) return 0;
   if (user.isAdmin) return 100;
-  const g = window.WSD_STORES.grades.find(x => x.id === user.gradeId);
+  const g = window.BGNJ_STORES.grades.find(x => x.id === user.gradeId);
   return g ? g.level : 10;
 };
 
 // 사용자 등급 메타 (label / color / level) 반환
-window.WSD_USER_GRADE = (user) => {
+window.BGNJ_USER_GRADE = (user) => {
   if (!user) return null;
-  const grades = window.WSD_STORES.grades || [];
+  const grades = window.BGNJ_STORES.grades || [];
   if (user.isAdmin) return grades.find(g => g.id === 'admin') || null;
   return grades.find(g => g.id === user.gradeId) || null;
 };
 
 // 작성자 식별자(id / 이름 / 이메일) 중 가능한 것으로 등급을 찾아 반환
-window.WSD_AUTHOR_GRADE = ({ authorId, author, authorEmail } = {}) => {
-  const users = window.WSD_STORES.users || [];
+window.BGNJ_AUTHOR_GRADE = ({ authorId, author, authorEmail } = {}) => {
+  const users = window.BGNJ_STORES.users || [];
   const found = users.find((u) =>
     (authorId && u.id === authorId) ||
     (authorEmail && u.email === authorEmail) ||
     (author && u.name === author)
   );
-  return found ? window.WSD_USER_GRADE(found) : null;
+  return found ? window.BGNJ_USER_GRADE(found) : null;
 };
 
-window.WANGSADEUL_DATA = {
+window.BANGINOJA_DATA = {
   notices: [
     { id: 1, tag: "공지", title: "2026년 상반기 궁궐 답사 프로그램 접수 개시", date: "2026.04.18", pinned: true },
     { id: 2, tag: "안내", title: "『왕의길』 영문판 출간 예정 — 4월 30일", date: "2026.04.15", pinned: true },
@@ -2087,7 +2152,7 @@ window.WANGSADEUL_DATA = {
     title: "왕의길",
     subtitle: "다섯 봉우리 아래 읽는 조선",
     author: "뱅기노자",
-    publisher: "왕사들 프레스",
+    publisher: "뱅기노자 프레스",
     pages: 412,
     isbn: "979-11-000-0000-0",
     priceKR: 28000,

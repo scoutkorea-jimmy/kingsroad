@@ -1,4 +1,4 @@
-// 왕사들 공용 Tiptap 에디터
+// 뱅기노자 공용 Tiptap 에디터
 // 두 프리셋:
 //   - "simple"  : 커뮤니티 글쓰기용 (본문 이미지 불가, 기본 포맷만)
 //   - "column"  : 칼럼용 (본문 내 이미지 + 드래그 위치 이동)
@@ -8,7 +8,7 @@
 const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, placeholder = "내용을 입력하세요..." }) => {
   const host = React.useRef(null);
   const editorRef = React.useRef(null);
-  const [ready, setReady] = React.useState(Boolean(window.WSD_TIPTAP));
+  const [ready, setReady] = React.useState(Boolean(window.BGNJ_TIPTAP));
   const [, forceRender] = React.useReducer(x => x + 1, 0);
 
   React.useEffect(() => {
@@ -20,7 +20,7 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
 
   React.useEffect(() => {
     if (!ready || !host.current) return;
-    const { Editor, StarterKit, Placeholder, Image, Link, Typography, Dropcursor } = window.WSD_TIPTAP;
+    const { Editor, StarterKit, Placeholder, Image, Link, Typography, Dropcursor } = window.BGNJ_TIPTAP;
 
     const extensions = [
       StarterKit.configure({

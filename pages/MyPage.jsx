@@ -1,33 +1,33 @@
 // 마이페이지
 const MyPage = ({ go, user, cart }) => {
-  const data = window.WANGSADEUL_DATA;
+  const data = window.BANGINOJA_DATA;
   const [orderTick, setOrderTick] = React.useState(0);
   const [refundTarget, setRefundTarget] = React.useState(null);
   const [refundReason, setRefundReason] = React.useState('');
   const [refundError, setRefundError] = React.useState('');
   const refreshOrders = () => setOrderTick((v) => v + 1);
 
-  const grades = window.WSD_STORES?.grades || [];
+  const grades = window.BGNJ_STORES?.grades || [];
   const grade = grades.find((item) => item.id === user?.gradeId);
   const upcomingLecture = data.lectures?.[0];
   const upcomingTour = data.tours?.[0];
-  const communityPosts = window.WSD_COMMUNITY?.listPosts?.() || data.posts || [];
+  const communityPosts = window.BGNJ_COMMUNITY?.listPosts?.() || data.posts || [];
   const recentPost = communityPosts.find((post) => post.authorId === user?.id || post.author === user?.name) || communityPosts[0];
   const bookmarkedPosts = user
-    ? (window.WSD_COMMUNITY?.listBookmarkedPosts?.(user.id) || [])
+    ? (window.BGNJ_COMMUNITY?.listBookmarkedPosts?.(user.id) || [])
     : [];
   const notifications = user
-    ? (window.WSD_COMMUNITY?.listNotifications?.(user.id) || [])
+    ? (window.BGNJ_COMMUNITY?.listNotifications?.(user.id) || [])
     : [];
   const unreadCount = notifications.filter((n) => !n.read).length;
   const myLectureRegs = user
-    ? (window.WSD_LECTURES?.listMyRegistrations?.(user.id) || [])
+    ? (window.BGNJ_LECTURES?.listMyRegistrations?.(user.id) || [])
     : [];
   const myOrders = React.useMemo(() =>
-    user ? (window.WSD_BOOK_ORDERS?.listMine?.(user.id) || []) : [],
+    user ? (window.BGNJ_BOOK_ORDERS?.listMine?.(user.id) || []) : [],
     [user, orderTick]);
   const myTourRegs = user
-    ? (window.WSD_TOURS?.listMyReservations?.(user.id) || [])
+    ? (window.BGNJ_TOURS?.listMyReservations?.(user.id) || [])
     : [];
   const tourStatusLabel = (s) => ({
     pending_payment: '입금 대기',
@@ -44,7 +44,7 @@ const MyPage = ({ go, user, cart }) => {
     refund_requested: '#e8a020',
   }[s] || 'var(--ink-2)');
   const goToTour = (tourId) => {
-    try { sessionStorage.setItem('wsd_pending_tour_id', String(tourId)); } catch {}
+    try { sessionStorage.setItem('bgnj_pending_tour_id', String(tourId)); } catch {}
     go('tour');
   };
   const orderStatusLabel = (s) => ({
@@ -65,11 +65,11 @@ const MyPage = ({ go, user, cart }) => {
   }[s] || 'var(--ink-2)');
 
   const goToPost = (postId) => {
-    try { sessionStorage.setItem('wsd_pending_post_id', String(postId)); } catch {}
+    try { sessionStorage.setItem('bgnj_pending_post_id', String(postId)); } catch {}
     go('community');
   };
   const goToLecture = (lectureId) => {
-    try { sessionStorage.setItem('wsd_pending_lecture_id', String(lectureId)); } catch {}
+    try { sessionStorage.setItem('bgnj_pending_lecture_id', String(lectureId)); } catch {}
     go('lectures');
   };
   const lectureStatusLabel = (s) => ({
@@ -111,7 +111,7 @@ const MyPage = ({ go, user, cart }) => {
         <SectionHead
           eyebrow="MY PAGE · 회원 정보"
           title={<><span className="accent">{user.name}</span> 님의 서재</>}
-          subtitle="왕사들에서의 계정 상태, 예정된 프로그램, 최근 활동을 한 곳에서 확인합니다."
+          subtitle="뱅기노자에서의 계정 상태, 예정된 프로그램, 최근 활동을 한 곳에서 확인합니다."
           action={<button type="button" className="btn btn-small" onClick={() => go("community")}>커뮤니티로 이동</button>}
         />
 
@@ -290,7 +290,7 @@ const MyPage = ({ go, user, cart }) => {
                       )}
                       <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                         <button type="button" className="btn-ghost"
-                          onClick={() => window.WSD_BOOK_ORDERS.downloadReceipt(o.id)}
+                          onClick={() => window.BGNJ_BOOK_ORDERS.downloadReceipt(o.id)}
                           style={{ fontSize: 11, color: 'var(--gold)' }}>
                           영수증 ↓
                         </button>
@@ -298,7 +298,7 @@ const MyPage = ({ go, user, cart }) => {
                           <button type="button" className="btn-ghost"
                             onClick={() => {
                               if (!confirm(`주문 ${o.orderNo}을(를) 취소하시겠어요?`)) return;
-                              window.WSD_BOOK_ORDERS.cancelOrder(o.id);
+                              window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
                               refreshOrders();
                             }}
                             style={{ fontSize: 11, color: 'var(--danger)' }}>
@@ -334,7 +334,7 @@ const MyPage = ({ go, user, cart }) => {
                         onClick={() => {
                           setRefundError('');
                           if (!refundReason.trim()) { setRefundError('환불 사유를 입력해 주세요.'); return; }
-                          const result = window.WSD_BOOK_ORDERS.requestRefund(refundTarget.id, refundReason);
+                          const result = window.BGNJ_BOOK_ORDERS.requestRefund(refundTarget.id, refundReason);
                           if (!result.ok) { setRefundError(result.message); return; }
                           setRefundTarget(null); setRefundReason('');
                           refreshOrders();
@@ -432,7 +432,7 @@ const MyPage = ({ go, user, cart }) => {
                 {notifications.slice(0, 6).map((n) => (
                   <li key={n.id}>
                     <button type="button" onClick={() => {
-                        window.WSD_COMMUNITY.markNotificationRead(user.id, n.id);
+                        window.BGNJ_COMMUNITY.markNotificationRead(user.id, n.id);
                         if (n.postId) goToPost(n.postId);
                       }}
                       style={{

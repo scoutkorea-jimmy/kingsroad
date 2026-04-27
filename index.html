@@ -18,7 +18,7 @@
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
 <noscript><p style="padding:24px;color:#efe9dc;background:#0a0907;">
-왕사들 사이트는 JavaScript로 렌더링됩니다. 스크립트를 활성화해주세요. 문의: hello@wangsadeul.kr
+뱅기노자 사이트는 JavaScript로 렌더링됩니다. 스크립트를 활성화해주세요. 문의: hello@bgnj.net
 </p></noscript>
 <div id="root"></div>
 
@@ -26,7 +26,7 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
-<!-- Tiptap via ESM — exposes factories to window.WSD_TIPTAP -->
+<!-- Tiptap via ESM — exposes factories to window.BGNJ_TIPTAP -->
 <script type="module">
   import { Editor } from 'https://esm.sh/@tiptap/core@2.11.5';
   import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.11.5';
@@ -35,7 +35,7 @@
   import Link from 'https://esm.sh/@tiptap/extension-link@2.11.5';
   import Typography from 'https://esm.sh/@tiptap/extension-typography@2.11.5';
   import Dropcursor from 'https://esm.sh/@tiptap/extension-dropcursor@2.11.5';
-  window.WSD_TIPTAP = { Editor, StarterKit, Placeholder, Image, Link, Typography, Dropcursor };
+  window.BGNJ_TIPTAP = { Editor, StarterKit, Placeholder, Image, Link, Typography, Dropcursor };
   window.dispatchEvent(new Event('wsd-tiptap-ready'));
 </script>
 <script src="data.js"></script>
@@ -81,20 +81,20 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 const App = () => {
   const [route, setRoute] = React.useState(() => {
-    try { return localStorage.getItem('wsd_route') || 'home'; } catch { return 'home'; }
+    try { return localStorage.getItem('bgnj_route') || 'home'; } catch { return 'home'; }
   });
   const [postId, setPostId] = React.useState(null);
-  const [user, setUser] = React.useState(() => window.WSD_AUTH.getSessionUser());
+  const [user, setUser] = React.useState(() => window.BGNJ_AUTH.getSessionUser());
   const [cart, setCart] = React.useState(() => {
     try {
-      const raw = localStorage.getItem('wsd_cart');
+      const raw = localStorage.getItem('bgnj_cart');
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }
   });
   React.useEffect(() => {
     try {
-      if (cart) localStorage.setItem('wsd_cart', JSON.stringify(cart));
-      else localStorage.removeItem('wsd_cart');
+      if (cart) localStorage.setItem('bgnj_cart', JSON.stringify(cart));
+      else localStorage.removeItem('bgnj_cart');
     } catch {}
   }, [cart]);
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
@@ -103,17 +103,17 @@ const App = () => {
   const go = (r) => {
     setRoute(r);
     setPostId(null);
-    try { localStorage.setItem('wsd_route', r); } catch {}
+    try { localStorage.setItem('bgnj_route', r); } catch {}
     window.scrollTo(0, 0);
   };
 
   const logout = () => {
-    window.WSD_AUTH.signOut();
+    window.BGNJ_AUTH.signOut();
     setUser(null);
     setPostId(null);
     setRoute("home");
     try {
-      localStorage.setItem('wsd_route', 'home');
+      localStorage.setItem('bgnj_route', 'home');
     } catch {}
     window.scrollTo(0, 0);
   };
@@ -138,23 +138,23 @@ const App = () => {
       const postMatch = h.match(/^#post-(.+)$/);
       const lectureMatch = h.match(/^#lecture-(.+)$/);
       if (colMatch) {
-        try { sessionStorage.setItem('wsd_pending_column_id', decodeURIComponent(colMatch[1])); } catch {}
+        try { sessionStorage.setItem('bgnj_pending_column_id', decodeURIComponent(colMatch[1])); } catch {}
         setRoute('column');
-        try { localStorage.setItem('wsd_route', 'column'); } catch {}
+        try { localStorage.setItem('bgnj_route', 'column'); } catch {}
       } else if (postMatch) {
-        try { sessionStorage.setItem('wsd_pending_post_id', decodeURIComponent(postMatch[1])); } catch {}
+        try { sessionStorage.setItem('bgnj_pending_post_id', decodeURIComponent(postMatch[1])); } catch {}
         setRoute('community');
-        try { localStorage.setItem('wsd_route', 'community'); } catch {}
+        try { localStorage.setItem('bgnj_route', 'community'); } catch {}
       } else if (lectureMatch) {
-        try { sessionStorage.setItem('wsd_pending_lecture_id', decodeURIComponent(lectureMatch[1])); } catch {}
+        try { sessionStorage.setItem('bgnj_pending_lecture_id', decodeURIComponent(lectureMatch[1])); } catch {}
         setRoute('lectures');
-        try { localStorage.setItem('wsd_route', 'lectures'); } catch {}
+        try { localStorage.setItem('bgnj_route', 'lectures'); } catch {}
       } else {
         const tourMatch = h.match(/^#tour-(.+)$/);
         if (tourMatch) {
-          try { sessionStorage.setItem('wsd_pending_tour_id', decodeURIComponent(tourMatch[1])); } catch {}
+          try { sessionStorage.setItem('bgnj_pending_tour_id', decodeURIComponent(tourMatch[1])); } catch {}
           setRoute('tour');
-          try { localStorage.setItem('wsd_route', 'tour'); } catch {}
+          try { localStorage.setItem('bgnj_route', 'tour'); } catch {}
         }
       }
     };

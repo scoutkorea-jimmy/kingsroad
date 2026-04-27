@@ -1,7 +1,7 @@
 // 왕사남 소개, 투어 상세
 const WangsanamPage = ({ go }) => {
   const members = [
-    { name: "뱅기노자", role: "커뮤니티장 · 수석 가이드", spec: "조선 정치사 · 실록 독해", years: 15, desc: "15년간 실록과 궁궐을 걷다. 『왕의길』 저자. 왕사들 커뮤니티를 세우고 이끈다." },
+    { name: "뱅기노자", role: "커뮤니티장 · 수석 가이드", spec: "조선 정치사 · 실록 독해", years: 15, desc: "15년간 실록과 궁궐을 걷다. 『왕의길』 저자. 뱅기노자 커뮤니티를 세우고 이끈다." },
     { name: "이공", role: "건축 가이드", spec: "궁궐 건축 · 도시 공간", years: 12, desc: "조선 궁궐의 공간 언어를 읽는다. 수원 화성 전문." },
     { name: "정사관", role: "사료 가이드", spec: "조선왕조실록 · 승정원일기", years: 10, desc: "원문 사료를 함께 읽는 프로그램을 운영. 고전번역원 출신." },
     { name: "여백", role: "미학 가이드", spec: "조선 회화 · 왕실 미술", years: 8, desc: "왕실 회화와 공예를 통해 군주의 미의식을 짚는다." },
@@ -58,8 +58,8 @@ const WangsanamPage = ({ go }) => {
 
 const TourPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
-  const tours = React.useMemo(() => window.WSD_TOURS.listAll(), [tick]);
-  const bank = React.useMemo(() => (window.WSD_LECTURES?.getBankAccount?.() || window.WSD_STORES.bankAccount || {}), [tick]);
+  const tours = React.useMemo(() => window.BGNJ_TOURS.listAll(), [tick]);
+  const bank = React.useMemo(() => (window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES.bankAccount || {}), [tick]);
   const refresh = () => setTick((v) => v + 1);
 
   const [selectedIdx, setSelectedIdx] = React.useState(0);
@@ -67,9 +67,9 @@ const TourPage = ({ go, user }) => {
   // 외부 진입(해시 / 마이페이지 알림 등)으로 들어온 투어 ID 처리
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem('wsd_pending_tour_id'); } catch {}
+    try { pending = sessionStorage.getItem('bgnj_pending_tour_id'); } catch {}
     if (pending) {
-      try { sessionStorage.removeItem('wsd_pending_tour_id'); } catch {}
+      try { sessionStorage.removeItem('bgnj_pending_tour_id'); } catch {}
       const idx = tours.findIndex((t) => String(t.id) === String(pending));
       if (idx >= 0) setSelectedIdx(idx);
     }
@@ -87,8 +87,8 @@ const TourPage = ({ go, user }) => {
 
   const safeIdx = Math.min(selectedIdx, tours.length - 1);
   const tour = tours[safeIdx];
-  const seats = window.WSD_TOURS.getSeats(tour.id);
-  const myReg = user ? window.WSD_TOURS.hasUserReserved(tour.id, user.id) : null;
+  const seats = window.BGNJ_TOURS.getSeats(tour.id);
+  const myReg = user ? window.BGNJ_TOURS.hasUserReserved(tour.id, user.id) : null;
   const formatPrice = (p) => (p === 0 || p == null) ? "무료" : `${p.toLocaleString()}원`;
 
   const labelStatus = (s) => ({
@@ -236,7 +236,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       setError("운영자 계좌번호가 아직 등록되지 않았습니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
-    const result = window.WSD_TOURS.reserve(tour.id, {
+    const result = window.BGNJ_TOURS.reserve(tour.id, {
       userId: user.id,
       name: name.trim(),
       email: email.trim(),
@@ -253,7 +253,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const cancelMyReg = () => {
     if (!myReg) return;
     if (!confirm("이 답사 신청을 취소하시겠어요?")) return;
-    window.WSD_TOURS.cancelReservation(tour.id, myReg.id);
+    window.BGNJ_TOURS.cancelReservation(tour.id, myReg.id);
     onRefresh();
     setSubmitted(null);
   };
@@ -261,13 +261,13 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const submitRefund = () => {
     setRefundError("");
     if (!refundReason.trim()) { setRefundError("환불 사유를 입력해 주세요."); return; }
-    const result = window.WSD_TOURS.requestRefund(tour.id, myReg.id, refundReason);
+    const result = window.BGNJ_TOURS.requestRefund(tour.id, myReg.id, refundReason);
     if (!result.ok) { setRefundError(result.message); return; }
     setRefundMode(false); setRefundReason("");
     onRefresh();
   };
 
-  const downloadIcs = () => window.WSD_TOURS.downloadIcs(tour.id);
+  const downloadIcs = () => window.BGNJ_TOURS.downloadIcs(tour.id);
   const showPaymentInfo = (tour.priceNumber || 0) > 0 && (myReg?.status === 'pending_payment' || submitted?.status === 'pending_payment');
   const isFull = seats.remaining <= 0;
   const isPaidConfirmed = myReg?.status === 'confirmed' && (tour.priceNumber || 0) > 0;
@@ -474,8 +474,8 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
 
 // === 투어 후기 섹션 =======================================================
 const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
-  const reviews = window.WSD_TOURS.listReviews(tour.id);
-  const canReview = user ? window.WSD_TOURS.canReview(tour.id, user.id) : false;
+  const reviews = window.BGNJ_TOURS.listReviews(tour.id);
+  const canReview = user ? window.BGNJ_TOURS.canReview(tour.id, user.id) : false;
   const [rating, setRating] = React.useState(5);
   const [text, setText] = React.useState("");
   const [error, setError] = React.useState("");
@@ -494,7 +494,7 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
       return;
     }
     if (!text.trim()) { setError("후기 내용을 입력해 주세요."); return; }
-    window.WSD_TOURS.addReview(tour.id, {
+    window.BGNJ_TOURS.addReview(tour.id, {
       userId: user.id,
       author: user.name,
       rating,
@@ -507,7 +507,7 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
 
   const remove = (id) => {
     if (!confirm("이 후기를 삭제하시겠어요?")) return;
-    window.WSD_TOURS.deleteReview(tour.id, id);
+    window.BGNJ_TOURS.deleteReview(tour.id, id);
     onRefresh?.();
   };
 

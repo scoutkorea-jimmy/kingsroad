@@ -50,8 +50,8 @@ const LoginPage = ({ go, setUser }) => {
     }
 
     const authResult = mode === "login"
-      ? window.WSD_AUTH.signIn({ email: normalizedEmail, password })
-      : window.WSD_AUTH.signUp({
+      ? window.BGNJ_AUTH.signIn({ email: normalizedEmail, password })
+      : window.BGNJ_AUTH.signUp({
           name: form.name.trim(),
           email: normalizedEmail,
           password,
@@ -94,7 +94,7 @@ const LoginPage = ({ go, setUser }) => {
       }}>
         <div>
           <BanginojaIcon size={36}/>
-          <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginTop:24}}>WANGSADEUL · 王사들</div>
+          <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginTop:24}}>BANGINOJA · 王사들</div>
         </div>
         <div style={{maxWidth:480}}>
           <div className="card" style={{padding:'14px 16px', marginBottom:24, background:'rgba(212,175,55,0.05)'}}>
@@ -157,7 +157,7 @@ const LoginPage = ({ go, setUser }) => {
               <input id="auth-email" name="email" type="email" className="field-input"
                 autoComplete="email" required aria-required="true" inputMode="email"
                 value={form.email} onChange={e => set('email', e.target.value)}
-                placeholder="hello@wangsadeul.kr"/>
+                placeholder="hello@bgnj.net"/>
             </div>
             <div className="field">
               <label className="field-label" htmlFor="auth-password">비밀번호 <span aria-hidden="true" className="gold">*</span></label>
@@ -329,15 +329,15 @@ const PRIVACY_DATA = {
   ],
   // ROPA — Record of Processing Activities (GDPR Art.30)
   ropa: [
-    { id: "ROPA-01", purpose: "회원 식별·계정 운영",   lawful: "계약 이행",     items: "이름, 이메일, 비밀번호(해시)", retention: "탈퇴 후 즉시 파기", controller: "왕사들", processor: "AWS(서울)", transfer: "없음" },
-    { id: "ROPA-02", purpose: "결제 및 주문 처리",     lawful: "계약 이행",     items: "주소, 전화번호, 카드토큰",     retention: "전자상거래법 5년",   controller: "왕사들", processor: "토스페이먼츠", transfer: "없음" },
-    { id: "ROPA-03", purpose: "마케팅·뉴스레터",       lawful: "명시적 동의",   items: "이메일, 관심분야",             retention: "철회 시 즉시",       controller: "왕사들", processor: "Mailgun(US)", transfer: "미국(SCCs)" },
-    { id: "ROPA-04", purpose: "사이트 분석·개선",      lawful: "정당한 이익",   items: "쿠키ID, 접속로그, UA",         retention: "13개월",             controller: "왕사들", processor: "Plausible(EU)", transfer: "EU(적정성)" },
-    { id: "ROPA-05", purpose: "투어 참가자 관리",      lawful: "계약 이행",     items: "이름, 연락처, 참가일자",       retention: "행사 종료 후 6개월", controller: "왕사들", processor: "자체",         transfer: "없음" },
+    { id: "ROPA-01", purpose: "회원 식별·계정 운영",   lawful: "계약 이행",     items: "이름, 이메일, 비밀번호(해시)", retention: "탈퇴 후 즉시 파기", controller: "뱅기노자", processor: "AWS(서울)", transfer: "없음" },
+    { id: "ROPA-02", purpose: "결제 및 주문 처리",     lawful: "계약 이행",     items: "주소, 전화번호, 카드토큰",     retention: "전자상거래법 5년",   controller: "뱅기노자", processor: "토스페이먼츠", transfer: "없음" },
+    { id: "ROPA-03", purpose: "마케팅·뉴스레터",       lawful: "명시적 동의",   items: "이메일, 관심분야",             retention: "철회 시 즉시",       controller: "뱅기노자", processor: "Mailgun(US)", transfer: "미국(SCCs)" },
+    { id: "ROPA-04", purpose: "사이트 분석·개선",      lawful: "정당한 이익",   items: "쿠키ID, 접속로그, UA",         retention: "13개월",             controller: "뱅기노자", processor: "Plausible(EU)", transfer: "EU(적정성)" },
+    { id: "ROPA-05", purpose: "투어 참가자 관리",      lawful: "계약 이행",     items: "이름, 연락처, 참가일자",       retention: "행사 종료 후 6개월", controller: "뱅기노자", processor: "자체",         transfer: "없음" },
   ],
   cookies: [
-    { name: "wsd_session", cat: "필수",  purpose: "로그인 상태 유지",   ttl: "세션",   party: "1st" },
-    { name: "wsd_route",   cat: "필수",  purpose: "마지막 방문 경로",   ttl: "영구(로컬)", party: "1st" },
+    { name: "bgnj_session", cat: "필수",  purpose: "로그인 상태 유지",   ttl: "세션",   party: "1st" },
+    { name: "bgnj_route",   cat: "필수",  purpose: "마지막 방문 경로",   ttl: "영구(로컬)", party: "1st" },
     { name: "_pl_visits",  cat: "분석",  purpose: "방문 통계(Plausible)", ttl: "24시간", party: "3rd" },
     { name: "_mkt_lead",   cat: "마케팅", purpose: "캠페인 효과 측정",   ttl: "90일",   party: "3rd" },
   ],
@@ -359,10 +359,10 @@ const PRIVACY_DATA = {
     { recipient: "Plausible Insights OÜ",           country: "에스토니아(EU)", purpose: "사이트 분석", basis: "GDPR 적정성 결정(EU 내부)", items: "쿠키ID, UA" },
   ],
   auditLog: [
-    { ts: "2026-04-20T14:12:33+09:00", actor: "banginoja@wangsadeul.kr", action: "DSR-2026-039 정정 승인", ip: "203.0.113.21" },
-    { ts: "2026-04-20T13:05:11+09:00", actor: "banginoja@wangsadeul.kr", action: "회원 #8734 개인정보 열람 내보내기", ip: "203.0.113.21" },
+    { ts: "2026-04-20T14:12:33+09:00", actor: "banginoja@bgnj.net", action: "DSR-2026-039 정정 승인", ip: "203.0.113.21" },
+    { ts: "2026-04-20T13:05:11+09:00", actor: "banginoja@bgnj.net", action: "회원 #8734 개인정보 열람 내보내기", ip: "203.0.113.21" },
     { ts: "2026-04-20T10:40:02+09:00", actor: "system", action: "보유기간 만료 로그 파기(3개월)", ip: "—" },
-    { ts: "2026-04-19T17:22:51+09:00", actor: "kim-admin@wangsadeul.kr", action: "ROPA-03 수탁처 변경 검토", ip: "203.0.113.45" },
+    { ts: "2026-04-19T17:22:51+09:00", actor: "kim-admin@bgnj.net", action: "ROPA-03 수탁처 변경 검토", ip: "203.0.113.45" },
   ],
   members: [
     { id: 8734, handle: "돌담아래", email: "stone@example.com",    joined: "2025-08-12", region: "KR", consents: ["terms","privacy","marketing"] },
@@ -399,11 +399,11 @@ const ADMIN_VERSION_HISTORY = [
     summary: "기능 정상화 묶음. 댓글 답글 트리·강연/투어 신규 등록·강연 후기·주문 영수증·운영 감사 로그·활동 기반 자동 등급 승격을 한 번에 도입했습니다. 운영자가 한 사이트 안에서 컨텐츠를 추가·관리·기록하는 흐름이 모두 닫혔습니다.",
     details: [
       "댓글 답글 트리(`CommentTree`) — 커뮤니티/칼럼 모두 1단계 들여쓰기 답글, 글 작성자 자동 알림 발화, 사이드 들여쓰기 표시.",
-      "강연 후기 섹션(`LectureReviewsSection`) — 투어 후기와 같은 패턴으로 별점 + 본문, 참가 확정 회원만 작성. `WSD_LECTURES.canReview / addReview / listReviews / deleteReview` 추가, `WSD_STORES.lectureReviews` 신규.",
+      "강연 후기 섹션(`LectureReviewsSection`) — 투어 후기와 같은 패턴으로 별점 + 본문, 참가 확정 회원만 작성. `BGNJ_LECTURES.canReview / addReview / listReviews / deleteReview` 추가, `BGNJ_STORES.lectureReviews` 신규.",
       "강연/투어 신규 등록 — 관리자 콘텐츠 메뉴의 강연·투어 탭에 `+ 새 강연 추가` / `+ 새 투어 추가` 버튼. 추가하면 즉시 편집 폼이 열려 정원·일정·가격을 채울 수 있고, 카드 헤더에는 삭제 버튼이 함께 노출.",
-      "주문 영수증 다운로드 — `WSD_BOOK_ORDERS.generateReceipt / downloadReceipt`로 텍스트 영수증을 발급. 마이페이지 내 주문 카드와 관리자 왕의길 탭에서 `영수증 ↓` 버튼으로 다운로드.",
-      "운영 감사 로그(`WSD_AUDIT` + `AuditLogPanel`) — 회원 등급 변경/정지/삭제, 관리자 권한 토글, 강연/투어/책 입금 확인·발송·배송 완료·취소가 모두 자동 기록. 관리자 시스템 메뉴 `감사 로그` 탭에 검색·CSV·전체 삭제와 함께 노출.",
-      "활동 기반 자동 등급 승격(`WSD_GRADE_PROMO`) — 댓글 5개 이상이면 독자, 글 3개 + 댓글 15개 이상이면 사관으로 자동 승격(승격은 일어나도 강등은 없음). 승격 시 본인에게 알림이 자동 발화되고 감사 로그에도 기록됨. createPost / addComment 시점에 트리거.",
+      "주문 영수증 다운로드 — `BGNJ_BOOK_ORDERS.generateReceipt / downloadReceipt`로 텍스트 영수증을 발급. 마이페이지 내 주문 카드와 관리자 왕의길 탭에서 `영수증 ↓` 버튼으로 다운로드.",
+      "운영 감사 로그(`BGNJ_AUDIT` + `AuditLogPanel`) — 회원 등급 변경/정지/삭제, 관리자 권한 토글, 강연/투어/책 입금 확인·발송·배송 완료·취소가 모두 자동 기록. 관리자 시스템 메뉴 `감사 로그` 탭에 검색·CSV·전체 삭제와 함께 노출.",
+      "활동 기반 자동 등급 승격(`BGNJ_GRADE_PROMO`) — 댓글 5개 이상이면 독자, 글 3개 + 댓글 15개 이상이면 사관으로 자동 승격(승격은 일어나도 강등은 없음). 승격 시 본인에게 알림이 자동 발화되고 감사 로그에도 기록됨. createPost / addComment 시점에 트리거.",
     ],
     context: "5개 미션 운영 사이클이 모두 닫힌 뒤, 사용자 입장에서는 답글이 안 달리고 후기가 한 영역만 있고 영수증이 없는 식의 작은 빈 칸이 눈에 띄었습니다. 운영자 입장에서도 강연/투어를 새로 만드는 흐름이 코드를 건드려야 가능했고, 어떤 운영 액션이 언제 일어났는지 추적이 어렵다는 한계가 있었습니다. 이번 PR은 그 빈 칸들을 한꺼번에 메우면서, 각 액션이 감사 로그로 자동 기록되도록 흐름을 일치시켰습니다.",
   },
@@ -412,11 +412,11 @@ const ADMIN_VERSION_HISTORY = [
     date: "2026-04-26",
     summary: "회원·게시판·권한·약관·FAQ·강연 UI·투어 후기까지 한 번에 정리한 운영 인프라 PR입니다. 관리자가 실제 등록 회원의 등급·정지·삭제를 직접 다루고, 게시판은 카드형 추가 + 순서/글 수/권한 매트릭스로 한 화면에서 정비할 수 있게 됐습니다. 약관/개인정보 처리방침과 자주 묻는 질문은 별도 라우트로 노출되며 관리자에서 본문을 직접 편집합니다. 강연 페이지는 투어와 같은 탭+스티키 사이드바 UI로 재구조됐고, 투어 페이지에는 참여 후기 영역이 도입됐습니다.",
     details: [
-      "`WSD_AUTH` 확장 — `setGrade(userId, gradeId)`, `toggleAdmin`, `suspendUser(reason)`, `unsuspendUser`, `removeUser`, `getActivity`. 정지된 사용자는 `signIn`이 거부.",
+      "`BGNJ_AUTH` 확장 — `setGrade(userId, gradeId)`, `toggleAdmin`, `suspendUser(reason)`, `unsuspendUser`, `removeUser`, `getActivity`. 정지된 사용자는 `signIn`이 거부.",
       "`MemberAdminPanel` 신설 — 실제 등록 회원 목록(검색·등급 필터·CSV) + 상세에서 등급 즉시 변경(셀렉트), 관리자 권한 토글, 정지/해제, 계정 삭제, 게시글·댓글·북마크·강연·답사·주문 활동 요약과 최근 게시글/주문/강연/답사 리스트.",
       "`AdminCategoryPanel` 개선 — 카드형 추가 폼(이름 입력 시 ID 자동 생성), 순서 ▲▼ 이동, 게시판별 글 수, 설명 인라인 수정 + `등급 × 게시판` 권한 매트릭스 뷰(읽기/쓰기 ✓/·).",
-      "`WSD_LEGAL` + `LegalAdminPanel` + `LegalPage` 신설 — 개인정보 처리방침/이용약관을 Tiptap 에디터로 편집, `wsd_legal_docs` 저장소. 푸터 버튼이 `privacy` / `terms` 라우트로 연결.",
-      "`WSD_FAQ` + `FaqAdminPanel` + `FaqPage` 신설 — FAQ 추가/수정/삭제/순서 변경, 카테고리별 그룹·검색 + 아코디언 형태로 공개. 푸터 `자주 묻는 질문` 버튼이 `faq` 라우트로 연결.",
+      "`BGNJ_LEGAL` + `LegalAdminPanel` + `LegalPage` 신설 — 개인정보 처리방침/이용약관을 Tiptap 에디터로 편집, `bgnj_legal_docs` 저장소. 푸터 버튼이 `privacy` / `terms` 라우트로 연결.",
+      "`BGNJ_FAQ` + `FaqAdminPanel` + `FaqPage` 신설 — FAQ 추가/수정/삭제/순서 변경, 카테고리별 그룹·검색 + 아코디언 형태로 공개. 푸터 `자주 묻는 질문` 버튼이 `faq` 라우트로 연결.",
       "`LecturesPage` 전면 재구조 — `TourPage`와 동일한 탭 + 좌측 본문(이미지·진행 흐름·참고) + 우측 스티키 `LectureBookingPanel`(잔여/대기 + 신청 폼 + 무통장 입금 안내 + 본인 상태 카드 + .ics).",
       "`TourPage` 하단에 `TourReviewsSection` 추가 — 참가 확정 회원만 별점 + 후기 작성, 평균 평점 + 별 표시, 본인/관리자 삭제 가능.",
       "`CommunityPage` 상단에 `MY ACCESS` 배너 — 현재 등급(컬러 배지)·레벨·읽기 가능/쓰기 가능 게시판 수와 이름 노출(비로그인은 비로그인 안내).",
@@ -429,14 +429,14 @@ const ADMIN_VERSION_HISTORY = [
     date: "2026-04-25",
     summary: "Cycle 5(투어 판매·운영) 출시와 공통 인프라 강화를 한 묶음으로 진행했습니다. 투어가 카탈로그였던 상태에서 회원 전용 신청 → 무통장 입금 → 관리자 입금 확인 → 참가 확정 사이클로 닫혔고, 정원·대기열·.ics·URL 해시 딥 링크까지 강연/책과 같은 패턴으로 정렬됐습니다. 동시에 강연/책/투어의 상태 변화가 사용자에게 자동 알림으로 전달되는 통합 알림 인프라가 도입됐고, 장바구니가 새로고침에도 유지되도록 localStorage 영속화가 들어갔습니다.",
     details: [
-      "`WSD_TOURS` helper 신설 — listAll / getTour / saveTour / deleteTour / reserve / cancelReservation / confirmPayment / unconfirmPayment / getSeats / hasUserReserved / listMyReservations / generateIcs / downloadIcs.",
-      "`WSD_STORES`에 `tourOverrides` / `tourReservations` 신설. 시드 투어(`WANGSADEUL_DATA.tours`)에 `capacity` / `priceNumber` / `startsAt` / `durationMinutes` 필드 추가.",
+      "`BGNJ_TOURS` helper 신설 — listAll / getTour / saveTour / deleteTour / reserve / cancelReservation / confirmPayment / unconfirmPayment / getSeats / hasUserReserved / listMyReservations / generateIcs / downloadIcs.",
+      "`BGNJ_STORES`에 `tourOverrides` / `tourReservations` 신설. 시드 투어(`BANGINOJA_DATA.tours`)에 `capacity` / `priceNumber` / `startsAt` / `durationMinutes` 필드 추가.",
       "`TourPage` 전면 개조 — 사이드바 `예약 신청` / `대기자 등록` mock을 실제 신청 폼(`TourBookingPanel`)로 교체. 본인 상태 카드 + 무통장 입금 안내 + .ics 다운로드 + 신청 취소까지 같은 위치에서 처리.",
       "관리자 콘텐츠 메뉴 `투어 프로그램` 탭을 mock 표 → `TourAdminPanel`로 교체 — 잔여/대기 표시 + 투어 정보 수정(capacity·일정·가격) + 참가자 명단 + 입금 확인 토글 + 신청 취소.",
-      "App에 `#tour-{id}` 해시 라우팅 추가, 홈 알림/마이페이지에서 `sessionStorage.wsd_pending_tour_id` 경유로 투어 상세 점프.",
+      "App에 `#tour-{id}` 해시 라우팅 추가, 홈 알림/마이페이지에서 `sessionStorage.bgnj_pending_tour_id` 경유로 투어 상세 점프.",
       "마이페이지 `예정 답사` 정적 카드를 `MY TOURS — 내 답사 신청` 개인화 카드로 교체(상태별 컬러 라벨).",
-      "통합 알림 인프라 — `WSD_LECTURES.confirmPayment / _promoteWaitlist`, `WSD_BOOK_ORDERS.confirmPayment / markShipped / markDelivered / cancelOrder`, `WSD_TOURS.confirmPayment / _promoteWaitlist`가 상태 변경 시 본인에게 알림을 자동 push. 헤더 ◇ 알림 벨이 알림 타입별로 강연 / 투어 / 마이페이지 / 커뮤니티 라우트로 라우팅.",
-      "장바구니 localStorage 영속화 — App `cart` 상태가 `wsd_cart` 키로 저장/복원되어 새로고침과 페이지 이동 사이에서도 유지됨.",
+      "통합 알림 인프라 — `BGNJ_LECTURES.confirmPayment / _promoteWaitlist`, `BGNJ_BOOK_ORDERS.confirmPayment / markShipped / markDelivered / cancelOrder`, `BGNJ_TOURS.confirmPayment / _promoteWaitlist`가 상태 변경 시 본인에게 알림을 자동 push. 헤더 ◇ 알림 벨이 알림 타입별로 강연 / 투어 / 마이페이지 / 커뮤니티 라우트로 라우팅.",
+      "장바구니 localStorage 영속화 — App `cart` 상태가 `bgnj_cart` 키로 저장/복원되어 새로고침과 페이지 이동 사이에서도 유지됨.",
       "KMS 미션 4(투어) 영역을 위 변경에 맞게 재기록. 미션 평가 카드 20% → ~70%.",
     ],
     context: "Cycle 3(강연), Cycle 4(책)에서 검증된 무통장 입금 + 정원·대기열 + 입금 확인 패턴을 그대로 투어에도 적용했습니다. 같은 helper 형태와 같은 `bankAccount` 저장소를 공유하므로 운영자가 한 번 익히면 세 영역 모두 같은 방식으로 운영할 수 있습니다. 동시에 결제 사이클이 닫힌 세 영역 모두에서 상태 변경이 사용자에게 보이지 않으면 의미가 없어, 알림 인프라를 한 PR에 묶어 통합했고 장바구니 손실을 막기 위한 localStorage 영속화도 같이 넣었습니다.",
@@ -446,8 +446,8 @@ const ADMIN_VERSION_HISTORY = [
     date: "2026-04-25",
     summary: "Cycle 4(뱅기노자 책 판매) 출시. 회원 전용 무통장 입금 단일 흐름으로 책 주문 → 입금 → 발송 → 배송 완료 사이클을 닫고, 관리자 콘솔의 메뉴 명칭을 홈페이지 내비와 일치시켰습니다(커뮤니티 / 강연 / 투어 프로그램 / 뱅기노자 칼럼 / 왕의길).",
     details: [
-      "`WSD_BOOK_ORDERS` helper 신설 — listAll / listByStatus / listMine / getOrder / createOrder / confirmPayment / unconfirmPayment / markShipped(tracking) / markDelivered / cancelOrder / exportCsv. 주문번호는 `WSD-YYYYMMDD-NNN` 시퀀스로 자동 생성.",
-      "`WSD_STORES.bookOrders` 신설 — 단일 배열에 모든 주문 보관(상태 머신: pending_payment → paid → shipped → delivered, 또는 cancelled).",
+      "`BGNJ_BOOK_ORDERS` helper 신설 — listAll / listByStatus / listMine / getOrder / createOrder / confirmPayment / unconfirmPayment / markShipped(tracking) / markDelivered / cancelOrder / exportCsv. 주문번호는 `WSD-YYYYMMDD-NNN` 시퀀스로 자동 생성.",
+      "`BGNJ_STORES.bookOrders` 신설 — 단일 배열에 모든 주문 보관(상태 머신: pending_payment → paid → shipped → delivered, 또는 cancelled).",
       "`CheckoutPage` 전면 개조 — 비로그인 차단 + 회원 전용 + 무통장 입금 안내 단일 흐름. 다단계 mock(카드/계좌이체/간편결제)을 모두 제거하고 배송 정보 한 폼으로 단순화. 운영자 계좌가 비어 있으면 결제 버튼 비활성화.",
       "주문 완료 화면 — 주문번호 · 계좌 안내 · 결제 금액 · 배송지를 한 페이지에 요약. 입금자명 가이드 자동 노출.",
       "관리자 콘텐츠 메뉴에 `왕의길` 탭 신설(`BookOrderAdminPanel`) — 상태별 필터 + 카드 + 입금 확인 → 발송 → 배송 완료 액션 + 송장 입력 + CSV 다운로드.",
@@ -466,7 +466,7 @@ const ADMIN_VERSION_HISTORY = [
     details: [
       "관리자 버전 기록 탭에 10건/페이지 페이지네이션 추가 + 상단에 총 N개 요약 / 최신 버전 표시.",
       "공통 ScrollToTop 컴포넌트 신설 — 320px 이상 스크롤 시 우하단 ↑ 플로팅 버튼 노출. 일반 화면과 관리자 내부 스크롤 컨테이너를 모두 감지.",
-      "내비 `커뮤니티` 항목에 hover/포커스 시 게시판 서브메뉴(메가메뉴) 표시. WSD_STORES.categories 중 사용자 등급으로 볼 수 있는 항목을 자동 노출하고 클릭 시 sessionStorage(`wsd_pending_board_id`) 경유로 해당 게시판 탭이 선택됨.",
+      "내비 `커뮤니티` 항목에 hover/포커스 시 게시판 서브메뉴(메가메뉴) 표시. BGNJ_STORES.categories 중 사용자 등급으로 볼 수 있는 항목을 자동 노출하고 클릭 시 sessionStorage(`bgnj_pending_board_id`) 경유로 해당 게시판 탭이 선택됨.",
       "관리자 카테고리 패널에서 게시판 설명(desc)도 인라인 편집 가능. 제목(label)은 기존대로 인라인 수정.",
       "`고딕 / 명조` 토글이 .app 루트의 `--font-serif` / `--font-sans` / `--font-display` / `--font-reading` 네 변수를 동시에 명조로 바꿔 nav·footer·카드·홈·강연 등 인라인 style의 var(--font-serif)까지 따라오도록 확장. 모노 / 브랜드 / 토글 자체는 유지.",
       "내비 menu에 `강연` 진입점을 추가해 강연 라우트 접근성을 높임.",
@@ -478,8 +478,8 @@ const ADMIN_VERSION_HISTORY = [
     date: "2026-04-25",
     summary: "Cycle 3(뱅기노자 강연 운영) 출시. 회원 전용 강연 신청, 무통장 입금 결제(PG 도입 전 임시), 관리자 입금 확인 → 참가 확정, 정원/대기열 자동 처리, .ics 캘린더 다운로드, 마이페이지 내 신청 내역, 관리자 강연 탭 + 계좌번호 설정까지 한 PR에 묶었습니다.",
     details: [
-      "`WSD_LECTURES` helper 신설 — listAll / getLecture / saveLecture / deleteLecture / register / cancelRegistration / confirmPayment / unconfirmPayment / getSeats / hasUserRegistered / listMyRegistrations / generateIcs / downloadIcs / getBankAccount / saveBankAccount.",
-      "`WSD_STORES`에 `lectureOverrides` / `lectureRegistrations` / `bankAccount` 신설. 시드 강연(`WANGSADEUL_DATA.lectures`)은 capacity / price / startsAt / durationMinutes를 갖도록 확장.",
+      "`BGNJ_LECTURES` helper 신설 — listAll / getLecture / saveLecture / deleteLecture / register / cancelRegistration / confirmPayment / unconfirmPayment / getSeats / hasUserRegistered / listMyRegistrations / generateIcs / downloadIcs / getBankAccount / saveBankAccount.",
+      "`BGNJ_STORES`에 `lectureOverrides` / `lectureRegistrations` / `bankAccount` 신설. 시드 강연(`BANGINOJA_DATA.lectures`)은 capacity / price / startsAt / durationMinutes를 갖도록 확장.",
       "`pages/LecturesPage.jsx` 신규 — 강연 목록 / 상세 / 신청 폼(회원 전용) / 무통장 입금 안내 / 본인 상태 카드 / 신청 취소 / .ics 다운로드.",
       "App에 `lectures` 라우트와 `#lecture-{id}` 해시 딥 링크 추가. 홈 강연 카드 클릭 타겟을 `tour` → `lectures`로 변경.",
       "마이페이지 `예정 강연` 정적 카드를 `MY LECTURES — 내 신청 강연` 개인화 카드로 교체(상태별 컬러 표시).",
@@ -494,13 +494,13 @@ const ADMIN_VERSION_HISTORY = [
     date: "2026-04-25",
     summary: "Cycle 2(뱅기노자 칼럼 운영 강화)를 한 PR에 묶었습니다. 임시 저장 / 예약 발행 / 발행 취소 / 수정 흐름과 좋아요 / 공유 링크 / 댓글 / 검색 / 카테고리 아카이브 / 추정 읽기 시간 자동 계산을 모두 도입해 칼럼이 단순 발행물에서 운영 가능한 콘텐츠 자산으로 전환되었습니다. URL 해시 딥 링크(`#col-{id}`, `#post-{id}`)도 함께 추가되어 외부 공유가 가능해졌습니다.",
     details: [
-      "`WSD_COLUMNS` helper 신설 — listAll / listPublic / getColumn / saveColumn / deleteColumn / searchPublic / estimateReadTime / 자동 promote.",
-      "콘텐츠는 `WSD_STORES.userColumns`(`status` = draft / scheduled / published)에 통합 저장. 좋아요·조회수는 `WSD_STORES.columnEngagement` 맵으로 분리(시드 칼럼도 동일).",
+      "`BGNJ_COLUMNS` helper 신설 — listAll / listPublic / getColumn / saveColumn / deleteColumn / searchPublic / estimateReadTime / 자동 promote.",
+      "콘텐츠는 `BGNJ_STORES.userColumns`(`status` = draft / scheduled / published)에 통합 저장. 좋아요·조회수는 `BGNJ_STORES.columnEngagement` 맵으로 분리(시드 칼럼도 동일).",
       "관리자 칼럼 에디터에 `임시 저장 / 예약 발행 / 즉시 발행 / 발행 취소 / 수정` 버튼과 상태 필터(전체/발행/예약/임시) 추가. DRAFT / SCHEDULED / PUBLISHED 배지로 상태 가시화.",
       "공개 칼럼 페이지에 검색 입력 / 카테고리 토글 / 카드별 ♥·조회수 인디케이터 / 추정 읽기 시간 자동 계산 도입.",
       "칼럼 상세에 ♥ 공감 토글 + 공유 링크 복사(`#col-{id}` 해시) + 댓글(등록 / 삭제 / 등급 배지) + 이전/다음 네비게이션 추가.",
       "App에 URL 해시 라우팅 추가: `#col-{id}` → 칼럼 상세, `#post-{id}` → 커뮤니티 상세.",
-      "홈 추천 칼럼과 관리자 대시보드 카운트가 `WSD_COLUMNS.listPublic()`을 사용하도록 정리 — draft/scheduled은 더 이상 공개 화면에 새지 않음.",
+      "홈 추천 칼럼과 관리자 대시보드 카운트가 `BGNJ_COLUMNS.listPublic()`을 사용하도록 정리 — draft/scheduled은 더 이상 공개 화면에 새지 않음.",
       "KMS 기능정의서 미션 3(칼럼) 영역을 위 변경에 맞게 재기록.",
     ],
     context: "Cycle 2의 목표는 '칼럼이 한 번 발행되고 끝나는 일회성 흐름'을 닫는 것이었습니다. 발행 사이클(임시→예약→발행→발행취소)과 독자 상호작용(공감·공유·댓글)이 같이 들어와야 비로소 콘텐츠가 자산으로 누적되기 때문에, 두 흐름을 한 PR에 묶었습니다. RSS와 이메일 구독은 외부 인프라가 필요해 후속 사이클로 미뤘고, 대신 URL 해시 딥 링크를 도입해 단기 공유는 작동하게 했습니다.",
@@ -508,16 +508,16 @@ const ADMIN_VERSION_HISTORY = [
   {
     version: "00.012.000",
     date: "2026-04-25",
-    summary: "Cycle 1(왕사들 커뮤니티 마무리)을 한 PR에 묶었습니다. 좋아요·북마크·신고·댓글 알림·작성자 등급 배지·게시글 페이지네이션을 모두 도입해 단순 게시판이었던 흐름을 '커뮤니티'로 끌어올렸습니다. 관리자 콘솔에는 신고 운영 큐 탭이 새로 들어왔고, 마이페이지에는 북마크와 알림 카드가 추가됐습니다.",
+    summary: "Cycle 1(뱅기노자 커뮤니티 마무리)을 한 PR에 묶었습니다. 좋아요·북마크·신고·댓글 알림·작성자 등급 배지·게시글 페이지네이션을 모두 도입해 단순 게시판이었던 흐름을 '커뮤니티'로 끌어올렸습니다. 관리자 콘솔에는 신고 운영 큐 탭이 새로 들어왔고, 마이페이지에는 북마크와 알림 카드가 추가됐습니다.",
     details: [
       "커뮤니티 글 상세에 `좋아요(♥)` 토글 도입 — 누른 사용자 ID를 글에 보존하고, 상세/액션/목록에서 수치를 모두 같은 값으로 표시.",
-      "글 상세에 `북마크(★/☆)` 토글과 마이페이지 BOOKMARKS 카드 도입(`WSD_STORES.bookmarks` 신설).",
+      "글 상세에 `북마크(★/☆)` 토글과 마이페이지 BOOKMARKS 카드 도입(`BGNJ_STORES.bookmarks` 신설).",
       "글 상세 `신고` 버튼을 사유 입력 폼으로 확장하고, 관리자 콘텐츠 메뉴에 `신고` 탭 신설(필터: 미처리/처리 완료/반려/전체, 액션: 게시글 열기 / 처리 완료 / 반려 / 게시글 삭제+처리).",
-      "댓글 등록 시 본인 글이 아니면 작성자에게 알림이 쌓이도록 연결(`WSD_STORES.notifications`). 내비게이션에 ◇ 알림 벨과 미읽음 배지·드롭다운 추가, 마이페이지 NOTIFICATIONS 카드도 동시 노출.",
-      "글 목록 / 글 상세 / 댓글 작성자에 회원 등급 배지(`AuthorGradeBadge`)를 인라인 표시. `WSD_USER_GRADE` / `WSD_AUTHOR_GRADE` helper 신설.",
+      "댓글 등록 시 본인 글이 아니면 작성자에게 알림이 쌓이도록 연결(`BGNJ_STORES.notifications`). 내비게이션에 ◇ 알림 벨과 미읽음 배지·드롭다운 추가, 마이페이지 NOTIFICATIONS 카드도 동시 노출.",
+      "글 목록 / 글 상세 / 댓글 작성자에 회원 등급 배지(`AuthorGradeBadge`)를 인라인 표시. `BGNJ_USER_GRADE` / `BGNJ_AUTHOR_GRADE` helper 신설.",
       "커뮤니티 글 목록에 페이지네이션(10건/페이지) 추가. 검색·탭이 바뀌면 1페이지로 리셋.",
       "관리자 CSV 다운로드 헤더에 `likes` 컬럼 추가.",
-      "외부 진입(알림 클릭 / 신고 큐 / 마이페이지 카드)에서 글 상세로 점프할 때 `sessionStorage.wsd_pending_post_id` 패턴을 도입.",
+      "외부 진입(알림 클릭 / 신고 큐 / 마이페이지 카드)에서 글 상세로 점프할 때 `sessionStorage.bgnj_pending_post_id` 패턴을 도입.",
       "KMS 기능정의서 미션 1(커뮤니티) 영역을 위 변경에 맞게 재기록.",
     ],
     context: "Cycle 1의 목표는 '커뮤니티가 게시판처럼 보이는 문제'를 닫는 것이었습니다. 글의 흐름은 이미 살아 있었지만 사용자가 다른 사람의 반응(좋아요/등급/알림)을 거의 느끼지 못해 참여 동기가 약했습니다. 이번 PR은 그 사회적 신호를 한 번에 깔고, 운영자가 신고를 처리할 수 있는 큐까지 같이 붙였습니다. 결제 의존이 없는 영역이라 한 사이클에 묶어 끝내는 것이 ROI가 가장 컸습니다.",
@@ -525,7 +525,7 @@ const ADMIN_VERSION_HISTORY = [
   {
     version: "00.011.000",
     date: "2026-04-25",
-    summary: "기능정의서를 사이트의 5가지 미션(왕사들 커뮤니티 / 뱅기노자 강연 일정 / 뱅기노자 칼럼 / 뱅기노자 투어 프로그램 / 뱅기노자 책 판매) + 공통 기반(BASE) 영역 단위로 재정렬하고, 각 영역에 `현재 평가 / 없는 기능 / 기능별(요소·기술 스펙·유의할 점·개발 이슈) / 영역 차원 기술 스펙·유의할 점·개발 이슈` 표준 블록을 도입했습니다. 관리자 KMS 화면에는 우측 스티키 목차(TOC)를 추가해 영역 간 이동을 빠르게 만들었습니다.",
+    summary: "기능정의서를 사이트의 5가지 미션(뱅기노자 커뮤니티 / 뱅기노자 강연 일정 / 뱅기노자 칼럼 / 뱅기노자 투어 프로그램 / 뱅기노자 책 판매) + 공통 기반(BASE) 영역 단위로 재정렬하고, 각 영역에 `현재 평가 / 없는 기능 / 기능별(요소·기술 스펙·유의할 점·개발 이슈) / 영역 차원 기술 스펙·유의할 점·개발 이슈` 표준 블록을 도입했습니다. 관리자 KMS 화면에는 우측 스티키 목차(TOC)를 추가해 영역 간 이동을 빠르게 만들었습니다.",
     details: [
       "기능정의서를 페이지 단위에서 미션 단위로 재구성: 공통 기반(00) + 커뮤니티(01) + 강연 일정(02) + 칼럼(03) + 투어(04) + 책 판매(05) 6개 영역.",
       "각 미션마다 현재 평가와 '완성도를 높이려면 필요한 것'(없는 기능) 목록을 명시.",
@@ -553,7 +553,7 @@ const ADMIN_VERSION_HISTORY = [
     date: "2026-04-25",
     summary: "관리자 대시보드를 실제 저장소 수치 기준으로 다시 연결했고, 사용자 화면에서는 왕사남 소개 영역과 진입점을 제거했습니다. KMS는 실제 페이지 기준 기능정의서로 개선하고, KMS 내부에 `기능정의서`, `디자인`, `운영 원칙` 탭을 둬 필요한 기준을 바로 찾아볼 수 있게 재구성했습니다.",
     details: [
-      "대시보드가 `WSD_AUTH`, `WSD_COMMUNITY`, `WSD_STORES`, `WANGSADEUL_DATA`를 기준으로 실제 수치를 보여주도록 바뀌었습니다.",
+      "대시보드가 `BGNJ_AUTH`, `BGNJ_COMMUNITY`, `BGNJ_STORES`, `BANGINOJA_DATA`를 기준으로 실제 수치를 보여주도록 바뀌었습니다.",
       "내비게이션, 홈, 라우트에서 왕사남 소개 진입점을 제거하고 홈에는 강연 일정만 남겼습니다.",
       "KMS 내부에서 기능정의서와 디자인 기준을 분리해 실제 페이지 구성과 작업 원칙을 더 명확히 확인할 수 있게 했습니다.",
     ],
@@ -575,7 +575,7 @@ const ADMIN_VERSION_HISTORY = [
     date: "2026-04-25",
     summary: "P2 첫 단계로 커뮤니티 게시글과 댓글을 local-first 단일 저장소로 통합하고, 글 수정·삭제·조회수 저장을 붙였습니다. 관리자 게시글 화면도 같은 데이터를 읽도록 바꿔 검색, 분류 필터, CSV 다운로드, 삭제 기능을 실제 운영 흐름으로 연결했습니다.",
     details: [
-      "`communityPosts` 저장소와 `WSD_COMMUNITY` helper를 추가해 게시글/댓글 흐름을 한 계층으로 묶었습니다.",
+      "`communityPosts` 저장소와 `BGNJ_COMMUNITY` helper를 추가해 게시글/댓글 흐름을 한 계층으로 묶었습니다.",
       "커뮤니티 상세에서 작성자 또는 관리자가 글과 댓글을 직접 수정·삭제할 수 있게 했습니다.",
       "관리자 게시글 탭이 실제 저장소를 읽고 검색, 필터, CSV 다운로드, 삭제를 수행하도록 연결했습니다.",
     ],
@@ -586,7 +586,7 @@ const ADMIN_VERSION_HISTORY = [
     date: "2026-04-25",
     summary: "P1 기준으로 local-first 인증/데이터 저장 구조를 분리해 회원 저장소와 세션 저장소를 실제로 연결했고, 로그인·회원가입·로그아웃이 같은 인증 계층을 보도록 정리했습니다. 현재 GitHub Pages 환경에서도 확장 가능한 구조로 운영 기준을 명확히 잡았습니다.",
     details: [
-      "`WSD_AUTH`, `WSD_DB`, `WSD_STORES.session`, `WSD_STORES.users`를 도입해 인증과 데이터 저장 구조를 분리했습니다.",
+      "`BGNJ_AUTH`, `BGNJ_DB`, `BGNJ_STORES.session`, `BGNJ_STORES.users`를 도입해 인증과 데이터 저장 구조를 분리했습니다.",
       "회원가입 시 실제 사용자 레코드를 저장하고, 로그인 시 저장된 사용자와 비밀번호 해시를 검증하도록 바꿨습니다.",
       "앱 전역 로그아웃과 로그인 상태 유지가 동일한 세션 저장소를 바라보도록 정리했습니다.",
     ],
@@ -685,7 +685,7 @@ const ADMIN_DESIGN_SECTIONS = [
 
 // === KMS 기능정의서: 5가지 미션 + 공통 기반 ===
 // 사이트가 존재하는 이유:
-//   1) 왕사들 커뮤니티 운영
+//   1) 뱅기노자 커뮤니티 운영
 //   2) 뱅기노자 강연 일정 안내
 //   3) 뱅기노자 칼럼 공유
 //   4) 뱅기노자 투어 프로그램 판매·운영
@@ -694,7 +694,7 @@ const MISSION_OVERVIEW = [
   {
     id: "community",
     number: "01",
-    title: "왕사들 커뮤니티",
+    title: "뱅기노자 커뮤니티",
     short: "회원이 글·댓글·후기를 나누는 핵심 참여 공간.",
     state: "Cycle 1 마무리",
     coverage: "기능 ~85%",
@@ -770,7 +770,7 @@ const FEATURE_DOMAINS = [
           "책 구매 CTA",
           "푸터 배포 버전 카드",
         ],
-        techSpec: "`HomePage` 단일 컴포넌트. 데이터는 `WANGSADEUL_DATA` 정적 + `WSD_STORES.userColumns` 병합. 레이아웃은 `tweaks.heroLayout`으로 토글.",
+        techSpec: "`HomePage` 단일 컴포넌트. 데이터는 `BANGINOJA_DATA` 정적 + `BGNJ_STORES.userColumns` 병합. 레이아웃은 `tweaks.heroLayout`으로 토글.",
         caution: "히어로 통계 수치는 하드코딩이라 실제 운영 수치와 어긋날 수 있음. 운영 화면(대시보드)과 동기화하기 전에는 '데모'로 봐야 함.",
         issues: ["fullbleed 모드에서 메인 비주얼이 과하게 강조되어 본문 가독성을 해치는 케이스 → radial-gradient 마스크로 완화"],
       },
@@ -787,10 +787,10 @@ const FEATURE_DOMAINS = [
           "세션 유지(브라우저 새로고침 후 로그인 상태)",
           "내비게이션 로그아웃",
         ],
-        techSpec: "`WSD_AUTH` helper + `WSD_STORES.users` / `WSD_STORES.session` localStorage. 비밀번호는 브라우저 내 해시.",
+        techSpec: "`BGNJ_AUTH` helper + `BGNJ_STORES.users` / `BGNJ_STORES.session` localStorage. 비밀번호는 브라우저 내 해시.",
         caution: "local-first 인증이라 정적 배포 위에서만 동작. 외부 DB 연동 시 저장소만 교체하는 방향으로 설계되었으므로 계층 분리를 깨지 말 것.",
         issues: [
-          "P1 초기에는 화면에서 즉석 user 객체를 만드는 수준이었음 → `WSD_AUTH` / `WSD_DB` 분리로 통합",
+          "P1 초기에는 화면에서 즉석 user 객체를 만드는 수준이었음 → `BGNJ_AUTH` / `BGNJ_DB` 분리로 통합",
           "Babel standalone + React UMD 환경이라 ESM import가 막혀 Tiptap·해시 라이브러리는 window 글로벌로 주입",
         ],
       },
@@ -807,7 +807,7 @@ const FEATURE_DOMAINS = [
           "주문 상태 카드(`cart` 기준)",
           "최근 커뮤니티 활동",
         ],
-        techSpec: "`MyPage` 단일 컴포넌트. `user` 세션 + `WSD_STORES.grades` + `WSD_COMMUNITY.listPosts()` + `WANGSADEUL_DATA.lectures/tours` + `cart` 상태.",
+        techSpec: "`MyPage` 단일 컴포넌트. `user` 세션 + `BGNJ_STORES.grades` + `BGNJ_COMMUNITY.listPosts()` + `BANGINOJA_DATA.lectures/tours` + `cart` 상태.",
         caution: "예정 강연/투어가 사용자 신청 내역이 아니라 사이트 다음 일정이므로, 사용자 입장에서는 '내가 신청한 것처럼' 보일 수 있음. 신청 흐름이 붙기 전까지 라벨링 주의.",
         issues: ["주문/예약 저장소가 없어 마이페이지에서 진짜 보여줄 데이터가 거의 없음"],
       },
@@ -825,10 +825,10 @@ const FEATURE_DOMAINS = [
           "개인정보 8개 탭(GDPR / PIPA)",
           "버전 기록 / KMS / 설정",
         ],
-        techSpec: "`AdminPage` 단일 컴포넌트. `WSD_COMMUNITY` / `WSD_AUTH` / `WSD_STORES` / `WANGSADEUL_DATA` / `PRIVACY_DATA` 동시 참조. 비관리자는 `AdminDenied` 화면.",
+        techSpec: "`AdminPage` 단일 컴포넌트. `BGNJ_COMMUNITY` / `BGNJ_AUTH` / `BGNJ_STORES` / `BANGINOJA_DATA` / `PRIVACY_DATA` 동시 참조. 비관리자는 `AdminDenied` 화면.",
         caution: "관리자 콘솔이 단일 컴포넌트라 1900줄을 넘는다. 새 탭 추가 시 분할을 고려할 것.",
         issues: [
-          "P1까지는 관리자 게시글 탭이 사용자 게시판과 다른 mock 배열을 봤음 → P2에서 `WSD_COMMUNITY`로 통합",
+          "P1까지는 관리자 게시글 탭이 사용자 게시판과 다른 mock 배열을 봤음 → P2에서 `BGNJ_COMMUNITY`로 통합",
           "Tiptap이 ESM으로만 제공되어 첫 마운트 전에 `wsd-tiptap-ready` 이벤트를 기다려야 했음",
         ],
       },
@@ -844,12 +844,12 @@ const FEATURE_DOMAINS = [
           "관리자 버전 기록 탭",
           "푸터 배포 버전 카드",
         ],
-        techSpec: "문서는 정적 마크다운 + 관리자 화면이 같은 내용을 컴포넌트로 표시. `window.WSD_VERSION`이 푸터·관리자 빌드 표시의 단일 출처.",
+        techSpec: "문서는 정적 마크다운 + 관리자 화면이 같은 내용을 컴포넌트로 표시. `window.BGNJ_VERSION`이 푸터·관리자 빌드 표시의 단일 출처.",
         caution: "문서와 화면이 어긋나면 다음 작업자가 혼선을 일으킨다. KMS 화면 = `kms.md` 본문 = 같은 기준으로 동기화 유지.",
         issues: [],
       },
     ],
-    techSpec: "프론트 단일 SPA(React UMD + Babel standalone) + localStorage 기반 저장소(`WSD_STORES`) + helper 계층(`WSD_AUTH`, `WSD_COMMUNITY`, `WSD_SAVE`). 외부 DB 연동 시 helper는 유지하고 저장소 구현만 교체하는 구조.",
+    techSpec: "프론트 단일 SPA(React UMD + Babel standalone) + localStorage 기반 저장소(`BGNJ_STORES`) + helper 계층(`BGNJ_AUTH`, `BGNJ_COMMUNITY`, `BGNJ_SAVE`). 외부 DB 연동 시 helper는 유지하고 저장소 구현만 교체하는 구조.",
     cautions: [
       "정적 배포(GitHub Pages) 환경이라 서버 측 권한 검증이 없으므로, 모든 권한 검사가 클라이언트 단에 그친다는 점을 잊지 말 것.",
       "Babel standalone로 JSX를 런타임 컴파일하므로 첫 페인트가 느릴 수 있다. 본격적인 트래픽 단계에서는 빌드 파이프라인 도입이 필요.",
@@ -862,8 +862,8 @@ const FEATURE_DOMAINS = [
   {
     id: "community",
     number: "01",
-    label: "왕사들 커뮤니티",
-    title: "미션 1 — 왕사들 커뮤니티 운영",
+    label: "뱅기노자 커뮤니티",
+    title: "미션 1 — 뱅기노자 커뮤니티 운영",
     role: "회원이 질문·후기·정보를 남기고 운영자가 같은 흐름에서 관리하는 핵심 참여 영역.",
     routes: ["community", "mypage(북마크 / 알림)", "admin > 게시글", "admin > 신고"],
     status: "Cycle 1 마무리(기능 ~85%)",
@@ -889,7 +889,7 @@ const FEATURE_DOMAINS = [
           "페이지네이션(10건/페이지, 이전·다음·번호)",
           "북마크 / 좋아요 카운트 인디케이터(제목 옆)",
         ],
-        techSpec: "`WSD_COMMUNITY.listPosts()` → `WSD_STORES.communityPosts` localStorage. 카테고리는 `WSD_STORES.categories` 중 `boardType === 'community'`. 페이지 상태(`page`)는 검색·탭 변경 시 1로 리셋.",
+        techSpec: "`BGNJ_COMMUNITY.listPosts()` → `BGNJ_STORES.communityPosts` localStorage. 카테고리는 `BGNJ_STORES.categories` 중 `boardType === 'community'`. 페이지 상태(`page`)는 검색·탭 변경 시 1로 리셋.",
         caution: "검색은 제목 부분 일치이고 본문 검색은 미구현. 정렬은 최신순 한 가지.",
         issues: ["사용자 작성 글과 시드 글이 다른 키에 저장되어 있던 P1 → `ensureCommunityPostsSeeded`로 단일 키 통합"],
       },
@@ -904,7 +904,7 @@ const FEATURE_DOMAINS = [
           "임시 저장 (미구현)",
           "수정 / 삭제 버튼(작성자·관리자)",
         ],
-        techSpec: "`WSD_COMMUNITY.createPost / updatePost / deletePost`. 권한은 작성자 본인 혹은 `user.isAdmin`. Tiptap은 `window.WSD_TIPTAP`으로 ESM 주입.",
+        techSpec: "`BGNJ_COMMUNITY.createPost / updatePost / deletePost`. 권한은 작성자 본인 혹은 `user.isAdmin`. Tiptap은 `window.BGNJ_TIPTAP`으로 ESM 주입.",
         caution: "삭제는 즉시 영구 삭제. 운영 중 실수 방지를 위해 confirm() 한 번을 반드시 거치도록 유지.",
         issues: [
           "Tiptap이 첫 마운트보다 늦게 로드될 수 있어 `wsd-tiptap-ready` 이벤트를 기다리는 fallback을 추가",
@@ -922,7 +922,7 @@ const FEATURE_DOMAINS = [
           "답글(트리) — 미구현",
           "멘션 — 미구현",
         ],
-        techSpec: "`WSD_STORES.comments[postId]` 배열. push / filter로 처리.",
+        techSpec: "`BGNJ_STORES.comments[postId]` 배열. push / filter로 처리.",
         caution: "포스트 ID당 단일 배열이라 댓글 수가 많아지면 페이지네이션 구조 확장 필요.",
         issues: ["게시글의 `replies` 카운트가 댓글 배열 길이와 어긋날 수 있어 normalize 시점에 동기화"],
       },
@@ -935,7 +935,7 @@ const FEATURE_DOMAINS = [
           "본인 자동 카운트 방지 — 미구현",
           "유닛 테스트 — 미구현",
         ],
-        techSpec: "상세 진입 시 `views += 1` 후 `WSD_SAVE.communityPosts()` 호출.",
+        techSpec: "상세 진입 시 `views += 1` 후 `BGNJ_SAVE.communityPosts()` 호출.",
         caution: "동일 사용자 새로고침 시 중복 카운트 발생. 운영 수치로는 신뢰도가 낮음.",
         issues: [],
       },
@@ -960,7 +960,7 @@ const FEATURE_DOMAINS = [
           "카테고리 정의(`boardType`, `requiresLogin`, `requiresAdmin`)",
           "게이트 컴포넌트",
         ],
-        techSpec: "`WSD_STORES.categories` 메타에 권한 플래그 보유, 컴포넌트 단에서 검사.",
+        techSpec: "`BGNJ_STORES.categories` 메타에 권한 플래그 보유, 컴포넌트 단에서 검사.",
         caution: "클라이언트 단 검사라 외부 DB 도입 시 서버 측 권한 정책을 별도로 가져가야 함.",
         issues: [],
       },
@@ -974,7 +974,7 @@ const FEATURE_DOMAINS = [
           "CSV 다운로드(좋아요 수 포함)",
           "행 단위 열기·삭제",
         ],
-        techSpec: "`WSD_COMMUNITY.exportCsv()` + `WSD_COMMUNITY.deletePost(id)`. 사용자 화면과 동일 저장소.",
+        techSpec: "`BGNJ_COMMUNITY.exportCsv()` + `BGNJ_COMMUNITY.deletePost(id)`. 사용자 화면과 동일 저장소.",
         caution: "관리자 삭제는 즉시 사용자 화면에 반영되므로 confirm 필수.",
         issues: ["P1 시점에 관리자 탭이 mock 배열을 보던 문제 → P2에서 통합"],
       },
@@ -988,7 +988,7 @@ const FEATURE_DOMAINS = [
           "비로그인 시 로그인 유도 confirm",
           "본인 두 번 누름 → 취소(토글)",
         ],
-        techSpec: "`WSD_COMMUNITY.toggleLike(postId, userId)` → `post.likes`(userId 배열). `hasLiked / getLikes`로 상태 조회. 글 저장 시 같이 직렬화.",
+        techSpec: "`BGNJ_COMMUNITY.toggleLike(postId, userId)` → `post.likes`(userId 배열). `hasLiked / getLikes`로 상태 조회. 글 저장 시 같이 직렬화.",
         caution: "좋아요 카운트는 배열 길이로 계산하므로 동일 userId가 중복으로 들어가지 않도록 toggleLike에서 보호.",
         issues: [],
       },
@@ -1002,7 +1002,7 @@ const FEATURE_DOMAINS = [
           "마이페이지 BOOKMARKS 카드(최대 8건 + 외 N건 표시)",
           "비로그인 시 로그인 유도 confirm",
         ],
-        techSpec: "`WSD_STORES.bookmarks` = `{ userId: [postId, ...] }`. `WSD_COMMUNITY.toggleBookmark / isBookmarked / getBookmarks / listBookmarkedPosts`.",
+        techSpec: "`BGNJ_STORES.bookmarks` = `{ userId: [postId, ...] }`. `BGNJ_COMMUNITY.toggleBookmark / isBookmarked / getBookmarks / listBookmarkedPosts`.",
         caution: "북마크된 글이 삭제되면 ID는 남되 `getPost`에서 null이 반환되어 마이페이지에서는 자동으로 누락됨.",
         issues: [],
       },
@@ -1017,7 +1017,7 @@ const FEATURE_DOMAINS = [
           "신고 카드(제목 / 사유 / 신고자 / 시각 / 상태 배지)",
           "액션 버튼: 게시글 열기 / 처리 완료 / 반려 / 게시글 삭제+처리",
         ],
-        techSpec: "`WSD_STORES.reports` 배열. `WSD_COMMUNITY.addReport / listReports(filter) / updateReportStatus / countOpenReports`. 상태: open / resolved / dismissed.",
+        techSpec: "`BGNJ_STORES.reports` 배열. `BGNJ_COMMUNITY.addReport / listReports(filter) / updateReportStatus / countOpenReports`. 상태: open / resolved / dismissed.",
         caution: "신고된 후 게시글을 직접 삭제해도 신고 레코드는 남는다(이력 보존). 게시글이 사라지면 '게시글 열기' 버튼은 빈 상세를 보여줄 수 있음.",
         issues: [],
       },
@@ -1032,7 +1032,7 @@ const FEATURE_DOMAINS = [
           "알림 클릭 → 게시글로 이동(읽음 처리)",
           "마이페이지 NOTIFICATIONS 카드(최근 6건 + 외 N건)",
         ],
-        techSpec: "`WSD_STORES.notifications` = `{ userId: [ {id, type, postId, postTitle, fromName, message, createdAt, read} ] }`. 댓글 등록 시 `addNotification(post.authorId, ...)` 호출(본인 글 제외, authorId 있을 때만). 게시글 점프는 `sessionStorage.wsd_pending_post_id` 후 `go('community')`.",
+        techSpec: "`BGNJ_STORES.notifications` = `{ userId: [ {id, type, postId, postTitle, fromName, message, createdAt, read} ] }`. 댓글 등록 시 `addNotification(post.authorId, ...)` 호출(본인 글 제외, authorId 있을 때만). 게시글 점프는 `sessionStorage.bgnj_pending_post_id` 후 `go('community')`.",
         caution: "본인 글에는 알림이 가지 않도록 commenter ↔ author 비교 필수. 시드 글처럼 authorId가 없는 글에는 알림이 발행되지 않음.",
         issues: ["라우팅이 글로벌 App 상태에 묶여 있어 외부 진입 시 sessionStorage 경유 패턴을 사용"],
       },
@@ -1046,22 +1046,22 @@ const FEATURE_DOMAINS = [
           "글 상세 작성자 메타",
           "댓글 작성자 라벨",
         ],
-        techSpec: "`WSD_USER_GRADE(user)` + `WSD_AUTHOR_GRADE({authorId, author, authorEmail})`. 등급 색상은 `WSD_STORES.grades`의 `color`.",
+        techSpec: "`BGNJ_USER_GRADE(user)` + `BGNJ_AUTHOR_GRADE({authorId, author, authorEmail})`. 등급 색상은 `BGNJ_STORES.grades`의 `color`.",
         caution: "시드 글 작성자(돌담아래 등)는 가입 사용자가 아니므로 배지가 표시되지 않음. 추후 시드 데이터를 가입 회원과 매칭하면 자동으로 채워짐.",
         issues: [],
       },
     ],
-    techSpec: "`WSD_COMMUNITY` helper + `WSD_STORES.communityPosts / comments / categories / bookmarks / reports / notifications` localStorage. 외부 DB 교체 시 helper는 유지하고 저장소 구현만 교체.",
+    techSpec: "`BGNJ_COMMUNITY` helper + `BGNJ_STORES.communityPosts / comments / categories / bookmarks / reports / notifications` localStorage. 외부 DB 교체 시 helper는 유지하고 저장소 구현만 교체.",
     cautions: [
       "localStorage 한계 → 이미지·알림·신고 누적 시 quota 초과",
       "권한 검사가 클라이언트 단 → 외부 DB 도입 시 서버 측 정책 필수",
       "사용자 화면 ↔ 관리자 화면이 같은 저장소를 본다는 가정이 P2 통합의 핵심이므로 깨지지 않게 유지",
-      "라우팅은 글로벌 App 상태에 묶여 있어 외부 진입 시 `sessionStorage.wsd_pending_post_id` 패턴을 사용",
+      "라우팅은 글로벌 App 상태에 묶여 있어 외부 진입 시 `sessionStorage.bgnj_pending_post_id` 패턴을 사용",
     ],
     issues: [
       "사용자 작성 글 / 시드 글이 다른 키에 저장되어 있던 P1 → `ensureCommunityPostsSeeded`로 마이그레이션",
-      "관리자와 사용자 화면이 다른 mock 배열을 보던 P1 → `WSD_COMMUNITY` 단일 helper로 수렴",
-      "Cycle 1에서 좋아요/북마크/신고/알림/등급 배지/페이지네이션을 한 PR에 묶음. 데이터 모델 6개를 동시에 도입하느라 helper 수가 크게 늘어났으므로, 다음 도메인 작업에서는 helper 명명을 `WSD_<DOMAIN>` 단위로 묶을지 재검토 필요",
+      "관리자와 사용자 화면이 다른 mock 배열을 보던 P1 → `BGNJ_COMMUNITY` 단일 helper로 수렴",
+      "Cycle 1에서 좋아요/북마크/신고/알림/등급 배지/페이지네이션을 한 PR에 묶음. 데이터 모델 6개를 동시에 도입하느라 helper 수가 크게 늘어났으므로, 다음 도메인 작업에서는 helper 명명을 `BGNJ_<DOMAIN>` 단위로 묶을지 재검토 필요",
     ],
   },
   {
@@ -1093,7 +1093,7 @@ const FEATURE_DOMAINS = [
           "내 신청 인디케이터(상태 라벨 동시 표시)",
           "상세 헤더 6 메타(일정·장소·진행·정원·잔여·참가비)",
         ],
-        techSpec: "`WSD_LECTURES.listAll() / getLecture / getSeats`. 시드는 `WANGSADEUL_DATA.lectures`, 관리자가 수정한 항목은 `WSD_STORES.lectureOverrides`에 저장 후 머지.",
+        techSpec: "`BGNJ_LECTURES.listAll() / getLecture / getSeats`. 시드는 `BANGINOJA_DATA.lectures`, 관리자가 수정한 항목은 `BGNJ_STORES.lectureOverrides`에 저장 후 머지.",
         caution: "잔여석은 `capacity - 활성(취소 제외) 비대기 등록 합` 으로 즉시 계산하므로 시드의 `seats` 텍스트는 더 이상 운영 수치로 사용하지 않음(표시 폴백용).",
         issues: [],
       },
@@ -1108,7 +1108,7 @@ const FEATURE_DOMAINS = [
           "비로그인 시 회원가입·로그인 진입 카드",
           "신청 후 본인 상태 카드 + 입금 안내(유료) + .ics 다운로드 + 신청 취소",
         ],
-        techSpec: "`WSD_LECTURES.register({lectureId, userId, name, email, phone, count, note})`. 같은 사용자가 같은 강연에 두 번 신청 못 하도록 `hasUserRegistered`로 가드. 취소 시 `_promoteWaitlist`가 자동 실행되어 가장 오래된 대기자를 승격.",
+        techSpec: "`BGNJ_LECTURES.register({lectureId, userId, name, email, phone, count, note})`. 같은 사용자가 같은 강연에 두 번 신청 못 하도록 `hasUserRegistered`로 가드. 취소 시 `_promoteWaitlist`가 자동 실행되어 가장 오래된 대기자를 승격.",
         caution: "한 사용자가 한 강연에 한 건만 가질 수 있다(취소 후 재신청은 가능). 인원 수는 1 이상, 정원 이하.",
         issues: ["기존 시드 데이터의 'seats' 텍스트는 실제 정원/잔여 계산과 무관하므로 운영자에게는 혼선이 될 수 있음 — 관리자 강연 탭에서 직접 capacity 값을 수정하도록 안내 필요"],
       },
@@ -1122,7 +1122,7 @@ const FEATURE_DOMAINS = [
           "참가자 표(이름·이메일·연락처·인원·상태·입금 여부)",
           "액션: `입금 확인 → 확정` / `확정 취소` / `취소`",
         ],
-        techSpec: "`WSD_LECTURES.confirmPayment(lectureId, registrationId)` → `paid: true`, `status: 'confirmed'`. `unconfirmPayment`로 되돌릴 수 있음. `cancelRegistration`은 좌석을 돌려놓고 `_promoteWaitlist` 실행.",
+        techSpec: "`BGNJ_LECTURES.confirmPayment(lectureId, registrationId)` → `paid: true`, `status: 'confirmed'`. `unconfirmPayment`로 되돌릴 수 있음. `cancelRegistration`은 좌석을 돌려놓고 `_promoteWaitlist` 실행.",
         caution: "확정 취소 후 좌석은 즉시 풀려 다음 대기자가 자동 승격됨. 의도치 않은 환불 분쟁을 막으려면 입금 환불 후에만 확정 취소를 누를 것.",
         issues: [],
       },
@@ -1135,7 +1135,7 @@ const FEATURE_DOMAINS = [
           "안내 메모(입금자명 규칙 등)",
           "저장 즉시 사용자 신청 화면에 반영",
         ],
-        techSpec: "`WSD_LECTURES.getBankAccount() / saveBankAccount(payload)` → `WSD_STORES.bankAccount`. 비어 있으면 사용자 신청 시 '운영자에게 문의' 안내.",
+        techSpec: "`BGNJ_LECTURES.getBankAccount() / saveBankAccount(payload)` → `BGNJ_STORES.bankAccount`. 비어 있으면 사용자 신청 시 '운영자에게 문의' 안내.",
         caution: "민감 정보(계좌)이므로 관리자 외에는 접근하지 못해야 함. 현재는 관리자 라우트 자체가 `user.isAdmin` 가드.",
         issues: [],
       },
@@ -1148,7 +1148,7 @@ const FEATURE_DOMAINS = [
           "카드 클릭 → 강연 상세로 이동",
           "최대 4건 + '외 N건'",
         ],
-        techSpec: "`WSD_LECTURES.listMyRegistrations(user.id)`로 모든 강연을 가로지르며 본인 등록만 모음. 강연 점프는 `sessionStorage.wsd_pending_lecture_id` 패턴 사용.",
+        techSpec: "`BGNJ_LECTURES.listMyRegistrations(user.id)`로 모든 강연을 가로지르며 본인 등록만 모음. 강연 점프는 `sessionStorage.bgnj_pending_lecture_id` 패턴 사용.",
         caution: "신청 후 강연이 삭제되면 카드의 강연 정보가 비어 보일 수 있음.",
         issues: [],
       },
@@ -1160,7 +1160,7 @@ const FEATURE_DOMAINS = [
           "상세에서 `캘린더 추가 (.ics)` 버튼",
           "신청 후 본인 상태 카드에서도 다운로드 가능",
         ],
-        techSpec: "`WSD_LECTURES.generateIcs(lecture)` → RFC 5545 형식 문자열. `downloadIcs(lectureId)`가 Blob을 만들어 클릭 다운로드.",
+        techSpec: "`BGNJ_LECTURES.generateIcs(lecture)` → RFC 5545 형식 문자열. `downloadIcs(lectureId)`가 Blob을 만들어 클릭 다운로드.",
         caution: "`startsAt` ISO + `durationMinutes`가 있어야 정상 생성됨. 운영자가 강연을 새로 만들 때 두 필드를 채우도록 강제할 것.",
         issues: [],
       },
@@ -1170,14 +1170,14 @@ const FEATURE_DOMAINS = [
         summary: "`#lecture-{id}`로 강연 상세를 외부 공유. 홈 강연 카드 클릭은 `lectures` 라우트로 직접 점프.",
         elements: [
           "App `applyHash`가 `#lecture-{id}` 매칭 시 `lectures` 라우트로 이동 + sessionStorage 셋",
-          "홈 강연 카드 onClick → `wsd_pending_lecture_id` + `go('lectures')`",
+          "홈 강연 카드 onClick → `bgnj_pending_lecture_id` + `go('lectures')`",
         ],
         techSpec: "`index.html` App `useEffect` 라우트 해시 + `sessionStorage` 페치. 강연 페이지 mount에서 pending id 읽고 setSelectedId.",
         caution: "라우트가 글로벌 App 상태에 묶여 있어 외부 진입은 sessionStorage 패턴을 그대로 따른다.",
         issues: [],
       },
     ],
-    techSpec: "`WSD_LECTURES` helper + `WANGSADEUL_DATA.lectures`(시드) + `WSD_STORES.lectureOverrides`(관리자 수정분 머지) + `WSD_STORES.lectureRegistrations`(`{lectureId: registration[]}`) + `WSD_STORES.bankAccount`. 회원 식별은 `user.id`, 결제 정책은 `price === 0` 분기.",
+    techSpec: "`BGNJ_LECTURES` helper + `BANGINOJA_DATA.lectures`(시드) + `BGNJ_STORES.lectureOverrides`(관리자 수정분 머지) + `BGNJ_STORES.lectureRegistrations`(`{lectureId: registration[]}`) + `BGNJ_STORES.bankAccount`. 회원 식별은 `user.id`, 결제 정책은 `price === 0` 분기.",
     cautions: [
       "회원만 신청 가능 — 비회원에게는 회원가입/로그인 진입 카드를 노출하고 폼 자체를 막음",
       "결제 도입은 '무통장 입금 → 관리자 입금 확인 → 참가 확정' 단계까지만 (PG는 후속)",
@@ -1218,7 +1218,7 @@ const FEATURE_DOMAINS = [
           "총 N개 / 카테고리 / 검색어 인디케이터",
           "피처 칼럼 1건 + 보조 4건(홈)",
         ],
-        techSpec: "`WSD_COLUMNS.searchPublic({query, category})` → `WSD_COLUMNS.listPublic()`(자동 promote 후 published만) + 검색 필터. 시드 + 사용자 발행 모두 동일 객체 형태.",
+        techSpec: "`BGNJ_COLUMNS.searchPublic({query, category})` → `BGNJ_COLUMNS.listPublic()`(자동 promote 후 published만) + 검색 필터. 시드 + 사용자 발행 모두 동일 객체 형태.",
         caution: "검색은 본문 텍스트 기준이며 HTML 태그는 비교에서 제외됨 (`body.text`).",
         issues: [],
       },
@@ -1234,11 +1234,11 @@ const FEATURE_DOMAINS = [
           "댓글 등록 / 삭제(작성자·관리자) / 등급 배지",
           "이전·다음 칼럼 네비게이션",
         ],
-        techSpec: "`WSD_COLUMNS.getColumn / getLikes / hasLiked / toggleLike / getViews / incrementViews / listComments / addComment / deleteComment`. 좋아요·조회수는 `WSD_STORES.columnEngagement` 맵에 통합 저장. 댓글은 `WSD_COMMUNITY.comments`를 `col-{id}` 키로 재사용.",
+        techSpec: "`BGNJ_COLUMNS.getColumn / getLikes / hasLiked / toggleLike / getViews / incrementViews / listComments / addComment / deleteComment`. 좋아요·조회수는 `BGNJ_STORES.columnEngagement` 맵에 통합 저장. 댓글은 `BGNJ_COMMUNITY.comments`를 `col-{id}` 키로 재사용.",
         caution: "관리자가 임의 HTML을 넣을 수 있으므로 에디터 정책으로 차단. 사용자 입력에는 절대 dangerouslySetInnerHTML 적용 금지.",
         issues: [
           "Tiptap 본문이 HTML로 직렬화되어 저장되므로 어떤 확장이 활성화돼 있는지를 같이 관리해야 함",
-          "라우팅이 글로벌 App 상태에 묶여 있어 외부 진입은 `sessionStorage.wsd_pending_column_id` + `#col-{id}` 해시 조합 사용",
+          "라우팅이 글로벌 App 상태에 묶여 있어 외부 진입은 `sessionStorage.bgnj_pending_column_id` + `#col-{id}` 해시 조합 사용",
         ],
       },
       {
@@ -1254,7 +1254,7 @@ const FEATURE_DOMAINS = [
           "버튼: 초기화 / 임시 저장 / 예약 발행 / 즉시 발행",
           "필터(전체/발행/예약/임시) + 상태 배지(DRAFT/SCHEDULED/PUBLISHED) + 수정 / 발행 취소 / 삭제",
         ],
-        techSpec: "`WSD_COLUMNS.saveColumn(payload)` — `id`(신규/기존 동일 키), `status`('draft'|'scheduled'|'published'), `publishAt`(예약 시), `publishedAt`(즉시 발행 시), `updatedAt` 자동. 페이지 진입마다 `_autoPromote()`가 시간 지난 예약을 published로 승격.",
+        techSpec: "`BGNJ_COLUMNS.saveColumn(payload)` — `id`(신규/기존 동일 키), `status`('draft'|'scheduled'|'published'), `publishAt`(예약 시), `publishedAt`(즉시 발행 시), `updatedAt` 자동. 페이지 진입마다 `_autoPromote()`가 시간 지난 예약을 published로 승격.",
         caution: "예약 시각은 현재보다 미래여야 하며, datetime-local은 로컬 타임존을 그대로 저장하므로 운영자 PC 시계 기준으로 동작함을 명심.",
         issues: ["발행 취소는 임시 저장 상태로 되돌리며, 칼럼 콘텐츠는 보존되지만 공개에서는 즉시 사라짐"],
       },
@@ -1263,12 +1263,12 @@ const FEATURE_DOMAINS = [
         status: "구현됨",
         summary: "메인 홈에 published 사용자 칼럼 + 시드를 묶어 피처 1 + 사이드 4 노출.",
         elements: ["피처 카드 1", "사이드 4건"],
-        techSpec: "`WSD_COLUMNS.listPublic()`의 상위 항목 사용. draft/scheduled은 자동 제외.",
+        techSpec: "`BGNJ_COLUMNS.listPublic()`의 상위 항목 사용. draft/scheduled은 자동 제외.",
         caution: "추천 알고리즘이 없어 항상 최신 5건이 노출됨.",
         issues: [],
       },
     ],
-    techSpec: "`WSD_COLUMNS` helper + `WSD_STORES.userColumns`(콘텐츠) + `WSD_STORES.columnEngagement`(좋아요·조회수) + `WSD_STORES.comments['col-{id}']`(댓글). 시드는 `WANGSADEUL_DATA.columns`에서 병합.",
+    techSpec: "`BGNJ_COLUMNS` helper + `BGNJ_STORES.userColumns`(콘텐츠) + `BGNJ_STORES.columnEngagement`(좋아요·조회수) + `BGNJ_STORES.comments['col-{id}']`(댓글). 시드는 `BANGINOJA_DATA.columns`에서 병합.",
     cautions: [
       "공개 정렬은 사용자 발행 → 시드 순서로 spread (사용자 발행 글이 위로)",
       "본문 HTML 신뢰 범위는 '관리자 입력에 한함'으로 유지",
@@ -1287,7 +1287,7 @@ const FEATURE_DOMAINS = [
     role: "뱅기노자가 진행하는 궁궐 답사·역사 답사 프로그램을 신청·운영.",
     routes: ["tour(목록·상세·예약)", "home(노출)", "mypage(내 답사 내역)", "admin > 투어 프로그램(운영 명단)", "admin > 설정(계좌번호)"],
     status: "Cycle 5 마무리(기능 ~70%)",
-    evaluation: "Cycle 5에서 카탈로그였던 투어가 회원 전용 신청 → 무통장 입금 → 관리자 입금 확인 → 참가 확정 사이클로 닫혔다. 강연과 같은 패턴(`WSD_TOURS` 신설)으로 정원/대기열 자동 처리, .ics 캘린더 다운로드, URL 해시 딥 링크(`#tour-{id}`)까지 동시에 도입. 결제·계좌 저장소는 강연/책과 모두 공유.",
+    evaluation: "Cycle 5에서 카탈로그였던 투어가 회원 전용 신청 → 무통장 입금 → 관리자 입금 확인 → 참가 확정 사이클로 닫혔다. 강연과 같은 패턴(`BGNJ_TOURS` 신설)으로 정원/대기열 자동 처리, .ics 캘린더 다운로드, URL 해시 딥 링크(`#tour-{id}`)까지 동시에 도입. 결제·계좌 저장소는 강연/책과 모두 공유.",
     missing: [
       "PG 결제(현재는 무통장 입금만)",
       "환불·취소 정책 자동화",
@@ -1309,7 +1309,7 @@ const FEATURE_DOMAINS = [
           "상세(기간 · 인원 · 난이도 · 다음 일정 · 가격 · 설명 · 답사 일정 · 준비물)",
           "FREE / 무통장 입금 배지",
         ],
-        techSpec: "`WSD_TOURS.listAll()` (시드 + `WSD_STORES.tourOverrides` 머지). 잔여는 `getSeats(tourId)`로 즉시 계산.",
+        techSpec: "`BGNJ_TOURS.listAll()` (시드 + `BGNJ_STORES.tourOverrides` 머지). 잔여는 `getSeats(tourId)`로 즉시 계산.",
         caution: "기존 시드의 `group` 텍스트('12인 이하')와 신규 `capacity` 숫자가 분리되어 있으니 운영자는 capacity 수정에 주의.",
         issues: [],
       },
@@ -1323,7 +1323,7 @@ const FEATURE_DOMAINS = [
           "본인 상태 카드(취소 / .ics 다운로드 + 무통장 입금 안내)",
           "비로그인 시 회원가입 진입 안내",
         ],
-        techSpec: "`WSD_TOURS.reserve(tourId, payload)`. `hasUserReserved`로 중복 방지. 취소 시 `_promoteWaitlist`가 자동 실행되어 대기자 자동 승격(승격 시 본인에게 알림 푸시).",
+        techSpec: "`BGNJ_TOURS.reserve(tourId, payload)`. `hasUserReserved`로 중복 방지. 취소 시 `_promoteWaitlist`가 자동 실행되어 대기자 자동 승격(승격 시 본인에게 알림 푸시).",
         caution: "한 회원 = 한 투어 = 한 건. 취소 후 재신청은 가능. 인원은 1~capacity 범위.",
         issues: ["기존 시드 `group` 텍스트는 운영 정원과 무관 — 관리자 투어 탭에서 capacity를 직접 관리할 것"],
       },
@@ -1337,7 +1337,7 @@ const FEATURE_DOMAINS = [
           "참가자 표(이름·이메일·연락처·인원·상태·입금 여부)",
           "액션: `입금 확인 → 확정` / `확정 취소` / `취소`",
         ],
-        techSpec: "`WSD_TOURS.confirmPayment / unconfirmPayment / cancelReservation`. 확정 시 본인에게 자동 알림 푸시.",
+        techSpec: "`BGNJ_TOURS.confirmPayment / unconfirmPayment / cancelReservation`. 확정 시 본인에게 자동 알림 푸시.",
         caution: "확정 취소 후 좌석은 즉시 풀려 다음 대기자가 자동 승격됨. 환불 후에만 누를 것.",
         issues: [],
       },
@@ -1350,7 +1350,7 @@ const FEATURE_DOMAINS = [
           "카드 클릭 → 투어 상세로 이동",
           "최대 4건 + '외 N건'",
         ],
-        techSpec: "`WSD_TOURS.listMyReservations(user.id)`로 모든 투어를 가로지르며 본인 신청만 모음. 점프는 `sessionStorage.wsd_pending_tour_id` 패턴 사용.",
+        techSpec: "`BGNJ_TOURS.listMyReservations(user.id)`로 모든 투어를 가로지르며 본인 신청만 모음. 점프는 `sessionStorage.bgnj_pending_tour_id` 패턴 사용.",
         caution: "투어가 삭제되면 카드의 투어 정보가 비어 보일 수 있음.",
         issues: [],
       },
@@ -1359,7 +1359,7 @@ const FEATURE_DOMAINS = [
         status: "구현됨",
         summary: "투어 시작 시각·소요 시간·장소·설명을 담은 표준 .ics 파일 다운로드.",
         elements: ["투어 사이드바 `캘린더에 추가 (.ics)` 버튼", "본인 상태 카드에서도 가능"],
-        techSpec: "`WSD_TOURS.generateIcs(tour)` → RFC 5545 형식. `downloadIcs(tourId)`가 Blob을 만들어 클릭 다운로드.",
+        techSpec: "`BGNJ_TOURS.generateIcs(tour)` → RFC 5545 형식. `downloadIcs(tourId)`가 Blob을 만들어 클릭 다운로드.",
         caution: "`startsAt` ISO + `durationMinutes`가 있어야 정상 생성됨.",
         issues: [],
       },
@@ -1373,7 +1373,7 @@ const FEATURE_DOMAINS = [
         issues: [],
       },
     ],
-    techSpec: "`WSD_TOURS` helper + `WANGSADEUL_DATA.tours`(시드) + `WSD_STORES.tourOverrides`(관리자 수정분 머지) + `WSD_STORES.tourReservations`(`{tourId: reservation[]}`) + `WSD_STORES.bankAccount`(강연·책과 공유). 결제 정책은 `priceNumber === 0` 분기.",
+    techSpec: "`BGNJ_TOURS` helper + `BANGINOJA_DATA.tours`(시드) + `BGNJ_STORES.tourOverrides`(관리자 수정분 머지) + `BGNJ_STORES.tourReservations`(`{tourId: reservation[]}`) + `BGNJ_STORES.bankAccount`(강연·책과 공유). 결제 정책은 `priceNumber === 0` 분기.",
     cautions: [
       "회원 전용 — 비로그인은 신청 폼에 진입할 수 없음(로그인 진입 confirm)",
       "결제는 무통장 입금만 (PG는 후속 사이클)",
@@ -1416,7 +1416,7 @@ const FEATURE_DOMAINS = [
           "챕터 목차 / 저자 / 리뷰 탭",
           "바로 구매 → 체크아웃 라우트로 이동",
         ],
-        techSpec: "`WANGSADEUL_DATA.book` 정적 객체를 `BookPage`가 렌더. 판본/수량은 메모리 `cart` 상태로 보관 후 결제 페이지에 전달.",
+        techSpec: "`BANGINOJA_DATA.book` 정적 객체를 `BookPage`가 렌더. 판본/수량은 메모리 `cart` 상태로 보관 후 결제 페이지에 전달.",
         caution: "ISBN과 가격은 정적이라 출판사 정책 변경 시 코드 갱신 필요.",
         issues: [],
       },
@@ -1431,7 +1431,7 @@ const FEATURE_DOMAINS = [
           "주문 요약 사이드바(상품·배송비·총액·운영 안내)",
           "주문 완료 화면(주문번호·계좌·금액·배송지 한 페이지 요약)",
         ],
-        techSpec: "`WSD_BOOK_ORDERS.createOrder({userId, version, qty, recipient, phone, address, addressDetail, memo})` → 주문 생성 시 `WSD_STORES.bookOrders`에 push. 계좌는 `WSD_LECTURES.getBankAccount()`로 강연과 공유. 주문번호는 `WSD-YYYYMMDD-NNN` 시퀀스.",
+        techSpec: "`BGNJ_BOOK_ORDERS.createOrder({userId, version, qty, recipient, phone, address, addressDetail, memo})` → 주문 생성 시 `BGNJ_STORES.bookOrders`에 push. 계좌는 `BGNJ_LECTURES.getBankAccount()`로 강연과 공유. 주문번호는 `WSD-YYYYMMDD-NNN` 시퀀스.",
         caution: "운영자 계좌가 비어 있으면 주문 버튼이 비활성화되어 결제 자체가 막힌다. 강연과 같은 계좌 저장소이므로 강연·책 어느 한 곳에서 설정해도 양쪽에 반영됨.",
         issues: ["장바구니가 휘발성 메모리이므로 결제 진입 후 새로고침하면 cart가 사라짐 — 다음 단계에서 localStorage 영속화 예정"],
       },
@@ -1445,7 +1445,7 @@ const FEATURE_DOMAINS = [
           "액션: 입금 확인 → 발송 준비 / 송장 입력 + 발송 처리 / 배송 완료 / 입금 확인 취소 / 주문 취소",
           "CSV 다운로드(주문 / 회원 / 주소 / 상태 / 송장)",
         ],
-        techSpec: "`WSD_BOOK_ORDERS.confirmPayment(id) / unconfirmPayment(id) / markShipped(id, tracking) / markDelivered(id) / cancelOrder(id) / exportCsv()`. 상태 머신: pending_payment → paid → shipped → delivered (혹은 cancelled).",
+        techSpec: "`BGNJ_BOOK_ORDERS.confirmPayment(id) / unconfirmPayment(id) / markShipped(id, tracking) / markDelivered(id) / cancelOrder(id) / exportCsv()`. 상태 머신: pending_payment → paid → shipped → delivered (혹은 cancelled).",
         caution: "각 단계는 운영자가 직접 클릭해야 진행됨(자동 진행 없음). 송장 번호는 발송 시 입력하고 이후 변경 불가(필요 시 코드 수정 또는 마지막 액션 reset 흐름 추가).",
         issues: [],
       },
@@ -1458,7 +1458,7 @@ const FEATURE_DOMAINS = [
           "송장 번호(발송된 주문)",
           "최대 4건 + '외 N건'",
         ],
-        techSpec: "`WSD_BOOK_ORDERS.listMine(user.id)`로 본인 주문만 모음.",
+        techSpec: "`BGNJ_BOOK_ORDERS.listMine(user.id)`로 본인 주문만 모음.",
         caution: "주문이 cancelled 상태로 바뀌면 카드는 남되 컬러로 구분.",
         issues: [],
       },
@@ -1467,12 +1467,12 @@ const FEATURE_DOMAINS = [
         status: "구현됨",
         summary: "관리자 대시보드 4개 KPI 중 마지막 슬롯을 '왕의길 주문'으로 교체. 입금 대기 건수 표시.",
         elements: ["전체 주문 수", "입금 대기 카운트(미처리 시 경고 색)"],
-        techSpec: "`window.WSD_BOOK_ORDERS.listAll()` + 상태 필터.",
+        techSpec: "`window.BGNJ_BOOK_ORDERS.listAll()` + 상태 필터.",
         caution: "필요 시 5번째 슬롯으로 카테고리/투어 등 다시 추가할 수 있음.",
         issues: [],
       },
     ],
-    techSpec: "`WSD_BOOK_ORDERS` helper + `WSD_STORES.bookOrders`(주문 단일 배열) + `WSD_STORES.bankAccount`(강연과 공유). 주문번호는 `WSD-YYYYMMDD-NNN`. 회원 식별은 `user.id`.",
+    techSpec: "`BGNJ_BOOK_ORDERS` helper + `BGNJ_STORES.bookOrders`(주문 단일 배열) + `BGNJ_STORES.bankAccount`(강연과 공유). 주문번호는 `WSD-YYYYMMDD-NNN`. 회원 식별은 `user.id`.",
     cautions: [
       "회원 전용 — 비로그인은 결제 진입 자체를 막음",
       "결제는 무통장 입금만 (PG는 후속 사이클)",
@@ -1491,24 +1491,24 @@ const FEATURE_DOMAINS = [
 const ReportQueuePanel = ({ onRefresh, go }) => {
   const [filter, setFilter] = React.useState("open");
   const [tick, setTick] = React.useState(0);
-  const reports = React.useMemo(() => window.WSD_COMMUNITY.listReports(filter), [filter, tick]);
+  const reports = React.useMemo(() => window.BGNJ_COMMUNITY.listReports(filter), [filter, tick]);
   const counts = React.useMemo(() => ({
-    open: window.WSD_COMMUNITY.listReports('open').length,
-    resolved: window.WSD_COMMUNITY.listReports('resolved').length,
-    dismissed: window.WSD_COMMUNITY.listReports('dismissed').length,
-    all: window.WSD_COMMUNITY.listReports('all').length,
+    open: window.BGNJ_COMMUNITY.listReports('open').length,
+    resolved: window.BGNJ_COMMUNITY.listReports('resolved').length,
+    dismissed: window.BGNJ_COMMUNITY.listReports('dismissed').length,
+    all: window.BGNJ_COMMUNITY.listReports('all').length,
   }), [tick]);
 
   const setStatus = (id, status) => {
-    window.WSD_COMMUNITY.updateReportStatus(id, status);
+    window.BGNJ_COMMUNITY.updateReportStatus(id, status);
     setTick((v) => v + 1);
   };
 
   const removePostFromReport = (report) => {
     if (!report.postId) return;
     if (!confirm(`"${report.postTitle}" 게시글을 삭제하고 신고를 처리 완료로 표시하시겠어요?`)) return;
-    window.WSD_COMMUNITY.deletePost(report.postId);
-    window.WSD_COMMUNITY.updateReportStatus(report.id, 'resolved');
+    window.BGNJ_COMMUNITY.deletePost(report.postId);
+    window.BGNJ_COMMUNITY.updateReportStatus(report.id, 'resolved');
     setTick((v) => v + 1);
     onRefresh?.();
   };
@@ -1566,7 +1566,7 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
                   {r.postId && (
                     <button type="button" className="btn btn-small"
                       onClick={() => {
-                        try { sessionStorage.setItem('wsd_pending_post_id', String(r.postId)); } catch {}
+                        try { sessionStorage.setItem('bgnj_pending_post_id', String(r.postId)); } catch {}
                         go('community');
                       }}>게시글 열기</button>
                   )}
@@ -1598,7 +1598,7 @@ const LectureAdminPanel = ({ go }) => {
   const [draft, setDraft] = React.useState({ title: '', topic: '', venue: '', host: '', startsAt: '', durationMinutes: 90, capacity: 30, price: 0, note: '' });
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
 
-  const lectures = React.useMemo(() => window.WSD_LECTURES.listAll(), [tick]);
+  const lectures = React.useMemo(() => window.BGNJ_LECTURES.listAll({ includeHidden: true }), [tick]);
 
   const refresh = () => setTick((v) => v + 1);
 
@@ -1626,11 +1626,11 @@ const LectureAdminPanel = ({ go }) => {
 
   const saveEdit = () => {
     if (editingId == null) return;
-    const lecture = window.WSD_LECTURES.getLecture(editingId);
+    const lecture = window.BGNJ_LECTURES.getLecture(editingId);
     if (!lecture) return;
     const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : lecture.startsAt;
     const next = draft.next || lecture.next;
-    window.WSD_LECTURES.saveLecture({
+    window.BGNJ_LECTURES.saveLecture({
       id: lecture.id,
       title: draft.title,
       topic: draft.topic,
@@ -1653,7 +1653,7 @@ const LectureAdminPanel = ({ go }) => {
     const pad = (n) => String(n).padStart(2, '0');
     const startsAt = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T19:00:00+09:00`;
     const next = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} 19:00`;
-    window.WSD_LECTURES.saveLecture({
+    window.BGNJ_LECTURES.saveLecture({
       id,
       title: '새 강연',
       topic: '강연 주제를 입력하세요',
@@ -1666,9 +1666,9 @@ const LectureAdminPanel = ({ go }) => {
       price: 0,
       note: '강연 안내를 입력하세요.',
     });
-    window.WSD_AUDIT?.log({ action: 'lecture.create', target: `lecture:${id}` });
+    window.BGNJ_AUDIT?.log({ action: 'lecture.create', target: `lecture:${id}` });
     refresh();
-    startEdit(window.WSD_LECTURES.getLecture(id));
+    startEdit(window.BGNJ_LECTURES.getLecture(id));
   };
 
   return (
@@ -1687,17 +1687,18 @@ const LectureAdminPanel = ({ go }) => {
       ) : (
         <div style={{display:'grid', gap:14}}>
           {lectures.map((l) => {
-            const seats = window.WSD_LECTURES.getSeats(l.id);
-            const regs = window.WSD_LECTURES.listRegistrations(l.id);
+            const seats = window.BGNJ_LECTURES.getSeats(l.id);
+            const regs = window.BGNJ_LECTURES.listRegistrations(l.id);
             const active = regs.filter((r) => r.status !== 'cancelled');
             const isEditing = editingId === l.id;
             return (
-              <article key={l.id} className="card" style={{padding:20}}>
+              <article key={l.id} className="card" style={{padding:20, opacity: l.hidden ? 0.55 : 1}}>
                 <header style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:10}}>
                   <div>
                     <h3 className="ko-serif" style={{fontSize:18}}>
                       <span className="dim-2 mono" style={{fontSize:11, marginRight:8}}>#{String(l.id).padStart(2,'0')}</span>
                       {l.title} — {l.topic}
+                      {l.hidden && <span className="mono" style={{marginLeft:10, fontSize:10, letterSpacing:'0.18em', color:'var(--danger)', border:'1px solid var(--danger)', padding:'1px 6px', borderRadius:2}}>숨김</span>}
                     </h3>
                     <div className="mono dim-2" style={{fontSize:11, marginTop:4, letterSpacing:'0.12em'}}>
                       {l.next} · {l.venue} · 진행 {l.host}
@@ -1749,12 +1750,21 @@ const LectureAdminPanel = ({ go }) => {
                     <button type="button" className="btn btn-small" onClick={() => startEdit(l)}>강연 정보 수정</button>
                     <button type="button" className="btn btn-small"
                       onClick={() => {
-                        if (!confirm('이 강연을 삭제하시겠어요? 관련 신청 정보도 함께 정리됩니다.')) return;
-                        window.WSD_LECTURES.deleteLecture(l.id);
-                        window.WSD_AUDIT?.log({ action: 'lecture.remove', target: `lecture:${l.id}` });
+                        window.BGNJ_LECTURES.setHidden(l.id, !l.hidden);
+                        window.BGNJ_AUDIT?.log({ action: l.hidden ? 'lecture.unhide' : 'lecture.hide', target: `lecture:${l.id}` });
                         refresh();
                       }}
-                      style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>삭제</button>
+                      style={{marginLeft:'auto'}}>
+                      {l.hidden ? '👁 표시 복원' : '🙈 숨김 처리'}
+                    </button>
+                    <button type="button" className="btn btn-small"
+                      onClick={() => {
+                        if (!confirm('이 강연을 삭제하시겠어요? 시드 강연은 자동 숨김 처리됩니다 (데이터 보존). 관리자가 추가한 강연은 완전 삭제됩니다.')) return;
+                        window.BGNJ_LECTURES.deleteLecture(l.id);
+                        window.BGNJ_AUDIT?.log({ action: 'lecture.remove', target: `lecture:${l.id}` });
+                        refresh();
+                      }}
+                      style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
                   </div>
                 )}
 
@@ -1795,13 +1805,13 @@ const LectureAdminPanel = ({ go }) => {
                               <div style={{display:'flex', justifyContent:'flex-end', gap:6, flexWrap:'wrap'}}>
                                 {r.status === 'pending_payment' && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => { window.WSD_LECTURES.confirmPayment(l.id, r.id); refresh(); }}>
+                                    onClick={() => { window.BGNJ_LECTURES.confirmPayment(l.id, r.id); refresh(); }}>
                                     입금 확인 → 확정
                                   </button>
                                 )}
                                 {r.status === 'confirmed' && r.price > 0 && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => { window.WSD_LECTURES.unconfirmPayment(l.id, r.id); refresh(); }}>
+                                    onClick={() => { window.BGNJ_LECTURES.unconfirmPayment(l.id, r.id); refresh(); }}>
                                     확정 취소
                                   </button>
                                 )}
@@ -1809,7 +1819,7 @@ const LectureAdminPanel = ({ go }) => {
                                   <button type="button" className="btn btn-small"
                                     onClick={() => {
                                       if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
-                                      window.WSD_LECTURES.cancelRegistration(l.id, r.id);
+                                      window.BGNJ_LECTURES.cancelRegistration(l.id, r.id);
                                       refresh();
                                     }}
                                     style={{borderColor:'var(--danger)', color:'var(--danger)'}}>취소</button>
@@ -1819,14 +1829,14 @@ const LectureAdminPanel = ({ go }) => {
                                     <span className="mono" style={{fontSize:9, color:'#e8a020', letterSpacing:'0.15em'}}>환불신청</span>
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
-                                      onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.WSD_LECTURES.approveRefund(l.id, r.id); refresh(); }}
+                                      onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.BGNJ_LECTURES.approveRefund(l.id, r.id); refresh(); }}
                                       style={{borderColor:'var(--gold)', color:'var(--gold)'}}>승인</button>
                                     <input className="field-input" placeholder="반려 사유"
                                       style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
                                       value={refundRejectNotes[r.id] || ''}
                                       onChange={e => setRefundRejectNotes({...refundRejectNotes, [r.id]: e.target.value})}/>
                                     <button type="button" className="btn btn-small"
-                                      onClick={() => { if (!confirm('환불 신청을 반려하시겠어요?')) return; window.WSD_LECTURES.rejectRefund(l.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
+                                      onClick={() => { if (!confirm('환불 신청을 반려하시겠어요?')) return; window.BGNJ_LECTURES.rejectRefund(l.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
                                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>반려</button>
                                   </>
                                 )}
@@ -1854,7 +1864,7 @@ const TourAdminPanel = ({ go }) => {
   const [draft, setDraft] = React.useState({});
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
   const refresh = () => setTick((v) => v + 1);
-  const tours = React.useMemo(() => window.WSD_TOURS.listAll(), [tick]);
+  const tours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
 
   const startEdit = (t) => {
     const startsAtLocal = (() => {
@@ -1880,10 +1890,10 @@ const TourAdminPanel = ({ go }) => {
 
   const saveEdit = () => {
     if (editingId == null) return;
-    const tour = window.WSD_TOURS.getTour(editingId);
+    const tour = window.BGNJ_TOURS.getTour(editingId);
     if (!tour) return;
     const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : tour.startsAt;
-    window.WSD_TOURS.saveTour({
+    window.BGNJ_TOURS.saveTour({
       id: tour.id,
       title: draft.title,
       level: draft.level,
@@ -1907,7 +1917,7 @@ const TourAdminPanel = ({ go }) => {
     const pad = (n) => String(n).padStart(2, '0');
     const startsAt = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T10:00:00+09:00`;
     const next = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} 10:00`;
-    window.WSD_TOURS.saveTour({
+    window.BGNJ_TOURS.saveTour({
       id,
       title: '새 답사 — 부제',
       level: '입문',
@@ -1921,15 +1931,20 @@ const TourAdminPanel = ({ go }) => {
       price: '80,000원',
       desc: '답사 안내를 입력하세요.',
     });
-    window.WSD_AUDIT?.log({ action: 'tour.create', target: `tour:${id}` });
+    window.BGNJ_AUDIT?.log({ action: 'tour.create', target: `tour:${id}` });
     refresh();
-    startEdit(window.WSD_TOURS.getTour(id));
+    startEdit(window.BGNJ_TOURS.getTour(id));
   };
 
   const removeTour = (id) => {
-    if (!confirm('이 투어를 삭제하시겠어요? 관련 예약 정보도 함께 정리됩니다.')) return;
-    window.WSD_TOURS.deleteTour(id);
-    window.WSD_AUDIT?.log({ action: 'tour.remove', target: `tour:${id}` });
+    if (!confirm('이 투어를 삭제하시겠어요? 시드 투어는 자동 숨김 처리(데이터 보존)됩니다. 관리자가 추가한 투어는 완전 삭제됩니다.')) return;
+    window.BGNJ_TOURS.deleteTour(id);
+    window.BGNJ_AUDIT?.log({ action: 'tour.remove', target: `tour:${id}` });
+    refresh();
+  };
+  const toggleTourHidden = (t) => {
+    window.BGNJ_TOURS.setHidden(t.id, !t.hidden);
+    window.BGNJ_AUDIT?.log({ action: t.hidden ? 'tour.unhide' : 'tour.hide', target: `tour:${t.id}` });
     refresh();
   };
 
@@ -1948,17 +1963,18 @@ const TourAdminPanel = ({ go }) => {
       ) : (
         <div style={{display:'grid', gap:14}}>
           {tours.map((t) => {
-            const seats = window.WSD_TOURS.getSeats(t.id);
-            const regs = window.WSD_TOURS.listReservations(t.id);
+            const seats = window.BGNJ_TOURS.getSeats(t.id);
+            const regs = window.BGNJ_TOURS.listReservations(t.id);
             const active = regs.filter((r) => r.status !== 'cancelled');
             const isEditing = editingId === t.id;
             return (
-              <article key={t.id} className="card" style={{padding:20}}>
+              <article key={t.id} className="card" style={{padding:20, opacity: t.hidden ? 0.55 : 1}}>
                 <header style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:10}}>
                   <div>
                     <h3 className="ko-serif" style={{fontSize:18}}>
                       <span className="dim-2 mono" style={{fontSize:11, marginRight:8}}>#{String(t.id).padStart(2,'0')}</span>
                       {t.title}
+                      {t.hidden && <span className="mono" style={{marginLeft:10, fontSize:10, letterSpacing:'0.18em', color:'var(--danger)', border:'1px solid var(--danger)', padding:'1px 6px', borderRadius:2}}>숨김</span>}
                     </h3>
                     <div className="mono dim-2" style={{fontSize:11, marginTop:4, letterSpacing:'0.12em'}}>
                       {t.next} · {t.duration} · {t.group} · {t.level}
@@ -2008,8 +2024,13 @@ const TourAdminPanel = ({ go }) => {
                 ) : (
                   <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10}}>
                     <button type="button" className="btn btn-small" onClick={() => startEdit(t)}>투어 정보 수정</button>
+                    <button type="button" className="btn btn-small"
+                      onClick={() => toggleTourHidden(t)}
+                      style={{marginLeft:'auto'}}>
+                      {t.hidden ? '👁 표시 복원' : '🙈 숨김 처리'}
+                    </button>
                     <button type="button" className="btn btn-small" onClick={() => removeTour(t.id)}
-                      style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>삭제</button>
+                      style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
                   </div>
                 )}
 
@@ -2050,13 +2071,13 @@ const TourAdminPanel = ({ go }) => {
                               <div style={{display:'flex', justifyContent:'flex-end', gap:6, flexWrap:'wrap'}}>
                                 {r.status === 'pending_payment' && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => { window.WSD_TOURS.confirmPayment(t.id, r.id); refresh(); }}>
+                                    onClick={() => { window.BGNJ_TOURS.confirmPayment(t.id, r.id); refresh(); }}>
                                     입금 확인 → 확정
                                   </button>
                                 )}
                                 {r.status === 'confirmed' && r.price > 0 && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => { window.WSD_TOURS.unconfirmPayment(t.id, r.id); refresh(); }}>
+                                    onClick={() => { window.BGNJ_TOURS.unconfirmPayment(t.id, r.id); refresh(); }}>
                                     확정 취소
                                   </button>
                                 )}
@@ -2064,7 +2085,7 @@ const TourAdminPanel = ({ go }) => {
                                   <button type="button" className="btn btn-small"
                                     onClick={() => {
                                       if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
-                                      window.WSD_TOURS.cancelReservation(t.id, r.id);
+                                      window.BGNJ_TOURS.cancelReservation(t.id, r.id);
                                       refresh();
                                     }}
                                     style={{borderColor:'var(--danger)', color:'var(--danger)'}}>취소</button>
@@ -2074,14 +2095,14 @@ const TourAdminPanel = ({ go }) => {
                                     <span className="mono" style={{fontSize:9, color:'#e8a020', letterSpacing:'0.15em'}}>환불신청</span>
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
-                                      onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.WSD_TOURS.approveRefund(t.id, r.id); refresh(); }}
+                                      onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.BGNJ_TOURS.approveRefund(t.id, r.id); refresh(); }}
                                       style={{borderColor:'var(--gold)', color:'var(--gold)'}}>승인</button>
                                     <input className="field-input" placeholder="반려 사유"
                                       style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
                                       value={refundRejectNotes[r.id] || ''}
                                       onChange={e => setRefundRejectNotes({...refundRejectNotes, [r.id]: e.target.value})}/>
                                     <button type="button" className="btn btn-small"
-                                      onClick={() => { if (!confirm('환불 신청을 반려하시겠어요?')) return; window.WSD_TOURS.rejectRefund(t.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
+                                      onClick={() => { if (!confirm('환불 신청을 반려하시겠어요?')) return; window.BGNJ_TOURS.rejectRefund(t.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
                                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>반려</button>
                                   </>
                                 )}
@@ -2104,12 +2125,12 @@ const TourAdminPanel = ({ go }) => {
 
 // === Bank Account Settings Panel ==================================
 const BankAccountPanel = () => {
-  const [bank, setBank] = React.useState(() => window.WSD_LECTURES.getBankAccount());
+  const [bank, setBank] = React.useState(() => window.BGNJ_LECTURES.getBankAccount());
   const [msg, setMsg] = React.useState("");
 
   const save = (e) => {
     e.preventDefault();
-    window.WSD_LECTURES.saveBankAccount(bank);
+    window.BGNJ_LECTURES.saveBankAccount(bank);
     setMsg("계좌 정보를 저장했습니다.");
     setTimeout(() => setMsg(""), 2000);
   };
@@ -2125,7 +2146,7 @@ const BankAccountPanel = () => {
         {[
           { k: 'bankName',      l: '은행',     placeholder: '예) 국민은행' },
           { k: 'accountNumber', l: '계좌번호', placeholder: '예) 123-456-7890123' },
-          { k: 'holder',        l: '예금주',   placeholder: '예) 왕사들 협동조합' },
+          { k: 'holder',        l: '예금주',   placeholder: '예) 뱅기노자 협동조합' },
         ].map((f) => (
           <div key={f.k} className="field" style={{margin:0}}>
             <label className="field-label">{f.l}</label>
@@ -2161,20 +2182,20 @@ const BookOrderAdminPanel = ({ go }) => {
   const [trackingDraft, setTrackingDraft] = React.useState({});
   const refresh = () => setTick((v) => v + 1);
 
-  const orders = React.useMemo(() => window.WSD_BOOK_ORDERS.listByStatus(filter), [filter, tick]);
+  const orders = React.useMemo(() => window.BGNJ_BOOK_ORDERS.listByStatus(filter), [filter, tick]);
   const [rejectNotes, setRejectNotes] = React.useState({});
   const counts = React.useMemo(() => ({
-    all: window.WSD_BOOK_ORDERS.listAll().length,
-    pending_payment: window.WSD_BOOK_ORDERS.listByStatus('pending_payment').length,
-    paid: window.WSD_BOOK_ORDERS.listByStatus('paid').length,
-    shipped: window.WSD_BOOK_ORDERS.listByStatus('shipped').length,
-    delivered: window.WSD_BOOK_ORDERS.listByStatus('delivered').length,
-    refund_requested: window.WSD_BOOK_ORDERS.listByStatus('refund_requested').length,
-    cancelled: window.WSD_BOOK_ORDERS.listByStatus('cancelled').length,
+    all: window.BGNJ_BOOK_ORDERS.listAll().length,
+    pending_payment: window.BGNJ_BOOK_ORDERS.listByStatus('pending_payment').length,
+    paid: window.BGNJ_BOOK_ORDERS.listByStatus('paid').length,
+    shipped: window.BGNJ_BOOK_ORDERS.listByStatus('shipped').length,
+    delivered: window.BGNJ_BOOK_ORDERS.listByStatus('delivered').length,
+    refund_requested: window.BGNJ_BOOK_ORDERS.listByStatus('refund_requested').length,
+    cancelled: window.BGNJ_BOOK_ORDERS.listByStatus('cancelled').length,
   }), [tick]);
 
   const downloadCsv = () => {
-    const csv = window.WSD_BOOK_ORDERS.exportCsv();
+    const csv = window.BGNJ_BOOK_ORDERS.exportCsv();
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2274,10 +2295,10 @@ const BookOrderAdminPanel = ({ go }) => {
 
               <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', borderTop:'1px solid var(--line)', paddingTop:12}}>
                 <button type="button" className="btn btn-small"
-                  onClick={() => window.WSD_BOOK_ORDERS.downloadReceipt(o.id)}>영수증 ↓</button>
+                  onClick={() => window.BGNJ_BOOK_ORDERS.downloadReceipt(o.id)}>영수증 ↓</button>
                 {o.status === 'pending_payment' && (
                   <button type="button" className="btn btn-small"
-                    onClick={() => { window.WSD_BOOK_ORDERS.confirmPayment(o.id); refresh(); }}>
+                    onClick={() => { window.BGNJ_BOOK_ORDERS.confirmPayment(o.id); refresh(); }}>
                     입금 확인 → 발송 준비
                   </button>
                 )}
@@ -2291,13 +2312,13 @@ const BookOrderAdminPanel = ({ go }) => {
                       onChange={(e) => setTrackingDraft({ ...trackingDraft, [o.id]: e.target.value })}/>
                     <button type="button" className="btn btn-small"
                       onClick={() => {
-                        window.WSD_BOOK_ORDERS.markShipped(o.id, trackingDraft[o.id] || '');
+                        window.BGNJ_BOOK_ORDERS.markShipped(o.id, trackingDraft[o.id] || '');
                         refresh();
                       }}>
                       발송 처리
                     </button>
                     <button type="button" className="btn btn-small"
-                      onClick={() => { window.WSD_BOOK_ORDERS.unconfirmPayment(o.id); refresh(); }}>
+                      onClick={() => { window.BGNJ_BOOK_ORDERS.unconfirmPayment(o.id); refresh(); }}>
                       입금 확인 취소
                     </button>
                   </>
@@ -2306,7 +2327,7 @@ const BookOrderAdminPanel = ({ go }) => {
                   <>
                     {o.tracking && <span className="mono dim-2" style={{fontSize:11}}>송장 {o.tracking}</span>}
                     <button type="button" className="btn btn-small"
-                      onClick={() => { window.WSD_BOOK_ORDERS.markDelivered(o.id); refresh(); }}>
+                      onClick={() => { window.BGNJ_BOOK_ORDERS.markDelivered(o.id); refresh(); }}>
                       배송 완료 처리
                     </button>
                   </>
@@ -2318,7 +2339,7 @@ const BookOrderAdminPanel = ({ go }) => {
                   <button type="button" className="btn btn-small"
                     onClick={() => {
                       if (!confirm(`주문 ${o.orderNo}을(를) 취소 처리하시겠어요?`)) return;
-                      window.WSD_BOOK_ORDERS.cancelOrder(o.id);
+                      window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
                       refresh();
                     }}
                     style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>
@@ -2336,7 +2357,7 @@ const BookOrderAdminPanel = ({ go }) => {
                         <button type="button" className="btn btn-small"
                           onClick={() => {
                             if (!confirm(`환불을 승인하시겠어요? 주문 ${o.orderNo}이 취소됩니다.`)) return;
-                            window.WSD_BOOK_ORDERS.approveRefund(o.id);
+                            window.BGNJ_BOOK_ORDERS.approveRefund(o.id);
                             refresh();
                           }}
                           style={{borderColor:'var(--gold)', color:'var(--gold)'}}>
@@ -2350,7 +2371,7 @@ const BookOrderAdminPanel = ({ go }) => {
                         <button type="button" className="btn btn-small"
                           onClick={() => {
                             if (!confirm(`환불 신청을 반려하시겠어요?`)) return;
-                            window.WSD_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || '');
+                            window.BGNJ_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || '');
                             refresh();
                           }}
                           style={{borderColor:'var(--danger)', color:'var(--danger)'}}>
@@ -2373,7 +2394,7 @@ const BookOrderAdminPanel = ({ go }) => {
 const LegalAdminPanel = () => {
   const [slug, setSlug] = React.useState('privacy');
   const [tick, setTick] = React.useState(0);
-  const doc = React.useMemo(() => window.WSD_LEGAL.get(slug) || { title: '', body: '' }, [slug, tick]);
+  const doc = React.useMemo(() => window.BGNJ_LEGAL.get(slug) || { title: '', body: '' }, [slug, tick]);
   const [title, setTitle] = React.useState(doc.title);
   const [body, setBody] = React.useState(doc.body);
   const [editorKey, setEditorKey] = React.useState(0);
@@ -2389,7 +2410,7 @@ const LegalAdminPanel = () => {
   const save = (e) => {
     e.preventDefault();
     if (!title.trim()) { setMsg('제목을 입력해 주세요.'); return; }
-    window.WSD_LEGAL.save(slug, { title: title.trim(), body });
+    window.BGNJ_LEGAL.save(slug, { title: title.trim(), body });
     setMsg('저장되었습니다.');
     setTick((v) => v + 1);
     setTimeout(() => setMsg(''), 2000);
@@ -2404,7 +2425,7 @@ const LegalAdminPanel = () => {
       </p>
 
       <div style={{display:'flex', gap:8, marginBottom:18, flexWrap:'wrap'}}>
-        {window.WSD_LEGAL.listSlugs().map((s) => (
+        {window.BGNJ_LEGAL.listSlugs().map((s) => (
           <button key={s} type="button" className="btn btn-small"
             onClick={() => setSlug(s)}
             style={{
@@ -2452,22 +2473,22 @@ const FaqAdminPanel = () => {
   const [draft, setDraft] = React.useState({ question:'', answer:'', category:'일반' });
   const [error, setError] = React.useState('');
   const refresh = () => setTick((v) => v + 1);
-  const faqs = React.useMemo(() => window.WSD_FAQ.listAll(), [tick]);
+  const faqs = React.useMemo(() => window.BGNJ_FAQ.listAll(), [tick]);
 
   const add = (e) => {
     e.preventDefault();
     setError('');
-    const next = window.WSD_FAQ.add(draft);
+    const next = window.BGNJ_FAQ.add(draft);
     if (!next) { setError('질문과 답변은 필수입니다.'); return; }
     setDraft({ question:'', answer:'', category: draft.category || '일반' });
     refresh();
   };
 
-  const update = (id, patch) => { window.WSD_FAQ.update(id, patch); refresh(); };
-  const move = (id, dir) => { window.WSD_FAQ.reorder(id, dir); refresh(); };
+  const update = (id, patch) => { window.BGNJ_FAQ.update(id, patch); refresh(); };
+  const move = (id, dir) => { window.BGNJ_FAQ.reorder(id, dir); refresh(); };
   const remove = (id) => {
     if (!confirm('이 FAQ를 삭제하시겠어요?')) return;
-    window.WSD_FAQ.remove(id);
+    window.BGNJ_FAQ.remove(id);
     refresh();
   };
 
@@ -2547,7 +2568,7 @@ const FaqAdminPanel = () => {
 // 각 섹션은 독립 저장 — 한 섹션 저장이 다른 섹션 편집값을 잃게 하지 않는다.
 const SiteContentAdminPanel = () => {
   const [tick, setTick] = React.useState(0);
-  const sc = React.useMemo(() => window.WSD_SITE_CONTENT.get(), [tick]);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
   const [msg, setMsg] = React.useState('');
 
   const flash = (text) => {
@@ -2569,14 +2590,14 @@ const SiteContentAdminPanel = () => {
     const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
     const save = (e) => {
       e.preventDefault();
-      window.WSD_SITE_CONTENT.saveSection(section, draft);
+      window.BGNJ_SITE_CONTENT.saveSection(section, draft);
       setTick((v) => v + 1);
       flash('저장되었습니다.');
       if (onAfterSave) onAfterSave();
     };
     const reset = () => {
       if (!confirm('이 섹션을 기본값으로 되돌릴까요?')) return;
-      window.WSD_SITE_CONTENT.resetSection(section);
+      window.BGNJ_SITE_CONTENT.resetSection(section);
       setTick((v) => v + 1);
       flash('기본값으로 복원되었습니다.');
     };
@@ -2616,14 +2637,14 @@ const SiteContentAdminPanel = () => {
         return;
       }
       const dataUri = await fileToDataUri(file);
-      window.WSD_SITE_CONTENT.saveSection(section, { [field]: dataUri });
+      window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: dataUri });
       setTick((v) => v + 1);
       flash(`${label} 업로드 완료`);
       e.target.value = '';
     };
     const clear = () => {
       if (!confirm(`${label}을(를) 비울까요? (기본 마크로 되돌아갑니다)`)) return;
-      window.WSD_SITE_CONTENT.saveSection(section, { [field]: '' });
+      window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: '' });
       setTick((v) => v + 1);
       flash(`${label} 제거됨`);
     };
@@ -2725,9 +2746,9 @@ const SiteContentAdminPanel = () => {
 // 다양한 책 콘텐츠 관리 — 메타/표지/PDF 미리보기/소개/목차/저자/리뷰.
 const BooksAdminPanel = () => {
   const [tick, setTick] = React.useState(0);
-  const books = React.useMemo(() => window.WSD_BOOKS.list(), [tick]);
+  const books = React.useMemo(() => window.BGNJ_BOOKS.list(), [tick]);
   const [selectedId, setSelectedId] = React.useState(books[0]?.id || null);
-  const selected = React.useMemo(() => window.WSD_BOOKS.get(selectedId), [selectedId, tick]);
+  const selected = React.useMemo(() => window.BGNJ_BOOKS.get(selectedId), [selectedId, tick]);
   const [editTab, setEditTab] = React.useState('meta');
   const [msg, setMsg] = React.useState('');
   const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2000); };
@@ -2744,27 +2765,27 @@ const BooksAdminPanel = () => {
   const addBook = () => {
     const title = prompt('새 책 제목을 입력하세요.');
     if (!title) return;
-    const created = window.WSD_BOOKS.create({ title, status: 'draft' });
+    const created = window.BGNJ_BOOKS.create({ title, status: 'draft' });
     refresh();
     setSelectedId(created.id);
     setEditTab('meta');
   };
 
   const removeBook = (id) => {
-    const target = window.WSD_BOOKS.get(id);
+    const target = window.BGNJ_BOOKS.get(id);
     if (!target) return;
     if (!confirm(`"${target.title}" 책을 삭제할까요? (되돌릴 수 없음)`)) return;
-    window.WSD_BOOKS.remove(id);
+    window.BGNJ_BOOKS.remove(id);
     refresh();
     if (selectedId === id) {
-      const remaining = window.WSD_BOOKS.list();
+      const remaining = window.BGNJ_BOOKS.list();
       setSelectedId(remaining[0]?.id || null);
     }
   };
 
   const patch = (changes) => {
     if (!selectedId) return;
-    window.WSD_BOOKS.update(selectedId, changes);
+    window.BGNJ_BOOKS.update(selectedId, changes);
     refresh();
   };
 
@@ -3052,7 +3073,7 @@ const BooksAdminPanel = () => {
                         <button type="button" className="btn btn-small"
                           onClick={() => {
                             if (!confirm('이 리뷰를 삭제할까요?')) return;
-                            window.WSD_BOOKS.removeReview(selected.id, r.id);
+                            window.BGNJ_BOOKS.removeReview(selected.id, r.id);
                             refresh();
                           }}
                           style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
@@ -3077,10 +3098,10 @@ const AuditLogPanel = () => {
   const [tick, setTick] = React.useState(0);
   const [search, setSearch] = React.useState('');
   const refresh = () => setTick((v) => v + 1);
-  const list = React.useMemo(() => window.WSD_AUDIT?.list?.({ search, limit: 200 }) || [], [search, tick]);
+  const list = React.useMemo(() => window.BGNJ_AUDIT?.list?.({ search, limit: 200 }) || [], [search, tick]);
 
   const exportCsv = () => {
-    const all = window.WSD_AUDIT.list({ limit: 1000 });
+    const all = window.BGNJ_AUDIT.list({ limit: 1000 });
     const header = ['id', 'ts', 'action', 'target', 'by', 'details'];
     const rows = all.map((e) => [e.id, e.ts, e.action, e.target, e.by, e.details ? JSON.stringify(e.details) : '']);
     const csv = [header, ...rows].map((row) => row.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -3093,7 +3114,7 @@ const AuditLogPanel = () => {
 
   const clear = () => {
     if (!confirm('감사 로그 전체를 삭제하시겠어요? 되돌릴 수 없습니다.')) return;
-    window.WSD_AUDIT.clear();
+    window.BGNJ_AUDIT.clear();
     refresh();
   };
 
@@ -3154,8 +3175,8 @@ const MemberAdminPanel = ({ go }) => {
   const [gradeFilter, setGradeFilter] = React.useState('all');
   const refresh = () => setTick((v) => v + 1);
 
-  const users = React.useMemo(() => window.WSD_AUTH.listUsers(), [tick]);
-  const grades = (window.WSD_STORES?.grades || []);
+  const users = React.useMemo(() => window.BGNJ_AUTH.listUsers(), [tick]);
+  const grades = (window.BGNJ_STORES?.grades || []);
   const filtered = users.filter((u) => {
     if (gradeFilter !== 'all') {
       const isAdminFilter = gradeFilter === 'admin';
@@ -3173,12 +3194,12 @@ const MemberAdminPanel = ({ go }) => {
   });
 
   const selected = users.find((u) => u.id === selectedId) || null;
-  const activity = selected ? window.WSD_AUTH.getActivity(selected.id) : null;
+  const activity = selected ? window.BGNJ_AUTH.getActivity(selected.id) : null;
 
   const exportCsv = () => {
     const header = ['id','name','email','gradeId','isAdmin','suspended','joinedAt','postCount','commentCount','bookOrders','lectures','tours'];
     const rows = users.map((u) => {
-      const a = window.WSD_AUTH.getActivity(u.id) || {};
+      const a = window.BGNJ_AUTH.getActivity(u.id) || {};
       return [u.id, u.name, u.email, u.gradeId, u.isAdmin ? 'Y' : 'N', u.suspended ? 'Y' : 'N', u.joinedAt || '', a.postCount || 0, a.commentCount || 0, (a.bookOrders||[]).length, (a.lectures||[]).length, (a.tours||[]).length];
     });
     const csv = [header, ...rows].map((row) => row.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -3190,29 +3211,29 @@ const MemberAdminPanel = ({ go }) => {
   };
 
   const changeGrade = (user, gradeId) => {
-    window.WSD_AUTH.setGrade(user.id, gradeId);
+    window.BGNJ_AUTH.setGrade(user.id, gradeId);
     refresh();
   };
   const toggleAdmin = (user) => {
     if (!confirm(`${user.name} 님의 관리자 권한을 ${user.isAdmin ? '해제' : '부여'}하시겠어요?`)) return;
-    window.WSD_AUTH.toggleAdmin(user.id);
+    window.BGNJ_AUTH.toggleAdmin(user.id);
     refresh();
   };
   const suspendUser = (user) => {
     const reason = prompt('정지 사유 (선택)', '');
     if (reason === null) return;
-    window.WSD_AUTH.suspendUser(user.id, reason || '');
+    window.BGNJ_AUTH.suspendUser(user.id, reason || '');
     refresh();
   };
   const unsuspend = (user) => {
     if (!confirm(`${user.name} 님의 정지를 해제하시겠어요?`)) return;
-    window.WSD_AUTH.unsuspendUser(user.id);
+    window.BGNJ_AUTH.unsuspendUser(user.id);
     refresh();
   };
   const deleteUser = (user) => {
     if (user.email === 'admin@admin.admin') { alert('기본 관리자 계정은 삭제할 수 없습니다.'); return; }
     if (!confirm(`${user.name} (${user.email}) 계정을 정말 삭제하시겠어요? 이 작업은 되돌릴 수 없습니다.`)) return;
-    window.WSD_AUTH.removeUser(user.id);
+    window.BGNJ_AUTH.removeUser(user.id);
     setSelectedId(null);
     refresh();
   };
@@ -3412,7 +3433,7 @@ const MemberAdminPanel = ({ go }) => {
         <tbody>
           {filtered.map((u) => {
             const g = gradeOf(u.gradeId);
-            const a = window.WSD_AUTH.getActivity(u.id) || {};
+            const a = window.BGNJ_AUTH.getActivity(u.id) || {};
             const activitySummary = `글 ${a.postCount || 0} · 댓글 ${a.commentCount || 0} · 주문 ${(a.bookOrders||[]).length} · 강연 ${(a.lectures||[]).length} · 답사 ${(a.tours||[]).length}`;
             return (
               <tr key={u.id} style={{borderBottom:'1px solid var(--line)'}}>
@@ -3453,7 +3474,7 @@ const MemberAdminPanel = ({ go }) => {
 
 // === Admin Page ===================================================
 const AdminPage = ({ go }) => {
-  const data = window.WANGSADEUL_DATA;
+  const data = window.BANGINOJA_DATA;
   const [tab, setTab] = React.useState("대시보드");
   const [kmsTab, setKmsTab] = React.useState("기능정의서");
   const [postSearch, setPostSearch] = React.useState("");
@@ -3464,20 +3485,20 @@ const AdminPage = ({ go }) => {
   const [bulkTargetCat, setBulkTargetCat] = React.useState("");
   const [bulkTargetPrefix, setBulkTargetPrefix] = React.useState("");
 
-  const allCommunityPosts = React.useMemo(() => window.WSD_COMMUNITY.listPosts(), [postRefreshKey]);
-  const allUsers = React.useMemo(() => window.WSD_AUTH.listUsers(), [postRefreshKey]);
-  const allColumns = React.useMemo(() => window.WSD_COLUMNS?.listPublic?.() || [...(window.WSD_STORES.userColumns || []), ...data.columns], [postRefreshKey]);
+  const allCommunityPosts = React.useMemo(() => window.BGNJ_COMMUNITY.listPosts(), [postRefreshKey]);
+  const allUsers = React.useMemo(() => window.BGNJ_AUTH.listUsers(), [postRefreshKey]);
+  const allColumns = React.useMemo(() => window.BGNJ_COLUMNS?.listPublic?.() || [...(window.BGNJ_STORES.userColumns || []), ...data.columns], [postRefreshKey]);
   const totalComments = React.useMemo(
-    () => Object.values(window.WSD_STORES.comments || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0),
+    () => Object.values(window.BGNJ_STORES.comments || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0),
     [postRefreshKey]
   );
-  const allBookOrders = React.useMemo(() => window.WSD_BOOK_ORDERS?.listAll?.() || [], [postRefreshKey]);
+  const allBookOrders = React.useMemo(() => window.BGNJ_BOOK_ORDERS?.listAll?.() || [], [postRefreshKey]);
   const pendingBookOrders = allBookOrders.filter((o) => o.status === 'pending_payment').length;
   const refundRequestedOrders = allBookOrders.filter((o) => o.status === 'refund_requested').length;
   const dashboardStats = React.useMemo(() => ([
     { l: "전체 회원", v: String(allUsers.length), d: `관리자 ${allUsers.filter((user) => user.isAdmin).length}명 포함`, p: true },
     { l: "커뮤니티 게시글", v: String(allCommunityPosts.length), d: `댓글 ${totalComments}개 누적`, p: true },
-    { l: "공개 칼럼", v: String(allColumns.length), d: `관리자 발행 ${(window.WSD_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published').length}건 · 임시/예약 ${(window.WSD_STORES.userColumns || []).filter((c) => c.status === 'draft' || c.status === 'scheduled').length}건`, p: true },
+    { l: "공개 칼럼", v: String(allColumns.length), d: `관리자 발행 ${(window.BGNJ_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published').length}건 · 임시/예약 ${(window.BGNJ_STORES.userColumns || []).filter((c) => c.status === 'draft' || c.status === 'scheduled').length}건`, p: true },
     { l: "왕의길 주문", v: String(allBookOrders.length), d: `입금 대기 ${pendingBookOrders}건${refundRequestedOrders > 0 ? ` · 환불 신청 ${refundRequestedOrders}건` : ''}`, p: pendingBookOrders === 0 && refundRequestedOrders === 0 },
   ]), [allUsers, allCommunityPosts, totalComments, allColumns, data, allBookOrders, pendingBookOrders, refundRequestedOrders]);
   const latestCommunityPost = allCommunityPosts[0] || null;
@@ -3520,7 +3541,7 @@ const AdminPage = ({ go }) => {
   };
 
   const exportCommunityPosts = () => {
-    const blob = new Blob([window.WSD_COMMUNITY.exportCsv()], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([window.BGNJ_COMMUNITY.exportCsv()], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -3531,7 +3552,7 @@ const AdminPage = ({ go }) => {
 
   const deleteCommunityPost = (post) => {
     if (!confirm(`"${post.title}" 게시글을 삭제하시겠어요?`)) return;
-    window.WSD_COMMUNITY.deletePost(post.id);
+    window.BGNJ_COMMUNITY.deletePost(post.id);
     setSelectedPostIds((prev) => { const next = new Set(prev); next.delete(post.id); return next; });
     setPostRefreshKey((value) => value + 1);
   };
@@ -3539,7 +3560,7 @@ const AdminPage = ({ go }) => {
   const bulkDeletePosts = () => {
     if (selectedPostIds.size === 0) return;
     if (!confirm(`선택한 ${selectedPostIds.size}개 게시글을 삭제할까요?`)) return;
-    selectedPostIds.forEach((id) => window.WSD_COMMUNITY.deletePost(id));
+    selectedPostIds.forEach((id) => window.BGNJ_COMMUNITY.deletePost(id));
     setSelectedPostIds(new Set());
     setPostRefreshKey((v) => v + 1);
   };
@@ -3547,9 +3568,9 @@ const AdminPage = ({ go }) => {
   const bulkMovePosts = () => {
     if (selectedPostIds.size === 0) return;
     if (!bulkTargetCat) { alert("이동할 게시판을 선택하세요."); return; }
-    const cat = window.WSD_STORES.categories.find((c) => c.id === bulkTargetCat);
+    const cat = window.BGNJ_STORES.categories.find((c) => c.id === bulkTargetCat);
     if (!cat) return;
-    selectedPostIds.forEach((id) => window.WSD_COMMUNITY.updatePost(id, { categoryId: cat.id, category: cat.label }));
+    selectedPostIds.forEach((id) => window.BGNJ_COMMUNITY.updatePost(id, { categoryId: cat.id, category: cat.label }));
     setSelectedPostIds(new Set());
     setBulkTargetCat("");
     setPostRefreshKey((v) => v + 1);
@@ -3558,7 +3579,7 @@ const AdminPage = ({ go }) => {
   const bulkSetPrefix = () => {
     if (selectedPostIds.size === 0) return;
     const next = bulkTargetPrefix.trim();
-    selectedPostIds.forEach((id) => window.WSD_COMMUNITY.updatePost(id, { prefix: next || null }));
+    selectedPostIds.forEach((id) => window.BGNJ_COMMUNITY.updatePost(id, { prefix: next || null }));
     setSelectedPostIds(new Set());
     setBulkTargetPrefix("");
     setPostRefreshKey((v) => v + 1);
@@ -3571,9 +3592,9 @@ const AdminPage = ({ go }) => {
         <div style={{padding:'0 24px 24px', borderBottom:'1px solid var(--line)'}}>
           <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em'}}>◆ ADMIN CONSOLE</div>
           <div className="ko-serif" style={{fontSize:20, marginTop:8}}>관리자</div>
-          <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>banginoja@wangsadeul.kr</div>
+          <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>banginoja@bgnj.net</div>
           <div style={{marginTop:12, padding:'8px 10px', background:'rgba(212,175,55,0.06)', border:'1px solid var(--gold-dim)', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--gold)', letterSpacing:'0.15em'}}>
-            DPO · dpo@wangsadeul.kr
+            DPO · dpo@bgnj.net
           </div>
           <div className="dim-2 mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em'}}>적용법: GDPR + PIPA</div>
           <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.1em'}}>최근 DPIA: 2026.03.02</div>
@@ -3759,7 +3780,7 @@ const AdminPage = ({ go }) => {
               <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>KMS SUMMARY</div>
               <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>KMS는 두 개의 탭으로 구성됩니다</h2>
               <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:14}}>
-                KMS의 제1 기능은 기능정의서입니다. 사이트가 존재하는 5가지 미션(왕사들 커뮤니티 / 강연 일정 / 칼럼 / 투어 프로그램 / 책 판매)을 기준으로 현재 어떤 기능이 있고
+                KMS의 제1 기능은 기능정의서입니다. 사이트가 존재하는 5가지 미션(뱅기노자 커뮤니티 / 강연 일정 / 칼럼 / 투어 프로그램 / 책 판매)을 기준으로 현재 어떤 기능이 있고
                 무엇이 비어 있는지를 먼저 보여주고, 그 위에 디자인 원칙을 함께 둡니다. KMS에 진입하면 기본은 `기능정의서` 탭입니다.
               </p>
               <div style={{display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12}} className="stats-grid">
@@ -4028,7 +4049,7 @@ const AdminPage = ({ go }) => {
                   <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>디자인 작업 기준</h2>
                   <p className="dim" style={{fontSize:13, lineHeight:1.8}}>
                     새 페이지를 만들거나 기존 UI를 바꿀 때는 이 탭의 원칙을 먼저 확인합니다.
-                    왕사들 화면은 일반적인 밝은 SaaS UI가 아니라, 조선 왕실과 전시 도록의 분위기를 유지하는 방향으로 작업해야 합니다.
+                    뱅기노자 화면은 일반적인 밝은 SaaS UI가 아니라, 조선 왕실과 전시 도록의 분위기를 유지하는 방향으로 작업해야 합니다.
                   </p>
                 </div>
 
@@ -4051,16 +4072,40 @@ const AdminPage = ({ go }) => {
         {/* 게시글 */}
         {tab === "커뮤니티" && (
           <div>
+            {/* 게시판 칩 (검색 위) */}
+            <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:12}} role="tablist" aria-label="게시판 필터">
+              {[{ id: 'all', label: '전체', count: allCommunityPosts.length }]
+                .concat(window.BGNJ_STORES.categories
+                  .filter((item) => item.boardType === 'community')
+                  .map((c) => ({ id: c.id, label: c.label, count: allCommunityPosts.filter((p) => p.categoryId === c.id).length })))
+                .map((chip) => {
+                  const active = postFilter === chip.id;
+                  return (
+                    <button key={chip.id} type="button" role="tab" aria-selected={active}
+                      onClick={() => { setPostFilter(chip.id); setSelectedPostIds(new Set()); }}
+                      style={{
+                        padding: '6px 14px', fontSize: 12,
+                        fontFamily: 'var(--font-serif)',
+                        background: active ? 'var(--gold)' : 'transparent',
+                        color: active ? 'var(--bg)' : 'var(--ink-2)',
+                        border: `1px solid ${active ? 'var(--gold)' : 'var(--line-2)'}`,
+                        borderRadius: 999,
+                        cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                      }}>
+                      <span>{chip.label}</span>
+                      <span className="mono" style={{
+                        fontSize: 10, letterSpacing: '0.05em',
+                        opacity: active ? 0.85 : 0.55,
+                      }}>{chip.count}</span>
+                    </button>
+                  );
+                })}
+            </div>
             <div style={{display:'flex', gap:12, marginBottom:16}}>
               <label htmlFor="post-search" className="sr-only">게시글 검색</label>
               <input id="post-search" className="field-input" placeholder="제목 또는 작성자 검색..." style={{flex:1}}
                 value={postSearch} onChange={(e) => setPostSearch(e.target.value)}/>
-              <select className="field-input" style={{maxWidth:180}} value={postFilter} onChange={(e) => { setPostFilter(e.target.value); setSelectedPostIds(new Set()); }}>
-                <option value="all">전체 분류</option>
-                {window.WSD_STORES.categories.filter((item) => item.boardType === "community").map((item) => (
-                  <option key={item.id} value={item.id}>{item.label}</option>
-                ))}
-              </select>
               <button type="button" className="btn btn-small" onClick={exportCommunityPosts}>CSV 다운로드</button>
             </div>
 
@@ -4072,7 +4117,7 @@ const AdminPage = ({ go }) => {
                 <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
                 <select className="field-input" style={{maxWidth:160, padding:'4px 8px'}} value={bulkTargetCat} onChange={(e) => setBulkTargetCat(e.target.value)}>
                   <option value="">게시판 선택...</option>
-                  {window.WSD_STORES.categories.filter((c) => c.boardType === "community").map((c) => (
+                  {window.BGNJ_STORES.categories.filter((c) => c.boardType === "community").map((c) => (
                     <option key={c.id} value={c.id}>{c.label}</option>
                   ))}
                 </select>
@@ -4467,8 +4512,8 @@ const AdminPage = ({ go }) => {
             <div className="card">
               <h2 className="ko-serif" style={{fontSize:20, marginBottom:16}}>사이트 설정</h2>
               <dl style={{display:'grid', gridTemplateColumns:'200px 1fr', gap:'8px 24px', fontSize:13, lineHeight:1.8}}>
-                <dt className="dim-2 mono" style={{fontSize:11}}>DPO</dt><dd>dpo@wangsadeul.kr · 02-0000-0001</dd>
-                <dt className="dim-2 mono" style={{fontSize:11}}>개인정보 책임자</dt><dd>뱅기노자 / banginoja@wangsadeul.kr</dd>
+                <dt className="dim-2 mono" style={{fontSize:11}}>DPO</dt><dd>dpo@bgnj.net · 02-0000-0001</dd>
+                <dt className="dim-2 mono" style={{fontSize:11}}>개인정보 책임자</dt><dd>뱅기노자 / banginoja@bgnj.net</dd>
                 <dt className="dim-2 mono" style={{fontSize:11}}>최근 DPIA</dt><dd>2026-03-02</dd>
                 <dt className="dim-2 mono" style={{fontSize:11}}>적용 법역</dt><dd>대한민국(PIPA) · 유럽연합(GDPR)</dd>
                 <dt className="dim-2 mono" style={{fontSize:11}}>감독기관</dt><dd>개인정보보호위원회 / 관할 EU DPA</dd>
@@ -4483,14 +4528,14 @@ const AdminPage = ({ go }) => {
 
 // === Admin: Category CRUD ==============================================
 const AdminCategoryPanel = () => {
-  const [cats, setCats] = React.useState(() => window.WSD_STORES.categories.slice());
+  const [cats, setCats] = React.useState(() => window.BGNJ_STORES.categories.slice());
   const [draft, setDraft] = React.useState({ id:"", label:"", boardType:"community", minLevel:10, postMinLevel:10, desc:"" });
   const [error, setError] = React.useState("");
   const [prefixDrafts, setPrefixDrafts] = React.useState({});
 
   const save = (next) => {
-    window.WSD_STORES.categories = next;
-    window.WSD_SAVE.categories();
+    window.BGNJ_STORES.categories = next;
+    window.BGNJ_SAVE.categories();
     setCats(next);
   };
   const slugify = (s) => String(s || '').trim().toLowerCase()
@@ -4525,11 +4570,11 @@ const AdminCategoryPanel = () => {
 
   // 게시판별 글 수
   const postCount = (catId) => {
-    const posts = window.WSD_COMMUNITY?.listPosts?.() || [];
+    const posts = window.BGNJ_COMMUNITY?.listPosts?.() || [];
     return posts.filter((p) => p.categoryId === catId).length;
   };
 
-  const grades = (window.WSD_STORES?.grades || []).slice().sort((a, b) => (a.level || 0) - (b.level || 0));
+  const grades = (window.BGNJ_STORES?.grades || []).slice().sort((a, b) => (a.level || 0) - (b.level || 0));
   const communityCats = cats.filter((c) => c.boardType === 'community');
 
   return (
@@ -4647,7 +4692,7 @@ const AdminCategoryPanel = () => {
       </table>
 
       <button type="button" className="btn btn-small" style={{marginTop:20}}
-        onClick={() => { if (confirm("기본값으로 되돌립니다. 진행할까요?")) { window.WSD_SAVE.resetCategories(); setCats(window.WSD_STORES.categories.slice()); } }}>
+        onClick={() => { if (confirm("기본값으로 되돌립니다. 진행할까요?")) { window.BGNJ_SAVE.resetCategories(); setCats(window.BGNJ_STORES.categories.slice()); } }}>
         기본값 복원
       </button>
 
@@ -4760,15 +4805,15 @@ const AdminCategoryPanel = () => {
 
 // === Admin: Grade CRUD =================================================
 const AdminGradePanel = () => {
-  const [grades, setGrades] = React.useState(() => window.WSD_STORES.grades.slice());
+  const [grades, setGrades] = React.useState(() => window.BGNJ_STORES.grades.slice());
   const [draft, setDraft] = React.useState({ id:"", label:"", level:20, color:"#D4AF37", desc:"" });
   const [error, setError] = React.useState("");
 
   const save = (next) => {
     // keep sorted by level for predictable reads
     const sorted = next.slice().sort((a, b) => a.level - b.level);
-    window.WSD_STORES.grades = sorted;
-    window.WSD_SAVE.grades();
+    window.BGNJ_STORES.grades = sorted;
+    window.BGNJ_SAVE.grades();
     setGrades(sorted);
   };
   const add = (e) => {
@@ -4874,7 +4919,7 @@ const AdminGradePanel = () => {
       </table>
 
       <button type="button" className="btn btn-small" style={{marginTop:20}}
-        onClick={() => { if (confirm("기본값으로 되돌립니다. 진행할까요?")) { window.WSD_SAVE.resetGrades(); setGrades(window.WSD_STORES.grades.slice()); } }}>
+        onClick={() => { if (confirm("기본값으로 되돌립니다. 진행할까요?")) { window.BGNJ_SAVE.resetGrades(); setGrades(window.BGNJ_STORES.grades.slice()); } }}>
         기본값 복원
       </button>
     </>
@@ -4895,7 +4940,7 @@ const AdminColumnEditor = () => {
   const [tick, setTick] = React.useState(0);
   const [msg, setMsg] = React.useState("");
 
-  const all = React.useMemo(() => window.WSD_COLUMNS.listAll(), [tick]);
+  const all = React.useMemo(() => window.BGNJ_COLUMNS.listAll(), [tick]);
   const filtered = statusFilter === 'all' ? all : all.filter((c) => (c.status || 'published') === statusFilter);
   const counts = {
     all: all.length,
@@ -4934,7 +4979,7 @@ const AdminColumnEditor = () => {
       category,
       excerpt: excerpt.trim() || text.slice(0, 100),
       date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`,
-      readTime: window.WSD_COLUMNS.estimateReadTime(text),
+      readTime: window.BGNJ_COLUMNS.estimateReadTime(text),
       body: { html, text },
       status,
       authorId: 'user-admin',
@@ -4965,7 +5010,7 @@ const AdminColumnEditor = () => {
     setMsg("");
     if (!validate(status)) return;
     const payload = buildPayload(status);
-    window.WSD_COLUMNS.saveColumn(payload);
+    window.BGNJ_COLUMNS.saveColumn(payload);
     setTick((v) => v + 1);
     const label = status === 'published' ? '발행' : status === 'scheduled' ? '예약 발행' : '임시 저장';
     setMsg(`"${payload.title}" ${label} 완료.`);
@@ -4975,16 +5020,16 @@ const AdminColumnEditor = () => {
 
   const remove = (id) => {
     if (!confirm("이 칼럼을 삭제하시겠어요?")) return;
-    window.WSD_COLUMNS.deleteColumn(id);
+    window.BGNJ_COLUMNS.deleteColumn(id);
     setTick((v) => v + 1);
     if (editingId === id) reset();
   };
 
   const unpublish = (id) => {
     if (!confirm("이 칼럼을 발행 취소(임시 저장으로 되돌림)하시겠어요?")) return;
-    const col = window.WSD_COLUMNS.getColumn(id);
+    const col = window.BGNJ_COLUMNS.getColumn(id);
     if (!col) return;
-    window.WSD_COLUMNS.saveColumn({ ...col, status: 'draft', publishAt: null, publishedAt: null });
+    window.BGNJ_COLUMNS.saveColumn({ ...col, status: 'draft', publishAt: null, publishedAt: null });
     setTick((v) => v + 1);
   };
 
@@ -5048,7 +5093,7 @@ const AdminColumnEditor = () => {
             onUpdate={(h, _j, t) => { setHtml(h); setText(t); }}
             placeholder="칼럼 본문을 작성하세요. 툴바의 🖼 본문 이미지 버튼으로 이미지를 삽입하고, 드래그로 이동할 수 있습니다."/>
           <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em', marginTop:6}}>
-            추정 읽기 시간 · {window.WSD_COLUMNS.estimateReadTime(text)} · 본문 {text.length}자
+            추정 읽기 시간 · {window.BGNJ_COLUMNS.estimateReadTime(text)} · 본문 {text.length}자
           </div>
         </div>
         <div className="field">

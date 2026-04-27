@@ -2,27 +2,27 @@
 const STARS = ['★', '★★', '★★★', '★★★★', '★★★★★'];
 
 const BookReviewSection = ({ user }) => {
-  const [reviews, setReviews] = React.useState(() => window.WSD_BOOK_ORDERS.listReviews());
+  const [reviews, setReviews] = React.useState(() => window.BGNJ_BOOK_ORDERS.listReviews());
   const [rating, setRating] = React.useState(5);
   const [text, setText] = React.useState('');
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
 
-  const canReview = user && window.WSD_BOOK_ORDERS.canReview(user.id);
-  const hasReviewed = user && window.WSD_BOOK_ORDERS.hasReviewed(user.id);
+  const canReview = user && window.BGNJ_BOOK_ORDERS.canReview(user.id);
+  const hasReviewed = user && window.BGNJ_BOOK_ORDERS.hasReviewed(user.id);
 
   const submit = () => {
     setError(''); setSuccess('');
-    const result = window.WSD_BOOK_ORDERS.addReview({ userId: user?.id, userName: user?.name, rating, text });
+    const result = window.BGNJ_BOOK_ORDERS.addReview({ userId: user?.id, userName: user?.name, rating, text });
     if (!result.ok) { setError(result.message); return; }
-    setReviews(window.WSD_BOOK_ORDERS.listReviews());
+    setReviews(window.BGNJ_BOOK_ORDERS.listReviews());
     setText(''); setSuccess('리뷰가 등록되었습니다. 감사합니다.');
   };
 
   const remove = (reviewId) => {
     if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
-    window.WSD_BOOK_ORDERS.deleteReview(reviewId);
-    setReviews(window.WSD_BOOK_ORDERS.listReviews());
+    window.BGNJ_BOOK_ORDERS.deleteReview(reviewId);
+    setReviews(window.BGNJ_BOOK_ORDERS.listReviews());
   };
 
   const isAdmin = user?.isAdmin;
@@ -90,7 +90,7 @@ const BookReviewSection = ({ user }) => {
 
 // 책 구매 페이지
 const BookPage = ({ go, cart, setCart, user }) => {
-  const book = window.WANGSADEUL_DATA.book;
+  const book = window.BANGINOJA_DATA.book;
   const [version, setVersion] = React.useState("KR");
   const [qty, setQty] = React.useState(1);
   const [tab, setTab] = React.useState("소개");
@@ -122,7 +122,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
                 color:'var(--gold)',
               }}>
                 <div>
-                  <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', marginBottom:8}}>WANGSADEUL PRESS · 2026</div>
+                  <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', marginBottom:8}}>BANGINOJA PRESS · 2026</div>
                   <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.2em'}}>{version === "KR" ? "KR EDITION" : "EN EDITION"}</div>
                 </div>
                 <div style={{textAlign:'center'}}>
@@ -259,7 +259,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
                   <div>
                     <h4 className="ko-serif gold" style={{fontSize:22, marginBottom:12}}>뱅기노자 · BANGINOJA</h4>
                     <p className="dim" style={{fontSize:14, lineHeight:1.9}}>
-                      왕사들 커뮤니티 창립자. 15년간 조선왕조실록과 궁궐을 오갔다. 답사와 강연을 통해 조선의 왕들을 오늘의 자리에 소환한다. 『왕의길』은 그의 첫 단독 저서다.
+                      뱅기노자 커뮤니티 창립자. 15년간 조선왕조실록과 궁궐을 오갔다. 답사와 강연을 통해 조선의 왕들을 오늘의 자리에 소환한다. 『왕의길』은 그의 첫 단독 저서다.
                     </p>
                   </div>
                 </div>
@@ -275,7 +275,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
 
 // 결제 페이지 — 회원 전용 + 무통장 입금 단일 흐름
 const CheckoutPage = ({ go, cart, user }) => {
-  const book = window.WANGSADEUL_DATA.book;
+  const book = window.BANGINOJA_DATA.book;
   const version = cart ? cart.version : "KR";
   const qty = cart ? cart.qty : 1;
   const unit = version === "EN" ? book.priceEN : book.priceKR;
@@ -283,7 +283,7 @@ const CheckoutPage = ({ go, cart, user }) => {
   const shipping = subtotal >= 30000 ? 0 : 3000;
   const total = subtotal + shipping;
 
-  const bank = (window.WSD_LECTURES?.getBankAccount?.() || window.WSD_STORES.bankAccount || {});
+  const bank = (window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES.bankAccount || {});
   const [recipient, setRecipient] = React.useState(user?.name || "");
   const [phone, setPhone] = React.useState("");
   const [address, setAddress] = React.useState("");
@@ -414,7 +414,7 @@ const CheckoutPage = ({ go, cart, user }) => {
     if (!recipient.trim()) return setError("받는 분 이름을 입력해 주세요.");
     if (!phone.trim()) return setError("연락처를 입력해 주세요.");
     if (!address.trim()) return setError("기본 주소를 입력해 주세요.");
-    const result = window.WSD_BOOK_ORDERS.createOrder({
+    const result = window.BGNJ_BOOK_ORDERS.createOrder({
       userId: user.id,
       version,
       qty,

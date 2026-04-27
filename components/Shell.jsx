@@ -60,7 +60,7 @@ const ScrollToTop = () => {
 
 // 작성자 등급 배지 — 게시글/댓글 작성자 옆에 인라인으로 표시
 const AuthorGradeBadge = ({ authorId, author, authorEmail, size = "sm" }) => {
-  const grade = window.WSD_AUTHOR_GRADE?.({ authorId, author, authorEmail });
+  const grade = window.BGNJ_AUTHOR_GRADE?.({ authorId, author, authorEmail });
   if (!grade) return null;
   const small = size === "sm";
   return (
@@ -94,7 +94,7 @@ const NotificationBell = ({ user, onPick }) => {
   // 다른 탭/세션에서 알림이 추가되면 storage 이벤트로 갱신
   React.useEffect(() => {
     const onStorage = (e) => {
-      if (e.key === 'wsd_notifications') setTick((t) => t + 1);
+      if (e.key === 'bgnj_notifications') setTick((t) => t + 1);
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -111,18 +111,18 @@ const NotificationBell = ({ user, onPick }) => {
   }, [open]);
 
   if (!user) return null;
-  const list = window.WSD_COMMUNITY?.listNotifications(user.id) || [];
+  const list = window.BGNJ_COMMUNITY?.listNotifications(user.id) || [];
   const unread = list.filter((n) => !n.read).length;
 
   const pick = (n) => {
-    window.WSD_COMMUNITY.markNotificationRead(user.id, n.id);
+    window.BGNJ_COMMUNITY.markNotificationRead(user.id, n.id);
     setOpen(false);
     if (onPick) onPick(n);
     setTick((t) => t + 1);
   };
 
   const markAll = () => {
-    window.WSD_COMMUNITY.markAllNotificationsRead(user.id);
+    window.BGNJ_COMMUNITY.markAllNotificationsRead(user.id);
     setTick((t) => t + 1);
   };
 
@@ -215,7 +215,7 @@ const BanginojaIcon = ({ size = 22 }) => (
 );
 
 const Brand = ({ onClick }) => {
-  const sc = window.WSD_SITE_CONTENT?.get?.() || {};
+  const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
   const brand = sc.brand || { name: "뱅기노자", sub: "BANGINOJA" };
   const logo = sc.branding?.logoDataUri;
   return (
@@ -238,7 +238,7 @@ const Brand = ({ onClick }) => {
 };
 
 const Nav = ({ route, go, user, onLogout }) => {
-  const navL = (window.WSD_SITE_CONTENT?.get?.() || {}).nav || {};
+  const navL = (window.BGNJ_SITE_CONTENT?.get?.() || {}).nav || {};
   const items = [
     { key: "home", label: navL.home || "홈" },
     { key: "community", label: navL.community || "커뮤니티", subRouteKey: "community" },
@@ -247,13 +247,13 @@ const Nav = ({ route, go, user, onLogout }) => {
     { key: "column", label: navL.column || "뱅기노자 칼럼" },
     { key: "book", label: navL.book || "뱅기노자의 길" },
   ];
-  // 커뮤니티 메가메뉴: WSD_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
-  const userLevel = window.WSD_USER_LEVEL ? window.WSD_USER_LEVEL(user) : (user ? 10 : 0);
-  const communityBoards = (window.WSD_STORES?.categories || [])
+  // 커뮤니티 메가메뉴: BGNJ_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
+  const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : (user ? 10 : 0);
+  const communityBoards = (window.BGNJ_STORES?.categories || [])
     .filter((c) => c.boardType === 'community' && userLevel >= (c.minLevel ?? 0));
 
   const goBoard = (boardId) => {
-    try { sessionStorage.setItem('wsd_pending_board_id', boardId); } catch {}
+    try { sessionStorage.setItem('bgnj_pending_board_id', boardId); } catch {}
     go('community');
   };
 
@@ -321,15 +321,15 @@ const Nav = ({ route, go, user, onLogout }) => {
                 // 알림 타입별 라우팅 — 강연/투어/주문/댓글
                 try {
                   if (n.type === 'comment' && n.postId) {
-                    sessionStorage.setItem('wsd_pending_post_id', String(n.postId));
+                    sessionStorage.setItem('bgnj_pending_post_id', String(n.postId));
                     go('community'); return;
                   }
                   if (n.type === 'lecture_confirmed' || n.type === 'lecture_promoted') {
-                    if (n.lectureId) sessionStorage.setItem('wsd_pending_lecture_id', String(n.lectureId));
+                    if (n.lectureId) sessionStorage.setItem('bgnj_pending_lecture_id', String(n.lectureId));
                     go('lectures'); return;
                   }
                   if (n.type === 'tour_confirmed' || n.type === 'tour_promoted') {
-                    if (n.tourId) sessionStorage.setItem('wsd_pending_tour_id', String(n.tourId));
+                    if (n.tourId) sessionStorage.setItem('bgnj_pending_tour_id', String(n.tourId));
                     go('tour'); return;
                   }
                   if (String(n.type || '').startsWith('order_')) {
@@ -337,7 +337,7 @@ const Nav = ({ route, go, user, onLogout }) => {
                   }
                   // 폴백 — postId가 있으면 커뮤니티
                   if (n.postId) {
-                    sessionStorage.setItem('wsd_pending_post_id', String(n.postId));
+                    sessionStorage.setItem('bgnj_pending_post_id', String(n.postId));
                     go('community');
                   }
                 } catch {}
@@ -368,7 +368,7 @@ const Footer = ({ go }) => (
         <div>
           <Brand onClick={() => go("home")}/>
           <p className="dim" style={{marginTop:20, fontSize:13, lineHeight:1.7, maxWidth:360}}>
-            {(window.WSD_SITE_CONTENT?.get?.() || {}).footer?.description || "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행."}
+            {(window.BGNJ_SITE_CONTENT?.get?.() || {}).footer?.description || "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행."}
           </p>
           <button type="button" className="btn btn-small" onClick={() => go("admin")}
             style={{marginTop:20}}>개인정보 처리 · 관리자</button>
@@ -407,18 +407,18 @@ const Footer = ({ go }) => (
         aria-label="현재 배포 버전 정보">
         <div>
           <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:6}}>CURRENT DEPLOY VERSION</div>
-          <div className="ko-serif" style={{fontSize:22, color:'var(--gold-2)'}}>v{window.WSD_VERSION?.version || '0.0.0'}</div>
+          <div className="ko-serif" style={{fontSize:22, color:'var(--gold-2)'}}>v{window.BGNJ_VERSION?.version || '0.0.0'}</div>
         </div>
         <div className="mono" style={{fontSize:11, letterSpacing:'0.16em', color:'var(--gold)'}}>
-          build {window.WSD_VERSION?.build || '—'} · {window.WSD_VERSION?.channel || ''}
+          build {window.BGNJ_VERSION?.build || '—'} · {window.BGNJ_VERSION?.channel || ''}
         </div>
       </div>
       <div className="footer-bottom">
         <span>© 2026 뱅기노자 BANGINOJA — ALL RIGHTS RESERVED</span>
         <span className="mono" style={{color:'var(--gold-dim)'}}>
-          v{window.WSD_VERSION?.version || '0.0.0'} · build {window.WSD_VERSION?.build || '—'} · {window.WSD_VERSION?.channel || ''}
+          v{window.BGNJ_VERSION?.version || '0.0.0'} · build {window.BGNJ_VERSION?.build || '—'} · {window.BGNJ_VERSION?.channel || ''}
         </span>
-        <span>{(window.WSD_SITE_CONTENT?.get?.() || {}).footer?.signature || "뱅기타고 노자 · DESIGNED IN SEOUL"}</span>
+        <span>{(window.BGNJ_SITE_CONTENT?.get?.() || {}).footer?.signature || "뱅기타고 노자 · DESIGNED IN SEOUL"}</span>
       </div>
     </div>
   </footer>
@@ -432,7 +432,7 @@ const Ornament = ({ children }) => (
   </div>
 );
 
-// title accepts string OR React node. For accent, pass JSX: <>왕사들에 <span className="accent">전하는 말</span></>
+// title accepts string OR React node. For accent, pass JSX: <>뱅기노자에 <span className="accent">전하는 말</span></>
 const SectionHead = ({ eyebrow, title, subtitle, action, level = 2 }) => {
   const H = `h${level}`;
   return (

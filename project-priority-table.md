@@ -20,7 +20,7 @@ This document fixes the current implementation priority order so context is not 
 | P5 | Refund / cancellation flow (book) | ✅ 완료 | Cancellation exists but actual refund processing is manual | Refund request + admin processing + status tracking — books only |
 | P5 | Refund / cancellation flow (lecture/tour) | ✅ 완료 | Book has refund flow but lectures/tours still lack request→approve cycle | Same requestRefund/approveRefund/rejectRefund pattern applied to lectures and tours |
 | P5 | Full-text search + sort options | ✅ 완료 | Community search is title-only, no sort options | Search body text, sort by popularity/comments |
-| P5 | Book reader reviews | ✅ 완료 | Book detail page has hardcoded dummy reviews | Real user reviews wired to `WSD_BOOK_ORDERS` confirmed orders |
+| P5 | Book reader reviews | ✅ 완료 | Book detail page has hardcoded dummy reviews | Real user reviews wired to `BGNJ_BOOK_ORDERS` confirmed orders |
 
 ## Decisions Made
 
@@ -48,13 +48,13 @@ This document fixes the current implementation priority order so context is not 
 ### P1 완료 항목
 
 - 인증/권한
-  - `WSD_AUTH` 기반 local-first 인증 구조로 정리됨
+  - `BGNJ_AUTH` 기반 local-first 인증 구조로 정리됨
   - 회원가입, 로그인, 로그아웃, 세션 유지가 같은 저장 구조를 사용함
 - 데이터 저장 구조
-  - `WSD_DB`, `WSD_STORES`, `WSD_SAVE` 기준으로 엔티티 책임이 분리됨
+  - `BGNJ_DB`, `BGNJ_STORES`, `BGNJ_SAVE` 기준으로 엔티티 책임이 분리됨
   - helper 계층 유지 + 저장소 구현 교체 구조로 확정
 - 관리자 발행물과 공개 페이지 연결
-  - 관리자 발행 칼럼이 `WSD_COLUMNS.listPublic()`을 통해 공개 칼럼 페이지와 홈 화면에 반영됨
+  - 관리자 발행 칼럼이 `BGNJ_COLUMNS.listPublic()`을 통해 공개 칼럼 페이지와 홈 화면에 반영됨
 
 ### P1 완료 처리 기준 메모
 
@@ -74,8 +74,8 @@ This document fixes the current implementation priority order so context is not 
   - 해시태그·이미지 슬라이더·MY ACCESS 배너
 - 관리자 운영 기능 고도화
   - `MemberAdminPanel` — 실 회원 목록, 등급 변경, 정지/해제, 삭제, 활동 이력
-  - `AuditLogPanel` + `WSD_AUDIT` — 핵심 액션 자동 감사 기록
-  - `WSD_GRADE_PROMO` — 활동 기반 자동 등급 승격
+  - `AuditLogPanel` + `BGNJ_AUDIT` — 핵심 액션 자동 감사 기록
+  - `BGNJ_GRADE_PROMO` — 활동 기반 자동 등급 승격
   - `LegalAdminPanel / FaqAdminPanel` + 공개 `LegalPage / FaqPage`
 
 ### P2 이후 완료된 항목 (P5)

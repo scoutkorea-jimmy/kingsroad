@@ -1,0 +1,17 @@
+name = "banginoja-api"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+account_id = "b8cc5609b10c4df5b8e31aec570937b8"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "banginoja-db"
+database_id = "f9974cb8-c5f9-4033-9cf2-b596098b677b"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "banginoja-media"
+
+[vars]
+ALLOWED_ORIGINS = "https://bgnj.net,https://www.bgnj.net,https://scoutkorea-jimmy.github.io,http://localhost:8080,http://localhost:3000"
+SESSION_TTL_SECONDS = "2592000"

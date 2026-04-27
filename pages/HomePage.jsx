@@ -24,21 +24,21 @@ const FEATURED_DESTINATIONS = [
 ];
 
 const HomePage = ({ go }) => {
-  const data = window.WANGSADEUL_DATA;
+  const data = window.BANGINOJA_DATA;
   const [selectedDest, setSelectedDest] = React.useState(null);
-  const sc = (window.WSD_SITE_CONTENT?.get?.() || {});
+  const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
   const hero = sc.hero || {};
 
-  const _cols = window.WSD_COLUMNS?.listPublic?.();
+  const _cols = window.BGNJ_COLUMNS?.listPublic?.();
   const publicColumns = (_cols && _cols.length) ? _cols : [
-    ...(window.WSD_STORES?.userColumns || []),
+    ...(window.BGNJ_STORES?.userColumns || []),
     ...(data.columns || []),
   ];
   const featuredColumn = publicColumns[0];
   const secondaryColumns = publicColumns.slice(1, 5);
 
   const recentPosts = React.useMemo(() => {
-    try { return (window.WSD_COMMUNITY?.listPosts?.() || []).slice(0, 4); } catch { return []; }
+    try { return (window.BGNJ_COMMUNITY?.listPosts?.() || []).slice(0, 4); } catch { return []; }
   }, []);
 
   const clickable = (onClick, label) => ({
@@ -396,7 +396,7 @@ const HomePage = ({ go }) => {
                 <article key={lecture.id}
                   className={`card ${i === 0 ? 'card-gold' : ''}`}
                   {...clickable(() => {
-                    try { sessionStorage.setItem('wsd_pending_lecture_id', String(lecture.id)); } catch {}
+                    try { sessionStorage.setItem('bgnj_pending_lecture_id', String(lecture.id)); } catch {}
                     go('lectures');
                   }, `강연: ${lecture.topic}`)}
                   style={{cursor:'pointer'}}>

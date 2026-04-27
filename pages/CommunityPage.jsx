@@ -2,9 +2,9 @@
 // 등급별 접근 제어: 읽기/쓰기 권한은 카테고리.minLevel / postMinLevel로 판정.
 
 // 공용 훅 — 권한 계산
-const useUserLevel = (user) => React.useMemo(() => window.WSD_USER_LEVEL(user), [user]);
+const useUserLevel = (user) => React.useMemo(() => window.BGNJ_USER_LEVEL(user), [user]);
 const getCategoriesForBoard = (boardType) =>
-  window.WSD_STORES.categories.filter(c => c.boardType === boardType);
+  window.BGNJ_STORES.categories.filter(c => c.boardType === boardType);
 
 // === Hashtag chip input =================================================
 const HashtagInput = ({ tags, setTags, max = 10 }) => {
@@ -269,22 +269,22 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   // 알림 벨 / 외부 진입에서 stash해 둔 postId가 있으면 자동으로 상세로 이동
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem('wsd_pending_post_id'); } catch {}
+    try { pending = sessionStorage.getItem('bgnj_pending_post_id'); } catch {}
     if (pending) {
-      try { sessionStorage.removeItem('wsd_pending_post_id'); } catch {}
+      try { sessionStorage.removeItem('bgnj_pending_post_id'); } catch {}
       setPostId(pending);
     }
     // 내비 메가메뉴에서 들어온 게시판 ID
     let pendingBoard = null;
-    try { pendingBoard = sessionStorage.getItem('wsd_pending_board_id'); } catch {}
+    try { pendingBoard = sessionStorage.getItem('bgnj_pending_board_id'); } catch {}
     if (pendingBoard) {
-      try { sessionStorage.removeItem('wsd_pending_board_id'); } catch {}
+      try { sessionStorage.removeItem('bgnj_pending_board_id'); } catch {}
       setTab(pendingBoard);
     }
   }, []);
 
   const allPosts = React.useMemo(() => {
-    return window.WSD_COMMUNITY.listPosts();
+    return window.BGNJ_COMMUNITY.listPosts();
   }, [refreshKey]);
 
   // ─── 모든 hook은 early return 전에 선언 ───────────────────────────────
@@ -326,8 +326,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       onCancel={() => setWriting(null)}
       onPublish={(payload) => {
         const savedPost = writing === true
-          ? window.WSD_COMMUNITY.createPost(payload)
-          : window.WSD_COMMUNITY.updatePost(writing.id, payload);
+          ? window.BGNJ_COMMUNITY.createPost(payload)
+          : window.BGNJ_COMMUNITY.updatePost(writing.id, payload);
         setWriting(null);
         setRefreshKey((value) => value + 1);
         setPostId(savedPost.id);
@@ -396,7 +396,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
         <header style={{marginBottom:24}}>
           <div className="section-eyebrow" aria-hidden="true">COMMUNITY · 커뮤니티</div>
           <h1 className="section-title">다섯 봉우리 <span className="accent">광장</span></h1>
-          <p className="section-subtitle">왕사들이 모여 나누는 이야기. 질문도 답도 환영합니다.</p>
+          <p className="section-subtitle">뱅기노자이 모여 나누는 이야기. 질문도 답도 환영합니다.</p>
         </header>
 
 
@@ -493,7 +493,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
             ) : pagePosts.map((p, i) => {
               const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category) || { label: p.category };
               const likesCount = Array.isArray(p.likes) ? p.likes.length : 0;
-              const bookmarked = user && window.WSD_COMMUNITY.isBookmarked(user.id, p.id);
+              const bookmarked = user && window.BGNJ_COMMUNITY.isBookmarked(user.id, p.id);
               return (
                 <tr key={p.id} style={{borderBottom:'1px solid var(--line)', transition:'background .2s'}}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.03)'}
@@ -734,7 +734,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
 // === Post Detail =========================================================
 const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
   const [comment, setComment] = React.useState("");
-  const [commentsList, setCommentsList] = React.useState(() => window.WSD_COMMUNITY.getComments(post.id));
+  const [commentsList, setCommentsList] = React.useState(() => window.BGNJ_COMMUNITY.getComments(post.id));
   const [reportOpen, setReportOpen] = React.useState(false);
   const [reportReason, setReportReason] = React.useState("");
   const [reportSubmitted, setReportSubmitted] = React.useState(false);
@@ -744,19 +744,19 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
   const likes = Array.isArray(post.likes) ? post.likes : [];
   const liked = !!user && likes.includes(user.id);
   const likesCount = likes.length;
-  const bookmarked = !!user && window.WSD_COMMUNITY.isBookmarked(user.id, post.id);
+  const bookmarked = !!user && window.BGNJ_COMMUNITY.isBookmarked(user.id, post.id);
 
   React.useEffect(() => {
-    setCommentsList(window.WSD_COMMUNITY.getComments(post.id));
+    setCommentsList(window.BGNJ_COMMUNITY.getComments(post.id));
   }, [post.id]);
 
   React.useEffect(() => {
-    const key = `wsd_viewed_post_${post.id}`;
+    const key = `bgnj_viewed_post_${post.id}`;
     try {
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
     } catch {}
-    window.WSD_COMMUNITY.incrementViews(post.id);
+    window.BGNJ_COMMUNITY.incrementViews(post.id);
     onRefresh?.();
   }, [post.id]);
 
@@ -768,19 +768,19 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
 
   const handleLike = () => {
     if (!user) return requireLogin('공감');
-    window.WSD_COMMUNITY.toggleLike(post.id, user.id);
+    window.BGNJ_COMMUNITY.toggleLike(post.id, user.id);
     onRefresh?.();
   };
 
   const handleBookmark = () => {
     if (!user) return requireLogin('북마크');
-    window.WSD_COMMUNITY.toggleBookmark(user.id, post.id);
+    window.BGNJ_COMMUNITY.toggleBookmark(user.id, post.id);
     onRefresh?.();
   };
 
   const handleReportSubmit = (e) => {
     e.preventDefault();
-    window.WSD_COMMUNITY.addReport({
+    window.BGNJ_COMMUNITY.addReport({
       postId: post.id,
       postTitle: post.title,
       reporterId: user?.id || null,
@@ -799,7 +799,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     if (!trimmed) return;
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const next = window.WSD_COMMUNITY.addComment(post.id, {
+    const next = window.BGNJ_COMMUNITY.addComment(post.id, {
       id: `comment-${Date.now()}`,
       author: user.name,
       authorId: user.id,
@@ -812,7 +812,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     // 본인 글이 아니면 작성자에게 알림. authorId가 있어야 푸시 가능.
     const isMyOwnPost = post.authorId === user.id || post.author === user.name;
     if (!isMyOwnPost && post.authorId) {
-      window.WSD_COMMUNITY.addNotification(post.authorId, {
+      window.BGNJ_COMMUNITY.addNotification(post.authorId, {
         type: 'comment',
         postId: post.id,
         postTitle: post.title,
@@ -827,13 +827,13 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
 
   const deletePost = () => {
     if (!confirm(`"${post.title}" 글을 삭제하시겠어요?`)) return;
-    window.WSD_COMMUNITY.deletePost(post.id);
+    window.BGNJ_COMMUNITY.deletePost(post.id);
     onRefresh?.();
     setPostId(null);
   };
 
   const deleteComment = (commentId) => {
-    const next = window.WSD_COMMUNITY.deleteComment(post.id, commentId);
+    const next = window.BGNJ_COMMUNITY.deleteComment(post.id, commentId);
     setCommentsList(next);
     onRefresh?.();
   };
@@ -993,7 +993,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
               if (!user || !text.trim()) return;
               const now = new Date();
               const pad = (n) => String(n).padStart(2, '0');
-              const next = window.WSD_COMMUNITY.addComment(post.id, {
+              const next = window.BGNJ_COMMUNITY.addComment(post.id, {
                 id: `comment-${Date.now()}-${Math.random().toString(36).slice(2,4)}`,
                 author: user.name,
                 authorId: user.id,
@@ -1005,7 +1005,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
               setCommentsList(next);
               const isMyOwnPost = post.authorId === user.id || post.author === user.name;
               if (!isMyOwnPost && post.authorId) {
-                window.WSD_COMMUNITY.addNotification(post.authorId, {
+                window.BGNJ_COMMUNITY.addNotification(post.authorId, {
                   type: 'comment',
                   postId: post.id,
                   postTitle: post.title,
