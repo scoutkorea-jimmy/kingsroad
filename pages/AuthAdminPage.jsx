@@ -2933,6 +2933,8 @@ const AdminPage = ({ go }) => {
   const [postFilter, setPostFilter] = React.useState("all");
   const [postRefreshKey, setPostRefreshKey] = React.useState(0);
   const [versionPage, setVersionPage] = React.useState(1);
+  const [selectedPostIds, setSelectedPostIds] = React.useState(new Set());
+  const [bulkTargetCat, setBulkTargetCat] = React.useState("");
 
   const allCommunityPosts = React.useMemo(() => window.WSD_COMMUNITY.listPosts(), [postRefreshKey]);
   const allUsers = React.useMemo(() => window.WSD_AUTH.listUsers(), [postRefreshKey]);
@@ -2966,7 +2968,7 @@ const AdminPage = ({ go }) => {
     // 홈페이지 내비 순서와 동일하게 정렬: 커뮤니티 → 강연 → 투어 프로그램 → 뱅기노자 칼럼 → 왕의길
     { group: "콘텐츠",   items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성", "왕의길"] },
     { group: "회원",     items: ["회원"] },
-    { group: "운영 설정", items: ["카테고리", "회원 등급", "약관/개인정보", "자주 묻는 질문"] },
+    { group: "운영 설정", items: ["카테고리", "회원 등급", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템",   items: ["버전 기록", "감사 로그", "KMS", "설정"] },
   ];
@@ -3002,7 +3004,27 @@ const AdminPage = ({ go }) => {
   const deleteCommunityPost = (post) => {
     if (!confirm(`"${post.title}" 게시글을 삭제하시겠어요?`)) return;
     window.WSD_COMMUNITY.deletePost(post.id);
+    setSelectedPostIds((prev) => { const next = new Set(prev); next.delete(post.id); return next; });
     setPostRefreshKey((value) => value + 1);
+  };
+
+  const bulkDeletePosts = () => {
+    if (selectedPostIds.size === 0) return;
+    if (!confirm(`선택한 ${selectedPostIds.size}개 게시글을 삭제할까요?`)) return;
+    selectedPostIds.forEach((id) => window.WSD_COMMUNITY.deletePost(id));
+    setSelectedPostIds(new Set());
+    setPostRefreshKey((v) => v + 1);
+  };
+
+  const bulkMovePosts = () => {
+    if (selectedPostIds.size === 0) return;
+    if (!bulkTargetCat) { alert("이동할 게시판을 선택하세요."); return; }
+    const cat = window.WSD_STORES.categories.find((c) => c.id === bulkTargetCat);
+    if (!cat) return;
+    selectedPostIds.forEach((id) => window.WSD_COMMUNITY.updatePost(id, { categoryId: cat.id, category: cat.label }));
+    setSelectedPostIds(new Set());
+    setBulkTargetCat("");
+    setPostRefreshKey((v) => v + 1);
   };
 
   return (
@@ -3492,11 +3514,11 @@ const AdminPage = ({ go }) => {
         {/* 게시글 */}
         {tab === "커뮤니티" && (
           <div>
-            <div style={{display:'flex', gap:12, marginBottom:20}}>
+            <div style={{display:'flex', gap:12, marginBottom:16}}>
               <label htmlFor="post-search" className="sr-only">게시글 검색</label>
               <input id="post-search" className="field-input" placeholder="제목 또는 작성자 검색..." style={{flex:1}}
                 value={postSearch} onChange={(e) => setPostSearch(e.target.value)}/>
-              <select className="field-input" style={{maxWidth:180}} value={postFilter} onChange={(e) => setPostFilter(e.target.value)}>
+              <select className="field-input" style={{maxWidth:180}} value={postFilter} onChange={(e) => { setPostFilter(e.target.value); setSelectedPostIds(new Set()); }}>
                 <option value="all">전체 분류</option>
                 {window.WSD_STORES.categories.filter((item) => item.boardType === "community").map((item) => (
                   <option key={item.id} value={item.id}>{item.label}</option>
@@ -3504,11 +3526,38 @@ const AdminPage = ({ go }) => {
               </select>
               <button type="button" className="btn btn-small" onClick={exportCommunityPosts}>CSV 다운로드</button>
             </div>
+
+            {/* 일괄 작업 바 */}
+            {selectedPostIds.size > 0 && (
+              <div style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'rgba(212,175,55,0.07)', border:'1px solid var(--gold-dim)', marginBottom:12}}>
+                <span className="mono gold" style={{fontSize:11}}>{selectedPostIds.size}개 선택됨</span>
+                <button type="button" className="btn btn-small" style={{borderColor:'var(--danger)', color:'var(--danger)'}} onClick={bulkDeletePosts}>선택 삭제</button>
+                <select className="field-input" style={{maxWidth:160, padding:'4px 8px'}} value={bulkTargetCat} onChange={(e) => setBulkTargetCat(e.target.value)}>
+                  <option value="">게시판 선택...</option>
+                  {window.WSD_STORES.categories.filter((c) => c.boardType === "community").map((c) => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+                <button type="button" className="btn btn-small btn-gold" onClick={bulkMovePosts}>이동</button>
+                <button type="button" className="btn btn-small" style={{marginLeft:'auto'}} onClick={() => setSelectedPostIds(new Set())}>선택 해제</button>
+              </div>
+            )}
+
             <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
               <thead>
                 <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
+                  <th scope="col" style={{padding:'12px 8px', textAlign:'center', width:36}}>
+                    <input type="checkbox"
+                      checked={visibleCommunityPosts.length > 0 && visibleCommunityPosts.every((p) => selectedPostIds.has(p.id))}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedPostIds(new Set(visibleCommunityPosts.map((p) => p.id)));
+                        else setSelectedPostIds(new Set());
+                      }}
+                      aria-label="전체 선택"/>
+                  </th>
                   <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
                   <th scope="col" style={{padding:12, textAlign:'left'}}>분류</th>
+                  <th scope="col" style={{padding:12, textAlign:'left'}}>말머리</th>
                   <th scope="col" style={{padding:12, textAlign:'left'}}>제목</th>
                   <th scope="col" style={{padding:12, textAlign:'left'}}>작성자</th>
                   <th scope="col" style={{padding:12, textAlign:'left'}}>날짜</th>
@@ -3517,9 +3566,23 @@ const AdminPage = ({ go }) => {
               </thead>
               <tbody>
                 {visibleCommunityPosts.map(p => (
-                  <tr key={p.id} style={{borderBottom:'1px solid var(--line)'}}>
+                  <tr key={p.id} style={{borderBottom:'1px solid var(--line)', background: selectedPostIds.has(p.id) ? 'rgba(212,175,55,0.04)' : undefined}}>
+                    <td style={{padding:'14px 8px', textAlign:'center'}}>
+                      <input type="checkbox" checked={selectedPostIds.has(p.id)}
+                        onChange={(e) => {
+                          setSelectedPostIds((prev) => {
+                            const next = new Set(prev);
+                            if (e.target.checked) next.add(p.id); else next.delete(p.id);
+                            return next;
+                          });
+                        }}
+                        aria-label={`"${p.title}" 선택`}/>
+                    </td>
                     <td className="mono dim-2" style={{padding:14}}>#{String(p.id).padStart(4,'0')}</td>
                     <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{p.category}</span></td>
+                    <td style={{padding:14}}>
+                      {p.prefix ? <span className="mono" style={{fontSize:9, padding:'1px 6px', border:'1px solid var(--gold-dim)', color:'var(--gold)'}}>{p.prefix}</span> : <span className="dim-2" style={{fontSize:10}}>—</span>}
+                    </td>
                     <td className="ko-serif" style={{padding:14, fontSize:14}}>{p.title}</td>
                     <td className="dim mono" style={{padding:14}}>{p.author}</td>
                     <td className="mono dim-2" style={{padding:14}}>{p.date}</td>
@@ -3851,6 +3914,9 @@ const AdminPage = ({ go }) => {
         {/* 칼럼 작성 (관리자 전용, Tiptap column preset — 이미지 본문 삽입/이동 가능) */}
         {tab === "칼럼 작성" && <AdminColumnEditor/>}
 
+        {/* 계좌번호 설정 */}
+        {tab === "계좌번호 설정" && <BankAccountPanel/>}
+
         {/* 설정 */}
         {tab === "설정" && (
           <div style={{display:'grid', gap:24}}>
@@ -3878,6 +3944,7 @@ const AdminCategoryPanel = () => {
   const [cats, setCats] = React.useState(() => window.WSD_STORES.categories.slice());
   const [draft, setDraft] = React.useState({ id:"", label:"", boardType:"community", minLevel:10, postMinLevel:10, desc:"" });
   const [error, setError] = React.useState("");
+  const [prefixDrafts, setPrefixDrafts] = React.useState({});
 
   const save = (next) => {
     window.WSD_STORES.categories = next;
@@ -4087,6 +4154,63 @@ const AdminCategoryPanel = () => {
             </tbody>
           </table>
         </div>
+      </article>
+
+      {/* 말머리(Prefix) 관리 */}
+      <article className="card" style={{padding:20, marginTop:32}}>
+        <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>THREAD PREFIXES · 말머리</div>
+        <h3 className="ko-serif" style={{fontSize:18, marginBottom:8}}>게시판별 말머리 설정</h3>
+        <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:20}}>
+          게시판마다 글 작성 시 선택할 수 있는 말머리(분류 태그)를 설정합니다.
+          말머리가 등록된 게시판에서는 커뮤니티 상단에 필터 탭으로도 노출됩니다.
+        </p>
+        {communityCats.length === 0 && (
+          <div className="dim" style={{fontSize:13}}>커뮤니티 게시판이 없습니다.</div>
+        )}
+        {communityCats.map((c) => {
+          const catIdx = cats.findIndex((x) => x.id === c.id);
+          const prefixes = c.prefixes || [];
+          const draftVal = prefixDrafts[c.id] || "";
+          return (
+            <div key={c.id} style={{marginBottom:16, padding:'14px 16px', background:'var(--bg-2)', border:'1px solid var(--line)'}}>
+              <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+                <span className="ko-serif" style={{fontSize:15}}>{c.label}</span>
+                <span className="mono dim-2" style={{fontSize:10}}>#{c.id}</span>
+                <span className="mono dim-2" style={{fontSize:10, marginLeft:4}}>{prefixes.length}개</span>
+              </div>
+              <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:10, minHeight:28}}>
+                {prefixes.length === 0 && <span className="dim-2 mono" style={{fontSize:11}}>말머리 없음 — 추가하면 커뮤니티 필터로 자동 노출됩니다</span>}
+                {prefixes.map((p) => (
+                  <span key={p} style={{display:'inline-flex', alignItems:'center', gap:4, padding:'2px 10px', border:'1px solid var(--gold-dim)', fontSize:12}}>
+                    <span className="gold">{p}</span>
+                    <button type="button"
+                      onClick={() => update(catIdx, 'prefixes', prefixes.filter((x) => x !== p))}
+                      style={{background:'none', border:'none', cursor:'pointer', color:'var(--danger)', fontSize:15, lineHeight:1, padding:0}}
+                      aria-label={`${p} 삭제`}>×</button>
+                  </span>
+                ))}
+              </div>
+              <div style={{display:'flex', gap:8}}>
+                <input className="field-input" style={{padding:'4px 8px', maxWidth:220}} value={draftVal}
+                  placeholder="말머리 입력 후 Enter 또는 추가..."
+                  onChange={(e) => setPrefixDrafts((prev) => ({ ...prev, [c.id]: e.target.value }))}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const val = draftVal.trim();
+                    if (val && !prefixes.includes(val)) update(catIdx, 'prefixes', [...prefixes, val]);
+                    setPrefixDrafts((prev) => ({ ...prev, [c.id]: "" }));
+                  }}/>
+                <button type="button" className="btn btn-small btn-gold"
+                  onClick={() => {
+                    const val = draftVal.trim();
+                    if (val && !prefixes.includes(val)) update(catIdx, 'prefixes', [...prefixes, val]);
+                    setPrefixDrafts((prev) => ({ ...prev, [c.id]: "" }));
+                  }}>추가</button>
+              </div>
+            </div>
+          );
+        })}
       </article>
     </>
   );

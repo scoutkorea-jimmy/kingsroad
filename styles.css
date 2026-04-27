@@ -1,4 +1,4 @@
-/* 왕사들 — 블랙 & 골드 커뮤니티 */
+/* 뱅기노자 — 한국 여행·역사·문화 커뮤니티 */
 @import url('https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.1/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css');
 
 @font-face {
@@ -16,27 +16,27 @@
 }
 
 :root {
-  --bg: #0a0907;
-  --bg-2: #111010;
-  --bg-3: #1a1814;
-  --line: #2a2620;
-  --line-2: #3a332a;
-  --gold: #D4AF37;
-  --gold-2: #E8C547;
-  --gold-dim: #8a7528;
-  --gold-ink: #F5E6A8;
-  --ink: #efe9dc;
-  --ink-2: #c8c1b1;           /* APCA Lc ≥ 60 on --bg for body */
-  --ink-3: #9a9287;           /* APCA Lc ≥ 45 on --bg for meta (raised from #78716a) */
-  --danger: #e06656;          /* raised contrast from #c24a3d */
-  --focus: #F5E6A8;           /* focus ring — high contrast on all bg tokens */
+  /* 뱅기노자 — 여행 매거진 라이트 팔레트 */
+  --bg: #FDFAF5;              /* 따뜻한 오프화이트 */
+  --bg-2: #F2EBE0;            /* 웜 크림 */
+  --bg-3: #E8DFD2;            /* 웜 베이지 */
+  --line: #D8CEBC;            /* 따뜻한 라인 */
+  --line-2: #C8BCA8;          /* 조금 진한 라인 */
+  --gold: #9E6818;            /* 앰버/황토 — 라이트 배경에서 WCAG AA 충족 */
+  --gold-2: #C07E28;          /* 중간 앰버 */
+  --gold-dim: #C49448;        /* 장식용 앰버 */
+  --gold-ink: #6A4412;        /* 텍스트 강조용 짙은 앰버 */
+  --ink: #1C1812;             /* 따뜻한 거의-검정 */
+  --ink-2: #4A3E34;           /* 중간 진한 갈색 */
+  --ink-3: #7E7060;           /* 밝은 웜 그레이 */
+  --danger: #C44030;
+  --focus: #9E6818;
 
   --gold-strength: 1;
   --font-serif: "Noto Serif KR", "Nanum Myeongjo", serif;
   --font-sans: "Wanted Sans Variable", "Wanted Sans", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "IBM Plex Mono", "D2 Coding", monospace;
   --font-hero: 'KblJumpExtended', "Wanted Sans Variable", sans-serif;
-  /* Reading font: swaps via toggle in header. Default = 고딕(Wanted Sans). */
   --font-reading: var(--font-sans);
   --font-display: var(--font-sans);
 }
@@ -541,8 +541,8 @@ main time, main .section-eyebrow {
   position: sticky;
   top: 0;
   z-index: 50;
-  backdrop-filter: blur(12px);
-  background: rgba(10, 9, 7, 0.72);
+  backdrop-filter: blur(16px);
+  background: rgba(253, 250, 245, 0.94);
   border-bottom: 1px solid var(--line);
 }
 .nav-inner {

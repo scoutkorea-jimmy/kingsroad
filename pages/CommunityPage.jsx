@@ -260,6 +260,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const categories = React.useMemo(() => getCategoriesForBoard("community"), [postId]);
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [tab, setTab] = React.useState("all");
+  const [activePrefix, setActivePrefix] = React.useState("");
   const [search, setSearch] = React.useState("");
   const [sort, setSort] = React.useState("latest");
   const [writing, setWriting] = React.useState(null);
@@ -317,6 +318,12 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   }
 
   const visibleCats = categories.filter(c => userLevel >= (c.minLevel ?? 0));
+  const currentBoard = categories.find(c => c.id === tab);
+  const boardPrefixes = currentBoard?.prefixes || [];
+
+  // 탭이 바뀌면 말머리 필터 초기화
+  React.useEffect(() => { setActivePrefix(""); }, [tab]);
+
   const filtered = React.useMemo(() => {
     const q = search.toLowerCase();
     const base = allPosts.filter(p => {
@@ -324,16 +331,17 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       if (cat && userLevel < (cat.minLevel ?? 0)) return false;
       if (tab !== "all" && (p.categoryId !== tab && cat?.id !== tab)) return false;
       if (q && !p.title.toLowerCase().includes(q) && !String(p.body?.text || '').toLowerCase().includes(q)) return false;
+      if (activePrefix && p.prefix !== activePrefix) return false;
       return true;
     });
     if (sort === "views") return [...base].sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
     if (sort === "replies") return [...base].sort((a, b) => (b.replies ?? 0) - (a.replies ?? 0));
     if (sort === "likes") return [...base].sort((a, b) => (Array.isArray(b.likes) ? b.likes.length : 0) - (Array.isArray(a.likes) ? a.likes.length : 0));
-    return base; // latest: listPosts() already returns newest-first
-  }, [allPosts, categories, userLevel, tab, search, sort]);
+    return base;
+  }, [allPosts, categories, userLevel, tab, search, sort, activePrefix]);
 
   // 검색어/탭/정렬이 바뀌면 페이지를 1로 되돌림
-  React.useEffect(() => { setPage(1); }, [tab, search, sort]);
+  React.useEffect(() => { setPage(1); }, [tab, search, sort, activePrefix]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
@@ -433,6 +441,32 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           </div>
         </div>
 
+        {/* 말머리 필터 — 해당 게시판에 말머리가 있을 때만 표시 */}
+        {boardPrefixes.length > 0 && (
+          <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:16}}>
+            <button type="button"
+              onClick={() => setActivePrefix("")}
+              style={{
+                padding:'4px 16px', border:'1px solid',
+                borderColor: activePrefix === "" ? 'var(--gold)' : 'var(--line-2)',
+                color: activePrefix === "" ? 'var(--gold)' : 'var(--ink-2)',
+                background: activePrefix === "" ? 'rgba(158,104,24,0.06)' : 'none',
+                cursor:'pointer', fontSize:13, letterSpacing:'0.05em',
+              }}>전체</button>
+            {boardPrefixes.map(p => (
+              <button key={p} type="button"
+                onClick={() => setActivePrefix(activePrefix === p ? "" : p)}
+                style={{
+                  padding:'4px 16px', border:'1px solid',
+                  borderColor: activePrefix === p ? 'var(--gold)' : 'var(--line-2)',
+                  color: activePrefix === p ? 'var(--gold)' : 'var(--ink-2)',
+                  background: activePrefix === p ? 'rgba(158,104,24,0.06)' : 'none',
+                  cursor:'pointer', fontSize:13, letterSpacing:'0.05em',
+                }}>{p}</button>
+            ))}
+          </div>
+        )}
+
         <table style={{width:'100%', borderCollapse:'collapse'}}>
           <caption className="sr-only">게시글 목록</caption>
           <thead>
@@ -524,12 +558,18 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   const writable = categories.filter(c => userLevel >= (c.postMinLevel ?? c.minLevel ?? 0));
   const [categoryId, setCategoryId] = React.useState(initialPost?.categoryId || writable[0]?.id || categories[0]?.id);
   const [title, setTitle] = React.useState(initialPost?.title || "");
+  const [prefix, setPrefix] = React.useState(initialPost?.prefix || "");
   const [tags, setTags] = React.useState(initialPost?.tags || []);
   const [images, setImages] = React.useState(initialPost?.images || []);
   const [bodyHtml, setBodyHtml] = React.useState(initialPost?.body?.html || "");
   const [bodyText, setBodyText] = React.useState(initialPost?.body?.text || "");
   const [error, setError] = React.useState("");
   const isEditing = !!initialPost;
+
+  const selectedCat = categories.find(c => c.id === categoryId);
+  const boardPrefixes = selectedCat?.prefixes || [];
+
+  React.useEffect(() => { setPrefix(""); }, [categoryId]);
 
   const submit = () => {
     setError("");
@@ -541,6 +581,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     onPublish({
       categoryId: cat.id,
       category: cat.label,
+      prefix: prefix || "",
       title: title.trim(),
       author: user?.name || "익명",
       authorId: user?.id || null,
@@ -568,9 +609,9 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
         </header>
 
         <form onSubmit={(e) => { e.preventDefault(); submit(); }} noValidate>
-          <div style={{display:'grid', gridTemplateColumns:'160px 1fr', gap:16, marginBottom:20}}>
+          <div style={{display:'grid', gridTemplateColumns:'160px 1fr', gap:16, marginBottom: boardPrefixes.length > 0 ? 12 : 20}}>
             <div className="field" style={{margin:0}}>
-              <label className="field-label" htmlFor="post-cat">분류</label>
+              <label className="field-label" htmlFor="post-cat">게시판</label>
               <select id="post-cat" className="field-input"
                 value={categoryId}
                 onChange={e => setCategoryId(e.target.value)}>
@@ -587,6 +628,27 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
                 required maxLength={120}/>
             </div>
           </div>
+
+          {/* 말머리 선택 — 선택된 게시판에 말머리가 있을 때만 표시 */}
+          {boardPrefixes.length > 0 && (
+            <div className="field" style={{marginBottom:20}}>
+              <div className="field-label">말머리</div>
+              <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                <button type="button"
+                  onClick={() => setPrefix("")}
+                  style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === "" ? 'var(--gold)' : 'var(--line)', color: prefix === "" ? 'var(--gold)' : 'var(--ink-2)', background:'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
+                  없음
+                </button>
+                {boardPrefixes.map((p) => (
+                  <button key={p} type="button"
+                    onClick={() => setPrefix(p)}
+                    style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === p ? 'var(--gold)' : 'var(--line)', color: prefix === p ? 'var(--gold)' : 'var(--ink-2)', background: prefix === p ? 'rgba(212,175,55,0.08)' : 'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Hashtags */}
           <div className="field">

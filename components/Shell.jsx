@@ -206,16 +206,24 @@ const NotificationBell = ({ user, onPick }) => {
   );
 };
 
+const BanginojaIcon = ({ size = 22 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    {/* 비행기 — 뱅기노자 브랜드 마크 */}
+    <path d="M21 14L13 9V4a1 1 0 0 0-2 0v5L3 14v2l8-2.5 2 6.5h2l2-6.5L21 16V14z"
+      fill="var(--gold)"/>
+  </svg>
+);
+
 const Brand = ({ onClick }) => (
   <button
     className="brand"
     onClick={onClick}
-    aria-label="왕사들 홈으로"
+    aria-label="뱅기노자 홈으로"
     style={{background:'none', border:'none', padding:0, cursor:'pointer'}}>
-    <span className="brand-mark" aria-hidden="true"><IlwolMark size={22}/></span>
+    <span className="brand-mark" aria-hidden="true"><BanginojaIcon size={22}/></span>
     <span className="brand-name">
-      왕사들
-      <span className="sub" lang="en">WANGSADEUL</span>
+      뱅기노자
+      <span className="sub" lang="en">BANGINOJA</span>
     </span>
   </button>
 );
@@ -364,7 +372,7 @@ const Footer = ({ go }) => (
         <div>
           <Brand onClick={() => go("home")}/>
           <p className="dim" style={{marginTop:20, fontSize:13, lineHeight:1.7, maxWidth:360}}>
-            일월오봉도 아래 모인 사람들. 왕사들은 조선의 왕들과 그들이 걸었던 길을 오늘의 언어로 다시 읽어내는 커뮤니티입니다.
+            비행기 타고 놀자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행.
           </p>
           <button type="button" className="btn btn-small" onClick={() => go("admin")}
             style={{marginTop:20}}>개인정보 처리 · 관리자</button>
@@ -391,9 +399,9 @@ const Footer = ({ go }) => (
         <address style={{fontStyle:'normal'}}>
           <h4 id="ft-contact">연락</h4>
           <ul aria-labelledby="ft-contact">
-            <li><a href="mailto:hello@wangsadeul.kr">hello@wangsadeul.kr</a></li>
+            <li><a href="mailto:hello@banginoja.kr">hello@banginoja.kr</a></li>
             <li><a href="tel:+82-2-0000-0000">02-0000-0000</a></li>
-            <li><span>서울 종로구 사직로</span></li>
+            <li><span>서울특별시</span></li>
           </ul>
         </address>
       </div>
@@ -410,11 +418,11 @@ const Footer = ({ go }) => (
         </div>
       </div>
       <div className="footer-bottom">
-        <span>© 2026 WANGSADEUL — ALL RIGHTS RESERVED</span>
+        <span>© 2026 뱅기노자 BANGINOJA — ALL RIGHTS RESERVED</span>
         <span className="mono" style={{color:'var(--gold-dim)'}}>
           v{window.WSD_VERSION?.version || '0.0.0'} · build {window.WSD_VERSION?.build || '—'} · {window.WSD_VERSION?.channel || ''}
         </span>
-        <span><span lang="zh-Hant">日月五峯</span> · DESIGNED IN SEOUL</span>
+        <span>비행기 타고 놀자 · DESIGNED IN SEOUL</span>
       </div>
     </div>
   </footer>
