@@ -134,7 +134,12 @@ const NotificationBell = ({ user, onPick }) => {
         aria-label={`알림 ${unread > 0 ? `${unread}건 안 읽음` : ''}`}
         onClick={() => setOpen((v) => !v)}
         style={{ position: 'relative', padding: '6px 10px', minWidth: 36 }}>
-        <span aria-hidden="true">◇</span>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+          style={{ display: 'block', verticalAlign: 'middle' }}>
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+        </svg>
         {unread > 0 && (
           <span
             aria-hidden="true"
@@ -495,4 +500,89 @@ const Tweaks = ({ tweaks, setTweaks, visible }) => {
   );
 };
 
-Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell, ScrollToTop, BanginojaIcon });
+// 쿠키 승인 배너 — 첫 방문 시 표시. 사용자가 결정하면 localStorage에 영속화.
+// PIPA / GDPR 가이드라인: 필수(기능)는 사용자 거부 불가, 분석·마케팅은 옵트인.
+// 저장 형태: { necessary:true, analytics:bool, marketing:bool, ts:ISO }
+const CookieConsent = () => {
+  const KEY = 'bgnj_cookie_consent';
+  const [decision, setDecision] = React.useState(() => {
+    try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  });
+  const [details, setDetails] = React.useState(false);
+  const [analytics, setAnalytics] = React.useState(true);
+  const [marketing, setMarketing] = React.useState(false);
+
+  const persist = (next) => {
+    try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
+    setDecision(next);
+    try { window.dispatchEvent(new CustomEvent('bgnj-cookie-consent', { detail: next })); } catch {}
+  };
+
+  const acceptAll = () => persist({ necessary: true, analytics: true, marketing: true, ts: new Date().toISOString() });
+  const rejectAll = () => persist({ necessary: true, analytics: false, marketing: false, ts: new Date().toISOString() });
+  const saveCustom = () => persist({ necessary: true, analytics: !!analytics, marketing: !!marketing, ts: new Date().toISOString() });
+
+  if (decision) return null;
+
+  return (
+    <div role="dialog" aria-modal="false" aria-labelledby="cookie-banner-title"
+      style={{
+        position: 'fixed', left: 16, right: 16, bottom: 16,
+        maxWidth: 720, margin: '0 auto', zIndex: 80,
+        background: 'var(--bg-2)', border: '1px solid var(--gold-dim)',
+        boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
+        padding: '20px 22px', borderRadius: 4,
+      }}>
+      <h2 id="cookie-banner-title" className="ko-serif" style={{ fontSize: 16, marginBottom: 8 }}>쿠키 사용 동의</h2>
+      <p className="dim" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
+        뱅기노자는 서비스 운영을 위한 <strong className="gold">필수 쿠키</strong>와, 사이트 개선을 위한
+        <strong className="gold"> 분석 쿠키</strong>·<strong className="gold">마케팅 쿠키</strong>를 사용합니다.
+        세부 설정에서 항목별로 선택하실 수 있어요.
+      </p>
+      {details && (
+        <div style={{ marginBottom: 14, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+          <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
+            <legend className="sr-only">쿠키 항목별 동의</legend>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', opacity: 0.7 }}>
+                <input type="checkbox" checked readOnly aria-label="필수 쿠키 (항상 활성)"/>
+                <span>
+                  <strong style={{ fontSize: 13 }}>필수</strong>
+                  <span className="dim" style={{ fontSize: 12, display: 'block' }}>로그인 세션, 보안, 필수 기능 동작에 사용. 거부 불가.</span>
+                </span>
+              </label>
+              <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <input type="checkbox" checked={analytics} onChange={(e) => setAnalytics(e.target.checked)}
+                  aria-label="분석 쿠키 동의"/>
+                <span>
+                  <strong style={{ fontSize: 13 }}>분석</strong>
+                  <span className="dim" style={{ fontSize: 12, display: 'block' }}>방문 통계·페이지 성능 개선용. 식별자 익명 처리.</span>
+                </span>
+              </label>
+              <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <input type="checkbox" checked={marketing} onChange={(e) => setMarketing(e.target.checked)}
+                  aria-label="마케팅 쿠키 동의"/>
+                <span>
+                  <strong style={{ fontSize: 13 }}>마케팅</strong>
+                  <span className="dim" style={{ fontSize: 12, display: 'block' }}>관심사 기반 안내, 외부 광고 매체 연동에 사용.</span>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <button type="button" className="btn btn-small" onClick={() => setDetails((v) => !v)}
+          aria-expanded={details}>
+          {details ? '간단히' : '세부 설정'}
+        </button>
+        <button type="button" className="btn btn-small" onClick={rejectAll}>모두 거부</button>
+        {details
+          ? <button type="button" className="btn btn-small btn-gold" onClick={saveCustom}>선택 저장</button>
+          : <button type="button" className="btn btn-small btn-gold" onClick={acceptAll}>모두 동의</button>}
+      </div>
+    </div>
+  );
+};
+
+Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell, ScrollToTop, BanginojaIcon, CookieConsent });

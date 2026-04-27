@@ -394,6 +394,38 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.026.000",
+    date: "2026-04-27",
+    summary: "브랜드 전환(왕사들→뱅기노자) 마무리 + 관리자 콘솔 7대 카테고리 재정렬 + Cloudflare 백엔드 인프라 셋업 + 운영 버그 일괄 처리. 사이트 콘텐츠/책 카탈로그 관리 패널, 게시글 일괄 말머리, 칩형 게시판 필터, 강연·투어 hidden 운영, 쿠키 동의 배너, 알림 종모양 라인아트 아이콘을 한 번에 도입했습니다.",
+    details: [
+      "전역 네임스페이스 통일 — `wsd_*`/`WSD_*` → `bgnj_*`/`BGNJ_*`. localStorage / sessionStorage / 글로벌 헬퍼 / 문서 노트 모두 일괄 변경. data.js 상단에 일회성 마이그레이션을 두어 기존 사용자의 wsd_* 키 데이터를 bgnj_*로 자동 복사(원본 보존).",
+      "브랜드 잔여 정리 — 왕사들/wangsadeul.kr/일월오봉도/Ilwolobongdo 모든 잔여 표기를 뱅기노자/bgnj.net/왕의 자리·어좌 뒤 병풍/제거로 정리. 로그인 시 `Ilwolobongdo is not defined` 에러 해결, 고아 컴포넌트 파일과 styles.css 잔여 클래스 삭제.",
+      "관리자 메뉴 7개 대카테고리 재정렬 — 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리. 책 카탈로그 / 책 주문이 쇼핑 그룹으로 분리되고, 회원·등급은 회원관리로 통합, 감사 로그 중복 렌더 제거.",
+      "사이트 콘텐츠 편집 패널 — 메뉴 라벨 / 히어로 텍스트 / 푸터 문구 / 브랜드명 / 로고·파비콘(파일 업로드 → dataURI) / OG 메타. 저장 시 head meta가 즉시 갱신되어 카카오톡·페이스북 공유 미리보기에 반영.",
+      "다양한 책 카탈로그 시스템 — `BGNJ_BOOKS` 헬퍼(list/get/create/update/remove/setHidden/addReview/removeReview) + `BooksAdminPanel` (메타·가격·상태·표지 PNG 업로드·PDF 미리보기 업로드·소개·목차·저자·리뷰 모더레이션). 책마다 독립된 reviews 배열.",
+      "강연/투어 hidden 운영 — 시드 데이터 + override 패턴이라 시드 항목 삭제가 무효화되던 문제 해결. `setHidden(id, hidden)` / `listAll({includeHidden})` API + 관리자 패널의 숨김 토글·배지·흐림 처리. 시드 항목은 자동 hidden 처리, override-only는 완전 삭제.",
+      "관리자 커뮤니티 칩형 필터 — 게시판 분류 드롭다운 → 검색 입력 위 칩 (전체/공지/자유/질문/정보/...) + 항목별 카운트, role=tab/aria-selected.",
+      "게시글 일괄 말머리(prefix) 설정 — 체크박스 선택 → 일괄 작업 바에 말머리 입력 + 적용 (비우면 제거).",
+      "쿠키 동의 배너 — 첫 방문 시 표시, 필수/분석/마케팅 항목별 동의(필수 거부 불가). PIPA·GDPR 가이드라인. 결정은 `bgnj_cookie_consent`에 영속화되고 `bgnj-cookie-consent` CustomEvent 발화.",
+      "알림 아이콘 → 종모양 라인아트 SVG (◇ 기호 → bell.outline). 미읽음 카운트 배지는 그대로.",
+      "Cloudflare 백엔드 인프라 셋업 — D1 데이터베이스 `banginoja-db` 생성 + 스키마(users/sessions/posts/comments/books/book_reviews/book_orders/categories/grades/site_content) 적용, R2 버킷 `banginoja-media` 생성, `workers/wrangler.toml` + `workers/schema.sql` 추가. Worker API 코드는 다음 버전.",
+      "회원등급 색상 블루 팔레트 마이그레이션 — 노란/금 hex 잔여 → #64748B/#94A3B8/#93C5FD/#3B82F6/#2563EB/#1E3A8A. 일회성 캐시 마이그레이션 추가.",
+      "기타 — '왕의길' 메뉴 → '뱅기노자의 길', 책 CTA 잡문구(3만원 무료배송 / 10% 적립 / 사인본 한정수량) 제거, 커뮤니티 미존재/등급 미달 게시글 접근 가드, .gitignore 추가, .DS_Store/.wrangler 캐시 git 제거.",
+    ],
+    context: "이번 묶음은 두 갈래입니다. 한쪽은 '왕사들'이라는 이전 브랜드의 모든 흔적을 코드와 화면에서 지우고 '뱅기노자'로 통일하는 정리 작업, 다른 한쪽은 운영자가 코드 수정 없이도 사이트를 굴릴 수 있게 만드는 패널 확장입니다. 사이트 콘텐츠/책 카탈로그/일괄 말머리/숨김 운영이 그 축이고, Cloudflare 백엔드(D1·R2) 인프라가 다음 사이클(서버 인증, 게시글 동기화, 미디어 업로드)의 토대가 됩니다. 메뉴 구조도 운영 흐름에 맞춰 7개 대카테고리(요약·콘텐츠·회원관리·쇼핑·운영설정·개인정보 관리·시스템 관리)로 재정리해, 같은 성격의 작업이 한 그룹 안에 모이도록 했습니다.",
+  },
+  {
+    version: "00.025.003",
+    date: "2026-04-27",
+    summary: "도메인 연결 사전작업 + 잔여 hooks 위반 수정. GitHub Pages용 GitHub Actions 워크플로우와 CNAME(bgnj.net) 추가, 일부 페이지의 hooks-before-return 위반을 정리해 라우팅 변경 시 재마운트 안전성 확보.",
+    details: [
+      "GitHub Pages 자동 배포 워크플로우 추가 — main push 시 정적 파일을 publish.",
+      "커스텀 도메인 bgnj.net 연결 (Cloudflare DNS A/CNAME + GitHub Pages 인증서 발급).",
+      "Hooks before return 위반 수정 — 라우팅 가드보다 React.useState 호출이 먼저 오도록 정리.",
+    ],
+    context: "도메인 연결과 GitHub Pages 자동 배포 라인을 마무리하면서, 페이지가 라우팅 분기에서 마운트/언마운트될 때 hooks 순서가 어긋나 발생하던 잠재적 불안 요소를 같이 정리했습니다.",
+  },
+  {
     version: "00.019.000",
     date: "2026-04-26",
     summary: "기능 정상화 묶음. 댓글 답글 트리·강연/투어 신규 등록·강연 후기·주문 영수증·운영 감사 로그·활동 기반 자동 등급 승격을 한 번에 도입했습니다. 운영자가 한 사이트 안에서 컨텐츠를 추가·관리·기록하는 흐름이 모두 닫혔습니다.",
@@ -3512,14 +3544,15 @@ const AdminPage = ({ go }) => {
     return matchesSearch && matchesFilter;
   }), [allCommunityPosts, postSearch, postFilter]);
 
+  // 7개 대카테고리: 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리
   const tabGroups = [
-    { group: "요약",     items: ["대시보드"] },
-    // 홈페이지 내비 순서와 동일하게 정렬: 커뮤니티 → 강연 → 투어 프로그램 → 뱅기노자 칼럼 → 왕의길
-    { group: "콘텐츠",   items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성", "왕의길"] },
-    { group: "회원",     items: ["회원"] },
-    { group: "운영 설정", items: ["사이트 콘텐츠", "카테고리", "회원 등급", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
-    { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템",   items: ["버전 기록", "감사 로그", "KMS", "설정"] },
+    { group: "요약",          items: ["대시보드"] },
+    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성"] },
+    { group: "회원관리",      items: ["회원", "회원 등급"] },
+    { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
+    { group: "운영설정",      items: ["사이트 콘텐츠", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
+    { group: "개인정보 관리", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
+    { group: "시스템 관리",   items: ["버전 기록", "KMS", "설정"] },
   ];
 
   const exportMemberData = (m) => {
@@ -4224,7 +4257,8 @@ const AdminPage = ({ go }) => {
         {tab === "회원" && <MemberAdminPanel go={go}/>}
 
         {/* 왕의길 (책 주문 운영) */}
-        {tab === "왕의길" && <BookOrderAdminPanel go={go}/>}
+        {tab === "책 주문" && <BookOrderAdminPanel go={go}/>}
+        {tab === "책 카탈로그" && <BooksAdminPanel/>}
 
         {/* 정보주체 권리 */}
         {tab === "정보주체 권리" && (
@@ -4452,35 +4486,6 @@ const AdminPage = ({ go }) => {
                     <td className="dim" style={{padding:14}}>{t.purpose}</td>
                     <td className="mono" style={{padding:14, fontSize:11}}>{t.items}</td>
                     <td className="gold mono" style={{padding:14, fontSize:11}}>{t.basis}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
-
-        {/* 감사 로그 */}
-        {tab === "감사 로그" && (
-          <>
-            <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
-              GDPR Art.32 · PIPA §29. 관리자 접근 및 개인정보 처리 이력은 모두 기록되며, 90일간 보관됩니다.
-            </p>
-            <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
-              <thead>
-                <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>시각</th>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>주체</th>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>행위</th>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>IP</th>
-                </tr>
-              </thead>
-              <tbody>
-                {PRIVACY_DATA.auditLog.map((l, i) => (
-                  <tr key={i} style={{borderBottom:'1px solid var(--line)'}}>
-                    <td className="mono dim-2" style={{padding:12}}>{l.ts}</td>
-                    <td className="mono" style={{padding:12}}>{l.actor}</td>
-                    <td style={{padding:12}}>{l.action}</td>
-                    <td className="mono dim-2" style={{padding:12}}>{l.ip}</td>
                   </tr>
                 ))}
               </tbody>
