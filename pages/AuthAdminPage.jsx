@@ -360,12 +360,6 @@ const PRIVACY_DATA = {
     { recipient: "Amazon Web Services, Inc.",       country: "한국(서울)", purpose: "클라우드 인프라",   basis: "국내 처리",               items: "전 데이터" },
     { recipient: "Plausible Insights OÜ",           country: "에스토니아(EU)", purpose: "사이트 분석", basis: "GDPR 적정성 결정(EU 내부)", items: "쿠키ID, UA" },
   ],
-  auditLog: [
-    { ts: "2026-04-20T14:12:33+09:00", actor: "banginoja@bgnj.net", action: "DSR-2026-039 정정 승인", ip: "203.0.113.21" },
-    { ts: "2026-04-20T13:05:11+09:00", actor: "banginoja@bgnj.net", action: "회원 #8734 개인정보 열람 내보내기", ip: "203.0.113.21" },
-    { ts: "2026-04-20T10:40:02+09:00", actor: "system", action: "보유기간 만료 로그 파기(3개월)", ip: "—" },
-    { ts: "2026-04-19T17:22:51+09:00", actor: "kim-admin@bgnj.net", action: "ROPA-03 수탁처 변경 검토", ip: "203.0.113.45" },
-  ],
   members: [
     { id: 8734, handle: "돌담아래", email: "stone@example.com",    joined: "2025-08-12", region: "KR", consents: ["terms","privacy","marketing"] },
     { id: 8735, handle: "역사애호", email: "h@example.com",        joined: "2025-09-02", region: "KR", consents: ["terms","privacy"] },

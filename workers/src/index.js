@@ -172,9 +172,15 @@ const handleAuthSignup = async (req, env) => {
   const { hash, salt } = await hashPassword(password);
   const id = randomId("u");
   // 부트스트랩 admin: 환경변수에 지정된 이메일이면 자동 관리자 권한 부여.
-  // (한 번만 발생 — 같은 이메일로 두 번째 가입 시도는 위 exists 체크에 걸림)
+  // 추가 안전 장치: 시스템에 이미 admin이 한 명 이상 있으면 부트스트랩 비활성화 (탈취 방지).
   const bootstrapEmail = String(env.ADMIN_BOOTSTRAP_EMAIL || "").trim().toLowerCase();
-  const isAdmin = bootstrapEmail && email === bootstrapEmail ? 1 : 0;
+  let isAdmin = 0;
+  if (bootstrapEmail && email === bootstrapEmail) {
+    const adminCountRow = await env.DB.prepare("SELECT COUNT(*) AS c FROM users WHERE is_admin = 1").first();
+    if (!adminCountRow || Number(adminCountRow.c || 0) === 0) {
+      isAdmin = 1;
+    }
+  }
   const gradeId = isAdmin ? "admin" : "member";
   await env.DB.prepare(
     `INSERT INTO users (id, email, name, password_hash, password_salt, is_admin, grade_id, consents_json, created_at)
@@ -391,6 +397,315 @@ const handleMediaGet = async (req, env, key) => {
   return new Response(obj.body, { headers });
 };
 
+// ──────── 감사 로그 ───────────────────────────────────────
+
+const auditWrite = async (env, actor, action, target, details, ip) => {
+  try {
+    await env.DB.prepare(
+      "INSERT INTO audit_log (actor, action, target, details_json, ip) VALUES (?, ?, ?, ?, ?)"
+    ).bind(actor || null, action, target || null, details ? JSON.stringify(details) : null, ip || null).run();
+  } catch {}
+};
+
+// ──────── 관리자: 회원 ─────────────────────────────────────
+
+const handleAdminUsersList = async (req, env) => {
+  await requireAdmin(req, env);
+  const url = new URL(req.url);
+  const q = (url.searchParams.get("q") || "").trim();
+  const args = [];
+  let where = "1=1";
+  if (q) { where += " AND (email LIKE ? OR name LIKE ?)"; args.push(`%${q}%`, `%${q}%`); }
+  const { results } = await env.DB.prepare(
+    `SELECT id, email, name, is_admin, grade_id, suspended, suspended_reason, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT 500`
+  ).bind(...args).all().catch(async () => {
+    // suspended 컬럼이 없을 수도(v1 스키마) — 조용히 폴백
+    const r = await env.DB.prepare(
+      `SELECT id, email, name, is_admin, grade_id, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT 500`
+    ).bind(...args).all();
+    return r;
+  });
+  return { users: results };
+};
+
+const handleAdminUserPatch = async (req, env, id) => {
+  const admin = await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const fields = [];
+  const args = [];
+  const action = [];
+  if ("isAdmin" in body) { fields.push("is_admin = ?"); args.push(body.isAdmin ? 1 : 0); action.push(body.isAdmin ? "promote_admin" : "demote_admin"); }
+  if ("gradeId" in body) { fields.push("grade_id = ?"); args.push(body.gradeId); action.push(`grade=${body.gradeId}`); }
+  if (!fields.length) return { ok: true };
+  args.push(id);
+  await env.DB.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).bind(...args).run();
+  await auditWrite(env, admin.email, "admin.user_update", `user:${id}`, { changes: body });
+  return { ok: true };
+};
+
+const handleAdminUserDelete = async (req, env, id) => {
+  const admin = await requireAdmin(req, env);
+  if (id === admin.id) throw new HttpError(400, "본인 계정은 삭제할 수 없습니다.");
+  await env.DB.prepare("DELETE FROM users WHERE id = ?").bind(id).run();
+  await auditWrite(env, admin.email, "admin.user_delete", `user:${id}`);
+  return { ok: true };
+};
+
+const handleAdminAuditList = async (req, env) => {
+  await requireAdmin(req, env);
+  const url = new URL(req.url);
+  const limit = Math.min(Number(url.searchParams.get("limit") || 200), 1000);
+  const { results } = await env.DB.prepare(
+    "SELECT id, ts, actor, action, target, details_json, ip FROM audit_log ORDER BY ts DESC LIMIT ?"
+  ).bind(limit).all();
+  return {
+    log: results.map((e) => ({ ...e, details: e.details_json ? JSON.parse(e.details_json) : null })),
+  };
+};
+
+// ──────── 강연 ────────────────────────────────────────────
+
+const lectureRow = (l) => l && ({
+  id: l.id, title: l.title, topic: l.topic, venue: l.venue, host: l.host,
+  next: l.next, startsAt: l.starts_at, durationMinutes: l.duration_minutes,
+  capacity: l.capacity, price: l.price, note: l.note, hidden: !!l.hidden,
+  createdAt: l.created_at, updatedAt: l.updated_at,
+});
+
+const handleLecturesList = async (req, env) => {
+  const url = new URL(req.url);
+  const includeHidden = url.searchParams.get("includeHidden") === "1";
+  const where = includeHidden ? "1=1" : "hidden = 0";
+  const { results } = await env.DB.prepare(`SELECT * FROM lectures WHERE ${where} ORDER BY starts_at ASC`).all();
+  return { lectures: results.map(lectureRow) };
+};
+
+const handleLectureGet = async (req, env, id) => {
+  const l = await env.DB.prepare("SELECT * FROM lectures WHERE id = ?").bind(id).first();
+  if (!l) throw new HttpError(404, "강연을 찾을 수 없습니다.");
+  const { results: regs } = await env.DB.prepare(
+    "SELECT id, user_id, user_name, status, created_at FROM lecture_registrations WHERE lecture_id = ? ORDER BY created_at ASC"
+  ).bind(id).all();
+  return { lecture: lectureRow(l), registrations: regs };
+};
+
+const handleLectureCreate = async (req, env) => {
+  const admin = await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const id = body.id || randomId("lec");
+  await env.DB.prepare(
+    `INSERT INTO lectures (id, title, topic, venue, host, next, starts_at, duration_minutes, capacity, price, note, hidden)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id, body.title || "새 강연", body.topic || "", body.venue || "", body.host || "뱅기노자",
+    body.next || "", body.startsAt || null,
+    Number(body.durationMinutes || 90), Number(body.capacity || 30), Number(body.price || 0),
+    body.note || "", body.hidden ? 1 : 0,
+  ).run();
+  await auditWrite(env, admin.email, "lecture.create", `lecture:${id}`);
+  return { id };
+};
+
+const handleLecturePatch = async (req, env, id) => {
+  const admin = await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const map = { title: "title", topic: "topic", venue: "venue", host: "host", next: "next",
+    startsAt: "starts_at", durationMinutes: "duration_minutes", capacity: "capacity",
+    price: "price", note: "note", hidden: "hidden" };
+  const fields = []; const args = [];
+  for (const [k, col] of Object.entries(map)) {
+    if (k in body) { fields.push(`${col} = ?`); args.push(k === "hidden" ? (body[k] ? 1 : 0) : body[k]); }
+  }
+  if (!fields.length) return { ok: true };
+  fields.push("updated_at = ?"); args.push(nowIso(), id);
+  await env.DB.prepare(`UPDATE lectures SET ${fields.join(", ")} WHERE id = ?`).bind(...args).run();
+  await auditWrite(env, admin.email, "lecture.update", `lecture:${id}`, body);
+  return { ok: true };
+};
+
+const handleLectureDelete = async (req, env, id) => {
+  const admin = await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM lectures WHERE id = ?").bind(id).run();
+  await auditWrite(env, admin.email, "lecture.remove", `lecture:${id}`);
+  return { ok: true };
+};
+
+const handleLectureRegister = async (req, env, lectureId) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const lec = await env.DB.prepare("SELECT capacity, price FROM lectures WHERE id = ?").bind(lectureId).first();
+  if (!lec) throw new HttpError(404, "강연을 찾을 수 없습니다.");
+  const existRow = await env.DB.prepare(
+    "SELECT id FROM lecture_registrations WHERE lecture_id = ? AND user_id = ? AND status != 'cancelled'"
+  ).bind(lectureId, user.id).first();
+  if (existRow) throw new HttpError(409, "이미 신청한 강연입니다.");
+  const countRow = await env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM lecture_registrations WHERE lecture_id = ? AND status IN ('pending_payment','confirmed')"
+  ).bind(lectureId).first();
+  const active = Number(countRow?.c || 0);
+  const status = active >= Number(lec.capacity || 0) ? "waitlist" : (Number(lec.price || 0) === 0 ? "confirmed" : "pending_payment");
+  const regId = randomId("reg");
+  await env.DB.prepare(
+    `INSERT INTO lecture_registrations (id, lecture_id, user_id, user_name, user_email, user_phone, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(regId, lectureId, user.id, user.name, user.email, body.phone || null, status).run();
+  return { id: regId, status };
+};
+
+// ──────── 투어 ────────────────────────────────────────────
+
+const tourRow = (t) => t && ({
+  id: t.id, title: t.title, desc: t.description, duration: t.duration,
+  group: t.group_size, level: t.level, next: t.next, startsAt: t.starts_at,
+  durationMinutes: t.duration_minutes, capacity: t.capacity, price: t.price,
+  hidden: !!t.hidden, createdAt: t.created_at, updatedAt: t.updated_at,
+});
+
+const handleToursList = async (req, env) => {
+  const url = new URL(req.url);
+  const includeHidden = url.searchParams.get("includeHidden") === "1";
+  const where = includeHidden ? "1=1" : "hidden = 0";
+  const { results } = await env.DB.prepare(`SELECT * FROM tours WHERE ${where} ORDER BY starts_at ASC`).all();
+  return { tours: results.map(tourRow) };
+};
+
+const handleTourGet = async (req, env, id) => {
+  const t = await env.DB.prepare("SELECT * FROM tours WHERE id = ?").bind(id).first();
+  if (!t) throw new HttpError(404, "투어를 찾을 수 없습니다.");
+  const { results: regs } = await env.DB.prepare(
+    "SELECT id, user_id, user_name, qty, status, created_at FROM tour_reservations WHERE tour_id = ? ORDER BY created_at ASC"
+  ).bind(id).all();
+  return { tour: tourRow(t), reservations: regs };
+};
+
+const handleTourCreate = async (req, env) => {
+  const admin = await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const id = body.id || randomId("tour");
+  await env.DB.prepare(
+    `INSERT INTO tours (id, title, description, duration, group_size, level, next, starts_at, duration_minutes, capacity, price, hidden)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id, body.title || "새 투어", body.desc || "", body.duration || "",
+    body.group || "", body.level || "", body.next || "", body.startsAt || null,
+    Number(body.durationMinutes || 240), Number(body.capacity || 8), Number(body.price || 0),
+    body.hidden ? 1 : 0,
+  ).run();
+  await auditWrite(env, admin.email, "tour.create", `tour:${id}`);
+  return { id };
+};
+
+const handleTourPatch = async (req, env, id) => {
+  const admin = await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const map = { title: "title", desc: "description", duration: "duration", group: "group_size",
+    level: "level", next: "next", startsAt: "starts_at", durationMinutes: "duration_minutes",
+    capacity: "capacity", price: "price", hidden: "hidden" };
+  const fields = []; const args = [];
+  for (const [k, col] of Object.entries(map)) {
+    if (k in body) { fields.push(`${col} = ?`); args.push(k === "hidden" ? (body[k] ? 1 : 0) : body[k]); }
+  }
+  if (!fields.length) return { ok: true };
+  fields.push("updated_at = ?"); args.push(nowIso(), id);
+  await env.DB.prepare(`UPDATE tours SET ${fields.join(", ")} WHERE id = ?`).bind(...args).run();
+  await auditWrite(env, admin.email, "tour.update", `tour:${id}`, body);
+  return { ok: true };
+};
+
+const handleTourDelete = async (req, env, id) => {
+  const admin = await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM tours WHERE id = ?").bind(id).run();
+  await auditWrite(env, admin.email, "tour.remove", `tour:${id}`);
+  return { ok: true };
+};
+
+// ──────── 알림 / 좋아요 / 북마크 / 신고 ───────────────────
+
+const handleNotificationsList = async (req, env) => {
+  const user = await requireUser(req, env);
+  const { results } = await env.DB.prepare(
+    "SELECT id, type, message, from_name, post_id, post_title, lecture_id, tour_id, read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50"
+  ).bind(user.id).all();
+  return { notifications: results.map((n) => ({ ...n, read: !!n.read })) };
+};
+
+const handleNotificationsMarkRead = async (req, env, id) => {
+  const user = await requireUser(req, env);
+  if (id === "all") {
+    await env.DB.prepare("UPDATE notifications SET read = 1 WHERE user_id = ?").bind(user.id).run();
+  } else {
+    await env.DB.prepare("UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?").bind(id, user.id).run();
+  }
+  return { ok: true };
+};
+
+const handleLikeToggle = async (req, env, postId) => {
+  const user = await requireUser(req, env);
+  const exists = await env.DB.prepare("SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?").bind(postId, user.id).first();
+  if (exists) {
+    await env.DB.prepare("DELETE FROM post_likes WHERE post_id = ? AND user_id = ?").bind(postId, user.id).run();
+    return { liked: false };
+  }
+  await env.DB.prepare("INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)").bind(postId, user.id).run();
+  return { liked: true };
+};
+
+const handleLikesList = async (req, env, postId) => {
+  const { results } = await env.DB.prepare("SELECT user_id FROM post_likes WHERE post_id = ?").bind(postId).all();
+  return { likes: results.map((r) => r.user_id), count: results.length };
+};
+
+const handleBookmarkToggle = async (req, env, postId) => {
+  const user = await requireUser(req, env);
+  const exists = await env.DB.prepare("SELECT 1 FROM bookmarks WHERE post_id = ? AND user_id = ?").bind(postId, user.id).first();
+  if (exists) {
+    await env.DB.prepare("DELETE FROM bookmarks WHERE post_id = ? AND user_id = ?").bind(postId, user.id).run();
+    return { bookmarked: false };
+  }
+  await env.DB.prepare("INSERT INTO bookmarks (user_id, post_id) VALUES (?, ?)").bind(user.id, postId).run();
+  return { bookmarked: true };
+};
+
+const handleBookmarksMine = async (req, env) => {
+  const user = await requireUser(req, env);
+  const { results } = await env.DB.prepare(
+    `SELECT p.id, p.title, p.category, p.author, p.created_at
+     FROM bookmarks b JOIN posts p ON p.id = b.post_id
+     WHERE b.user_id = ? ORDER BY b.created_at DESC`
+  ).bind(user.id).all();
+  return { bookmarks: results };
+};
+
+const handleReportCreate = async (req, env) => {
+  const user = await getCurrentUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const id = randomId("rpt");
+  await env.DB.prepare(
+    `INSERT INTO reports (id, post_id, post_title, reporter_id, reporter_name, reason, status)
+     VALUES (?, ?, ?, ?, ?, ?, 'open')`
+  ).bind(id, body.postId || null, body.postTitle || "", user?.id || null, user?.name || body.reporterName || "익명", body.reason || "").run();
+  return { id };
+};
+
+const handleReportsList = async (req, env) => {
+  await requireAdmin(req, env);
+  const url = new URL(req.url);
+  const filter = url.searchParams.get("status");
+  const where = filter ? "status = ?" : "1=1";
+  const args = filter ? [filter] : [];
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM reports WHERE ${where} ORDER BY created_at DESC LIMIT 200`
+  ).bind(...args).all();
+  return { reports: results };
+};
+
+const handleReportPatch = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  await env.DB.prepare("UPDATE reports SET status = ?, updated_at = ? WHERE id = ?").bind(body.status || "open", nowIso(), id).run();
+  return { ok: true };
+};
+
 // ──────── 라우터 ──────────────────────────────────────────
 
 const route = async (req, env) => {
@@ -443,6 +758,58 @@ const route = async (req, env) => {
   if (req.method === "POST" && p === "/api/media/upload") return json(await handleMediaUpload(req, env));
   if ((g = m(/^\/api\/media\/(.+)$/))) {
     if (req.method === "GET") return await handleMediaGet(req, env, g[1]);
+  }
+
+  // 관리자: 회원
+  if (req.method === "GET" && p === "/api/admin/users") return json(await handleAdminUsersList(req, env));
+  if ((g = m(/^\/api\/admin\/users\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleAdminUserPatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleAdminUserDelete(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/admin/audit") return json(await handleAdminAuditList(req, env));
+
+  // 강연
+  if (req.method === "GET" && p === "/api/lectures") return json(await handleLecturesList(req, env));
+  if (req.method === "POST" && p === "/api/lectures") return json(await handleLectureCreate(req, env), { status: 201 });
+  if ((g = m(/^\/api\/lectures\/([\w-]+)$/))) {
+    if (req.method === "GET") return json(await handleLectureGet(req, env, g[1]));
+    if (req.method === "PATCH") return json(await handleLecturePatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleLectureDelete(req, env, g[1]));
+  }
+  if ((g = m(/^\/api\/lectures\/([\w-]+)\/register$/))) {
+    if (req.method === "POST") return json(await handleLectureRegister(req, env, g[1]), { status: 201 });
+  }
+
+  // 투어
+  if (req.method === "GET" && p === "/api/tours") return json(await handleToursList(req, env));
+  if (req.method === "POST" && p === "/api/tours") return json(await handleTourCreate(req, env), { status: 201 });
+  if ((g = m(/^\/api\/tours\/([\w-]+)$/))) {
+    if (req.method === "GET") return json(await handleTourGet(req, env, g[1]));
+    if (req.method === "PATCH") return json(await handleTourPatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleTourDelete(req, env, g[1]));
+  }
+
+  // 알림
+  if (req.method === "GET" && p === "/api/notifications") return json(await handleNotificationsList(req, env));
+  if ((g = m(/^\/api\/notifications\/([\w-]+)\/read$/))) {
+    if (req.method === "POST") return json(await handleNotificationsMarkRead(req, env, g[1]));
+  }
+
+  // 좋아요 / 북마크
+  if ((g = m(/^\/api\/posts\/(\d+)\/likes$/))) {
+    if (req.method === "GET") return json(await handleLikesList(req, env, Number(g[1])));
+    if (req.method === "POST") return json(await handleLikeToggle(req, env, Number(g[1])));
+  }
+  if ((g = m(/^\/api\/posts\/(\d+)\/bookmark$/))) {
+    if (req.method === "POST") return json(await handleBookmarkToggle(req, env, Number(g[1])));
+  }
+  if (req.method === "GET" && p === "/api/me/bookmarks") return json(await handleBookmarksMine(req, env));
+
+  // 신고
+  if (req.method === "POST" && p === "/api/reports") return json(await handleReportCreate(req, env), { status: 201 });
+  if (req.method === "GET" && p === "/api/admin/reports") return json(await handleReportsList(req, env));
+  if ((g = m(/^\/api\/admin\/reports\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleReportPatch(req, env, g[1]));
   }
 
   return json({ error: "Not found" }, { status: 404 });

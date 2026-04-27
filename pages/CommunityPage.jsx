@@ -764,6 +764,19 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
 
   React.useEffect(() => {
     setCommentsList(window.BGNJ_COMMUNITY.getComments(post.id));
+    // 서버 게시글이면 서버에서 댓글 동기화
+    if (post._remote) {
+      window.BGNJ_COMMUNITY.refreshComments?.(post.id).then(() => {
+        setCommentsList(window.BGNJ_COMMUNITY.getComments(post.id));
+      });
+    }
+    const onRefreshComments = (e) => {
+      if (e.detail && String(e.detail.postId) === String(post.id)) {
+        setCommentsList(window.BGNJ_COMMUNITY.getComments(post.id));
+      }
+    };
+    window.addEventListener('bgnj-comments-refresh', onRefreshComments);
+    return () => window.removeEventListener('bgnj-comments-refresh', onRefreshComments);
   }, [post.id]);
 
   React.useEffect(() => {

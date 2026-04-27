@@ -626,18 +626,57 @@ window.BGNJ_COMMUNITY = {
     if (!post) return null;
     return this.updatePost(postId, { views: (post.views || 0) + 1 });
   },
+  // 서버 댓글 캐시 (postId → 배열). refreshComments가 채운다.
+  _commentsCache: {},
+  async refreshComments(postId) {
+    try {
+      const { comments } = await window.BGNJ_API.posts.comments.list(postId);
+      this._commentsCache[String(postId)] = (comments || []).map((c) => ({
+        id: c.id,
+        postId: c.post_id,
+        parentId: c.parent_id,
+        body: c.body,
+        authorId: c.author_id,
+        author: c.author,
+        createdAt: c.created_at,
+      }));
+      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}
+    } catch {}
+    return this._commentsCache[String(postId)] || [];
+  },
   getComments(postId) {
+    // 서버 게시글이면 서버 캐시 우선, 로컬 게시글이면 로컬 저장소.
+    const post = this.getPost(postId);
+    if (post && post._remote) return (this._commentsCache[String(postId)] || []).slice();
     return (window.BGNJ_STORES.comments[String(postId)] || []).slice();
   },
   saveComments(postId, comments) {
     window.BGNJ_STORES.comments[String(postId)] = comments.slice();
     window.BGNJ_SAVE.comments();
     const post = this.getPost(postId);
-    if (post) {
+    if (post && !post._remote) {
       this.updatePost(postId, { replies: comments.length });
     }
   },
+  async addCommentRemote(postId, payload) {
+    await window.BGNJ_API.posts.comments.create(postId, { body: payload.body, parentId: payload.parentId });
+    await this.refreshComments(postId);
+    if (payload.authorId) {
+      try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
+    }
+    return this._commentsCache[String(postId)] || [];
+  },
   addComment(postId, payload) {
+    const post = this.getPost(postId);
+    if (post && post._remote) {
+      // 서버 게시글 — 비동기로 위임 (UI에서 await 가능). 동기 호출자는 즉시 캐시에 prepend로 임시 표시.
+      const optimistic = { ...payload, id: `tmp-${Date.now()}`, createdAt: new Date().toISOString() };
+      const arr = this._commentsCache[String(postId)] || [];
+      this._commentsCache[String(postId)] = [...arr, optimistic];
+      this.addCommentRemote(postId, payload).catch(() => {});
+      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}
+      return this._commentsCache[String(postId)];
+    }
     const nextComments = [...this.getComments(postId), payload];
     this.saveComments(postId, nextComments);
     if (payload.authorId) {
@@ -646,6 +685,14 @@ window.BGNJ_COMMUNITY = {
     return nextComments;
   },
   deleteComment(postId, commentId) {
+    const post = this.getPost(postId);
+    if (post && post._remote) {
+      // 서버 댓글 삭제 API는 아직 없음 — 로컬 캐시에서만 제거(다음 새로고침 시 복원될 수 있음).
+      const arr = this._commentsCache[String(postId)] || [];
+      this._commentsCache[String(postId)] = arr.filter((c) => String(c.id) !== String(commentId));
+      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}
+      return this._commentsCache[String(postId)];
+    }
     const nextComments = this.getComments(postId).filter((comment) => String(comment.id) !== String(commentId));
     this.saveComments(postId, nextComments);
     return nextComments;

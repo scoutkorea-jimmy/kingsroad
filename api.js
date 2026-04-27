@@ -95,5 +95,63 @@
       },
       url: (key) => `${BASE}/media/${key}`,
     },
+
+    // ── 강연 ──
+    lectures: {
+      list: ({ includeHidden } = {}) => request("GET", `/lectures${includeHidden ? "?includeHidden=1" : ""}`),
+      get: (id) => request("GET", `/lectures/${id}`),
+      create: (payload) => request("POST", "/lectures", payload),
+      update: (id, patch) => request("PATCH", `/lectures/${id}`, patch),
+      remove: (id) => request("DELETE", `/lectures/${id}`),
+      register: (id, { phone } = {}) => request("POST", `/lectures/${id}/register`, { phone }),
+    },
+
+    // ── 투어 ──
+    tours: {
+      list: ({ includeHidden } = {}) => request("GET", `/tours${includeHidden ? "?includeHidden=1" : ""}`),
+      get: (id) => request("GET", `/tours/${id}`),
+      create: (payload) => request("POST", "/tours", payload),
+      update: (id, patch) => request("PATCH", `/tours/${id}`, patch),
+      remove: (id) => request("DELETE", `/tours/${id}`),
+    },
+
+    // ── 알림 ──
+    notifications: {
+      list: () => request("GET", "/notifications"),
+      markRead: (id) => request("POST", `/notifications/${id}/read`),
+      markAllRead: () => request("POST", "/notifications/all/read"),
+    },
+
+    // ── 좋아요 / 북마크 ──
+    likes: {
+      list: (postId) => request("GET", `/posts/${postId}/likes`),
+      toggle: (postId) => request("POST", `/posts/${postId}/likes`),
+    },
+    bookmarks: {
+      toggle: (postId) => request("POST", `/posts/${postId}/bookmark`),
+      mine: () => request("GET", "/me/bookmarks"),
+    },
+
+    // ── 신고 ──
+    reports: {
+      create: ({ postId, postTitle, reason, reporterName }) =>
+        request("POST", "/reports", { postId, postTitle, reason, reporterName }),
+    },
+
+    // ── 관리자 ──
+    admin: {
+      users: {
+        list: ({ q } = {}) => request("GET", `/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`),
+        update: (id, patch) => request("PATCH", `/admin/users/${id}`, patch),
+        remove: (id) => request("DELETE", `/admin/users/${id}`),
+      },
+      audit: {
+        list: ({ limit } = {}) => request("GET", `/admin/audit${limit ? `?limit=${limit}` : ""}`),
+      },
+      reports: {
+        list: ({ status } = {}) => request("GET", `/admin/reports${status ? `?status=${status}` : ""}`),
+        update: (id, patch) => request("PATCH", `/admin/reports/${id}`, patch),
+      },
+    },
   };
 })();
