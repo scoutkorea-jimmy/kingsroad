@@ -171,10 +171,15 @@ const handleAuthSignup = async (req, env) => {
 
   const { hash, salt } = await hashPassword(password);
   const id = randomId("u");
+  // 부트스트랩 admin: 환경변수에 지정된 이메일이면 자동 관리자 권한 부여.
+  // (한 번만 발생 — 같은 이메일로 두 번째 가입 시도는 위 exists 체크에 걸림)
+  const bootstrapEmail = String(env.ADMIN_BOOTSTRAP_EMAIL || "").trim().toLowerCase();
+  const isAdmin = bootstrapEmail && email === bootstrapEmail ? 1 : 0;
+  const gradeId = isAdmin ? "admin" : "member";
   await env.DB.prepare(
     `INSERT INTO users (id, email, name, password_hash, password_salt, is_admin, grade_id, consents_json, created_at)
-     VALUES (?, ?, ?, ?, ?, 0, 'member', ?, ?)`
-  ).bind(id, email, name, hash, salt, JSON.stringify(body.consents || {}), nowIso()).run();
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, email, name, hash, salt, isAdmin, gradeId, JSON.stringify(body.consents || {}), nowIso()).run();
 
   const token = newSessionToken();
   const ttl = Number(env.SESSION_TTL_SECONDS || 2592000);
@@ -182,7 +187,7 @@ const handleAuthSignup = async (req, env) => {
     `INSERT INTO sessions (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)`
   ).bind(token, id, Date.now() + ttl * 1000, nowIso()).run();
 
-  return { token, ttl, user: { id, email, name, isAdmin: false, gradeId: "member" } };
+  return { token, ttl, user: { id, email, name, isAdmin: !!isAdmin, gradeId } };
 };
 
 const handleAuthLogin = async (req, env) => {

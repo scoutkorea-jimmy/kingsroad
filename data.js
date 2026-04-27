@@ -320,45 +320,65 @@ window.BGNJ_DB = {
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
+// 인증은 Cloudflare Worker(BGNJ_API)에 위임된다.
+// 세션 쿠키(bgnj_session, HttpOnly)는 서버가 관리하고, 클라이언트는 사용자 메타를
+// localStorage('bgnj_session_user')에 캐시해 첫 페인트 속도를 확보한다.
+// API 호출 실패 시에는 캐시를 유지(네트워크 단절 시 사용자 경험 보존).
 window.BGNJ_AUTH = {
-  hashPassword,
+  hashPassword, // legacy — 외부 코드 호환용. 신규 비밀번호 검증에는 사용되지 않음.
+  _SESSION_KEY: 'bgnj_session_user',
+  _readCache() {
+    try { const raw = localStorage.getItem(this._SESSION_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  },
+  _writeCache(user) {
+    try {
+      if (user) localStorage.setItem(this._SESSION_KEY, JSON.stringify(user));
+      else localStorage.removeItem(this._SESSION_KEY);
+    } catch {}
+  },
   getSessionUser() {
-    return window.BGNJ_STORES.session || null;
+    return this._readCache();
   },
   listUsers() {
     return window.BGNJ_STORES.users.slice();
   },
-  signOut() {
-    window.BGNJ_STORES.session = null;
-    window.BGNJ_SAVE.session();
-    return null;
+  // 페이지 진입 시 1회 호출 — 서버 쿠키로 진짜 세션 검증 후 캐시 갱신.
+  async refreshSession() {
+    try {
+      const { user } = await window.BGNJ_API.me();
+      this._writeCache(user || null);
+      return user || null;
+    } catch {
+      return this._readCache();
+    }
   },
-  signIn({ email, password }) {
-    const normalizedEmail = String(email || "").trim().toLowerCase();
-    const passwordHash = hashPassword(password);
-    const found = window.BGNJ_STORES.users.find((user) => user.email === normalizedEmail);
-    if (!found) {
-      return { ok: false, message: "등록되지 않은 이메일입니다." };
+  async signIn({ email, password }) {
+    try {
+      const { user } = await window.BGNJ_API.login({ email, password });
+      this._writeCache(user);
+      return { ok: true, user };
+    } catch (err) {
+      return { ok: false, message: err?.body?.error || err?.message || '로그인 중 오류가 발생했습니다.' };
     }
-    if (found.passwordHash !== passwordHash) {
-      return { ok: false, message: "비밀번호가 올바르지 않습니다." };
+  },
+  async signUp(payload) {
+    try {
+      const { user } = await window.BGNJ_API.signup({
+        email: payload.email,
+        name: payload.name,
+        password: payload.password,
+        consents: payload.consents,
+      });
+      this._writeCache(user);
+      return { ok: true, user };
+    } catch (err) {
+      return { ok: false, message: err?.body?.error || err?.message || '회원가입 중 오류가 발생했습니다.' };
     }
-    if (found.suspended) {
-      return { ok: false, message: `이 계정은 정지 상태입니다.${found.suspendedReason ? ` (${found.suspendedReason})` : ''}` };
-    }
-    const sessionUser = {
-      id: found.id,
-      name: found.name,
-      email: found.email,
-      isAdmin: found.isAdmin,
-      gradeId: found.gradeId,
-      profile: found.profile,
-      consents: found.consents,
-      joinedAt: found.joinedAt,
-    };
-    window.BGNJ_STORES.session = sessionUser;
-    window.BGNJ_SAVE.session();
-    return { ok: true, user: sessionUser };
+  },
+  async signOut() {
+    try { await window.BGNJ_API.logout(); } catch {}
+    this._writeCache(null);
+    return null;
   },
 
   // ── 관리자 운영 ─────────────────────────────────────────────

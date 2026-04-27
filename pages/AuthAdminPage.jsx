@@ -1,9 +1,7 @@
 // 로그인, 회원가입, 관리자 페이지
 const AUTH_CONFIG = {
-  mode: "local-first",
-  adminEmail: "admin@admin.admin",
-  adminPassword: "admin",
-  note: "현재 인증은 GitHub Pages 정적 배포에 맞춘 local-first 구조입니다. 회원 정보와 세션은 브라우저에 저장되지만, 이후 외부 DB로 확장할 수 있도록 계정 저장소와 세션 저장소를 분리해두었습니다.",
+  mode: "cloudflare-workers",
+  note: "회원가입과 로그인은 Cloudflare Workers + D1으로 처리됩니다. 세션은 HttpOnly 쿠키로 유지되며 비밀번호는 PBKDF2-SHA256(100k iter)로 해시되어 저장됩니다.",
 };
 
 const LoginPage = ({ go, setUser }) => {
@@ -14,9 +12,11 @@ const LoginPage = ({ go, setUser }) => {
     gender: "", interest: "", recommender: "",
     consentTerms: false, consentMarketing: false, consentThirdParty: false,
   });
+  const [submitting, setSubmitting] = React.useState(false);
   const set = (k, v) => setForm({ ...form, [k]: v });
 
-  const submit = () => {
+  const submit = async () => {
+    if (submitting) return;
     const normalizedEmail = (form.email || "").trim().toLowerCase();
     const password = form.password || "";
 
@@ -49,36 +49,41 @@ const LoginPage = ({ go, setUser }) => {
       }
     }
 
-    const authResult = mode === "login"
-      ? window.BGNJ_AUTH.signIn({ email: normalizedEmail, password })
-      : window.BGNJ_AUTH.signUp({
-          name: form.name.trim(),
-          email: normalizedEmail,
-          password,
-          profile: {
-            birthdate: form.birthdate,
-            phone: form.phone,
-            zip: form.zip,
-            addr1: form.addr1,
-            addr2: form.addr2,
-            gender: form.gender,
-            interest: form.interest,
-            recommender: form.recommender,
-          },
-          consents: {
-            terms: true,
-            marketing: form.consentMarketing,
-            thirdParty: form.consentThirdParty,
-          },
-        });
+    setSubmitting(true);
+    try {
+      const authResult = mode === "login"
+        ? await window.BGNJ_AUTH.signIn({ email: normalizedEmail, password })
+        : await window.BGNJ_AUTH.signUp({
+            name: form.name.trim(),
+            email: normalizedEmail,
+            password,
+            profile: {
+              birthdate: form.birthdate,
+              phone: form.phone,
+              zip: form.zip,
+              addr1: form.addr1,
+              addr2: form.addr2,
+              gender: form.gender,
+              interest: form.interest,
+              recommender: form.recommender,
+            },
+            consents: {
+              terms: true,
+              marketing: form.consentMarketing,
+              thirdParty: form.consentThirdParty,
+            },
+          });
 
-    if (!authResult.ok) {
-      alert(authResult.message);
-      return;
+      if (!authResult.ok) {
+        alert(authResult.message);
+        return;
+      }
+
+      setUser(authResult.user);
+      go(authResult.user.isAdmin ? "admin" : "home");
+    } finally {
+      setSubmitting(false);
     }
-
-    setUser(authResult.user);
-    go(authResult.user.isAdmin ? "admin" : "home");
   };
 
   return (
@@ -97,14 +102,11 @@ const LoginPage = ({ go, setUser }) => {
           <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginTop:24}}>BANGINOJA · 王사들</div>
         </div>
         <div style={{maxWidth:480}}>
-          <div className="card" style={{padding:'14px 16px', marginBottom:24, background:'rgba(212,175,55,0.05)'}}>
-            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>AUTH STATUS</div>
-            <p className="dim" style={{fontSize:12, lineHeight:1.8, marginBottom:10}}>
+          <div className="card" style={{padding:'14px 16px', marginBottom:24, background:'rgba(59,130,246,0.05)'}}>
+            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>AUTH STATUS · CLOUDFLARE</div>
+            <p className="dim" style={{fontSize:12, lineHeight:1.8, margin:0}}>
               {AUTH_CONFIG.note}
             </p>
-            <div className="mono dim-2" style={{fontSize:11}}>
-              관리자 임시 계정: {AUTH_CONFIG.adminEmail} / {AUTH_CONFIG.adminPassword}
-            </div>
           </div>
           <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:16}}>
             {mode === "login" ? "— WELCOME BACK" : "— JOIN US"}
@@ -289,8 +291,8 @@ const LoginPage = ({ go, setUser }) => {
               <button type="button" className="btn-ghost" style={{color:'var(--gold)'}}>비밀번호 찾기</button>
             </div>
           )}
-            <button type="submit" className="btn btn-gold btn-block">
-              {mode === "login" ? "입장하기 →" : "회원가입 →"}
+            <button type="submit" className="btn btn-gold btn-block" disabled={submitting} aria-busy={submitting}>
+              {submitting ? "처리 중..." : (mode === "login" ? "입장하기 →" : "회원가입 →")}
             </button>
           </form>
 

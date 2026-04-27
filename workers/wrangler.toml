@@ -15,3 +15,5 @@ bucket_name = "banginoja-media"
 [vars]
 ALLOWED_ORIGINS = "https://bgnj.net,https://www.bgnj.net,https://scoutkorea-jimmy.github.io,http://localhost:8080,http://localhost:3000"
 SESSION_TTL_SECONDS = "2592000"
+# 이 이메일로 회원가입하면 자동으로 is_admin=1로 등록된다 (한 번만 가능 — 두 번째 가입 시도는 409).
+ADMIN_BOOTSTRAP_EMAIL = "admin@admin.admin"
