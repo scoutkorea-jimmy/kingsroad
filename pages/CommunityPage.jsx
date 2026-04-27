@@ -287,6 +287,32 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     return window.WSD_COMMUNITY.listPosts();
   }, [refreshKey]);
 
+  // ─── 모든 hook은 early return 전에 선언 ───────────────────────────────
+  const visibleCats = categories.filter(c => userLevel >= (c.minLevel ?? 0));
+  const currentBoard = categories.find(c => c.id === tab);
+  const boardPrefixes = currentBoard?.prefixes || [];
+
+  React.useEffect(() => { setActivePrefix(""); }, [tab]);
+
+  const filtered = React.useMemo(() => {
+    const q = search.toLowerCase();
+    const base = allPosts.filter(p => {
+      const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category);
+      if (cat && userLevel < (cat.minLevel ?? 0)) return false;
+      if (tab !== "all" && (p.categoryId !== tab && cat?.id !== tab)) return false;
+      if (q && !p.title.toLowerCase().includes(q) && !String(p.body?.text || '').toLowerCase().includes(q)) return false;
+      if (activePrefix && p.prefix !== activePrefix) return false;
+      return true;
+    });
+    if (sort === "views") return [...base].sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
+    if (sort === "replies") return [...base].sort((a, b) => (b.replies ?? 0) - (a.replies ?? 0));
+    if (sort === "likes") return [...base].sort((a, b) => (Array.isArray(b.likes) ? b.likes.length : 0) - (Array.isArray(a.likes) ? a.likes.length : 0));
+    return base;
+  }, [allPosts, categories, userLevel, tab, search, sort, activePrefix]);
+
+  React.useEffect(() => { setPage(1); }, [tab, search, sort, activePrefix]);
+  // ─────────────────────────────────────────────────────────────────────
+
   if (writing) {
     return <PostCompose
       user={user}
@@ -316,32 +342,6 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       onEdit={(nextPost) => setWriting(nextPost)}
     />;
   }
-
-  const visibleCats = categories.filter(c => userLevel >= (c.minLevel ?? 0));
-  const currentBoard = categories.find(c => c.id === tab);
-  const boardPrefixes = currentBoard?.prefixes || [];
-
-  // 탭이 바뀌면 말머리 필터 초기화
-  React.useEffect(() => { setActivePrefix(""); }, [tab]);
-
-  const filtered = React.useMemo(() => {
-    const q = search.toLowerCase();
-    const base = allPosts.filter(p => {
-      const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category);
-      if (cat && userLevel < (cat.minLevel ?? 0)) return false;
-      if (tab !== "all" && (p.categoryId !== tab && cat?.id !== tab)) return false;
-      if (q && !p.title.toLowerCase().includes(q) && !String(p.body?.text || '').toLowerCase().includes(q)) return false;
-      if (activePrefix && p.prefix !== activePrefix) return false;
-      return true;
-    });
-    if (sort === "views") return [...base].sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
-    if (sort === "replies") return [...base].sort((a, b) => (b.replies ?? 0) - (a.replies ?? 0));
-    if (sort === "likes") return [...base].sort((a, b) => (Array.isArray(b.likes) ? b.likes.length : 0) - (Array.isArray(a.likes) ? a.likes.length : 0));
-    return base;
-  }, [allPosts, categories, userLevel, tab, search, sort, activePrefix]);
-
-  // 검색어/탭/정렬이 바뀌면 페이지를 1로 되돌림
-  React.useEffect(() => { setPage(1); }, [tab, search, sort, activePrefix]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
