@@ -6,3 +6,9 @@ node_modules/
 *.log
 .vscode/
 .idea/
+
+# Cloudflare wrangler 로컬 캐시
+.wrangler/
+**/.wrangler/
+wrangler-account.json
+.dev.vars
