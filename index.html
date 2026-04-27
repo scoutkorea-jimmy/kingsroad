@@ -50,6 +50,24 @@
 <script type="text/babel" src="pages/MyPage.jsx"></script>
 
 <script type="text/babel">
+// 전체 앱 에러 바운더리 — 흰 화면 방지
+class AppErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(err) { return { error: err }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{padding:40, fontFamily:'monospace', color:'#1e293b', background:'#eff6ff', minHeight:'100vh'}}>
+          <h2 style={{color:'#dc2626', marginBottom:12}}>⚠ 렌더링 오류</h2>
+          <pre style={{whiteSpace:'pre-wrap', fontSize:12, color:'#334155'}}>{String(this.state.error)}</pre>
+          <button onClick={() => this.setState({error:null})} style={{marginTop:16, padding:'8px 16px', cursor:'pointer'}}>다시 시도</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "lineStyle": "outline",
   "intensity": 1,
@@ -181,7 +199,7 @@ const App = () => {
 };
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App/>);
+root.render(<AppErrorBoundary><App/></AppErrorBoundary>);
 </script>
 </body>
 </html>

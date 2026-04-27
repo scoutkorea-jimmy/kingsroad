@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.WSD_VERSION = {
-  version: "00.024.000",
+  version: "00.025.000",
   build: "2026.04.27",
   channel: "preview",
 };

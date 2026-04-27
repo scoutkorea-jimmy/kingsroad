@@ -124,12 +124,18 @@ const HomePage = ({ go }) => {
               }}>
                 지도를 클릭해 여행지를 탐색하세요
               </div>
-              <KoreaMap
-                onSelect={(dest) => setSelectedDest(
-                  selectedDest?.id === dest.id ? null : dest
-                )}
-                selected={selectedDest?.id}
-              />
+              {typeof KoreaMap === 'function' ? (
+                <KoreaMap
+                  onSelect={(dest) => setSelectedDest(
+                    selectedDest?.id === dest.id ? null : dest
+                  )}
+                  selected={selectedDest?.id}
+                />
+              ) : (
+                <div style={{height:400, display:'grid', placeItems:'center', color:'var(--ink-3)', fontSize:13}}>
+                  지도 로딩 중...
+                </div>
+              )}
               {selectedDest && (
                 <div style={{
                   marginTop:12, padding:'16px 20px',
