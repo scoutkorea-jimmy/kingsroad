@@ -110,15 +110,12 @@ const LoginPage = ({ go, setUser }) => {
             {mode === "login" ? "— WELCOME BACK" : "— JOIN US"}
           </div>
           <h2 style={{fontFamily:'var(--font-serif)', fontSize:48, fontWeight:500, lineHeight:1.15, marginBottom:20}}>
-            다섯 봉우리 아래<br/>
-            <span className="gold" style={{fontStyle:'italic'}}>왕사들</span>이 되다
+            뱅기 타고<br/>
+            <span className="gold" style={{fontStyle:'italic'}}>뱅기노자</span>가 되다
           </h2>
           <p className="dim" style={{fontSize:15, lineHeight:1.9}}>
-            왕사들은 단순 구독 플랫폼이 아닙니다. 질문하는 독자, 답사하는 독자, 쓰는 독자들이 모인 광장입니다. 매달 새로운 칼럼과 답사가 이어집니다.
+            뱅기노자는 단순 여행 정보 사이트가 아닙니다. 함께 떠나고, 함께 걷고, 함께 이야기하는 여행자들의 광장입니다. 매달 새로운 답사와 칼럼이 이어집니다.
           </p>
-        </div>
-        <div style={{opacity:0.5}}>
-          <Ilwolobongdo lineStyle="dashed" intensity={0.6} interactive={false} className="ilwol-svg"/>
         </div>
       </div>
       {/* Right: form */}
@@ -764,7 +761,7 @@ const FEATURE_DOMAINS = [
         status: "구현됨",
         summary: "첫 방문자에게 사이트 정체성과 최신 콘텐츠를 가장 빠르게 보여주는 입구.",
         elements: [
-          "히어로(일월오봉도 SVG, 슬로건, CTA) — 레이아웃 토글 center / split / fullbleed",
+          "히어로(메인 비주얼, 슬로건, CTA) — 레이아웃 토글 center / split / fullbleed",
           "공지사항(`data.notices` 상위 2건 강조 + 행 리스트)",
           "왕사남 강연 일정(3열 카드)",
           "투어 프로그램(2열 카드)",
@@ -775,7 +772,7 @@ const FEATURE_DOMAINS = [
         ],
         techSpec: "`HomePage` 단일 컴포넌트. 데이터는 `WANGSADEUL_DATA` 정적 + `WSD_STORES.userColumns` 병합. 레이아웃은 `tweaks.heroLayout`으로 토글.",
         caution: "히어로 통계 수치는 하드코딩이라 실제 운영 수치와 어긋날 수 있음. 운영 화면(대시보드)과 동기화하기 전에는 '데모'로 봐야 함.",
-        issues: ["fullbleed 모드에서 일월오봉도 SVG가 과하게 강조되어 본문 가독성을 해치는 케이스 → radial-gradient 마스크로 완화"],
+        issues: ["fullbleed 모드에서 메인 비주얼이 과하게 강조되어 본문 가독성을 해치는 케이스 → radial-gradient 마스크로 완화"],
       },
       {
         name: "인증 / 계정",

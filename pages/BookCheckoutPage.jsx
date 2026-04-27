@@ -238,7 +238,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
 
               {tab === "소개" && (
                 <div style={{fontFamily:'var(--font-serif)', fontSize:15, lineHeight:1.9, color:'var(--ink-2)'}}>
-                  <p style={{marginBottom:16}}>일월오봉도 앞에 선 자는 누구인가. 이 책은 그 자리에서 무엇을 보았는지를 묻는다.</p>
+                  <p style={{marginBottom:16}}>왕의 자리에 선 자는 누구인가. 이 책은 그 자리에서 무엇을 보았는지를 묻는다.</p>
                   <p style={{marginBottom:16}}>저자 뱅기노자는 15년간 실록과 궁궐을 오가며 쌓아올린 기록을 한 권으로 엮었다. 왕의 자리가 아니라 왕이 바라본 길 — 그 시선의 각도를 오늘의 언어로 재구성한다.</p>
                   <p>총 5부 22장. 조선 27명의 왕 중 11명을 깊이 있게 다룬다.</p>
                 </div>

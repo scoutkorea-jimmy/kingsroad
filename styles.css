@@ -887,22 +887,6 @@ main time, main .section-eyebrow {
 }
 .footer-bottom span { display: inline-block; }
 
-/* ---- Ilwolobongdo SVG ---- */
-.ilwol-svg { display: block; width: 100%; height: auto; overflow: visible; }
-.ilwol-line {
-  fill: none;
-  stroke: var(--gold);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-.ilwol-line-2 {
-  fill: none;
-  stroke: var(--gold-dim);
-  stroke-width: 0.75;
-  vector-effect: non-scaling-stroke;
-}
-.ilwol-fill { fill: var(--gold); opacity: 0.04; }
-
 /* ---- Grid helpers ---- */
 .grid { display: grid; gap: 24px; }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
