@@ -93,7 +93,7 @@ const LoginPage = ({ go, setUser }) => {
         justifyContent:'space-between',
       }}>
         <div>
-          <IlwolMark size={36}/>
+          <BanginojaIcon size={36}/>
           <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginTop:24}}>WANGSADEUL · 王사들</div>
         </div>
         <div style={{maxWidth:480}}>

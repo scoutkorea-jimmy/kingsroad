@@ -485,6 +485,4 @@ const Tweaks = ({ tweaks, setTweaks, visible }) => {
   );
 };
 
-// IlwolMark를 BanginojaIcon으로 교체 — 기존 참조 호환 유지
-const IlwolMark = BanginojaIcon;
-Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell, ScrollToTop, BanginojaIcon, IlwolMark });
+Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell, ScrollToTop, BanginojaIcon });

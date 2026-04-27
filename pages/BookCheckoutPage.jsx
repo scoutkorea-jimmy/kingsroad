@@ -139,7 +139,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
                   </div>
                 </div>
                 <div style={{textAlign:'center'}}>
-                  <IlwolMark size={28}/>
+                  <BanginojaIcon size={28}/>
                 </div>
               </div>
               {/* subtle shadow offset */}
@@ -324,7 +324,7 @@ const CheckoutPage = ({ go, cart, user }) => {
       <div className="section">
         <div className="container" style={{maxWidth:600, textAlign:'center'}}>
           <div style={{marginBottom:40, display:'inline-block'}}>
-            <IlwolMark size={60}/>
+            <BanginojaIcon size={60}/>
           </div>
           <div className="mono gold" style={{fontSize:12, letterSpacing:'0.3em', marginBottom:16}}>ORDER RECEIVED</div>
           <h1 style={{fontFamily:'var(--font-serif)', fontSize:40, fontWeight:500, marginBottom:20}}>
