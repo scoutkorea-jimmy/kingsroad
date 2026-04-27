@@ -64,10 +64,10 @@ const HomePage = ({ go }) => {
                 <span>BANGINOJA · 비행기 타고 놀자</span>
               </div>
               <h1 style={{
-                fontFamily:'var(--font-serif)',
-                fontSize:'clamp(38px, 5vw, 62px)',
-                fontWeight:500,
-                lineHeight:1.12,
+                fontFamily:'var(--font-display)',
+                fontSize:'clamp(44px, 5.5vw, 72px)',
+                fontWeight:900,
+                lineHeight:1.05,
                 letterSpacing:'-0.02em',
                 marginBottom:24,
                 color:'var(--ink)',

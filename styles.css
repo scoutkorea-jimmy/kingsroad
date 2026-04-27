@@ -8,10 +8,39 @@
   font-display: swap;
 }
 
+/* KBL 점프 Regular */
+@font-face {
+  font-family: 'KblJump';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-5@1.0/KBLJump_RTTF.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+/* KBL 점프 Bold */
+@font-face {
+  font-family: 'KblJump';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-5@1.0/KBLJump_BTTF.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+/* KBL 점프 ExtraBold Extended — 히어로·대제목 */
 @font-face {
   font-family: 'KblJumpExtended';
   src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-5@1.0/KBLJump_EB_ExtendedTTF.woff2') format('woff2');
-  font-weight: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+/* KBL 점프 ExtraBold Condensed — 서브제목·배지 */
+@font-face {
+  font-family: 'KblJumpCondensed';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-5@1.0/KBLJump_EB_CondensedTTF.woff2') format('woff2');
+  font-weight: 900;
+  font-display: swap;
+}
+/* KBL Court ExtraBold — 섹션 아이원레터·강조 */
+@font-face {
+  font-family: 'KblCourt';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-5@1.0/KBLCourt_EBTTF.woff2') format('woff2');
+  font-weight: 900;
   font-display: swap;
 }
 
@@ -47,12 +76,14 @@
   --cta-active: #1D4ED8;
 
   --gold-strength: 1;
-  --font-serif: "Noto Serif KR", "Nanum Myeongjo", serif;
-  --font-sans: "Wanted Sans Variable", "Wanted Sans", "Noto Sans KR", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: "IBM Plex Mono", "D2 Coding", monospace;
-  --font-hero: 'KblJumpExtended', "Wanted Sans Variable", sans-serif;
+  /* KBL 폰트 계층 */
+  --font-display: 'KblJumpExtended', 'KblJump', "Wanted Sans Variable", sans-serif; /* 대제목·히어로 */
+  --font-title:   'KblJump', 'KblJumpExtended', "Wanted Sans Variable", sans-serif; /* 소제목·카드 타이틀 */
+  --font-hero:    'KblJumpExtended', "Wanted Sans Variable", sans-serif;
+  --font-serif:   'KblJump', "Noto Serif KR", serif;
+  --font-sans:    "Wanted Sans Variable", "Wanted Sans", "Noto Sans KR", -apple-system, sans-serif;
+  --font-mono:    "IBM Plex Mono", "D2 Coding", monospace;
   --font-reading: var(--font-sans);
-  --font-display: var(--font-sans);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -129,11 +160,14 @@ button, [role="button"], a.nav-link, .nav-link, .footer li button {
   --font-display: 'ChosunIlboMyungjo', 'Noto Serif KR', serif;
 }
 
-main h1, main h2, main h3, main h4,
-main .section-title,
-main .card-title,
-main .ko-serif {
+main h1, main .section-title {
   font-family: var(--font-display);
+  font-weight: 900;
+}
+main h2, main h3, main h4,
+main .card-title, main .ko-serif {
+  font-family: var(--font-title);
+  font-weight: 700;
 }
 main p,
 main article,
@@ -679,11 +713,11 @@ main time, main .section-eyebrow {
   background: var(--gold);
 }
 .section-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 48px;
-  font-weight: 500;
+  font-weight: 900;
   letter-spacing: -0.02em;
-  line-height: 1.15;
+  line-height: 1.12;
   color: var(--ink);
   margin-bottom: 16px;
 }
@@ -716,9 +750,9 @@ main time, main .section-eyebrow {
   background: linear-gradient(180deg, rgba(212,175,55,0.04), transparent);
 }
 .card-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-title);
   font-size: 22px;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -0.01em;
   margin-bottom: 12px;
   color: var(--ink);

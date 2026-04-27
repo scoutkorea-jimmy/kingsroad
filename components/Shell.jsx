@@ -228,7 +228,7 @@ const Brand = ({ onClick }) => (
   </button>
 );
 
-const Nav = ({ route, go, user, onLogout, readFont, setReadFont }) => {
+const Nav = ({ route, go, user, onLogout }) => {
   const items = [
     { key: "home", label: "홈" },
     { key: "community", label: "커뮤니티", subRouteKey: "community" },
@@ -303,19 +303,6 @@ const Nav = ({ route, go, user, onLogout, readFont, setReadFont }) => {
           ))}
         </ul>
         <div className="nav-actions">
-          {setReadFont && (
-            <div className="read-toggle" role="group" aria-label="읽기 폰트 선택">
-              <button type="button"
-                aria-pressed={readFont === 'sans'}
-                onClick={() => setReadFont('sans')}
-                title="고딕계열로 읽기">고딕</button>
-              <button type="button"
-                aria-pressed={readFont === 'serif'}
-                onClick={() => setReadFont('serif')}
-                title="명조계열(조선일보명조)로 읽기"
-                style={{fontFamily: "'ChosunIlboMyungjo', serif"}}>명조</button>
-            </div>
-          )}
           {user ? (
             <>
               <span className="mono" aria-label={`로그인: ${user.name}`}
