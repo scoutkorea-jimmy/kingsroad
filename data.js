@@ -499,17 +499,62 @@ window.BGNJ_AUTH = {
   },
 };
 
+// 서버(D1) 게시글을 UI 형식으로 매핑.
+const _serverPostToUi = (p) => ({
+  id: p.id,
+  categoryId: p.category_id || p.categoryId,
+  category: p.category,
+  prefix: p.prefix || null,
+  title: p.title,
+  body: p.body || '',
+  author: p.author,
+  authorId: p.author_id || p.authorId,
+  views: Number(p.views || 0),
+  replies: Number(p.replies || 0),
+  date: (p.created_at || p.createdAt || '').slice(0, 10).replace(/-/g, '.'),
+  createdAt: p.created_at || p.createdAt,
+  _remote: true,
+});
+
 window.BGNJ_COMMUNITY = {
+  // 서버에서 받은 게시글 캐시. refreshPosts()가 채운다.
+  // listPosts()는 캐시가 비어있으면 로컬 시드로 폴백.
+  _serverPosts: [],
+  _serverLoaded: false,
+
   listPosts() {
+    if (this._serverLoaded) {
+      // 서버 게시글 + 로컬에만 있는(아직 동기화 못 한) 글이 있다면 합쳐 보여준다 (서버 우선).
+      const serverIds = new Set(this._serverPosts.map((p) => String(p.id)));
+      const localOnly = (window.BGNJ_STORES.communityPosts || [])
+        .filter((p) => !serverIds.has(String(p.id)));
+      return [...this._serverPosts, ...localOnly]
+        .slice()
+        .sort((a, b) => String(b.createdAt || b.date).localeCompare(String(a.createdAt || a.date)));
+    }
     return (window.BGNJ_STORES.communityPosts || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
   },
   getPost(postId) {
-    return (window.BGNJ_STORES.communityPosts || []).find((post) => String(post.id) === String(postId)) || null;
+    return this.listPosts().find((post) => String(post.id) === String(postId)) || null;
+  },
+  // 서버에서 게시글 목록을 갱신해 캐시에 저장하고 'bgnj-posts-refresh' 이벤트를 발화한다.
+  // CommunityPage가 useEffect로 구독해 재렌더한다.
+  async refreshPosts(opts = {}) {
+    try {
+      const { posts } = await window.BGNJ_API.posts.list(opts);
+      this._serverPosts = (posts || []).map(_serverPostToUi);
+      this._serverLoaded = true;
+      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+    } catch {
+      // 서버 실패 — 캐시 유지(로컬 폴백)
+    }
+    return this._serverPosts;
   },
   savePosts(posts) {
     window.BGNJ_STORES.communityPosts = posts.map(normalizeCommunityPost);
     window.BGNJ_SAVE.communityPosts();
   },
+  // 동기 createPost — 호환용. 가능하면 createPostRemote 사용 권장.
   createPost(payload) {
     const nextPost = normalizeCommunityPost({
       ...payload,
@@ -517,24 +562,62 @@ window.BGNJ_COMMUNITY = {
       _userCreated: true,
       _new: true,
     });
-    this.savePosts([nextPost, ...this.listPosts()]);
+    this.savePosts([nextPost, ...this.listPosts().filter((p) => !p._remote)]);
     if (payload.authorId) {
       try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
     }
     return nextPost;
   },
+  // 비동기 — 서버에 INSERT 후 캐시 갱신.
+  async createPostRemote(payload) {
+    const { id } = await window.BGNJ_API.posts.create({
+      categoryId: payload.categoryId,
+      title: payload.title,
+      body: payload.body || '',
+      prefix: payload.prefix || null,
+    });
+    await this.refreshPosts();
+    return this.getPost(id);
+  },
+  async deletePostRemote(postId) {
+    await window.BGNJ_API.posts.remove(postId);
+    await this.refreshPosts();
+  },
+  async updatePostRemote(postId, patch) {
+    const apiPatch = {};
+    if ('title' in patch) apiPatch.title = patch.title;
+    if ('body' in patch) apiPatch.body = patch.body;
+    if ('prefix' in patch) apiPatch.prefix = patch.prefix;
+    if ('categoryId' in patch) apiPatch.category_id = patch.categoryId;
+    await window.BGNJ_API.posts.update(postId, apiPatch);
+    await this.refreshPosts();
+    return this.getPost(postId);
+  },
   updatePost(postId, patch) {
+    // 서버 캐시 항목이면 서버 업데이트로 위임 (fire-and-forget).
+    const serverPost = this._serverPosts.find((p) => String(p.id) === String(postId));
+    if (serverPost) {
+      this.updatePostRemote(postId, patch).catch(() => {});
+      return { ...serverPost, ...patch };
+    }
     const posts = this.listPosts().map((post) => (
       String(post.id) === String(postId)
         ? normalizeCommunityPost({ ...post, ...patch, updatedAt: new Date().toISOString() })
         : post
     ));
-    this.savePosts(posts);
+    this.savePosts(posts.filter((p) => !p._remote));
     return this.getPost(postId);
   },
   deletePost(postId) {
+    const serverPost = this._serverPosts.find((p) => String(p.id) === String(postId));
+    if (serverPost) {
+      this.deletePostRemote(postId).catch(() => {});
+      this._serverPosts = this._serverPosts.filter((p) => String(p.id) !== String(postId));
+      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+      return;
+    }
     const nextPosts = this.listPosts().filter((post) => String(post.id) !== String(postId));
-    this.savePosts(nextPosts);
+    this.savePosts(nextPosts.filter((p) => !p._remote));
     delete window.BGNJ_STORES.comments[postId];
     window.BGNJ_SAVE.comments();
   },

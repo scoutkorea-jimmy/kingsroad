@@ -22,6 +22,20 @@
 </p></noscript>
 <div id="root"></div>
 
+<script>
+  // SPA fallback 복원 — 404.html이 ?p=/community 같은 형태로 리다이렉트시켰으면
+  // 진짜 경로를 복원해 클라이언트 라우터가 인식하게 한다.
+  (function () {
+    try {
+      var url = new URL(location.href);
+      var p = url.searchParams.get('p');
+      if (p) {
+        history.replaceState(null, '', p);
+      }
+    } catch {}
+  })();
+</script>
+
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -80,9 +94,25 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "interactive": true
 }/*EDITMODE-END*/;
 
+// URL 경로 ↔ 라우트 키 매핑.
+// 알려진 라우트만 화이트리스트로 받아 안전하게 폴백한다(home).
+const VALID_ROUTES = ['home','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy'];
+const pathToRoute = (pathname) => {
+  const p = (pathname || '/').replace(/\/+$/, '') || '/';
+  if (p === '/') return 'home';
+  const seg = p.replace(/^\//, '').split('/')[0];
+  return VALID_ROUTES.includes(seg) ? seg : 'home';
+};
+const routeToPath = (r) => r === 'home' ? '/' : '/' + r;
+
 const App = () => {
   const [route, setRoute] = React.useState(() => {
-    try { return localStorage.getItem('bgnj_route') || 'home'; } catch { return 'home'; }
+    // URL 우선. 폴백으로 localStorage.
+    try {
+      const fromPath = pathToRoute(window.location.pathname);
+      if (fromPath !== 'home' || window.location.pathname === '/') return fromPath;
+      return localStorage.getItem('bgnj_route') || 'home';
+    } catch { return 'home'; }
   });
   const [postId, setPostId] = React.useState(null);
   const [user, setUser] = React.useState(() => window.BGNJ_AUTH.getSessionUser());
@@ -113,8 +143,27 @@ const App = () => {
     setRoute(r);
     setPostId(null);
     try { localStorage.setItem('bgnj_route', r); } catch {}
+    // 브라우저 주소를 동기화 — 같은 경로면 push 생략(불필요한 스택 누적 방지).
+    try {
+      const target = routeToPath(r);
+      if (window.location.pathname !== target) {
+        window.history.pushState(null, '', target);
+      }
+    } catch {}
     window.scrollTo(0, 0);
   };
+
+  // 뒤로/앞으로 버튼 동기화 — popstate 시 URL을 다시 라우트로 변환.
+  React.useEffect(() => {
+    const onPop = () => {
+      const next = pathToRoute(window.location.pathname);
+      setRoute(next);
+      setPostId(null);
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const logout = () => {
     window.BGNJ_AUTH.signOut();

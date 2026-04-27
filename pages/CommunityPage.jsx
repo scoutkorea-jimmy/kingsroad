@@ -283,6 +283,14 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     }
   }, []);
 
+  // 서버 게시글 동기화 — 페이지 진입 시 1회 + 'bgnj-posts-refresh' 이벤트마다 재렌더
+  React.useEffect(() => {
+    window.BGNJ_COMMUNITY.refreshPosts?.();
+    const onRefresh = () => setRefreshKey((v) => v + 1);
+    window.addEventListener('bgnj-posts-refresh', onRefresh);
+    return () => window.removeEventListener('bgnj-posts-refresh', onRefresh);
+  }, []);
+
   const allPosts = React.useMemo(() => {
     return window.BGNJ_COMMUNITY.listPosts();
   }, [refreshKey]);
@@ -324,13 +332,21 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       user={user}
       initialPost={writing === true ? null : writing}
       onCancel={() => setWriting(null)}
-      onPublish={(payload) => {
-        const savedPost = writing === true
-          ? window.BGNJ_COMMUNITY.createPost(payload)
-          : window.BGNJ_COMMUNITY.updatePost(writing.id, payload);
+      onPublish={async (payload) => {
+        let savedPost;
+        try {
+          savedPost = writing === true
+            ? await window.BGNJ_COMMUNITY.createPostRemote(payload)
+            : await window.BGNJ_COMMUNITY.updatePostRemote(writing.id, payload);
+        } catch (err) {
+          // 서버 실패 시 로컬 폴백 — 비로그인/네트워크 단절 환경에서도 작성은 보존.
+          savedPost = writing === true
+            ? window.BGNJ_COMMUNITY.createPost(payload)
+            : window.BGNJ_COMMUNITY.updatePost(writing.id, payload);
+        }
         setWriting(null);
         setRefreshKey((value) => value + 1);
-        setPostId(savedPost.id);
+        if (savedPost) setPostId(savedPost.id);
       }}
       categories={categories}
       userLevel={userLevel}

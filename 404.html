@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>리다이렉트 중...</title>
+<script>
+  // SPA fallback — GitHub Pages는 unknown path에 404.html을 서빙한다.
+  // 여기서 경로를 ?p= 쿼리에 담아 루트로 리다이렉트시키면, index.html이
+  // 부팅 시 history.replaceState로 원래 경로를 복원해 클라이언트 라우터가 인식.
+  (function () {
+    var path = location.pathname + location.search + location.hash;
+    var origin = location.origin;
+    var encoded = '?p=' + encodeURIComponent(path);
+    location.replace(origin + '/' + encoded);
+  })();
+</script>
+</head>
+<body>
+  <noscript>이 페이지는 JavaScript가 필요합니다. <a href="/">홈으로</a></noscript>
+</body>
+</html>
