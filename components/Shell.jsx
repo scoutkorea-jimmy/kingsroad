@@ -280,10 +280,9 @@ const Nav = ({ route, go, user, onLogout, readFont, setReadFont }) => {
                             padding:'8px 16px', fontSize:13,
                             background:'transparent', color:'var(--ink-2)', border:'none', cursor:'pointer',
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(212,175,55,0.06)'; e.currentTarget.style.color = 'var(--gold)'; }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(27,79,160,0.06)'; e.currentTarget.style.color = 'var(--gold)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-2)'; }}>
                           <span>{b.label}</span>
-                          {b.desc && <span className="dim-2 mono" style={{display:'block', fontSize:10, marginTop:2, letterSpacing:'0.05em'}}>{b.desc}</span>}
                         </button>
                       </li>
                     ))}

@@ -1,124 +1,5 @@
 // 뱅기노자 홈페이지 — 한국 여행·역사·문화 커뮤니티
-
-// 인터랙티브 한국 지도
-const KoreaMap = ({ onSelect, selected }) => {
-  const [hovered, setHovered] = React.useState(null);
-
-  const destinations = [
-    { id:'seoul',   name:'서울', x:145, y:82,  region:'수도권',       tags:['궁궐','한옥','역사'],  desc:'경복궁·창덕궁·북촌, 조선 왕조의 숨결이 살아있는 천년 수도.' },
-    { id:'incheon', name:'인천', x:112, y:92,  region:'경기',         tags:['강화도','개항장','섬'], desc:'강화 고려 유적과 개항기 역사거리, 서해의 관문.' },
-    { id:'gangwon', name:'강릉', x:248, y:102, region:'강원',         tags:['동해','오죽헌','자연'], desc:'경포대·오죽헌·동해 바다, 강원의 절경.' },
-    { id:'daejeon', name:'대전', x:162, y:188, region:'충청',         tags:['유성','계룡산'],        desc:'계룡산 산세와 충청 문화의 중심.' },
-    { id:'jeonju',  name:'전주', x:132, y:248, region:'전라북도',     tags:['한옥','한식','전통'],   desc:'700채 한옥마을·비빔밥·막걸리, 전통문화의 도시.' },
-    { id:'gwangju', name:'광주', x:108, y:318, region:'전라남도',     tags:['예술','역사','민주'],   desc:'무등산과 518 역사의 도시, 문화예술의 거점.' },
-    { id:'andong',  name:'안동', x:218, y:192, region:'경상북도',     tags:['유교','하회','서원'],   desc:'하회마을·도산서원, 한국 유교문화의 본향.' },
-    { id:'gyeongju',name:'경주', x:242, y:272, region:'경상북도',     tags:['신라','불국사','고분'], desc:'불국사·석굴암·대릉원, 신라 천년의 야외 박물관.' },
-    { id:'busan',   name:'부산', x:248, y:322, region:'경상남도',     tags:['해안','항구','문화'],   desc:'해운대·감천문화마을, 역동적인 항구도시.' },
-    { id:'jeju',    name:'제주', x:148, y:408, region:'제주특별자치도', tags:['한라산','올레길','해녀'],'desc':'화산섬의 자연, 한라산·올레길·해녀문화.' },
-  ];
-
-  const mainland = "M58,22 C50,35 44,58 42,90 L38,125 C35,150 36,175 42,200 L46,230 C50,255 56,275 62,295 C68,315 80,338 96,358 C108,374 128,390 152,398 C172,406 194,402 212,388 C228,374 242,355 250,330 C255,312 258,290 256,265 C254,240 252,215 250,190 C248,162 246,138 244,110 C242,85 238,62 232,42 C225,28 212,18 195,16 C172,14 148,14 120,16 C95,18 75,20 58,22 Z";
-  const jeju = "M126,405 C120,398 134,391 150,390 C168,389 183,398 178,406 C173,415 156,419 140,417 C126,415 124,411 126,405 Z";
-
-  const active = hovered || selected;
-  const activeInfo = destinations.find(d => d.id === active);
-
-  return (
-    <div style={{position:'relative'}}>
-      <svg viewBox="0 0 300 435" style={{width:'100%', height:'auto', overflow:'visible', display:'block'}}>
-        <defs>
-          <pattern id="mapDots" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
-            <circle cx="9" cy="9" r="0.7" fill="var(--line)" opacity="0.6"/>
-          </pattern>
-        </defs>
-
-        {/* 배경 점 그리드 */}
-        <rect x="-30" y="-30" width="360" height="500" fill="url(#mapDots)"/>
-
-        {/* 해역 레이블 */}
-        {[
-          {x:18, y:200, label:'서 해', rotate:true},
-          {x:274, y:165, label:'동 해', rotate:true},
-          {x:122, y:428, label:'남  해', rotate:false},
-        ].map(sea => (
-          <text key={sea.label} x={sea.x} y={sea.y}
-            fontSize="7.5" fill="var(--ink-3)" fontFamily="var(--font-mono)"
-            letterSpacing="0.18em" opacity="0.55"
-            transform={sea.rotate ? `rotate(-90, ${sea.x}, ${sea.y})` : undefined}
-            textAnchor="middle">
-            {sea.label}
-          </text>
-        ))}
-
-        {/* 한반도 본토 */}
-        <path d={mainland}
-          fill="var(--bg-2)"
-          stroke="var(--gold-dim)"
-          strokeWidth="1.2"
-          strokeLinejoin="round"/>
-
-        {/* 제주도 */}
-        <path d={jeju}
-          fill="var(--bg-2)"
-          stroke="var(--gold-dim)"
-          strokeWidth="1"
-          strokeLinejoin="round"/>
-
-        {/* 여행지 핀 */}
-        {destinations.map(d => {
-          const isActive = (hovered === d.id || selected === d.id);
-          return (
-            <g key={d.id}
-              role="button" tabIndex={0}
-              aria-label={`${d.name} 여행지`}
-              style={{cursor:'pointer'}}
-              onClick={() => onSelect && onSelect(d)}
-              onMouseEnter={() => setHovered(d.id)}
-              onMouseLeave={() => setHovered(null)}
-              onKeyDown={(e) => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); onSelect && onSelect(d); } }}>
-              <circle cx={d.x} cy={d.y} r={14} fill="transparent"/>
-              {isActive && (
-                <circle cx={d.x} cy={d.y} r={10}
-                  fill="rgba(158,104,24,0.1)" stroke="var(--gold)" strokeWidth="1"/>
-              )}
-              <circle cx={d.x} cy={d.y} r={isActive ? 5 : 3.8}
-                fill={isActive ? 'var(--gold)' : 'var(--bg)'}
-                stroke="var(--gold)"
-                strokeWidth="1.5"/>
-              <text x={d.x} y={d.id==='jeju' ? d.y-10 : d.y+16}
-                textAnchor="middle"
-                fontSize="8.5"
-                fill={isActive ? 'var(--gold)' : 'var(--ink-2)'}
-                fontFamily="var(--font-sans)"
-                fontWeight={isActive ? '600' : '400'}>
-                {d.name}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* 선택된 여행지 정보 카드 */}
-      {activeInfo && (
-        <div style={{
-          marginTop:8, padding:'12px 16px',
-          background:'var(--bg)', border:'1px solid var(--gold-dim)',
-          fontSize:13,
-        }}>
-          <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:6}}>
-            {activeInfo.tags.map(t => (
-              <span key={t} style={{
-                fontSize:9, fontFamily:'var(--font-mono)', letterSpacing:'0.15em',
-                border:'1px solid var(--gold-dim)', color:'var(--gold)', padding:'1px 7px',
-              }}>{t}</span>
-            ))}
-          </div>
-          <div style={{color:'var(--ink-2)', lineHeight:1.55}}>{activeInfo.desc}</div>
-        </div>
-      )}
-    </div>
-  );
-};
+// KoreaMap 컴포넌트 → components/KoreaMap.jsx (실제 광역시도 SVG)
 
 // 주요 여행지 데이터
 const FEATURED_DESTINATIONS = [
@@ -258,11 +139,11 @@ const HomePage = ({ go }) => {
                   <div>
                     <div style={{display:'flex', alignItems:'baseline', gap:10, marginBottom:6}}>
                       <span style={{fontFamily:'var(--font-serif)', fontSize:20, color:'var(--ink)'}}>{selectedDest.name}</span>
-                      <span style={{fontFamily:'var(--font-mono)', fontSize:9, color:'var(--ink-3)', letterSpacing:'0.15em'}}>{selectedDest.region}</span>
+                      <span style={{fontFamily:'var(--font-mono)', fontSize:9, color:'var(--ink-3)', letterSpacing:'0.15em'}}>{selectedDest.fullname}</span>
                     </div>
                     <p style={{fontSize:13, color:'var(--ink-2)', lineHeight:1.6, marginBottom:10}}>{selectedDest.desc}</p>
                     <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-                      {selectedDest.tags.map(t => (
+                      {String(selectedDest.tags||'').split('·').map(t => t.trim()).filter(Boolean).map(t => (
                         <span key={t} style={{
                           fontSize:9, fontFamily:'var(--font-mono)',
                           border:'1px solid var(--gold-dim)',

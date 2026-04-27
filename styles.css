@@ -16,21 +16,35 @@
 }
 
 :root {
-  /* 뱅기노자 — 여행 매거진 라이트 팔레트 */
-  --bg: #FDFAF5;              /* 따뜻한 오프화이트 */
-  --bg-2: #F2EBE0;            /* 웜 크림 */
-  --bg-3: #E8DFD2;            /* 웜 베이지 */
-  --line: #D8CEBC;            /* 따뜻한 라인 */
-  --line-2: #C8BCA8;          /* 조금 진한 라인 */
-  --gold: #9E6818;            /* 앰버/황토 — 라이트 배경에서 WCAG AA 충족 */
-  --gold-2: #C07E28;          /* 중간 앰버 */
-  --gold-dim: #C49448;        /* 장식용 앰버 */
-  --gold-ink: #6A4412;        /* 텍스트 강조용 짙은 앰버 */
-  --ink: #1C1812;             /* 따뜻한 거의-검정 */
-  --ink-2: #4A3E34;           /* 중간 진한 갈색 */
-  --ink-3: #7E7060;           /* 밝은 웜 그레이 */
-  --danger: #C44030;
-  --focus: #9E6818;
+  /* 뱅기노자 — 블루 여행 팔레트 / 순백 배경
+     Altitude system (고도감)
+     High Altitude : #1E40AF  — deep, authority
+     Mid Sky       : #3B82F6  — action rest state
+     Low Sky       : #93C5FD  — decorative / soft
+     CTA temperature: rest #3B82F6 → hover #2563EB → active #1D4ED8 */
+
+  --bg: #FFFFFF;              /* 순백 */
+  --bg-2: #EFF6FF;            /* Background Sky */
+  --bg-3: #DBEAFE;            /* 연한 블루 */
+  --line: #BFDBFE;            /* 라인 */
+  --line-2: #93C5FD;          /* Low Sky — 진한 라인 */
+
+  --gold: #3B82F6;            /* Mid Sky — Action Blue (rest) */
+  --gold-2: #2563EB;          /* Primary Blue — Hover state */
+  --gold-dim: #93C5FD;        /* Low Sky — decorative borders */
+  --gold-ink: #1E3A8A;        /* Deep Blue — text emphasis / High Altitude */
+
+  --ink: #0F172A;             /* 짙은 네이비 블랙 */
+  --ink-2: #1E3A8A;           /* Deep Blue — 본문 텍스트 */
+  --ink-3: #64748B;           /* Slate — 보조 텍스트 */
+
+  --danger: #DC2626;
+  --focus: #1D4ED8;           /* Active Blue — focus ring */
+
+  /* CTA 인터랙션 토큰 */
+  --cta-rest:   #3B82F6;
+  --cta-hover:  #2563EB;
+  --cta-active: #1D4ED8;
 
   --gold-strength: 1;
   --font-serif: "Noto Serif KR", "Nanum Myeongjo", serif;
@@ -542,7 +556,7 @@ main time, main .section-eyebrow {
   top: 0;
   z-index: 50;
   backdrop-filter: blur(16px);
-  background: rgba(253, 250, 245, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   border-bottom: 1px solid var(--line);
 }
 .nav-inner {
@@ -632,11 +646,12 @@ main time, main .section-eyebrow {
 }
 .btn:hover { border-color: var(--gold); color: var(--gold); }
 .btn-gold {
-  border-color: var(--gold);
-  color: var(--bg);
-  background: var(--gold);
+  border-color: var(--cta-rest);
+  color: #fff;
+  background: var(--cta-rest);
 }
-.btn-gold:hover { background: var(--gold-2); border-color: var(--gold-2); color: var(--bg); }
+.btn-gold:hover  { background: var(--cta-hover);  border-color: var(--cta-hover);  color: #fff; }
+.btn-gold:active { background: var(--cta-active); border-color: var(--cta-active); color: #fff; }
 .btn-ghost { border-color: transparent; color: var(--ink-2); padding: 8px 0; }
 .btn-ghost:hover { color: var(--gold); border-color: transparent; }
 .btn-small { padding: 8px 16px; font-size: 11px; }

@@ -373,36 +373,6 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           <p className="section-subtitle">왕사들이 모여 나누는 이야기. 질문도 답도 환영합니다.</p>
         </header>
 
-        {/* 내 등급 / 쓰기 가능 게시판 안내 배너 */}
-        {(() => {
-          const myGrade = window.WSD_USER_GRADE?.(user) || null;
-          const readable = categories.filter((c) => userLevel >= (c.minLevel ?? 0));
-          const writable = categories.filter((c) => userLevel >= (c.postMinLevel ?? c.minLevel ?? 0));
-          const writableLabels = writable.map((c) => c.label).join(' · ') || '없음';
-          return (
-            <div className="card" style={{padding:14, marginBottom:24, display:'flex', justifyContent:'space-between', alignItems:'center', gap:14, flexWrap:'wrap'}}>
-              <div style={{display:'flex', alignItems:'baseline', gap:10, flexWrap:'wrap'}}>
-                <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em'}}>MY ACCESS</span>
-                {user ? (
-                  <>
-                    <span className="ko-serif" style={{fontSize:14}}>
-                      {user.name}
-                      {myGrade && (
-                        <span className="mono" style={{fontSize:10, letterSpacing:'0.14em', color: myGrade.color || 'var(--gold)', border:`1px solid ${myGrade.color || 'var(--gold-dim)'}`, padding:'1px 6px', marginLeft:8}}>{myGrade.label}</span>
-                      )}
-                      <span className="dim-2 mono" style={{fontSize:10, marginLeft:8}}>Lv {userLevel}</span>
-                    </span>
-                  </>
-                ) : (
-                  <span className="dim" style={{fontSize:13}}>비로그인 · 일부 게시판만 읽기 가능</span>
-                )}
-              </div>
-              <div className="dim mono" style={{fontSize:11, letterSpacing:'0.05em'}}>
-                읽기 가능 {readable.length}개 · 쓰기 가능 {writable.length}개{writable.length > 0 ? ` (${writableLabels})` : ''}
-              </div>
-            </div>
-          );
-        })()}
 
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, gap:24, flexWrap:'wrap'}}>
           <div role="tablist" aria-label="게시판 분류"
@@ -424,9 +394,10 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           </div>
           <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
             <label htmlFor="community-search" className="sr-only">게시글 검색</label>
-            <input id="community-search" placeholder="제목·본문 검색..."
+            <input id="community-search"
+              placeholder={tab === "all" ? "전체 게시판 검색..." : `${currentBoard?.label || ''} 게시판 검색...`}
               value={search} onChange={e => setSearch(e.target.value)}
-              className="field-input" style={{width:180, padding:'10px 14px'}}/>
+              className="field-input" style={{width:200, padding:'10px 14px'}}/>
             <label htmlFor="community-sort" className="sr-only">정렬</label>
             <select id="community-sort" value={sort} onChange={e => setSort(e.target.value)}
               className="field-input" style={{padding:'10px 12px', fontSize:12, cursor:'pointer'}}>
@@ -440,6 +411,15 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
             </button>
           </div>
         </div>
+
+        {/* 게시판 설명 — 특정 게시판 뷰에서만 표시 */}
+        {tab !== "all" && currentBoard?.desc && (
+          <div style={{
+            padding:'10px 16px', marginBottom:16,
+            background:'var(--bg-2)', borderLeft:'3px solid var(--gold)',
+            fontSize:13, color:'var(--ink-2)', lineHeight:1.6,
+          }}>{currentBoard.desc}</div>
+        )}
 
         {/* 말머리 필터 — 해당 게시판에 말머리가 있을 때만 표시 */}
         {boardPrefixes.length > 0 && (
@@ -548,6 +528,24 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
             전체 {filtered.length}건 · {safePage}/{totalPages} 페이지
           </div>
         )}
+
+        {/* 하단 검색 + 글쓰기 바 */}
+        <div style={{
+          display:'flex', gap:10, alignItems:'center', justifyContent:'center',
+          marginTop:40, paddingTop:24, borderTop:'1px solid var(--line)',
+          flexWrap:'wrap',
+        }}>
+          <label htmlFor="community-search-bottom" className="sr-only">게시글 검색</label>
+          <input id="community-search-bottom"
+            placeholder={tab === "all" ? "전체 게시판 검색..." : `${currentBoard?.label || ''} 게시판 검색...`}
+            value={search} onChange={e => setSearch(e.target.value)}
+            className="field-input"
+            style={{width:280, padding:'12px 16px', fontSize:14}}/>
+          <button type="button" className="btn btn-gold" onClick={handleWrite}
+            style={{padding:'12px 28px', fontSize:13}}>
+            {user ? '글쓰기 ＋' : '로그인 후 글쓰기'}
+          </button>
+        </div>
       </div>
     </div>
   );
