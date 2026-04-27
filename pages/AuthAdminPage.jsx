@@ -2545,6 +2545,536 @@ const FaqAdminPanel = () => {
   );
 };
 
+// === Site Content Panel ===========================================
+// 메뉴 라벨, 히어로/푸터 텍스트, 브랜드명, 로고/파비콘, OG 메타를 한 화면에서 편집한다.
+// 각 섹션은 독립 저장 — 한 섹션 저장이 다른 섹션 편집값을 잃게 하지 않는다.
+const SiteContentAdminPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.WSD_SITE_CONTENT.get(), [tick]);
+  const [msg, setMsg] = React.useState('');
+
+  const flash = (text) => {
+    setMsg(text);
+    setTimeout(() => setMsg(''), 2000);
+  };
+
+  const fileToDataUri = (file) => new Promise((resolve, reject) => {
+    if (!file) { resolve(''); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  // 섹션 단위 폼 — 입력 상태는 sc 변경 시 자동 초기화 (key prop으로 강제 remount).
+  const SectionForm = ({ section, fields, onAfterSave }) => {
+    const [draft, setDraft] = React.useState(() => ({ ...(sc[section] || {}) }));
+    const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
+    const save = (e) => {
+      e.preventDefault();
+      window.WSD_SITE_CONTENT.saveSection(section, draft);
+      setTick((v) => v + 1);
+      flash('저장되었습니다.');
+      if (onAfterSave) onAfterSave();
+    };
+    const reset = () => {
+      if (!confirm('이 섹션을 기본값으로 되돌릴까요?')) return;
+      window.WSD_SITE_CONTENT.resetSection(section);
+      setTick((v) => v + 1);
+      flash('기본값으로 복원되었습니다.');
+    };
+    return (
+      <form onSubmit={save} className="card" style={{padding:20, marginBottom:20}}>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:14}}>
+          {fields.map((f) => (
+            <div key={f.key} className="field" style={{gridColumn: f.full ? '1 / -1' : 'auto'}}>
+              <label className="field-label" htmlFor={`sc-${section}-${f.key}`}>{f.label}</label>
+              {f.multiline ? (
+                <textarea id={`sc-${section}-${f.key}`} className="field-input" rows={3}
+                  value={draft[f.key] ?? ''} onChange={(e) => set(f.key, e.target.value)}/>
+              ) : (
+                <input id={`sc-${section}-${f.key}`} className="field-input"
+                  value={draft[f.key] ?? ''} onChange={(e) => set(f.key, e.target.value)}/>
+              )}
+            </div>
+          ))}
+        </div>
+        <div style={{display:'flex', gap:8, justifyContent:'flex-end', borderTop:'1px solid var(--line)', paddingTop:14, marginTop:14}}>
+          <button type="button" className="btn btn-small" onClick={reset}>기본값 복원</button>
+          <button type="submit" className="btn btn-gold">저장</button>
+        </div>
+      </form>
+    );
+  };
+
+  const ImageUploader = ({ section, field, label, hint, previewSize = 56, accept = 'image/*' }) => {
+    const current = sc[section]?.[field] || '';
+    const onPick = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      // 1.5MB 이상은 거절 — base64는 약 33% 부풀어 localStorage(보통 5~10MB) 한도 위협.
+      if (file.size > 1.5 * 1024 * 1024) {
+        alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+        e.target.value = '';
+        return;
+      }
+      const dataUri = await fileToDataUri(file);
+      window.WSD_SITE_CONTENT.saveSection(section, { [field]: dataUri });
+      setTick((v) => v + 1);
+      flash(`${label} 업로드 완료`);
+      e.target.value = '';
+    };
+    const clear = () => {
+      if (!confirm(`${label}을(를) 비울까요? (기본 마크로 되돌아갑니다)`)) return;
+      window.WSD_SITE_CONTENT.saveSection(section, { [field]: '' });
+      setTick((v) => v + 1);
+      flash(`${label} 제거됨`);
+    };
+    return (
+      <div className="card" style={{padding:16, display:'flex', gap:14, alignItems:'center', marginBottom:12}}>
+        <div style={{
+          width:previewSize, height:previewSize, flexShrink:0,
+          border:'1px solid var(--line)', background:'var(--bg-2)',
+          display:'grid', placeItems:'center', overflow:'hidden',
+        }}>
+          {current
+            ? <img src={current} alt="" style={{maxWidth:'100%', maxHeight:'100%', objectFit:'contain'}}/>
+            : <span className="dim-2 mono" style={{fontSize:9, letterSpacing:'0.18em'}}>NONE</span>}
+        </div>
+        <div style={{flex:1}}>
+          <div className="ko-serif" style={{fontSize:14, marginBottom:4}}>{label}</div>
+          {hint && <div className="dim-2" style={{fontSize:11, lineHeight:1.5}}>{hint}</div>}
+        </div>
+        <div style={{display:'flex', gap:8}}>
+          <label className="btn btn-small" style={{cursor:'pointer'}}>
+            업로드
+            <input type="file" accept={accept} onChange={onPick} style={{display:'none'}}/>
+          </label>
+          {current && (
+            <button type="button" className="btn btn-small" onClick={clear}
+              style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        홈페이지 내비게이션 라벨, 히어로/푸터 텍스트, 브랜드명, 로고·파비콘, OG 메타를 직접 편집합니다.
+        섹션별로 저장되며 저장 즉시 사이트에 반영됩니다.
+      </p>
+      {msg && (
+        <div role="status" className="mono gold" style={{fontSize:12, marginBottom:14, padding:'8px 12px', border:'1px solid var(--gold-dim)', background:'rgba(59,130,246,0.06)'}}>
+          {msg}
+        </div>
+      )}
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>메뉴 라벨</h3>
+      <SectionForm key={`nav-${tick}`} section="nav" fields={[
+        { key: 'home', label: '홈' },
+        { key: 'community', label: '커뮤니티' },
+        { key: 'lectures', label: '강연' },
+        { key: 'tour', label: '투어 프로그램' },
+        { key: 'column', label: '뱅기노자 칼럼' },
+        { key: 'book', label: '뱅기노자의 길' },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>브랜드</h3>
+      <SectionForm key={`brand-${tick}`} section="brand" fields={[
+        { key: 'name', label: '브랜드 이름 (한글)' },
+        { key: 'sub', label: '브랜드 영문' },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>히어로(메인 상단)</h3>
+      <SectionForm key={`hero-${tick}`} section="hero" fields={[
+        { key: 'eyebrow', label: '아이브로우 (상단 작은 텍스트)', full: true },
+        { key: 'title1', label: '큰 제목 1줄' },
+        { key: 'title2', label: '큰 제목 2줄 (강조 색)' },
+        { key: 'title3', label: '큰 제목 3줄' },
+        { key: 'subtitle', label: '본문 설명', full: true, multiline: true },
+        { key: 'ctaPrimary', label: 'CTA 버튼 (주요)' },
+        { key: 'ctaSecondary', label: 'CTA 버튼 (보조)' },
+        { key: 'mapHint', label: '지도 안내 문구', full: true },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>푸터</h3>
+      <SectionForm key={`footer-${tick}`} section="footer" fields={[
+        { key: 'description', label: '소개 문단', full: true, multiline: true },
+        { key: 'signature', label: '하단 서명', full: true },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>로고 · 파비콘</h3>
+      <ImageUploader section="branding" field="logoDataUri" label="헤더 로고"
+        hint="22x22px 표시. PNG/SVG 권장 · 1.5MB 이하."/>
+      <ImageUploader section="branding" field="faviconDataUri" label="파비콘"
+        hint="32x32 또는 64x64 PNG 권장 · 저장 즉시 브라우저 탭 아이콘이 갱신됩니다."
+        previewSize={40} accept="image/png,image/x-icon,image/svg+xml"/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>OG 메타 (공유 미리보기)</h3>
+      <SectionForm key={`og-${tick}`} section="og" fields={[
+        { key: 'title', label: 'OG 제목', full: true },
+        { key: 'description', label: 'OG 설명', full: true, multiline: true },
+      ]}/>
+      <ImageUploader section="og" field="imageDataUri" label="OG 이미지"
+        hint="1200x630 PNG/JPG 권장 · 카카오톡/페이스북/X 공유 시 미리보기에 사용. 1.5MB 이하."
+        previewSize={80}/>
+    </div>
+  );
+};
+
+// === Books Admin Panel ============================================
+// 다양한 책 콘텐츠 관리 — 메타/표지/PDF 미리보기/소개/목차/저자/리뷰.
+const BooksAdminPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const books = React.useMemo(() => window.WSD_BOOKS.list(), [tick]);
+  const [selectedId, setSelectedId] = React.useState(books[0]?.id || null);
+  const selected = React.useMemo(() => window.WSD_BOOKS.get(selectedId), [selectedId, tick]);
+  const [editTab, setEditTab] = React.useState('meta');
+  const [msg, setMsg] = React.useState('');
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2000); };
+  const refresh = () => setTick((v) => v + 1);
+
+  const fileToDataUri = (file) => new Promise((resolve, reject) => {
+    if (!file) { resolve(''); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const addBook = () => {
+    const title = prompt('새 책 제목을 입력하세요.');
+    if (!title) return;
+    const created = window.WSD_BOOKS.create({ title, status: 'draft' });
+    refresh();
+    setSelectedId(created.id);
+    setEditTab('meta');
+  };
+
+  const removeBook = (id) => {
+    const target = window.WSD_BOOKS.get(id);
+    if (!target) return;
+    if (!confirm(`"${target.title}" 책을 삭제할까요? (되돌릴 수 없음)`)) return;
+    window.WSD_BOOKS.remove(id);
+    refresh();
+    if (selectedId === id) {
+      const remaining = window.WSD_BOOKS.list();
+      setSelectedId(remaining[0]?.id || null);
+    }
+  };
+
+  const patch = (changes) => {
+    if (!selectedId) return;
+    window.WSD_BOOKS.update(selectedId, changes);
+    refresh();
+  };
+
+  const onUploadCover = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert(`표지 이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      e.target.value = ''; return;
+    }
+    const dataUri = await fileToDataUri(file);
+    patch({ coverDataUri: dataUri });
+    flash('표지 업로드 완료');
+    e.target.value = '';
+  };
+
+  const onUploadPdf = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // PDF는 미리보기 분량만 — localStorage 한도 고려해 3MB로 캡.
+    if (file.size > 3 * 1024 * 1024) {
+      alert(`PDF가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 미리보기용으로 3MB 이하 권장.`);
+      e.target.value = ''; return;
+    }
+    const dataUri = await fileToDataUri(file);
+    patch({ pdfPreviewDataUri: dataUri });
+    flash('PDF 미리보기 업로드 완료');
+    e.target.value = '';
+  };
+
+  const tabs = [
+    { id: 'meta', label: '메타·가격' },
+    { id: 'media', label: '표지 · PDF' },
+    { id: 'intro', label: '소개' },
+    { id: 'toc', label: '목차' },
+    { id: 'author', label: '저자' },
+    { id: 'reviews', label: `리뷰 ${(selected?.reviews || []).length || ''}`.trim() },
+  ];
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        뱅기노자가 출간한 책들을 관리합니다. 각 책은 표지(PNG)와 본문 미리보기(PDF)를 가질 수 있고,
+        소개·목차·저자·리뷰 콘텐츠를 독립적으로 편집합니다.
+      </p>
+      {msg && (
+        <div role="status" className="mono gold" style={{fontSize:12, marginBottom:14, padding:'8px 12px', border:'1px solid var(--gold-dim)', background:'rgba(59,130,246,0.06)'}}>
+          {msg}
+        </div>
+      )}
+
+      <div style={{display:'grid', gridTemplateColumns:'280px 1fr', gap:20, alignItems:'start'}}>
+        {/* 좌측: 책 목록 */}
+        <aside aria-label="책 목록" style={{border:'1px solid var(--line)'}}>
+          <div style={{padding:'10px 14px', borderBottom:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+            <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em'}}>BOOKS · {books.length}</span>
+            <button type="button" className="btn btn-small btn-gold" onClick={addBook}>＋ 새 책</button>
+          </div>
+          {books.length === 0 ? (
+            <div className="dim" style={{padding:20, fontSize:13}}>등록된 책이 없습니다.</div>
+          ) : (
+            <ul role="list" style={{listStyle:'none', margin:0, padding:0}}>
+              {books.map((b) => (
+                <li key={b.id} style={{borderBottom:'1px solid var(--line)'}}>
+                  <button type="button"
+                    onClick={() => { setSelectedId(b.id); setEditTab('meta'); }}
+                    aria-current={selectedId === b.id ? 'true' : undefined}
+                    style={{
+                      width:'100%', textAlign:'left', padding:'12px 14px',
+                      background: selectedId === b.id ? 'rgba(59,130,246,0.06)' : 'transparent',
+                      border:'none', cursor:'pointer', display:'flex', gap:10, alignItems:'center',
+                    }}>
+                    <span style={{
+                      width:32, height:42, flexShrink:0,
+                      border:'1px solid var(--line)', background:'var(--bg-2)',
+                      display:'grid', placeItems:'center', overflow:'hidden',
+                    }}>
+                      {b.coverDataUri
+                        ? <img src={b.coverDataUri} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                        : <span className="dim-2 mono" style={{fontSize:8}}>NO COVER</span>}
+                    </span>
+                    <span style={{flex:1, minWidth:0}}>
+                      <span className="ko-serif" style={{fontSize:13, color:'var(--ink)', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{b.title}</span>
+                      <span className="mono dim-2" style={{fontSize:9, letterSpacing:'0.12em'}}>
+                        {b.status === 'published' ? '출간' : b.status === 'coming_soon' ? '출간 예정' : '초안'}
+                        {b.primary ? ' · 대표' : ''}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+
+        {/* 우측: 편집 폼 */}
+        <section aria-label="책 편집">
+          {!selected ? (
+            <div className="card" style={{padding:24, textAlign:'center'}}>좌측에서 책을 선택하거나 새 책을 추가하세요.</div>
+          ) : (
+            <>
+              <div style={{display:'flex', gap:6, borderBottom:'1px solid var(--line)', marginBottom:18}}>
+                {tabs.map((t) => (
+                  <button key={t.id} type="button"
+                    onClick={() => setEditTab(t.id)}
+                    style={{
+                      padding:'10px 14px', fontSize:13,
+                      color: editTab === t.id ? 'var(--gold)' : 'var(--ink-2)',
+                      borderBottom: editTab === t.id ? '2px solid var(--gold)' : '2px solid transparent',
+                      marginBottom:-1, background:'none', border:'none', cursor:'pointer',
+                      fontFamily:'var(--font-serif)',
+                    }}>{t.label}</button>
+                ))}
+                <span style={{flex:1}}/>
+                <button type="button" className="btn btn-small"
+                  onClick={() => removeBook(selected.id)}
+                  style={{borderColor:'var(--danger)', color:'var(--danger)'}}>책 삭제</button>
+              </div>
+
+              {editTab === 'meta' && (
+                <div className="card" style={{padding:20, display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:14}}>
+                  <div className="field" style={{gridColumn:'1 / -1'}}>
+                    <label className="field-label">제목</label>
+                    <input className="field-input" value={selected.title} onChange={(e) => patch({ title: e.target.value })}/>
+                  </div>
+                  <div className="field" style={{gridColumn:'1 / -1'}}>
+                    <label className="field-label">부제</label>
+                    <input className="field-input" value={selected.subtitle} onChange={(e) => patch({ subtitle: e.target.value })}/>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">저자</label>
+                    <input className="field-input" value={selected.author} onChange={(e) => patch({ author: e.target.value })}/>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">출판사</label>
+                    <input className="field-input" value={selected.publisher} onChange={(e) => patch({ publisher: e.target.value })}/>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">페이지 수</label>
+                    <input type="number" className="field-input" value={selected.pages} onChange={(e) => patch({ pages: Number(e.target.value) })}/>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">ISBN</label>
+                    <input className="field-input" value={selected.isbn} onChange={(e) => patch({ isbn: e.target.value })}/>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">국문판 가격(원)</label>
+                    <input type="number" className="field-input" value={selected.priceKR} onChange={(e) => patch({ priceKR: Number(e.target.value) })}/>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">영문판 가격(원)</label>
+                    <input type="number" className="field-input" value={selected.priceEN} onChange={(e) => patch({ priceEN: Number(e.target.value) })}/>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">상태</label>
+                    <select className="field-input" value={selected.status} onChange={(e) => patch({ status: e.target.value })}>
+                      <option value="published">출간</option>
+                      <option value="coming_soon">출간 예정</option>
+                      <option value="draft">초안 (비공개)</option>
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">출간일</label>
+                    <input type="date" className="field-input" value={selected.publishedAt || ''} onChange={(e) => patch({ publishedAt: e.target.value })}/>
+                  </div>
+                  <div className="field" style={{gridColumn:'1 / -1', display:'flex', alignItems:'center', gap:10}}>
+                    <input id="book-primary" type="checkbox" checked={!!selected.primary} onChange={(e) => patch({ primary: e.target.checked })}/>
+                    <label htmlFor="book-primary" className="field-label" style={{margin:0}}>대표 책 (홈 CTA에 노출되는 메인 책)</label>
+                  </div>
+                  <div className="field" style={{gridColumn:'1 / -1'}}>
+                    <label className="field-label">짧은 설명 (카탈로그 카드용)</label>
+                    <textarea className="field-input" rows={3} value={selected.desc} onChange={(e) => patch({ desc: e.target.value })}/>
+                  </div>
+                </div>
+              )}
+
+              {editTab === 'media' && (
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:18}}>
+                  <div className="card" style={{padding:18}}>
+                    <h4 className="ko-serif" style={{fontSize:14, marginBottom:10}}>표지 (PNG/JPG)</h4>
+                    <div style={{
+                      aspectRatio:'3/4', maxWidth:200, marginBottom:12,
+                      border:'1px solid var(--line)', background:'var(--bg-2)',
+                      display:'grid', placeItems:'center', overflow:'hidden',
+                    }}>
+                      {selected.coverDataUri
+                        ? <img src={selected.coverDataUri} alt={`${selected.title} 표지`} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                        : <span className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>NO COVER</span>}
+                    </div>
+                    <div style={{display:'flex', gap:8}}>
+                      <label className="btn btn-small" style={{cursor:'pointer'}}>
+                        업로드
+                        <input type="file" accept="image/png,image/jpeg" onChange={onUploadCover} style={{display:'none'}}/>
+                      </label>
+                      {selected.coverDataUri && (
+                        <button type="button" className="btn btn-small"
+                          onClick={() => { if (confirm('표지를 비울까요?')) patch({ coverDataUri: '' }); }}
+                          style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
+                      )}
+                    </div>
+                    <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.5}}>
+                      권장 비율 3:4. 1.5MB 이하 PNG/JPG. 카탈로그·상세 페이지에 노출됩니다.
+                    </p>
+                  </div>
+                  <div className="card" style={{padding:18}}>
+                    <h4 className="ko-serif" style={{fontSize:14, marginBottom:10}}>본문 미리보기 (PDF)</h4>
+                    {selected.pdfPreviewDataUri ? (
+                      <div style={{height:240, border:'1px solid var(--line)', marginBottom:12}}>
+                        <iframe src={selected.pdfPreviewDataUri} title={`${selected.title} 미리보기`}
+                          style={{width:'100%', height:'100%', border:'none'}}/>
+                      </div>
+                    ) : (
+                      <div style={{height:240, border:'1px dashed var(--line-2)', marginBottom:12, display:'grid', placeItems:'center'}}>
+                        <span className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>NO PDF</span>
+                      </div>
+                    )}
+                    <div style={{display:'flex', gap:8}}>
+                      <label className="btn btn-small" style={{cursor:'pointer'}}>
+                        업로드
+                        <input type="file" accept="application/pdf" onChange={onUploadPdf} style={{display:'none'}}/>
+                      </label>
+                      {selected.pdfPreviewDataUri && (
+                        <button type="button" className="btn btn-small"
+                          onClick={() => { if (confirm('PDF 미리보기를 비울까요?')) patch({ pdfPreviewDataUri: '' }); }}
+                          style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
+                      )}
+                    </div>
+                    <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.5}}>
+                      미리보기 분량(2~3MB)만 권장. 사용자는 도서 상세 페이지의 "PDF 미리보기" 버튼으로 열람합니다.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {editTab === 'intro' && (
+                <div className="card" style={{padding:20}}>
+                  <label className="field-label">소개 (HTML 허용)</label>
+                  <textarea className="field-input" rows={12}
+                    value={selected.intro || ''}
+                    onChange={(e) => patch({ intro: e.target.value })}
+                    style={{fontFamily:'var(--font-mono)', fontSize:13, lineHeight:1.7}}/>
+                  <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.5}}>
+                    문단은 &lt;p&gt;…&lt;/p&gt;로 구분. 강조는 &lt;strong&gt;…&lt;/strong&gt;.
+                  </p>
+                </div>
+              )}
+
+              {editTab === 'toc' && (
+                <div className="card" style={{padding:20}}>
+                  <label className="field-label">목차 (한 줄에 한 항목)</label>
+                  <textarea className="field-input" rows={12}
+                    value={(selected.chapters || []).join('\n')}
+                    onChange={(e) => patch({ chapters: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })}
+                    style={{fontFamily:'var(--font-serif)', fontSize:14, lineHeight:1.8}}/>
+                </div>
+              )}
+
+              {editTab === 'author' && (
+                <div className="card" style={{padding:20}}>
+                  <label className="field-label">저자 소개</label>
+                  <textarea className="field-input" rows={8}
+                    value={selected.authorBio || ''}
+                    onChange={(e) => patch({ authorBio: e.target.value })}
+                    style={{fontSize:14, lineHeight:1.8}}/>
+                </div>
+              )}
+
+              {editTab === 'reviews' && (
+                <div>
+                  {(selected.reviews || []).length === 0 ? (
+                    <div className="card" style={{padding:24, textAlign:'center'}}>
+                      <span className="dim">등록된 리뷰가 없습니다.</span>
+                    </div>
+                  ) : (
+                    (selected.reviews || []).map((r) => (
+                      <div key={r.id} className="card" style={{padding:14, marginBottom:8, display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12}}>
+                        <div style={{flex:1}}>
+                          <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:4}}>
+                            <span className="gold" style={{fontSize:13}}>{'★'.repeat(r.rating || 5)}</span>
+                            <span className="mono dim-2" style={{fontSize:11}}>{r.userName}</span>
+                            <span className="mono dim-2" style={{fontSize:10}}>{new Date(r.createdAt).toLocaleDateString('ko-KR')}</span>
+                          </div>
+                          <p className="ko-serif" style={{fontSize:13, lineHeight:1.7, margin:0}}>{r.text}</p>
+                        </div>
+                        <button type="button" className="btn btn-small"
+                          onClick={() => {
+                            if (!confirm('이 리뷰를 삭제할까요?')) return;
+                            window.WSD_BOOKS.removeReview(selected.id, r.id);
+                            refresh();
+                          }}
+                          style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+                      </div>
+                    ))
+                  )}
+                  <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.5}}>
+                    리뷰는 사용자가 도서 상세 페이지에서 직접 등록합니다. 여기서는 부적절한 리뷰만 삭제할 수 있습니다.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+};
+
 // === Audit Log Panel ==============================================
 const AuditLogPanel = () => {
   const [tick, setTick] = React.useState(0);
@@ -2935,6 +3465,7 @@ const AdminPage = ({ go }) => {
   const [versionPage, setVersionPage] = React.useState(1);
   const [selectedPostIds, setSelectedPostIds] = React.useState(new Set());
   const [bulkTargetCat, setBulkTargetCat] = React.useState("");
+  const [bulkTargetPrefix, setBulkTargetPrefix] = React.useState("");
 
   const allCommunityPosts = React.useMemo(() => window.WSD_COMMUNITY.listPosts(), [postRefreshKey]);
   const allUsers = React.useMemo(() => window.WSD_AUTH.listUsers(), [postRefreshKey]);
@@ -2968,7 +3499,7 @@ const AdminPage = ({ go }) => {
     // 홈페이지 내비 순서와 동일하게 정렬: 커뮤니티 → 강연 → 투어 프로그램 → 뱅기노자 칼럼 → 왕의길
     { group: "콘텐츠",   items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성", "왕의길"] },
     { group: "회원",     items: ["회원"] },
-    { group: "운영 설정", items: ["카테고리", "회원 등급", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
+    { group: "운영 설정", items: ["사이트 콘텐츠", "카테고리", "회원 등급", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템",   items: ["버전 기록", "감사 로그", "KMS", "설정"] },
   ];
@@ -3024,6 +3555,15 @@ const AdminPage = ({ go }) => {
     selectedPostIds.forEach((id) => window.WSD_COMMUNITY.updatePost(id, { categoryId: cat.id, category: cat.label }));
     setSelectedPostIds(new Set());
     setBulkTargetCat("");
+    setPostRefreshKey((v) => v + 1);
+  };
+
+  const bulkSetPrefix = () => {
+    if (selectedPostIds.size === 0) return;
+    const next = bulkTargetPrefix.trim();
+    selectedPostIds.forEach((id) => window.WSD_COMMUNITY.updatePost(id, { prefix: next || null }));
+    setSelectedPostIds(new Set());
+    setBulkTargetPrefix("");
     setPostRefreshKey((v) => v + 1);
   };
 
@@ -3529,9 +4069,10 @@ const AdminPage = ({ go }) => {
 
             {/* 일괄 작업 바 */}
             {selectedPostIds.size > 0 && (
-              <div style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'rgba(212,175,55,0.07)', border:'1px solid var(--gold-dim)', marginBottom:12}}>
+              <div style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'rgba(59,130,246,0.07)', border:'1px solid var(--gold-dim)', marginBottom:12, flexWrap:'wrap'}}>
                 <span className="mono gold" style={{fontSize:11}}>{selectedPostIds.size}개 선택됨</span>
                 <button type="button" className="btn btn-small" style={{borderColor:'var(--danger)', color:'var(--danger)'}} onClick={bulkDeletePosts}>선택 삭제</button>
+                <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
                 <select className="field-input" style={{maxWidth:160, padding:'4px 8px'}} value={bulkTargetCat} onChange={(e) => setBulkTargetCat(e.target.value)}>
                   <option value="">게시판 선택...</option>
                   {window.WSD_STORES.categories.filter((c) => c.boardType === "community").map((c) => (
@@ -3539,6 +4080,9 @@ const AdminPage = ({ go }) => {
                   ))}
                 </select>
                 <button type="button" className="btn btn-small btn-gold" onClick={bulkMovePosts}>이동</button>
+                <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
+                <input type="text" className="field-input" style={{maxWidth:140, padding:'4px 8px'}} placeholder="말머리 (비우면 제거)" value={bulkTargetPrefix} onChange={(e) => setBulkTargetPrefix(e.target.value)} aria-label="일괄 적용할 말머리"/>
+                <button type="button" className="btn btn-small btn-gold" onClick={bulkSetPrefix}>말머리 적용</button>
                 <button type="button" className="btn btn-small" style={{marginLeft:'auto'}} onClick={() => setSelectedPostIds(new Set())}>선택 해제</button>
               </div>
             )}
@@ -3903,6 +4447,7 @@ const AdminPage = ({ go }) => {
         )}
 
         {/* 카테고리 CRUD */}
+        {tab === "사이트 콘텐츠" && <SiteContentAdminPanel/>}
         {tab === "카테고리" && <AdminCategoryPanel/>}
         {tab === "약관/개인정보" && <LegalAdminPanel/>}
         {tab === "자주 묻는 질문" && <FaqAdminPanel/>}
@@ -4601,4 +5146,4 @@ const AdminDenied = ({ go, user }) => (
   </div>
 );
 
-Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel, AuditLogPanel });
+Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel, AuditLogPanel, SiteContentAdminPanel });

@@ -15,6 +15,10 @@ const _lsGet = (k, fallback) => {
   } catch { return fallback; }
 };
 const _lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const _asArray = (value, fallback = []) => Array.isArray(value) ? value : fallback;
+const _asRecord = (value, fallback = {}) => (
+  value && typeof value === "object" && !Array.isArray(value) ? value : fallback
+);
 
 const WSD_STORAGE_VERSION = "v1-local-first";
 const hashPassword = (input) => {
@@ -28,14 +32,108 @@ const hashPassword = (input) => {
 };
 
 // 회원 등급 — 번호가 낮을수록 권한 낮음. admin > …
+// 색상은 사이트 블루 팔레트(--gold ~ --gold-ink)와 일관성 있게 단계적으로 진해진다.
 const DEFAULT_GRADES = [
-  { id: "guest",    label: "방문객", level: 0, color: "#78716a", desc: "비로그인 / 게스트" },
-  { id: "member",   label: "입문", level: 10, color: "#b8b1a1", desc: "회원가입 완료" },
-  { id: "reader",   label: "독자", level: 30, color: "#E8C547", desc: "활동 회원 (댓글 10+)" },
-  { id: "scholar",  label: "사관", level: 60, color: "#D4AF37", desc: "열성 회원 (칼럼 기고 가능)" },
-  { id: "wangsanam",label: "왕사남", level: 90, color: "#F5E6A8", desc: "운영진" },
-  { id: "admin",    label: "관리자", level: 100, color: "#F5E6A8", desc: "최고 관리자" },
+  { id: "guest",    label: "방문객", level: 0, color: "#64748B", desc: "비로그인 / 게스트" },
+  { id: "member",   label: "입문", level: 10, color: "#94A3B8", desc: "회원가입 완료" },
+  { id: "reader",   label: "독자", level: 30, color: "#93C5FD", desc: "활동 회원 (댓글 10+)" },
+  { id: "scholar",  label: "사관", level: 60, color: "#3B82F6", desc: "열성 회원 (칼럼 기고 가능)" },
+  { id: "wangsanam",label: "왕사남", level: 90, color: "#2563EB", desc: "운영진" },
+  { id: "admin",    label: "관리자", level: 100, color: "#1E3A8A", desc: "최고 관리자" },
 ];
+
+// 기존 localStorage에 남아있는 노란색(legacy gold) 등급 색상을 새 블루 팔레트로 마이그레이션.
+// id 기준 매칭 — 사용자가 직접 색을 바꿨으면 건드리지 않음.
+const LEGACY_GRADE_COLORS = {
+  guest: "#78716a",
+  member: "#b8b1a1",
+  reader: "#E8C547",
+  scholar: "#D4AF37",
+  wangsanam: "#F5E6A8",
+  admin: "#F5E6A8",
+};
+const migrateLegacyGradeColors = (grades) => {
+  if (!Array.isArray(grades)) return grades;
+  const byId = Object.fromEntries(DEFAULT_GRADES.map((g) => [g.id, g.color]));
+  return grades.map((g) => {
+    if (!g || !g.id) return g;
+    const legacy = LEGACY_GRADE_COLORS[g.id];
+    if (legacy && (g.color || "").toLowerCase() === legacy.toLowerCase() && byId[g.id]) {
+      return { ...g, color: byId[g.id] };
+    }
+    return g;
+  });
+};
+
+// 다양한 책 카탈로그 — 관리자 페이지에서 추가/편집. 표지(PNG)와 본문 미리보기(PDF)는
+// dataURI(base64)로 localStorage에 저장. 책마다 소개/목차/저자/리뷰가 독립적으로 따라간다.
+const DEFAULT_BOOKS = [
+  {
+    id: "wang",
+    slug: "wang",
+    title: "왕의길",
+    subtitle: "다섯 봉우리 아래 읽는 조선",
+    author: "뱅기노자",
+    publisher: "뱅기노자 프레스",
+    pages: 412,
+    isbn: "979-11-000-0000-0",
+    priceKR: 28000,
+    priceEN: 35000,
+    desc: "일월오봉도 앞에 선 자는 누구인가. 그 자리에서 무엇을 보았으며, 어떤 질문을 견뎠는가. 뱅기노자가 15년간 쌓아올린 궁궐 답사와 실록 독해의 결실을 한 권으로 엮는다. 왕의 자리가 아니라 왕이 바라본 길을 따라가는 책.",
+    intro: "<p>일월오봉도 앞에 선 자는 누구인가. 이 책은 그 자리에서 무엇을 보았는지를 묻는다.</p><p>저자 뱅기노자는 15년간 실록과 궁궐을 오가며 쌓아올린 기록을 한 권으로 엮었다. 왕의 자리가 아니라 왕이 바라본 길 — 그 시선의 각도를 오늘의 언어로 재구성한다.</p><p>총 5부 22장. 조선 27명의 왕 중 11명을 깊이 있게 다룬다.</p>",
+    chapters: [
+      "1부 · 다섯 봉우리의 설계",
+      "2부 · 어좌 뒤에서 바라본 것",
+      "3부 · 측근과 거리의 정치",
+      "4부 · 길이라는 말의 무게",
+      "5부 · 현대의 군주는 누구인가",
+    ],
+    authorBio: "뱅기노자. 커뮤니티 창립자. 15년간 조선왕조실록과 궁궐을 오갔다. 답사와 강연을 통해 조선의 왕들을 오늘의 자리에 소환한다. 『왕의길』은 그의 첫 단독 저서다.",
+    coverDataUri: "",
+    pdfPreviewDataUri: "",
+    badges: ["출간"],
+    status: "published",
+    publishedAt: "2026-04-01",
+    primary: true,
+    order: 0,
+    reviews: [],
+  },
+];
+
+// 사이트 콘텐츠 — 관리자 페이지에서 직접 편집되는 메뉴 라벨, 히어로 텍스트, 푸터 문구.
+// 각 섹션은 기본값 위에 사용자 편집값을 얕은 병합으로 덮어쓴다.
+const DEFAULT_SITE_CONTENT = {
+  nav: {
+    home: "홈",
+    community: "커뮤니티",
+    lectures: "강연",
+    tour: "투어 프로그램",
+    column: "뱅기노자 칼럼",
+    book: "뱅기노자의 길",
+  },
+  brand: { name: "뱅기노자", sub: "BANGINOJA" },
+  hero: {
+    eyebrow: "BANGINOJA · 뱅기타고 노자",
+    title1: "뱅기타고",
+    title2: "한국을",
+    title3: "느끼다",
+    subtitle: "궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다.",
+    ctaPrimary: "커뮤니티 참여하기 →",
+    ctaSecondary: "투어 프로그램 보기",
+    mapHint: "지도를 클릭해 여행지를 탐색하세요",
+  },
+  footer: {
+    description: "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행.",
+    signature: "뱅기타고 노자 · DESIGNED IN SEOUL",
+  },
+  // 이미지는 dataURI(base64)로 저장한다. 비워두면 기본 SVG/이모지 마크가 사용된다.
+  branding: { logoDataUri: "", faviconDataUri: "" },
+  og: {
+    title: "뱅기노자 — 뱅기 타고 한국을 느끼다",
+    description: "뱅기노자 — 뱅기 타고 한국을 느끼다. 궁궐 답사부터 지역 여행까지, 한국의 역사·문화·자연을 함께 여행하는 커뮤니티.",
+    imageDataUri: "",
+  },
+};
 
 // 게시판 분류 — 각 카테고리에 최소 등급(minLevel) 지정 시 접근 제한
 const DEFAULT_CATEGORIES = [
@@ -109,37 +207,47 @@ const ensureCommunityPostsSeeded = (posts, legacyUserPosts) => {
 
 window.WSD_STORES = {
   storageVersion: WSD_STORAGE_VERSION,
-  grades: _lsGet('wsd_grades', DEFAULT_GRADES),
-  categories: _lsGet('wsd_categories', DEFAULT_CATEGORIES),
+  grades: (() => {
+    const raw = _asArray(_lsGet('wsd_grades', DEFAULT_GRADES), DEFAULT_GRADES.slice());
+    const migrated = migrateLegacyGradeColors(raw);
+    // 색상이 실제로 바뀐 경우에만 캐시 업데이트(한 번만 발생)
+    if (raw.some((g, i) => g && migrated[i] && g.color !== migrated[i].color)) {
+      try { _lsSet('wsd_grades', migrated); } catch {}
+    }
+    return migrated;
+  })(),
+  categories: _asArray(_lsGet('wsd_categories', DEFAULT_CATEGORIES), DEFAULT_CATEGORIES.slice()),
   communityPosts: ensureCommunityPostsSeeded(_lsGet('wsd_community_posts', []), _lsGet('wsd_user_posts', [])),
-  userPosts: _lsGet('wsd_user_posts', []),
-  comments: _lsGet('wsd_comments', {}),
-  userColumns: _lsGet('wsd_user_columns', []),
+  userPosts: _asArray(_lsGet('wsd_user_posts', [])),
+  comments: _asRecord(_lsGet('wsd_comments', {})),
+  userColumns: _asArray(_lsGet('wsd_user_columns', [])),
   users: ensureUsersSeeded(_lsGet('wsd_users', DEFAULT_USERS)),
-  session: _lsGet('wsd_session', null),
-  bookmarks: _lsGet('wsd_bookmarks', {}),
-  reports: _lsGet('wsd_reports', []),
-  notifications: _lsGet('wsd_notifications', {}),
-  columnEngagement: _lsGet('wsd_column_engagement', {}),
-  lectureOverrides: _lsGet('wsd_lecture_overrides', {}),
-  lectureRegistrations: _lsGet('wsd_lecture_registrations', {}),
-  bankAccount: _lsGet('wsd_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
-  bookOrders: _lsGet('wsd_book_orders', []),
-  bookReviews: _lsGet('wsd_book_reviews', []),
-  tourOverrides: _lsGet('wsd_tour_overrides', {}),
-  tourReservations: _lsGet('wsd_tour_reservations', {}),
-  tourReviews: _lsGet('wsd_tour_reviews', {}),
-  legalDocs: _lsGet('wsd_legal_docs', {
+  session: _asRecord(_lsGet('wsd_session', null), null),
+  bookmarks: _asRecord(_lsGet('wsd_bookmarks', {})),
+  reports: _asArray(_lsGet('wsd_reports', [])),
+  notifications: _asRecord(_lsGet('wsd_notifications', {})),
+  columnEngagement: _asRecord(_lsGet('wsd_column_engagement', {})),
+  lectureOverrides: _asRecord(_lsGet('wsd_lecture_overrides', {})),
+  lectureRegistrations: _asRecord(_lsGet('wsd_lecture_registrations', {})),
+  bankAccount: _asRecord(_lsGet('wsd_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }), { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
+  bookOrders: _asArray(_lsGet('wsd_book_orders', [])),
+  bookReviews: _asArray(_lsGet('wsd_book_reviews', [])),
+  tourOverrides: _asRecord(_lsGet('wsd_tour_overrides', {})),
+  tourReservations: _asRecord(_lsGet('wsd_tour_reservations', {})),
+  tourReviews: _asRecord(_lsGet('wsd_tour_reviews', {})),
+  legalDocs: _asRecord(_lsGet('wsd_legal_docs', {
     privacy: { title: "개인정보 처리방침", body: "<p>왕사들 사이트는 회원 가입과 운영을 위해 최소한의 개인정보를 수집·이용합니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
     terms:   { title: "이용약관",          body: "<p>왕사들 사이트의 이용약관입니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
-  }),
-  lectureReviews: _lsGet('wsd_lecture_reviews', {}),
-  auditLog: _lsGet('wsd_audit_log', []),
-  faqs: _lsGet('wsd_faqs', [
+  })),
+  lectureReviews: _asRecord(_lsGet('wsd_lecture_reviews', {})),
+  auditLog: _asArray(_lsGet('wsd_audit_log', [])),
+  siteContent: _asRecord(_lsGet('wsd_site_content', {}), {}),
+  books: _asArray(_lsGet('wsd_books', DEFAULT_BOOKS), DEFAULT_BOOKS.slice()),
+  faqs: _asArray(_lsGet('wsd_faqs', [
     { id: 'faq-1', question: "회원가입은 어떻게 하나요?", answer: "상단 로그인 화면에서 '회원가입' 탭을 눌러 이메일과 비밀번호를 등록하면 즉시 가입됩니다.", category: '계정', order: 0 },
     { id: 'faq-2', question: "강연·답사 결제는 어떻게 진행되나요?", answer: "현재는 무통장 입금만 지원합니다. 신청 → 안내 계좌로 입금 → 운영자 입금 확인 → 참가 확정 순으로 진행됩니다.", category: '결제', order: 1 },
     { id: 'faq-3', question: "주문 취소 / 환불은 가능한가요?", answer: "마이페이지에서 입금 확인 전 단계의 주문은 직접 취소할 수 있습니다. 환불 처리는 운영자에게 문의해 주세요.", category: '결제', order: 2 },
-  ]),
+  ])),
 };
 window.WSD_SAVE = {
   grades: () => _lsSet('wsd_grades', window.WSD_STORES.grades),
@@ -164,6 +272,8 @@ window.WSD_SAVE = {
   tourReviews: () => _lsSet('wsd_tour_reviews', window.WSD_STORES.tourReviews),
   legalDocs: () => _lsSet('wsd_legal_docs', window.WSD_STORES.legalDocs),
   faqs: () => _lsSet('wsd_faqs', window.WSD_STORES.faqs),
+  siteContent: () => _lsSet('wsd_site_content', window.WSD_STORES.siteContent),
+  books: () => _lsSet('wsd_books', window.WSD_STORES.books),
   lectureReviews: () => _lsSet('wsd_lecture_reviews', window.WSD_STORES.lectureReviews),
   auditLog: () => _lsSet('wsd_audit_log', window.WSD_STORES.auditLog),
   resetGrades: () => { window.WSD_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('wsd_grades', window.WSD_STORES.grades); },
@@ -1672,6 +1782,172 @@ window.WSD_GRADE_PROMO = {
       message: `활동을 기반으로 등급이 ${grades.find((g) => g.id === targetId)?.label || targetId}(으)로 승격되었습니다.`,
     });
     return targetId;
+  },
+};
+
+// === 사이트 콘텐츠(WSD_SITE_CONTENT) helper =============================
+// 메뉴 라벨, 히어로/푸터 텍스트, 로고/파비콘, OG 메타를 묶어 관리한다.
+// `get()`은 항상 기본값과 사용자 편집값을 섹션 단위로 얕은 병합해 반환한다.
+window.WSD_SITE_CONTENT = {
+  defaults: DEFAULT_SITE_CONTENT,
+  get() {
+    const stored = window.WSD_STORES.siteContent || {};
+    const merged = {};
+    for (const key of Object.keys(DEFAULT_SITE_CONTENT)) {
+      merged[key] = { ...DEFAULT_SITE_CONTENT[key], ...((stored[key] && typeof stored[key] === 'object') ? stored[key] : {}) };
+    }
+    return merged;
+  },
+  saveSection(section, patch) {
+    const cur = window.WSD_STORES.siteContent || {};
+    const next = { ...cur, [section]: { ...(cur[section] || {}), ...patch } };
+    window.WSD_STORES.siteContent = next;
+    window.WSD_SAVE.siteContent();
+    this.applyHead();
+    return next;
+  },
+  resetSection(section) {
+    const cur = window.WSD_STORES.siteContent || {};
+    const next = { ...cur };
+    delete next[section];
+    window.WSD_STORES.siteContent = next;
+    window.WSD_SAVE.siteContent();
+    this.applyHead();
+    return next;
+  },
+  // <head>의 favicon, OG/description 메타를 현재 siteContent로 덮어쓴다.
+  // 페이지 로드 시 1회 + 관리자 저장 시 호출.
+  applyHead() {
+    if (typeof document === 'undefined') return;
+    const sc = this.get();
+    try {
+      // favicon
+      const fav = sc.branding?.faviconDataUri;
+      if (fav) {
+        let link = document.querySelector("link[rel~='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.setAttribute('rel', 'icon');
+          document.head.appendChild(link);
+        }
+        link.setAttribute('href', fav);
+      }
+      // title + description
+      if (sc.og?.title) document.title = sc.og.title;
+      const setMeta = (selector, attr, value) => {
+        if (!value) return;
+        let el = document.querySelector(selector);
+        if (!el) {
+          el = document.createElement('meta');
+          const [, key, val] = selector.match(/\[(\w+)="([^"]+)"\]/) || [];
+          if (key && val) el.setAttribute(key, val);
+          document.head.appendChild(el);
+        }
+        el.setAttribute(attr, value);
+      };
+      setMeta('meta[name="description"]', 'content', sc.og?.description);
+      setMeta('meta[property="og:title"]', 'content', sc.og?.title);
+      setMeta('meta[property="og:description"]', 'content', sc.og?.description);
+      if (sc.og?.imageDataUri) setMeta('meta[property="og:image"]', 'content', sc.og.imageDataUri);
+    } catch {}
+  },
+};
+// 페이지 로드 직후 한 번 적용
+try { window.WSD_SITE_CONTENT.applyHead(); } catch {}
+
+// === 책 카탈로그(WSD_BOOKS) helper =======================================
+// 다양한 책을 관리하고 표지(PNG)/본문 미리보기(PDF)를 dataURI로 보관한다.
+// 책마다 독립된 reviews 배열을 갖는다 — 기존 WSD_BOOK_ORDERS의 글로벌 리뷰와 별개.
+window.WSD_BOOKS = {
+  list({ status } = {}) {
+    const all = (window.WSD_STORES.books || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (status) return all.filter((b) => (b.status || 'published') === status);
+    return all;
+  },
+  get(id) {
+    if (!id) return null;
+    return (window.WSD_STORES.books || []).find((b) => b.id === id) || null;
+  },
+  // primary=true 표시된 책 또는 첫 번째 published 책 반환. 없으면 null.
+  primary() {
+    const books = this.list();
+    return books.find((b) => b.primary && (b.status || 'published') === 'published')
+      || books.find((b) => (b.status || 'published') === 'published')
+      || null;
+  },
+  _persist(next) {
+    window.WSD_STORES.books = next;
+    window.WSD_SAVE.books();
+  },
+  create(payload = {}) {
+    const id = payload.id || `book-${Date.now()}-${Math.random().toString(36).slice(2,5)}`;
+    const next = (window.WSD_STORES.books || []).slice();
+    next.push({
+      id,
+      slug: payload.slug || id,
+      title: String(payload.title || '제목 없음'),
+      subtitle: String(payload.subtitle || ''),
+      author: String(payload.author || '뱅기노자'),
+      publisher: String(payload.publisher || ''),
+      pages: Number(payload.pages || 0),
+      isbn: String(payload.isbn || ''),
+      priceKR: Number(payload.priceKR || 0),
+      priceEN: Number(payload.priceEN || 0),
+      desc: String(payload.desc || ''),
+      intro: String(payload.intro || ''),
+      chapters: Array.isArray(payload.chapters) ? payload.chapters.slice() : [],
+      authorBio: String(payload.authorBio || ''),
+      coverDataUri: String(payload.coverDataUri || ''),
+      pdfPreviewDataUri: String(payload.pdfPreviewDataUri || ''),
+      badges: Array.isArray(payload.badges) ? payload.badges.slice() : [],
+      status: payload.status || 'published',
+      publishedAt: payload.publishedAt || new Date().toISOString().slice(0, 10),
+      primary: !!payload.primary,
+      order: Number.isFinite(payload.order) ? payload.order : next.length,
+      reviews: [],
+    });
+    this._persist(next);
+    return this.get(id);
+  },
+  update(id, patch = {}) {
+    const next = (window.WSD_STORES.books || []).slice();
+    const idx = next.findIndex((b) => b.id === id);
+    if (idx < 0) return null;
+    next[idx] = { ...next[idx], ...patch };
+    // primary는 한 권만 — 다른 책의 primary는 false로
+    if (patch.primary === true) {
+      next.forEach((b, i) => { if (i !== idx) b.primary = false; });
+    }
+    this._persist(next);
+    return next[idx];
+  },
+  remove(id) {
+    const next = (window.WSD_STORES.books || []).filter((b) => b.id !== id);
+    this._persist(next);
+  },
+  reorder(ids) {
+    const map = Object.fromEntries((window.WSD_STORES.books || []).map((b) => [b.id, b]));
+    const next = ids.map((id, i) => map[id] && { ...map[id], order: i }).filter(Boolean);
+    if (next.length) this._persist(next);
+  },
+  // 책별 리뷰
+  addReview(id, payload) {
+    const book = this.get(id);
+    if (!book) return null;
+    const review = {
+      id: `rv-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      userId: payload.userId || null,
+      userName: String(payload.userName || '익명'),
+      rating: Math.max(1, Math.min(5, Number(payload.rating || 5))),
+      text: String(payload.text || '').trim(),
+      createdAt: new Date().toISOString(),
+    };
+    return this.update(id, { reviews: [review, ...(book.reviews || [])] });
+  },
+  removeReview(id, reviewId) {
+    const book = this.get(id);
+    if (!book) return null;
+    return this.update(id, { reviews: (book.reviews || []).filter((r) => r.id !== reviewId) });
   },
 };
 

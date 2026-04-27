@@ -208,34 +208,44 @@ const NotificationBell = ({ user, onPick }) => {
 
 const BanginojaIcon = ({ size = 22 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    {/* 비행기 — 뱅기노자 브랜드 마크 */}
+    {/* 뱅기 — 뱅기노자 브랜드 마크 */}
     <path d="M21 14L13 9V4a1 1 0 0 0-2 0v5L3 14v2l8-2.5 2 6.5h2l2-6.5L21 16V14z"
       fill="var(--gold)"/>
   </svg>
 );
 
-const Brand = ({ onClick }) => (
-  <button
-    className="brand"
-    onClick={onClick}
-    aria-label="뱅기노자 홈으로"
-    style={{background:'none', border:'none', padding:0, cursor:'pointer'}}>
-    <span className="brand-mark" aria-hidden="true"><BanginojaIcon size={22}/></span>
-    <span className="brand-name">
-      뱅기노자
-      <span className="sub" lang="en">BANGINOJA</span>
-    </span>
-  </button>
-);
+const Brand = ({ onClick }) => {
+  const sc = window.WSD_SITE_CONTENT?.get?.() || {};
+  const brand = sc.brand || { name: "뱅기노자", sub: "BANGINOJA" };
+  const logo = sc.branding?.logoDataUri;
+  return (
+    <button
+      className="brand"
+      onClick={onClick}
+      aria-label={`${brand.name} 홈으로`}
+      style={{background:'none', border:'none', padding:0, cursor:'pointer'}}>
+      <span className="brand-mark" aria-hidden="true">
+        {logo
+          ? <img src={logo} alt="" style={{width:22, height:22, objectFit:'contain', display:'block'}}/>
+          : <BanginojaIcon size={22}/>}
+      </span>
+      <span className="brand-name">
+        {brand.name}
+        <span className="sub" lang="en">{brand.sub}</span>
+      </span>
+    </button>
+  );
+};
 
 const Nav = ({ route, go, user, onLogout }) => {
+  const navL = (window.WSD_SITE_CONTENT?.get?.() || {}).nav || {};
   const items = [
-    { key: "home", label: "홈" },
-    { key: "community", label: "커뮤니티", subRouteKey: "community" },
-    { key: "lectures", label: "강연" },
-    { key: "tour", label: "투어 프로그램" },
-    { key: "column", label: "뱅기노자 칼럼" },
-    { key: "book", label: "왕의길" },
+    { key: "home", label: navL.home || "홈" },
+    { key: "community", label: navL.community || "커뮤니티", subRouteKey: "community" },
+    { key: "lectures", label: navL.lectures || "강연" },
+    { key: "tour", label: navL.tour || "투어 프로그램" },
+    { key: "column", label: navL.column || "뱅기노자 칼럼" },
+    { key: "book", label: navL.book || "뱅기노자의 길" },
   ];
   // 커뮤니티 메가메뉴: WSD_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
   const userLevel = window.WSD_USER_LEVEL ? window.WSD_USER_LEVEL(user) : (user ? 10 : 0);
@@ -358,7 +368,7 @@ const Footer = ({ go }) => (
         <div>
           <Brand onClick={() => go("home")}/>
           <p className="dim" style={{marginTop:20, fontSize:13, lineHeight:1.7, maxWidth:360}}>
-            비행기 타고 놀자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행.
+            {(window.WSD_SITE_CONTENT?.get?.() || {}).footer?.description || "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행."}
           </p>
           <button type="button" className="btn btn-small" onClick={() => go("admin")}
             style={{marginTop:20}}>개인정보 처리 · 관리자</button>
@@ -408,7 +418,7 @@ const Footer = ({ go }) => (
         <span className="mono" style={{color:'var(--gold-dim)'}}>
           v{window.WSD_VERSION?.version || '0.0.0'} · build {window.WSD_VERSION?.build || '—'} · {window.WSD_VERSION?.channel || ''}
         </span>
-        <span>비행기 타고 놀자 · DESIGNED IN SEOUL</span>
+        <span>{(window.WSD_SITE_CONTENT?.get?.() || {}).footer?.signature || "뱅기타고 노자 · DESIGNED IN SEOUL"}</span>
       </div>
     </div>
   </footer>

@@ -219,11 +219,6 @@ const BookPage = ({ go, cart, setCart, user }) => {
               <button className="btn btn-block">장바구니</button>
             </div>
 
-            <p className="dim-2" style={{fontSize:11, textAlign:'center', marginTop:20, lineHeight:1.8}}>
-              3만원 이상 무료배송 · 영문판 해외 배송 가능<br/>
-              회원 10% 적립 · 사인본 한정 수량
-            </p>
-
             {/* Tabs */}
             <div style={{marginTop:60, borderTop:'1px solid var(--line-2)', paddingTop:40}}>
               <div style={{display:'flex', gap:0, borderBottom:'1px solid var(--line)', marginBottom:32}}>
@@ -312,6 +307,24 @@ const CheckoutPage = ({ go, cart, user }) => {
             <button className="btn btn-gold" onClick={() => go('login')}>로그인</button>
             <button className="btn" onClick={() => go('signup')}>회원가입</button>
             <button className="btn btn-ghost" onClick={() => go('book')}>책 정보로 돌아가기</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!cart) {
+    return (
+      <div className="section">
+        <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
+          <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:16}}>CHECKOUT · 결제</div>
+          <h1 className="ko-serif" style={{fontSize:32, marginBottom:20}}>장바구니가 비어 있습니다</h1>
+          <p className="dim" style={{fontSize:15, lineHeight:1.8, marginBottom:32}}>
+            바로 결제 화면으로 들어온 상태입니다. 책 정보를 확인한 뒤 다시 주문을 진행해 주세요.
+          </p>
+          <div style={{display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap'}}>
+            <button className="btn btn-gold" onClick={() => go('book')}>책 정보로 이동</button>
+            <button className="btn" onClick={() => go('home')}>홈으로</button>
           </div>
         </div>
       </div>
@@ -511,7 +524,6 @@ const CheckoutPage = ({ go, cart, user }) => {
                 <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>◆ 운영 안내</div>
                 <div className="dim" style={{fontSize:12, lineHeight:1.7}}>
                   · 입금 확인 후 평일 1-2일 내 발송<br/>
-                  · 3만원 이상 무료배송<br/>
                   · 주문 취소·환불은 마이페이지에서 요청
                 </div>
               </div>

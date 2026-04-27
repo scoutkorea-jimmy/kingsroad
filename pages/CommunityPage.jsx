@@ -291,6 +291,11 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const visibleCats = categories.filter(c => userLevel >= (c.minLevel ?? 0));
   const currentBoard = categories.find(c => c.id === tab);
   const boardPrefixes = currentBoard?.prefixes || [];
+  const canReadPost = React.useCallback((post) => {
+    if (!post) return false;
+    const cat = categories.find(c => c.id === post.categoryId) || categories.find(c => c.label === post.category);
+    return !cat || userLevel >= (cat.minLevel ?? 0);
+  }, [categories, userLevel]);
 
   React.useEffect(() => { setActivePrefix(""); }, [tab]);
 
@@ -315,6 +320,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
 
   if (writing) {
     return <PostCompose
+      key={writing === true ? "new" : String(writing.id)}
       user={user}
       initialPost={writing === true ? null : writing}
       onCancel={() => setWriting(null)}
@@ -332,7 +338,27 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   }
 
   if (postId) {
-    const post = allPosts.find(p => p.id === postId) || allPosts[0];
+    const post = allPosts.find(p => String(p.id) === String(postId)) || null;
+    if (!post) {
+      return (
+        <div className="section">
+          <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
+            <p className="dim" style={{fontSize:14, marginBottom:16}}>해당 게시글을 찾을 수 없습니다.</p>
+            <button type="button" className="btn" onClick={() => setPostId(null)}>목록으로</button>
+          </div>
+        </div>
+      );
+    }
+    if (!canReadPost(post)) {
+      return (
+        <div className="section">
+          <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
+            <p className="dim" style={{fontSize:14, marginBottom:16}}>현재 등급으로는 이 게시글을 볼 수 없습니다.</p>
+            <button type="button" className="btn" onClick={() => setPostId(null)}>목록으로</button>
+          </div>
+        </div>
+      );
+    }
     return <PostDetail
       post={post}
       go={go}
@@ -554,7 +580,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
 // === Post Compose =======================================================
 const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userLevel }) => {
   const writable = categories.filter(c => userLevel >= (c.postMinLevel ?? c.minLevel ?? 0));
-  const [categoryId, setCategoryId] = React.useState(initialPost?.categoryId || writable[0]?.id || categories[0]?.id);
+  const defaultCategoryId = initialPost?.categoryId || writable[0]?.id || categories[0]?.id || "";
+  const [categoryId, setCategoryId] = React.useState(defaultCategoryId);
   const [title, setTitle] = React.useState(initialPost?.title || "");
   const [prefix, setPrefix] = React.useState(initialPost?.prefix || "");
   const [tags, setTags] = React.useState(initialPost?.tags || []);
@@ -563,11 +590,30 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   const [bodyText, setBodyText] = React.useState(initialPost?.body?.text || "");
   const [error, setError] = React.useState("");
   const isEditing = !!initialPost;
+  const prevCategoryIdRef = React.useRef(categoryId);
+
+  React.useEffect(() => {
+    setCategoryId(defaultCategoryId);
+    setTitle(initialPost?.title || "");
+    setPrefix(initialPost?.prefix || "");
+    setTags(initialPost?.tags || []);
+    setImages(initialPost?.images || []);
+    setBodyHtml(initialPost?.body?.html || "");
+    setBodyText(initialPost?.body?.text || "");
+    setError("");
+    prevCategoryIdRef.current = defaultCategoryId;
+  }, [initialPost, defaultCategoryId]);
 
   const selectedCat = categories.find(c => c.id === categoryId);
   const boardPrefixes = selectedCat?.prefixes || [];
 
-  React.useEffect(() => { setPrefix(""); }, [categoryId]);
+  React.useEffect(() => {
+    if (prevCategoryIdRef.current === categoryId) return;
+    prevCategoryIdRef.current = categoryId;
+    if (!isEditing || categoryId !== (initialPost?.categoryId || "")) {
+      setPrefix("");
+    }
+  }, [categoryId, initialPost, isEditing]);
 
   const submit = () => {
     setError("");
@@ -657,8 +703,9 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
           {/* Tiptap editor */}
             <div className="field">
               <div className="field-label">본문 <span className="gold" aria-hidden="true">*</span></div>
-              <TiptapEditor preset="simple"
-                content={initialPost?.body?.html || ""}
+              <TiptapEditor key={initialPost?.id || "new"}
+                preset="simple"
+                content={bodyHtml}
                 onUpdate={(html, _json, text) => { setBodyHtml(html); setBodyText(text); }}
                 placeholder="본문을 입력하세요..."/>
             </div>

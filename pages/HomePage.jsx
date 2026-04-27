@@ -26,6 +26,8 @@ const FEATURED_DESTINATIONS = [
 const HomePage = ({ go }) => {
   const data = window.WANGSADEUL_DATA;
   const [selectedDest, setSelectedDest] = React.useState(null);
+  const sc = (window.WSD_SITE_CONTENT?.get?.() || {});
+  const hero = sc.hero || {};
 
   const _cols = window.WSD_COLUMNS?.listPublic?.();
   const publicColumns = (_cols && _cols.length) ? _cols : [
@@ -61,7 +63,7 @@ const HomePage = ({ go }) => {
             {/* 왼쪽: 텍스트 */}
             <div>
               <div className="section-eyebrow">
-                <span>BANGINOJA · 비행기 타고 놀자</span>
+                <span>{hero.eyebrow || "BANGINOJA · 뱅기타고 노자"}</span>
               </div>
               <h1 style={{
                 fontFamily:'var(--font-display)',
@@ -72,22 +74,22 @@ const HomePage = ({ go }) => {
                 marginBottom:24,
                 color:'var(--ink)',
               }}>
-                비행기 타고<br/>
-                <span style={{color:'var(--gold)'}}>한국을</span><br/>
-                느끼다
+                {hero.title1 || "뱅기타고"}<br/>
+                <span style={{color:'var(--gold)'}}>{hero.title2 || "한국을"}</span><br/>
+                {hero.title3 || "느끼다"}
               </h1>
               <p style={{
                 fontSize:16, lineHeight:1.9, color:'var(--ink-2)',
                 maxWidth:420, marginBottom:40,
               }}>
-                궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다.
+                {hero.subtitle || "궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다."}
               </p>
               <div style={{display:'flex', gap:14, flexWrap:'wrap', marginBottom:56}}>
                 <button className="btn btn-gold" onClick={() => go('community')}>
-                  커뮤니티 참여하기 →
+                  {hero.ctaPrimary || "커뮤니티 참여하기 →"}
                 </button>
                 <button className="btn" onClick={() => go('tour')}>
-                  투어 프로그램 보기
+                  {hero.ctaSecondary || "투어 프로그램 보기"}
                 </button>
               </div>
               <div style={{
@@ -122,7 +124,7 @@ const HomePage = ({ go }) => {
                 letterSpacing:'0.25em', color:'var(--ink-3)',
                 marginBottom:12, textAlign:'center',
               }}>
-                지도를 클릭해 여행지를 탐색하세요
+                {hero.mapHint || "지도를 클릭해 여행지를 탐색하세요"}
               </div>
               {typeof KoreaMap === 'function' ? (
                 <KoreaMap
