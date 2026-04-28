@@ -468,6 +468,19 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.034.000",
+    date: "2026-04-28",
+    summary: "🧹 과거 데이터 정리 + 옛 캐시 영구 무력화. 마이그레이션된 엔티티의 localStorage 잔재 일괄 삭제(자동), Service Worker / Cache API 캐시 강제 해제, D1 의 진단용 probe 계정 정리.",
+    details: [
+      "data.js — `cleanupV33` 마이그레이션 신설. 페이지 로드 시점에 마이그레이션된 엔티티(book_orders/book_reviews/books/lecture_*/tour_*/user_columns/column_engagement/audit_log/legal_docs/faqs/bank_account/site_content/users/session/bookmarks/reports/notifications/grades/categories/community_posts/user_posts/comments) 의 localStorage 키와 wsd_* 잔재를 일괄 삭제. UI 상태(카트/세션캐시/쿠키동의/임시저장/라우트) 는 보존. 'bgnj_cleanup_v33' 마커로 1회만 실행.",
+      "index.html — 페이지 진입 시 등록되어 있을 수 있는 모든 Service Worker `unregister()` + Cache API `caches.delete()` 일괄 실행. 옛 SW 캐시가 새 빌드를 가리는 일을 영구 차단.",
+      "정적 자산 cache-buster 를 `?v=00.034.000` 로 갱신. HTML 자체는 이미 `Cache-Control: no-cache, no-store, must-revalidate` 메타로 캐시되지 않음.",
+      "D1 정리 — `probe-flow-%@example.com` / `signuptest+%@example.com` 진단용 테스트 계정 + 관련 sessions 일괄 DELETE. 정리 후 D1 상태: 사용자 1, 세션 1, 그 외 마이그레이션된 엔티티 모두 0(깨끗한 출발점).",
+      "BGNJ_DIAG.run() 헬퍼는 그대로 유지 — 콘솔에서 진단 시 즉시 origin/health/session 보고.",
+    ],
+    context: "사용자 요청 '과거 데이터 정리 + 옛 캐시 삭제'. 클라이언트 측은 (1) localStorage 잔재 자동 삭제 (2) Service Worker / Cache API 강제 해제 (3) ?v= cache-buster 갱신 의 3중 안전망으로 옛 코드/데이터의 잔류 가능성을 차단했습니다. 서버 측은 진단 과정에서 만든 probe 계정을 D1 에서 모두 제거했습니다. 다음 진입부터는 사용자가 강제 새로고침 한 번이면 모든 레거시 잔재가 정리되고 콘솔에 [BGNJ] v00.034.000 배지 + cleanup 결과가 출력됩니다.",
+  },
+  {
     version: "00.033.000",
     date: "2026-04-28",
     summary: "관리자 페이지 GUI 가독성 보강 + BGNJ_COLUMNS 서버 전환. 회원 상세 프로필이 한글 라벨 카드로(JSON 덤프 제거 확정), 감사 로그 details 가 key/value 칩으로, 정지 사유 입력이 모달 다이얼로그로 교체. 새 책 추가도 prompt() 대신 인라인 폼. 사용자 칼럼이 D1 user_columns 테이블 source-of-truth 로.",

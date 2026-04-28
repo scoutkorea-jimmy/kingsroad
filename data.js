@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.033.000",
+  version: "00.034.000",
   build: "2026.04.28",
   channel: "preview",
 };
@@ -68,6 +68,48 @@ window.BGNJ_DIAG = {
       }
     }
     localStorage.setItem('bgnj_migration_v1', 'done');
+  } catch {}
+})();
+
+// === v33 정리 — D1 로 이전된 엔티티의 localStorage 잔재 일괄 삭제 ===
+// 다음 키들은 이제 모두 D1 source of truth. 클라이언트 localStorage 에 남아있는 옛 데이터는
+// 캐시 충돌/오해를 일으키므로 한 번 비운다. UI 상태(카트/세션캐시/쿠키동의/임시저장/라우트) 는 보존.
+(function cleanupV33() {
+  try {
+    if (localStorage.getItem('bgnj_cleanup_v33') === 'done') return;
+    const KEEP_PREFIXES = ['bgnj_post_draft_'];
+    const KEEP_EXACT = new Set([
+      'bgnj_session_user',  // FCP 캐시
+      'bgnj_route',         // 마지막 라우트
+      'bgnj_cart',          // 장바구니 (UI 상태)
+      'bgnj_cookie_consent',// 쿠키 동의 결정
+      'bgnj_migration_v1',  // 마이그레이션 마커 (보존)
+      'bgnj_cleanup_v33',   // 본 마이그레이션 마커
+    ]);
+    // 마이그레이션된 엔티티 — 명시적 삭제.
+    const PURGE = [
+      'bgnj_book_orders', 'bgnj_book_reviews', 'bgnj_books',
+      'bgnj_lecture_overrides', 'bgnj_lecture_registrations', 'bgnj_lecture_reviews',
+      'bgnj_tour_overrides', 'bgnj_tour_reservations', 'bgnj_tour_reviews',
+      'bgnj_user_columns', 'bgnj_column_engagement',
+      'bgnj_audit_log', 'bgnj_legal_docs', 'bgnj_faqs',
+      'bgnj_bank_account', 'bgnj_site_content',
+      'bgnj_users', 'bgnj_session',
+      'bgnj_bookmarks', 'bgnj_reports', 'bgnj_notifications',
+      'bgnj_grades', 'bgnj_categories',
+      'bgnj_community_posts', 'bgnj_user_posts', 'bgnj_comments',
+    ];
+    const removed = [];
+    PURGE.forEach((k) => { if (localStorage.getItem(k) !== null) { localStorage.removeItem(k); removed.push(k); } });
+    // 또 wsd_* 잔재도 같이 정리(마이그레이션 후 더는 사용 안 함).
+    const wsdKeys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('wsd_')) wsdKeys.push(k);
+    }
+    wsdKeys.forEach((k) => { localStorage.removeItem(k); removed.push(k); });
+    localStorage.setItem('bgnj_cleanup_v33', 'done');
+    if (removed.length) console.log('[BGNJ] v33 cleanup — removed localStorage keys:', removed);
   } catch {}
 })();
 
