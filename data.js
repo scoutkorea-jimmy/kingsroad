@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.029.000",
+  version: "00.030.000",
   build: "2026.04.28",
   channel: "preview",
 };
@@ -384,8 +384,11 @@ window.BGNJ_AUTH = {
   getSessionUser() {
     return this._readCache();
   },
+  // 회원 목록 — 서버에서 최근 가져온 캐시(_usersCache) 우선. 비어있으면 레거시 BGNJ_STORES.users 를 폴백.
+  // 관리자 패널은 mount 시 refreshUsers() 를 await 로 호출하는 것이 권장됨.
   listUsers() {
-    return window.BGNJ_STORES.users.slice();
+    if (this._usersCache && this._usersCache.length) return this._usersCache.slice();
+    return (window.BGNJ_STORES.users || []).slice();
   },
   // 페이지 진입 시 1회 호출 — 서버 쿠키로 진짜 세션 검증 후 캐시 갱신.
   // 401(세션 없음) 이면 좀비 캐시를 즉시 비워 클라이언트가 잘못된 사용자로 보이지 않도록 한다.
@@ -458,66 +461,66 @@ window.BGNJ_AUTH = {
     return null;
   },
 
-  // ── 관리자 운영 ─────────────────────────────────────────────
-  setGrade(userId, gradeId) {
-    const before = (window.BGNJ_STORES.users || []).find((u) => u.id === userId);
-    window.BGNJ_STORES.users = window.BGNJ_STORES.users.map((u) => (
-      u.id === userId ? { ...u, gradeId, gradeChangedAt: new Date().toISOString() } : u
-    ));
-    window.BGNJ_SAVE.users();
+  // ── 관리자 운영 (서버 source of truth) ─────────────────────
+  // 모든 회원 변경은 PATCH /api/admin/users/:id 또는 DELETE 로 D1 에 영속.
+  // 호출 측은 await 으로 사용. listUsers() 는 _usersCache 를 쓰는데, 변경 후 refreshUsers() 호출 권장.
+  _usersCache: [],
+  async refreshUsers({ q } = {}) {
+    try {
+      const { users } = await window.BGNJ_API.admin.users.list({ q });
+      this._usersCache = (users || []).map((u) => ({
+        id: u.id, email: u.email, name: u.name,
+        isAdmin: !!u.is_admin, gradeId: u.grade_id,
+        suspended: !!u.suspended,
+        suspendedReason: u.suspended_reason || '',
+        joinedAt: u.created_at,
+        profile: u.profile_json ? (typeof u.profile_json === 'string' ? JSON.parse(u.profile_json) : u.profile_json) : null,
+        consents: u.consents_json ? (typeof u.consents_json === 'string' ? JSON.parse(u.consents_json) : u.consents_json) : null,
+      }));
+      try { window.dispatchEvent(new CustomEvent('bgnj-users-refresh')); } catch {}
+    } catch {}
+    return this._usersCache.slice();
+  },
+  async setGrade(userId, gradeId) {
+    await window.BGNJ_API.admin.users.update(userId, { gradeId });
+    await this.refreshUsers();
     if (window.BGNJ_STORES.session?.id === userId) {
       window.BGNJ_STORES.session = { ...window.BGNJ_STORES.session, gradeId };
       window.BGNJ_SAVE.session();
     }
-    if (before && before.gradeId !== gradeId) {
-      window.BGNJ_AUDIT?.log({ action: 'member.grade_change', target: `user:${userId}`, details: { from: before.gradeId, to: gradeId } });
-    }
-    return window.BGNJ_STORES.users.find((u) => u.id === userId) || null;
+    return this._usersCache.find((u) => u.id === userId) || null;
   },
-  suspendUser(userId, reason) {
-    window.BGNJ_STORES.users = window.BGNJ_STORES.users.map((u) => (
-      u.id === userId ? { ...u, suspended: true, suspendedReason: reason || '', suspendedAt: new Date().toISOString() } : u
-    ));
-    window.BGNJ_SAVE.users();
+  async suspendUser(userId, reason) {
+    await window.BGNJ_API.admin.users.update(userId, { suspended: true, suspendedReason: reason || '' });
+    await this.refreshUsers();
     if (window.BGNJ_STORES.session?.id === userId) {
       window.BGNJ_STORES.session = null;
       window.BGNJ_SAVE.session();
     }
-    window.BGNJ_AUDIT?.log({ action: 'member.suspend', target: `user:${userId}`, details: { reason: reason || '' } });
-    return window.BGNJ_STORES.users.find((u) => u.id === userId) || null;
+    return this._usersCache.find((u) => u.id === userId) || null;
   },
-  unsuspendUser(userId) {
-    window.BGNJ_STORES.users = window.BGNJ_STORES.users.map((u) => (
-      u.id === userId ? { ...u, suspended: false, suspendedReason: '', unsuspendedAt: new Date().toISOString() } : u
-    ));
-    window.BGNJ_SAVE.users();
-    window.BGNJ_AUDIT?.log({ action: 'member.unsuspend', target: `user:${userId}` });
-    return window.BGNJ_STORES.users.find((u) => u.id === userId) || null;
+  async unsuspendUser(userId) {
+    await window.BGNJ_API.admin.users.update(userId, { suspended: false });
+    await this.refreshUsers();
+    return this._usersCache.find((u) => u.id === userId) || null;
   },
-  removeUser(userId) {
-    window.BGNJ_STORES.users = window.BGNJ_STORES.users.filter((u) => u.id !== userId);
-    window.BGNJ_SAVE.users();
+  async removeUser(userId) {
+    await window.BGNJ_API.admin.users.remove(userId);
+    await this.refreshUsers();
     if (window.BGNJ_STORES.session?.id === userId) {
       window.BGNJ_STORES.session = null;
       window.BGNJ_SAVE.session();
     }
-    window.BGNJ_AUDIT?.log({ action: 'member.remove', target: `user:${userId}` });
   },
-  toggleAdmin(userId) {
-    const before = (window.BGNJ_STORES.users || []).find((u) => u.id === userId);
-    let next = null;
-    window.BGNJ_STORES.users = window.BGNJ_STORES.users.map((u) => {
-      if (u.id !== userId) return u;
-      next = { ...u, isAdmin: !u.isAdmin };
-      return next;
-    });
-    window.BGNJ_SAVE.users();
+  async toggleAdmin(userId) {
+    const before = this._usersCache.find((u) => u.id === userId);
+    if (!before) return null;
+    await window.BGNJ_API.admin.users.update(userId, { isAdmin: !before.isAdmin });
+    await this.refreshUsers();
+    const next = this._usersCache.find((u) => u.id === userId) || null;
     if (window.BGNJ_STORES.session?.id === userId && next) {
       window.BGNJ_STORES.session = { ...window.BGNJ_STORES.session, isAdmin: next.isAdmin };
       window.BGNJ_SAVE.session();
-    }
-    if (before && next) {
-      window.BGNJ_AUDIT?.log({ action: 'member.admin_toggle', target: `user:${userId}`, details: { from: !!before.isAdmin, to: !!next.isAdmin } });
     }
     return next;
   },

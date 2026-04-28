@@ -243,11 +243,12 @@ const handleAuthLogin = async (req, env) => {
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
   const row = await env.DB.prepare(
-    "SELECT id, email, name, password_hash, password_salt, is_admin, grade_id FROM users WHERE email = ?"
+    "SELECT id, email, name, password_hash, password_salt, is_admin, grade_id, suspended, suspended_reason FROM users WHERE email = ?"
   ).bind(email).first();
   if (!row) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않습니다.");
   const ok = await verifyPassword(password, row.password_hash, row.password_salt);
   if (!ok) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않습니다.");
+  if (row.suspended) throw new HttpError(403, `정지된 계정입니다.${row.suspended_reason ? ' 사유: ' + row.suspended_reason : ''}`);
 
   // 슈퍼 관리자 자동 승격
   let isAdmin = !!row.is_admin;
@@ -468,7 +469,7 @@ const handleAdminUsersList = async (req, env) => {
   let where = "1=1";
   if (q) { where += " AND (email LIKE ? OR name LIKE ?)"; args.push(`%${q}%`, `%${q}%`); }
   const { results } = await env.DB.prepare(
-    `SELECT id, email, name, is_admin, grade_id, suspended, suspended_reason, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT 500`
+    `SELECT id, email, name, is_admin, grade_id, suspended, suspended_reason, profile_json, consents_json, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT 500`
   ).bind(...args).all().catch(async () => {
     // suspended 컬럼이 없을 수도(v1 스키마) — 조용히 폴백
     const r = await env.DB.prepare(
@@ -487,6 +488,19 @@ const handleAdminUserPatch = async (req, env, id) => {
   const action = [];
   if ("isAdmin" in body) { fields.push("is_admin = ?"); args.push(body.isAdmin ? 1 : 0); action.push(body.isAdmin ? "promote_admin" : "demote_admin"); }
   if ("gradeId" in body) { fields.push("grade_id = ?"); args.push(body.gradeId); action.push(`grade=${body.gradeId}`); }
+  if ("suspended" in body) {
+    fields.push("suspended = ?"); args.push(body.suspended ? 1 : 0);
+    if (body.suspended) {
+      fields.push("suspended_reason = ?"); args.push(body.suspendedReason || "");
+      fields.push("suspended_at = ?"); args.push(nowIso());
+      // 정지된 사용자의 기존 세션은 무효화.
+      await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(id).run();
+    } else {
+      fields.push("suspended_reason = ?"); args.push(null);
+    }
+    action.push(body.suspended ? "suspend" : "unsuspend");
+  }
+  if ("name" in body && typeof body.name === "string") { fields.push("name = ?"); args.push(body.name.trim()); }
   if (!fields.length) return { ok: true };
   args.push(id);
   await env.DB.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).bind(...args).run();

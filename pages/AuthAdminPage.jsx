@@ -468,6 +468,23 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.030.000",
+    date: "2026-04-28",
+    summary: "관리자 회원 운영 서버 전환 + 회원 상세 가시성 개선. 등급 변경/관리자 토글/정지/해제/삭제가 D1 에 영속되며, 정지된 사용자는 로그인 거부 + 기존 세션 즉시 무효화. 회원 상세의 프로필 JSON 덤프를 라벨링된 카드로 교체.",
+    details: [
+      "BGNJ_AUTH 의 setGrade/toggleAdmin/suspendUser/unsuspendUser/removeUser 가 모두 PATCH /api/admin/users/:id 또는 DELETE 호출로 전환. D1 에 영속.",
+      "BGNJ_AUTH._usersCache + refreshUsers() 신설. listUsers() 가 캐시 우선, 비어있으면 레거시 폴백.",
+      "MemberAdminPanel — mount 시 refreshUsers() 자동 호출, 변경 액션이 await 로 동작 후 자동 새로고침. 'bgnj-users-refresh' 이벤트로 다른 패널과도 동기화.",
+      "Worker handleAdminUserPatch 가 suspended/suspendedReason/name 필드 추가 처리 + 정지 시 해당 사용자 모든 세션 즉시 DELETE.",
+      "Worker handleAuthLogin 이 suspended=1 사용자 로그인 거부(HTTP 403 + 사유 메시지 동봉).",
+      "users 테이블 ALTER — suspended/suspended_reason/suspended_at 컬럼 추가.",
+      "ProfileFields 컴포넌트 신설 — 회원 상세의 프로필을 한글 라벨(생년월일/전화번호/우편번호/주소/상세주소/성별/관심분야/추천인) + 빈 값 dash 표시로 가독성 있는 카드로 노출. 기존 JSON.stringify 덤프 제거.",
+      "활성 동의 배지가 한글 라벨로 표시(이용약관·개인정보 처리방침 / 마케팅 메일 / 제3자 제공).",
+      "Worker 배포: Version a3ff1281-92c8-4742-84e4-3279499e084c.",
+    ],
+    context: "사용자 요청 '관리자페이지 가시성 확보' + '나머지 페이지 다음 커밋' 의 첫 분량. 회원 운영(가장 자주 쓰는 관리 액션) 을 우선 서버 source-of-truth 로 전환했고, 회원 상세 화면에서 가입 시점에 받은 프로필 정보를 한눈에 읽을 수 있도록 가독성을 정리했습니다. 다음 커밋: BGNJ_LECTURES / TOURS / BOOK_ORDERS / COMMUNITY / BOOKS metadata 의 서버 전환과 해당 페이지 컴포넌트의 동기→비동기 호출 패턴 적용.",
+  },
+  {
     version: "00.029.000",
     date: "2026-04-28",
     summary: "🌐 서버 source-of-truth 1차 — Worker 에 빠진 모든 운영 엔드포인트 추가 + D1 스키마 보강 + 가입 시 프로필 저장 + 작은 헬퍼들(LEGAL/FAQ/AUDIT/SITE_CONTENT) 서버 연결. 큰 트랜잭션 헬퍼(BOOK_ORDERS/LECTURES/TOURS/COMMUNITY) 는 다음 사이클에서 일괄 전환.",
@@ -3398,6 +3415,44 @@ const AuditLogPanel = () => {
   );
 };
 
+// 프로필 필드 한글 라벨 + 빈 값은 dash 로 노출 — JSON 덤프 대신 가독성 있는 카드.
+const PROFILE_LABELS = {
+  birthdate: '생년월일',
+  phone: '전화번호',
+  zip: '우편번호',
+  addr1: '주소',
+  addr2: '상세 주소',
+  gender: '성별',
+  interest: '관심 분야',
+  recommender: '추천인',
+};
+const PROFILE_GENDER = { f: '여성', m: '남성', x: '기타/응답 안 함' };
+const ProfileFields = ({ profile }) => {
+  const entries = Object.entries(profile || {});
+  if (!entries.length) return <span className="dim-2">—</span>;
+  return (
+    <div style={{
+      display:'grid', gridTemplateColumns:'140px 1fr', gap:'8px 16px',
+      padding:'12px 14px', background:'var(--bg-2)', border:'1px solid var(--line)', fontSize:13,
+    }}>
+      {entries.map(([k, v]) => {
+        const label = PROFILE_LABELS[k] || k;
+        let value = v;
+        if (k === 'gender' && v) value = PROFILE_GENDER[v] || v;
+        const isEmpty = value === '' || value == null;
+        return (
+          <React.Fragment key={k}>
+            <div className="dim-2 mono" style={{fontSize:11, paddingTop:2}}>{label}</div>
+            <div style={{color: isEmpty ? 'var(--ink-3)' : 'var(--ink)', fontStyle: isEmpty ? 'italic' : 'normal'}}>
+              {isEmpty ? '—' : String(value)}
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+};
+
 // === Member Admin Panel ===========================================
 const MemberAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
@@ -3405,6 +3460,14 @@ const MemberAdminPanel = ({ go }) => {
   const [search, setSearch] = React.useState("");
   const [gradeFilter, setGradeFilter] = React.useState('all');
   const refresh = () => setTick((v) => v + 1);
+
+  // Mount 시 + 변경 후 서버에서 회원 목록 갱신.
+  React.useEffect(() => {
+    window.BGNJ_AUTH.refreshUsers?.().then(() => refresh());
+    const onRefresh = () => refresh();
+    window.addEventListener('bgnj-users-refresh', onRefresh);
+    return () => window.removeEventListener('bgnj-users-refresh', onRefresh);
+  }, []);
 
   const users = React.useMemo(() => window.BGNJ_AUTH.listUsers(), [tick]);
   const grades = (window.BGNJ_STORES?.grades || []);
@@ -3441,32 +3504,31 @@ const MemberAdminPanel = ({ go }) => {
     URL.revokeObjectURL(url);
   };
 
-  const changeGrade = (user, gradeId) => {
-    window.BGNJ_AUTH.setGrade(user.id, gradeId);
-    refresh();
+  const changeGrade = async (user, gradeId) => {
+    try { await window.BGNJ_AUTH.setGrade(user.id, gradeId); refresh(); }
+    catch (err) { alert(`등급 변경 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
-  const toggleAdmin = (user) => {
+  const toggleAdmin = async (user) => {
     if (!confirm(`${user.name} 님의 관리자 권한을 ${user.isAdmin ? '해제' : '부여'}하시겠어요?`)) return;
-    window.BGNJ_AUTH.toggleAdmin(user.id);
-    refresh();
+    try { await window.BGNJ_AUTH.toggleAdmin(user.id); refresh(); }
+    catch (err) { alert(`관리자 권한 변경 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
-  const suspendUser = (user) => {
+  const suspendUser = async (user) => {
     const reason = prompt('정지 사유 (선택)', '');
     if (reason === null) return;
-    window.BGNJ_AUTH.suspendUser(user.id, reason || '');
-    refresh();
+    try { await window.BGNJ_AUTH.suspendUser(user.id, reason || ''); refresh(); }
+    catch (err) { alert(`정지 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
-  const unsuspend = (user) => {
+  const unsuspend = async (user) => {
     if (!confirm(`${user.name} 님의 정지를 해제하시겠어요?`)) return;
-    window.BGNJ_AUTH.unsuspendUser(user.id);
-    refresh();
+    try { await window.BGNJ_AUTH.unsuspendUser(user.id); refresh(); }
+    catch (err) { alert(`정지 해제 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
-  const deleteUser = (user) => {
+  const deleteUser = async (user) => {
     if (user.email === 'admin@admin.admin') { alert('기본 관리자 계정은 삭제할 수 없습니다.'); return; }
     if (!confirm(`${user.name} (${user.email}) 계정을 정말 삭제하시겠어요? 이 작업은 되돌릴 수 없습니다.`)) return;
-    window.BGNJ_AUTH.removeUser(user.id);
-    setSelectedId(null);
-    refresh();
+    try { await window.BGNJ_AUTH.removeUser(user.id); setSelectedId(null); refresh(); }
+    catch (err) { alert(`삭제 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
 
   const gradeOf = (id) => grades.find((g) => g.id === id);
@@ -3515,16 +3577,19 @@ const MemberAdminPanel = ({ go }) => {
               </button>
             </dd>
             <dt className="dim-2 mono" style={{fontSize:11}}>활성 동의</dt>
-            <dd>{selected.consents ? Object.entries(selected.consents).filter(([, v]) => v).map(([k]) => (
-              <span key={k} className="badge" style={{marginRight:6}}>{k}</span>
-            )) : '-'}</dd>
+            <dd>{(() => {
+              const labels = { terms: '이용약관·개인정보 처리방침', marketing: '마케팅 메일', thirdParty: '제3자 제공' };
+              const active = selected.consents ? Object.entries(selected.consents).filter(([, v]) => v) : [];
+              if (!active.length) return <span className="dim-2">—</span>;
+              return active.map(([k]) => (
+                <span key={k} className="badge" style={{marginRight:6, fontSize:11}}>{labels[k] || k}</span>
+              ));
+            })()}</dd>
             {selected.profile && Object.keys(selected.profile).length > 0 && (
               <>
                 <dt className="dim-2 mono" style={{fontSize:11}}>프로필</dt>
                 <dd>
-                  <pre style={{fontSize:11, lineHeight:1.6, fontFamily:'var(--font-mono)', background:'var(--bg-2)', padding:10, overflow:'auto'}}>
-                    {JSON.stringify(selected.profile, null, 2)}
-                  </pre>
+                  <ProfileFields profile={selected.profile}/>
                 </dd>
               </>
             )}
