@@ -166,6 +166,13 @@ const DEFAULT_SITE_CONTENT = {
     description: "뱅기노자 — 뱅기 타고 한국을 느끼다. 궁궐 답사부터 지역 여행까지, 한국의 역사·문화·자연을 함께 여행하는 커뮤니티.",
     imageDataUri: "",
   },
+  // 로그인/회원가입 페이지 좌측 영역 — 관리자에서 이미지/문구 직접 편집 가능.
+  auth: {
+    imageDataUri: "",
+    eyebrow: "BANGINOJA",
+    title: "뱅기 타고\n뱅기노자가 되다",
+    description: "뱅기노자는 단순 여행 정보 사이트가 아닙니다. 함께 떠나고, 함께 걷고, 함께 이야기하는 여행자들의 광장입니다. 매달 새로운 답사와 칼럼이 이어집니다.",
+  },
 };
 
 // 게시판 분류 — 각 카테고리에 최소 등급(minLevel) 지정 시 접근 제한
@@ -609,17 +616,21 @@ window.BGNJ_COMMUNITY = {
     return this.getPost(postId);
   },
   deletePost(postId) {
+    const targetPost = this.getPost(postId);
+    const authorId = targetPost?.authorId || null;
     const serverPost = this._serverPosts.find((p) => String(p.id) === String(postId));
     if (serverPost) {
       this.deletePostRemote(postId).catch(() => {});
       this._serverPosts = this._serverPosts.filter((p) => String(p.id) !== String(postId));
       try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+      if (authorId) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
       return;
     }
     const nextPosts = this.listPosts().filter((post) => String(post.id) !== String(postId));
     this.savePosts(nextPosts.filter((p) => !p._remote));
     delete window.BGNJ_STORES.comments[postId];
     window.BGNJ_SAVE.comments();
+    if (authorId) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
   },
   incrementViews(postId) {
     const post = this.getPost(postId);
@@ -686,15 +697,21 @@ window.BGNJ_COMMUNITY = {
   },
   deleteComment(postId, commentId) {
     const post = this.getPost(postId);
+    // 댓글 작성자 추적 — 강등 판단용.
+    const allComments = this.getComments(postId);
+    const removed = allComments.find((c) => String(c.id) === String(commentId));
+    const authorId = removed?.authorId || null;
     if (post && post._remote) {
       // 서버 댓글 삭제 API는 아직 없음 — 로컬 캐시에서만 제거(다음 새로고침 시 복원될 수 있음).
       const arr = this._commentsCache[String(postId)] || [];
       this._commentsCache[String(postId)] = arr.filter((c) => String(c.id) !== String(commentId));
       try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}
+      if (authorId) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
       return this._commentsCache[String(postId)];
     }
-    const nextComments = this.getComments(postId).filter((comment) => String(comment.id) !== String(commentId));
+    const nextComments = allComments.filter((comment) => String(comment.id) !== String(commentId));
     this.saveComments(postId, nextComments);
+    if (authorId) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
     return nextComments;
   },
   exportCsv() {
@@ -1948,10 +1965,12 @@ window.BGNJ_AUDIT = {
   },
 };
 
-// === 자동 등급 승격(BGNJ_GRADE_PROMO) ====================================
+// === 자동 등급 승격/강등(BGNJ_GRADE_PROMO) ===============================
 // 활동(글 + 댓글 가중치)을 기준으로 사용자의 자격 등급을 평가.
-// 운영자는 admin / wangsanam 등급은 자동 변경하지 않으며, 기본 흐름은 회원이 활동을
-// 쌓을 때만 더 높은 등급으로 '승격'한다(강등은 없음).
+// 운영자는 admin / wangsanam 등급은 자동 변경하지 않는다.
+// 승격: 새 글/댓글 작성 시점에 호출되어 자격이 되는 가장 높은 등급으로 올린다.
+// 강등: 게시글/댓글 삭제 시점 또는 관리자가 수동으로 호출. 활동 누적량이 현재 등급
+//      기준에 미치지 못하면 자격 등급으로 내린다 (이동 폭은 한 단계가 아니라 자격 기준 그대로).
 window.BGNJ_GRADE_RULES = {
   reader:  { posts: 0,  comments: 5  },   // 댓글 5개 이상 → 독자
   scholar: { posts: 3,  comments: 15 },   // 글 3개 + 댓글 15개 → 사관
@@ -1997,6 +2016,45 @@ window.BGNJ_GRADE_PROMO = {
       message: `활동을 기반으로 등급이 ${grades.find((g) => g.id === targetId)?.label || targetId}(으)로 승격되었습니다.`,
     });
     return targetId;
+  },
+  // 활동량 감소 시 호출 — 자격 등급보다 현재 등급이 높으면 강등.
+  // 글/댓글 삭제 후 또는 관리자 도구의 '활동 기반 재산정'에서 사용.
+  maybeDemote(userId) {
+    const user = (window.BGNJ_STORES.users || []).find((u) => u.id === userId);
+    if (!user) return null;
+    if (user.isAdmin) return null;
+    if (PROMOTION_PROTECTED.has(user.gradeId)) return null;
+    const grades = window.BGNJ_STORES.grades || [];
+    const currentLv = grades.find((g) => g.id === user.gradeId)?.level ?? 0;
+    const targetId = this.evaluate(userId);
+    const targetLv = grades.find((g) => g.id === targetId)?.level ?? 0;
+    // 자격 등급이 현재보다 낮을 때만 강등.
+    if (targetLv >= currentLv) return null;
+    window.BGNJ_AUTH.setGrade(userId, targetId);
+    window.BGNJ_AUDIT?.log({
+      action: 'grade.auto_demote',
+      target: `user:${userId}`,
+      details: { from: user.gradeId, to: targetId },
+      by: 'system',
+    });
+    window.BGNJ_COMMUNITY?.addNotification(userId, {
+      type: 'grade_demoted',
+      postTitle: '회원 등급 안내',
+      fromName: '운영자',
+      message: `활동량 변동으로 등급이 ${grades.find((g) => g.id === targetId)?.label || targetId}(으)로 조정되었습니다.`,
+    });
+    return targetId;
+  },
+  // 모든 회원에 대해 활동 기반 등급 재산정 — 관리자 패널 일괄 작업용.
+  reevaluateAll() {
+    const summary = { promoted: 0, demoted: 0 };
+    (window.BGNJ_STORES.users || []).forEach((u) => {
+      if (u.isAdmin) return;
+      if (PROMOTION_PROTECTED.has(u.gradeId)) return;
+      if (this.maybePromote(u.id)) summary.promoted++;
+      else if (this.maybeDemote(u.id)) summary.demoted++;
+    });
+    return summary;
   },
 };
 

@@ -181,12 +181,35 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
   );
 };
 
-// === Comment tree (1단계 답글) ============================================
+// === Comment tree (다단계 답글, 최대 깊이 MAX_DEPTH) ======================
+// @멘션은 본문에 @이름 토큰을 골드 chip 으로 렌더링.
+const MAX_REPLY_DEPTH = 3;
+
+const renderCommentText = (text) => {
+  if (!text) return null;
+  // @닉네임 토큰을 골드 chip 으로 변환. 닉은 한글/영문/숫자/_ 허용.
+  const parts = String(text).split(/(@[\p{L}\p{N}_]+)/gu);
+  return parts.map((part, i) => {
+    if (part.startsWith('@') && part.length > 1) {
+      return <span key={i} className="gold" style={{fontWeight:600}}>{part}</span>;
+    }
+    return <React.Fragment key={i}>{part}</React.Fragment>;
+  });
+};
+
 const CommentTree = ({ comments, user, onDelete, onReply }) => {
   const topLevel = (comments || []).filter((c) => !c.parentId);
   const repliesOf = (parentId) => (comments || []).filter((c) => c.parentId === parentId);
   const [openReplyTo, setOpenReplyTo] = React.useState(null);
   const [draft, setDraft] = React.useState('');
+
+  // 멘션 자동완성 — 댓글 작성자 + 글 댓글에 등장한 모든 닉네임을 후보로.
+  const allAuthors = React.useMemo(() => {
+    const seen = new Set();
+    return (comments || [])
+      .map((c) => c.author)
+      .filter((n) => n && !seen.has(n) && (seen.add(n) || true));
+  }, [comments]);
 
   const submitReply = (parentId) => {
     onReply?.(parentId, draft);
@@ -194,61 +217,161 @@ const CommentTree = ({ comments, user, onDelete, onReply }) => {
     setOpenReplyTo(null);
   };
 
-  const renderItem = (c, depth = 0) => (
-    <li key={c.id} style={{padding:'18px 0', borderBottom: depth === 0 ? '1px solid var(--line)' : 'none', marginLeft: depth * 24}}>
-      <div style={{display:'flex', gap:16, alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
-        <div style={{display:'flex', gap:14, alignItems:'center', flexWrap:'wrap'}}>
-          {depth > 0 && <span className="dim-2 mono" style={{fontSize:11}}>↳</span>}
-          <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em', display:'inline-flex', alignItems:'center'}}>
-            {c.author}
-            <AuthorGradeBadge authorId={c.authorId} author={c.author} authorEmail={c.authorEmail}/>
-          </span>
-          <time className="mono dim-2" style={{fontSize:11}}>{c.date}</time>
-        </div>
-        <div style={{display:'flex', gap:6, alignItems:'center'}}>
-          {!!user && depth === 0 && (
-            <button type="button" className="btn-ghost"
-              onClick={() => { setOpenReplyTo(openReplyTo === c.id ? null : c.id); setDraft(''); }}
-              style={{fontSize:11, color:'var(--ink-2)'}}>
-              {openReplyTo === c.id ? '취소' : '답글'}
-            </button>
-          )}
-          {!!user && (user.isAdmin || c.authorId === user.id || c.author === user.name) && (
-            <button type="button" className="btn-ghost" onClick={() => onDelete?.(c.id)}
-              style={{fontSize:11, color:'var(--danger)'}}>삭제</button>
-          )}
-        </div>
-      </div>
-      <p style={{fontFamily:'var(--font-reading)', fontSize: depth > 0 ? 14 : 15, lineHeight:1.8, color:'var(--ink)', whiteSpace:'pre-wrap'}}>{c.text}</p>
-
-      {/* 답글 입력 폼 */}
-      {openReplyTo === c.id && (
-        <form onSubmit={(e) => { e.preventDefault(); submitReply(c.id); }}
-          style={{marginTop:10, paddingLeft:24, borderLeft:'2px solid var(--gold-dim)'}}>
-          <textarea className="field-input" rows={2} value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={`@${c.author}에게 답글...`}
-            style={{marginBottom:8}}/>
-          <div style={{display:'flex', justifyContent:'flex-end', gap:6}}>
-            <button type="button" className="btn btn-small" onClick={() => { setOpenReplyTo(null); setDraft(''); }}>취소</button>
-            <button type="submit" className="btn btn-gold btn-small" disabled={!draft.trim()}>답글 등록</button>
+  const renderItem = (c, depth = 0) => {
+    const children = repliesOf(c.id);
+    const canReply = !!user && depth < MAX_REPLY_DEPTH;
+    return (
+      <li key={c.id} style={{padding:'18px 0', borderBottom: depth === 0 ? '1px solid var(--line)' : 'none'}}>
+        <div style={{display:'flex', gap:16, alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
+          <div style={{display:'flex', gap:14, alignItems:'center', flexWrap:'wrap'}}>
+            {depth > 0 && <span className="dim-2 mono" style={{fontSize:11}}>↳</span>}
+            <span className="gold mono" style={{fontSize:12, letterSpacing:'0.1em', display:'inline-flex', alignItems:'center'}}>
+              {c.author}
+              <AuthorGradeBadge authorId={c.authorId} author={c.author} authorEmail={c.authorEmail}/>
+            </span>
+            <time className="mono dim-2" style={{fontSize:11}}>{c.date}</time>
           </div>
-        </form>
-      )}
+          <div style={{display:'flex', gap:6, alignItems:'center'}}>
+            {canReply && (
+              <button type="button" className="btn-ghost"
+                onClick={() => {
+                  setOpenReplyTo(openReplyTo === c.id ? null : c.id);
+                  setDraft(openReplyTo === c.id ? '' : `@${c.author} `);
+                }}
+                style={{fontSize:11, color:'var(--ink-2)'}}>
+                {openReplyTo === c.id ? '취소' : '답글'}
+              </button>
+            )}
+            {!!user && (user.isAdmin || c.authorId === user.id || c.author === user.name) && (
+              <button type="button" className="btn-ghost" onClick={() => onDelete?.(c.id)}
+                style={{fontSize:11, color:'var(--danger)'}}>삭제</button>
+            )}
+          </div>
+        </div>
+        <p style={{fontFamily:'var(--font-reading)', fontSize: depth > 0 ? 14 : 15, lineHeight:1.8, color:'var(--ink)', whiteSpace:'pre-wrap'}}>
+          {renderCommentText(c.text)}
+        </p>
 
-      {/* 자식 답글들 */}
-      {depth === 0 && repliesOf(c.id).length > 0 && (
-        <ol style={{listStyle:'none', padding:0, margin:'12px 0 0', borderLeft:'2px solid var(--line)', paddingLeft:14}}>
-          {repliesOf(c.id).map((r) => renderItem(r, depth + 1))}
-        </ol>
-      )}
-    </li>
-  );
+        {/* 답글 입력 폼 */}
+        {openReplyTo === c.id && (
+          <form onSubmit={(e) => { e.preventDefault(); submitReply(c.id); }}
+            style={{marginTop:10, paddingLeft:24, borderLeft:'2px solid var(--gold-dim)'}}>
+            <MentionTextarea
+              value={draft}
+              onChange={setDraft}
+              authors={allAuthors}
+              rows={2}
+              placeholder={`@${c.author}에게 답글... (@를 입력하면 멘션 자동완성)`}
+              style={{marginBottom:8}}/>
+            <div style={{display:'flex', justifyContent:'flex-end', gap:6}}>
+              <button type="button" className="btn btn-small" onClick={() => { setOpenReplyTo(null); setDraft(''); }}>취소</button>
+              <button type="submit" className="btn btn-gold btn-small" disabled={!draft.trim()}>답글 등록</button>
+            </div>
+          </form>
+        )}
+
+        {/* 자식 답글들 — 재귀 렌더 */}
+        {children.length > 0 && (
+          <ol style={{listStyle:'none', padding:0, margin:'12px 0 0 24px', borderLeft:'2px solid var(--line)', paddingLeft:14}}>
+            {children.map((r) => renderItem(r, depth + 1))}
+          </ol>
+        )}
+      </li>
+    );
+  };
 
   return (
     <ol style={{listStyle:'none', padding:0, margin:0}}>
       {topLevel.map((c) => renderItem(c, 0))}
     </ol>
+  );
+};
+
+// === @멘션 자동완성 textarea =============================================
+// 사용자가 @을 입력하면 후보 리스트를 띄우고, 클릭/Enter 로 닉네임을 삽입.
+const MentionTextarea = ({ value, onChange, authors, rows = 4, placeholder, style }) => {
+  const ref = React.useRef(null);
+  const [open, setOpen] = React.useState(false);
+  const [token, setToken] = React.useState('');
+  const [active, setActive] = React.useState(0);
+
+  const candidates = React.useMemo(() => {
+    if (!open) return [];
+    const q = token.toLowerCase();
+    return (authors || [])
+      .filter((a) => !q || a.toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [authors, token, open]);
+
+  const detectMention = (text, caret) => {
+    // 캐럿 직전에서 가장 가까운 @를 찾고, @ 다음 문자가 공백/줄바꿈이 아닌지 확인.
+    const upto = text.slice(0, caret);
+    const m = /@([\p{L}\p{N}_]*)$/u.exec(upto);
+    if (m) { setToken(m[1]); setOpen(true); setActive(0); }
+    else { setOpen(false); setToken(''); }
+  };
+
+  const handleChange = (e) => {
+    const v = e.target.value;
+    onChange(v);
+    detectMention(v, e.target.selectionStart || v.length);
+  };
+
+  const insertCandidate = (name) => {
+    const el = ref.current;
+    const caret = el?.selectionStart ?? value.length;
+    const before = value.slice(0, caret);
+    const after = value.slice(caret);
+    const replaced = before.replace(/@([\p{L}\p{N}_]*)$/u, `@${name} `);
+    const next = replaced + after;
+    onChange(next);
+    setOpen(false);
+    setToken('');
+    // 캐럿을 삽입 끝으로 이동
+    setTimeout(() => {
+      try {
+        const pos = replaced.length;
+        el?.focus();
+        el?.setSelectionRange(pos, pos);
+      } catch {}
+    }, 0);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!open || candidates.length === 0) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => (i + 1) % candidates.length); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => (i - 1 + candidates.length) % candidates.length); }
+    else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); insertCandidate(candidates[active]); }
+    else if (e.key === 'Escape') { setOpen(false); }
+  };
+
+  return (
+    <div style={{position:'relative'}}>
+      <textarea ref={ref} className="field-input" rows={rows}
+        value={value} onChange={handleChange} onKeyDown={handleKeyDown}
+        placeholder={placeholder} style={style}/>
+      {open && candidates.length > 0 && (
+        <ul role="listbox" aria-label="멘션 후보"
+          style={{
+            position:'absolute', zIndex:50, top:'100%', left:0, marginTop:2,
+            background:'var(--bg)', border:'1px solid var(--line)',
+            listStyle:'none', padding:4, minWidth:180, maxWidth:280,
+            boxShadow:'0 4px 12px rgba(0,0,0,0.08)',
+          }}>
+          {candidates.map((name, i) => (
+            <li key={name} role="option" aria-selected={i === active}
+              onMouseDown={(e) => { e.preventDefault(); insertCandidate(name); }}
+              style={{
+                padding:'6px 10px', fontSize:13, cursor:'pointer',
+                background: i === active ? 'rgba(212,175,55,0.12)' : 'transparent',
+                color: i === active ? 'var(--gold)' : 'var(--ink)',
+              }}>
+              @{name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 };
 
@@ -594,22 +717,63 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
 };
 
 // === Post Compose =======================================================
+// 새 글 임시저장 키 — 사용자별로 분리(여러 계정이 같은 브라우저를 쓸 때 섞이지 않도록).
+const draftKeyFor = (userId) => `bgnj_post_draft_${userId || 'guest'}`;
+
 const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userLevel }) => {
   const writable = categories.filter(c => userLevel >= (c.postMinLevel ?? c.minLevel ?? 0));
   const defaultCategoryId = initialPost?.categoryId || writable[0]?.id || categories[0]?.id || "";
-  const [categoryId, setCategoryId] = React.useState(defaultCategoryId);
-  const [title, setTitle] = React.useState(initialPost?.title || "");
-  const [prefix, setPrefix] = React.useState(initialPost?.prefix || "");
-  const [tags, setTags] = React.useState(initialPost?.tags || []);
-  const [images, setImages] = React.useState(initialPost?.images || []);
-  const [bodyHtml, setBodyHtml] = React.useState(initialPost?.body?.html || "");
-  const [bodyText, setBodyText] = React.useState(initialPost?.body?.text || "");
-  const [error, setError] = React.useState("");
   const isEditing = !!initialPost;
+
+  // 새 글 작성일 때만 임시저장 복원/저장. 수정 모드에서는 원본 게시글이 source of truth.
+  const draftKey = draftKeyFor(user?.id);
+  const initialDraft = React.useMemo(() => {
+    if (isEditing) return null;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }, [draftKey, isEditing]);
+
+  const [categoryId, setCategoryId] = React.useState(initialDraft?.categoryId || defaultCategoryId);
+  const [title, setTitle] = React.useState(initialPost?.title || initialDraft?.title || "");
+  const [prefix, setPrefix] = React.useState(initialPost?.prefix || initialDraft?.prefix || "");
+  const [tags, setTags] = React.useState(initialPost?.tags || initialDraft?.tags || []);
+  const [images, setImages] = React.useState(initialPost?.images || initialDraft?.images || []);
+  const [bodyHtml, setBodyHtml] = React.useState(initialPost?.body?.html || initialDraft?.bodyHtml || "");
+  const [bodyText, setBodyText] = React.useState(initialPost?.body?.text || initialDraft?.bodyText || "");
+  const [error, setError] = React.useState("");
+  const [draftRestored, setDraftRestored] = React.useState(!!(initialDraft && (initialDraft.title || initialDraft.bodyText)));
+  const [savedAt, setSavedAt] = React.useState(initialDraft?.savedAt || null);
   const prevCategoryIdRef = React.useRef(categoryId);
 
+  // 임시저장 — 수정 모드 제외, 1초 디바운스로 저장.
   React.useEffect(() => {
-    setCategoryId(defaultCategoryId);
+    if (isEditing) return;
+    const hasContent = !!(title.trim() || bodyText.trim() || (tags && tags.length) || (images && images.length));
+    const t = setTimeout(() => {
+      try {
+        if (hasContent) {
+          const snapshot = { categoryId, title, prefix, tags, images, bodyHtml, bodyText, savedAt: new Date().toISOString() };
+          localStorage.setItem(draftKey, JSON.stringify(snapshot));
+          setSavedAt(snapshot.savedAt);
+        } else {
+          localStorage.removeItem(draftKey);
+          setSavedAt(null);
+        }
+      } catch {}
+    }, 800);
+    return () => clearTimeout(t);
+  }, [draftKey, isEditing, categoryId, title, prefix, tags, images, bodyHtml, bodyText]);
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(draftKey); } catch {}
+    setSavedAt(null);
+    setDraftRestored(false);
+  };
+
+  React.useEffect(() => {
+    setCategoryId(initialPost?.categoryId || defaultCategoryId);
     setTitle(initialPost?.title || "");
     setPrefix(initialPost?.prefix || "");
     setTags(initialPost?.tags || []);
@@ -617,7 +781,8 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     setBodyHtml(initialPost?.body?.html || "");
     setBodyText(initialPost?.body?.text || "");
     setError("");
-    prevCategoryIdRef.current = defaultCategoryId;
+    prevCategoryIdRef.current = initialPost?.categoryId || defaultCategoryId;
+    // initialPost 가 들어오면 (= 수정 모드) 임시저장은 무시.
   }, [initialPost, defaultCategoryId]);
 
   const selectedCat = categories.find(c => c.id === categoryId);
@@ -638,6 +803,10 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     const cat = categories.find(c => c.id === categoryId);
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
+    // 발행 성공 가정으로 임시저장 정리 (실패 시 onPublish 측에서 다시 저장은 안 함).
+    if (!isEditing) {
+      try { localStorage.removeItem(draftKey); } catch {}
+    }
     onPublish({
       categoryId: cat.id,
       category: cat.label,
@@ -665,7 +834,32 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
           <h1 className="section-title" style={{fontSize:36}}>{isEditing ? "게시글 수정" : "새 글 작성"}</h1>
           <p className="dim" style={{fontSize:13, marginTop:8}}>
             작성자: <span className="gold">{user?.name || '익명'}</span>
+            {!isEditing && savedAt && (
+              <span className="dim-2 mono" style={{marginLeft:14, fontSize:11}}>
+                · 임시저장됨 ({new Date(savedAt).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'})})
+              </span>
+            )}
           </p>
+          {!isEditing && draftRestored && (
+            <div role="status" style={{
+              marginTop:14, padding:'10px 14px', background:'rgba(212,175,55,0.06)',
+              border:'1px solid var(--gold-dim)', fontSize:12, color:'var(--ink-2)',
+              display:'flex', justifyContent:'space-between', alignItems:'center', gap:12,
+            }}>
+              <span>이전에 작성하던 글을 복원했습니다.</span>
+              <button type="button" className="btn-ghost"
+                onClick={() => {
+                  if (confirm('임시저장된 글을 삭제하고 새로 시작하시겠어요?')) {
+                    setTitle(''); setPrefix(''); setTags([]); setImages([]);
+                    setBodyHtml(''); setBodyText('');
+                    clearDraft();
+                  }
+                }}
+                style={{fontSize:11, color:'var(--danger)', textDecoration:'underline'}}>
+                새로 시작
+              </button>
+            </div>
+          )}
         </header>
 
         <form onSubmit={(e) => { e.preventDefault(); submit(); }} noValidate>
@@ -993,9 +1187,12 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
           {user ? (
             <form onSubmit={submitComment} style={{marginBottom:32}}>
               <label htmlFor="comment-input" className="sr-only">댓글 입력</label>
-              <textarea id="comment-input" className="field-input"
-                placeholder="생각을 나누어 주세요..."
-                value={comment} onChange={e => setComment(e.target.value)}
+              <MentionTextarea
+                value={comment}
+                onChange={setComment}
+                authors={(commentsList || []).map((c) => c.author).concat(post.author).filter(Boolean)}
+                rows={4}
+                placeholder="생각을 나누어 주세요... (@를 입력하면 멘션 자동완성)"
                 style={{minHeight:100, resize:'vertical', marginBottom:12}}/>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 <span className="dim-2 mono" style={{fontSize:11}}>{user.name}(으)로 등록</span>

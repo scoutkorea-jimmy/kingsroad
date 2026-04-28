@@ -1,18 +1,58 @@
 // 로그인, 회원가입, 관리자 페이지
-const AUTH_CONFIG = {
-  mode: "cloudflare-workers",
-  note: "회원가입과 로그인은 Cloudflare Workers + D1으로 처리됩니다. 세션은 HttpOnly 쿠키로 유지되며 비밀번호는 PBKDF2-SHA256(100k iter)로 해시되어 저장됩니다.",
+// === 약관/개인정보 모달 ==================================================
+// 회원가입 시 이용약관 텍스트를 클릭하면 모달로 본문을 노출.
+const LegalModal = ({ slug, onClose }) => {
+  const doc = (window.BGNJ_LEGAL?.get(slug)) || { title: slug === 'terms' ? '이용약관' : '개인정보 처리방침', body: '<p>(준비 중)</p>' };
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div role="dialog" aria-modal="true" aria-label={doc.title}
+      onClick={onClose}
+      style={{
+        position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000,
+        display:'grid', placeItems:'center', padding:'24px',
+      }}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{
+          background:'var(--bg)', maxWidth:720, width:'100%', maxHeight:'80vh',
+          overflow:'auto', padding:'28px 32px', border:'1px solid var(--line)',
+          boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+        }}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20, gap:16}}>
+          <h2 className="ko-serif" style={{fontSize:22, margin:0}}>{doc.title}</h2>
+          <button type="button" className="btn btn-small" onClick={onClose}>닫기</button>
+        </div>
+        <div className="legal-body" style={{fontSize:14, lineHeight:1.85, color:'var(--ink)'}}
+          dangerouslySetInnerHTML={{__html: doc.body || '<p>(준비 중)</p>'}}/>
+      </div>
+    </div>
+  );
 };
+
+const INTEREST_OPTIONS = [
+  { value: 'palace',       label: '궁궐 답사' },
+  { value: 'history',      label: '조선 역사' },
+  { value: 'philosophy',   label: '동양 철학' },
+  { value: 'literature',   label: '한문학' },
+  { value: 'architecture', label: '전통 건축' },
+  { value: 'art',          label: '미술사' },
+  { value: 'other',        label: '기타 (직접 입력)' },
+];
 
 const LoginPage = ({ go, setUser }) => {
   const [mode, setMode] = React.useState("login"); // login | signup
   const [form, setForm] = React.useState({
     name: "", email: "", password: "", password2: "",
     birthdate: "", phone: "", zip: "", addr1: "", addr2: "",
-    gender: "", interest: "", recommender: "",
-    consentTerms: false, consentMarketing: false, consentThirdParty: false,
+    gender: "", interest: "", interestOther: "", recommender: "",
+    consentTerms: false,
   });
   const [submitting, setSubmitting] = React.useState(false);
+  const [legalModal, setLegalModal] = React.useState(null); // 'terms' | 'privacy' | null
+  const authContent = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.()?.auth) || {}, []);
   const set = (k, v) => setForm({ ...form, [k]: v });
 
   const submit = async () => {
@@ -51,6 +91,10 @@ const LoginPage = ({ go, setUser }) => {
 
     setSubmitting(true);
     try {
+      // 관심분야 — '기타' 선택 시 직접 입력값을 저장.
+      const interestValue = form.interest === 'other'
+        ? (form.interestOther || '').trim()
+        : form.interest;
       const authResult = mode === "login"
         ? await window.BGNJ_AUTH.signIn({ email: normalizedEmail, password })
         : await window.BGNJ_AUTH.signUp({
@@ -64,14 +108,10 @@ const LoginPage = ({ go, setUser }) => {
               addr1: form.addr1,
               addr2: form.addr2,
               gender: form.gender,
-              interest: form.interest,
+              interest: interestValue,
               recommender: form.recommender,
             },
-            consents: {
-              terms: true,
-              marketing: form.consentMarketing,
-              thirdParty: form.consentThirdParty,
-            },
+            consents: { terms: true },
           });
 
       if (!authResult.ok) {
@@ -86,37 +126,39 @@ const LoginPage = ({ go, setUser }) => {
     }
   };
 
+  // 관리자 편집 가능 좌측 영역 — auth.imageDataUri 가 있으면 이미지 배경, 없으면 기본 그라데이션.
+  const authBg = authContent.imageDataUri
+    ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.45) 100%), url(${authContent.imageDataUri})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { background: `linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%)` };
+  const authTitle = authContent.title || '뱅기 타고\n뱅기노자가 되다';
+  const authDescription = authContent.description || '뱅기노자는 단순 여행 정보 사이트가 아닙니다. 함께 떠나고, 함께 걷고, 함께 이야기하는 여행자들의 광장입니다. 매달 새로운 답사와 칼럼이 이어집니다.';
+  const authEyebrow = authContent.eyebrow || 'BANGINOJA';
+
   return (
     <div style={{minHeight:'calc(100vh - 72px)', display:'grid', gridTemplateColumns:'1fr 1fr'}} className="auth-grid">
-      {/* Left: art */}
+      {/* Left: art (관리자에서 이미지/문구 편집 가능) */}
       <div style={{
-        background:`linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%)`,
+        ...authBg,
         borderRight:'1px solid var(--line)',
         padding:'80px 60px',
         display:'flex',
         flexDirection:'column',
         justifyContent:'space-between',
+        color: authContent.imageDataUri ? '#fff' : undefined,
       }}>
         <div>
           <BanginojaIcon size={36}/>
-          <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginTop:24}}>BANGINOJA · 王사들</div>
+          <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginTop:24}}>{authEyebrow}</div>
         </div>
         <div style={{maxWidth:480}}>
-          <div className="card" style={{padding:'14px 16px', marginBottom:24, background:'rgba(59,130,246,0.05)'}}>
-            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>AUTH STATUS · CLOUDFLARE</div>
-            <p className="dim" style={{fontSize:12, lineHeight:1.8, margin:0}}>
-              {AUTH_CONFIG.note}
-            </p>
-          </div>
           <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:16}}>
             {mode === "login" ? "— WELCOME BACK" : "— JOIN US"}
           </div>
-          <h2 style={{fontFamily:'var(--font-serif)', fontSize:48, fontWeight:500, lineHeight:1.15, marginBottom:20}}>
-            뱅기 타고<br/>
-            <span className="gold" style={{fontStyle:'italic'}}>뱅기노자</span>가 되다
+          <h2 style={{fontFamily:'var(--font-serif)', fontSize:48, fontWeight:500, lineHeight:1.15, marginBottom:20, whiteSpace:'pre-line'}}>
+            {authTitle}
           </h2>
-          <p className="dim" style={{fontSize:15, lineHeight:1.9}}>
-            뱅기노자는 단순 여행 정보 사이트가 아닙니다. 함께 떠나고, 함께 걷고, 함께 이야기하는 여행자들의 광장입니다. 매달 새로운 답사와 칼럼이 이어집니다.
+          <p className={authContent.imageDataUri ? '' : 'dim'} style={{fontSize:15, lineHeight:1.9}}>
+            {authDescription}
           </p>
         </div>
       </div>
@@ -187,10 +229,10 @@ const LoginPage = ({ go, setUser }) => {
                 {/* 선택 항목 — 접기/펴기 */}
                 <details style={{border:'1px solid var(--line)', padding:'14px 16px', margin:'24px 0'}}>
                   <summary style={{cursor:'pointer', fontFamily:'var(--font-mono)', fontSize:11, letterSpacing:'0.2em', color:'var(--gold)'}}>
-                    추가 정보 입력 (선택 · 커뮤니티 운영에 도움이 됩니다)
+                    추가 정보 입력 (선택 · 입력하지 않아도 사이트 이용에 문제 없음)
                   </summary>
-                  <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7}}>
-                    아래 항목은 모두 <strong>선택</strong>입니다. 입력하지 않아도 서비스 이용에 제한이 없습니다. 수집된 정보는 GDPR/PIPA에 따라 관리되며, 언제든 열람·정정·삭제할 수 있습니다.
+                  <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7, padding:'10px 12px', background:'rgba(212,175,55,0.06)', border:'1px solid var(--gold-dim)'}}>
+                    <strong className="gold">아래 항목은 모두 선택입니다.</strong> 입력하지 않으셔도 회원가입과 모든 사이트 기능을 동일하게 이용하실 수 있습니다. 수집된 정보는 GDPR/PIPA에 따라 관리되며, 언제든 열람·정정·삭제할 수 있습니다.
                   </p>
 
                   <div className="field" style={{marginTop:16}}>
@@ -246,13 +288,17 @@ const LoginPage = ({ go, setUser }) => {
                     <select id="auth-interest" className="field-input"
                       value={form.interest} onChange={e => set('interest', e.target.value)}>
                       <option value="">선택 안 함</option>
-                      <option value="palace">궁궐 답사</option>
-                      <option value="history">조선 역사</option>
-                      <option value="philosophy">동양 철학</option>
-                      <option value="literature">한문학</option>
-                      <option value="architecture">전통 건축</option>
-                      <option value="art">미술사</option>
+                      {INTEREST_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
                     </select>
+                    {form.interest === 'other' && (
+                      <input type="text" className="field-input" style={{marginTop:8}}
+                        placeholder="관심 분야를 직접 입력해 주세요"
+                        value={form.interestOther}
+                        onChange={(e) => set('interestOther', e.target.value)}
+                        maxLength={60}/>
+                    )}
                   </div>
 
                   <div className="field" style={{marginBottom:0}}>
@@ -263,26 +309,26 @@ const LoginPage = ({ go, setUser }) => {
                   </div>
                 </details>
 
-                <label htmlFor="consent-terms" style={{display:'flex', gap:10, alignItems:'flex-start', margin:'16px 0', fontSize:12, color:'var(--ink-2)', lineHeight:1.6}}>
+                <label htmlFor="consent-terms" style={{display:'flex', gap:10, alignItems:'flex-start', margin:'16px 0 20px', fontSize:12, color:'var(--ink-2)', lineHeight:1.6}}>
                   <input id="consent-terms" type="checkbox" required aria-required="true"
                     checked={form.consentTerms} onChange={e => set('consentTerms', e.target.checked)}
                     style={{accentColor:'var(--gold)', marginTop:3}}/>
-                  <span>이용약관 및 개인정보 처리방침에 동의합니다 <span className="gold">(필수)</span></span>
-                </label>
-                <label htmlFor="consent-marketing" style={{display:'flex', gap:10, alignItems:'flex-start', marginBottom:10, fontSize:12, color:'var(--ink-2)', lineHeight:1.6}}>
-                  <input id="consent-marketing" type="checkbox"
-                    checked={form.consentMarketing} onChange={e => set('consentMarketing', e.target.checked)}
-                    style={{accentColor:'var(--gold)', marginTop:3}}/>
-                  <span>뱅기노자 칼럼 · 답사 일정 메일 수신 (선택)</span>
-                </label>
-                <label htmlFor="consent-third" style={{display:'flex', gap:10, alignItems:'flex-start', marginBottom:20, fontSize:12, color:'var(--ink-2)', lineHeight:1.6}}>
-                  <input id="consent-third" type="checkbox"
-                    checked={form.consentThirdParty} onChange={e => set('consentThirdParty', e.target.checked)}
-                    style={{accentColor:'var(--gold)', marginTop:3}}/>
-                  <span>파트너 기관(국립고궁박물관 등) 행사 안내 제3자 제공 (선택)</span>
+                  <span>
+                    <button type="button" className="btn-ghost" onClick={() => setLegalModal('terms')}
+                      style={{padding:0, color:'var(--gold)', textDecoration:'underline', fontSize:12}}>
+                      이용약관
+                    </button>
+                    {' '}및{' '}
+                    <button type="button" className="btn-ghost" onClick={() => setLegalModal('privacy')}
+                      style={{padding:0, color:'var(--gold)', textDecoration:'underline', fontSize:12}}>
+                      개인정보 처리방침
+                    </button>
+                    에 동의합니다 <span className="gold">(필수)</span>
+                  </span>
                 </label>
               </>
             )}
+            {legalModal && <LegalModal slug={legalModal} onClose={() => setLegalModal(null)}/>}
             {mode === "login" && (
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, fontSize:12}}>
                 <label htmlFor="keep-login" style={{display:'flex', gap:8, alignItems:'center', color:'var(--ink-2)'}}>
@@ -295,15 +341,6 @@ const LoginPage = ({ go, setUser }) => {
               {submitting ? "처리 중..." : (mode === "login" ? "입장하기 →" : "회원가입 →")}
             </button>
           </form>
-
-          <div style={{margin:'32px 0', display:'flex', alignItems:'center', gap:16, color:'var(--ink-3)', fontSize:11, fontFamily:'var(--font-mono)', letterSpacing:'0.2em'}}>
-            <div style={{flex:1, height:1, background:'var(--line)'}}/>
-            <span>OR</span>
-            <div style={{flex:1, height:1, background:'var(--line)'}}/>
-          </div>
-
-          <button className="btn btn-block" style={{marginBottom:10}}>네이버로 계속하기</button>
-          <button className="btn btn-block">카카오로 계속하기</button>
         </div>
       </div>
     </div>
@@ -392,10 +429,10 @@ const ADMIN_VERSION_HISTORY = [
   {
     version: "00.026.000",
     date: "2026-04-27",
-    summary: "브랜드 전환(왕사들→뱅기노자) 마무리 + 관리자 콘솔 7대 카테고리 재정렬 + Cloudflare 백엔드 인프라 셋업 + 운영 버그 일괄 처리. 사이트 콘텐츠/책 카탈로그 관리 패널, 게시글 일괄 말머리, 칩형 게시판 필터, 강연·투어 hidden 운영, 쿠키 동의 배너, 알림 종모양 라인아트 아이콘을 한 번에 도입했습니다.",
+    summary: "브랜드 정비(이전 명칭 정리) 마무리 + 관리자 콘솔 7대 카테고리 재정렬 + Cloudflare 백엔드 인프라 셋업 + 운영 버그 일괄 처리. 사이트 콘텐츠/책 카탈로그 관리 패널, 게시글 일괄 말머리, 칩형 게시판 필터, 강연·투어 hidden 운영, 쿠키 동의 배너, 알림 종모양 라인아트 아이콘을 한 번에 도입했습니다.",
     details: [
       "전역 네임스페이스 통일 — `wsd_*`/`WSD_*` → `bgnj_*`/`BGNJ_*`. localStorage / sessionStorage / 글로벌 헬퍼 / 문서 노트 모두 일괄 변경. data.js 상단에 일회성 마이그레이션을 두어 기존 사용자의 wsd_* 키 데이터를 bgnj_*로 자동 복사(원본 보존).",
-      "브랜드 잔여 정리 — 왕사들/wangsadeul.kr/일월오봉도/Ilwolobongdo 모든 잔여 표기를 뱅기노자/bgnj.net/왕의 자리·어좌 뒤 병풍/제거로 정리. 로그인 시 `Ilwolobongdo is not defined` 에러 해결, 고아 컴포넌트 파일과 styles.css 잔여 클래스 삭제.",
+      "브랜드 잔여 정리 — 이전 명칭/도메인/심볼 표기를 뱅기노자/bgnj.net/현 디자인 시스템으로 통합. 로그인 시 발생하던 미정의 식별자 에러 해결, 고아 컴포넌트 파일과 styles.css 잔여 클래스 삭제.",
       "관리자 메뉴 7개 대카테고리 재정렬 — 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리. 책 카탈로그 / 책 주문이 쇼핑 그룹으로 분리되고, 회원·등급은 회원관리로 통합, 감사 로그 중복 렌더 제거.",
       "사이트 콘텐츠 편집 패널 — 메뉴 라벨 / 히어로 텍스트 / 푸터 문구 / 브랜드명 / 로고·파비콘(파일 업로드 → dataURI) / OG 메타. 저장 시 head meta가 즉시 갱신되어 카카오톡·페이스북 공유 미리보기에 반영.",
       "다양한 책 카탈로그 시스템 — `BGNJ_BOOKS` 헬퍼(list/get/create/update/remove/setHidden/addReview/removeReview) + `BooksAdminPanel` (메타·가격·상태·표지 PNG 업로드·PDF 미리보기 업로드·소개·목차·저자·리뷰 모더레이션). 책마다 독립된 reviews 배열.",
@@ -408,7 +445,7 @@ const ADMIN_VERSION_HISTORY = [
       "회원등급 색상 블루 팔레트 마이그레이션 — 노란/금 hex 잔여 → #64748B/#94A3B8/#93C5FD/#3B82F6/#2563EB/#1E3A8A. 일회성 캐시 마이그레이션 추가.",
       "기타 — '왕의길' 메뉴 → '뱅기노자의 길', 책 CTA 잡문구(3만원 무료배송 / 10% 적립 / 사인본 한정수량) 제거, 커뮤니티 미존재/등급 미달 게시글 접근 가드, .gitignore 추가, .DS_Store/.wrangler 캐시 git 제거.",
     ],
-    context: "이번 묶음은 두 갈래입니다. 한쪽은 '왕사들'이라는 이전 브랜드의 모든 흔적을 코드와 화면에서 지우고 '뱅기노자'로 통일하는 정리 작업, 다른 한쪽은 운영자가 코드 수정 없이도 사이트를 굴릴 수 있게 만드는 패널 확장입니다. 사이트 콘텐츠/책 카탈로그/일괄 말머리/숨김 운영이 그 축이고, Cloudflare 백엔드(D1·R2) 인프라가 다음 사이클(서버 인증, 게시글 동기화, 미디어 업로드)의 토대가 됩니다. 메뉴 구조도 운영 흐름에 맞춰 7개 대카테고리(요약·콘텐츠·회원관리·쇼핑·운영설정·개인정보 관리·시스템 관리)로 재정리해, 같은 성격의 작업이 한 그룹 안에 모이도록 했습니다.",
+    context: "이번 묶음은 두 갈래입니다. 한쪽은 이전 브랜드의 모든 흔적을 코드와 화면에서 지우고 '뱅기노자'로 통일하는 정리 작업, 다른 한쪽은 운영자가 코드 수정 없이도 사이트를 굴릴 수 있게 만드는 패널 확장입니다. 사이트 콘텐츠/책 카탈로그/일괄 말머리/숨김 운영이 그 축이고, Cloudflare 백엔드(D1·R2) 인프라가 다음 사이클(서버 인증, 게시글 동기화, 미디어 업로드)의 토대가 됩니다. 메뉴 구조도 운영 흐름에 맞춰 7개 대카테고리(요약·콘텐츠·회원관리·쇼핑·운영설정·개인정보 관리·시스템 관리)로 재정리해, 같은 성격의 작업이 한 그룹 안에 모이도록 했습니다.",
   },
   {
     version: "00.025.003",
@@ -2757,6 +2794,19 @@ const SiteContentAdminPanel = () => {
       <ImageUploader section="branding" field="faviconDataUri" label="파비콘"
         hint="32x32 또는 64x64 PNG 권장 · 저장 즉시 브라우저 탭 아이콘이 갱신됩니다."
         previewSize={40} accept="image/png,image/x-icon,image/svg+xml"/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>로그인 / 회원가입 좌측 영역</h3>
+      <p className="dim-2" style={{fontSize:12, marginBottom:12, lineHeight:1.7}}>
+        로그인·회원가입 페이지 왼쪽에 노출되는 이미지와 문구입니다. 이미지를 업로드하면 그라데이션 배경 대신 이미지가 사용됩니다.
+      </p>
+      <SectionForm key={`auth-${tick}`} section="auth" fields={[
+        { key: 'eyebrow', label: '윗쪽 작은 라벨 (대문자 권장)' },
+        { key: 'title', label: '메인 제목 (줄바꿈 가능)', full: true, multiline: true },
+        { key: 'description', label: '소개 문단', full: true, multiline: true },
+      ]}/>
+      <ImageUploader section="auth" field="imageDataUri" label="좌측 배경 이미지"
+        hint="1200x1600 또는 1080x1920 권장 · JPG/PNG · 비우면 기본 그라데이션 배경 사용. 1.5MB 이하."
+        previewSize={120}/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>OG 메타 (공유 미리보기)</h3>
       <SectionForm key={`og-${tick}`} section="og" fields={[

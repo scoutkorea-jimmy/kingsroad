@@ -33,9 +33,15 @@ const json = (body, init = {}, env = null) => {
   return new Response(JSON.stringify(body), { ...init, headers });
 };
 
+const isLocalDevOrigin = (origin) => {
+  // 로컬 개발 환경(127.0.0.1 / localhost) 의 임의 포트 자동 허용.
+  // VS Code Live Server(5500), Vite(5173), Python http.server(8000) 등 임시 포트 대응.
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin || "");
+};
+
 const corsHeaders = (origin, env) => {
   const allowed = (env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
-  const ok = allowed.includes(origin) || allowed.includes("*");
+  const ok = allowed.includes(origin) || allowed.includes("*") || isLocalDevOrigin(origin);
   const h = new Headers();
   if (ok && origin) h.set("Access-Control-Allow-Origin", origin);
   h.set("Vary", "Origin");
@@ -114,6 +120,22 @@ const readSessionToken = (req) => {
   return m ? m[1] : null;
 };
 
+// 슈퍼 관리자 — 로그인/세션 조회 시 항상 is_admin=1 / grade_id='admin' 강제.
+// 환경 변수 SUPER_ADMIN_EMAILS 에 콤마로 여러 개 지정 가능.
+const isSuperAdminEmail = (email, env) => {
+  const list = String(env.SUPER_ADMIN_EMAILS || "")
+    .split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  return list.includes(String(email || "").trim().toLowerCase());
+};
+
+const ensureSuperAdmin = async (env, userId, email) => {
+  if (!isSuperAdminEmail(email, env)) return false;
+  await env.DB.prepare(
+    "UPDATE users SET is_admin = 1, grade_id = 'admin' WHERE id = ? AND (is_admin <> 1 OR grade_id <> 'admin')"
+  ).bind(userId).run();
+  return true;
+};
+
 const getCurrentUser = async (req, env) => {
   const token = readSessionToken(req);
   if (!token) return null;
@@ -127,12 +149,22 @@ const getCurrentUser = async (req, env) => {
     await env.DB.prepare("DELETE FROM sessions WHERE token = ?").bind(token).run();
     return null;
   }
+  // 슈퍼 관리자 강제 동기화 — 매 세션 조회 시점에 권한 확정.
+  let isAdmin = !!row.is_admin;
+  let gradeId = row.grade_id;
+  if (isSuperAdminEmail(row.email, env)) {
+    if (!isAdmin || gradeId !== 'admin') {
+      await ensureSuperAdmin(env, row.id, row.email);
+      isAdmin = true;
+      gradeId = 'admin';
+    }
+  }
   return {
     id: row.id,
     email: row.email,
     name: row.name,
-    isAdmin: !!row.is_admin,
-    gradeId: row.grade_id,
+    isAdmin,
+    gradeId,
     profile: row.profile_json ? JSON.parse(row.profile_json) : null,
     consents: row.consents_json ? JSON.parse(row.consents_json) : null,
     createdAt: row.created_at,
@@ -181,6 +213,10 @@ const handleAuthSignup = async (req, env) => {
       isAdmin = 1;
     }
   }
+  // 슈퍼 관리자 이메일은 가입 시점부터 항상 admin (기존 admin 유무와 무관).
+  if (isSuperAdminEmail(email, env)) {
+    isAdmin = 1;
+  }
   const gradeId = isAdmin ? "admin" : "member";
   await env.DB.prepare(
     `INSERT INTO users (id, email, name, password_hash, password_salt, is_admin, grade_id, consents_json, created_at)
@@ -207,13 +243,22 @@ const handleAuthLogin = async (req, env) => {
   const ok = await verifyPassword(password, row.password_hash, row.password_salt);
   if (!ok) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않습니다.");
 
+  // 슈퍼 관리자 자동 승격
+  let isAdmin = !!row.is_admin;
+  let gradeId = row.grade_id;
+  if (isSuperAdminEmail(row.email, env)) {
+    await ensureSuperAdmin(env, row.id, row.email);
+    isAdmin = true;
+    gradeId = 'admin';
+  }
+
   const token = newSessionToken();
   const ttl = Number(env.SESSION_TTL_SECONDS || 2592000);
   await env.DB.prepare(
     `INSERT INTO sessions (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)`
   ).bind(token, row.id, Date.now() + ttl * 1000, nowIso()).run();
 
-  return { token, ttl, user: { id: row.id, email: row.email, name: row.name, isAdmin: !!row.is_admin, gradeId: row.grade_id } };
+  return { token, ttl, user: { id: row.id, email: row.email, name: row.name, isAdmin, gradeId } };
 };
 
 const handleAuthLogout = async (req, env) => {
