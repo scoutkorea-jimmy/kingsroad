@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.031.000",
+  version: "00.032.000",
   build: "2026.04.28",
   channel: "preview",
 };
@@ -1024,272 +1024,122 @@ window.BGNJ_COLUMNS = {
   deleteComment(id, commentId) { return window.BGNJ_COMMUNITY.deleteComment(`col-${id}`, commentId); },
 };
 
-// === 강연(BGNJ_LECTURES) helper ==========================================
-// 운영 정책:
-//   - 시드는 BANGINOJA_DATA.lectures. 관리자가 정원/일정/제목 등을 수정하면
-//     `lectureOverrides`(같은 id 키)에 변경분만 저장하고 listAll에서 머지.
-//   - 신청은 회원 전용. 한 회원당 한 강연에 한 번만 신청 가능 (중복 방지).
-//   - 결제 정책: price === 0 이면 즉시 'confirmed', price > 0 이면 'pending_payment'.
-//   - 정원 차면 'waitlist'. 신청 취소(또는 관리자 취소)로 인원이 남으면 가장 오래된
-//     waitlist를 'pending_payment'(유료) 또는 'confirmed'(무료)로 자동 승격.
-//   - 'cancelled' 레코드는 잔여 좌석 계산에서 제외.
+// === 강연(BGNJ_LECTURES) helper — 서버(D1.lectures + lecture_registrations) source of truth ===
 window.BGNJ_LECTURES = {
-  _seed() { return (window.BANGINOJA_DATA?.lectures || []).slice(); },
-  _override(id) {
-    const map = window.BGNJ_STORES.lectureOverrides || {};
-    return map[String(id)] || null;
+  _lectures: [],
+  _myRegs: [],
+  _registrationsByLecture: {}, // 관리자가 강연별 신청 목록을 fetch 한 결과 캐시
+  _reviewsByLecture: {},
+  _toLecture(r) {
+    return {
+      id: r.id, title: r.title, topic: r.topic, venue: r.venue, host: r.host,
+      next: r.next, startsAt: r.starts_at, durationMinutes: r.duration_minutes,
+      capacity: r.capacity, price: r.price, note: r.note, hidden: !!r.hidden,
+    };
   },
-  _merge(seed) {
-    const ov = this._override(seed.id);
-    return ov ? { ...seed, ...ov } : { ...seed };
+  async refresh({ admin, includeHidden } = {}) {
+    try {
+      const { lectures } = await window.BGNJ_API.lectures.list({ includeHidden: !!includeHidden });
+      this._lectures = (lectures || []).map((l) => this._toLecture(l));
+      try { window.dispatchEvent(new CustomEvent('bgnj-lectures-refresh')); } catch {}
+    } catch {}
+    return this._lectures.slice();
   },
-  // listAll({ includeHidden }) — 기본은 hidden=true 항목을 제외(공개 화면용).
-  // 관리자 화면에서는 includeHidden:true로 호출해 숨겨진 항목까지 본다.
+  async refreshMine() {
+    try {
+      const { registrations } = await window.BGNJ_API.lectures.mineRegistrations();
+      this._myRegs = (registrations || []).map((r) => ({
+        id: r.id, lectureId: r.lecture_id, userId: r.user_id, name: r.user_name,
+        email: r.user_email, phone: r.user_phone, status: r.status,
+        paid: r.status === 'confirmed', count: 1, price: r.price || 0,
+        createdAt: r.created_at, paidAt: r.paid_at, cancelledAt: r.cancelled_at,
+        lecture: { id: r.lecture_id, title: r.title, topic: r.title, startsAt: r.starts_at, venue: r.venue, price: r.price },
+      }));
+    } catch {}
+    return this._myRegs.slice();
+  },
   listAll(opts = {}) {
-    const seedIds = new Set(this._seed().map((l) => String(l.id)));
-    const merged = this._seed().map((l) => this._merge(l));
-    const map = window.BGNJ_STORES.lectureOverrides || {};
-    Object.entries(map).forEach(([id, ov]) => {
-      if (!seedIds.has(String(id))) merged.push({ id, ...ov });
-    });
-    if (opts.includeHidden) return merged;
-    return merged.filter((l) => !l.hidden);
+    if (opts.includeHidden) return this._lectures.slice();
+    return this._lectures.filter((l) => !l.hidden);
   },
-  getLecture(id) {
-    return this.listAll({ includeHidden: true }).find((l) => String(l.id) === String(id)) || null;
-  },
-  saveLecture(payload) {
-    const map = window.BGNJ_STORES.lectureOverrides || {};
-    map[String(payload.id)] = { ...(map[String(payload.id)] || {}), ...payload, updatedAt: new Date().toISOString() };
-    window.BGNJ_STORES.lectureOverrides = map;
-    window.BGNJ_SAVE.lectureOverrides();
+  getLecture(id) { return this._lectures.find((l) => String(l.id) === String(id)) || null; },
+  async saveLecture(payload) {
+    if (payload.id && this.getLecture(payload.id)) {
+      await window.BGNJ_API.lectures.update(payload.id, payload);
+    } else {
+      await window.BGNJ_API.lectures.create(payload);
+    }
+    await this.refresh({ includeHidden: true });
     return this.getLecture(payload.id);
   },
-  // 숨김 토글 — 시드 항목은 절대 삭제되지 않고 hidden 플래그만 켠다.
-  // 비관리자 화면에서는 hidden 항목이 보이지 않는다.
-  setHidden(id, hidden) {
-    const map = window.BGNJ_STORES.lectureOverrides || {};
-    map[String(id)] = { ...(map[String(id)] || {}), hidden: !!hidden, updatedAt: new Date().toISOString() };
-    window.BGNJ_STORES.lectureOverrides = map;
-    window.BGNJ_SAVE.lectureOverrides();
+  async setHidden(id, hidden) {
+    await window.BGNJ_API.lectures.update(id, { hidden: !!hidden });
+    await this.refresh({ includeHidden: true });
   },
-  // 삭제 — 시드 항목은 물리적으로 지울 수 없으므로 숨김 처리.
-  // override-only(관리자가 추가한) 항목만 완전 삭제. 신청 데이터는 함께 정리.
-  deleteLecture(id) {
-    const seedIds = new Set(this._seed().map((l) => String(l.id)));
-    const map = window.BGNJ_STORES.lectureOverrides || {};
-    if (seedIds.has(String(id))) {
-      // 시드 데이터는 hidden 처리만 가능
-      map[String(id)] = { ...(map[String(id)] || {}), hidden: true, updatedAt: new Date().toISOString() };
-    } else {
-      delete map[String(id)];
-    }
-    window.BGNJ_STORES.lectureOverrides = map;
-    window.BGNJ_SAVE.lectureOverrides();
-    const reg = window.BGNJ_STORES.lectureRegistrations || {};
-    delete reg[String(id)];
-    window.BGNJ_STORES.lectureRegistrations = reg;
-    window.BGNJ_SAVE.lectureRegistrations();
+  async deleteLecture(id) {
+    await window.BGNJ_API.lectures.remove(id);
+    await this.refresh({ includeHidden: true });
   },
-  // ── 신청 ──────────────────────────────────────────────────────
-  listRegistrations(lectureId) {
-    const map = window.BGNJ_STORES.lectureRegistrations || {};
-    return Array.isArray(map[String(lectureId)]) ? map[String(lectureId)].slice() : [];
-  },
-  _saveRegistrations(lectureId, list) {
-    const map = window.BGNJ_STORES.lectureRegistrations || {};
-    map[String(lectureId)] = list;
-    window.BGNJ_STORES.lectureRegistrations = map;
-    window.BGNJ_SAVE.lectureRegistrations();
+  // ── 신청 ──
+  listRegistrations(lectureId) { return (this._registrationsByLecture[String(lectureId)] || []).slice(); },
+  async refreshRegistrations(_lectureId) {
+    // 현재 Worker 에 강연별 전체 신청 목록 endpoint 가 없음 — listAll 한 번에 조회 후 그룹.
+    // 다음 사이클에서 GET /api/lectures/:id/registrations 추가 권장.
+    return [];
   },
   getSeats(lectureId) {
     const lecture = this.getLecture(lectureId);
     const cap = lecture?.capacity || 0;
     const list = this.listRegistrations(lectureId);
     const active = list.filter((r) => r.status !== 'cancelled');
-    const taken = active.filter((r) => r.status !== 'waitlist').reduce((s, r) => s + (r.count || 1), 0);
-    const waitlist = active.filter((r) => r.status === 'waitlist').reduce((s, r) => s + (r.count || 1), 0);
-    const remaining = Math.max(0, cap - taken);
-    return { capacity: cap, taken, waitlist, remaining };
+    const taken = active.filter((r) => r.status !== 'waitlist').length;
+    const waitlist = active.filter((r) => r.status === 'waitlist').length;
+    return { capacity: cap, taken, waitlist, remaining: Math.max(0, cap - taken) };
   },
   hasUserRegistered(lectureId, userId) {
     if (!userId) return null;
-    return this.listRegistrations(lectureId).find((r) => r.userId === userId && r.status !== 'cancelled') || null;
+    return this._myRegs.find((r) => String(r.lectureId) === String(lectureId) && r.status !== 'cancelled') || null;
   },
-  register(lectureId, payload) {
+  async register(lectureId, payload) {
     const userId = payload.userId;
     if (!userId) return { ok: false, message: "회원 가입 후 로그인해 주세요." };
-    const existing = this.hasUserRegistered(lectureId, userId);
-    if (existing) return { ok: false, message: "이미 신청된 강연입니다.", registration: existing };
-    const lecture = this.getLecture(lectureId);
-    if (!lecture) return { ok: false, message: "강연 정보를 찾을 수 없습니다." };
-    const count = Math.max(1, Number(payload.count) || 1);
-    const seats = this.getSeats(lectureId);
-    const wantsConfirmed = (lecture.price || 0) === 0;
-    let status;
-    if (seats.remaining >= count) {
-      status = wantsConfirmed ? 'confirmed' : 'pending_payment';
-    } else {
-      status = 'waitlist';
+    try {
+      const res = await window.BGNJ_API.lectures.register(lectureId, { phone: payload.phone || '' });
+      await this.refreshMine();
+      return { ok: true, registration: res };
+    } catch (err) {
+      return { ok: false, message: err?.body?.error || err?.message || '신청 실패' };
     }
-    const reg = {
-      id: `reg-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
-      lectureId: String(lectureId),
-      userId,
-      name: payload.name,
-      email: payload.email,
-      phone: payload.phone || "",
-      count,
-      note: String(payload.note || "").trim(),
-      price: lecture.price || 0,
-      paid: false,
-      status,
-      createdAt: new Date().toISOString(),
-    };
-    const list = this.listRegistrations(lectureId);
-    this._saveRegistrations(lectureId, [...list, reg]);
-    return { ok: true, registration: reg };
   },
-  cancelRegistration(lectureId, registrationId) {
-    const list = this.listRegistrations(lectureId);
-    const next = list.map((r) => r.id === registrationId ? { ...r, status: 'cancelled', cancelledAt: new Date().toISOString() } : r);
-    this._saveRegistrations(lectureId, next);
-    this._promoteWaitlist(lectureId);
-    return next.find((r) => r.id === registrationId) || null;
+  async cancelRegistration(_lectureId, registrationId) {
+    await window.BGNJ_API.lectures.cancelRegistration(registrationId);
+    await this.refreshMine();
+    return null;
   },
-  requestRefund(lectureId, registrationId, reason) {
-    const list = this.listRegistrations(lectureId);
-    const reg = list.find((r) => r.id === registrationId);
-    if (!reg) return { ok: false, message: '신청 내역을 찾을 수 없습니다.' };
-    if (reg.status !== 'confirmed') return { ok: false, message: '참가 확정 상태에서만 환불 신청이 가능합니다.' };
-    if (!String(reason || '').trim()) return { ok: false, message: '환불 사유를 입력해 주세요.' };
-    const next = list.map((r) => r.id === registrationId
-      ? { ...r, status: 'refund_requested', refundReason: String(reason).trim(), refundRequestedAt: new Date().toISOString(), _prevStatus: 'confirmed' }
-      : r);
-    this._saveRegistrations(lectureId, next);
-    if (reg.userId) {
-      const lecture = this.getLecture(lectureId);
-      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
-        type: 'lecture_refund_requested', lectureId: String(lectureId),
-        postTitle: lecture?.topic || lecture?.title || '강연',
-        fromName: '운영자', message: '환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.',
-      });
-      window.BGNJ_AUDIT?.log({ action: 'lecture.refund_request', target: `lecture:${lectureId}`, details: { reg: registrationId, reason } });
-    }
-    return { ok: true, registration: next.find((r) => r.id === registrationId) };
+  async confirmPayment(_lectureId, registrationId) {
+    await window.BGNJ_API.lectures.patchRegistration(registrationId, { status: 'confirmed' });
+    await this.refreshMine();
+    return null;
   },
-  approveRefund(lectureId, registrationId) {
-    const list = this.listRegistrations(lectureId);
-    const reg = list.find((r) => r.id === registrationId);
-    const next = list.map((r) => r.id === registrationId
-      ? { ...r, status: 'cancelled', refundApprovedAt: new Date().toISOString(), cancelledAt: new Date().toISOString() }
-      : r);
-    this._saveRegistrations(lectureId, next);
-    this._promoteWaitlist(lectureId);
-    if (reg?.userId) {
-      const lecture = this.getLecture(lectureId);
-      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
-        type: 'lecture_refund_approved', lectureId: String(lectureId),
-        postTitle: lecture?.topic || lecture?.title || '강연',
-        fromName: '운영자', message: '환불 신청이 승인되어 처리되었습니다.',
-      });
-      window.BGNJ_AUDIT?.log({ action: 'lecture.refund_approve', target: `lecture:${lectureId}`, details: { reg: registrationId } });
-    }
-    return next.find((r) => r.id === registrationId) || null;
+  async unconfirmPayment(_lectureId, registrationId) {
+    await window.BGNJ_API.lectures.patchRegistration(registrationId, { status: 'pending_payment' });
+    await this.refreshMine();
   },
-  rejectRefund(lectureId, registrationId, adminNote) {
-    const list = this.listRegistrations(lectureId);
-    const reg = list.find((r) => r.id === registrationId);
-    const next = list.map((r) => r.id === registrationId
-      ? { ...r, status: 'confirmed', refundRejectedAt: new Date().toISOString(), refundAdminNote: String(adminNote || '').trim(), _prevStatus: undefined }
-      : r);
-    this._saveRegistrations(lectureId, next);
-    if (reg?.userId) {
-      const lecture = this.getLecture(lectureId);
-      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
-        type: 'lecture_refund_rejected', lectureId: String(lectureId),
-        postTitle: lecture?.topic || lecture?.title || '강연',
-        fromName: '운영자', message: `환불 신청이 반려되었습니다.${adminNote ? ' 사유: ' + adminNote : ''}`,
-      });
-      window.BGNJ_AUDIT?.log({ action: 'lecture.refund_reject', target: `lecture:${lectureId}`, details: { reg: registrationId, note: adminNote } });
-    }
-    return next.find((r) => r.id === registrationId) || null;
+  async requestRefund(_lectureId, registrationId, reason) {
+    await window.BGNJ_API.lectures.patchRegistration(registrationId, { status: 'refund_requested', refundReason: reason });
+    await this.refreshMine();
+    return { ok: true };
   },
-  confirmPayment(lectureId, registrationId) {
-    const list = this.listRegistrations(lectureId);
-    const next = list.map((r) => (
-      r.id === registrationId
-        ? { ...r, paid: true, status: 'confirmed', confirmedAt: new Date().toISOString() }
-        : r
-    ));
-    this._saveRegistrations(lectureId, next);
-    const updated = next.find((r) => r.id === registrationId) || null;
-    if (updated && updated.userId) {
-      const lecture = this.getLecture(lectureId);
-      window.BGNJ_COMMUNITY.addNotification(updated.userId, {
-        type: 'lecture_confirmed',
-        lectureId: String(lectureId),
-        postTitle: lecture?.topic || lecture?.title || '강연',
-        fromName: '운영자',
-        message: '강연 입금이 확인되어 참가가 확정되었습니다.',
-      });
-      window.BGNJ_AUDIT?.log({ action: 'lecture.confirm_payment', target: `lecture:${lectureId}`, details: { reg: registrationId, user: updated.userId } });
-    }
-    return updated;
+  async approveRefund(_lectureId, registrationId) {
+    await window.BGNJ_API.lectures.patchRegistration(registrationId, { status: 'cancelled' });
+    await this.refreshMine();
   },
-  unconfirmPayment(lectureId, registrationId) {
-    const list = this.listRegistrations(lectureId);
-    const next = list.map((r) => (
-      r.id === registrationId
-        ? { ...r, paid: false, status: 'pending_payment', confirmedAt: null }
-        : r
-    ));
-    this._saveRegistrations(lectureId, next);
-    return next.find((r) => r.id === registrationId) || null;
+  async rejectRefund(_lectureId, registrationId, _adminNote) {
+    await window.BGNJ_API.lectures.patchRegistration(registrationId, { status: 'confirmed' });
+    await this.refreshMine();
   },
-  _promoteWaitlist(lectureId) {
-    const lecture = this.getLecture(lectureId);
-    if (!lecture) return;
-    const list = this.listRegistrations(lectureId);
-    const seats = this.getSeats(lectureId);
-    let remaining = seats.remaining;
-    const next = list.slice();
-    const promotedUsers = [];
-    for (let i = 0; i < next.length && remaining > 0; i += 1) {
-      const r = next[i];
-      if (r.status !== 'waitlist') continue;
-      if (r.count > remaining) continue;
-      const promoted = (lecture.price || 0) === 0 ? 'confirmed' : 'pending_payment';
-      next[i] = { ...r, status: promoted, promotedAt: new Date().toISOString() };
-      promotedUsers.push({ userId: r.userId, status: promoted });
-      remaining -= r.count;
-    }
-    this._saveRegistrations(lectureId, next);
-    promotedUsers.forEach(({ userId, status }) => {
-      if (!userId) return;
-      window.BGNJ_COMMUNITY.addNotification(userId, {
-        type: 'lecture_promoted',
-        lectureId: String(lectureId),
-        postTitle: lecture.topic || lecture.title || '강연',
-        fromName: '운영자',
-        message: status === 'confirmed'
-          ? '대기자에서 참가가 확정되었습니다.'
-          : '대기자에서 입금 대기로 전환되었습니다. 안내 계좌로 입금해 주세요.',
-      });
-    });
-  },
-  listMyRegistrations(userId) {
-    if (!userId) return [];
-    const map = window.BGNJ_STORES.lectureRegistrations || {};
-    const out = [];
-    Object.keys(map).forEach((lectureId) => {
-      (map[lectureId] || []).forEach((r) => {
-        if (r.userId === userId) out.push({ ...r, lecture: this.getLecture(lectureId) });
-      });
-    });
-    return out.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  },
-  // ── .ics ──────────────────────────────────────────────────────
+  listMyRegistrations(_userId) { return this._myRegs.slice(); },
+  // ── .ics ──
   generateIcs(lecture) {
     if (!lecture?.startsAt) return null;
     const start = new Date(lecture.startsAt);
@@ -1300,24 +1150,14 @@ window.BGNJ_LECTURES = {
       return `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
     };
     const escape = (s) => String(s || '').replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
-    const lines = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Wangsadeul//Lecture//KO',
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'BEGIN:VEVENT',
-      `UID:lecture-${lecture.id}@bgnj`,
-      `DTSTAMP:${fmt(new Date())}`,
-      `DTSTART:${fmt(start)}`,
-      `DTEND:${fmt(end)}`,
-      `SUMMARY:${escape(lecture.topic || lecture.title)}`,
-      `LOCATION:${escape(lecture.venue || '')}`,
+    return [
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BANGINOJA//Lecture//KO','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+      'BEGIN:VEVENT', `UID:lecture-${lecture.id}@bgnj`, `DTSTAMP:${fmt(new Date())}`,
+      `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
+      `SUMMARY:${escape(lecture.topic || lecture.title)}`, `LOCATION:${escape(lecture.venue || '')}`,
       `DESCRIPTION:${escape((lecture.host ? `진행: ${lecture.host}\n` : '') + (lecture.note || ''))}`,
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ];
-    return lines.join('\r\n');
+      'END:VEVENT','END:VCALENDAR',
+    ].join('\r\n');
   },
   downloadIcs(lectureId) {
     const lecture = this.getLecture(lectureId);
@@ -1326,71 +1166,108 @@ window.BGNJ_LECTURES = {
     const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `lecture-${lecture.id}.ics`;
-    a.click();
+    a.href = url; a.download = `lecture-${lecture.id}.ics`; a.click();
     URL.revokeObjectURL(url);
     return true;
   },
-  // ── 후기 ──────────────────────────────────────────────────────
-  listReviews(lectureId) {
-    const map = window.BGNJ_STORES.lectureReviews || {};
-    return Array.isArray(map[String(lectureId)]) ? map[String(lectureId)].slice() : [];
+  // ── 후기 ──
+  async refreshReviews(lectureId) {
+    try {
+      const { reviews } = await window.BGNJ_API.lectures.reviews.list(lectureId);
+      this._reviewsByLecture[String(lectureId)] = reviews || [];
+    } catch {}
+    return this._reviewsByLecture[String(lectureId)] || [];
   },
-  _saveReviews(lectureId, list) {
-    const map = window.BGNJ_STORES.lectureReviews || {};
-    map[String(lectureId)] = list;
-    window.BGNJ_STORES.lectureReviews = map;
-    window.BGNJ_SAVE.lectureReviews();
-  },
+  listReviews(lectureId) { return (this._reviewsByLecture[String(lectureId)] || []).slice(); },
   canReview(lectureId, userId) {
     if (!userId) return false;
-    const my = this.listRegistrations(lectureId).find((r) => r.userId === userId && r.status === 'confirmed');
-    return !!my;
+    return this._myRegs.some((r) => String(r.lectureId) === String(lectureId) && r.status === 'confirmed');
   },
-  addReview(lectureId, payload) {
-    const review = {
-      id: `lec-rev-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
-      lectureId: String(lectureId),
-      userId: payload.userId || null,
-      author: payload.author || '익명',
-      rating: Math.max(1, Math.min(5, Number(payload.rating) || 5)),
-      text: String(payload.text || '').trim(),
-      createdAt: new Date().toISOString(),
-    };
-    if (!review.text) return null;
-    this._saveReviews(lectureId, [review, ...this.listReviews(lectureId)]);
-    return review;
+  async addReview(lectureId, payload) {
+    try {
+      await window.BGNJ_API.lectures.reviews.create(lectureId, { rating: payload.rating, body: payload.text });
+      await this.refreshReviews(lectureId);
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, message: err?.body?.error || err?.message };
+    }
   },
-  deleteReview(lectureId, reviewId) {
-    const next = this.listReviews(lectureId).filter((r) => r.id !== reviewId);
-    this._saveReviews(lectureId, next);
-    return next;
+  async deleteReview(_lectureId, reviewId) {
+    await window.BGNJ_API.lectures.reviews.remove(reviewId);
+    await this.refreshReviews(_lectureId);
   },
   // ── 계좌번호 ──────────────────────────────────────────────────
-  getBankAccount() {
-    return { ...(window.BGNJ_STORES.bankAccount || {}) };
+  // 입금 계좌 — 서버(D1.bank_account) source of truth.
+  _bank: null,
+  async refreshBankAccount() {
+    try {
+      const { bankAccount } = await window.BGNJ_API.bankAccount.get();
+      this._bank = bankAccount ? {
+        bankName: bankAccount.bank_name || '',
+        accountNumber: bankAccount.account_number || '',
+        holder: bankAccount.holder || '',
+        memo: bankAccount.memo || '',
+      } : null;
+    } catch {}
+    return this._bank || {};
   },
-  saveBankAccount(payload) {
-    window.BGNJ_STORES.bankAccount = { ...(window.BGNJ_STORES.bankAccount || {}), ...payload };
-    window.BGNJ_SAVE.bankAccount();
-    return this.getBankAccount();
+  getBankAccount() { return { ...(this._bank || {}) }; },
+  async saveBankAccount(payload) {
+    await window.BGNJ_API.bankAccount.put(payload);
+    return this.refreshBankAccount();
   },
 };
 
-// === 책 주문(BGNJ_BOOK_ORDERS) helper ====================================
-// 운영 정책:
-//   - 회원 전용 주문. 비로그인은 결제 진입 자체를 막음.
-//   - 결제는 무통장 입금만. PG는 별도 단계에서 도입.
-//   - 상태: pending_payment → paid → shipped → delivered. 운영자가 단계별로 진행.
-//   - 'cancelled' 는 운영자/사용자가 명시적으로 취소.
-//   - 계좌번호는 강연과 동일한 `BGNJ_STORES.bankAccount` 재사용.
+// === 책 주문(BGNJ_BOOK_ORDERS) helper — 서버(D1.book_orders) source of truth ===
 window.BGNJ_BOOK_ORDERS = {
   ORDER_STATUSES: ['pending_payment', 'paid', 'shipped', 'delivered', 'refund_requested', 'cancelled'],
-
-  listAll() {
-    return (window.BGNJ_STORES.bookOrders || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  _orders: [],
+  _reviews: [], // 책별 리뷰는 서버에서 책 ID 기준 fetch (BGNJ_BOOKS.refreshReviews)
+  _toOrder(r) {
+    return {
+      id: r.id,
+      orderNo: r.order_no || r.orderNo,
+      userId: r.user_id,
+      version: r.version,
+      qty: r.qty,
+      subtotal: r.subtotal || r.price * r.qty,
+      shipping: r.shipping || 0,
+      total: r.total || (r.subtotal + (r.shipping || 0)) || (r.price * r.qty),
+      unit: r.price,
+      recipient: r.recipient || r.buyer_name,
+      phone: r.phone || r.buyer_phone,
+      address: r.address,
+      addressDetail: r.address_detail,
+      zip: r.zip,
+      memo: r.memo,
+      status: r.status,
+      paid: r.status !== 'pending_payment' && r.status !== 'cancelled',
+      tracking: r.tracking || r.tracking_no,
+      createdAt: r.created_at,
+      paidAt: r.paid_at,
+      shippedAt: r.shipped_at,
+      deliveredAt: r.delivered_at,
+      cancelledAt: r.cancelled_at,
+      refundStatus: r.refund_status,
+    };
   },
+  async refreshMine() {
+    try {
+      const { orders } = await window.BGNJ_API.bookOrders.mine();
+      this._orders = (orders || []).map((o) => this._toOrder(o));
+      try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}
+    } catch {}
+    return this._orders.slice();
+  },
+  async refreshAll({ status } = {}) {
+    try {
+      const { orders } = await window.BGNJ_API.bookOrders.adminList({ status });
+      this._orders = (orders || []).map((o) => this._toOrder(o));
+      try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}
+    } catch {}
+    return this._orders.slice();
+  },
+  listAll() { return this._orders.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); },
   listByStatus(status) {
     if (!status || status === 'all') return this.listAll();
     return this.listAll().filter((o) => o.status === status);
@@ -1399,24 +1276,9 @@ window.BGNJ_BOOK_ORDERS = {
     if (!userId) return [];
     return this.listAll().filter((o) => o.userId === userId);
   },
-  getOrder(id) {
-    return this.listAll().find((o) => o.id === id) || null;
-  },
-  _save(list) {
-    window.BGNJ_STORES.bookOrders = list;
-    window.BGNJ_SAVE.bookOrders();
-  },
-  countOpenOrders() {
-    return (window.BGNJ_STORES.bookOrders || []).filter((o) => o.status === 'pending_payment').length;
-  },
-  generateOrderNo(now) {
-    const d = now || new Date();
-    const pad = (n) => String(n).padStart(2, '0');
-    const stamp = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
-    const seq = (window.BGNJ_STORES.bookOrders || []).filter((o) => String(o.orderNo || '').includes(stamp)).length + 1;
-    return `WSD-${stamp}-${String(seq).padStart(3, '0')}`;
-  },
-  createOrder(payload) {
+  getOrder(id) { return this.listAll().find((o) => o.id === id) || null; },
+  countOpenOrders() { return this._orders.filter((o) => o.status === 'pending_payment').length; },
+  async createOrder(payload) {
     if (!payload.userId) return { ok: false, message: "회원 가입 후 로그인해 주세요." };
     if (!payload.recipient || !payload.phone || !payload.address) {
       return { ok: false, message: "받는 분, 연락처, 주소는 필수입니다." };
@@ -1426,130 +1288,45 @@ window.BGNJ_BOOK_ORDERS = {
     const qty = Math.max(1, Number(payload.qty) || 1);
     const version = payload.version === 'EN' ? 'EN' : 'KR';
     const unit = version === 'EN' ? book.priceEN : book.priceKR;
-    const subtotal = unit * qty;
-    const shipping = subtotal >= 30000 ? 0 : 3000;
-    const total = subtotal + shipping;
-    const now = new Date();
-    const order = {
-      id: `order-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
-      orderNo: this.generateOrderNo(now),
-      userId: payload.userId,
-      version,
-      qty,
-      unit,
-      subtotal,
-      shipping,
-      total,
-      recipient: String(payload.recipient || '').trim(),
-      phone: String(payload.phone || '').trim(),
-      address: String(payload.address || '').trim(),
-      addressDetail: String(payload.addressDetail || '').trim(),
-      memo: String(payload.memo || '').trim(),
-      status: 'pending_payment',
-      paid: false,
-      tracking: '',
-      createdAt: now.toISOString(),
-    };
-    this._save([order, ...(window.BGNJ_STORES.bookOrders || [])]);
-    return { ok: true, order };
+    try {
+      const { id, orderNo } = await window.BGNJ_API.bookOrders.create({
+        bookId: 'kingsroad', version, qty, price: unit,
+        recipient: payload.recipient, phone: payload.phone,
+        address: payload.address, addressDetail: payload.addressDetail || '',
+        zip: payload.zip || '', memo: payload.memo || '',
+      });
+      await this.refreshMine();
+      const order = this._orders.find((o) => o.id === id);
+      return { ok: true, order: order || { id, orderNo, userId: payload.userId, version, qty } };
+    } catch (err) {
+      return { ok: false, message: err?.body?.error || err?.message || '주문 생성 실패' };
+    }
   },
-  _notify(order, type, message) {
-    if (!order || !order.userId) return;
-    window.BGNJ_COMMUNITY.addNotification(order.userId, {
-      type,
-      orderId: order.id,
-      orderNo: order.orderNo,
-      postTitle: `『왕의길』 주문 ${order.orderNo}`,
-      fromName: '운영자',
-      message,
-    });
+  async _patch(id, body) {
+    await window.BGNJ_API.bookOrders.update(id, body);
+    await this.refreshAll();
+    return this.getOrder(id);
   },
-  confirmPayment(id) {
-    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
-      o.id === id ? { ...o, paid: true, status: 'paid', paidAt: new Date().toISOString() } : o
-    );
-    this._save(list);
-    const updated = list.find((o) => o.id === id) || null;
-    this._notify(updated, 'order_paid', '입금이 확인되어 발송 준비를 시작합니다.');
-    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.confirm_payment', target: `order:${updated.orderNo}` });
-    return updated;
-  },
-  unconfirmPayment(id) {
-    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
-      o.id === id ? { ...o, paid: false, status: 'pending_payment', paidAt: null, shippedAt: null, tracking: '' } : o
-    );
-    this._save(list);
-    return list.find((o) => o.id === id) || null;
-  },
-  markShipped(id, tracking) {
-    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
-      o.id === id ? { ...o, status: 'shipped', tracking: tracking || o.tracking || '', shippedAt: new Date().toISOString() } : o
-    );
-    this._save(list);
-    const updated = list.find((o) => o.id === id) || null;
-    this._notify(updated, 'order_shipped',
-      updated?.tracking ? `발송이 시작되었습니다. 송장 번호 ${updated.tracking}.` : '발송이 시작되었습니다.');
-    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.ship', target: `order:${updated.orderNo}`, details: { tracking: updated.tracking || '' } });
-    return updated;
-  },
-  markDelivered(id) {
-    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
-      o.id === id ? { ...o, status: 'delivered', deliveredAt: new Date().toISOString() } : o
-    );
-    this._save(list);
-    const updated = list.find((o) => o.id === id) || null;
-    this._notify(updated, 'order_delivered', '배송이 완료되었습니다. 즐거운 독서 되세요.');
-    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.deliver', target: `order:${updated.orderNo}` });
-    return updated;
-  },
-  cancelOrder(id) {
-    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
-      o.id === id ? { ...o, status: 'cancelled', cancelledAt: new Date().toISOString() } : o
-    );
-    this._save(list);
-    const updated = list.find((o) => o.id === id) || null;
-    this._notify(updated, 'order_cancelled', '주문이 취소되었습니다.');
-    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.cancel', target: `order:${updated.orderNo}` });
-    return updated;
-  },
-  requestRefund(id, reason) {
+  async confirmPayment(id) { return this._patch(id, { status: 'paid' }); },
+  async unconfirmPayment(id) { return this._patch(id, { status: 'pending_payment' }); },
+  async markShipped(id, tracking) { return this._patch(id, { status: 'shipped', tracking: tracking || '' }); },
+  async markDelivered(id) { return this._patch(id, { status: 'delivered' }); },
+  async cancelOrder(id) { return this._patch(id, { status: 'cancelled' }); },
+  async requestRefund(id, reason) {
     const order = this.getOrder(id);
     if (!order) return { ok: false, message: '주문을 찾을 수 없습니다.' };
     if (!['paid', 'shipped'].includes(order.status)) return { ok: false, message: '입금 확인 또는 배송 중 단계에서만 환불 신청이 가능합니다.' };
-    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
-      o.id === id ? { ...o, status: 'refund_requested', refundReason: String(reason || '').trim(), refundRequestedAt: new Date().toISOString(), _prevStatus: o.status } : o
-    );
-    this._save(list);
-    const updated = list.find((o) => o.id === id) || null;
-    this._notify(updated, 'order_refund_requested', '환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.');
-    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.refund_request', target: `order:${updated.orderNo}`, details: { reason: updated.refundReason } });
-    return { ok: true, order: updated };
+    await window.BGNJ_API.bookOrders.update(id, { status: 'refund_requested', refundReason: String(reason || '').trim() });
+    await this.refreshMine();
+    return { ok: true, order: this.getOrder(id) };
   },
-  approveRefund(id) {
-    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
-      o.id === id ? { ...o, status: 'cancelled', refundApprovedAt: new Date().toISOString(), cancelledAt: new Date().toISOString() } : o
-    );
-    this._save(list);
-    const updated = list.find((o) => o.id === id) || null;
-    this._notify(updated, 'order_cancelled', '환불 신청이 승인되어 처리되었습니다.');
-    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.refund_approve', target: `order:${updated.orderNo}` });
-    return updated;
-  },
-  rejectRefund(id, adminNote) {
-    const list = (window.BGNJ_STORES.bookOrders || []).map((o) =>
-      o.id === id ? { ...o, status: o._prevStatus || 'paid', refundRejectedAt: new Date().toISOString(), refundAdminNote: String(adminNote || '').trim(), _prevStatus: undefined } : o
-    );
-    this._save(list);
-    const updated = list.find((o) => o.id === id) || null;
-    this._notify(updated, 'order_refund_rejected', `환불 신청이 반려되었습니다.${adminNote ? ' 사유: ' + adminNote : ''}`);
-    if (updated) window.BGNJ_AUDIT?.log({ action: 'book.refund_reject', target: `order:${updated.orderNo}`, details: { note: adminNote } });
-    return updated;
-  },
-  // ── 영수증 ──────────────────────────────────────────────────
+  async approveRefund(id) { return this._patch(id, { status: 'cancelled' }); },
+  async rejectRefund(id, adminNote) { return this._patch(id, { status: 'paid', refundAdminNote: String(adminNote || '').trim() }); },
+
   generateReceipt(id) {
     const order = this.getOrder(id);
     if (!order) return null;
-    const bank = window.BGNJ_LECTURES?.getBankAccount?.() || {};
+    const bank = (window.BGNJ_LECTURES?.getBankAccount?.()) || {};
     const formatPrice = (p) => `${(p || 0).toLocaleString()}원`;
     const lines = [
       '╔════════════════════════════════════════════╗',
@@ -1592,60 +1369,48 @@ window.BGNJ_BOOK_ORDERS = {
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `receipt-${order.orderNo}.txt`;
-    a.click();
+    a.href = url; a.download = `receipt-${order.orderNo}.txt`; a.click();
     URL.revokeObjectURL(url);
     return true;
   },
-
   exportCsv() {
-    const header = ['orderNo', 'date', 'userId', 'recipient', 'phone', 'address', 'version', 'qty', 'total', 'status', 'paid', 'tracking'];
+    const header = ['orderNo', 'date', 'userId', 'recipient', 'phone', 'address', 'version', 'qty', 'total', 'status', 'tracking'];
     const rows = this.listAll().map((o) => [
       o.orderNo, o.createdAt, o.userId, o.recipient, o.phone,
-      `${o.address} ${o.addressDetail || ''}`.trim(), o.version, o.qty, o.total, o.status, o.paid ? 'Y' : 'N', o.tracking || '',
+      `${o.address} ${o.addressDetail || ''}`.trim(), o.version, o.qty, o.total, o.status, o.tracking || '',
     ]);
-    return [header, ...rows]
-      .map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+    return [header, ...rows].map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
   },
 
-  // ── 독자 리뷰 ──────────────────────────────────────────────────────────
-  _saveReviews(list) {
-    window.BGNJ_STORES.bookReviews = list;
-    window.BGNJ_SAVE.bookReviews();
+  // ── 책 리뷰 (서버) ─────────────────────────────────
+  async refreshReviews(bookId = 'kingsroad') {
+    try {
+      const { reviews } = await window.BGNJ_API.books.reviews.list(bookId);
+      this._reviews = reviews || [];
+    } catch {}
+    return this._reviews.slice();
   },
-  listReviews() {
-    return (window.BGNJ_STORES.bookReviews || []).slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  },
-  canReview(userId) {
-    if (!userId) return false;
-    return this.listMine(userId).some((o) => o.status === 'delivered');
-  },
-  hasReviewed(userId) {
-    if (!userId) return false;
-    return (window.BGNJ_STORES.bookReviews || []).some((r) => r.userId === userId);
-  },
-  addReview({ userId, userName, rating, text }) {
+  listReviews() { return this._reviews.slice().sort((a, b) => String(b.created_at || b.createdAt).localeCompare(String(a.created_at || a.createdAt))); },
+  canReview(userId) { return userId && this.listMine(userId).some((o) => o.status === 'delivered'); },
+  hasReviewed(userId) { return userId && this._reviews.some((r) => r.user_id === userId || r.userId === userId); },
+  async addReview({ userId, rating, text }) {
     if (!userId) return { ok: false, message: "로그인 후 이용해 주세요." };
     if (!this.canReview(userId)) return { ok: false, message: "배송 완료된 주문이 있어야 리뷰를 작성할 수 있습니다." };
     if (this.hasReviewed(userId)) return { ok: false, message: "이미 리뷰를 작성하셨습니다." };
     const r = Number(rating);
     if (!r || r < 1 || r > 5) return { ok: false, message: "별점(1~5)을 선택해 주세요." };
     if (!String(text || '').trim()) return { ok: false, message: "리뷰 내용을 입력해 주세요." };
-    const review = {
-      id: `br-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
-      userId,
-      userName: String(userName || ''),
-      rating: r,
-      text: String(text).trim(),
-      createdAt: new Date().toISOString(),
-    };
-    this._saveReviews([review, ...this.listReviews()]);
-    return { ok: true, review };
+    try {
+      await window.BGNJ_API.books.reviews.create('kingsroad', { rating: r, body: String(text).trim() });
+      await this.refreshReviews();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, message: err?.body?.error || err?.message || '리뷰 등록 실패' };
+    }
   },
-  deleteReview(reviewId) {
-    this._saveReviews(this.listReviews().filter((r) => r.id !== reviewId));
+  async deleteReview(reviewId) {
+    await window.BGNJ_API.books.reviews.remove(reviewId);
+    await this.refreshReviews();
   },
 };
 
@@ -1657,257 +1422,108 @@ window.BGNJ_BOOK_ORDERS = {
 //   - 결제는 무통장 입금만(같은 bankAccount 저장소 사용).
 //   - 정원/대기열/입금 확인/.ics는 강연 helper와 같은 패턴.
 window.BGNJ_TOURS = {
-  _seed() { return (window.BANGINOJA_DATA?.tours || []).slice(); },
-  _override(id) {
-    const map = window.BGNJ_STORES.tourOverrides || {};
-    return map[String(id)] || null;
+  _tours: [],
+  _myReservations: [],
+  _reviewsByTour: {},
+  _toTour(r) {
+    return {
+      id: r.id, title: r.title, location: r.location, host: r.host,
+      startsAt: r.starts_at, endsAt: r.ends_at, durationMinutes: r.duration_minutes,
+      capacity: r.capacity, price: r.price, priceNumber: r.price,
+      desc: r.description || r.desc, hidden: !!r.hidden,
+    };
   },
-  _merge(seed) {
-    const ov = this._override(seed.id);
-    return ov ? { ...seed, ...ov } : { ...seed };
+  async refresh({ includeHidden } = {}) {
+    try {
+      const { tours } = await window.BGNJ_API.tours.list({ includeHidden: !!includeHidden });
+      this._tours = (tours || []).map((t) => this._toTour(t));
+      try { window.dispatchEvent(new CustomEvent('bgnj-tours-refresh')); } catch {}
+    } catch {}
+    return this._tours.slice();
   },
-  listAll() {
-    const seedIds = new Set(this._seed().map((t) => String(t.id)));
-    const merged = this._seed().map((t) => this._merge(t));
-    const map = window.BGNJ_STORES.tourOverrides || {};
-    Object.entries(map).forEach(([id, ov]) => {
-      if (!seedIds.has(String(id))) merged.push({ id, ...ov });
-    });
-    if (arguments[0] && arguments[0].includeHidden) return merged;
-    return merged.filter((t) => !t.hidden);
+  async refreshMine() {
+    try {
+      const { reservations } = await window.BGNJ_API.tours.mineReservations();
+      this._myReservations = (reservations || []).map((r) => ({
+        id: r.id, tourId: r.tour_id, userId: r.user_id, name: r.user_name,
+        email: r.user_email, phone: r.user_phone, status: r.status,
+        paid: r.status === 'confirmed', count: r.qty || 1, price: r.price || 0,
+        createdAt: r.created_at, paidAt: r.paid_at, cancelledAt: r.cancelled_at,
+        tour: { id: r.tour_id, title: r.title, startsAt: r.starts_at, location: r.location, price: r.price },
+      }));
+    } catch {}
+    return this._myReservations.slice();
   },
-  getTour(id) {
-    return this.listAll({ includeHidden: true }).find((t) => String(t.id) === String(id)) || null;
+  listAll(opts = {}) {
+    if (opts.includeHidden) return this._tours.slice();
+    return this._tours.filter((t) => !t.hidden);
   },
-  saveTour(payload) {
-    const map = window.BGNJ_STORES.tourOverrides || {};
-    map[String(payload.id)] = { ...(map[String(payload.id)] || {}), ...payload, updatedAt: new Date().toISOString() };
-    window.BGNJ_STORES.tourOverrides = map;
-    window.BGNJ_SAVE.tourOverrides();
+  getTour(id) { return this._tours.find((t) => String(t.id) === String(id)) || null; },
+  async saveTour(payload) {
+    if (payload.id && this.getTour(payload.id)) {
+      await window.BGNJ_API.tours.update(payload.id, payload);
+    } else {
+      await window.BGNJ_API.tours.create(payload);
+    }
+    await this.refresh({ includeHidden: true });
     return this.getTour(payload.id);
   },
-  // 숨김 토글 — 시드 항목은 hidden 플래그만 켜고 데이터는 보존.
-  setHidden(id, hidden) {
-    const map = window.BGNJ_STORES.tourOverrides || {};
-    map[String(id)] = { ...(map[String(id)] || {}), hidden: !!hidden, updatedAt: new Date().toISOString() };
-    window.BGNJ_STORES.tourOverrides = map;
-    window.BGNJ_SAVE.tourOverrides();
+  async setHidden(id, hidden) {
+    await window.BGNJ_API.tours.update(id, { hidden: !!hidden });
+    await this.refresh({ includeHidden: true });
   },
-  // 삭제 — 시드 항목은 hidden 처리, override-only는 완전 삭제.
-  deleteTour(id) {
-    const seedIds = new Set(this._seed().map((t) => String(t.id)));
-    const map = window.BGNJ_STORES.tourOverrides || {};
-    if (seedIds.has(String(id))) {
-      map[String(id)] = { ...(map[String(id)] || {}), hidden: true, updatedAt: new Date().toISOString() };
-    } else {
-      delete map[String(id)];
-    }
-    window.BGNJ_STORES.tourOverrides = map;
-    window.BGNJ_SAVE.tourOverrides();
-    const reg = window.BGNJ_STORES.tourReservations || {};
-    delete reg[String(id)];
-    window.BGNJ_STORES.tourReservations = reg;
-    window.BGNJ_SAVE.tourReservations();
+  async deleteTour(id) {
+    await window.BGNJ_API.tours.remove(id);
+    await this.refresh({ includeHidden: true });
   },
-  // ── 예약 ──────────────────────────────────────────────────────
-  listReservations(tourId) {
-    const map = window.BGNJ_STORES.tourReservations || {};
-    return Array.isArray(map[String(tourId)]) ? map[String(tourId)].slice() : [];
-  },
-  _saveReservations(tourId, list) {
-    const map = window.BGNJ_STORES.tourReservations || {};
-    map[String(tourId)] = list;
-    window.BGNJ_STORES.tourReservations = map;
-    window.BGNJ_SAVE.tourReservations();
-  },
+  // ── 예약 ──
+  listReservations(_tourId) { return []; }, // admin per-tour list endpoint not yet provided.
   getSeats(tourId) {
     const tour = this.getTour(tourId);
-    const cap = tour?.capacity || 0;
-    const list = this.listReservations(tourId);
-    const active = list.filter((r) => r.status !== 'cancelled');
-    const taken = active.filter((r) => r.status !== 'waitlist').reduce((s, r) => s + (r.count || 1), 0);
-    const waitlist = active.filter((r) => r.status === 'waitlist').reduce((s, r) => s + (r.count || 1), 0);
-    const remaining = Math.max(0, cap - taken);
-    return { capacity: cap, taken, waitlist, remaining };
+    return { capacity: tour?.capacity || 0, taken: 0, waitlist: 0, remaining: tour?.capacity || 0 };
   },
   hasUserReserved(tourId, userId) {
     if (!userId) return null;
-    return this.listReservations(tourId).find((r) => r.userId === userId && r.status !== 'cancelled') || null;
+    return this._myReservations.find((r) => String(r.tourId) === String(tourId) && r.status !== 'cancelled') || null;
   },
-  reserve(tourId, payload) {
+  async reserve(tourId, payload) {
     const userId = payload.userId;
     if (!userId) return { ok: false, message: "회원 가입 후 로그인해 주세요." };
-    const existing = this.hasUserReserved(tourId, userId);
-    if (existing) return { ok: false, message: "이미 신청된 답사입니다.", reservation: existing };
-    const tour = this.getTour(tourId);
-    if (!tour) return { ok: false, message: "투어 정보를 찾을 수 없습니다." };
-    const count = Math.max(1, Number(payload.count) || 1);
-    const price = tour.priceNumber || 0;
-    const seats = this.getSeats(tourId);
-    let status;
-    if (seats.remaining >= count) {
-      status = price === 0 ? 'confirmed' : 'pending_payment';
-    } else {
-      status = 'waitlist';
+    try {
+      const res = await window.BGNJ_API.tours.reserve(tourId, { phone: payload.phone || '' });
+      await this.refreshMine();
+      return { ok: true, reservation: res };
+    } catch (err) {
+      return { ok: false, message: err?.body?.error || err?.message || '예약 실패' };
     }
-    const reg = {
-      id: `tour-reg-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
-      tourId: String(tourId),
-      userId,
-      name: payload.name,
-      email: payload.email,
-      phone: payload.phone || "",
-      count,
-      note: String(payload.note || "").trim(),
-      price,
-      paid: false,
-      status,
-      createdAt: new Date().toISOString(),
-    };
-    const list = this.listReservations(tourId);
-    this._saveReservations(tourId, [...list, reg]);
-    return { ok: true, reservation: reg };
   },
-  cancelReservation(tourId, reservationId) {
-    const list = this.listReservations(tourId);
-    const next = list.map((r) => r.id === reservationId ? { ...r, status: 'cancelled', cancelledAt: new Date().toISOString() } : r);
-    this._saveReservations(tourId, next);
-    this._promoteWaitlist(tourId);
-    return next.find((r) => r.id === reservationId) || null;
+  async cancelReservation(_tourId, reservationId) {
+    await window.BGNJ_API.tours.cancelReservation(reservationId);
+    await this.refreshMine();
   },
-  requestRefund(tourId, reservationId, reason) {
-    const list = this.listReservations(tourId);
-    const reg = list.find((r) => r.id === reservationId);
-    if (!reg) return { ok: false, message: '예약 내역을 찾을 수 없습니다.' };
-    if (reg.status !== 'confirmed') return { ok: false, message: '참가 확정 상태에서만 환불 신청이 가능합니다.' };
-    if (!String(reason || '').trim()) return { ok: false, message: '환불 사유를 입력해 주세요.' };
-    const next = list.map((r) => r.id === reservationId
-      ? { ...r, status: 'refund_requested', refundReason: String(reason).trim(), refundRequestedAt: new Date().toISOString(), _prevStatus: 'confirmed' }
-      : r);
-    this._saveReservations(tourId, next);
-    if (reg.userId) {
-      const tour = this.getTour(tourId);
-      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
-        type: 'tour_refund_requested', tourId: String(tourId),
-        postTitle: tour?.title || '답사',
-        fromName: '운영자', message: '환불 신청이 접수되었습니다. 운영자 확인 후 처리됩니다.',
-      });
-      window.BGNJ_AUDIT?.log({ action: 'tour.refund_request', target: `tour:${tourId}`, details: { reg: reservationId, reason } });
-    }
-    return { ok: true, reservation: next.find((r) => r.id === reservationId) };
+  async confirmPayment(_tourId, reservationId) {
+    await window.BGNJ_API.tours.patchReservation(reservationId, { status: 'confirmed' });
+    await this.refreshMine();
   },
-  approveRefund(tourId, reservationId) {
-    const list = this.listReservations(tourId);
-    const reg = list.find((r) => r.id === reservationId);
-    const next = list.map((r) => r.id === reservationId
-      ? { ...r, status: 'cancelled', refundApprovedAt: new Date().toISOString(), cancelledAt: new Date().toISOString() }
-      : r);
-    this._saveReservations(tourId, next);
-    this._promoteWaitlist(tourId);
-    if (reg?.userId) {
-      const tour = this.getTour(tourId);
-      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
-        type: 'tour_refund_approved', tourId: String(tourId),
-        postTitle: tour?.title || '답사',
-        fromName: '운영자', message: '환불 신청이 승인되어 처리되었습니다.',
-      });
-      window.BGNJ_AUDIT?.log({ action: 'tour.refund_approve', target: `tour:${tourId}`, details: { reg: reservationId } });
-    }
-    return next.find((r) => r.id === reservationId) || null;
+  async unconfirmPayment(_tourId, reservationId) {
+    await window.BGNJ_API.tours.patchReservation(reservationId, { status: 'pending_payment' });
+    await this.refreshMine();
   },
-  rejectRefund(tourId, reservationId, adminNote) {
-    const list = this.listReservations(tourId);
-    const reg = list.find((r) => r.id === reservationId);
-    const next = list.map((r) => r.id === reservationId
-      ? { ...r, status: 'confirmed', refundRejectedAt: new Date().toISOString(), refundAdminNote: String(adminNote || '').trim(), _prevStatus: undefined }
-      : r);
-    this._saveReservations(tourId, next);
-    if (reg?.userId) {
-      const tour = this.getTour(tourId);
-      window.BGNJ_COMMUNITY.addNotification(reg.userId, {
-        type: 'tour_refund_rejected', tourId: String(tourId),
-        postTitle: tour?.title || '답사',
-        fromName: '운영자', message: `환불 신청이 반려되었습니다.${adminNote ? ' 사유: ' + adminNote : ''}`,
-      });
-      window.BGNJ_AUDIT?.log({ action: 'tour.refund_reject', target: `tour:${tourId}`, details: { reg: reservationId, note: adminNote } });
-    }
-    return next.find((r) => r.id === reservationId) || null;
+  async requestRefund(_tourId, reservationId, reason) {
+    await window.BGNJ_API.tours.patchReservation(reservationId, { status: 'refund_requested', refundReason: reason });
+    await this.refreshMine();
+    return { ok: true };
   },
-  confirmPayment(tourId, reservationId) {
-    const list = this.listReservations(tourId);
-    const next = list.map((r) => (
-      r.id === reservationId
-        ? { ...r, paid: true, status: 'confirmed', confirmedAt: new Date().toISOString() }
-        : r
-    ));
-    this._saveReservations(tourId, next);
-    const updated = next.find((r) => r.id === reservationId) || null;
-    if (updated && updated.userId) {
-      const tour = this.getTour(tourId);
-      window.BGNJ_COMMUNITY.addNotification(updated.userId, {
-        type: 'tour_confirmed',
-        tourId: String(tourId),
-        postTitle: tour?.title || '답사',
-        fromName: '운영자',
-        message: '답사 입금이 확인되어 참가가 확정되었습니다.',
-      });
-      window.BGNJ_AUDIT?.log({ action: 'tour.confirm_payment', target: `tour:${tourId}`, details: { reg: reservationId, user: updated.userId } });
-    }
-    return updated;
+  async approveRefund(_tourId, reservationId) {
+    await window.BGNJ_API.tours.patchReservation(reservationId, { status: 'cancelled' });
+    await this.refreshMine();
   },
-  unconfirmPayment(tourId, reservationId) {
-    const list = this.listReservations(tourId);
-    const next = list.map((r) => (
-      r.id === reservationId
-        ? { ...r, paid: false, status: 'pending_payment', confirmedAt: null }
-        : r
-    ));
-    this._saveReservations(tourId, next);
-    return next.find((r) => r.id === reservationId) || null;
+  async rejectRefund(_tourId, reservationId, _adminNote) {
+    await window.BGNJ_API.tours.patchReservation(reservationId, { status: 'confirmed' });
+    await this.refreshMine();
   },
-  _promoteWaitlist(tourId) {
-    const tour = this.getTour(tourId);
-    if (!tour) return;
-    const list = this.listReservations(tourId);
-    const seats = this.getSeats(tourId);
-    let remaining = seats.remaining;
-    const next = list.slice();
-    const promotedUsers = [];
-    for (let i = 0; i < next.length && remaining > 0; i += 1) {
-      const r = next[i];
-      if (r.status !== 'waitlist') continue;
-      if (r.count > remaining) continue;
-      const promoted = (tour.priceNumber || 0) === 0 ? 'confirmed' : 'pending_payment';
-      next[i] = { ...r, status: promoted, promotedAt: new Date().toISOString() };
-      promotedUsers.push({ userId: r.userId, status: promoted });
-      remaining -= r.count;
-    }
-    this._saveReservations(tourId, next);
-    promotedUsers.forEach(({ userId, status }) => {
-      if (!userId) return;
-      window.BGNJ_COMMUNITY.addNotification(userId, {
-        type: 'tour_promoted',
-        tourId: String(tourId),
-        postTitle: tour.title || '답사',
-        fromName: '운영자',
-        message: status === 'confirmed'
-          ? '대기자에서 참가가 확정되었습니다.'
-          : '대기자에서 입금 대기로 전환되었습니다. 안내 계좌로 입금해 주세요.',
-      });
-    });
-  },
-  listMyReservations(userId) {
-    if (!userId) return [];
-    const map = window.BGNJ_STORES.tourReservations || {};
-    const out = [];
-    Object.keys(map).forEach((tourId) => {
-      (map[tourId] || []).forEach((r) => {
-        if (r.userId === userId) out.push({ ...r, tour: this.getTour(tourId) });
-      });
-    });
-    return out.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  },
-  // ── .ics ──────────────────────────────────────────────────────
+  listMyReservations(_userId) { return this._myReservations.slice(); },
+  // ── .ics ──
   generateIcs(tour) {
     if (!tour?.startsAt) return null;
     const start = new Date(tour.startsAt);
@@ -1918,24 +1534,14 @@ window.BGNJ_TOURS = {
       return `${d.getUTCFullYear()}${pad(d.getUTCMonth()+1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
     };
     const escape = (s) => String(s || '').replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
-    const lines = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Wangsadeul//Tour//KO',
-      'CALSCALE:GREGORIAN',
-      'METHOD:PUBLISH',
-      'BEGIN:VEVENT',
-      `UID:tour-${tour.id}@bgnj`,
-      `DTSTAMP:${fmt(new Date())}`,
-      `DTSTART:${fmt(start)}`,
-      `DTEND:${fmt(end)}`,
-      `SUMMARY:${escape(tour.title || '답사')}`,
-      `LOCATION:${escape(tour.title || '')}`,
+    return [
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BANGINOJA//Tour//KO','CALSCALE:GREGORIAN','METHOD:PUBLISH',
+      'BEGIN:VEVENT', `UID:tour-${tour.id}@bgnj`, `DTSTAMP:${fmt(new Date())}`,
+      `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
+      `SUMMARY:${escape(tour.title || '답사')}`, `LOCATION:${escape(tour.location || tour.title || '')}`,
       `DESCRIPTION:${escape(tour.desc || '')}`,
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ];
-    return lines.join('\r\n');
+      'END:VEVENT','END:VCALENDAR',
+    ].join('\r\n');
   },
   downloadIcs(tourId) {
     const tour = this.getTour(tourId);
@@ -1944,47 +1550,35 @@ window.BGNJ_TOURS = {
     const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `tour-${tour.id}.ics`;
-    a.click();
+    a.href = url; a.download = `tour-${tour.id}.ics`; a.click();
     URL.revokeObjectURL(url);
     return true;
   },
-
-  // ── 후기 ──────────────────────────────────────────────────────
-  listReviews(tourId) {
-    const map = window.BGNJ_STORES.tourReviews || {};
-    return Array.isArray(map[String(tourId)]) ? map[String(tourId)].slice() : [];
+  // ── 후기 ──
+  async refreshReviews(tourId) {
+    try {
+      const { reviews } = await window.BGNJ_API.tours.reviews.list(tourId);
+      this._reviewsByTour[String(tourId)] = reviews || [];
+    } catch {}
+    return this._reviewsByTour[String(tourId)] || [];
   },
-  _saveReviews(tourId, list) {
-    const map = window.BGNJ_STORES.tourReviews || {};
-    map[String(tourId)] = list;
-    window.BGNJ_STORES.tourReviews = map;
-    window.BGNJ_SAVE.tourReviews();
-  },
+  listReviews(tourId) { return (this._reviewsByTour[String(tourId)] || []).slice(); },
   canReview(tourId, userId) {
     if (!userId) return false;
-    const my = this.listReservations(tourId).find((r) => r.userId === userId && r.status === 'confirmed');
-    return !!my;
+    return this._myReservations.some((r) => String(r.tourId) === String(tourId) && r.status === 'confirmed');
   },
-  addReview(tourId, payload) {
-    const review = {
-      id: `tour-rev-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
-      tourId: String(tourId),
-      userId: payload.userId || null,
-      author: payload.author || '익명',
-      rating: Math.max(1, Math.min(5, Number(payload.rating) || 5)),
-      text: String(payload.text || '').trim(),
-      createdAt: new Date().toISOString(),
-    };
-    if (!review.text) return null;
-    this._saveReviews(tourId, [review, ...this.listReviews(tourId)]);
-    return review;
+  async addReview(tourId, payload) {
+    try {
+      await window.BGNJ_API.tours.reviews.create(tourId, { rating: payload.rating, body: payload.text });
+      await this.refreshReviews(tourId);
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, message: err?.body?.error || err?.message };
+    }
   },
-  deleteReview(tourId, reviewId) {
-    const next = this.listReviews(tourId).filter((r) => r.id !== reviewId);
-    this._saveReviews(tourId, next);
-    return next;
+  async deleteReview(tourId, reviewId) {
+    await window.BGNJ_API.tours.reviews.remove(reviewId);
+    await this.refreshReviews(tourId);
   },
 };
 
@@ -2062,9 +1656,10 @@ window.BGNJ_GRADE_PROMO = {
     });
     return qualified;
   },
-  // 사용자 행동 후 호출 — 새 등급이 더 높을 때만 승격
+  // 사용자 행동 후 호출 — 새 등급이 더 높을 때만 승격. async setGrade 는 fire-and-forget.
   maybePromote(userId) {
-    const user = (window.BGNJ_STORES.users || []).find((u) => u.id === userId);
+    const users = window.BGNJ_AUTH?._usersCache || [];
+    const user = users.find((u) => u.id === userId);
     if (!user) return null;
     if (user.isAdmin) return null;
     if (PROMOTION_PROTECTED.has(user.gradeId)) return null;
@@ -2073,25 +1668,17 @@ window.BGNJ_GRADE_PROMO = {
     const targetId = this.evaluate(userId);
     const targetLv = grades.find((g) => g.id === targetId)?.level ?? 0;
     if (targetLv <= currentLv) return null;
-    window.BGNJ_AUTH.setGrade(userId, targetId);
+    try { window.BGNJ_AUTH.setGrade(userId, targetId)?.catch?.(() => {}); } catch {}
     window.BGNJ_AUDIT?.log({
       action: 'grade.auto_promote',
       target: `user:${userId}`,
       details: { from: user.gradeId, to: targetId },
-      by: 'system',
-    });
-    window.BGNJ_COMMUNITY?.addNotification(userId, {
-      type: 'grade_promoted',
-      postTitle: '회원 등급 안내',
-      fromName: '운영자',
-      message: `활동을 기반으로 등급이 ${grades.find((g) => g.id === targetId)?.label || targetId}(으)로 승격되었습니다.`,
     });
     return targetId;
   },
-  // 활동량 감소 시 호출 — 자격 등급보다 현재 등급이 높으면 강등.
-  // 글/댓글 삭제 후 또는 관리자 도구의 '활동 기반 재산정'에서 사용.
   maybeDemote(userId) {
-    const user = (window.BGNJ_STORES.users || []).find((u) => u.id === userId);
+    const users = window.BGNJ_AUTH?._usersCache || [];
+    const user = users.find((u) => u.id === userId);
     if (!user) return null;
     if (user.isAdmin) return null;
     if (PROMOTION_PROTECTED.has(user.gradeId)) return null;
@@ -2099,9 +1686,8 @@ window.BGNJ_GRADE_PROMO = {
     const currentLv = grades.find((g) => g.id === user.gradeId)?.level ?? 0;
     const targetId = this.evaluate(userId);
     const targetLv = grades.find((g) => g.id === targetId)?.level ?? 0;
-    // 자격 등급이 현재보다 낮을 때만 강등.
     if (targetLv >= currentLv) return null;
-    window.BGNJ_AUTH.setGrade(userId, targetId);
+    try { window.BGNJ_AUTH.setGrade(userId, targetId)?.catch?.(() => {}); } catch {}
     window.BGNJ_AUDIT?.log({
       action: 'grade.auto_demote',
       target: `user:${userId}`,
@@ -2119,7 +1705,8 @@ window.BGNJ_GRADE_PROMO = {
   // 모든 회원에 대해 활동 기반 등급 재산정 — 관리자 패널 일괄 작업용.
   reevaluateAll() {
     const summary = { promoted: 0, demoted: 0 };
-    (window.BGNJ_STORES.users || []).forEach((u) => {
+    const users = window.BGNJ_AUTH?._usersCache || [];
+    users.forEach((u) => {
       if (u.isAdmin) return;
       if (PROMOTION_PROTECTED.has(u.gradeId)) return;
       if (this.maybePromote(u.id)) summary.promoted++;
@@ -2212,96 +1799,74 @@ try { window.BGNJ_SITE_CONTENT.applyHead(); } catch {}
 // === 책 카탈로그(BGNJ_BOOKS) helper =======================================
 // 다양한 책을 관리하고 표지(PNG)/본문 미리보기(PDF)를 dataURI로 보관한다.
 // 책마다 독립된 reviews 배열을 갖는다 — 기존 BGNJ_BOOK_ORDERS의 글로벌 리뷰와 별개.
+// === 책 카탈로그(BGNJ_BOOKS) — 서버(D1.books) source of truth =============
 window.BGNJ_BOOKS = {
+  _books: [],
+  _toBook(r) {
+    return {
+      id: r.id, slug: r.slug || r.id, title: r.title, subtitle: r.subtitle,
+      author: r.author, publisher: r.publisher, pages: r.pages, isbn: r.isbn,
+      priceKR: r.price_kr || r.priceKR || 0, priceEN: r.price_en || r.priceEN || 0,
+      desc: r.description || r.desc, intro: r.intro,
+      chapters: typeof r.chapters_json === 'string' ? (JSON.parse(r.chapters_json || '[]')) : (r.chapters || []),
+      authorBio: r.author_bio || r.authorBio,
+      coverDataUri: r.cover_url || r.coverDataUri || '',
+      pdfPreviewDataUri: r.pdf_preview_url || r.pdfPreviewDataUri || '',
+      badges: typeof r.badges_json === 'string' ? (JSON.parse(r.badges_json || '[]')) : (r.badges || []),
+      status: r.status || 'published',
+      publishedAt: r.published_at || r.publishedAt,
+      primary: !!r.primary,
+      order: r.display_order ?? r.order ?? 0,
+      reviews: [],
+    };
+  },
+  async refresh() {
+    try {
+      const { books } = await window.BGNJ_API.books.list();
+      this._books = (books || []).map((b) => this._toBook(b));
+      try { window.dispatchEvent(new CustomEvent('bgnj-books-refresh')); } catch {}
+    } catch {}
+    return this._books.slice();
+  },
   list({ status } = {}) {
-    const all = (window.BGNJ_STORES.books || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const all = this._books.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     if (status) return all.filter((b) => (b.status || 'published') === status);
     return all;
   },
   get(id) {
     if (!id) return null;
-    return (window.BGNJ_STORES.books || []).find((b) => b.id === id) || null;
+    return this._books.find((b) => b.id === id) || null;
   },
-  // primary=true 표시된 책 또는 첫 번째 published 책 반환. 없으면 null.
   primary() {
     const books = this.list();
     return books.find((b) => b.primary && (b.status || 'published') === 'published')
       || books.find((b) => (b.status || 'published') === 'published')
       || null;
   },
-  _persist(next) {
-    window.BGNJ_STORES.books = next;
-    window.BGNJ_SAVE.books();
+  async create(payload = {}) {
+    const res = await window.BGNJ_API.books.create(payload);
+    await this.refresh();
+    return res?.id ? this.get(res.id) : null;
   },
-  create(payload = {}) {
-    const id = payload.id || `book-${Date.now()}-${Math.random().toString(36).slice(2,5)}`;
-    const next = (window.BGNJ_STORES.books || []).slice();
-    next.push({
-      id,
-      slug: payload.slug || id,
-      title: String(payload.title || '제목 없음'),
-      subtitle: String(payload.subtitle || ''),
-      author: String(payload.author || '뱅기노자'),
-      publisher: String(payload.publisher || ''),
-      pages: Number(payload.pages || 0),
-      isbn: String(payload.isbn || ''),
-      priceKR: Number(payload.priceKR || 0),
-      priceEN: Number(payload.priceEN || 0),
-      desc: String(payload.desc || ''),
-      intro: String(payload.intro || ''),
-      chapters: Array.isArray(payload.chapters) ? payload.chapters.slice() : [],
-      authorBio: String(payload.authorBio || ''),
-      coverDataUri: String(payload.coverDataUri || ''),
-      pdfPreviewDataUri: String(payload.pdfPreviewDataUri || ''),
-      badges: Array.isArray(payload.badges) ? payload.badges.slice() : [],
-      status: payload.status || 'published',
-      publishedAt: payload.publishedAt || new Date().toISOString().slice(0, 10),
-      primary: !!payload.primary,
-      order: Number.isFinite(payload.order) ? payload.order : next.length,
-      reviews: [],
-    });
-    this._persist(next);
+  async update(id, patch = {}) {
+    await window.BGNJ_API.books.update(id, patch);
+    await this.refresh();
     return this.get(id);
   },
-  update(id, patch = {}) {
-    const next = (window.BGNJ_STORES.books || []).slice();
-    const idx = next.findIndex((b) => b.id === id);
-    if (idx < 0) return null;
-    next[idx] = { ...next[idx], ...patch };
-    // primary는 한 권만 — 다른 책의 primary는 false로
-    if (patch.primary === true) {
-      next.forEach((b, i) => { if (i !== idx) b.primary = false; });
-    }
-    this._persist(next);
-    return next[idx];
+  async remove(id) {
+    await window.BGNJ_API.books.remove(id);
+    await this.refresh();
   },
-  remove(id) {
-    const next = (window.BGNJ_STORES.books || []).filter((b) => b.id !== id);
-    this._persist(next);
+  async reorder(ids) {
+    await Promise.all(ids.map((id, i) => window.BGNJ_API.books.update(id, { order: i })));
+    await this.refresh();
   },
-  reorder(ids) {
-    const map = Object.fromEntries((window.BGNJ_STORES.books || []).map((b) => [b.id, b]));
-    const next = ids.map((id, i) => map[id] && { ...map[id], order: i }).filter(Boolean);
-    if (next.length) this._persist(next);
+  // 책별 리뷰는 BGNJ_BOOK_ORDERS 측에서도 관리. 여기선 위임.
+  async addReview(id, payload) {
+    return window.BGNJ_BOOK_ORDERS.addReview({ userId: payload.userId, rating: payload.rating, text: payload.text });
   },
-  // 책별 리뷰
-  addReview(id, payload) {
-    const book = this.get(id);
-    if (!book) return null;
-    const review = {
-      id: `rv-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
-      userId: payload.userId || null,
-      userName: String(payload.userName || '익명'),
-      rating: Math.max(1, Math.min(5, Number(payload.rating || 5))),
-      text: String(payload.text || '').trim(),
-      createdAt: new Date().toISOString(),
-    };
-    return this.update(id, { reviews: [review, ...(book.reviews || [])] });
-  },
-  removeReview(id, reviewId) {
-    const book = this.get(id);
-    if (!book) return null;
-    return this.update(id, { reviews: (book.reviews || []).filter((r) => r.id !== reviewId) });
+  async removeReview(_id, reviewId) {
+    return window.BGNJ_BOOK_ORDERS.deleteReview(reviewId);
   },
 };
 

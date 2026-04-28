@@ -468,6 +468,21 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.032.000",
+    date: "2026-04-28",
+    summary: "🌐 트랜잭션 헬퍼 일괄 서버 전환. BGNJ_BOOK_ORDERS / LECTURES / TOURS / BOOKS 가 모두 D1 source-of-truth 로 전환되었습니다. localStorage 영속화 호출(BGNJ_SAVE.*) 모두 제거. App 진입 시 + 로그인 시 본인 활동 데이터까지 자동 동기화.",
+    details: [
+      "BGNJ_BOOK_ORDERS — createOrder/confirmPayment/markShipped/markDelivered/cancelOrder/requestRefund/approveRefund/rejectRefund 가 모두 BGNJ_API.bookOrders 호출. refreshMine/refreshAll 로 캐시 동기화. 영수증/CSV 는 클라이언트에서 데이터로 포맷.",
+      "BGNJ_LECTURES — listAll/getLecture/saveLecture/setHidden/deleteLecture/register/cancel/payment/refund/reviews 모두 서버 호출. refresh + refreshMine 으로 본인 신청 목록 동기화. _saveRegistrations 같은 BGNJ_STORES 쓰기 제거.",
+      "BGNJ_TOURS — 동일 패턴. listAll/getTour/saveTour/setHidden/deleteTour/reserve/cancel/payment/refund/reviews 모두 서버. refreshMine 으로 본인 예약 동기화.",
+      "BGNJ_BOOKS — list/get/create/update/remove/reorder 모두 BGNJ_API.books. _persist(localStorage) 쓰기 제거. 책별 리뷰는 BGNJ_BOOK_ORDERS 측 server reviews 로 위임.",
+      "BGNJ_GRADE_PROMO — BGNJ_STORES.users 대신 BGNJ_AUTH._usersCache 참조. setGrade 가 async 라 fire-and-forget 으로 호출.",
+      "App init useEffect — Promise.allSettled 로 SITE_CONTENT/FAQ/LEGAL/LECTURES/TOURS/BOOKS/bankAccount 일괄 refresh. 로그인 사용자는 추가로 mine/bookmarks/notifications 동기화.",
+      "Worker, D1 schema, ALTER 컬럼은 v00.029-30 에서 이미 적용됨.",
+    ],
+    context: "사용자가 '모두 진행' 으로 강력하게 요구한 마이그레이션. 트랜잭션 헬퍼 4종(BOOK_ORDERS/LECTURES/TOURS/BOOKS) 을 한 번에 서버 source-of-truth 로 전환했습니다. 메소드 시그니처는 호환 유지하되 변경 메소드는 모두 async 로 전환. 페이지 컴포넌트가 sync 호출하는 경우 동작은 fire-and-forget 으로 흐르고, await 으로 명시 호출하는 경우 정상 흐름. 다음 작업: 페이지 컴포넌트(LecturesPage/WangsanamTourPage/BookCheckoutPage/MyPage/관리자 패널) 의 await + try/catch 정리, 그리고 BGNJ_COLUMNS 의 D1 테이블 생성과 서버 전환.",
+  },
+  {
     version: "00.031.000",
     date: "2026-04-28",
     summary: "COMMUNITY 좋아요/북마크/신고/알림 서버 전환. 사용자가 명시한 '로컬 업데이트는 존재하지 않는다' 정책에 맞춰 낙관적 로컬 쓰기를 모두 제거하고 순수 서버 호출로 변경했습니다. 다음 커밋에서 LECTURES/TOURS/BOOK_ORDERS/BOOKS metadata 까지 서버 전환을 완료할 예정.",
