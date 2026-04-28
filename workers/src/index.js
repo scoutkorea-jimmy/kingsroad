@@ -222,10 +222,12 @@ const handleAuthSignup = async (req, env) => {
     isAdmin = 1;
   }
   const gradeId = isAdmin ? "admin" : "member";
+  // 프로필(생년월일/전화/주소/관심분야 등)도 가입 시점에 함께 저장.
+  const profile = body.profile && typeof body.profile === 'object' ? body.profile : null;
   await env.DB.prepare(
-    `INSERT INTO users (id, email, name, password_hash, password_salt, is_admin, grade_id, consents_json, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, email, name, hash, salt, isAdmin, gradeId, JSON.stringify(body.consents || {}), nowIso()).run();
+    `INSERT INTO users (id, email, name, password_hash, password_salt, is_admin, grade_id, profile_json, consents_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, email, name, hash, salt, isAdmin, gradeId, profile ? JSON.stringify(profile) : null, JSON.stringify(body.consents || {}), nowIso()).run();
 
   const token = newSessionToken();
   const ttl = Number(env.SESSION_TTL_SECONDS || 2592000);
@@ -755,6 +757,440 @@ const handleReportPatch = async (req, env, id) => {
   return { ok: true };
 };
 
+// ──────── 추가 핸들러 (v00.029.000) ───────────────────────
+
+// 본인 프로필 수정 — name, profile_json 만 갱신 가능 (email/password 는 별도 흐름).
+const handleMePatch = async (req, env) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const sets = []; const args = [];
+  if (typeof body.name === "string") { sets.push("name = ?"); args.push(body.name.trim()); }
+  if (body.profile && typeof body.profile === "object") {
+    sets.push("profile_json = ?"); args.push(JSON.stringify(body.profile));
+  }
+  if (!sets.length) return { ok: true };
+  args.push(user.id);
+  await env.DB.prepare(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  const fresh = await getCurrentUser(req, env);
+  return { user: fresh };
+};
+
+// 댓글 삭제 — 작성자 본인 또는 관리자.
+const handleCommentDelete = async (req, env, postId, commentId) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT id, author_id FROM comments WHERE id = ? AND post_id = ?").bind(commentId, postId).first();
+  if (!row) throw new HttpError(404, "댓글을 찾을 수 없습니다.");
+  if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403, "본인 또는 관리자만 삭제할 수 있습니다.");
+  await env.DB.prepare("DELETE FROM comments WHERE id = ?").bind(commentId).run();
+  return { ok: true };
+};
+
+// ── 강연 등록 흐름 ──
+const handleMyLectures = async (req, env) => {
+  const user = await requireUser(req, env);
+  const { results } = await env.DB.prepare(
+    `SELECT lr.*, l.title, l.starts_at, l.venue, l.price
+     FROM lecture_registrations lr JOIN lectures l ON l.id = lr.lecture_id
+     WHERE lr.user_id = ? ORDER BY lr.created_at DESC`
+  ).bind(user.id).all();
+  return { registrations: results };
+};
+
+const handleLectureRegistrationCancel = async (req, env, regId) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT id, user_id, status FROM lecture_registrations WHERE id = ?").bind(regId).first();
+  if (!row) throw new HttpError(404, "신청을 찾을 수 없습니다.");
+  if (!user.isAdmin && row.user_id !== user.id) throw new HttpError(403, "본인 신청만 취소할 수 있습니다.");
+  await env.DB.prepare("UPDATE lecture_registrations SET status = 'cancelled', cancelled_at = ? WHERE id = ?").bind(nowIso(), regId).run();
+  return { ok: true };
+};
+
+const handleLectureRegistrationPatch = async (req, env, regId) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const sets = []; const args = [];
+  if (body.status) { sets.push("status = ?"); args.push(body.status); }
+  if (body.status === 'confirmed') { sets.push("paid_at = ?"); args.push(nowIso()); }
+  if (!sets.length) return { ok: true };
+  args.push(regId);
+  await env.DB.prepare(`UPDATE lecture_registrations SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+
+const handleLectureReviews = async (req, env, lectureId) => {
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM lecture_reviews WHERE lecture_id = ? ORDER BY created_at DESC"
+  ).bind(lectureId).all();
+  return { reviews: results };
+};
+
+const handleLectureReviewCreate = async (req, env, lectureId) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const conf = await env.DB.prepare(
+    "SELECT 1 FROM lecture_registrations WHERE lecture_id = ? AND user_id = ? AND status = 'confirmed'"
+  ).bind(lectureId, user.id).first();
+  if (!conf) throw new HttpError(403, "참가 확정된 회원만 후기를 작성할 수 있습니다.");
+  const id = randomId("lrev");
+  await env.DB.prepare(
+    `INSERT INTO lecture_reviews (id, lecture_id, user_id, user_name, rating, text)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(id, lectureId, user.id, user.name, Number(body.rating || 5), String(body.body || "").slice(0, 2000)).run();
+  return { id };
+};
+
+const handleLectureReviewDelete = async (req, env, reviewId) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT user_id FROM lecture_reviews WHERE id = ?").bind(reviewId).first();
+  if (!row) throw new HttpError(404, "후기를 찾을 수 없습니다.");
+  if (!user.isAdmin && row.user_id !== user.id) throw new HttpError(403);
+  await env.DB.prepare("DELETE FROM lecture_reviews WHERE id = ?").bind(reviewId).run();
+  return { ok: true };
+};
+
+// ── 투어 예약 흐름 ──
+const handleTourReserve = async (req, env, tourId) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const tour = await env.DB.prepare("SELECT id, capacity FROM tours WHERE id = ?").bind(tourId).first();
+  if (!tour) throw new HttpError(404, "투어를 찾을 수 없습니다.");
+  const cnt = await env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM tour_reservations WHERE tour_id = ? AND status IN ('confirmed','paid')"
+  ).bind(tourId).first();
+  const isFull = Number(cnt?.c || 0) >= Number(tour.capacity || 0);
+  const status = isFull ? "waitlist" : "pending_payment";
+  const id = randomId("tres");
+  await env.DB.prepare(
+    `INSERT INTO tour_reservations (id, tour_id, user_id, user_name, user_email, user_phone, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, tourId, user.id, user.name, user.email, body.phone || "", status).run();
+  return { id, status };
+};
+
+const handleMyTours = async (req, env) => {
+  const user = await requireUser(req, env);
+  const { results } = await env.DB.prepare(
+    `SELECT tr.*, t.title, t.starts_at, t.location, t.price
+     FROM tour_reservations tr JOIN tours t ON t.id = tr.tour_id
+     WHERE tr.user_id = ? ORDER BY tr.created_at DESC`
+  ).bind(user.id).all();
+  return { reservations: results };
+};
+
+const handleTourReservationCancel = async (req, env, regId) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT id, user_id FROM tour_reservations WHERE id = ?").bind(regId).first();
+  if (!row) throw new HttpError(404);
+  if (!user.isAdmin && row.user_id !== user.id) throw new HttpError(403);
+  await env.DB.prepare("UPDATE tour_reservations SET status = 'cancelled', cancelled_at = ? WHERE id = ?").bind(nowIso(), regId).run();
+  return { ok: true };
+};
+
+const handleTourReservationPatch = async (req, env, regId) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const sets = []; const args = [];
+  if (body.status) { sets.push("status = ?"); args.push(body.status); }
+  if (body.status === 'confirmed') { sets.push("paid_at = ?"); args.push(nowIso()); }
+  if (!sets.length) return { ok: true };
+  args.push(regId);
+  await env.DB.prepare(`UPDATE tour_reservations SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+
+const handleTourReviews = async (req, env, tourId) => {
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM tour_reviews WHERE tour_id = ? ORDER BY created_at DESC"
+  ).bind(tourId).all();
+  return { reviews: results };
+};
+
+const handleTourReviewCreate = async (req, env, tourId) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const conf = await env.DB.prepare(
+    "SELECT 1 FROM tour_reservations WHERE tour_id = ? AND user_id = ? AND status = 'confirmed'"
+  ).bind(tourId, user.id).first();
+  if (!conf) throw new HttpError(403, "참가 확정된 회원만 후기를 작성할 수 있습니다.");
+  const id = randomId("trev");
+  await env.DB.prepare(
+    `INSERT INTO tour_reviews (id, tour_id, user_id, user_name, rating, text)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(id, tourId, user.id, user.name, Number(body.rating || 5), String(body.body || "").slice(0, 2000)).run();
+  return { id };
+};
+
+const handleTourReviewDelete = async (req, env, reviewId) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT user_id FROM tour_reviews WHERE id = ?").bind(reviewId).first();
+  if (!row) throw new HttpError(404);
+  if (!user.isAdmin && row.user_id !== user.id) throw new HttpError(403);
+  await env.DB.prepare("DELETE FROM tour_reviews WHERE id = ?").bind(reviewId).run();
+  return { ok: true };
+};
+
+// ── 책 주문 ──
+const handleBookOrderCreate = async (req, env) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const id = randomId("ord");
+  const orderNo = "BGNJ-" + Date.now().toString(36).toUpperCase();
+  await env.DB.prepare(
+    `INSERT INTO book_orders (id, order_no, book_id, user_id, version, qty, price, recipient, phone, address, address_detail, zip, memo, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?)`
+  ).bind(
+    id, orderNo, body.bookId || "kingsroad", user.id,
+    body.version || "KR", Number(body.qty || 1), Number(body.price || 0),
+    body.recipient || user.name, body.phone || "", body.address || "", body.addressDetail || "",
+    body.zip || "", body.memo || "", nowIso()
+  ).run();
+  return { id, orderNo };
+};
+
+const handleMyOrders = async (req, env) => {
+  const user = await requireUser(req, env);
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM book_orders WHERE user_id = ? ORDER BY created_at DESC"
+  ).bind(user.id).all();
+  return { orders: results };
+};
+
+const handleAdminOrdersList = async (req, env) => {
+  await requireAdmin(req, env);
+  const url = new URL(req.url);
+  const status = url.searchParams.get("status");
+  const where = status ? "status = ?" : "1=1";
+  const args = status ? [status] : [];
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM book_orders WHERE ${where} ORDER BY created_at DESC LIMIT 500`
+  ).bind(...args).all();
+  return { orders: results };
+};
+
+const handleOrderPatch = async (req, env, orderId) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const row = await env.DB.prepare("SELECT user_id, status FROM book_orders WHERE id = ?").bind(orderId).first();
+  if (!row) throw new HttpError(404, "주문을 찾을 수 없습니다.");
+  // 본인은 자신의 주문 취소만 가능. 그 외 상태 변경은 관리자만.
+  const isSelfCancel = (row.user_id === user.id) && body.status === 'cancelled' && row.status === 'pending_payment';
+  if (!user.isAdmin && !isSelfCancel) throw new HttpError(403);
+  const sets = []; const args = [];
+  if (body.status) { sets.push("status = ?"); args.push(body.status); }
+  if (body.status === 'paid') { sets.push("paid_at = ?"); args.push(nowIso()); }
+  if (body.status === 'shipped') { sets.push("shipped_at = ?"); args.push(nowIso()); if (body.tracking) { sets.push("tracking = ?"); args.push(body.tracking); } }
+  if (body.status === 'delivered') { sets.push("delivered_at = ?"); args.push(nowIso()); }
+  if (!sets.length) return { ok: true };
+  args.push(orderId);
+  await env.DB.prepare(`UPDATE book_orders SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+
+// ── 책 후기 ──
+const handleBookReviews = async (req, env, bookId) => {
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM book_reviews WHERE book_id = ? ORDER BY created_at DESC"
+  ).bind(bookId).all();
+  return { reviews: results };
+};
+
+const handleBookReviewCreate = async (req, env, bookId) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const delivered = await env.DB.prepare(
+    "SELECT 1 FROM book_orders WHERE book_id = ? AND user_id = ? AND status = 'delivered' LIMIT 1"
+  ).bind(bookId, user.id).first();
+  if (!delivered && !user.isAdmin) throw new HttpError(403, "배송 완료된 회원만 후기를 작성할 수 있습니다.");
+  const id = randomId("brev");
+  await env.DB.prepare(
+    `INSERT INTO book_reviews (id, book_id, user_id, user_name, rating, text)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(id, bookId, user.id, user.name, Number(body.rating || 5), String(body.body || "").slice(0, 2000)).run();
+  return { id };
+};
+
+const handleBookReviewDelete = async (req, env, reviewId) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT user_id FROM book_reviews WHERE id = ?").bind(reviewId).first();
+  if (!row) throw new HttpError(404);
+  if (!user.isAdmin && row.user_id !== user.id) throw new HttpError(403);
+  await env.DB.prepare("DELETE FROM book_reviews WHERE id = ?").bind(reviewId).run();
+  return { ok: true };
+};
+
+// ── 사이트 콘텐츠 ──
+const handleSiteContentGet = async (req, env) => {
+  const { results } = await env.DB.prepare("SELECT section, data_json FROM site_content_kv").all();
+  const out = {};
+  for (const r of results || []) {
+    try { out[r.section] = JSON.parse(r.data_json); } catch {}
+  }
+  return { siteContent: out };
+};
+
+const handleSiteContentPatch = async (req, env, section) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const data = body.data || body || {};
+  await env.DB.prepare(
+    `INSERT INTO site_content_kv (section, data_json, updated_at) VALUES (?, ?, ?)
+     ON CONFLICT(section) DO UPDATE SET data_json = excluded.data_json, updated_at = excluded.updated_at`
+  ).bind(section, JSON.stringify(data), nowIso()).run();
+  return { ok: true, section, data };
+};
+
+// ── FAQ ──
+const handleFaqList = async (req, env) => {
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM faqs WHERE hidden = 0 ORDER BY display_order, created_at DESC"
+  ).all();
+  return { faqs: results };
+};
+
+const handleFaqAdminList = async (req, env) => {
+  await requireAdmin(req, env);
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM faqs ORDER BY display_order, created_at DESC"
+  ).all();
+  return { faqs: results };
+};
+
+const handleFaqCreate = async (req, env) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const id = randomId("faq");
+  await env.DB.prepare(
+    `INSERT INTO faqs (id, category, question, answer, display_order, hidden) VALUES (?, ?, ?, ?, ?, ?)`
+  ).bind(id, body.category || "일반", body.question || "", body.answer || "", Number(body.order || 0), body.hidden ? 1 : 0).run();
+  return { id };
+};
+
+const handleFaqPatch = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const sets = []; const args = [];
+  for (const [k, col] of [["category","category"],["question","question"],["answer","answer"]]) {
+    if (k in body) { sets.push(`${col} = ?`); args.push(body[k]); }
+  }
+  if ("order" in body) { sets.push("display_order = ?"); args.push(Number(body.order || 0)); }
+  if ("hidden" in body) { sets.push("hidden = ?"); args.push(body.hidden ? 1 : 0); }
+  sets.push("updated_at = ?"); args.push(nowIso());
+  args.push(id);
+  await env.DB.prepare(`UPDATE faqs SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+
+const handleFaqDelete = async (req, env, id) => {
+  await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM faqs WHERE id = ?").bind(id).run();
+  return { ok: true };
+};
+
+// ── 약관/개인정보 처리방침 ──
+const handleLegalGet = async (req, env, slug) => {
+  const row = await env.DB.prepare("SELECT * FROM legal_docs WHERE slug = ?").bind(slug).first();
+  return { doc: row || null };
+};
+
+const handleLegalPut = async (req, env, slug) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  await env.DB.prepare(
+    `INSERT INTO legal_docs (slug, title, body, updated_at) VALUES (?, ?, ?, ?)
+     ON CONFLICT(slug) DO UPDATE SET title = excluded.title, body = excluded.body, updated_at = excluded.updated_at`
+  ).bind(slug, body.title || slug, body.body || "", nowIso()).run();
+  return { ok: true };
+};
+
+// ── 입금 계좌 ──
+const handleBankAccountGet = async (req, env) => {
+  const row = await env.DB.prepare("SELECT * FROM bank_account WHERE id = 1").first();
+  return { bankAccount: row || null };
+};
+
+const handleBankAccountPut = async (req, env) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  await env.DB.prepare(
+    `UPDATE bank_account SET bank_name = ?, account_number = ?, holder = ?, memo = ?, updated_at = ? WHERE id = 1`
+  ).bind(body.bankName || "", body.accountNumber || "", body.holder || "", body.memo || "", nowIso()).run();
+  return { ok: true };
+};
+
+// ── 카테고리 ──
+const handleCategoriesList = async (req, env) => {
+  const { results } = await env.DB.prepare("SELECT * FROM categories_kv ORDER BY display_order").all();
+  return { categories: (results || []).map((r) => ({ ...r, prefixes: r.prefixes_json ? JSON.parse(r.prefixes_json) : [] })) };
+};
+
+const handleCategoryCreate = async (req, env) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const id = String(body.id || "").trim() || randomId("cat");
+  await env.DB.prepare(
+    `INSERT INTO categories_kv (id, label, board_type, min_level, post_min_level, description, prefixes_json, display_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, body.label || "", body.boardType || "community", Number(body.minLevel || 0), Number(body.postMinLevel || 10), body.description || "", JSON.stringify(body.prefixes || []), Number(body.order || 0)).run();
+  return { id };
+};
+
+const handleCategoryPatch = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const sets = []; const args = [];
+  if ("label" in body) { sets.push("label = ?"); args.push(body.label); }
+  if ("boardType" in body) { sets.push("board_type = ?"); args.push(body.boardType); }
+  if ("minLevel" in body) { sets.push("min_level = ?"); args.push(Number(body.minLevel)); }
+  if ("postMinLevel" in body) { sets.push("post_min_level = ?"); args.push(Number(body.postMinLevel)); }
+  if ("description" in body) { sets.push("description = ?"); args.push(body.description); }
+  if ("prefixes" in body) { sets.push("prefixes_json = ?"); args.push(JSON.stringify(body.prefixes || [])); }
+  if ("order" in body) { sets.push("display_order = ?"); args.push(Number(body.order)); }
+  if (!sets.length) return { ok: true };
+  args.push(id);
+  await env.DB.prepare(`UPDATE categories_kv SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+
+const handleCategoryDelete = async (req, env, id) => {
+  await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM categories_kv WHERE id = ?").bind(id).run();
+  return { ok: true };
+};
+
+// ── 등급 ──
+const handleGradesList = async (req, env) => {
+  const { results } = await env.DB.prepare("SELECT * FROM grades_kv ORDER BY level").all();
+  return { grades: results };
+};
+
+const handleGradeUpsert = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  await env.DB.prepare(
+    `INSERT INTO grades_kv (id, label, level, color, description, display_order) VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET label = excluded.label, level = excluded.level, color = excluded.color,
+       description = excluded.description, display_order = excluded.display_order`
+  ).bind(id, body.label || id, Number(body.level || 0), body.color || "", body.description || "", Number(body.order || 0)).run();
+  return { ok: true };
+};
+
+const handleGradeDelete = async (req, env, id) => {
+  await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM grades_kv WHERE id = ?").bind(id).run();
+  return { ok: true };
+};
+
+// ── 감사 로그 ──
+const handleAuditCreate = async (req, env) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const id = randomId("aud");
+  await env.DB.prepare(
+    `INSERT INTO audit_log (id, action, target, details_json, actor) VALUES (?, ?, ?, ?, ?)`
+  ).bind(id, body.action || "", body.target || "", JSON.stringify(body.details || {}), user.id).run();
+  return { id };
+};
+
 // ──────── 라우터 ──────────────────────────────────────────
 
 const route = async (req, env) => {
@@ -779,6 +1215,7 @@ const route = async (req, env) => {
     return clearSessionCookie(json(data));
   }
   if (req.method === "GET" && p === "/api/auth/me") return json(await handleAuthMe(req, env));
+  if (req.method === "PATCH" && p === "/api/me") return json(await handleMePatch(req, env));
 
   if (req.method === "GET" && p === "/api/posts") return json(await handlePostsList(req, env));
   if (req.method === "POST" && p === "/api/posts") return json(await handlePostsCreate(req, env), { status: 201 });
@@ -793,6 +1230,11 @@ const route = async (req, env) => {
     const id = Number(g[1]);
     if (req.method === "GET") return json(await handleCommentsList(req, env, id));
     if (req.method === "POST") return json(await handleCommentsCreate(req, env, id), { status: 201 });
+  }
+  if ((g = m(/^\/api\/posts\/(\d+)\/comments\/([\w-]+)$/))) {
+    const postId = Number(g[1]);
+    const cid = g[2];
+    if (req.method === "DELETE") return json(await handleCommentDelete(req, env, postId, cid));
   }
 
   if (req.method === "GET" && p === "/api/books") return json(await handleBooksList(req, env));
@@ -828,6 +1270,18 @@ const route = async (req, env) => {
   if ((g = m(/^\/api\/lectures\/([\w-]+)\/register$/))) {
     if (req.method === "POST") return json(await handleLectureRegister(req, env, g[1]), { status: 201 });
   }
+  if ((g = m(/^\/api\/lectures\/([\w-]+)\/reviews$/))) {
+    if (req.method === "GET") return json(await handleLectureReviews(req, env, g[1]));
+    if (req.method === "POST") return json(await handleLectureReviewCreate(req, env, g[1]), { status: 201 });
+  }
+  if ((g = m(/^\/api\/lecture-reviews\/([\w-]+)$/))) {
+    if (req.method === "DELETE") return json(await handleLectureReviewDelete(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/me/lectures") return json(await handleMyLectures(req, env));
+  if ((g = m(/^\/api\/lecture-registrations\/([\w-]+)$/))) {
+    if (req.method === "DELETE") return json(await handleLectureRegistrationCancel(req, env, g[1]));
+    if (req.method === "PATCH") return json(await handleLectureRegistrationPatch(req, env, g[1]));
+  }
 
   // 투어
   if (req.method === "GET" && p === "/api/tours") return json(await handleToursList(req, env));
@@ -837,6 +1291,69 @@ const route = async (req, env) => {
     if (req.method === "PATCH") return json(await handleTourPatch(req, env, g[1]));
     if (req.method === "DELETE") return json(await handleTourDelete(req, env, g[1]));
   }
+  if ((g = m(/^\/api\/tours\/([\w-]+)\/reserve$/))) {
+    if (req.method === "POST") return json(await handleTourReserve(req, env, g[1]), { status: 201 });
+  }
+  if ((g = m(/^\/api\/tours\/([\w-]+)\/reviews$/))) {
+    if (req.method === "GET") return json(await handleTourReviews(req, env, g[1]));
+    if (req.method === "POST") return json(await handleTourReviewCreate(req, env, g[1]), { status: 201 });
+  }
+  if ((g = m(/^\/api\/tour-reviews\/([\w-]+)$/))) {
+    if (req.method === "DELETE") return json(await handleTourReviewDelete(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/me/tours") return json(await handleMyTours(req, env));
+  if ((g = m(/^\/api\/tour-reservations\/([\w-]+)$/))) {
+    if (req.method === "DELETE") return json(await handleTourReservationCancel(req, env, g[1]));
+    if (req.method === "PATCH") return json(await handleTourReservationPatch(req, env, g[1]));
+  }
+
+  // 책 주문
+  if (req.method === "POST" && p === "/api/book-orders") return json(await handleBookOrderCreate(req, env), { status: 201 });
+  if (req.method === "GET" && p === "/api/me/orders") return json(await handleMyOrders(req, env));
+  if (req.method === "GET" && p === "/api/admin/book-orders") return json(await handleAdminOrdersList(req, env));
+  if ((g = m(/^\/api\/book-orders\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleOrderPatch(req, env, g[1]));
+  }
+
+  // 책 후기
+  if ((g = m(/^\/api\/books\/([\w-]+)\/reviews$/))) {
+    if (req.method === "GET") return json(await handleBookReviews(req, env, g[1]));
+    if (req.method === "POST") return json(await handleBookReviewCreate(req, env, g[1]), { status: 201 });
+  }
+  if ((g = m(/^\/api\/book-reviews\/([\w-]+)$/))) {
+    if (req.method === "DELETE") return json(await handleBookReviewDelete(req, env, g[1]));
+  }
+
+  // 사이트 콘텐츠 / FAQ / 약관 / 입금 계좌 / 카테고리 / 등급 / 감사 로그
+  if (req.method === "GET" && p === "/api/site-content") return json(await handleSiteContentGet(req, env));
+  if ((g = m(/^\/api\/site-content\/([\w-]+)$/))) {
+    if (req.method === "PATCH" || req.method === "PUT") return json(await handleSiteContentPatch(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/faqs") return json(await handleFaqList(req, env));
+  if (req.method === "GET" && p === "/api/admin/faqs") return json(await handleFaqAdminList(req, env));
+  if (req.method === "POST" && p === "/api/faqs") return json(await handleFaqCreate(req, env), { status: 201 });
+  if ((g = m(/^\/api\/faqs\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleFaqPatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleFaqDelete(req, env, g[1]));
+  }
+  if ((g = m(/^\/api\/legal\/([\w-]+)$/))) {
+    if (req.method === "GET") return json(await handleLegalGet(req, env, g[1]));
+    if (req.method === "PUT") return json(await handleLegalPut(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/bank-account") return json(await handleBankAccountGet(req, env));
+  if (req.method === "PUT" && p === "/api/bank-account") return json(await handleBankAccountPut(req, env));
+  if (req.method === "GET" && p === "/api/categories") return json(await handleCategoriesList(req, env));
+  if (req.method === "POST" && p === "/api/categories") return json(await handleCategoryCreate(req, env), { status: 201 });
+  if ((g = m(/^\/api\/categories\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleCategoryPatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleCategoryDelete(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/grades") return json(await handleGradesList(req, env));
+  if ((g = m(/^\/api\/grades\/([\w-]+)$/))) {
+    if (req.method === "PUT") return json(await handleGradeUpsert(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleGradeDelete(req, env, g[1]));
+  }
+  if (req.method === "POST" && p === "/api/admin/audit") return json(await handleAuditCreate(req, env), { status: 201 });
 
   // 알림
   if (req.method === "GET" && p === "/api/notifications") return json(await handleNotificationsList(req, env));

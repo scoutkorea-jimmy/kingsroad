@@ -86,12 +86,13 @@
     health: () => request("GET", "/health"),
 
     // ── 인증 ──
-    signup: ({ email, name, password, consents }) =>
-      request("POST", "/auth/signup", { email, name, password, consents }),
+    signup: ({ email, name, password, profile, consents }) =>
+      request("POST", "/auth/signup", { email, name, password, profile, consents }),
     login: ({ email, password }) =>
       request("POST", "/auth/login", { email, password }),
     logout: () => request("POST", "/auth/logout"),
     me: () => request("GET", "/auth/me"),
+    updateProfile: ({ name, profile }) => request("PATCH", "/me", { name, profile }),
 
     // ── 게시글 ──
     posts: {
@@ -112,6 +113,7 @@
         list: (postId) => request("GET", `/posts/${postId}/comments`),
         create: (postId, { body, parentId }) =>
           request("POST", `/posts/${postId}/comments`, { body, parentId }),
+        remove: (postId, commentId) => request("DELETE", `/posts/${postId}/comments/${commentId}`),
       },
     },
 
@@ -122,6 +124,19 @@
       create: (payload) => request("POST", "/books", payload),
       update: (id, patch) => request("PATCH", `/books/${id}`, patch),
       remove: (id) => request("DELETE", `/books/${id}`),
+      reviews: {
+        list: (bookId) => request("GET", `/books/${bookId}/reviews`),
+        create: (bookId, { rating, body }) => request("POST", `/books/${bookId}/reviews`, { rating, body }),
+        remove: (reviewId) => request("DELETE", `/book-reviews/${reviewId}`),
+      },
+    },
+
+    // ── 책 주문 ──
+    bookOrders: {
+      create: (payload) => request("POST", "/book-orders", payload),
+      mine: () => request("GET", "/me/orders"),
+      adminList: ({ status } = {}) => request("GET", `/admin/book-orders${status ? `?status=${status}` : ""}`),
+      update: (id, patch) => request("PATCH", `/book-orders/${id}`, patch),
     },
 
     // ── 미디어 ──
@@ -144,6 +159,14 @@
       update: (id, patch) => request("PATCH", `/lectures/${id}`, patch),
       remove: (id) => request("DELETE", `/lectures/${id}`),
       register: (id, { phone } = {}) => request("POST", `/lectures/${id}/register`, { phone }),
+      mineRegistrations: () => request("GET", "/me/lectures"),
+      cancelRegistration: (regId) => request("DELETE", `/lecture-registrations/${regId}`),
+      patchRegistration: (regId, patch) => request("PATCH", `/lecture-registrations/${regId}`, patch),
+      reviews: {
+        list: (lectureId) => request("GET", `/lectures/${lectureId}/reviews`),
+        create: (lectureId, { rating, body }) => request("POST", `/lectures/${lectureId}/reviews`, { rating, body }),
+        remove: (reviewId) => request("DELETE", `/lecture-reviews/${reviewId}`),
+      },
     },
 
     // ── 투어 ──
@@ -153,6 +176,15 @@
       create: (payload) => request("POST", "/tours", payload),
       update: (id, patch) => request("PATCH", `/tours/${id}`, patch),
       remove: (id) => request("DELETE", `/tours/${id}`),
+      reserve: (id, { phone } = {}) => request("POST", `/tours/${id}/reserve`, { phone }),
+      mineReservations: () => request("GET", "/me/tours"),
+      cancelReservation: (regId) => request("DELETE", `/tour-reservations/${regId}`),
+      patchReservation: (regId, patch) => request("PATCH", `/tour-reservations/${regId}`, patch),
+      reviews: {
+        list: (tourId) => request("GET", `/tours/${tourId}/reviews`),
+        create: (tourId, { rating, body }) => request("POST", `/tours/${tourId}/reviews`, { rating, body }),
+        remove: (reviewId) => request("DELETE", `/tour-reviews/${reviewId}`),
+      },
     },
 
     // ── 알림 ──
@@ -187,11 +219,44 @@
       },
       audit: {
         list: ({ limit } = {}) => request("GET", `/admin/audit${limit ? `?limit=${limit}` : ""}`),
+        create: ({ action, target, details }) => request("POST", "/admin/audit", { action, target, details }),
       },
       reports: {
         list: ({ status } = {}) => request("GET", `/admin/reports${status ? `?status=${status}` : ""}`),
         update: (id, patch) => request("PATCH", `/admin/reports/${id}`, patch),
       },
+    },
+
+    // ── 사이트 콘텐츠 / FAQ / 약관 / 입금 계좌 / 카테고리 / 등급 ──
+    siteContent: {
+      get: () => request("GET", "/site-content"),
+      saveSection: (section, data) => request("PATCH", `/site-content/${section}`, { data }),
+    },
+    faqs: {
+      list: () => request("GET", "/faqs"),
+      adminList: () => request("GET", "/admin/faqs"),
+      create: (payload) => request("POST", "/faqs", payload),
+      update: (id, patch) => request("PATCH", `/faqs/${id}`, patch),
+      remove: (id) => request("DELETE", `/faqs/${id}`),
+    },
+    legal: {
+      get: (slug) => request("GET", `/legal/${slug}`),
+      put: (slug, { title, body }) => request("PUT", `/legal/${slug}`, { title, body }),
+    },
+    bankAccount: {
+      get: () => request("GET", "/bank-account"),
+      put: (payload) => request("PUT", "/bank-account", payload),
+    },
+    categories: {
+      list: () => request("GET", "/categories"),
+      create: (payload) => request("POST", "/categories", payload),
+      update: (id, patch) => request("PATCH", `/categories/${id}`, patch),
+      remove: (id) => request("DELETE", `/categories/${id}`),
+    },
+    grades: {
+      list: () => request("GET", "/grades"),
+      upsert: (id, payload) => request("PUT", `/grades/${id}`, payload),
+      remove: (id) => request("DELETE", `/grades/${id}`),
     },
   };
 })();

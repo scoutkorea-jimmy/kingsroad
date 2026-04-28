@@ -468,6 +468,24 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.029.000",
+    date: "2026-04-28",
+    summary: "🌐 서버 source-of-truth 1차 — Worker 에 빠진 모든 운영 엔드포인트 추가 + D1 스키마 보강 + 가입 시 프로필 저장 + 작은 헬퍼들(LEGAL/FAQ/AUDIT/SITE_CONTENT) 서버 연결. 큰 트랜잭션 헬퍼(BOOK_ORDERS/LECTURES/TOURS/COMMUNITY) 는 다음 사이클에서 일괄 전환.",
+    details: [
+      "가입 시 프로필 저장 — 회원가입 폼의 birthdate/phone/zip/addr/gender/interest/recommender 가 Worker → users.profile_json 으로 영속.",
+      "Worker 신규 핸들러 — PATCH /api/me, DELETE /api/posts/:id/comments/:cid, GET /api/me/lectures + /me/tours + /me/orders, POST /api/lectures/:id/reviews, POST /api/tours/:id/reserve + /reviews, POST /api/book-orders + GET /api/admin/book-orders + PATCH /api/book-orders/:id, GET/POST /api/books/:id/reviews, GET/PATCH /api/site-content + section, FAQ CRUD, GET/PUT /api/legal/:slug, GET/PUT /api/bank-account, Categories CRUD, Grades upsert, POST /api/admin/audit. 약 30+ 신규 엔드포인트.",
+      "D1 schema-v3.sql 추가 — legal_docs, faqs, bank_account(단일행 시드), site_content_kv, grades_kv, categories_kv. ALTER 로 book_orders 에 order_no/recipient/phone/address_detail/zip/memo/price/tracking/cancelled_at/refund_status 컬럼 보강.",
+      "api.js — siteContent / faqs / legal / bankAccount / categories / grades / bookOrders / books.reviews / lectures.reviews + mineRegistrations + cancel/patch / tours.reserve + reviews + mineReservations / posts.comments.remove / admin.audit.create 네임스페이스 신설.",
+      "BGNJ_LEGAL — 서버(D1.legal_docs) source of truth 로 전환. _cache 에 메모리 캐시. refresh() 비동기 호출.",
+      "BGNJ_FAQ — 서버(D1.faqs) source of truth. add/update/remove/reorder 모두 BGNJ_API.faqs 호출.",
+      "BGNJ_AUDIT — log() 는 fire-and-forget 으로 서버 전송 + 즉시 메모리 캐시 갱신. refresh() 가 D1.audit_log 에서 최근 로그 fetch.",
+      "BGNJ_SITE_CONTENT — saveSection/resetSection 모두 서버 PATCH. 페이지 진입 시 refresh() 한 번 자동 호출.",
+      "App 진입 시 일괄 동기화 — BGNJ_SITE_CONTENT/FAQ/LEGAL refresh 가 useEffect 에서 자동 발화.",
+      "Worker 배포: Version 2b830622-c6f0-471d-a36f-93bbbee5866e. CORS/auth 환경변수 동일 유지.",
+    ],
+    context: "사용자 요청 '로컬에서 처리되는건 없어야 한다'에 대응한 1차 마이그레이션. Worker 측은 모든 누락 엔드포인트를 한 번에 추가했고 D1 스키마도 운영 모든 엔티티(약관/FAQ/계좌/사이트콘텐츠/등급/카테고리)에 대응하는 테이블을 갖췄습니다. 클라이언트는 작고 결합도 낮은 헬퍼(LEGAL/FAQ/AUDIT/SITE_CONTENT) 부터 서버 source-of-truth 패턴으로 전환했고, 큰 트랜잭션 헬퍼(BOOK_ORDERS/LECTURES/TOURS) 는 다음 커밋에서 일괄 전환합니다. 다음 작업은 BGNJ_LECTURES/TOURS/BOOK_ORDERS/COMMUNITY/AUTH grade-suspend/BOOKS metadata 의 서버 연결 + 페이지 컴포넌트의 동기→비동기 호출 전환.",
+  },
+  {
     version: "00.028.000",
     date: "2026-04-28",
     summary: "🚨 가입 블로커 수정 + 좀비 세션 차단 + 푸터 정비. data.js 의 BGNJ_AUTH 에 동일 이름의 signUp 메소드가 두 번 정의되어 있었고 뒤쪽의 레거시 로컬 전용 signUp 이 위쪽의 Cloudflare 호출용 signUp 을 덮어쓰고 있었습니다. 즉 모든 회원가입이 localStorage 에만 저장되고 D1 에 도달하지 못했습니다. 이를 제거해 가입이 실제로 서버에 저장되도록 정상화했습니다.",

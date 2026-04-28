@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.028.000",
+  version: "00.029.000",
   build: "2026.04.28",
   channel: "preview",
 };
@@ -443,6 +443,7 @@ window.BGNJ_AUTH = {
         email: payload.email,
         name: payload.name,
         password: payload.password,
+        profile: payload.profile || null,
         consents: payload.consents,
       });
       this._writeCache(user);
@@ -1972,24 +1973,41 @@ window.BGNJ_TOURS = {
 
 // === 운영 감사 로그(BGNJ_AUDIT) ============================================
 // 운영자(혹은 시스템)가 데이터를 변경할 때마다 한 줄 기록한다. 최근 500건 유지.
+// 감사 로그 — 서버(D1.audit_log)가 source of truth.
+// 동기 호출자(예: GRADE_PROMO 내부) 호환을 위해 log() 는 fire-and-forget 으로 서버 전송하고,
+// 즉시 메모리 캐시에도 추가한다.
 window.BGNJ_AUDIT = {
-  log({ action, target, details, by }) {
+  _cache: [],
+  log({ action, target, details } = {}) {
     const entry = {
-      id: `audit-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+      id: `audit-local-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
       action: String(action || '').trim(),
       target: String(target || ''),
       details: details || null,
-      by: by || (window.BGNJ_STORES.session?.name) || 'system',
-      byId: window.BGNJ_STORES.session?.id || null,
+      by: window.BGNJ_AUTH?._readCache?.()?.name || 'system',
       ts: new Date().toISOString(),
     };
-    const list = [entry, ...(window.BGNJ_STORES.auditLog || [])].slice(0, 500);
-    window.BGNJ_STORES.auditLog = list;
-    window.BGNJ_SAVE.auditLog();
+    this._cache = [entry, ...this._cache].slice(0, 500);
+    // 서버에 비동기 전송. 실패해도 UI 흐름은 막지 않음(레벨 낮은 작업).
+    try {
+      window.BGNJ_API.admin.audit.create({ action: entry.action, target: entry.target, details: entry.details })
+        .catch(() => {});
+    } catch {}
     return entry;
   },
+  async refresh({ limit = 200, search = '' } = {}) {
+    try {
+      const { log } = await window.BGNJ_API.admin.audit.list({ limit });
+      this._cache = (log || []).map((e) => ({
+        id: e.id, action: e.action, target: e.target,
+        details: e.details ?? (e.details_json ? JSON.parse(e.details_json) : null),
+        by: e.actor || 'system', ts: e.ts || e.created_at,
+      }));
+    } catch {}
+    return this.list({ search, limit });
+  },
   list({ search = '', limit = 200 } = {}) {
-    const all = (window.BGNJ_STORES.auditLog || []).slice();
+    const all = this._cache.slice();
     if (!search) return all.slice(0, limit);
     const q = String(search).toLowerCase();
     return all.filter((e) =>
@@ -1998,10 +2016,7 @@ window.BGNJ_AUDIT = {
       || String(e.by || '').toLowerCase().includes(q)
     ).slice(0, limit);
   },
-  clear() {
-    window.BGNJ_STORES.auditLog = [];
-    window.BGNJ_SAVE.auditLog();
-  },
+  clear() { this._cache = []; },
 };
 
 // === 자동 등급 승격/강등(BGNJ_GRADE_PROMO) ===============================
@@ -2098,34 +2113,44 @@ window.BGNJ_GRADE_PROMO = {
 };
 
 // === 사이트 콘텐츠(BGNJ_SITE_CONTENT) helper =============================
-// 메뉴 라벨, 히어로/푸터 텍스트, 로고/파비콘, OG 메타를 묶어 관리한다.
-// `get()`은 항상 기본값과 사용자 편집값을 섹션 단위로 얕은 병합해 반환한다.
+// 서버(D1.site_content_kv)가 source of truth. 페이지 진입 시 1회 refresh() 로 메모리 캐시 채움.
+// `get()` 은 동기 read 호환 — 캐시가 비어있으면 기본값만 반환.
 window.BGNJ_SITE_CONTENT = {
   defaults: DEFAULT_SITE_CONTENT,
+  _cache: {},
+  async refresh() {
+    try {
+      const { siteContent } = await window.BGNJ_API.siteContent.get();
+      this._cache = siteContent || {};
+      this.applyHead();
+      try { window.dispatchEvent(new CustomEvent('bgnj-site-content-refresh')); } catch {}
+    } catch {}
+    return this.get();
+  },
   get() {
-    const stored = window.BGNJ_STORES.siteContent || {};
+    const stored = this._cache || {};
     const merged = {};
     for (const key of Object.keys(DEFAULT_SITE_CONTENT)) {
       merged[key] = { ...DEFAULT_SITE_CONTENT[key], ...((stored[key] && typeof stored[key] === 'object') ? stored[key] : {}) };
     }
     return merged;
   },
-  saveSection(section, patch) {
-    const cur = window.BGNJ_STORES.siteContent || {};
-    const next = { ...cur, [section]: { ...(cur[section] || {}), ...patch } };
-    window.BGNJ_STORES.siteContent = next;
-    window.BGNJ_SAVE.siteContent();
+  async saveSection(section, patch) {
+    const cur = this._cache[section] || {};
+    const data = { ...cur, ...patch };
+    await window.BGNJ_API.siteContent.saveSection(section, data);
+    this._cache = { ...this._cache, [section]: data };
     this.applyHead();
-    return next;
+    return this.get();
   },
-  resetSection(section) {
-    const cur = window.BGNJ_STORES.siteContent || {};
-    const next = { ...cur };
+  async resetSection(section) {
+    // 서버에서 빈 객체로 덮어 사용자 편집값을 비움 → 기본값이 다시 노출됨.
+    await window.BGNJ_API.siteContent.saveSection(section, {});
+    const next = { ...this._cache };
     delete next[section];
-    window.BGNJ_STORES.siteContent = next;
-    window.BGNJ_SAVE.siteContent();
+    this._cache = next;
     this.applyHead();
-    return next;
+    return this.get();
   },
   // <head>의 favicon, OG/description 메타를 현재 siteContent로 덮어쓴다.
   // 페이지 로드 시 1회 + 관리자 저장 시 호출.
@@ -2264,26 +2289,47 @@ window.BGNJ_BOOKS = {
 };
 
 // === 약관 / 개인정보 처리방침(BGNJ_LEGAL) helper ==========================
+// 서버(D1.legal_docs)가 source of truth. 로컬은 첫 페인트용 메모리 캐시.
 window.BGNJ_LEGAL = {
-  get(slug) {
-    const docs = window.BGNJ_STORES.legalDocs || {};
-    return docs[slug] || null;
+  _cache: {},
+  async refresh(slug) {
+    try {
+      const { doc } = await window.BGNJ_API.legal.get(slug);
+      if (doc) this._cache[slug] = { title: doc.title, body: doc.body, updatedAt: doc.updated_at };
+      else delete this._cache[slug];
+      return this._cache[slug] || null;
+    } catch { return this._cache[slug] || null; }
   },
-  save(slug, payload) {
-    const docs = window.BGNJ_STORES.legalDocs || {};
-    docs[slug] = { ...(docs[slug] || {}), ...payload, updatedAt: new Date().toISOString() };
-    window.BGNJ_STORES.legalDocs = docs;
-    window.BGNJ_SAVE.legalDocs();
-    return docs[slug];
+  get(slug) { return this._cache[slug] || null; },
+  async save(slug, payload) {
+    const next = { title: payload.title || slug, body: payload.body || '' };
+    await window.BGNJ_API.legal.put(slug, next);
+    this._cache[slug] = { ...next, updatedAt: new Date().toISOString() };
+    return this._cache[slug];
   },
   listSlugs() { return ['privacy', 'terms']; },
 };
 
 // === FAQ(BGNJ_FAQ) helper ================================================
+// 서버(D1.faqs)가 source of truth. 메모리 캐시는 동기 read 호환용.
 window.BGNJ_FAQ = {
-  listAll() {
-    return (window.BGNJ_STORES.faqs || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  _cache: [],
+  async refresh({ admin } = {}) {
+    try {
+      const { faqs } = admin
+        ? await window.BGNJ_API.faqs.adminList()
+        : await window.BGNJ_API.faqs.list();
+      this._cache = (faqs || []).map((f) => ({
+        id: f.id, question: f.question, answer: f.answer,
+        category: f.category || '일반',
+        order: f.display_order ?? 0,
+        hidden: !!f.hidden,
+      }));
+      try { window.dispatchEvent(new CustomEvent('bgnj-faqs-refresh')); } catch {}
+    } catch {}
+    return this._cache.slice();
   },
+  listAll() { return this._cache.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); },
   listCategories() {
     const set = new Set(this.listAll().map((f) => f.category || '일반'));
     return ['전체', ...Array.from(set)];
@@ -2297,38 +2343,38 @@ window.BGNJ_FAQ = {
         || String(f.answer || '').toLowerCase().includes(q);
     });
   },
-  add(payload) {
+  async add(payload) {
     const next = {
-      id: `faq-${Date.now()}-${Math.random().toString(36).slice(2,4)}`,
       question: String(payload.question || '').trim(),
       answer: String(payload.answer || '').trim(),
       category: String(payload.category || '일반').trim() || '일반',
-      order: typeof payload.order === 'number' ? payload.order : (window.BGNJ_STORES.faqs || []).length,
+      order: typeof payload.order === 'number' ? payload.order : this._cache.length,
     };
     if (!next.question || !next.answer) return null;
-    window.BGNJ_STORES.faqs = [...(window.BGNJ_STORES.faqs || []), next];
-    window.BGNJ_SAVE.faqs();
-    return next;
+    const { id } = await window.BGNJ_API.faqs.create(next);
+    await this.refresh({ admin: true });
+    return this._cache.find((f) => f.id === id) || null;
   },
-  update(id, patch) {
-    window.BGNJ_STORES.faqs = (window.BGNJ_STORES.faqs || []).map((f) => f.id === id ? { ...f, ...patch } : f);
-    window.BGNJ_SAVE.faqs();
-    return (window.BGNJ_STORES.faqs || []).find((f) => f.id === id) || null;
+  async update(id, patch) {
+    await window.BGNJ_API.faqs.update(id, patch);
+    await this.refresh({ admin: true });
+    return this._cache.find((f) => f.id === id) || null;
   },
-  remove(id) {
-    window.BGNJ_STORES.faqs = (window.BGNJ_STORES.faqs || []).filter((f) => f.id !== id);
-    window.BGNJ_SAVE.faqs();
+  async remove(id) {
+    await window.BGNJ_API.faqs.remove(id);
+    await this.refresh({ admin: true });
   },
-  reorder(id, dir) {
+  async reorder(id, dir) {
     const list = this.listAll();
     const idx = list.findIndex((f) => f.id === id);
     const j = idx + dir;
     if (idx < 0 || j < 0 || j >= list.length) return;
-    const next = list.slice();
-    [next[idx], next[j]] = [next[j], next[idx]];
-    next.forEach((f, i) => { f.order = i; });
-    window.BGNJ_STORES.faqs = next;
-    window.BGNJ_SAVE.faqs();
+    const a = list[idx], b = list[j];
+    await Promise.all([
+      window.BGNJ_API.faqs.update(a.id, { order: j }),
+      window.BGNJ_API.faqs.update(b.id, { order: idx }),
+    ]);
+    await this.refresh({ admin: true });
   },
 };
 
