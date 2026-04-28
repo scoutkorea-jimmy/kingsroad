@@ -200,3 +200,4 @@ AI는 버전을 임의로 크게 올리지 않는다.
 - 2026-04-25: 다중 AI 협업을 위한 공용 개발 규칙 문서 최초 작성
 - 2026-04-25: AI 선독 원칙, 배포 검토 원칙, 비개발자 설명 원칙, 계획 문서 생성/삭제 원칙, 버전 체계, 관리자 버전 기록 원칙, KMS 동기화 원칙 추가
 - 2026-04-25: KMS 수정 시 변경 계기와 배경을 함께 기록하는 원칙 추가
+- 2026-04-28: 작업 마무리 시 자동 수행 범위 명문화. ① `git commit` + `git push origin main` 은 별도 지시 없이도 자동 진행(메모리 규칙). ② `workers/` 하위(특히 `src/index.js`, `wrangler.toml`)가 변경된 작업은 push 후 `cd workers && wrangler deploy` 까지 자동 수행. ③ 작업 단위마다 `data.js` 의 `BGNJ_VERSION` 과 `pages/AuthAdminPage.jsx` 의 `ADMIN_VERSION_HISTORY` 와 `kms.md` 변경 기록과 `ai-development-rules.md` 변경 기록을 같은 커밋에서 함께 갱신한다 — 어느 하나만 갱신되면 같은 작업으로 보지 않는다. ④ 슈퍼 관리자 권한은 코드(Worker `SUPER_ADMIN_EMAILS` 환경변수)로 관리하므로 D1 직접 수정은 회피. ⑤ 'Failed to fetch' 진단 시 우선 의심 순서: (1) Worker 미배포, (2) 클라이언트 origin 이 ALLOWED_ORIGINS 또는 localhost 자동허용 정규식에 미해당, (3) `credentials: 'include'` + 와일드카드 origin 충돌. ⑥ 다른 AI 도구도 동일 규칙을 따른다.
