@@ -14,10 +14,13 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="">
 <title>뱅기노자 — 뱅기 타고 한국을 느끼다</title>
+<!-- 인라인 SVG favicon — 별도 파일 호스팅 없이 브라우저의 자동 /favicon.ico 404 를 차단.
+     관리자 사이트 콘텐츠에서 업로드된 favicon 이 있으면 data.js 의 applyHead 가 이 link 의 href 를 덮어쓴다. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 64 64%22%3E%3Crect width%3D%2264%22 height%3D%2264%22 rx%3D%2212%22 fill%3D%22%231E3A8A%22%2F%3E%3Cpath d%3D%22M32 14l4 14 14 4-14 4-4 14-4-14-14-4 14-4z%22 fill%3D%22%23F5E6A8%22%2F%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.034.001">
+<link rel="stylesheet" href="styles.css?v=00.034.002">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -75,21 +78,21 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script src="api.js?v=00.034.001"></script>
-<script src="data.js?v=00.034.001"></script>
-<script src="components/KoreaMapData.js?v=00.034.001"></script>
-<script type="text/babel" src="components/KoreaMap.jsx?v=00.034.001"></script>
-<script type="text/babel" src="components/Shell.jsx?v=00.034.001"></script>
-<script type="text/babel" src="components/TiptapEditor.jsx?v=00.034.001"></script>
-<script type="text/babel" src="pages/HomePage.jsx?v=00.034.001"></script>
-<script type="text/babel" src="pages/CommunityPage.jsx?v=00.034.001"></script>
-<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.034.001"></script>
-<script type="text/babel" src="pages/ColumnPage.jsx?v=00.034.001"></script>
-<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.034.001"></script>
-<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.034.001"></script>
-<script type="text/babel" src="pages/LecturesPage.jsx?v=00.034.001"></script>
-<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.034.001"></script>
-<script type="text/babel" src="pages/MyPage.jsx?v=00.034.001"></script>
+<script src="api.js?v=00.034.002"></script>
+<script src="data.js?v=00.034.002"></script>
+<script src="components/KoreaMapData.js?v=00.034.002"></script>
+<script type="text/babel" src="components/KoreaMap.jsx?v=00.034.002"></script>
+<script type="text/babel" src="components/Shell.jsx?v=00.034.002"></script>
+<script type="text/babel" src="components/TiptapEditor.jsx?v=00.034.002"></script>
+<script type="text/babel" src="pages/HomePage.jsx?v=00.034.002"></script>
+<script type="text/babel" src="pages/CommunityPage.jsx?v=00.034.002"></script>
+<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.034.002"></script>
+<script type="text/babel" src="pages/ColumnPage.jsx?v=00.034.002"></script>
+<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.034.002"></script>
+<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.034.002"></script>
+<script type="text/babel" src="pages/LecturesPage.jsx?v=00.034.002"></script>
+<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.034.002"></script>
+<script type="text/babel" src="pages/MyPage.jsx?v=00.034.002"></script>
 
 <script type="text/babel">
 // 전체 앱 에러 바운더리 — 흰 화면 방지 + 정확한 진단 정보 노출.
