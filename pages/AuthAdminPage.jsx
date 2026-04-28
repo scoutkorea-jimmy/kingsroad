@@ -468,6 +468,19 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.028.000",
+    date: "2026-04-28",
+    summary: "🚨 가입 블로커 수정 + 좀비 세션 차단 + 푸터 정비. data.js 의 BGNJ_AUTH 에 동일 이름의 signUp 메소드가 두 번 정의되어 있었고 뒤쪽의 레거시 로컬 전용 signUp 이 위쪽의 Cloudflare 호출용 signUp 을 덮어쓰고 있었습니다. 즉 모든 회원가입이 localStorage 에만 저장되고 D1 에 도달하지 못했습니다. 이를 제거해 가입이 실제로 서버에 저장되도록 정상화했습니다.",
+    details: [
+      "🔥 data.js BGNJ_AUTH — 중복 정의된 레거시 로컬 signUp(payload) 제거. 위쪽의 async signUp(=BGNJ_API.signup 호출) 만 남겨 가입이 D1 에 정상 저장되도록 함. 그동안 가입은 화면상 '성공' 으로 보였지만 새로고침/세션 검증 시점에 사라지던 원인이었음.",
+      "BGNJ_AUTH.refreshSession — /api/auth/me 가 401 일 때 localStorage 캐시도 즉시 비움. 좀비 세션(서버에는 없는데 클라이언트에선 로그인된 것처럼 보이는 상태) 차단.",
+      "푸터 — '개인정보 처리 · 관리자' 버튼 제거(관리자 진입은 상단 내비의 '관리' 버튼으로만). 본문 가운데의 큰 'CURRENT DEPLOY VERSION' 카드 제거. 하단 줄 버전 표기는 더 작고 차분하게.",
+      "푸터 연락 정보 동적화 — 이메일/전화/전화 링크/주소를 사이트 콘텐츠의 `contact` 섹션에서 읽도록 변경. 빈 값이면 해당 줄 미노출.",
+      "관리자 사이트 콘텐츠 패널 — '푸터 — 연락 정보' 카드 신설(이메일/전화/전화 링크/주소). 푸터 카드는 '소개·서명' / '연락 정보' 로 분리.",
+    ],
+    context: "사용자 보고('회원가입이 일회성/로컬에서만 적용된다') 가 결정적인 단서였습니다. D1 직접 조회로 scoutkorea@kakao.com 행이 0개임을 확인했고, BGNJ_AUTH 객체에 동일 이름 메소드 두 개가 정의되어 있어 객체 리터럴 덮어쓰기 규칙으로 레거시 로컬 메소드가 활성화된 상태임을 식별했습니다. 이 한 줄 충돌이 전체 인증 파이프라인을 무력화하고 있었습니다. 같이 묶은 좀비 세션 차단은 같은 문제로 캐시에 잘못 들어간 데이터가 다음 진입에서도 계속 사용자처럼 보이는 부작용을 끊는 안전망입니다. 푸터 정비는 사용자 별도 요청.",
+  },
+  {
     version: "00.027.004",
     date: "2026-04-28",
     summary: "HTTP 환경 정상화 — SSL 미도입 기간에도 사이트가 정상 동작하도록 Worker CORS 에 HTTP origin 을 추가하고 세션 쿠키의 SameSite 를 None 으로 변경했습니다. v00.027.003 의 HTTPS 강제 리다이렉트는 제거. 다음 단계로 GitHub Pages 의 무료 HTTPS 활성화 안내.",
@@ -2893,10 +2906,21 @@ const SiteContentAdminPanel = () => {
         { key: 'mapHint', label: '지도 안내 문구', full: true },
       ]}/>
 
-      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>푸터</h3>
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>푸터 — 소개·서명</h3>
       <SectionForm key={`footer-${tick}`} section="footer" fields={[
         { key: 'description', label: '소개 문단', full: true, multiline: true },
         { key: 'signature', label: '하단 서명', full: true },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>푸터 — 연락 정보</h3>
+      <p className="dim-2" style={{fontSize:12, marginBottom:12, lineHeight:1.7}}>
+        푸터의 '연락' 섹션에 노출됩니다. 비우면 해당 줄이 표시되지 않습니다.
+      </p>
+      <SectionForm key={`contact-${tick}`} section="contact" fields={[
+        { key: 'email',     label: '이메일' },
+        { key: 'phone',     label: '전화번호 (표시용)' },
+        { key: 'phoneHref', label: '전화 링크 (예: tel:+82-2-0000-0000)' },
+        { key: 'address',   label: '주소', full: true },
       ]}/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>로고 · 파비콘</h3>

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.027.004",
+  version: "00.028.000",
   build: "2026.04.28",
   channel: "preview",
 };
@@ -204,6 +204,13 @@ const DEFAULT_SITE_CONTENT = {
     title: "뱅기 타고\n뱅기노자가 되다",
     description: "뱅기노자는 단순 여행 정보 사이트가 아닙니다. 함께 떠나고, 함께 걷고, 함께 이야기하는 여행자들의 광장입니다. 매달 새로운 답사와 칼럼이 이어집니다.",
   },
+  // 푸터 연락 정보 — 관리자에서 직접 편집. 빈 값이면 해당 줄 미노출.
+  contact: {
+    email: "hello@bgnj.net",
+    phone: "02-0000-0000",
+    phoneHref: "tel:+82-2-0000-0000",
+    address: "서울특별시",
+  },
 };
 
 // 게시판 분류 — 각 카테고리에 최소 등급(minLevel) 지정 시 접근 제한
@@ -381,12 +388,18 @@ window.BGNJ_AUTH = {
     return window.BGNJ_STORES.users.slice();
   },
   // 페이지 진입 시 1회 호출 — 서버 쿠키로 진짜 세션 검증 후 캐시 갱신.
+  // 401(세션 없음) 이면 좀비 캐시를 즉시 비워 클라이언트가 잘못된 사용자로 보이지 않도록 한다.
+  // 그 외 네트워크 단절은 캐시를 유지(오프라인 UX 보존).
   async refreshSession() {
     try {
       const { user } = await window.BGNJ_API.me();
       this._writeCache(user || null);
       return user || null;
-    } catch {
+    } catch (err) {
+      if (err?.status === 401) {
+        this._writeCache(null);
+        return null;
+      }
       return this._readCache();
     }
   },
@@ -528,38 +541,8 @@ window.BGNJ_AUTH = {
       notifications,
     };
   },
-  signUp(payload) {
-    const normalizedEmail = String(payload.email || "").trim().toLowerCase();
-    if (window.BGNJ_STORES.users.find((user) => user.email === normalizedEmail)) {
-      return { ok: false, message: "이미 가입된 이메일입니다." };
-    }
-    const nextUser = {
-      id: `user-${Date.now()}`,
-      name: payload.name,
-      email: normalizedEmail,
-      passwordHash: hashPassword(payload.password),
-      isAdmin: false,
-      gradeId: "member",
-      profile: payload.profile || null,
-      consents: payload.consents || { terms: true, marketing: false, thirdParty: false },
-      joinedAt: new Date().toISOString(),
-    };
-    window.BGNJ_STORES.users = [nextUser, ...window.BGNJ_STORES.users];
-    window.BGNJ_SAVE.users();
-    const sessionUser = {
-      id: nextUser.id,
-      name: nextUser.name,
-      email: nextUser.email,
-      isAdmin: nextUser.isAdmin,
-      gradeId: nextUser.gradeId,
-      profile: nextUser.profile,
-      consents: nextUser.consents,
-      joinedAt: nextUser.joinedAt,
-    };
-    window.BGNJ_STORES.session = sessionUser;
-    window.BGNJ_SAVE.session();
-    return { ok: true, user: sessionUser };
-  },
+  // (제거됨) 레거시 로컬 signUp — 위쪽의 async signUp(=Cloudflare Worker 호출) 을 덮어써서
+  // 모든 가입이 localStorage 에만 저장되고 D1 에 도달하지 못했던 버그의 원인. 위쪽 정의만 사용.
 };
 
 // 서버(D1) 게시글을 UI 형식으로 매핑.

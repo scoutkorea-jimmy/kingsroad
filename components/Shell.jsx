@@ -366,68 +366,63 @@ const Nav = ({ route, go, user, onLogout }) => {
   );
 };
 
-const Footer = ({ go }) => (
-  <footer className="footer" aria-label="사이트 정보 및 푸터">
-    <div className="container">
-      <div className="footer-grid">
-        <div>
-          <Brand onClick={() => go("home")}/>
-          <p className="dim" style={{marginTop:20, fontSize:13, lineHeight:1.7, maxWidth:360}}>
-            {(window.BGNJ_SITE_CONTENT?.get?.() || {}).footer?.description || "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행."}
-          </p>
-          <button type="button" className="btn btn-small" onClick={() => go("admin")}
-            style={{marginTop:20}}>개인정보 처리 · 관리자</button>
+const Footer = ({ go }) => {
+  const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+  const contact = sc.contact || {};
+  const footer = sc.footer || {};
+  const email = contact.email || "hello@bgnj.net";
+  const phone = contact.phone || "02-0000-0000";
+  const phoneHref = contact.phoneHref || ("tel:" + (phone || "").replace(/[^0-9+]/g, ""));
+  const address = contact.address || "서울특별시";
+  return (
+    <footer className="footer" aria-label="사이트 정보 및 푸터">
+      <div className="container">
+        <div className="footer-grid">
+          <div>
+            <Brand onClick={() => go("home")}/>
+            <p className="dim" style={{marginTop:20, fontSize:13, lineHeight:1.7, maxWidth:360}}>
+              {footer.description || "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행."}
+            </p>
+          </div>
+          <nav aria-label="콘텐츠 바로가기">
+            <h4 id="ft-content">콘텐츠</h4>
+            <ul aria-labelledby="ft-content">
+              <li><button type="button" onClick={() => go("column")}>뱅기노자 칼럼</button></li>
+              <li><button type="button" onClick={() => go("tour")}>투어 프로그램</button></li>
+              <li><button type="button" onClick={() => go("book")}>『왕의길』</button></li>
+              <li><button type="button" onClick={() => go("community")}>커뮤니티</button></li>
+            </ul>
+          </nav>
+          <nav aria-label="정보 바로가기">
+            <h4 id="ft-info">정보</h4>
+            <ul aria-labelledby="ft-info">
+              <li><button type="button" onClick={() => go("home")}>강연 일정</button></li>
+              <li><button type="button" onClick={() => go("community")}>공지사항</button></li>
+              <li><button type="button" onClick={() => go("faq")}>자주 묻는 질문</button></li>
+              <li><button type="button" onClick={() => go("terms")}>이용약관</button></li>
+              <li><button type="button" onClick={() => go("privacy")}>개인정보 처리방침</button></li>
+            </ul>
+          </nav>
+          <address style={{fontStyle:'normal'}}>
+            <h4 id="ft-contact">연락</h4>
+            <ul aria-labelledby="ft-contact">
+              {email && <li><a href={`mailto:${email}`}>{email}</a></li>}
+              {phone && <li><a href={phoneHref}>{phone}</a></li>}
+              {address && <li><span>{address}</span></li>}
+            </ul>
+          </address>
         </div>
-        <nav aria-label="콘텐츠 바로가기">
-          <h4 id="ft-content">콘텐츠</h4>
-          <ul aria-labelledby="ft-content">
-            <li><button type="button" onClick={() => go("column")}>뱅기노자 칼럼</button></li>
-            <li><button type="button" onClick={() => go("tour")}>투어 프로그램</button></li>
-            <li><button type="button" onClick={() => go("book")}>『왕의길』</button></li>
-            <li><button type="button" onClick={() => go("community")}>커뮤니티</button></li>
-          </ul>
-        </nav>
-        <nav aria-label="정보 바로가기">
-          <h4 id="ft-info">정보</h4>
-          <ul aria-labelledby="ft-info">
-            <li><button type="button" onClick={() => go("home")}>강연 일정</button></li>
-            <li><button type="button" onClick={() => go("community")}>공지사항</button></li>
-            <li><button type="button" onClick={() => go("faq")}>자주 묻는 질문</button></li>
-            <li><button type="button" onClick={() => go("terms")}>이용약관</button></li>
-            <li><button type="button" onClick={() => go("privacy")}>개인정보 처리방침</button></li>
-          </ul>
-        </nav>
-        <address style={{fontStyle:'normal'}}>
-          <h4 id="ft-contact">연락</h4>
-          <ul aria-labelledby="ft-contact">
-            <li><a href="mailto:hello@banginoja.kr">hello@banginoja.kr</a></li>
-            <li><a href="tel:+82-2-0000-0000">02-0000-0000</a></li>
-            <li><span>서울특별시</span></li>
-          </ul>
-        </address>
-      </div>
-      <div
-        className="card card-gold"
-        style={{marginTop:24, padding:'14px 16px', display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', flexWrap:'wrap'}}
-        aria-label="현재 배포 버전 정보">
-        <div>
-          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:6}}>CURRENT DEPLOY VERSION</div>
-          <div className="ko-serif" style={{fontSize:22, color:'var(--gold-2)'}}>v{window.BGNJ_VERSION?.version || '0.0.0'}</div>
-        </div>
-        <div className="mono" style={{fontSize:11, letterSpacing:'0.16em', color:'var(--gold)'}}>
-          build {window.BGNJ_VERSION?.build || '—'} · {window.BGNJ_VERSION?.channel || ''}
+        <div className="footer-bottom" style={{marginTop:24}}>
+          <span>© 2026 뱅기노자 BANGINOJA — ALL RIGHTS RESERVED</span>
+          <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em'}}>
+            v{window.BGNJ_VERSION?.version || '0.0.0'} · {window.BGNJ_VERSION?.build || '—'}
+          </span>
+          <span>{footer.signature || "뱅기타고 노자 · DESIGNED IN SEOUL"}</span>
         </div>
       </div>
-      <div className="footer-bottom">
-        <span>© 2026 뱅기노자 BANGINOJA — ALL RIGHTS RESERVED</span>
-        <span className="mono" style={{color:'var(--gold-dim)'}}>
-          v{window.BGNJ_VERSION?.version || '0.0.0'} · build {window.BGNJ_VERSION?.build || '—'} · {window.BGNJ_VERSION?.channel || ''}
-        </span>
-        <span>{(window.BGNJ_SITE_CONTENT?.get?.() || {}).footer?.signature || "뱅기타고 노자 · DESIGNED IN SEOUL"}</span>
-      </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 const Ornament = ({ children }) => (
   <div className="ornament" style={{margin:"40px 0"}}>
