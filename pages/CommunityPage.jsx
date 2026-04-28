@@ -989,30 +989,34 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     }
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!user) return requireLogin('공감');
-    window.BGNJ_COMMUNITY.toggleLike(post.id, user.id);
-    onRefresh?.();
+    try { await window.BGNJ_COMMUNITY.toggleLike(post.id, user.id); onRefresh?.(); }
+    catch (err) { alert(`공감 처리 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
 
-  const handleBookmark = () => {
+  const handleBookmark = async () => {
     if (!user) return requireLogin('북마크');
-    window.BGNJ_COMMUNITY.toggleBookmark(user.id, post.id);
-    onRefresh?.();
+    try { await window.BGNJ_COMMUNITY.toggleBookmark(user.id, post.id); onRefresh?.(); }
+    catch (err) { alert(`북마크 처리 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
 
-  const handleReportSubmit = (e) => {
+  const handleReportSubmit = async (e) => {
     e.preventDefault();
-    window.BGNJ_COMMUNITY.addReport({
-      postId: post.id,
-      postTitle: post.title,
-      reporterId: user?.id || null,
-      reporterName: user?.name || '익명',
-      reason: reportReason,
-    });
-    setReportSubmitted(true);
-    setReportReason("");
-    setTimeout(() => { setReportOpen(false); setReportSubmitted(false); }, 1800);
+    try {
+      await window.BGNJ_COMMUNITY.addReport({
+        postId: post.id,
+        postTitle: post.title,
+        reporterId: user?.id || null,
+        reporterName: user?.name || '익명',
+        reason: reportReason,
+      });
+      setReportSubmitted(true);
+      setReportReason("");
+      setTimeout(() => { setReportOpen(false); setReportSubmitted(false); }, 1800);
+    } catch (err) {
+      alert(`신고 접수 실패: ${err?.message || '알 수 없는 오류'}`);
+    }
   };
 
   const submitComment = (e) => {

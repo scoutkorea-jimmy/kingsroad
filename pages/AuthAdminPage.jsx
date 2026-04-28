@@ -468,6 +468,19 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.031.000",
+    date: "2026-04-28",
+    summary: "COMMUNITY 좋아요/북마크/신고/알림 서버 전환. 사용자가 명시한 '로컬 업데이트는 존재하지 않는다' 정책에 맞춰 낙관적 로컬 쓰기를 모두 제거하고 순수 서버 호출로 변경했습니다. 다음 커밋에서 LECTURES/TOURS/BOOK_ORDERS/BOOKS metadata 까지 서버 전환을 완료할 예정.",
+    details: [
+      "BGNJ_COMMUNITY.toggleLike — POST /api/posts/:id/likes 토글 후 GET 으로 사용자 목록 재조회. 메모리 캐시(_serverPosts) 만 갱신, localStorage 미사용.",
+      "BGNJ_COMMUNITY.toggleBookmark — POST /api/posts/:id/bookmark 호출 후 refreshBookmarks 로 서버 목록 재조회. 낙관적 업데이트 제거.",
+      "BGNJ_COMMUNITY 신고/알림 — addReport 가 POST /api/reports 직호출. addNotification 은 no-op 으로 변환(서버 부수효과로 자동 발급). listReports/listNotifications 는 서버 sync 캐시 read.",
+      "BGNJ_COMMUNITY._bookmarks/_notifications/_reports 메모리 캐시 + refreshBookmarks/refreshNotifications/refreshReports 메소드.",
+      "CommunityPage handleLike/handleBookmark/handleReportSubmit 가 await + try/catch 로 호출, 실패 시 사용자에게 알림.",
+    ],
+    context: "이전 v00.030 에서 COMMUNITY 변경에 '낙관적 로컬 업데이트' 패턴을 도입했으나 사용자가 '로컬 업데이트는 존재하지 않는다' 고 명확히 재확인. 정책에 맞춰 순수 서버 호출로 전환했습니다. 다음 커밋: BGNJ_LECTURES/TOURS/BOOK_ORDERS 등 트랜잭션 헬퍼들이 여전히 BGNJ_STORES 에 영속하고 있으며, 이들도 서버로 마이그레이션 필요. 각 헬퍼 30여 메소드 + 페이지 동기→비동기 전환이 동반되는 광범위 작업.",
+  },
+  {
     version: "00.030.000",
     date: "2026-04-28",
     summary: "관리자 회원 운영 서버 전환 + 회원 상세 가시성 개선. 등급 변경/관리자 토글/정지/해제/삭제가 D1 에 영속되며, 정지된 사용자는 로그인 거부 + 기존 세션 즉시 무효화. 회원 상세의 프로필 JSON 덤프를 라벨링된 카드로 교체.",

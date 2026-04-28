@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.030.000",
+  version: "00.031.000",
   build: "2026.04.28",
   channel: "preview",
 };
@@ -782,115 +782,129 @@ window.BGNJ_COMMUNITY = {
   hasLiked(postId, userId) {
     return !!userId && this.getLikes(postId).includes(userId);
   },
-  toggleLike(postId, userId) {
+  // 좋아요 — POST /api/posts/:id/likes. 토글 응답을 받아 게시글 캐시만 갱신(localStorage 미사용).
+  async toggleLike(postId, userId) {
     if (!userId) return null;
-    const likes = this.getLikes(postId);
-    const next = likes.includes(userId) ? likes.filter((id) => id !== userId) : [...likes, userId];
-    return this.updatePost(postId, { likes: next });
+    try {
+      await window.BGNJ_API.likes.toggle(postId);
+      // 서버에서 likes 목록 재조회. handleLikesList 가 user_id 문자열 배열을 반환.
+      const { likes } = await window.BGNJ_API.likes.list(postId);
+      const arr = Array.isArray(likes) ? likes : [];
+      // 메모리 캐시(_serverPosts) 의 해당 게시글 likes 만 갱신.
+      const post = (this._serverPosts || []).find((p) => String(p.id) === String(postId));
+      if (post) post.likes = arr;
+      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+      return arr;
+    } catch (err) {
+      throw err;
+    }
   },
 
-  // ── 북마크 (per-user post list) ───────────────────────────────────
+  // ── 북마크 (서버 source of truth) ─────────────────────────────────
+  // 메모리 캐시 _bookmarks 가 사용자별 postId 배열을 보관. 서버 toggle 후 갱신.
+  _bookmarks: {},
+  async refreshBookmarks(userId) {
+    if (!userId) return [];
+    try {
+      const { bookmarks } = await window.BGNJ_API.bookmarks.mine();
+      this._bookmarks[userId] = (bookmarks || []).map((b) => b.post_id);
+    } catch {}
+    return this._bookmarks[userId] || [];
+  },
   getBookmarks(userId) {
     if (!userId) return [];
-    const map = window.BGNJ_STORES.bookmarks || {};
-    return Array.isArray(map[userId]) ? map[userId].slice() : [];
+    return Array.isArray(this._bookmarks[userId]) ? this._bookmarks[userId].slice() : [];
   },
   isBookmarked(userId, postId) {
     return this.getBookmarks(userId).includes(postId);
   },
-  toggleBookmark(userId, postId) {
+  async toggleBookmark(userId, postId) {
     if (!userId) return [];
-    const map = window.BGNJ_STORES.bookmarks || {};
-    const list = Array.isArray(map[userId]) ? map[userId] : [];
-    const next = list.includes(postId) ? list.filter((x) => x !== postId) : [postId, ...list];
-    map[userId] = next;
-    window.BGNJ_STORES.bookmarks = map;
-    window.BGNJ_SAVE.bookmarks();
-    return next;
+    await window.BGNJ_API.bookmarks.toggle(postId);
+    return this.refreshBookmarks(userId);
   },
   listBookmarkedPosts(userId) {
     return this.getBookmarks(userId).map((id) => this.getPost(id)).filter(Boolean);
   },
 
-  // ── 신고 큐 ───────────────────────────────────────────────────────
-  addReport({ postId, postTitle, reporterId, reporterName, reason }) {
-    const report = {
-      id: `report-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      postId: postId ?? null,
-      postTitle: postTitle ?? "(제목 없음)",
-      reporterId: reporterId || null,
-      reporterName: reporterName || "익명",
-      reason: String(reason || "").trim() || "(사유 미기재)",
-      createdAt: new Date().toISOString(),
-      status: "open",
-    };
-    window.BGNJ_STORES.reports = [report, ...(window.BGNJ_STORES.reports || [])];
-    window.BGNJ_SAVE.reports();
-    return report;
+  // ── 신고 큐 (서버 source of truth) ────────────────────────────────
+  _reports: [],
+  async refreshReports({ status } = {}) {
+    try {
+      const { reports } = await window.BGNJ_API.admin.reports.list({ status });
+      this._reports = reports || [];
+    } catch {}
+    return this._reports.slice();
+  },
+  async addReport({ postId, postTitle, reporterId, reporterName, reason }) {
+    try {
+      await window.BGNJ_API.reports.create({ postId, postTitle, reporterName, reason });
+    } catch (err) {
+      throw err;
+    }
+    return { ok: true };
   },
   listReports(filter) {
-    const all = (window.BGNJ_STORES.reports || []).slice();
+    const all = this._reports.slice();
     if (!filter || filter === "all") return all;
     return all.filter((r) => r.status === filter);
   },
-  updateReportStatus(id, status) {
-    const next = (window.BGNJ_STORES.reports || []).map((r) =>
-      r.id === id ? { ...r, status, updatedAt: new Date().toISOString() } : r
-    );
-    window.BGNJ_STORES.reports = next;
-    window.BGNJ_SAVE.reports();
-    return next.find((r) => r.id === id) || null;
+  async updateReportStatus(id, status) {
+    await window.BGNJ_API.admin.reports.update(id, { status });
+    await this.refreshReports();
+    return this._reports.find((r) => r.id === id) || null;
   },
   countOpenReports() {
-    return (window.BGNJ_STORES.reports || []).filter((r) => r.status === "open").length;
+    return this._reports.filter((r) => r.status === "open").length;
   },
 
-  // ── 알림 (per-user) ───────────────────────────────────────────────
-  addNotification(userId, payload) {
-    if (!userId) return null;
-    const map = window.BGNJ_STORES.notifications || {};
-    const list = Array.isArray(map[userId]) ? map[userId] : [];
-    const entry = {
-      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      createdAt: new Date().toISOString(),
-      read: false,
-      ...payload,
-    };
-    map[userId] = [entry, ...list].slice(0, 50);
-    window.BGNJ_STORES.notifications = map;
-    window.BGNJ_SAVE.notifications();
-    return entry;
+  // ── 알림 (서버 source of truth) ───────────────────────────────────
+  _notifications: {},
+  async refreshNotifications(userId) {
+    if (!userId) return [];
+    try {
+      const { notifications } = await window.BGNJ_API.notifications.list();
+      this._notifications[userId] = (notifications || []).map((n) => ({
+        id: n.id, type: n.type, message: n.message,
+        fromName: n.from_name, postId: n.post_id, postTitle: n.post_title,
+        lectureId: n.lecture_id, tourId: n.tour_id,
+        read: !!n.read, createdAt: n.created_at,
+      }));
+      try { window.dispatchEvent(new CustomEvent('bgnj-notifications-refresh', { detail: { userId } })); } catch {}
+    } catch {}
+    return this._notifications[userId] || [];
+  },
+  // 알림 — 서버가 행위 시점(댓글/등록/주문 등) 에 자동 발급해야 함. 클라이언트는 발급 권한 없음.
+  // 호환을 위해 no-op 으로 둠. 호출자는 서버 측 핸들러가 알림을 생성하도록 의존해야 한다.
+  addNotification(_userId, _payload) {
+    // intentional no-op: notifications must be created server-side as a side-effect
+    // of the originating action. Returning null preserves existing call sites.
+    return null;
   },
   listNotifications(userId) {
     if (!userId) return [];
-    const map = window.BGNJ_STORES.notifications || {};
-    return Array.isArray(map[userId]) ? map[userId].slice() : [];
+    return Array.isArray(this._notifications[userId]) ? this._notifications[userId].slice() : [];
   },
   unreadNotificationCount(userId) {
     return this.listNotifications(userId).filter((n) => !n.read).length;
   },
   markNotificationRead(userId, id) {
     if (!userId) return [];
-    const map = window.BGNJ_STORES.notifications || {};
-    map[userId] = (map[userId] || []).map((n) => (n.id === id ? { ...n, read: true } : n));
-    window.BGNJ_STORES.notifications = map;
-    window.BGNJ_SAVE.notifications();
-    return map[userId];
+    const list = this._notifications[userId] || [];
+    this._notifications[userId] = list.map((n) => (n.id === id ? { ...n, read: true } : n));
+    try { window.BGNJ_API.notifications.markRead(id).catch(() => {}); } catch {}
+    return this._notifications[userId];
   },
   markAllNotificationsRead(userId) {
     if (!userId) return [];
-    const map = window.BGNJ_STORES.notifications || {};
-    map[userId] = (map[userId] || []).map((n) => ({ ...n, read: true }));
-    window.BGNJ_STORES.notifications = map;
-    window.BGNJ_SAVE.notifications();
-    return map[userId];
+    const list = this._notifications[userId] || [];
+    this._notifications[userId] = list.map((n) => ({ ...n, read: true }));
+    try { window.BGNJ_API.notifications.markAllRead().catch(() => {}); } catch {}
+    return this._notifications[userId];
   },
   clearNotifications(userId) {
     if (!userId) return [];
-    const map = window.BGNJ_STORES.notifications || {};
-    map[userId] = [];
-    window.BGNJ_STORES.notifications = map;
-    window.BGNJ_SAVE.notifications();
+    this._notifications[userId] = [];
     return [];
   },
 };
