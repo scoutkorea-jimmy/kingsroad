@@ -1194,6 +1194,66 @@ const handleGradeDelete = async (req, env, id) => {
   return { ok: true };
 };
 
+// ── 사용자 칼럼 ──
+const handleColumnsList = async (req, env) => {
+  const url = new URL(req.url);
+  const includeAll = url.searchParams.get("includeAll") === "1";
+  const status = includeAll ? null : 'published';
+  const where = status ? "status = ?" : "1=1";
+  const args = status ? [status] : [];
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM user_columns WHERE ${where} ORDER BY created_at DESC LIMIT 200`
+  ).bind(...args).all();
+  return { columns: results || [] };
+};
+
+const handleColumnGet = async (req, env, id) => {
+  const row = await env.DB.prepare("SELECT * FROM user_columns WHERE id = ?").bind(id).first();
+  return { column: row || null };
+};
+
+const handleColumnCreate = async (req, env) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const id = randomId("col");
+  await env.DB.prepare(
+    `INSERT INTO user_columns (id, author_id, author_name, title, excerpt, body, category, cover_url, status, scheduled_at, read_minutes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id, user.id, user.name,
+    body.title || '', body.excerpt || '', body.body || '',
+    body.category || '', body.coverUrl || '',
+    body.status || 'published', body.scheduledAt || null,
+    Number(body.readMinutes || 3)
+  ).run();
+  return { id };
+};
+
+const handleColumnPatch = async (req, env, id) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT author_id FROM user_columns WHERE id = ?").bind(id).first();
+  if (!row) throw new HttpError(404, "칼럼을 찾을 수 없습니다.");
+  if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403);
+  const body = await req.json().catch(() => ({}));
+  const sets = []; const args = [];
+  for (const [k, col] of [["title","title"],["excerpt","excerpt"],["body","body"],["category","category"],["status","status"],["scheduledAt","scheduled_at"],["coverUrl","cover_url"],["readMinutes","read_minutes"]]) {
+    if (k in body) { sets.push(`${col} = ?`); args.push(body[k]); }
+  }
+  sets.push("updated_at = ?"); args.push(nowIso());
+  args.push(id);
+  await env.DB.prepare(`UPDATE user_columns SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+
+const handleColumnDelete = async (req, env, id) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT author_id FROM user_columns WHERE id = ?").bind(id).first();
+  if (!row) throw new HttpError(404);
+  if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403);
+  await env.DB.prepare("DELETE FROM user_columns WHERE id = ?").bind(id).run();
+  return { ok: true };
+};
+
 // ── 감사 로그 ──
 const handleAuditCreate = async (req, env) => {
   const user = await requireUser(req, env);
@@ -1368,6 +1428,15 @@ const route = async (req, env) => {
     if (req.method === "DELETE") return json(await handleGradeDelete(req, env, g[1]));
   }
   if (req.method === "POST" && p === "/api/admin/audit") return json(await handleAuditCreate(req, env), { status: 201 });
+
+  // 사용자 칼럼
+  if (req.method === "GET" && p === "/api/columns") return json(await handleColumnsList(req, env));
+  if (req.method === "POST" && p === "/api/columns") return json(await handleColumnCreate(req, env), { status: 201 });
+  if ((g = m(/^\/api\/columns\/([\w-]+)$/))) {
+    if (req.method === "GET") return json(await handleColumnGet(req, env, g[1]));
+    if (req.method === "PATCH") return json(await handleColumnPatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleColumnDelete(req, env, g[1]));
+  }
 
   // 알림
   if (req.method === "GET" && p === "/api/notifications") return json(await handleNotificationsList(req, env));

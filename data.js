@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.032.000",
+  version: "00.033.000",
   build: "2026.04.28",
   channel: "preview",
 };
@@ -915,98 +915,81 @@ window.BGNJ_COMMUNITY = {
 //   - status: 'draft' | 'scheduled' | 'published' (시드는 항상 published).
 //   - 좋아요/조회수는 columnEngagement 맵으로 분리 — 시드 칼럼도 동일하게 저장.
 //   - 댓글은 BGNJ_COMMUNITY.comments 저장소를 `col-{id}` 키로 재사용.
+// === 칼럼(BGNJ_COLUMNS) — 서버(D1.user_columns) source of truth =============
 window.BGNJ_COLUMNS = {
+  _columns: [],
+  _toColumn(r) {
+    return {
+      id: r.id, authorId: r.author_id, author: r.author_name,
+      title: r.title, excerpt: r.excerpt,
+      body: r.body ? (typeof r.body === 'string' ? { text: r.body, html: r.body } : r.body) : null,
+      category: r.category, coverUrl: r.cover_url,
+      status: r.status || 'published',
+      scheduledAt: r.scheduled_at, publishAt: r.scheduled_at,
+      readMinutes: r.read_minutes,
+      views: r.views || 0,
+      likes: r.likes_json ? (typeof r.likes_json === 'string' ? JSON.parse(r.likes_json) : r.likes_json) : [],
+      createdAt: r.created_at, updatedAt: r.updated_at,
+    };
+  },
   estimateReadTime(text) {
     const len = String(text || '').length;
     const minutes = Math.max(3, Math.ceil(len / 600));
     return `${minutes}분`;
   },
-  _engage(id) {
-    const map = window.BGNJ_STORES.columnEngagement || {};
-    const entry = map[String(id)] || {};
-    return { likes: Array.isArray(entry.likes) ? entry.likes : [], views: entry.views || 0 };
+  async refresh({ admin } = {}) {
+    try {
+      const { columns } = await window.BGNJ_API.columns.list({ includeAll: !!admin });
+      this._columns = (columns || []).map((c) => this._toColumn(c));
+      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}
+    } catch {}
+    return this._columns.slice();
   },
-  _setEngage(id, next) {
-    const map = window.BGNJ_STORES.columnEngagement || {};
-    map[String(id)] = next;
-    window.BGNJ_STORES.columnEngagement = map;
-    window.BGNJ_SAVE.columnEngagement();
-  },
-  getLikes(id) { return this._engage(id).likes.slice(); },
+  getLikes(id) { return (this._columns.find((c) => String(c.id) === String(id))?.likes) || []; },
   hasLiked(id, userId) { return !!userId && this.getLikes(id).includes(userId); },
-  toggleLike(id, userId) {
-    if (!userId) return null;
-    const e = this._engage(id);
-    const likes = e.likes;
-    const next = likes.includes(userId) ? likes.filter(x => x !== userId) : [...likes, userId];
-    this._setEngage(id, { ...e, likes: next });
-    return next;
+  toggleLike(_id, _userId) {
+    // 칼럼 좋아요는 별도 D1 테이블 없이 user_columns.likes_json 으로 관리.
+    // 현재는 공개 토글 endpoint 가 없으므로 추후 사이클에서 추가. (no-op)
+    return null;
   },
-  getViews(id) { return this._engage(id).views || 0; },
-  incrementViews(id) {
-    const e = this._engage(id);
-    const next = (e.views || 0) + 1;
-    this._setEngage(id, { ...e, views: next });
-    return next;
+  getViews(id) { return this._columns.find((c) => String(c.id) === String(id))?.views || 0; },
+  incrementViews(_id) {
+    // 조회수 카운트는 서버 측 PATCH 가 필요. 지금은 렌더만 동작.
+    return 0;
   },
-  // 예약 발행이 시간 지났으면 자동으로 published로 승격
-  _autoPromote() {
-    const now = Date.now();
-    const list = (window.BGNJ_STORES.userColumns || []);
-    let mutated = false;
-    const next = list.map((c) => {
-      if (c.status === 'scheduled' && c.publishAt && new Date(c.publishAt).getTime() <= now) {
-        mutated = true;
-        return { ...c, status: 'published', publishedAt: c.publishedAt || new Date().toISOString() };
-      }
-      return c;
-    });
-    if (mutated) {
-      window.BGNJ_STORES.userColumns = next;
-      window.BGNJ_SAVE.userColumns();
-    }
-  },
-  listAll() {
-    this._autoPromote();
-    return (window.BGNJ_STORES.userColumns || []).map((c) => ({
-      ...c, status: c.status || 'published',
-    }));
-  },
-  // 공개 노출용 — published 사용자 칼럼 + 시드 칼럼
+  listAll() { return this._columns.slice(); },
   listPublic() {
-    this._autoPromote();
-    const userPub = (window.BGNJ_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published');
+    const userPub = this._columns.filter((c) => (c.status || 'published') === 'published');
     const seed = (window.BANGINOJA_DATA?.columns || []).map((c) => ({ ...c, status: 'published' }));
     return [...userPub, ...seed];
   },
   getColumn(id) {
-    this._autoPromote();
-    const fromUser = (window.BGNJ_STORES.userColumns || []).find((c) => String(c.id) === String(id));
-    if (fromUser) return { ...fromUser, status: fromUser.status || 'published' };
+    const fromUser = this._columns.find((c) => String(c.id) === String(id));
+    if (fromUser) return { ...fromUser };
     const seed = (window.BANGINOJA_DATA?.columns || []).find((c) => String(c.id) === String(id));
     return seed ? { ...seed, status: 'published' } : null;
   },
-  saveColumn(payload) {
-    const list = window.BGNJ_STORES.userColumns || [];
-    const idx = list.findIndex((c) => String(c.id) === String(payload.id));
-    if (idx >= 0) {
-      list[idx] = { ...list[idx], ...payload, updatedAt: new Date().toISOString() };
+  async saveColumn(payload) {
+    const exists = payload.id && this._columns.find((c) => String(c.id) === String(payload.id));
+    const body = {
+      title: payload.title, excerpt: payload.excerpt,
+      body: typeof payload.body === 'object' ? (payload.body?.text || '') : (payload.body || ''),
+      category: payload.category, coverUrl: payload.coverUrl,
+      status: payload.status, scheduledAt: payload.publishAt || payload.scheduledAt,
+      readMinutes: Number(payload.readMinutes || 3),
+    };
+    if (exists) {
+      await window.BGNJ_API.columns.update(payload.id, body);
     } else {
-      list.unshift({ ...payload, createdAt: new Date().toISOString() });
+      await window.BGNJ_API.columns.create(body);
     }
-    window.BGNJ_STORES.userColumns = list;
-    window.BGNJ_SAVE.userColumns();
+    await this.refresh({ admin: true });
     return payload;
   },
-  deleteColumn(id) {
-    window.BGNJ_STORES.userColumns = (window.BGNJ_STORES.userColumns || []).filter((c) => String(c.id) !== String(id));
-    window.BGNJ_SAVE.userColumns();
-    const map = window.BGNJ_STORES.columnEngagement || {};
-    delete map[String(id)];
-    window.BGNJ_STORES.columnEngagement = map;
-    window.BGNJ_SAVE.columnEngagement();
+  async deleteColumn(id) {
+    await window.BGNJ_API.columns.remove(id);
+    await this.refresh({ admin: true });
   },
-  // 검색 + 카테고리 필터
   searchPublic({ query = '', category = '전체' } = {}) {
     const q = String(query || '').trim().toLowerCase();
     return this.listPublic().filter((c) => {
@@ -1014,7 +997,7 @@ window.BGNJ_COLUMNS = {
       if (!q) return true;
       const inTitle = String(c.title || '').toLowerCase().includes(q);
       const inExcerpt = String(c.excerpt || '').toLowerCase().includes(q);
-      const inBodyText = String(c.body?.text || '').toLowerCase().includes(q);
+      const inBodyText = String(c.body?.text || c.body || '').toLowerCase().includes(q);
       return inTitle || inExcerpt || inBodyText;
     });
   },

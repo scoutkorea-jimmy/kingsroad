@@ -228,6 +228,13 @@
     },
 
     // ── 사이트 콘텐츠 / FAQ / 약관 / 입금 계좌 / 카테고리 / 등급 ──
+    columns: {
+      list: ({ includeAll } = {}) => request("GET", `/columns${includeAll ? "?includeAll=1" : ""}`),
+      get: (id) => request("GET", `/columns/${id}`),
+      create: (payload) => request("POST", "/columns", payload),
+      update: (id, patch) => request("PATCH", `/columns/${id}`, patch),
+      remove: (id) => request("DELETE", `/columns/${id}`),
+    },
     siteContent: {
       get: () => request("GET", "/site-content"),
       saveSection: (section, data) => request("PATCH", `/site-content/${section}`, { data }),

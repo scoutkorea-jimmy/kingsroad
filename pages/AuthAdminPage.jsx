@@ -468,6 +468,22 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.033.000",
+    date: "2026-04-28",
+    summary: "관리자 페이지 GUI 가독성 보강 + BGNJ_COLUMNS 서버 전환. 회원 상세 프로필이 한글 라벨 카드로(JSON 덤프 제거 확정), 감사 로그 details 가 key/value 칩으로, 정지 사유 입력이 모달 다이얼로그로 교체. 새 책 추가도 prompt() 대신 인라인 폼. 사용자 칼럼이 D1 user_columns 테이블 source-of-truth 로.",
+    details: [
+      "ProfileFields — JSON.stringify(profile) 노출을 한글 라벨(생년월일/전화번호/우편번호/주소/상세주소/성별/관심분야/추천인) + 빈 값 dash 카드로 완전 교체. (v00.030 코드 확정)",
+      "AuditDetailsCell — 감사 로그 details 의 raw JSON 을 key/value 칩 리스트로 렌더. action·target·by 는 그대로 mono 표시.",
+      "SuspendDialog — '회원 정지' 액션의 prompt() 를 모달 다이얼로그로 교체. 사유 textarea + ESC/취소/적용 버튼.",
+      "BooksAdminPanel — '새 책 추가' prompt() 를 인라인 폼으로 교체. 좌측 책 목록 상단에 입력창이 펼쳐지고 추가/취소 버튼.",
+      "활성 동의 배지 한글화는 v00.030 에서 적용 완료.",
+      "BGNJ_COLUMNS — D1 user_columns 테이블 신설 + Worker GET/POST/PATCH/DELETE 엔드포인트. 헬퍼가 BGNJ_API.columns 호출로 전환. localStorage(userColumns) 쓰기 제거. 좋아요/조회수는 다음 사이클에 별도 endpoint 추가 예정 (현재 no-op).",
+      "App init useEffect 에 BGNJ_COLUMNS.refresh 자동 호출 추가.",
+      "Worker 배포: Version 955d2989-bfc1-4339-b9e3-9cef15c18718.",
+    ],
+    context: "사용자 요청 '관리자페이지 가시성 + 텍스트로 구현된 기능은 없게'. 화면에 그대로 노출되던 JSON 덤프와 prompt() 호출을 모두 컴포넌트화 — 관리자 페이지의 모든 입력은 폼/모달로, 모든 데이터는 라벨/칩으로 표현됩니다. 캐시된 옛 페이지에서 JSON 이 보였던 것은 코드 변경 후 강제 새로고침이 필요했기 때문이고, ?v=00.033.000 cache-buster 가 다음 진입에서 자동 갱신.",
+  },
+  {
     version: "00.032.000",
     date: "2026-04-28",
     summary: "🌐 트랜잭션 헬퍼 일괄 서버 전환. BGNJ_BOOK_ORDERS / LECTURES / TOURS / BOOKS 가 모두 D1 source-of-truth 로 전환되었습니다. localStorage 영속화 호출(BGNJ_SAVE.*) 모두 제거. App 진입 시 + 로그인 시 본인 활동 데이터까지 자동 동기화.",
@@ -3038,20 +3054,23 @@ const BooksAdminPanel = () => {
     reader.readAsDataURL(file);
   });
 
-  const addBook = () => {
-    const title = prompt('새 책 제목을 입력하세요.');
+  const [addingBook, setAddingBook] = React.useState(false);
+  const [newBookTitle, setNewBookTitle] = React.useState('');
+  const submitAddBook = async () => {
+    const title = (newBookTitle || '').trim();
     if (!title) return;
-    const created = window.BGNJ_BOOKS.create({ title, status: 'draft' });
+    const created = await window.BGNJ_BOOKS.create({ title, status: 'draft' });
+    setNewBookTitle(''); setAddingBook(false);
     refresh();
-    setSelectedId(created.id);
-    setEditTab('meta');
+    if (created?.id) { setSelectedId(created.id); setEditTab('meta'); }
   };
+  const addBook = () => { setNewBookTitle(''); setAddingBook(true); };
 
-  const removeBook = (id) => {
+  const removeBook = async (id) => {
     const target = window.BGNJ_BOOKS.get(id);
     if (!target) return;
     if (!confirm(`"${target.title}" 책을 삭제할까요? (되돌릴 수 없음)`)) return;
-    window.BGNJ_BOOKS.remove(id);
+    await window.BGNJ_BOOKS.remove(id);
     refresh();
     if (selectedId === id) {
       const remaining = window.BGNJ_BOOKS.list();
@@ -3120,6 +3139,18 @@ const BooksAdminPanel = () => {
             <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em'}}>BOOKS · {books.length}</span>
             <button type="button" className="btn btn-small btn-gold" onClick={addBook}>＋ 새 책</button>
           </div>
+          {addingBook && (
+            <form onSubmit={(e) => { e.preventDefault(); submitAddBook(); }}
+              style={{padding:'10px 12px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)', display:'flex', gap:6, alignItems:'center'}}>
+              <input className="field-input" autoFocus
+                style={{flex:1, padding:'6px 10px', fontSize:13}}
+                placeholder="새 책 제목"
+                value={newBookTitle}
+                onChange={(e) => setNewBookTitle(e.target.value)}/>
+              <button type="submit" className="btn btn-small btn-gold" disabled={!newBookTitle.trim()}>추가</button>
+              <button type="button" className="btn btn-small" onClick={() => { setAddingBook(false); setNewBookTitle(''); }}>취소</button>
+            </form>
+          )}
           {books.length === 0 ? (
             <div className="dim" style={{padding:20, fontSize:13}}>등록된 책이 없습니다.</div>
           ) : (
@@ -3428,8 +3459,8 @@ const AuditLogPanel = () => {
                 <td className="mono gold" style={{padding:10, fontSize:11}}>{e.action}</td>
                 <td className="mono" style={{padding:10, fontSize:11}}>{e.target}</td>
                 <td style={{padding:10, fontSize:12}}>{e.by}</td>
-                <td className="mono dim-2" style={{padding:10, fontSize:10, lineHeight:1.5}}>
-                  {e.details ? JSON.stringify(e.details) : '-'}
+                <td style={{padding:10, fontSize:11, lineHeight:1.6}}>
+                  <AuditDetailsCell details={e.details}/>
                 </td>
               </tr>
             ))}
@@ -3439,6 +3470,67 @@ const AuditLogPanel = () => {
       <div className="dim-2 mono" style={{fontSize:11, marginTop:12, textAlign:'right'}}>
         표시 {list.length}건 (전체 최근 500건 중)
       </div>
+    </div>
+  );
+};
+
+// 정지 사유 입력 모달 — prompt() 대신 GUI.
+const SuspendDialog = ({ target, reason, onChange, onConfirm, onCancel }) => {
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+  return (
+    <div role="dialog" aria-modal="true" aria-label="회원 정지"
+      onClick={onCancel}
+      style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:1000, display:'grid', placeItems:'center', padding:24}}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{background:'var(--bg)', maxWidth:480, width:'100%', padding:24, border:'1px solid var(--line)', boxShadow:'0 16px 40px rgba(0,0,0,0.25)'}}>
+        <h3 className="ko-serif" style={{fontSize:20, marginBottom:8}}>회원 정지</h3>
+        <p className="dim" style={{fontSize:13, marginBottom:16, lineHeight:1.7}}>
+          <strong className="gold">{target?.name || target?.email}</strong> 님을 정지하시겠습니까?
+          정지된 회원은 즉시 로그아웃되고 다시 로그인할 수 없습니다.
+        </p>
+        <label className="field" style={{margin:0}}>
+          <span className="field-label">정지 사유 (선택)</span>
+          <textarea className="field-input" autoFocus rows={3}
+            placeholder="예: 약관 위반, 스팸 등"
+            value={reason}
+            onChange={(e) => onChange(e.target.value)}/>
+        </label>
+        <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:18}}>
+          <button type="button" className="btn" onClick={onCancel}>취소</button>
+          <button type="button" className="btn" onClick={onConfirm}
+            style={{borderColor:'var(--danger)', color:'var(--danger)'}}>정지 적용</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 감사 로그 details — JSON 덤프 대신 key/value 칩 리스트로 노출.
+const AuditDetailsCell = ({ details }) => {
+  if (!details || (typeof details === 'object' && !Object.keys(details).length)) {
+    return <span className="dim-2">—</span>;
+  }
+  if (typeof details !== 'object') {
+    return <span className="mono dim">{String(details)}</span>;
+  }
+  return (
+    <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+      {Object.entries(details).map(([k, v]) => (
+        <span key={k} style={{
+          display:'inline-flex', gap:4, alignItems:'baseline',
+          padding:'2px 8px', background:'var(--bg-2)', border:'1px solid var(--line)',
+          fontSize:11,
+        }}>
+          <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.1em'}}>{k}</span>
+          <span style={{color:'var(--ink)'}}>{
+            typeof v === 'object' ? JSON.stringify(v) : String(v)
+          }</span>
+        </span>
+      ))}
     </div>
   );
 };
@@ -3541,12 +3633,18 @@ const MemberAdminPanel = ({ go }) => {
     try { await window.BGNJ_AUTH.toggleAdmin(user.id); refresh(); }
     catch (err) { alert(`관리자 권한 변경 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
-  const suspendUser = async (user) => {
-    const reason = prompt('정지 사유 (선택)', '');
-    if (reason === null) return;
-    try { await window.BGNJ_AUTH.suspendUser(user.id, reason || ''); refresh(); }
+  const [suspendTarget, setSuspendTarget] = React.useState(null);
+  const [suspendReason, setSuspendReason] = React.useState('');
+  const openSuspendDialog = (user) => { setSuspendTarget(user); setSuspendReason(''); };
+  const submitSuspend = async () => {
+    if (!suspendTarget) return;
+    const target = suspendTarget;
+    const reason = suspendReason.trim();
+    setSuspendTarget(null); setSuspendReason('');
+    try { await window.BGNJ_AUTH.suspendUser(target.id, reason); refresh(); }
     catch (err) { alert(`정지 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
+  const suspendUser = (user) => openSuspendDialog(user);
   const unsuspend = async (user) => {
     if (!confirm(`${user.name} 님의 정지를 해제하시겠어요?`)) return;
     try { await window.BGNJ_AUTH.unsuspendUser(user.id); refresh(); }
@@ -3717,6 +3815,12 @@ const MemberAdminPanel = ({ go }) => {
               </div>
             </div>
           </article>
+        )}
+        {suspendTarget && (
+          <SuspendDialog target={suspendTarget} reason={suspendReason}
+            onChange={setSuspendReason}
+            onConfirm={submitSuspend}
+            onCancel={() => { setSuspendTarget(null); setSuspendReason(''); }}/>
         )}
       </div>
     );
