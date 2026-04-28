@@ -468,6 +468,17 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.027.003",
+    date: "2026-04-28",
+    summary: "HTTPS 강제 리다이렉트. 사용자가 `http://bgnj.net` (HTTP) 로 접속하면 Cloudflare Worker API 가 CORS 거부해 로그인이 'Failed to fetch' 로 실패하던 문제를 차단했습니다. 페이지 진입 즉시 https:// 로 자동 전환되도록 index.html 최상단에 가드를 추가했습니다.",
+    details: [
+      "index.html — `<head>` 진입 즉시 `location.protocol === 'http:'` 면 `https:` 로 `location.replace`. localhost / 127.0.0.1 은 예외(개발 환경 평문 허용).",
+      "원인 — Worker 의 ALLOWED_ORIGINS 는 `https://bgnj.net` 만 허용. 사용자가 주소창에 `bgnj.net` 만 치면 일부 브라우저/북마크가 `http://` 로 진입하고, 그 결과 모든 API 호출이 CORS preflight 단계에서 차단되어 'Access to fetch ... blocked by CORS policy' / 'Failed to fetch' 로 보임.",
+      "보완 안내 — Cloudflare DNS/SSL 패널의 'Always Use HTTPS' 설정도 켜두면 서버 측에서도 301 리다이렉트가 추가로 적용됨(클라이언트 가드와 이중 안전장치).",
+    ],
+    context: "v00.027.001 의 새 에러 패널이 'NETWORK_OR_CORS' 코드를 정확히 보여줬고, 사용자가 콘솔 스크린샷을 공유해 주신 덕에 origin 이 `http://bgnj.net` 인 것을 즉시 식별할 수 있었습니다. CORS 거부의 진짜 원인은 네트워크 단절이나 Worker 미배포가 아니라 프로토콜 불일치였습니다. 같은 패턴이 반복되지 않도록 클라이언트 측에서 즉시 HTTPS 로 점프하도록 강제했습니다.",
+  },
+  {
     version: "00.027.002",
     date: "2026-04-28",
     summary: "캐시 무력화 + 진단 도구. 새 코드를 배포해도 사용자의 브라우저가 이전 JS 를 캐시한 상태로 보고 있어 'Failed to fetch' 같은 옛 메시지가 계속 노출되던 문제를 영구 차단했습니다. 모든 정적 자산에 버전 쿼리를 붙여 신규 배포 시 자동 갱신되도록 정리하고, 콘솔에 현재 버전 배지와 진단 헬퍼를 추가했습니다.",
