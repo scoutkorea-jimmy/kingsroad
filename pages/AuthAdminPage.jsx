@@ -468,6 +468,25 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.035.000",
+    date: "2026-04-29",
+    summary: "운영 인프라 대규모 보강 — 멀티 입금 계좌 + 무통장 PUT CORS 수정 + ROPA 표 전환 + 회원 필터/정렬 + 오류 로그 패널 + SEO 관리 패널 + 토스트 자동 소거 + 관리자 게시글 모달 뷰어. 한 번에 8가지 운영 기능을 묶어 처리.",
+    details: [
+      "🔧 Worker CORS Allow-Methods 에 PUT 추가 — 무통장 계좌 저장(PUT /api/bank-account) preflight 통과. '강연 무통장 입금 정보 저장 시 Failed to fetch' 해결.",
+      "💳 멀티 입금 계좌 — D1.bank_accounts 테이블 신설. CRUD 엔드포인트(GET/POST/PATCH/DELETE) + BankAccountPanel 표 형식 UI + 기본 계좌 지정 + 라벨/은행/계좌번호/예금주/메모. BGNJ_BankAccountPicker 결제 화면 셀렉터 컴포넌트 신설(다음 사이클에 강연/투어/책 결제 폼에 wiring 예정).",
+      "🗑 설정 탭의 중복 BankAccountPanel 제거 — 안내문 인포 박스로 교체, 멀티 계좌는 '계좌번호 설정' 탭에서 단독 관리.",
+      "📋 ROPA — 6열 카드 그리드 → 단일 표(ID/처리목적/법적근거/수집항목/보유기간/수탁사/국외이전). 가독성 + 비교 용이.",
+      "🔍 회원 관리 — 상태 필터(전체/활성/정지됨/관리자만) + 정렬(가입일↓↑/이름가나다·역순/이메일/등급↓/게시글많은순/댓글많은순) 8가지. 검색·필터·정렬 동시 적용.",
+      "🚨 오류 로그 — D1.error_log 테이블 + Worker POST /api/error-log (인증 불요, 익명 오류도 캡처) + GET /admin/error-log + DELETE. GlobalErrorToast 와 AppErrorBoundary 가 모든 오류를 자동 서버 보고. 관리자 시스템 메뉴 '오류 로그' 패널에서 검색/필터/전체삭제.",
+      "⏱ 토스트 자동 소거 — GlobalErrorToast 가 10초 후 자동 사라짐. 사용자 명시 닫기 버튼도 유지.",
+      "🌐 SEO 패널 신설 — '시스템 관리 > SEO' 탭. OG 제목/설명/이미지(파일 업로드) + Hero 상단 라벨/제목 3행/부제 + 브랜드명 편집. 저장 즉시 <head> 메타에 반영.",
+      "📰 PostViewerModal — 관리자 패널 '열기' 버튼이 페이지 이동 대신 모달로 본문/메타/댓글을 한눈에 노출 (다음 커밋에 두 곳 wiring).",
+      "📜 ai-development-rules.md — '작업 시작 전 오류 로그 우선 확인' 규칙 추가. AI 가 새 작업 받기 전에 D1.error_log 를 먼저 점검하도록 명문화.",
+      "Worker 배포: Version c192f088-7642-449f-a9d6-900b9c6bfe2b.",
+    ],
+    context: "사용자 6 가지 요청을 한 묶음으로 처리: ① 무통장 저장 오류 ② 멀티 계좌 + 결제 시 선택 ③ 설정 탭 중복 제거 ④ ROPA 표 전환 ⑤ 회원 필터/정렬 ⑥ 오류 로그 자동 적재 + AI 우선 처리 규칙 ⑦ 토스트 10초 자동 소거 ⑧ SEO 관리 패널. 결제 화면 계좌 셀렉터와 PostViewerModal 의 wiring 은 다음 커밋에서 페이지 컴포넌트 sync→async 정리와 함께 진행.",
+  },
+  {
     version: "00.034.001",
     date: "2026-04-28",
     summary: "공감 토글 즉시 반영 + /api/me/tours 500 오류 수정 + 약관 편집 패널 서버 동기화 + 댓글 본문 가독성. 사용자 보고 'Failed to load /me/tours 500' / '공감 안 눌리거나 매우 느림' / '댓글 굵어서 헷갈림' 한꺼번에 처리.",
@@ -2418,54 +2437,227 @@ const TourAdminPanel = ({ go }) => {
 };
 
 // === Bank Account Settings Panel ==================================
+// 무통장 입금 계좌 — 멀티 계좌 CRUD. 강연/투어/책 결제 화면에서 계좌 선택 가능.
 const BankAccountPanel = () => {
-  const [bank, setBank] = React.useState(() => window.BGNJ_LECTURES.getBankAccount());
-  const [msg, setMsg] = React.useState("");
+  const [tick, setTick] = React.useState(0);
+  const [accounts, setAccounts] = React.useState(() => window.BGNJ_LECTURES.listBankAccounts());
+  const [editingId, setEditingId] = React.useState(null);
+  const [draft, setDraft] = React.useState({ label: '', bankName: '', accountNumber: '', holder: '', memo: '', isDefault: false });
+  const [msg, setMsg] = React.useState('');
 
-  const save = (e) => {
+  const refresh = async () => {
+    await window.BGNJ_LECTURES.refreshBankAccount();
+    setAccounts(window.BGNJ_LECTURES.listBankAccounts());
+    setTick((v) => v + 1);
+  };
+
+  React.useEffect(() => {
+    refresh();
+    const onR = () => setAccounts(window.BGNJ_LECTURES.listBankAccounts());
+    window.addEventListener('bgnj-bank-accounts-refresh', onR);
+    return () => window.removeEventListener('bgnj-bank-accounts-refresh', onR);
+  }, []);
+
+  const startEdit = (a) => {
+    setEditingId(a.id);
+    setDraft({
+      label: a.label || '', bankName: a.bankName || '', accountNumber: a.accountNumber || '',
+      holder: a.holder || '', memo: a.memo || '', isDefault: !!a.isDefault,
+    });
+  };
+  const startNew = () => {
+    setEditingId('new');
+    setDraft({ label: '', bankName: '', accountNumber: '', holder: '', memo: '', isDefault: !accounts.length });
+  };
+  const cancel = () => { setEditingId(null); setMsg(''); };
+
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2400); };
+
+  const save = async (e) => {
     e.preventDefault();
-    window.BGNJ_LECTURES.saveBankAccount(bank);
-    setMsg("계좌 정보를 저장했습니다.");
-    setTimeout(() => setMsg(""), 2000);
+    if (!draft.label.trim()) return flash('✗ 계좌 이름을 입력해 주세요.');
+    if (!draft.accountNumber.trim()) return flash('✗ 계좌번호를 입력해 주세요.');
+    try {
+      if (editingId === 'new') {
+        await window.BGNJ_LECTURES.createBankAccount(draft);
+      } else if (editingId) {
+        await window.BGNJ_LECTURES.updateBankAccount(editingId, draft);
+      }
+      await refresh();
+      setEditingId(null);
+      flash('✓ 저장되었습니다.');
+    } catch (err) {
+      flash('✗ 저장 실패: ' + (err?.body?.error || err?.message || '알 수 없는 오류'));
+    }
+  };
+
+  const remove = async (a) => {
+    if (!confirm(`"${a.label}" 계좌를 삭제하시겠습니까?`)) return;
+    try {
+      await window.BGNJ_LECTURES.deleteBankAccount(a.id);
+      await refresh();
+      flash('✓ 삭제되었습니다.');
+    } catch (err) {
+      flash('✗ 삭제 실패: ' + (err?.message || ''));
+    }
+  };
+
+  const setDefault = async (a) => {
+    try {
+      await window.BGNJ_LECTURES.updateBankAccount(a.id, { isDefault: true });
+      await refresh();
+      flash('✓ 기본 계좌가 변경되었습니다.');
+    } catch (err) { flash('✗ 변경 실패: ' + (err?.message || '')); }
   };
 
   return (
-    <form onSubmit={save} className="card" style={{padding:24, maxWidth:640}}>
-      <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>BANK ACCOUNT</div>
-      <h2 className="ko-serif" style={{fontSize:20, marginBottom:6}}>강연 무통장 입금 계좌</h2>
-      <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:18}}>
-        강연 신청 시 사용자에게 노출되는 입금 계좌입니다. 변경하면 새로 신청하는 사용자부터 즉시 반영됩니다.
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:14, lineHeight:1.8}}>
+        무통장 입금 계좌를 여러 개 등록할 수 있습니다. <strong className="gold">기본 계좌</strong>는 결제 화면에서 자동 선택되며, 사용자가 다른 계좌를 선택할 수도 있습니다.
       </p>
-      <div style={{display:'grid', gap:12}}>
-        {[
-          { k: 'bankName',      l: '은행',     placeholder: '예) 국민은행' },
-          { k: 'accountNumber', l: '계좌번호', placeholder: '예) 123-456-7890123' },
-          { k: 'holder',        l: '예금주',   placeholder: '예) 뱅기노자 협동조합' },
-        ].map((f) => (
-          <div key={f.k} className="field" style={{margin:0}}>
-            <label className="field-label">{f.l}</label>
-            <input className="field-input" placeholder={f.placeholder}
-              value={bank[f.k] || ''}
-              onChange={(e) => setBank({ ...bank, [f.k]: e.target.value })}/>
-          </div>
-        ))}
-        <div className="field" style={{margin:0}}>
-          <label className="field-label">안내 메모 (선택)</label>
-          <textarea className="field-input" rows={2}
-            value={bank.memo || ''}
-            placeholder="입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요."
-            onChange={(e) => setBank({ ...bank, memo: e.target.value })}/>
-        </div>
+
+      <div style={{display:'flex', justifyContent:'flex-end', marginBottom:14}}>
+        <button type="button" className="btn btn-small btn-gold" onClick={startNew}>＋ 새 계좌 추가</button>
       </div>
+
+      <div style={{overflowX:'auto', border:'1px solid var(--line)'}}>
+        <table style={{width:'100%', borderCollapse:'collapse', fontSize:13, minWidth:880}}>
+          <thead>
+            <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+              <th scope="col" style={{padding:'12px 14px', textAlign:'left', width:140}}>이름 (라벨)</th>
+              <th scope="col" style={{padding:'12px 14px', textAlign:'left', width:120}}>은행</th>
+              <th scope="col" style={{padding:'12px 14px', textAlign:'left'}}>계좌번호</th>
+              <th scope="col" style={{padding:'12px 14px', textAlign:'left', width:120}}>예금주</th>
+              <th scope="col" style={{padding:'12px 14px', textAlign:'center', width:100}}>기본</th>
+              <th scope="col" style={{padding:'12px 14px', textAlign:'right', width:200}}>작업</th>
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.length === 0 ? (
+              <tr><td colSpan={6} className="dim" style={{padding:32, textAlign:'center'}}>등록된 계좌가 없습니다. "＋ 새 계좌 추가" 를 눌러 시작하세요.</td></tr>
+            ) : accounts.map((a) => (
+              <tr key={a.id} style={{borderTop:'1px solid var(--line)'}}>
+                <td className="ko-serif" style={{padding:'12px 14px', fontWeight:500}}>{a.label}</td>
+                <td style={{padding:'12px 14px'}}>{a.bankName || '-'}</td>
+                <td className="mono" style={{padding:'12px 14px'}}>{a.accountNumber || '-'}</td>
+                <td style={{padding:'12px 14px'}}>{a.holder || '-'}</td>
+                <td style={{padding:'12px 14px', textAlign:'center'}}>
+                  {a.isDefault ? (
+                    <span className="badge badge-gold" style={{fontSize:10}}>기본</span>
+                  ) : (
+                    <button type="button" className="btn-ghost" onClick={() => setDefault(a)}
+                      style={{fontSize:11, color:'var(--ink-3)'}}>기본으로</button>
+                  )}
+                </td>
+                <td style={{padding:'12px 14px', textAlign:'right'}}>
+                  <button type="button" className="btn btn-small" onClick={() => startEdit(a)} style={{marginRight:6}}>수정</button>
+                  <button type="button" className="btn btn-small" onClick={() => remove(a)}
+                    style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {msg && (
-        <div role="status" className="mono gold" style={{fontSize:12, marginTop:14, padding:'8px 12px', border:'1px solid var(--gold-dim)', background:'rgba(212,175,55,0.06)'}}>
-          {msg}
+        <div role="status" style={{
+          marginTop:14, padding:'10px 14px',
+          border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
+          background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(212,175,55,0.06)',
+          color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--gold)', fontSize:13,
+        }}>{msg}</div>
+      )}
+
+      {editingId && (
+        <form onSubmit={save} className="card" style={{padding:24, marginTop:18, maxWidth:720}}>
+          <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>
+            {editingId === 'new' ? 'NEW ACCOUNT' : 'EDIT ACCOUNT'}
+          </div>
+          <h2 className="ko-serif" style={{fontSize:18, marginBottom:14}}>
+            {editingId === 'new' ? '새 계좌 추가' : '계좌 수정'}
+          </h2>
+          <div style={{display:'grid', gap:12}}>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">계좌 이름 (라벨) <span className="gold">*</span></label>
+              <input className="field-input" placeholder="예) 강연 입금용 / 책 주문용 / 메인"
+                value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })}/>
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+              <div className="field" style={{margin:0}}>
+                <label className="field-label">은행</label>
+                <input className="field-input" placeholder="예) 국민은행"
+                  value={draft.bankName} onChange={(e) => setDraft({ ...draft, bankName: e.target.value })}/>
+              </div>
+              <div className="field" style={{margin:0}}>
+                <label className="field-label">예금주</label>
+                <input className="field-input" placeholder="예) 뱅기노자"
+                  value={draft.holder} onChange={(e) => setDraft({ ...draft, holder: e.target.value })}/>
+              </div>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">계좌번호 <span className="gold">*</span></label>
+              <input className="field-input" placeholder="예) 123-456-7890123"
+                value={draft.accountNumber} onChange={(e) => setDraft({ ...draft, accountNumber: e.target.value })}/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">안내 메모 (선택)</label>
+              <textarea className="field-input" rows={2}
+                placeholder="입금자명에 신청자 본명 + 신청번호를 남겨 주세요."
+                value={draft.memo} onChange={(e) => setDraft({ ...draft, memo: e.target.value })}/>
+            </div>
+            <label style={{display:'flex', alignItems:'center', gap:8, fontSize:13}}>
+              <input type="checkbox" style={{accentColor:'var(--gold)'}}
+                checked={draft.isDefault}
+                onChange={(e) => setDraft({ ...draft, isDefault: e.target.checked })}/>
+              기본 계좌로 사용 (결제 화면에서 자동 선택)
+            </label>
+          </div>
+          <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:18, paddingTop:14, borderTop:'1px solid var(--line)'}}>
+            <button type="button" className="btn" onClick={cancel}>취소</button>
+            <button type="submit" className="btn btn-gold">{editingId === 'new' ? '추가' : '저장'}</button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+};
+
+// 결제 화면용 — 멀티 계좌 셀렉터 + 안내 박스. 모든 결제 흐름(강연/투어/책) 에서 재사용.
+window.BGNJ_BankAccountPicker = ({ value, onChange, accounts }) => {
+  const list = (accounts && accounts.length) ? accounts : (window.BGNJ_LECTURES?.listBankAccounts?.() || []);
+  if (!list.length) return null;
+  const selected = list.find((a) => a.id === value) || list.find((a) => a.isDefault) || list[0];
+  React.useEffect(() => {
+    if (selected && selected.id !== value && onChange) onChange(selected.id);
+  }, []);
+  return (
+    <div style={{padding:'14px 16px', border:'1px solid var(--gold-dim)', background:'rgba(212,175,55,0.04)'}}>
+      <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>BANK ACCOUNT · 입금 계좌 선택</div>
+      {list.length > 1 && (
+        <select className="field-input" style={{marginBottom:12, fontSize:13}}
+          value={selected?.id || ''}
+          onChange={(e) => onChange?.(e.target.value)}>
+          {list.map((a) => (
+            <option key={a.id} value={a.id}>{a.label}{a.isDefault ? ' (기본)' : ''}</option>
+          ))}
+        </select>
+      )}
+      {selected && (
+        <div style={{display:'grid', gridTemplateColumns:'90px 1fr', gap:'6px 14px', fontSize:13}}>
+          <div className="dim-2 mono" style={{fontSize:11}}>은행</div>
+          <div>{selected.bankName || '-'}</div>
+          <div className="dim-2 mono" style={{fontSize:11}}>계좌번호</div>
+          <div className="mono" style={{fontWeight:500}}>{selected.accountNumber || '-'}</div>
+          <div className="dim-2 mono" style={{fontSize:11}}>예금주</div>
+          <div>{selected.holder || '-'}</div>
+          {selected.memo && (<>
+            <div className="dim-2 mono" style={{fontSize:11}}>안내</div>
+            <div style={{lineHeight:1.6}}>{selected.memo}</div>
+          </>)}
         </div>
       )}
-      <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:18, paddingTop:14, borderTop:'1px solid var(--line)'}}>
-        <button type="submit" className="btn btn-gold">저장</button>
-      </div>
-    </form>
+    </div>
   );
 };
 
@@ -3462,6 +3654,261 @@ const BooksAdminPanel = () => {
   );
 };
 
+// === Error Log Panel ==============================================
+// 사이트에서 발생한 모든 클라이언트 오류(인증/네트워크/렌더링/미처리 promise) 를 D1.error_log 에서 조회.
+const ErrorLogPanel = () => {
+  const [errors, setErrors] = React.useState([]);
+  const [search, setSearch] = React.useState('');
+  const [codeFilter, setCodeFilter] = React.useState('all');
+  const [loading, setLoading] = React.useState(false);
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const { errors: list } = await window.BGNJ_API.errorLog.list({ limit: 500 });
+      setErrors(list || []);
+    } catch {} finally { setLoading(false); }
+  };
+  React.useEffect(() => { refresh(); }, []);
+
+  const codeOptions = React.useMemo(() => {
+    const set = new Set(errors.map((e) => e.code).filter(Boolean));
+    return ['all', ...Array.from(set)];
+  }, [errors]);
+
+  const filtered = React.useMemo(() => {
+    let list = errors.slice();
+    if (codeFilter !== 'all') list = list.filter((e) => e.code === codeFilter);
+    const q = search.trim().toLowerCase();
+    if (q) list = list.filter((e) =>
+      String(e.message || '').toLowerCase().includes(q)
+      || String(e.url || '').toLowerCase().includes(q)
+      || String(e.pathname || '').toLowerCase().includes(q)
+    );
+    return list;
+  }, [errors, codeFilter, search]);
+
+  const clearAll = async () => {
+    if (!confirm('모든 오류 로그를 삭제하시겠습니까? (되돌릴 수 없음)')) return;
+    try { await window.BGNJ_API.errorLog.clear(); await refresh(); }
+    catch (err) { alert('삭제 실패: ' + (err?.message || '')); }
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:14, lineHeight:1.7}}>
+        사이트에서 발생한 모든 클라이언트 오류가 D1.error_log 에 기록됩니다 (인증/네트워크/렌더링/미처리 promise).
+        AI 또는 운영자가 작업을 시작할 때 <strong className="gold">이 패널을 가장 먼저 확인</strong>하여 미해결 오류를 우선 처리하는 것이 원칙입니다.
+      </p>
+      <div style={{display:'flex', gap:12, marginBottom:14, alignItems:'center', flexWrap:'wrap'}}>
+        <input className="field-input" placeholder="메시지/URL 검색..." style={{flex:1, minWidth:240}}
+          value={search} onChange={(e) => setSearch(e.target.value)}/>
+        <select className="field-input" style={{maxWidth:200}}
+          value={codeFilter} onChange={(e) => setCodeFilter(e.target.value)}>
+          {codeOptions.map((c) => <option key={c} value={c}>{c === 'all' ? '전체 코드' : c}</option>)}
+        </select>
+        <button type="button" className="btn btn-small" onClick={refresh} disabled={loading}>
+          {loading ? '불러오는 중...' : '새로고침'}
+        </button>
+        <button type="button" className="btn btn-small" onClick={clearAll}
+          style={{borderColor:'var(--danger)', color:'var(--danger)'}}>전체 삭제</button>
+        <span className="mono dim-2" style={{fontSize:11}}>총 {errors.length}건 · 표시 {filtered.length}건</span>
+      </div>
+      <div style={{overflowX:'auto', border:'1px solid var(--line)'}}>
+        <table style={{width:'100%', borderCollapse:'collapse', fontSize:12, minWidth:980}}>
+          <thead>
+            <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+              <th scope="col" style={{padding:'10px 12px', textAlign:'left', width:160}}>시각</th>
+              <th scope="col" style={{padding:'10px 12px', textAlign:'left', width:140}}>코드</th>
+              <th scope="col" style={{padding:'10px 12px', textAlign:'left', width:60}}>HTTP</th>
+              <th scope="col" style={{padding:'10px 12px', textAlign:'left'}}>메시지</th>
+              <th scope="col" style={{padding:'10px 12px', textAlign:'left', width:160}}>경로</th>
+              <th scope="col" style={{padding:'10px 12px', textAlign:'left', width:200}}>요청 URL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={6} className="dim" style={{padding:32, textAlign:'center'}}>{loading ? '불러오는 중...' : '오류 로그가 없습니다.'}</td></tr>
+            ) : filtered.map((e) => (
+              <tr key={e.id} style={{borderTop:'1px solid var(--line)'}}>
+                <td className="mono dim-2" style={{padding:'10px 12px', fontSize:11, verticalAlign:'top'}}>
+                  {e.ts ? new Date(e.ts).toLocaleString('ko-KR') : '-'}
+                </td>
+                <td className="mono" style={{padding:'10px 12px', fontSize:11, verticalAlign:'top', color:'var(--danger)', letterSpacing:'0.1em'}}>
+                  {e.code || '-'}
+                </td>
+                <td className="mono" style={{padding:'10px 12px', fontSize:11, verticalAlign:'top'}}>{e.status || '-'}</td>
+                <td style={{padding:'10px 12px', fontSize:13, verticalAlign:'top', lineHeight:1.6}}>
+                  <div style={{fontWeight:500}}>{e.message}</div>
+                  {e.hint && <div className="dim-2" style={{fontSize:11, marginTop:4}}>{e.hint}</div>}
+                </td>
+                <td className="mono dim-2" style={{padding:'10px 12px', fontSize:10, verticalAlign:'top', wordBreak:'break-all'}}>{e.pathname || '-'}</td>
+                <td className="mono dim-2" style={{padding:'10px 12px', fontSize:10, verticalAlign:'top', wordBreak:'break-all'}}>{e.url || '-'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// === SEO Admin Panel ==============================================
+// 사이트 메타데이터(OG 이미지, 페이지 title/description) 관리.
+// 서버 source: site_content_kv.og 섹션. data.js applyHead 가 <head> 메타를 즉시 갱신.
+const SEOAdminPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const [og, setOg] = React.useState({ title: '', description: '', imageDataUri: '' });
+  const [hero, setHero] = React.useState({ eyebrow: '', title1: '', title2: '', title3: '', subtitle: '' });
+  const [brand, setBrand] = React.useState({ name: '', sub: '' });
+  const [msg, setMsg] = React.useState('');
+
+  const refresh = async () => {
+    await window.BGNJ_SITE_CONTENT.refresh();
+    const sc = window.BGNJ_SITE_CONTENT.get();
+    setOg(sc.og || {});
+    setHero(sc.hero || {});
+    setBrand(sc.brand || {});
+    setTick((v) => v + 1);
+  };
+  React.useEffect(() => { refresh(); }, []);
+
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2400); };
+
+  const save = async (section, data) => {
+    try {
+      await window.BGNJ_SITE_CONTENT.saveSection(section, data);
+      flash('✓ 저장되었습니다. <head> 메타가 즉시 갱신됩니다.');
+      await refresh();
+    } catch (err) {
+      flash('✗ 저장 실패: ' + (err?.body?.error || err?.message || ''));
+    }
+  };
+
+  const onPickImage = async (e, section, field) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1.5 * 1024 * 1024) {
+      flash('✗ 이미지가 너무 큽니다 (1.5MB 이하 권장).'); e.target.value = ''; return;
+    }
+    const dataUri = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ''));
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+    if (section === 'og') {
+      const next = { ...og, [field]: dataUri };
+      setOg(next);
+      await save(section, next);
+    }
+    e.target.value = '';
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        검색엔진과 SNS 공유 미리보기에 사용되는 메타데이터를 관리합니다. 변경 사항은 저장 즉시 페이지의 <code className="mono">&lt;head&gt;</code> 에 반영됩니다.
+      </p>
+
+      {msg && (
+        <div role="status" style={{
+          marginBottom:16, padding:'10px 14px',
+          border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
+          background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(212,175,55,0.06)',
+          color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--gold)', fontSize:13,
+        }}>{msg}</div>
+      )}
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>OG · 검색엔진 공유 메타</h3>
+      <p className="dim-2" style={{fontSize:12, marginBottom:14, lineHeight:1.7}}>
+        카카오톡/페이스북/X 공유 시 노출되는 미리보기 카드와 검색엔진 description.
+      </p>
+      <form onSubmit={(e) => { e.preventDefault(); save('og', og); }} className="card" style={{padding:20, marginBottom:24}}>
+        <div className="field">
+          <label className="field-label">OG 제목 (검색·공유 카드 제목)</label>
+          <input className="field-input" placeholder="뱅기노자 — 뱅기 타고 한국을 느끼다"
+            value={og.title || ''} onChange={(e) => setOg({ ...og, title: e.target.value })}/>
+        </div>
+        <div className="field">
+          <label className="field-label">OG 설명 (검색·공유 카드 본문)</label>
+          <textarea className="field-input" rows={3}
+            placeholder="궁궐 답사부터 지역 여행까지, 한국의 역사·문화·자연을 함께 여행하는 커뮤니티."
+            value={og.description || ''} onChange={(e) => setOg({ ...og, description: e.target.value })}/>
+        </div>
+        <div className="field">
+          <label className="field-label">OG 이미지 (1200×630 권장 · 1.5MB 이하)</label>
+          {og.imageDataUri && (
+            <img src={og.imageDataUri} alt="OG preview"
+              style={{display:'block', maxWidth:240, maxHeight:126, marginBottom:8, border:'1px solid var(--line)'}}/>
+          )}
+          <input type="file" accept="image/png,image/jpeg" onChange={(e) => onPickImage(e, 'og', 'imageDataUri')}/>
+          {og.imageDataUri && (
+            <button type="button" className="btn-ghost" style={{fontSize:11, color:'var(--danger)', marginTop:6}}
+              onClick={() => save('og', { ...og, imageDataUri: '' })}>이미지 제거</button>
+          )}
+        </div>
+        <div style={{display:'flex', justifyContent:'flex-end', borderTop:'1px solid var(--line)', paddingTop:14, marginTop:14}}>
+          <button type="submit" className="btn btn-gold">OG 저장</button>
+        </div>
+      </form>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>페이지 상단 (Hero)</h3>
+      <p className="dim-2" style={{fontSize:12, marginBottom:14, lineHeight:1.7}}>
+        홈페이지 첫 화면의 큰 제목과 부제. 검색엔진의 페이지 본문 첫 인상에 사용됩니다.
+      </p>
+      <form onSubmit={(e) => { e.preventDefault(); save('hero', hero); }} className="card" style={{padding:20, marginBottom:24}}>
+        <div className="field">
+          <label className="field-label">상단 라벨 (대문자 권장)</label>
+          <input className="field-input" placeholder="BANGINOJA · 뱅기타고 노자"
+            value={hero.eyebrow || ''} onChange={(e) => setHero({ ...hero, eyebrow: e.target.value })}/>
+        </div>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12}}>
+          <div className="field">
+            <label className="field-label">제목 1행</label>
+            <input className="field-input" value={hero.title1 || ''} onChange={(e) => setHero({ ...hero, title1: e.target.value })}/>
+          </div>
+          <div className="field">
+            <label className="field-label">제목 2행</label>
+            <input className="field-input" value={hero.title2 || ''} onChange={(e) => setHero({ ...hero, title2: e.target.value })}/>
+          </div>
+          <div className="field">
+            <label className="field-label">제목 3행</label>
+            <input className="field-input" value={hero.title3 || ''} onChange={(e) => setHero({ ...hero, title3: e.target.value })}/>
+          </div>
+        </div>
+        <div className="field">
+          <label className="field-label">부제 (Hero subtitle)</label>
+          <textarea className="field-input" rows={2}
+            value={hero.subtitle || ''} onChange={(e) => setHero({ ...hero, subtitle: e.target.value })}/>
+        </div>
+        <div style={{display:'flex', justifyContent:'flex-end', borderTop:'1px solid var(--line)', paddingTop:14, marginTop:14}}>
+          <button type="submit" className="btn btn-gold">Hero 저장</button>
+        </div>
+      </form>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>브랜드 이름</h3>
+      <form onSubmit={(e) => { e.preventDefault(); save('brand', brand); }} className="card" style={{padding:20}}>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+          <div className="field">
+            <label className="field-label">브랜드명 (한글)</label>
+            <input className="field-input" placeholder="뱅기노자"
+              value={brand.name || ''} onChange={(e) => setBrand({ ...brand, name: e.target.value })}/>
+          </div>
+          <div className="field">
+            <label className="field-label">서브 (영문/약어)</label>
+            <input className="field-input" placeholder="BANGINOJA"
+              value={brand.sub || ''} onChange={(e) => setBrand({ ...brand, sub: e.target.value })}/>
+          </div>
+        </div>
+        <div style={{display:'flex', justifyContent:'flex-end', borderTop:'1px solid var(--line)', paddingTop:14, marginTop:14}}>
+          <button type="submit" className="btn btn-gold">브랜드 저장</button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 // === Audit Log Panel ==============================================
 const AuditLogPanel = () => {
   const [tick, setTick] = React.useState(0);
@@ -3531,6 +3978,143 @@ const AuditLogPanel = () => {
       )}
       <div className="dim-2 mono" style={{fontSize:11, marginTop:12, textAlign:'right'}}>
         표시 {list.length}건 (전체 최근 500건 중)
+      </div>
+    </div>
+  );
+};
+
+// 게시글 뷰어 모달 — 관리자 패널에서 페이지 이동 없이 본문/메타/댓글을 한눈에.
+const PostViewerModal = ({ postId, onClose }) => {
+  const [post, setPost] = React.useState(() => window.BGNJ_COMMUNITY?.getPost?.(postId) || null);
+  const [comments, setComments] = React.useState(() => window.BGNJ_COMMUNITY?.getComments?.(postId) || []);
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    // 서버 게시글이면 댓글 동기화 시도.
+    try { window.BGNJ_COMMUNITY?.refreshComments?.(postId).then(() => {
+      setComments(window.BGNJ_COMMUNITY.getComments(postId));
+    }); } catch {}
+    return () => window.removeEventListener('keydown', onKey);
+  }, [postId, onClose]);
+
+  if (!post) {
+    return (
+      <div role="dialog" aria-modal="true" onClick={onClose}
+        style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'grid', placeItems:'center', padding:24}}>
+        <div onClick={(e) => e.stopPropagation()}
+          style={{background:'var(--bg)', maxWidth:520, width:'100%', padding:28, border:'1px solid var(--line)'}}>
+          <div className="dim" style={{fontSize:14, marginBottom:16}}>해당 게시글을 찾을 수 없습니다.</div>
+          <div style={{textAlign:'right'}}><button type="button" className="btn" onClick={onClose}>닫기</button></div>
+        </div>
+      </div>
+    );
+  }
+
+  const likes = Array.isArray(post.likes) ? post.likes.length : 0;
+  const tagList = post.tags || [];
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label={post.title}
+      onClick={onClose}
+      style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'grid', placeItems:'center', padding:24}}>
+      <div onClick={(e) => e.stopPropagation()}
+        style={{
+          background:'var(--bg)', width:'100%', maxWidth:860, maxHeight:'88vh',
+          overflow:'auto', padding:'28px 32px', border:'1px solid var(--line)',
+          boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+        }}>
+        {/* 상단 메타 */}
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:16, marginBottom:14}}>
+          <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.18em'}}>
+            POST · #{String(post.id).padStart(4, '0')}
+          </div>
+          <button type="button" className="btn btn-small" onClick={onClose} aria-label="닫기">닫기</button>
+        </div>
+
+        {/* 제목 + 배지 */}
+        <div style={{display:'flex', gap:10, marginBottom:14, flexWrap:'wrap'}}>
+          <span className="badge badge-gold">{post.category}</span>
+          {post.prefix && <span className="badge">{post.prefix}</span>}
+          {post.hot && <span className="badge">HOT</span>}
+        </div>
+        <h2 className="ko-serif" style={{fontSize:26, lineHeight:1.3, marginBottom:14}}>{post.title}</h2>
+
+        {tagList.length > 0 && (
+          <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:14}}>
+            {tagList.map((t) => <span key={t} className="tag-chip">#{t}</span>)}
+          </div>
+        )}
+
+        {/* 작성자/일시/조회/공감/댓글 */}
+        <div style={{
+          display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:12,
+          padding:'12px 14px', background:'var(--bg-2)', border:'1px solid var(--line)',
+          marginBottom:18, fontSize:12,
+        }}>
+          {[
+            ['작성자', post.author || '-'],
+            ['작성일', post.date || (post.createdAt ? new Date(post.createdAt).toLocaleString('ko-KR') : '-')],
+            ['조회', post.views ?? 0],
+            ['공감', likes],
+            ['댓글', comments.length],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em', marginBottom:4}}>{label}</div>
+              <div style={{fontSize:13}}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* 본문 */}
+        <div className="post-body" style={{
+          padding:'18px 4px', borderTop:'1px solid var(--line)',
+          fontFamily:'var(--font-reading)', fontSize:15, lineHeight:1.85, color:'var(--ink)',
+        }}>
+          {post.body?.html ? (
+            <div dangerouslySetInnerHTML={{__html: post.body.html}}/>
+          ) : post.body?.text ? (
+            <div style={{whiteSpace:'pre-wrap'}}>{post.body.text}</div>
+          ) : (
+            <div className="dim-2" style={{fontStyle:'italic'}}>(본문 없음)</div>
+          )}
+        </div>
+
+        {/* 첨부 이미지 */}
+        {Array.isArray(post.images) && post.images.length > 0 && (
+          <div style={{marginTop:18}}>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:10}}>ATTACHMENTS · {post.images.length}</div>
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))', gap:10}}>
+              {post.images.map((src, i) => (
+                <a key={i} href={src} target="_blank" rel="noreferrer"
+                  style={{border:'1px solid var(--line)', display:'block'}}>
+                  <img src={src} alt="" style={{display:'block', width:'100%', height:120, objectFit:'cover'}}/>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 댓글 */}
+        <div style={{marginTop:24, paddingTop:18, borderTop:'1px solid var(--line)'}}>
+          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:10}}>COMMENTS · {comments.length}</div>
+          {comments.length === 0 ? (
+            <div className="dim-2" style={{fontSize:13}}>아직 댓글이 없습니다.</div>
+          ) : (
+            <ul style={{listStyle:'none', margin:0, padding:0, display:'flex', flexDirection:'column', gap:10}}>
+              {comments.map((c) => (
+                <li key={c.id} style={{padding:'10px 12px', background:'var(--bg-2)', border:'1px solid var(--line)', fontSize:13}}>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:10, marginBottom:4}}>
+                    <span className="gold mono" style={{fontSize:11, letterSpacing:'0.1em'}}>
+                      {c.parentId ? '↳ ' : ''}{c.author || '-'}
+                    </span>
+                    <span className="mono dim-2" style={{fontSize:10}}>{c.date || (c.createdAt ? new Date(c.createdAt).toLocaleString('ko-KR') : '')}</span>
+                  </div>
+                  <div style={{lineHeight:1.7, whiteSpace:'pre-wrap'}}>{c.text || c.body || '-'}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -3641,6 +4225,8 @@ const MemberAdminPanel = ({ go }) => {
   const [selectedId, setSelectedId] = React.useState(null);
   const [search, setSearch] = React.useState("");
   const [gradeFilter, setGradeFilter] = React.useState('all');
+  const [statusFilter, setStatusFilter] = React.useState('all'); // all | active | suspended | admin
+  const [sortKey, setSortKey] = React.useState('joined_desc'); // joined_desc/asc, name_asc/desc, posts_desc, comments_desc, email_asc
   const refresh = () => setTick((v) => v + 1);
 
   // Mount 시 + 변경 후 서버에서 회원 목록 갱신.
@@ -3653,21 +4239,49 @@ const MemberAdminPanel = ({ go }) => {
 
   const users = React.useMemo(() => window.BGNJ_AUTH.listUsers(), [tick]);
   const grades = (window.BGNJ_STORES?.grades || []);
-  const filtered = users.filter((u) => {
+
+  // 필터 + 정렬 통합.
+  const filtered = React.useMemo(() => {
+    let list = users.slice();
+    // 상태 필터
+    if (statusFilter === 'active') list = list.filter((u) => !u.suspended);
+    else if (statusFilter === 'suspended') list = list.filter((u) => u.suspended);
+    else if (statusFilter === 'admin') list = list.filter((u) => u.isAdmin);
+    // 등급 필터
     if (gradeFilter !== 'all') {
-      const isAdminFilter = gradeFilter === 'admin';
-      if (isAdminFilter && !u.isAdmin) return false;
-      if (!isAdminFilter && u.gradeId !== gradeFilter) return false;
+      list = list.filter((u) => u.gradeId === gradeFilter);
     }
-    if (search) {
-      const q = search.trim().toLowerCase();
-      if (!q) return true;
-      return String(u.name || '').toLowerCase().includes(q)
+    // 검색
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter((u) =>
+        String(u.name || '').toLowerCase().includes(q)
         || String(u.email || '').toLowerCase().includes(q)
-        || String(u.id || '').toLowerCase().includes(q);
+        || String(u.id || '').toLowerCase().includes(q)
+      );
     }
-    return true;
-  });
+    // 정렬
+    const cmpStr = (a, b) => String(a || '').localeCompare(String(b || ''), 'ko');
+    const cmpDate = (a, b) => new Date(b || 0).getTime() - new Date(a || 0).getTime();
+    const activityCount = (u, key) => {
+      const a = window.BGNJ_AUTH.getActivity?.(u.id);
+      return a?.[key] || 0;
+    };
+    list.sort((a, b) => {
+      switch (sortKey) {
+        case 'joined_asc':    return -cmpDate(a.joinedAt, b.joinedAt);
+        case 'name_asc':      return cmpStr(a.name, b.name);
+        case 'name_desc':     return -cmpStr(a.name, b.name);
+        case 'email_asc':     return cmpStr(a.email, b.email);
+        case 'posts_desc':    return activityCount(b, 'postCount') - activityCount(a, 'postCount');
+        case 'comments_desc': return activityCount(b, 'commentCount') - activityCount(a, 'commentCount');
+        case 'grade_desc':    return ((grades.find((g) => g.id === b.gradeId)?.level ?? 0) - (grades.find((g) => g.id === a.gradeId)?.level ?? 0));
+        case 'joined_desc':
+        default:              return cmpDate(a.joinedAt, b.joinedAt);
+      }
+    });
+    return list;
+  }, [users, gradeFilter, statusFilter, search, sortKey, grades, tick]);
 
   const selected = users.find((u) => u.id === selectedId) || null;
   const activity = selected ? window.BGNJ_AUTH.getActivity(selected.id) : null;
@@ -3894,11 +4508,28 @@ const MemberAdminPanel = ({ go }) => {
       <div style={{display:'flex', gap:12, marginBottom:16, alignItems:'center', flexWrap:'wrap'}}>
         <input className="field-input" placeholder="이름·이메일 검색..." style={{flex:1, minWidth:240}}
           value={search} onChange={(e) => setSearch(e.target.value)}/>
+        <select className="field-input" style={{maxWidth:160}}
+          value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="all">전체 상태</option>
+          <option value="active">활성</option>
+          <option value="suspended">정지됨</option>
+          <option value="admin">관리자만</option>
+        </select>
         <select className="field-input" style={{maxWidth:200}}
           value={gradeFilter} onChange={(e) => setGradeFilter(e.target.value)}>
           <option value="all">전체 등급</option>
-          <option value="admin">관리자만</option>
           {grades.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
+        </select>
+        <select className="field-input" style={{maxWidth:200}}
+          value={sortKey} onChange={(e) => setSortKey(e.target.value)}>
+          <option value="joined_desc">가입일 ↓ (최신)</option>
+          <option value="joined_asc">가입일 ↑ (오래된)</option>
+          <option value="name_asc">이름 가나다</option>
+          <option value="name_desc">이름 역순</option>
+          <option value="email_asc">이메일 a→z</option>
+          <option value="grade_desc">등급 ↓ (높은 순)</option>
+          <option value="posts_desc">게시글 많은 순</option>
+          <option value="comments_desc">댓글 많은 순</option>
         </select>
         <span className="mono dim-2" style={{fontSize:11}}>총 {users.length}명 · 표시 {filtered.length}명</span>
         <button type="button" className="btn btn-small" onClick={exportCsv}>CSV 다운로드</button>
@@ -4010,7 +4641,7 @@ const AdminPage = ({ go }) => {
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
     { group: "운영설정",      items: ["사이트 콘텐츠", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보 관리", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템 관리",   items: ["버전 기록", "KMS", "설정"] },
+    { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "SEO", "설정"] },
   ];
 
   const exportMemberData = (m) => {
@@ -4814,20 +5445,33 @@ const AdminPage = ({ go }) => {
             <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
               GDPR Art.30. 모든 처리 목적·법적 근거·보유기간·수탁자·국외이전을 문서화합니다.
             </p>
-            <div className="grid grid-2">
-              {PRIVACY_DATA.ropa.map(r => (
-                <article key={r.id} className="card">
-                  <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em', marginBottom:8}}>{r.id}</div>
-                  <h3 className="ko-serif" style={{fontSize:18, marginBottom:12}}>{r.purpose}</h3>
-                  <dl style={{display:'grid', gridTemplateColumns:'100px 1fr', gap:'6px 16px', fontSize:12, lineHeight:1.6}}>
-                    <dt className="dim-2 mono" style={{fontSize:10}}>법적 근거</dt><dd className="gold">{r.lawful}</dd>
-                    <dt className="dim-2 mono" style={{fontSize:10}}>수집 항목</dt><dd>{r.items}</dd>
-                    <dt className="dim-2 mono" style={{fontSize:10}}>보유기간</dt><dd>{r.retention}</dd>
-                    <dt className="dim-2 mono" style={{fontSize:10}}>수탁사</dt><dd>{r.processor}</dd>
-                    <dt className="dim-2 mono" style={{fontSize:10}}>국외이전</dt><dd>{r.transfer}</dd>
-                  </dl>
-                </article>
-              ))}
+            <div style={{overflowX:'auto', border:'1px solid var(--line)'}}>
+              <table style={{width:'100%', borderCollapse:'collapse', fontSize:13, minWidth:880}}>
+                <thead>
+                  <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
+                    <th scope="col" style={{padding:'12px 14px', textAlign:'left', width:90}}>ID</th>
+                    <th scope="col" style={{padding:'12px 14px', textAlign:'left'}}>처리 목적</th>
+                    <th scope="col" style={{padding:'12px 14px', textAlign:'left', width:120}}>법적 근거</th>
+                    <th scope="col" style={{padding:'12px 14px', textAlign:'left'}}>수집 항목</th>
+                    <th scope="col" style={{padding:'12px 14px', textAlign:'left', width:140}}>보유기간</th>
+                    <th scope="col" style={{padding:'12px 14px', textAlign:'left', width:140}}>수탁사</th>
+                    <th scope="col" style={{padding:'12px 14px', textAlign:'left', width:120}}>국외이전</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {PRIVACY_DATA.ropa.map((r) => (
+                    <tr key={r.id} style={{borderTop:'1px solid var(--line)'}}>
+                      <td className="mono gold" style={{padding:'12px 14px', fontSize:11, letterSpacing:'0.14em', verticalAlign:'top'}}>{r.id}</td>
+                      <td className="ko-serif" style={{padding:'12px 14px', fontWeight:500, verticalAlign:'top'}}>{r.purpose}</td>
+                      <td className="gold" style={{padding:'12px 14px', verticalAlign:'top'}}>{r.lawful}</td>
+                      <td style={{padding:'12px 14px', verticalAlign:'top'}}>{r.items}</td>
+                      <td style={{padding:'12px 14px', verticalAlign:'top'}}>{r.retention}</td>
+                      <td style={{padding:'12px 14px', verticalAlign:'top'}}>{r.processor}</td>
+                      <td style={{padding:'12px 14px', verticalAlign:'top'}}>{r.transfer}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </>
         )}
@@ -4957,6 +5601,8 @@ const AdminPage = ({ go }) => {
         {tab === "약관/개인정보" && <LegalAdminPanel/>}
         {tab === "자주 묻는 질문" && <FaqAdminPanel/>}
         {tab === "감사 로그" && <AuditLogPanel/>}
+        {tab === "오류 로그" && <ErrorLogPanel/>}
+        {tab === "SEO" && <SEOAdminPanel/>}
 
         {/* 회원 등급 CRUD */}
         {tab === "회원 등급" && <AdminGradePanel/>}
@@ -4967,11 +5613,14 @@ const AdminPage = ({ go }) => {
         {/* 계좌번호 설정 */}
         {tab === "계좌번호 설정" && <BankAccountPanel/>}
 
-        {/* 설정 */}
+        {/* 설정 — 입금 계좌는 별도 '계좌번호 설정' 탭에서 관리. */}
         {tab === "설정" && (
           <div style={{display:'grid', gap:24}}>
-            <BankAccountPanel/>
-
+            <div className="card" style={{padding:'14px 18px', background:'var(--bg-2)', borderLeft:'3px solid var(--gold-dim)'}}>
+              <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
+                ⓘ 무통장 입금 계좌는 좌측 메뉴의 <strong className="gold">계좌번호 설정</strong> 탭에서 관리합니다 (멀티 계좌 지원).
+              </p>
+            </div>
             <div className="card">
               <h2 className="ko-serif" style={{fontSize:20, marginBottom:16}}>사이트 설정</h2>
               <dl style={{display:'grid', gridTemplateColumns:'200px 1fr', gap:'8px 24px', fontSize:13, lineHeight:1.8}}>
@@ -5651,4 +6300,4 @@ const AdminDenied = ({ go, user }) => (
   </div>
 );
 
-Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel, AuditLogPanel, SiteContentAdminPanel });
+Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel, AuditLogPanel, ErrorLogPanel, SEOAdminPanel, SiteContentAdminPanel });

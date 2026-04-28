@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.034.002",
+  version: "00.035.000",
   build: "2026.04.29",
   channel: "preview",
 };
@@ -1235,23 +1235,42 @@ window.BGNJ_LECTURES = {
     await this.refreshReviews(_lectureId);
   },
   // ── 계좌번호 ──────────────────────────────────────────────────
-  // 입금 계좌 — 서버(D1.bank_account) source of truth.
-  _bank: null,
+  // 입금 계좌 — 서버(D1.bank_accounts) source of truth.
+  _bank: null,        // 기본 계좌 (legacy 단일 호환)
+  _bankAccounts: [],  // 멀티 계좌 목록
   async refreshBankAccount() {
     try {
-      const { bankAccount } = await window.BGNJ_API.bankAccount.get();
-      this._bank = bankAccount ? {
-        bankName: bankAccount.bank_name || '',
-        accountNumber: bankAccount.account_number || '',
-        holder: bankAccount.holder || '',
-        memo: bankAccount.memo || '',
-      } : null;
+      const { accounts } = await window.BGNJ_API.bankAccounts.list();
+      this._bankAccounts = (accounts || []).map((a) => ({
+        id: a.id, label: a.label || '계좌',
+        bankName: a.bank_name || '', accountNumber: a.account_number || '',
+        holder: a.holder || '', memo: a.memo || '',
+        isDefault: !!a.is_default, order: a.display_order ?? 0,
+      }));
+      const def = this._bankAccounts.find((a) => a.isDefault) || this._bankAccounts[0];
+      this._bank = def ? { ...def } : null;
+      try { window.dispatchEvent(new CustomEvent('bgnj-bank-accounts-refresh')); } catch {}
     } catch {}
     return this._bank || {};
   },
   getBankAccount() { return { ...(this._bank || {}) }; },
+  listBankAccounts() { return this._bankAccounts.slice(); },
+  getBankAccountById(id) { return this._bankAccounts.find((a) => a.id === id) || null; },
   async saveBankAccount(payload) {
+    // legacy single PUT — 첫 번째 default 계좌 갱신.
     await window.BGNJ_API.bankAccount.put(payload);
+    return this.refreshBankAccount();
+  },
+  async createBankAccount(payload) {
+    await window.BGNJ_API.bankAccounts.create(payload);
+    return this.refreshBankAccount();
+  },
+  async updateBankAccount(id, patch) {
+    await window.BGNJ_API.bankAccounts.update(id, patch);
+    return this.refreshBankAccount();
+  },
+  async deleteBankAccount(id) {
+    await window.BGNJ_API.bankAccounts.remove(id);
     return this.refreshBankAccount();
   },
 };

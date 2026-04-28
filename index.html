@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.034.002">
+<link rel="stylesheet" href="styles.css?v=00.035.000">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -78,21 +78,21 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script src="api.js?v=00.034.002"></script>
-<script src="data.js?v=00.034.002"></script>
-<script src="components/KoreaMapData.js?v=00.034.002"></script>
-<script type="text/babel" src="components/KoreaMap.jsx?v=00.034.002"></script>
-<script type="text/babel" src="components/Shell.jsx?v=00.034.002"></script>
-<script type="text/babel" src="components/TiptapEditor.jsx?v=00.034.002"></script>
-<script type="text/babel" src="pages/HomePage.jsx?v=00.034.002"></script>
-<script type="text/babel" src="pages/CommunityPage.jsx?v=00.034.002"></script>
-<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.034.002"></script>
-<script type="text/babel" src="pages/ColumnPage.jsx?v=00.034.002"></script>
-<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.034.002"></script>
-<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.034.002"></script>
-<script type="text/babel" src="pages/LecturesPage.jsx?v=00.034.002"></script>
-<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.034.002"></script>
-<script type="text/babel" src="pages/MyPage.jsx?v=00.034.002"></script>
+<script src="api.js?v=00.035.000"></script>
+<script src="data.js?v=00.035.000"></script>
+<script src="components/KoreaMapData.js?v=00.035.000"></script>
+<script type="text/babel" src="components/KoreaMap.jsx?v=00.035.000"></script>
+<script type="text/babel" src="components/Shell.jsx?v=00.035.000"></script>
+<script type="text/babel" src="components/TiptapEditor.jsx?v=00.035.000"></script>
+<script type="text/babel" src="pages/HomePage.jsx?v=00.035.000"></script>
+<script type="text/babel" src="pages/CommunityPage.jsx?v=00.035.000"></script>
+<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.035.000"></script>
+<script type="text/babel" src="pages/ColumnPage.jsx?v=00.035.000"></script>
+<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.035.000"></script>
+<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.035.000"></script>
+<script type="text/babel" src="pages/LecturesPage.jsx?v=00.035.000"></script>
+<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.035.000"></script>
+<script type="text/babel" src="pages/MyPage.jsx?v=00.035.000"></script>
 
 <script type="text/babel">
 // 전체 앱 에러 바운더리 — 흰 화면 방지 + 정확한 진단 정보 노출.
@@ -102,6 +102,16 @@ class AppErrorBoundary extends React.Component {
   componentDidCatch(err, info) {
     this.setState({ info });
     try { console.error('[AppErrorBoundary]', err, info); } catch {}
+    // 렌더링 오류도 서버에 기록.
+    try {
+      window.BGNJ_API?.errorLog?.report({
+        code: err?.code || (err?.name || 'RENDER_ERROR'),
+        status: null, kind: 'render',
+        message: err?.message || String(err),
+        hint: '', url: '',
+        pathname: location.pathname, origin: location.origin,
+      })?.catch?.(() => {});
+    } catch {}
   }
   render() {
     if (this.state.error) {
@@ -145,24 +155,40 @@ class AppErrorBoundary extends React.Component {
 }
 
 // 전역 미처리 오류 토스트 — 비동기/Promise 거부와 자원 로드 실패까지 캡처.
-// 인증 흐름의 인라인 에러 패널과 별개로, 그 외 비동기 호출에서 발생한 미처리 오류를 사용자에게 노출.
+// 모든 오류는 서버(D1.error_log) 에 자동 기록 + 10초 후 자동 소거.
+const TOAST_DISMISS_MS = 10000;
+const reportErrorToServer = (entry) => {
+  try {
+    window.BGNJ_API?.errorLog?.report({
+      code: entry.code, status: entry.status, kind: entry.kind,
+      message: entry.message, hint: entry.hint, url: entry.url,
+      pathname: location.pathname, origin: location.origin,
+    })?.catch?.(() => {});
+  } catch {}
+};
 const GlobalErrorToast = () => {
   const [errors, setErrors] = React.useState([]);
   React.useEffect(() => {
     const push = (entry) => {
-      setErrors((prev) => [...prev, { id: Date.now() + Math.random(), ...entry }].slice(-3));
+      const id = Date.now() + Math.random();
+      setErrors((prev) => [...prev, { id, ...entry }].slice(-3));
+      reportErrorToServer(entry);
+      // 10초 후 자동 소거.
+      setTimeout(() => {
+        setErrors((prev) => prev.filter((e) => e.id !== id));
+      }, TOAST_DISMISS_MS);
     };
     const onRejection = (ev) => {
       const r = ev?.reason;
       if (!r) return;
       const code = r.code || (r.status ? `HTTP_${r.status}` : (r.name || 'PROMISE_REJECTION'));
       const message = r.message || String(r);
-      push({ code, message, hint: r.hint || '', url: r.url || '', kind: r.kind || 'unknown' });
+      push({ code, status: r.status || null, message, hint: r.hint || '', url: r.url || '', kind: r.kind || 'unknown' });
       try { console.error('[GlobalErrorToast]', r); } catch {}
     };
     const onError = (ev) => {
       const message = ev?.message || ev?.error?.message || 'Script error';
-      push({ code: 'WINDOW_ERROR', message, hint: '', url: ev?.filename || '', kind: 'unknown' });
+      push({ code: 'WINDOW_ERROR', status: null, message, hint: '', url: ev?.filename || '', kind: 'unknown' });
       try { console.error('[GlobalErrorToast]', ev?.error || ev); } catch {}
     };
     window.addEventListener('unhandledrejection', onRejection);

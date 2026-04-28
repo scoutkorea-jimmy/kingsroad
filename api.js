@@ -254,6 +254,12 @@
       get: () => request("GET", "/bank-account"),
       put: (payload) => request("PUT", "/bank-account", payload),
     },
+    bankAccounts: {
+      list: () => request("GET", "/bank-accounts"),
+      create: (payload) => request("POST", "/bank-accounts", payload),
+      update: (id, patch) => request("PATCH", `/bank-accounts/${id}`, patch),
+      remove: (id) => request("DELETE", `/bank-accounts/${id}`),
+    },
     categories: {
       list: () => request("GET", "/categories"),
       create: (payload) => request("POST", "/categories", payload),
@@ -264,6 +270,19 @@
       list: () => request("GET", "/grades"),
       upsert: (id, payload) => request("PUT", `/grades/${id}`, payload),
       remove: (id) => request("DELETE", `/grades/${id}`),
+    },
+    errorLog: {
+      // POST 는 인증 없이도 가능 (익명 오류도 기록).
+      report: ({ code, status, kind, message, hint, url, pathname, origin }) =>
+        request("POST", "/error-log", { code, status, kind, message, hint, url, pathname, origin }),
+      list: ({ limit, code } = {}) => {
+        const qs = new URLSearchParams();
+        if (limit) qs.set("limit", String(limit));
+        if (code) qs.set("code", code);
+        const s = qs.toString();
+        return request("GET", `/admin/error-log${s ? "?" + s : ""}`);
+      },
+      clear: () => request("DELETE", "/admin/error-log"),
     },
   };
 })();

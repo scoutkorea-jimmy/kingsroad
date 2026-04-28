@@ -46,7 +46,7 @@ const corsHeaders = (origin, env) => {
   if (ok && origin) h.set("Access-Control-Allow-Origin", origin);
   h.set("Vary", "Origin");
   h.set("Access-Control-Allow-Credentials", "true");
-  h.set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+  h.set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   h.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   h.set("Access-Control-Max-Age", "86400");
   return h;
@@ -1119,18 +1119,93 @@ const handleLegalPut = async (req, env, slug) => {
   return { ok: true };
 };
 
-// ── 입금 계좌 ──
+// ── 입금 계좌 (멀티 계좌) ──
+// 단일 행 bank_account 는 backward-compat 으로 첫 번째 default 계좌를 미러링.
 const handleBankAccountGet = async (req, env) => {
-  const row = await env.DB.prepare("SELECT * FROM bank_account WHERE id = 1").first();
-  return { bankAccount: row || null };
+  // 신규: bank_accounts 테이블에서 default 또는 가장 최근 항목 반환.
+  const row = await env.DB.prepare(
+    `SELECT * FROM bank_accounts ORDER BY is_default DESC, display_order ASC, created_at DESC LIMIT 1`
+  ).first();
+  if (row) {
+    return { bankAccount: { id: row.id, label: row.label, bank_name: row.bank_name, account_number: row.account_number, holder: row.holder, memo: row.memo } };
+  }
+  // 폴백 — 레거시 단일 행 테이블.
+  const legacy = await env.DB.prepare("SELECT * FROM bank_account WHERE id = 1").first();
+  return { bankAccount: legacy || null };
 };
 
 const handleBankAccountPut = async (req, env) => {
   await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
+  // 레거시 단일 PUT — 첫 번째 default 계좌를 갱신하거나 새로 생성.
+  const existing = await env.DB.prepare(
+    `SELECT id FROM bank_accounts ORDER BY is_default DESC, display_order ASC, created_at DESC LIMIT 1`
+  ).first();
+  if (existing) {
+    await env.DB.prepare(
+      `UPDATE bank_accounts SET bank_name = ?, account_number = ?, holder = ?, memo = ?, updated_at = ? WHERE id = ?`
+    ).bind(body.bankName || "", body.accountNumber || "", body.holder || "", body.memo || "", nowIso(), existing.id).run();
+  } else {
+    const id = randomId("ba");
+    await env.DB.prepare(
+      `INSERT INTO bank_accounts (id, label, bank_name, account_number, holder, memo, is_default) VALUES (?, ?, ?, ?, ?, ?, 1)`
+    ).bind(id, body.label || '기본 계좌', body.bankName || "", body.accountNumber || "", body.holder || "", body.memo || "").run();
+  }
+  // 레거시 단일 행도 미러링 (구 클라이언트 호환).
   await env.DB.prepare(
     `UPDATE bank_account SET bank_name = ?, account_number = ?, holder = ?, memo = ?, updated_at = ? WHERE id = 1`
   ).bind(body.bankName || "", body.accountNumber || "", body.holder || "", body.memo || "", nowIso()).run();
+  return { ok: true };
+};
+
+// 멀티 계좌 — 공개 list 는 결제 화면에서 계좌 선택을 위해 사용.
+const handleBankAccountsList = async (req, env) => {
+  const { results } = await env.DB.prepare(
+    `SELECT id, label, bank_name, account_number, holder, memo, is_default, display_order
+     FROM bank_accounts ORDER BY is_default DESC, display_order ASC, created_at DESC`
+  ).all();
+  return { accounts: results || [] };
+};
+
+const handleBankAccountCreate = async (req, env) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const id = randomId("ba");
+  if (body.isDefault) {
+    await env.DB.prepare(`UPDATE bank_accounts SET is_default = 0`).run();
+  }
+  await env.DB.prepare(
+    `INSERT INTO bank_accounts (id, label, bank_name, account_number, holder, memo, is_default, display_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id, body.label || '계좌', body.bankName || "", body.accountNumber || "",
+    body.holder || "", body.memo || "", body.isDefault ? 1 : 0, Number(body.order || 0)
+  ).run();
+  return { id };
+};
+
+const handleBankAccountPatch = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  if (body.isDefault === true) {
+    await env.DB.prepare(`UPDATE bank_accounts SET is_default = 0`).run();
+  }
+  const sets = []; const args = [];
+  for (const [k, col] of [["label","label"],["bankName","bank_name"],["accountNumber","account_number"],["holder","holder"],["memo","memo"]]) {
+    if (k in body) { sets.push(`${col} = ?`); args.push(body[k]); }
+  }
+  if ("isDefault" in body) { sets.push("is_default = ?"); args.push(body.isDefault ? 1 : 0); }
+  if ("order" in body) { sets.push("display_order = ?"); args.push(Number(body.order || 0)); }
+  if (!sets.length) return { ok: true };
+  sets.push("updated_at = ?"); args.push(nowIso());
+  args.push(id);
+  await env.DB.prepare(`UPDATE bank_accounts SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+
+const handleBankAccountDelete = async (req, env, id) => {
+  await requireAdmin(req, env);
+  await env.DB.prepare(`DELETE FROM bank_accounts WHERE id = ?`).bind(id).run();
   return { ok: true };
 };
 
@@ -1254,6 +1329,47 @@ const handleColumnDelete = async (req, env, id) => {
   if (!row) throw new HttpError(404);
   if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403);
   await env.DB.prepare("DELETE FROM user_columns WHERE id = ?").bind(id).run();
+  return { ok: true };
+};
+
+// ── 에러 로그 ──
+// 클라이언트가 잡은 모든 오류(인증 외 비동기 실패, 렌더링 오류, 미처리 promise 등) 를 D1 에 기록.
+// 인증 없이도 기록 가능 (익명 사용자 오류도 잡기 위해).
+const handleErrorLogCreate = async (req, env) => {
+  const body = await req.json().catch(() => ({}));
+  const id = randomId("err");
+  const user = await getCurrentUser(req, env).catch(() => null);
+  await env.DB.prepare(
+    `INSERT INTO error_log (id, code, status, kind, message, hint, url, user_id, user_agent, pathname, origin)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id, body.code || null, body.status ? Number(body.status) : null, body.kind || null,
+    String(body.message || '').slice(0, 2000), String(body.hint || '').slice(0, 1000),
+    String(body.url || '').slice(0, 500),
+    user?.id || null,
+    String(req.headers.get('user-agent') || '').slice(0, 300),
+    String(body.pathname || '').slice(0, 300),
+    String(body.origin || req.headers.get('origin') || '').slice(0, 200)
+  ).run();
+  return { id };
+};
+
+const handleErrorLogList = async (req, env) => {
+  await requireAdmin(req, env);
+  const url = new URL(req.url);
+  const limit = Math.min(Number(url.searchParams.get("limit") || 200), 500);
+  const code = url.searchParams.get("code");
+  const where = code ? "code = ?" : "1=1";
+  const args = code ? [code] : [];
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM error_log WHERE ${where} ORDER BY ts DESC LIMIT ?`
+  ).bind(...args, limit).all();
+  return { errors: results || [] };
+};
+
+const handleErrorLogClear = async (req, env) => {
+  await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM error_log").run();
   return { ok: true };
 };
 
@@ -1419,6 +1535,13 @@ const route = async (req, env) => {
   }
   if (req.method === "GET" && p === "/api/bank-account") return json(await handleBankAccountGet(req, env));
   if (req.method === "PUT" && p === "/api/bank-account") return json(await handleBankAccountPut(req, env));
+  // 멀티 계좌
+  if (req.method === "GET" && p === "/api/bank-accounts") return json(await handleBankAccountsList(req, env));
+  if (req.method === "POST" && p === "/api/bank-accounts") return json(await handleBankAccountCreate(req, env), { status: 201 });
+  if ((g = m(/^\/api\/bank-accounts\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleBankAccountPatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleBankAccountDelete(req, env, g[1]));
+  }
   if (req.method === "GET" && p === "/api/categories") return json(await handleCategoriesList(req, env));
   if (req.method === "POST" && p === "/api/categories") return json(await handleCategoryCreate(req, env), { status: 201 });
   if ((g = m(/^\/api\/categories\/([\w-]+)$/))) {
@@ -1431,6 +1554,11 @@ const route = async (req, env) => {
     if (req.method === "DELETE") return json(await handleGradeDelete(req, env, g[1]));
   }
   if (req.method === "POST" && p === "/api/admin/audit") return json(await handleAuditCreate(req, env), { status: 201 });
+
+  // 에러 로그 — 클라이언트의 모든 오류 기록 (POST 는 인증 불요).
+  if (req.method === "POST" && p === "/api/error-log") return json(await handleErrorLogCreate(req, env), { status: 201 });
+  if (req.method === "GET" && p === "/api/admin/error-log") return json(await handleErrorLogList(req, env));
+  if (req.method === "DELETE" && p === "/api/admin/error-log") return json(await handleErrorLogClear(req, env));
 
   // 사용자 칼럼
   if (req.method === "GET" && p === "/api/columns") return json(await handleColumnsList(req, env));
