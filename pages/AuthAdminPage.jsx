@@ -32,6 +32,57 @@ const LegalModal = ({ slug, onClose }) => {
   );
 };
 
+// 인증 흐름 에러 패널 — 코드 + 정확한 사유 + 사용자 가이드 + 콘솔 가이드까지 분리해서 노출.
+const AuthErrorPanel = ({ error, onDismiss }) => {
+  if (!error) return null;
+  const code = error.code || 'UNKNOWN';
+  const status = error.status ? `HTTP ${error.status}` : null;
+  const kindLabel = ({
+    network: '네트워크',
+    cors: 'CORS',
+    http: '서버 응답',
+    parse: '응답 해석',
+    client: '입력 검증',
+    unknown: '오류',
+  })[error.kind] || '오류';
+  return (
+    <div role="alert" aria-live="assertive"
+      style={{
+        margin: '16px 0 4px',
+        padding: '14px 16px',
+        background: 'rgba(194,74,61,0.06)',
+        border: '1px solid var(--danger)',
+        color: 'var(--ink)',
+        fontSize: 13,
+        lineHeight: 1.7,
+      }}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6, gap:12}}>
+        <div className="mono" style={{fontSize:11, letterSpacing:'0.18em', color:'var(--danger)'}}>
+          {kindLabel} 오류 · {code}{status ? ` · ${status}` : ''}
+        </div>
+        {onDismiss && (
+          <button type="button" onClick={onDismiss}
+            className="btn-ghost"
+            style={{fontSize:11, color:'var(--ink-3)'}}
+            aria-label="에러 메시지 닫기">×</button>
+        )}
+      </div>
+      <div style={{fontWeight:600, marginBottom:6}}>{error.message || '알 수 없는 오류'}</div>
+      {error.hint && (
+        <div className="dim-2" style={{fontSize:12, lineHeight:1.7}}>{error.hint}</div>
+      )}
+      {error.url && (
+        <div className="mono dim-2" style={{fontSize:10, marginTop:8, wordBreak:'break-all'}}>
+          요청: {error.url}
+        </div>
+      )}
+      <div className="mono dim-2" style={{fontSize:10, marginTop:6}}>
+        ⓘ 자세한 진단 정보는 브라우저 개발자 도구(F12)의 콘솔/네트워크 탭에서 확인할 수 있습니다.
+      </div>
+    </div>
+  );
+};
+
 const INTEREST_OPTIONS = [
   { value: 'palace',       label: '궁궐 답사' },
   { value: 'history',      label: '조선 역사' },
@@ -52,41 +103,28 @@ const LoginPage = ({ go, setUser }) => {
   });
   const [submitting, setSubmitting] = React.useState(false);
   const [legalModal, setLegalModal] = React.useState(null); // 'terms' | 'privacy' | null
+  const [authError, setAuthError] = React.useState(null); // { code, status, kind, message, hint, url } | { code:'CLIENT', message }
   const authContent = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.()?.auth) || {}, []);
-  const set = (k, v) => setForm({ ...form, [k]: v });
+  const set = (k, v) => { setForm({ ...form, [k]: v }); if (authError) setAuthError(null); };
+  const setMode2 = (next) => { setMode(next); setAuthError(null); };
 
   const submit = async () => {
     if (submitting) return;
+    setAuthError(null);
     const normalizedEmail = (form.email || "").trim().toLowerCase();
     const password = form.password || "";
 
-    if (!normalizedEmail) {
-      alert("이메일을 입력해주세요.");
-      return;
-    }
+    // 클라이언트 사전 검증 — alert 대신 인라인 에러 패널로 노출.
+    const clientError = (code, message) => setAuthError({ code, kind: 'client', message, hint: '' });
 
-    if (!password) {
-      alert("비밀번호를 입력해주세요.");
-      return;
-    }
+    if (!normalizedEmail) return clientError('FORM_EMAIL_REQUIRED', '이메일을 입력해 주세요.');
+    if (!password) return clientError('FORM_PASSWORD_REQUIRED', '비밀번호를 입력해 주세요.');
 
     if (mode === "signup") {
-      if (!form.name.trim()) {
-        alert("회원가입 시 이름을 입력해주세요.");
-        return;
-      }
-      if (password.length < 8) {
-        alert("비밀번호는 8자 이상으로 입력해주세요.");
-        return;
-      }
-      if (password !== form.password2) {
-        alert("비밀번호 확인이 일치하지 않습니다.");
-        return;
-      }
-      if (!form.consentTerms) {
-        alert("이용약관 및 개인정보 처리방침 동의가 필요합니다.");
-        return;
-      }
+      if (!form.name.trim()) return clientError('FORM_NAME_REQUIRED', '이름을 입력해 주세요.');
+      if (password.length < 8) return clientError('FORM_PASSWORD_TOO_SHORT', '비밀번호는 8자 이상으로 입력해 주세요.');
+      if (password !== form.password2) return clientError('FORM_PASSWORD_MISMATCH', '비밀번호 확인이 일치하지 않습니다.');
+      if (!form.consentTerms) return clientError('FORM_CONSENT_REQUIRED', '이용약관 및 개인정보 처리방침 동의가 필요합니다.');
     }
 
     setSubmitting(true);
@@ -115,7 +153,9 @@ const LoginPage = ({ go, setUser }) => {
           });
 
       if (!authResult.ok) {
-        alert(authResult.message);
+        // 콘솔에도 동일 정보를 남겨 운영자가 개발자 도구에서 빠르게 확인할 수 있도록.
+        try { console.error('[BGNJ_AUTH]', mode, authResult); } catch {}
+        setAuthError(authResult);
         return;
       }
 
@@ -168,7 +208,7 @@ const LoginPage = ({ go, setUser }) => {
           <div style={{display:'flex', gap:0, marginBottom:40, borderBottom:'1px solid var(--line)'}}>
             {[{k:"login", l:"로그인"}, {k:"signup", l:"회원가입"}].map(t => (
               <button key={t.k}
-                onClick={() => setMode(t.k)}
+                onClick={() => setMode2(t.k)}
                 style={{
                   flex:1, padding:'14px',
                   fontFamily:'var(--font-serif)',
@@ -329,6 +369,7 @@ const LoginPage = ({ go, setUser }) => {
               </>
             )}
             {legalModal && <LegalModal slug={legalModal} onClose={() => setLegalModal(null)}/>}
+            {authError && <AuthErrorPanel error={authError} onDismiss={() => setAuthError(null)}/>}
             {mode === "login" && (
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, fontSize:12}}>
                 <label htmlFor="keep-login" style={{display:'flex', gap:8, alignItems:'center', color:'var(--ink-2)'}}>
@@ -426,6 +467,21 @@ const formatTimeLeft = (dueIso) => {
 };
 
 const ADMIN_VERSION_HISTORY = [
+  {
+    version: "00.027.001",
+    date: "2026-04-28",
+    summary: "오류 가시화 묶음. 로그인/회원가입 실패는 alert 대신 코드·상태·정확한 사유·사용자 가이드를 함께 보여주는 인라인 에러 패널로 노출하고, 사이트 전반의 미처리 비동기 오류와 렌더링 오류도 코드와 함께 화면에 표시되도록 통합했습니다. 오류가 발생했을 때 '왜' 가 분명해지는 흐름을 만들었습니다.",
+    details: [
+      "BGNJ_API.request — 네트워크/CORS/HTTP/응답 해석 실패를 분류해 `err.kind / err.code / err.status / err.body / err.url` 로 throw. 'Failed to fetch' 류는 `NETWORK_OR_CORS` 코드로 호출 측에 전달.",
+      "BGNJ_AUTH.signIn / signUp — 실패 시 `{ ok:false, code, status, kind, message, hint, url }` 구조 반환. 401/403/409/400/5xx 와 네트워크 단절을 구분해 사용자 가이드(`hint`) 를 자동 부여.",
+      "AuthErrorPanel — 로그인/회원가입 폼 안에 인라인으로 에러 코드, 상태, 사유, 가이드, 요청 URL, 개발자 도구 안내까지 한 카드로 노출. 입력값을 수정하거나 모드를 바꾸면 자동으로 사라짐.",
+      "클라이언트 사전 검증도 alert → 인라인 에러로 통일 (FORM_EMAIL_REQUIRED, FORM_PASSWORD_TOO_SHORT 등 의미 있는 코드 부여).",
+      "AppErrorBoundary 강화 — 렌더링 오류 발생 시 코드/사유/스택/컴포넌트 스택을 분리해 펼쳐볼 수 있는 카드로 노출. '다시 시도' 와 '페이지 새로고침' 두 액션 제공.",
+      "GlobalErrorToast 신설 — `unhandledrejection` 과 `window.error` 이벤트를 잡아 우하단 토스트로 코드+사유+가이드+요청 URL 표시. 인증 외 비동기 호출(게시글 동기화, 강연 등록 등)에서 발생한 오류도 화면에 도달.",
+      "모든 분류된 에러는 console.error 로 동시에 기록 — 개발자 도구 콘솔/네트워크 탭에서 빠르게 추적 가능.",
+    ],
+    context: "이전에는 로그인이 실패해도 'Failed to fetch' 같은 모호한 alert 만 한 줄 떠서 운영자도 사용자도 원인을 알기 어려웠습니다. 이번 작업으로 오류는 (1) 어떤 코드인지, (2) 어떤 상태인지, (3) 정확한 사유가 무엇인지, (4) 사용자가 무엇을 해야 하는지가 한 화면 안에 보이게 됩니다. 인증 흐름은 폼 안 인라인 패널로, 그 외 비동기 오류는 우하단 토스트로, 렌더링 오류는 풀스크린 카드로 분리해 — 화면 어디에서 무슨 일이 났는지가 즉시 파악되는 구조입니다.",
+  },
   {
     version: "00.027.000",
     date: "2026-04-28",

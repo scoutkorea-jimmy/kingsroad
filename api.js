@@ -13,6 +13,27 @@
 (function () {
   const BASE = "https://banginoja-api.scoutkorea.workers.dev/api";
 
+  // 에러는 단일 형태로 분류해 호출 측에서 사용자에게 정확한 원인을 보일 수 있게 한다.
+  // err.kind: 'network' | 'cors' | 'http' | 'parse' | 'unknown'
+  // err.status: HTTP 상태 (kind==='http' 일 때만 의미)
+  // err.code: 사람이 읽는 코드 — 'NETWORK', 'CORS', 'HTTP_401' 등
+  // err.body: 서버 응답 본문 (있으면)
+  // err.url:  요청 URL
+  const classifyFetchError = (rawErr, url) => {
+    const err = new Error(rawErr?.message || "요청 실패");
+    err.kind = "network";
+    err.code = "NETWORK";
+    err.url = url;
+    err.cause = rawErr;
+    // 'Failed to fetch' / 'NetworkError when attempting to fetch resource.' 등
+    // CORS 거부도 'TypeError: Failed to fetch' 로 노출되기 때문에 메시지로 단정 짓지 않고
+    // 호출 측이 hint를 함께 보여주도록 한다.
+    if (typeof rawErr?.message === "string" && /failed to fetch|networkerror|load failed/i.test(rawErr.message)) {
+      err.code = "NETWORK_OR_CORS";
+    }
+    return err;
+  };
+
   const request = async (method, path, body) => {
     const url = path.startsWith("http") ? path : `${BASE}${path}`;
     const init = {
@@ -28,14 +49,33 @@
         init.body = JSON.stringify(body);
       }
     }
-    const resp = await fetch(url, init);
+    let resp;
+    try {
+      resp = await fetch(url, init);
+    } catch (rawErr) {
+      // 네트워크 단절, DNS 실패, CORS 거부 등 fetch 자체가 throw 한 경우.
+      throw classifyFetchError(rawErr, url);
+    }
     const text = await resp.text();
     let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
+    let parseFailed = false;
+    try { data = text ? JSON.parse(text) : null; }
+    catch { data = { raw: text }; parseFailed = true; }
     if (!resp.ok) {
       const err = new Error(data?.error || `HTTP ${resp.status}`);
+      err.kind = "http";
       err.status = resp.status;
+      err.code = `HTTP_${resp.status}`;
       err.body = data;
+      err.url = url;
+      throw err;
+    }
+    if (parseFailed) {
+      const err = new Error("서버 응답을 해석할 수 없습니다.");
+      err.kind = "parse";
+      err.code = "PARSE";
+      err.body = data;
+      err.url = url;
       throw err;
     }
     return data;

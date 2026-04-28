@@ -69,23 +69,111 @@
 <script type="text/babel" src="pages/MyPage.jsx"></script>
 
 <script type="text/babel">
-// 전체 앱 에러 바운더리 — 흰 화면 방지
+// 전체 앱 에러 바운더리 — 흰 화면 방지 + 정확한 진단 정보 노출.
 class AppErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { error: null }; }
+  constructor(props) { super(props); this.state = { error: null, info: null }; }
   static getDerivedStateFromError(err) { return { error: err }; }
+  componentDidCatch(err, info) {
+    this.setState({ info });
+    try { console.error('[AppErrorBoundary]', err, info); } catch {}
+  }
   render() {
     if (this.state.error) {
+      const e = this.state.error;
+      const code = e?.code || (e?.status ? `HTTP_${e.status}` : (e?.name || 'RENDER_ERROR'));
+      const reason = e?.message || String(e);
       return (
         <div style={{padding:40, fontFamily:'monospace', color:'#1e293b', background:'#eff6ff', minHeight:'100vh'}}>
-          <h2 style={{color:'#dc2626', marginBottom:12}}>⚠ 렌더링 오류</h2>
-          <pre style={{whiteSpace:'pre-wrap', fontSize:12, color:'#334155'}}>{String(this.state.error)}</pre>
-          <button onClick={() => this.setState({error:null})} style={{marginTop:16, padding:'8px 16px', cursor:'pointer'}}>다시 시도</button>
+          <h2 style={{color:'#dc2626', marginBottom:12}}>⚠ 페이지 렌더링 오류</h2>
+          <div style={{
+            background:'#fff', padding:'14px 16px', border:'1px solid #fecaca',
+            marginBottom:12, fontSize:13, lineHeight:1.7, color:'#1e293b',
+          }}>
+            <div style={{color:'#dc2626', fontSize:11, letterSpacing:'0.18em', marginBottom:6}}>
+              CODE · {code}
+            </div>
+            <div style={{fontWeight:600, marginBottom:8}}>{reason}</div>
+            {e?.stack && (
+              <details style={{marginTop:8}}>
+                <summary style={{cursor:'pointer', fontSize:11, color:'#475569'}}>스택 추적 (개발자용)</summary>
+                <pre style={{whiteSpace:'pre-wrap', fontSize:11, color:'#475569', marginTop:8}}>{e.stack}</pre>
+              </details>
+            )}
+            {this.state.info?.componentStack && (
+              <details style={{marginTop:8}}>
+                <summary style={{cursor:'pointer', fontSize:11, color:'#475569'}}>컴포넌트 스택 (개발자용)</summary>
+                <pre style={{whiteSpace:'pre-wrap', fontSize:11, color:'#475569', marginTop:8}}>{this.state.info.componentStack}</pre>
+              </details>
+            )}
+          </div>
+          <div style={{display:'flex', gap:8}}>
+            <button onClick={() => this.setState({error:null, info:null})} style={{padding:'8px 16px', cursor:'pointer'}}>다시 시도</button>
+            <button onClick={() => { try { window.location.reload(); } catch {} }} style={{padding:'8px 16px', cursor:'pointer'}}>페이지 새로고침</button>
+          </div>
+          <p style={{marginTop:12, fontSize:11, color:'#64748b'}}>ⓘ 추가 정보는 브라우저 개발자 도구(F12) 콘솔에서 확인할 수 있습니다.</p>
         </div>
       );
     }
     return this.props.children;
   }
 }
+
+// 전역 미처리 오류 토스트 — 비동기/Promise 거부와 자원 로드 실패까지 캡처.
+// 인증 흐름의 인라인 에러 패널과 별개로, 그 외 비동기 호출에서 발생한 미처리 오류를 사용자에게 노출.
+const GlobalErrorToast = () => {
+  const [errors, setErrors] = React.useState([]);
+  React.useEffect(() => {
+    const push = (entry) => {
+      setErrors((prev) => [...prev, { id: Date.now() + Math.random(), ...entry }].slice(-3));
+    };
+    const onRejection = (ev) => {
+      const r = ev?.reason;
+      if (!r) return;
+      const code = r.code || (r.status ? `HTTP_${r.status}` : (r.name || 'PROMISE_REJECTION'));
+      const message = r.message || String(r);
+      push({ code, message, hint: r.hint || '', url: r.url || '', kind: r.kind || 'unknown' });
+      try { console.error('[GlobalErrorToast]', r); } catch {}
+    };
+    const onError = (ev) => {
+      const message = ev?.message || ev?.error?.message || 'Script error';
+      push({ code: 'WINDOW_ERROR', message, hint: '', url: ev?.filename || '', kind: 'unknown' });
+      try { console.error('[GlobalErrorToast]', ev?.error || ev); } catch {}
+    };
+    window.addEventListener('unhandledrejection', onRejection);
+    window.addEventListener('error', onError);
+    return () => {
+      window.removeEventListener('unhandledrejection', onRejection);
+      window.removeEventListener('error', onError);
+    };
+  }, []);
+  const dismiss = (id) => setErrors((prev) => prev.filter((e) => e.id !== id));
+  if (!errors.length) return null;
+  return (
+    <div aria-live="polite" style={{
+      position:'fixed', right:16, bottom:16, zIndex:2000,
+      display:'flex', flexDirection:'column', gap:8, maxWidth:420,
+    }}>
+      {errors.map((e) => (
+        <div key={e.id} role="alert" style={{
+          background:'#fff', border:'1px solid #c24a3d', boxShadow:'0 8px 24px rgba(0,0,0,0.14)',
+          padding:'12px 14px', fontSize:13, lineHeight:1.7, color:'#1e293b',
+        }}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, marginBottom:4}}>
+            <span style={{fontFamily:'monospace', fontSize:10, letterSpacing:'0.14em', color:'#c24a3d'}}>
+              {e.code}
+            </span>
+            <button type="button" onClick={() => dismiss(e.id)}
+              style={{background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:14}}
+              aria-label="닫기">×</button>
+          </div>
+          <div style={{fontWeight:600, marginBottom:e.hint ? 4 : 0}}>{e.message}</div>
+          {e.hint && <div style={{color:'#475569', fontSize:12}}>{e.hint}</div>}
+          {e.url && <div style={{fontFamily:'monospace', fontSize:10, color:'#94a3b8', marginTop:6, wordBreak:'break-all'}}>{e.url}</div>}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "lineStyle": "outline",
@@ -257,6 +345,7 @@ const App = () => {
       <Tweaks tweaks={tweaks} setTweaks={updateTweaks} visible={editMode}/>
       <ScrollToTop/>
       <CookieConsent/>
+      <GlobalErrorToast/>
     </div>
   );
 };

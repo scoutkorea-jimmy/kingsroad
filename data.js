@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.027.000",
+  version: "00.027.001",
   build: "2026.04.28",
   channel: "preview",
 };
@@ -359,13 +359,38 @@ window.BGNJ_AUTH = {
       return this._readCache();
     }
   },
+  // 인증 흐름의 에러를 구조화해 UI 가 코드/원인/가이드를 분리해 노출할 수 있게 한다.
+  _classifyAuthError(err, fallback) {
+    const kind = err?.kind || 'unknown';
+    const code = err?.code || (err?.status ? `HTTP_${err.status}` : 'UNKNOWN');
+    const status = err?.status || null;
+    const serverMsg = err?.body?.error || null;
+    let message = serverMsg || err?.message || fallback;
+    let hint = '';
+    if (kind === 'network') {
+      hint = '인터넷 연결 또는 서버 도달이 차단됐습니다. 네트워크/방화벽/광고차단/CORS 설정을 확인해 주세요. (요청 주소: ' + (err?.url || '?') + ')';
+    } else if (status === 401) {
+      hint = '이메일 또는 비밀번호가 올바르지 않습니다. 다시 확인해 주세요.';
+    } else if (status === 403) {
+      hint = '계정이 정지됐거나 접근 권한이 없습니다. 운영자에게 문의해 주세요.';
+    } else if (status === 409) {
+      hint = '이미 가입된 이메일입니다. 로그인 탭으로 이동해 주세요.';
+    } else if (status === 400) {
+      hint = '입력값이 올바르지 않습니다. 안내 메시지를 확인해 주세요.';
+    } else if (status >= 500) {
+      hint = '서버 일시 오류입니다. 잠시 후 다시 시도해 주세요. 반복되면 운영자에게 문의해 주세요.';
+    } else if (kind === 'parse') {
+      hint = '서버 응답을 해석할 수 없습니다. 운영자에게 문의해 주세요.';
+    }
+    return { ok: false, code, status, kind, message, hint, url: err?.url || null };
+  },
   async signIn({ email, password }) {
     try {
       const { user } = await window.BGNJ_API.login({ email, password });
       this._writeCache(user);
       return { ok: true, user };
     } catch (err) {
-      return { ok: false, message: err?.body?.error || err?.message || '로그인 중 오류가 발생했습니다.' };
+      return this._classifyAuthError(err, '로그인 중 오류가 발생했습니다.');
     }
   },
   async signUp(payload) {
@@ -379,7 +404,7 @@ window.BGNJ_AUTH = {
       this._writeCache(user);
       return { ok: true, user };
     } catch (err) {
-      return { ok: false, message: err?.body?.error || err?.message || '회원가입 중 오류가 발생했습니다.' };
+      return this._classifyAuthError(err, '회원가입 중 오류가 발생했습니다.');
     }
   },
   async signOut() {
