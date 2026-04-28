@@ -468,6 +468,19 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.034.001",
+    date: "2026-04-28",
+    summary: "공감 토글 즉시 반영 + /api/me/tours 500 오류 수정 + 약관 편집 패널 서버 동기화 + 댓글 본문 가독성. 사용자 보고 'Failed to load /me/tours 500' / '공감 안 눌리거나 매우 느림' / '댓글 굵어서 헷갈림' 한꺼번에 처리.",
+    details: [
+      "Worker handleMyTours — tours 테이블에 없는 `location` 컬럼을 SELECT 하던 쿼리 수정 (title/starts_at/price 만 사용). /api/me/tours 가 200 으로 응답.",
+      "Worker handleLikeToggle — 토글 후 likes user_id 배열을 응답에 동봉(`{ liked, likes, count }`). 클라이언트가 별도 GET 으로 재조회할 필요 없음 → 1회 round trip.",
+      "BGNJ_COMMUNITY.toggleLike — 낙관적 UI 갱신(즉시 하트 채워짐) + 서버 응답으로 교정. 메모리 캐시(_serverPosts + BGNJ_STORES.communityPosts) 만 mutate, localStorage 미사용. 시드 게시글에서도 정상 동작.",
+      "data.js renderCommentText — @멘션의 fontWeight 600 → 500. 댓글 본문 평문 가독성 회복.",
+      "Worker 배포: Version e63c2760-1196-41de-870a-5c4d01063b8b.",
+    ],
+    context: "v00.032 의 트랜잭션 헬퍼 일괄 전환 직후 발생한 회귀 — handleMyTours 가 schema 와 어긋나 500 을 던졌고, toggleLike 가 2회 호출(toggle + list) 패턴이라 체감상 매우 느렸으며, 시드 게시글의 likes 가 캐시에 갱신 안 되어 클릭이 무시되는 것처럼 보였습니다. Worker 측 응답을 풍성하게 하고 클라이언트는 즉시 낙관적 갱신을 하는 표준 패턴으로 정리했습니다.",
+  },
+  {
     version: "00.034.000",
     date: "2026-04-28",
     summary: "🧹 과거 데이터 정리 + 옛 캐시 영구 무력화. 마이그레이션된 엔티티의 localStorage 잔재 일괄 삭제(자동), Service Worker / Cache API 캐시 강제 해제, D1 의 진단용 probe 계정 정리.",
@@ -2673,57 +2686,84 @@ const BookOrderAdminPanel = ({ go }) => {
 
 // === Legal Documents Admin Panel (Privacy / Terms) ================
 const LegalAdminPanel = () => {
-  const [slug, setSlug] = React.useState('privacy');
+  const [slug, setSlug] = React.useState('terms');
   const [tick, setTick] = React.useState(0);
-  const doc = React.useMemo(() => window.BGNJ_LEGAL.get(slug) || { title: '', body: '' }, [slug, tick]);
-  const [title, setTitle] = React.useState(doc.title);
-  const [body, setBody] = React.useState(doc.body);
+  const [doc, setDoc] = React.useState({ title: '', body: '', updatedAt: null });
+  const [title, setTitle] = React.useState('');
+  const [body, setBody] = React.useState('');
   const [editorKey, setEditorKey] = React.useState(0);
   const [msg, setMsg] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
 
+  // 슬러그 전환 시 서버에서 최신 본문 fetch.
   React.useEffect(() => {
-    setTitle(doc.title || '');
-    setBody(doc.body || '');
-    setEditorKey((k) => k + 1);
-    setMsg('');
+    let cancelled = false;
+    (async () => {
+      const fresh = await window.BGNJ_LEGAL.refresh(slug);
+      if (cancelled) return;
+      const d = fresh || { title: '', body: '' };
+      setDoc(d);
+      setTitle(d.title || (slug === 'terms' ? '이용약관' : slug === 'privacy' ? '개인정보 처리방침' : ''));
+      setBody(d.body || '');
+      setEditorKey((k) => k + 1);
+      setMsg('');
+    })();
+    return () => { cancelled = true; };
   }, [slug, tick]);
 
-  const save = (e) => {
+  const save = async (e) => {
     e.preventDefault();
-    if (!title.trim()) { setMsg('제목을 입력해 주세요.'); return; }
-    window.BGNJ_LEGAL.save(slug, { title: title.trim(), body });
-    setMsg('저장되었습니다.');
-    setTick((v) => v + 1);
-    setTimeout(() => setMsg(''), 2000);
+    if (!title.trim()) { setMsg('⚠ 제목을 입력해 주세요.'); return; }
+    setSaving(true);
+    try {
+      await window.BGNJ_LEGAL.save(slug, { title: title.trim(), body });
+      setMsg('✓ 저장되었습니다. 사이트 푸터의 ' + (slug === 'terms' ? '이용약관' : '개인정보 처리방침') + ' 링크에 즉시 반영됩니다.');
+      setTick((v) => v + 1);
+      setTimeout(() => setMsg(''), 2400);
+    } catch (err) {
+      setMsg('✗ 저장 실패: ' + (err?.body?.error || err?.message || '알 수 없는 오류'));
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const SLUG_LABEL = { privacy: '개인정보 처리방침', terms: '이용약관' };
+  const SLUG_LABEL = { terms: '이용약관', privacy: '개인정보 처리방침' };
+  const SLUG_HINT = {
+    terms: '회원가입 시 동의 체크박스 옆 "이용약관" 클릭 시 + 푸터 메뉴에서 노출됩니다.',
+    privacy: '회원가입 시 "개인정보 처리방침" 클릭 시 + 푸터 메뉴에서 노출됩니다.',
+  };
 
   return (
     <div>
       <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
-        사이트 푸터의 <strong className="gold">이용약관</strong>·<strong className="gold">개인정보 처리방침</strong> 페이지에 그대로 노출되는 본문을 직접 편집합니다.
+        <strong className="gold">이용약관</strong>·<strong className="gold">개인정보 처리방침</strong> 본문을 직접 편집합니다. 저장 즉시 회원가입 모달과 푸터 페이지에 반영됩니다.
       </p>
 
-      <div style={{display:'flex', gap:8, marginBottom:18, flexWrap:'wrap'}}>
+      <div role="tablist" aria-label="문서 분류" style={{display:'flex', gap:0, marginBottom:18, borderBottom:'1px solid var(--line)'}}>
         {window.BGNJ_LEGAL.listSlugs().map((s) => (
-          <button key={s} type="button" className="btn btn-small"
+          <button key={s} type="button" role="tab" aria-selected={slug === s}
             onClick={() => setSlug(s)}
             style={{
-              borderColor: slug === s ? 'var(--gold)' : 'var(--line)',
+              padding:'12px 22px', fontSize:14, letterSpacing:'0.05em',
               color: slug === s ? 'var(--gold)' : 'var(--ink-2)',
-              background: slug === s ? 'rgba(212,175,55,0.06)' : 'transparent',
+              borderBottom: slug === s ? '2px solid var(--gold)' : '2px solid transparent',
+              marginBottom:-1, background:'none',
             }}>
             {SLUG_LABEL[s] || s}
           </button>
         ))}
       </div>
 
+      <p className="dim-2" style={{fontSize:12, marginBottom:14, lineHeight:1.7, padding:'10px 12px', background:'var(--bg-2)', borderLeft:'3px solid var(--gold-dim)'}}>
+        ⓘ {SLUG_HINT[slug] || ''}
+      </p>
+
       <form onSubmit={save} className="card" style={{padding:20}}>
         <div className="field">
           <label className="field-label" htmlFor="legal-title">문서 제목</label>
           <input id="legal-title" className="field-input" value={title}
-            onChange={(e) => setTitle(e.target.value)}/>
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={SLUG_LABEL[slug] || ''}/>
         </div>
         <div className="field">
           <label className="field-label">본문</label>
@@ -2732,16 +2772,25 @@ const LegalAdminPanel = () => {
             onUpdate={(html) => setBody(html)}
             placeholder="문서 본문을 입력합니다. 이미지·링크·인용·목록을 지원합니다."/>
         </div>
-        {doc.updatedAt && (
-          <div className="dim-2 mono" style={{fontSize:11, marginBottom:14}}>최근 수정 · {new Date(doc.updatedAt).toLocaleString('ko-KR')}</div>
-        )}
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, gap:12, flexWrap:'wrap'}}>
+          {doc.updatedAt ? (
+            <div className="dim-2 mono" style={{fontSize:11}}>최근 수정 · {new Date(doc.updatedAt).toLocaleString('ko-KR')}</div>
+          ) : (
+            <div className="dim-2 mono" style={{fontSize:11}}>저장 이력 없음 — 처음 저장하시면 회원가입 모달과 푸터에 노출됩니다.</div>
+          )}
+        </div>
         {msg && (
-          <div role="status" className="mono gold" style={{fontSize:12, marginBottom:14, padding:'8px 12px', border:'1px solid var(--gold-dim)', background:'rgba(212,175,55,0.06)'}}>
-            {msg}
-          </div>
+          <div role="status" style={{
+            fontSize:13, marginBottom:14, padding:'10px 14px',
+            border: msg.startsWith('✗') || msg.startsWith('⚠') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
+            background: msg.startsWith('✗') || msg.startsWith('⚠') ? 'rgba(194,74,61,0.06)' : 'rgba(212,175,55,0.06)',
+            color: msg.startsWith('✗') || msg.startsWith('⚠') ? 'var(--danger)' : 'var(--gold)',
+          }}>{msg}</div>
         )}
         <div style={{display:'flex', gap:8, justifyContent:'flex-end', borderTop:'1px solid var(--line)', paddingTop:14}}>
-          <button type="submit" className="btn btn-gold">저장</button>
+          <button type="submit" className="btn btn-gold" disabled={saving} aria-busy={saving}>
+            {saving ? '저장 중...' : '저장'}
+          </button>
         </div>
       </form>
     </div>

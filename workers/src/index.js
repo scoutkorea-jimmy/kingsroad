@@ -709,10 +709,13 @@ const handleLikeToggle = async (req, env, postId) => {
   const exists = await env.DB.prepare("SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?").bind(postId, user.id).first();
   if (exists) {
     await env.DB.prepare("DELETE FROM post_likes WHERE post_id = ? AND user_id = ?").bind(postId, user.id).run();
-    return { liked: false };
+  } else {
+    await env.DB.prepare("INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)").bind(postId, user.id).run();
   }
-  await env.DB.prepare("INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)").bind(postId, user.id).run();
-  return { liked: true };
+  // 토글 후 최신 user_id 배열을 한 번에 반환 — 클라이언트가 별도 GET 호출하지 않도록.
+  const { results } = await env.DB.prepare("SELECT user_id FROM post_likes WHERE post_id = ?").bind(postId).all();
+  const likes = (results || []).map((r) => r.user_id);
+  return { liked: !exists, likes, count: likes.length };
 };
 
 const handleLikesList = async (req, env, postId) => {
@@ -884,7 +887,7 @@ const handleTourReserve = async (req, env, tourId) => {
 const handleMyTours = async (req, env) => {
   const user = await requireUser(req, env);
   const { results } = await env.DB.prepare(
-    `SELECT tr.*, t.title, t.starts_at, t.location, t.price
+    `SELECT tr.*, t.title, t.starts_at, t.price
      FROM tour_reservations tr JOIN tours t ON t.id = tr.tour_id
      WHERE tr.user_id = ? ORDER BY tr.created_at DESC`
   ).bind(user.id).all();

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.034.000",
+  version: "00.034.001",
   build: "2026.04.28",
   channel: "preview",
 };
@@ -824,20 +824,33 @@ window.BGNJ_COMMUNITY = {
   hasLiked(postId, userId) {
     return !!userId && this.getLikes(postId).includes(userId);
   },
-  // 좋아요 — POST /api/posts/:id/likes. 토글 응답을 받아 게시글 캐시만 갱신(localStorage 미사용).
+  // 메모리 캐시에서만 게시글 likes 를 갱신 — localStorage 미터치.
+  _patchLikesInMemory(postId, likes) {
+    const sp = this._serverPosts || [];
+    const idxS = sp.findIndex((p) => String(p.id) === String(postId));
+    if (idxS >= 0) sp[idxS] = { ...sp[idxS], likes };
+    const cp = window.BGNJ_STORES.communityPosts || [];
+    const idxC = cp.findIndex((p) => String(p.id) === String(postId));
+    if (idxC >= 0) cp[idxC] = { ...cp[idxC], likes };
+  },
+  // 좋아요 — POST /api/posts/:id/likes. 응답에 likes 배열 동봉(1회 호출).
+  // 낙관적 UI 는 메모리 캐시만 갱신. 서버 응답으로 진실값 교정. localStorage 미사용.
   async toggleLike(postId, userId) {
     if (!userId) return null;
+    const post = this.getPost(postId);
+    const cur = Array.isArray(post?.likes) ? post.likes : [];
+    const optimistic = cur.includes(userId) ? cur.filter((id) => id !== userId) : [...cur, userId];
+    this._patchLikesInMemory(postId, optimistic);
+    try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
     try {
-      await window.BGNJ_API.likes.toggle(postId);
-      // 서버에서 likes 목록 재조회. handleLikesList 가 user_id 문자열 배열을 반환.
-      const { likes } = await window.BGNJ_API.likes.list(postId);
-      const arr = Array.isArray(likes) ? likes : [];
-      // 메모리 캐시(_serverPosts) 의 해당 게시글 likes 만 갱신.
-      const post = (this._serverPosts || []).find((p) => String(p.id) === String(postId));
-      if (post) post.likes = arr;
+      const res = await window.BGNJ_API.likes.toggle(postId);
+      const arr = Array.isArray(res?.likes) ? res.likes : optimistic;
+      this._patchLikesInMemory(postId, arr);
       try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
       return arr;
     } catch (err) {
+      this._patchLikesInMemory(postId, cur);
+      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
       throw err;
     }
   },

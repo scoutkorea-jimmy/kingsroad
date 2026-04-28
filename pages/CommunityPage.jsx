@@ -187,11 +187,11 @@ const MAX_REPLY_DEPTH = 3;
 
 const renderCommentText = (text) => {
   if (!text) return null;
-  // @닉네임 토큰을 골드 chip 으로 변환. 닉은 한글/영문/숫자/_ 허용.
+  // @닉네임 토큰만 가볍게 강조(골드, medium). 본문은 평문 그대로.
   const parts = String(text).split(/(@[\p{L}\p{N}_]+)/gu);
   return parts.map((part, i) => {
     if (part.startsWith('@') && part.length > 1) {
-      return <span key={i} className="gold" style={{fontWeight:600}}>{part}</span>;
+      return <span key={i} className="gold" style={{fontWeight:500}}>{part}</span>;
     }
     return <React.Fragment key={i}>{part}</React.Fragment>;
   });
