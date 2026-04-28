@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.027.003">
+<link rel="stylesheet" href="styles.css?v=00.027.004">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -27,21 +27,9 @@
 <div id="root"></div>
 
 <script>
-  // HTTPS 강제 — Cloudflare Worker API 가 https://bgnj.net 만 CORS 허용하므로
-  // http:// 로 들어온 사용자는 즉시 https:// 로 리다이렉트해 'Failed to fetch'를 막는다.
-  // localhost 환경(개발) 은 예외 — 평문 HTTP 로 fetch 가능.
-  (function () {
-    try {
-      if (location.protocol === 'http:'
-          && location.hostname !== 'localhost'
-          && location.hostname !== '127.0.0.1') {
-        location.replace('https:' + location.href.substring(location.protocol.length));
-        return;
-      }
-    } catch {}
-  })();
   // SPA fallback 복원 — 404.html이 ?p=/community 같은 형태로 리다이렉트시켰으면
   // 진짜 경로를 복원해 클라이언트 라우터가 인식하게 한다.
+  // (HTTPS 강제 리다이렉트는 SSL 도입 후 다시 활성화 — 현재는 http://bgnj.net 운영.)
   (function () {
     try {
       var url = new URL(location.href);
@@ -71,21 +59,21 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script src="api.js?v=00.027.003"></script>
-<script src="data.js?v=00.027.003"></script>
-<script src="components/KoreaMapData.js?v=00.027.003"></script>
-<script type="text/babel" src="components/KoreaMap.jsx?v=00.027.003"></script>
-<script type="text/babel" src="components/Shell.jsx?v=00.027.003"></script>
-<script type="text/babel" src="components/TiptapEditor.jsx?v=00.027.003"></script>
-<script type="text/babel" src="pages/HomePage.jsx?v=00.027.003"></script>
-<script type="text/babel" src="pages/CommunityPage.jsx?v=00.027.003"></script>
-<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.027.003"></script>
-<script type="text/babel" src="pages/ColumnPage.jsx?v=00.027.003"></script>
-<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.027.003"></script>
-<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.027.003"></script>
-<script type="text/babel" src="pages/LecturesPage.jsx?v=00.027.003"></script>
-<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.027.003"></script>
-<script type="text/babel" src="pages/MyPage.jsx?v=00.027.003"></script>
+<script src="api.js?v=00.027.004"></script>
+<script src="data.js?v=00.027.004"></script>
+<script src="components/KoreaMapData.js?v=00.027.004"></script>
+<script type="text/babel" src="components/KoreaMap.jsx?v=00.027.004"></script>
+<script type="text/babel" src="components/Shell.jsx?v=00.027.004"></script>
+<script type="text/babel" src="components/TiptapEditor.jsx?v=00.027.004"></script>
+<script type="text/babel" src="pages/HomePage.jsx?v=00.027.004"></script>
+<script type="text/babel" src="pages/CommunityPage.jsx?v=00.027.004"></script>
+<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.027.004"></script>
+<script type="text/babel" src="pages/ColumnPage.jsx?v=00.027.004"></script>
+<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.027.004"></script>
+<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.027.004"></script>
+<script type="text/babel" src="pages/LecturesPage.jsx?v=00.027.004"></script>
+<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.027.004"></script>
+<script type="text/babel" src="pages/MyPage.jsx?v=00.027.004"></script>
 
 <script type="text/babel">
 // 전체 앱 에러 바운더리 — 흰 화면 방지 + 정확한 진단 정보 노출.

@@ -100,15 +100,19 @@ const newSessionToken = () => {
   return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
 };
 
+// 크로스사이트 인증 쿠키 — 사이트(bgnj.net) 와 API(workers.dev) 가 서로 다른 도메인이라
+// SameSite=None 이어야 fetch credentials:include 가 쿠키를 동봉한다.
+// SameSite=None 은 반드시 Secure 와 함께 사용해야 하지만, workers.dev 가 항상 HTTPS 이므로
+// 쿠키 설정 단계에서 Secure 가 충족된다 (사이트 본 페이지가 HTTP 여도 무관).
 const setSessionCookie = (resp, token, ttl) => {
   const h = new Headers(resp.headers);
-  h.append("Set-Cookie", `${SESSION_COOKIE}=${token}; Path=/; Max-Age=${ttl}; HttpOnly; Secure; SameSite=Lax`);
+  h.append("Set-Cookie", `${SESSION_COOKIE}=${token}; Path=/; Max-Age=${ttl}; HttpOnly; Secure; SameSite=None`);
   return new Response(resp.body, { status: resp.status, headers: h });
 };
 
 const clearSessionCookie = (resp) => {
   const h = new Headers(resp.headers);
-  h.append("Set-Cookie", `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`);
+  h.append("Set-Cookie", `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None`);
   return new Response(resp.body, { status: resp.status, headers: h });
 };
 

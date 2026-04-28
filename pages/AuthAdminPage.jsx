@@ -468,6 +468,18 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.027.004",
+    date: "2026-04-28",
+    summary: "HTTP 환경 정상화 — SSL 미도입 기간에도 사이트가 정상 동작하도록 Worker CORS 에 HTTP origin 을 추가하고 세션 쿠키의 SameSite 를 None 으로 변경했습니다. v00.027.003 의 HTTPS 강제 리다이렉트는 제거. 다음 단계로 GitHub Pages 의 무료 HTTPS 활성화 안내.",
+    details: [
+      "index.html — v00.027.003 에서 추가한 HTTP→HTTPS 자동 리다이렉트 제거 (SSL 도입 후 재활성화 예정).",
+      "Worker — `ALLOWED_ORIGINS` 에 `http://bgnj.net`, `http://www.bgnj.net`, `http://scoutkorea-jimmy.github.io` 추가. HTTPS 도입 후 제거 권장.",
+      "Worker — 세션 쿠키 플래그 `SameSite=Lax` → `SameSite=None`. 사이트(bgnj.net) 와 API(workers.dev) 가 서로 다른 도메인이라 cross-site 인 fetch credentials:include 호출에 쿠키가 동봉되려면 SameSite=None 이 필수. Secure 는 workers.dev 가 항상 HTTPS 라 충족.",
+      "검증 — `curl -I -X OPTIONS ... -H 'Origin: http://bgnj.net'` 가 `access-control-allow-origin: http://bgnj.net` 으로 응답하는 것 확인.",
+    ],
+    context: "사용자가 HTTPS 가 유료라고 인식해 HTTP 환경을 유지하고 싶어 하셨습니다. 실제로는 GitHub Pages 가 자동으로 무료 Let's Encrypt 인증서를 발급해 주므로 (저장소 Settings → Pages → 'Enforce HTTPS' 토글) 추가 비용 없이 HTTPS 전환이 가능합니다. 다만 즉시 적용을 위해 우선 HTTP 환경에서도 로그인이 정상 동작하도록 백엔드 정책을 임시 완화했습니다. 이 완화는 SameSite=None 으로 인한 보안 노출(약간 더 넓은 cross-site 쿠키 동봉) 이 있으므로 SSL 도입 후 SameSite=Lax 로 되돌리는 게 좋습니다.",
+  },
+  {
     version: "00.027.003",
     date: "2026-04-28",
     summary: "HTTPS 강제 리다이렉트. 사용자가 `http://bgnj.net` (HTTP) 로 접속하면 Cloudflare Worker API 가 CORS 거부해 로그인이 'Failed to fetch' 로 실패하던 문제를 차단했습니다. 페이지 진입 즉시 https:// 로 자동 전환되도록 index.html 최상단에 가드를 추가했습니다.",
