@@ -468,6 +468,31 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.036.000",
+    date: "2026-04-29",
+    summary: "P0 일괄 해소 + 디자인 시스템 라이브 도파. 결제 3폼에 BankAccountPicker 결합, 관리자 '열기' → PostViewerModal 모달, async 헬퍼 호출 사이트 4곳 await/try-catch 일괄 적용. KMS 디자인 탭을 텍스트 bullet → 실제 컴포넌트 샘플 + 토큰 카드 + 정의/특징/활용처 11섹션 라이브 도파로 전면 재구축.",
+    details: [
+      "🟢 버전 표시 — ADMIN_VERSION_HISTORY 헤더가 'v00.036.000' 처럼 v 접두사 표시.",
+      "🟢 P0-1 — LecturesPage / WangsanamTourPage / BookCheckoutPage 결제 폼의 inline bank 표 → `BGNJ_BankAccountPicker` 셀렉터로 교체. 멀티 계좌 등록 시 사용자가 선택 가능. 단일 계좌만 있어도 폴백으로 단일 옵션 노출. 등록 0건이면 빨간 안내 카드.",
+      "🟢 P0-2 — 관리자 community posts 패널 '열기' + reports 패널 '게시글 열기' 버튼이 모두 `PostViewerModal` 호출로 전환. 페이지 이동 없이 본문/메타/댓글을 모달에 노출.",
+      "🟢 P0-3 — async 헬퍼 sync 호출 사이트 정리: LectureBookingPanel.submit/cancelMyReg/submitRefund + TourBookingPanel.submit/cancelMyReg/submitRefund + BookCheckoutPage.submit + MyPage.cancelOrder/requestRefund 모두 async + await + try/catch. 실패 시 에러 메시지 사용자에게 노출.",
+      "🎨 KMS 디자인 탭 전면 재구축 — `DesignSystemView` 컴포넌트 신설. 11개 라이브 섹션:",
+      "  ① 컬러 토큰 (11종 — 실제 hex 스와치 카드 + 역할/특징)",
+      "  ② 타이포그래피 (5종 폰트 — 실제 렌더링된 샘플 + 사이즈/weight/letter-spacing)",
+      "  ③ 스페이싱·라운드·엘리베이션 (4의 배수 스케일 시각화 + radius/shadow 박스)",
+      "  ④ 버튼 5종 (실제 클릭 가능한 라이브 샘플)",
+      "  ⑤ 배지·태그칩 (badge / badge-gold / tag-chip / 필터 칩)",
+      "  ⑥ 폼 (input/select/textarea/error 인라인 라이브)",
+      "  ⑦ 카드 (standard / emphasis / 인포 박스 3종)",
+      "  ⑧ 표 (실제 데이터 표 샘플 + 헤더 스타일)",
+      "  ⑨ 모달 (어두운 배경 + 닫기 패턴 시각화)",
+      "  ⑩ 피드백 (인라인 에러 + 인라인 성공 + 토스트 샘플)",
+      "  ⑪ 화면 작업 원칙 (기존 ADMIN_DESIGN_SECTIONS 통합)",
+      "각 섹션 = `DSSection` 래퍼 (정의 · 특징 · 활용처 · 라이브 샘플 4-축).",
+    ],
+    context: "사용자 요청 '버전 35.000 보임 → 정상화', '모든 오류 해결', 'KMS 디자인 탭을 실질 디자인 샘플 + 용어 정의 + 특징 + 활용처로 완성'. 4 가지 P0 위험 중 (1) 결제 picker (2) post viewer modal (3) async wiring (4) 버전 표기 모두 본 커밋에서 해소. 디자인 탭은 텍스트 bullet 만 있던 형태에서 라이브 컴포넌트 + 토큰 + 4-축 메타데이터 도파로 전면 재구축되어 새 페이지 만들 때 바로 참고 가능.",
+  },
+  {
     version: "00.035.001",
     date: "2026-04-29",
     summary: "🩺 종합 점검 + 문서 동기화. 사이트 전반 잠재 오류 감사 → KMS 부록 '현재 위험 인벤토리' 섹션에 정리. project-priority-table 의 P0/P1/P2 재정리. ai-development-rules 에 서버 source-of-truth/await 의무/cache-buster 의무/매퍼 표준화 4개 운영 원칙 추가. KMS 디자인 탭을 현재 라이트 톤 디자인 시스템 기준으로 전면 갱신.",
@@ -963,6 +988,501 @@ const ADMIN_VERSION_HISTORY = [
     context: "사용자가 홈에서 바로 강연 일정을 보고, 로그인 후 본인 상태를 확인할 수 있는 최소 계정 흐름이 필요했습니다.",
   },
 ];
+
+// === Design System View — 실제 컴포넌트/토큰을 렌더해 보는 라이브 도파 =====
+// 각 카드: 용어 정의 + 시각 샘플 + 특징 + 활용처. KMS '디자인' 탭에서 노출.
+const DesignSystemView = () => {
+  // 토큰 정의표 — 컬러
+  const COLOR_TOKENS = [
+    { token: '--bg',       hex: '#FDFAF5', usage: '페이지 베이스 배경 (가장 큰 면적)', notes: '거의 흰색에 가까운 미세 크림. 카드를 띄우는 캔버스.' },
+    { token: '--bg-2',     hex: '#F1F5F9', usage: '서브 배경 · 표 헤더 · 인포 박스', notes: '본문보다 한 단 낮은 회색 — 정보 위계용.' },
+    { token: '--ink',      hex: '#0F172A', usage: '본문 1차 텍스트 · 제목', notes: '거의 검정. 가장 진한 잉크.' },
+    { token: '--ink-2',    hex: '#475569', usage: '보조 텍스트 · 설명문 · 라벨', notes: '본문보다 한 단 흐림.' },
+    { token: '--ink-3',    hex: '#94A3B8', usage: '메타 정보 · 비활성 · placeholder', notes: '가장 흐림. dim-2 클래스가 자주 사용.' },
+    { token: '--line',     hex: '#E2E8F0', usage: '카드/표 테두리 · divider', notes: '얇은 슬레이트 회색.' },
+    { token: '--line-2',   hex: '#CBD5E1', usage: '강조 테두리 · 입력 필드 외곽', notes: 'line 보다 한 단 진함.' },
+    { token: '--gold',     hex: '#1E3A8A', usage: '브랜드 강조 · 활성 탭 · 액센트', notes: '실제로는 로열 블루. "gold" 라는 토큰명만 유지(레거시).' },
+    { token: '--gold-2',   hex: '#2563EB', usage: '주요 가격/카운트 강조', notes: 'gold 보다 한 단 밝은 블루.' },
+    { token: '--gold-dim', hex: '#93C5FD', usage: '활성 영역 배경 hint · gold 박스 외곽', notes: '아주 옅은 블루 테두리/배경.' },
+    { token: '--danger',   hex: '#C24A3D', usage: '정지 · 삭제 · 오류 · 환불 거부', notes: 'gold 와 명확히 구분되는 단일 빨강.' },
+  ];
+
+  // 폰트 패밀리 정의
+  const FONT_TOKENS = [
+    { token: 'var(--font-serif) / var(--font-display)', family: 'Noto Serif KR', sample: '뱅기 타고 한국을 느끼다', size: 26, weight: 500, usage: '페이지 제목 · 카드 헤더 · 모달 타이틀', char: '제목용 · 한글 세리프의 권위' },
+    { token: 'var(--font-reading)', family: 'Noto Sans KR', sample: '어제 창덕궁 후원 야간 답사를 다녀왔습니다.', size: 15, weight: 400, usage: '게시글/댓글 본문 · 긴 글', char: '본문 가독성 — line-height 1.85' },
+    { token: 'var(--font-sans)', family: 'Noto Sans KR', sample: '카드 안내 · 폼 라벨', size: 13, weight: 400, usage: 'UI 본문 · 카드 설명 · 폼 텍스트', char: '단문 · line-height 1.7' },
+    { token: 'Nanum Myeongjo', family: 'Nanum Myeongjo', sample: '명조 토글 활성 시 본문 전체 적용', size: 15, weight: 400, usage: '폰트 토글 ON 시 본문 전역', char: '전통 활자 무드 — 옵션' },
+    { token: 'var(--font-mono)', family: 'IBM Plex Mono', sample: 'BANGINOJA · 2026.04.29 · v00.035', size: 11, weight: 400, usage: '메타 정보 · ID · 시각 · 코드 · 라벨', char: 'letter-spacing 0.18em — 구조 신호' },
+  ];
+
+  // 스페이싱 스케일
+  const SPACING = [4, 8, 12, 16, 20, 24, 32, 40, 60, 80];
+
+  // 라운드/엘리베이션 정의
+  const RADIUS = [
+    { name: '0', value: '0px', usage: '기본 — 모든 카드/표/버튼은 90% 직각 (편집 디자인 무드)' },
+    { name: '999', value: '999px', usage: '필터 칩 / 배지 (둥근 캡슐)' },
+  ];
+  const SHADOW = [
+    { name: 'none', value: 'none', usage: '기본 — 그림자는 거의 없음 (선과 색으로 위계)' },
+    { name: 'modal', value: '0 16px 40px rgba(0,0,0,0.25)', usage: '모달 (LegalModal/SuspendDialog/PostViewerModal)' },
+    { name: 'toast', value: '0 8px 24px rgba(0,0,0,0.14)', usage: '우하단 GlobalErrorToast' },
+  ];
+
+  return (
+    <div style={{display:'grid', gap:24}}>
+      {/* 헤더 */}
+      <div className="card card-gold" style={{padding:24}}>
+        <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>DESIGN SYSTEM · 라이브 도파</div>
+        <h2 className="ko-serif" style={{fontSize:26, marginBottom:10}}>뱅기노자 디자인 시스템</h2>
+        <p className="dim" style={{fontSize:14, lineHeight:1.8, margin:0}}>
+          새 페이지를 만들거나 기존 화면을 다듬을 때 <strong className="gold">이 탭의 토큰과 컴포넌트를 그대로 재사용</strong>합니다.
+          편집 디자인의 무드(라이트 베이스 + 로열 블루 강조 + 골드 포인트) 안에서 정보가 또렷하게 정렬되도록 만듭니다.
+        </p>
+      </div>
+
+      {/* 1. 컬러 토큰 */}
+      <DSSection
+        eyebrow="01 · COLOR"
+        title="컬러 토큰"
+        definition="화면 전반에서 반복되는 색을 의미 단위로 묶은 변수. 직접 hex 를 적지 않고 항상 `var(--token)` 으로 참조한다."
+        characteristics={[
+          '역할 기반 — 같은 색이라도 의미가 다르면 토큰을 분리.',
+          '명도 단계 — bg/bg-2, ink/ink-2/ink-3, line/line-2 처럼 한 토큰군 안에서 단계.',
+          '토큰명 안정성 — gold 는 실제로 로열 블루지만 코드 호환을 위해 이름 유지.',
+        ]}
+        usage={[
+          'CSS: `color: var(--ink-2)`, `background: var(--bg-2)`',
+          '인라인 style: `style={{ color: \'var(--gold)\' }}`',
+          '클래스: `.gold` `.dim` `.dim-2` `.danger` 등 미리 정의된 유틸 클래스',
+        ]}
+      >
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:12}}>
+          {COLOR_TOKENS.map((c) => (
+            <div key={c.token} style={{border:'1px solid var(--line)', overflow:'hidden'}}>
+              <div style={{height:60, background:c.hex, borderBottom:'1px solid var(--line)'}}/>
+              <div style={{padding:'10px 12px'}}>
+                <div className="mono gold" style={{fontSize:11, letterSpacing:'0.1em'}}>{c.token}</div>
+                <div className="mono dim-2" style={{fontSize:10, marginTop:2}}>{c.hex}</div>
+                <div style={{fontSize:12, marginTop:6, lineHeight:1.5, color:'var(--ink)'}}>{c.usage}</div>
+                <div className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.5}}>{c.notes}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </DSSection>
+
+      {/* 2. 타이포그래피 */}
+      <DSSection
+        eyebrow="02 · TYPOGRAPHY"
+        title="타이포그래피 시스템"
+        definition="페이지에서 사용하는 5종 폰트와 각각의 역할. 제목/본문/UI/명조/모노 5계층."
+        characteristics={[
+          '제목은 항상 `ko-serif` (Noto Serif KR) — 무드 신호.',
+          '본문은 길이에 따라 font-reading(긴 글) 또는 font-sans(단문 UI) 사용.',
+          '메타 정보는 항상 `mono` + letter-spacing 으로 구조 신호 부여.',
+          '명조 모드(Nanum Myeongjo) 는 사용자 폰트 토글로만 활성.',
+        ]}
+        usage={[
+          '클래스: `.ko-serif` (제목), `.mono` (메타/코드/라벨), `.dim` `.dim-2` (본문 위계)',
+          '인라인 style: 폰트 사이즈는 11/12/13/14/15/18/22/24/26 단위',
+        ]}
+      >
+        <div style={{display:'grid', gap:10}}>
+          {FONT_TOKENS.map((f) => (
+            <div key={f.token} style={{display:'grid', gridTemplateColumns:'200px 1fr 200px', gap:14, padding:'12px 14px', border:'1px solid var(--line)', alignItems:'center'}}>
+              <div>
+                <div className="mono gold" style={{fontSize:10, letterSpacing:'0.14em', marginBottom:4}}>{f.token}</div>
+                <div className="mono dim-2" style={{fontSize:10}}>{f.family}</div>
+                <div className="mono dim-2" style={{fontSize:10}}>{f.size}px · w{f.weight}</div>
+              </div>
+              <div style={{
+                fontFamily: f.token.startsWith('var(') ? f.token : `'${f.family}', serif`,
+                fontSize: f.size, fontWeight: f.weight, lineHeight: 1.5, color: 'var(--ink)',
+                letterSpacing: f.token.includes('mono') ? '0.18em' : 'normal',
+              }}>
+                {f.sample}
+              </div>
+              <div style={{fontSize:11, lineHeight:1.6, color:'var(--ink-2)'}}>
+                <div style={{fontWeight:500, marginBottom:2}}>{f.usage}</div>
+                <div className="dim-2">{f.char}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </DSSection>
+
+      {/* 3. 스페이싱 / 라운드 / 엘리베이션 */}
+      <DSSection
+        eyebrow="03 · SPACING & RADIUS"
+        title="여백 · 모서리 · 그림자"
+        definition="간격은 4의 배수 스케일. 모서리는 0(직각)이 기본, 캡슐(999)은 칩 전용. 그림자는 모달/토스트 외에 거의 사용 안 함."
+        characteristics={[
+          '4·8·12·16·20·24·32·40·60·80 — 디자인 여백은 이 중에서만 선택.',
+          '카드 padding 은 18~24, 표 셀 padding 은 10~14.',
+          '직각 베이스 — 라운드 박스는 디자인 일관성을 깨뜨릴 수 있음.',
+          '그림자는 모달/토스트 외에 사용하지 않음. 깊이는 선과 배경 명도로 표현.',
+        ]}
+        usage={[
+          '`gap: 12` 또는 `padding: 16 24` 같은 형태로 사용.',
+          '카드: `padding: 24` 표준. 좁은 인포 박스: `10–14`.',
+          '필터 칩만 `borderRadius: 999`.',
+        ]}
+      >
+        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em', marginBottom:8}}>SPACING SCALE (px)</div>
+        <div style={{display:'flex', alignItems:'flex-end', gap:6, marginBottom:18}}>
+          {SPACING.map((px) => (
+            <div key={px} style={{display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
+              <div style={{width:px, height:px, background:'var(--gold)'}}/>
+              <div className="mono dim-2" style={{fontSize:10}}>{px}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em', marginBottom:8}}>RADIUS</div>
+        <div style={{display:'flex', gap:14, marginBottom:18, flexWrap:'wrap'}}>
+          {RADIUS.map((r) => (
+            <div key={r.name} style={{
+              padding:'10px 14px', border:'1px solid var(--line)', borderRadius: r.value,
+              background:'var(--bg-2)', minWidth:160,
+            }}>
+              <div className="mono gold" style={{fontSize:10}}>{r.value}</div>
+              <div style={{fontSize:11, marginTop:4, lineHeight:1.5, color:'var(--ink-2)'}}>{r.usage}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em', marginBottom:8}}>SHADOW</div>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:12}}>
+          {SHADOW.map((s) => (
+            <div key={s.name} style={{padding:'14px 16px', background:'#fff', boxShadow: s.value, border:'1px solid var(--line)'}}>
+              <div className="mono gold" style={{fontSize:10}}>{s.name}</div>
+              <div className="mono dim-2" style={{fontSize:10, marginTop:2, wordBreak:'break-all'}}>{s.value}</div>
+              <div style={{fontSize:11, marginTop:4, color:'var(--ink-2)'}}>{s.usage}</div>
+            </div>
+          ))}
+        </div>
+      </DSSection>
+
+      {/* 4. 버튼 */}
+      <DSSection
+        eyebrow="04 · BUTTONS"
+        title="버튼 5종"
+        definition="모든 인터랙션 버튼은 5종 중 하나. 커스텀 인라인 색은 위험 표기에만 한정한다."
+        characteristics={[
+          'btn — 기본 (테두리 + 본문 색)',
+          'btn btn-gold — 핵심 액션 (저장/등록/입장)',
+          'btn btn-small — 소형 (표 안 / 인라인 액션)',
+          'btn btn-block — 가로 100% (폼 제출)',
+          'btn-ghost — 배경 없는 텍스트 버튼 (보조)',
+        ]}
+        usage={[
+          '폼 1차 제출은 `btn btn-gold`. 보조는 `btn`.',
+          '표 행 끝의 액션은 `btn btn-small` 만 사용.',
+          '삭제/정지/위험은 `btn` + `style={{borderColor:\'var(--danger)\', color:\'var(--danger)\'}}`.',
+        ]}
+      >
+        <div style={{display:'flex', gap:10, flexWrap:'wrap', alignItems:'center'}}>
+          <button type="button" className="btn">btn</button>
+          <button type="button" className="btn btn-gold">btn-gold</button>
+          <button type="button" className="btn btn-small">btn-small</button>
+          <button type="button" className="btn btn-small btn-gold">small + gold</button>
+          <button type="button" className="btn-ghost" style={{color:'var(--gold)'}}>btn-ghost</button>
+          <button type="button" className="btn btn-small" style={{borderColor:'var(--danger)', color:'var(--danger)'}}>위험</button>
+          <button type="button" className="btn btn-gold" disabled aria-busy="true">로딩 중...</button>
+        </div>
+      </DSSection>
+
+      {/* 5. 배지 / 칩 */}
+      <DSSection
+        eyebrow="05 · BADGES & CHIPS"
+        title="배지 · 태그 칩"
+        definition="짧은 라벨로 상태나 분류를 표시. 둥근 캡슐(필터 칩) vs 직각 박스(상태 배지) 두 패턴."
+        characteristics={[
+          '배지(.badge) — 직각, 작은 텍스트, 등급/카테고리.',
+          '골드 배지(.badge-badge-gold) — 카테고리/등급 강조.',
+          '태그 칩(.tag-chip) — 해시태그/말머리.',
+          '필터 칩 — 둥근 캡슐, 활성 시 골드 배경 + 흰 텍스트.',
+        ]}
+        usage={[
+          '게시글 카테고리/HOT/관리자 등급 → `.badge`',
+          '해시태그 표시 → `.tag-chip`',
+          '관리자 상태 필터 (전체/활성/정지) → 필터 칩',
+        ]}
+      >
+        <div style={{display:'flex', gap:12, flexWrap:'wrap', alignItems:'center'}}>
+          <span className="badge">기본 BADGE</span>
+          <span className="badge badge-gold">관리자</span>
+          <span className="badge" style={{borderColor:'var(--danger)', color:'var(--danger)'}}>정지됨</span>
+          <span className="tag-chip">#궁궐</span>
+          <span className="tag-chip">#답사</span>
+          <span style={{
+            padding:'6px 14px', fontSize:12, borderRadius:999,
+            background:'var(--gold)', color:'var(--bg)',
+            fontFamily:'var(--font-serif)',
+          }}>전체</span>
+          <span style={{
+            padding:'6px 14px', fontSize:12, borderRadius:999,
+            border:'1px solid var(--line-2)', color:'var(--ink-2)',
+            fontFamily:'var(--font-serif)',
+          }}>비활성 칩</span>
+        </div>
+      </DSSection>
+
+      {/* 6. 폼 / 입력 */}
+      <DSSection
+        eyebrow="06 · FORMS"
+        title="입력 필드 · 라벨"
+        definition="모든 폼은 같은 외형. `.field-input` 한 클래스로 input/textarea/select 통일. 라벨은 위에 작은 글씨."
+        characteristics={[
+          '필드 라벨은 `field-label` — 작은 회색 한글.',
+          '필수 표시는 골드 별표(★) — 라벨 옆에.',
+          '필드 폭은 폼 컨테이너에 따라 자동, 짧은 입력만 maxWidth 명시.',
+          '에러 메시지는 폼 안 인라인 박스 (alert 사용 금지).',
+        ]}
+        usage={[
+          'input/textarea/select 모두 `<input className="field-input"/>` 패턴.',
+          '폼 제출 후 결과는 인라인 박스(성공: 골드 / 실패: 빨강).',
+        ]}
+      >
+        <div style={{display:'grid', gap:14, maxWidth:560}}>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">이름 <span className="gold">★</span></label>
+            <input className="field-input" placeholder="실명을 입력해주세요" defaultValue="박지민" readOnly/>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">관심 분야</label>
+            <select className="field-input" defaultValue="palace">
+              <option value="palace">궁궐 답사</option>
+              <option value="history">조선 역사</option>
+            </select>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">메모 (선택)</label>
+            <textarea className="field-input" rows={2} defaultValue="입금자명에 신청자 본명을 남겨 주세요." readOnly/>
+          </div>
+          <div role="alert" style={{
+            padding:'12px 16px', background:'rgba(194,74,61,0.06)',
+            border:'1px solid var(--danger)', color:'var(--danger)', fontSize:13,
+          }}>
+            <span className="mono" style={{fontSize:11, letterSpacing:'0.18em', marginRight:8}}>HTTP 401</span>
+            이메일 또는 비밀번호가 올바르지 않습니다.
+          </div>
+        </div>
+      </DSSection>
+
+      {/* 7. 카드 */}
+      <DSSection
+        eyebrow="07 · CARDS"
+        title="카드 컨테이너"
+        definition="화면의 모든 정보 블록은 카드(.card)에 들어간다. 강조용은 .card-gold. 인포 박스는 별도 패턴."
+        characteristics={[
+          '`.card` — 흰 배경 + 얇은 테두리 + padding 24.',
+          '`.card-gold` — 옅은 블루(#F0F6FF) 배경 + 골드 dim 테두리. 강조용.',
+          '인포 박스(좌측 골드 라인) — 안내문 전용 패턴.',
+          '카드 헤더는 `mono gold` 라벨 + ko-serif 제목.',
+        ]}
+        usage={[
+          '회원 상세, 관리자 폼, KMS 섹션 모두 카드 안에.',
+          '강조하고 싶은 카드(요약/공지)는 card-gold.',
+        ]}
+      >
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:14}}>
+          <article className="card" style={{padding:20}}>
+            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>STANDARD CARD</div>
+            <h3 className="ko-serif" style={{fontSize:18, marginBottom:8}}>기본 카드</h3>
+            <p className="dim" style={{fontSize:12, lineHeight:1.7, margin:0}}>흰 배경 · 얇은 테두리. 일반 정보 블록.</p>
+          </article>
+          <article className="card card-gold" style={{padding:20}}>
+            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>EMPHASIS CARD</div>
+            <h3 className="ko-serif" style={{fontSize:18, marginBottom:8}}>강조 카드</h3>
+            <p className="dim" style={{fontSize:12, lineHeight:1.7, margin:0}}>옅은 블루 배경 · 골드 dim 테두리. 요약/공지/버전 카드.</p>
+          </article>
+          <article style={{padding:'14px 16px', background:'var(--bg-2)', borderLeft:'3px solid var(--gold-dim)'}}>
+            <p className="dim" style={{fontSize:12, lineHeight:1.7, margin:0}}>
+              ⓘ <strong className="gold">인포 박스</strong> — 좌측 3px 골드 라인 + 회색 배경. 안내문/팁/주의사항.
+            </p>
+          </article>
+        </div>
+      </DSSection>
+
+      {/* 8. 표 */}
+      <DSSection
+        eyebrow="08 · TABLES"
+        title="데이터 표"
+        definition="여러 행 데이터의 표준 노출 방식. 카드 그리드보다 표가 정렬·비교에 더 적합한 경우 우선."
+        characteristics={[
+          '헤더: bg-2 배경 + mono dim-2 + letter-spacing 0.2em + uppercase 영문.',
+          '행 구분: borderTop 1px solid var(--line) — 줄무늬 없음.',
+          '셀 padding: 10–14px.',
+          '액션 컬럼은 우측 정렬, 작은 버튼만.',
+        ]}
+        usage={[
+          'ROPA, 회원 목록, 입금 계좌, 책 주문, 오류 로그.',
+          '컬럼 5개 미만이면 카드 그리드도 검토 가능.',
+        ]}
+      >
+        <div style={{overflowX:'auto', border:'1px solid var(--line)'}}>
+          <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+            <thead>
+              <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
+                <th style={{padding:'10px 14px', textAlign:'left'}}>이름</th>
+                <th style={{padding:'10px 14px', textAlign:'left'}}>등급</th>
+                <th style={{padding:'10px 14px', textAlign:'left'}}>가입일</th>
+                <th style={{padding:'10px 14px', textAlign:'right'}}>액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[['박지민', '관리자', '2026.04.28'], ['돌담아래', '독자', '2026.03.18']].map(([n, g, d]) => (
+                <tr key={n} style={{borderTop:'1px solid var(--line)'}}>
+                  <td className="ko-serif" style={{padding:'10px 14px'}}>{n}</td>
+                  <td style={{padding:'10px 14px'}}><span className="badge">{g}</span></td>
+                  <td className="mono dim-2" style={{padding:'10px 14px'}}>{d}</td>
+                  <td style={{padding:'10px 14px', textAlign:'right'}}>
+                    <button type="button" className="btn btn-small">상세</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </DSSection>
+
+      {/* 9. 모달 */}
+      <DSSection
+        eyebrow="09 · MODALS"
+        title="모달 다이얼로그"
+        definition="window.alert/prompt 대신 항상 모달. 어두운 반투명 배경 + 중앙 정렬 + Esc/바깥 클릭/닫기 모두 동작."
+        characteristics={[
+          '배경 rgba(0,0,0,0.55) — 본문보다 어둡게.',
+          '본문 max-width 480~860, max-height 80vh.',
+          '닫기 액션 3가지: ESC / 바깥 클릭 / 우상단 닫기 버튼.',
+          '제목은 ko-serif, 본문은 var(--font-sans).',
+        ]}
+        usage={[
+          'LegalModal — 약관/개인정보 본문',
+          'SuspendDialog — 회원 정지 사유 입력',
+          'PostViewerModal — 관리자 게시글 본문/댓글 조회',
+        ]}
+      >
+        <div style={{
+          padding:'24px 28px', background:'var(--bg)',
+          maxWidth:560, border:'1px solid var(--line)',
+          boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+        }}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
+            <h3 className="ko-serif" style={{fontSize:20, margin:0}}>모달 제목</h3>
+            <button type="button" className="btn btn-small">닫기</button>
+          </div>
+          <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:16}}>
+            모달은 결정이 필요한 순간에만 띄웁니다. 본문에 폼이 들어갈 수 있고, 우하단 액션은 우선순위에 따라 정렬합니다.
+          </p>
+          <div style={{display:'flex', justifyContent:'flex-end', gap:8}}>
+            <button type="button" className="btn">취소</button>
+            <button type="button" className="btn btn-gold">확인</button>
+          </div>
+        </div>
+      </DSSection>
+
+      {/* 10. 피드백 */}
+      <DSSection
+        eyebrow="10 · FEEDBACK"
+        title="에러 · 성공 · 토스트"
+        definition="작업 결과는 인라인(폼 안) 또는 우하단 토스트(전역) 중 하나로만 노출. alert() 는 사용 금지."
+        characteristics={[
+          '인라인 에러 — 폼 안 빨강 박스 + 코드 + 사유 + 가이드.',
+          '인라인 성공 — 폼 안 골드 박스 + ✓ 메시지.',
+          '전역 토스트 — 우하단 누적, 10초 자동 소거, 에러 코드 표시.',
+          '모든 오류는 D1.error_log 자동 보고 (관리자 패널에서 확인).',
+        ]}
+        usage={[
+          '폼 제출 결과는 인라인.',
+          '비동기 미처리 오류는 토스트 + 자동 보고.',
+        ]}
+      >
+        <div style={{display:'grid', gap:10, maxWidth:560}}>
+          <div role="alert" style={{
+            padding:'12px 16px', background:'rgba(194,74,61,0.06)',
+            border:'1px solid var(--danger)', color:'var(--danger)', fontSize:13,
+          }}>
+            <div className="mono" style={{fontSize:11, letterSpacing:'0.18em', marginBottom:4}}>네트워크 오류 · NETWORK_OR_CORS</div>
+            <div style={{fontWeight:500}}>요청 실패</div>
+            <div style={{fontSize:12, marginTop:4}}>인터넷 연결 또는 서버 도달이 차단됐습니다.</div>
+          </div>
+          <div role="status" style={{
+            padding:'10px 14px', border:'1px solid var(--gold-dim)',
+            background:'rgba(212,175,55,0.06)', color:'var(--gold)', fontSize:13,
+          }}>✓ 저장되었습니다.</div>
+          <div style={{
+            padding:'12px 14px', background:'#fff',
+            border:'1px solid var(--danger)', boxShadow:'0 8px 24px rgba(0,0,0,0.14)',
+            fontSize:13,
+          }}>
+            <div className="mono" style={{fontSize:10, letterSpacing:'0.14em', color:'var(--danger)'}}>HTTP_500</div>
+            <div style={{fontWeight:500, marginTop:2}}>서버 오류</div>
+            <div className="dim-2" style={{fontSize:11, marginTop:4}}>10초 후 자동 사라짐 · 우하단 토스트 패턴</div>
+          </div>
+        </div>
+      </DSSection>
+
+      {/* 11. 원칙 정리 (기존 ADMIN_DESIGN_SECTIONS 재활용) */}
+      <DSSection
+        eyebrow="11 · PRINCIPLES"
+        title="화면 작업 원칙 (체크리스트)"
+        definition="새 페이지/컴포넌트를 만들 때 마지막에 한 번 더 확인할 항목."
+        characteristics={[]}
+        usage={[]}
+      >
+        <div style={{display:'grid', gap:14}}>
+          {ADMIN_DESIGN_SECTIONS.map((section) => (
+            <article key={section.title} style={{padding:'14px 18px', border:'1px solid var(--line)', background:'var(--bg)'}}>
+              <h4 className="ko-serif" style={{fontSize:15, marginBottom:10, color:'var(--ink)'}}>{section.title}</h4>
+              <ul style={{listStyle:'none', padding:0, margin:0, display:'grid', gap:6}}>
+                {section.points.map((point) => (
+                  <li key={point} style={{fontSize:12, lineHeight:1.7, color:'var(--ink-2)'}}>· {point}</li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+      </DSSection>
+    </div>
+  );
+};
+
+// 디자인 시스템 섹션 래퍼 — 정의/특징/활용처 + 슬롯에 라이브 샘플.
+const DSSection = ({ eyebrow, title, definition, characteristics, usage, children }) => (
+  <section className="card" style={{padding:24}}>
+    <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:6}}>{eyebrow}</div>
+    <h2 className="ko-serif" style={{fontSize:22, marginBottom:10}}>{title}</h2>
+    {definition && (
+      <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:18, paddingBottom:14, borderBottom:'1px solid var(--line)'}}>
+        <strong className="gold">정의 · </strong>{definition}
+      </p>
+    )}
+    {(characteristics?.length || usage?.length) > 0 && (
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:18, marginBottom:18}}>
+        {characteristics?.length > 0 && (
+          <div>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>특징</div>
+            <ul style={{listStyle:'none', padding:0, margin:0, display:'grid', gap:6, fontSize:12, lineHeight:1.7, color:'var(--ink-2)'}}>
+              {characteristics.map((p) => <li key={p}>· {p}</li>)}
+            </ul>
+          </div>
+        )}
+        {usage?.length > 0 && (
+          <div>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>활용처</div>
+            <ul style={{listStyle:'none', padding:0, margin:0, display:'grid', gap:6, fontSize:12, lineHeight:1.7, color:'var(--ink-2)'}}>
+              {usage.map((p) => <li key={p}>· {p}</li>)}
+            </ul>
+          </div>
+        )}
+      </div>
+    )}
+    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:10}}>SAMPLE · 라이브 예시</div>
+    <div>{children}</div>
+  </section>
+);
 
 const ADMIN_DESIGN_SECTIONS = [
   {
@@ -1837,6 +2357,7 @@ const FEATURE_DOMAINS = [
 const ReportQueuePanel = ({ onRefresh, go }) => {
   const [filter, setFilter] = React.useState("open");
   const [tick, setTick] = React.useState(0);
+  const [viewingPostId, setViewingPostId] = React.useState(null);
   const reports = React.useMemo(() => window.BGNJ_COMMUNITY.listReports(filter), [filter, tick]);
   const counts = React.useMemo(() => ({
     open: window.BGNJ_COMMUNITY.listReports('open').length,
@@ -1911,10 +2432,7 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
                 <div style={{display:'flex', gap:8, justifyContent:'flex-end', flexWrap:'wrap'}}>
                   {r.postId && (
                     <button type="button" className="btn btn-small"
-                      onClick={() => {
-                        try { sessionStorage.setItem('bgnj_pending_post_id', String(r.postId)); } catch {}
-                        go('community');
-                      }}>게시글 열기</button>
+                      onClick={() => setViewingPostId(r.postId)}>게시글 열기</button>
                   )}
                   {r.status !== 'resolved' && (
                     <button type="button" className="btn btn-small" onClick={() => setStatus(r.id, 'resolved')}>처리 완료</button>
@@ -1932,6 +2450,9 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
             );
           })}
         </div>
+      )}
+      {viewingPostId && (
+        <PostViewerModal postId={viewingPostId} onClose={() => setViewingPostId(null)}/>
       )}
     </div>
   );
@@ -2657,36 +3178,66 @@ const BankAccountPanel = () => {
 };
 
 // 결제 화면용 — 멀티 계좌 셀렉터 + 안내 박스. 모든 결제 흐름(강연/투어/책) 에서 재사용.
-window.BGNJ_BankAccountPicker = ({ value, onChange, accounts }) => {
-  const list = (accounts && accounts.length) ? accounts : (window.BGNJ_LECTURES?.listBankAccounts?.() || []);
-  if (!list.length) return null;
+// 멀티 계좌가 없으면 단일 getBankAccount 폴백을 단일 옵션으로 노출. 둘 다 없으면 안내 메시지.
+window.BGNJ_BankAccountPicker = ({ value, onChange, accounts, refreshOnMount = true }) => {
+  const [tick, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (refreshOnMount) {
+      window.BGNJ_LECTURES?.refreshBankAccount?.().then(() => setTick((v) => v + 1));
+    }
+    const onR = () => setTick((v) => v + 1);
+    window.addEventListener('bgnj-bank-accounts-refresh', onR);
+    return () => window.removeEventListener('bgnj-bank-accounts-refresh', onR);
+  }, []);
+  const multi = (accounts && accounts.length) ? accounts : (window.BGNJ_LECTURES?.listBankAccounts?.() || []);
+  const list = multi.length
+    ? multi
+    : (() => {
+      const single = window.BGNJ_LECTURES?.getBankAccount?.() || {};
+      return single.accountNumber
+        ? [{ id: 'default', label: '기본 계좌', isDefault: true,
+            bankName: single.bankName, accountNumber: single.accountNumber,
+            holder: single.holder, memo: single.memo }]
+        : [];
+    })();
+  if (!list.length) {
+    return (
+      <div style={{padding:'12px 14px', border:'1px solid var(--danger)', background:'rgba(194,74,61,0.05)', color:'var(--danger)', fontSize:12, lineHeight:1.6}}>
+        ⚠ 등록된 입금 계좌가 없습니다. 운영자에게 문의해 주세요.
+      </div>
+    );
+  }
   const selected = list.find((a) => a.id === value) || list.find((a) => a.isDefault) || list[0];
+  // 첫 마운트 시 부모에 기본 선택 알림.
   React.useEffect(() => {
     if (selected && selected.id !== value && onChange) onChange(selected.id);
-  }, []);
+  }, [list.length]);
   return (
     <div style={{padding:'14px 16px', border:'1px solid var(--gold-dim)', background:'rgba(212,175,55,0.04)'}}>
-      <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>BANK ACCOUNT · 입금 계좌 선택</div>
+      <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>BANK ACCOUNT · 입금 계좌</div>
       {list.length > 1 && (
-        <select className="field-input" style={{marginBottom:12, fontSize:13}}
-          value={selected?.id || ''}
-          onChange={(e) => onChange?.(e.target.value)}>
-          {list.map((a) => (
-            <option key={a.id} value={a.id}>{a.label}{a.isDefault ? ' (기본)' : ''}</option>
-          ))}
-        </select>
+        <div style={{marginBottom:12}}>
+          <label className="dim-2 mono" style={{fontSize:11, display:'block', marginBottom:6}}>입금할 계좌 선택</label>
+          <select className="field-input" style={{fontSize:13}}
+            value={selected?.id || ''}
+            onChange={(e) => onChange?.(e.target.value)}>
+            {list.map((a) => (
+              <option key={a.id} value={a.id}>{a.label}{a.isDefault ? ' (기본)' : ''}</option>
+            ))}
+          </select>
+        </div>
       )}
       {selected && (
-        <div style={{display:'grid', gridTemplateColumns:'90px 1fr', gap:'6px 14px', fontSize:13}}>
+        <div style={{display:'grid', gridTemplateColumns:'90px 1fr', gap:'6px 14px', fontSize:13, lineHeight:1.6}}>
           <div className="dim-2 mono" style={{fontSize:11}}>은행</div>
           <div>{selected.bankName || '-'}</div>
           <div className="dim-2 mono" style={{fontSize:11}}>계좌번호</div>
-          <div className="mono" style={{fontWeight:500}}>{selected.accountNumber || '-'}</div>
+          <div className="mono gold" style={{fontWeight:500}}>{selected.accountNumber || '-'}</div>
           <div className="dim-2 mono" style={{fontSize:11}}>예금주</div>
           <div>{selected.holder || '-'}</div>
           {selected.memo && (<>
             <div className="dim-2 mono" style={{fontSize:11}}>안내</div>
-            <div style={{lineHeight:1.6}}>{selected.memo}</div>
+            <div>{selected.memo}</div>
           </>)}
         </div>
       )}
@@ -4636,6 +5187,7 @@ const AdminPage = ({ go }) => {
   const [postRefreshKey, setPostRefreshKey] = React.useState(0);
   const [versionPage, setVersionPage] = React.useState(1);
   const [selectedPostIds, setSelectedPostIds] = React.useState(new Set());
+  const [viewingPostId, setViewingPostId] = React.useState(null);
   const [bulkTargetCat, setBulkTargetCat] = React.useState("");
   const [bulkTargetPrefix, setBulkTargetPrefix] = React.useState("");
 
@@ -4876,7 +5428,7 @@ const AdminPage = ({ go }) => {
                   <div style={{display:'flex', justifyContent:'space-between', gap:16, alignItems:'start', marginBottom:16, flexWrap:'wrap'}}>
                     <div>
                       <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>VERSION LOG</div>
-                      <h2 className="ko-serif" style={{fontSize:24}}>{entry.version}</h2>
+                      <h2 className="ko-serif" style={{fontSize:24}}>v{entry.version}</h2>
                     </div>
                     <div className="mono dim-2" style={{fontSize:11}}>{entry.date}</div>
                   </div>
@@ -5197,29 +5749,7 @@ const AdminPage = ({ go }) => {
               </div>
             )}
 
-            {kmsTab === "디자인" && (
-              <div style={{display:'grid', gap:16}}>
-                <div className="card card-gold" style={{padding:24}}>
-                  <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>DESIGN PRINCIPLES</div>
-                  <h2 className="ko-serif" style={{fontSize:24, marginBottom:12}}>디자인 작업 기준</h2>
-                  <p className="dim" style={{fontSize:13, lineHeight:1.8}}>
-                    새 페이지를 만들거나 기존 UI를 바꿀 때는 이 탭의 원칙을 먼저 확인합니다.
-                    뱅기노자 화면은 일반적인 밝은 SaaS UI가 아니라, 조선 왕실과 전시 도록의 분위기를 유지하는 방향으로 작업해야 합니다.
-                  </p>
-                </div>
-
-                {ADMIN_DESIGN_SECTIONS.map((section) => (
-                  <article key={section.title} className="card" style={{padding:24}}>
-                    <h2 className="ko-serif" style={{fontSize:22, marginBottom:14}}>{section.title}</h2>
-                    <div style={{display:'grid', gap:8}}>
-                      {section.points.map((point) => (
-                        <div key={point} className="card" style={{padding:14}}>{point}</div>
-                      ))}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
+            {kmsTab === "디자인" && <DesignSystemView/>}
 
           </div>
         )}
@@ -5328,7 +5858,7 @@ const AdminPage = ({ go }) => {
                     <td className="dim mono" style={{padding:14}}>{p.author}</td>
                     <td className="mono dim-2" style={{padding:14}}>{p.date}</td>
                     <td style={{padding:14, textAlign:'right', display:'flex', justifyContent:'flex-end', gap:8}}>
-                      <button type="button" className="btn btn-small" onClick={() => go("community")}>열기</button>
+                      <button type="button" className="btn btn-small" onClick={() => setViewingPostId(p.id)}>열기</button>
                       <button type="button" className="btn btn-small" onClick={() => deleteCommunityPost(p)}
                         style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
                     </td>
@@ -5340,6 +5870,9 @@ const AdminPage = ({ go }) => {
               <div className="card" style={{padding:24, marginTop:16, textAlign:'center'}}>
                 조건에 맞는 게시글이 없습니다.
               </div>
+            )}
+            {viewingPostId && (
+              <PostViewerModal postId={viewingPostId} onClose={() => setViewingPostId(null)}/>
             )}
           </div>
         )}

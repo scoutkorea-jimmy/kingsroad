@@ -284,6 +284,7 @@ const CheckoutPage = ({ go, cart, user }) => {
   const total = subtotal + shipping;
 
   const bank = (window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES.bankAccount || {});
+  const [selectedBankId, setSelectedBankId] = React.useState(null);
   const [recipient, setRecipient] = React.useState(user?.name || "");
   const [phone, setPhone] = React.useState("");
   const [address, setAddress] = React.useState("");
@@ -348,33 +349,21 @@ const CheckoutPage = ({ go, cart, user }) => {
             아래 계좌로 입금이 확인되면 발송 준비를 시작합니다.
           </p>
 
-          {/* 무통장 입금 안내 */}
-          <div className="card card-gold" style={{textAlign:'left', marginBottom:24, padding:24}}>
-            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>BANK TRANSFER</div>
-            {bank.accountNumber ? (
-              <div style={{display:'grid', gap:8}}>
-                <div style={{display:'flex', justifyContent:'space-between', gap:12, paddingBottom:8, borderBottom:'1px dashed var(--line)'}}>
-                  <span className="dim">은행</span><span>{bank.bankName || '-'}</span>
-                </div>
-                <div style={{display:'flex', justifyContent:'space-between', gap:12, paddingBottom:8, borderBottom:'1px dashed var(--line)'}}>
-                  <span className="dim">계좌번호</span><span className="gold mono">{bank.accountNumber}</span>
-                </div>
-                <div style={{display:'flex', justifyContent:'space-between', gap:12, paddingBottom:8, borderBottom:'1px dashed var(--line)'}}>
-                  <span className="dim">예금주</span><span>{bank.holder || '-'}</span>
-                </div>
-                <div style={{display:'flex', justifyContent:'space-between', gap:12, paddingBottom:8, borderBottom:'1px dashed var(--line)'}}>
-                  <span className="dim">금액</span>
-                  <span className="gold ko-serif" style={{fontSize:22}}>{submittedOrder.total.toLocaleString()}원</span>
-                </div>
-                <p className="dim" style={{fontSize:12, lineHeight:1.7, marginTop:6}}>
-                  입금자명에 <strong className="gold">{submittedOrder.recipient}</strong> 또는 주문번호 <strong className="gold">{submittedOrder.orderNo}</strong>를 남겨 주세요.
-                </p>
-              </div>
-            ) : (
-              <p className="dim" style={{fontSize:13, color:'var(--danger)'}}>
-                계좌번호가 아직 등록되지 않았습니다. 운영자에게 문의해 주세요.
-              </p>
-            )}
+          {/* 무통장 입금 안내 — picker (멀티 계좌 지원) */}
+          <div style={{textAlign:'left', marginBottom:24}}>
+            {window.BGNJ_BankAccountPicker
+              ? <window.BGNJ_BankAccountPicker value={selectedBankId} onChange={setSelectedBankId}/>
+              : null}
+            <div style={{
+              marginTop:10, padding:'12px 16px', background:'var(--bg-2)',
+              border:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'baseline',
+            }}>
+              <span className="dim">입금 금액</span>
+              <span className="gold ko-serif" style={{fontSize:22}}>{submittedOrder.total.toLocaleString()}원</span>
+            </div>
+            <p className="dim" style={{fontSize:12, lineHeight:1.7, marginTop:10}}>
+              입금자명에 <strong className="gold">{submittedOrder.recipient}</strong> 또는 주문번호 <strong className="gold">{submittedOrder.orderNo}</strong>를 남겨 주세요.
+            </p>
           </div>
 
           <div className="card" style={{textAlign:'left', marginBottom:32, padding:20}}>
@@ -408,24 +397,28 @@ const CheckoutPage = ({ go, cart, user }) => {
     );
   }
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setError("");
     if (!recipient.trim()) return setError("받는 분 이름을 입력해 주세요.");
     if (!phone.trim()) return setError("연락처를 입력해 주세요.");
     if (!address.trim()) return setError("기본 주소를 입력해 주세요.");
-    const result = window.BGNJ_BOOK_ORDERS.createOrder({
-      userId: user.id,
-      version,
-      qty,
-      recipient: recipient.trim(),
-      phone: phone.trim(),
-      address: address.trim(),
-      addressDetail: addressDetail.trim(),
-      memo: memo.trim(),
-    });
-    if (!result.ok) return setError(result.message || "주문 처리에 실패했습니다.");
-    setSubmittedOrder(result.order);
+    try {
+      const result = await window.BGNJ_BOOK_ORDERS.createOrder({
+        userId: user.id,
+        version,
+        qty,
+        recipient: recipient.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
+        addressDetail: addressDetail.trim(),
+        memo: memo.trim(),
+      });
+      if (!result?.ok) return setError(result?.message || "주문 처리에 실패했습니다.");
+      setSubmittedOrder(result.order);
+    } catch (err) {
+      setError(err?.body?.error || err?.message || '주문 처리 중 오류');
+    }
   };
 
   return (
@@ -466,22 +459,17 @@ const CheckoutPage = ({ go, cart, user }) => {
                 placeholder="부재 시 경비실에 맡겨주세요" style={{minHeight:80, resize:'vertical'}}/>
             </div>
 
-            <h3 className="ko-serif" style={{fontSize:22, marginTop:24, marginBottom:14}}>결제 수단</h3>
-            <div className="card" style={{padding:18}}>
-              <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:10}}>
-                <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--gold)', border:'1px solid var(--gold-dim)', padding:'1px 6px'}}>BANK TRANSFER</span>
-                <span className="ko-serif" style={{fontSize:16}}>무통장 입금</span>
-              </div>
-              {bank.accountNumber ? (
-                <div className="dim" style={{fontSize:13, lineHeight:1.8}}>
-                  주문 접수 후 <strong className="gold">{bank.bankName} {bank.accountNumber} ({bank.holder})</strong> 계좌로 입금하시면 운영자가 확인 후 발송을 시작합니다.
-                </div>
-              ) : (
-                <div style={{fontSize:13, lineHeight:1.8, color:'var(--danger)'}}>
-                  운영자 계좌번호가 아직 등록되지 않았습니다. 잠시 후 다시 시도해 주세요.
+            <h3 className="ko-serif" style={{fontSize:22, marginTop:24, marginBottom:14}}>결제 수단 — 무통장 입금</h3>
+            {window.BGNJ_BankAccountPicker
+              ? <window.BGNJ_BankAccountPicker value={selectedBankId} onChange={setSelectedBankId}/>
+              : (
+                <div className="dim" style={{fontSize:13, lineHeight:1.8, padding:'12px 14px', border:'1px solid var(--line)'}}>
+                  운영자 계좌가 등록되어 있어야 주문이 진행됩니다.
                 </div>
               )}
-            </div>
+            <p className="dim" style={{fontSize:12, marginTop:10, lineHeight:1.7}}>
+              주문 접수 후 위 계좌로 입금하시면 운영자가 확인하여 발송을 시작합니다.
+            </p>
 
             {error && (
               <div role="alert" style={{padding:'12px 16px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:13, marginTop:20}}>
@@ -491,7 +479,7 @@ const CheckoutPage = ({ go, cart, user }) => {
 
             <div style={{display:'flex', gap:12, marginTop:24}}>
               <button type="button" className="btn btn-block" onClick={() => go("book")}>← 책 정보</button>
-              <button type="submit" className="btn btn-gold btn-block" disabled={!bank.accountNumber}>주문 접수 · {total.toLocaleString()}원</button>
+              <button type="submit" className="btn btn-gold btn-block">주문 접수 · {total.toLocaleString()}원</button>
             </div>
           </div>
 

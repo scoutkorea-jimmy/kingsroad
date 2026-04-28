@@ -202,6 +202,7 @@ const TourPage = ({ go, user }) => {
 };
 
 const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, formatPrice, onRefresh, go }) => {
+  const [selectedBankId, setSelectedBankId] = React.useState(null);
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState(user?.name || "");
   const [email, setEmail] = React.useState(user?.email || "");
@@ -227,44 +228,51 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
     }
   };
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setError("");
     if (!user) return requireLogin('답사 신청');
     if (!name.trim() || !email.trim()) { setError("이름과 이메일은 필수입니다."); return; }
-    if ((tour.priceNumber || 0) > 0 && !bank.accountNumber) {
-      setError("운영자 계좌번호가 아직 등록되지 않았습니다. 잠시 후 다시 시도해 주세요.");
-      return;
+    try {
+      const result = await window.BGNJ_TOURS.reserve(tour.id, {
+        userId: user.id,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        count: Math.max(1, Number(count) || 1),
+        note: note.trim(),
+      });
+      if (!result?.ok) { setError(result?.message || "신청 처리에 실패했습니다."); return; }
+      setSubmitted(result.reservation);
+      onRefresh();
+      setOpen(false);
+    } catch (err) {
+      setError(err?.body?.error || err?.message || '신청 처리 중 오류');
     }
-    const result = window.BGNJ_TOURS.reserve(tour.id, {
-      userId: user.id,
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      count: Math.max(1, Number(count) || 1),
-      note: note.trim(),
-    });
-    if (!result.ok) { setError(result.message || "신청 처리에 실패했습니다."); return; }
-    setSubmitted(result.reservation);
-    onRefresh();
-    setOpen(false);
   };
 
-  const cancelMyReg = () => {
+  const cancelMyReg = async () => {
     if (!myReg) return;
     if (!confirm("이 답사 신청을 취소하시겠어요?")) return;
-    window.BGNJ_TOURS.cancelReservation(tour.id, myReg.id);
-    onRefresh();
-    setSubmitted(null);
+    try {
+      await window.BGNJ_TOURS.cancelReservation(tour.id, myReg.id);
+      onRefresh(); setSubmitted(null);
+    } catch (err) {
+      alert('취소 실패: ' + (err?.body?.error || err?.message || ''));
+    }
   };
 
-  const submitRefund = () => {
+  const submitRefund = async () => {
     setRefundError("");
     if (!refundReason.trim()) { setRefundError("환불 사유를 입력해 주세요."); return; }
-    const result = window.BGNJ_TOURS.requestRefund(tour.id, myReg.id, refundReason);
-    if (!result.ok) { setRefundError(result.message); return; }
-    setRefundMode(false); setRefundReason("");
-    onRefresh();
+    try {
+      const result = await window.BGNJ_TOURS.requestRefund(tour.id, myReg.id, refundReason);
+      if (!result?.ok) { setRefundError(result?.message || '환불 신청 실패'); return; }
+      setRefundMode(false); setRefundReason("");
+      onRefresh();
+    } catch (err) {
+      setRefundError(err?.body?.error || err?.message || '환불 신청 중 오류');
+    }
   };
 
   const downloadIcs = () => window.BGNJ_TOURS.downloadIcs(tour.id);
@@ -384,24 +392,19 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
 
       {/* 무통장 입금 안내 */}
       {showPaymentInfo && (
-        <div style={{padding:14, background:'rgba(212,175,55,0.04)', border:'1px dashed var(--gold-dim)', marginBottom:16, fontSize:12}}>
-          <div className="mono gold" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:8}}>BANK TRANSFER</div>
-          {bank.accountNumber ? (
-            <div style={{display:'grid', gap:6, lineHeight:1.6}}>
-              <div style={{display:'flex', justifyContent:'space-between'}}><span className="dim">은행</span><span>{bank.bankName || '-'}</span></div>
-              <div style={{display:'flex', justifyContent:'space-between'}}><span className="dim">계좌</span><span className="gold mono">{bank.accountNumber}</span></div>
-              <div style={{display:'flex', justifyContent:'space-between'}}><span className="dim">예금주</span><span>{bank.holder || '-'}</span></div>
-              <div style={{display:'flex', justifyContent:'space-between'}}>
-                <span className="dim">금액</span>
-                <span className="gold ko-serif" style={{fontSize:15}}>
-                  {formatPrice((tour.priceNumber || 0) * (myReg?.count || submitted?.count || 1))}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <p className="dim" style={{fontSize:12, color:'var(--danger)'}}>계좌번호가 등록되지 않았습니다. 운영자에게 문의해 주세요.</p>
-          )}
-        </div>
+        <div style={{marginBottom:16}}>
+          {window.BGNJ_BankAccountPicker
+            ? <window.BGNJ_BankAccountPicker value={selectedBankId} onChange={setSelectedBankId}/>
+            : null}
+          <div style={{
+            marginTop:10, padding:'10px 14px', background:'var(--bg-2)',
+            border:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'baseline',
+          }}>
+            <span className="dim" style={{fontSize:13}}>입금 금액</span>
+            <span className="gold ko-serif" style={{fontSize:18}}>
+              {formatPrice((tour.priceNumber || 0) * (myReg?.count || submitted?.count || 1))}
+            </span>
+          </div>
       )}
 
       {/* 신청 폼 진입 */}

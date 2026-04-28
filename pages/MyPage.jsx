@@ -296,10 +296,14 @@ const MyPage = ({ go, user, cart }) => {
                         </button>
                         {o.status === 'pending_payment' && (
                           <button type="button" className="btn-ghost"
-                            onClick={() => {
+                            onClick={async () => {
                               if (!confirm(`주문 ${o.orderNo}을(를) 취소하시겠어요?`)) return;
-                              window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
-                              refreshOrders();
+                              try {
+                                await window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
+                                refreshOrders();
+                              } catch (err) {
+                                alert('취소 실패: ' + (err?.body?.error || err?.message || ''));
+                              }
                             }}
                             style={{ fontSize: 11, color: 'var(--danger)' }}>
                             주문 취소
@@ -331,13 +335,17 @@ const MyPage = ({ go, user, cart }) => {
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button type="button" className="btn btn-small"
                         style={{ borderColor: '#e8a020', color: '#e8a020' }}
-                        onClick={() => {
+                        onClick={async () => {
                           setRefundError('');
                           if (!refundReason.trim()) { setRefundError('환불 사유를 입력해 주세요.'); return; }
-                          const result = window.BGNJ_BOOK_ORDERS.requestRefund(refundTarget.id, refundReason);
-                          if (!result.ok) { setRefundError(result.message); return; }
-                          setRefundTarget(null); setRefundReason('');
-                          refreshOrders();
+                          try {
+                            const result = await window.BGNJ_BOOK_ORDERS.requestRefund(refundTarget.id, refundReason);
+                            if (!result?.ok) { setRefundError(result?.message || '환불 신청 실패'); return; }
+                            setRefundTarget(null); setRefundReason('');
+                            refreshOrders();
+                          } catch (err) {
+                            setRefundError(err?.body?.error || err?.message || '환불 신청 중 오류');
+                          }
                         }}>
                         신청하기
                       </button>

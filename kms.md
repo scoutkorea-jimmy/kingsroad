@@ -640,11 +640,11 @@ KMS를 수정할 때는 가능하면 아래 구조를 따른다.
 
 ## 🔴 P0 — 실사용자 차단
 
-| 코드 | 문제 | 위치 | 권장 조치 |
-|---|---|---|---|
-| P0-1 | 결제 폼(강연/투어/책) 에 입금 계좌 선택 UI 부재 | `LecturesPage.jsx:286`, `WangsanamTourPage.jsx`, `BookCheckoutPage.jsx:475` | `<BGNJ_BankAccountPicker value onChange/>` 삽입 |
-| P0-2 | 관리자 패널 '열기' 버튼이 페이지 이동만 — 모달 미wiring | `AuthAdminPage.jsx:5298`, `:1865` | `PostViewerModal` 호출로 교체 |
-| P0-3 | 강연 신청 / 투어 예약 / 책 주문 헬퍼는 async 인데 페이지가 sync 로 호출 | `LecturesPage.jsx:183`, `WangsanamTourPage.jsx:239`, `BookCheckoutPage.jsx:417` | 호출 사이트에 await + try/catch 적용 |
+(v00.036.000 에서 모두 해소. 변경 기록 참조.)
+
+~~| P0-1 | 결제 폼 BankAccountPicker 미wiring → ✅ 해소 |~~
+~~| P0-2 | 관리자 PostViewerModal 미wiring → ✅ 해소 |~~
+~~| P0-3 | async 헬퍼 sync 호출 → ✅ await/try-catch 일괄 적용 |~~
 
 ## 🟡 P1 — 기능 제한 / UX 저하
 
@@ -694,6 +694,7 @@ KMS를 수정할 때는 가능하면 아래 구조를 따른다.
 - 2026-04-27: KMS 현행화. 5가지 미션 평가 요약 업데이트(커뮤니티 ~95%, 책 ~90%). 커뮤니티·책 판매 영역 기능 섹션 갱신. 마이페이지 취소·환불 UI 반영. P3 이후 남은 과제에서 P5 완료 항목 정리.
 - 2026-04-27: 의사결정 반영. Cloudflare(Workers + D1 + R2)로 외부 DB·인증·이미지 스토리지 방향 확정. PG 결제는 스켈레톤 UI 먼저(비활성화), 이메일 알림은 인프라 준비 후 비활성화 상태 배포. gilwell-media 로컬 105커밋 동기화 완료. 강연/투어 환불 신청 흐름 누락 식별(P5 책만 구현됨) — project-priority-table에 ⚠️ 미완으로 기록.
 - 2026-04-27: 강연/투어 환불 신청 흐름 구현 완료 (v00.021.000). BGNJ_LECTURES·BGNJ_TOURS에 requestRefund/approveRefund/rejectRefund 추가. LecturesPage·TourPage 사이드바에 참가 확정(유료) 환불 신청 폼(사유 입력) + 상태 표시 적용. 관리자 LectureAdminPanel·TourAdminPanel에 환불 승인/반려 UI 추가. MyPage 강연/투어 상태 레이블에 refund_requested 반영. KMS 및 project-priority-table 전체 완료 처리.
+- 2026-04-29: 🚀 P0 일괄 해소 + 디자인 시스템 라이브 도파 (v00.036.000). 무엇이 바뀌었나: ① 결제 폼 3곳(강연/투어/책)에 `BGNJ_BankAccountPicker` 결합. ② 관리자 패널 '열기' 두 곳(community posts/reports) → `PostViewerModal` 모달. ③ async 헬퍼 sync 호출 사이트 4곳(LectureBookingPanel/TourBookingPanel/BookCheckoutPage/MyPage) await + try/catch 일괄 적용. ④ 버전 표시 헤더 'v' 접두사. ⑤ KMS 디자인 탭 전면 재구축 — `DesignSystemView` 컴포넌트 신설, 11 섹션 라이브 도파(컬러 토큰 11종 스와치 / 타이포 5종 렌더 샘플 / 스페이싱·라운드·엘리베이션 시각화 / 버튼 5종 라이브 / 배지 4종 / 폼 라이브 / 카드 3종 / 표 / 모달 / 피드백 3종 / 화면 작업 원칙). 각 섹션은 정의·특징·활용처·라이브 샘플 4-축. 왜: 사용자 요청 'v00.035.000 표시 정상화 + 모든 오류 해결 + 디자인 탭을 실질 샘플 + 용어 정의 + 특징 + 활용처로 완성'. 다음 작업: P1 위험 처리(SEO/MyPage 이벤트 리스너, 토스트 무한루프 가드, 매퍼 표준화).
 - 2026-04-29: 🩺 종합 점검 + 문서 동기화 (v00.035.001). 무엇이 바뀌었나: ① 사이트 전반 잠재 오류/리스크 종합 감사를 수행하고 결과를 KMS 부록 '현재 위험 인벤토리' 섹션에 정리. ② project-priority-table.md 를 P0/P1/P2 로 재정리. ③ ai-development-rules.md 에 '오류 로그 우선 확인' 외 신규 운영 원칙(서버 source-of-truth 원칙, 비동기 호출 await 의무, ?v= cache-buster 의무) 추가. ④ KMS 디자인 탭 갱신(현 디자인 시스템 기준 컬러/타이포/컴포넌트). 식별된 P0 위험: ① 결제 폼 3곳에 BGNJ_BankAccountPicker 미wiring, ② 관리자 게시글 모달 PostViewerModal 미wiring, ③ async 헬퍼를 sync 호출하는 페이지 존재 (LecturesPage:183, WangsanamTourPage:239, BookCheckoutPage:417). 다음 사이클: P0 3건 일괄 처리.
 - 2026-04-29: 운영 인프라 대규모 보강 (v00.035.000). 무엇이 바뀌었나: ① Worker CORS Allow-Methods 에 PUT 추가 — 무통장 PUT preflight 통과. ② D1.bank_accounts 테이블 + CRUD 엔드포인트 + BankAccountPanel 표 UI(멀티 계좌, 기본 계좌 지정) + BGNJ_BankAccountPicker 결제 셀렉터. ③ 설정 탭 중복 BankAccountPanel 제거 → 안내 인포 박스. ④ ROPA 카드 → 7컬럼 표. ⑤ 회원 관리에 상태 필터(전체/활성/정지/관리자) + 정렬 8종(가입일/이름/이메일/등급/게시글수/댓글수). ⑥ D1.error_log 테이블 + Worker POST /api/error-log(익명 허용) + GET /admin/error-log + DELETE. GlobalErrorToast/AppErrorBoundary 가 모든 오류 자동 서버 보고. 관리자 '오류 로그' 패널에서 검색/필터/삭제. ⑦ 토스트 10초 자동 소거. ⑧ '시스템 관리 > SEO' 탭 신설(OG title/description/이미지 + Hero 3행 제목/부제 + 브랜드명). 저장 즉시 <head> 메타 반영. ⑨ ai-development-rules.md '작업 시작 전 오류 로그 우선 확인' 규칙 추가. ⑩ PostViewerModal 컴포넌트 신설(관리자 '열기' 버튼 → 모달 본문/메타/댓글). Worker 배포 c192f088. 왜: 사용자 6 가지 요청 일괄 처리. 다음: 결제 화면(강연/투어/책)에 BGNJ_BankAccountPicker wiring + PostViewerModal 호출 사이트 정리.
 - 2026-04-28: 공감 1-shot + /me/tours 500 수정 + 댓글 가독성 + 약관 패널 서버 동기 (v00.034.001). 무엇이 바뀌었나: ① Worker handleMyTours 가 tours 테이블에 없는 `location` 컬럼 select 하던 버그 제거. ② Worker handleLikeToggle 이 토글 후 likes 배열을 응답에 동봉 → 클라이언트 1회 호출로 끝. ③ BGNJ_COMMUNITY.toggleLike 가 낙관적 메모리 캐시 갱신 + 서버 응답 교정 패턴 적용. _patchLikesInMemory 헬퍼 신설(localStorage 미터치). ④ 댓글 본문 @멘션 폰트 weight 600→500 으로 가벼워져 평문 가독성 회복. ⑤ LegalAdminPanel 이 mount 시 server refresh + save 시 await + 성공/실패 메시지 + 탭 UI 로 정리. 왜: v00.032 트랜잭션 헬퍼 일괄 전환 직후 회귀(스키마 불일치 + UX 지연 + 시드 게시글 캐시 갱신 누락) 일괄 처리. 다음 작업: 페이지 sync→async 정리 잔여, 이용약관 GUI 정리.
