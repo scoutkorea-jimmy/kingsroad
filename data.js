@@ -2,9 +2,40 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.027.001",
+  version: "00.027.002",
   build: "2026.04.28",
   channel: "preview",
+};
+
+// 로딩 직후 콘솔에 버전 표식 — '내가 어떤 코드를 보고 있는지' 즉시 확인용.
+// 강제 새로고침이 필요한 사용자도 콘솔로 빠르게 진단 가능.
+try {
+  console.log(
+    `%c[BGNJ] v${window.BGNJ_VERSION.version} · build ${window.BGNJ_VERSION.build}`,
+    'background:#1E3A8A;color:#F5E6A8;padding:3px 8px;border-radius:3px;font-weight:600;'
+  );
+} catch {}
+
+// 진단용 헬스체크 헬퍼 — 콘솔에서 BGNJ_DIAG.run() 으로 즉시 실행 가능.
+window.BGNJ_DIAG = {
+  async run() {
+    const result = { version: window.BGNJ_VERSION, origin: location.origin, time: new Date().toISOString() };
+    try {
+      const t0 = performance.now();
+      const health = await window.BGNJ_API.health();
+      result.health = { ok: true, latencyMs: Math.round(performance.now() - t0), ...health };
+    } catch (err) {
+      result.health = { ok: false, code: err?.code, status: err?.status, message: err?.message, url: err?.url };
+    }
+    try {
+      const me = await window.BGNJ_API.me();
+      result.session = { ok: true, user: me?.user || null };
+    } catch (err) {
+      result.session = { ok: false, code: err?.code, status: err?.status, message: err?.message };
+    }
+    console.log('[BGNJ_DIAG]', result);
+    return result;
+  },
 };
 
 // === wsd_* → bgnj_* 일회성 마이그레이션 ===
