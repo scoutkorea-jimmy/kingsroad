@@ -160,6 +160,7 @@
       remove: (id) => request("DELETE", `/lectures/${id}`),
       register: (id, { phone } = {}) => request("POST", `/lectures/${id}/register`, { phone }),
       mineRegistrations: () => request("GET", "/me/lectures"),
+      adminRegistrations: (lectureId) => request("GET", `/lectures/${lectureId}/registrations`),
       cancelRegistration: (regId) => request("DELETE", `/lecture-registrations/${regId}`),
       patchRegistration: (regId, patch) => request("PATCH", `/lecture-registrations/${regId}`, patch),
       reviews: {
@@ -178,6 +179,7 @@
       remove: (id) => request("DELETE", `/tours/${id}`),
       reserve: (id, { phone } = {}) => request("POST", `/tours/${id}/reserve`, { phone }),
       mineReservations: () => request("GET", "/me/tours"),
+      adminReservations: (tourId) => request("GET", `/tours/${tourId}/reservations`),
       cancelReservation: (regId) => request("DELETE", `/tour-reservations/${regId}`),
       patchReservation: (regId, patch) => request("PATCH", `/tour-reservations/${regId}`, patch),
       reviews: {
@@ -216,6 +218,7 @@
         list: ({ q } = {}) => request("GET", `/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`),
         update: (id, patch) => request("PATCH", `/admin/users/${id}`, patch),
         remove: (id) => request("DELETE", `/admin/users/${id}`),
+        activity: (id) => request("GET", `/admin/users/${id}/activity`),
       },
       audit: {
         list: ({ limit } = {}) => request("GET", `/admin/audit${limit ? `?limit=${limit}` : ""}`),
@@ -234,6 +237,8 @@
       create: (payload) => request("POST", "/columns", payload),
       update: (id, patch) => request("PATCH", `/columns/${id}`, patch),
       remove: (id) => request("DELETE", `/columns/${id}`),
+      like: (id) => request("POST", `/columns/${id}/like`),
+      view: (id) => request("POST", `/columns/${id}/view`),
     },
     siteContent: {
       get: () => request("GET", "/site-content"),

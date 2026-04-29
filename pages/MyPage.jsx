@@ -7,6 +7,28 @@ const MyPage = ({ go, user, cart }) => {
   const [refundError, setRefundError] = React.useState('');
   const refreshOrders = () => setOrderTick((v) => v + 1);
 
+  // 글로벌 데이터 변경 이벤트 listen — 다른 곳(관리자/관계자 액션)에서 본인 데이터가 바뀌면 즉시 반영.
+  React.useEffect(() => {
+    const onR = () => refreshOrders();
+    const events = [
+      'bgnj-orders-refresh',
+      'bgnj-lectures-refresh',
+      'bgnj-tours-refresh',
+      'bgnj-notifications-refresh',
+    ];
+    events.forEach((e) => window.addEventListener(e, onR));
+    // 마이페이지 진입 시 본인 데이터 강제 동기화.
+    if (user?.id) {
+      Promise.allSettled([
+        window.BGNJ_BOOK_ORDERS?.refreshMine?.(),
+        window.BGNJ_LECTURES?.refreshMine?.(),
+        window.BGNJ_TOURS?.refreshMine?.(),
+        window.BGNJ_COMMUNITY?.refreshNotifications?.(user.id),
+      ]).then(() => refreshOrders());
+    }
+    return () => events.forEach((e) => window.removeEventListener(e, onR));
+  }, [user?.id]);
+
   const grades = window.BGNJ_STORES?.grades || [];
   const grade = grades.find((item) => item.id === user?.gradeId);
   const upcomingLecture = data.lectures?.[0];

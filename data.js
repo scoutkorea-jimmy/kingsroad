@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.037.000",
-  build: "2026.04.29",
+  version: "00.038.000",
+  build: "2026.04.28",
   channel: "preview",
 };
 
@@ -569,8 +569,32 @@ window.BGNJ_AUTH = {
     }
     return next;
   },
+  // 회원 활동 — 서버 집계(GET /api/admin/users/:id/activity) 캐시.
+  _activityCache: {},
+  async fetchActivity(userId) {
+    if (!userId) return null;
+    try {
+      const res = await window.BGNJ_API.admin.users.activity(userId);
+      const a = res?.activity || res || {};
+      const result = {
+        postCount: a.postCount || 0,
+        commentCount: a.commentCount || 0,
+        bookmarkCount: a.bookmarkCount || 0,
+        bookOrders: Array.isArray(a.bookOrders) ? a.bookOrders : Array.from({ length: a.orderCount || 0 }),
+        lectures: Array.isArray(a.lectures) ? a.lectures : Array.from({ length: a.lectureCount || 0 }),
+        tours: Array.isArray(a.tours) ? a.tours : Array.from({ length: a.tourCount || 0 }),
+        notifications: Array.isArray(a.notifications) ? a.notifications : Array.from({ length: a.notificationCount || 0 }),
+        posts: Array.isArray(a.posts) ? a.posts : [],
+      };
+      this._activityCache[userId] = result;
+      return result;
+    } catch {
+      return this.getActivity(userId);
+    }
+  },
   getActivity(userId) {
     if (!userId) return null;
+    if (this._activityCache[userId]) return this._activityCache[userId];
     const posts = (window.BGNJ_COMMUNITY?.listPosts?.() || []).filter((p) => p.authorId === userId);
     const comments = Object.values(window.BGNJ_STORES.comments || {})
       .reduce((sum, list) => sum + (Array.isArray(list) ? list.filter((c) => c.authorId === userId).length : 0), 0);
@@ -1005,15 +1029,27 @@ window.BGNJ_COLUMNS = {
   },
   getLikes(id) { return (this._columns.find((c) => String(c.id) === String(id))?.likes) || []; },
   hasLiked(id, userId) { return !!userId && this.getLikes(id).includes(userId); },
-  toggleLike(_id, _userId) {
-    // 칼럼 좋아요는 별도 D1 테이블 없이 user_columns.likes_json 으로 관리.
-    // 현재는 공개 토글 endpoint 가 없으므로 추후 사이클에서 추가. (no-op)
-    return null;
+  async toggleLike(id, _userId) {
+    try {
+      const { likes } = await window.BGNJ_API.columns.like(id);
+      const target = this._columns.find((c) => String(c.id) === String(id));
+      if (target) target.likes = Array.isArray(likes) ? likes : (target.likes || []);
+      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}
+      return target?.likes || [];
+    } catch (err) {
+      window.BGNJ_API?.errorLog?.report?.({ kind: 'http', code: err?.code || 'COLUMN_LIKE_FAIL', message: err?.message || '칼럼 좋아요 실패', url: err?.url });
+      return null;
+    }
   },
   getViews(id) { return this._columns.find((c) => String(c.id) === String(id))?.views || 0; },
-  incrementViews(_id) {
-    // 조회수 카운트는 서버 측 PATCH 가 필요. 지금은 렌더만 동작.
-    return 0;
+  async incrementViews(id) {
+    try {
+      const { views } = await window.BGNJ_API.columns.view(id);
+      const target = this._columns.find((c) => String(c.id) === String(id));
+      if (target && typeof views === 'number') target.views = views;
+      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}
+      return views || 0;
+    } catch { return 0; }
   },
   listAll() { return this._columns.slice(); },
   listPublic() {
@@ -1072,10 +1108,16 @@ window.BGNJ_LECTURES = {
   _registrationsByLecture: {}, // 관리자가 강연별 신청 목록을 fetch 한 결과 캐시
   _reviewsByLecture: {},
   _toLecture(r) {
+    if (!r) return null;
     return {
       id: r.id, title: r.title, topic: r.topic, venue: r.venue, host: r.host,
-      next: r.next, startsAt: r.starts_at, durationMinutes: r.duration_minutes,
-      capacity: r.capacity, price: r.price, note: r.note, hidden: !!r.hidden,
+      next: r.next,
+      startsAt: r.starts_at || r.startsAt || null,
+      durationMinutes: r.duration_minutes || r.durationMinutes || 0,
+      capacity: r.capacity || 0,
+      price: r.price || 0,
+      note: r.note || '',
+      hidden: !!r.hidden,
     };
   },
   async refresh({ admin, includeHidden } = {}) {
@@ -1121,12 +1163,22 @@ window.BGNJ_LECTURES = {
     await window.BGNJ_API.lectures.remove(id);
     await this.refresh({ includeHidden: true });
   },
-  // ── 신청 ──
+  // ── 신청 (관리자) ──
   listRegistrations(lectureId) { return (this._registrationsByLecture[String(lectureId)] || []).slice(); },
-  async refreshRegistrations(_lectureId) {
-    // 현재 Worker 에 강연별 전체 신청 목록 endpoint 가 없음 — listAll 한 번에 조회 후 그룹.
-    // 다음 사이클에서 GET /api/lectures/:id/registrations 추가 권장.
-    return [];
+  async refreshRegistrations(lectureId) {
+    if (!lectureId) return [];
+    try {
+      const { registrations } = await window.BGNJ_API.lectures.adminRegistrations(lectureId);
+      const mapped = (registrations || []).map((r) => ({
+        id: r.id, lectureId: r.lecture_id, userId: r.user_id,
+        name: r.user_name, email: r.user_email, phone: r.user_phone,
+        status: r.status, paid: r.status === 'confirmed',
+        count: 1, price: r.price || 0,
+        createdAt: r.created_at, paidAt: r.paid_at, cancelledAt: r.cancelled_at,
+      }));
+      this._registrationsByLecture[String(lectureId)] = mapped;
+      return mapped;
+    } catch { return this._registrationsByLecture[String(lectureId)] || []; }
   },
   getSeats(lectureId) {
     const lecture = this.getLecture(lectureId);
@@ -1486,11 +1538,17 @@ window.BGNJ_TOURS = {
   _myReservations: [],
   _reviewsByTour: {},
   _toTour(r) {
+    if (!r) return null;
+    const price = r.price || 0;
     return {
-      id: r.id, title: r.title, location: r.location, host: r.host,
-      startsAt: r.starts_at, endsAt: r.ends_at, durationMinutes: r.duration_minutes,
-      capacity: r.capacity, price: r.price, priceNumber: r.price,
-      desc: r.description || r.desc, hidden: !!r.hidden,
+      id: r.id, title: r.title, location: r.location || '', host: r.host || '',
+      startsAt: r.starts_at || r.startsAt || null,
+      endsAt: r.ends_at || r.endsAt || null,
+      durationMinutes: r.duration_minutes || r.durationMinutes || 0,
+      capacity: r.capacity || 0,
+      price, priceNumber: price,
+      desc: r.description || r.desc || '',
+      hidden: !!r.hidden,
     };
   },
   async refresh({ includeHidden } = {}) {
@@ -1536,8 +1594,24 @@ window.BGNJ_TOURS = {
     await window.BGNJ_API.tours.remove(id);
     await this.refresh({ includeHidden: true });
   },
-  // ── 예약 ──
-  listReservations(_tourId) { return []; }, // admin per-tour list endpoint not yet provided.
+  // ── 예약 (관리자) ──
+  _reservationsByTour: {},
+  listReservations(tourId) { return (this._reservationsByTour[String(tourId)] || []).slice(); },
+  async refreshReservations(tourId) {
+    if (!tourId) return [];
+    try {
+      const { reservations } = await window.BGNJ_API.tours.adminReservations(tourId);
+      const mapped = (reservations || []).map((r) => ({
+        id: r.id, tourId: r.tour_id, userId: r.user_id,
+        name: r.user_name, email: r.user_email, phone: r.user_phone,
+        status: r.status, paid: r.status === 'confirmed',
+        count: r.qty || 1, price: r.price || 0,
+        createdAt: r.created_at, paidAt: r.paid_at, cancelledAt: r.cancelled_at,
+      }));
+      this._reservationsByTour[String(tourId)] = mapped;
+      return mapped;
+    } catch { return this._reservationsByTour[String(tourId)] || []; }
+  },
   getSeats(tourId) {
     const tour = this.getTour(tourId);
     return { capacity: tour?.capacity || 0, taken: 0, waitlist: 0, remaining: tour?.capacity || 0 };

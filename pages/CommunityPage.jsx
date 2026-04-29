@@ -183,7 +183,8 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
 
 // === Comment tree (다단계 답글, 최대 깊이 MAX_DEPTH) ======================
 // @멘션은 본문에 @이름 토큰을 골드 chip 으로 렌더링.
-const MAX_REPLY_DEPTH = 3;
+// 답글 트리 — 시각적 들여쓰기 기본 캡(3). 그 이상은 자동 펼침/접기 토글로 노출.
+const MAX_VISIBLE_DEPTH = 3;
 
 const renderCommentText = (text) => {
   if (!text) return null;
@@ -217,9 +218,13 @@ const CommentTree = ({ comments, user, onDelete, onReply }) => {
     setOpenReplyTo(null);
   };
 
+  // 깊이 제한을 풀고 (서버는 무제한 허용), 시각만 MAX_VISIBLE_DEPTH 까지 들여쓰기.
+  const [expanded, setExpanded] = React.useState({}); // commentId -> true (사용자 펼침 클릭)
   const renderItem = (c, depth = 0) => {
     const children = repliesOf(c.id);
-    const canReply = !!user && depth < MAX_REPLY_DEPTH;
+    const canReply = !!user; // 깊이 무관 답글 허용
+    const visualDepth = Math.min(depth, MAX_VISIBLE_DEPTH);
+    const isDeepCollapsed = depth >= MAX_VISIBLE_DEPTH && !expanded[c.id] && children.length > 0;
     return (
       <li key={c.id} style={{padding:'18px 0', borderBottom: depth === 0 ? '1px solid var(--line)' : 'none'}}>
         <div style={{display:'flex', gap:16, alignItems:'center', justifyContent:'space-between', marginBottom:10}}>
@@ -270,11 +275,35 @@ const CommentTree = ({ comments, user, onDelete, onReply }) => {
           </form>
         )}
 
-        {/* 자식 답글들 — 재귀 렌더 */}
+        {/* 자식 답글들 — 깊이 캡 도달 전까지 재귀, 도달 후엔 '펼치기' 토글 */}
         {children.length > 0 && (
-          <ol style={{listStyle:'none', padding:0, margin:'12px 0 0 24px', borderLeft:'2px solid var(--line)', paddingLeft:14}}>
-            {children.map((r) => renderItem(r, depth + 1))}
-          </ol>
+          isDeepCollapsed ? (
+            <button type="button" className="btn-ghost"
+              onClick={() => setExpanded((s) => ({ ...s, [c.id]: true }))}
+              style={{
+                marginTop:10, marginLeft:24, fontSize:11, color:'var(--ink-3)',
+                padding:'4px 10px', border:'1px dashed var(--line)',
+              }}>
+              ↳ 답글 {children.length}개 펼치기
+            </button>
+          ) : (
+            <ol style={{
+              listStyle:'none', padding:0,
+              margin: depth < MAX_VISIBLE_DEPTH ? '12px 0 0 24px' : '12px 0 0 12px',
+              borderLeft:'2px solid var(--line)', paddingLeft:14,
+            }}>
+              {children.map((r) => renderItem(r, depth + 1))}
+              {depth >= MAX_VISIBLE_DEPTH && (
+                <li>
+                  <button type="button" className="btn-ghost"
+                    onClick={() => setExpanded((s) => ({ ...s, [c.id]: false }))}
+                    style={{fontSize:11, color:'var(--ink-3)', padding:'4px 10px'}}>
+                    ↑ 답글 접기
+                  </button>
+                </li>
+              )}
+            </ol>
+          )
         )}
       </li>
     );

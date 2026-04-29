@@ -468,6 +468,27 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.038.000",
+    date: "2026-04-28",
+    summary: "P1 + P2 우선순위 일괄 해소. 서버 알림 부수효과(댓글/등록/주문 자동 알림 insert) + 강연/투어 관리자 신청자 endpoint + 칼럼 좋아요·조회수 D1 영속 + 회원 활동 집계 endpoint + 응답 매퍼 방어적 폴백 + 댓글 트리 깊이 펼침/접기 + 새 콘텐츠 시드 백필 버튼.",
+    details: [
+      "🌐 Worker — `insertNotification(env, ...)` 헬퍼 + `handleCommentsCreate` 가 게시글 작성자/부모 댓글 작성자에게 자동 알림 insert. `handleLectureRegistrationPatch` / `handleTourReservationPatch` / `handleOrderPatch` 가 상태 변경 시 자동 알림.",
+      "🌐 Worker — `GET /api/admin/users/:id/activity` (게시글·댓글·북마크·주문·강연·투어·알림 7 종 카운트 + 최근 목록).",
+      "🌐 Worker — `GET /api/lectures/:id/registrations` + `GET /api/tours/:id/reservations` 관리자 전용 신청자 목록.",
+      "🌐 Worker — `POST /api/columns/:id/like` (토글) + `POST /api/columns/:id/view` (조회수 +1). user_columns.likes_json + views 컬럼 영속.",
+      "🪶 P1-1 — HomePage 가 `bgnj-site-content-refresh` 이벤트로 즉시 재렌더 (관리자 SEO/Hero 변경이 새로고침 없이 반영).",
+      "🪶 P1-2 — MyPage 가 `bgnj-orders-refresh / bgnj-lectures-refresh / bgnj-tours-refresh / bgnj-notifications-refresh` 4 이벤트 동기 + mount 시 mine refresh 4건 일괄 fetch.",
+      "🪶 P1-3 — GlobalErrorToast 의 `__reportingError` reentry guard. 오류 보고 자체가 오류를 일으키는 무한 루프 차단.",
+      "🪶 P1-4 — `_toLecture` / `_toTour` 응답 매퍼에 `r.starts_at || r.startsAt` 패턴 + null guard 추가. 컬럼명 변경에 견고.",
+      "🪶 P1-5 — 회원 등급 셀에 grade 미존재 시 `—` em-dash 폴백. 빈 셀 회피.",
+      "🌳 P2-5 — 댓글 트리: `MAX_REPLY_DEPTH` (답글 차단) → `MAX_VISIBLE_DEPTH` (시각 깊이만 제한, 답글 무제한). 3 단계 이상은 [+ N개 더보기] / [- 접기] 버튼으로 펼침/접기 토글.",
+      "🌱 P2-1 — LectureAdminPanel / TourAdminPanel / BooksAdminPanel 에 `샘플 데이터 추가` 버튼 (각 패널이 비어 있을 때만 노출). 강연 3 / 답사 3 / 책 2 권 시드.",
+      "🔌 클라이언트 wiring — `BGNJ_COLUMNS.toggleLike` / `incrementViews` 가 새 endpoint 호출 + 메모리 캐시 갱신. `BGNJ_AUTH.fetchActivity` 추가 → MemberAdminPanel detail 이 서버 집계 사용. `BGNJ_LECTURES.refreshRegistrations` / `BGNJ_TOURS.refreshReservations` 가 신규 endpoint 사용. LectureAdminPanel / TourAdminPanel 이 mount 시 일괄 fetch.",
+      "📦 cache-buster — `?v=00.038.000`.",
+    ],
+    context: "사용자 요청 'P1 은 전체 진행해줘 / P2 도 개선해주고' 한 묶음 처리. 사이클 시작 시점의 P1 5 항목 전부 + P2 6 항목 중 5 항목 처리 (PG 결제 P2-4 는 사용자 결정으로 보류). 서버 알림 부수효과를 도입해 클라이언트 알림 insert 를 완전히 제거할 토대 마련. 다음 사이클 권장: ① 클라이언트 측 BGNJ_COMMUNITY.addNotification 호출부 점진 제거 ② 칼럼 likes 의 D1 별도 테이블 분리(현재 user_columns.likes_json) ③ 알림 deeplink 정합 검수.",
+  },
+  {
     version: "00.037.000",
     date: "2026-04-29",
     summary: "🪶 새 브랜드 자산 + 의식주 + 행문 매트릭스 + 서버 운영 매트릭스 정리. 새 브랜드 로고(노란 라운드 + B + 뱅기 + 별 SVG) 를 BanginojaIcon / favicon / static asset 3 곳에 적용. 새 메뉴 3종(먹고 놀자 / 자고 놀자 / 사고 놀자) 신설로 의식주(衣食住) 3 요소가 행문(行文) 과 결합되는 인문학 여행 매트릭스 완성. KMS 본문에 '서버 기준 운영 매트릭스' 추가 — 의도적 클라이언트 보존 항목과 사유 명문화.",
@@ -2489,6 +2510,17 @@ const LectureAdminPanel = ({ go }) => {
 
   const refresh = () => setTick((v) => v + 1);
 
+  // 강연별 신청 목록을 mount 시 일괄 fetch.
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const list = window.BGNJ_LECTURES.listAll({ includeHidden: true });
+      await Promise.allSettled(list.map((l) => window.BGNJ_LECTURES.refreshRegistrations(l.id)));
+      if (!cancelled) refresh();
+    })();
+    return () => { cancelled = true; };
+  }, [lectures.length]);
+
   const startEdit = (l) => {
     const startsAtLocal = (() => {
       if (!l.startsAt) return '';
@@ -2566,7 +2598,27 @@ const LectureAdminPanel = ({ go }) => {
           결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다.
           계좌번호는 <strong className="gold">시스템 → 설정</strong> 탭에서 등록합니다.
         </p>
-        <button type="button" className="btn btn-gold btn-small" onClick={addNewLecture}>＋ 새 강연 추가</button>
+        <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+          {lectures.length === 0 && (
+            <button type="button" className="btn btn-small" onClick={async () => {
+              if (!confirm('샘플 강연 3개를 추가합니다. 진행할까요?')) return;
+              const samples = [
+                { title: '왕의 길', topic: '조선 왕실의 일상과 의례', venue: '경복궁 수정전', host: '뱅기노자', durationMinutes: 90, capacity: 30, price: 0, note: '경복궁 답사와 함께하는 인문학 강연.' },
+                { title: '문(門)을 읽다', topic: '궁궐 문(門)에 새겨진 인문학', venue: '창덕궁 인정전', host: '뱅기노자', durationMinutes: 90, capacity: 30, price: 30000, note: '궁궐 곳곳의 문에 담긴 의미를 해독합니다.' },
+                { title: '차(茶) 한 잔의 인문학', topic: '동아시아 차 문화와 사유', venue: '뱅기노자 사랑방', host: '뱅기노자', durationMinutes: 75, capacity: 20, price: 50000, note: '차 한 잔에 담긴 천 년의 사유를 함께 따라갑니다.' },
+              ];
+              const pad = (n) => String(n).padStart(2, '0');
+              for (let i = 0; i < samples.length; i++) {
+                const d = new Date(Date.now() + (i + 1) * 7 * 24 * 60 * 60 * 1000);
+                const startsAt = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T19:00:00+09:00`;
+                const next = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} 19:00`;
+                await window.BGNJ_LECTURES.saveLecture({ id: `sample-lecture-${Date.now()}-${i}`, ...samples[i], startsAt, next });
+              }
+              refresh();
+            }}>샘플 데이터 추가</button>
+          )}
+          <button type="button" className="btn btn-gold btn-small" onClick={addNewLecture}>＋ 새 강연 추가</button>
+        </div>
       </div>
 
       {lectures.length === 0 ? (
@@ -2753,6 +2805,17 @@ const TourAdminPanel = ({ go }) => {
   const refresh = () => setTick((v) => v + 1);
   const tours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
 
+  // 답사별 예약 목록을 mount 시 일괄 fetch.
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const list = window.BGNJ_TOURS.listAll({ includeHidden: true });
+      await Promise.allSettled(list.map((t) => window.BGNJ_TOURS.refreshReservations(t.id)));
+      if (!cancelled) refresh();
+    })();
+    return () => { cancelled = true; };
+  }, [tours.length]);
+
   const startEdit = (t) => {
     const startsAtLocal = (() => {
       if (!t.startsAt) return '';
@@ -2842,7 +2905,35 @@ const TourAdminPanel = ({ go }) => {
           투어 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
           결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다(강연과 같은 계좌 사용).
         </p>
-        <button type="button" className="btn btn-gold btn-small" onClick={addNewTour}>＋ 새 투어 추가</button>
+        <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+          {tours.length === 0 && (
+            <button type="button" className="btn btn-small" onClick={async () => {
+              if (!confirm('샘플 답사 3개를 추가합니다. 진행할까요?')) return;
+              const samples = [
+                { title: '경복궁 — 왕의 일상', location: '경복궁 일대', host: '뱅기노자', durationMinutes: 180, capacity: 15, price: 30000, desc: '경복궁 외전·내전을 따라 왕의 하루를 좇는 답사.' },
+                { title: '창덕궁 — 후원 산책', location: '창덕궁 후원', host: '뱅기노자', durationMinutes: 150, capacity: 12, price: 35000, desc: '비원의 절경과 함께하는 인문학 산책.' },
+                { title: '북촌 — 한옥과 사람', location: '북촌 한옥마을', host: '뱅기노자', durationMinutes: 120, capacity: 10, price: 25000, desc: '북촌의 골목과 한옥에 담긴 이야기를 따라 걷습니다.' },
+              ];
+              const pad = (n) => String(n).padStart(2, '0');
+              for (let i = 0; i < samples.length; i++) {
+                const d = new Date(Date.now() + (i + 2) * 7 * 24 * 60 * 60 * 1000);
+                const startsAt = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T10:00:00+09:00`;
+                const next = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} 10:00`;
+                const sample = samples[i];
+                await window.BGNJ_TOURS.saveTour({
+                  id: `sample-tour-${Date.now()}-${i}`,
+                  title: sample.title, level: '입문', duration: `${Math.round(sample.durationMinutes/60)}시간`,
+                  group: `소그룹 (최대 ${sample.capacity}명)`, next, startsAt,
+                  durationMinutes: sample.durationMinutes, capacity: sample.capacity,
+                  priceNumber: sample.price, price: `${sample.price.toLocaleString()}원`,
+                  desc: sample.desc, location: sample.location, host: sample.host,
+                });
+              }
+              refresh();
+            }}>샘플 데이터 추가</button>
+          )}
+          <button type="button" className="btn btn-gold btn-small" onClick={addNewTour}>＋ 새 투어 추가</button>
+        </div>
       </div>
 
       {tours.length === 0 ? (
@@ -3995,7 +4086,20 @@ const BooksAdminPanel = () => {
         <aside aria-label="책 목록" style={{border:'1px solid var(--line)'}}>
           <div style={{padding:'10px 14px', borderBottom:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
             <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em'}}>BOOKS · {books.length}</span>
-            <button type="button" className="btn btn-small btn-gold" onClick={addBook}>＋ 새 책</button>
+            <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+              {books.length === 0 && (
+                <button type="button" className="btn btn-small" onClick={async () => {
+                  if (!confirm('샘플 책 2권을 추가합니다. 진행할까요?')) return;
+                  const samples = [
+                    { title: '왕의 길 — 조선 왕실의 일상', subtitle: '경복궁의 사계와 의례', author: '뱅기노자', publisher: '뱅기노자 출판부', priceKR: 18000, status: 'published', desc: '조선 왕실의 일상과 의례를 따라 걷는 인문학 산책.' },
+                    { title: '문(門)을 읽다', subtitle: '궁궐 문에 새겨진 인문학', author: '뱅기노자', publisher: '뱅기노자 출판부', priceKR: 22000, status: 'published', desc: '광화문에서 신무문까지, 문에 담긴 의미를 해독합니다.' },
+                  ];
+                  for (const s of samples) await window.BGNJ_BOOKS.create(s);
+                  refresh();
+                }}>샘플 데이터 추가</button>
+              )}
+              <button type="button" className="btn btn-small btn-gold" onClick={addBook}>＋ 새 책</button>
+            </div>
           </div>
           {addingBook && (
             <form onSubmit={(e) => { e.preventDefault(); submitAddBook(); }}
@@ -4888,7 +4992,17 @@ const MemberAdminPanel = ({ go }) => {
   }, [users, gradeFilter, statusFilter, search, sortKey, grades, tick]);
 
   const selected = users.find((u) => u.id === selectedId) || null;
-  const activity = selected ? window.BGNJ_AUTH.getActivity(selected.id) : null;
+  const [serverActivity, setServerActivity] = React.useState(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    setServerActivity(null);
+    if (!selected?.id) return () => {};
+    Promise.resolve(window.BGNJ_AUTH.fetchActivity?.(selected.id)).then((a) => {
+      if (!cancelled) setServerActivity(a);
+    });
+    return () => { cancelled = true; };
+  }, [selected?.id]);
+  const activity = selected ? (serverActivity || window.BGNJ_AUTH.getActivity(selected.id)) : null;
 
   const exportCsv = () => {
     const header = ['id','name','email','gradeId','isAdmin','suspended','joinedAt','postCount','commentCount','bookOrders','lectures','tours'];
@@ -5172,10 +5286,12 @@ const MemberAdminPanel = ({ go }) => {
                 </td>
                 <td className="mono dim-2" style={{padding:12, fontSize:11}}>{u.email}</td>
                 <td style={{padding:12}}>
-                  {g && (
+                  {g ? (
                     <span className="mono" style={{fontSize:10, letterSpacing:'0.14em', color: g.color || 'var(--gold)', border:`1px solid ${g.color || 'var(--gold-dim)'}`, padding:'1px 6px'}}>
                       {g.label}
                     </span>
+                  ) : (
+                    <span className="dim-2 mono" style={{fontSize:10}}>—</span>
                   )}
                 </td>
                 <td className="mono dim-2" style={{padding:12, fontSize:11}}>{u.joinedAt ? new Date(u.joinedAt).toLocaleDateString('ko-KR') : '-'}</td>

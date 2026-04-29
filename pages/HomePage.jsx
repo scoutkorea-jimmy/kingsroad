@@ -26,7 +26,14 @@ const FEATURED_DESTINATIONS = [
 const HomePage = ({ go }) => {
   const data = window.BANGINOJA_DATA;
   const [selectedDest, setSelectedDest] = React.useState(null);
-  const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+  const [scTick, setScTick] = React.useState(0);
+  // SEO/Hero/Brand 가 변경되면 즉시 재렌더 (refresh 이벤트 listen).
+  React.useEffect(() => {
+    const onR = () => setScTick((v) => v + 1);
+    window.addEventListener('bgnj-site-content-refresh', onR);
+    return () => window.removeEventListener('bgnj-site-content-refresh', onR);
+  }, []);
+  const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);
   const hero = sc.hero || {};
 
   const _cols = window.BGNJ_COLUMNS?.listPublic?.();

@@ -357,6 +357,28 @@ const handleCommentsCreate = async (req, env, postId) => {
     "INSERT INTO comments (post_id, parent_id, body, author_id, author, created_at) VALUES (?, ?, ?, ?, ?, ?)"
   ).bind(postId, body.parentId || null, text, user.id, user.name, nowIso()).run();
   await env.DB.prepare("UPDATE posts SET replies = replies + 1 WHERE id = ?").bind(postId).run();
+  // 알림 자동 발급 — 게시글 작성자에게 (본인 댓글은 제외).
+  try {
+    const post = await env.DB.prepare("SELECT author_id, title FROM posts WHERE id = ?").bind(postId).first();
+    if (post?.author_id && post.author_id !== user.id) {
+      await insertNotification(env, {
+        userId: post.author_id, type: 'comment',
+        message: '내 글에 새 댓글이 달렸습니다.',
+        fromName: user.name, postId, postTitle: post.title,
+      });
+    }
+    // 답글이면 부모 댓글 작성자에게도.
+    if (body.parentId) {
+      const parent = await env.DB.prepare("SELECT author_id FROM comments WHERE id = ?").bind(body.parentId).first();
+      if (parent?.author_id && parent.author_id !== user.id && parent.author_id !== post?.author_id) {
+        await insertNotification(env, {
+          userId: parent.author_id, type: 'reply',
+          message: '내 댓글에 답글이 달렸습니다.',
+          fromName: user.name, postId, postTitle: post?.title || '',
+        });
+      }
+    }
+  } catch {}
   return { id: r.meta.last_row_id };
 };
 
@@ -825,12 +847,32 @@ const handleLectureRegistrationCancel = async (req, env, regId) => {
 const handleLectureRegistrationPatch = async (req, env, regId) => {
   await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
+  // 상태 변경 시 알림 발급용으로 사전에 정보 fetch.
+  const before = await env.DB.prepare(
+    "SELECT lr.user_id, lr.status, l.title, l.id AS lecture_id FROM lecture_registrations lr LEFT JOIN lectures l ON l.id = lr.lecture_id WHERE lr.id = ?"
+  ).bind(regId).first();
   const sets = []; const args = [];
   if (body.status) { sets.push("status = ?"); args.push(body.status); }
   if (body.status === 'confirmed') { sets.push("paid_at = ?"); args.push(nowIso()); }
   if (!sets.length) return { ok: true };
   args.push(regId);
   await env.DB.prepare(`UPDATE lecture_registrations SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  // 상태 변화 알림 — 입금확인/취소/환불 등.
+  if (before?.user_id && body.status && body.status !== before.status) {
+    const map = {
+      confirmed: '강연 입금이 확인되어 참가가 확정되었습니다.',
+      cancelled: '강연 신청이 취소되었습니다.',
+      refund_requested: '환불 신청이 접수되었습니다.',
+      pending_payment: '강연 신청이 입금 대기 상태로 전환되었습니다.',
+    };
+    if (map[body.status]) {
+      await insertNotification(env, {
+        userId: before.user_id, type: 'lecture_' + body.status,
+        message: map[body.status], fromName: '운영자',
+        lectureId: before.lecture_id, postTitle: before.title || '강연',
+      });
+    }
+  }
   return { ok: true };
 };
 
@@ -906,12 +948,30 @@ const handleTourReservationCancel = async (req, env, regId) => {
 const handleTourReservationPatch = async (req, env, regId) => {
   await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
+  const before = await env.DB.prepare(
+    "SELECT tr.user_id, tr.status, t.title, t.id AS tour_id FROM tour_reservations tr LEFT JOIN tours t ON t.id = tr.tour_id WHERE tr.id = ?"
+  ).bind(regId).first();
   const sets = []; const args = [];
   if (body.status) { sets.push("status = ?"); args.push(body.status); }
   if (body.status === 'confirmed') { sets.push("paid_at = ?"); args.push(nowIso()); }
   if (!sets.length) return { ok: true };
   args.push(regId);
   await env.DB.prepare(`UPDATE tour_reservations SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  if (before?.user_id && body.status && body.status !== before.status) {
+    const map = {
+      confirmed: '투어 입금이 확인되어 참가가 확정되었습니다.',
+      cancelled: '투어 예약이 취소되었습니다.',
+      refund_requested: '환불 신청이 접수되었습니다.',
+      pending_payment: '투어 예약이 입금 대기 상태로 전환되었습니다.',
+    };
+    if (map[body.status]) {
+      await insertNotification(env, {
+        userId: before.user_id, type: 'tour_' + body.status,
+        message: map[body.status], fromName: '운영자',
+        tourId: before.tour_id, postTitle: before.title || '투어',
+      });
+    }
+  }
   return { ok: true };
 };
 
@@ -1000,6 +1060,24 @@ const handleOrderPatch = async (req, env, orderId) => {
   if (!sets.length) return { ok: true };
   args.push(orderId);
   await env.DB.prepare(`UPDATE book_orders SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  // 주문 상태 변경 시 알림 자동 발급.
+  if (row.user_id && body.status && body.status !== row.status) {
+    const map = {
+      paid: '입금이 확인되어 발송 준비를 시작합니다.',
+      shipped: body.tracking ? `발송이 시작되었습니다. 송장 번호 ${body.tracking}.` : '발송이 시작되었습니다.',
+      delivered: '배송이 완료되었습니다. 즐거운 독서 되세요.',
+      cancelled: '주문이 취소되었습니다.',
+      refund_requested: '환불 신청이 접수되었습니다.',
+    };
+    if (map[body.status]) {
+      const order = await env.DB.prepare("SELECT order_no FROM book_orders WHERE id = ?").bind(orderId).first();
+      await insertNotification(env, {
+        userId: row.user_id, type: 'order_' + body.status,
+        message: map[body.status], fromName: '운영자',
+        postTitle: `『왕의길』 주문 ${order?.order_no || orderId}`,
+      });
+    }
+  }
   return { ok: true };
 };
 
@@ -1270,6 +1348,73 @@ const handleGradeDelete = async (req, env, id) => {
   await requireAdmin(req, env);
   await env.DB.prepare("DELETE FROM grades_kv WHERE id = ?").bind(id).run();
   return { ok: true };
+};
+
+// ── 회원 활동 집계 (관리자) ──
+const handleUserActivity = async (req, env, userId) => {
+  await requireAdmin(req, env);
+  const safe = async (sql, args = []) => {
+    try { const r = await env.DB.prepare(sql).bind(...args).first(); return r?.c || 0; }
+    catch { return 0; }
+  };
+  const [postCount, commentCount, bookmarkCount, orderCount, lectureCount, tourCount, notificationCount] = await Promise.all([
+    safe("SELECT COUNT(*) AS c FROM posts WHERE author_id = ?", [userId]),
+    safe("SELECT COUNT(*) AS c FROM comments WHERE author_id = ?", [userId]),
+    safe("SELECT COUNT(*) AS c FROM bookmarks WHERE user_id = ?", [userId]),
+    safe("SELECT COUNT(*) AS c FROM book_orders WHERE user_id = ?", [userId]),
+    safe("SELECT COUNT(*) AS c FROM lecture_registrations WHERE user_id = ?", [userId]),
+    safe("SELECT COUNT(*) AS c FROM tour_reservations WHERE user_id = ?", [userId]),
+    safe("SELECT COUNT(*) AS c FROM notifications WHERE user_id = ?", [userId]),
+  ]);
+  return { activity: { postCount, commentCount, bookmarkCount, orderCount, lectureCount, tourCount, notificationCount } };
+};
+
+// ── 강연 신청 / 투어 예약 — 관리자 강연·투어별 목록 ──
+const handleLectureRegList = async (req, env, lectureId) => {
+  await requireAdmin(req, env);
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM lecture_registrations WHERE lecture_id = ? ORDER BY created_at DESC"
+  ).bind(lectureId).all();
+  return { registrations: results || [] };
+};
+const handleTourResvList = async (req, env, tourId) => {
+  await requireAdmin(req, env);
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM tour_reservations WHERE tour_id = ? ORDER BY created_at DESC"
+  ).bind(tourId).all();
+  return { reservations: results || [] };
+};
+
+// ── 칼럼 좋아요 / 조회수 ──
+const handleColumnLike = async (req, env, id) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT likes_json FROM user_columns WHERE id = ?").bind(id).first();
+  if (!row) throw new HttpError(404, "칼럼을 찾을 수 없습니다.");
+  let likes = [];
+  try { likes = row.likes_json ? JSON.parse(row.likes_json) : []; } catch { likes = []; }
+  const next = likes.includes(user.id) ? likes.filter((x) => x !== user.id) : [...likes, user.id];
+  await env.DB.prepare("UPDATE user_columns SET likes_json = ? WHERE id = ?").bind(JSON.stringify(next), id).run();
+  return { liked: !likes.includes(user.id), likes: next, count: next.length };
+};
+const handleColumnView = async (req, env, id) => {
+  // 비로그인도 카운트 — 그러나 같은 사용자의 다중 카운트 방지는 클라이언트 sessionStorage 에서 가드.
+  await env.DB.prepare("UPDATE user_columns SET views = COALESCE(views, 0) + 1 WHERE id = ?").bind(id).run();
+  const row = await env.DB.prepare("SELECT views FROM user_columns WHERE id = ?").bind(id).first();
+  return { views: row?.views || 0 };
+};
+
+// ── 알림 자동 발급 헬퍼 (서버 부수효과 패턴) ──
+// 댓글 작성 / 등록 / 주문 등 행위 시 호출. 익명 안전(throw 안 함).
+const insertNotification = async (env, { userId, type, message, fromName, postId, postTitle, lectureId, tourId }) => {
+  if (!userId) return;
+  try {
+    const id = randomId("notif");
+    await env.DB.prepare(
+      `INSERT INTO notifications (id, user_id, type, message, from_name, post_id, post_title, lecture_id, tour_id, read)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`
+    ).bind(id, userId, type || 'general', message || '', fromName || '운영자',
+      postId || null, postTitle || null, lectureId || null, tourId || null).run();
+  } catch {}
 };
 
 // ── 사용자 칼럼 ──
@@ -1567,6 +1712,24 @@ const route = async (req, env) => {
     if (req.method === "GET") return json(await handleColumnGet(req, env, g[1]));
     if (req.method === "PATCH") return json(await handleColumnPatch(req, env, g[1]));
     if (req.method === "DELETE") return json(await handleColumnDelete(req, env, g[1]));
+  }
+  if ((g = m(/^\/api\/columns\/([\w-]+)\/like$/))) {
+    if (req.method === "POST") return json(await handleColumnLike(req, env, g[1]));
+  }
+  if ((g = m(/^\/api\/columns\/([\w-]+)\/view$/))) {
+    if (req.method === "POST") return json(await handleColumnView(req, env, g[1]));
+  }
+
+  // 회원 활동 집계 (관리자)
+  if ((g = m(/^\/api\/admin\/users\/([\w-]+)\/activity$/))) {
+    if (req.method === "GET") return json(await handleUserActivity(req, env, g[1]));
+  }
+  // 강연·투어별 신청 목록 (관리자)
+  if ((g = m(/^\/api\/lectures\/([\w-]+)\/registrations$/))) {
+    if (req.method === "GET") return json(await handleLectureRegList(req, env, g[1]));
+  }
+  if ((g = m(/^\/api\/tours\/([\w-]+)\/reservations$/))) {
+    if (req.method === "GET") return json(await handleTourResvList(req, env, g[1]));
   }
 
   // 알림

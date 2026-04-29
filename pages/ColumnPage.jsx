@@ -39,8 +39,7 @@ const ColumnPage = ({ go, user }) => {
     try {
       if (!sessionStorage.getItem(key)) {
         sessionStorage.setItem(key, "1");
-        window.BGNJ_COLUMNS.incrementViews(selectedId);
-        refresh();
+        Promise.resolve(window.BGNJ_COLUMNS.incrementViews(selectedId)).then(() => refresh());
       }
     } catch {}
   }, [selectedId]);
@@ -51,9 +50,9 @@ const ColumnPage = ({ go, user }) => {
     }
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!user) return requireLogin("공감");
-    window.BGNJ_COLUMNS.toggleLike(selectedId, user.id);
+    await window.BGNJ_COLUMNS.toggleLike(selectedId, user.id);
     refresh();
   };
 
