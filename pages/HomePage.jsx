@@ -64,7 +64,7 @@ const HomePage = ({ go }) => {
         padding:'80px 0 100px',
       }}>
         <div className="container">
-          <div style={{
+          <div className="hero-grid" style={{
             display:'grid', gridTemplateColumns:'1fr 1fr', gap:72, alignItems:'center',
           }}>
             {/* 왼쪽: 텍스트 */}
@@ -99,7 +99,7 @@ const HomePage = ({ go }) => {
                   {hero.ctaSecondary || "투어 프로그램 보기"}
                 </button>
               </div>
-              <div style={{
+              <div className="hero-stats" style={{
                 display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:20,
                 paddingTop:28, borderTop:'1px solid var(--line)',
               }}>
@@ -424,7 +424,7 @@ const HomePage = ({ go }) => {
       {/* ── 책 CTA ───────────────────────────────────────────────────── */}
       <section className="section">
         <div className="container">
-          <div className="card card-gold" style={{
+          <div className="card card-gold cta-grid" style={{
             padding:'72px 60px',
             display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center',
           }}>
