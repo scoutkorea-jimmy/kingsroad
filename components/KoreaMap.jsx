@@ -44,10 +44,12 @@ const KoreaMap = ({ onSelect, selected }) => {
                 x={r.cx} y={r.cy}
                 textAnchor="middle"
                 fontSize={r.id === 'sejong' ? 6 : (r.id === 'incheon' || r.id === 'gwangju' || r.id === 'daejeon' || r.id === 'ulsan') ? 7.5 : 9}
-                fill={isSelected ? '#FFFFFF' : isHovered ? '#92400E' : '#64748B'}
+                fill={isSelected ? '#FFFFFF' : '#92400E'}
                 fontFamily="var(--font-sans)"
-                fontWeight={isActive ? '700' : '400'}
-                style={{pointerEvents:'none', userSelect:'none', transition:'fill 0.15s ease'}}
+                fontWeight="700"
+                opacity={isActive ? 1 : 0}
+                style={{pointerEvents:'none', userSelect:'none', transition:'opacity 0.15s ease, fill 0.15s ease'}}
+                aria-hidden={isActive ? undefined : 'true'}
               >{r.name}</text>
             </g>
           );

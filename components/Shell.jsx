@@ -262,6 +262,9 @@ const Brand = ({ onClick }) => {
 
 const Nav = ({ route, go, user, onLogout }) => {
   const navL = (window.BGNJ_SITE_CONTENT?.get?.() || {}).nav || {};
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+  // 라우트 변경 시 모바일 메뉴 자동 닫힘
+  React.useEffect(() => { setMobileOpen(false); }, [route]);
   // 놀자 메가메뉴 자식 (의식주: 먹고/자고/사고). "놀자" 자체 클릭 시 첫 항목으로 진입.
   const playChildren = [
     { key: "eat",   label: navL.eat   || "먹고 놀자",  desc: "식 食 — 한정식·향토음식·시장" },
@@ -295,10 +298,19 @@ const Nav = ({ route, go, user, onLogout }) => {
   };
 
   return (
-    <nav className="nav" aria-label="주 메뉴">
+    <nav className={`nav ${mobileOpen ? 'mobile-open' : ''}`} aria-label="주 메뉴">
       <div className="container nav-inner">
         <Brand onClick={() => go("home")} />
-        <ul className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>
+        <button
+          type="button"
+          className="nav-toggle"
+          aria-label={mobileOpen ? "메뉴 닫기" : "메뉴 열기"}
+          aria-expanded={mobileOpen}
+          aria-controls="primary-nav-menu"
+          onClick={() => setMobileOpen((v) => !v)}>
+          <span className="nav-toggle-bars" aria-hidden="true"/>
+        </button>
+        <ul id="primary-nav-menu" className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>
           {items.map(it => {
             const hasMega = it.isMega === 'play' || (it.isMega === 'community' && communityBoards.length > 0);
             const onClick = () => go(it.defaultRoute || it.key);
@@ -343,6 +355,19 @@ const Nav = ({ route, go, user, onLogout }) => {
                   </div>
                 )}
 
+                {/* 모바일 전용: 놀자 메가 자식들을 인라인 펼침으로 노출 */}
+                {it.isMega === 'play' && (
+                  <ul className="nav-mobile-submenu" role="list" aria-label="놀자 하위" style={{listStyle:'none', margin:0, padding:0}}>
+                    {playChildren.map((p) => (
+                      <li key={p.key}>
+                        <button type="button"
+                          className={`nav-link nav-sub-link ${route === p.key ? 'active' : ''}`}
+                          aria-current={route === p.key ? 'page' : undefined}
+                          onClick={() => go(p.key)}>{p.label}</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {it.isMega === 'community' && communityBoards.length > 0 && (
                   <div className="nav-mega" role="menu" aria-label="게시판 목록"
                     style={{
@@ -386,6 +411,32 @@ const Nav = ({ route, go, user, onLogout }) => {
               </li>
             );
           })}
+          {/* 모바일 전용: 사용자 액션을 메뉴 내부에 노출. 데스크탑에선 .nav-mobile-only CSS 로 숨김. */}
+          <li className="nav-mobile-only nav-mobile-divider" aria-hidden="true"/>
+          {user ? (
+            <>
+              <li className="nav-mobile-only">
+                <button type="button" className="nav-link" onClick={() => go("mypage")}>마이페이지</button>
+              </li>
+              {user.isAdmin && (
+                <li className="nav-mobile-only">
+                  <button type="button" className="nav-link" onClick={() => go("admin")}>관리</button>
+                </li>
+              )}
+              <li className="nav-mobile-only">
+                <button type="button" className="nav-link" onClick={onLogout}>로그아웃</button>
+              </li>
+            </>
+          ) : (
+            <>
+              <li className="nav-mobile-only">
+                <button type="button" className="nav-link" onClick={() => go("login")}>로그인</button>
+              </li>
+              <li className="nav-mobile-only">
+                <button type="button" className="nav-link" onClick={() => go("signup")}>회원가입</button>
+              </li>
+            </>
+          )}
         </ul>
         <div className="nav-actions">
           {user ? (

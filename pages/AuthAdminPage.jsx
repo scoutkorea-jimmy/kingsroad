@@ -468,6 +468,22 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.041.000",
+    date: "2026-04-29",
+    summary: "📱 모바일 최적화 + 🔤 WCAG 폰트 가독성 + 🗺 지도 라벨 기본 숨김. 햄버거 메뉴 도입(≤900px), 폰 최적화 브레이크포인트(≤600px) 신설, 본문 weight 300→400, 한국 지도 시도명은 호버/선택 시에만 노출.",
+    details: [
+      "📱 햄버거 메뉴 — Nav 에 mobile-open 상태 + 토글 버튼 추가. 라우트 변경 시 자동 닫힘. 44×44 터치 타겟, aria-expanded/aria-controls 로 스크린리더 호환. X 모양 애니메이션.",
+      "📱 ≤900px 브레이크포인트 — 데스크탑 nav-menu 숨김 + 햄버거 노출. 메뉴 열림 시 헤더 바로 아래 풀폭 오버레이로 수직 펼침 (max-height: 100vh-64px, overflow-y:auto). nav-actions 의 텍스트 버튼들은 모바일에서 숨겨지고(알림 벨만 유지) 사용자 액션(마이페이지/관리/로그아웃 또는 로그인/회원가입)이 mobile-only 메뉴 항목으로 메뉴 안에 통합.",
+      "📱 모바일 메가 — 데스크탑 hover 기반 .nav-mega 는 모바일에선 숨김. 대신 '놀자' 부모는 nav-mobile-submenu(인라인 펼침) 으로 자식(먹고/자고/사고)을 들여쓰기로 노출.",
+      "📱 ≤600px 폰 브레이크포인트 신설 — container padding 20→16px, .section padding 64→48px, .section-title 32→26px. .grid-3/.grid-4/.grid-2 모두 1열로. 카드 padding 32→20px. .btn 최소 높이 44px / .btn-small 40px (WCAG 3.0 터치 타겟). .img-slider aspect-ratio 16:9 → 4:3 (세로 친화).",
+      "🔤 폰트 weight — html/body font-weight 300 → 400. v00.038 까지 Light(300) 가 Korean text 가독성을 떨어뜨려 WCAG 본문 가독성 가이드와 충돌. Wanted Sans Variable / Noto Sans KR 모두 400 (Regular) 부터가 안정적.",
+      "🗺 KoreaMap.jsx — 시도명 텍스트 기본 opacity 0, 호버/선택 시 opacity 1. fill 도 단순화(default secondary, selected white). transition 0.15s 부드러움. aria-hidden 동적 토글 (비활성 상태에서 스크린리더 숨김).",
+      "♿ 모바일 보강 — 메뉴 토글 aria-expanded/aria-label 동기, 라우트 변경 시 자동 닫힘 (포커스 트랩 미사용 — 페이지 이동이 자연스러운 종료점).",
+      "📦 cache-buster — `?v=00.041.000`.",
+    ],
+    context: "사용자 피드백 3가지 한 묶음 처리: ① '모바일 최적화도 적용해줘' — 기존엔 ≤900px 에서 nav-menu 가 그냥 사라지기만 해서 모바일에서 메뉴 접근 자체가 불가능했음 ② '지도에서는 글씨들이 기본적으로는 안 보이게 해줘. 클릭하면 보이게할껀데, 자세한 내용은 곧 따로 정리해줌' — 기본 숨김으로 일단 처리, 클릭 활성 외 별도 토글 UI 는 사용자 사양 대기 ③ '글씨의 얇기가 웹 접근성 기준을 준수하지 않는것같음' — Light 300 가 가독성을 깎아 WCAG 본문 권장과 충돌. 다음 사이클 권장: ① 지도 '라벨 모두 보기' 토글 버튼(사용자 사양 입력 후) ② 모바일 메뉴 키보드 trap + Escape 닫기 ③ 모바일 헤더 sticky 동작 + 스크롤 시 컴팩트화 ④ 작은 메타 텍스트(.mono dim-2 9-10px) weight 500 으로 보강 검토.",
+  },
+  {
     version: "00.040.000",
     date: "2026-04-29",
     summary: "🎨 컬러 시스템 v2 — Primary/Secondary/Tertiary + System 시맨틱 토큰 + 5:25:70 황금 배색. v00.039 의 Sunny Gold 가 사이트 전체를 노랗게 덮어 가독성/위계가 무너진 문제 해소. 노란색을 KEY ACCENT(5%)로 한정하고 베이스는 white+slate 뉴트럴로 재정렬. 상단 메뉴 9→6 으로 간결화 (먹고/자고/사고 놀자 → '놀자▾' 메가메뉴, 책은 푸터로).",
