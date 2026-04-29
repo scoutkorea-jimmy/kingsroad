@@ -45,38 +45,61 @@
 }
 
 :root {
-  /* 뱅기노자 — Sunny Gold 팔레트 / 로고 #F5D548 기반
-     Sunny Gold system
-     Logo Yellow  : #F5D548  — brand mark, headline accent
-     Honey Amber  : #E5BF2E  — hover state
-     Deep Amber   : #C99E1A  — active / focus
-     Caramel Ink  : #92400E  — text emphasis on light bg
-     CTA temperature: rest #F5D548 → hover #E5BF2E → active #C99E1A
-     CTA 텍스트는 옐로우 대비를 위해 var(--cta-ink) 다크 잉크로 고정. */
+  /* ===============================================================
+     뱅기노자 컬러 시스템 v2 — 5:25:70 황금 배색
+     ===============================================================
+     Primary    (5%)   : 로고 옐로우 — CTA·활성·focus·로고
+     Secondary  (≤20%) : Caramel Ink — 링크·서브 강조·중요 라벨
+     Tertiary   (보조) : Slate accent — 부가 위계
+     Neutral    (70%+) : white + slate 배경/텍스트/라인 (대부분 면적)
+     System            : success / warning / info / error 상태 컬러
+     접근성     : WCAG 2.1 AA — 본문/배경 ≥ 4.5:1 보장
+     레거시 토큰 (--gold/--cta-*) 은 호환 alias 로 유지. */
 
-  --bg: #FFFFFF;              /* 순백 */
-  --bg-2: #FFFBEB;            /* Cream — 따뜻한 크림 */
-  --bg-3: #FEF3C7;            /* Soft Yellow — 옅은 노랑 */
-  --line: #FDE68A;            /* 라인 — 노랑 톤 */
-  --line-2: #FCD34D;          /* 진한 라인 */
+  /* ─── Primary (5% — KEY ACCENT) ─── */
+  --primary:        #F5D548;      /* 로고 옐로우 */
+  --primary-hover:  #E5BF2E;      /* Honey Amber — hover */
+  --primary-active: #C99E1A;      /* Deep Amber — active/focus */
+  --primary-dim:    #FDE68A;      /* 옅은 옐로우 — 미세 강조 */
+  --on-primary:     #0F172A;      /* primary 위 텍스트 — 다크 잉크 */
 
-  --gold: #F5D548;            /* 로고 옐로우 — primary brand */
-  --gold-2: #E5BF2E;          /* Honey Amber — hover state */
-  --gold-dim: #FCEBA0;        /* 옅은 노랑 — decorative borders */
-  --gold-ink: #92400E;        /* Caramel Ink — text emphasis */
+  /* ─── Secondary (15–25% — 보조 강조) ─── */
+  --secondary:       #92400E;     /* Caramel Ink — 링크·강조 */
+  --secondary-hover: #7C2D12;     /* 한 단 깊음 */
 
-  --ink: #0F172A;             /* 짙은 네이비 블랙 */
-  --ink-2: #1F2937;           /* Warm Dark — 본문 텍스트 */
-  --ink-3: #78716C;           /* Warm Stone — 보조 텍스트 */
+  /* ─── Tertiary (부가 위계) ─── */
+  --tertiary:        #475569;     /* Slate 600 — 부차 강조 */
 
-  --danger: #DC2626;
-  --focus: #C99E1A;           /* Deep Amber — focus ring */
+  /* ─── Neutral (70–80% — 베이스) ─── */
+  --bg:    #FFFFFF;               /* 페이지 베이스 (가장 큰 면적) */
+  --bg-2:  #F8FAFC;               /* 서브 배경·카드 */
+  --bg-3:  #F1F5F9;               /* 입력·코드 배경 */
+  --line:  #E5E7EB;               /* 기본 라인 */
+  --line-2:#D1D5DB;               /* 진한 라인 */
 
-  /* CTA 인터랙션 토큰 — 옐로우 배경 + 다크 텍스트 (WCAG AA ≥ 4.5:1) */
-  --cta-rest:   #F5D548;
-  --cta-hover:  #E5BF2E;
-  --cta-active: #C99E1A;
-  --cta-ink:    #0F172A;
+  /* ─── Text (위계 3단) ─── */
+  --ink:   #0F172A;               /* 1차 — 제목·본문 */
+  --ink-2: #334155;               /* 2차 — 보조 텍스트 */
+  --ink-3: #64748B;               /* 3차 — 메타·라벨·placeholder */
+
+  /* ─── System Colors (상태) ─── */
+  --success: #16A34A;             /* 성공·확정 */
+  --warning: #D97706;             /* 주의 (primary 와 명도 차이로 구분) */
+  --info:    #2563EB;             /* 정보·안내 */
+  --danger:  #DC2626;             /* 에러·삭제·거부 */
+
+  --focus:   #C99E1A;             /* focus ring (= primary-active) */
+
+  /* ─── 레거시 호환 alias ─── */
+  --gold:     var(--primary);
+  --gold-2:   var(--primary-hover);
+  --gold-dim: var(--primary-dim);
+  --gold-ink: var(--secondary);
+
+  --cta-rest:   var(--primary);
+  --cta-hover:  var(--primary-hover);
+  --cta-active: var(--primary-active);
+  --cta-ink:    var(--on-primary);
 
   --gold-strength: 1;
   /* KBL 폰트 계층 */
@@ -407,12 +430,12 @@ main time, main .section-eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.05em;
-  background: rgba(245,213,72,0.1);
-  border: 1px solid var(--gold-dim);
-  color: var(--gold);
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
 }
 .tag-chip button {
-  color: var(--gold);
+  color: var(--ink-3);
   font-size: 10px;
   padding: 0 2px;
   min-height: 0;
@@ -629,7 +652,7 @@ main time, main .section-eyebrow {
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.3em;
-  color: var(--gold);
+  color: var(--ink-3);
   margin-top: 2px;
 }
 .nav-menu {
@@ -650,7 +673,7 @@ main time, main .section-eyebrow {
   font-family: inherit;
 }
 .nav-link:hover { color: var(--ink); }
-.nav-link.active, .nav-link[aria-current="page"] { color: var(--gold); }
+.nav-link.active, .nav-link[aria-current="page"] { color: var(--ink); font-weight: 500; }
 .nav-link.active::after, .nav-link[aria-current="page"]::after {
   content: "";
   position: absolute;
@@ -704,7 +727,7 @@ main time, main .section-eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.35em;
-  color: var(--gold);
+  color: var(--ink-3);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -713,7 +736,7 @@ main time, main .section-eyebrow {
 .section-eyebrow::before {
   content: "";
   width: 32px; height: 1px;
-  background: var(--gold);
+  background: var(--line-2);
 }
 .section-title {
   font-family: var(--font-display);
@@ -862,7 +885,7 @@ main time, main .section-eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.25em;
-  color: var(--gold);
+  color: var(--ink-3);
   margin-bottom: 20px;
   text-transform: uppercase;
 }
@@ -975,9 +998,9 @@ main time, main .section-eyebrow {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.15em;
-  background: rgba(245,213,72,0.08);
-  color: var(--gold);
-  border: 1px solid var(--gold-dim);
+  background: var(--bg-3);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
 }
 
 /* List row */
@@ -992,7 +1015,7 @@ main time, main .section-eyebrow {
   transition: background .2s;
 }
 .row:hover { background: rgba(245,213,72,0.03); }
-.row-num { font-family: var(--font-mono); font-size: 12px; color: var(--gold); letter-spacing: 0.1em; }
+.row-num { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); letter-spacing: 0.1em; }
 .row-title { font-family: var(--font-serif); font-size: 17px; color: var(--ink); }
 .row-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); letter-spacing: 0.1em; }
 

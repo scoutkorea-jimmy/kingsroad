@@ -262,16 +262,21 @@ const Brand = ({ onClick }) => {
 
 const Nav = ({ route, go, user, onLogout }) => {
   const navL = (window.BGNJ_SITE_CONTENT?.get?.() || {}).nav || {};
+  // 놀자 메가메뉴 자식 (의식주: 먹고/자고/사고). "놀자" 자체 클릭 시 첫 항목으로 진입.
+  const playChildren = [
+    { key: "eat",   label: navL.eat   || "먹고 놀자",  desc: "식 食 — 한정식·향토음식·시장" },
+    { key: "sleep", label: navL.sleep || "자고 놀자",  desc: "주 住 — 한옥·고택·템플스테이" },
+    { key: "shop",  label: navL.shop  || "사고 놀자",  desc: "의 衣 — 전통공예·토산물" },
+  ];
+  const playKeys = playChildren.map((p) => p.key);
+
   const items = [
     { key: "home", label: navL.home || "홈" },
-    { key: "eat", label: navL.eat || "먹고 놀자" },
-    { key: "sleep", label: navL.sleep || "자고 놀자" },
-    { key: "shop", label: navL.shop || "사고 놀자" },
-    { key: "tour", label: navL.tour || "투어 프로그램" },
+    { key: "play", label: navL.play || "놀자", isMega: 'play', defaultRoute: 'eat' },
+    { key: "tour", label: navL.tour || "투어" },
     { key: "lectures", label: navL.lectures || "강연" },
-    { key: "column", label: navL.column || "뱅기노자 칼럼" },
-    { key: "community", label: navL.community || "커뮤니티", subRouteKey: "community" },
-    { key: "book", label: navL.book || "뱅기노자의 길" },
+    { key: "column", label: navL.column || "칼럼" },
+    { key: "community", label: navL.community || "커뮤니티", isMega: 'community' },
   ];
   // 커뮤니티 메가메뉴: BGNJ_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
   const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : (user ? 10 : 0);
@@ -283,66 +288,110 @@ const Nav = ({ route, go, user, onLogout }) => {
     go('community');
   };
 
+  // 활성 상태 판정 — 메가 그룹은 자식 라우트도 활성으로 간주
+  const isActive = (it) => {
+    if (it.isMega === 'play') return playKeys.includes(route);
+    return route === it.key;
+  };
+
   return (
     <nav className="nav" aria-label="주 메뉴">
       <div className="container nav-inner">
         <Brand onClick={() => go("home")} />
         <ul className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>
-          {items.map(it => (
-            <li key={it.key} style={{position:'relative'}} className={it.key === 'community' ? 'nav-has-mega' : ''}>
-              <button
-                type="button"
-                className={`nav-link ${route === it.key ? "active" : ""}`}
-                aria-current={route === it.key ? "page" : undefined}
-                onClick={() => go(it.key)}>{it.label}</button>
-              {it.key === 'community' && communityBoards.length > 0 && (
-                <div className="nav-mega" role="menu" aria-label="게시판 목록"
-                  style={{
-                    position:'absolute', top:'100%', left:'50%', transform:'translateX(-50%)',
-                    minWidth:220, padding:'10px 0',
-                    background:'var(--bg-2)', border:'1px solid var(--line)',
-                    boxShadow:'0 16px 40px rgba(0,0,0,0.55)',
-                    visibility:'hidden', opacity:0, transition:'opacity .12s ease',
-                    zIndex:50,
-                  }}>
-                  <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>BOARDS</div>
-                  <ul style={{listStyle:'none', margin:0, padding:0}}>
-                    {communityBoards.map((b) => (
-                      <li key={b.id}>
+          {items.map(it => {
+            const hasMega = it.isMega === 'play' || (it.isMega === 'community' && communityBoards.length > 0);
+            const onClick = () => go(it.defaultRoute || it.key);
+            return (
+              <li key={it.key} style={{position:'relative'}} className={hasMega ? 'nav-has-mega' : ''}>
+                <button
+                  type="button"
+                  className={`nav-link ${isActive(it) ? "active" : ""}`}
+                  aria-current={isActive(it) ? "page" : undefined}
+                  aria-haspopup={hasMega ? 'menu' : undefined}
+                  onClick={onClick}>{it.label}{hasMega ? ' ▾' : ''}</button>
+
+                {it.isMega === 'play' && (
+                  <div className="nav-mega" role="menu" aria-label="놀자 — 의식주 카테고리"
+                    style={{
+                      position:'absolute', top:'100%', left:'50%', transform:'translateX(-50%)',
+                      minWidth:280, padding:'10px 0',
+                      background:'var(--bg)', border:'1px solid var(--line)',
+                      boxShadow:'0 16px 40px rgba(15,23,42,0.10)',
+                      visibility:'hidden', opacity:0, transition:'opacity .12s ease',
+                      zIndex:50,
+                    }}>
+                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>의식주 衣食住</div>
+                    <ul style={{listStyle:'none', margin:0, padding:0}}>
+                      {playChildren.map((p) => (
+                        <li key={p.key}>
+                          <button type="button" role="menuitem"
+                            onClick={() => go(p.key)}
+                            style={{
+                              display:'block', width:'100%', textAlign:'left',
+                              padding:'10px 16px',
+                              background:'transparent', color:'var(--ink-2)', border:'none', cursor:'pointer',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-2)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}>
+                            <div style={{fontSize:13, fontWeight:500}}>{p.label}</div>
+                            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.05em', marginTop:2}}>{p.desc}</div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {it.isMega === 'community' && communityBoards.length > 0 && (
+                  <div className="nav-mega" role="menu" aria-label="게시판 목록"
+                    style={{
+                      position:'absolute', top:'100%', left:'50%', transform:'translateX(-50%)',
+                      minWidth:220, padding:'10px 0',
+                      background:'var(--bg)', border:'1px solid var(--line)',
+                      boxShadow:'0 16px 40px rgba(15,23,42,0.10)',
+                      visibility:'hidden', opacity:0, transition:'opacity .12s ease',
+                      zIndex:50,
+                    }}>
+                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>BOARDS</div>
+                    <ul style={{listStyle:'none', margin:0, padding:0}}>
+                      {communityBoards.map((b) => (
+                        <li key={b.id}>
+                          <button type="button" role="menuitem"
+                            onClick={() => goBoard(b.id)}
+                            style={{
+                              display:'block', width:'100%', textAlign:'left',
+                              padding:'8px 16px', fontSize:13,
+                              background:'transparent', color:'var(--ink-2)', border:'none', cursor:'pointer',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-2)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}>
+                            <span>{b.label}</span>
+                          </button>
+                        </li>
+                      ))}
+                      <li style={{borderTop:'1px solid var(--line)', marginTop:6, paddingTop:6}}>
                         <button type="button" role="menuitem"
-                          onClick={() => goBoard(b.id)}
+                          onClick={() => go('community')}
                           style={{
                             display:'block', width:'100%', textAlign:'left',
-                            padding:'8px 16px', fontSize:13,
-                            background:'transparent', color:'var(--ink-2)', border:'none', cursor:'pointer',
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(27,79,160,0.06)'; e.currentTarget.style.color = 'var(--gold)'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-2)'; }}>
-                          <span>{b.label}</span>
-                        </button>
+                            padding:'8px 16px', fontSize:12, letterSpacing:'0.18em',
+                            background:'transparent', color:'var(--secondary)', border:'none', cursor:'pointer',
+                            fontFamily:'var(--font-mono)',
+                          }}>전체 보기 →</button>
                       </li>
-                    ))}
-                    <li style={{borderTop:'1px solid var(--line)', marginTop:6, paddingTop:6}}>
-                      <button type="button" role="menuitem"
-                        onClick={() => go('community')}
-                        style={{
-                          display:'block', width:'100%', textAlign:'left',
-                          padding:'8px 16px', fontSize:12, letterSpacing:'0.18em',
-                          background:'transparent', color:'var(--gold)', border:'none', cursor:'pointer',
-                          fontFamily:'var(--font-mono)',
-                        }}>전체 보기 →</button>
-                    </li>
-                  </ul>
-                </div>
-              )}
-            </li>
-          ))}
+                    </ul>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
         <div className="nav-actions">
           {user ? (
             <>
               <span className="mono" aria-label={`로그인: ${user.name}`}
-                style={{fontSize:11, letterSpacing:'0.15em', color:'var(--gold)'}}>{user.name}</span>
+                style={{fontSize:11, letterSpacing:'0.15em', color:'var(--ink-2)'}}>{user.name}</span>
               <NotificationBell user={user} onPick={(n) => {
                 // 알림 타입별 라우팅 — 강연/투어/주문/댓글
                 try {

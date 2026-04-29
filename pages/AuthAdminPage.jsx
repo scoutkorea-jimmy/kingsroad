@@ -468,6 +468,28 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.040.000",
+    date: "2026-04-29",
+    summary: "🎨 컬러 시스템 v2 — Primary/Secondary/Tertiary + System 시맨틱 토큰 + 5:25:70 황금 배색. v00.039 의 Sunny Gold 가 사이트 전체를 노랗게 덮어 가독성/위계가 무너진 문제 해소. 노란색을 KEY ACCENT(5%)로 한정하고 베이스는 white+slate 뉴트럴로 재정렬. 상단 메뉴 9→6 으로 간결화 (먹고/자고/사고 놀자 → '놀자▾' 메가메뉴, 책은 푸터로).",
+    details: [
+      "🎨 styles.css :root — Primary/Secondary/Tertiary + Neutral + System Colors 시맨틱 구조로 재편. `--primary` #F5D548 / `--primary-hover` #E5BF2E / `--primary-active` #C99E1A / `--on-primary` #0F172A. `--secondary` #92400E Caramel Ink. `--tertiary` #475569 Slate.",
+      "🎨 Neutral 베이스 — `--bg-2` #FFFBEB → #F8FAFC, `--bg-3` #FEF3C7 → #F1F5F9, `--line` #FDE68A → #E5E7EB, `--line-2` #FCD34D → #D1D5DB. 옐로우 톤 배경/라인 전부 슬레이트 뉴트럴로 교체 — 사이트 면적 70%+ 가 차분한 흰/회색.",
+      "🎨 본문 잉크 — `--ink-2` #1F2937 → #334155 Slate 700, `--ink-3` #78716C → #64748B Slate 500. 슬레이트 톤이라 옐로우 액센트와 조화.",
+      "🎨 System Colors 신설 — `--success` #16A34A · `--warning` #D97706 · `--info` #2563EB · `--danger` #DC2626. 상태 신호 4종 — primary 와 명도/색상으로 명확히 구분.",
+      "🎨 레거시 토큰 호환 — `--gold/--gold-2/--gold-dim/--gold-ink/--cta-*` 는 신규 시맨틱 토큰의 alias 로 유지. 기존 코드 모두 그대로 작동.",
+      "🎨 노란색 잔재 정리 — `.section-eyebrow` (gold→ink-3+line-2), `.brand-name .sub` (gold→ink-3), `.nav-link.active` (gold→ink+font-weight 500, dot은 gold 유지), `.footer h4` (gold→ink-3), `.row-num` (gold→ink-3), `.tag-chip`/`.pill` (gold tinted→neutral). 이제 옐로우는 CTA·로고·focus·active toggle·active dot 같은 인터랙션 상태에만.",
+      "🗺 KoreaMap.jsx — 잠재 시도 fill #FFFBEB → #F8FAFC, stroke #FCD34D → #E5E7EB. 호버/선택 시 amber 톤은 유지(인터랙션 상태). 잠재 텍스트 fill #57534E → #64748B Slate 500.",
+      "🪶 Nav 메뉴 — 9개 → 6개. `먹고/자고/사고 놀자` 3개를 `놀자▾` 메가메뉴 하나로 통합 (의식주 부제 표시). `뱅기노자의 길`(책)은 상단 nav 에서 제거 — 푸터 콘텐츠 섹션의 `『왕의길』` 링크로 접근. `투어 프로그램`/`뱅기노자 칼럼` 라벨은 `투어`/`칼럼` 으로 짧게.",
+      "🪶 Nav active 상태 판정 — 메가 그룹의 자식 라우트(eat/sleep/shop) 도 부모(`놀자`)를 활성으로 표시하도록 `isActive(it)` 함수 추가.",
+      "🪶 Mega menu 스타일 — 옐로우 hover 색상(`var(--gold)`) → 뉴트럴 bg-2 hover 로 정돈. `전체 보기 →` 링크는 `var(--secondary)` Caramel Ink.",
+      "🪶 user.name 표시 — Nav 우상단 사용자 이름 색 `var(--gold)` → `var(--ink-2)` 로 정돈.",
+      "🪟 theme-color 메타 — #FFFBEB → #FFFFFF. AppErrorBoundary 폴백 배경 #fffbeb → #f8fafc.",
+      "📑 KMS 디자인 도파 — `COLOR_TOKENS` 표를 Primary/Secondary/Tertiary/Neutral/Text/System 6 카테고리로 재구성 (13→20 항목, hex 모두 신값). '컬러 원칙' 섹션 본문이 5:25:70 황금 배색, 5% 룰 명문화.",
+      "📦 cache-buster — `?v=00.040.000`.",
+    ],
+    context: "사용자 피드백 두 가지: ① '너무 노래서 눈에 안들어오고, 노란색은 키컬러로만 쓰여야해' ② '상단 메뉴가 너무 많아서 불편해'. 추가로 사용자 제공 컬러 시스템 가이드(Primary/Secondary/Tertiary + System Colors + 5:25:70 황금 배색 + WCAG AA 4.5:1) 를 토큰 구조로 직접 반영. v00.039 가 옐로우 단일 톤으로 면적을 다 칠해 위계가 사라진 점이 핵심 원인 — Primary 5% 룰을 따르지 않으면 '키컬러' 가 의미 없어짐. 다음 사이클 권장: ① 다크 모드 토큰 정의(현 시맨틱 토큰을 [color-scheme: dark] 변형으로 매핑) ② 시스템 컬러 4종(success/warning/info/danger) 의 실제 사용처 점검 — 결제 confirm 토스트/환불 경고/공지 박스 등 ③ 메가메뉴 키보드 내비게이션(현재 hover 만 지원) ④ Primary 5% 영역 자동 검사 도구(개발자 도구 기반).",
+  },
+  {
     version: "00.039.000",
     date: "2026-04-29",
     summary: "🎨 Sunny Gold 팔레트 정렬 — 로고(#F5D548 노란 라운드 마크)와 사이트 전반 색상이 충돌하던 상태(블루 베이스 + 노란 로고)를 해소. 로고 옐로우를 기준으로 모든 컬러 토큰 / CTA / 회원 등급 색상 / 한국 지도 / favicon-theme 메타 / 디자인 가이드 문구를 일괄 재정렬.",
@@ -1052,19 +1074,32 @@ const ADMIN_VERSION_HISTORY = [
 const DesignSystemView = () => {
   // 토큰 정의표 — 컬러
   const COLOR_TOKENS = [
-    { token: '--bg',       hex: '#FFFFFF', usage: '페이지 베이스 배경 (가장 큰 면적)', notes: '순백 — 카드를 띄우는 캔버스.' },
-    { token: '--bg-2',     hex: '#FFFBEB', usage: '서브 배경 · 표 헤더 · 인포 박스', notes: '따뜻한 크림 — 옐로우 한 방울. 정보 위계용.' },
-    { token: '--bg-3',     hex: '#FEF3C7', usage: '코드/입력 백그라운드 · placeholder', notes: '소프트 옐로우 — 한 단 더 짙은 부드러운 톤.' },
-    { token: '--ink',      hex: '#0F172A', usage: '본문 1차 텍스트 · 제목', notes: '거의 검정. 가장 진한 잉크.' },
-    { token: '--ink-2',    hex: '#1F2937', usage: '보조 텍스트 · 설명문 · 라벨', notes: '본문보다 한 단 흐림 — 따뜻한 다크 그레이.' },
-    { token: '--ink-3',    hex: '#78716C', usage: '메타 정보 · 비활성 · placeholder', notes: '가장 흐림. dim-2 클래스가 자주 사용 — Warm Stone.' },
-    { token: '--line',     hex: '#FDE68A', usage: '카드/표 테두리 · divider', notes: '옅은 옐로우 라인 — 베이스 톤과 어우러짐.' },
-    { token: '--line-2',   hex: '#FCD34D', usage: '강조 테두리 · 입력 필드 외곽', notes: 'line 보다 한 단 진한 옐로우.' },
-    { token: '--gold',     hex: '#F5D548', usage: '브랜드 강조 · 활성 탭 · 액센트', notes: '로고 옐로우 — Sunny Gold 시그니처.' },
-    { token: '--gold-2',   hex: '#E5BF2E', usage: 'hover · 주요 가격/카운트 강조', notes: 'Honey Amber — 로고보다 한 단 깊음.' },
-    { token: '--gold-dim', hex: '#FCEBA0', usage: '활성 영역 배경 hint · gold 박스 외곽', notes: '아주 옅은 옐로우 테두리/배경.' },
-    { token: '--gold-ink', hex: '#92400E', usage: '본문 강조 잉크 (인용/링크 hover)', notes: 'Caramel Ink — 옐로우 위에서 또렷한 다크 앰버.' },
-    { token: '--danger',   hex: '#DC2626', usage: '정지 · 삭제 · 오류 · 환불 거부', notes: 'gold 와 명확히 구분되는 단일 빨강.' },
+    // === Primary (5% — KEY ACCENT) ===
+    { token: '--primary',         hex: '#F5D548', usage: 'CTA · 활성 · focus · 로고', notes: 'KEY ACCENT — 5% 영역에만. 로고 옐로우.' },
+    { token: '--primary-hover',   hex: '#E5BF2E', usage: 'CTA hover', notes: 'Honey Amber — primary 한 단 깊음.' },
+    { token: '--primary-active',  hex: '#C99E1A', usage: 'CTA active · focus ring', notes: 'Deep Amber — 누름·focus 상태.' },
+    { token: '--primary-dim',     hex: '#FDE68A', usage: '미세 강조 배경/보더', notes: '옅은 옐로우 — 1-tier soft accent.' },
+    { token: '--on-primary',      hex: '#0F172A', usage: 'primary 위 텍스트', notes: '옐로우 배경 위 다크 잉크 (WCAG AA).' },
+    // === Secondary (15-25% — 보조 강조) ===
+    { token: '--secondary',       hex: '#92400E', usage: '링크 · 본문 강조 · 서브 버튼', notes: 'Caramel Ink — 옐로우와 시각적으로 어우러지면서도 본문 가독성 유지.' },
+    { token: '--secondary-hover', hex: '#7C2D12', usage: '링크 hover', notes: 'secondary 한 단 깊음.' },
+    // === Tertiary (보조 위계) ===
+    { token: '--tertiary',        hex: '#475569', usage: '부차 강조 · 그래픽', notes: 'Slate 600 — 더 차분한 회색 강조.' },
+    // === Neutral (70-80% — 베이스) ===
+    { token: '--bg',              hex: '#FFFFFF', usage: '페이지 베이스 (가장 큰 면적)', notes: '순백 — 카드를 띄우는 캔버스.' },
+    { token: '--bg-2',            hex: '#F8FAFC', usage: '서브 배경 · 카드 · 표 헤더', notes: 'Slate 50 — 본문보다 한 단 낮은 그레이.' },
+    { token: '--bg-3',            hex: '#F1F5F9', usage: '코드/입력 배경 · placeholder', notes: 'Slate 100 — 입력/코드 영역.' },
+    { token: '--line',            hex: '#E5E7EB', usage: '기본 라인 · divider', notes: '뉴트럴 라인.' },
+    { token: '--line-2',          hex: '#D1D5DB', usage: '강조 테두리', notes: 'line 한 단 진함.' },
+    // === Text (위계 3단) ===
+    { token: '--ink',             hex: '#0F172A', usage: '제목 · 1차 본문', notes: '거의 검정 — 가장 진한 잉크.' },
+    { token: '--ink-2',           hex: '#334155', usage: '본문 · 설명문', notes: 'Slate 700 — 1차보다 한 단 흐림.' },
+    { token: '--ink-3',           hex: '#64748B', usage: '메타 · 라벨 · placeholder', notes: 'Slate 500 — 가장 흐림. dim-2 자주 사용.' },
+    // === System Colors (상태) ===
+    { token: '--success',         hex: '#16A34A', usage: '성공 · 확정 · 완료', notes: 'Green — 긍정 신호.' },
+    { token: '--warning',         hex: '#D97706', usage: '주의 · 보류', notes: 'Amber 600 — primary 와 명도로 구분.' },
+    { token: '--info',            hex: '#2563EB', usage: '정보 · 안내', notes: 'Blue — 안내 메시지.' },
+    { token: '--danger',          hex: '#DC2626', usage: '에러 · 삭제 · 거부', notes: '단일 빨강 — primary 와 명확히 구분.' },
   ];
 
   // 폰트 패밀리 정의
@@ -1550,21 +1585,22 @@ const ADMIN_DESIGN_SECTIONS = [
     points: [
       "한국의 자연·문화·역사를 직접 걷고 느끼는 여행 커뮤니티의 차분한 인상을 기본으로 합니다.",
       "장식보다 정렬감과 여백, 정보 밀도를 우선합니다.",
-      "순백 베이스(흰색 + 따뜻한 크림) + Sunny Gold 옐로우 강조 + Caramel Ink 포인트의 절제된 조합을 유지합니다 — 로고 #F5D548 와 직접 호응.",
+      "5:25:70 황금 배색 — Primary 옐로우 5% (CTA·로고·활성), Secondary Caramel Ink 15-25% (링크·강조), Neutral white+slate 70%+ (배경·텍스트). 노란색은 인터랙션 상태에만 등장하는 KEY ACCENT.",
       "v00.026 부터 짙은 먹색 다크 톤 → 라이트 톤으로 전환되었습니다 (편집 디자인 모티프 유지).",
     ],
   },
   {
     title: "컬러 원칙 (실제 토큰)",
     points: [
-      "베이스 배경: var(--bg) #FFFFFF / var(--bg-2) #FFFBEB / var(--bg-3) #FEF3C7 (순백 → 따뜻한 크림 → 소프트 옐로우).",
-      "본문 잉크: var(--ink) #0F172A · var(--ink-2) #1F2937 · var(--ink-3) #78716C (3단계 위계 — Warm Stone).",
-      "라인: var(--line) #FDE68A / var(--line-2) #FCD34D (옐로우 톤 라인).",
-      "주 강조: var(--gold) #F5D548 로고 옐로우 (Sunny Gold 시그니처 — 등급/CTA 모두 옐로우 그라데이션으로 통일).",
-      "보조 강조: var(--gold-2) #E5BF2E (Honey Amber, hover) / var(--gold-dim) #FCEBA0 (옅은 노랑 보더) / var(--gold-ink) #92400E (Caramel Ink, 본문 강조).",
-      "위험: var(--danger) #DC2626 (정지/삭제/오류 전용 — 옐로우와 명확히 구분되는 단일 빨강).",
-      "회원 등급 색상: guest #A8A29E → member #FCD34D → reader #F5D548 → scholar #F59E0B → wangsanam #D97706 → admin #92400E (Sunny Gold 그라데이션).",
-      "CTA 텍스트: 옐로우 배경(#F5D548) 위에는 흰 글씨 대비가 부족하므로 var(--cta-ink) #0F172A 다크 잉크를 사용합니다 (WCAG AA 통과).",
+      "Primary (5% — 키컬러): var(--primary) #F5D548 로고 옐로우. CTA·로고·활성 탭·focus·active toggle 등 인터랙션 상태에만. 호버는 var(--primary-hover) #E5BF2E, 누름은 var(--primary-active) #C99E1A.",
+      "Secondary (15-25%): var(--secondary) #92400E Caramel Ink. 링크·본문 강조·서브 버튼. 옐로우와 어우러지면서도 본문 가독성 유지.",
+      "Tertiary: var(--tertiary) #475569 Slate 600 — 부차 강조·그래픽 보조.",
+      "Neutral (70%+): var(--bg) #FFFFFF / var(--bg-2) #F8FAFC / var(--bg-3) #F1F5F9 (배경 3단). var(--line) #E5E7EB / var(--line-2) #D1D5DB (라인 2단). 모든 면적은 뉴트럴 슬레이트 — 옐로우 라인/배경은 사용하지 않음.",
+      "Text (위계 3단): var(--ink) #0F172A 1차 / var(--ink-2) #334155 2차 / var(--ink-3) #64748B 3차. 모두 슬레이트 톤이라 옐로우 액센트와 충돌하지 않음.",
+      "System Colors: var(--success) #16A34A · var(--warning) #D97706 · var(--info) #2563EB · var(--danger) #DC2626. 상태 신호 4종 — primary 와 명도/색상으로 명확히 구분.",
+      "회원 등급 색상: guest #A8A29E → member #FCD34D → reader #F5D548 → scholar #F59E0B → wangsanam #D97706 → admin #92400E (Sunny Gold 그라데이션 — 등급은 시각적 위계라 5% 룰 예외).",
+      "CTA 텍스트: 옐로우 배경(#F5D548) 위에는 var(--on-primary) #0F172A 다크 잉크 사용 (WCAG AA 통과 — 흰 글씨 대비 부족).",
+      "5% 룰: 한 화면에서 옐로우 면적이 시각적으로 5%를 넘으면 다른 토큰으로 대체. 라벨/eyebrow/배지는 var(--ink-3) 가 기본.",
     ],
   },
   {

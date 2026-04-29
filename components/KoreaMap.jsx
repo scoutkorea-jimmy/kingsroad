@@ -25,8 +25,8 @@ const KoreaMap = ({ onSelect, selected }) => {
             <g key={r.id}>
               <path
                 d={r.path}
-                fill={isSelected ? '#B45309' : isHovered ? '#FEF3C7' : '#FFFBEB'}
-                stroke={isActive ? '#D97706' : '#FCD34D'}
+                fill={isSelected ? '#B45309' : isHovered ? '#FEF3C7' : '#F8FAFC'}
+                stroke={isActive ? '#D97706' : '#E5E7EB'}
                 strokeWidth={isActive ? 1.5 : 0.8}
                 style={{cursor:'pointer', transition:'fill 0.15s ease, stroke 0.15s ease'}}
                 filter={isActive ? 'url(#map-shadow)' : undefined}
@@ -44,7 +44,7 @@ const KoreaMap = ({ onSelect, selected }) => {
                 x={r.cx} y={r.cy}
                 textAnchor="middle"
                 fontSize={r.id === 'sejong' ? 6 : (r.id === 'incheon' || r.id === 'gwangju' || r.id === 'daejeon' || r.id === 'ulsan') ? 7.5 : 9}
-                fill={isSelected ? '#FFFFFF' : isHovered ? '#92400E' : '#57534E'}
+                fill={isSelected ? '#FFFFFF' : isHovered ? '#92400E' : '#64748B'}
                 fontFamily="var(--font-sans)"
                 fontWeight={isActive ? '700' : '400'}
                 style={{pointerEvents:'none', userSelect:'none', transition:'fill 0.15s ease'}}
