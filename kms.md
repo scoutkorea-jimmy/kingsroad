@@ -634,6 +634,74 @@ KMS를 수정할 때는 가능하면 아래 구조를 따른다.
 3. 어떤 배경과 맥락이 있었는가
 4. 이후 어떤 작업과 연결되는가
 
+# 서버 기준 운영 매트릭스 (v00.036.000 · 2026-04-29)
+
+본 사이트는 **D1(Cloudflare SQLite) 을 single source of truth** 로 운영한다. 클라이언트(localStorage / 메모리 캐시) 는 첫 페인트 속도와 UX 상태를 위한 **읽기 보조** 또는 **사용자 개인 설정** 용도로만 사용한다.
+
+## ✅ 서버(D1) 기준 운영 항목
+
+| 도메인 | 테이블 | 상태 |
+|---|---|---|
+| 인증/세션 | `users`, `sessions` | ✅ 모든 가입/로그인/로그아웃 D1 영속 |
+| 회원관리 | `users` (suspended, is_admin, grade_id) | ✅ 등급/정지/관리자 토글 모두 PATCH /api/admin/users/:id |
+| 게시글 | `posts`, `comments` | ✅ CRUD + 댓글 트리 + 댓글 삭제 |
+| 좋아요·북마크 | `post_likes`, `bookmarks` | ✅ 토글 1회 호출로 즉시 반영 |
+| 신고 | `reports` | ✅ POST /api/reports + 관리자 처리 |
+| 알림 | `notifications` | ✅ list/markRead. 발급은 서버 부수효과 패턴(다음 사이클) |
+| 강연 | `lectures`, `lecture_registrations`, `lecture_reviews` | ✅ CRUD + 신청 + 결제확정 + 후기 |
+| 투어 | `tours`, `tour_reservations`, `tour_reviews` | ✅ 동일 패턴 |
+| 책 카탈로그 | `books`, `book_reviews` | ✅ 메타·리뷰 D1 |
+| 책 주문 | `book_orders` | ✅ 생성·결제확정·발송·환불 모두 D1 |
+| 입금 계좌 | `bank_accounts`, `bank_account` | ✅ 멀티 계좌 + 기본 계좌 + 결제 시 셀렉터 |
+| 사이트 콘텐츠 | `site_content_kv` | ✅ section 단위 PATCH (nav/hero/footer/branding/og/auth/contact) |
+| FAQ | `faqs` | ✅ CRUD + 순서·숨김 |
+| 약관/개인정보 | `legal_docs` | ✅ slug 단위 PUT |
+| 카테고리 | `categories_kv` | ⚠️ 테이블 존재 + Worker CRUD ✅. 클라이언트 헬퍼는 아직 BGNJ_STORES seed 사용(다음 사이클에 BGNJ_STORES → server load 전환). |
+| 등급 | `grades_kv` | ⚠️ 동일 (테이블·Worker ✅, 클라이언트는 seed) |
+| 사용자 칼럼 | `user_columns` | ✅ CRUD |
+| 감사 로그 | `audit_log` | ✅ 자동 기록 + 관리자 조회 |
+| 오류 로그 | `error_log` | ✅ 클라이언트 자동 보고 + 관리자 조회 |
+
+## 🟡 의도적 클라이언트(localStorage) 보존 항목 — 사유
+
+이 항목들은 **서버에 저장하면 오히려 UX 가 나빠지거나 의미가 없는** 개인/세션 상태이므로 D1 으로 옮기지 않는다. KMS 정책으로 명시.
+
+| 항목 | 키 | 사유 |
+|---|---|---|
+| 장바구니 | `bgnj_cart` | 비로그인도 사용. 결제 직전까지 임시 상태이므로 서버 동기 불필요. 결제 성공 시점에 `book_orders` 로 영속됨. |
+| 세션 캐시 (FCP) | `bgnj_session_user` | /api/auth/me 응답을 캐시해 첫 페인트를 빠르게. 401 시 즉시 비움(refreshSession). |
+| 마지막 라우트 | `bgnj_route` | 사용자가 새 탭으로 들어왔을 때 마지막 위치 복원용. 서버 저장 가치 낮음. |
+| 쿠키 동의 결정 | `bgnj_cookie_consent` | GDPR/PIPA 정의상 사용자 단말 안에 보관하는 것이 표준. 서버 저장 시 추가 동의 필요. |
+| 글 임시저장(draft) | `bgnj_post_draft_{userId}` | 다중 기기 동기 비요건. 같은 브라우저에서 작성 중 글이 손실되지 않게만 하면 충분. 발행 시 `posts` 로 영속. |
+| 마이그레이션 마커 | `bgnj_migration_v1`, `bgnj_cleanup_v33` | 일회성 마이그레이션이 두 번 실행되지 않게 보장. |
+| 폰트 토글 / 테마 | (해당 시 별도 키) | 사용자 개인 UI 선호 — 동일 사용자라도 기기마다 다를 수 있음. |
+| 좀비 캐시 보조 캐시 | `_serverPosts`, `_bookmarks`, `_notifications` 등 (메모리만) | localStorage 미사용. 페이지 진입 시마다 서버에서 다시 받음. |
+
+## 🔁 클라이언트 → 서버 전환 권장 항목 (다음 사이클)
+
+| 항목 | 현 위치 | 전환 사유 |
+|---|---|---|
+| `BGNJ_STORES.grades` | 클라이언트 seed | 관리자가 등급을 추가/수정할 수 있어야 함. `grades_kv` 테이블·Worker 핸들러 이미 있음 — 헬퍼만 server-load 패턴으로 교체. |
+| `BGNJ_STORES.categories` | 클라이언트 seed | 동일. `categories_kv` 테이블·Worker CRUD 이미 있음. |
+| 알림 발급 | 클라이언트 호출(no-op) | 댓글/등록/주문 등 행위 시점에 **서버가** notifications 행을 생성하도록 핸들러 측 수정 필요. |
+| 칼럼 좋아요/조회수 | no-op | user_columns 에 likes_json/views 가 있지만 endpoint 없음. POST /api/columns/:id/like + /view 추가. |
+| 강연/투어별 신청 목록(관리자) | no-op | 현재 서버 GET /api/lectures/:id/registrations 부재. |
+| 회원 활동 카운트 | 클라이언트 집계 | 서버 GET /api/admin/users/:id/activity 추가하면 정확도 ↑. |
+
+## 🆕 새 메뉴 도입 (v00.036.000) — 의식주 + 행문 매트릭스
+
+| 라우트 | 메뉴 | 의식주(衣食住) | 현 상태 | D1 테이블 |
+|---|---|---|---|---|
+| `/eat` | 먹고 놀자 | 식(食) | placeholder + 카테고리 | `venues`(다음 사이클) |
+| `/sleep` | 자고 놀자 | 주(住) | placeholder | `lodgings`(다음 사이클) |
+| `/shop` | 사고 놀자 | 의(衣) + 토산 | placeholder | `goods`(다음 사이클) |
+| `/tour` | 투어 프로그램 | 행(行) | ✅ 운영 | `tours` |
+| `/lectures` | 강연 | 문(文) | ✅ 운영 | `lectures` |
+| `/column` | 뱅기노자 칼럼 | 문(文) | ✅ 운영 | `user_columns` |
+| `/community` | 커뮤니티 | 통합 | ✅ 운영 | `posts`, `comments` |
+
+> **행문(行文)** = 길에서 만나는 글. 의식주(衣食住) 3 요소에 행(行) + 문(文) 이 결합되는 여정. 새 3 메뉴(먹고/자고/사고)와 기존 투어·강연·칼럼이 하나의 인문학 여행 매트릭스를 이룬다.
+
 # 현재 위험 인벤토리 (v00.035.000 기준 · 2026-04-29 종합 점검)
 
 본 섹션은 **즉시 발생 가능한 오류** 와 **잠재적 문제** 를 한 곳에 모아 운영자/AI 가 진입 시 가장 먼저 확인하도록 정리한다. 각 항목 해소 시 본 섹션에서 제거하고 변경 기록에 이관한다.
@@ -694,6 +762,7 @@ KMS를 수정할 때는 가능하면 아래 구조를 따른다.
 - 2026-04-27: KMS 현행화. 5가지 미션 평가 요약 업데이트(커뮤니티 ~95%, 책 ~90%). 커뮤니티·책 판매 영역 기능 섹션 갱신. 마이페이지 취소·환불 UI 반영. P3 이후 남은 과제에서 P5 완료 항목 정리.
 - 2026-04-27: 의사결정 반영. Cloudflare(Workers + D1 + R2)로 외부 DB·인증·이미지 스토리지 방향 확정. PG 결제는 스켈레톤 UI 먼저(비활성화), 이메일 알림은 인프라 준비 후 비활성화 상태 배포. gilwell-media 로컬 105커밋 동기화 완료. 강연/투어 환불 신청 흐름 누락 식별(P5 책만 구현됨) — project-priority-table에 ⚠️ 미완으로 기록.
 - 2026-04-27: 강연/투어 환불 신청 흐름 구현 완료 (v00.021.000). BGNJ_LECTURES·BGNJ_TOURS에 requestRefund/approveRefund/rejectRefund 추가. LecturesPage·TourPage 사이드바에 참가 확정(유료) 환불 신청 폼(사유 입력) + 상태 표시 적용. 관리자 LectureAdminPanel·TourAdminPanel에 환불 승인/반려 UI 추가. MyPage 강연/투어 상태 레이블에 refund_requested 반영. KMS 및 project-priority-table 전체 완료 처리.
+- 2026-04-29: 🪶 브랜드 로고 + 의식주 + 행문 매트릭스 + 서버 운영 매트릭스 (v00.037.000). 무엇이 바뀌었나: ① BanginojaIcon / favicon / /assets/logo.svg 3 곳에 새 브랜드 SVG(노란 라운드 + B + 뱅기 + 별) 적용. ② 새 메뉴 3종(먹고 놀자 식·자고 놀자 주·사고 놀자 의+토산) 신설 — pages/EatSleepShopPages.jsx + Nav + VALID_ROUTES + DEFAULT_SITE_CONTENT.nav + App switch. ③ Hero 카피를 '먹고 자고 놀자 와 인문학 여행 / 의식주(衣食住) 3 요소에 행문(行文) 이 결합되는 여정' 으로 갱신. ④ App init useEffect 에서 BGNJ_API.grades/categories.list 호출해 D1 정의로 BGNJ_STORES.grades / categories seed 를 덮어씀(서버 정의 비면 seed 폴백). ⑤ KMS 본문에 '서버 기준 운영 매트릭스' 섹션 신설 — 22 도메인 D1 운영 상태 표 + 의도적 클라이언트 보존 8 항목 + 사유 + 클라이언트→서버 전환 권장 6 항목 + 의식주+행문 도식 + 새 메뉴 3 종 placeholder 등록. 왜: 사용자 요청 5 가지(로고/3메뉴/의식주행문 카피/서버운영기준화/KMS 갱신) 일괄 처리. 다음 작업: venues/lodgings/goods D1 테이블 신설 + 각 페이지 카테고리별 실데이터 + 예약 흐름.
 - 2026-04-29: 🚀 P0 일괄 해소 + 디자인 시스템 라이브 도파 (v00.036.000). 무엇이 바뀌었나: ① 결제 폼 3곳(강연/투어/책)에 `BGNJ_BankAccountPicker` 결합. ② 관리자 패널 '열기' 두 곳(community posts/reports) → `PostViewerModal` 모달. ③ async 헬퍼 sync 호출 사이트 4곳(LectureBookingPanel/TourBookingPanel/BookCheckoutPage/MyPage) await + try/catch 일괄 적용. ④ 버전 표시 헤더 'v' 접두사. ⑤ KMS 디자인 탭 전면 재구축 — `DesignSystemView` 컴포넌트 신설, 11 섹션 라이브 도파(컬러 토큰 11종 스와치 / 타이포 5종 렌더 샘플 / 스페이싱·라운드·엘리베이션 시각화 / 버튼 5종 라이브 / 배지 4종 / 폼 라이브 / 카드 3종 / 표 / 모달 / 피드백 3종 / 화면 작업 원칙). 각 섹션은 정의·특징·활용처·라이브 샘플 4-축. 왜: 사용자 요청 'v00.035.000 표시 정상화 + 모든 오류 해결 + 디자인 탭을 실질 샘플 + 용어 정의 + 특징 + 활용처로 완성'. 다음 작업: P1 위험 처리(SEO/MyPage 이벤트 리스너, 토스트 무한루프 가드, 매퍼 표준화).
 - 2026-04-29: 🩺 종합 점검 + 문서 동기화 (v00.035.001). 무엇이 바뀌었나: ① 사이트 전반 잠재 오류/리스크 종합 감사를 수행하고 결과를 KMS 부록 '현재 위험 인벤토리' 섹션에 정리. ② project-priority-table.md 를 P0/P1/P2 로 재정리. ③ ai-development-rules.md 에 '오류 로그 우선 확인' 외 신규 운영 원칙(서버 source-of-truth 원칙, 비동기 호출 await 의무, ?v= cache-buster 의무) 추가. ④ KMS 디자인 탭 갱신(현 디자인 시스템 기준 컬러/타이포/컴포넌트). 식별된 P0 위험: ① 결제 폼 3곳에 BGNJ_BankAccountPicker 미wiring, ② 관리자 게시글 모달 PostViewerModal 미wiring, ③ async 헬퍼를 sync 호출하는 페이지 존재 (LecturesPage:183, WangsanamTourPage:239, BookCheckoutPage:417). 다음 사이클: P0 3건 일괄 처리.
 - 2026-04-29: 운영 인프라 대규모 보강 (v00.035.000). 무엇이 바뀌었나: ① Worker CORS Allow-Methods 에 PUT 추가 — 무통장 PUT preflight 통과. ② D1.bank_accounts 테이블 + CRUD 엔드포인트 + BankAccountPanel 표 UI(멀티 계좌, 기본 계좌 지정) + BGNJ_BankAccountPicker 결제 셀렉터. ③ 설정 탭 중복 BankAccountPanel 제거 → 안내 인포 박스. ④ ROPA 카드 → 7컬럼 표. ⑤ 회원 관리에 상태 필터(전체/활성/정지/관리자) + 정렬 8종(가입일/이름/이메일/등급/게시글수/댓글수). ⑥ D1.error_log 테이블 + Worker POST /api/error-log(익명 허용) + GET /admin/error-log + DELETE. GlobalErrorToast/AppErrorBoundary 가 모든 오류 자동 서버 보고. 관리자 '오류 로그' 패널에서 검색/필터/삭제. ⑦ 토스트 10초 자동 소거. ⑧ '시스템 관리 > SEO' 탭 신설(OG title/description/이미지 + Hero 3행 제목/부제 + 브랜드명). 저장 즉시 <head> 메타 반영. ⑨ ai-development-rules.md '작업 시작 전 오류 로그 우선 확인' 규칙 추가. ⑩ PostViewerModal 컴포넌트 신설(관리자 '열기' 버튼 → 모달 본문/메타/댓글). Worker 배포 c192f088. 왜: 사용자 6 가지 요청 일괄 처리. 다음: 결제 화면(강연/투어/책)에 BGNJ_BankAccountPicker wiring + PostViewerModal 호출 사이트 정리.

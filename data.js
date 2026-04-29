@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.036.000",
+  version: "00.037.000",
   build: "2026.04.29",
   channel: "preview",
 };
@@ -211,19 +211,22 @@ const DEFAULT_BOOKS = [
 const DEFAULT_SITE_CONTENT = {
   nav: {
     home: "홈",
-    community: "커뮤니티",
-    lectures: "강연",
+    eat: "먹고 놀자",
+    sleep: "자고 놀자",
+    shop: "사고 놀자",
     tour: "투어 프로그램",
+    lectures: "강연",
     column: "뱅기노자 칼럼",
+    community: "커뮤니티",
     book: "뱅기노자의 길",
   },
   brand: { name: "뱅기노자", sub: "BANGINOJA" },
   hero: {
-    eyebrow: "BANGINOJA · 뱅기타고 노자",
+    eyebrow: "BANGINOJA · 먹고 자고 놀자 와 인문학 여행",
     title1: "뱅기타고",
     title2: "한국을",
     title3: "느끼다",
-    subtitle: "궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다.",
+    subtitle: "의식주(衣食住) 생활의 3요소에 행문(行文)이 결합되는 여정. 먹고·자고·놀고·배우는 한국을, 뱅기노자와 함께 걷고 느낍니다.",
     ctaPrimary: "커뮤니티 참여하기 →",
     ctaSecondary: "투어 프로그램 보기",
     mapHint: "지도를 클릭해 여행지를 탐색하세요",

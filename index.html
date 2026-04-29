@@ -14,13 +14,13 @@
 <meta property="og:type" content="website">
 <meta property="og:image" content="">
 <title>뱅기노자 — 뱅기 타고 한국을 느끼다</title>
-<!-- 인라인 SVG favicon — 별도 파일 호스팅 없이 브라우저의 자동 /favicon.ico 404 를 차단.
-     관리자 사이트 콘텐츠에서 업로드된 favicon 이 있으면 data.js 의 applyHead 가 이 link 의 href 를 덮어쓴다. -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 64 64%22%3E%3Crect width%3D%2264%22 height%3D%2264%22 rx%3D%2212%22 fill%3D%22%231E3A8A%22%2F%3E%3Cpath d%3D%22M32 14l4 14 14 4-14 4-4 14-4-14-14-4 14-4z%22 fill%3D%22%23F5E6A8%22%2F%3E%3C%2Fsvg%3E">
+<!-- 뱅기노자 브랜드 favicon — 인라인 SVG (별도 파일 호스팅 없음, 자동 /favicon.ico 404 차단).
+     관리자 사이트 콘텐츠에서 업로드된 favicon 이 있으면 data.js applyHead 가 이 link 의 href 를 덮어쓴다. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 64 64%22%3E%3Crect width%3D%2264%22 height%3D%2264%22 rx%3D%229%22 fill%3D%22%23F5D548%22%2F%3E%3Cpath d%3D%22M 9 8 L 9 56 L 32 56 C 42 56 47 51 47 44.5 C 47 39.5 44 36 39.5 35 C 43 33.5 45.5 30.5 45.5 26 C 45.5 18.5 40 14 30 14 L 9 14 Z M 18 19 L 28 19 C 33 19 36 21 36 25 C 36 29 33 31 28 31 L 18 31 Z M 18 36 L 30 36 C 36 36 39 38.5 39 43 C 39 47.5 36 50 30 50 L 18 50 Z%22 fill%3D%22%23FFFFFF%22%2F%3E%3Cpath d%3D%22M 26 22.5 C 27 21.5 28 21.5 28.5 22.5 L 31 27 L 38 25 C 38.8 24.8 39.4 25.2 39.5 26 C 39.6 26.6 39.3 27.1 38.8 27.4 L 32.5 30.7 L 33.5 36.5 L 36 37.8 C 36.4 38 36.5 38.4 36.3 38.7 C 36.2 39 35.9 39.1 35.6 39 L 31.5 38 L 28 39.5 C 27.7 39.6 27.3 39.4 27.2 39 C 27.1 38.7 27.3 38.4 27.6 38.2 L 30 37 L 28.7 32 L 24 33.5 C 23.4 33.7 22.9 33.4 22.8 32.8 C 22.7 32.3 23 31.9 23.5 31.7 L 27.5 30.2 L 26.3 26 L 25.5 24.5 C 25.2 24 25.4 23.3 26 23 Z%22 fill%3D%22%23F5D548%22%2F%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.036.000">
+<link rel="stylesheet" href="styles.css?v=00.037.000">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -78,21 +78,22 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script src="api.js?v=00.036.000"></script>
-<script src="data.js?v=00.036.000"></script>
-<script src="components/KoreaMapData.js?v=00.036.000"></script>
-<script type="text/babel" src="components/KoreaMap.jsx?v=00.036.000"></script>
-<script type="text/babel" src="components/Shell.jsx?v=00.036.000"></script>
-<script type="text/babel" src="components/TiptapEditor.jsx?v=00.036.000"></script>
-<script type="text/babel" src="pages/HomePage.jsx?v=00.036.000"></script>
-<script type="text/babel" src="pages/CommunityPage.jsx?v=00.036.000"></script>
-<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.036.000"></script>
-<script type="text/babel" src="pages/ColumnPage.jsx?v=00.036.000"></script>
-<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.036.000"></script>
-<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.036.000"></script>
-<script type="text/babel" src="pages/LecturesPage.jsx?v=00.036.000"></script>
-<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.036.000"></script>
-<script type="text/babel" src="pages/MyPage.jsx?v=00.036.000"></script>
+<script src="api.js?v=00.037.000"></script>
+<script src="data.js?v=00.037.000"></script>
+<script src="components/KoreaMapData.js?v=00.037.000"></script>
+<script type="text/babel" src="components/KoreaMap.jsx?v=00.037.000"></script>
+<script type="text/babel" src="components/Shell.jsx?v=00.037.000"></script>
+<script type="text/babel" src="components/TiptapEditor.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/HomePage.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/CommunityPage.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/ColumnPage.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/EatSleepShopPages.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/LecturesPage.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.037.000"></script>
+<script type="text/babel" src="pages/MyPage.jsx?v=00.037.000"></script>
 
 <script type="text/babel">
 // 전체 앱 에러 바운더리 — 흰 화면 방지 + 정확한 진단 정보 노출.
@@ -236,7 +237,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 // URL 경로 ↔ 라우트 키 매핑.
 // 알려진 라우트만 화이트리스트로 받아 안전하게 폴백한다(home).
-const VALID_ROUTES = ['home','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy'];
+const VALID_ROUTES = ['home','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy','eat','sleep','shop'];
 const pathToRoute = (pathname) => {
   const p = (pathname || '/').replace(/\/+$/, '') || '/';
   if (p === '/') return 'home';
@@ -284,6 +285,30 @@ const App = () => {
       window.BGNJ_BOOKS?.refresh?.(),
       window.BGNJ_BOOK_ORDERS?.refreshBankAccount?.(),
       window.BGNJ_COLUMNS?.refresh?.({ admin: true }),
+      // 등급/카테고리 — D1 에서 서버 정의를 받아 BGNJ_STORES seed 를 덮어씀.
+      // 서버에 정의가 비어 있으면 seed 가 그대로 유지(첫 진입자용 폴백).
+      window.BGNJ_API?.grades?.list?.()?.then?.((r) => {
+        if (Array.isArray(r?.grades) && r.grades.length) {
+          window.BGNJ_STORES.grades = r.grades.map((g) => ({
+            id: g.id, label: g.label, level: g.level,
+            color: g.color, desc: g.description,
+            order: g.display_order ?? 0,
+          }));
+        }
+      })?.catch?.(() => {}),
+      window.BGNJ_API?.categories?.list?.()?.then?.((r) => {
+        if (Array.isArray(r?.categories) && r.categories.length) {
+          window.BGNJ_STORES.categories = r.categories.map((c) => ({
+            id: c.id, label: c.label,
+            boardType: c.board_type || 'community',
+            minLevel: c.min_level ?? 0,
+            postMinLevel: c.post_min_level ?? 10,
+            desc: c.description,
+            prefixes: c.prefixes || [],
+            order: c.display_order ?? 0,
+          }));
+        }
+      })?.catch?.(() => {}),
     ]).catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -393,6 +418,9 @@ const App = () => {
   const page = (() => {
     switch (route) {
       case "home": return <HomePage go={go} tweaks={tweaks}/>;
+      case "eat":   return <EatPage go={go} user={user}/>;
+      case "sleep": return <SleepPage go={go} user={user}/>;
+      case "shop":  return <ShopPage go={go} user={user}/>;
       case "community": return <CommunityPage go={go} postId={postId} setPostId={setPostId} user={user}/>;
       case "tour": return <TourPage go={go} user={user}/>;
       case "lectures": return <LecturesPage go={go} user={user}/>;

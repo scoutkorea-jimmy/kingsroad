@@ -468,6 +468,26 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.037.000",
+    date: "2026-04-29",
+    summary: "🪶 새 브랜드 자산 + 의식주 + 행문 매트릭스 + 서버 운영 매트릭스 정리. 새 브랜드 로고(노란 라운드 + B + 뱅기 + 별 SVG) 를 BanginojaIcon / favicon / static asset 3 곳에 적용. 새 메뉴 3종(먹고 놀자 / 자고 놀자 / 사고 놀자) 신설로 의식주(衣食住) 3 요소가 행문(行文) 과 결합되는 인문학 여행 매트릭스 완성. KMS 본문에 '서버 기준 운영 매트릭스' 추가 — 의도적 클라이언트 보존 항목과 사유 명문화.",
+    details: [
+      "🎨 BanginojaIcon (Shell.jsx) — 비행기 아이콘 → 노란 라운드 사각형(64x64) + 흰색 'B' 컷아웃(fill-rule=evenodd) + 노란 뱅기 + 흰색 별 5 개 sparkle SVG 로 교체.",
+      "🎨 index.html favicon — 인라인 SVG 를 새 브랜드 마크 동일 데이터 URI 로 교체.",
+      "🎨 /assets/logo.svg — 정적 SVG 파일로 별도 저장 (OG 이미지·외부 사용 대비).",
+      "🍽 새 메뉴 3종 — pages/EatSleepShopPages.jsx 신설. PlacePage 컴포넌트 + EatPage/SleepPage/ShopPage 3 종. 인트로 + 카테고리 그리드 + 예약 placeholder.",
+      "  · /eat — 먹고 놀자 (식 食) — 한정식·향토음식·시장·제철식재·주안상",
+      "  · /sleep — 자고 놀자 (주 住) — 한옥스테이·고택·게스트하우스·템플스테이·농가체험",
+      "  · /shop — 사고 놀자 (의 衣 + 토산) — 전통공예·토산물·전통직물·도자·발효식품",
+      "🪶 Nav 메뉴 — Shell.jsx 에 eat/sleep/shop 추가 (홈 다음 우측). VALID_ROUTES 에 3 라우트 추가. App.js switch 에 EatPage/SleepPage/ShopPage 연결.",
+      "🪶 site_content_kv.nav — eat/sleep/shop 키 추가. 관리자에서 라벨 직접 편집 가능.",
+      "🪶 hero 카피 갱신 — 'BANGINOJA · 먹고 자고 놀자 와 인문학 여행' / 부제 '의식주(衣食住) 생활의 3요소에 행문(行文)이 결합되는 여정. 먹고·자고·놀고·배우는 한국을, 뱅기노자와 함께 걷고 느낍니다.'",
+      "🌐 BGNJ_STORES.grades / categories — App init 에서 BGNJ_API.grades.list / categories.list 호출로 D1 정의가 있으면 seed 를 덮어쓰는 패턴 추가. 서버 정의가 비면 seed 폴백.",
+      "📜 KMS 본문 — '서버 기준 운영 매트릭스' 섹션 신설. 22 개 도메인의 D1 운영 상태 표 + '의도적 클라이언트 보존' 8 항목 사유 + '클라이언트→서버 전환 권장' 6 항목 + '의식주+행문 매트릭스' 도식.",
+    ],
+    context: "사용자 요청 5 가지 한 묶음 처리: ① 새 브랜드 로고(PDF) 적용 ② 메뉴 3종(먹고/자고/사고 놀자) 추가 + 의식주 + 행문 카피 ③ '클라이언트 운영 → 서버 운영' 으로 인식 정정(이미 서버 SoT 인 항목과 의도적 클라이언트 항목 명확히 구분) ④ 이전 갱신 분 KMS 동기 ⑤ 모든 변경 후 KMS 갱신. 서버 운영 매트릭스 표를 KMS 에 박아 다음 사이클 진입자(AI/사람)가 즉시 '어디까지 D1 영속이고 어디는 의도적으로 클라이언트인지' 한눈에 파악 가능. eat/sleep/shop 은 placeholder 페이지이며 다음 사이클에 venues/lodgings/goods D1 테이블 + 관리자 입력 폼 + 예약 흐름 구현 예정.",
+  },
+  {
     version: "00.036.000",
     date: "2026-04-29",
     summary: "P0 일괄 해소 + 디자인 시스템 라이브 도파. 결제 3폼에 BankAccountPicker 결합, 관리자 '열기' → PostViewerModal 모달, async 헬퍼 호출 사이트 4곳 await/try-catch 일괄 적용. KMS 디자인 탭을 텍스트 bullet → 실제 컴포넌트 샘플 + 토큰 카드 + 정의/특징/활용처 11섹션 라이브 도파로 전면 재구축.",

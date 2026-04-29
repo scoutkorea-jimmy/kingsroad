@@ -211,11 +211,29 @@ const NotificationBell = ({ user, onPick }) => {
   );
 };
 
+// 뱅기노자 브랜드 마크 — 노란 라운드 사각형 + 'B' 컷아웃 + 뱅기 + 별들.
+// PDF 원본 기반으로 SVG 재구성. 주 색상은 브랜드 노란색 #F5D548.
 const BanginojaIcon = ({ size = 22 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    {/* 뱅기 — 뱅기노자 브랜드 마크 */}
-    <path d="M21 14L13 9V4a1 1 0 0 0-2 0v5L3 14v2l8-2.5 2 6.5h2l2-6.5L21 16V14z"
-      fill="var(--gold)"/>
+  <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
+    {/* 라운드 사각형 배경 */}
+    <rect width="64" height="64" rx="9" ry="9" fill="#F5D548"/>
+    {/* 'B' 컷아웃 — 두 개의 둥근 볼륨이 좌측 세로 기둥에 붙은 형태. fillRule=evenodd 로 안쪽 빈 공간을 컷아웃. */}
+    <path
+      fillRule="evenodd"
+      d="M 9 8 L 9 56 L 32 56 C 42 56 47 51 47 44.5 C 47 39.5 44 36 39.5 35 C 43 33.5 45.5 30.5 45.5 26 C 45.5 18.5 40 14 30 14 L 9 14 Z M 18 19 L 28 19 C 33 19 36 21 36 25 C 36 29 33 31 28 31 L 18 31 Z M 18 36 L 30 36 C 36 36 39 38.5 39 43 C 39 47.5 36 50 30 50 L 18 50 Z"
+      fill="#FFFFFF"/>
+    {/* 뱅기 (비행기) — B 의 상단 빈 공간을 가로지르며 좌측 위에서 우측 아래로 */}
+    <path
+      d="M 26 22.5 C 27 21.5 28 21.5 28.5 22.5 L 31 27 L 38 25 C 38.8 24.8 39.4 25.2 39.5 26 C 39.6 26.6 39.3 27.1 38.8 27.4 L 32.5 30.7 L 33.5 36.5 L 36 37.8 C 36.4 38 36.5 38.4 36.3 38.7 C 36.2 39 35.9 39.1 35.6 39 L 31.5 38 L 28 39.5 C 27.7 39.6 27.3 39.4 27.2 39 C 27.1 38.7 27.3 38.4 27.6 38.2 L 30 37 L 28.7 32 L 24 33.5 C 23.4 33.7 22.9 33.4 22.8 32.8 C 22.7 32.3 23 31.9 23.5 31.7 L 27.5 30.2 L 26.3 26 L 25.5 24.5 C 25.2 24 25.4 23.3 26 23 Z"
+      fill="#F5D548"/>
+    {/* 별 (sparkle) — 4-점 다이아몬드 5 개. 우측 상단에서 우측 하단으로 흩어짐 */}
+    <g fill="#FFFFFF">
+      <path d="M 53 15 L 54.5 18 L 57.5 19.5 L 54.5 21 L 53 24 L 51.5 21 L 48.5 19.5 L 51.5 18 Z"/>
+      <path d="M 58 26 L 59 28 L 61 29 L 59 30 L 58 32 L 57 30 L 55 29 L 57 28 Z"/>
+      <path d="M 50 33 L 50.7 34.5 L 52.2 35 L 50.7 35.5 L 50 37 L 49.3 35.5 L 47.8 35 L 49.3 34.5 Z"/>
+      <path d="M 55 40 L 55.5 41 L 56.5 41.5 L 55.5 42 L 55 43 L 54.5 42 L 53.5 41.5 L 54.5 41 Z"/>
+      <path d="M 59 36 L 59.4 37 L 60.4 37.5 L 59.4 38 L 59 39 L 58.6 38 L 57.6 37.5 L 58.6 37 Z"/>
+    </g>
   </svg>
 );
 
@@ -246,10 +264,13 @@ const Nav = ({ route, go, user, onLogout }) => {
   const navL = (window.BGNJ_SITE_CONTENT?.get?.() || {}).nav || {};
   const items = [
     { key: "home", label: navL.home || "홈" },
-    { key: "community", label: navL.community || "커뮤니티", subRouteKey: "community" },
-    { key: "lectures", label: navL.lectures || "강연" },
+    { key: "eat", label: navL.eat || "먹고 놀자" },
+    { key: "sleep", label: navL.sleep || "자고 놀자" },
+    { key: "shop", label: navL.shop || "사고 놀자" },
     { key: "tour", label: navL.tour || "투어 프로그램" },
+    { key: "lectures", label: navL.lectures || "강연" },
     { key: "column", label: navL.column || "뱅기노자 칼럼" },
+    { key: "community", label: navL.community || "커뮤니티", subRouteKey: "community" },
     { key: "book", label: navL.book || "뱅기노자의 길" },
   ];
   // 커뮤니티 메가메뉴: BGNJ_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
