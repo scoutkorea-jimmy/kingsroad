@@ -271,7 +271,7 @@ const LoginPage = ({ go, setUser }) => {
                   <summary style={{cursor:'pointer', fontFamily:'var(--font-mono)', fontSize:11, letterSpacing:'0.2em', color:'var(--gold)'}}>
                     추가 정보 입력 (선택 · 입력하지 않아도 사이트 이용에 문제 없음)
                   </summary>
-                  <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7, padding:'10px 12px', background:'rgba(212,175,55,0.06)', border:'1px solid var(--gold-dim)'}}>
+                  <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7, padding:'10px 12px', background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)'}}>
                     <strong className="gold">아래 항목은 모두 선택입니다.</strong> 입력하지 않으셔도 회원가입과 모든 사이트 기능을 동일하게 이용하실 수 있습니다. 수집된 정보는 GDPR/PIPA에 따라 관리되며, 언제든 열람·정정·삭제할 수 있습니다.
                   </p>
 
@@ -467,6 +467,23 @@ const formatTimeLeft = (dueIso) => {
 };
 
 const ADMIN_VERSION_HISTORY = [
+  {
+    version: "00.039.000",
+    date: "2026-04-29",
+    summary: "🎨 Sunny Gold 팔레트 정렬 — 로고(#F5D548 노란 라운드 마크)와 사이트 전반 색상이 충돌하던 상태(블루 베이스 + 노란 로고)를 해소. 로고 옐로우를 기준으로 모든 컬러 토큰 / CTA / 회원 등급 색상 / 한국 지도 / favicon-theme 메타 / 디자인 가이드 문구를 일괄 재정렬.",
+    details: [
+      "🎨 styles.css :root — `--bg/--bg-2/--bg-3` 순백 → 따뜻한 크림(#FFFBEB) → 소프트 옐로우(#FEF3C7). `--line/--line-2` 옐로우 톤 라인. `--gold` #F5D548(로고) · `--gold-2` #E5BF2E(Honey Amber, hover) · `--gold-dim` #FCEBA0 · `--gold-ink` #92400E(Caramel Ink, 본문 강조).",
+      "🎨 CTA 토큰 — `--cta-rest` #F5D548 / `--cta-hover` #E5BF2E / `--cta-active` #C99E1A. 옐로우 위 흰 글씨는 명도대비 부족이므로 `--cta-ink` #0F172A 다크 잉크 추가. `.btn-gold` 텍스트도 `var(--cta-ink)` 로 전환 (WCAG AA 통과).",
+      "🎨 본문 잉크 — `--ink-2` 블루 #1E3A8A → 따뜻한 다크 그레이 #1F2937. `--ink-3` Slate → Warm Stone #78716C. `--focus` #C99E1A Deep Amber.",
+      "🎨 회원 등급 — guest #A8A29E → member #FCD34D → reader #F5D548 → scholar #F59E0B → wangsanam #D97706 → admin #92400E (옐로우 그라데이션 통일). `LEGACY_GRADE_COLORS` 가 [메탈릭 골드, 블루] 두 세대 모두 잡아 자동 마이그레이션.",
+      "🗺 KoreaMap.jsx — 시도 fill/stroke/text/shadow 를 옐로우-앰버 톤으로 교체. selected = #B45309, hover = #FEF3C7.",
+      "🧹 잔재 정리 — `rgba(212,175,55,...)` (구 메탈릭 골드) 38곳 → `rgba(245,213,72,...)` (로고 옐로우) 일괄 치환. 콘솔 버전 배지 배경 #1E3A8A → #92400E.",
+      "📑 KMS 디자인 도파 — 컬러 토큰 정의표(`COLOR_TOKENS`) 11→13 항목 (`--bg-3`, `--gold-ink` 명시). '브랜드 무드' / '컬러 원칙' 섹션 본문이 새 Sunny Gold 시스템을 정확히 기술.",
+      "🪟 theme-color 메타 — #FDFAF5 → #FFFBEB (모바일 브라우저 상단바 색상 동기).",
+      "📦 cache-buster — `?v=00.039.000`.",
+    ],
+    context: "사용자 보고 '홈페이지 로고가 색이 색이다보니 전체적인 컬러감 수정이 필요해보임'. 코드 베이스가 v00.026 라이트 톤 전환 → v00.035 블루 팔레트 마이그레이션을 거치면서 로고만 노란색으로 남아 충돌하던 상태였음. CSS 변수 이름이 여전히 `--gold-*` 인 점에서 원래 골드 정체성으로의 회귀가 자연스러웠고, 로고 색을 기준점으로 삼아 전체 팔레트를 Sunny Gold 시스템으로 재정렬. 다음 사이클 권장: ① 다크 모드 토글 도입 시 동일 hue 의 다크 변형 정의 ② OG 이미지에 새 팔레트 적용한 카드 1장 추가 ③ AuthAdminPage 의 스크린샷/설명에 라이브 토큰 색상 카드를 직접 끼워 넣어 도파 자동화.",
+  },
   {
     version: "00.038.000",
     date: "2026-04-28",
@@ -1035,17 +1052,19 @@ const ADMIN_VERSION_HISTORY = [
 const DesignSystemView = () => {
   // 토큰 정의표 — 컬러
   const COLOR_TOKENS = [
-    { token: '--bg',       hex: '#FDFAF5', usage: '페이지 베이스 배경 (가장 큰 면적)', notes: '거의 흰색에 가까운 미세 크림. 카드를 띄우는 캔버스.' },
-    { token: '--bg-2',     hex: '#F1F5F9', usage: '서브 배경 · 표 헤더 · 인포 박스', notes: '본문보다 한 단 낮은 회색 — 정보 위계용.' },
+    { token: '--bg',       hex: '#FFFFFF', usage: '페이지 베이스 배경 (가장 큰 면적)', notes: '순백 — 카드를 띄우는 캔버스.' },
+    { token: '--bg-2',     hex: '#FFFBEB', usage: '서브 배경 · 표 헤더 · 인포 박스', notes: '따뜻한 크림 — 옐로우 한 방울. 정보 위계용.' },
+    { token: '--bg-3',     hex: '#FEF3C7', usage: '코드/입력 백그라운드 · placeholder', notes: '소프트 옐로우 — 한 단 더 짙은 부드러운 톤.' },
     { token: '--ink',      hex: '#0F172A', usage: '본문 1차 텍스트 · 제목', notes: '거의 검정. 가장 진한 잉크.' },
-    { token: '--ink-2',    hex: '#475569', usage: '보조 텍스트 · 설명문 · 라벨', notes: '본문보다 한 단 흐림.' },
-    { token: '--ink-3',    hex: '#94A3B8', usage: '메타 정보 · 비활성 · placeholder', notes: '가장 흐림. dim-2 클래스가 자주 사용.' },
-    { token: '--line',     hex: '#E2E8F0', usage: '카드/표 테두리 · divider', notes: '얇은 슬레이트 회색.' },
-    { token: '--line-2',   hex: '#CBD5E1', usage: '강조 테두리 · 입력 필드 외곽', notes: 'line 보다 한 단 진함.' },
-    { token: '--gold',     hex: '#1E3A8A', usage: '브랜드 강조 · 활성 탭 · 액센트', notes: '실제로는 로열 블루. "gold" 라는 토큰명만 유지(레거시).' },
-    { token: '--gold-2',   hex: '#2563EB', usage: '주요 가격/카운트 강조', notes: 'gold 보다 한 단 밝은 블루.' },
-    { token: '--gold-dim', hex: '#93C5FD', usage: '활성 영역 배경 hint · gold 박스 외곽', notes: '아주 옅은 블루 테두리/배경.' },
-    { token: '--danger',   hex: '#C24A3D', usage: '정지 · 삭제 · 오류 · 환불 거부', notes: 'gold 와 명확히 구분되는 단일 빨강.' },
+    { token: '--ink-2',    hex: '#1F2937', usage: '보조 텍스트 · 설명문 · 라벨', notes: '본문보다 한 단 흐림 — 따뜻한 다크 그레이.' },
+    { token: '--ink-3',    hex: '#78716C', usage: '메타 정보 · 비활성 · placeholder', notes: '가장 흐림. dim-2 클래스가 자주 사용 — Warm Stone.' },
+    { token: '--line',     hex: '#FDE68A', usage: '카드/표 테두리 · divider', notes: '옅은 옐로우 라인 — 베이스 톤과 어우러짐.' },
+    { token: '--line-2',   hex: '#FCD34D', usage: '강조 테두리 · 입력 필드 외곽', notes: 'line 보다 한 단 진한 옐로우.' },
+    { token: '--gold',     hex: '#F5D548', usage: '브랜드 강조 · 활성 탭 · 액센트', notes: '로고 옐로우 — Sunny Gold 시그니처.' },
+    { token: '--gold-2',   hex: '#E5BF2E', usage: 'hover · 주요 가격/카운트 강조', notes: 'Honey Amber — 로고보다 한 단 깊음.' },
+    { token: '--gold-dim', hex: '#FCEBA0', usage: '활성 영역 배경 hint · gold 박스 외곽', notes: '아주 옅은 옐로우 테두리/배경.' },
+    { token: '--gold-ink', hex: '#92400E', usage: '본문 강조 잉크 (인용/링크 hover)', notes: 'Caramel Ink — 옐로우 위에서 또렷한 다크 앰버.' },
+    { token: '--danger',   hex: '#DC2626', usage: '정지 · 삭제 · 오류 · 환불 거부', notes: 'gold 와 명확히 구분되는 단일 빨강.' },
   ];
 
   // 폰트 패밀리 정의
@@ -1079,7 +1098,7 @@ const DesignSystemView = () => {
         <h2 className="ko-serif" style={{fontSize:26, marginBottom:10}}>뱅기노자 디자인 시스템</h2>
         <p className="dim" style={{fontSize:14, lineHeight:1.8, margin:0}}>
           새 페이지를 만들거나 기존 화면을 다듬을 때 <strong className="gold">이 탭의 토큰과 컴포넌트를 그대로 재사용</strong>합니다.
-          편집 디자인의 무드(라이트 베이스 + 로열 블루 강조 + 골드 포인트) 안에서 정보가 또렷하게 정렬되도록 만듭니다.
+          편집 디자인의 무드(순백 베이스 + Sunny Gold 옐로우 강조 + Caramel Ink 포인트) 안에서 정보가 또렷하게 정렬되도록 만듭니다.
         </p>
       </div>
 
@@ -1091,7 +1110,7 @@ const DesignSystemView = () => {
         characteristics={[
           '역할 기반 — 같은 색이라도 의미가 다르면 토큰을 분리.',
           '명도 단계 — bg/bg-2, ink/ink-2/ink-3, line/line-2 처럼 한 토큰군 안에서 단계.',
-          '토큰명 안정성 — gold 는 실제로 로열 블루지만 코드 호환을 위해 이름 유지.',
+          '토큰명 의미 — gold 는 로고 옐로우(#F5D548)에 맞춘 Sunny Gold 시그니처.',
         ]}
         usage={[
           'CSS: `color: var(--ink-2)`, `background: var(--bg-2)`',
@@ -1318,7 +1337,7 @@ const DesignSystemView = () => {
         definition="화면의 모든 정보 블록은 카드(.card)에 들어간다. 강조용은 .card-gold. 인포 박스는 별도 패턴."
         characteristics={[
           '`.card` — 흰 배경 + 얇은 테두리 + padding 24.',
-          '`.card-gold` — 옅은 블루(#F0F6FF) 배경 + 골드 dim 테두리. 강조용.',
+          '`.card-gold` — 옅은 옐로우 그라데이션 배경 + 골드 dim 테두리. 강조용.',
           '인포 박스(좌측 골드 라인) — 안내문 전용 패턴.',
           '카드 헤더는 `mono gold` 라벨 + ko-serif 제목.',
         ]}
@@ -1336,7 +1355,7 @@ const DesignSystemView = () => {
           <article className="card card-gold" style={{padding:20}}>
             <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>EMPHASIS CARD</div>
             <h3 className="ko-serif" style={{fontSize:18, marginBottom:8}}>강조 카드</h3>
-            <p className="dim" style={{fontSize:12, lineHeight:1.7, margin:0}}>옅은 블루 배경 · 골드 dim 테두리. 요약/공지/버전 카드.</p>
+            <p className="dim" style={{fontSize:12, lineHeight:1.7, margin:0}}>옅은 옐로우 그라데이션 배경 · 골드 dim 테두리. 요약/공지/버전 카드.</p>
           </article>
           <article style={{padding:'14px 16px', background:'var(--bg-2)', borderLeft:'3px solid var(--gold-dim)'}}>
             <p className="dim" style={{fontSize:12, lineHeight:1.7, margin:0}}>
@@ -1451,7 +1470,7 @@ const DesignSystemView = () => {
           </div>
           <div role="status" style={{
             padding:'10px 14px', border:'1px solid var(--gold-dim)',
-            background:'rgba(212,175,55,0.06)', color:'var(--gold)', fontSize:13,
+            background:'rgba(245,213,72,0.06)', color:'var(--gold)', fontSize:13,
           }}>✓ 저장되었습니다.</div>
           <div style={{
             padding:'12px 14px', background:'#fff',
@@ -1531,20 +1550,21 @@ const ADMIN_DESIGN_SECTIONS = [
     points: [
       "한국의 자연·문화·역사를 직접 걷고 느끼는 여행 커뮤니티의 차분한 인상을 기본으로 합니다.",
       "장식보다 정렬감과 여백, 정보 밀도를 우선합니다.",
-      "라이트 베이스(거의 흰/연한 파스텔 블루) + 로열 블루 강조 + 골드 포인트의 절제된 조합을 유지합니다.",
+      "순백 베이스(흰색 + 따뜻한 크림) + Sunny Gold 옐로우 강조 + Caramel Ink 포인트의 절제된 조합을 유지합니다 — 로고 #F5D548 와 직접 호응.",
       "v00.026 부터 짙은 먹색 다크 톤 → 라이트 톤으로 전환되었습니다 (편집 디자인 모티프 유지).",
     ],
   },
   {
     title: "컬러 원칙 (실제 토큰)",
     points: [
-      "베이스 배경: var(--bg) #FDFAF5 / var(--bg-2) #F1F5F9 (연한 파스텔 블루-회색).",
-      "본문 잉크: var(--ink) #0F172A · var(--ink-2) #475569 · var(--ink-3) #94A3B8 (3단계 위계).",
-      "라인: var(--line) / var(--line-2) (얇은 슬레이트 회색).",
-      "주 강조: var(--gold) #1E3A8A 로얄 블루 (브랜드 신호 — 등급 색상은 모두 블루 팔레트로 통일).",
-      "보조 강조: var(--gold-2) / var(--gold-dim) — 옅은 블루~네이비 변주.",
-      "위험: var(--danger) #C24A3D (정지/삭제/오류 전용 — 다른 강조와 명확히 구분).",
-      "회원 등급 색상: guest/member/reader/scholar/wangsanam/admin 모두 블루 팔레트(#64748B → #1E3A8A) 그라데이션으로 통일.",
+      "베이스 배경: var(--bg) #FFFFFF / var(--bg-2) #FFFBEB / var(--bg-3) #FEF3C7 (순백 → 따뜻한 크림 → 소프트 옐로우).",
+      "본문 잉크: var(--ink) #0F172A · var(--ink-2) #1F2937 · var(--ink-3) #78716C (3단계 위계 — Warm Stone).",
+      "라인: var(--line) #FDE68A / var(--line-2) #FCD34D (옐로우 톤 라인).",
+      "주 강조: var(--gold) #F5D548 로고 옐로우 (Sunny Gold 시그니처 — 등급/CTA 모두 옐로우 그라데이션으로 통일).",
+      "보조 강조: var(--gold-2) #E5BF2E (Honey Amber, hover) / var(--gold-dim) #FCEBA0 (옅은 노랑 보더) / var(--gold-ink) #92400E (Caramel Ink, 본문 강조).",
+      "위험: var(--danger) #DC2626 (정지/삭제/오류 전용 — 옐로우와 명확히 구분되는 단일 빨강).",
+      "회원 등급 색상: guest #A8A29E → member #FCD34D → reader #F5D548 → scholar #F59E0B → wangsanam #D97706 → admin #92400E (Sunny Gold 그라데이션).",
+      "CTA 텍스트: 옐로우 배경(#F5D548) 위에는 흰 글씨 대비가 부족하므로 var(--cta-ink) #0F172A 다크 잉크를 사용합니다 (WCAG AA 통과).",
     ],
   },
   {
@@ -2435,7 +2455,7 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
             style={{
               borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
               color: filter === f.key ? 'var(--gold)' : 'var(--ink-2)',
-              background: filter === f.key ? 'rgba(212,175,55,0.06)' : 'transparent',
+              background: filter === f.key ? 'rgba(245,213,72,0.06)' : 'transparent',
             }}>
             {f.label} <span className="mono dim-2" style={{ fontSize: 10, marginLeft: 4 }}>{counts[f.key] ?? 0}</span>
           </button>
@@ -3229,7 +3249,7 @@ const BankAccountPanel = () => {
         <div role="status" style={{
           marginTop:14, padding:'10px 14px',
           border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
-          background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(212,175,55,0.06)',
+          background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(245,213,72,0.06)',
           color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--gold)', fontSize:13,
         }}>{msg}</div>
       )}
@@ -3324,7 +3344,7 @@ window.BGNJ_BankAccountPicker = ({ value, onChange, accounts, refreshOnMount = t
     if (selected && selected.id !== value && onChange) onChange(selected.id);
   }, [list.length]);
   return (
-    <div style={{padding:'14px 16px', border:'1px solid var(--gold-dim)', background:'rgba(212,175,55,0.04)'}}>
+    <div style={{padding:'14px 16px', border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.04)'}}>
       <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>BANK ACCOUNT · 입금 계좌</div>
       {list.length > 1 && (
         <div style={{marginBottom:12}}>
@@ -3428,7 +3448,7 @@ const BookOrderAdminPanel = ({ go }) => {
               style={{
                 borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
                 color: filter === f.key ? 'var(--gold)' : 'var(--ink-2)',
-                background: filter === f.key ? 'rgba(212,175,55,0.06)' : 'transparent',
+                background: filter === f.key ? 'rgba(245,213,72,0.06)' : 'transparent',
               }}>
               {f.label} <span className="mono dim-2" style={{ fontSize: 10, marginLeft: 4 }}>{counts[f.key] ?? 0}</span>
             </button>
@@ -3670,7 +3690,7 @@ const LegalAdminPanel = () => {
           <div role="status" style={{
             fontSize:13, marginBottom:14, padding:'10px 14px',
             border: msg.startsWith('✗') || msg.startsWith('⚠') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
-            background: msg.startsWith('✗') || msg.startsWith('⚠') ? 'rgba(194,74,61,0.06)' : 'rgba(212,175,55,0.06)',
+            background: msg.startsWith('✗') || msg.startsWith('⚠') ? 'rgba(194,74,61,0.06)' : 'rgba(245,213,72,0.06)',
             color: msg.startsWith('✗') || msg.startsWith('⚠') ? 'var(--danger)' : 'var(--gold)',
           }}>{msg}</div>
         )}
@@ -4523,7 +4543,7 @@ const SEOAdminPanel = () => {
         <div role="status" style={{
           marginBottom:16, padding:'10px 14px',
           border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
-          background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(212,175,55,0.06)',
+          background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(245,213,72,0.06)',
           color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--gold)', fontSize:13,
         }}>{msg}</div>
       )}
@@ -5436,7 +5456,7 @@ const AdminPage = ({ go }) => {
           <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em'}}>◆ ADMIN CONSOLE</div>
           <div className="ko-serif" style={{fontSize:20, marginTop:8}}>관리자</div>
           <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>banginoja@bgnj.net</div>
-          <div style={{marginTop:12, padding:'8px 10px', background:'rgba(212,175,55,0.06)', border:'1px solid var(--gold-dim)', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--gold)', letterSpacing:'0.15em'}}>
+          <div style={{marginTop:12, padding:'8px 10px', background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--gold)', letterSpacing:'0.15em'}}>
             DPO · dpo@bgnj.net
           </div>
           <div className="dim-2 mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em'}}>적용법: GDPR + PIPA</div>
@@ -5458,7 +5478,7 @@ const AdminPage = ({ go }) => {
                       width:'100%', textAlign:'left',
                       padding:'10px 24px',
                       fontSize:13,
-                      background: tab === t ? 'rgba(212,175,55,0.06)' : 'transparent',
+                      background: tab === t ? 'rgba(245,213,72,0.06)' : 'transparent',
                       color: tab === t ? 'var(--gold)' : 'var(--ink-2)',
                       borderLeft: tab === t ? '2px solid var(--gold)' : '2px solid transparent',
                       letterSpacing:'0.03em',
@@ -5604,7 +5624,7 @@ const AdminPage = ({ go }) => {
                       style={{
                         borderColor: n === safePage ? 'var(--gold)' : 'var(--line)',
                         color: n === safePage ? 'var(--gold)' : 'var(--ink-2)',
-                        background: n === safePage ? 'rgba(212,175,55,0.08)' : 'transparent',
+                        background: n === safePage ? 'rgba(245,213,72,0.08)' : 'transparent',
                         minWidth: 36,
                       }}>{n}</button>
                   ))}
@@ -5650,7 +5670,7 @@ const AdminPage = ({ go }) => {
                   style={{
                     borderColor: kmsTab === item ? 'var(--gold)' : 'var(--line)',
                     color: kmsTab === item ? 'var(--gold)' : 'var(--ink-2)',
-                    background: kmsTab === item ? 'rgba(212,175,55,0.06)' : 'transparent',
+                    background: kmsTab === item ? 'rgba(245,213,72,0.06)' : 'transparent',
                   }}>
                   {item}
                 </button>
@@ -5723,7 +5743,7 @@ const AdminPage = ({ go }) => {
                               <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>없는 기능 / 완성도를 높이려면 필요한 것</div>
                               <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
                                 {domain.missing.map((item) => (
-                                  <li key={item} style={{padding:'8px 12px', borderLeft:'2px solid var(--gold-dim)', background:'rgba(212,175,55,0.04)', fontSize:13, lineHeight:1.7}}>
+                                  <li key={item} style={{padding:'8px 12px', borderLeft:'2px solid var(--gold-dim)', background:'rgba(245,213,72,0.04)', fontSize:13, lineHeight:1.7}}>
                                     {item}
                                   </li>
                                 ))}
@@ -5973,7 +5993,7 @@ const AdminPage = ({ go }) => {
               </thead>
               <tbody>
                 {visibleCommunityPosts.map(p => (
-                  <tr key={p.id} style={{borderBottom:'1px solid var(--line)', background: selectedPostIds.has(p.id) ? 'rgba(212,175,55,0.04)' : undefined}}>
+                  <tr key={p.id} style={{borderBottom:'1px solid var(--line)', background: selectedPostIds.has(p.id) ? 'rgba(245,213,72,0.04)' : undefined}}>
                     <td style={{padding:'14px 8px', textAlign:'center'}}>
                       <input type="checkbox" checked={selectedPostIds.has(p.id)}
                         onChange={(e) => {
@@ -6915,7 +6935,7 @@ const AdminColumnEditor = () => {
           <input id="col-publishAt" type="datetime-local" className="field-input"
             value={publishAt} onChange={(e) => setPublishAt(e.target.value)}/>
         </div>
-        {msg && <div role="status" className="mono gold" style={{fontSize:12, padding:10, border:'1px solid var(--gold-dim)', background:'rgba(212,175,55,0.06)', marginBottom:16}}>{msg}</div>}
+        {msg && <div role="status" className="mono gold" style={{fontSize:12, padding:10, border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.06)', marginBottom:16}}>{msg}</div>}
         <div style={{display:'flex', gap:12, justifyContent:'flex-end', paddingTop:20, borderTop:'1px solid var(--line)', flexWrap:'wrap'}}>
           <button type="button" className="btn" onClick={reset}>초기화</button>
           <button type="button" className="btn" onClick={() => save('draft')}>임시 저장</button>
@@ -6939,7 +6959,7 @@ const AdminColumnEditor = () => {
                 style={{
                   borderColor: statusFilter === f.key ? 'var(--gold)' : 'var(--line)',
                   color: statusFilter === f.key ? 'var(--gold)' : 'var(--ink-2)',
-                  background: statusFilter === f.key ? 'rgba(212,175,55,0.06)' : 'transparent',
+                  background: statusFilter === f.key ? 'rgba(245,213,72,0.06)' : 'transparent',
                 }}>
                 {f.label} <span className="mono dim-2" style={{fontSize:10, marginLeft:4}}>{counts[f.key] ?? 0}</span>
               </button>

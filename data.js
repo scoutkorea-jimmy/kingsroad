@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.038.000",
-  build: "2026.04.28",
+  version: "00.039.000",
+  build: "2026.04.29",
   channel: "preview",
 };
 
@@ -12,7 +12,7 @@ window.BGNJ_VERSION = {
 try {
   console.log(
     `%c[BGNJ] v${window.BGNJ_VERSION.version} · build ${window.BGNJ_VERSION.build}`,
-    'background:#1E3A8A;color:#F5E6A8;padding:3px 8px;border-radius:3px;font-weight:600;'
+    'background:#92400E;color:#F5D548;padding:3px 8px;border-radius:3px;font-weight:600;'
   );
 } catch {}
 
@@ -138,25 +138,26 @@ const hashPassword = (input) => {
 };
 
 // 회원 등급 — 번호가 낮을수록 권한 낮음. admin > …
-// 색상은 사이트 블루 팔레트(--gold ~ --gold-ink)와 일관성 있게 단계적으로 진해진다.
+// 색상은 사이트 Sunny Gold 팔레트(--gold ~ --gold-ink)와 일관성 있게 단계적으로 진해진다.
 const DEFAULT_GRADES = [
-  { id: "guest",    label: "방문객", level: 0, color: "#64748B", desc: "비로그인 / 게스트" },
-  { id: "member",   label: "입문", level: 10, color: "#94A3B8", desc: "회원가입 완료" },
-  { id: "reader",   label: "독자", level: 30, color: "#93C5FD", desc: "활동 회원 (댓글 10+)" },
-  { id: "scholar",  label: "사관", level: 60, color: "#3B82F6", desc: "열성 회원 (칼럼 기고 가능)" },
-  { id: "wangsanam",label: "왕사남", level: 90, color: "#2563EB", desc: "운영진" },
-  { id: "admin",    label: "관리자", level: 100, color: "#1E3A8A", desc: "최고 관리자" },
+  { id: "guest",    label: "방문객", level: 0, color: "#A8A29E", desc: "비로그인 / 게스트" },
+  { id: "member",   label: "입문", level: 10, color: "#FCD34D", desc: "회원가입 완료" },
+  { id: "reader",   label: "독자", level: 30, color: "#F5D548", desc: "활동 회원 (댓글 10+)" },
+  { id: "scholar",  label: "사관", level: 60, color: "#F59E0B", desc: "열성 회원 (칼럼 기고 가능)" },
+  { id: "wangsanam",label: "왕사남", level: 90, color: "#D97706", desc: "운영진" },
+  { id: "admin",    label: "관리자", level: 100, color: "#92400E", desc: "최고 관리자" },
 ];
 
-// 기존 localStorage에 남아있는 노란색(legacy gold) 등급 색상을 새 블루 팔레트로 마이그레이션.
+// 기존 localStorage에 남아있는 (legacy) 등급 색상을 새 Sunny Gold 팔레트로 마이그레이션.
 // id 기준 매칭 — 사용자가 직접 색을 바꿨으면 건드리지 않음.
+// 한 사용자가 두 차례에 걸쳐 거쳐온 팔레트(노란/금 → 블루 → Sunny Gold) 모두 잡아낸다.
 const LEGACY_GRADE_COLORS = {
-  guest: "#78716a",
-  member: "#b8b1a1",
-  reader: "#E8C547",
-  scholar: "#D4AF37",
-  wangsanam: "#F5E6A8",
-  admin: "#F5E6A8",
+  guest:     ["#78716a", "#64748B"],
+  member:    ["#b8b1a1", "#94A3B8"],
+  reader:    ["#E8C547", "#93C5FD"],
+  scholar:   ["#D4AF37", "#3B82F6"],
+  wangsanam: ["#F5E6A8", "#2563EB"],
+  admin:     ["#F5E6A8", "#1E3A8A"],
 };
 const migrateLegacyGradeColors = (grades) => {
   if (!Array.isArray(grades)) return grades;
@@ -164,10 +165,10 @@ const migrateLegacyGradeColors = (grades) => {
   return grades.map((g) => {
     if (!g || !g.id) return g;
     const legacy = LEGACY_GRADE_COLORS[g.id];
-    if (legacy && (g.color || "").toLowerCase() === legacy.toLowerCase() && byId[g.id]) {
-      return { ...g, color: byId[g.id] };
-    }
-    return g;
+    if (!legacy || !byId[g.id]) return g;
+    const cur = (g.color || "").toLowerCase();
+    const hit = legacy.some((c) => c.toLowerCase() === cur);
+    return hit ? { ...g, color: byId[g.id] } : g;
   });
 };
 

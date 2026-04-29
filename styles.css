@@ -45,35 +45,38 @@
 }
 
 :root {
-  /* 뱅기노자 — 블루 여행 팔레트 / 순백 배경
-     Altitude system (고도감)
-     High Altitude : #1E40AF  — deep, authority
-     Mid Sky       : #3B82F6  — action rest state
-     Low Sky       : #93C5FD  — decorative / soft
-     CTA temperature: rest #3B82F6 → hover #2563EB → active #1D4ED8 */
+  /* 뱅기노자 — Sunny Gold 팔레트 / 로고 #F5D548 기반
+     Sunny Gold system
+     Logo Yellow  : #F5D548  — brand mark, headline accent
+     Honey Amber  : #E5BF2E  — hover state
+     Deep Amber   : #C99E1A  — active / focus
+     Caramel Ink  : #92400E  — text emphasis on light bg
+     CTA temperature: rest #F5D548 → hover #E5BF2E → active #C99E1A
+     CTA 텍스트는 옐로우 대비를 위해 var(--cta-ink) 다크 잉크로 고정. */
 
   --bg: #FFFFFF;              /* 순백 */
-  --bg-2: #EFF6FF;            /* Background Sky */
-  --bg-3: #DBEAFE;            /* 연한 블루 */
-  --line: #BFDBFE;            /* 라인 */
-  --line-2: #93C5FD;          /* Low Sky — 진한 라인 */
+  --bg-2: #FFFBEB;            /* Cream — 따뜻한 크림 */
+  --bg-3: #FEF3C7;            /* Soft Yellow — 옅은 노랑 */
+  --line: #FDE68A;            /* 라인 — 노랑 톤 */
+  --line-2: #FCD34D;          /* 진한 라인 */
 
-  --gold: #3B82F6;            /* Mid Sky — Action Blue (rest) */
-  --gold-2: #2563EB;          /* Primary Blue — Hover state */
-  --gold-dim: #93C5FD;        /* Low Sky — decorative borders */
-  --gold-ink: #1E3A8A;        /* Deep Blue — text emphasis / High Altitude */
+  --gold: #F5D548;            /* 로고 옐로우 — primary brand */
+  --gold-2: #E5BF2E;          /* Honey Amber — hover state */
+  --gold-dim: #FCEBA0;        /* 옅은 노랑 — decorative borders */
+  --gold-ink: #92400E;        /* Caramel Ink — text emphasis */
 
   --ink: #0F172A;             /* 짙은 네이비 블랙 */
-  --ink-2: #1E3A8A;           /* Deep Blue — 본문 텍스트 */
-  --ink-3: #64748B;           /* Slate — 보조 텍스트 */
+  --ink-2: #1F2937;           /* Warm Dark — 본문 텍스트 */
+  --ink-3: #78716C;           /* Warm Stone — 보조 텍스트 */
 
   --danger: #DC2626;
-  --focus: #1D4ED8;           /* Active Blue — focus ring */
+  --focus: #C99E1A;           /* Deep Amber — focus ring */
 
-  /* CTA 인터랙션 토큰 */
-  --cta-rest:   #3B82F6;
-  --cta-hover:  #2563EB;
-  --cta-active: #1D4ED8;
+  /* CTA 인터랙션 토큰 — 옐로우 배경 + 다크 텍스트 (WCAG AA ≥ 4.5:1) */
+  --cta-rest:   #F5D548;
+  --cta-hover:  #E5BF2E;
+  --cta-active: #C99E1A;
+  --cta-ink:    #0F172A;
 
   --gold-strength: 1;
   /* KBL 폰트 계층 */
@@ -203,7 +206,7 @@ main time, main .section-eyebrow {
   min-height: 32px;
 }
 .read-toggle button[aria-pressed="true"] {
-  background: rgba(212,175,55,0.08);
+  background: rgba(245,213,72,0.08);
   color: var(--gold);
 }
 .read-toggle button + button { border-left: 1px solid var(--line-2); }
@@ -323,8 +326,8 @@ main time, main .section-eyebrow {
   cursor: pointer;
   transition: all 0.15s;
 }
-.tt-btn:hover:not(:disabled) { color: var(--gold); background: rgba(212,175,55,0.08); }
-.tt-btn.on { color: var(--gold); background: rgba(212,175,55,0.12); border-color: var(--gold-dim); }
+.tt-btn:hover:not(:disabled) { color: var(--gold); background: rgba(245,213,72,0.08); }
+.tt-btn.on { color: var(--gold); background: rgba(245,213,72,0.12); border-color: var(--gold-dim); }
 .tt-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .tt-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 
@@ -404,7 +407,7 @@ main time, main .section-eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.05em;
-  background: rgba(212,175,55,0.1);
+  background: rgba(245,213,72,0.1);
   border: 1px solid var(--gold-dim);
   color: var(--gold);
 }
@@ -681,11 +684,11 @@ main time, main .section-eyebrow {
 .btn:hover { border-color: var(--gold); color: var(--gold); }
 .btn-gold {
   border-color: var(--cta-rest);
-  color: #fff;
+  color: var(--cta-ink);
   background: var(--cta-rest);
 }
-.btn-gold:hover  { background: var(--cta-hover);  border-color: var(--cta-hover);  color: #fff; }
-.btn-gold:active { background: var(--cta-active); border-color: var(--cta-active); color: #fff; }
+.btn-gold:hover  { background: var(--cta-hover);  border-color: var(--cta-hover);  color: var(--cta-ink); }
+.btn-gold:active { background: var(--cta-active); border-color: var(--cta-active); color: var(--cta-ink); }
 .btn-ghost { border-color: transparent; color: var(--ink-2); padding: 8px 0; }
 .btn-ghost:hover { color: var(--gold); border-color: transparent; }
 .btn-small { padding: 8px 16px; font-size: 11px; }
@@ -747,7 +750,7 @@ main time, main .section-eyebrow {
 .card:hover { border-color: var(--gold-dim); }
 .card-gold {
   border-color: var(--gold-dim);
-  background: linear-gradient(180deg, rgba(212,175,55,0.04), transparent);
+  background: linear-gradient(180deg, rgba(245,213,72,0.04), transparent);
 }
 .card-title {
   font-family: var(--font-title);
@@ -936,7 +939,7 @@ main time, main .section-eyebrow {
 .tweaks-options button.on {
   border-color: var(--gold);
   color: var(--gold);
-  background: rgba(212,175,55,0.08);
+  background: rgba(245,213,72,0.08);
 }
 .tweaks-slider {
   width: 100%;
@@ -972,7 +975,7 @@ main time, main .section-eyebrow {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.15em;
-  background: rgba(212,175,55,0.08);
+  background: rgba(245,213,72,0.08);
   color: var(--gold);
   border: 1px solid var(--gold-dim);
 }
@@ -988,7 +991,7 @@ main time, main .section-eyebrow {
   cursor: pointer;
   transition: background .2s;
 }
-.row:hover { background: rgba(212,175,55,0.03); }
+.row:hover { background: rgba(245,213,72,0.03); }
 .row-num { font-family: var(--font-mono); font-size: 12px; color: var(--gold); letter-spacing: 0.1em; }
 .row-title { font-family: var(--font-serif); font-size: 17px; color: var(--ink); }
 .row-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); letter-spacing: 0.1em; }
@@ -996,7 +999,7 @@ main time, main .section-eyebrow {
 /* Placeholder image */
 .placeholder {
   background:
-    repeating-linear-gradient(45deg, rgba(212,175,55,0.04) 0 8px, transparent 8px 16px),
+    repeating-linear-gradient(45deg, rgba(245,213,72,0.04) 0 8px, transparent 8px 16px),
     var(--bg-3);
   border: 1px solid var(--line);
   display: grid;
@@ -1023,7 +1026,7 @@ main time, main .section-eyebrow {
   }
 }
 .kms-fdef-toc button:hover {
-  background: rgba(212,175,55,0.06) !important;
+  background: rgba(245,213,72,0.06) !important;
   color: var(--gold) !important;
 }
 

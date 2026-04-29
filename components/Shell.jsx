@@ -184,7 +184,7 @@ const NotificationBell = ({ user, onPick }) => {
                     style={{
                       width: '100%', textAlign: 'left',
                       padding: '12px 14px',
-                      background: n.read ? 'transparent' : 'rgba(212,175,55,0.06)',
+                      background: n.read ? 'transparent' : 'rgba(245,213,72,0.06)',
                       borderBottom: '1px solid var(--line)',
                       cursor: 'pointer',
                     }}>

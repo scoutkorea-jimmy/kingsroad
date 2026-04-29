@@ -112,7 +112,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
               <div className="placeholder" style={{
                 aspectRatio:'3/4',
                 background:`linear-gradient(135deg, var(--bg-3), #000),
-                  repeating-linear-gradient(45deg, rgba(212,175,55,0.06) 0 6px, transparent 6px 12px)`,
+                  repeating-linear-gradient(45deg, rgba(245,213,72,0.06) 0 6px, transparent 6px 12px)`,
                 border:'1px solid var(--gold-dim)',
                 display:'flex',
                 flexDirection:'column',
@@ -186,7 +186,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
                     style={{
                       padding:'20px',
                       border: version === v.k ? '1px solid var(--gold)' : '1px solid var(--line-2)',
-                      background: version === v.k ? 'rgba(212,175,55,0.05)' : 'transparent',
+                      background: version === v.k ? 'rgba(245,213,72,0.05)' : 'transparent',
                       textAlign:'left',
                       cursor:'pointer',
                     }}>
@@ -508,7 +508,7 @@ const CheckoutPage = ({ go, cart, user }) => {
                 <span className="gold-2 ko-serif" style={{fontSize:24}}>{total.toLocaleString()}원</span>
               </div>
 
-              <div style={{marginTop:24, padding:'16px', background:'rgba(212,175,55,0.04)', border:'1px dashed var(--gold-dim)'}}>
+              <div style={{marginTop:24, padding:'16px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)'}}>
                 <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>◆ 운영 안내</div>
                 <div className="dim" style={{fontSize:12, lineHeight:1.7}}>
                   · 입금 확인 후 평일 1-2일 내 발송<br/>

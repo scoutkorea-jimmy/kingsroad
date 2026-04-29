@@ -204,7 +204,7 @@ const ColumnPage = ({ go, user }) => {
                 </div>
               </form>
             ) : (
-              <div className="card" style={{padding:24, textAlign:'center', marginBottom:32, background:'rgba(212,175,55,0.04)'}}>
+              <div className="card" style={{padding:24, textAlign:'center', marginBottom:32, background:'rgba(245,213,72,0.04)'}}>
                 <p className="dim" style={{fontSize:14, marginBottom:16}}>
                   댓글 작성은 <strong className="gold">로그인한 회원</strong>만 가능합니다.
                 </p>

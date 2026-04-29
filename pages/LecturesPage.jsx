@@ -253,7 +253,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       </div>
 
       {myReg && (
-        <div style={{padding:14, background:'rgba(212,175,55,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
+        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
           <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>MY REGISTRATION</div>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8}}>
             <span className="ko-serif" style={{fontSize:16}}>{labelStatus(myReg.status)}</span>
@@ -318,7 +318,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       )}
 
       {!myReg && submitted && (
-        <div style={{padding:14, background:'rgba(212,175,55,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
+        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
           <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>SUBMITTED</div>
           <div className="ko-serif" style={{fontSize:16, marginBottom:6}}>
             신청 접수 — {labelStatus(submitted.status)}
@@ -509,7 +509,7 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
           </div>
         )
       ) : (
-        <div className="card" style={{padding:16, marginBottom:24, textAlign:'center', background:'rgba(212,175,55,0.04)'}}>
+        <div className="card" style={{padding:16, marginBottom:24, textAlign:'center', background:'rgba(245,213,72,0.04)'}}>
           <p className="dim" style={{fontSize:13, marginBottom:10}}>후기 작성은 회원 전용입니다.</p>
           <div style={{display:'flex', gap:8, justifyContent:'center'}}>
             <button type="button" className="btn btn-gold btn-small" onClick={() => go('login')}>로그인</button>

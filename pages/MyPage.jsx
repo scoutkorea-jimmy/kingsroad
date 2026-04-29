@@ -206,7 +206,7 @@ const MyPage = ({ go, user, cart }) => {
                           all: 'unset', cursor: 'pointer', width: '100%',
                           padding: '10px 12px',
                           borderLeft: `2px solid ${lectureStatusTone(r.status)}`,
-                          background: 'rgba(212,175,55,0.04)',
+                          background: 'rgba(245,213,72,0.04)',
                         }}>
                         <div style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
                           {r.lecture?.topic || '강연'}
@@ -249,7 +249,7 @@ const MyPage = ({ go, user, cart }) => {
                           all: 'unset', cursor: 'pointer', width: '100%',
                           padding: '10px 12px',
                           borderLeft: `2px solid ${tourStatusTone(r.status)}`,
-                          background: 'rgba(212,175,55,0.04)',
+                          background: 'rgba(245,213,72,0.04)',
                         }}>
                         <div style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
                           {r.tour?.title || '답사'}
@@ -292,7 +292,7 @@ const MyPage = ({ go, user, cart }) => {
                       style={{
                         padding: '10px 12px',
                         borderLeft: `2px solid ${orderStatusTone(o.status)}`,
-                        background: 'rgba(212,175,55,0.04)',
+                        background: 'rgba(245,213,72,0.04)',
                       }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline', marginBottom: 4 }}>
                         <span className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.16em' }}>{o.orderNo}</span>
@@ -432,7 +432,7 @@ const MyPage = ({ go, user, cart }) => {
                       style={{
                         all: 'unset', cursor: 'pointer', width: '100%',
                         padding: '10px 12px', borderLeft: '2px solid var(--gold-dim)',
-                        background: 'rgba(212,175,55,0.04)',
+                        background: 'rgba(245,213,72,0.04)',
                       }}>
                       <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
                         <span className="pill" style={{ fontSize: 9 }}>{post.category}</span>
@@ -469,7 +469,7 @@ const MyPage = ({ go, user, cart }) => {
                         all: 'unset', cursor: 'pointer', width: '100%',
                         padding: '10px 12px',
                         borderLeft: '2px solid ' + (n.read ? 'var(--line)' : 'var(--gold)'),
-                        background: n.read ? 'transparent' : 'rgba(212,175,55,0.04)',
+                        background: n.read ? 'transparent' : 'rgba(245,213,72,0.04)',
                       }}>
                       <div style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
                         <span className="gold">{n.fromName}</span>

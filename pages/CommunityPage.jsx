@@ -392,7 +392,7 @@ const MentionTextarea = ({ value, onChange, authors, rows = 4, placeholder, styl
               onMouseDown={(e) => { e.preventDefault(); insertCandidate(name); }}
               style={{
                 padding:'6px 10px', fontSize:13, cursor:'pointer',
-                background: i === active ? 'rgba(212,175,55,0.12)' : 'transparent',
+                background: i === active ? 'rgba(245,213,72,0.12)' : 'transparent',
                 color: i === active ? 'var(--gold)' : 'var(--ink)',
               }}>
               @{name}
@@ -664,7 +664,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
               const bookmarked = user && window.BGNJ_COMMUNITY.isBookmarked(user.id, p.id);
               return (
                 <tr key={p.id} style={{borderBottom:'1px solid var(--line)', transition:'background .2s'}}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.03)'}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,213,72,0.03)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <td className="mono dim-2" style={{padding:'18px 8px', fontSize:12}}>{String(filtered.length - (pageStart + i)).padStart(3, '0')}</td>
                   <td style={{padding:'18px 8px'}}><span className="badge">{cat.label}</span></td>
@@ -707,7 +707,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                 style={{
                   borderColor: n === safePage ? 'var(--gold)' : 'var(--line)',
                   color: n === safePage ? 'var(--gold)' : 'var(--ink-2)',
-                  background: n === safePage ? 'rgba(212,175,55,0.08)' : 'transparent',
+                  background: n === safePage ? 'rgba(245,213,72,0.08)' : 'transparent',
                   minWidth: 36,
                 }}>{n}</button>
             ))}
@@ -871,7 +871,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
           </p>
           {!isEditing && draftRestored && (
             <div role="status" style={{
-              marginTop:14, padding:'10px 14px', background:'rgba(212,175,55,0.06)',
+              marginTop:14, padding:'10px 14px', background:'rgba(245,213,72,0.06)',
               border:'1px solid var(--gold-dim)', fontSize:12, color:'var(--ink-2)',
               display:'flex', justifyContent:'space-between', alignItems:'center', gap:12,
             }}>
@@ -925,7 +925,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
                 {boardPrefixes.map((p) => (
                   <button key={p} type="button"
                     onClick={() => setPrefix(p)}
-                    style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === p ? 'var(--gold)' : 'var(--line)', color: prefix === p ? 'var(--gold)' : 'var(--ink-2)', background: prefix === p ? 'rgba(212,175,55,0.08)' : 'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
+                    style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === p ? 'var(--gold)' : 'var(--line)', color: prefix === p ? 'var(--gold)' : 'var(--ink-2)', background: prefix === p ? 'rgba(245,213,72,0.08)' : 'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
                     {p}
                   </button>
                 ))}
@@ -1233,7 +1233,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
               </div>
             </form>
           ) : (
-            <div className="card" style={{padding:24, textAlign:'center', marginBottom:32, background:'rgba(212,175,55,0.04)'}}>
+            <div className="card" style={{padding:24, textAlign:'center', marginBottom:32, background:'rgba(245,213,72,0.04)'}}>
               <p className="dim" style={{fontSize:14, marginBottom:16}}>
                 댓글 작성은 <strong className="gold">로그인한 회원</strong>만 가능합니다.
               </p>
