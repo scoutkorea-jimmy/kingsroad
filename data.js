@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.050.000",
+  version: "00.051.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -153,11 +153,12 @@ const _asRecord = (value, fallback = {}) => (
   value && typeof value === "object" && !Array.isArray(value) ? value : fallback
 );
 
-const BGNJ_STORAGE_VERSION = "v3-no-overrides";
+const BGNJ_STORAGE_VERSION = "v4-bookmarks-dead";
 
 // 마이그레이션 — storage version 기준 누적.
 //   v2-server-first (v00.046): 시드 박힌 bgnj_community_posts 정리.
-//   v3-no-overrides (v00.049): dead 4 키(lectureOverrides/lectureRegistrations/tourOverrides/tourReservations) 제거.
+//   v3-no-overrides (v00.049): dead 4 키(lectureOverrides/lectureRegistrations/tourOverrides/tourReservations) + bgnj_users 시드 정리.
+//   v4-bookmarks-dead (v00.051): bgnj_bookmarks 정리 — BGNJ_COMMUNITY._bookmarks 서버 캐시만 사용.
 //     모든 케이스에서 사용자 임시 글(bgnj_user_posts)은 보존.
 try {
   const prevVer = localStorage.getItem('bgnj_storage_version');
@@ -170,6 +171,8 @@ try {
     localStorage.removeItem('bgnj_tour_overrides');
     localStorage.removeItem('bgnj_tour_reservations');
     localStorage.removeItem('bgnj_users');  // BGNJ_AUTH 가 서버에서 다시 로드. 좀비 시드 사용자 제거.
+    // v4 — bookmarks 캐시는 BGNJ_COMMUNITY._bookmarks (서버 캐시) 만 사용. localStorage 잔재 정리.
+    localStorage.removeItem('bgnj_bookmarks');
     localStorage.setItem('bgnj_storage_version', BGNJ_STORAGE_VERSION);
   }
 } catch {}
@@ -306,6 +309,9 @@ const DEFAULT_SITE_CONTENT = {
   // 뱅기노자 추천 여행지 — 관리자가 직접 추가/편집 (KMS 사이트 콘텐츠 패널). 빈 배열이면 홈에 섹션 미노출.
   // 각 항목: { id, region, name, subtitle, desc, tags(string|array), imageDataUri }
   recommendations: [],
+  // 회원등급 자동승급 룰 오버라이드 — 관리자가 GradePromotionPanel 에서 편집. 빈 객체면 코드 default(BGNJ_GRADE_RULES) 사용.
+  // 형태: { reader: { posts, comments, ... }, scholar: {...} }. 일부 필드만 오버라이드 가능 (default 위에 머지).
+  gradeRules: {},
 };
 
 // 게시판 분류 — 각 카테고리에 최소 등급(minLevel) 지정 시 접근 제한
@@ -392,7 +398,7 @@ const ensureCommunityPostsSeeded = (posts, legacyUserPosts) => {
 //   userColumns           ⚠ legacy — BGNJ_COLUMNS._columns 가 서버 source. 호환 잔재
 //   users                 ⚠ legacy — 인증은 BGNJ_AUTH/D1.users 가 진실. 시드(DEFAULT_USERS) 잔재
 //   session               💾 local intentional — 세션 토큰 캐시 (서버 검증 후 보관)
-//   bookmarks             ⚠ legacy — BGNJ_API.community.bookmarks 로 마이그레이션 진행
+//   (v00.051 제거: bookmarks — BGNJ_COMMUNITY._bookmarks 서버 캐시가 단독 source)
 //   reports               ⚠ legacy — D1.reports 로 마이그레이션 (admin Report 패널)
 //   notifications         🌐 server-backed (캐시 — refreshNotifications 가 서버에서 채움)
 //   columnEngagement      🌐 server-backed (likes/views — BGNJ_API.columns.like/view)
@@ -425,7 +431,7 @@ window.BGNJ_STORES = {
   userColumns: _asArray(_lsGet('bgnj_user_columns', [])),
   users: ensureUsersSeeded(_lsGet('bgnj_users', [])),
   session: _asRecord(_lsGet('bgnj_session', null), null),
-  bookmarks: _asRecord(_lsGet('bgnj_bookmarks', {})),
+  // v00.051: bookmarks 키 제거. BGNJ_COMMUNITY._bookmarks(서버 캐시)가 단독 source.
   reports: _asArray(_lsGet('bgnj_reports', [])),
   notifications: _asRecord(_lsGet('bgnj_notifications', {})),
   columnEngagement: _asRecord(_lsGet('bgnj_column_engagement', {})),
@@ -457,7 +463,7 @@ window.BGNJ_SAVE = {
   userColumns: () => _lsSet('bgnj_user_columns', window.BGNJ_STORES.userColumns),
   users: () => _lsSet('bgnj_users', window.BGNJ_STORES.users),
   session: () => _lsSet('bgnj_session', window.BGNJ_STORES.session),
-  bookmarks: () => _lsSet('bgnj_bookmarks', window.BGNJ_STORES.bookmarks),
+  // v00.051: bookmarks save 핸들러 제거 — BGNJ_COMMUNITY._bookmarks(서버 캐시) 가 source.
   reports: () => _lsSet('bgnj_reports', window.BGNJ_STORES.reports),
   notifications: () => _lsSet('bgnj_notifications', window.BGNJ_STORES.notifications),
   columnEngagement: () => _lsSet('bgnj_column_engagement', window.BGNJ_STORES.columnEngagement),
@@ -479,7 +485,7 @@ window.BGNJ_SAVE = {
 window.BGNJ_DB = {
   version: BGNJ_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "bankAccount", "bookOrders", "bookReviews", "tourReviews", "lectureReviews", "auditLog", "legalDocs", "faqs"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "reports", "notifications", "columnEngagement", "bankAccount", "bookOrders", "bookReviews", "tourReviews", "lectureReviews", "auditLog", "legalDocs", "faqs"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -1872,6 +1878,19 @@ window.BGNJ_GRADE_RULES = {
 const REPORT_DEMOTE_THRESHOLD = 5;  // 신고 5회 이상 → 강제 member 강등
 const PROMOTION_PROTECTED = new Set(['admin', 'wangsanam']);
 
+// 운영자 GUI 오버라이드(site_content_kv.gradeRules) 와 코드 default 를 머지해 effective 룰 반환.
+// 각 등급마다 일부 필드만 오버라이드해도 나머지는 코드 default 를 유지.
+window.BGNJ_GRADE_RULES_EFFECTIVE = () => {
+  const defaults = window.BGNJ_GRADE_RULES || {};
+  const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {}).gradeRules || {};
+  const merged = {};
+  for (const gid of Object.keys(defaults)) {
+    const override = (sc[gid] && typeof sc[gid] === 'object' && !Array.isArray(sc[gid])) ? sc[gid] : {};
+    merged[gid] = { ...defaults[gid], ...override };
+  }
+  return merged;
+};
+
 // === 방문 추적 (BGNJ_VISITS) =============================================
 // localStorage 에 사용자별 최근 방문 timestamp 배열 저장. 30일 초과는 자동 만료.
 // App init 또는 라우트 변경 시 record() 1회 호출.
@@ -1945,7 +1964,8 @@ window.BGNJ_GRADE_PROMO = {
     // 강제 강등 — 신고 임계 초과면 자격 무관 member.
     if (m.reportCount >= REPORT_DEMOTE_THRESHOLD) return 'member';
     let qualified = 'member';
-    Object.entries(window.BGNJ_GRADE_RULES || {}).forEach(([gid, rule]) => {
+    const rules = window.BGNJ_GRADE_RULES_EFFECTIVE();
+    Object.entries(rules || {}).forEach(([gid, rule]) => {
       const ok = (m.posts >= (rule.posts || 0))
         && (m.comments >= (rule.comments || 0))
         && (m.visitsLast30Days >= (rule.visitsLast30Days || 0))

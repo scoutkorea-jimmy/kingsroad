@@ -468,6 +468,21 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.051.000",
+    date: "2026-05-01",
+    summary: "🎓 자동승급 룰 GUI 편집 + 🧹 bookmarks 키 제거. 운영자가 코드 수정 없이 BGNJ_GRADE_RULES 를 7가지 조건 모두 직접 편집/저장/복원.",
+    details: [
+      "🎓 BGNJ_GRADE_RULES_EFFECTIVE() 헬퍼 신설 — site_content_kv.gradeRules 오버라이드 + 코드 default 머지. 일부 필드만 오버라이드해도 나머지는 default 유지.",
+      "🎓 BGNJ_GRADE_PROMO.evaluate — 코드 default 직접 참조 → effective rules 사용. GUI 편집 후 저장 즉시 다음 평가부터 반영.",
+      "🎓 GradePromotionPanel — 편집 모드 추가. '기준 편집' 버튼 → 7개 컬럼 input 활성화 → '저장' 또는 '취소'. 'default 복원' 버튼이 site_content_kv.gradeRules 를 비워 코드 default 로 회귀. 저장 시 파스텔 알림.",
+      "🎓 DEFAULT_SITE_CONTENT.gradeRules: {} 신설 — 빈 객체일 때 코드 default 그대로 사용.",
+      "🧹 BGNJ_STORES.bookmarks 정의 제거 — BGNJ_COMMUNITY._bookmarks (서버 캐시) 가 단독 source. SAVE.bookmarks / cleanup entities / 헤더 주석에서 모두 정리.",
+      "🧹 storage version v3-no-overrides → v4-bookmarks-dead — 일회성 마이그레이션으로 bgnj_bookmarks localStorage 키 정리. 사용자 임시 글(bgnj_user_posts)은 보존.",
+      "📦 cache-buster — `?v=00.051.000`.",
+    ],
+    context: "v00.050 의 다음 사이클 후보 P1 P3 처리. GUI 편집은 site_content_kv 패턴(추천 여행지와 동일)을 재사용해 워커 변경 없이 구현. 운영자가 admin 콘솔 'GRADE PROMOTION' 섹션에서 7가지 조건을 즉시 조정 가능 — 댓글 임계, 가입 경과 일수, 최근 30일 방문 횟수, 받은 좋아요, 활동 unique 일수, 신고 한계 등. bookmarks 정리는 BGNJ_STORES 정의·SAVE 핸들러·entities 리스트·localStorage 잔재 4 곳을 한 묶음으로. 다음 사이클(v00.052) 후보: ① 서버 endpoint 로 reportCount/likesReceived 정확화(워커 배포 동반) ② legacy 키 reports / comments 점진 마이그레이션 ③ OG 이미지 / 다크 모드 / KMS 라이브 토큰 카드.",
+  },
+  {
     version: "00.050.000",
     date: "2026-05-01",
     summary: "🛗 관리자 사이드바 모바일 drawer + 🎓 회원등급 자동승급 다중 조건 + 알림. 사용자 요청 두 갈래 한 묶음 처리.",
@@ -7157,16 +7172,50 @@ const AdminGradePanel = () => {
   );
 };
 
-// 자동 승급/강등 기준 표시 + 일괄 재산정 패널
-// BGNJ_GRADE_RULES 가 source-of-truth (data.js). 운영자는 기준을 보고 일괄 재산정 트리거.
+// 자동 승급/강등 기준 표시 + GUI 편집 + 일괄 재산정 패널
+// 운영자가 BGNJ_GRADE_RULES_EFFECTIVE() 의 결과를 보고 site_content_kv.gradeRules 로 오버라이드.
 const GradePromotionPanel = () => {
   const G = window.BGNJ_GUARD;
   const [busy, setBusy] = React.useState(false);
   const [result, setResult] = React.useState(null);
-  const rules = G.call(() => window.BGNJ_GRADE_RULES, {});
+  const [tick, setTick] = React.useState(0);
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState({});
+  const [saveMsg, setSaveMsg] = React.useState('');
+  const rules = G.call(() => window.BGNJ_GRADE_RULES_EFFECTIVE?.() || window.BGNJ_GRADE_RULES, {});
   const grades = G.arr(() => window.BGNJ_STORES?.grades);
 
   const ruleEntries = Object.entries(rules || {});
+
+  // 편집 모드 진입 시 현재 effective 룰을 draft 로 복사
+  const startEdit = () => { setDraft(JSON.parse(JSON.stringify(rules))); setEditing(true); setSaveMsg(''); };
+  const cancelEdit = () => { setEditing(false); setDraft({}); setSaveMsg(''); };
+  const setField = (gid, key, val) => {
+    setDraft((d) => ({ ...d, [gid]: { ...(d[gid] || {}), [key]: Number(val) || 0 } }));
+  };
+  const saveRules = async () => {
+    try {
+      await window.BGNJ_SITE_CONTENT?.saveSection?.('gradeRules', draft);
+      setEditing(false);
+      setSaveMsg('저장되었습니다 — 이후 평가부터 새 기준 적용.');
+      setTick((v) => v + 1);
+      setTimeout(() => setSaveMsg(''), 2500);
+    } catch (err) {
+      alert('저장 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
+  };
+  const resetRules = async () => {
+    if (!confirm('GUI 오버라이드를 비우고 코드 default 로 되돌립니다. 진행할까요?')) return;
+    try {
+      await window.BGNJ_SITE_CONTENT?.resetSection?.('gradeRules');
+      setEditing(false);
+      setSaveMsg('default 로 복원됨.');
+      setTick((v) => v + 1);
+      setTimeout(() => setSaveMsg(''), 2500);
+    } catch (err) {
+      alert('복원 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
+  };
 
   const reevaluate = async () => {
     if (!confirm('전체 회원의 활동량을 재평가하여 자격 등급으로 자동 승급/강등 합니다. 진행할까요?')) return;
@@ -7212,19 +7261,30 @@ const GradePromotionPanel = () => {
             <tbody>
               {ruleEntries.map(([gid, rule]) => {
                 const g = grades.find((x) => x.id === gid);
+                const v = editing ? (draft[gid] || rule) : rule;
+                const numCell = (key, prefix = '≥ ') => editing ? (
+                  <input type="number" min={0}
+                    value={v[key] ?? 0}
+                    onChange={(e) => setField(gid, key, e.target.value)}
+                    style={{
+                      width:'100%', maxWidth:80, padding:'4px 6px', textAlign:'right',
+                      fontFamily:'var(--font-mono)', fontSize:12,
+                      border:'1px solid var(--line-2)', background:'var(--bg)',
+                    }}/>
+                ) : `${prefix}${v[key] ?? 0}`;
                 return (
                   <tr key={gid} style={{borderBottom:'1px solid var(--line)'}}>
                     <td style={{padding:'10px'}}>
                       <span className="grade-badge" style={{color: g?.color || 'var(--ink-2)'}}>{g?.label || gid}</span>
                       <span className="mono dim-2" style={{fontSize:10, marginLeft:8}}>{gid} · L{g?.level ?? '?'}</span>
                     </td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.posts ?? 0}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.comments ?? 0}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.visitsLast30Days ?? 0}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.daysSinceSignup ?? 0}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.likesReceived ?? 0}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.activeDays ?? 0}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{`< ${rule.maxReports ?? '∞'}`}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('posts')}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('comments')}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('visitsLast30Days')}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('daysSinceSignup')}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('likesReceived')}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('activeDays')}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('maxReports', '< ')}</td>
                   </tr>
                 );
               })}
@@ -7233,12 +7293,28 @@ const GradePromotionPanel = () => {
         )}
         <p style={{fontSize:11, color:'var(--ink-3)', marginTop:12, lineHeight:1.6}}>
           ⓘ 모든 조건을 동시에 만족해야 자격. 신고가 <strong>5회 이상</strong>이면 자격 무관 강제 강등(member).
-          승급/강등 시 본인에게 알림이 자동 발송됩니다. 기준 수정은 현재 코드 레벨(<code>data.js</code> 의 <code>BGNJ_GRADE_RULES</code>) 에서만 가능 — GUI 편집은 다음 사이클.
+          승급/강등 시 본인에게 알림이 자동 발송됩니다. GUI 편집 후 저장하면 <code>site_content_kv.gradeRules</code> 에 오버라이드되며, 코드 default 위에 머지됩니다.
         </p>
+        {/* 편집 / 저장 / 복원 */}
+        <div style={{display:'flex', gap:8, marginTop:12, flexWrap:'wrap'}}>
+          {!editing && (
+            <button type="button" className="btn btn-small" onClick={startEdit}>기준 편집</button>
+          )}
+          {editing && (
+            <>
+              <button type="button" className="btn btn-gold btn-small" onClick={saveRules}>저장</button>
+              <button type="button" className="btn btn-small" onClick={cancelEdit}>취소</button>
+            </>
+          )}
+          <button type="button" className="btn btn-small" onClick={resetRules} style={{marginLeft:'auto', borderColor:'var(--line-2)'}}>default 복원</button>
+        </div>
+        {saveMsg && (
+          <p role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, marginTop:10}}>{saveMsg}</p>
+        )}
       </div>
 
       <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
-        <button type="button" className="btn btn-gold" onClick={reevaluate} disabled={busy}>
+        <button type="button" className="btn btn-gold" onClick={reevaluate} disabled={busy || editing}>
           {busy ? '재산정 중…' : '전체 회원 재산정'}
         </button>
         {result && (
