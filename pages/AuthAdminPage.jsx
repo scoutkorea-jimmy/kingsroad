@@ -468,6 +468,18 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.049.001",
+    date: "2026-05-01",
+    summary: "🩹 핫픽스 — AdminPage useMemo 의존성 배열에 잔존하던 `data` 식별자 제거. v00.047 에서 `const data = window.BANGINOJA_DATA` 변수를 제거하면서 4 곳의 본문 참조는 정합했으나 `dashboardStats` useMemo 의 deps 에 `data` 가 남아있어 `/admin` 진입 시 ReferenceError. + CONTEXT.md 종합 문서 신설.",
+    details: [
+      "🩹 AdminPage 5698행 useMemo deps `[allUsers, allCommunityPosts, totalComments, allColumns, data, allBookOrders, ...]` 에서 `data` 제거. PageErrorBoundary 가 잡아 흰 화면은 면했지만 admin 자체 사용 불가 상태였음.",
+      "📝 CONTEXT.md 저장소 루트에 종합 컨텍스트 문서 신설 — 인프라 토폴로지, 운영 원칙 9 항목, 파일 구조, 라우팅, 누적 사이클 히스토리(v00.039→v00.049), 사용자 가드, 다음 사이클 후보, 검증 명령, 라인 참조 표. 새 사이클 시작 시 §0 / §6 / §7 먼저 읽기.",
+      "📝 메모리 — `project_context_snapshot.md` 추가. CONTEXT.md 위치 + 현재 상태 + 다음 사이클 우선순위 5 가지.",
+      "📦 cache-buster — `?v=00.049.001`.",
+    ],
+    context: "사용자가 컨텍스트 종합 문서를 요청한 시점에 admin 진입을 시도하다 ReferenceError 발견. 변수 제거 시 deps 배열까지 따라가서 정합하지 않은 누락이 원인. 교훈: 변수 제거 시 grep `\\b<var>\\b` 로 모든 토큰 위치 확인 필요(전엔 `\\b<var>\\.` 만 검사). 향후 check-syntax 에 'undefined identifier' 룰 도입 검토(babel parser AST 로 ReferenceError 류 정적 검출 가능).",
+  },
+  {
     version: "00.049.000",
     date: "2026-05-01",
     summary: "🧹 BGNJ_STORES 정리 — dead 4 키 제거 + users 키 서버 일원화 + 신규 룰 var/TODO. localStorage 좀비 시드/오래된 키 자동 청소 마이그레이션 v3.",
@@ -5695,7 +5707,7 @@ const AdminPage = ({ go }) => {
     { l: "커뮤니티 게시글", v: String(allCommunityPosts.length), d: `댓글 ${totalComments}개 누적`, p: true },
     { l: "공개 칼럼", v: String(allColumns.length), d: `관리자 발행 ${(window.BGNJ_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published').length}건 · 임시/예약 ${(window.BGNJ_STORES.userColumns || []).filter((c) => c.status === 'draft' || c.status === 'scheduled').length}건`, p: true },
     { l: "왕의길 주문", v: String(allBookOrders.length), d: `입금 대기 ${pendingBookOrders}건${refundRequestedOrders > 0 ? ` · 환불 신청 ${refundRequestedOrders}건` : ''}`, p: pendingBookOrders === 0 && refundRequestedOrders === 0 },
-  ]), [allUsers, allCommunityPosts, totalComments, allColumns, data, allBookOrders, pendingBookOrders, refundRequestedOrders]);
+  ]), [allUsers, allCommunityPosts, totalComments, allColumns, allBookOrders, pendingBookOrders, refundRequestedOrders]);
   const latestCommunityPost = allCommunityPosts[0] || null;
   const latestColumn = allColumns[0] || null;
   const visibleCommunityPosts = React.useMemo(() => allCommunityPosts.filter((post) => {
