@@ -111,18 +111,20 @@ const NotificationBell = ({ user, onPick }) => {
   }, [open]);
 
   if (!user) return null;
-  const list = window.BGNJ_COMMUNITY?.listNotifications(user.id) || [];
-  const unread = list.filter((n) => !n.read).length;
+  // BGNJ_COMMUNITY 가 부분 로드된 시점에 호출돼도 화면이 깨지지 않도록 모든 호출에 옵셔널 체이닝 + 가드
+  const rawList = (() => { try { return window.BGNJ_COMMUNITY?.listNotifications?.(user.id); } catch { return []; } })();
+  const list = Array.isArray(rawList) ? rawList : [];
+  const unread = list.filter((n) => n && !n.read).length;
 
   const pick = (n) => {
-    window.BGNJ_COMMUNITY.markNotificationRead(user.id, n.id);
+    try { window.BGNJ_COMMUNITY?.markNotificationRead?.(user.id, n.id); } catch {}
     setOpen(false);
     if (onPick) onPick(n);
     setTick((t) => t + 1);
   };
 
   const markAll = () => {
-    window.BGNJ_COMMUNITY.markAllNotificationsRead(user.id);
+    try { window.BGNJ_COMMUNITY?.markAllNotificationsRead?.(user.id); } catch {}
     setTick((t) => t + 1);
   };
 

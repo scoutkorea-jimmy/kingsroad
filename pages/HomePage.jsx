@@ -78,6 +78,36 @@ const DestinationMapModal = ({ onClose, go }) => {
   );
 };
 
+// 섹션 단위 에러 바운더리 — 한 섹션이 망가져도 다른 섹션은 정상 렌더.
+class HomeSectionBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(err) { return { error: err }; }
+  componentDidCatch(err) {
+    try { console.error('[HomeSectionBoundary]', this.props.label || 'section', err); } catch {}
+    try {
+      window.BGNJ_API?.errorLog?.report({
+        code: 'HOME_SECTION_ERROR', status: null, kind: 'render',
+        message: err?.message || String(err),
+        hint: `section=${this.props.label || ''}`, url: '',
+        pathname: location.pathname, origin: location.origin,
+      })?.catch?.(() => {});
+    } catch {}
+  }
+  render() {
+    if (this.state.error) {
+      // 무음 격리 — 사용자에게 빈 자리 대신 가벼운 placeholder 한 줄만 표기
+      return (
+        <section style={{padding:'24px 0', borderBottom:'1px solid var(--line)', textAlign:'center'}}>
+          <p className="mono dim-2" style={{fontSize:11, letterSpacing:'0.18em'}}>
+            ⚠ {this.props.label || '이 섹션'} 을 불러오지 못했습니다
+          </p>
+        </section>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // 추천 여행지 상세 모달 — 카드 클릭 시 더 큰 이미지 + 전체 설명 + 태그 + 투어 보기 CTA.
 const RecommendationDetailModal = ({ rec, onClose, go }) => {
   React.useEffect(() => {
@@ -184,27 +214,14 @@ const HomePage = ({ go }) => {
   const recommendations = Array.isArray(sc.recommendations) ? sc.recommendations.filter(Boolean) : [];
   const [recDetail, setRecDetail] = React.useState(null);
 
-  // 실데이터만 — 시드 폴백 제거
-  const publicColumns = React.useMemo(
-    () => window.BGNJ_COLUMNS?.listPublic?.() || [],
-    [dataTick]
-  );
+  // 실데이터만 — 시드 폴백 제거. 모든 헬퍼 호출은 try/catch + Array.isArray 가드로 견고화.
+  const safeArr = (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const publicColumns = React.useMemo(() => safeArr(() => window.BGNJ_COLUMNS?.listPublic?.()), [dataTick]);
   const featuredColumn = publicColumns[0];
   const secondaryColumns = publicColumns.slice(1, 5);
-
-  const recentPosts = React.useMemo(() => {
-    try { return (window.BGNJ_COMMUNITY?.listPosts?.() || []).slice(0, 4); } catch { return []; }
-  }, [dataTick]);
-
-  const tours = React.useMemo(
-    () => (window.BGNJ_TOURS?.listAll?.() || []).filter((t) => !t.hidden).slice(0, 4),
-    [dataTick]
-  );
-
-  const lectures = React.useMemo(
-    () => (window.BGNJ_LECTURES?.listAll?.() || []).filter((l) => !l.hidden).slice(0, 3),
-    [dataTick]
-  );
+  const recentPosts = React.useMemo(() => safeArr(() => window.BGNJ_COMMUNITY?.listPosts?.()).slice(0, 4), [dataTick]);
+  const tours = React.useMemo(() => safeArr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden).slice(0, 4), [dataTick]);
+  const lectures = React.useMemo(() => safeArr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden).slice(0, 3), [dataTick]);
 
   const stats = [
     { l: '여행지', v: '전국', s: '주요 답사지 운영' },
@@ -224,7 +241,7 @@ const HomePage = ({ go }) => {
       {recDetail && <RecommendationDetailModal rec={recDetail} onClose={() => setRecDetail(null)} go={go}/>}
 
       {/* ── HERO (단일 컬럼, 가운데 정렬) ───────────────────────────── */}
-      <section style={{
+      <HomeSectionBoundary label="히어로"><section style={{
         position:'relative', overflow:'hidden',
         background:'var(--bg)', borderBottom:'1px solid var(--line)',
         padding:'88px 0 96px',
@@ -287,9 +304,11 @@ const HomePage = ({ go }) => {
         </div>
       </section>
 
+      </HomeSectionBoundary>
+
       {/* ── 뱅기노자 추천 (관리자 콘텐츠 패널에서 추가) ─────────────── */}
       {recommendations.length > 0 && (
-        <section className="section" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="뱅기노자 추천"><section className="section" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
           <div className="container">
             <SectionHead
               eyebrow="RECOMMENDATIONS · 뱅기노자 추천"
@@ -339,12 +358,12 @@ const HomePage = ({ go }) => {
               })}
             </div>
           </div>
-        </section>
+        </section></HomeSectionBoundary>
       )}
 
       {/* ── 투어 프로그램 ─────────────────────────────────────────────── */}
       {tours.length > 0 && (
-        <section className="section" style={{borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="투어 프로그램"><section className="section" style={{borderBottom:'1px solid var(--line)'}}>
           <div className="container">
             <SectionHead
               eyebrow="TOUR PROGRAM · 뱅기노자 투어"
@@ -385,11 +404,11 @@ const HomePage = ({ go }) => {
               ))}
             </div>
           </div>
-        </section>
+        </section></HomeSectionBoundary>
       )}
 
       {/* ── 커뮤니티 ─────────────────────────────────────────────────── */}
-      <section className="section" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
+      <HomeSectionBoundary label="커뮤니티"><section className="section" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
         <div className="container">
           <SectionHead
             eyebrow="COMMUNITY · 여행 이야기"
@@ -445,11 +464,11 @@ const HomePage = ({ go }) => {
             </div>
           )}
         </div>
-      </section>
+      </section></HomeSectionBoundary>
 
       {/* ── 뱅기노자 칼럼 ─────────────────────────────────────────────── */}
       {featuredColumn && (
-        <section className="section" style={{borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="칼럼"><section className="section" style={{borderBottom:'1px solid var(--line)'}}>
           <div className="container">
             <SectionHead
               eyebrow="COLUMN · 뱅기노자의 글"
@@ -510,12 +529,12 @@ const HomePage = ({ go }) => {
               </div>
             </div>
           </div>
-        </section>
+        </section></HomeSectionBoundary>
       )}
 
       {/* ── 강연 일정 ─────────────────────────────────────────────────── */}
       {lectures.length > 0 && (
-        <section className="section-tight" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="강연"><section className="section-tight" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
           <div className="container">
             <SectionHead
               eyebrow="LECTURE · 뱅기노자 강연"
@@ -542,11 +561,11 @@ const HomePage = ({ go }) => {
               ))}
             </div>
           </div>
-        </section>
+        </section></HomeSectionBoundary>
       )}
 
       {/* ── 책 CTA ───────────────────────────────────────────────────── */}
-      <section className="section">
+      <HomeSectionBoundary label="책 CTA"><section className="section">
         <div className="container">
           <div className="card cta-grid" style={{
             padding:'72px 60px',
@@ -591,7 +610,7 @@ const HomePage = ({ go }) => {
             </div>
           </div>
         </div>
-      </section>
+      </section></HomeSectionBoundary>
 
     </div>
   );

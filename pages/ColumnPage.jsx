@@ -108,10 +108,10 @@ const ColumnPage = ({ go, user }) => {
     const idx = publicColumns.findIndex((x) => String(x.id) === String(c.id));
     const prevCol = idx > 0 ? publicColumns[idx - 1] : null;
     const nextCol = idx >= 0 && idx < publicColumns.length - 1 ? publicColumns[idx + 1] : null;
-    const likes = window.BGNJ_COLUMNS.getLikes(c.id);
+    const likes = (() => { try { const v = window.BGNJ_COLUMNS?.getLikes?.(c.id); return Array.isArray(v) ? v : []; } catch { return []; } })();
     const liked = !!user && likes.includes(user.id);
-    const views = window.BGNJ_COLUMNS.getViews(c.id);
-    const comments = window.BGNJ_COLUMNS.listComments(c.id);
+    const views = (() => { try { return window.BGNJ_COLUMNS?.getViews?.(c.id) ?? 0; } catch { return 0; } })();
+    const comments = (() => { try { const v = window.BGNJ_COLUMNS?.listComments?.(c.id); return Array.isArray(v) ? v : []; } catch { return []; } })();
     const readTime = c.body?.text
       ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text)
       : c.readTime;
@@ -303,10 +303,10 @@ const ColumnPage = ({ go, user }) => {
         ) : (
           <div className="grid grid-3">
             {filtered.map((c, i) => {
-              const likes = window.BGNJ_COLUMNS.getLikes(c.id);
-              const views = window.BGNJ_COLUMNS.getViews(c.id);
+              const likes = (() => { try { const v = window.BGNJ_COLUMNS?.getLikes?.(c.id); return Array.isArray(v) ? v : []; } catch { return []; } })();
+              const views = (() => { try { return window.BGNJ_COLUMNS?.getViews?.(c.id) ?? 0; } catch { return 0; } })();
               const readTime = c.body?.text
-                ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text)
+                ? (() => { try { return window.BGNJ_COLUMNS?.estimateReadTime?.(c.body.text); } catch { return c.readTime; } })()
                 : c.readTime;
               return (
                 <div key={c.id}

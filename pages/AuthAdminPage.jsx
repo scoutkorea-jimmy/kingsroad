@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.044.000",
+    date: "2026-04-30",
+    summary: "🛡 홈페이지 안정성 스윕 — Babel parser 로 16개 .jsx 파일 일괄 신택스 검증, HomePage useMemo 전부 try/catch+Array 가드, 섹션별 ErrorBoundary, Shell/ColumnPage 헬퍼 호출 옵셔널 체이닝. 한 섹션 오류가 다른 섹션 렌더를 막지 않도록 격리.",
+    details: [
+      "🔍 자동 신택스 검증 — @babel/parser 로 components/*.jsx + pages/*.jsx + data.js + api.js (총 16 파일) 일괄 파싱. 컴파일 단계에서 깨진 파일이 있으면 즉시 발견 가능. 향후 CI 또는 pre-commit hook 으로 정착 검토.",
+      "🛡 HomePage 안정화 — `safeArr(fn)` 헬퍼 도입(try/catch + Array.isArray 가드). publicColumns/recentPosts/tours/lectures 모두 이 헬퍼로 감싸 헬퍼가 throw 하거나 비-배열 반환해도 안전 폴백.",
+      "🛡 HomeSectionBoundary class 신설 + 7개 섹션(히어로/추천/투어/커뮤니티/칼럼/강연/책 CTA) 각각 감쌈. 한 섹션이 던진 오류는 격리되어 가벼운 placeholder 한 줄로 표시되고, 다른 섹션은 정상 렌더 유지. errorLog 자동 보고.",
+      "🛡 Shell NotificationBell — `BGNJ_COMMUNITY?.listNotifications?.(...)` 옵셔널 체이닝, try/catch 래핑. markNotificationRead/markAllNotificationsRead 도 동일. 헬퍼가 부분 로드된 시점에 호출돼도 화면 안 깨짐.",
+      "🛡 ColumnPage — getLikes/getViews/listComments/estimateReadTime 호출을 IIFE+try/catch+Array.isArray 가드로 감쌈. 칼럼 목록·상세 두 위치 모두 적용.",
+      "📦 cache-buster — `?v=00.044.000`.",
+    ],
+    context: "사용자 요청 '현재 홈페이지 기준 오류 발생 여부 검토 + 모두 예방 + 업데이트'. 두 가지 종류의 위험을 잡음: (1) 컴파일 시점 — Babel SyntaxError 가 한 .jsx 파일을 깨뜨리면 그 컴포넌트가 정의되지 않아 PageErrorBoundary 도 못 잡음. v00.042.001 핫픽스에서 같은 문제(WangsanamTourPage 누락된 </div>) 를 만났던 경험. 이번엔 16/16 파일이 깨끗함을 확인. (2) 런타임 시점 — 헬퍼가 throw 하거나 비-배열을 반환하면 .filter/.map 이 죽고 그 결과 전체 페이지가 흰 화면. HomePage 섹션을 격리해 한 곳이 죽어도 나머지는 살아있게. 다음 사이클: ① 다른 페이지(LecturesPage/CommunityPage/MyPage/AuthAdminPage)에도 동일 패턴 적용 ② Babel parser 검증을 pre-commit hook 으로 자동화 ③ 헬퍼들 자체에 입력 검증 표준화 (predicate guard 패턴).",
+  },
+  {
     version: "00.043.000",
     date: "2026-04-30",
     summary: "📌 추천 카드 상세 모달 + 🪪 라우트별 document.title + 📱 모바일 메뉴 Esc·scroll lock + 🔤 메타 텍스트 가독성. v00.042.001 핫픽스(WangsanamTourPage 누락된 </div>) 이후 차근차근 polish 사이클.",
