@@ -468,6 +468,22 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.046.000",
+    date: "2026-04-30",
+    summary: "🌐 홈페이지 D1 source-of-truth 정합 — 시드(BANGINOJA_DATA / DEFAULT_*) 폴백을 모두 차단하고, 누락된 BGNJ_COMMUNITY.refreshPosts 를 App init 에 추가. 사용자가 보는 콘텐츠는 100% 서버 데이터로만 구성. 깡통/시드 카드 노출 0.",
+    details: [
+      "🌐 BGNJ_COMMUNITY.listPosts — 서버 미로드(_serverLoaded=false) 시 BGNJ_STORES.communityPosts 시드 폴백을 폐지하고 빈 배열 반환. 'D1 source-of-truth' 정책 정합.",
+      "🌐 ensureCommunityPostsSeeded — DEFAULT_COMMUNITY_POSTS 자동 주입 폐지. localStorage `bgnj_community_posts` 는 사용자 임시 글(미동기화 분) 만 보관.",
+      "🌐 storage version v1-local-first → v2-server-first — 일회성 마이그레이션으로 기존 시드 박힌 `bgnj_community_posts` localStorage 항목 삭제. 사용자 임시 저장본(`bgnj_user_posts`)은 보존.",
+      "🌐 App init — `Promise.allSettled` 에 `BGNJ_COMMUNITY.refreshPosts()` 누락분 추가. 진입 즉시 서버 게시글 동기화.",
+      "🌐 HomePage refresh 이벤트 — `bgnj-community-refresh`(존재하지 않음) → 실제 발화 이름 `bgnj-posts-refresh` 로 정정. 새 게시글 작성 직후 홈 즉시 반영.",
+      "🌐 MyPage — 로컬 시드 `BANGINOJA_DATA.lectures/.tours` 직접 참조 제거. `BGNJ_LECTURES/TOURS.listAll()` 로 일원화. `data` 변수 자체 제거.",
+      "📝 HomePage 헤더 주석 — '데이터 원칙' 4 가지(서버 source-of-truth, 시드 무참조, 빈 섹션 미렌더, BGNJ_GUARD 보호) 명문화. 후속 변경 시 가이드.",
+      "📦 cache-buster — `?v=00.046.000`.",
+    ],
+    context: "사용자 요청 '서버가 아니라 로컬에서 운영되는 모든 것들은 제외 + 홈페이지 안정 운영'. 핵심 발견 — App init 이 BGNJ_COMMUNITY.refreshPosts 를 호출하지 않아 진입 시 서버 게시글이 절대 안 뜸(이전엔 시드 폴백으로 가려져 있었음). 시드 폴백을 끊자마자 이 누락이 즉시 드러나, 함께 수정. 결과 — 홈페이지에 노출되는 모든 콘텐츠(추천/투어/강연/칼럼/커뮤니티 게시글) 100% 서버 데이터로만 구성, 서버 비면 해당 섹션 자체가 안 보임. 다음 사이클: ① BANGINOJA_DATA.book → BGNJ_BOOKS 로 BookCheckoutPage 정합 ② localStorage 잔재 키 정리(bookmarks/audit 등 cache 성격 vs server 의무) 분류 ③ check-syntax 에 'BANGINOJA_DATA 직접 참조 금지' 룰 추가.",
+  },
+  {
     version: "00.045.000",
     date: "2026-04-30",
     summary: "🛡 가드 패턴 표준화(BGNJ_GUARD) + 🪝 pre-commit 신택스 훅 정착 + 🗺 히어로 지도 미리보기 복원. 전사 헬퍼 호출을 try/catch+Array 가드로 통일하고, 깨진 .jsx 가 컴파일에 들어가지 못하도록 git hook 으로 차단.",

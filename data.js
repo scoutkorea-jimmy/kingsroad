@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.045.001",
+  version: "00.046.000",
   build: "2026.04.30",
   channel: "preview",
 };
@@ -153,7 +153,18 @@ const _asRecord = (value, fallback = {}) => (
   value && typeof value === "object" && !Array.isArray(value) ? value : fallback
 );
 
-const BGNJ_STORAGE_VERSION = "v1-local-first";
+const BGNJ_STORAGE_VERSION = "v2-server-first";
+
+// v00.046 마이그레이션 — 이전 'v1-local-first' 정책에서 seed 가 localStorage 에 박혀있던 경우
+// 한 번 비워서 D1 source-of-truth 와 일관되게. legacyUserPosts(bgnj_user_posts) 는 보존(임시 저장본).
+try {
+  const prevVer = localStorage.getItem('bgnj_storage_version');
+  if (prevVer !== BGNJ_STORAGE_VERSION) {
+    // 시드가 박혀있던 키들을 비움. 사용자 임시 글(bgnj_user_posts) 은 건드리지 않음.
+    localStorage.removeItem('bgnj_community_posts');
+    localStorage.setItem('bgnj_storage_version', BGNJ_STORAGE_VERSION);
+  }
+} catch {}
 const hashPassword = (input) => {
   const value = String(input || "");
   let hash = 0;
@@ -346,11 +357,12 @@ const normalizeCommunityPost = (post) => {
   };
 };
 
+// v00.046: 커뮤니티 게시글 seed 주입 폐지 — 모든 게시글은 서버(D1) source-of-truth.
+// localStorage 의 bgnj_community_posts 는 더 이상 시드를 채우지 않고, 사용자가 직접 작성했으나
+// 서버 동기화 전인 임시 저장본만 보관 (legacyUserPosts merge 로직은 유지).
 const ensureCommunityPostsSeeded = (posts, legacyUserPosts) => {
-  const seeded = Array.isArray(posts) && posts.length
-    ? posts.map(normalizeCommunityPost)
-    : DEFAULT_COMMUNITY_POSTS.map(normalizeCommunityPost);
-  const next = seeded.slice();
+  const stored = Array.isArray(posts) ? posts.map(normalizeCommunityPost) : [];
+  const next = stored.slice();
   (Array.isArray(legacyUserPosts) ? legacyUserPosts : []).map(normalizeCommunityPost).forEach((post) => {
     if (!next.find((item) => String(item.id) === String(post.id))) {
       next.unshift(post);
@@ -668,13 +680,13 @@ const _serverPostToUi = (p) => ({
 
 window.BGNJ_COMMUNITY = {
   // 서버에서 받은 게시글 캐시. refreshPosts()가 채운다.
-  // listPosts()는 캐시가 비어있으면 로컬 시드로 폴백.
+  // v00.046: 서버 미로드 시 로컬 시드 폴백 폐지 — 빈 배열 반환. 'D1 source-of-truth' 정책 정합.
   _serverPosts: [],
   _serverLoaded: false,
 
   listPosts() {
     if (this._serverLoaded) {
-      // 서버 게시글 + 로컬에만 있는(아직 동기화 못 한) 글이 있다면 합쳐 보여준다 (서버 우선).
+      // 서버 게시글 + 로컬에만 있는(아직 동기화 못 한) 사용자 임시 글 merge.
       const serverIds = new Set(this._serverPosts.map((p) => String(p.id)));
       const localOnly = (window.BGNJ_STORES.communityPosts || [])
         .filter((p) => !serverIds.has(String(p.id)));
@@ -682,7 +694,8 @@ window.BGNJ_COMMUNITY = {
         .slice()
         .sort((a, b) => String(b.createdAt || b.date).localeCompare(String(a.createdAt || a.date)));
     }
-    return (window.BGNJ_STORES.communityPosts || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    // 서버 아직 미로드 — 빈 배열. (이전엔 BGNJ_STORES.communityPosts 시드 반환했으나 깡통 데이터로 분류돼 폐지.)
+    return [];
   },
   getPost(postId) {
     return this.listPosts().find((post) => String(post.id) === String(postId)) || null;

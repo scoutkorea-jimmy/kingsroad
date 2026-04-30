@@ -1,6 +1,7 @@
 // 마이페이지
+// 데이터 원칙: 모든 콘텐츠 데이터는 서버(D1) source-of-truth — BGNJ_LECTURES/TOURS/COMMUNITY/BOOK_ORDERS.
+// BANGINOJA_DATA 정적 시드는 더 이상 참조하지 않는다 (v00.046 정합).
 const MyPage = ({ go, user, cart }) => {
-  const data = window.BANGINOJA_DATA;
   const [orderTick, setOrderTick] = React.useState(0);
   const [refundTarget, setRefundTarget] = React.useState(null);
   const [refundReason, setRefundReason] = React.useState('');
@@ -32,8 +33,9 @@ const MyPage = ({ go, user, cart }) => {
   const G = window.BGNJ_GUARD;
   const grades = G.arr(() => window.BGNJ_STORES?.grades);
   const grade = grades.find((item) => item.id === user?.gradeId);
-  const upcomingLecture = G.arr(() => data?.lectures)[0];
-  const upcomingTour = G.arr(() => data?.tours)[0];
+  // 서버에서 받은 다음 일정 — 로컬 시드(BANGINOJA_DATA) 폴백 제거. 비면 placeholder 안 보여줌.
+  const upcomingLecture = G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden)[0];
+  const upcomingTour = G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden)[0];
   const communityPosts = G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.());
   const recentPost = communityPosts.find((post) => post.authorId === user?.id || post.author === user?.name) || communityPosts[0];
   const bookmarkedPosts = user ? G.arr(() => window.BGNJ_COMMUNITY?.listBookmarkedPosts?.(user.id)) : [];

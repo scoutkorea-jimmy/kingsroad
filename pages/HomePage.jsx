@@ -1,6 +1,13 @@
 // 뱅기노자 홈페이지 — 한국 여행·역사·문화 커뮤니티
-// 데이터 소스 원칙: 시드(BANGINOJA_DATA.*) 폴백 없이 서버 적재 데이터(BGNJ_COLUMNS/TOURS/LECTURES/COMMUNITY)만 표시.
-// 빈 섹션은 렌더하지 않음 — '깡통 카드' 노출 금지.
+// 데이터 원칙 (v00.046):
+//   1. 모든 콘텐츠는 서버(D1) source-of-truth.
+//      - sc.recommendations    → site_content_kv (관리자 콘텐츠 패널)
+//      - publicColumns         → BGNJ_API.columns.list (D1.user_columns)
+//      - tours / lectures      → BGNJ_API.tours/lectures.list
+//      - recentPosts           → BGNJ_API.community.posts
+//   2. BANGINOJA_DATA 정적 시드는 더 이상 참조하지 않는다.
+//   3. 서버 응답이 비면 해당 섹션 자체를 렌더하지 않는다 (깡통 카드 금지).
+//   4. 모든 헬퍼 호출은 BGNJ_GUARD.arr/.call 로 try/catch + 타입 가드 통과.
 
 const DestinationMapModal = ({ onClose, go }) => {
   const [selectedDest, setSelectedDest] = React.useState(null);
@@ -201,10 +208,11 @@ const HomePage = ({ go }) => {
     return () => window.removeEventListener('bgnj-site-content-refresh', onR);
   }, []);
 
-  // 서버 데이터 refresh 이벤트 — 컬럼/투어/강연/커뮤니티
+  // 서버 데이터 refresh 이벤트 — 실제 발화 이름과 일치 (data.js 참고).
+  // bgnj-posts-refresh: 커뮤니티 게시글 / bgnj-columns-refresh: 칼럼 / bgnj-tours-refresh: 답사 / bgnj-lectures-refresh: 강연 / bgnj-site-content-refresh: 추천(이미 위에서 listen)
   React.useEffect(() => {
     const tick = () => setDataTick((v) => v + 1);
-    const evts = ['bgnj-columns-refresh', 'bgnj-tours-refresh', 'bgnj-lectures-refresh', 'bgnj-community-refresh'];
+    const evts = ['bgnj-columns-refresh', 'bgnj-tours-refresh', 'bgnj-lectures-refresh', 'bgnj-posts-refresh'];
     evts.forEach((e) => window.addEventListener(e, tick));
     return () => evts.forEach((e) => window.removeEventListener(e, tick));
   }, []);
