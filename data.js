@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.049.001",
+  version: "00.050.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -1838,32 +1838,127 @@ window.BGNJ_AUDIT = {
 };
 
 // === 자동 등급 승격/강등(BGNJ_GRADE_PROMO) ===============================
-// 활동(글 + 댓글 가중치)을 기준으로 사용자의 자격 등급을 평가.
+// 활동을 종합한 다중 기준으로 사용자의 자격 등급을 평가.
 // 운영자는 admin / wangsanam 등급은 자동 변경하지 않는다.
-// 승격: 새 글/댓글 작성 시점에 호출되어 자격이 되는 가장 높은 등급으로 올린다.
-// 강등: 게시글/댓글 삭제 시점 또는 관리자가 수동으로 호출. 활동 누적량이 현재 등급
-//      기준에 미치지 못하면 자격 등급으로 내린다 (이동 폭은 한 단계가 아니라 자격 기준 그대로).
+//
+// 승급 기준 (모두 만족해야 자격):
+//   posts            — 누적 게시글 수
+//   comments         — 누적 댓글 수
+//   visitsLast30Days — 최근 30일 방문 횟수 (BGNJ_VISITS 가 추적)
+//   daysSinceSignup  — 가입 후 경과 일수
+//   likesReceived    — 자기 글/댓글이 받은 좋아요 합계
+//   activeDays       — 최근 30일 활동(글/댓글 작성)한 unique 일수
+//   maxReports       — 이 값 미만의 신고 횟수만 자격 (이상이면 자격 박탈)
+//
+// 강제 강등: 신고가 REPORT_DEMOTE_THRESHOLD 이상이면 자격 무관 강제 member 로.
 window.BGNJ_GRADE_RULES = {
-  reader:  { posts: 0,  comments: 5  },   // 댓글 5개 이상 → 독자
-  scholar: { posts: 3,  comments: 15 },   // 글 3개 + 댓글 15개 → 사관
+  reader: {
+    posts: 0, comments: 5,
+    visitsLast30Days: 3,
+    daysSinceSignup: 7,
+    likesReceived: 0,
+    activeDays: 2,
+    maxReports: 3,
+  },
+  scholar: {
+    posts: 3, comments: 15,
+    visitsLast30Days: 10,
+    daysSinceSignup: 30,
+    likesReceived: 10,
+    activeDays: 7,
+    maxReports: 1,
+  },
 };
+const REPORT_DEMOTE_THRESHOLD = 5;  // 신고 5회 이상 → 강제 member 강등
 const PROMOTION_PROTECTED = new Set(['admin', 'wangsanam']);
 
+// === 방문 추적 (BGNJ_VISITS) =============================================
+// localStorage 에 사용자별 최근 방문 timestamp 배열 저장. 30일 초과는 자동 만료.
+// App init 또는 라우트 변경 시 record() 1회 호출.
+window.BGNJ_VISITS = {
+  _key(userId) { return `bgnj_visits_${userId}`; },
+  record(userId) {
+    if (!userId) return 0;
+    try {
+      const now = Date.now();
+      const cutoff = now - 30 * 24 * 60 * 60 * 1000;
+      const raw = JSON.parse(localStorage.getItem(this._key(userId)) || '[]');
+      const arr = Array.isArray(raw) ? raw.filter((t) => Number(t) >= cutoff) : [];
+      // 같은 날 첫 진입만 카운트 (하루에 여러 번 방문해도 +1)
+      const today = new Date(now).toDateString();
+      const lastDay = arr.length ? new Date(arr[arr.length - 1]).toDateString() : null;
+      if (today !== lastDay) arr.push(now);
+      localStorage.setItem(this._key(userId), JSON.stringify(arr));
+      return arr.length;
+    } catch { return 0; }
+  },
+  countLast30Days(userId) {
+    if (!userId) return 0;
+    try {
+      const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const raw = JSON.parse(localStorage.getItem(this._key(userId)) || '[]');
+      return Array.isArray(raw) ? raw.filter((t) => Number(t) >= cutoff).length : 0;
+    } catch { return 0; }
+  },
+};
+
 window.BGNJ_GRADE_PROMO = {
+  // 사용자 측정치 — 서버 활동 + 클라이언트 방문 + 가입 일수 + 신고/좋아요/활동일.
+  // 일부 필드는 서버 endpoint 가 없으면 클라이언트에서 best-effort 추정.
+  metrics(userId) {
+    const a = window.BGNJ_AUTH.getActivity(userId) || {};
+    const users = (window.BGNJ_AUTH._usersCache || []);
+    const user = users.find((u) => u.id === userId) || {};
+    const createdAt = user.createdAt || user.created_at;
+    const signupTime = createdAt ? new Date(createdAt).getTime() : Date.now();
+    const daysSinceSignup = Math.max(0, Math.floor((Date.now() - signupTime) / (24 * 60 * 60 * 1000)));
+    // 활동 unique 날짜 — posts 배열의 date 와 comments 의 date 합산
+    const userPosts = Array.isArray(a.posts) ? a.posts : [];
+    const dayKey = (d) => { try { return new Date(d).toDateString(); } catch { return null; } };
+    const activeDaysSet = new Set(userPosts.map((p) => dayKey(p.date || p.createdAt)).filter(Boolean));
+    // 좋아요 받은 수 — 게시글 + 칼럼 likes 합산
+    let likesReceived = 0;
+    try {
+      (window.BGNJ_COMMUNITY?.listPosts?.() || [])
+        .filter((p) => p.authorId === userId)
+        .forEach((p) => { likesReceived += Array.isArray(p.likes) ? p.likes.length : 0; });
+    } catch {}
+    // 신고 받은 수 — BGNJ_COMMUNITY._reports 에서 targetUserId 매칭
+    let reportCount = 0;
+    try {
+      const reports = window.BGNJ_COMMUNITY?._reports || [];
+      reportCount = reports.filter((r) => r && (r.targetUserId === userId || r.target_user_id === userId)).length;
+    } catch {}
+    return {
+      posts: a.postCount || 0,
+      comments: a.commentCount || 0,
+      visitsLast30Days: window.BGNJ_VISITS?.countLast30Days?.(userId) || 0,
+      daysSinceSignup,
+      likesReceived,
+      activeDays: activeDaysSet.size,
+      reportCount,
+    };
+  },
   evaluate(userId) {
-    const a = window.BGNJ_AUTH.getActivity(userId);
-    if (!a) return null;
-    const post = a.postCount || 0;
-    const comment = a.commentCount || 0;
+    const m = this.metrics(userId);
+    if (!m) return null;
+    // 강제 강등 — 신고 임계 초과면 자격 무관 member.
+    if (m.reportCount >= REPORT_DEMOTE_THRESHOLD) return 'member';
     let qualified = 'member';
     Object.entries(window.BGNJ_GRADE_RULES || {}).forEach(([gid, rule]) => {
-      if (post >= (rule.posts || 0) && comment >= (rule.comments || 0)) {
-        qualified = gid;
-      }
+      const ok = (m.posts >= (rule.posts || 0))
+        && (m.comments >= (rule.comments || 0))
+        && (m.visitsLast30Days >= (rule.visitsLast30Days || 0))
+        && (m.daysSinceSignup >= (rule.daysSinceSignup || 0))
+        && (m.likesReceived >= (rule.likesReceived || 0))
+        && (m.activeDays >= (rule.activeDays || 0))
+        && (m.reportCount < (rule.maxReports ?? Infinity));
+      if (ok) qualified = gid;
     });
     return qualified;
   },
   // 사용자 행동 후 호출 — 새 등급이 더 높을 때만 승격. async setGrade 는 fire-and-forget.
+  // 승급 발생 시 본인에게 알림 발송 (강등에도 동일).
   maybePromote(userId) {
     const users = window.BGNJ_AUTH?._usersCache || [];
     const user = users.find((u) => u.id === userId);
@@ -1880,6 +1975,13 @@ window.BGNJ_GRADE_PROMO = {
       action: 'grade.auto_promote',
       target: `user:${userId}`,
       details: { from: user.gradeId, to: targetId },
+    });
+    const newLabel = grades.find((g) => g.id === targetId)?.label || targetId;
+    window.BGNJ_COMMUNITY?.addNotification?.(userId, {
+      type: 'grade_promoted',
+      postTitle: '회원 등급 승급',
+      fromName: '운영자',
+      message: `축하합니다 — 활동량을 기준으로 등급이 ${newLabel}(으)로 승급되었습니다.`,
     });
     return targetId;
   },

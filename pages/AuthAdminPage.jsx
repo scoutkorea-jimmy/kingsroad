@@ -468,6 +468,22 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.050.000",
+    date: "2026-05-01",
+    summary: "🛗 관리자 사이드바 모바일 drawer + 🎓 회원등급 자동승급 다중 조건 + 알림. 사용자 요청 두 갈래 한 묶음 처리.",
+    details: [
+      "🛗 AdminPage 사이드바 — ≤900px 에서 햄버거 토글로 drawer 슬라이드. body scroll lock + Esc 닫기 + viewport > 900 자동 닫힘 + 탭 변경 자동 닫힘 + 백드롭 클릭 닫힘. 햄버거 버튼 fixed top:84 left:16 (44×44 터치).",
+      "🎓 BGNJ_GRADE_RULES 다중 조건 확장 — posts / comments / visitsLast30Days / daysSinceSignup / likesReceived / activeDays / maxReports 7 가지. 모든 조건을 동시 만족해야 자격. reader/scholar 두 등급 정의.",
+      "🎓 강제 강등 — 신고가 REPORT_DEMOTE_THRESHOLD(5) 이상이면 자격 무관 member 로 강제. 운영진(admin/wangsanam)은 보호.",
+      "🎓 BGNJ_VISITS 신설 — localStorage 기반 방문 기록. record(userId) 가 같은 날 첫 진입만 카운트. countLast30Days(userId) 로 자격 평가. App init 의 refreshSession 이후 자동 호출.",
+      "🎓 BGNJ_GRADE_PROMO.metrics(userId) 신설 — 7가지 지표 산출. 서버 활동 + 클라이언트 방문 + 가입일 + likes 합산 + reports 카운트 통합. evaluate 가 모든 조건 AND 체크.",
+      "🎓 승급 알림 추가 — maybePromote 가 BGNJ_COMMUNITY.addNotification 으로 본인에게 'grade_promoted' 알림 발송 (강등은 이미 v00.030 부터 발송 중). 운영진 등급은 자동 변경 안 됨.",
+      "🎓 GradePromotionPanel UI — AdminGradePanel 하단에 자동승급 섹션. 7 컬럼 기준 표 + '전체 회원 재산정' 버튼 + 결과 요약. 모바일 가로 스크롤(overflow-x:auto).",
+      "📦 cache-buster — `?v=00.050.000`.",
+    ],
+    context: "사용자 요청 ① '관리자 사이드바 모바일 drawer' ② '회원등급 자동승급 — posts/comments/visitsLast30Days/daysSinceSignup/maxReports + 합리적 2-3종 추가 + 승급/강등 알림'. ②는 기존 BGNJ_GRADE_PROMO 가 posts/comments 만 보던 것을 7가지로 확장 + 승급 알림이 누락됐던 점도 동시 보강. 클라이언트 측에서 best-effort 계산(visits/daysSinceSignup/likes/activeDays/reports). 다음 사이클: ① 서버 endpoint 로 reports/likesReceived 정확 계산 ② GUI 로 BGNJ_GRADE_RULES 편집 ③ 추천 등급(scholar 위 wangsanam 자동 승급 차단 정책 명시). bookmarks 마이그레이션은 helper 가 이미 _bookmarks 서버 캐시만 사용해 dead 상태 — 다음 사이클에 BGNJ_STORES.bookmarks 와 SAVE.bookmarks 정의 자체 제거.",
+  },
+  {
     version: "00.049.001",
     date: "2026-05-01",
     summary: "🩹 핫픽스 — AdminPage useMemo 의존성 배열에 잔존하던 `data` 식별자 제거. v00.047 에서 `const data = window.BANGINOJA_DATA` 변수를 제거하면서 4 곳의 본문 참조는 정합했으나 `dashboardStats` useMemo 의 deps 에 `data` 가 남아있어 `/admin` 진입 시 ReferenceError. + CONTEXT.md 종합 문서 신설.",
@@ -5793,10 +5809,41 @@ const AdminPage = ({ go }) => {
     setPostRefreshKey((v) => v + 1);
   };
 
+  // 모바일 사이드바 drawer 상태 — ≤900px 에서 햄버거 토글로 사이드바 슬라이드.
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  // 탭 변경 시 자동 닫힘 + Esc 닫기 + body scroll lock.
+  React.useEffect(() => { setSidebarOpen(false); }, [tab, kmsTab]);
+  React.useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setSidebarOpen(false); };
+    const onResize = () => { if (window.innerWidth > 900) setSidebarOpen(false); };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+      document.body.style.overflow = prev;
+    };
+  }, [sidebarOpen]);
+
   return (
-    <div style={{display:'grid', gridTemplateColumns:'260px 1fr', minHeight:'calc(100vh - 72px)'}}>
+    <div className={`admin-shell ${sidebarOpen ? 'sidebar-open' : ''}`} style={{display:'grid', gridTemplateColumns:'260px 1fr', minHeight:'calc(100vh - 72px)', position:'relative'}}>
+      {/* 모바일 햄버거 — ≤900px 에서만 보임 (CSS) */}
+      <button
+        type="button"
+        className="admin-sidebar-toggle"
+        aria-label={sidebarOpen ? '메뉴 닫기' : '메뉴 열기'}
+        aria-expanded={sidebarOpen}
+        aria-controls="admin-sidebar"
+        onClick={() => setSidebarOpen((v) => !v)}>
+        <span className="nav-toggle-bars" aria-hidden="true"/>
+      </button>
+      {/* 모바일 백드롭 — 클릭 시 닫힘 */}
+      {sidebarOpen && <div className="admin-sidebar-backdrop" onClick={() => setSidebarOpen(false)} aria-hidden="true"/>}
       {/* Sidebar */}
-      <aside aria-label="관리자 메뉴" style={{background:'var(--bg-2)', borderRight:'1px solid var(--line)', padding:'32px 0', overflowY:'auto'}}>
+      <aside id="admin-sidebar" aria-label="관리자 메뉴" className="admin-sidebar" style={{background:'var(--bg-2)', borderRight:'1px solid var(--line)', padding:'32px 0', overflowY:'auto'}}>
         <div style={{padding:'0 24px 24px', borderBottom:'1px solid var(--line)'}}>
           <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em'}}>◆ ADMIN CONSOLE</div>
           <div className="ko-serif" style={{fontSize:20, marginTop:8}}>관리자</div>
@@ -5837,7 +5884,7 @@ const AdminPage = ({ go }) => {
       </aside>
 
       {/* Main */}
-      <div style={{padding:40, overflow:'auto'}}>
+      <div className="admin-main" style={{padding:40, overflow:'auto'}}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:32}}>
           <div>
             <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em'}}>ADMIN / {tab.toUpperCase()}</div>
@@ -7104,7 +7151,103 @@ const AdminGradePanel = () => {
         onClick={() => { if (confirm("기본값으로 되돌립니다. 진행할까요?")) { window.BGNJ_SAVE.resetGrades(); setGrades(window.BGNJ_STORES.grades.slice()); } }}>
         기본값 복원
       </button>
+
+      <GradePromotionPanel/>
     </>
+  );
+};
+
+// 자동 승급/강등 기준 표시 + 일괄 재산정 패널
+// BGNJ_GRADE_RULES 가 source-of-truth (data.js). 운영자는 기준을 보고 일괄 재산정 트리거.
+const GradePromotionPanel = () => {
+  const G = window.BGNJ_GUARD;
+  const [busy, setBusy] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+  const rules = G.call(() => window.BGNJ_GRADE_RULES, {});
+  const grades = G.arr(() => window.BGNJ_STORES?.grades);
+
+  const ruleEntries = Object.entries(rules || {});
+
+  const reevaluate = async () => {
+    if (!confirm('전체 회원의 활동량을 재평가하여 자격 등급으로 자동 승급/강등 합니다. 진행할까요?')) return;
+    setBusy(true);
+    try {
+      // 정확한 평가를 위해 회원 목록을 새로 받음 (활동 카운트는 BGNJ_AUTH.getActivity 가 캐시).
+      await window.BGNJ_AUTH?.refreshUsers?.();
+      const summary = window.BGNJ_GRADE_PROMO?.reevaluateAll?.() || { promoted: 0, demoted: 0 };
+      setResult(summary);
+    } catch (err) {
+      alert('재산정 중 오류: ' + (err?.message || '알 수 없는 오류'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section style={{marginTop:36, paddingTop:24, borderTop:'1px solid var(--line)'}}>
+      <h3 className="ko-serif" style={{fontSize:18, fontWeight:600, marginBottom:6}}>자동 승급·강등</h3>
+      <p style={{fontSize:13, color:'var(--ink-2)', lineHeight:1.7, marginBottom:16}}>
+        회원이 글/댓글을 작성하면 자격이 되는 가장 높은 등급으로 자동 승급됩니다.
+        글/댓글이 삭제돼 자격이 미달이 되면 자동 강등됩니다 (운영진 등급 admin / wangsanam 은 보호 — 자동 변경 안 됨).
+      </p>
+
+      <div className="card" style={{padding:18, marginBottom:14, overflowX:'auto'}}>
+        <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.2em', color:'var(--ink-2)', marginBottom:10}}>승급 기준 (BGNJ_GRADE_RULES)</div>
+        {ruleEntries.length === 0 ? (
+          <p style={{fontSize:13, color:'var(--ink-3)'}}>정의된 기준이 없습니다.</p>
+        ) : (
+          <table style={{width:'100%', minWidth:680, borderCollapse:'collapse', fontSize:12}}>
+            <thead>
+              <tr style={{borderBottom:'1px solid var(--line)', color:'var(--ink-3)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.16em'}}>
+                <th scope="col" style={{padding:'8px 10px', textAlign:'left'}}>등급</th>
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>게시글</th>
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>댓글</th>
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>30일 방문</th>
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>가입경과(일)</th>
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>받은 좋아요</th>
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>활동일</th>
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>신고 한계</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ruleEntries.map(([gid, rule]) => {
+                const g = grades.find((x) => x.id === gid);
+                return (
+                  <tr key={gid} style={{borderBottom:'1px solid var(--line)'}}>
+                    <td style={{padding:'10px'}}>
+                      <span className="grade-badge" style={{color: g?.color || 'var(--ink-2)'}}>{g?.label || gid}</span>
+                      <span className="mono dim-2" style={{fontSize:10, marginLeft:8}}>{gid} · L{g?.level ?? '?'}</span>
+                    </td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.posts ?? 0}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.comments ?? 0}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.visitsLast30Days ?? 0}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.daysSinceSignup ?? 0}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.likesReceived ?? 0}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>≥ {rule.activeDays ?? 0}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{`< ${rule.maxReports ?? '∞'}`}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        <p style={{fontSize:11, color:'var(--ink-3)', marginTop:12, lineHeight:1.6}}>
+          ⓘ 모든 조건을 동시에 만족해야 자격. 신고가 <strong>5회 이상</strong>이면 자격 무관 강제 강등(member).
+          승급/강등 시 본인에게 알림이 자동 발송됩니다. 기준 수정은 현재 코드 레벨(<code>data.js</code> 의 <code>BGNJ_GRADE_RULES</code>) 에서만 가능 — GUI 편집은 다음 사이클.
+        </p>
+      </div>
+
+      <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
+        <button type="button" className="btn btn-gold" onClick={reevaluate} disabled={busy}>
+          {busy ? '재산정 중…' : '전체 회원 재산정'}
+        </button>
+        {result && (
+          <span className="mono" style={{fontSize:12, fontWeight:600, color:'var(--secondary)'}}>
+            ✓ 재산정 완료 — 승급 {result.promoted} · 강등 {result.demoted}
+          </span>
+        )}
+      </div>
+    </section>
   );
 };
 
