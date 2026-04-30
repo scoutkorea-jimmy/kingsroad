@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.048.000",
-  build: "2026.04.30",
+  version: "00.049.000",
+  build: "2026.05.01",
   channel: "preview",
 };
 
@@ -153,15 +153,23 @@ const _asRecord = (value, fallback = {}) => (
   value && typeof value === "object" && !Array.isArray(value) ? value : fallback
 );
 
-const BGNJ_STORAGE_VERSION = "v2-server-first";
+const BGNJ_STORAGE_VERSION = "v3-no-overrides";
 
-// v00.046 마이그레이션 — 이전 'v1-local-first' 정책에서 seed 가 localStorage 에 박혀있던 경우
-// 한 번 비워서 D1 source-of-truth 와 일관되게. legacyUserPosts(bgnj_user_posts) 는 보존(임시 저장본).
+// 마이그레이션 — storage version 기준 누적.
+//   v2-server-first (v00.046): 시드 박힌 bgnj_community_posts 정리.
+//   v3-no-overrides (v00.049): dead 4 키(lectureOverrides/lectureRegistrations/tourOverrides/tourReservations) 제거.
+//     모든 케이스에서 사용자 임시 글(bgnj_user_posts)은 보존.
 try {
   const prevVer = localStorage.getItem('bgnj_storage_version');
   if (prevVer !== BGNJ_STORAGE_VERSION) {
-    // 시드가 박혀있던 키들을 비움. 사용자 임시 글(bgnj_user_posts) 은 건드리지 않음.
+    // v2 부터 — 시드가 박혀있던 키.
     localStorage.removeItem('bgnj_community_posts');
+    // v3 — dead 키들 + users 시드(DEFAULT_USERS) 정리.
+    localStorage.removeItem('bgnj_lecture_overrides');
+    localStorage.removeItem('bgnj_lecture_registrations');
+    localStorage.removeItem('bgnj_tour_overrides');
+    localStorage.removeItem('bgnj_tour_reservations');
+    localStorage.removeItem('bgnj_users');  // BGNJ_AUTH 가 서버에서 다시 로드. 좀비 시드 사용자 제거.
     localStorage.setItem('bgnj_storage_version', BGNJ_STORAGE_VERSION);
   }
 } catch {}
@@ -334,12 +342,10 @@ const DEFAULT_USERS = [
   },
 ];
 
+// v00.049: 시드(DEFAULT_USERS) 자동 주입 폐지. BGNJ_AUTH._usersCache(서버 D1.users) 가 진실.
+// localStorage.bgnj_users 는 빈 배열로 초기화되며, 호환을 위해 키만 유지.
 const ensureUsersSeeded = (users) => {
-  const list = Array.isArray(users) ? users.slice() : [];
-  if (!list.find((user) => user.email === "admin@admin.admin")) {
-    list.unshift(DEFAULT_USERS[0]);
-  }
-  return list;
+  return Array.isArray(users) ? users.slice() : [];
 };
 
 const normalizeCommunityPost = (post) => {
@@ -390,14 +396,11 @@ const ensureCommunityPostsSeeded = (posts, legacyUserPosts) => {
 //   reports               ⚠ legacy — D1.reports 로 마이그레이션 (admin Report 패널)
 //   notifications         🌐 server-backed (캐시 — refreshNotifications 가 서버에서 채움)
 //   columnEngagement      🌐 server-backed (likes/views — BGNJ_API.columns.like/view)
-//   lectureOverrides      💀 dead (BGNJ_LECTURES.saveLecture 가 서버 직호출, override 머지 폐지)
-//   lectureRegistrations  💀 dead (BGNJ_API.lectures.registrations 로 일원화)
 //   bankAccount           🌐 server-backed (D1.bank_account)
 //   bookOrders            ⚠ legacy — BGNJ_BOOK_ORDERS 가 서버 source
 //   bookReviews           ⚠ legacy — BGNJ_BOOKS.refreshReviews 사용
-//   tourOverrides         💀 dead (BGNJ_TOURS.saveTour 직호출)
-//   tourReservations      💀 dead (BGNJ_API.tours.reservations 일원화)
 //   tourReviews           ⚠ legacy — BGNJ_TOURS.listReviews 가 _reviewsByTour 사용
+//   (v00.049 제거된 dead 키: lectureOverrides / lectureRegistrations / tourOverrides / tourReservations)
 //   legalDocs             🌐 server-backed (BGNJ_LEGAL.refresh)
 //   lectureReviews        ⚠ legacy
 //   auditLog              🌐 server-backed (D1.audit_log)
@@ -420,19 +423,16 @@ window.BGNJ_STORES = {
   userPosts: _asArray(_lsGet('bgnj_user_posts', [])),
   comments: _asRecord(_lsGet('bgnj_comments', {})),
   userColumns: _asArray(_lsGet('bgnj_user_columns', [])),
-  users: ensureUsersSeeded(_lsGet('bgnj_users', DEFAULT_USERS)),
+  users: ensureUsersSeeded(_lsGet('bgnj_users', [])),
   session: _asRecord(_lsGet('bgnj_session', null), null),
   bookmarks: _asRecord(_lsGet('bgnj_bookmarks', {})),
   reports: _asArray(_lsGet('bgnj_reports', [])),
   notifications: _asRecord(_lsGet('bgnj_notifications', {})),
   columnEngagement: _asRecord(_lsGet('bgnj_column_engagement', {})),
-  lectureOverrides: _asRecord(_lsGet('bgnj_lecture_overrides', {})),
-  lectureRegistrations: _asRecord(_lsGet('bgnj_lecture_registrations', {})),
+  // v00.049: lectureOverrides / lectureRegistrations / tourOverrides / tourReservations 제거 (dead).
   bankAccount: _asRecord(_lsGet('bgnj_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }), { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
   bookOrders: _asArray(_lsGet('bgnj_book_orders', [])),
   bookReviews: _asArray(_lsGet('bgnj_book_reviews', [])),
-  tourOverrides: _asRecord(_lsGet('bgnj_tour_overrides', {})),
-  tourReservations: _asRecord(_lsGet('bgnj_tour_reservations', {})),
   tourReviews: _asRecord(_lsGet('bgnj_tour_reviews', {})),
   legalDocs: _asRecord(_lsGet('bgnj_legal_docs', {
     privacy: { title: "개인정보 처리방침", body: "<p>뱅기노자 사이트는 회원 가입과 운영을 위해 최소한의 개인정보를 수집·이용합니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
@@ -461,13 +461,10 @@ window.BGNJ_SAVE = {
   reports: () => _lsSet('bgnj_reports', window.BGNJ_STORES.reports),
   notifications: () => _lsSet('bgnj_notifications', window.BGNJ_STORES.notifications),
   columnEngagement: () => _lsSet('bgnj_column_engagement', window.BGNJ_STORES.columnEngagement),
-  lectureOverrides: () => _lsSet('bgnj_lecture_overrides', window.BGNJ_STORES.lectureOverrides),
-  lectureRegistrations: () => _lsSet('bgnj_lecture_registrations', window.BGNJ_STORES.lectureRegistrations),
+  // v00.049: lectureOverrides / lectureRegistrations / tourOverrides / tourReservations save 핸들러 제거.
   bankAccount: () => _lsSet('bgnj_bank_account', window.BGNJ_STORES.bankAccount),
   bookOrders: () => _lsSet('bgnj_book_orders', window.BGNJ_STORES.bookOrders),
   bookReviews: () => _lsSet('bgnj_book_reviews', window.BGNJ_STORES.bookReviews),
-  tourOverrides: () => _lsSet('bgnj_tour_overrides', window.BGNJ_STORES.tourOverrides),
-  tourReservations: () => _lsSet('bgnj_tour_reservations', window.BGNJ_STORES.tourReservations),
   tourReviews: () => _lsSet('bgnj_tour_reviews', window.BGNJ_STORES.tourReviews),
   legalDocs: () => _lsSet('bgnj_legal_docs', window.BGNJ_STORES.legalDocs),
   faqs: () => _lsSet('bgnj_faqs', window.BGNJ_STORES.faqs),
@@ -482,7 +479,7 @@ window.BGNJ_SAVE = {
 window.BGNJ_DB = {
   version: BGNJ_STORAGE_VERSION,
   mode: "local-first",
-  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "lectureOverrides", "lectureRegistrations", "bankAccount", "bookOrders", "bookReviews", "tourOverrides", "tourReservations", "tourReviews", "lectureReviews", "auditLog", "legalDocs", "faqs"],
+  entities: ["users", "session", "communityPosts", "comments", "userColumns", "grades", "categories", "bookmarks", "reports", "notifications", "columnEngagement", "bankAccount", "bookOrders", "bookReviews", "tourReviews", "lectureReviews", "auditLog", "legalDocs", "faqs"],
   note: "현재는 GitHub Pages 정적 배포 환경에 맞춘 local-first 저장 구조입니다. 이후 외부 DB로 교체할 때도 동일한 엔티티 구조를 유지하는 것을 기본 원칙으로 합니다.",
 };
 
@@ -505,11 +502,10 @@ window.BGNJ_AUTH = {
   getSessionUser() {
     return this._readCache();
   },
-  // 회원 목록 — 서버에서 최근 가져온 캐시(_usersCache) 우선. 비어있으면 레거시 BGNJ_STORES.users 를 폴백.
+  // v00.049: users 키 서버 일원화. 시드(DEFAULT_USERS) 폴백 폐지. _usersCache(서버) 만 사용.
   // 관리자 패널은 mount 시 refreshUsers() 를 await 로 호출하는 것이 권장됨.
   listUsers() {
-    if (this._usersCache && this._usersCache.length) return this._usersCache.slice();
-    return (window.BGNJ_STORES.users || []).slice();
+    return (this._usersCache || []).slice();
   },
   // 페이지 진입 시 1회 호출 — 서버 쿠키로 진짜 세션 검증 후 캐시 갱신.
   // 401(세션 없음) 이면 좀비 캐시를 즉시 비워 클라이언트가 잘못된 사용자로 보이지 않도록 한다.
@@ -2204,8 +2200,9 @@ window.BGNJ_USER_GRADE = (user) => {
 };
 
 // 작성자 식별자(id / 이름 / 이메일) 중 가능한 것으로 등급을 찾아 반환
+// v00.049: BGNJ_AUTH.listUsers() (서버 캐시) 만 참조. 시드 폴백 제거.
 window.BGNJ_AUTHOR_GRADE = ({ authorId, author, authorEmail } = {}) => {
-  const users = window.BGNJ_STORES.users || [];
+  const users = (window.BGNJ_AUTH?.listUsers?.() || []);
   const found = users.find((u) =>
     (authorId && u.id === authorId) ||
     (authorEmail && u.email === authorEmail) ||

@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.049.000",
+    date: "2026-05-01",
+    summary: "🧹 BGNJ_STORES 정리 — dead 4 키 제거 + users 키 서버 일원화 + 신규 룰 var/TODO. localStorage 좀비 시드/오래된 키 자동 청소 마이그레이션 v3.",
+    details: [
+      "🧹 P1: dead 4 키(lectureOverrides / lectureRegistrations / tourOverrides / tourReservations) 정의·SAVE 핸들러·CLEANUP entities 에서 제거. read 사용처 0 이라 안전.",
+      "🧹 P1 마이그레이션: storage version v2-server-first → v3-no-overrides. 일회성 정리 — 4 dead 키 + bgnj_users 좀비 시드 모두 localStorage 에서 삭제. 사용자 임시 글(bgnj_user_posts)은 보존.",
+      "🧹 P2: users 키 서버 일원화. BGNJ_AUTH.listUsers() 가 _usersCache (서버 D1.users) 만 사용. 시드(DEFAULT_USERS) 자동 주입 폐지. ensureUsersSeeded → no-op. BGNJ_AUTHOR_GRADE 가 BGNJ_AUTH.listUsers 를 사용 (BGNJ_STORES.users 직접 참조 제거).",
+      "🪝 P3: check-syntax 새 룰 'var' — let/const 강제. 호이스팅·재선언 함정 차단. 위반 시 pre-commit 차단.",
+      "🪝 P3: check-syntax 정보성 INFO_RULES 신설 — TODO/FIXME/HACK/XXX 잔재 마커 카운트만 보고 (차단 X). 처음 5 건 노출.",
+      "📦 cache-buster — `?v=00.049.000`.",
+    ],
+    context: "v00.048 다음 사이클 정의를 받아 P1·P2·P3 일괄 처리. dead 키 제거는 read 사용처 0 이라 위험도 낮음. users 키 일원화는 admin Member 패널이 _usersCache 만 보도록 정합 (refreshUsers 가 mount 시 await 호출되므로 정상 동작). var 룰은 현재 베이스에 위반 0 (이미 모두 let/const). TODO 1 건은 changelog 문자열 내 매치라 정보성으로만 노출. 다음 사이클(v00.050) 후보 — ① 관리자 사이드바 모바일 drawer (≤600px) ② legacy 키 중 bookmarks → reports → comments 순 server-only 마이그레이션 ③ 다크 모드 토큰 + 토글 ④ KMS 디자인 도파에 라이브 토큰 카드.",
+  },
+  {
     version: "00.048.000",
     date: "2026-04-30",
     summary: "🪝 check-syntax 룰 다중화 (BANGINOJA_DATA + console.log) + 📋 BGNJ_STORES 26 개 키 역할 문서화. 어느 키가 server-backed/local-intentional/legacy/dead 인지 한 눈에. 다음 사이클 정리 대상 명시.",

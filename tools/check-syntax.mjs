@@ -92,9 +92,26 @@ const RULES = [
     pattern: /\bconsole\.log\s*\(/,
     msg: "console.log 잔재 금지 (production 노이즈) — 진단은 console.error/warn 또는 errorLog 헬퍼 사용",
   },
+  {
+    name: "var",
+    // var 키워드는 ES2015+ 환경에서 let/const 로 대체. 호이스팅·재선언 함정 방지.
+    allow: new Set(),
+    pattern: /(^|[\s;{(,])var\s+[a-zA-Z_$]/,
+    msg: "var 키워드 금지 — let / const 사용",
+  },
+];
+
+// 추가 정보성 검사 — 위반이 있어도 차단은 안 하고 카운트만 보고.
+const INFO_RULES = [
+  {
+    name: "TODO",
+    pattern: /\b(TODO|FIXME|HACK|XXX)\b/,
+    msg: "잔재 마커",
+  },
 ];
 
 const violations = [];
+const infos = [];
 for (const f of targets) {
   const rel = path.relative(ROOT, f);
   const code = await fs.readFile(f, "utf8");
@@ -113,12 +130,25 @@ for (const f of targets) {
         violations.push({ file: rel, line: i + 1, rule: rule.name, msg: `${rule.msg} — 우회 시 // bgnj-lint-ignore-next-line ${rule.name}` });
       }
     }
+    // 정보성 — 차단 안 함, 카운트만.
+    for (const rule of INFO_RULES) {
+      if (rule.pattern.test(stripped)) {
+        infos.push({ file: rel, line: i + 1, rule: rule.name, msg: rule.msg });
+      }
+    }
   }
 }
 
 // 5) 보고.
 if (bad === 0 && violations.length === 0) {
   console.log(`✅ ${targets.length} files parsed cleanly.`);
+  if (infos.length > 0) {
+    // 정보성 — 처음 5 건만 노출. 차단은 안 함.
+    console.log(`ℹ ${infos.length} 잔재 마커 (TODO/FIXME/HACK/XXX) — 처음 5 건:`);
+    for (const v of infos.slice(0, 5)) {
+      console.log(`  • [${v.rule}] ${v.file}:${v.line}`);
+    }
+  }
   process.exit(0);
 }
 if (bad > 0) {
