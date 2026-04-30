@@ -468,6 +468,19 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.047.000",
+    date: "2026-04-30",
+    summary: "🌐 BANGINOJA_DATA 직접 참조 전면 폐지 + check-syntax 룰화. BookPage/CheckoutPage 가 BGNJ_BOOKS.primary() 로, AdminPage 의 다음 강연/투어 / 칼럼 목록도 서버 헬퍼 경유. CommunityPage 의 render-path 헬퍼 호출에 BGNJ_GUARD 적용.",
+    details: [
+      "🌐 BookCheckoutPage — `window.BANGINOJA_DATA.book` → `window.BGNJ_BOOKS.primary()` 로 전환. 책 미로드 시 '책 정보를 불러오는 중...' placeholder. CheckoutPage 도 동일. `book.chapters.map` 가 array 가드.",
+      "🌐 AuthAdminPage — `const data = window.BANGINOJA_DATA` 변수 자체 제거. 다음 강연/투어 (대시보드) → BGNJ_LECTURES/TOURS.listAll() 의 첫 항목. '뱅기노자 칼럼' 탭의 카드 렌더 → `allColumns` (BGNJ_COLUMNS.listPublic) 사용. 발행된 칼럼이 없으면 안내 문구.",
+      "🛡 CommunityPage — render-path 헬퍼 호출(listPosts/getComments/isBookmarked) BGNJ_GUARD 가드. PostDetail mount 시 댓글 동기화 .then 도 .catch 추가.",
+      "🪝 tools/check-syntax — 룰 검사 단계 신설. `window.BANGINOJA_DATA` 직접 참조를 신택스 OK 후에도 차단. 우회 필요 시 한 줄 위에 `// bgnj-lint-ignore-next-line BANGINOJA_DATA`. 주석 / 백틱 docstring 안의 매치는 자동 무시. data.js 는 정의 위치라 allow 리스트.",
+      "📦 cache-buster — `?v=00.047.000`.",
+    ],
+    context: "v00.046 의 다음 사이클 후보 일괄 처리. BANGINOJA_DATA 시드의 마지막 직접 참조점들(BookPage/CheckoutPage/AdminPage) 을 모두 BGNJ_BOOKS/LECTURES/TOURS/COLUMNS 헬퍼 경유로 정합. check-syntax 가 신택스 + BANGINOJA_DATA 룰을 모두 검사하므로, 향후 새 코드가 시드를 다시 참조하려 하면 pre-commit 단계에서 차단됨. 다음 사이클: ① BGNJ_STORES 의 종속 시드(communityPosts seed merge)들 정리 ② localStorage 캐시 vs 서버 의무 데이터 키 명시적 분류 + 마이그레이션 ③ check-syntax 에 'unused var' / 'console.log 잔재' 같은 추가 룰 검토.",
+  },
+  {
     version: "00.046.000",
     date: "2026-04-30",
     summary: "🌐 홈페이지 D1 source-of-truth 정합 — 시드(BANGINOJA_DATA / DEFAULT_*) 폴백을 모두 차단하고, 누락된 BGNJ_COMMUNITY.refreshPosts 를 App init 에 추가. 사용자가 보는 콘텐츠는 100% 서버 데이터로만 구성. 깡통/시드 카드 노출 0.",
@@ -5625,8 +5638,9 @@ const MemberAdminPanel = ({ go }) => {
 };
 
 // === Admin Page ===================================================
+// 데이터 원칙: 모든 콘텐츠는 BGNJ_* 헬퍼 경유 (D1 source-of-truth). BANGINOJA_DATA 직접 참조 금지.
 const AdminPage = ({ go }) => {
-  const data = window.BANGINOJA_DATA;
+  const G = window.BGNJ_GUARD;
   const [tab, setTab] = React.useState("대시보드");
   const [kmsTab, setKmsTab] = React.useState("기능정의서");
   const [postSearch, setPostSearch] = React.useState("");
@@ -5640,7 +5654,7 @@ const AdminPage = ({ go }) => {
 
   const allCommunityPosts = React.useMemo(() => window.BGNJ_COMMUNITY.listPosts(), [postRefreshKey]);
   const allUsers = React.useMemo(() => window.BGNJ_AUTH.listUsers(), [postRefreshKey]);
-  const allColumns = React.useMemo(() => window.BGNJ_COLUMNS?.listPublic?.() || [...(window.BGNJ_STORES.userColumns || []), ...data.columns], [postRefreshKey]);
+  const allColumns = React.useMemo(() => G.arr(() => window.BGNJ_COLUMNS?.listPublic?.()), [postRefreshKey]);
   const totalComments = React.useMemo(
     () => Object.values(window.BGNJ_STORES.comments || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0),
     [postRefreshKey]
@@ -5834,8 +5848,8 @@ const AdminPage = ({ go }) => {
                 <h2 className="ko-serif" style={{fontSize:20, marginBottom:12}}>운영 요약</h2>
                 <div style={{display:'grid', gap:12, marginBottom:18}}>
                   <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">최근 칼럼</span><span>{latestColumn?.title || "없음"}</span></div>
-                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 강연</span><span>{data.lectures[0]?.next || "없음"}</span></div>
-                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 투어</span><span>{data.tours[0]?.next || "없음"}</span></div>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 강연</span><span>{G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden)[0]?.next || "없음"}</span></div>
+                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 투어</span><span>{G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden)[0]?.next || "없음"}</span></div>
                   <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">DSR 대기</span><span>{PRIVACY_DATA.dsrRequests.filter(r => r.status !== 'done').length}건</span></div>
                 </div>
                 <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
@@ -6330,20 +6344,21 @@ const AdminPage = ({ go }) => {
           <ReportQueuePanel onRefresh={() => setPostRefreshKey((v) => v + 1)} go={go}/>
         )}
 
-        {/* 칼럼 */}
+        {/* 칼럼 — 서버 발행분 (BGNJ_COLUMNS.listPublic). */}
         {tab === "뱅기노자 칼럼" && (
           <div className="grid grid-2">
-            {data.columns.map(c => (
+            {allColumns.length === 0 ? (
+              <p style={{fontSize:13, color:'var(--ink-3)', padding:'24px 0', gridColumn:'1 / -1'}}>발행된 칼럼이 없습니다. '칼럼 작성' 탭에서 새 칼럼을 작성하세요.</p>
+            ) : allColumns.map((c) => (
               <article key={c.id} className="card">
                 <div style={{display:'flex', justifyContent:'space-between', marginBottom:12}}>
                   <span className="pill">{c.category}</span>
-                  <span className="mono dim-2" style={{fontSize:10}}>#{String(c.id).padStart(3,'0')}</span>
+                  <span className="mono dim-2" style={{fontSize:10}}>#{String(c.id).slice(-6)}</span>
                 </div>
                 <h3 className="ko-serif" style={{fontSize:17, marginBottom:8}}>{c.title}</h3>
-                <div className="dim-2 mono" style={{fontSize:11, marginBottom:12}}>{c.date} · {c.readTime}</div>
+                <div className="dim-2 mono" style={{fontSize:11, marginBottom:12}}>{c.date || ''} {c.readTime ? `· ${c.readTime}` : ''}</div>
                 <div style={{display:'flex', gap:8}}>
-                  <button type="button" className="btn btn-small">편집</button>
-                  <button type="button" className="btn btn-small">통계</button>
+                  <button type="button" className="btn btn-small" onClick={() => setTab('칼럼 작성')}>편집</button>
                 </div>
               </article>
             ))}

@@ -443,9 +443,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     return () => window.removeEventListener('bgnj-posts-refresh', onRefresh);
   }, []);
 
-  const allPosts = React.useMemo(() => {
-    return window.BGNJ_COMMUNITY.listPosts();
-  }, [refreshKey]);
+  const G = window.BGNJ_GUARD;
+  const allPosts = React.useMemo(() => G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()), [refreshKey]);
 
   // ─── 모든 hook은 early return 전에 선언 ───────────────────────────────
   const visibleCats = categories.filter(c => userLevel >= (c.minLevel ?? 0));
@@ -661,7 +660,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
             ) : pagePosts.map((p, i) => {
               const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category) || { label: p.category };
               const likesCount = Array.isArray(p.likes) ? p.likes.length : 0;
-              const bookmarked = user && window.BGNJ_COMMUNITY.isBookmarked(user.id, p.id);
+              const bookmarked = user && G.call(() => window.BGNJ_COMMUNITY?.isBookmarked?.(user.id, p.id), false);
               return (
                 <tr key={p.id} style={{borderBottom:'1px solid var(--line)', transition:'background .2s'}}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,213,72,0.03)'}
@@ -972,8 +971,9 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
 
 // === Post Detail =========================================================
 const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
+  const G = window.BGNJ_GUARD;
   const [comment, setComment] = React.useState("");
-  const [commentsList, setCommentsList] = React.useState(() => window.BGNJ_COMMUNITY.getComments(post.id));
+  const [commentsList, setCommentsList] = React.useState(() => G.arr(() => window.BGNJ_COMMUNITY?.getComments?.(post.id)));
   const [reportOpen, setReportOpen] = React.useState(false);
   const [reportReason, setReportReason] = React.useState("");
   const [reportSubmitted, setReportSubmitted] = React.useState(false);
@@ -983,15 +983,15 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
   const likes = Array.isArray(post.likes) ? post.likes : [];
   const liked = !!user && likes.includes(user.id);
   const likesCount = likes.length;
-  const bookmarked = !!user && window.BGNJ_COMMUNITY.isBookmarked(user.id, post.id);
+  const bookmarked = !!user && G.call(() => window.BGNJ_COMMUNITY?.isBookmarked?.(user.id, post.id), false);
 
   React.useEffect(() => {
-    setCommentsList(window.BGNJ_COMMUNITY.getComments(post.id));
+    setCommentsList(G.arr(() => window.BGNJ_COMMUNITY?.getComments?.(post.id)));
     // 서버 게시글이면 서버에서 댓글 동기화
     if (post._remote) {
-      window.BGNJ_COMMUNITY.refreshComments?.(post.id).then(() => {
-        setCommentsList(window.BGNJ_COMMUNITY.getComments(post.id));
-      });
+      window.BGNJ_COMMUNITY?.refreshComments?.(post.id)?.then?.(() => {
+        setCommentsList(G.arr(() => window.BGNJ_COMMUNITY?.getComments?.(post.id)));
+      })?.catch?.(() => {});
     }
     const onRefreshComments = (e) => {
       if (e.detail && String(e.detail.postId) === String(post.id)) {

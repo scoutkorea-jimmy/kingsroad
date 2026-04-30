@@ -89,13 +89,32 @@ const BookReviewSection = ({ user }) => {
 };
 
 // 책 구매 페이지
+// 데이터 원칙: BGNJ_BOOKS.primary() 가 D1.books 의 primary 책 + 폴백. 시드(BANGINOJA_DATA.book) 직접 참조 금지.
 const BookPage = ({ go, cart, setCart, user }) => {
-  const book = window.BANGINOJA_DATA.book;
+  const G = window.BGNJ_GUARD;
+  const [tick, setTick] = React.useState(0);
+  // 책 정보가 서버에서 도착하면 재렌더
+  React.useEffect(() => {
+    const onR = () => setTick((v) => v + 1);
+    window.addEventListener('bgnj-books-refresh', onR);
+    return () => window.removeEventListener('bgnj-books-refresh', onR);
+  }, []);
+  const book = React.useMemo(() => G.call(() => window.BGNJ_BOOKS?.primary?.(), null), [tick]);
   const [version, setVersion] = React.useState("KR");
   const [qty, setQty] = React.useState(1);
   const [tab, setTab] = React.useState("소개");
 
-  const price = version === "KR" ? book.priceKR : book.priceEN;
+  if (!book) {
+    return (
+      <div className="section">
+        <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
+          <p style={{fontSize:14, color:'var(--ink-2)'}}>책 정보를 불러오는 중입니다…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const price = version === "KR" ? (book.priceKR || 0) : (book.priceEN || 0);
 
   const addToCart = () => {
     setCart({ version, qty, price });
@@ -245,12 +264,15 @@ const BookPage = ({ go, cart, setCart, user }) => {
               )}
               {tab === "목차" && (
                 <div>
-                  {book.chapters.map((c, i) => (
+                  {(Array.isArray(book.chapters) ? book.chapters : []).map((c, i) => (
                     <div key={i} style={{padding:'16px 0', borderBottom:'1px solid var(--line)', display:'flex', gap:24}}>
-                      <span className="mono gold" style={{width:40, fontSize:12}}>0{i+1}</span>
+                      <span className="mono" style={{width:40, fontSize:12, color:'var(--secondary)', fontWeight:700}}>0{i+1}</span>
                       <span className="ko-serif" style={{fontSize:17}}>{c}</span>
                     </div>
                   ))}
+                  {(!Array.isArray(book.chapters) || book.chapters.length === 0) && (
+                    <p style={{fontSize:13, color:'var(--ink-3)', padding:'16px 0'}}>목차 정보가 아직 입력되지 않았습니다.</p>
+                  )}
                 </div>
               )}
               {tab === "저자" && (
@@ -275,15 +297,16 @@ const BookPage = ({ go, cart, setCart, user }) => {
 
 // 결제 페이지 — 회원 전용 + 무통장 입금 단일 흐름
 const CheckoutPage = ({ go, cart, user }) => {
-  const book = window.BANGINOJA_DATA.book;
+  const G = window.BGNJ_GUARD;
+  const book = G.call(() => window.BGNJ_BOOKS?.primary?.(), null);
   const version = cart ? cart.version : "KR";
   const qty = cart ? cart.qty : 1;
-  const unit = version === "EN" ? book.priceEN : book.priceKR;
+  const unit = book ? (version === "EN" ? (book.priceEN || 0) : (book.priceKR || 0)) : 0;
   const subtotal = unit * qty;
   const shipping = subtotal >= 30000 ? 0 : 3000;
   const total = subtotal + shipping;
 
-  const bank = (window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES.bankAccount || {});
+  const bank = G.call(() => window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES?.bankAccount, {});
   const [selectedBankId, setSelectedBankId] = React.useState(null);
   const [recipient, setRecipient] = React.useState(user?.name || "");
   const [phone, setPhone] = React.useState("");
@@ -292,6 +315,17 @@ const CheckoutPage = ({ go, cart, user }) => {
   const [memo, setMemo] = React.useState("");
   const [error, setError] = React.useState("");
   const [submittedOrder, setSubmittedOrder] = React.useState(null);
+
+  // 책 정보 미로드 — 서버에서 도착 전이거나 D1.books 가 비어 있음.
+  if (!book) {
+    return (
+      <div className="section">
+        <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
+          <p style={{fontSize:14, color:'var(--ink-2)'}}>책 정보를 불러오는 중입니다…</p>
+        </div>
+      </div>
+    );
+  }
 
   // 비로그인 차단 안내
   if (!user) {
