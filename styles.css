@@ -1032,6 +1032,9 @@ main time, main .section-eyebrow {
 
 /* === Phone (≤ 600px) ============================================ */
 @media (max-width: 600px) {
+  /* 히어로 지도 미리보기는 폰에서 너무 큰 면적 차지 — CTA 버튼만 두고 숨김. 사용자는 '지도에서 여행지 찾기' 버튼으로 모달 진입 */
+  .hero-map-preview { display: none; }
+
   .container { padding: 0 16px; }
   .section { padding: 48px 0; }
   .section-tight { padding: 32px 0; }

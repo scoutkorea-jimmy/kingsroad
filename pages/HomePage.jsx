@@ -306,30 +306,31 @@ const HomePage = ({ go }) => {
               </div>
             </div>
 
-            {/* 우측: 지도 미리보기 — 클릭 시 전체 모달 (시도 호버 시 라벨 노출, 기본은 숨김 v00.041 정책 유지) */}
-            <div role="button" tabIndex={0}
-              aria-label="여행지 지도 — 클릭해 전체 보기"
-              onClick={() => setMapOpen(true)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMapOpen(true); } }}
-              style={{
-                cursor:'pointer', position:'relative',
-                padding:16, border:'1px solid var(--line)', background:'var(--bg-2)',
-              }}>
+            {/* 우측: 지도 미리보기 — 시도 클릭 → 전체 모달 (a11y: 외곽 div 는 단순 컨테이너, 실제 버튼은 region path 와 우상단 텍스트 버튼). 폰(≤600px) 에서는 hero-map-preview CSS 로 숨김 + CTA 버튼만 노출. */}
+            <div className="hero-map-preview" style={{
+              position:'relative',
+              padding:'48px 16px 16px',
+              border:'1px solid var(--line)', background:'var(--bg-2)',
+            }}>
               <div className="mono" style={{
                 position:'absolute', top:14, left:16,
                 fontSize:10, fontWeight:600, letterSpacing:'0.24em', color:'var(--ink-2)',
               }}>KOREA</div>
-              <div className="mono" style={{
-                position:'absolute', top:14, right:16,
-                fontSize:10, fontWeight:700, letterSpacing:'0.18em', color:'var(--secondary)',
-              }}>+ 클릭해 탐색</div>
-              <div style={{paddingTop:24}}>
-                {typeof KoreaMap === 'function' ? (
-                  <KoreaMap onSelect={() => setMapOpen(true)} selected={null}/>
-                ) : (
-                  <div style={{height:280, display:'grid', placeItems:'center', color:'var(--ink-3)', fontSize:13}}>지도 로딩 중…</div>
-                )}
-              </div>
+              <button type="button"
+                onClick={() => setMapOpen(true)}
+                aria-haspopup="dialog"
+                style={{
+                  position:'absolute', top:10, right:10,
+                  fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700,
+                  letterSpacing:'0.18em', color:'var(--secondary)',
+                  background:'transparent', border:'1px solid var(--line)',
+                  padding:'4px 10px', cursor:'pointer',
+                }}>전체 보기 →</button>
+              {typeof KoreaMap === 'function' ? (
+                <KoreaMap onSelect={() => setMapOpen(true)} selected={null}/>
+              ) : (
+                <div style={{height:280, display:'grid', placeItems:'center', color:'var(--ink-3)', fontSize:13}}>지도 로딩 중…</div>
+              )}
             </div>
           </div>
         </div>
