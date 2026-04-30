@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.045.000",
+    date: "2026-04-30",
+    summary: "🛡 가드 패턴 표준화(BGNJ_GUARD) + 🪝 pre-commit 신택스 훅 정착 + 🗺 히어로 지도 미리보기 복원. 전사 헬퍼 호출을 try/catch+Array 가드로 통일하고, 깨진 .jsx 가 컴파일에 들어가지 못하도록 git hook 으로 차단.",
+    details: [
+      "🛡 BGNJ_GUARD 유틸 신설 (data.js 초반 위치) — `arr(fn,fb=[])` / `call(fn,fb)` / `num(fn,fb=0)` / `str(fn,fb='')` 4종 표준 가드. 모든 페이지가 동일 시그니처로 헬퍼 호출 보호. throw 가 발생해도 폴백으로 안전 복귀.",
+      "🛡 페이지 가드 적용 — HomePage(safeArr→G.arr), ColumnPage(getLikes/getViews/listComments/estimateReadTime), LecturesPage(listAll/getBankAccount/getSeats/hasUserRegistered), WangsanamTourPage(listAll/getBankAccount/getSeats/hasUserReserved), MyPage(grades/communityPosts/bookmarkedPosts/notifications/myLectureRegs/myOrders/myTourRegs).",
+      "🪝 tools/check-syntax.mjs — @babel/parser 로 components/*.jsx + pages/*.jsx + data.js + api.js 일괄 신택스 검증. 첫 실행 시 `tools/node_modules` 에 자동 npm install. 깨끗하면 exit 0, 실패면 1.",
+      "🪝 tools/install-hooks.sh — `.git/hooks/pre-commit` 자동 설치. 매 커밋 직전 check-syntax 실행해 깨진 .jsx 가 staging 통과 못 함. (v00.042.001 WangsanamTourPage 누락된 </div> 같은 사고 재발 방지).",
+      "🗺 히어로 지도 미리보기 복원 — v00.043 모달화 후 빈 자리가 어색했던 문제. 우측에 KoreaMap 컴팩트 미리보기 + 클릭 시 전체 모달. 모바일(≤900px) 1단 stack 유지. 시도 라벨은 호버 시에만 노출(v00.041 정책 그대로).",
+      "📦 cache-buster — `?v=00.045.000`.",
+    ],
+    context: "사용자 요청 두 갈래: ① '시네틱 오류 검토 + 가드 패턴 확보' — 컴파일/런타임 양쪽 방어선을 표준화해 다음 사이클부터 새 페이지가 추가돼도 일관된 패턴으로 보호. pre-commit 훅이 SyntaxError 를 commit 단계에서 차단해 v00.042.001 같은 사고가 production 까지 도달하지 못하게. ② '지도 안 보인다' — 모달화 후 우측이 비어 어색했던 점. 미리보기 + 클릭→모달 의 hybrid 패턴으로 노출은 살리고 인터랙션은 모달에 모음. 다음 사이클 권장: ① CommunityPage / AuthAdminPage / BookCheckoutPage 의 헬퍼 호출도 BGNJ_GUARD 로 통일 ② 헬퍼 자체에 입력 검증 표준화(predicate guard) ③ check-syntax 에 ESLint-style 룰 추가 (사용 안 하는 변수 등).",
+  },
+  {
     version: "00.044.000",
     date: "2026-04-30",
     summary: "🛡 홈페이지 안정성 스윕 — Babel parser 로 16개 .jsx 파일 일괄 신택스 검증, HomePage useMemo 전부 try/catch+Array 가드, 섹션별 ErrorBoundary, Shell/ColumnPage 헬퍼 호출 옵셔널 체이닝. 한 섹션 오류가 다른 섹션 렌더를 막지 않도록 격리.",

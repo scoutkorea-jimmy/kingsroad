@@ -58,8 +58,9 @@ const WangsanamPage = ({ go }) => {
 
 const TourPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
-  const tours = React.useMemo(() => window.BGNJ_TOURS.listAll(), [tick]);
-  const bank = React.useMemo(() => (window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES.bankAccount || {}), [tick]);
+  const G = window.BGNJ_GUARD;
+  const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.()), [tick]);
+  const bank = React.useMemo(() => G.call(() => window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES?.bankAccount, {}), [tick]);
   const refresh = () => setTick((v) => v + 1);
 
   const [selectedIdx, setSelectedIdx] = React.useState(0);
@@ -85,10 +86,10 @@ const TourPage = ({ go, user }) => {
     );
   }
 
-  const safeIdx = Math.min(selectedIdx, tours.length - 1);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, tours.length - 1));
   const tour = tours[safeIdx];
-  const seats = window.BGNJ_TOURS.getSeats(tour.id);
-  const myReg = user ? window.BGNJ_TOURS.hasUserReserved(tour.id, user.id) : null;
+  const seats = G.call(() => window.BGNJ_TOURS?.getSeats?.(tour.id), { capacity: 0, taken: 0, waitlist: 0, remaining: 0 });
+  const myReg = user ? G.call(() => window.BGNJ_TOURS?.hasUserReserved?.(tour.id, user.id), null) : null;
   const formatPrice = (p) => (p === 0 || p == null) ? "무료" : `${p.toLocaleString()}원`;
 
   const labelStatus = (s) => ({

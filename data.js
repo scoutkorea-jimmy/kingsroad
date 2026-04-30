@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.044.000",
+  version: "00.045.000",
   build: "2026.04.30",
   channel: "preview",
 };
@@ -15,6 +15,33 @@ try {
     'background:#92400E;color:#F5D548;padding:3px 8px;border-radius:3px;font-weight:600;'
   );
 } catch {}
+
+// === 공통 가드 유틸 (BGNJ_GUARD) =========================================
+// 페이지/컴포넌트에서 헬퍼 호출이 throw 하거나 비-배열을 반환해도 화면이 안 깨지도록
+// 표준 가드 패턴을 한 곳에 모아둔다. 모든 페이지가 동일 시그니처로 호출.
+//
+//   BGNJ_GUARD.arr(() => window.BGNJ_X.listFoo())          // []
+//   BGNJ_GUARD.arr(() => ..., fallback)                    // fallback
+//   BGNJ_GUARD.call(() => window.BGNJ_X.foo(), 0)          // 단일 값. fallback 기본 undefined.
+//   BGNJ_GUARD.num(() => window.BGNJ_X.count(), 0)         // 정수 환산. NaN/Infinity 도 0.
+//   BGNJ_GUARD.str(() => window.BGNJ_X.name(), '')         // 문자열로. null/undefined 는 fallback.
+window.BGNJ_GUARD = {
+  arr(fn, fallback) {
+    try { const v = fn(); return Array.isArray(v) ? v : (fallback ?? []); }
+    catch { return fallback ?? []; }
+  },
+  call(fn, fallback) {
+    try { return fn(); } catch { return fallback; }
+  },
+  num(fn, fallback = 0) {
+    try { const v = Number(fn()); return Number.isFinite(v) ? v : fallback; }
+    catch { return fallback; }
+  },
+  str(fn, fallback = '') {
+    try { const v = fn(); return v == null ? fallback : String(v); }
+    catch { return fallback; }
+  },
+};
 
 // 진단용 헬스체크 헬퍼 — 콘솔에서 BGNJ_DIAG.run() 으로 즉시 실행 가능.
 window.BGNJ_DIAG = {

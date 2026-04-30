@@ -214,14 +214,14 @@ const HomePage = ({ go }) => {
   const recommendations = Array.isArray(sc.recommendations) ? sc.recommendations.filter(Boolean) : [];
   const [recDetail, setRecDetail] = React.useState(null);
 
-  // 실데이터만 — 시드 폴백 제거. 모든 헬퍼 호출은 try/catch + Array.isArray 가드로 견고화.
-  const safeArr = (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } };
-  const publicColumns = React.useMemo(() => safeArr(() => window.BGNJ_COLUMNS?.listPublic?.()), [dataTick]);
+  // 실데이터만 — 시드 폴백 제거. 모든 헬퍼 호출은 BGNJ_GUARD.arr 로 try/catch + Array 가드.
+  const G = window.BGNJ_GUARD;
+  const publicColumns = React.useMemo(() => G.arr(() => window.BGNJ_COLUMNS?.listPublic?.()), [dataTick]);
   const featuredColumn = publicColumns[0];
   const secondaryColumns = publicColumns.slice(1, 5);
-  const recentPosts = React.useMemo(() => safeArr(() => window.BGNJ_COMMUNITY?.listPosts?.()).slice(0, 4), [dataTick]);
-  const tours = React.useMemo(() => safeArr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden).slice(0, 4), [dataTick]);
-  const lectures = React.useMemo(() => safeArr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden).slice(0, 3), [dataTick]);
+  const recentPosts = React.useMemo(() => G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()).slice(0, 4), [dataTick]);
+  const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden).slice(0, 4), [dataTick]);
+  const lectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden).slice(0, 3), [dataTick]);
 
   const stats = [
     { l: '여행지', v: '전국', s: '주요 답사지 운영' },
@@ -240,65 +240,96 @@ const HomePage = ({ go }) => {
       {mapOpen && <DestinationMapModal onClose={() => setMapOpen(false)} go={go}/>}
       {recDetail && <RecommendationDetailModal rec={recDetail} onClose={() => setRecDetail(null)} go={go}/>}
 
-      {/* ── HERO (단일 컬럼, 가운데 정렬) ───────────────────────────── */}
+      {/* ── HERO (텍스트 + 우측 지도 미리보기, 모바일 1단) ─────────── */}
       <HomeSectionBoundary label="히어로"><section style={{
         position:'relative', overflow:'hidden',
         background:'var(--bg)', borderBottom:'1px solid var(--line)',
-        padding:'88px 0 96px',
+        padding:'72px 0 88px',
       }}>
         <div className="container">
-          <div style={{maxWidth:760, margin:'0 auto', textAlign:'left'}}>
-            <div className="section-eyebrow">
-              <span>{hero.eyebrow || "BANGINOJA · 뱅기타고 노자"}</span>
+          <div className="hero-grid" style={{
+            display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:56, alignItems:'center',
+          }}>
+            {/* 좌측: 텍스트 */}
+            <div>
+              <div className="section-eyebrow">
+                <span>{hero.eyebrow || "BANGINOJA · 뱅기타고 노자"}</span>
+              </div>
+              <h1 style={{
+                fontFamily:'var(--font-display)',
+                fontSize:'clamp(36px, 5vw, 64px)',
+                fontWeight:900,
+                lineHeight:1.05,
+                letterSpacing:'-0.02em',
+                marginBottom:22,
+                color:'var(--ink)',
+              }}>
+                {hero.title1 || "뱅기타고"}<br/>
+                <span style={{color:'var(--primary)'}}>{hero.title2 || "한국을"}</span><br/>
+                {hero.title3 || "느끼다"}
+              </h1>
+              <p style={{
+                fontSize:16, lineHeight:1.85, color:'var(--ink-2)',
+                maxWidth:520, marginBottom:32, fontWeight:500,
+              }}>
+                {hero.subtitle || "궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다."}
+              </p>
+              <div style={{display:'flex', gap:12, flexWrap:'wrap', marginBottom:40}}>
+                <button className="btn btn-gold" onClick={() => setMapOpen(true)} aria-haspopup="dialog">
+                  지도에서 여행지 찾기 →
+                </button>
+                <button className="btn" onClick={() => go('community')}>
+                  {hero.ctaPrimary || "커뮤니티 참여하기"}
+                </button>
+                <button className="btn" onClick={() => go('tour')}>
+                  {hero.ctaSecondary || "투어 프로그램 보기"}
+                </button>
+              </div>
+              <div className="hero-stats" style={{
+                display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:20,
+                paddingTop:24, borderTop:'1px solid var(--line)',
+              }}>
+                {stats.map((stat) => (
+                  <div key={stat.l}>
+                    <div style={{
+                      fontFamily:'var(--font-serif)', fontSize:22, fontWeight:600,
+                      color:'var(--ink)', marginBottom:4,
+                    }}>{stat.v}</div>
+                    <div style={{
+                      fontFamily:'var(--font-mono)', fontSize:10, fontWeight:600,
+                      letterSpacing:'0.22em', color:'var(--ink-2)',
+                      textTransform:'uppercase', marginBottom:3,
+                    }}>{stat.l}</div>
+                    <div style={{fontSize:12, color:'var(--ink-3)'}}>{stat.s}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <h1 style={{
-              fontFamily:'var(--font-display)',
-              fontSize:'clamp(40px, 6vw, 72px)',
-              fontWeight:900,
-              lineHeight:1.05,
-              letterSpacing:'-0.02em',
-              marginBottom:24,
-              color:'var(--ink)',
-            }}>
-              {hero.title1 || "뱅기타고"}<br/>
-              <span style={{color:'var(--primary)'}}>{hero.title2 || "한국을"}</span><br/>
-              {hero.title3 || "느끼다"}
-            </h1>
-            <p style={{
-              fontSize:17, lineHeight:1.85, color:'var(--ink-2)',
-              maxWidth:560, marginBottom:36, fontWeight:500,
-            }}>
-              {hero.subtitle || "궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다."}
-            </p>
-            <div style={{display:'flex', gap:14, flexWrap:'wrap', marginBottom:48}}>
-              <button className="btn btn-gold" onClick={() => setMapOpen(true)} aria-haspopup="dialog">
-                지도에서 여행지 찾기 →
-              </button>
-              <button className="btn" onClick={() => go('community')}>
-                {hero.ctaPrimary || "커뮤니티 참여하기"}
-              </button>
-              <button className="btn" onClick={() => go('tour')}>
-                {hero.ctaSecondary || "투어 프로그램 보기"}
-              </button>
-            </div>
-            <div className="hero-stats" style={{
-              display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:20,
-              paddingTop:28, borderTop:'1px solid var(--line)',
-            }}>
-              {stats.map((stat) => (
-                <div key={stat.l}>
-                  <div style={{
-                    fontFamily:'var(--font-serif)', fontSize:22, fontWeight:600,
-                    color:'var(--ink)', marginBottom:4,
-                  }}>{stat.v}</div>
-                  <div style={{
-                    fontFamily:'var(--font-mono)', fontSize:10, fontWeight:600,
-                    letterSpacing:'0.22em', color:'var(--ink-2)',
-                    textTransform:'uppercase', marginBottom:3,
-                  }}>{stat.l}</div>
-                  <div style={{fontSize:12, color:'var(--ink-3)'}}>{stat.s}</div>
-                </div>
-              ))}
+
+            {/* 우측: 지도 미리보기 — 클릭 시 전체 모달 (시도 호버 시 라벨 노출, 기본은 숨김 v00.041 정책 유지) */}
+            <div role="button" tabIndex={0}
+              aria-label="여행지 지도 — 클릭해 전체 보기"
+              onClick={() => setMapOpen(true)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMapOpen(true); } }}
+              style={{
+                cursor:'pointer', position:'relative',
+                padding:16, border:'1px solid var(--line)', background:'var(--bg-2)',
+              }}>
+              <div className="mono" style={{
+                position:'absolute', top:14, left:16,
+                fontSize:10, fontWeight:600, letterSpacing:'0.24em', color:'var(--ink-2)',
+              }}>KOREA</div>
+              <div className="mono" style={{
+                position:'absolute', top:14, right:16,
+                fontSize:10, fontWeight:700, letterSpacing:'0.18em', color:'var(--secondary)',
+              }}>+ 클릭해 탐색</div>
+              <div style={{paddingTop:24}}>
+                {typeof KoreaMap === 'function' ? (
+                  <KoreaMap onSelect={() => setMapOpen(true)} selected={null}/>
+                ) : (
+                  <div style={{height:280, display:'grid', placeItems:'center', color:'var(--ink-3)', fontSize:13}}>지도 로딩 중…</div>
+                )}
+              </div>
             </div>
           </div>
         </div>

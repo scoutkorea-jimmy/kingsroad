@@ -15,3 +15,4 @@ wrangler-account.json
 
 # Claude Code 개인 설정
 .claude/settings.local.json
+tools/node_modules/

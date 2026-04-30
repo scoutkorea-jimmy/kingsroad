@@ -29,28 +29,19 @@ const MyPage = ({ go, user, cart }) => {
     return () => events.forEach((e) => window.removeEventListener(e, onR));
   }, [user?.id]);
 
-  const grades = window.BGNJ_STORES?.grades || [];
+  const G = window.BGNJ_GUARD;
+  const grades = G.arr(() => window.BGNJ_STORES?.grades);
   const grade = grades.find((item) => item.id === user?.gradeId);
-  const upcomingLecture = data.lectures?.[0];
-  const upcomingTour = data.tours?.[0];
-  const communityPosts = window.BGNJ_COMMUNITY?.listPosts?.() || data.posts || [];
+  const upcomingLecture = G.arr(() => data?.lectures)[0];
+  const upcomingTour = G.arr(() => data?.tours)[0];
+  const communityPosts = G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.());
   const recentPost = communityPosts.find((post) => post.authorId === user?.id || post.author === user?.name) || communityPosts[0];
-  const bookmarkedPosts = user
-    ? (window.BGNJ_COMMUNITY?.listBookmarkedPosts?.(user.id) || [])
-    : [];
-  const notifications = user
-    ? (window.BGNJ_COMMUNITY?.listNotifications?.(user.id) || [])
-    : [];
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const myLectureRegs = user
-    ? (window.BGNJ_LECTURES?.listMyRegistrations?.(user.id) || [])
-    : [];
-  const myOrders = React.useMemo(() =>
-    user ? (window.BGNJ_BOOK_ORDERS?.listMine?.(user.id) || []) : [],
-    [user, orderTick]);
-  const myTourRegs = user
-    ? (window.BGNJ_TOURS?.listMyReservations?.(user.id) || [])
-    : [];
+  const bookmarkedPosts = user ? G.arr(() => window.BGNJ_COMMUNITY?.listBookmarkedPosts?.(user.id)) : [];
+  const notifications = user ? G.arr(() => window.BGNJ_COMMUNITY?.listNotifications?.(user.id)) : [];
+  const unreadCount = notifications.filter((n) => n && !n.read).length;
+  const myLectureRegs = user ? G.arr(() => window.BGNJ_LECTURES?.listMyRegistrations?.(user.id)) : [];
+  const myOrders = React.useMemo(() => user ? G.arr(() => window.BGNJ_BOOK_ORDERS?.listMine?.(user.id)) : [], [user, orderTick]);
+  const myTourRegs = user ? G.arr(() => window.BGNJ_TOURS?.listMyReservations?.(user.id)) : [];
   const tourStatusLabel = (s) => ({
     pending_payment: '입금 대기',
     confirmed: '참가 확정',

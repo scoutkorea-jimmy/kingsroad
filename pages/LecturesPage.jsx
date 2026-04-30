@@ -3,9 +3,10 @@ const LecturesPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   const refresh = () => setTick((v) => v + 1);
+  const G = window.BGNJ_GUARD;
 
-  const lectures = React.useMemo(() => window.BGNJ_LECTURES.listAll(), [tick]);
-  const bank = React.useMemo(() => window.BGNJ_LECTURES.getBankAccount(), [tick]);
+  const lectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()), [tick]);
+  const bank = React.useMemo(() => G.call(() => window.BGNJ_LECTURES?.getBankAccount?.(), {}), [tick]);
 
   // 외부 진입 — sessionStorage / 해시
   React.useEffect(() => {
@@ -28,10 +29,10 @@ const LecturesPage = ({ go, user }) => {
     );
   }
 
-  const safeIdx = Math.min(selectedIdx, lectures.length - 1);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, lectures.length - 1));
   const lecture = lectures[safeIdx];
-  const seats = window.BGNJ_LECTURES.getSeats(lecture.id);
-  const myReg = user ? window.BGNJ_LECTURES.hasUserRegistered(lecture.id, user.id) : null;
+  const seats = G.call(() => window.BGNJ_LECTURES?.getSeats?.(lecture.id), { capacity: 0, taken: 0, waitlist: 0, remaining: 0 });
+  const myReg = user ? G.call(() => window.BGNJ_LECTURES?.hasUserRegistered?.(lecture.id, user.id), null) : null;
 
   const formatPrice = (p) => (p === 0 || p == null) ? "무료" : `${p.toLocaleString()}원`;
   const labelStatus = (s) => ({

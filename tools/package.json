@@ -1,0 +1,14 @@
+{
+  "name": "bgnj-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-only tooling for the BGNJ repo (syntax check, hooks). Not shipped.",
+  "type": "module",
+  "scripts": {
+    "check": "node check-syntax.mjs",
+    "install-hooks": "bash install-hooks.sh"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.25.0"
+  }
+}
