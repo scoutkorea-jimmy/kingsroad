@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.048.000",
+    date: "2026-04-30",
+    summary: "🪝 check-syntax 룰 다중화 (BANGINOJA_DATA + console.log) + 📋 BGNJ_STORES 26 개 키 역할 문서화. 어느 키가 server-backed/local-intentional/legacy/dead 인지 한 눈에. 다음 사이클 정리 대상 명시.",
+    details: [
+      "🪝 tools/check-syntax.mjs — 룰 시스템을 RULES 배열로 모듈화. 각 룰은 `{ name, allow, pattern, msg }` 구조. 우회 마커는 같은 줄 또는 직전 줄 `// bgnj-lint-ignore-next-line <RULE>` 형식.",
+      "🪝 새 룰 'console.log' — production 노이즈 차단. data.js (버전 배지/마이그레이션 진단) 와 api.js 는 allow. 페이지/컴포넌트에서 console.log 사용 시 pre-commit 훅이 차단. 진단은 console.error/warn 또는 errorLog 헬퍼 사용 권고.",
+      "📋 data.js BGNJ_STORES 헤더 주석 — 26 개 키 각각의 운영 의미를 4 가지 태그로 분류 표기: 🌐 server-backed (캐시) / 💾 local intentional (drafts/session) / ⚠ legacy (마이그레이션 진행 중) / 💀 dead (read 사용처 없음, 다음 사이클 제거).",
+      "📋 식별된 dead 키 4 개 — `lectureOverrides`, `lectureRegistrations`, `tourOverrides`, `tourReservations`. 이미 BGNJ_LECTURES.saveLecture / BGNJ_TOURS.saveTour 가 서버 직호출이고 override 머지 로직이 폐지되어 read 사용처 없음.",
+      "📋 식별된 legacy 키 — communityPosts (시드 폴백 폐지 후 localOnly merge 만), comments / userColumns / users / bookmarks / reports / bookOrders / bookReviews / tourReviews / lectureReviews — 점진 마이그레이션 대상.",
+      "📦 cache-buster — `?v=00.048.000`.",
+    ],
+    context: "v00.047 의 다음 사이클 후보 처리. 룰 다중화로 향후 새 룰을 RULES 배열에 한 줄 추가만으로 도입 가능. console.log 차단은 production 콘솔 노이즈 한 클래스 제거. BGNJ_STORES 의 4-태그 분류는 다음 사이클부터 dead 키 제거 / legacy 키 migration 우선순위 결정에 직접 활용. 다음 사이클: ① dead 키 4 개 (lectureOverrides/lectureRegistrations/tourOverrides/tourReservations) 정의 + localStorage 키 일괄 제거 ② legacy 키 중 가장 가시성 높은 것(communityPosts merge 로직?) 우선 server-only 화 ③ 룰 'TODO 잔재' / 'unused import' 추가 검토.",
+  },
+  {
     version: "00.047.000",
     date: "2026-04-30",
     summary: "🌐 BANGINOJA_DATA 직접 참조 전면 폐지 + check-syntax 룰화. BookPage/CheckoutPage 가 BGNJ_BOOKS.primary() 로, AdminPage 의 다음 강연/투어 / 칼럼 목록도 서버 헬퍼 경유. CommunityPage 의 render-path 헬퍼 호출에 BGNJ_GUARD 적용.",

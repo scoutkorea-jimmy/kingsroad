@@ -75,31 +75,43 @@ for (const f of targets) {
 }
 
 // 4) 룰 검사 — 신택스가 OK 인 파일에서 추가 금지 패턴 점검.
-//    A) BANGINOJA_DATA 직접 참조: 시드는 더 이상 페이지에서 읽지 않는다 (서버 source-of-truth).
-//       허용: data.js (정의), AuthAdminPage 의 KMS techSpec 문자열은 lint-ignore 주석으로 우회.
-//    B) listPosts/listAll 등 헬퍼 호출이 옵셔널 체이닝 없이 직접 호출되는 핫스팟 — 경고만.
-const violations = [];
-const BANGINOJA_DATA_ALLOW = new Set(["data.js"]);
-const BANGINOJA_DATA_PATTERN = /\bwindow\.BANGINOJA_DATA\b/g;
+//    각 룰은 { name, allow:Set<rel>, pattern:RegExp, msg } 구조.
+//    라인 단위로 검사하고 같은 줄 또는 한 줄 위에 `// bgnj-lint-ignore-next-line <RULE>` 이 있으면 스킵.
+//    주석(//) / 블록 주석 / 백틱 docstring 안의 매치는 자동 무시 (false positive 차단).
+const RULES = [
+  {
+    name: "BANGINOJA_DATA",
+    allow: new Set(["data.js"]),
+    pattern: /\bwindow\.BANGINOJA_DATA\b/,
+    msg: "BANGINOJA_DATA 직접 참조 금지 (서버 source-of-truth)",
+  },
+  {
+    name: "console.log",
+    // data.js: 버전 배지/마이그레이션 진단 / api.js: 에러 진단 — 의도된 콘솔 출력 허용.
+    allow: new Set(["data.js", "api.js"]),
+    pattern: /\bconsole\.log\s*\(/,
+    msg: "console.log 잔재 금지 (production 노이즈) — 진단은 console.error/warn 또는 errorLog 헬퍼 사용",
+  },
+];
 
+const violations = [];
 for (const f of targets) {
   const rel = path.relative(ROOT, f);
-  if (BANGINOJA_DATA_ALLOW.has(rel)) continue;
   const code = await fs.readFile(f, "utf8");
-  // 라인 단위로 검사하고 // bgnj-lint-ignore-next-line BANGINOJA_DATA 가 있는 줄은 무시.
   const lines = code.split("\n");
-  let lintIgnoreNext = false;
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    if (lintIgnoreNext) { lintIgnoreNext = false; continue; }
-    if (/bgnj-lint-ignore-next-line\s+BANGINOJA_DATA/.test(line)) { lintIgnoreNext = true; continue; }
-    // 주석 안의 매치(// 또는 *)는 허용 — 코드 상의 실제 참조만 차단.
-    const stripped = line.replace(/\/\/.*$/, "").replace(/\*[^*]*\*/g, "");
-    // backtick 안의 문자열 ('`...BANGINOJA_DATA...`') 은 docstring 처럼 사용되므로 허용.
-    const noBackticks = stripped.replace(/`[^`]*`/g, "''");
-    BANGINOJA_DATA_PATTERN.lastIndex = 0;
-    if (BANGINOJA_DATA_PATTERN.test(noBackticks)) {
-      violations.push({ file: rel, line: i + 1, msg: "BANGINOJA_DATA 직접 참조 금지 (서버 source-of-truth) — 필요 시 // bgnj-lint-ignore-next-line BANGINOJA_DATA 로 우회" });
+    // 코드 상의 실제 매치만 검사 — 주석/백틱 제거.
+    const stripped = line.replace(/\/\/.*$/, "").replace(/`[^`]*`/g, "''");
+    for (const rule of RULES) {
+      if (rule.allow.has(rel)) continue;
+      const ignoreMarker = new RegExp(`bgnj-lint-ignore-next-line\\s+${rule.name.replace(/\./g, "\\.")}`);
+      // 같은 줄 또는 직전 줄에 마커가 있으면 스킵.
+      if (ignoreMarker.test(line)) continue;
+      if (i > 0 && ignoreMarker.test(lines[i - 1])) continue;
+      if (rule.pattern.test(stripped)) {
+        violations.push({ file: rel, line: i + 1, rule: rule.name, msg: `${rule.msg} — 우회 시 // bgnj-lint-ignore-next-line ${rule.name}` });
+      }
     }
   }
 }
@@ -119,7 +131,7 @@ if (bad > 0) {
 if (violations.length > 0) {
   console.error(`\n⚠ ${violations.length} 룰 위반 발견:\n`);
   for (const v of violations) {
-    console.error(`  • ${v.file}:${v.line} — ${v.msg}`);
+    console.error(`  • [${v.rule}] ${v.file}:${v.line} — ${v.msg}`);
   }
 }
 console.error("\n커밋 전 위 항목을 먼저 정리해 주세요.");

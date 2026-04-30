@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.047.000",
+  version: "00.048.000",
   build: "2026.04.30",
   channel: "preview",
 };
@@ -371,6 +371,39 @@ const ensureCommunityPostsSeeded = (posts, legacyUserPosts) => {
   return next;
 };
 
+// === BGNJ_STORES — 클라이언트 측 데이터 저장소 ===========================
+// 각 키의 운영 의미 (v00.048 정리):
+//   🌐 server-backed   : 서버(D1) source-of-truth. 여기는 캐시/임시 머지용일 뿐, 화면 콘텐츠는 BGNJ_* 헬퍼 경유로 노출. (정합성 OK)
+//   💾 local intentional: 사용자 임시 상태 (drafts/session/cart) — 의도적으로 로컬 보관.
+//   ⚠ legacy            : 과거 로컬-퍼스트 시절 잔재. 마이그레이션 진행 중. 새 코드는 BGNJ_* 헬퍼만 사용.
+//   💀 dead             : 더 이상 어떤 화면도 읽지 않음. 다음 사이클에 제거 예정.
+//
+//   grades                🌐 server-backed (App init 에서 BGNJ_API.grades.list 로 덮어씀, 미정의면 시드)
+//   categories            🌐 server-backed (App init 에서 BGNJ_API.categories.list 로 덮어씀)
+//   communityPosts        ⚠ legacy — listPosts 가 _serverPosts merge 시 localOnly 필터로만 사용. v00.046 시드 주입 폐지
+//   userPosts             💾 local intentional — 사용자 작성 임시본 (서버 동기화 전)
+//   comments              ⚠ legacy — 서버 BGNJ_API.community.comments 로 점진 마이그레이션
+//   userColumns           ⚠ legacy — BGNJ_COLUMNS._columns 가 서버 source. 호환 잔재
+//   users                 ⚠ legacy — 인증은 BGNJ_AUTH/D1.users 가 진실. 시드(DEFAULT_USERS) 잔재
+//   session               💾 local intentional — 세션 토큰 캐시 (서버 검증 후 보관)
+//   bookmarks             ⚠ legacy — BGNJ_API.community.bookmarks 로 마이그레이션 진행
+//   reports               ⚠ legacy — D1.reports 로 마이그레이션 (admin Report 패널)
+//   notifications         🌐 server-backed (캐시 — refreshNotifications 가 서버에서 채움)
+//   columnEngagement      🌐 server-backed (likes/views — BGNJ_API.columns.like/view)
+//   lectureOverrides      💀 dead (BGNJ_LECTURES.saveLecture 가 서버 직호출, override 머지 폐지)
+//   lectureRegistrations  💀 dead (BGNJ_API.lectures.registrations 로 일원화)
+//   bankAccount           🌐 server-backed (D1.bank_account)
+//   bookOrders            ⚠ legacy — BGNJ_BOOK_ORDERS 가 서버 source
+//   bookReviews           ⚠ legacy — BGNJ_BOOKS.refreshReviews 사용
+//   tourOverrides         💀 dead (BGNJ_TOURS.saveTour 직호출)
+//   tourReservations      💀 dead (BGNJ_API.tours.reservations 일원화)
+//   tourReviews           ⚠ legacy — BGNJ_TOURS.listReviews 가 _reviewsByTour 사용
+//   legalDocs             🌐 server-backed (BGNJ_LEGAL.refresh)
+//   lectureReviews        ⚠ legacy
+//   auditLog              🌐 server-backed (D1.audit_log)
+//   siteContent           🌐 server-backed (BGNJ_SITE_CONTENT)
+//   books                 🌐 server-backed (BGNJ_BOOKS)
+//   faqs                  🌐 server-backed (BGNJ_FAQ)
 window.BGNJ_STORES = {
   storageVersion: BGNJ_STORAGE_VERSION,
   grades: (() => {
