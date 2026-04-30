@@ -405,6 +405,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
               {formatPrice((tour.priceNumber || 0) * (myReg?.count || submitted?.count || 1))}
             </span>
           </div>
+        </div>
       )}
 
       {/* 신청 폼 진입 */}
