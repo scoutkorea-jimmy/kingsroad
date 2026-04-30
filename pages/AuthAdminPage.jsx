@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.053.000",
+    date: "2026-05-01",
+    summary: "🩹 다크 모드 가독성 핫픽스 + 🗺 KoreaMap stroke 강조 + 📊 자동승급 기준을 회원등급 표 인라인 통합 + 🖼 OG 가벼운 로고-only.",
+    details: [
+      "🩹 styles.css 다크 모드 nav/footer/admin-sidebar/card 정합 — `.nav { background: rgba(255,255,255,0.96) }` 가 다크 모드에서도 흰 강제하던 문제 해소(rgba(15,23,42,0.92)). footer/admin-sidebar/.dim/.dim-2/.btn/.gold/.ko-serif 다크 정합 룰 추가. tbody hover/border 도 토큰화.",
+      "🗺 KoreaMap stroke #E5E7EB → var(--line-2), fill 도 var 토큰화 → 라이트/다크 모두에서 경계선이 또렷하게 보임. strokeWidth 0.8 → 1.1.",
+      "📊 AdminGradePanel 등급 표 — 각 등급 행 아래에 `↳ 자동 승급 기준` 행 인라인 추가 (PromoChip 컴포넌트). 게시글/댓글/30일방문/가입경과/좋아요/활동일/신고 7개 칩으로 즉시 노출. 별도 패널 GradePromotionPanel 의 편집/재산정 기능은 유지.",
+      "🖼 OG 이미지 — 텍스트 4줄 + 옐로우 라인의 무거운 디자인 → 가운데 옐로우 박스 + B 마크 + 작은 워드마크의 가벼운 로고-only 레이아웃으로 교체 (사용자 요청).",
+      "📑 KMS sub-tab 버튼 가독성 — border var(--line) → var(--line-2), background transparent → var(--bg-2), color var(--ink-2) → var(--ink). 활성 시 fontWeight 700 + role/aria-selected 추가. + DesignSystemView 의 인라인 `background:'#fff'` 1곳 → var(--bg) 토큰화.",
+      "📦 cache-buster — `?v=00.053.000`.",
+    ],
+    context: "사용자 피드백 4 가지 핫픽스 묶음: ① '다크 모드에서 상단 메뉴 안 보임' (헤더 배경 흰 강제) ② '지도 잘 안 보임' (stroke 너무 옅음) ③ 'KMS 디자인 탭 가독성' (sub-tab 버튼 배경/대비 옅음) ④ '자동승급 기능 등급 아래 바로 보이게' (별도 패널 → 표 인라인). + 사용자 첫 메시지의 'OG 이미지 로고만 가볍게' 도 동일 사이클에 처리. 다음 사이클(v00.054) 후보: ① 관리자 히어로 페이지 편집 탭 (콘텐츠 + 스타일 트윗 — 사용자 요청, 큰 작업이라 분리) ② 플러그인 업데이트(Wrangler/React/Babel) 의존성 검사 (사용자 요청). 다크 모드는 인라인 hex 정합 점진 진행 — KMS 라이브 토큰 카드로 drift 발견 시 우선 정리.",
+  },
+  {
     version: "00.052.000",
     date: "2026-05-01",
     summary: "🌓 다크 모드 토큰 + 토글 + 🖼 OG 이미지 브랜드 fallback + 📑 KMS 라이브 토큰 카드. 클라이언트 단독 사이클 — 워커/D1 변경 없음.",
@@ -1731,7 +1745,7 @@ const DesignSystemView = () => {
             background:'rgba(245,213,72,0.06)', color:'var(--gold)', fontSize:13,
           }}>✓ 저장되었습니다.</div>
           <div style={{
-            padding:'12px 14px', background:'#fff',
+            padding:'12px 14px', background:'var(--bg)',
             border:'1px solid var(--danger)', boxShadow:'0 8px 24px rgba(0,0,0,0.14)',
             fontSize:13,
           }}>
@@ -6115,21 +6129,27 @@ const AdminPage = ({ go }) => {
               </div>
             </div>
 
-            <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-              {["기능정의서", "디자인"].map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  className="btn btn-small"
-                  onClick={() => setKmsTab(item)}
-                  style={{
-                    borderColor: kmsTab === item ? 'var(--gold)' : 'var(--line)',
-                    color: kmsTab === item ? 'var(--gold)' : 'var(--ink-2)',
-                    background: kmsTab === item ? 'rgba(245,213,72,0.06)' : 'transparent',
-                  }}>
-                  {item}
-                </button>
-              ))}
+            <div style={{display:'flex', gap:8, flexWrap:'wrap'}} role="tablist" aria-label="KMS 영역 선택">
+              {["기능정의서", "디자인"].map((item) => {
+                const on = kmsTab === item;
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    className="btn btn-small"
+                    onClick={() => setKmsTab(item)}
+                    style={{
+                      borderColor: on ? 'var(--primary)' : 'var(--line-2)',
+                      color: on ? 'var(--primary)' : 'var(--ink)',
+                      background: on ? 'rgba(245,213,72,0.10)' : 'var(--bg-2)',
+                      fontWeight: on ? 700 : 500,
+                    }}>
+                    {item}
+                  </button>
+                );
+              })}
             </div>
 
             {kmsTab === "기능정의서" && (
@@ -7095,6 +7115,19 @@ const AdminCategoryPanel = () => {
 };
 
 // === Admin: Grade CRUD =================================================
+// 자동 승급 기준 칩 — 등급 표 각 행 아래에 인라인 노출 (read-only).
+// tone='danger' 면 신고 한계 강조. 값이 없으면 0/제한없음으로 폴백.
+const PromoChip = ({ label, value, prefix = '≥', tone }) => (
+  <span style={{
+    display:'inline-flex', alignItems:'center', gap:4,
+    padding:'3px 8px', border:'1px solid var(--line-2)',
+    borderRadius:999, background:'var(--bg)', color: tone === 'danger' ? 'var(--danger)' : 'var(--ink)',
+  }}>
+    <span style={{color:'var(--ink-3)', fontSize:10}}>{label}</span>
+    <span style={{fontWeight:600}}>{prefix} {Number.isFinite(Number(value)) ? Number(value) : 0}</span>
+  </span>
+);
+
 const AdminGradePanel = () => {
   const [grades, setGrades] = React.useState(() => window.BGNJ_STORES.grades.slice());
   const [draft, setDraft] = React.useState({ id:"", label:"", level:20, color:"#D4AF37", desc:"" });
@@ -7178,34 +7211,59 @@ const AdminGradePanel = () => {
           </tr>
         </thead>
         <tbody>
-          {grades.map((g, i) => (
-            <tr key={g.id} style={{borderBottom:'1px solid var(--line)'}}>
-              <td style={{padding:10}}>
-                <span className="grade-badge" style={{color: g.color}}>{g.label}</span>
-              </td>
-              <td className="mono gold" style={{padding:10}}>{g.id}</td>
-              <td style={{padding:10}}>
-                <input className="field-input" style={{padding:'4px 8px'}} value={g.label}
-                  onChange={e => update(i, 'label', e.target.value)}/>
-              </td>
-              <td style={{padding:10, textAlign:'right'}}>
-                <input type="number" className="field-input" style={{padding:'4px 8px', width:80, textAlign:'right'}}
-                  value={g.level} onChange={e => update(i, 'level', e.target.value)}/>
-              </td>
-              <td style={{padding:10}}>
-                <input type="color" className="field-input" style={{padding:0, width:60, height:30}}
-                  value={g.color} onChange={e => update(i, 'color', e.target.value)}/>
-              </td>
-              <td style={{padding:10, fontSize:11}} className="dim">
-                <input className="field-input" style={{padding:'4px 8px'}} value={g.desc}
-                  onChange={e => update(i, 'desc', e.target.value)}/>
-              </td>
-              <td style={{padding:10, textAlign:'right'}}>
-                <button type="button" className="btn btn-small" onClick={() => remove(i)}
-                  style={{borderColor:'var(--danger)', color:'var(--danger)'}} disabled={g.id === "admin" || g.id === "guest"}>삭제</button>
-              </td>
-            </tr>
-          ))}
+          {grades.map((g, i) => {
+            const G = window.BGNJ_GUARD;
+            const rules = G?.call?.(() => window.BGNJ_GRADE_RULES_EFFECTIVE?.() || window.BGNJ_GRADE_RULES, {}) || {};
+            const rule = rules[g.id];
+            return (
+              <React.Fragment key={g.id}>
+                <tr style={{borderBottom: rule ? 'none' : '1px solid var(--line)'}}>
+                  <td style={{padding:10}}>
+                    <span className="grade-badge" style={{color: g.color}}>{g.label}</span>
+                  </td>
+                  <td className="mono gold" style={{padding:10}}>{g.id}</td>
+                  <td style={{padding:10}}>
+                    <input className="field-input" style={{padding:'4px 8px'}} value={g.label}
+                      onChange={e => update(i, 'label', e.target.value)}/>
+                  </td>
+                  <td style={{padding:10, textAlign:'right'}}>
+                    <input type="number" className="field-input" style={{padding:'4px 8px', width:80, textAlign:'right'}}
+                      value={g.level} onChange={e => update(i, 'level', e.target.value)}/>
+                  </td>
+                  <td style={{padding:10}}>
+                    <input type="color" className="field-input" style={{padding:0, width:60, height:30}}
+                      value={g.color} onChange={e => update(i, 'color', e.target.value)}/>
+                  </td>
+                  <td style={{padding:10, fontSize:11}} className="dim">
+                    <input className="field-input" style={{padding:'4px 8px'}} value={g.desc}
+                      onChange={e => update(i, 'desc', e.target.value)}/>
+                  </td>
+                  <td style={{padding:10, textAlign:'right'}}>
+                    <button type="button" className="btn btn-small" onClick={() => remove(i)}
+                      style={{borderColor:'var(--danger)', color:'var(--danger)'}} disabled={g.id === "admin" || g.id === "guest"}>삭제</button>
+                  </td>
+                </tr>
+                {rule && (
+                  <tr style={{borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
+                    <td colSpan={7} style={{padding:'8px 12px 12px'}}>
+                      <div className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--ink-3)', marginBottom:6}}>
+                        ↳ 자동 승급 기준 (모두 동시에 충족 시 {g.label}{`'`} 등급 자동 부여)
+                      </div>
+                      <div style={{display:'flex', flexWrap:'wrap', gap:6, fontFamily:'var(--font-mono)', fontSize:11}}>
+                        <PromoChip label="게시글" value={rule.posts} prefix="≥"/>
+                        <PromoChip label="댓글" value={rule.comments} prefix="≥"/>
+                        <PromoChip label="30일 방문" value={rule.visitsLast30Days} prefix="≥"/>
+                        <PromoChip label="가입 경과(일)" value={rule.daysSinceSignup} prefix="≥"/>
+                        <PromoChip label="받은 좋아요" value={rule.likesReceived} prefix="≥"/>
+                        <PromoChip label="활동일" value={rule.activeDays} prefix="≥"/>
+                        <PromoChip label="신고" value={rule.maxReports} prefix="<" tone="danger"/>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
         </tbody>
       </table>
 

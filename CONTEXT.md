@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.052.000 · 2026-05-01 (다크 모드 + OG 이미지 + KMS 라이브 토큰 카드)
+> **마지막 업데이트:** v00.053.000 · 2026-05-01 (다크 nav/sidebar 가독성 핫픽스 + 지도 stroke 강조 + 자동승급 기준 등급표 인라인 + OG 가벼움)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.052)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.053)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -207,6 +207,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.050** | 2026-05-01 | 관리자 사이드바 모바일 drawer + 회원등급 자동승급 7 조건 + 강등 알림 + BGNJ_VISITS |
 | **v00.051** | 2026-05-01 | 자동승급 룰 GUI 편집 (BGNJ_GRADE_RULES_EFFECTIVE) + bookmarks 키 제거 (storage v4) |
 | **v00.052** | 2026-05-01 | 다크 모드 토큰 (BGNJ_THEME · light/dark/auto) + OG 이미지 SVG fallback + KMS 라이브 토큰 카드 |
+| **v00.053** | 2026-05-01 | 다크 nav/sidebar/footer 가독성 핫픽스 + KoreaMap stroke 강조 + 자동승급 기준 등급표 인라인 + OG 로고-only |
 
 ---
 
@@ -231,16 +232,21 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 7. 다음 사이클 (v00.053) 후보
+## 7. 다음 사이클 (v00.054 / v00.055) 후보
 
-우선순위 정렬:
+**v00.054 (큰 단위 — 사용자 요청 분리):**
+1. **관리자 히어로 편집 탭** (사용자 요청) — admin 콘솔에 신규 탭 추가. 히어로의 각 항목(eyebrow/title1-3/subtitle/CTA primary/secondary/mapHint) 인라인 편집 + **스타일 트윗** (폰트 크기/굵기/정렬/컬러/spacing 등). site_content_kv.hero 와 site_content_kv.heroStyle 분리 저장.
 
-1. **서버 endpoint reportCount/likesReceived 정확화 (워커 배포 동반)** — 현재 클라이언트 best-effort 합산. `/api/users/:id/metrics` 에서 D1 쿼리로 정확 계산 → BGNJ_GRADE_PROMO.metrics 가 prefer.
-2. **legacy 키 점진 마이그레이션** — 우선순위: `reports` (admin Report 패널) → `comments` (서버 BGNJ_API.community.comments 일원화). bookmarks 는 v00.051 에 완료.
-3. **다크 모드 인라인 hex 정합** — 토큰 기반 컴포넌트는 v00.052 다크 모드에서 자동 정합되지만 HomePage/AdminPage/모달 일부에 인라인 hex 가 남아 정합 어긋남. KMS 라이브 토큰 카드로 발견된 drift 부터 정리.
-4. **관리자 OG 이미지 업로드 UI 명시화** — 현재 site_content_kv.og.imageDataUri 로 저장 가능하지만 admin UI 에 명시 카드 없음. PNG 업로드 + 미리보기 카드 추가.
-5. **추가 룰** — `unused import` (간단 정규식 가능) / 큰 파일 줄 수 limit / `===` 강제(`==` 금지).
-6. **HTTPS / SSL 도입** — 현재 http://bgnj.net. og:image dataURI 가 일부 크롤러에서 거부될 수 있어 정적 PNG + https 호스팅 필요.
+**v00.055 (의존성 점검 — 사용자 요청):**
+2. **플러그인 업데이트** (사용자 요청) — Wrangler / @babel/standalone / React UMD / Tiptap ESM / @babel/parser 의존성 최신 확인 + 호환성 테스트 + 보안 advisory 검토. Wrangler 는 사용자 wrangler deploy 직전 npm install 권장.
+
+**일반 후보 (우선순위 정렬):**
+3. **서버 endpoint reportCount/likesReceived 정확화 (워커 배포 동반)** — 현재 클라이언트 best-effort 합산. `/api/users/:id/metrics` 에서 D1 쿼리로 정확 계산 → BGNJ_GRADE_PROMO.metrics 가 prefer.
+4. **legacy 키 점진 마이그레이션** — 우선순위: `reports` (admin Report 패널) → `comments` (서버 BGNJ_API.community.comments 일원화). bookmarks 는 v00.051 에 완료.
+5. **다크 모드 인라인 hex 정합 (잔존부)** — v00.053 에서 nav/sidebar/footer/지도 정합 완료. 그 외 HomePage/AdminPage 모달에 잔존하는 인라인 hex 점진 정리. KMS 라이브 카드로 drift 발견 시 우선.
+6. **관리자 OG 이미지 업로드 UI 명시화** — 현재 site_content_kv.og.imageDataUri 로 저장 가능하지만 admin UI 에 명시 카드 없음. PNG 업로드 + 미리보기 카드 추가.
+7. **추가 룰** — `unused import` (간단 정규식 가능) / 큰 파일 줄 수 limit / `===` 강제(`==` 금지).
+8. **HTTPS / SSL 도입** — 현재 http://bgnj.net. og:image dataURI 가 일부 크롤러에서 거부될 수 있어 정적 PNG + https 호스팅 필요.
 
 ---
 
