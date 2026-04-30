@@ -586,7 +586,9 @@ const handleLectureCreate = async (req, env) => {
   ).bind(
     id, body.title || "새 강연", body.topic || "", body.venue || "", body.host || "뱅기노자",
     body.next || "", body.startsAt || null,
-    Number(body.durationMinutes || 90), Number(body.capacity || 30), Number(body.price || 0),
+    Math.max(1, Number(body.durationMinutes) || 90),
+    Math.max(1, Number(body.capacity) || 30),
+    parsePrice(body),
     body.note || "", body.hidden ? 1 : 0,
   ).run();
   await auditWrite(env, admin.email, "lecture.create", `lecture:${id}`);
@@ -598,10 +600,13 @@ const handleLecturePatch = async (req, env, id) => {
   const body = await req.json().catch(() => ({}));
   const map = { title: "title", topic: "topic", venue: "venue", host: "host", next: "next",
     startsAt: "starts_at", durationMinutes: "duration_minutes", capacity: "capacity",
-    price: "price", note: "note", hidden: "hidden" };
+    note: "note", hidden: "hidden" };
   const fields = []; const args = [];
   for (const [k, col] of Object.entries(map)) {
     if (k in body) { fields.push(`${col} = ?`); args.push(k === "hidden" ? (body[k] ? 1 : 0) : body[k]); }
+  }
+  if ("price" in body || "priceNumber" in body) {
+    fields.push("price = ?"); args.push(parsePrice(body));
   }
   if (!fields.length) return { ok: true };
   fields.push("updated_at = ?"); args.push(nowIso(), id);
@@ -665,6 +670,17 @@ const handleTourGet = async (req, env, id) => {
   return { tour: tourRow(t), reservations: regs };
 };
 
+// 가격 필드 견고 파싱 — 클라이언트가 "80,000원" 같은 포맷팅 문자열을 보내도 안전하게 정수로 환산.
+// priceNumber 우선, 없으면 price 에서 숫자만 추출. NaN/null 모두 0 으로 폴백.
+const parsePrice = (body) => {
+  const raw = body.priceNumber != null ? body.priceNumber : body.price;
+  if (raw == null || raw === "") return 0;
+  if (typeof raw === "number") return Number.isFinite(raw) ? Math.max(0, Math.trunc(raw)) : 0;
+  const digits = String(raw).replace(/[^0-9]/g, "");
+  const n = digits ? parseInt(digits, 10) : 0;
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+};
+
 const handleTourCreate = async (req, env) => {
   const admin = await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
@@ -675,7 +691,9 @@ const handleTourCreate = async (req, env) => {
   ).bind(
     id, body.title || "새 투어", body.desc || "", body.duration || "",
     body.group || "", body.level || "", body.next || "", body.startsAt || null,
-    Number(body.durationMinutes || 240), Number(body.capacity || 8), Number(body.price || 0),
+    Math.max(1, Number(body.durationMinutes) || 240),
+    Math.max(1, Number(body.capacity) || 8),
+    parsePrice(body),
     body.hidden ? 1 : 0,
   ).run();
   await auditWrite(env, admin.email, "tour.create", `tour:${id}`);
@@ -687,10 +705,14 @@ const handleTourPatch = async (req, env, id) => {
   const body = await req.json().catch(() => ({}));
   const map = { title: "title", desc: "description", duration: "duration", group: "group_size",
     level: "level", next: "next", startsAt: "starts_at", durationMinutes: "duration_minutes",
-    capacity: "capacity", price: "price", hidden: "hidden" };
+    capacity: "capacity", hidden: "hidden" };
   const fields = []; const args = [];
   for (const [k, col] of Object.entries(map)) {
     if (k in body) { fields.push(`${col} = ?`); args.push(k === "hidden" ? (body[k] ? 1 : 0) : body[k]); }
+  }
+  // price 필드는 별도 파싱 (포맷팅 문자열 안전 처리)
+  if ("price" in body || "priceNumber" in body) {
+    fields.push("price = ?"); args.push(parsePrice(body));
   }
   if (!fields.length) return { ok: true };
   fields.push("updated_at = ?"); args.push(nowIso(), id);

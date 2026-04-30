@@ -113,7 +113,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-weight: 400; letter-spacing: -0.01em; }
+html, body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-weight: 500; letter-spacing: -0.01em; }
 body { min-height: 100vh; overflow-x: hidden; }
 a { color: inherit; text-decoration: none; }
 a:hover, a:focus-visible { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 4px; }
@@ -632,14 +632,12 @@ main time, main .section-eyebrow {
   cursor: pointer;
 }
 .brand-mark {
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--gold);
-  position: relative;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
 }
-.brand-mark svg { width: 26px; height: 26px; }
+.brand-mark svg { width: 36px; height: 36px; }
 .brand-name {
   font-family: var(--font-serif);
   font-size: 20px;
@@ -661,9 +659,10 @@ main time, main .section-eyebrow {
   align-items: center;
 }
 .nav-link {
-  font-size: 13px;
-  letter-spacing: 0.05em;
-  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink);
   padding: 10px 4px;
   position: relative;
   cursor: pointer;
@@ -672,8 +671,8 @@ main time, main .section-eyebrow {
   border: none;
   font-family: inherit;
 }
-.nav-link:hover { color: var(--ink); }
-.nav-link.active, .nav-link[aria-current="page"] { color: var(--ink); font-weight: 500; }
+.nav-link:hover { color: var(--secondary); }
+.nav-link.active, .nav-link[aria-current="page"] { color: var(--ink); font-weight: 700; }
 .nav-link.active::after, .nav-link[aria-current="page"]::after {
   content: "";
   position: absolute;
@@ -726,8 +725,9 @@ main time, main .section-eyebrow {
 .section-eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.35em;
-  color: var(--ink-3);
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  color: var(--ink-2);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -822,9 +822,10 @@ main time, main .section-eyebrow {
 .field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
 .field-label {
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--ink-2);
   text-transform: uppercase;
 }
 .field-input {
@@ -884,11 +885,13 @@ main time, main .section-eyebrow {
 .footer h4 {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.25em;
-  color: var(--ink-3);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--ink-2);
   margin-bottom: 20px;
   text-transform: uppercase;
 }
+.footer li { font-weight: 500; }
 .footer li { list-style: none; font-size: 13px; margin-bottom: 10px; }
 .footer li button, .footer li a, .footer li span {
   color: var(--ink-2);

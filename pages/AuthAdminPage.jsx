@@ -468,6 +468,24 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.042.000",
+    date: "2026-04-30",
+    summary: "P0 일괄 정비 — 투어 생성 NOT NULL 오류 수정 + 페이지별 에러바운더리 + 홈 깡통 데이터 정리 + '뱅기노자 추천' 관리자 패널 신설 + 여행지 탐색 모달화 + 로고 박스 제거 + 본문/사이드바 가독성 강화 (글자 두께 500, weight 600 라벨).",
+    details: [
+      "🩹 투어/강연 NOT NULL 오류 수정 — 클라이언트가 'price: \"80,000원\"' 같은 포맷팅 문자열을 보내고 서버는 Number(body.price) 로 파싱하다 NaN→null→tours.price NOT NULL 위반. 서버에 parsePrice() 도입(priceNumber 우선, 문자열 숫자만 추출, 폴백 0). 클라이언트 addNewTour/saveEdit/샘플 모두 정수만 전송. addNewTour/startEdit 에 null 가드 추가 (생성 실패 후 'Cannot read properties of null reading startsAt' 차단).",
+      "🛡 페이지 에러바운더리 — index.html 에 PageErrorBoundary class 추가, App switch 가 window 에서 컴포넌트를 defensive 하게 lookup. 한 페이지 컴포넌트가 누락/오류여도 전역 트리는 살아있고, 사용자에게 '다시 시도/홈으로/새로고침' 회복 버튼 제공. route key prop 으로 라우트 변경 시 자동 reset. 오류는 BGNJ_API.errorLog 로 자동 보고.",
+      "🧹 홈 깡통 데이터 정리 — HomePage 의 하드코딩 FEATURED_DESTINATIONS(궁/탑/한 placeholder 카드) 섹션 제거. data.js BGNJ_COLUMNS.listPublic 의 시드(BANGINOJA_DATA.columns) 폴백 제거 — 실제 작성된 칼럼만 노출. tours/lectures 도 시드 폴백 없이 BGNJ_TOURS/BGNJ_LECTURES.listAll() 만 사용. 데이터 없는 섹션은 렌더 자체를 안 함.",
+      "📌 '뱅기노자 추천' 관리자 패널 신설 — 콘텐츠 그룹에 '추천 여행지' 탭 추가. region/name/subtitle/desc/tags(쉼표 구분)/이미지 업로드 + 순서 변경 + 삭제 + 일괄 저장. site_content_kv 의 'recommendations' 키에 배열로 저장 (BGNJ_SITE_CONTENT v2 array merge 지원). 비어있으면 홈에 섹션 미노출.",
+      "🗺 여행지 탐색 모달화 — 히어로 우측 인라인 지도 → '지도에서 여행지 찾기' 버튼 + 모달. ESC 키로 닫힘, 외부 클릭으로 닫힘, body scroll lock. 모달 안에서 시도 클릭 → 지역 정보 + '이 지역 투어 보기' CTA.",
+      "🪪 로고 박스 제거 — .brand-mark 의 1px gold border 삭제, SVG 로고 자체가 둥근 사각형 컨테이너이므로 외곽선이 시각적 충돌 발생. 마크 크기 38→40px, SVG 26→36px 로 가시성 보강.",
+      "🔤 폰트 가독성 강화 — html/body weight 400 → 500 (Korean 본문 가독성). .nav-link 13→14px / weight 500 / color ink-3→ink. .section-eyebrow weight 600 + color ink-3→ink-2. .field-label / .footer h4 weight 600 + color ink-3→ink-2. Admin 사이드바 그룹 헤더 9px→11px / weight 700 / color ink-3→ink. 사이드바 항목 13→14px / weight 500 (active 700).",
+      "🧰 BGNJ_SITE_CONTENT v2 — get() / saveSection() 가 Array 형 섹션을 인식. 배열은 통째 교체(병합 X), 객체는 기존처럼 patch merge. recommendations 같은 새 배열 섹션 추가에 활용.",
+      "🪵 워커 lectures.price 도 parsePrice 동일 적용 — 같은 NaN→null 문제가 강연에도 잠재되어 있던 것을 선제 차단.",
+      "📦 cache-buster — `?v=00.042.000`.",
+    ],
+    context: "사용자 피드백 5건 + 추가 2건 한 묶음 처리: ① 여행지 탐색 모달화 ② 로고 박스 테두리 삭제 ③ 메뉴 글씨 가독성 ④ 투어 추가 NOT NULL 오류 + 홈 깡통 데이터 ⑤ 글자 두께 ⑥ '뱅기노자 추천' 관리자 패널 ⑦ 일부 페이지 렌더 오류. 핵심은 (1) NOT NULL 위반의 진짜 원인이 클라이언트가 포맷팅된 문자열을 가격 필드로 보내고 있었던 점 — 서버 파싱을 견고하게 만들고 클라이언트도 숫자만 보내게 정합. (2) 한 페이지 오류가 전체 트리를 깨뜨리던 패턴을 PageErrorBoundary 로 격리. 다음 사이클: ① 추천 여행지 카드 클릭 시 모달 안에서 상세 정보 ② 추천 항목 검색/필터 ③ 워커 endpoint 단위 테스트 ④ 모바일 메뉴 항목 클릭 시 햄버거 자동 닫힘 (이미 구현되어 있지만 검증 필요).",
+  },
+  {
     version: "00.041.000",
     date: "2026-04-29",
     summary: "📱 모바일 최적화 + 🔤 WCAG 폰트 가독성 + 🗺 지도 라벨 기본 숨김. 햄버거 메뉴 도입(≤900px), 폰 최적화 브레이크포인트(≤600px) 신설, 본문 weight 300→400, 한국 지도 시도명은 호버/선택 시에만 노출.",
@@ -2889,6 +2907,7 @@ const TourAdminPanel = ({ go }) => {
   }, [tours.length]);
 
   const startEdit = (t) => {
+    if (!t) return; // 생성 실패/null 방어
     const startsAtLocal = (() => {
       if (!t.startsAt) return '';
       const d = new Date(t.startsAt);
@@ -2926,36 +2945,43 @@ const TourAdminPanel = ({ go }) => {
       durationMinutes: Number(draft.durationMinutes) || 180,
       capacity: Number(draft.capacity) || tour.capacity,
       priceNumber: Number(draft.priceNumber) || 0,
-      price: `${(Number(draft.priceNumber) || 0).toLocaleString()}원`,
+      price: Number(draft.priceNumber) || 0,
       desc: draft.desc,
     });
     setEditingId(null);
     refresh();
   };
 
-  const addNewTour = () => {
+  const addNewTour = async () => {
     const id = `tour-${Date.now()}`;
     const now = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // +2주
     const pad = (n) => String(n).padStart(2, '0');
     const startsAt = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T10:00:00+09:00`;
     const next = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} 10:00`;
-    window.BGNJ_TOURS.saveTour({
-      id,
-      title: '새 답사 — 부제',
-      level: '입문',
-      duration: '3시간',
-      group: '12인 이하',
-      next,
-      startsAt,
-      durationMinutes: 180,
-      capacity: 12,
-      priceNumber: 80000,
-      price: '80,000원',
-      desc: '답사 안내를 입력하세요.',
-    });
-    window.BGNJ_AUDIT?.log({ action: 'tour.create', target: `tour:${id}` });
-    refresh();
-    startEdit(window.BGNJ_TOURS.getTour(id));
+    try {
+      // 서버는 priceNumber 우선, price 는 폴백 (parsePrice). 포맷팅 문자열 대신 숫자만 보냄.
+      const tour = await window.BGNJ_TOURS.saveTour({
+        id,
+        title: '새 답사 — 부제',
+        level: '입문',
+        duration: '3시간',
+        group: '12인 이하',
+        next,
+        startsAt,
+        durationMinutes: 180,
+        capacity: 12,
+        priceNumber: 80000,
+        price: 80000,
+        desc: '답사 안내를 입력하세요.',
+      });
+      if (!tour) throw new Error('서버 응답 없음');
+      window.BGNJ_AUDIT?.log({ action: 'tour.create', target: `tour:${id}` });
+      refresh();
+      startEdit(tour);
+    } catch (err) {
+      alert('투어 생성 실패: ' + (err?.message || '알 수 없는 오류'));
+      refresh();
+    }
   };
 
   const removeTour = (id) => {
@@ -2997,7 +3023,7 @@ const TourAdminPanel = ({ go }) => {
                   title: sample.title, level: '입문', duration: `${Math.round(sample.durationMinutes/60)}시간`,
                   group: `소그룹 (최대 ${sample.capacity}명)`, next, startsAt,
                   durationMinutes: sample.durationMinutes, capacity: sample.capacity,
-                  priceNumber: sample.price, price: `${sample.price.toLocaleString()}원`,
+                  priceNumber: sample.price, price: sample.price,
                   desc: sample.desc, location: sample.location, host: sample.host,
                 });
               }
@@ -3855,6 +3881,161 @@ const FaqAdminPanel = () => {
 // === Site Content Panel ===========================================
 // 메뉴 라벨, 히어로/푸터 텍스트, 브랜드명, 로고/파비콘, OG 메타를 한 화면에서 편집한다.
 // 각 섹션은 독립 저장 — 한 섹션 저장이 다른 섹션 편집값을 잃게 하지 않는다.
+// === 추천 여행지 CRUD =====================================================
+// 저장소: site_content_kv 의 'recommendations' 키. 배열로 통째 저장 (BGNJ_SITE_CONTENT v2 array merge).
+// 운영: 관리자가 카드 형태로 region/name/subtitle/desc/tags/image 를 채우고 저장 → 홈 '뱅기노자 추천' 섹션에 즉시 반영.
+const RecommendationsAdminPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const items = React.useMemo(() => Array.isArray(sc.recommendations) ? sc.recommendations : [], [sc]);
+  const [draft, setDraft] = React.useState(items);
+  React.useEffect(() => { setDraft(items); }, [items.length, tick]);
+  const [msg, setMsg] = React.useState('');
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2000); };
+
+  const fileToDataUri = (file) => new Promise((resolve, reject) => {
+    if (!file) { resolve(''); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  const setItem = (idx, patch) => setDraft((arr) => arr.map((it, i) => i === idx ? { ...it, ...patch } : it));
+  const addItem = () => setDraft((arr) => [...arr, {
+    id: `rec-${Date.now()}`,
+    region: '', name: '', subtitle: '', desc: '',
+    tags: '', imageDataUri: '',
+  }]);
+  const removeItem = (idx) => {
+    if (!confirm('이 추천을 삭제할까요?')) return;
+    setDraft((arr) => arr.filter((_, i) => i !== idx));
+  };
+  const moveItem = (idx, dir) => {
+    setDraft((arr) => {
+      const next = arr.slice();
+      const j = idx + dir;
+      if (j < 0 || j >= next.length) return next;
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return next;
+    });
+  };
+  const onPickImage = async (idx, e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      return;
+    }
+    const dataUri = await fileToDataUri(file);
+    setItem(idx, { imageDataUri: dataUri });
+  };
+
+  const save = async () => {
+    // 빈 항목 제거 + 정규화
+    const cleaned = draft
+      .map((it) => ({
+        id: it.id || `rec-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+        region: String(it.region || '').trim(),
+        name: String(it.name || '').trim(),
+        subtitle: String(it.subtitle || '').trim(),
+        desc: String(it.desc || '').trim(),
+        tags: String(it.tags || '').trim(),
+        imageDataUri: it.imageDataUri || '',
+      }))
+      .filter((it) => it.name); // 이름 없으면 제외
+    try {
+      await window.BGNJ_SITE_CONTENT.saveSection('recommendations', cleaned);
+      setTick((v) => v + 1);
+      flash(`${cleaned.length}개 추천이 저장되었습니다.`);
+    } catch (err) {
+      alert('저장 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
+  };
+
+  return (
+    <div style={{display:'grid', gap:18}}>
+      <div className="card" style={{padding:'14px 18px', background:'var(--bg-2)', borderLeft:'3px solid var(--primary-dim)'}}>
+        <p style={{fontSize:13, lineHeight:1.75, margin:0, color:'var(--ink-2)'}}>
+          ⓘ 홈페이지 <strong>뱅기노자 추천</strong> 섹션에 노출될 여행지를 관리합니다. 빈 배열이면 섹션이 노출되지 않습니다.
+          이미지는 1.5MB 이하 권장(가로형 사진이 카드에 잘 어울립니다). 태그는 쉼표(,) 또는 가운뎃점(·)으로 구분.
+        </p>
+      </div>
+
+      {msg && <div role="status" className="card" style={{padding:'10px 14px', background:'rgba(245,213,72,0.10)', border:'1px solid var(--primary-dim)', color:'var(--secondary)', fontSize:13}}>{msg}</div>}
+
+      {draft.length === 0 ? (
+        <div className="card" style={{padding:32, textAlign:'center', color:'var(--ink-2)'}}>
+          등록된 추천이 없습니다. 아래 버튼으로 첫 추천을 추가해 주세요.
+        </div>
+      ) : (
+        <div style={{display:'grid', gap:14}}>
+          {draft.map((it, idx) => (
+            <article key={it.id || idx} className="card" style={{padding:16, display:'grid', gridTemplateColumns:'120px 1fr auto', gap:16, alignItems:'flex-start'}}>
+              {/* 이미지 미리보기/업로드 */}
+              <div style={{display:'flex', flexDirection:'column', gap:6}}>
+                <div style={{
+                  width:120, height:90, border:'1px solid var(--line)',
+                  background: it.imageDataUri ? `url(${it.imageDataUri}) center/cover` : 'var(--bg-3)',
+                  display:'grid', placeItems:'center',
+                }}>
+                  {!it.imageDataUri && <span className="mono" style={{fontSize:9, color:'var(--ink-3)', letterSpacing:'0.18em'}}>NO IMAGE</span>}
+                </div>
+                <label className="btn btn-small" style={{cursor:'pointer', textAlign:'center'}}>
+                  업로드<input type="file" accept="image/*" style={{display:'none'}} onChange={(e) => onPickImage(idx, e)}/>
+                </label>
+                {it.imageDataUri && (
+                  <button type="button" className="btn-ghost" style={{fontSize:11, color:'var(--danger)'}} onClick={() => setItem(idx, { imageDataUri: '' })}>이미지 제거</button>
+                )}
+              </div>
+
+              {/* 폼 필드 */}
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}} className="member-act-grid">
+                <div className="field" style={{margin:0}}>
+                  <label className="field-label">지역 (예: 수도권)</label>
+                  <input className="field-input" value={it.region || ''} onChange={(e) => setItem(idx, { region: e.target.value })}/>
+                </div>
+                <div className="field" style={{margin:0}}>
+                  <label className="field-label">제목 (예: 서울)</label>
+                  <input className="field-input" value={it.name || ''} onChange={(e) => setItem(idx, { name: e.target.value })}/>
+                </div>
+                <div className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                  <label className="field-label">부제 (예: 궁궐과 골목의 도시)</label>
+                  <input className="field-input" value={it.subtitle || ''} onChange={(e) => setItem(idx, { subtitle: e.target.value })}/>
+                </div>
+                <div className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                  <label className="field-label">설명</label>
+                  <textarea className="field-input" rows={2} value={it.desc || ''} onChange={(e) => setItem(idx, { desc: e.target.value })}/>
+                </div>
+                <div className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                  <label className="field-label">태그 (쉼표 또는 가운뎃점으로 구분 — 예: 궁궐, 한옥, 역사)</label>
+                  <input className="field-input" value={it.tags || ''} onChange={(e) => setItem(idx, { tags: e.target.value })}/>
+                </div>
+              </div>
+
+              {/* 우측: 순서 / 삭제 */}
+              <div style={{display:'flex', flexDirection:'column', gap:6, alignItems:'stretch'}}>
+                <button type="button" className="btn btn-small" disabled={idx === 0} onClick={() => moveItem(idx, -1)} aria-label="위로">↑</button>
+                <button type="button" className="btn btn-small" disabled={idx === draft.length - 1} onClick={() => moveItem(idx, +1)} aria-label="아래로">↓</button>
+                <button type="button" className="btn btn-small" style={{color:'var(--danger)', borderColor:'var(--danger)'}} onClick={() => removeItem(idx)}>삭제</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <div style={{display:'flex', gap:10, justifyContent:'space-between', alignItems:'center', flexWrap:'wrap'}}>
+        <button type="button" className="btn" onClick={addItem}>＋ 새 추천 추가</button>
+        <div style={{display:'flex', gap:8}}>
+          <button type="button" className="btn btn-small" onClick={() => setDraft(items)}>변경 취소</button>
+          <button type="button" className="btn btn-gold" onClick={save}>전체 저장 ({draft.length}개)</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SiteContentAdminPanel = () => {
   const [tick, setTick] = React.useState(0);
   const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
@@ -5429,7 +5610,7 @@ const AdminPage = ({ go }) => {
   // 7개 대카테고리: 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리
   const tabGroups = [
     { group: "요약",          items: ["대시보드"] },
-    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성"] },
+    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성", "추천 여행지"] },
     { group: "회원관리",      items: ["회원", "회원 등급"] },
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
     { group: "운영설정",      items: ["사이트 콘텐츠", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
@@ -5516,7 +5697,7 @@ const AdminPage = ({ go }) => {
         </div>
         {tabGroups.map(grp => (
           <div key={grp.group} style={{padding:'14px 0'}}>
-            <div className="mono" style={{fontSize:9, letterSpacing:'0.25em', color:'var(--ink-3)', padding:'0 24px 8px'}}>
+            <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.22em', color:'var(--ink)', padding:'0 24px 10px'}}>
               {grp.group.toUpperCase()}
             </div>
             <ul role="list" style={{listStyle:'none', margin:0, padding:0}}>
@@ -5528,12 +5709,13 @@ const AdminPage = ({ go }) => {
                     aria-current={tab === t ? "page" : undefined}
                     style={{
                       width:'100%', textAlign:'left',
-                      padding:'10px 24px',
-                      fontSize:13,
-                      background: tab === t ? 'rgba(245,213,72,0.06)' : 'transparent',
-                      color: tab === t ? 'var(--gold)' : 'var(--ink-2)',
-                      borderLeft: tab === t ? '2px solid var(--gold)' : '2px solid transparent',
-                      letterSpacing:'0.03em',
+                      padding:'11px 24px',
+                      fontSize:14,
+                      fontWeight: tab === t ? 700 : 500,
+                      background: tab === t ? 'rgba(245,213,72,0.10)' : 'transparent',
+                      color: tab === t ? 'var(--secondary)' : 'var(--ink)',
+                      borderLeft: tab === t ? '3px solid var(--primary)' : '3px solid transparent',
+                      letterSpacing:'0.01em',
                     }}>{t}</button>
                 </li>
               ))}
@@ -6369,6 +6551,7 @@ const AdminPage = ({ go }) => {
           </>
         )}
 
+        {tab === "추천 여행지" && <RecommendationsAdminPanel/>}
         {/* 카테고리 CRUD */}
         {tab === "사이트 콘텐츠" && <SiteContentAdminPanel/>}
         {tab === "카테고리" && <AdminCategoryPanel/>}
@@ -7074,4 +7257,4 @@ const AdminDenied = ({ go, user }) => (
   </div>
 );
 
-Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel, AuditLogPanel, ErrorLogPanel, SEOAdminPanel, SiteContentAdminPanel });
+Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel, AuditLogPanel, ErrorLogPanel, SEOAdminPanel, SiteContentAdminPanel, RecommendationsAdminPanel });

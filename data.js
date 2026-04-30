@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.041.001",
+  version: "00.042.000",
   build: "2026.04.29",
   channel: "preview",
 };
@@ -257,6 +257,9 @@ const DEFAULT_SITE_CONTENT = {
     phoneHref: "tel:+82-2-0000-0000",
     address: "서울특별시",
   },
+  // 뱅기노자 추천 여행지 — 관리자가 직접 추가/편집 (KMS 사이트 콘텐츠 패널). 빈 배열이면 홈에 섹션 미노출.
+  // 각 항목: { id, region, name, subtitle, desc, tags(string|array), imageDataUri }
+  recommendations: [],
 };
 
 // 게시판 분류 — 각 카테고리에 최소 등급(minLevel) 지정 시 접근 제한
@@ -1053,10 +1056,10 @@ window.BGNJ_COLUMNS = {
     } catch { return 0; }
   },
   listAll() { return this._columns.slice(); },
+  // 운영 정책: 시드(BANGINOJA_DATA.columns) 는 더 이상 listPublic 에 섞지 않는다 — 홈에 깡통 콘텐츠 노출 금지.
+  // 실제 작성된 칼럼만 노출. getColumn 단건 조회는 seed 호환을 위해 폴백 유지.
   listPublic() {
-    const userPub = this._columns.filter((c) => (c.status || 'published') === 'published');
-    const seed = (window.BANGINOJA_DATA?.columns || []).map((c) => ({ ...c, status: 'published' }));
-    return [...userPub, ...seed];
+    return this._columns.filter((c) => (c.status || 'published') === 'published');
   },
   getColumn(id) {
     const fromUser = this._columns.find((c) => String(c.id) === String(id));
@@ -1870,13 +1873,29 @@ window.BGNJ_SITE_CONTENT = {
     const stored = this._cache || {};
     const merged = {};
     for (const key of Object.keys(DEFAULT_SITE_CONTENT)) {
-      merged[key] = { ...DEFAULT_SITE_CONTENT[key], ...((stored[key] && typeof stored[key] === 'object') ? stored[key] : {}) };
+      const def = DEFAULT_SITE_CONTENT[key];
+      const sv = stored[key];
+      if (Array.isArray(def)) {
+        // 배열형 섹션(예: recommendations) — 통째로 교체. 잘못된 형태는 기본값 폴백.
+        merged[key] = Array.isArray(sv) ? sv : def;
+      } else if (def && typeof def === 'object') {
+        merged[key] = { ...def, ...((sv && typeof sv === 'object' && !Array.isArray(sv)) ? sv : {}) };
+      } else {
+        merged[key] = sv !== undefined ? sv : def;
+      }
     }
     return merged;
   },
-  async saveSection(section, patch) {
-    const cur = this._cache[section] || {};
-    const data = { ...cur, ...patch };
+  async saveSection(section, value) {
+    const def = DEFAULT_SITE_CONTENT[section];
+    let data;
+    if (Array.isArray(def)) {
+      // 배열 섹션은 patch merge 가 의미 없음 — value 가 배열이면 통째로 교체.
+      data = Array.isArray(value) ? value.slice() : [];
+    } else {
+      const cur = (this._cache[section] && typeof this._cache[section] === 'object' && !Array.isArray(this._cache[section])) ? this._cache[section] : {};
+      data = { ...cur, ...value };
+    }
     await window.BGNJ_API.siteContent.saveSection(section, data);
     this._cache = { ...this._cache, [section]: data };
     this.applyHead();
