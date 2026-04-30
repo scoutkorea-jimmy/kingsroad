@@ -78,6 +78,87 @@ const DestinationMapModal = ({ onClose, go }) => {
   );
 };
 
+// 추천 여행지 상세 모달 — 카드 클릭 시 더 큰 이미지 + 전체 설명 + 태그 + 투어 보기 CTA.
+const RecommendationDetailModal = ({ rec, onClose, go }) => {
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+  const tags = Array.isArray(rec.tags)
+    ? rec.tags
+    : (typeof rec.tags === 'string' ? rec.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : []);
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`${rec.name || '추천'} 상세`}
+      style={{
+        position:'fixed', inset:0, zIndex:200,
+        background:'rgba(15,23,42,0.55)',
+        display:'grid', placeItems:'center', padding:20,
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{
+        background:'var(--bg)', maxWidth:720, width:'100%', maxHeight:'92vh',
+        overflow:'auto', position:'relative',
+        border:'1px solid var(--line)',
+      }}>
+        <button onClick={onClose} aria-label="닫기"
+          style={{
+            position:'absolute', top:14, right:14, zIndex:2,
+            width:36, height:36, fontSize:24,
+            background:'rgba(255,255,255,0.92)', border:'1px solid var(--line)', cursor:'pointer',
+            color:'var(--ink)', lineHeight:1, fontWeight:600,
+          }}>×</button>
+        {rec.imageDataUri && (
+          <div style={{
+            width:'100%', height:280,
+            background: `url(${rec.imageDataUri}) center/cover`,
+            borderBottom:'1px solid var(--line)',
+          }}/>
+        )}
+        <div style={{padding:'28px 28px 24px'}}>
+          {rec.region && (
+            <div style={{
+              display:'inline-block', padding:'4px 10px',
+              fontFamily:'var(--font-mono)', fontSize:10, fontWeight:600,
+              letterSpacing:'0.18em', color:'var(--ink-2)',
+              border:'1px solid var(--line-2)', marginBottom:14,
+            }}>{rec.region}</div>
+          )}
+          <h2 style={{
+            fontFamily:'var(--font-serif)', fontSize:32, fontWeight:700,
+            color:'var(--ink)', lineHeight:1.2, marginBottom:8,
+          }}>{rec.name || '제목 없음'}</h2>
+          {rec.subtitle && (
+            <div style={{
+              fontFamily:'var(--font-mono)', fontSize:13, fontWeight:600,
+              color:'var(--secondary)', letterSpacing:'0.04em', marginBottom:18,
+            }}>{rec.subtitle}</div>
+          )}
+          {rec.desc && (
+            <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:22}}>{rec.desc}</p>
+          )}
+          {tags.length > 0 && (
+            <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:22}}>
+              {tags.map((t) => (
+                <span key={t} className="badge" style={{fontSize:10}}>{t}</span>
+              ))}
+            </div>
+          )}
+          <div style={{display:'flex', gap:10, flexWrap:'wrap', borderTop:'1px solid var(--line)', paddingTop:18}}>
+            <button className="btn btn-gold" onClick={() => { go('tour'); onClose(); }}>이 지역 투어 보기 →</button>
+            <button className="btn" onClick={onClose}>닫기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const HomePage = ({ go }) => {
   const [mapOpen, setMapOpen] = React.useState(false);
   const [scTick, setScTick] = React.useState(0);
@@ -101,6 +182,7 @@ const HomePage = ({ go }) => {
   const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);
   const hero = sc.hero || {};
   const recommendations = Array.isArray(sc.recommendations) ? sc.recommendations.filter(Boolean) : [];
+  const [recDetail, setRecDetail] = React.useState(null);
 
   // 실데이터만 — 시드 폴백 제거
   const publicColumns = React.useMemo(
@@ -139,6 +221,7 @@ const HomePage = ({ go }) => {
   return (
     <div>
       {mapOpen && <DestinationMapModal onClose={() => setMapOpen(false)} go={go}/>}
+      {recDetail && <RecommendationDetailModal rec={recDetail} onClose={() => setRecDetail(null)} go={go}/>}
 
       {/* ── HERO (단일 컬럼, 가운데 정렬) ───────────────────────────── */}
       <section style={{
@@ -220,7 +303,7 @@ const HomePage = ({ go }) => {
                 return (
                   <article key={r.id || r.name}
                     className="card"
-                    {...clickable(() => go('tour'), `${r.name || '추천'} 추천`)}
+                    {...clickable(() => setRecDetail(r), `${r.name || '추천'} 상세 보기`)}
                     style={{cursor:'pointer'}}>
                     <div style={{
                       height:160, marginBottom:18, position:'relative', overflow:'hidden',

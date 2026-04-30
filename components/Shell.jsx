@@ -265,6 +265,21 @@ const Nav = ({ route, go, user, onLogout }) => {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   // 라우트 변경 시 모바일 메뉴 자동 닫힘
   React.useEffect(() => { setMobileOpen(false); }, [route]);
+  // 모바일 메뉴 열림 시: Escape 닫기 + body scroll lock + viewport 확대 시 자동 닫힘
+  React.useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setMobileOpen(false); };
+    const onResize = () => { if (window.innerWidth > 900) setMobileOpen(false); };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('resize', onResize);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
   // 놀자 메가메뉴 자식 (의식주: 먹고/자고/사고). "놀자" 자체 클릭 시 첫 항목으로 진입.
   const playChildren = [
     { key: "eat",   label: navL.eat   || "먹고 놀자",  desc: "식 食 — 한정식·향토음식·시장" },

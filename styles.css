@@ -590,7 +590,9 @@ main time, main .section-eyebrow {
 /* ---- Typography utilities ---- */
 .ko-serif { font-family: var(--font-serif); }
 .ko-sans { font-family: var(--font-sans); }
-.mono { font-family: var(--font-mono); }
+.mono { font-family: var(--font-mono); font-weight: 500; }
+/* 작은 메타 텍스트는 가독성 보강 위해 weight 600 — IBM Plex Mono 의 가는 weight 가 한글에서 너무 얇게 보임 */
+.mono.dim-2 { font-weight: 600; }
 
 .gold { color: var(--gold); }
 .gold-2 { color: var(--gold-2); }

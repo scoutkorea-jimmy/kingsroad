@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.042.001">
+<link rel="stylesheet" href="styles.css?v=00.043.000">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -78,22 +78,22 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script src="api.js?v=00.042.001"></script>
-<script src="data.js?v=00.042.001"></script>
-<script src="components/KoreaMapData.js?v=00.042.001"></script>
-<script type="text/babel" src="components/KoreaMap.jsx?v=00.042.001"></script>
-<script type="text/babel" src="components/Shell.jsx?v=00.042.001"></script>
-<script type="text/babel" src="components/TiptapEditor.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/HomePage.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/CommunityPage.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/ColumnPage.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/EatSleepShopPages.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/LecturesPage.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.042.001"></script>
-<script type="text/babel" src="pages/MyPage.jsx?v=00.042.001"></script>
+<script src="api.js?v=00.043.000"></script>
+<script src="data.js?v=00.043.000"></script>
+<script src="components/KoreaMapData.js?v=00.043.000"></script>
+<script type="text/babel" src="components/KoreaMap.jsx?v=00.043.000"></script>
+<script type="text/babel" src="components/Shell.jsx?v=00.043.000"></script>
+<script type="text/babel" src="components/TiptapEditor.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/HomePage.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/CommunityPage.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/ColumnPage.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/EatSleepShopPages.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/LecturesPage.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.043.000"></script>
+<script type="text/babel" src="pages/MyPage.jsx?v=00.043.000"></script>
 
 <script type="text/babel">
 // 전체 앱 에러 바운더리 — 흰 화면 방지 + 정확한 진단 정보 노출.
@@ -413,6 +413,47 @@ const App = () => {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
+
+  // 라우트별 document.title — 북마크 / 공유 / 탭 라벨 의미화.
+  // 사이트 콘텐츠(브랜드명/OG)도 변경 시 같이 갱신.
+  React.useEffect(() => {
+    const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+    const brand = sc.brand?.name || '뱅기노자';
+    const tagline = sc.og?.title || '뱅기 타고 한국을 느끼다';
+    const ROUTE_TITLES = {
+      home: tagline,
+      eat: '먹고 놀자',
+      sleep: '자고 놀자',
+      shop: '사고 놀자',
+      tour: '투어 프로그램',
+      lectures: '강연',
+      column: '뱅기노자 칼럼',
+      community: '커뮤니티',
+      book: '뱅기노자의 길',
+      checkout: '결제',
+      mypage: '마이페이지',
+      admin: '관리자',
+      login: '로그인',
+      signup: '회원가입',
+      faq: '자주 묻는 질문',
+      privacy: '개인정보 처리방침',
+      terms: '이용약관',
+    };
+    const seg = ROUTE_TITLES[route] || '';
+    const title = route === 'home' ? `${brand} — ${tagline}` : `${seg} — ${brand}`;
+    try { document.title = title; } catch {}
+    // route 변경 시 사이트 콘텐츠 refresh 이벤트도 listen — 브랜드명/태그라인 바뀌면 즉시 반영.
+    const onScRefresh = () => {
+      const sc2 = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const b2 = sc2.brand?.name || '뱅기노자';
+      const t2 = sc2.og?.title || '뱅기 타고 한국을 느끼다';
+      const s = ROUTE_TITLES[route] || '';
+      const newTitle = route === 'home' ? `${b2} — ${t2}` : `${s} — ${b2}`;
+      try { document.title = newTitle; } catch {}
+    };
+    window.addEventListener('bgnj-site-content-refresh', onScRefresh);
+    return () => window.removeEventListener('bgnj-site-content-refresh', onScRefresh);
+  }, [route]);
 
   const logout = () => {
     window.BGNJ_AUTH.signOut();

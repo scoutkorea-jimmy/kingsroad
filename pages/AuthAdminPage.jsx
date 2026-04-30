@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.043.000",
+    date: "2026-04-30",
+    summary: "📌 추천 카드 상세 모달 + 🪪 라우트별 document.title + 📱 모바일 메뉴 Esc·scroll lock + 🔤 메타 텍스트 가독성. v00.042.001 핫픽스(WangsanamTourPage 누락된 </div>) 이후 차근차근 polish 사이클.",
+    details: [
+      "📌 RecommendationDetailModal 신설 — 추천 카드 클릭 시 /tour 로 이동하지 않고 모달로 상세 정보(280px 이미지 + 큰 제목/부제 + 본문 + 태그 + '이 지역 투어 보기' CTA). ESC 닫기 + 외부클릭 닫기 + body scroll lock.",
+      "🪪 라우트별 document.title — App 에 useEffect([route]) 추가. ROUTE_TITLES 매핑(home/eat/sleep/shop/tour/lectures/column/community/book/checkout/mypage/admin/login/signup/faq/privacy/terms). 형식 — 홈은 '뱅기노자 — 뱅기 타고 한국을 느끼다', 그 외는 '<섹션명> — 뱅기노자'. site_content_kv 의 brand.name / og.title 변경 시에도 동기화.",
+      "📱 모바일 메뉴 강화 — 햄버거 열림 시 Escape 키로 닫힘 + body scroll lock + viewport > 900px 으로 확대되면 자동 닫힘. 라우트 변경 자동 닫힘은 v00.041 부터 이미 적용.",
+      "🔤 메타 텍스트 가독성 — `.mono` 기본 weight 500, `.mono.dim-2` 600. IBM Plex Mono 의 가는 weight 가 한글 보조에서 너무 얇게 보이던 문제 해소. KMS 도파, 푸터 메타, 카드 메타 모두 보강.",
+      "🩹 (v00.042.001 핫픽스) WangsanamTourPage.jsx 의 누락된 </div> 복구 — 결제 안내 블록 외곽 div 가 닫히지 않아 babel 컴파일 SyntaxError. 컴파일 실패 시 컴포넌트가 정의되지 않으므로 PageErrorBoundary 도 보호 못함. LecturesPage 의 동일 블록(line 350) 과 비교해 누락 발견 후 수정.",
+      "📦 cache-buster — `?v=00.043.000`.",
+    ],
+    context: "v00.042 의 다음 사이클 권장에 적어둔 polish 항목들과 사용자 추가 피드백(여전히 /tour 렌더 오류 — Babel 파서 SyntaxError 가 진짜 원인) 한 묶음 처리. 핵심 — Babel 컴파일 에러는 PageErrorBoundary 가 못 잡는다(컴포넌트 자체가 만들어지지 않아 ReferenceError). 이 패턴은 향후 컴파일 시점에 console 을 monitor 해 즉시 사용자에게 노출하는 헬퍼 도입을 검토. 다음 사이클: ① 모바일 메뉴 키보드 trap (focus loop) ② 추천 모달 위치 정보 / 지도 핀 ③ 작은 화면에서 admin sidebar collapse / drawer 화 ④ 다크 모드 토큰 / 토글.",
+  },
+  {
     version: "00.042.000",
     date: "2026-04-30",
     summary: "P0 일괄 정비 — 투어 생성 NOT NULL 오류 수정 + 페이지별 에러바운더리 + 홈 깡통 데이터 정리 + '뱅기노자 추천' 관리자 패널 신설 + 여행지 탐색 모달화 + 로고 박스 제거 + 본문/사이드바 가독성 강화 (글자 두께 500, weight 600 라벨).",
