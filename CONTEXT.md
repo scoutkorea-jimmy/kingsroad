@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.049.000 · 2026-05-01 · 커밋 `5f00270`
+> **마지막 업데이트:** v00.052.000 · 2026-05-01 (다크 모드 + OG 이미지 + KMS 라이브 토큰 카드)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.049)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.052)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -203,6 +203,10 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.047** | 2026-04-30 | `BANGINOJA_DATA` 시드 직접 참조 전면 폐지 + check-syntax 룰화 + CommunityPage 가드 통일 |
 | **v00.048** | 2026-04-30 | check-syntax 룰 다중화 + console.log 룰 추가 + BGNJ_STORES 26 키 4-태그 분류 문서화 |
 | **v00.049** | 2026-05-01 | dead 4 키 제거 + users 키 서버 일원화 + var/TODO 룰 추가 + storage v3-no-overrides 마이그레이션 |
+| **v00.049.001** | 2026-05-01 | 핫픽스 — AdminPage useMemo deps 의 잔존 `data` 식별자 제거 + CONTEXT.md 신설 |
+| **v00.050** | 2026-05-01 | 관리자 사이드바 모바일 drawer + 회원등급 자동승급 7 조건 + 강등 알림 + BGNJ_VISITS |
+| **v00.051** | 2026-05-01 | 자동승급 룰 GUI 편집 (BGNJ_GRADE_RULES_EFFECTIVE) + bookmarks 키 제거 (storage v4) |
+| **v00.052** | 2026-05-01 | 다크 모드 토큰 (BGNJ_THEME · light/dark/auto) + OG 이미지 SVG fallback + KMS 라이브 토큰 카드 |
 
 ---
 
@@ -227,16 +231,16 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 7. 다음 사이클 (v00.050) 후보
+## 7. 다음 사이클 (v00.053) 후보
 
 우선순위 정렬:
 
-1. **관리자 사이드바 모바일 drawer** — 현재 260px 고정 사이드바가 ≤600px 화면 절반 차지. ≤900 또는 ≤600 에서 햄버거 + drawer 슬라이드 패턴으로.
-2. **legacy 키 점진 마이그레이션** — 우선순위: `bookmarks` (북마크 동기화) → `reports` (admin Report 패널) → `comments` (서버 BGNJ_API.community.comments 일원화).
-3. **다크 모드 토큰 + 토글** — 현재 시맨틱 토큰의 dark variant 정의. body 또는 root 에 data-theme 속성 토글.
-4. **KMS 디자인 도파에 라이브 토큰 카드** — hex 표 + 실제 컴포넌트 스와치(.btn, .card, .pill 등) 한 화면에.
-5. **OG 이미지** — 현재 `<meta property="og:image" content="">` 비어있음. 카드 1장 추가 (Sunny Gold + 로고).
-6. **추가 룰** — `unused import` (간단 정규식 가능) / 큰 파일 줄 수 limit / `===` 강제(`==` 금지).
+1. **서버 endpoint reportCount/likesReceived 정확화 (워커 배포 동반)** — 현재 클라이언트 best-effort 합산. `/api/users/:id/metrics` 에서 D1 쿼리로 정확 계산 → BGNJ_GRADE_PROMO.metrics 가 prefer.
+2. **legacy 키 점진 마이그레이션** — 우선순위: `reports` (admin Report 패널) → `comments` (서버 BGNJ_API.community.comments 일원화). bookmarks 는 v00.051 에 완료.
+3. **다크 모드 인라인 hex 정합** — 토큰 기반 컴포넌트는 v00.052 다크 모드에서 자동 정합되지만 HomePage/AdminPage/모달 일부에 인라인 hex 가 남아 정합 어긋남. KMS 라이브 토큰 카드로 발견된 drift 부터 정리.
+4. **관리자 OG 이미지 업로드 UI 명시화** — 현재 site_content_kv.og.imageDataUri 로 저장 가능하지만 admin UI 에 명시 카드 없음. PNG 업로드 + 미리보기 카드 추가.
+5. **추가 룰** — `unused import` (간단 정규식 가능) / 큰 파일 줄 수 limit / `===` 강제(`==` 금지).
+6. **HTTPS / SSL 도입** — 현재 http://bgnj.net. og:image dataURI 가 일부 크롤러에서 거부될 수 있어 정적 PNG + https 호스팅 필요.
 
 ---
 

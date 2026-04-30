@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.051.000",
+  version: "00.052.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -42,6 +42,50 @@ window.BGNJ_GUARD = {
     catch { return fallback; }
   },
 };
+
+// === 테마 헬퍼 (BGNJ_THEME · v00.052) ====================================
+// localStorage(bgnj_theme) ∈ {auto, light, dark}. auto 면 prefers-color-scheme 에 위임.
+// <head> 의 인라인 부트 스크립트가 React mount 전에 data-theme 을 미리 적용 → FOUC 차단.
+// Shell.jsx Footer 의 토글 버튼이 cycle() 호출 → light→dark→auto→light 순환.
+window.BGNJ_THEME = {
+  KEY: 'bgnj_theme',
+  get() { try { return localStorage.getItem(this.KEY) || 'auto'; } catch { return 'auto'; } },
+  set(value) {
+    const v = (value === 'light' || value === 'dark') ? value : 'auto';
+    try { localStorage.setItem(this.KEY, v); } catch {}
+    this.apply();
+    return v;
+  },
+  cycle() {
+    const next = ({ auto: 'light', light: 'dark', dark: 'auto' })[this.get()] || 'auto';
+    return this.set(next);
+  },
+  effective() {
+    const v = this.get();
+    if (v === 'auto') {
+      try { return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'; }
+      catch { return 'light'; }
+    }
+    return v;
+  },
+  apply() {
+    try {
+      const eff = this.effective();
+      document.documentElement.setAttribute('data-theme', eff);
+      document.documentElement.style.colorScheme = eff;
+    } catch {}
+    try { window.dispatchEvent(new CustomEvent('bgnj-theme-change', { detail: { mode: this.get(), effective: this.effective() } })); } catch {}
+  },
+};
+try { window.BGNJ_THEME.apply(); } catch {}
+try {
+  const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq) {
+    const onChange = () => { if (window.BGNJ_THEME.get() === 'auto') window.BGNJ_THEME.apply(); };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+} catch {}
 
 // 진단용 헬스체크 헬퍼 — 콘솔에서 BGNJ_DIAG.run() 으로 즉시 실행 가능.
 window.BGNJ_DIAG = {

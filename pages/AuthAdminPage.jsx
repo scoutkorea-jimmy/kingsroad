@@ -468,6 +468,21 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.052.000",
+    date: "2026-05-01",
+    summary: "🌓 다크 모드 토큰 + 토글 + 🖼 OG 이미지 브랜드 fallback + 📑 KMS 라이브 토큰 카드. 클라이언트 단독 사이클 — 워커/D1 변경 없음.",
+    details: [
+      "🌓 BGNJ_THEME 헬퍼 신설 — get/set/cycle/effective/apply. localStorage(bgnj_theme) ∈ {auto, light, dark}. auto 면 prefers-color-scheme 따름. 시스템 pref 변경 이벤트 listen 해 auto 모드일 때 자동 재적용.",
+      "🌓 styles.css `:root[data-theme=\"dark\"]` 토큰 오버라이드 — bg/bg-2/bg-3, line/line-2, ink/ink-2/ink-3, secondary, system 4종 모두 다크 팔레트로 교체. Primary 옐로우는 유지(브랜드 시그니처). card/input/select/btn 추가 다크 룰. .theme-toggle 컴포넌트 스타일.",
+      "🌓 index.html 인라인 부트스트랩 스크립트 — React mount 전에 data-theme 미리 적용 → FOUC 차단. theme-color meta 도 light/dark 분리.",
+      "🌓 ThemeToggle 컴포넌트 (Shell.jsx Footer) — light → dark → auto → light 순환. 아이콘(☀/🌙/◐) + 라벨. bgnj-theme-change 이벤트 listen 해 외부 변경에도 반응.",
+      "🖼 og:image 브랜드 SVG fallback — 1200×630 인라인 SVG dataURI. 빈 content=\"\" → 브랜드 마크 + 'BANGINOJA' + 서브타이틀 + bgnj.net. Twitter/Discord 등 SVG OG 인식 플랫폼에 표시. 관리자 og.imageDataUri 업로드 시 applyHead 가 덮어씀.",
+      "📑 KMS 라이브 토큰 카드 — DesignSystemView 의 COLOR_TOKENS 카드를 LiveColorCards 로 분리. 스와치 background 를 hex → var(--token) 으로 교체 → 다크 모드에서 자동 갱신. computed value 를 mount 시·테마 전환 시 읽어 hex 컬럼에 표시 (디자인값과 다르면 '· 라이브' 배지).",
+      "📦 cache-buster — `?v=00.052.000`.",
+    ],
+    context: "v00.051 의 다음 사이클 후보 ③④⑤ 묶음 처리 — OG 이미지 / 다크 모드 / KMS 라이브 토큰. 모두 클라이언트 단독이라 워커 배포 동반 없음. 다크 모드는 토큰 기반 컴포넌트가 대부분 자동 정합되지만 인라인 hex 가 남은 곳(카드/모달 일부)은 점진 정합 필요 — '실험적' 단계로 시작. OG SVG 는 Twitter/Discord 에서만 인식되고 Facebook/Kakao 는 PNG 필요 → 관리자에서 og.imageDataUri 로 PNG 업로드해야 전 플랫폼 커버. KMS 라이브 카드는 다크 모드 토큰이 의도대로 적용됐는지 즉시 검증할 수 있는 self-test 도파 역할. 다음 사이클(v00.053) 후보: ① 서버 endpoint 로 reportCount/likesReceived 정확화 (워커 배포 동반) ② legacy 키 reports → comments 점진 마이그레이션 ③ 다크 모드 인라인 hex 정합 (HomePage/AdminPage 잔존부) ④ 관리자 OG 이미지 업로드 UI 명시화 (현재 hidden field 만).",
+  },
+  {
     version: "00.051.000",
     date: "2026-05-01",
     summary: "🎓 자동승급 룰 GUI 편집 + 🧹 bookmarks 키 제거. 운영자가 코드 수정 없이 BGNJ_GRADE_RULES 를 7가지 조건 모두 직접 편집/저장/복원.",
@@ -1247,6 +1262,50 @@ const ADMIN_VERSION_HISTORY = [
 
 // === Design System View — 실제 컴포넌트/토큰을 렌더해 보는 라이브 도파 =====
 // 각 카드: 용어 정의 + 시각 샘플 + 특징 + 활용처. KMS '디자인' 탭에서 노출.
+// 라이브 토큰 카드 — var(--token) 으로 직접 채워 다크 모드에서도 정합.
+// computed value 를 mount 시 + 테마 전환 시 다시 읽어 hex 컬럼을 갱신.
+const LiveColorCards = ({ tokens }) => {
+  const [computed, setComputed] = React.useState({});
+  React.useEffect(() => {
+    const read = () => {
+      try {
+        const root = getComputedStyle(document.documentElement);
+        const next = {};
+        for (const t of tokens) next[t.token] = root.getPropertyValue(t.token).trim();
+        setComputed(next);
+      } catch {}
+    };
+    read();
+    const onTheme = () => read();
+    window.addEventListener('bgnj-theme-change', onTheme);
+    return () => window.removeEventListener('bgnj-theme-change', onTheme);
+  }, [tokens]);
+  return (
+    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:12}}>
+      {tokens.map((c) => {
+        const live = computed[c.token] || '';
+        const driftFromDesign = live && c.hex && live.toUpperCase() !== c.hex.toUpperCase();
+        return (
+          <div key={c.token} style={{border:'1px solid var(--line)', overflow:'hidden', background:'var(--bg-2)'}}>
+            <div style={{height:60, background:`var(${c.token})`, borderBottom:'1px solid var(--line)'}}/>
+            <div style={{padding:'10px 12px'}}>
+              <div className="mono gold" style={{fontSize:11, letterSpacing:'0.1em'}}>{c.token}</div>
+              <div className="mono dim-2" style={{fontSize:10, marginTop:2}}>
+                {live || c.hex}
+                {driftFromDesign && (
+                  <span style={{marginLeft:6, color:'var(--secondary)'}} title={`디자인값: ${c.hex}`}>· 라이브</span>
+                )}
+              </div>
+              <div style={{fontSize:12, marginTop:6, lineHeight:1.5, color:'var(--ink)'}}>{c.usage}</div>
+              <div className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.5}}>{c.notes}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const DesignSystemView = () => {
   // 토큰 정의표 — 컬러
   const COLOR_TOKENS = [
@@ -1329,19 +1388,7 @@ const DesignSystemView = () => {
           '클래스: `.gold` `.dim` `.dim-2` `.danger` 등 미리 정의된 유틸 클래스',
         ]}
       >
-        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:12}}>
-          {COLOR_TOKENS.map((c) => (
-            <div key={c.token} style={{border:'1px solid var(--line)', overflow:'hidden'}}>
-              <div style={{height:60, background:c.hex, borderBottom:'1px solid var(--line)'}}/>
-              <div style={{padding:'10px 12px'}}>
-                <div className="mono gold" style={{fontSize:11, letterSpacing:'0.1em'}}>{c.token}</div>
-                <div className="mono dim-2" style={{fontSize:10, marginTop:2}}>{c.hex}</div>
-                <div style={{fontSize:12, marginTop:6, lineHeight:1.5, color:'var(--ink)'}}>{c.usage}</div>
-                <div className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.5}}>{c.notes}</div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <LiveColorCards tokens={COLOR_TOKENS}/>
       </DSSection>
 
       {/* 2. 타이포그래피 */}

@@ -555,10 +555,30 @@ const Footer = ({ go }) => {
           <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em'}}>
             v{window.BGNJ_VERSION?.version || '0.0.0'} · {window.BGNJ_VERSION?.build || '—'}
           </span>
+          <ThemeToggle/>
           <span>{footer.signature || "뱅기타고 노자 · DESIGNED IN SEOUL"}</span>
         </div>
       </div>
     </footer>
+  );
+};
+
+// 테마 토글 — light → dark → auto → light 순환. BGNJ_THEME 헬퍼와 짝.
+const ThemeToggle = () => {
+  const [mode, setMode] = React.useState(() => (window.BGNJ_THEME?.get?.() || 'auto'));
+  React.useEffect(() => {
+    const onChange = () => setMode(window.BGNJ_THEME?.get?.() || 'auto');
+    window.addEventListener('bgnj-theme-change', onChange);
+    return () => window.removeEventListener('bgnj-theme-change', onChange);
+  }, []);
+  if (!window.BGNJ_THEME) return null;
+  const next = window.BGNJ_THEME.cycle.bind(window.BGNJ_THEME);
+  const icon = mode === 'dark' ? '🌙' : mode === 'light' ? '☀' : '◐';
+  const label = mode === 'dark' ? 'DARK' : mode === 'light' ? 'LIGHT' : 'AUTO';
+  return (
+    <button type="button" className="theme-toggle" onClick={() => next()} aria-label={`테마 전환 — 현재 ${label}`} title="테마: 라이트 / 다크 / 자동">
+      <span aria-hidden="true">{icon}</span><span>{label}</span>
+    </button>
   );
 };
 

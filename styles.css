@@ -112,6 +112,54 @@
   --font-reading: var(--font-sans);
 }
 
+/* ===============================================================
+   다크 모드 (v00.052) — 토큰 오버라이드
+   ===============================================================
+   data-theme="dark" 가 <html> 에 부여되면 활성화. 토글 helper(BGNJ_THEME)가
+   localStorage(bgnj_theme) ∈ {auto,light,dark}를 읽어 설정. Primary(옐로우)는
+   유지 — 브랜드 시그니처. Neutral/Text/System 만 어두운 팔레트로 교체.
+   *모든* 페이지가 토큰을 통해 색을 잡는 가정에서 동작. 인라인 hex 가 남아있는
+   곳은 다크 모드에서 정합이 어긋날 수 있음(점진 정합 진행). */
+:root[data-theme="dark"] {
+  --bg:    #0F172A;             /* Slate 900 — 페이지 베이스 */
+  --bg-2:  #1E293B;             /* Slate 800 — 카드/서브 */
+  --bg-3:  #334155;             /* Slate 700 — 입력/코드 */
+  --line:  #334155;             /* Slate 700 — 라인 */
+  --line-2:#475569;             /* Slate 600 — 강조 라인 */
+
+  --ink:   #F1F5F9;             /* Slate 100 — 1차 본문 */
+  --ink-2: #CBD5E1;             /* Slate 300 — 2차 */
+  --ink-3: #94A3B8;             /* Slate 400 — 메타 */
+
+  --secondary:       #FBBF24;   /* Amber 400 — 다크 위에서 가독성 ↑ */
+  --secondary-hover: #FCD34D;   /* Amber 300 */
+  --tertiary:        #94A3B8;   /* Slate 400 */
+
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --info:    #60A5FA;
+  --danger:  #F87171;
+}
+:root[data-theme="dark"] body { background: var(--bg); color: var(--ink); }
+:root[data-theme="dark"] img { filter: brightness(0.92); }
+:root[data-theme="dark"] .card-gold,
+:root[data-theme="dark"] .card { background: var(--bg-2); border-color: var(--line); }
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select { background: var(--bg-3); color: var(--ink); border-color: var(--line-2); }
+:root[data-theme="dark"] ::placeholder { color: var(--ink-3); }
+:root[data-theme="dark"] .btn { color: var(--on-primary); }
+/* 테마 토글 버튼 */
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border: 1px solid var(--line);
+  background: var(--bg-2); color: var(--ink-2);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
+  cursor: pointer; border-radius: 4px;
+}
+.theme-toggle:hover { border-color: var(--primary); color: var(--ink); }
+.theme-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-weight: 500; letter-spacing: -0.01em; }
 body { min-height: 100vh; overflow-x: hidden; }
