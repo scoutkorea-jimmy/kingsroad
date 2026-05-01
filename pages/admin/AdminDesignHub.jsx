@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.078.000",
+    date: "2026-05-01",
+    summary: "📂 AuthAdminPage 2차 분할 — pages/admin/AdminContentEditors.jsx (~1300 줄). 5904 줄 → defensive lint 여유 확보.",
+    details: [
+      "📂 신규 pages/admin/AdminContentEditors.jsx — RecommendationsAdminPanel + TPE_*(4) + _arr*(4) + TourPageEditorPanel + FOOTER_COLOR_OPTIONS + FooterStyleEditor + HE_*(6) + HERO_* 상수 + HeroEditorPanel.",
+      "🪢 trampoline — AuthAdminPage 상단에서 window.* 11 항목 받아 기존 참조 무수정 유지 (v00.070 AdminDesignHub 패턴 동일).",
+      "📦 index.html — AdminContentEditors.js 가 AdminDesignHub.js 다음, AuthAdminPage.js 이전 로드.",
+      "📦 cache-buster — `?v=00.078.000` (20곳 — AdminContentEditors 신규 +1).",
+      "ℹ AuthAdminPage.jsx: 7196 줄 → 5904 줄 (-1292). AdminDesignHub.jsx: 2658 줄. AdminContentEditors.jsx: 1329 줄.",
+    ],
+    context: "v00.070 의 AdminDesignHub 분할(2530 줄) 이후 본 파일이 v00.072~v00.077 사이클을 거치며 다시 7196 줄까지 증가. 8000 줄 large_file lint 임계까지 800 줄 여유였으나 다음 큰 패널 추가 시 닿을 위험 → defensive 분할. 콘텐츠 편집 패널 묶음(추천/투어 페이지/푸터 스타일/히어로) + 공통 helper(TPE_*/_arr*/HE_*) 를 한 파일로 응집. 다음 사이클(v00.079~) 후보: ★ wrangler deploy 의존 (legacy comments / R2 / cover_url 컬럼) — 사용자 deploy 차단점.",
+  },
+  {
     version: "00.077.000",
     date: "2026-05-01",
     summary: "🔒 useModalGuard 일괄 적용 — 5 모달 (LegalModal / PostViewerModal / SuspendDialog / DestinationMapModal / RecommendationDetailModal) ESC+body lock+popstate 통일.",

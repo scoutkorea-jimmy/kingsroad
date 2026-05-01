@@ -85,13 +85,8 @@
 ### ✅ v00.077 — useModalGuard 일괄 적용
 - 완료: LegalModal / PostViewerModal / SuspendDialog (AuthAdminPage) + DestinationMapModal / RecommendationDetailModal (HomePage) 5 모달 통일. 수동 keydown + body overflow lock 핸들러 제거.
 
-### ⏳ v00.078 — AuthAdminPage 2차 분할
-- [ ] HeroEditorPanel + FooterStyleEditor + TourPageEditorPanel + RecommendationsAdminPanel → `pages/admin/AdminContentEditors.jsx` (~1500 줄 이동)
-- [ ] trampoline 패턴 재사용 (v00.070 AdminDesignHub 와 동일)
-- [ ] index.html 스크립트 태그 + cache-buster
-- **동기:** 현재 6881 줄. defensive — 다음 큰 패널 추가 시 8000 닿기 전 재분할.
-- **추정:** 1 시간.
-- **status:** pending
+### ✅ v00.078 — AuthAdminPage 2차 분할
+- 완료: AdminContentEditors.jsx 신설 (~1300 줄). 7196→5904. 콘텐츠 편집 패널 + 공통 helper 응집.
 
 ---
 
@@ -171,4 +166,5 @@
 - **v00.074** ✅ 데이터 매퍼 audit — _toBook 양방향 silent 버그 fix + _toLecture/_toOrder 보강 (commit `726fbb1`)
 - **v00.075** ✅ 강연 페이지 편집화 parity — 진행/참고/커버 per-lecture + 후기 게이팅 + inline LectureAdminPanel (commit `9bb52f8`)
 - **v00.076** ✅ Tiptap CSS 보강 — 14 extension 시각 스타일 일괄 (commit `5a918f7`)
-- **v00.077** ✅ useModalGuard 일괄 적용 — 5 모달 ESC+body lock+popstate 통일 (commit 다음 sha)
+- **v00.077** ✅ useModalGuard 일괄 적용 — 5 모달 ESC+body lock+popstate 통일 (commit `bddd796`)
+- **v00.078** ✅ AuthAdminPage 2차 분할 — AdminContentEditors.jsx 1300 줄 추출 (commit 다음 sha)
