@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.075.000",
+    date: "2026-05-01",
+    summary: "🎤 강연 페이지 편집화 parity — 진행/참고/커버 per-lecture override + 후기 게이팅 안내 + LectureAdminPanel inline 편집 (투어 v00.070+v00.072 패턴 그대로 강연에 적용).",
+    details: [
+      "🎤 신규 site_content_kv 키 4종 — lectureReviewsGate (gate/anonymous/empty), lectureSchedule (글로벌 진행 흐름), lectureNotes (글로벌 참고 리스트), lecturePages[id] (per-lecture override: schedule/notes/coverDataUri).",
+      "🎤 LecturesPage — 하드코드 5 줄 진행 + 4 줄 참고 제거. site_content fallback 패턴(우선순위: per-lecture override > 글로벌 > 코드 default). 커버 이미지: lecturePages[id].coverDataUri 가 있으면 표시, 없으면 placeholder.",
+      "🎤 LectureReviewsSection — 게이팅/익명/empty 안내 문구를 모두 site_content_kv.lectureReviewsGate 에서 읽음.",
+      "🛠 LectureAdminPanel — 각 강연 카드 액션에 '✎ 강연 정보 (제목·정원·시간·가격)' 라벨 명시화 + '📋 강연 진행·참고·커버' inline 편집 버튼 신설. TPE_ScheduleEditor / TPE_PrepEditor 재사용 (구조 동일: 시간 라벨 + 본문 / 문자열 배열). 저장 시 site_content_kv.lecturePages[id].",
+      "🛠 SiteContentAdminPanel — 강연 후기 안내 문구 SectionForm 신설 (gate / anonymous / empty).",
+      "📦 cache-buster — `?v=00.075.000` (19곳).",
+    ],
+    context: "v00.070(tour) + v00.072(TourAdminPanel inline) 의 패턴을 강연(lecture) 에 일대일 매핑. 답사 일정→강연 진행, 준비물→참고, tourPages→lecturePages, tourReviewsGate→lectureReviewsGate. 강연/투어가 같은 도메인 모델(예약+후기+per-id 콘텐츠)이라 코드 재사용 깔끔. 다음 사이클(v00.076~) 후보: ① Tiptap CSS 보강 (v00.068 의 14 extension 시각 스타일 미완) ② useModalGuard 일괄 적용 ③ AuthAdminPage 2차 분할.",
+  },
+  {
     version: "00.074.000",
     date: "2026-05-01",
     summary: "🔍 데이터 매퍼 audit — _toBook 양방향 silent 버그 fix + _toLecture/_toOrder 누락 필드 보강.",

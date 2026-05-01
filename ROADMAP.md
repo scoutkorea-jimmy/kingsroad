@@ -31,7 +31,7 @@
 ### ✅ v00.074 — 데이터 매퍼 audit
 - 완료: _toBook 양방향 silent 버그 fix (DB cover_key/pdf_key/is_primary/sort_order 직접 매칭 + _toBookPayload 변환). _toLecture createdAt/updatedAt 패스스루. _toOrder bookId 추가. _toColumn / _toTour / reservation mapper 는 audit 결과 깨끗.
 
-### ⏳ v00.075 — (이전 v00.074) 데이터 매퍼 audit (예약 슬롯)
+### ✅ v00.075 — 강연 페이지 편집화 parity (lectureReviewsGate / lectureSchedule / lectureNotes / lecturePages + LectureAdminPanel inline)
 - [ ] `data.js` 의 모든 `_toX` 매퍼 함수가 워커 응답 필드를 보존하는지 점검
   - [ ] `_toTour` (v00.070 fix 완료, 회귀 검증)
   - [ ] `_toLecture` (또는 LECTURES 헬퍼 내부 매퍼)
@@ -184,4 +184,5 @@
 - **v00.071** ✅ 빌드 단계 도입 (esbuild) — Babel-standalone 제거, in-browser 경고 / 500KB deopt 근본 차단 (commit `0dcf267`)
 - **v00.072** ✅ 홈 카드 desc 축약 + TourAdminPanel inline 답사 일정·준비물·커버 편집 통합 (commit `16940d3`)
 - **v00.073** ✅ 전 페이지 hero/intro + 푸터 잔재 admin 편집화 sweep — 9 페이지 + 푸터 4 필드 (commit `07a9ca0`)
-- **v00.074** ✅ 데이터 매퍼 audit — _toBook 양방향 silent 버그 fix + _toLecture/_toOrder 보강 (commit 다음 sha)
+- **v00.074** ✅ 데이터 매퍼 audit — _toBook 양방향 silent 버그 fix + _toLecture/_toOrder 보강 (commit `726fbb1`)
+- **v00.075** ✅ 강연 페이지 편집화 parity — 진행/참고/커버 per-lecture + 후기 게이팅 + inline LectureAdminPanel (commit 다음 sha)

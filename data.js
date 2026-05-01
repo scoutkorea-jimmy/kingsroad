@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.074.000",
+  version: "00.075.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -466,6 +466,31 @@ const DEFAULT_SITE_CONTENT = {
     titleAccent: '강연 일정',
     subtitle: '공개 / 심화 / 현장 강연. 회원 전용 신청 · 무통장 입금 결제.',
   },
+  // 강연 페이지 후기 게이팅 (v00.075) — LectureReviewsSection 안내 문구. tourReviewsGate 와 동일 구조.
+  lectureReviewsGate: {
+    gate: '후기는 참가 확정된 회원만 작성할 수 있습니다. 아직 신청 전이라면 사이드바에서 강연을 신청하고 운영자 입금 확인을 받은 뒤 다시 와 주세요.',
+    anonymous: '후기 작성은 회원 전용입니다.',
+    empty: '아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.',
+  },
+  // 강연 페이지 진행 흐름 (v00.075) — global default. lecturePages[id].schedule 가 있으면 override.
+  // 각 항목: { t: '시간 라벨', l: '내용' }.
+  lectureSchedule: [
+    { t: '0h 00m', l: '입장 · 인사' },
+    { t: '0h 10m', l: '주제 도입' },
+    { t: '0h 30m', l: '본론 · 사료 함께 읽기' },
+    { t: '1h 10m', l: '휴식 · 질의응답 준비' },
+    { t: '1h 20m', l: 'Q&A · 마무리' },
+  ],
+  // 강연 페이지 '참고' 안내 리스트 (v00.075). 각 항목: 문자열.
+  lectureNotes: [
+    '회원 가입 후 신청 가능 — 비회원은 자동 차단',
+    '유료 강연은 안내된 계좌로 입금 후 운영자 확인 → 참가 확정',
+    '정원이 차면 자동 대기자 등록 → 자리가 나면 자동 승격',
+    '취소는 마이페이지 또는 강연 사이드바에서 가능',
+  ],
+  // 강연별 override (v00.075) — { [lectureId]: { schedule: [{t,l}], notes: [str], coverDataUri?: string } }.
+  // 키 누락 또는 빈 배열이면 글로벌 (lectureSchedule / lectureNotes) fallback. tourPages 와 동일 패턴.
+  lecturePages: {},
   communityIntro: {
     eyebrow: 'COMMUNITY · 커뮤니티',
     titlePrefix: '다섯 봉우리 ',

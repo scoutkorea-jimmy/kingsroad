@@ -588,10 +588,64 @@ const LectureAdminPanel = ({ go }) => {
   const [editingId, setEditingId] = React.useState(null);
   const [draft, setDraft] = React.useState({ title: '', topic: '', venue: '', host: '', startsAt: '', durationMinutes: 90, capacity: 30, price: 0, note: '' });
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
+  // v00.075 — 강연별 진행/참고/커버 inline 편집용 별도 state (TourAdminPanel v00.072 패턴 동일).
+  const [contentEditingId, setContentEditingId] = React.useState(null);
+  const [contentSchedule, setContentSchedule] = React.useState([]);
+  const [contentNotes, setContentNotes] = React.useState([]);
+  const [contentCover, setContentCover] = React.useState('');
+  const [contentMsg, setContentMsg] = React.useState('');
 
   const lectures = React.useMemo(() => window.BGNJ_LECTURES.listAll({ includeHidden: true }), [tick]);
 
   const refresh = () => setTick((v) => v + 1);
+
+  // v00.075 — 강연별 콘텐츠 (진행/참고/커버) override 편집기.
+  const startContentEdit = (l) => {
+    if (!l) return;
+    const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+    const ovr = (sc.lecturePages || {})[l.id] || {};
+    setContentEditingId(l.id);
+    setContentSchedule(Array.isArray(ovr.schedule) ? ovr.schedule.slice() : []);
+    setContentNotes(Array.isArray(ovr.notes) ? ovr.notes.slice() : []);
+    setContentCover(ovr.coverDataUri || '');
+    setContentMsg('');
+  };
+  const cancelContentEdit = () => {
+    setContentEditingId(null); setContentSchedule([]); setContentNotes([]); setContentCover(''); setContentMsg('');
+  };
+  const saveContentEdit = async () => {
+    if (!contentEditingId) return;
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const lecturePages = sc.lecturePages || {};
+      const cleanS = contentSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
+      const cleanN = contentNotes.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
+      const next = { ...lecturePages, [contentEditingId]: {
+        schedule: cleanS, notes: cleanN,
+        coverDataUri: contentCover || undefined,
+      } };
+      await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', next);
+      setContentMsg('저장됨 — 강연 페이지에 즉시 반영.');
+      setTimeout(() => setContentMsg(''), 2500);
+      refresh();
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+  const onPickContentCover = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      e.target.value = ''; return;
+    }
+    const dataUri = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    setContentCover(dataUri);
+    e.target.value = '';
+  };
 
   // 강연별 신청 목록을 mount 시 일괄 fetch.
   React.useEffect(() => {
@@ -775,8 +829,9 @@ const LectureAdminPanel = ({ go }) => {
                     </div>
                   </div>
                 ) : (
-                  <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10}}>
-                    <button type="button" className="btn btn-small" onClick={() => startEdit(l)}>강연 정보 수정</button>
+                  <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10, flexWrap:'wrap'}}>
+                    <button type="button" className="btn btn-small btn-gold" onClick={() => startEdit(l)}>✎ 강연 정보 (제목·정원·시간·가격)</button>
+                    <button type="button" className="btn btn-small" onClick={() => startContentEdit(l)}>📋 강연 진행·참고·커버</button>
                     <button type="button" className="btn btn-small"
                       onClick={() => {
                         window.BGNJ_LECTURES.setHidden(l.id, !l.hidden);
@@ -795,6 +850,57 @@ const LectureAdminPanel = ({ go }) => {
                       }}
                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
                   </div>
+                )}
+
+                {/* v00.075 — 강연별 진행/참고/커버 inline 편집 (per-lecture override) */}
+                {contentEditingId === l.id && (
+                  <section style={{marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10, flexWrap:'wrap', gap:8}}>
+                      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.22em'}}>이 강연의 진행/참고 콘텐츠</div>
+                      <div className="dim-2" style={{fontSize:10, fontStyle:'italic'}}>
+                        비워두면 글로벌 (운영설정 → 사이트 콘텐츠 → 강연 페이지) 사용. 커버 비면 placeholder.
+                      </div>
+                    </div>
+                    {/* 커버 이미지 */}
+                    <div className="card" style={{padding:12, marginBottom:12, display:'flex', gap:14, alignItems:'center'}}>
+                      <div style={{width:96, height:60, flexShrink:0, border:'1px solid var(--line)', background:'var(--bg-2)', display:'grid', placeItems:'center', overflow:'hidden'}}>
+                        {contentCover
+                          ? <img src={contentCover} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                          : <span className="dim-2 mono" style={{fontSize:9, letterSpacing:'0.18em'}}>NONE</span>}
+                      </div>
+                      <div style={{flex:1}}>
+                        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:3}}>커버 이미지</div>
+                        <div className="dim-2" style={{fontSize:11, lineHeight:1.5}}>1600×1000 권장 · 1.5MB 이하 · 비우면 placeholder.</div>
+                      </div>
+                      <div style={{display:'flex', gap:6}}>
+                        <label className="btn btn-small" style={{cursor:'pointer'}}>
+                          업로드
+                          <input type="file" accept="image/*" onChange={onPickContentCover} style={{display:'none'}}/>
+                        </label>
+                        {contentCover && (
+                          <button type="button" className="btn btn-small" onClick={() => setContentCover('')}
+                            style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
+                        )}
+                      </div>
+                    </div>
+                    {/* 진행 일정 — TPE_ScheduleEditor 재사용 (모듈 최상위) */}
+                    <TPE_ScheduleEditor rows={contentSchedule}
+                      onAdd={() => setContentSchedule((a) => _arrAdd(a, { t: '', l: '' }))}
+                      onRemove={(i) => setContentSchedule((a) => _arrRemove(a, i))}
+                      onUpdate={(i, k, v) => setContentSchedule((a) => { const n = a.slice(); n[i] = { ...n[i], [k]: v }; return n; })}
+                      onMove={(i, d) => setContentSchedule((a) => _arrMove(a, i, d))}/>
+                    {/* 참고 리스트 — TPE_PrepEditor 재사용 (구조 동일: 문자열 배열) */}
+                    <TPE_PrepEditor rows={contentNotes}
+                      onAdd={() => setContentNotes((a) => _arrAdd(a, ''))}
+                      onRemove={(i) => setContentNotes((a) => _arrRemove(a, i))}
+                      onUpdate={(i, v) => setContentNotes((a) => _arrUpdate(a, i, v))}
+                      onMove={(i, d) => setContentNotes((a) => _arrMove(a, i, d))}/>
+                    <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:8}}>
+                      {contentMsg && <span role="status" className="mono" style={{fontSize:11, color:'var(--secondary)', fontWeight:600, marginRight:'auto'}}>{contentMsg}</span>}
+                      <button type="button" className="btn btn-small" onClick={cancelContentEdit}>닫기</button>
+                      <button type="button" className="btn btn-gold btn-small" onClick={saveContentEdit}>저장</button>
+                    </div>
+                  </section>
                 )}
 
                 {/* Roster */}
@@ -3514,6 +3620,20 @@ const SiteContentAdminPanel = () => {
         { key: 'titleAccent', label: '큰 제목 강조어 (예: 강연 일정)' },
         { key: 'subtitle',    label: '본문 설명', full: true, multiline: true },
       ]}/>
+
+      {/* v00.075 — 강연 후기 게이팅 + 글로벌 진행/참고 */}
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>강연 페이지 — 후기 안내 문구</h3>
+      <p className="dim-2" style={{fontSize:12, marginBottom:12, lineHeight:1.7}}>
+        강연 상세 페이지의 후기 섹션 안내 카드 문구. 비우면 코드 default.
+      </p>
+      <SectionForm key={`lectureReviewsGate-${tick}`} section="lectureReviewsGate" fields={[
+        { key: 'gate',      label: '미참가 회원 안내', full: true, multiline: true },
+        { key: 'anonymous', label: '비로그인 안내', full: true, multiline: true },
+        { key: 'empty',     label: '후기가 0건일 때 안내', full: true, multiline: true },
+      ]}/>
+      <p className="dim-2" style={{fontSize:12, marginBottom:6, marginTop:14, lineHeight:1.7}}>
+        ※ 강연별 진행 일정 / 참고 / 커버는 <strong>강연 메뉴 → 각 강연 카드의 "📋 강연 진행·참고·커버" 버튼</strong>에서 inline 편집. 글로벌 default 는 아래에서 직접 수정 가능 (admin 직접 site_content 편집 — 지원 시점에 SectionForm 추가 예정).
+      </p>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>커뮤니티 페이지 — 상단 인트로</h3>
       <SectionForm key={`communityIntro-${tick}`} section="communityIntro" fields={[

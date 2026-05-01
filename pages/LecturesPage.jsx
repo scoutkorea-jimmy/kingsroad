@@ -88,9 +88,24 @@ const LecturesPage = ({ go, user }) => {
 
         <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:60}} className="tour-grid">
           <div>
-            <div className="placeholder" style={{aspectRatio:'16/10', marginBottom:32, fontSize:11}}>
-              {String(lecture.title || '').toUpperCase()} · 1600×1000
-            </div>
+            {(() => {
+              // v00.075 — site_content_kv.lecturePages[id].coverDataUri 가 있으면 cover, 없으면 placeholder.
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const coverUri = sc.lecturePages?.[lecture.id]?.coverDataUri || '';
+              if (coverUri) {
+                return (
+                  <div style={{aspectRatio:'16/10', marginBottom:32, overflow:'hidden', borderRadius:2, background:'var(--bg-2)'}}>
+                    <img src={coverUri} alt={lecture.title || '강연 커버'}
+                      style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                  </div>
+                );
+              }
+              return (
+                <div className="placeholder" style={{aspectRatio:'16/10', marginBottom:32, fontSize:11}}>
+                  {String(lecture.title || '').toUpperCase()} · 1600×1000
+                </div>
+              );
+            })()}
             <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap'}}>
               <span className="badge badge-gold">{lecture.title}</span>
               {lecture.price === 0
@@ -102,33 +117,48 @@ const LecturesPage = ({ go, user }) => {
             <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24}}>{lecture.topic}</h2>
             <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{lecture.note}</p>
 
-            <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
-              강연 진행
-            </h3>
-            <div style={{marginBottom:32}}>
-              {[
-                { t: "0h 00m", l: "입장 · 인사" },
-                { t: "0h 10m", l: "주제 도입" },
-                { t: "0h 30m", l: "본론 · 사료 함께 읽기" },
-                { t: "1h 10m", l: "휴식 · 질의응답 준비" },
-                { t: "1h 20m", l: "Q&A · 마무리" },
-              ].map((s, i) => (
-                <div key={i} style={{display:'grid', gridTemplateColumns:'100px 1fr', gap:24, padding:'14px 0', borderBottom:'1px dashed var(--line)'}}>
-                  <div className="mono gold" style={{fontSize:12, letterSpacing:'0.1em'}}>{s.t}</div>
-                  <div className="ko-serif" style={{fontSize:15}}>{s.l}</div>
-                </div>
-              ))}
-            </div>
-
-            <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
-              참고
-            </h3>
-            <ul style={{paddingLeft:20, color:'var(--ink-2)', lineHeight:2, fontSize:14, marginBottom:48}}>
-              <li>회원 가입 후 신청 가능 — 비회원은 자동 차단</li>
-              <li>유료 강연은 안내된 계좌로 입금 후 운영자 확인 → 참가 확정</li>
-              <li>정원이 차면 자동 대기자 등록 → 자리가 나면 자동 승격</li>
-              <li>취소는 마이페이지 또는 강연 사이드바에서 가능</li>
-            </ul>
+            {(() => {
+              // v00.075 — per-lecture override(lecturePages[id]) 우선, 없으면 글로벌(lectureSchedule/lectureNotes) fallback.
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const perLec = (sc.lecturePages && typeof sc.lecturePages === 'object' && lecture?.id) ? (sc.lecturePages[lecture.id] || null) : null;
+              const ovrSchedule = Array.isArray(perLec?.schedule) ? perLec.schedule : null;
+              const ovrNotes    = Array.isArray(perLec?.notes)    ? perLec.notes    : null;
+              const schedule = (ovrSchedule && ovrSchedule.length > 0)
+                ? ovrSchedule.filter((s) => s && (s.t || s.l))
+                : (Array.isArray(sc.lectureSchedule) ? sc.lectureSchedule.filter((s) => s && (s.t || s.l)) : []);
+              const notes = (ovrNotes && ovrNotes.length > 0)
+                ? ovrNotes.filter(Boolean)
+                : (Array.isArray(sc.lectureNotes) ? sc.lectureNotes.filter(Boolean) : []);
+              return (
+                <>
+                  {schedule.length > 0 && (
+                    <>
+                      <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
+                        강연 진행
+                      </h3>
+                      <div style={{marginBottom:32}}>
+                        {schedule.map((s, i) => (
+                          <div key={i} style={{display:'grid', gridTemplateColumns:'100px 1fr', gap:24, padding:'14px 0', borderBottom:'1px dashed var(--line)'}}>
+                            <div className="mono gold" style={{fontSize:12, letterSpacing:'0.1em'}}>{s.t}</div>
+                            <div className="ko-serif" style={{fontSize:15}}>{s.l}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {notes.length > 0 && (
+                    <>
+                      <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
+                        참고
+                      </h3>
+                      <ul style={{paddingLeft:20, color:'var(--ink-2)', lineHeight:2, fontSize:14, marginBottom:48}}>
+                        {notes.map((n, i) => <li key={i}>{n}</li>)}
+                      </ul>
+                    </>
+                  )}
+                </>
+              );
+            })()}
 
             <LectureReviewsSection lecture={lecture} user={user} go={go} onRefresh={refresh}/>
           </div>
@@ -431,6 +461,16 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
   const [rating, setRating] = React.useState(5);
   const [text, setText] = React.useState("");
   const [error, setError] = React.useState("");
+  // v00.075 — site_content_kv.lectureReviewsGate 에서 게이팅/익명/empty 안내 읽기.
+  const gateContent = (() => {
+    const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+    const g = (sc.lectureReviewsGate && typeof sc.lectureReviewsGate === 'object') ? sc.lectureReviewsGate : {};
+    return {
+      gate: g.gate || '후기는 참가 확정된 회원만 작성할 수 있습니다. 아직 신청 전이라면 사이드바에서 강연을 신청하고 운영자 입금 확인을 받은 뒤 다시 와 주세요.',
+      anonymous: g.anonymous || '후기 작성은 회원 전용입니다.',
+      empty: g.empty || '아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.',
+    };
+  })();
 
   const submit = (e) => {
     e.preventDefault();
@@ -511,14 +551,13 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
             </div>
           </form>
         ) : (
-          <div className="card dim" style={{padding:16, marginBottom:24, fontSize:13, lineHeight:1.7}}>
-            후기는 <strong className="gold">참가 확정</strong>된 회원만 작성할 수 있습니다.
-            아직 신청 전이라면 사이드바에서 강연을 신청하고 운영자 입금 확인을 받은 뒤 다시 와 주세요.
+          <div className="card dim" style={{padding:16, marginBottom:24, fontSize:13, lineHeight:1.7, whiteSpace:'pre-wrap'}}>
+            {gateContent.gate}
           </div>
         )
       ) : (
         <div className="card" style={{padding:16, marginBottom:24, textAlign:'center', background:'rgba(245,213,72,0.04)'}}>
-          <p className="dim" style={{fontSize:13, marginBottom:10}}>후기 작성은 회원 전용입니다.</p>
+          <p className="dim" style={{fontSize:13, marginBottom:10, whiteSpace:'pre-wrap'}}>{gateContent.anonymous}</p>
           <div style={{display:'flex', gap:8, justifyContent:'center'}}>
             <button type="button" className="btn btn-gold btn-small" onClick={() => go('login')}>로그인</button>
             <button type="button" className="btn btn-small" onClick={() => go('signup')}>회원가입</button>
@@ -527,8 +566,8 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
       )}
 
       {reviews.length === 0 ? (
-        <div className="dim" style={{fontSize:13, padding:'24px 0', textAlign:'center'}}>
-          아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.
+        <div className="dim" style={{fontSize:13, padding:'24px 0', textAlign:'center', whiteSpace:'pre-wrap'}}>
+          {gateContent.empty}
         </div>
       ) : (
         <ol style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:12}}>
