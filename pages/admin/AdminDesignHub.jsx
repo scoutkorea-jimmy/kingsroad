@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.104.000",
+    date: "2026-05-01",
+    summary: "🛠 LegacyMigrationPanel 신설 — 시스템 관리 → 데이터 정리. 누적 legacy cover 데이터 일괄 마이그.",
+    details: [
+      "🛠 admin 사이드바 시스템 관리 그룹에 '데이터 정리' 탭 추가 (KMS / 오류 로그 / SEO / 설정 다음).",
+      "🛠 ① 투어 cover 마이그 — site_content_kv.tourPages[id].coverDataUri → D1.tours.cover_url. 이전 후 site_content 의 해당 키 제거 (schedule/prep/templateId 보존).",
+      "🛠 ② 강연 cover dataURI → R2 — site_content_kv.lecturePages[id].coverDataUri 가 data: 로 시작하면 fetch+blob → BGNJ_MEDIA.uploadFile 후 URL 로 교체. URL 형태는 skip.",
+      "🛠 안전 정책 — dry-run 스캔 → 미리보기 → 적용. 결과 카운트 + 실패 목록 표시. 재실행 idempotent (이미 마이그된 항목은 자동 skip).",
+      "📦 cache-buster — `?v=00.104.000` (20곳).",
+    ],
+    context: "v00.070~083 의 누적 legacy 데이터 정리 도구. 운영자가 admin → 시스템 관리 → 데이터 정리 에서 1회 실행하면 ① 투어 cover 가 정식 D1 컬럼으로 ② 강연 cover dataURI 가 R2 객체로 이동. site_content_kv 행 비대화 차단 + 데이터 모델 정합성 회복. 향후 사이클: 책 표지/PDF dataURI / 추천 이미지 / 게시글 첨부 dataURI 의 R2 일괄 마이그 도구는 별도 추가 (현재 사이클은 v00.081/v00.083 시점 잔재만 처리).",
+  },
+  {
     version: "00.103.000",
     date: "2026-05-01",
     summary: "🪣 R2 사용자 콘텐츠 — 게시글 첨부 + 이미지 업로드가 BGNJ_MEDIA.uploadFile 호출. 가장 큰 데이터 비대화 잠재 차단.",

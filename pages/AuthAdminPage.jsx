@@ -487,6 +487,7 @@ const _arrUpdate = window._arrUpdate;
 const _arrMove   = window._arrMove;
 const TourPageEditorPanel = window.TourPageEditorPanel;
 const LecturePageEditorPanel = window.LecturePageEditorPanel; // v00.083
+const LegacyMigrationPanel = window.LegacyMigrationPanel; // v00.086
 const FooterStyleEditor   = window.FooterStyleEditor;
 const HeroEditorPanel     = window.HeroEditorPanel;
 
@@ -3945,7 +3946,7 @@ const AdminPage = ({ go }) => {
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
     { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "투어 페이지", "강연 페이지", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보 관리", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "SEO", "설정"] },
+    { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "SEO", "설정", "데이터 정리"] },
   ];
 
   const exportMemberData = (m) => {
@@ -4913,6 +4914,7 @@ const AdminPage = ({ go }) => {
         {tab === "감사 로그" && <AuditLogPanel/>}
         {tab === "오류 로그" && <ErrorLogPanel/>}
         {tab === "SEO" && <SEOAdminPanel/>}
+        {tab === "데이터 정리" && <LegacyMigrationPanel/>}
 
         {/* 회원 등급 CRUD */}
         {tab === "회원 등급" && <AdminGradePanel/>}

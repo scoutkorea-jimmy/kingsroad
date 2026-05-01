@@ -1718,6 +1718,210 @@ const HeroEditorPanel = () => {
   );
 };
 
+// === Legacy Migration Panel (v00.086) ===================================
+// 운영자 1회성 도구. 누적된 legacy 데이터를 정식 위치로 일괄 이동.
+//   ① 투어 cover: site_content_kv.tourPages[id].coverDataUri → D1.tours.cover_url
+//   ② 강연 cover dataURI → R2: site_content_kv.lecturePages[id].coverDataUri (data:...) → R2 URL 교체
+// 안전 정책: 항상 dry-run 미리보기 → 실행. 결과 카운트 + 실패 목록 노출. 재실행 idempotent.
+
+const LegacyMigrationPanel = () => {
+  const [tourScan, setTourScan] = React.useState(null);     // { count, items: [{id, source, hasD1}] }
+  const [lectureScan, setLectureScan] = React.useState(null);
+  const [running, setRunning] = React.useState('');
+  const [tourResult, setTourResult] = React.useState(null);
+  const [lectureResult, setLectureResult] = React.useState(null);
+
+  const isDataUri = (v) => typeof v === 'string' && v.startsWith('data:');
+
+  const scanTour = () => {
+    setRunning('tour-scan');
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const tourPages = sc.tourPages || {};
+      const tours = (window.BGNJ_TOURS?.listAll?.({ includeHidden: true }) || []);
+      const items = [];
+      for (const [id, ovr] of Object.entries(tourPages)) {
+        if (!ovr || !ovr.coverDataUri) continue;
+        const tour = tours.find((t) => String(t.id) === String(id));
+        items.push({
+          id, title: tour?.title || '(삭제된 투어)',
+          source: ovr.coverDataUri,
+          hasD1: !!(tour?.coverUrl),
+          isDataUri: isDataUri(ovr.coverDataUri),
+        });
+      }
+      setTourScan({ count: items.length, items });
+    } finally { setRunning(''); }
+  };
+
+  const applyTour = async () => {
+    if (!tourScan || tourScan.items.length === 0) return;
+    if (!confirm(`투어 ${tourScan.items.length} 개의 legacy cover 를 D1 cover_url 로 이동합니다. 진행할까요? (재실행 안전)`)) return;
+    setRunning('tour-apply');
+    const result = { migrated: 0, skipped: 0, failed: [] };
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const tourPages = { ...(sc.tourPages || {}) };
+      for (const it of tourScan.items) {
+        try {
+          await window.BGNJ_TOURS.saveTour({ id: it.id, coverUrl: it.source });
+          const { coverDataUri, ...rest } = (tourPages[it.id] || {});
+          if (Object.keys(rest).length > 0) tourPages[it.id] = rest;
+          else delete tourPages[it.id];
+          result.migrated += 1;
+        } catch (err) {
+          result.failed.push({ id: it.id, msg: err?.message || String(err) });
+        }
+      }
+      try {
+        await window.BGNJ_SITE_CONTENT.saveSection('tourPages', tourPages);
+      } catch (err) {
+        result.failed.push({ id: '(site_content)', msg: 'tourPages 저장 실패: ' + (err?.message || '') });
+      }
+      setTourResult(result);
+      setTourScan(null);
+    } finally { setRunning(''); }
+  };
+
+  const scanLecture = () => {
+    setRunning('lecture-scan');
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const lecturePages = sc.lecturePages || {};
+      const lectures = (window.BGNJ_LECTURES?.listAll?.({ includeHidden: true }) || []);
+      const items = [];
+      for (const [id, ovr] of Object.entries(lecturePages)) {
+        if (!ovr || !ovr.coverDataUri) continue;
+        if (!isDataUri(ovr.coverDataUri)) continue;
+        const lecture = lectures.find((l) => String(l.id) === String(id));
+        items.push({
+          id, title: lecture?.title || '(삭제된 강연)',
+          sizeBytes: ovr.coverDataUri.length,
+        });
+      }
+      setLectureScan({ count: items.length, items });
+    } finally { setRunning(''); }
+  };
+
+  const dataUriToFile = async (dataUri, filename) => {
+    // bgnj-lint-ignore-next-line direct_fetch — data: URI 디코딩만 (네트워크 호출 X)
+    const res = await fetch(dataUri);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: blob.type || 'image/png' });
+  };
+  const applyLecture = async () => {
+    if (!lectureScan || lectureScan.items.length === 0) return;
+    if (!confirm(`강연 ${lectureScan.items.length} 개의 dataURI cover 를 R2 객체로 변환합니다. 진행할까요?`)) return;
+    setRunning('lecture-apply');
+    const result = { migrated: 0, skipped: 0, failed: [] };
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const lecturePages = { ...(sc.lecturePages || {}) };
+      for (const it of lectureScan.items) {
+        try {
+          const ovr = lecturePages[it.id] || {};
+          const file = await dataUriToFile(ovr.coverDataUri, `${it.id}-cover.png`);
+          const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'lecture-covers', maxBytes: 10 * 1024 * 1024 });
+          lecturePages[it.id] = { ...ovr, coverDataUri: url };
+          result.migrated += 1;
+        } catch (err) {
+          result.failed.push({ id: it.id, msg: err?.message || String(err) });
+        }
+      }
+      try {
+        await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', lecturePages);
+      } catch (err) {
+        result.failed.push({ id: '(site_content)', msg: 'lecturePages 저장 실패: ' + (err?.message || '') });
+      }
+      setLectureResult(result);
+      setLectureScan(null);
+    } finally { setRunning(''); }
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        v00.070~082 사이클을 거치며 누적된 legacy 데이터를 정식 위치로 일괄 이동합니다. 모든 작업은 idempotent — 중복 실행 안전.
+      </p>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:8}}>① 투어 legacy cover → D1 cover_url</h3>
+      <p className="dim-2" style={{fontSize:12, marginBottom:14, lineHeight:1.7}}>
+        v00.081 D1 cover_url 컬럼 도입 전 (v00.070) 시점의 site_content_kv.tourPages[id].coverDataUri 값을 정식 D1 컬럼으로 이동합니다. 이전 후 site_content 의 해당 키 제거 (schedule/prep/templateId 는 보존).
+      </p>
+      <div style={{display:'flex', gap:10, flexWrap:'wrap', marginBottom:14}}>
+        <button type="button" className="btn btn-small" disabled={!!running} onClick={scanTour}>① 스캔</button>
+        <button type="button" className="btn btn-gold btn-small"
+          disabled={!tourScan || tourScan.items.length === 0 || !!running}
+          onClick={applyTour}>② 적용 ({tourScan?.count || 0}개)</button>
+      </div>
+      {tourScan && (
+        <div className="card" style={{padding:14, marginBottom:18, fontSize:12, lineHeight:1.7}}>
+          {tourScan.items.length === 0
+            ? <span className="dim">▸ 마이그할 항목 없음.</span>
+            : <ul style={{paddingLeft:18, margin:0}}>
+                {tourScan.items.map((it) => (
+                  <li key={it.id}>
+                    <span className="mono dim-2">{it.id}</span> · {it.title}
+                    {it.hasD1 && <span className="gold mono" style={{marginLeft:8, fontSize:10}}>D1 이미 존재 — 덮어씁니다</span>}
+                    {!it.isDataUri && <span className="dim-2 mono" style={{marginLeft:8, fontSize:10}}>(URL 형태 — 그대로 D1 로 이동)</span>}
+                  </li>
+                ))}
+              </ul>}
+        </div>
+      )}
+      {tourResult && (
+        <div className="card" style={{padding:14, marginBottom:18, fontSize:12, lineHeight:1.7, borderColor:'var(--gold)'}}>
+          ✅ 마이그 완료 — {tourResult.migrated} 건 이동, {tourResult.failed.length} 건 실패.
+          {tourResult.failed.length > 0 && (
+            <ul style={{paddingLeft:18, margin:'8px 0 0', color:'var(--danger)'}}>
+              {tourResult.failed.map((f, i) => <li key={i}>{f.id}: {f.msg}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>② 강연 legacy cover dataURI → R2</h3>
+      <p className="dim-2" style={{fontSize:12, marginBottom:14, lineHeight:1.7}}>
+        v00.075~083 동안 site_content_kv.lecturePages[id].coverDataUri 에 base64 dataURI 로 저장된 항목을 R2 객체로 업로드 후 URL 로 교체합니다. 이미 URL 인 항목은 skip.
+      </p>
+      <div style={{display:'flex', gap:10, flexWrap:'wrap', marginBottom:14}}>
+        <button type="button" className="btn btn-small" disabled={!!running} onClick={scanLecture}>① 스캔</button>
+        <button type="button" className="btn btn-gold btn-small"
+          disabled={!lectureScan || lectureScan.items.length === 0 || !!running}
+          onClick={applyLecture}>② 적용 ({lectureScan?.count || 0}개)</button>
+      </div>
+      {lectureScan && (
+        <div className="card" style={{padding:14, marginBottom:18, fontSize:12, lineHeight:1.7}}>
+          {lectureScan.items.length === 0
+            ? <span className="dim">▸ 마이그할 항목 없음 (모두 URL 형태이거나 비어있음).</span>
+            : <ul style={{paddingLeft:18, margin:0}}>
+                {lectureScan.items.map((it) => (
+                  <li key={it.id}>
+                    <span className="mono dim-2">{it.id}</span> · {it.title}
+                    <span className="dim-2 mono" style={{marginLeft:8, fontSize:10}}>~{(it.sizeBytes / 1024 / 1.33).toFixed(0)} KB</span>
+                  </li>
+                ))}
+              </ul>}
+        </div>
+      )}
+      {lectureResult && (
+        <div className="card" style={{padding:14, marginBottom:18, fontSize:12, lineHeight:1.7, borderColor:'var(--gold)'}}>
+          ✅ 마이그 완료 — {lectureResult.migrated} 건 R2 업로드, {lectureResult.failed.length} 건 실패.
+          {lectureResult.failed.length > 0 && (
+            <ul style={{paddingLeft:18, margin:'8px 0 0', color:'var(--danger)'}}>
+              {lectureResult.failed.map((f, i) => <li key={i}>{f.id}: {f.msg}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+
+      <p className="dim-2" style={{fontSize:11, marginTop:24, lineHeight:1.7}}>
+        ⓘ 추가 마이그가 필요한 항목 (책 표지/PDF dataURI, 추천 이미지, 게시글 첨부) 은 향후 별도 도구. 현재는 v00.081/v00.083 신규 컬럼·R2 패스 적용 직후의 잔재만 처리.
+      </p>
+    </div>
+  );
+};
+
 // v00.078 — 외부 스크립트(AuthAdminPage)에서 사용할 수 있도록 window 에 노출.
 Object.assign(window, {
   RecommendationsAdminPanel,
@@ -1730,4 +1934,5 @@ Object.assign(window, {
   HE_Field, HE_Input, HE_TextArea, HE_Select, HE_NumberRange, HE_StyleGroup,
   HERO_COLOR_OPTIONS, HERO_WEIGHTS, HERO_ALIGNS, HERO_TFORMS,
   HeroEditorPanel,
+  LegacyMigrationPanel, // v00.086
 });

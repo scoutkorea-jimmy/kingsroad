@@ -17,40 +17,7 @@
 
 ## 큐 1 — 다음 사이클 (검증 보고 후 명시 갱신)
 
-### ⏳ v00.083 — LecturePageEditorPanel + HomePage 추천 섹션 잔재
-- [ ] LecturePageEditorPanel 신설 — TourPageEditorPanel 의 글로벌 / 템플릿 / per-lecture 3 모드 패턴 복제 (lectureSchedule / lectureNotes / lecturePages 편집)
-- [ ] admin 사이드바 운영설정 그룹에 "강연 페이지" 탭 추가
-- [ ] HomePage 추천 여행지 섹션 헤더 / 빈 상태 메시지 → `site_content_kv.recommendationsHeading` 신설 + 연동 (v00.073 sweep 미완 항목)
-- **동기:** 검증 보고 — v00.075 에서 강연 inline per-lecture 만 구현, 글로벌 default 편집 GUI 없음. 투어와 parity 미완.
-- **추정:** 1-2 시간 (코드 거의 복제).
-- **status:** pending
-
-### ⏳ v00.084 — R2 admin 콘텐츠 확장 (Books + Recommendations)
-- [ ] BooksAdminPanel: 책 표지 (cover_key) + PDF 미리보기 (pdf_key) 업로드 → BGNJ_MEDIA.uploadFile (folder='book-covers' / 'book-pdfs'). dataURI 폴백 유지.
-- [ ] RecommendationsAdminPanel: 추천 여행지 이미지 → BGNJ_MEDIA.uploadFile (folder='recommendations'). dataURI 폴백 유지.
-- [ ] 워커 변경 없음 — handleMediaUpload + handleMediaGet 활용.
-- **동기:** v00.082 가 admin 6 슬롯만 처리. Books/Recommendations 패널은 fileToDataUri 직접 호출 잔재.
-- **영향:** D1 books 테이블 행 비대화 (PDF base64 ~수백KB 누적) 차단.
-- **추정:** 1-2 시간.
-- **status:** pending
-
-### ⏳ v00.085 — R2 사용자 콘텐츠 (게시글 첨부 + 이미지)
-- [ ] CommunityPage PostCompose: 첨부 (10MB×3) + 이미지 (10장) 업로드 → BGNJ_MEDIA.uploadFile (folder='post-attachments' / 'post-images'). dataURI 폴백 유지.
-- [ ] 게시글 상세 렌더 — 첨부 다운로드 링크 + 이미지 슬라이드가 R2 URL / dataURI 양쪽 정상 처리.
-- [ ] legacy dataURI 게시글 호환 — 기존 게시글 표시 유지.
-- **동기:** v00.082 가 admin only. 사용자 콘텐츠가 가장 큰 데이터 비대화 잠재 (10MB×3 첨부 누적).
-- **영향:** D1 posts 테이블 행 비대화 차단. 첨부 한도 R2 도입 시 완화 가능 (다음 사이클).
-- **추정:** 2-3 시간 (사용자 facing — 회귀 위험 신중).
-- **status:** pending
-
-### ⏳ v00.086 — legacy site_content cover 일괄 마이그레이션 도구 (선택)
-- [ ] admin 운영자 도구: `site_content_kv.tourPages[id].coverDataUri` (v00.070 legacy) → `tours.cover_url` (v00.081 D1) 일괄 이동
-- [ ] 동일 패턴 lecture 적용 (v00.083 LecturePageEditorPanel 완료 후)
-- [ ] R2 함께 처리 — dataURI cover 를 R2 객체로 마이그레이션 (folder='tour-covers' / 'lecture-covers')
-- [ ] 마이그 후 `tourPages[id].coverDataUri` 키 자동 삭제 (정합성)
-- **동기:** v00.081 분기 저장 후 legacy 잔재 자동 정리 도구 부재. 운영자가 인지 못하면 잔재 무한 보존.
-- **추정:** 1-2 시간.
-- **status:** pending — v00.083~085 완료 후 진입 권장.
+(현재 비어있음 — v00.083~086 모두 완료. 다음 보고 / 사용자 신호 시 신규 사이클 추가)
 
 ---
 
@@ -116,3 +83,7 @@
 - **v00.082** ✅ R2 업로드 흐름 활성화 — admin 6 슬롯 (OG/로고/파비콘/auth/투어 커버/강연 커버) (commit `0707e00`) — *Books/Recommendations/게시글 미적용 → v00.084-085 로 분리*
 - **v00.090** ✅ Tiptap 3 메이저 — @tiptap/* 3.22.5 + StarterKit 중복 제거 (commit `2115b77`)
 - **v00.100** ✅ React 19 마이그레이션 평가 — UMD 단종으로 보류 + 18.3.1 LTS 유지 + DEPENDENCY_MATRIX 갱신 (commit `583c255`)
+- **v00.101** ✅ LecturePageEditorPanel + HomePage 추천 헤딩 (ROADMAP v00.083, commit `6886d4d`)
+- **v00.102** ✅ R2 admin 확장 — Books 표지/PDF + Recommendations 이미지 (ROADMAP v00.084, commit `983d094`)
+- **v00.103** ✅ R2 사용자 콘텐츠 — 게시글 첨부 + 이미지 (ROADMAP v00.085, commit `0eaf1d2`)
+- **v00.104** ✅ LegacyMigrationPanel — 누적 legacy cover 일괄 마이그 (ROADMAP v00.086, commit 다음 sha)
