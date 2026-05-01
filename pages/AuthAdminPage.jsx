@@ -4290,11 +4290,38 @@ const AdminPage = ({ go }) => {
                   <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:6}}>VERSION HISTORY</div>
                   <div style={{fontSize:14, lineHeight:1.6}}>
                     총 <span className="ko-serif gold-2" style={{fontSize:20}}>{total}</span>개 버전 기록
-                    {latest && <span className="dim-2 mono" style={{fontSize:11, marginLeft:10}}>최신 {latest.version} · {latest.date}</span>}
+                    {latest && <span className="dim-2 mono" style={{fontSize:11, marginLeft:10}}>
+                      최신 {latest.version} · {latest.datetime ? (window.BGNJ_FMT?.kstDateTime?.(latest.datetime) || latest.date) : latest.date}
+                    </span>}
                   </div>
                 </div>
-                <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.16em'}}>
-                  {safePage} / {totalPages} 페이지 · {start + 1}–{Math.min(start + VERSIONS_PER_PAGE, total)}건 표시
+                <div style={{display:'flex', alignItems:'center', gap:14, flexWrap:'wrap'}}>
+                  <button type="button" className="btn btn-small" onClick={() => {
+                    // v00.107 — CSV 다운로드. version, datetime(KST), date, summary, details(joined), context.
+                    const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+                    const rows = [['version', 'datetime_kst', 'date', 'summary', 'details', 'context']];
+                    for (const e of ADMIN_VERSION_HISTORY) {
+                      rows.push([
+                        e.version || '',
+                        e.datetime ? (window.BGNJ_FMT?.kstDateTime?.(e.datetime) || '') : '',
+                        e.date || '',
+                        e.summary || '',
+                        Array.isArray(e.details) ? e.details.join(' | ') : '',
+                        e.context || '',
+                      ]);
+                    }
+                    const csv = '﻿' + rows.map((r) => r.map(esc).join(',')).join('\r\n'); // BOM for Excel KR.
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `bgnj-version-history-${new Date().toISOString().slice(0,10)}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}>📥 CSV 다운로드</button>
+                  <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.16em'}}>
+                    {safePage} / {totalPages} 페이지 · {start + 1}–{Math.min(start + VERSIONS_PER_PAGE, total)}건 표시
+                  </div>
                 </div>
               </div>
 
@@ -4305,7 +4332,11 @@ const AdminPage = ({ go }) => {
                       <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>VERSION LOG</div>
                       <h2 className="ko-serif" style={{fontSize:24}}>v{entry.version}</h2>
                     </div>
-                    <div className="mono dim-2" style={{fontSize:11}}>{entry.date}</div>
+                    <div className="mono dim-2" style={{fontSize:11, textAlign:'right'}}>
+                      {entry.datetime
+                        ? (<><div>{window.BGNJ_FMT?.kstDateTime?.(entry.datetime) || entry.date}</div></>)
+                        : entry.date}
+                    </div>
                   </div>
 
                   <div style={{marginBottom:18}}>

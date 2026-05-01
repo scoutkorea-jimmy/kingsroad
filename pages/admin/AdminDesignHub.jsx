@@ -4,8 +4,25 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.107.000",
+    date: "2026-05-01",
+    datetime: "2026-05-01T18:30:00+09:00", // v00.107 — KST timestamp
+    summary: "🕒 버전 기록 KST 시분초 표기 + CSV 다운로드 + KMS 최신화 + BGNJ_FMT 헬퍼",
+    details: [
+      "🕒 BGNJ_FMT 헬퍼 신설 (data.js) — kstDateTime / kstShort. timeZone 'Asia/Seoul' 강제 → 사용자 브라우저 TZ 무관 KST 출력.",
+      "🕒 ADMIN_VERSION_HISTORY entries — datetime 필드 (ISO+09:00) 추가. 옛 entries 는 date 만 존재 → fallback.",
+      "🕒 버전 기록 패널 — datetime 있으면 BGNJ_FMT.kstDateTime 으로 시분초 표기. 없으면 date 만.",
+      "📥 CSV 다운로드 버튼 — 버전 기록 헤더에 추가. 모든 entries (version / datetime / summary / details / context) 를 CSV 행으로 변환 후 Blob 다운로드.",
+      "📑 FEATURE_DOMAINS 일부 갱신 — R2 활성화 / Tiptap 3 / Cover_url D1 / 놀자 시리즈 그룹 분리 등 최근 변경 반영 (다음 사이클 추가 갱신 예정).",
+      "📦 cache-buster — `?v=00.107.000` (20곳).",
+      "ℹ 사이트 전반 KST 적용은 향후 사이클 — 현재는 버전 기록 한정. 다른 시간 표시 (게시글 작성 시간, 강연 시작 시간 등) 는 brower TZ → KST 강제 마이그 별도.",
+    ],
+    context: "사용자 요청 '버전기록과 KMS를 모두 최신화 + CSV 다운로드 + 연월일시분초 표기 + KST 기반 운영'. v00.106 까지 entries 에 date(YYYY-MM-DD) 만 있어서 시간 식별 불가. datetime 필드 + KST 헬퍼 + CSV 다운로드 도입. 사이트 전반 KST 강제 (게시글 시간 등) 는 다음 사이클 separate.",
+  },
+  {
     version: "00.106.000",
     date: "2026-05-01",
+    datetime: "2026-05-01T17:45:00+09:00",
     summary: "🚌 투어 폼 재구성 + 부제·환불정책 + GUI 개선 + 홈 hero 강연/답사 미니 카드 (A안) + 놀자 시리즈 그룹 분리",
     details: [
       "🗄 D1 ALTER TABLE tours — subtitle TEXT + refund_policy TEXT 컬럼 추가. ★ wrangler deploy (Version 5c11459b).",

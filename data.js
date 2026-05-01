@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.106.000",
+  version: "00.107.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -232,6 +232,42 @@ window.BGNJ_DIAG = {
     if (removed.length) console.log('[BGNJ] v33 cleanup — removed localStorage keys:', removed);
   } catch {}
 })();
+
+// === BGNJ_FMT — KST 기반 날짜·시간 포맷 헬퍼 (v00.107) ====================
+// 뱅기노자 사이트는 한국 사용자 대상 → 모든 시간 표시는 KST 기준.
+// 사용:
+//   BGNJ_FMT.kstDateTime('2026-05-01T08:23:45Z') → '2026-05-01 17:23:45 KST'
+//   BGNJ_FMT.kstShort(iso) → '2026.05.01 17:23'
+window.BGNJ_FMT = {
+  // 한국 표준시 (UTC+9) 로 ISO → 'YYYY-MM-DD HH:MM:SS KST' 형식.
+  // 잘못된 입력은 빈 문자열.
+  kstDateTime(iso) {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      // toLocaleString 'ko-KR' + timeZone Asia/Seoul → 일관된 KST 출력 (사용자 브라우저 TZ 무관).
+      const out = d.toLocaleString('ko-KR', {
+        timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+      });
+      // ko-KR 출력: '2026. 05. 01. 17:23:45' → '2026-05-01 17:23:45'
+      return out.replace(/\.\s?/g, '-').replace(/-\s/, ' ').replace(/-$/, '').trim() + ' KST';
+    } catch { return ''; }
+  },
+  kstShort(iso) {
+    if (!iso) return '';
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      const out = d.toLocaleString('ko-KR', {
+        timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false,
+      });
+      return out.replace(/\.\s?/g, '.').replace(/\.\s/, ' ').replace(/\.$/, '');
+    } catch { return ''; }
+  },
+};
 
 // === 회원 등급/카테고리/해시태그 저장소 (localStorage 연동) ===
 const _lsGet = (k, fallback) => {
