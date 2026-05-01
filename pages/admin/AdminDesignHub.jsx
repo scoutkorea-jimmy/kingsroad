@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.114.000",
+    date: "2026-05-01",
+    datetime: "2026-05-01T22:00:57+09:00", // pre-commit stamp.
+    summary: "🧹 lint false-positive 차단 (TODO 코멘트만 / equality_loose `== null` idiom 제외) + 📑 CONTEXT.md v00.114 일괄 갱신",
+    details: [
+      "🧹 [TODO 룰 정정] tools/check-syntax.mjs INFO_RULES — pattern 을 `// TODO`, `/* TODO`, `* TODO` (JSDoc 행) 로 한정. 이전엔 `\\b(TODO|FIXME|HACK|XXX)\\b` 가 ADMIN_VERSION_HISTORY 변경기록 문자열 내 'TODO' 단어 6건을 false-positive 매치.",
+      "🧹 [equality_loose 룰 정정] pattern 에 lookahead `(?!\\s*null\\b)` 추가 — `== null` / `!= null` idiom (null + undefined 동시 검사 의도) 매치 제외. 이전 12 건 (실제 6 건 + 빌드 산출물 .js 중복) 카운트 → 0.",
+      "📑 [CONTEXT.md 일괄 갱신] v00.071 → v00.114 (41 사이클 미반영) 정합. §0 요약(esbuild + R2 + KST + DOMPurify), §1 토폴로지(boot.js 외부화 + R2 폴더 + login_attempts), §2.1 헬퍼 32종 목록, §2.3 PageErrorBoundary 위치 (boot.jsx:64), §2.7 자동화 3 도구 (build/stamp-datetime/check-syntax) + 4종 차단 룰 + 3종 정보성, §2.8 cache-buster 17 → 21곳, §2.9 BGNJ_STORES 4-태그 갱신 (login_attempts 추가, comments 사망 표시), §3 파일 구조에 boot.jsx / tools/build.mjs / tools/stamp-datetime.mjs / pages/admin/* / schema-v4.sql 추가, §5 히스토리 v00.072~114 한 줄 요약 표, §6 사용자 가드에 BGNJ_SAFE_HTML / BGNJ_FMT 의무 추가, §7 백로그 ROADMAP 큐 1~4 동기, §7.5 단계 3 ✅ 완료 표시, §8 검증 명령에 build.mjs / wrangler d1 execute / wrangler deploy 추가, §9 라인 참조 전부 갱신.",
+      "📦 cache-buster — `?v=00.114.000` (21곳).",
+    ],
+    context: "사용자 요청 '계획 대비 전체기능 완성도 검토 → 부족한 것 모두 갱신'. v00.113 audit 에서 stale CONTEXT.md (v00.071 기준) + lint false-positive 12+6 건 확인. 본 사이클: ① 룰 false-positive 근본 차단 (string 내부 TODO / null idiom 정상 인정) ② CONTEXT.md v00.114 일괄 갱신 — 새 사이클 시작 시 이 문서만 읽으면 v00.039~114 모든 누적 컨텍스트 파악 가능하도록. lint 룰 변경은 false-positive 만 제거 — 실제 코드 cleanup 0 건 (모두 정상 idiom 이었음).",
+  },
+  {
     version: "00.113.000",
     date: "2026-05-01",
     datetime: "2026-05-01T19:44:52+09:00", // pre-commit stamp.

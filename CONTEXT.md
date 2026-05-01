@@ -1,18 +1,23 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.071.000 · 2026-05-01 (빌드 단계 도입 — esbuild 사전 컴파일로 @babel/standalone 제거 + 인-브라우저 경고/500KB deopt 근본 차단)
+> **마지막 업데이트:** v00.114.000 · 2026-05-01 (보안 audit 마무리 + 라인 룰 false-positive 차단 + CONTEXT 일괄 갱신)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
 
 ## 0. 한 페이지 요약
 
-뱅기노자는 한국 여행·역사·문화 커뮤니티 사이트(`bgnj.net`). 정적 호스팅(GitHub Pages) + 동적 백엔드(Cloudflare Worker + D1) 의 hybrid. **React + Babel-standalone(in-browser)** 으로 빌드 단계 없이 운영. 페이지/컴포넌트는 `BGNJ_*` 헬퍼를 거쳐 서버를 source-of-truth 로 사용.
+뱅기노자는 한국 여행·역사·문화 커뮤니티 사이트(`bgnj.net`). 정적 호스팅(GitHub Pages) + 동적 백엔드(Cloudflare Worker + D1 + R2) hybrid. **React 18.3.1 (UMD) + esbuild 사전 컴파일** — 빌드 단계가 pre-commit 훅에서 자동 실행되어 `*.jsx → *.js` 사전 transpile (v00.071 부터 in-browser Babel 폐기). 페이지/컴포넌트는 `BGNJ_*` 헬퍼를 거쳐 D1 을 source-of-truth 로 사용.
 
 세 가지 운영 축:
 1. **D1 source-of-truth** — 사용자가 보는 모든 콘텐츠는 서버 D1 에서 옴. 시드/로컬 폴백 금지.
 2. **표준 가드 + ErrorBoundary 2-tier** — 한 페이지/섹션이 죽어도 전역 트리는 살아남음.
-3. **pre-commit 자동 검증** — 컴파일 SyntaxError + 룰 위반(BANGINOJA_DATA / console.log / var)을 커밋 단계에서 차단.
+3. **pre-commit 자동화** — datetime stamp + esbuild 빌드 + 신택스/룰 검증을 커밋 단계에서 일괄 실행.
+
+보안 패턴(v00.109~113):
+- DOMPurify (CDN+SRI) + BGNJ_SAFE_HTML hooks (iframe 화이트리스트 / data: image-only / target=_blank noopener).
+- CSP meta 전체 + X-Frame-Options SAMEORIGIN + ALLOWED_ORIGINS https-only.
+- 워커 brute-force rate limit (D1 login_attempts, 15min/5fail) + 게시글 작성 권한 검증(post_min_level).
 
 ---
 
@@ -23,45 +28,51 @@
    │  GET https://bgnj.net/...
    ▼
 GitHub Pages (정적 호스팅)
-   ├─ index.html (App + ErrorBoundary + 라우터)
+   ├─ index.html (App + ErrorBoundary boot.js + 라우터)
    ├─ data.js / api.js / styles.css
-   ├─ components/*.jsx (Babel-standalone in-browser 컴파일)
-   ├─ pages/*.jsx
+   ├─ boot.js (PageErrorBoundary + App + go/route)
+   ├─ components/*.js (esbuild 산출물 — *.jsx 가 소스)
+   ├─ pages/*.js + pages/admin/*.js
    └─ workers/ (배포 안 함, 소스만)
    │
    │  fetch /api/...
    ▼
 Cloudflare Worker (banginoja-api)
    ├─ src/index.js — 모든 endpoint
-   ├─ wrangler.toml — D1 binding
-   └─ schema-v3.sql — D1 schema
+   ├─ wrangler.toml — D1 + R2 + ALLOWED_ORIGINS / SUPER_ADMIN_EMAILS
+   └─ schema.sql / schema-v2.sql / schema-v3.sql / schema-v4.sql
+   │
+   ├─ R2 (banginoja-media)
+   │   └─ og-images/ logos/ favicons/ auth/ tour-covers/ lecture-covers/
+   │      book-covers/ book-pdfs/ recommendations/ post-images/ post-attachments/
    │
    ▼
 Cloudflare D1 (banginoja-db)
-   └─ users / community_posts / comments / tours / lectures /
+   └─ users / sessions / posts / comments / tours / lectures /
       books / book_orders / columns / column_engagement /
-      site_content_kv / legal / faqs / grades / categories /
-      audit_log / notifications / bookmarks / reports / ...
+      site_content_kv / legal_docs / faqs / grades_kv / categories_kv /
+      audit_log / notifications / login_attempts (v00.113)
 ```
 
-**배포:**
-- 프론트엔드: `git push origin main` → GitHub Pages 자동 빌드 (정적 파일 그대로). pre-commit 훅으로 자동 검증 후 push.
-- 워커: `cd workers && wrangler deploy` (사용자가 직접 실행. AI 권한 없음).
+**배포 흐름:**
+- 프론트엔드: `git push origin main` → GitHub Pages 자동 빌드. pre-commit 훅이 datetime stamp + esbuild 빌드 + 룰 검증을 자동 실행.
+- 워커: `cd workers && npx wrangler deploy` (사용자가 직접 실행. 권한 prompt 필요).
+- D1 schema: `cd workers && npx wrangler d1 execute banginoja-db --remote --file=schema-vN.sql` (멱등 — IF NOT EXISTS).
 
-**도메인:** `bgnj.net` (HTTP 운영 중. SSL 도입 후 HTTPS 강제 예정.)
+**도메인:** `bgnj.net` (Cloudflare DNS · v00.109 부터 ALLOWED_ORIGINS https-only).
 
 ---
 
-## 2. 운영 원칙 9 가지 (v00.049 기준 정합)
+## 2. 운영 원칙 9 가지
 
 ### 2.1 D1 source-of-truth
 - 페이지/컴포넌트는 `window.BANGINOJA_DATA` 시드 직접 참조 금지. `tools/check-syntax.mjs` 룰이 차단.
-- 콘텐츠는 `BGNJ_*` 헬퍼 경유로만 접근 — `BGNJ_TOURS`, `BGNJ_LECTURES`, `BGNJ_COLUMNS`, `BGNJ_COMMUNITY`, `BGNJ_BOOKS`, `BGNJ_BOOK_ORDERS`, `BGNJ_AUTH`, `BGNJ_FAQ`, `BGNJ_LEGAL`, `BGNJ_SITE_CONTENT`.
+- 콘텐츠는 `BGNJ_*` 헬퍼 경유로만 접근. 32 개 헬퍼: `BGNJ_VERSION` / `BGNJ_GUARD` / `BGNJ_DRAFTS` / `BGNJ_THEME` / `BGNJ_DIAG` / `BGNJ_SAFE_HTML` / `BGNJ_FMT` / `BGNJ_TOURS` / `BGNJ_LECTURES` / `BGNJ_COLUMNS` / `BGNJ_COMMUNITY` / `BGNJ_BOOKS` / `BGNJ_BOOK_ORDERS` / `BGNJ_AUTH` / `BGNJ_FAQ` / `BGNJ_LEGAL` / `BGNJ_SITE_CONTENT` / `BGNJ_AUDIT` / `BGNJ_VISITS` / `BGNJ_GRADE_PROMO` / `BGNJ_GRADE_RULES_EFFECTIVE` / `BGNJ_HERO_STYLE` / `BGNJ_FOOTER_STYLE` / `BGNJ_NOTIFICATIONS` / `BGNJ_RECOMMENDATIONS` / `BGNJ_KIND_PAGES` / 등.
 - 헬퍼는 내부적으로 `BGNJ_API` (Worker fetch wrapper) 호출. 응답이 비면 빈 배열/null 반환 — 페이지는 해당 섹션 자체를 렌더하지 않음(깡통 카드 금지).
-- App init 의 `Promise.allSettled` (index.html) 가 모든 헬퍼 `refresh()` 트리거. 각 헬퍼는 `bgnj-*-refresh` 이벤트 발화 → 페이지 useEffect 가 listen → 자동 재렌더.
+- App init 의 `Promise.allSettled` 가 모든 헬퍼 `refresh()` 트리거. 각 헬퍼는 `bgnj-*-refresh` 이벤트 발화 → 페이지 useEffect 가 listen → 자동 재렌더.
 
 ### 2.2 표준 가드 — `BGNJ_GUARD`
-`data.js` 초반에 정의:
+[data.js:28](data.js#L28) 에 정의:
 ```js
 window.BGNJ_GUARD = {
   arr(fn, fb=[])  { /* try/catch + Array.isArray 가드 */ },
@@ -73,9 +84,10 @@ window.BGNJ_GUARD = {
 모든 페이지가 동일 시그니처로 헬퍼 호출 보호. 예: `G.arr(() => window.BGNJ_TOURS?.listAll?.())`.
 
 ### 2.3 ErrorBoundary 2-tier
-- **`PageErrorBoundary`** (`index.html`) — 라우트 단위. 한 페이지 컴포넌트가 throw 해도 전역 트리 보존, "다시 시도/홈으로/새로고침" UI. `key={route}` 로 라우트 변경 시 자동 reset.
-- **`HomeSectionBoundary`** (`pages/HomePage.jsx`) — 홈 섹션 단위. 7개 섹션(히어로/추천/투어/커뮤니티/칼럼/강연/책CTA) 각각 격리. 한 섹션이 죽어도 다른 섹션 정상 렌더.
+- **`PageErrorBoundary`** ([boot.jsx:64](boot.jsx#L64)) — 라우트 단위. 한 페이지 컴포넌트가 throw 해도 전역 트리 보존, "다시 시도/홈으로/새로고침" UI. `key={route}` 로 라우트 변경 시 자동 reset.
+- **`HomeSectionBoundary`** ([pages/HomePage.jsx](pages/HomePage.jsx)) — 홈 섹션 단위. 7개 섹션(히어로/추천/투어/커뮤니티/칼럼/강연/책CTA) 각각 격리. 한 섹션이 죽어도 다른 섹션 정상 렌더.
 - 양 boundary 모두 `BGNJ_API.errorLog.report` 자동 호출.
+- v00.071 부터 boot.js (esbuild 산출물) 가 `<script src="boot.js?v=...">` 로 로드 — 이전엔 index.html 의 인라인 `<script type="text/babel">` 였음.
 
 ### 2.4 컬러 시스템 v2 — Primary/Secondary/Tertiary + System
 - 5:25:70 황금 배색.
@@ -88,7 +100,7 @@ window.BGNJ_GUARD = {
 
 ### 2.5 모바일 정책
 - ≤900px: 다열 그리드 모두 1단 강제 (`!important` 로 인라인 스타일 덮음).
-- ≤600px (폰): 헤더 64px, container padding 16px, 터치 타겟 44px+, hero 지도 미리보기 숨김.
+- ≤600px (폰): 헤더 64px, container padding 16px, 터치 타겟 44px+, hero 지도 미리보기 숨김(v00.105 부터 hero 지도 자체 제거 — 추천 카드만).
 - 햄버거 메뉴: Esc 닫기 + body scroll lock + viewport > 900px 자동 닫힘 + 라우트 변경 자동 닫힘.
 
 ### 2.6 폰트 가독성 (WCAG 정합)
@@ -96,69 +108,83 @@ window.BGNJ_GUARD = {
 - `.nav-link` 14px / weight 500. `.section-eyebrow` weight 600. `.field-label` weight 600. `.footer h4` weight 600.
 - `.mono` weight 500, `.mono.dim-2` weight 600 (한글 보조에서 IBM Plex Mono 가는 weight 가독성 보강).
 
-### 2.7 자동화 — `tools/check-syntax.mjs`
-- `@babel/parser` 로 16 개 .jsx/.js 일괄 파싱 → SyntaxError 차단 (v00.042.001 같은 사고 재발 방지).
-- 룰 시스템 — `RULES` 배열에 `{ name, allow, pattern, msg }` 추가.
-- 차단 룰 3 개:
+### 2.7 자동화 — `tools/check-syntax.mjs` + `tools/build.mjs` + `tools/stamp-datetime.mjs`
+- **build.mjs** (v00.071): `*.jsx → *.js` 사전 컴파일 (esbuild). 매 커밋 시 자동 실행 + 산출물 자동 stage. @babel/standalone CDN 폐기 (~3MB ↓).
+- **stamp-datetime.mjs** (v00.111): ADMIN_VERSION_HISTORY[0].datetime sentinel `new Date().toISOString()` 을 실제 KST(+09:00) ISO 로 자동 치환.
+- **check-syntax.mjs**: `@babel/parser` 로 19 개 .jsx/.js 일괄 파싱 → SyntaxError 차단.
+- 차단 룰 4 개 ([tools/check-syntax.mjs:89](tools/check-syntax.mjs#L89)):
   1. `BANGINOJA_DATA` — 시드 직접 참조 금지 (`data.js` 만 allow).
   2. `console.log` — production 노이즈 금지 (`data.js` / `api.js` 만 allow).
   3. `var` — let/const 강제.
-- 정보성 룰 (차단 안 함, 카운트만): TODO/FIXME/HACK/XXX 잔재 마커.
+  4. `direct_fetch` — `BGNJ_API` 우회 차단 (`api.js` / `data.js` 만 allow).
+- 정보성 룰 (차단 안 함, 카운트만):
+  - `TODO` — 코멘트 마커 (v00.114 부터 string 내부 false-positive 차단).
+  - `equality_loose` — `==` / `!=` (v00.114 부터 `== null` idiom 제외).
+  - `large_file` — 8000줄 초과 분할 권장.
 - 우회: 같은 줄 또는 직전 줄에 `// bgnj-lint-ignore-next-line <RULE>`.
-- pre-commit 훅: `tools/install-hooks.sh` 가 `.git/hooks/pre-commit` 설치 (이미 활성).
+- pre-commit 훅: `tools/install-hooks.sh` 가 `.git/hooks/pre-commit` 설치. 순서: stamp-datetime → 자동 stage → build → stage .js → check-syntax.
 
 ### 2.8 릴리스 워크플로우 (3종 동기 + 1 명령)
 변경 시 항상 함께 갱신:
 1. **`data.js`** — `window.BGNJ_VERSION.version` + `build` 갱신.
-2. **`index.html`** — 17 곳의 `?v=00.0XX.YYY` 일괄 (`sed -i '' 's/?v=OLD/?v=NEW/g'`).
-3. **`pages/AuthAdminPage.jsx`** — `ADMIN_VERSION_HISTORY` 맨 앞에 새 항목 (`version/date/summary/details[]/context`).
-4. **`git push origin main`** — pre-commit 훅 통과 후 GitHub Pages 자동 배포.
+2. **`index.html`** — 21곳의 `?v=00.0XX.YYY` 일괄 (Edit replace_all 패턴).
+3. **`pages/admin/AdminDesignHub.jsx`** — `ADMIN_VERSION_HISTORY` 맨 앞에 새 항목. datetime 은 `new Date().toISOString()` sentinel 로 두면 commit 시 자동 stamp.
+4. **`git push origin main`** — pre-commit 훅(stamp-datetime + build + 룰) 통과 후 GitHub Pages 자동 배포.
 
-### 2.9 BGNJ_STORES 4-태그 분류 (v00.049)
-- 🌐 server-backed (10): grades / categories / notifications / columnEngagement / bankAccount / legalDocs / auditLog / siteContent / books / faqs
-- 💾 local intentional (2): userPosts (사용자 임시 글) / session (세션 토큰 캐시)
-- ⚠ legacy (9): communityPosts / comments / userColumns / bookmarks / reports / bookOrders / bookReviews / tourReviews / lectureReviews
-- 🪦 dead 제거됨 (4): ~~lectureOverrides / lectureRegistrations / tourOverrides / tourReservations~~ (v00.049 정리)
+### 2.9 BGNJ_STORES 4-태그 분류 (v00.049 → v00.063 → v00.079)
+- 🌐 server-backed (D1): grades_kv / categories_kv / notifications / columnEngagement / bankAccount / legalDocs / auditLog / siteContent_kv / books / faqs / posts / comments / tours / lectures / login_attempts
+- 💾 local intentional: userPosts (사용자 임시 글) / session (세션 토큰 캐시) / drafts (BGNJ_DRAFTS 임시저장)
+- ⚠ legacy: bookOrders / bookReviews / tourReviews / lectureReviews (점진 마이그)
+- 🪦 dead 제거됨: ~~lectureOverrides / lectureRegistrations / tourOverrides / tourReservations~~ (v00.049) / ~~bookmarks~~ (v00.051) / ~~reports~~ (v00.063) / ~~bgnj_comments~~ (v00.079, storage v6-comments-dead)
 
 ---
 
 ## 3. 파일 구조
 
 ```
-/                                      ← bgnj.net 루트
-├─ index.html                          App + 라우팅 + ErrorBoundary
-├─ data.js                             BGNJ_VERSION, BGNJ_STORES, BGNJ_GUARD, 모든 BGNJ_* 헬퍼, BANGINOJA_DATA(레거시 시드, 직접 참조 금지)
-├─ api.js                              BGNJ_API (Worker fetch wrapper)
-├─ styles.css                          토큰 + 컴포넌트 + 반응형
-├─ 404.html                            GitHub Pages SPA fallback (?p= 리다이렉트)
+/                                        ← bgnj.net 루트
+├─ index.html                            App + 라우팅 boot 외부 + ErrorBoundary boot.js 외부 + CSP meta
+├─ data.js                               BGNJ_VERSION, BGNJ_STORES, BGNJ_GUARD, BGNJ_FMT, BGNJ_SAFE_HTML, 모든 BGNJ_* 헬퍼
+├─ api.js                                BGNJ_API (Worker fetch wrapper)
+├─ styles.css                            토큰 + 컴포넌트 + 반응형
+├─ boot.jsx → boot.js                    PageErrorBoundary + App + go/route + Promise.allSettled init (v00.071)
+├─ 404.html                              GitHub Pages SPA fallback (?p= 리다이렉트)
 ├─ CNAME
 ├─ assets/
-│  └─ logo.svg                         로고 SVG (in-page favicon은 dataURI 임베드)
-├─ components/
-│  ├─ Shell.jsx                        Brand · Nav (햄버거 + 메가) · Footer · Tweaks · NotificationBell · ScrollToTop · BanginojaIcon · CookieConsent · GradeBadge
-│  ├─ KoreaMap.jsx                     SVG 시도 지도 (라벨 호버시 노출)
-│  ├─ KoreaMapData.js                  지역 path 데이터
-│  └─ TiptapEditor.jsx                 Tiptap 래퍼
-├─ pages/
-│  ├─ HomePage.jsx                     히어로(지도 미리보기) + 추천/투어/커뮤니티/칼럼/강연/책CTA + DestinationMapModal + RecommendationDetailModal + HomeSectionBoundary
-│  ├─ CommunityPage.jsx                목록/상세/작성/댓글/멘션/이미지 슬라이더
-│  ├─ ColumnPage.jsx                   칼럼 목록/상세
-│  ├─ WangsanamTourPage.jsx            왕사남 + 투어 (TourPage / TourBookingPanel / TourReviewsSection)
-│  ├─ LecturesPage.jsx                 강연
-│  ├─ BookCheckoutPage.jsx             BookPage / CheckoutPage
+│  └─ logo.svg                           로고 SVG (in-page favicon은 dataURI 임베드)
+├─ components/                           (.jsx 소스 + .js 빌드 산출물)
+│  ├─ Shell.jsx                          Brand · Nav (햄버거 + 메가) · Footer · Tweaks · NotificationBell · ScrollToTop · BanginojaIcon · CookieConsent · GradeBadge · CoverPlaceholder
+│  ├─ KoreaMap.jsx                       SVG 시도 지도 (라벨 호버시 노출)
+│  ├─ KoreaMapData.js                    지역 path 데이터 (hand-written, jsx 짝 없음)
+│  └─ TiptapEditor.jsx                   Tiptap 3.22.5 래퍼
+├─ pages/                                (.jsx 소스 + .js 빌드 산출물)
+│  ├─ HomePage.jsx                       히어로 + HeroProgramCards(v00.106) + 추천/투어/커뮤니티/칼럼/강연/책CTA + DestinationMapModal + RecommendationDetailModal + HomeSectionBoundary
+│  ├─ CommunityPage.jsx                  목록/상세/작성/댓글/멘션/이미지 슬라이더/파일 첨부
+│  ├─ ColumnPage.jsx                     칼럼 목록/상세/통합 작성 모달 (v00.067)
+│  ├─ WangsanamTourPage.jsx              왕사남 + 투어 (TourPage / TourBookingPanel / TourReviewsSection)
+│  ├─ LecturesPage.jsx                   강연
+│  ├─ BookCheckoutPage.jsx               BookPage / CheckoutPage
 │  ├─ MyPage.jsx
-│  ├─ AuthAdminPage.jsx                LoginPage / AdminPage / 모든 admin 패널 + ADMIN_VERSION_HISTORY
-│  ├─ EatSleepShopPages.jsx            먹고/자고/사고 놀자
-│  └─ LegalFaqPages.jsx
+│  ├─ AuthAdminPage.jsx                  LoginPage / AdminPage / 모든 admin 패널 (~6100줄)
+│  ├─ EatSleepShopPages.jsx              먹고/자고/사고 놀자 (v00.105 그룹화)
+│  ├─ LegalFaqPages.jsx
+│  └─ admin/
+│     ├─ AdminDesignHub.jsx              ADMIN_VERSION_HISTORY + Design System View + DEPENDENCY_MATRIX + 미션 + 기능 정의서 (v00.070 분할)
+│     └─ AdminContentEditors.jsx         TourPageEditorPanel / LecturePageEditorPanel / KindPagePanel / LegacyMigrationPanel (v00.078 분할)
 ├─ workers/
-│  ├─ src/index.js                     Cloudflare Worker (Hono-less, fetch handler)
-│  ├─ schema*.sql
-│  └─ wrangler.toml
-└─ tools/                              local-only (배포 안 됨)
-   ├─ check-syntax.mjs                 babel 파서 + 룰 검사
-   ├─ install-hooks.sh                 .git/hooks/pre-commit 설치
-   ├─ package.json                     @babel/parser
-   └─ node_modules/                    (gitignore)
+│  ├─ src/index.js                       Cloudflare Worker (모든 endpoint)
+│  ├─ schema.sql / schema-v2.sql / schema-v3.sql
+│  ├─ schema-v4.sql                      login_attempts (rate limit · v00.113)
+│  └─ wrangler.toml                      D1 + R2 + ALLOWED_ORIGINS / SUPER_ADMIN_EMAILS
+├─ tools/                                local-only (배포 안 됨)
+│  ├─ build.mjs                          esbuild 사전 컴파일 (v00.071)
+│  ├─ check-syntax.mjs                   babel 파서 + 룰 4종 + 정보성 3종
+│  ├─ stamp-datetime.mjs                 datetime sentinel auto-stamp (v00.111)
+│  ├─ install-hooks.sh                   .git/hooks/pre-commit 설치
+│  ├─ package.json                       @babel/parser + esbuild
+│  └─ node_modules/                      (gitignore)
+├─ ROADMAP.md                            forward-looking 사이클 백로그
+└─ CONTEXT.md                            (이 문서)
 ```
 
 ---
@@ -185,47 +211,34 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.071)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.114)
 
-| 버전 | 날짜 | 핵심 |
-|---|---|---|
-| **v00.039** | 2026-04-29 | Sunny Gold 팔레트 — 로고 #F5D548 기준으로 색상 통일. 시멘틱 토큰 기반 정렬. |
-| **v00.040** | 2026-04-29 | 컬러 시스템 v2 (5:25:70 황금 배색) + 메뉴 9→6 통합 (놀자 메가메뉴) |
-| **v00.041** | 2026-04-29 | 모바일 햄버거 + 지도 라벨 기본 숨김 + 폰트 weight 300→400 (WCAG) |
-| **v00.041.001** | 2026-04-29 | 모바일 페이지 레벨 2단 → 1단 강제 |
-| **v00.042** | 2026-04-29 | 투어 NOT NULL 오류 수정 + PageErrorBoundary + 추천 여행지 CMS + 지도 모달화 + 로고 박스 제거 + 사이드바/메뉴 가독성 |
-| **v00.042.001** | 2026-04-29 | 핫픽스 — WangsanamTourPage 누락된 `</div>` 복구 (Babel SyntaxError) |
-| **v00.043** | 2026-04-29 | 추천 카드 상세 모달 + 라우트별 document.title + 모바일 메뉴 Esc·scroll lock + 메타 텍스트 weight |
-| **v00.044** | 2026-04-29 | 홈페이지 안정성 스윕 — 신택스 검증 + HomeSectionBoundary + 헬퍼 가드 (인라인 safeArr) |
-| **v00.045** | 2026-04-29 | `BGNJ_GUARD` 표준 가드 + pre-commit 신택스 훅 정착 + 히어로 지도 미리보기 복원 |
-| **v00.045.001** | 2026-04-29 | 히어로 지도 a11y (중첩 button role) + 폰에서 미리보기 숨김 |
-| **v00.046** | 2026-04-29 | 홈페이지 D1 source-of-truth — 시드 폴백 차단 + 누락 `BGNJ_COMMUNITY.refreshPosts` 추가 + storage v2-server-first 마이그레이션 |
-| **v00.047** | 2026-04-30 | `BANGINOJA_DATA` 시드 직접 참조 전면 폐지 + check-syntax 룰화 + CommunityPage 가드 통일 |
-| **v00.048** | 2026-04-30 | check-syntax 룰 다중화 + console.log 룰 추가 + BGNJ_STORES 26 키 4-태그 분류 문서화 |
-| **v00.049** | 2026-05-01 | dead 4 키 제거 + users 키 서버 일원화 + var/TODO 룰 추가 + storage v3-no-overrides 마이그레이션 |
-| **v00.049.001** | 2026-05-01 | 핫픽스 — AdminPage useMemo deps 의 잔존 `data` 식별자 제거 + CONTEXT.md 신설 |
-| **v00.050** | 2026-05-01 | 관리자 사이드바 모바일 drawer + 회원등급 자동승급 7 조건 + 강등 알림 + BGNJ_VISITS |
-| **v00.051** | 2026-05-01 | 자동승급 룰 GUI 편집 (BGNJ_GRADE_RULES_EFFECTIVE) + bookmarks 키 제거 (storage v4) |
-| **v00.052** | 2026-05-01 | 다크 모드 토큰 (BGNJ_THEME · light/dark/auto) + OG 이미지 SVG fallback + KMS 라이브 토큰 카드 |
-| **v00.053** | 2026-05-01 | 다크 nav/sidebar/footer 가독성 핫픽스 + KoreaMap stroke 강조 + 자동승급 기준 등급표 인라인 + OG 로고-only |
-| **v00.054** | 2026-05-01 | 관리자 '히어로' 탭 — 콘텐츠 8 항목 + 스타일 4 그룹(eyebrow/title/subtitle/cta) GUI 편집 + 라이브 미리보기 |
-| **v00.055** | 2026-05-01 | 의존성 patch 갱신 (@babel/parser, @babel/standalone) + workers/package.json + KMS 의존성 매트릭스 |
-| **v00.056** | 2026-05-01 | 히어로 통계 카드 GUI 편집 (hero.stats + heroStyle.stats) + footerStyle 토큰 베이스 |
-| **v00.057** | 2026-05-01 | 푸터 스타일 GUI 편집 — FooterStyleEditor (description/signature/heading 3 그룹) + 라이브 미리보기 |
-| **v00.058** | 2026-05-01 | 한글 IME 핫픽스 (내부 컴포넌트 호이스팅) + heroStyle 모바일 별도 트윗 + viewport 토글 미리보기 |
-| **v00.059** | 2026-05-01 | 다크 모드 인라인 hex 정합 잔존부 — 환불 amber #e8a020 → var(--warning), 추천 카드/모달 닫기 버튼, styles.css 추가 룰 |
-| **v00.060** | 2026-05-01 | OG 이미지 관리 UI — OgPreviewBlock (라이브 미리보기 + 플랫폼 호환성 표 + 업로드 안내) |
-| **v00.061** | 2026-05-01 | 핫픽스 addNewLecture await 누락 (startsAt null 오류) + lint 룰 (direct_fetch / equality_loose / large_file) |
-| **v00.062** | 2026-05-01 | 서버 metrics endpoint (/api/admin/users/:id/metrics) + BGNJ_GRADE_PROMO 캐시 prefer · ★ 워커 배포 필요 |
-| **v00.063** | 2026-05-01 | legacy 'reports' 키 제거 (BGNJ_STORES + SAVE + localStorage) + storage v5-reports-dead. comments 는 v00.065+ 분리 |
-| **v00.064** | 2026-05-01 | HTTPS/SSL 코드 측 정합 — og:url + og:site_name + opt-in HTTPS 강제 헬퍼 + CONTEXT §7.5 인프라 가이드 |
-| **v00.065** | 2026-05-01 | 투어 페이지 답사 일정 + 준비물 GUI 편집 (TourPageEditorPanel + site_content_kv.tourSchedule / tourPrep) |
-| **v00.066** | 2026-05-01 | 답사 일정/준비물 템플릿 시스템 + per-tour override · 3 모드 (글로벌/템플릿/투어별) |
-| **v00.067** | 2026-05-01 | 칼럼 작성/목록 통합 모달 + BGNJ_DRAFTS(7일/10개) + useModalGuard(ESC/외부클릭 임시저장 prompt) + Tab focus-visible |
-| **v00.068** | 2026-05-01 | Tiptap 무료 extension 풍부화 (밑줄/형광펜/Sub-Sup/색상/표/체크리스트/코드블록/정렬/YouTube) + 커뮤니티 글쓰기 모달 |
-| **v00.069** | 2026-05-01 | 게시글 파일 첨부 10MB×3 (FileAttacher) + 상세 다운로드 링크. 이미지(10장)+슬라이드는 기 구현 점검 |
-| **v00.070** | 2026-05-01 | 투어 페이지 모든 항목 admin 편집 — tourIntro/tourReviewsGate/coverDataUri site_content + _toTour 누락 4 필드(level/duration/group/next) fix + AuthAdminPage 9332→6900 줄 분할 (AdminDesignHub.jsx) |
-| **v00.071** | 2026-05-01 | 빌드 단계 도입 (esbuild) — `tools/build.mjs` 가 `*.jsx → *.js` 사전 컴파일 + pre-commit hook 자동화. `@babel/standalone` CDN 제거 (~3MB ↓). 인-브라우저 경고 / 500KB deopt 노트 근본 차단 |
+상세는 `pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY`. 본 표는 한 줄 요약.
+
+| 버전 | 핵심 |
+|---|---|
+| **v00.039~049** | Sunny Gold + 5:25:70 컬러 시스템 + BGNJ_GUARD + ErrorBoundary 2-tier + check-syntax 룰화 + storage v3 마이그 |
+| **v00.050~055** | 관리자 사이드바 drawer + 자동승급 룰 GUI + 다크 모드 토큰 + KMS 디자인 토큰 카드 + 의존성 patch 갱신 |
+| **v00.056~063** | 푸터 스타일 GUI + IME 핫픽스 + heroStyle 모바일 별도 + OG UI + addNewLecture await fix + metrics endpoint + storage v5 reports-dead |
+| **v00.064** | HTTPS 코드 측 정합 (og:url + 조건부 강제 헬퍼 + CONTEXT §7.5) |
+| **v00.065~068** | 투어 답사 일정/준비물 GUI + 칼럼 통합 모달 + BGNJ_DRAFTS + Tiptap 무료 extension 풍부화 + 커뮤니티 글쓰기 모달 |
+| **v00.069~070** | 게시글 파일 첨부 10MB×3 + AuthAdminPage 9332→6900 분할 (AdminDesignHub.jsx) + tour 누락 4 필드 fix |
+| **v00.071** | **빌드 단계 도입 (esbuild)** — `@babel/standalone` 폐기. boot.jsx 분리. pre-commit 자동화 |
+| **v00.072~076** | 홈 카드 desc 축약 + TourAdminPanel inline 통합 + hero/intro 일괄 admin + 데이터 매퍼 audit + Tiptap CSS 보강 |
+| **v00.077~079** | useModalGuard 일괄 + AdminContentEditors.jsx 2차 분할 + storage v6 comments-dead + ★ wrangler deploy metrics |
+| **v00.081~082** | 투어 D1 cover_url + ★ wrangler deploy + R2 admin 6 슬롯 활성화 |
+| **v00.090** | **Tiptap 3 메이저** — 3.22.5. StarterKit 중복 제거 |
+| **v00.100** | React 19 평가 → UMD 단종으로 보류. 18.3.1 LTS 유지 |
+| **v00.101~104** | LecturePageEditorPanel + R2 books/recommendations + R2 게시글 첨부 + LegacyMigrationPanel |
+| **v00.105** | hero 지도 제거 + 빈 섹션 미노출 + CoverPlaceholder + Tiptap 3 named imports + 놀자 시리즈 그룹화 + 투어/강연 admin 통합 |
+| **v00.106** | TourAdminPanel 폼 재구조화 (필드 그룹 6) + 부제/환불정책 D1 + GUI 일정/준비물 + ★ wrangler deploy |
+| **v00.107~108** | ADMIN_VERSION_HISTORY datetime + BGNJ_FMT KST + CSV 다운로드 + formatToParts fix + 사이트 KST sweep |
+| **v00.109** | **보안 audit** — DOMPurify XSS sanitize 5곳 + R2 폴더 권한 분기 + HTTP origin 제거 + ★ wrangler deploy |
+| **v00.110** | 홈 hero ReferenceError fix + v00.106~109 datetime 실제 commit 시간 정정 |
+| **v00.111** | datetime auto-stamp tool + 게시판 작성 권한(post_min_level) + X-Frame-Options/CSP frame-ancestors |
+| **v00.112** | BGNJ_SAFE_HTML hardening — iframe 화이트리스트 + data: image-only + target=_blank noopener + ROADMAP 갱신 |
+| **v00.113** | **전체 CSP** + brute-force rate limit (D1 login_attempts) + ★ wrangler deploy v00.111 + rate limit 일괄 |
+| **v00.114** | check-syntax false-positive 차단 (TODO 코멘트만 / equality_loose `== null` idiom 제외) + CONTEXT.md v00.114 갱신 |
 
 ---
 
@@ -233,9 +246,11 @@ URL 매핑 (`VALID_ROUTES`):
 
 ### 항상 적용
 - 작업 끝나면 별도 지시 없이도 commit + push (auto deploy 정책).
-- 모든 변경에 `BGNJ_VERSION` + `?v=` cache-buster 17곳 + `ADMIN_VERSION_HISTORY` 동기.
+- 모든 변경에 `BGNJ_VERSION` + `?v=` cache-buster 21곳 + `ADMIN_VERSION_HISTORY` 동기.
 - 새 컴포넌트/페이지: `BGNJ_GUARD.{arr,call}` 패턴으로 헬퍼 호출 보호.
 - 새 데이터 표시: D1 → BGNJ_API → BGNJ_* 헬퍼 → 페이지. 시드 폴백 만들지 말 것.
+- 새 dangerouslySetInnerHTML: 반드시 `BGNJ_SAFE_HTML(html)` 래핑.
+- 시간 표시: `BGNJ_FMT.kstDateTime/kstShort/kstDate/kstFriendly` 사용 (KST 강제). 사용자 브라우저 TZ 의존 toLocaleString 금지.
 - 색상: 옐로우는 인터랙션 상태에만 (5% 면적). 배경/라벨로 깔지 말 것.
 - 모바일: 다열 그리드 1단으로. 인라인 `gridTemplateColumns: '1fr 1fr'` 사용 시 클래스 부여.
 
@@ -243,6 +258,7 @@ URL 매핑 (`VALID_ROUTES`):
 - `window.BANGINOJA_DATA` 직접 참조 (페이지/컴포넌트에서). pre-commit 훅이 차단.
 - `console.log` (페이지/컴포넌트에서). 진단은 `console.error/warn` 또는 `errorLog` 헬퍼.
 - `var` 키워드. let/const 만.
+- `fetch(...)` 직접 호출. `BGNJ_API` 헬퍼 사용.
 - 옐로우 면적으로 깔기 (`background: var(--primary)` 같은 큰 영역).
 
 ### 우회 마커
@@ -250,30 +266,30 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 7. 다음 사이클 백로그 (v00.056 → v00.063, 총 8 사이클)
+## 7. 다음 사이클 백로그
 
-각 사이클은 1 패치 단위로 commit/push (auto deploy). 우선순위 순:
+상세는 `ROADMAP.md` 의 큐 1~4. 본 §은 요약.
 
+### 큐 1 — 코드 사이클
+- **v00.116+** CSP nonce 기반 strict-dynamic — inline `<script>` 부트스트랩 4종에 nonce 부여 → `'unsafe-inline'` 제거.
+- **v00.117+** 옛 schema.sql `categories` / `grades` 테이블 deprecation — categories_kv / grades_kv 일원화 후 legacy DROP.
 
+### 큐 2 — 워커 배포 의존
+(현재 비어있음 — v00.113 deploy 로 모두 처리됨.)
 
+### 큐 3 — 메이저 마이그레이션
+- React 19 — UMD 단종으로 보류. ESM 재구조화 시점 도래 시 진입.
+- ProseMirror / Lexical 검토 — Tiptap 유지보수 변경 시점.
 
-
-### v00.065 — legacy 'comments' 키 서버 일원화
-data.js 의 BGNJ_STORES.comments[postId] 직접 read/write 패턴(다수)을 BGNJ_API.community.comments 헬퍼 + BGNJ_COMMUNITY._comments 캐시로 전환. AuthAdminPage 6800 totalComments 등 호출처 정합. storage v6-comments-dead 마이그레이션.
-**위험도:** 중간 — 데이터 흐름 변경 + 호출처 다수.
-
-
-### 별도 메이저 마이그레이션 (사이클 외)
-- **React 19** (현재 18.3.1 → 19.2.5) — ref-as-prop, useEffect 동작 변경 검증.
-- **Tiptap 3** (현재 2.11.5 → 3.22.5) — extension API 브레이킹 체인지. AdminColumnEditor + TiptapEditor.jsx 마이그레이션.
-
-각 메이저는 1 사이클 단독. 일반 사이클과 분리.
+### 큐 4 — 사용자 직접 작업 (코드 외)
+- **★ HTTPS/SSL 인프라 도입** — Cloudflare 대시보드 + GitHub Pages 설정 (§7.5 가이드).
+- **★ Cloudflare Secrets 이관** — `wrangler secret put SUPER_ADMIN_EMAILS` + `wrangler secret put ADMIN_BOOTSTRAP_EMAIL` 후 wrangler.toml [vars] 에서 두 항목 제거.
 
 ---
 
-## 7.5. HTTPS / SSL 도입 가이드 (v00.064 — 사용자 직접 작업)
+## 7.5. HTTPS / SSL 도입 가이드 (사용자 직접 작업)
 
-현재 `http://bgnj.net` 운영. HTTPS 도입은 인프라 작업으로 **사용자가 직접 진행해야 함**. 코드 측 정합은 v00.064 에서 완료 (og:url 메타 + 조건부 HTTPS 강제 헬퍼).
+v00.064 에 코드 측 정합 완료(og:url 메타 + 조건부 HTTPS 강제 헬퍼). v00.109 부터 워커 ALLOWED_ORIGINS 가 https-only — 하단 §3 단계는 적용됨. §1, §2, §4 가 사용자 수동.
 
 ### 단계 1 — Cloudflare DNS / SSL 설정
 1. Cloudflare 대시보드 → bgnj.net → SSL/TLS → "Full" 또는 "Full (strict)" 모드.
@@ -284,20 +300,17 @@ data.js 의 BGNJ_STORES.comments[postId] 직접 read/write 패턴(다수)을 BGN
 1. GitHub repo → Settings → Pages → Custom domain `bgnj.net` 입력.
 2. "Enforce HTTPS" 체크 (DNS 전파 후 자동 활성화 가능).
 
-### 단계 3 — 워커 ALLOWED_ORIGINS http 항목 제거
-`workers/wrangler.toml` 의 `ALLOWED_ORIGINS` 에서 `http://bgnj.net,http://www.bgnj.net,http://scoutkorea-jimmy.github.io` 제거. https 만 남김. `wrangler deploy` 재배포.
+### 단계 3 — 워커 ALLOWED_ORIGINS http 항목 제거 ✅ (v00.109 완료)
+완료. https-only.
 
 ### 단계 4 — 클라이언트 HTTPS 강제 활성화
-브라우저 콘솔에서:
 ```js
 localStorage.setItem('bgnj_force_https', '1')
 ```
-이후 http:// 진입은 자동 https 리다이렉트.
 
 ### 검증
 - `curl -I http://bgnj.net` → 301 / Location https://bgnj.net 확인.
 - `curl -I https://bgnj.net` → 200 OK + valid SSL.
-- 카카오톡/페이스북 공유 미리보기 → og:image PNG 정상 노출 (https 필수).
 
 ---
 
@@ -307,6 +320,9 @@ localStorage.setItem('bgnj_force_https', '1')
 # 전체 신택스 + 룰 검증
 node tools/check-syntax.mjs
 
+# esbuild 빌드 (수동)
+node tools/build.mjs
+
 # pre-commit 훅 재설치
 bash tools/install-hooks.sh
 
@@ -315,25 +331,32 @@ window.BGNJ_DIAG.run()
 
 # Worker health check
 curl -s https://banginoja-api.scoutkorea.workers.dev/api/health
+
+# D1 schema 적용 (사용자 수동, 필요 시)
+cd workers && npx wrangler d1 execute banginoja-db --remote --file=schema-v4.sql
+
+# 워커 deploy (사용자 수동)
+cd workers && npx wrangler deploy
 ```
 
 ---
 
 ## 9. 핵심 파일·라인 빠른 참조
 
-- `data.js:5` — `BGNJ_VERSION` (변경 항상 갱신)
-- `data.js:30` — `BGNJ_GUARD` 정의
-- `data.js:160` — storage 마이그레이션 진입점
-- `data.js:382` — `BGNJ_STORES` 4-태그 헤더 주석
-- `data.js:430` — `window.BGNJ_STORES = { ... }`
-- `index.html:23` — styles.css cache-buster
-- `index.html:81-96` — 17개 스크립트 cache-buster
-- `index.html:98+` — `AppErrorBoundary` + `PageErrorBoundary`
-- `index.html:282+` — `App` 컴포넌트 + 라우팅
-- `pages/HomePage.jsx:107+` — `HomeSectionBoundary` + 데이터 원칙 주석
-- `pages/AuthAdminPage.jsx:469` — `ADMIN_VERSION_HISTORY` (변경 항상 prepend)
-- `tools/check-syntax.mjs:81` — `RULES` 배열 (룰 추가 위치)
-- `styles.css:48` — `:root` 시맨틱 토큰
+- [data.js:4](data.js#L4) — `BGNJ_VERSION` (변경 항상 갱신)
+- [data.js:28](data.js#L28) — `BGNJ_GUARD` 정의
+- [data.js:50](data.js#L50) — `BGNJ_DRAFTS` (임시저장 v00.067)
+- [data.js:99](data.js#L99) — `BGNJ_THEME` (다크 모드 v00.052)
+- [data.js:236](data.js#L236) — `BGNJ_SAFE_HTML` sanitizer (v00.109/v00.112 hardening)
+- [data.js:322](data.js#L322) — `BGNJ_FMT` KST 헬퍼 (v00.107/v00.108)
+- [data.js:383](data.js#L383) — storage 마이그레이션 진입점 (v6-comments-dead)
+- [boot.jsx:64](boot.jsx#L64) — `PageErrorBoundary`
+- [pages/HomePage.jsx](pages/HomePage.jsx) — `HomeSectionBoundary` + `HeroProgramCards`
+- [pages/admin/AdminDesignHub.jsx:5](pages/admin/AdminDesignHub.jsx#L5) — `ADMIN_VERSION_HISTORY` (변경 항상 prepend, datetime 은 sentinel)
+- [tools/check-syntax.mjs:89](tools/check-syntax.mjs#L89) — `RULES` (4종 차단)
+- [tools/check-syntax.mjs:122](tools/check-syntax.mjs#L122) — `INFO_RULES` (3종 정보성)
+- [workers/src/index.js](workers/src/index.js) — `clientIp` / `checkRateLimit` / `recordAttempt` (v00.113)
+- [workers/schema-v4.sql](workers/schema-v4.sql) — login_attempts (rate limit · v00.113)
 
 ---
 

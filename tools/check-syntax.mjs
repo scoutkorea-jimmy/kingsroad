@@ -119,18 +119,21 @@ const RULES = [
 
 // 추가 정보성 검사 — 위반이 있어도 차단은 안 하고 카운트만 보고.
 // 룰별로 첫 5건씩 묶어 출력.
+// v00.114 — false-positive 차단:
+//   · TODO 룰: 코멘트 마커 (// TODO, /* TODO) 만 매치. 문자열 내 'TODO' 단어 제외.
+//   · equality_loose: `== null` / `!= null` 은 의도된 idiom (null + undefined 동시 검사) — 매치 제외.
 const INFO_RULES = [
   {
     name: "TODO",
-    pattern: /\b(TODO|FIXME|HACK|XXX)\b/,
-    msg: "잔재 마커",
+    // `// TODO`, `/* TODO`, `* TODO` (JSDoc 행 시작) 만 매치.
+    pattern: /(?:\/\/|\/\*|^\s*\*)\s*(TODO|FIXME|HACK|XXX)\b/,
+    msg: "잔재 마커 (코멘트)",
   },
   {
     name: "equality_loose",
-    // == 와 != 사용. == null / != null 은 의도적 idiom 이지만 일관성을 위해 모두 카운트.
-    // === / !== 사용 권장.
-    pattern: /[^=!<>]==[^=]|[^=!]!=[^=]/,
-    msg: "느슨한 비교(==/!=) — === / !== 권장 (== null 은 idiom 허용)",
+    // `== null` / `!= null` 은 idiom — lookahead 로 제외.
+    pattern: /[^=!<>]==(?!\s*null\b)[^=]|[^=!]!=(?!\s*null\b)[^=]/,
+    msg: "느슨한 비교(==/!=) — === / !== 권장",
   },
 ];
 
