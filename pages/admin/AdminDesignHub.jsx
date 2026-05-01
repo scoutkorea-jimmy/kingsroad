@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.101.000",
+    date: "2026-05-01",
+    summary: "🎤 LecturePageEditorPanel 신설 (강연 페이지 글로벌/템플릿/per-lecture 편집) + HomePage 추천 섹션 헤딩 site_content 연동.",
+    details: [
+      "🎤 pages/admin/AdminContentEditors.jsx — LecturePageEditorPanel + LPE_NotesEditor + LPE_PreviewCard 추가. TourPageEditorPanel 의 글로벌/템플릿/per_tour 패턴을 강연(lectureSchedule/lectureNotes/lectureTemplates/lecturePages) 으로 일대일 복제.",
+      "🎤 admin 사이드바 — '운영설정' 그룹에 '강연 페이지' 탭 추가 (투어 페이지 다음). AuthAdminPage trampoline 에 LecturePageEditorPanel 등록.",
+      "🎤 site_content_kv.lectureTemplates 신설 (DEFAULT_SITE_CONTENT) — { id, name, schedule, notes } 배열. tourTemplates 와 동일 구조.",
+      "🎤 강연별 커버 업로드 — R2 우선 (folder='lecture-covers', 5MB) + dataURI 폴백 (1.5MB). v00.082 R2 헬퍼 활용.",
+      "🏠 HomePage.jsx 추천 여행지 섹션 헤딩 — 하드코드 → site_content_kv.recommendationsHeading (eyebrow/titlePrefix/titleAccent/titleSuffix/subtitle). v00.073 sweep 잔재 처리.",
+      "🛠 SiteContentAdminPanel — '홈 페이지 — 추천 여행지 섹션 헤딩' SectionForm 신설. 강연 후기 안내 섹션의 'admin 직접 site_content 편집' 안내 → '운영설정 → 강연 페이지' 안내로 갱신.",
+      "📦 cache-buster — `?v=00.101.000` (20곳).",
+      "ℹ 사이클 번호 점프 (100→101): ROADMAP 의 v00.083 라벨은 계획 단위. 실제 release 버전은 단조 증가 (v00.100 다음 v00.101).",
+    ],
+    context: "v00.100 검증 보고가 '강연 글로벌 default 편집 GUI 부재 (v00.075 미완)' + '추천 섹션 헤더 site_content 미연동 (v00.073 sweep 미완)' 두 갭 식별 → 본 사이클에 일괄 처리. LecturePageEditorPanel 은 TourPageEditorPanel 거의 복제 — 회귀 위험 낮음. 다음 사이클(v00.102): R2 admin 확장 (Books 표지/PDF + Recommendations 이미지).",
+  },
+  {
     version: "00.100.000",
     date: "2026-05-01",
     summary: "🔬 React 19 마이그레이션 평가 — UMD 단종 확인 후 18.3.1 유지 결정. DEPENDENCY_MATRIX 갱신 (risk major → lts). 코드 변경 없는 분석 사이클.",

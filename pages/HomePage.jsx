@@ -402,12 +402,23 @@ const HomePage = ({ go }) => {
       {recommendations.length > 0 && (
         <HomeSectionBoundary label="뱅기노자 추천"><section className="section" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
           <div className="container">
-            <SectionHead
-              eyebrow="RECOMMENDATIONS · 뱅기노자 추천"
-              title={<>뱅기노자가 <span className="accent">추천</span>합니다</>}
-              subtitle="뱅기노자가 직접 걷고, 맛보고, 느낀 곳. 운영자가 큐레이션한 추천 여행지입니다."
-              action={<button type="button" className="btn-ghost" onClick={() => go('tour')}>전체 프로그램 →</button>}
-            />
+            {(() => {
+              // v00.083 — site_content_kv.recommendationsHeading 에서 hero 읽음 (v00.073 sweep 미완 잔재).
+              const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).recommendationsHeading || {};
+              const eb = _i.eyebrow      || 'RECOMMENDATIONS · 뱅기노자 추천';
+              const tp = _i.titlePrefix  ?? '뱅기노자가 ';
+              const ta = _i.titleAccent  ?? '추천';
+              const ts = _i.titleSuffix  ?? '합니다';
+              const sb = _i.subtitle     || '뱅기노자가 직접 걷고, 맛보고, 느낀 곳. 운영자가 큐레이션한 추천 여행지입니다.';
+              return (
+                <SectionHead
+                  eyebrow={eb}
+                  title={<>{tp}<span className="accent">{ta}</span>{ts}</>}
+                  subtitle={sb}
+                  action={<button type="button" className="btn-ghost" onClick={() => go('tour')}>전체 프로그램 →</button>}
+                />
+              );
+            })()}
             <div className="grid grid-3">
               {recommendations.map((r) => {
                 const tags = Array.isArray(r.tags) ? r.tags : (typeof r.tags === 'string' ? r.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : []);

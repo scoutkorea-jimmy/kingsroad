@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.100.000",
+  version: "00.101.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -491,9 +491,20 @@ const DEFAULT_SITE_CONTENT = {
     '정원이 차면 자동 대기자 등록 → 자리가 나면 자동 승격',
     '취소는 마이페이지 또는 강연 사이드바에서 가능',
   ],
-  // 강연별 override (v00.075) — { [lectureId]: { schedule: [{t,l}], notes: [str], coverDataUri?: string } }.
+  // 강연별 override (v00.075) — { [lectureId]: { schedule: [{t,l}], notes: [str], coverDataUri?: string, templateId?: string } }.
   // 키 누락 또는 빈 배열이면 글로벌 (lectureSchedule / lectureNotes) fallback. tourPages 와 동일 패턴.
   lecturePages: {},
+  // 강연 진행/참고 템플릿 모음 (v00.083) — 운영자가 자주 쓰는 패턴 저장.
+  // 각 항목: { id, name, schedule: [{t,l}], notes: [str] }. tourTemplates 와 동일 구조.
+  lectureTemplates: [],
+  // HomePage 추천 여행지 섹션 헤딩 (v00.083) — v00.073 sweep 잔재 처리.
+  recommendationsHeading: {
+    eyebrow: 'RECOMMENDATIONS · 뱅기노자 추천',
+    titlePrefix: '뱅기노자가 ',
+    titleAccent: '추천',
+    titleSuffix: '합니다',
+    subtitle: '뱅기노자가 직접 걷고, 맛보고, 느낀 곳. 운영자가 큐레이션한 추천 여행지입니다.',
+  },
   communityIntro: {
     eyebrow: 'COMMUNITY · 커뮤니티',
     titlePrefix: '다섯 봉우리 ',

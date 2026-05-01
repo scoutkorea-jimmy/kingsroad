@@ -486,6 +486,7 @@ const _arrRemove = window._arrRemove;
 const _arrUpdate = window._arrUpdate;
 const _arrMove   = window._arrMove;
 const TourPageEditorPanel = window.TourPageEditorPanel;
+const LecturePageEditorPanel = window.LecturePageEditorPanel; // v00.083
 const FooterStyleEditor   = window.FooterStyleEditor;
 const HeroEditorPanel     = window.HeroEditorPanel;
 
@@ -2375,8 +2376,17 @@ const SiteContentAdminPanel = () => {
         { key: 'empty',     label: '후기가 0건일 때 안내', full: true, multiline: true },
       ]}/>
       <p className="dim-2" style={{fontSize:12, marginBottom:6, marginTop:14, lineHeight:1.7}}>
-        ※ 강연별 진행 일정 / 참고 / 커버는 <strong>강연 메뉴 → 각 강연 카드의 "📋 강연 진행·참고·커버" 버튼</strong>에서 inline 편집. 글로벌 default 는 아래에서 직접 수정 가능 (admin 직접 site_content 편집 — 지원 시점에 SectionForm 추가 예정).
+        ※ 강연별 진행 일정 / 참고 / 커버 + 글로벌 default + 템플릿은 <strong>운영설정 → 강연 페이지 (v00.083)</strong> 에서 GUI 편집.
       </p>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>홈 페이지 — 추천 여행지 섹션 헤딩</h3>
+      <SectionForm key={`recommendationsHeading-${tick}`} section="recommendationsHeading" fields={[
+        { key: 'eyebrow',     label: '아이브로우 (예: RECOMMENDATIONS · 뱅기노자 추천)', full: true },
+        { key: 'titlePrefix', label: '큰 제목 앞부분 (예: 뱅기노자가 )' },
+        { key: 'titleAccent', label: '큰 제목 강조어 (예: 추천)' },
+        { key: 'titleSuffix', label: '큰 제목 뒷부분 (예: 합니다)' },
+        { key: 'subtitle',    label: '본문 설명', full: true, multiline: true },
+      ]}/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>커뮤니티 페이지 — 상단 인트로</h3>
       <SectionForm key={`communityIntro-${tick}`} section="communityIntro" fields={[
@@ -3913,7 +3923,7 @@ const AdminPage = ({ go }) => {
     { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "추천 여행지"] },
     { group: "회원관리",      items: ["회원", "회원 등급"] },
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
-    { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "투어 페이지", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
+    { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "투어 페이지", "강연 페이지", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보 관리", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "SEO", "설정"] },
   ];
@@ -4876,6 +4886,7 @@ const AdminPage = ({ go }) => {
         {tab === "사이트 콘텐츠" && <SiteContentAdminPanel/>}
         {tab === "히어로" && <HeroEditorPanel/>}
         {tab === "투어 페이지" && <TourPageEditorPanel/>}
+        {tab === "강연 페이지" && <LecturePageEditorPanel/>}
         {tab === "카테고리" && <AdminCategoryPanel/>}
         {tab === "약관/개인정보" && <LegalAdminPanel/>}
         {tab === "자주 묻는 질문" && <FaqAdminPanel/>}

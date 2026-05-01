@@ -596,6 +596,400 @@ const TourPageEditorPanel = () => {
   );
 };
 
+// === Lecture Schedule / Notes Editor (v00.083) ============================
+// TourPageEditorPanel 의 글로벌 / 템플릿 / per-lecture 패턴 복제.
+// site_content_kv: lectureSchedule (글로벌 진행) / lectureNotes (글로벌 참고) /
+//   lectureTemplates (템플릿 모음) / lecturePages[id] (per-lecture override).
+// 우선순위: per-lecture > 템플릿 > 글로벌 > 코드 default.
+
+const LPE_NotesEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
+  <div className="card" style={{padding:14, marginBottom:14}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>참고 안내</div>
+      <button type="button" className="btn btn-small" onClick={onAdd}>＋ 행 추가</button>
+    </div>
+    {rows.length === 0 && <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>아직 항목이 없습니다. ＋로 추가하세요.</p>}
+    {rows.map((p, i) => (
+      <div key={i} style={{display:'grid', gridTemplateColumns:'1fr auto', gap:8, marginBottom:8, alignItems:'center'}}>
+        <input type="text" className="field-input" value={p || ''}
+          onChange={(e) => onUpdate(i, e.target.value)} placeholder="회원 가입 후 신청 가능 — 비회원은 자동 차단"
+          style={{padding:'6px 8px', fontSize:13}}/>
+        <TPE_RowActions i={i} total={rows.length} onMove={onMove} onRemove={onRemove}/>
+      </div>
+    ))}
+  </div>
+);
+
+const LPE_PreviewCard = ({ schedule, notes }) => (
+  <div className="card" style={{padding:0, overflow:'hidden', position:'sticky', top:24}}>
+    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'8px 12px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
+      PREVIEW · 강연 페이지
+    </div>
+    <div style={{padding:'24px'}}>
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:14, paddingBottom:10, borderBottom:'1px solid var(--line)'}}>강연 진행</h3>
+      {schedule.filter((s) => s && (s.t || s.l)).length > 0 ? schedule.filter((s) => s && (s.t || s.l)).map((s, i) => (
+        <div key={i} style={{display:'grid', gridTemplateColumns:'80px 1fr', gap:16, padding:'10px 0', borderBottom:'1px dashed var(--line)'}}>
+          <div className="mono gold" style={{fontSize:11, letterSpacing:'0.1em'}}>{s.t || '—'}</div>
+          <div className="ko-serif" style={{fontSize:13}}>{s.l || '내용 미입력'}</div>
+        </div>
+      )) : (
+        <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>(미노출)</p>
+      )}
+      <h3 className="ko-serif" style={{fontSize:18, marginTop:24, marginBottom:14, paddingBottom:10, borderBottom:'1px solid var(--line)'}}>참고</h3>
+      {notes.filter(Boolean).length > 0 ? (
+        <ul style={{paddingLeft:18, color:'var(--ink-2)', fontSize:13, lineHeight:1.9}}>
+          {notes.filter(Boolean).map((n, i) => <li key={i}>{n}</li>)}
+        </ul>
+      ) : (
+        <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>(미노출)</p>
+      )}
+    </div>
+  </div>
+);
+
+const LecturePageEditorPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const [mode, setMode] = React.useState('global'); // 'global' | 'templates' | 'per_lecture'
+  const [msg, setMsg] = React.useState('');
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2500); };
+
+  // ── 글로벌 ─────────────────────────────────────
+  const [gSchedule, setGSchedule] = React.useState(() => Array.isArray(sc.lectureSchedule) ? sc.lectureSchedule.slice() : []);
+  const [gNotes, setGNotes] = React.useState(() => Array.isArray(sc.lectureNotes) ? sc.lectureNotes.slice() : []);
+  const saveGlobal = async () => {
+    try {
+      const cleanS = gSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
+      const cleanN = gNotes.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
+      await window.BGNJ_SITE_CONTENT.saveSection('lectureSchedule', cleanS);
+      await window.BGNJ_SITE_CONTENT.saveSection('lectureNotes', cleanN);
+      setTick((v) => v + 1);
+      flash('글로벌 저장됨 — 강연 페이지에 즉시 반영.');
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+  const resetGlobal = async () => {
+    if (!confirm('글로벌 진행/참고를 default 로 복원합니다. 진행할까요?')) return;
+    try {
+      await window.BGNJ_SITE_CONTENT.resetSection('lectureSchedule');
+      await window.BGNJ_SITE_CONTENT.resetSection('lectureNotes');
+      const next = window.BGNJ_SITE_CONTENT.get();
+      setGSchedule(Array.isArray(next.lectureSchedule) ? next.lectureSchedule.slice() : []);
+      setGNotes(Array.isArray(next.lectureNotes) ? next.lectureNotes.slice() : []);
+      setTick((v) => v + 1);
+      flash('글로벌 default 복원됨.');
+    } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  // ── 템플릿 ─────────────────────────────────────
+  const [templates, setTemplates] = React.useState(() => Array.isArray(sc.lectureTemplates) ? sc.lectureTemplates.slice() : []);
+  const [activeTplIdx, setActiveTplIdx] = React.useState(-1);
+  const activeTpl = activeTplIdx >= 0 ? templates[activeTplIdx] : null;
+  const addTemplate = () => {
+    const id = `lec-tpl-${Date.now()}`;
+    setTemplates((arr) => [...arr, { id, name: '새 템플릿', schedule: [], notes: [] }]);
+    setActiveTplIdx(templates.length);
+  };
+  const removeTemplate = (i) => {
+    if (!confirm(`"${templates[i]?.name || '템플릿'}" 을 삭제하시겠어요?`)) return;
+    setTemplates((arr) => arr.filter((_, j) => j !== i));
+    if (activeTplIdx >= templates.length - 1) setActiveTplIdx(-1);
+  };
+  const updateActiveTpl = (patch) => {
+    if (activeTplIdx < 0) return;
+    setTemplates((arr) => arr.map((t, j) => j === activeTplIdx ? { ...t, ...patch } : t));
+  };
+  const saveTemplates = async () => {
+    try {
+      const clean = templates.map((t) => ({
+        id: t.id || `lec-tpl-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+        name: String(t.name || '이름 없음'),
+        schedule: (Array.isArray(t.schedule) ? t.schedule : []).filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') })),
+        notes: (Array.isArray(t.notes) ? t.notes : []).filter((p) => p && String(p).trim()).map((p) => String(p).trim()),
+      }));
+      await window.BGNJ_SITE_CONTENT.saveSection('lectureTemplates', clean);
+      setTick((v) => v + 1);
+      flash('템플릿 저장됨.');
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  // ── 강연별 ─────────────────────────────────────
+  const lectures = React.useMemo(() => {
+    try { return (window.BGNJ_LECTURES?.listAll?.() || []).slice(); } catch { return []; }
+  }, [tick]);
+  const [activeLectureId, setActiveLectureId] = React.useState('');
+  const lecturePages = sc.lecturePages || {};
+  const activeOverride = activeLectureId ? (lecturePages[activeLectureId] || null) : null;
+  const [pSchedule, setPSchedule] = React.useState([]);
+  const [pNotes, setPNotes] = React.useState([]);
+  const [pTemplateId, setPTemplateId] = React.useState('');
+  const [pCover, setPCover] = React.useState('');
+  React.useEffect(() => {
+    if (!activeLectureId) { setPSchedule([]); setPNotes([]); setPTemplateId(''); setPCover(''); return; }
+    const ovr = lecturePages[activeLectureId] || {};
+    setPSchedule(Array.isArray(ovr.schedule) ? ovr.schedule.slice() : []);
+    setPNotes(Array.isArray(ovr.notes) ? ovr.notes.slice() : []);
+    setPTemplateId(ovr.templateId || '');
+    setPCover(ovr.coverDataUri || '');
+  }, [activeLectureId, tick]);
+  const applyTplToPerLecture = (tplId) => {
+    const tpl = templates.find((t) => t.id === tplId);
+    if (!tpl) return;
+    setPSchedule(Array.isArray(tpl.schedule) ? tpl.schedule.map((s) => ({ ...s })) : []);
+    setPNotes(Array.isArray(tpl.notes) ? tpl.notes.slice() : []);
+    setPTemplateId(tplId);
+  };
+  const savePerLecture = async () => {
+    if (!activeLectureId) { alert('강연을 먼저 선택해 주세요.'); return; }
+    try {
+      const cleanS = pSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
+      const cleanN = pNotes.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
+      const next = { ...lecturePages, [activeLectureId]: {
+        schedule: cleanS, notes: cleanN,
+        templateId: pTemplateId || undefined,
+        coverDataUri: pCover || undefined,
+      } };
+      await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', next);
+      setTick((v) => v + 1);
+      flash(`'${activeLectureId}' 강연 override 저장됨.`);
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+  // v00.083 — 커버 이미지 업로드. R2 우선 (5MB) + dataURI 폴백 (1.5MB).
+  const onPickCover = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'lecture-covers', maxBytes: 5 * 1024 * 1024 });
+      setPCover(url);
+      e.target.value = '';
+      return;
+    } catch (err) {
+      console.warn('[v00.083] R2 업로드 실패 — dataURI 폴백:', err);
+    }
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
+      e.target.value = ''; return;
+    }
+    const dataUri = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    setPCover(dataUri);
+    e.target.value = '';
+  };
+  const clearPerLecture = async () => {
+    if (!activeLectureId) return;
+    if (!confirm(`'${activeLectureId}' 강연의 override 를 제거하고 글로벌로 폴백하시겠어요?`)) return;
+    try {
+      const next = { ...lecturePages };
+      delete next[activeLectureId];
+      await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', next);
+      setPSchedule([]); setPNotes([]); setPTemplateId(''); setPCover('');
+      setTick((v) => v + 1);
+      flash('override 제거됨 — 글로벌 fallback 적용.');
+    } catch (err) { alert('실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  // 미리보기 입력 (모드별).
+  const previewSchedule = mode === 'global' ? gSchedule : (mode === 'templates' ? (activeTpl?.schedule || []) : pSchedule);
+  const previewNotes    = mode === 'global' ? gNotes    : (mode === 'templates' ? (activeTpl?.notes    || []) : pNotes);
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:14, lineHeight:1.8}}>
+        <code>/lectures</code> 페이지의 <strong className="gold">강연 진행</strong>과 <strong className="gold">참고</strong> 편집.
+        우선순위: <strong>강연별 override</strong> &gt; <strong>템플릿</strong> &gt; <strong>글로벌</strong> &gt; 코드 default.
+      </p>
+      <div role="tablist" aria-label="편집 모드" style={{display:'flex', gap:6, marginBottom:14, flexWrap:'wrap'}}>
+        {[
+          { key: 'global',       label: '글로벌 (모든 강연 공통)' },
+          { key: 'templates',    label: '템플릿' },
+          { key: 'per_lecture',  label: '강연별 override' },
+        ].map((m) => {
+          const on = mode === m.key;
+          return (
+            <button key={m.key} type="button" role="tab" aria-selected={on}
+              onClick={() => setMode(m.key)}
+              className="btn btn-small"
+              style={{
+                fontSize:12,
+                borderColor: on ? 'var(--primary)' : 'var(--line-2)',
+                color: on ? 'var(--primary)' : 'var(--ink)',
+                background: on ? 'rgba(245,213,72,0.10)' : 'var(--bg-2)',
+                fontWeight: on ? 700 : 500,
+              }}>{m.label}</button>
+          );
+        })}
+      </div>
+
+      <div style={{display:'grid', gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)', gap:20}} className="hero-editor-grid">
+        {/* 좌: 편집 */}
+        <div>
+          {mode === 'global' && (
+            <>
+              <TPE_ScheduleEditor rows={gSchedule}
+                onAdd={() => setGSchedule((a) => _arrAdd(a, { t: '', l: '' }))}
+                onRemove={(i) => setGSchedule((a) => _arrRemove(a, i))}
+                onUpdate={(i, k, v) => setGSchedule((a) => { const n = a.slice(); n[i] = { ...n[i], [k]: v }; return n; })}
+                onMove={(i, d) => setGSchedule((a) => _arrMove(a, i, d))}/>
+              <LPE_NotesEditor rows={gNotes}
+                onAdd={() => setGNotes((a) => _arrAdd(a, ''))}
+                onRemove={(i) => setGNotes((a) => _arrRemove(a, i))}
+                onUpdate={(i, v) => setGNotes((a) => _arrUpdate(a, i, v))}
+                onMove={(i, d) => setGNotes((a) => _arrMove(a, i, d))}/>
+              <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+                <button type="button" className="btn btn-gold" onClick={saveGlobal}>저장</button>
+                <button type="button" className="btn btn-small" onClick={resetGlobal} style={{borderColor:'var(--line-2)'}}>default 복원</button>
+              </div>
+            </>
+          )}
+
+          {mode === 'templates' && (
+            <>
+              <div className="card" style={{padding:14, marginBottom:14}}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+                  <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>템플릿 목록</div>
+                  <button type="button" className="btn btn-small" onClick={addTemplate}>＋ 새 템플릿</button>
+                </div>
+                {templates.length === 0 && (
+                  <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>아직 템플릿이 없습니다. 자주 쓰는 강연 진행/참고 패턴을 저장해 두면 강연별 override 에서 빠르게 적용할 수 있습니다.</p>
+                )}
+                <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                  {templates.map((t, i) => (
+                    <button key={t.id || i} type="button" className="btn btn-small"
+                      onClick={() => setActiveTplIdx(i)}
+                      style={{
+                        fontSize:11,
+                        borderColor: activeTplIdx === i ? 'var(--primary)' : 'var(--line-2)',
+                        color: activeTplIdx === i ? 'var(--primary)' : 'var(--ink)',
+                        fontWeight: activeTplIdx === i ? 700 : 500,
+                      }}>{t.name || '이름 없음'}</button>
+                  ))}
+                </div>
+              </div>
+              {activeTpl && (
+                <>
+                  <div className="card" style={{padding:14, marginBottom:14}}>
+                    <label style={{display:'block', marginBottom:8}}>
+                      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:5}}>템플릿 이름</div>
+                      <input type="text" className="field-input" value={activeTpl.name || ''}
+                        onChange={(e) => updateActiveTpl({ name: e.target.value })}
+                        style={{width:'100%', padding:'6px 10px', fontSize:13}}/>
+                    </label>
+                    <button type="button" className="btn btn-small" onClick={() => removeTemplate(activeTplIdx)}
+                      style={{borderColor:'var(--danger)', color:'var(--danger)', fontSize:10}}>이 템플릿 삭제</button>
+                  </div>
+                  <TPE_ScheduleEditor rows={activeTpl.schedule || []}
+                    onAdd={() => updateActiveTpl({ schedule: _arrAdd(activeTpl.schedule || [], { t: '', l: '' }) })}
+                    onRemove={(i) => updateActiveTpl({ schedule: _arrRemove(activeTpl.schedule || [], i) })}
+                    onUpdate={(i, k, v) => { const n = (activeTpl.schedule || []).slice(); n[i] = { ...n[i], [k]: v }; updateActiveTpl({ schedule: n }); }}
+                    onMove={(i, d) => updateActiveTpl({ schedule: _arrMove(activeTpl.schedule || [], i, d) })}/>
+                  <LPE_NotesEditor rows={activeTpl.notes || []}
+                    onAdd={() => updateActiveTpl({ notes: _arrAdd(activeTpl.notes || [], '') })}
+                    onRemove={(i) => updateActiveTpl({ notes: _arrRemove(activeTpl.notes || [], i) })}
+                    onUpdate={(i, v) => updateActiveTpl({ notes: _arrUpdate(activeTpl.notes || [], i, v) })}
+                    onMove={(i, d) => updateActiveTpl({ notes: _arrMove(activeTpl.notes || [], i, d) })}/>
+                </>
+              )}
+              <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+                <button type="button" className="btn btn-gold" onClick={saveTemplates}>모든 템플릿 저장</button>
+              </div>
+            </>
+          )}
+
+          {mode === 'per_lecture' && (
+            <>
+              <div className="card" style={{padding:14, marginBottom:14}}>
+                <label style={{display:'block', marginBottom:10}}>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:5}}>강연 선택</div>
+                  <select value={activeLectureId} onChange={(e) => setActiveLectureId(e.target.value)} className="field-input"
+                    style={{width:'100%', padding:'8px 10px', fontSize:13}}>
+                    <option value="">— 강연을 선택 —</option>
+                    {lectures.map((l) => (
+                      <option key={l.id} value={l.id}>{l.title || l.id} {lecturePages[l.id] ? '· override 있음' : ''}</option>
+                    ))}
+                  </select>
+                </label>
+                {activeLectureId && (
+                  <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                    <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.16em'}}>템플릿 적용:</span>
+                    <select value={pTemplateId || ''} onChange={(e) => applyTplToPerLecture(e.target.value)} className="field-input"
+                      style={{padding:'6px 8px', fontSize:12, minWidth:160}}>
+                      <option value="">— 직접 편집 —</option>
+                      {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+              {activeLectureId ? (
+                <>
+                  {/* 커버 이미지 (R2 우선) */}
+                  <div className="card" style={{padding:14, marginBottom:14}}>
+                    <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em', marginBottom:10}}>커버 이미지 (선택)</div>
+                    <div style={{display:'flex', gap:14, alignItems:'center'}}>
+                      <div style={{
+                        width:120, height:75, flexShrink:0,
+                        border:'1px solid var(--line)', background:'var(--bg-2)',
+                        display:'grid', placeItems:'center', overflow:'hidden',
+                      }}>
+                        {pCover
+                          ? <img src={pCover} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                          : <span className="dim-2 mono" style={{fontSize:9, letterSpacing:'0.18em'}}>NONE</span>}
+                      </div>
+                      <div style={{flex:1}}>
+                        <div className="dim-2" style={{fontSize:11, lineHeight:1.5}}>
+                          1600×1000 권장 · R2 5MB / dataURI 폴백 1.5MB · 비우면 placeholder.
+                        </div>
+                      </div>
+                      <div style={{display:'flex', gap:6}}>
+                        <label className="btn btn-small" style={{cursor:'pointer'}}>
+                          업로드
+                          <input type="file" accept="image/*" onChange={onPickCover} style={{display:'none'}}/>
+                        </label>
+                        {pCover && (
+                          <button type="button" className="btn btn-small" onClick={() => setPCover('')}
+                            style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <TPE_ScheduleEditor rows={pSchedule}
+                    onAdd={() => setPSchedule((a) => _arrAdd(a, { t: '', l: '' }))}
+                    onRemove={(i) => setPSchedule((a) => _arrRemove(a, i))}
+                    onUpdate={(i, k, v) => setPSchedule((a) => { const n = a.slice(); n[i] = { ...n[i], [k]: v }; return n; })}
+                    onMove={(i, d) => setPSchedule((a) => _arrMove(a, i, d))}/>
+                  <LPE_NotesEditor rows={pNotes}
+                    onAdd={() => setPNotes((a) => _arrAdd(a, ''))}
+                    onRemove={(i) => setPNotes((a) => _arrRemove(a, i))}
+                    onUpdate={(i, v) => setPNotes((a) => _arrUpdate(a, i, v))}
+                    onMove={(i, d) => setPNotes((a) => _arrMove(a, i, d))}/>
+                  <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+                    <button type="button" className="btn btn-gold" onClick={savePerLecture}>이 강연 저장</button>
+                    {activeOverride && (
+                      <button type="button" className="btn btn-small" onClick={clearPerLecture}
+                        style={{borderColor:'var(--danger)', color:'var(--danger)'}}>override 제거 (글로벌 fallback)</button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>강연을 선택하면 그 강연의 진행/참고/커버를 편집할 수 있습니다. 저장된 override 가 없으면 글로벌이 사용됩니다.</p>
+              )}
+            </>
+          )}
+
+          {msg && <p role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, marginTop:10}}>{msg}</p>}
+        </div>
+
+        {/* 우: 미리보기 */}
+        <div>
+          <LPE_PreviewCard schedule={previewSchedule} notes={previewNotes}/>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // === Footer Style Editor (v00.057) =====================================
 // 푸터 3 그룹(description/signature/heading) 의 폰트·색상 GUI 편집.
 // site_content_kv.footerStyle 저장 → Shell.jsx Footer 가 BGNJ_FOOTER_STYLE() 로 인라인 적용.
@@ -1322,6 +1716,8 @@ Object.assign(window, {
   TPE_RowActions, TPE_ScheduleEditor, TPE_PrepEditor, TPE_PreviewCard,
   _arrAdd, _arrRemove, _arrUpdate, _arrMove,
   TourPageEditorPanel,
+  LecturePageEditorPanel, // v00.083
+  LPE_NotesEditor, LPE_PreviewCard,
   FOOTER_COLOR_OPTIONS, FooterStyleEditor,
   HE_Field, HE_Input, HE_TextArea, HE_Select, HE_NumberRange, HE_StyleGroup,
   HERO_COLOR_OPTIONS, HERO_WEIGHTS, HERO_ALIGNS, HERO_TFORMS,
