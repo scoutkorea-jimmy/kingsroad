@@ -232,10 +232,16 @@ const HomePage = ({ go }) => {
   const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden).slice(0, 4), [dataTick]);
   const lectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden).slice(0, 3), [dataTick]);
 
+  // hero.stats 가 있으면 콘텐츠(label/sub/valueFallback) 를 거기서. 동적 value(투어/커뮤니티 갯수) 는 코드 측 우선.
+  const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
+    { label: '여행지',   sub: '주요 답사지 운영',   valueFallback: '전국'    },
+    { label: '투어',     sub: '직접 기획 프로그램', valueFallback: '준비 중' },
+    { label: '커뮤니티', sub: '함께 만드는 여행',   valueFallback: '운영 중' },
+  ];
   const stats = [
-    { l: '여행지', v: '전국', s: '주요 답사지 운영' },
-    { l: '투어',   v: tours.length > 0 ? `${tours.length}개` : '준비 중', s: '직접 기획 프로그램' },
-    { l: '커뮤니티', v: recentPosts.length > 0 ? `${recentPosts.length}+` : '운영 중', s: '함께 만드는 여행' },
+    { l: heroStats[0].label, v: heroStats[0].valueFallback || '전국',                                            s: heroStats[0].sub },
+    { l: heroStats[1].label, v: tours.length > 0 ? `${tours.length}개` : (heroStats[1].valueFallback || '준비 중'),     s: heroStats[1].sub },
+    { l: heroStats[2].label, v: recentPosts.length > 0 ? `${recentPosts.length}+` : (heroStats[2].valueFallback || '운영 중'), s: heroStats[2].sub },
   ];
 
   const clickable = (onClick, label) => ({
@@ -320,15 +326,25 @@ const HomePage = ({ go }) => {
                 {stats.map((stat) => (
                   <div key={stat.l}>
                     <div style={{
-                      fontFamily:'var(--font-serif)', fontSize:22, fontWeight:600,
-                      color:'var(--ink)', marginBottom:4,
+                      fontFamily:'var(--font-serif)',
+                      fontSize: heroStyle.stats.value.fontSize,
+                      fontWeight: heroStyle.stats.value.fontWeight,
+                      color: `var(${heroStyle.stats.value.color})`,
+                      marginBottom:4,
                     }}>{stat.v}</div>
                     <div style={{
-                      fontFamily:'var(--font-mono)', fontSize:10, fontWeight:600,
-                      letterSpacing:'0.22em', color:'var(--ink-2)',
-                      textTransform:'uppercase', marginBottom:3,
+                      fontFamily:'var(--font-mono)',
+                      fontSize: heroStyle.stats.label.fontSize,
+                      fontWeight: heroStyle.stats.label.fontWeight,
+                      letterSpacing: `${heroStyle.stats.label.letterSpacing}em`,
+                      color: `var(${heroStyle.stats.label.color})`,
+                      textTransform: heroStyle.stats.label.textTransform || 'uppercase',
+                      marginBottom:3,
                     }}>{stat.l}</div>
-                    <div style={{fontSize:12, color:'var(--ink-3)'}}>{stat.s}</div>
+                    <div style={{
+                      fontSize: heroStyle.stats.sub.fontSize,
+                      color: `var(${heroStyle.stats.sub.color})`,
+                    }}>{stat.s}</div>
                   </div>
                 ))}
               </div>

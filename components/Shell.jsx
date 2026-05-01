@@ -508,22 +508,36 @@ const Footer = ({ go }) => {
   const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
   const contact = sc.contact || {};
   const footer = sc.footer || {};
+  const fStyle = (window.BGNJ_FOOTER_STYLE?.() || window.BGNJ_FOOTER_STYLE_DEFAULT);
   const email = contact.email || "hello@bgnj.net";
   const phone = contact.phone || "02-0000-0000";
   const phoneHref = contact.phoneHref || ("tel:" + (phone || "").replace(/[^0-9+]/g, ""));
   const address = contact.address || "서울특별시";
+  const headingStyle = {
+    fontSize: fStyle.heading.fontSize,
+    fontWeight: fStyle.heading.fontWeight,
+    letterSpacing: `${fStyle.heading.letterSpacing}em`,
+    color: `var(${fStyle.heading.color})`,
+  };
   return (
     <footer className="footer" aria-label="사이트 정보 및 푸터">
       <div className="container">
         <div className="footer-grid">
           <div>
             <Brand onClick={() => go("home")}/>
-            <p className="dim" style={{marginTop:20, fontSize:13, lineHeight:1.7, maxWidth:360}}>
+            <p className="dim" style={{
+              marginTop:20,
+              fontSize: fStyle.description.fontSize,
+              fontWeight: fStyle.description.fontWeight,
+              lineHeight: fStyle.description.lineHeight,
+              color: `var(${fStyle.description.color})`,
+              maxWidth: fStyle.description.maxWidth,
+            }}>
               {footer.description || "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행."}
             </p>
           </div>
           <nav aria-label="콘텐츠 바로가기">
-            <h4 id="ft-content">콘텐츠</h4>
+            <h4 id="ft-content" style={headingStyle}>콘텐츠</h4>
             <ul aria-labelledby="ft-content">
               <li><button type="button" onClick={() => go("column")}>뱅기노자 칼럼</button></li>
               <li><button type="button" onClick={() => go("tour")}>투어 프로그램</button></li>
@@ -532,7 +546,7 @@ const Footer = ({ go }) => {
             </ul>
           </nav>
           <nav aria-label="정보 바로가기">
-            <h4 id="ft-info">정보</h4>
+            <h4 id="ft-info" style={headingStyle}>정보</h4>
             <ul aria-labelledby="ft-info">
               <li><button type="button" onClick={() => go("home")}>강연 일정</button></li>
               <li><button type="button" onClick={() => go("community")}>공지사항</button></li>
@@ -542,7 +556,7 @@ const Footer = ({ go }) => {
             </ul>
           </nav>
           <address style={{fontStyle:'normal'}}>
-            <h4 id="ft-contact">연락</h4>
+            <h4 id="ft-contact" style={headingStyle}>연락</h4>
             <ul aria-labelledby="ft-contact">
               {email && <li><a href={`mailto:${email}`}>{email}</a></li>}
               {phone && <li><a href={phoneHref}>{phone}</a></li>}
@@ -556,7 +570,13 @@ const Footer = ({ go }) => {
             v{window.BGNJ_VERSION?.version || '0.0.0'} · {window.BGNJ_VERSION?.build || '—'}
           </span>
           <ThemeToggle/>
-          <span>{footer.signature || "뱅기타고 노자 · DESIGNED IN SEOUL"}</span>
+          <span style={{
+            fontSize: fStyle.signature.fontSize,
+            fontWeight: fStyle.signature.fontWeight,
+            letterSpacing: `${fStyle.signature.letterSpacing}em`,
+            color: `var(${fStyle.signature.color})`,
+            textTransform: fStyle.signature.textTransform || 'uppercase',
+          }}>{footer.signature || "뱅기타고 노자 · DESIGNED IN SEOUL"}</span>
         </div>
       </div>
     </footer>

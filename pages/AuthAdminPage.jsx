@@ -468,6 +468,22 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.056.000",
+    date: "2026-05-01",
+    summary: "📊 히어로 통계 카드 GUI 편집 + footerStyle 토큰 베이스 — 다른 섹션 GUI 편집 패턴 확장 1단계.",
+    details: [
+      "📊 hero.stats 스키마 확장 — 3 슬롯 [{label, sub, valueFallback}] 으로 정의. 동적 value(투어/커뮤니티 갯수)는 코드 우선, 없으면 valueFallback.",
+      "📊 BGNJ_HERO_STYLE_DEFAULT.stats 신설 — { label, value, sub } 3 sub 스타일. 라벨/값/부연 각각 fontSize·fontWeight·color 등.",
+      "📊 HomePage 통계 카드가 hero.stats 콘텐츠 + heroStyle.stats 인라인 스타일 적용. 기존 동적 value 로직(투어 갯수/커뮤니티 갯수) 보존.",
+      "📊 HeroEditorPanel 확장 — '통계 카드 콘텐츠' 폼 (3 슬롯 × {label, valueFallback, sub}) + 3 스타일 그룹(label/value/sub). 미리보기 sticky 카드에도 통계 카드 시뮬레이션.",
+      "🎨 BGNJ_FOOTER_STYLE_DEFAULT + BGNJ_FOOTER_STYLE() 헬퍼 신설 — { description, signature, heading } 3 그룹 토큰화.",
+      "🎨 Shell.jsx Footer 가 BGNJ_FOOTER_STYLE() 결과를 description / 헤딩(콘텐츠/정보/연락) / signature 인라인 스타일로 적용. footerStyle 슬롯 비면 코드 default.",
+      "🎨 SiteContentAdminPanel 푸터 섹션에 안내 추가 — 'footerStyle GUI 편집은 v00.057 사이클에 추가 예정'.",
+      "📦 cache-buster — `?v=00.056.000`.",
+    ],
+    context: "v00.054 의 히어로 편집 탭 패턴 확장 1단계 — 통계 카드(히어로 하단)와 푸터 토큰 베이스. footer GUI 편집은 사이클 크기 조절을 위해 v00.057 으로 분리. 통계 카드는 전체 사용자 가시성이 높은 영역이라 우선. site_content_kv 패턴 재사용 — hero(콘텐츠+stats) / heroStyle(스타일+stats) / footerStyle(푸터 스타일) 세 섹션. 다음 사이클(v00.057): footerStyle GUI 편집 + heroStyle 모바일 별도 트윗.",
+  },
+  {
     version: "00.055.000",
     date: "2026-05-01",
     summary: "🔧 의존성 점검 사이클 — @babel/parser & @babel/standalone patch 갱신 + 의존성 매트릭스 KMS 도파 + workers/package.json 신설.",
@@ -4369,6 +4385,19 @@ const HeroEditorPanel = () => {
   const [styleDraft,   setStyleDraft]   = React.useState(() => ({ ...(sc.heroStyle && typeof sc.heroStyle === 'object' ? sc.heroStyle : {}) }));
   const [msg, setMsg] = React.useState('');
 
+  // 통계 카드 — 3개 슬롯이며 valueFallback 은 동적 value(투어/커뮤니티 갯수) 가 없을 때만 표시.
+  const initialStats = (Array.isArray(sc.hero?.stats) && sc.hero.stats.length === 3) ? sc.hero.stats : [
+    { label: '여행지',   sub: '주요 답사지 운영',   valueFallback: '전국'    },
+    { label: '투어',     sub: '직접 기획 프로그램', valueFallback: '준비 중' },
+    { label: '커뮤니티', sub: '함께 만드는 여행',   valueFallback: '운영 중' },
+  ];
+  const [statsDraft, setStatsDraft] = React.useState(initialStats);
+  const updateStats = (idx, key, value) => setStatsDraft((arr) => {
+    const next = arr.slice();
+    next[idx] = { ...next[idx], [key]: value };
+    return next;
+  });
+
   const updateContent = (k, v) => setContentDraft((d) => ({ ...d, [k]: v }));
   const updateStyle = (group, key, value) =>
     setStyleDraft((d) => ({ ...d, [group]: { ...(d[group] || {}), [key]: value } }));
@@ -4382,12 +4411,23 @@ const HeroEditorPanel = () => {
       title:    { ...def.title,    ...(styleDraft.title    || {}) },
       subtitle: { ...def.subtitle, ...(styleDraft.subtitle || {}) },
       cta:      { ...def.cta,      ...(styleDraft.cta      || {}) },
+      stats:    {
+        label: { ...def.stats.label, ...(styleDraft.stats?.label || {}) },
+        value: { ...def.stats.value, ...(styleDraft.stats?.value || {}) },
+        sub:   { ...def.stats.sub,   ...(styleDraft.stats?.sub   || {}) },
+      },
     };
   }, [styleDraft]);
+  const updateStatsStyle = (sub, key, value) =>
+    setStyleDraft((d) => ({ ...d, stats: { ...(d.stats || {}), [sub]: { ...((d.stats || {})[sub] || {}), [key]: value } } }));
+  const resetStatsGroup = (sub) =>
+    setStyleDraft((d) => { const stats = { ...(d.stats || {}) }; delete stats[sub]; return { ...d, stats }; });
 
   const save = async () => {
     try {
-      await window.BGNJ_SITE_CONTENT.saveSection('hero', contentDraft);
+      // contentDraft 에 stats 도 합쳐서 저장 (히어로 단일 섹션).
+      const heroPayload = { ...contentDraft, stats: statsDraft };
+      await window.BGNJ_SITE_CONTENT.saveSection('hero', heroPayload);
       await window.BGNJ_SITE_CONTENT.saveSection('heroStyle', styleDraft);
       setTick((v) => v + 1);
       setMsg('저장되었습니다 — 홈에 즉시 반영됩니다.');
@@ -4401,6 +4441,7 @@ const HeroEditorPanel = () => {
       await window.BGNJ_SITE_CONTENT.resetSection('heroStyle');
       setContentDraft({});
       setStyleDraft({});
+      setStatsDraft(initialStats);
       setTick((v) => v + 1);
       setMsg('default 로 복원됨.');
       setTimeout(() => setMsg(''), 2500);
@@ -4570,6 +4611,76 @@ const HeroEditorPanel = () => {
             </Field>
           </StyleGroup>
 
+          {/* 통계 카드 — 콘텐츠 + 스타일 (v00.056) */}
+          <h3 className="ko-serif" style={{fontSize:16, marginBottom:10, marginTop:20}}>통계 카드 콘텐츠</h3>
+          <div className="card" style={{padding:16, marginBottom:14}}>
+            {statsDraft.map((s, i) => (
+              <div key={i} style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom: i < 2 ? 12 : 0}}>
+                <Field label={`#${i+1} 라벨`}>
+                  <Input value={s.label || ''} onChange={(e) => updateStats(i, 'label', e.target.value)} placeholder="여행지"/>
+                </Field>
+                <Field label={`#${i+1} 폴백 값`}>
+                  <Input value={s.valueFallback || ''} onChange={(e) => updateStats(i, 'valueFallback', e.target.value)} placeholder="전국"/>
+                </Field>
+                <Field label={`#${i+1} 부연`}>
+                  <Input value={s.sub || ''} onChange={(e) => updateStats(i, 'sub', e.target.value)} placeholder="주요 답사지 운영"/>
+                </Field>
+              </div>
+            ))}
+            <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.5}}>
+              ⓘ #2(투어)·#3(커뮤니티)는 콘텐츠가 있으면 갯수(예: <code>3개</code>) 가 우선 표시되고, 없을 때만 폴백 값이 사용됩니다.
+            </p>
+          </div>
+          <StyleGroup title="통계 카드 — 라벨 스타일" group="stats.label">
+            <Field label={`폰트 크기 · ${eff.stats.label.fontSize}px`}>
+              <NumberRange value={eff.stats.label.fontSize} min={8} max={20} step={1}
+                onChange={(v) => updateStatsStyle('label', 'fontSize', v)}/>
+            </Field>
+            <Field label="굵기">
+              <Select value={String(eff.stats.label.fontWeight)} options={HERO_WEIGHTS.map(String)}
+                onChange={(v) => updateStatsStyle('label', 'fontWeight', Number(v))}/>
+            </Field>
+            <Field label={`자간 · ${eff.stats.label.letterSpacing}em`}>
+              <NumberRange value={eff.stats.label.letterSpacing} min={0} max={0.5} step={0.01}
+                onChange={(v) => updateStatsStyle('label', 'letterSpacing', v)}/>
+            </Field>
+            <Field label="색상">
+              <Select value={eff.stats.label.color} options={HERO_COLOR_OPTIONS}
+                onChange={(v) => updateStatsStyle('label', 'color', v)}/>
+            </Field>
+            <Field label="대소문자">
+              <Select value={eff.stats.label.textTransform || 'uppercase'} options={HERO_TFORMS}
+                onChange={(v) => updateStatsStyle('label', 'textTransform', v)}/>
+            </Field>
+            <button type="button" className="btn btn-small" onClick={() => resetStatsGroup('label')} style={{fontSize:10, marginTop:6}}>이 그룹 default</button>
+          </StyleGroup>
+          <StyleGroup title="통계 카드 — 값 스타일" group="stats.value">
+            <Field label={`폰트 크기 · ${eff.stats.value.fontSize}px`}>
+              <NumberRange value={eff.stats.value.fontSize} min={14} max={48} step={1}
+                onChange={(v) => updateStatsStyle('value', 'fontSize', v)}/>
+            </Field>
+            <Field label="굵기">
+              <Select value={String(eff.stats.value.fontWeight)} options={HERO_WEIGHTS.map(String)}
+                onChange={(v) => updateStatsStyle('value', 'fontWeight', Number(v))}/>
+            </Field>
+            <Field label="색상">
+              <Select value={eff.stats.value.color} options={HERO_COLOR_OPTIONS}
+                onChange={(v) => updateStatsStyle('value', 'color', v)}/>
+            </Field>
+            <button type="button" className="btn btn-small" onClick={() => resetStatsGroup('value')} style={{fontSize:10, marginTop:6}}>이 그룹 default</button>
+          </StyleGroup>
+          <StyleGroup title="통계 카드 — 부연 스타일" group="stats.sub">
+            <Field label={`폰트 크기 · ${eff.stats.sub.fontSize}px`}>
+              <NumberRange value={eff.stats.sub.fontSize} min={10} max={20} step={1}
+                onChange={(v) => updateStatsStyle('sub', 'fontSize', v)}/>
+            </Field>
+            <Field label="색상">
+              <Select value={eff.stats.sub.color} options={HERO_COLOR_OPTIONS}
+                onChange={(v) => updateStatsStyle('sub', 'color', v)}/>
+            </Field>
+            <button type="button" className="btn btn-small" onClick={() => resetStatsGroup('sub')} style={{fontSize:10, marginTop:6}}>이 그룹 default</button>
+          </StyleGroup>
+
           <div style={{display:'flex', gap:10, marginTop:18, flexWrap:'wrap'}}>
             <button type="button" className="btn btn-gold" onClick={save}>저장</button>
             <button type="button" className="btn btn-small" onClick={resetAll} style={{borderColor:'var(--line-2)'}}>전체 default 복원</button>
@@ -4633,6 +4744,30 @@ const HeroEditorPanel = () => {
                 <button type="button" className="btn btn-small" style={{fontWeight: eff.cta.fontWeight}}>
                   {contentDraft.ctaSecondary || '투어 프로그램 보기'}
                 </button>
+              </div>
+              {/* 통계 카드 미리보기 */}
+              <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:14, paddingTop:18, borderTop:'1px solid var(--line)', marginTop:24}}>
+                {statsDraft.map((s, i) => (
+                  <div key={i}>
+                    <div style={{
+                      fontFamily:'var(--font-serif)',
+                      fontSize: eff.stats.value.fontSize, fontWeight: eff.stats.value.fontWeight,
+                      color: `var(${eff.stats.value.color})`, marginBottom:4,
+                    }}>{s.valueFallback || '—'}</div>
+                    <div style={{
+                      fontFamily:'var(--font-mono)',
+                      fontSize: eff.stats.label.fontSize, fontWeight: eff.stats.label.fontWeight,
+                      letterSpacing: `${eff.stats.label.letterSpacing}em`,
+                      color: `var(${eff.stats.label.color})`,
+                      textTransform: eff.stats.label.textTransform || 'uppercase',
+                      marginBottom:3,
+                    }}>{s.label || '라벨'}</div>
+                    <div style={{
+                      fontSize: eff.stats.sub.fontSize,
+                      color: `var(${eff.stats.sub.color})`,
+                    }}>{s.sub || '부연'}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -4794,6 +4929,9 @@ const SiteContentAdminPanel = () => {
       ]}/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>푸터 — 소개·서명</h3>
+      <p className="dim-2" style={{fontSize:11, marginBottom:8, lineHeight:1.6}}>
+        ⓘ v00.056 부터 footerStyle (헤딩/소개/서명 폰트·색상) 토큰이 코드에 적용됨. GUI 편집은 v00.057 사이클에 추가 예정.
+      </p>
       <SectionForm key={`footer-${tick}`} section="footer" fields={[
         { key: 'description', label: '소개 문단', full: true, multiline: true },
         { key: 'signature', label: '하단 서명', full: true },

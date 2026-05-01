@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.055.000 · 2026-05-01 (의존성 점검 + babel patch 갱신 + KMS 의존성 매트릭스 + 백로그 8 사이클)
+> **마지막 업데이트:** v00.056.000 · 2026-05-01 (히어로 통계 카드 GUI 편집 + footerStyle 토큰 베이스)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.055)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.056)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -210,6 +210,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.053** | 2026-05-01 | 다크 nav/sidebar/footer 가독성 핫픽스 + KoreaMap stroke 강조 + 자동승급 기준 등급표 인라인 + OG 로고-only |
 | **v00.054** | 2026-05-01 | 관리자 '히어로' 탭 — 콘텐츠 8 항목 + 스타일 4 그룹(eyebrow/title/subtitle/cta) GUI 편집 + 라이브 미리보기 |
 | **v00.055** | 2026-05-01 | 의존성 patch 갱신 (@babel/parser, @babel/standalone) + workers/package.json + KMS 의존성 매트릭스 |
+| **v00.056** | 2026-05-01 | 히어로 통계 카드 GUI 편집 (hero.stats + heroStyle.stats) + footerStyle 토큰 베이스 |
 
 ---
 
@@ -238,12 +239,8 @@ URL 매핑 (`VALID_ROUTES`):
 
 각 사이클은 1 패치 단위로 commit/push (auto deploy). 우선순위 순:
 
-### v00.056 — 다른 섹션 GUI 편집 패턴 확장
-v00.054 의 히어로 편집 탭 패턴을 통계 카드 / 푸터 / 추천 섹션 / 책 CTA 등으로 확장. site_content_kv 에 sectionStyle 통합 → 관리자가 코드 수정 없이 모든 섹션 트윗.
-**위험도:** 낮음 (클라이언트 단독, 기존 패턴 재사용).
-
-### v00.057 — heroStyle 모바일 별도 트윗
-현재는 `clamp(36px, 5vw, max)` 자동. 모바일 전용 fontSize/lineHeight/letterSpacing 별도 슬롯 + 미리보기 viewport 토글.
+### v00.057 — footerStyle GUI 편집 + heroStyle 모바일 별도 트윗
+v00.056 에서 footerStyle 토큰 베이스만 적용. GUI 편집 폼 (description / signature / heading 그룹) 추가 + 미리보기. 동시에 heroStyle 모바일 별도 트윗 (모바일 전용 fontSize/lineHeight 슬롯 + viewport 토글 미리보기).
 **위험도:** 낮음.
 
 ### v00.058 — 다크 모드 인라인 hex 정합 (잔존부)

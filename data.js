@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.055.000",
+  version: "00.056.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -324,6 +324,12 @@ const DEFAULT_SITE_CONTENT = {
     ctaPrimary: "커뮤니티 참여하기 →",
     ctaSecondary: "투어 프로그램 보기",
     mapHint: "지도를 클릭해 여행지를 탐색하세요",
+    // 히어로 하단 통계 카드 — value 는 동적이지만 label/sub/valueFallback 은 편집 가능.
+    stats: [
+      { label: '여행지',   sub: '주요 답사지 운영',   valueFallback: '전국'    },
+      { label: '투어',     sub: '직접 기획 프로그램', valueFallback: '준비 중' },
+      { label: '커뮤니티', sub: '함께 만드는 여행',   valueFallback: '운영 중' },
+    ],
   },
   footer: {
     description: "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행.",
@@ -357,8 +363,11 @@ const DEFAULT_SITE_CONTENT = {
   // 형태: { reader: { posts, comments, ... }, scholar: {...} }. 일부 필드만 오버라이드 가능 (default 위에 머지).
   gradeRules: {},
   // 히어로 스타일 트윗 — 관리자 '히어로' 탭에서 편집. 빈 그룹이면 코드 default(아래 BGNJ_HERO_STYLE_DEFAULT) 사용.
-  // 형태: { eyebrow: {...}, title: {...}, subtitle: {...}, cta: {...} }. 일부만 오버라이드 가능.
+  // 형태: { eyebrow: {...}, title: {...}, subtitle: {...}, cta: {...}, stats: { label, value, sub } }. 일부만 오버라이드 가능.
   heroStyle: {},
+  // 푸터 스타일 트윗 — 관리자 '사이트 콘텐츠' 푸터 섹션에서 편집. 빈 그룹이면 코드 default(BGNJ_FOOTER_STYLE_DEFAULT).
+  // 형태: { description: {...}, signature: {...}, heading: {...} }.
+  footerStyle: {},
 };
 
 // 히어로 스타일 default — saveSection('heroStyle', value) 가 비면 이 값을 사용.
@@ -368,6 +377,11 @@ window.BGNJ_HERO_STYLE_DEFAULT = {
   title:    { fontSize: 56, fontWeight: 900, lineHeight: 1.05, letterSpacing: -0.02, color: '--ink', accentColor: '--primary', textAlign: 'left' },
   subtitle: { fontSize: 16, fontWeight: 500, lineHeight: 1.85, color: '--ink-2', maxWidth: 520, textAlign: 'left' },
   cta:      { fontWeight: 600, textTransform: 'uppercase' },
+  stats:    {
+    label: { fontSize: 10, fontWeight: 600, letterSpacing: 0.22, color: '--ink-2', textTransform: 'uppercase' },
+    value: { fontSize: 22, fontWeight: 600, color: '--ink' },
+    sub:   { fontSize: 12, color: '--ink-3' },
+  },
 };
 // 머지된 effective 스타일 (override + default).
 window.BGNJ_HERO_STYLE = function () {
@@ -380,8 +394,33 @@ window.BGNJ_HERO_STYLE = function () {
       title:    { ...d.title,    ...(o.title    || {}) },
       subtitle: { ...d.subtitle, ...(o.subtitle || {}) },
       cta:      { ...d.cta,      ...(o.cta      || {}) },
+      stats:    {
+        label: { ...d.stats.label, ...(o.stats?.label || {}) },
+        value: { ...d.stats.value, ...(o.stats?.value || {}) },
+        sub:   { ...d.stats.sub,   ...(o.stats?.sub   || {}) },
+      },
     };
   } catch { return window.BGNJ_HERO_STYLE_DEFAULT; }
+};
+
+// === 푸터 스타일 (v00.056) ============================================
+// site_content_kv.footerStyle 오버라이드 + 코드 default 머지. Shell.jsx Footer 가 BGNJ_FOOTER_STYLE() 적용.
+window.BGNJ_FOOTER_STYLE_DEFAULT = {
+  description: { fontSize: 13, fontWeight: 400, lineHeight: 1.7, color: '--ink-2', maxWidth: 360 },
+  signature:   { fontSize: 11, fontWeight: 600, letterSpacing: 0.18, color: '--ink-3', textTransform: 'uppercase' },
+  heading:     { fontSize: 12, fontWeight: 700, letterSpacing: 0.12, color: '--ink' },
+};
+window.BGNJ_FOOTER_STYLE = function () {
+  try {
+    const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+    const o = (sc.footerStyle && typeof sc.footerStyle === 'object') ? sc.footerStyle : {};
+    const d = window.BGNJ_FOOTER_STYLE_DEFAULT;
+    return {
+      description: { ...d.description, ...(o.description || {}) },
+      signature:   { ...d.signature,   ...(o.signature   || {}) },
+      heading:     { ...d.heading,     ...(o.heading     || {}) },
+    };
+  } catch { return window.BGNJ_FOOTER_STYLE_DEFAULT; }
 };
 
 // 게시판 분류 — 각 카테고리에 최소 등급(minLevel) 지정 시 접근 제한
