@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.054.000 · 2026-05-01 (관리자 히어로 편집 탭 — 콘텐츠 + 스타일 트윗 + 라이브 미리보기)
+> **마지막 업데이트:** v00.055.000 · 2026-05-01 (의존성 점검 + babel patch 갱신 + KMS 의존성 매트릭스 + 백로그 8 사이클)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.054)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.055)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -209,6 +209,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.052** | 2026-05-01 | 다크 모드 토큰 (BGNJ_THEME · light/dark/auto) + OG 이미지 SVG fallback + KMS 라이브 토큰 카드 |
 | **v00.053** | 2026-05-01 | 다크 nav/sidebar/footer 가독성 핫픽스 + KoreaMap stroke 강조 + 자동승급 기준 등급표 인라인 + OG 로고-only |
 | **v00.054** | 2026-05-01 | 관리자 '히어로' 탭 — 콘텐츠 8 항목 + 스타일 4 그룹(eyebrow/title/subtitle/cta) GUI 편집 + 라이브 미리보기 |
+| **v00.055** | 2026-05-01 | 의존성 patch 갱신 (@babel/parser, @babel/standalone) + workers/package.json + KMS 의존성 매트릭스 |
 
 ---
 
@@ -233,18 +234,47 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 7. 다음 사이클 (v00.055) 후보
+## 7. 다음 사이클 백로그 (v00.056 → v00.063, 총 8 사이클)
 
-**v00.055 (의존성 점검 — 사용자 요청):**
-1. **플러그인 업데이트** (사용자 요청) — Wrangler / @babel/standalone / React UMD / Tiptap ESM / @babel/parser 의존성 최신 확인 + 호환성 테스트 + 보안 advisory 검토. Wrangler 는 사용자 wrangler deploy 직전 npm install 권장.
+각 사이클은 1 패치 단위로 commit/push (auto deploy). 우선순위 순:
 
-**일반 후보 (우선순위 정렬):**
-3. **서버 endpoint reportCount/likesReceived 정확화 (워커 배포 동반)** — 현재 클라이언트 best-effort 합산. `/api/users/:id/metrics` 에서 D1 쿼리로 정확 계산 → BGNJ_GRADE_PROMO.metrics 가 prefer.
-4. **legacy 키 점진 마이그레이션** — 우선순위: `reports` (admin Report 패널) → `comments` (서버 BGNJ_API.community.comments 일원화). bookmarks 는 v00.051 에 완료.
-5. **다크 모드 인라인 hex 정합 (잔존부)** — v00.053 에서 nav/sidebar/footer/지도 정합 완료. 그 외 HomePage/AdminPage 모달에 잔존하는 인라인 hex 점진 정리. KMS 라이브 카드로 drift 발견 시 우선.
-6. **관리자 OG 이미지 업로드 UI 명시화** — 현재 site_content_kv.og.imageDataUri 로 저장 가능하지만 admin UI 에 명시 카드 없음. PNG 업로드 + 미리보기 카드 추가.
-7. **추가 룰** — `unused import` (간단 정규식 가능) / 큰 파일 줄 수 limit / `===` 강제(`==` 금지).
-8. **HTTPS / SSL 도입** — 현재 http://bgnj.net. og:image dataURI 가 일부 크롤러에서 거부될 수 있어 정적 PNG + https 호스팅 필요.
+### v00.056 — 다른 섹션 GUI 편집 패턴 확장
+v00.054 의 히어로 편집 탭 패턴을 통계 카드 / 푸터 / 추천 섹션 / 책 CTA 등으로 확장. site_content_kv 에 sectionStyle 통합 → 관리자가 코드 수정 없이 모든 섹션 트윗.
+**위험도:** 낮음 (클라이언트 단독, 기존 패턴 재사용).
+
+### v00.057 — heroStyle 모바일 별도 트윗
+현재는 `clamp(36px, 5vw, max)` 자동. 모바일 전용 fontSize/lineHeight/letterSpacing 별도 슬롯 + 미리보기 viewport 토글.
+**위험도:** 낮음.
+
+### v00.058 — 다크 모드 인라인 hex 정합 (잔존부)
+HomePage/AdminPage/모달 잔존 인라인 hex 점진 정리. KMS 라이브 토큰 카드로 drift 발견부터.
+**위험도:** 낮음 (visual regression 가능, 단계 검토).
+
+### v00.059 — 관리자 OG 이미지 업로드 UI 명시 카드
+site_content_kv.og.imageDataUri 업로드 + 미리보기 + reset. PNG 권장 (FB/Kakao 호환).
+**위험도:** 낮음.
+
+### v00.060 — 추가 lint 룰
+`unused import` (간단 정규식) / 큰 파일 줄 수 limit / `===` 강제(`==` 금지) / async 함수 await 누락 감지.
+**위험도:** 낮음 (룰 추가만, 위반 발견 시 별도 fix 사이클).
+
+### v00.061 — 서버 endpoint reportCount / likesReceived 정확화 ★ 워커 배포 동반
+현재 클라이언트 best-effort 합산. `/api/users/:id/metrics` 에서 D1 쿼리로 정확 계산 → BGNJ_GRADE_PROMO.metrics 가 prefer. legacy `reports` 키 정합 동반.
+**위험도:** 중간 — 워커 배포 필요 (사용자 직접 `wrangler deploy`).
+
+### v00.062 — legacy 키 마이그레이션 (`reports` → `comments`)
+admin Report 패널 + comments BGNJ_API.community.comments 일원화. v00.061 의 metrics endpoint 와 동행.
+**위험도:** 중간 — 데이터 마이그레이션 + 워커 배포.
+
+### v00.063 — HTTPS / SSL 도입 ★ 인프라 변경
+http://bgnj.net → https://bgnj.net. og:image dataURI 안정화, Service Worker 재활성화 가능. SSL 인증서 발급(Cloudflare) + ALLOWED_ORIGINS 정합.
+**위험도:** 높음 — 사용자 직접 진행. AI 는 코드 측 정합만 지원.
+
+### 별도 메이저 마이그레이션 (사이클 외)
+- **React 19** (현재 18.3.1 → 19.2.5) — ref-as-prop, useEffect 동작 변경 검증.
+- **Tiptap 3** (현재 2.11.5 → 3.22.5) — extension API 브레이킹 체인지. AdminColumnEditor + TiptapEditor.jsx 마이그레이션.
+
+각 메이저는 1 사이클 단독. 일반 사이클과 분리.
 
 ---
 

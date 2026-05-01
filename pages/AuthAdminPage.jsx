@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.055.000",
+    date: "2026-05-01",
+    summary: "🔧 의존성 점검 사이클 — @babel/parser & @babel/standalone patch 갱신 + 의존성 매트릭스 KMS 도파 + workers/package.json 신설.",
+    details: [
+      "🔧 tools/@babel/parser 7.29.2 → 7.29.3 (npm update). pre-commit 훅 영향 없음.",
+      "🔧 CDN @babel/standalone 7.29.0 → 7.29.3 + 새 SRI hash (sha384-rCpRZgF...). 빌드 안정성 동일, in-browser JSX 컴파일.",
+      "🔧 workers/package.json 신설 — wrangler ^4.87.0 devDependency 선언. 사용자가 `cd workers && npm install` 후 `wrangler deploy` 가능. 별도 npm script: deploy / dev / tail.",
+      "📑 KMS 디자인 도파 12번째 섹션 'DEPENDENCIES' 신설 — DependencyMatrix 컴포넌트 + DEPENDENCY_MATRIX 상수. 6개 의존성(CDN @babel/standalone, react UMD, @tiptap/*, npm @babel/parser, wrangler, 폰트) 의 현재/최신/위험도/위치/메모 한 표.",
+      "⚠ React 18 → 19 & Tiptap 2 → 3 메이저 업그레이드는 별도 사이클로 분리. ref-as-prop / extension API 브레이킹 체인지 검증 필요.",
+      "📦 cache-buster — `?v=00.055.000`.",
+    ],
+    context: "사용자 요청 '플러그인 모두 최신 업데이트 진행'. npm 등록처 조회 결과: @babel/parser 7.29.3, @babel/standalone 7.29.3, @tiptap/core 3.22.5(메이저), react 19.2.5(메이저), wrangler 4.87.0. 자동 적용 가능한 patch 만 본 사이클에. 메이저는 마이그레이션 작업이 사이클 단위라 분리 — DEPENDENCY_MATRIX 표가 사용자/AI가 매 사이클 시작 시 검토하는 single source of truth. 다음 사이클(v00.056~) 후보 정렬은 CONTEXT.md §7 참조.",
+  },
+  {
     version: "00.054.000",
     date: "2026-05-01",
     summary: "🎚 관리자 '히어로' 탭 — 홈페이지 히어로의 콘텐츠 8개 항목 + 스타일 4그룹(eyebrow/title/subtitle/cta) GUI 편집 + 라이브 미리보기.",
@@ -1793,6 +1807,82 @@ const DesignSystemView = () => {
           ))}
         </div>
       </DSSection>
+
+      {/* 12. 의존성 매트릭스 — v00.055 신설. 외부 의존성 현재/최신/액션 한눈에. */}
+      <DSSection
+        eyebrow="12 · DEPENDENCIES"
+        title="외부 의존성 매트릭스"
+        definition="사이트가 의존하는 모든 외부 라이브러리와 도구의 현재/최신 버전 + 업데이트 액션. 마지막 검토일은 본 카드 우상단."
+        characteristics={[
+          'patch (예: 7.29.0 → 7.29.3) — 안전, 자동 업데이트.',
+          'minor (2.10 → 2.11) — 일반적으로 안전. release notes 1회 훑고 업데이트.',
+          'major (2.x → 3.x, 18 → 19) — 브레이킹 체인지. 별도 사이클로 마이그레이션.',
+        ]}
+        usage={[
+          'CDN 변경 시 SRI hash 재계산: `curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A`',
+          '워커 의존성: `cd workers && npm install` 후 `wrangler deploy` (사용자 직접).',
+        ]}
+      >
+        <DependencyMatrix/>
+      </DSSection>
+    </div>
+  );
+};
+
+// 의존성 매트릭스 — 현재/최신/위치/위험도 한 표에. 매 사이클 검토일 갱신.
+// 최신 버전은 KMS 사이클 마지막 npm registry 조회 시점 기준. 자동 갱신 X (수동 검토).
+const DEPENDENCY_MATRIX = [
+  // CDN — index.html 직접 참조
+  { kind: 'CDN', name: '@babel/standalone', current: '7.29.3', latest: '7.29.3', risk: 'patch', location: 'index.html', notes: 'in-browser JSX 컴파일러. SRI hash 동시 갱신 필요.' },
+  { kind: 'CDN', name: 'react / react-dom (UMD)', current: '18.3.1', latest: '19.2.5', risk: 'major', location: 'index.html', notes: 'React 19 마이그레이션 별도 사이클 — useEffect 동작 변경 + ref-as-prop + key 정합 검토.' },
+  { kind: 'CDN', name: '@tiptap/* (ESM)', current: '2.11.5', latest: '3.22.5', risk: 'major', location: 'index.html', notes: 'Tiptap 3 메이저 — extension API 변경. AdminColumnEditor + TiptapEditor.jsx 마이그레이션 별도 사이클.' },
+  // npm — 로컬 도구
+  { kind: 'npm', name: '@babel/parser', current: '7.29.3', latest: '7.29.3', risk: 'patch', location: 'tools/package.json', notes: 'pre-commit 훅 신택스 검증. `npm update` 로 자동 갱신.' },
+  { kind: 'npm', name: 'wrangler', current: '4.87.0 (선언)', latest: '4.87.0', risk: 'patch', location: 'workers/package.json', notes: 'Cloudflare 워커 CLI. `cd workers && npm install` 후 `wrangler deploy`. 글로벌 설치 시 사용자 권한 필요.' },
+  // 외부 BGNJ
+  { kind: '폰트', name: 'Wanted Sans / KBL Jump / Noto Serif KR', current: 'CDN', latest: 'CDN', risk: 'auto', location: 'styles.css @import', notes: 'CDN @import — 자동 갱신.' },
+];
+const DependencyMatrix = () => {
+  const reviewedAt = '2026-05-01';
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'flex-end', marginBottom:10}}>
+        <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em'}}>마지막 검토 · {reviewedAt}</span>
+      </div>
+      <div style={{overflowX:'auto'}}>
+        <table style={{width:'100%', minWidth:720, borderCollapse:'collapse', fontSize:12}}>
+          <thead>
+            <tr style={{borderBottom:'1px solid var(--line)', background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.16em', color:'var(--ink-3)'}}>
+              <th scope="col" style={{padding:'8px 10px', textAlign:'left'}}>구분</th>
+              <th scope="col" style={{padding:'8px 10px', textAlign:'left'}}>이름</th>
+              <th scope="col" style={{padding:'8px 10px', textAlign:'left'}}>현재</th>
+              <th scope="col" style={{padding:'8px 10px', textAlign:'left'}}>최신</th>
+              <th scope="col" style={{padding:'8px 10px', textAlign:'left'}}>위험도</th>
+              <th scope="col" style={{padding:'8px 10px', textAlign:'left'}}>위치</th>
+              <th scope="col" style={{padding:'8px 10px', textAlign:'left'}}>메모</th>
+            </tr>
+          </thead>
+          <tbody>
+            {DEPENDENCY_MATRIX.map((d) => {
+              const upToDate = d.current === d.latest;
+              const riskColor = d.risk === 'major' ? 'var(--danger)' : d.risk === 'minor' ? 'var(--warning)' : 'var(--success)';
+              return (
+                <tr key={d.name} style={{borderBottom:'1px solid var(--line)'}}>
+                  <td className="mono dim-2" style={{padding:'10px', fontSize:10, letterSpacing:'0.14em'}}>{d.kind}</td>
+                  <td className="mono" style={{padding:'10px', fontSize:11, color:'var(--ink)'}}>{d.name}</td>
+                  <td className="mono" style={{padding:'10px', fontSize:11}}>{d.current}</td>
+                  <td className="mono" style={{padding:'10px', fontSize:11, color: upToDate ? 'var(--success)' : 'var(--secondary)', fontWeight: upToDate ? 500 : 700}}>
+                    {d.latest}{!upToDate && ' ⚠'}
+                  </td>
+                  <td className="mono" style={{padding:'10px', fontSize:10, color: riskColor, letterSpacing:'0.12em'}}>{d.risk.toUpperCase()}</td>
+                  <td className="mono dim-2" style={{padding:'10px', fontSize:10}}>{d.location}</td>
+                  <td className="dim-2" style={{padding:'10px', fontSize:11, lineHeight:1.5}}>{d.notes}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

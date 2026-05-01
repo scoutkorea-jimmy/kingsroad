@@ -1,0 +1,14 @@
+{
+  "name": "banginoja-workers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker (banginoja-api). Wrangler 만 dev 의존성으로. wrangler deploy 는 사용자 직접 실행.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.87.0"
+  }
+}
