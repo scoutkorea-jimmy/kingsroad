@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.071.000",
+    date: "2026-05-01",
+    summary: "⚙ 빌드 단계 도입 (esbuild) — Babel-standalone 제거 + 인-브라우저 컴파일 경고 / 500KB deopt 노트 근본 차단.",
+    details: [
+      "🔧 tools/build.mjs 신설 — esbuild transform API 로 *.jsx → *.js per-file 컴파일. JSX factory React.createElement (UMD React 18 사용). IIFE 래핑 으로 기존 script-tag-isolation 보존. 인라인 source map.",
+      "🔧 tools/install-hooks.sh 갱신 — pre-commit hook 이 ① 빌드 ② 산출 .js 자동 stage ③ 신택스 검증 의 3-step 으로 확장. 빌드 실패 시 commit 차단.",
+      "🔧 tools/check-syntax.mjs 갱신 — collect() 가 *.jsx 와 짝 *.js 공존 시 .js 를 lint 제외 (빌드 산출물). hand-written .js (data.js / api.js / KoreaMapData.js) 만 통과.",
+      "📦 boot.jsx 신설 (저장소 루트) — index.html 의 인라인 ~480 줄 Babel 블록 (AppErrorBoundary + App + ReactDOM render) 분리. 빌드 → boot.js.",
+      "🩹 index.html — @babel/standalone CDN (~3MB) 제거 + 13 개 type=\"text/babel\" src=\"*.jsx?v=...\" → 평범 src=\"*.js?v=...\" 변환 + 인라인 블록 → boot.js 참조.",
+      "📦 cache-buster — `?v=00.071.000` (19곳).",
+      "ℹ 부수효과: 첫 로드 ~3MB ↓ (Babel-standalone 제거), JSX 컴파일 시간 0, 콘솔 경고 사라짐, 500KB deopt 노트 사라짐.",
+      "ℹ 워크플로 변경: 매 commit 시 pre-commit hook 이 자동 빌드 + stage. 수동: `node tools/build.mjs`. 감시 모드: `node tools/build.mjs --watch`.",
+    ],
+    context: "사용자 보고 'You are using the in-browser Babel transformer...' 경고가 자꾸 생기는 원인 + 명확한 fix 요청. 옵션 비교 후 빌드 단계 도입(esbuild) 선택 — 경고 silence 같은 꼼수가 아닌 근본 fix. esbuild 채택 이유: ① bundle 불필요 (window globals 패턴 유지) ② 단순 transform API ③ 80ms 미만 빌드 ④ 작은 dep (~10MB). pre-commit 자동 빌드 + 자동 stage 로 수동 단계 0. 다음 사이클(v00.072~) 후보: 홈 노출 축약 + 투어/강연 admin 통합 + 전 페이지 헤더/푸터 admin 편집화. (ROADMAP.md 참조)",
+  },
+  {
     version: "00.070.000",
     date: "2026-05-01",
     summary: "🚌 투어 페이지 모든 항목 admin 편집 (인트로 / 후기 안내 / 커버 이미지) + 누락 표시 필드 fix + AuthAdminPage 분할.",

@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.070.000 · 2026-05-01 (투어 페이지 모든 항목 admin 편집화 — tourIntro/tourReviewsGate/coverDataUri + _toTour 누락 필드 fix + AuthAdminPage 분할 9332→6900 줄)
+> **마지막 업데이트:** v00.071.000 · 2026-05-01 (빌드 단계 도입 — esbuild 사전 컴파일로 @babel/standalone 제거 + 인-브라우저 경고/500KB deopt 근본 차단)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.070)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.071)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -225,6 +225,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.068** | 2026-05-01 | Tiptap 무료 extension 풍부화 (밑줄/형광펜/Sub-Sup/색상/표/체크리스트/코드블록/정렬/YouTube) + 커뮤니티 글쓰기 모달 |
 | **v00.069** | 2026-05-01 | 게시글 파일 첨부 10MB×3 (FileAttacher) + 상세 다운로드 링크. 이미지(10장)+슬라이드는 기 구현 점검 |
 | **v00.070** | 2026-05-01 | 투어 페이지 모든 항목 admin 편집 — tourIntro/tourReviewsGate/coverDataUri site_content + _toTour 누락 4 필드(level/duration/group/next) fix + AuthAdminPage 9332→6900 줄 분할 (AdminDesignHub.jsx) |
+| **v00.071** | 2026-05-01 | 빌드 단계 도입 (esbuild) — `tools/build.mjs` 가 `*.jsx → *.js` 사전 컴파일 + pre-commit hook 자동화. `@babel/standalone` CDN 제거 (~3MB ↓). 인-브라우저 경고 / 500KB deopt 노트 근본 차단 |
 
 ---
 

@@ -17,7 +17,26 @@
 
 ## 큐 1 — 코드측 무차단 (워커 배포 불필요)
 
-### ⏳ v00.071 — 데이터 매퍼 audit
+### ✅ v00.071 — 빌드 단계 도입 (esbuild) — Babel-standalone 제거 (commit 다음 sha)
+- 완료: tools/build.mjs (esbuild) + boot.jsx 분리 + index.html 재작성 (@babel/standalone CDN 제거) + pre-commit hook 자동 빌드 + check-syntax 가 jsx/js 짝 인식
+
+### ⏳ v00.072 — 홈 노출 축약 + 투어 admin 통합
+- [ ] 홈페이지 투어/강연 카드 description 축약 — 첫 ~120자 + "…" 또는 별도 `homePreview` site_content 슬롯
+- [ ] TourAdminPanel 에 일정/준비물/커버 inline 편집 통합 (현재는 별도 "투어 페이지" 탭) — 투어 카드 하단에 토글 섹션
+- [ ] 동일 패턴을 LectureAdminPanel 에도 적용 (강연 admin 에서 일정/준비물 편집)
+- [ ] 정원/난이도/소요시간 편집 가시성 개선 — "투어 정보 수정" 버튼이 묻히지 않도록 즉시 노출 또는 inline 편집
+- **동기:** 사용자 보고 "홈에 노출되는건 적당히 줄이거나 홈용으로 따로 글을 쓰게 해야지 / 투어프로그램 설정에 각 프로그램별 답사일정·준비물 설정할수있게해줘야지 / 정원·난이도·소요시간도 설정할수있게해주고". 현재 일부는 분산되어 있어 발견 어려움.
+- **status:** pending
+
+### ⏳ v00.073 — 전 페이지 헤더 + 푸터 admin 편집화 sweep
+- [ ] 모든 페이지의 eyebrow / title / subtitle / accent 를 `site_content_kv.<page>Intro` 패턴으로 추출 (LecturesPage / CommunityPage / ColumnPage / MyPage / EatPage / SleepPage / ShopPage / FaqPage / LegalPage)
+- [ ] WangsanamTourPage 에서 이미 적용된 tourIntro 패턴(v00.070) 그대로 재사용
+- [ ] SiteContentAdminPanel 에 페이지별 SectionForm 일괄 추가 (또는 페이지 단위 폴더 구조)
+- [ ] 푸터 잔여 하드코드 audit — 카피라이트 라인 / 보조 메뉴 라벨 / 안내 문구 등 site_content 로 이관
+- **동기:** 사용자 보고 "관리자페이지에서 각 메뉴들 제목·부제목들을 수정할 수 있게 세팅해줘 / 푸터정보도 관리자페이지에서 수정할수있게해줘". v00.054(hero) / v00.057(footer) / v00.070(tour) 의 패턴을 사이트 전체에 일관 적용.
+- **status:** pending
+
+### ⏳ v00.074 — 데이터 매퍼 audit
 - [ ] `data.js` 의 모든 `_toX` 매퍼 함수가 워커 응답 필드를 보존하는지 점검
   - [ ] `_toTour` (v00.070 fix 완료, 회귀 검증)
   - [ ] `_toLecture` (또는 LECTURES 헬퍼 내부 매퍼)
@@ -167,3 +186,4 @@
 > 본 문서는 forward-looking. 완료 항목은 한 줄로 옮기고 본문에서 제거.
 
 - **v00.070** ✅ 투어 페이지 모든 항목 admin 편집 + AuthAdminPage 9332→6900 분할 (commit `3ccc6b9`)
+- **v00.071** ✅ 빌드 단계 도입 (esbuild) — Babel-standalone 제거, in-browser 경고 / 500KB deopt 근본 차단 (commit 다음 sha)

@@ -10,5 +10,8 @@
   },
   "dependencies": {
     "@babel/parser": "^7.25.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.0"
   }
 }

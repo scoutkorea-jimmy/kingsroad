@@ -32,15 +32,23 @@ const { parse } = await import(parserPath);
 
 // 2) 검사 대상 수집.
 const TARGET_DIRS = ["components", "pages"];
-const TARGET_ROOT_FILES = ["data.js", "api.js"];
+// data.js / api.js 는 hand-written. boot.jsx (v00.071) 는 빌드 소스 (boot.js 는 산출물 → 제외).
+const TARGET_ROOT_FILES = ["data.js", "api.js", "boot.jsx"];
 
 const collect = async (dir, out = []) => {
   const entries = await fs.readdir(dir, { withFileTypes: true });
+  // v00.071 — *.jsx 와 짝 *.js 가 같은 폴더에 공존하면 .js 는 빌드 산출물이므로 lint 제외.
+  const names = new Set(entries.filter((e) => e.isFile()).map((e) => e.name));
   for (const e of entries) {
     if (e.name.startsWith(".") || e.name === "node_modules") continue;
     const p = path.join(dir, e.name);
     if (e.isDirectory()) await collect(p, out);
-    else if (/\.(jsx?|mjs)$/.test(e.name)) out.push(p);
+    else if (/\.jsx$/.test(e.name)) out.push(p);
+    else if (/\.mjs$/.test(e.name)) out.push(p);
+    else if (/\.js$/.test(e.name)) {
+      const jsxTwin = e.name.replace(/\.js$/, ".jsx");
+      if (!names.has(jsxTwin)) out.push(p); // hand-written .js (KoreaMapData 등) 만 통과
+    }
   }
   return out;
 };
