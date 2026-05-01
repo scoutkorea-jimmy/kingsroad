@@ -1718,6 +1718,137 @@ const HeroEditorPanel = () => {
   );
 };
 
+// === Eat/Sleep/Shop Admin Panel (v00.105) ===============================
+// 놀자 시리즈 (먹고 / 자고 / 사고) 의 인트로 + categories 편집.
+// site_content_kv: eatIntro / sleepIntro / shopIntro 의 { eyebrow, title, sub, desc, accent, categories }.
+const ESS_CategoryEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
+  <div style={{marginTop:8}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
+      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em'}}>카테고리 ({rows.length})</div>
+      <button type="button" className="btn btn-small" onClick={onAdd}>＋ 카테고리</button>
+    </div>
+    {rows.length === 0 && <p className="dim-2" style={{fontSize:11, fontStyle:'italic'}}>(미노출)</p>}
+    {rows.map((c, i) => (
+      <div key={i} style={{display:'grid', gridTemplateColumns:'1fr auto', gap:6, marginBottom:6, alignItems:'center'}}>
+        <input type="text" className="field-input" value={c || ''}
+          onChange={(e) => onUpdate(i, e.target.value)}
+          style={{padding:'5px 8px', fontSize:13}}/>
+        <TPE_RowActions i={i} total={rows.length} onMove={onMove} onRemove={onRemove}/>
+      </div>
+    ))}
+  </div>
+);
+
+const EatSleepShopAdminPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const [msg, setMsg] = React.useState('');
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2200); };
+
+  const KINDS = [
+    { key: 'eatIntro',   label: '먹고 놀자 (/eat)',   accentDefault: '#E8A540' },
+    { key: 'sleepIntro', label: '자고 놀자 (/sleep)', accentDefault: '#5A8FBF' },
+    { key: 'shopIntro',  label: '사고 놀자 (/shop)',  accentDefault: '#9C6FB3' },
+  ];
+
+  const [drafts, setDrafts] = React.useState(() => {
+    const out = {};
+    for (const k of KINDS) {
+      const cur = sc[k.key] || {};
+      out[k.key] = {
+        eyebrow: cur.eyebrow || '',
+        title: cur.title || '',
+        sub: cur.sub || '',
+        desc: cur.desc || '',
+        accent: cur.accent || k.accentDefault,
+        categories: Array.isArray(cur.categories) ? cur.categories.slice() : [],
+      };
+    }
+    return out;
+  });
+  const update = (kind, patch) => setDrafts((prev) => ({ ...prev, [kind]: { ...prev[kind], ...patch } }));
+
+  const save = async (kind) => {
+    try {
+      const d = drafts[kind];
+      const clean = {
+        eyebrow: String(d.eyebrow || ''),
+        title: String(d.title || ''),
+        sub: String(d.sub || ''),
+        desc: String(d.desc || ''),
+        accent: String(d.accent || ''),
+        categories: (Array.isArray(d.categories) ? d.categories : []).filter((c) => c && String(c).trim()).map((c) => String(c).trim()),
+      };
+      await window.BGNJ_SITE_CONTENT.saveSection(kind, clean);
+      setTick((v) => v + 1);
+      flash(`'${kind}' 저장됨.`);
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        놀자 시리즈 — <code>/eat</code> / <code>/sleep</code> / <code>/shop</code> 페이지의 인트로 (eyebrow / title / sub / desc / accent) + 카테고리 목록 편집.
+        카테고리는 우측 사이드 그리드의 칩 라벨로 노출됨. 비우면 페이지에서 카테고리 섹션 미노출.
+      </p>
+
+      {KINDS.map((k) => {
+        const d = drafts[k.key];
+        return (
+          <section key={k.key} className="card" style={{padding:18, marginBottom:18}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+              <h3 className="ko-serif" style={{fontSize:16, margin:0}}>{k.label}</h3>
+              <button type="button" className="btn btn-gold btn-small" onClick={() => save(k.key)}>저장</button>
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:10}}>
+              <label className="field" style={{margin:0}}>
+                <span className="field-label">아이브로우</span>
+                <input className="field-input" value={d.eyebrow}
+                  onChange={(e) => update(k.key, { eyebrow: e.target.value })}/>
+              </label>
+              <label className="field" style={{margin:0}}>
+                <span className="field-label">큰 제목</span>
+                <input className="field-input" value={d.title}
+                  onChange={(e) => update(k.key, { title: e.target.value })}/>
+              </label>
+              <label className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                <span className="field-label">제목 우측 작은 부제</span>
+                <input className="field-input" value={d.sub}
+                  onChange={(e) => update(k.key, { sub: e.target.value })}/>
+              </label>
+              <label className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                <span className="field-label">본문 설명</span>
+                <textarea className="field-input" rows={3} value={d.desc}
+                  onChange={(e) => update(k.key, { desc: e.target.value })}/>
+              </label>
+              <label className="field" style={{margin:0}}>
+                <span className="field-label">부제 강조 색상 (HEX)</span>
+                <input className="field-input" value={d.accent}
+                  onChange={(e) => update(k.key, { accent: e.target.value })}
+                  placeholder={k.accentDefault}/>
+              </label>
+              <div style={{margin:0}}>
+                <span className="field-label">색상 미리보기</span>
+                <div style={{display:'flex', alignItems:'center', gap:10, padding:'7px 10px', border:'1px solid var(--line-2)', background:'var(--bg-2)', borderRadius:2}}>
+                  <span style={{display:'inline-block', width:24, height:24, borderRadius:3, background: d.accent || k.accentDefault, border:'1px solid var(--line-2)'}}/>
+                  <span className="mono dim-2" style={{fontSize:11}}>{d.accent || k.accentDefault}</span>
+                </div>
+              </div>
+            </div>
+            <ESS_CategoryEditor rows={d.categories}
+              onAdd={() => update(k.key, { categories: _arrAdd(d.categories, '') })}
+              onRemove={(i) => update(k.key, { categories: _arrRemove(d.categories, i) })}
+              onUpdate={(i, v) => update(k.key, { categories: _arrUpdate(d.categories, i, v) })}
+              onMove={(i, dir) => update(k.key, { categories: _arrMove(d.categories, i, dir) })}/>
+          </section>
+        );
+      })}
+
+      {msg && <p role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, marginTop:10}}>{msg}</p>}
+    </div>
+  );
+};
+
 // === Legacy Migration Panel (v00.086) ===================================
 // 운영자 1회성 도구. 누적된 legacy 데이터를 정식 위치로 일괄 이동.
 //   ① 투어 cover: site_content_kv.tourPages[id].coverDataUri → D1.tours.cover_url
@@ -1935,4 +2066,5 @@ Object.assign(window, {
   HERO_COLOR_OPTIONS, HERO_WEIGHTS, HERO_ALIGNS, HERO_TFORMS,
   HeroEditorPanel,
   LegacyMigrationPanel, // v00.086
+  EatSleepShopAdminPanel, ESS_CategoryEditor, // v00.105
 });

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.104.000",
+  version: "00.105.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -425,23 +425,13 @@ const DEFAULT_SITE_CONTENT = {
   // 히어로 스타일 트윗 — 관리자 '히어로' 탭에서 편집. 빈 그룹이면 코드 default(아래 BGNJ_HERO_STYLE_DEFAULT) 사용.
   // 형태: { eyebrow: {...}, title: {...}, subtitle: {...}, cta: {...}, stats: { label, value, sub } }. 일부만 오버라이드 가능.
   heroStyle: {},
-  // 투어 페이지 답사 일정 — 관리자에서 항목별 편집. 빈 배열이면 코드 default 사용.
+  // 투어 페이지 답사 일정 — 관리자에서 항목별 편집. 빈 배열이면 페이지에서 미노출.
   // 각 항목: { t: '시간 라벨 (예: 0h 30m)', l: '내용 (예: 주요 공간 답사)' }.
-  tourSchedule: [
-    { t: '0h 00m', l: '집결 · 인트로 강연' },
-    { t: '0h 30m', l: '주요 공간 답사 — 뱅기노자 해설' },
-    { t: '1h 30m', l: '휴식 · 질의응답' },
-    { t: '2h 00m', l: '사료와 함께 읽기' },
-    { t: '2h 45m', l: '마무리 · 다음 회차 안내' },
-  ],
-  // 투어 페이지 준비물 — 관리자에서 항목별 편집. 빈 배열이면 코드 default.
-  // 각 항목: 문자열.
-  tourPrep: [
-    '편한 신발 (3~5km 보행)',
-    '필기구 · 노트',
-    '따뜻한 겉옷 (야간 프로그램 시)',
-    '사전 배포되는 자료집은 현장에서 제공됩니다',
-  ],
+  // v00.105 — 시드 비움. "비우면 미노출" 약속 준수. 운영자가 글로벌 default 채우면 모든 투어에 적용.
+  tourSchedule: [],
+  // 투어 페이지 준비물 — 관리자에서 항목별 편집. 빈 배열이면 페이지에서 미노출.
+  // 각 항목: 문자열. v00.105 — 시드 비움.
+  tourPrep: [],
   // 투어별 override (v00.066) — { [tourId]: { schedule: [{t,l}], prep: [str], templateId?: string, coverDataUri?: string } }.
   // per-tour 차별화. 키 누락 또는 빈 배열이면 위 글로벌(tourSchedule/tourPrep) fallback.
   // templateId 가 있으면 그 템플릿의 schedule/prep 사용 (직접 편집한 schedule/prep 보다 우선순위 낮음).
@@ -476,21 +466,10 @@ const DEFAULT_SITE_CONTENT = {
     empty: '아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.',
   },
   // 강연 페이지 진행 흐름 (v00.075) — global default. lecturePages[id].schedule 가 있으면 override.
-  // 각 항목: { t: '시간 라벨', l: '내용' }.
-  lectureSchedule: [
-    { t: '0h 00m', l: '입장 · 인사' },
-    { t: '0h 10m', l: '주제 도입' },
-    { t: '0h 30m', l: '본론 · 사료 함께 읽기' },
-    { t: '1h 10m', l: '휴식 · 질의응답 준비' },
-    { t: '1h 20m', l: 'Q&A · 마무리' },
-  ],
-  // 강연 페이지 '참고' 안내 리스트 (v00.075). 각 항목: 문자열.
-  lectureNotes: [
-    '회원 가입 후 신청 가능 — 비회원은 자동 차단',
-    '유료 강연은 안내된 계좌로 입금 후 운영자 확인 → 참가 확정',
-    '정원이 차면 자동 대기자 등록 → 자리가 나면 자동 승격',
-    '취소는 마이페이지 또는 강연 사이드바에서 가능',
-  ],
+  // 각 항목: { t: '시간 라벨', l: '내용' }. v00.105 — 시드 비움 (비우면 미노출).
+  lectureSchedule: [],
+  // 강연 페이지 '참고' 안내 리스트 (v00.075). 각 항목: 문자열. v00.105 — 시드 비움.
+  lectureNotes: [],
   // 강연별 override (v00.075) — { [lectureId]: { schedule: [{t,l}], notes: [str], coverDataUri?: string, templateId?: string } }.
   // 키 누락 또는 빈 배열이면 글로벌 (lectureSchedule / lectureNotes) fallback. tourPages 와 동일 패턴.
   lecturePages: {},
@@ -539,13 +518,15 @@ const DEFAULT_SITE_CONTENT = {
     titleSuffix: ' 님의 서재',
     subtitle: '뱅기노자에서의 계정 상태, 예정된 프로그램, 최근 활동을 한 곳에서 확인합니다.',
   },
-  // EatSleepShop 3 페이지 — { eyebrow, title, sub, desc, accent } 구조 유지 (페이지 레이아웃 차별화).
+  // EatSleepShop 3 페이지 — { eyebrow, title, sub, desc, accent, categories } 구조.
+  // v00.105 — categories 도 admin 편집 가능 (이전엔 코드 default).
   eatIntro: {
     eyebrow: 'EAT · 먹고 놀자',
     title: '먹고 놀자',
     sub: '한국의 맛, 한 끼의 인문학',
     desc: '식(食) — 지역의 식재료와 손맛을 따라가는 여정. 뱅기노자와 함께 검증된 식당과 종가 음식을 만납니다.',
     accent: '#E8A540',
+    categories: ['전통 한정식', '향토 음식', '시장 먹거리', '제철 식재', '주안상·발효'],
   },
   sleepIntro: {
     eyebrow: 'STAY · 자고 놀자',
@@ -553,6 +534,7 @@ const DEFAULT_SITE_CONTENT = {
     sub: '머무는 곳에서 시작되는 여행',
     desc: '주(住) — 한옥·전통 게스트하우스·고택 스테이까지. 머무는 시간이 곧 풍경이 되는 숙박을 큐레이션합니다.',
     accent: '#5A8FBF',
+    categories: ['한옥 스테이', '고택 / 종가', '게스트하우스', '템플 스테이', '농가 체험'],
   },
   shopIntro: {
     eyebrow: 'SHOP · 사고 놀자',
@@ -560,6 +542,7 @@ const DEFAULT_SITE_CONTENT = {
     sub: '집으로 가져오는 한국의 손길',
     desc: '의(衣) + 토산 — 지역 장인의 공예와 토산물을 한자리에. 손에 닿는 한국을 가져갑니다.',
     accent: '#9C6FB3',
+    categories: ['전통 공예', '지역 토산물', '의류·전통 직물', '도자·금속', '보존·발효 식품'],
   },
   // 답사 일정/준비물 템플릿 모음 (v00.066) — 운영자가 자주 쓰는 패턴 저장.
   // 각 항목: { id, name, schedule: [{t,l}], prep: [str] }.

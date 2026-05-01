@@ -6,9 +6,8 @@
 //   - 다음 사이클에 D1 테이블(`venues` / `lodgings` / `goods`) 신설 + 관리자 입력 폼 + 예약 흐름.
 
 const PlacePage = ({ go, kind, user }) => {
-  // v00.073 — eyebrow / title / sub / desc / accent 는 site_content_kv.{eat|sleep|shop}Intro 에서.
-  // categories 는 코드 default 유지 (D1 marketplace 도입 시 마이그레이션).
-  const KIND_DEFAULT = {
+  // v00.073/v00.105 — eyebrow / title / sub / desc / accent / categories 모두 site_content_kv.{eat|sleep|shop}Intro 에서.
+  const KIND_FALLBACK = {
     eat:   { categories: ['전통 한정식', '향토 음식', '시장 먹거리', '제철 식재', '주안상·발효'] },
     sleep: { categories: ['한옥 스테이', '고택 / 종가', '게스트하우스', '템플 스테이', '농가 체험'] },
     shop:  { categories: ['전통 공예', '지역 토산물', '의류·전통 직물', '도자·금속', '보존·발효 식품'] },
@@ -21,7 +20,9 @@ const PlacePage = ({ go, kind, user }) => {
     sub:     _intro.sub     || '한국의 맛, 한 끼의 인문학',
     desc:    _intro.desc    || '식(食) — 지역의 식재료와 손맛을 따라가는 여정. 뱅기노자와 함께 검증된 식당과 종가 음식을 만납니다.',
     accent:  _intro.accent  || '#E8A540',
-    categories: (KIND_DEFAULT[kind] || KIND_DEFAULT.eat).categories,
+    categories: (Array.isArray(_intro.categories) && _intro.categories.length > 0)
+      ? _intro.categories
+      : (KIND_FALLBACK[kind] || KIND_FALLBACK.eat).categories,
   };
 
   return (

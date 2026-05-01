@@ -305,7 +305,7 @@ const HomePage = ({ go }) => {
                 <span style={{color:`var(${heroStyle.title.accentColor})`}}>{hero.title2 || "한국을"}</span><br/>
                 {hero.title3 || "느끼다"}
               </h1>
-              <p style={{
+              <p className="bgnj-multiline" style={{
                 fontSize: heroStyle.subtitle.fontSize,
                 lineHeight: heroStyle.subtitle.lineHeight,
                 color: `var(${heroStyle.subtitle.color})`,

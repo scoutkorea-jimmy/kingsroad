@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.105.000",
+    date: "2026-05-01",
+    summary: "🩹 핫픽스 묶음 — Tiptap 3 named import / 빈 default 미노출 / BANGINOJA 로고 placeholder / 투어·강연 admin 통합 / 놀자 admin 탭 / 줄바꿈 적용",
+    details: [
+      "🩹 [Tiptap 3 import 에러] @tiptap/extension-text-style@3.22.5 + @tiptap/extension-table@3.22.5 가 default export 없음 → named import 로 교체 ({ TextStyle } / { Table }). 콘솔 'does not provide an export named default' 에러 + admin 페이지 React 트리 죽음 fix. 책 추가 버튼 등 cascading 버그도 동시 해결.",
+      "🩹 [비우면 미노출 약속] DEFAULT_SITE_CONTENT.tourSchedule / tourPrep / lectureSchedule / lectureNotes 시드를 빈 배열로 교체. 운영자가 글로벌 default 채우면 모든 투어/강연에 적용. (이전 시드가 fallback 으로 노출되어 admin 빈 상태에도 페이지에 5 줄 일정 보였던 contradiction 해소).",
+      "🖼 CoverPlaceholder 컴포넌트 신설 (Shell.jsx) — BANGINOJA 로고 50% 투명 + label. WangsanamTourPage / LecturesPage 의 placeholder 교체. window.CoverPlaceholder 노출.",
+      "🔗 [통합] 투어 프로그램 ⋄ 투어 페이지 + 강연 ⋄ 강연 페이지 — 사이드바 별도 탭 제거. TourAdminPanel / LectureAdminPanel 상단에 collapsible '📋 페이지 콘텐츠' 섹션으로 TourPageEditorPanel / LecturePageEditorPanel 내장. 사용자 보고 '왜 별도로 구분되어있는거야' 처리.",
+      "🍱 EatSleepShopAdminPanel 신설 (AdminContentEditors.jsx) — 사이드바 콘텐츠 그룹에 '놀자 시리즈' 탭 추가. eat/sleep/shopIntro 의 인트로 + categories (배열 편집기) 통합 GUI. 이전엔 카테고리가 코드 default 만이었음 → site_content_kv.{eat|sleep|shop}Intro.categories 로 마이그.",
+      "📝 [줄바꿈 적용] .section-subtitle / .bgnj-multiline 클래스에 white-space: pre-wrap. footer description / hero subtitle 등 textarea 입력의 \\n 이 그대로 표시. 사용자 보고 '사이트 콘텐츠에서 줄바꿈이 적용이 안되는거 같은데'.",
+      "📦 cache-buster — `?v=00.105.000` (20곳).",
+    ],
+    context: "v00.090 Tiptap 3 마이그 직후 사용자가 admin 페이지 로딩 시 콘솔에 'extension-table does not provide default' 에러 보고. esm.sh 의 Tiptap 3 패키지 일부가 default export 없는 것 발견 → named import. 같은 시점 사용자 보고 5 종을 묶음 처리: ① Tiptap import 에러 ② 빈 시드 contradiction ③ 로고 placeholder ④ admin 별도 탭 통합 ⑤ 놀자 시리즈 admin ⑥ 줄바꿈 미적용. 다음 사이클(v00.106): 홈 히어로 지도 제거 — 사용자 협의 후 진행 (현재 별도 컴포넌트로 마련된 후보 안 없음, propose 단계).",
+  },
+  {
     version: "00.104.000",
     date: "2026-05-01",
     summary: "🛠 LegacyMigrationPanel 신설 — 시스템 관리 → 데이터 정리. 누적 legacy cover 데이터 일괄 마이그.",

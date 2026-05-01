@@ -100,9 +100,12 @@ const LecturesPage = ({ go, user }) => {
                   </div>
                 );
               }
+              // v00.105 — 커버 미설정 시 BANGINOJA 로고 50% 투명 placeholder.
               return (
-                <div className="placeholder" style={{aspectRatio:'16/10', marginBottom:32, fontSize:11}}>
-                  {String(lecture.title || '').toUpperCase()} · 1600×1000
+                <div style={{marginBottom:32}}>
+                  {window.CoverPlaceholder
+                    ? <window.CoverPlaceholder aspectRatio="16/10" label={String(lecture.title || '').toUpperCase()}/>
+                    : <div className="placeholder" style={{aspectRatio:'16/10', fontSize:11}}>{String(lecture.title || '').toUpperCase()}</div>}
                 </div>
               );
             })()}

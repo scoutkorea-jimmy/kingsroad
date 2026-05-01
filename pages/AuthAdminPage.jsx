@@ -488,6 +488,7 @@ const _arrMove   = window._arrMove;
 const TourPageEditorPanel = window.TourPageEditorPanel;
 const LecturePageEditorPanel = window.LecturePageEditorPanel; // v00.083
 const LegacyMigrationPanel = window.LegacyMigrationPanel; // v00.086
+const EatSleepShopAdminPanel = window.EatSleepShopAdminPanel; // v00.105
 const FooterStyleEditor   = window.FooterStyleEditor;
 const HeroEditorPanel     = window.HeroEditorPanel;
 
@@ -758,8 +759,31 @@ const LectureAdminPanel = ({ go }) => {
     }
   };
 
+  // v00.105 — 통합: 강연 페이지 콘텐츠 편집기 collapsible 내장.
+  const [showPageEditor, setShowPageEditor] = React.useState(false);
+
   return (
     <div>
+      {/* 통합 페이지 콘텐츠 편집기 */}
+      <div style={{marginBottom:18, border:'1px solid var(--line)', background:'var(--bg-2)'}}>
+        <button type="button"
+          onClick={() => setShowPageEditor((v) => !v)}
+          style={{
+            width:'100%', padding:'12px 16px', textAlign:'left',
+            background:'transparent', border:'none', cursor:'pointer',
+            fontSize:13, fontWeight:600, color:'var(--ink)',
+            display:'flex', justifyContent:'space-between', alignItems:'center',
+          }}>
+          <span>📋 강연 페이지 콘텐츠 — 글로벌 진행·참고 / 템플릿 / 강연별 override</span>
+          <span className="mono dim-2" style={{fontSize:11}}>{showPageEditor ? '▲ 닫기' : '▼ 펼치기'}</span>
+        </button>
+        {showPageEditor && (
+          <div style={{padding:'14px 18px', borderTop:'1px solid var(--line)', background:'var(--bg)'}}>
+            {window.LecturePageEditorPanel ? <window.LecturePageEditorPanel/> : <p className="dim">패널 로딩 중...</p>}
+          </div>
+        )}
+      </div>
+
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, flexWrap:'wrap', marginBottom:18}}>
         <p className="dim" style={{fontSize:13, lineHeight:1.8, margin:0, flex:1, minWidth:280}}>
           강연 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
@@ -1197,8 +1221,32 @@ const TourAdminPanel = ({ go }) => {
     refresh();
   };
 
+  // v00.105 — 통합: 투어 페이지 콘텐츠 편집(글로벌/템플릿/per-tour) 을 본 패널 상단에 collapsible 로 내장.
+  // 사용자 요청: '투어 프로그램과 투어 페이지는 연결되어야지'.
+  const [showPageEditor, setShowPageEditor] = React.useState(false);
+
   return (
     <div>
+      {/* 통합 페이지 콘텐츠 편집기 (collapsible) */}
+      <div style={{marginBottom:18, border:'1px solid var(--line)', background:'var(--bg-2)'}}>
+        <button type="button"
+          onClick={() => setShowPageEditor((v) => !v)}
+          style={{
+            width:'100%', padding:'12px 16px', textAlign:'left',
+            background:'transparent', border:'none', cursor:'pointer',
+            fontSize:13, fontWeight:600, color:'var(--ink)',
+            display:'flex', justifyContent:'space-between', alignItems:'center',
+          }}>
+          <span>📋 투어 페이지 콘텐츠 — 글로벌 답사 일정·준비물 / 템플릿 / 투어별 override</span>
+          <span className="mono dim-2" style={{fontSize:11}}>{showPageEditor ? '▲ 닫기' : '▼ 펼치기'}</span>
+        </button>
+        {showPageEditor && (
+          <div style={{padding:'14px 18px', borderTop:'1px solid var(--line)', background:'var(--bg)'}}>
+            {window.TourPageEditorPanel ? <window.TourPageEditorPanel/> : <p className="dim">패널 로딩 중...</p>}
+          </div>
+        )}
+      </div>
+
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, flexWrap:'wrap', marginBottom:18}}>
         <p className="dim" style={{fontSize:13, lineHeight:1.8, margin:0, flex:1, minWidth:280}}>
           투어 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
@@ -3941,10 +3989,10 @@ const AdminPage = ({ go }) => {
   // 7개 대카테고리: 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리
   const tabGroups = [
     { group: "요약",          items: ["대시보드"] },
-    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "추천 여행지"] },
+    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "추천 여행지", "놀자 시리즈"] },
     { group: "회원관리",      items: ["회원", "회원 등급"] },
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
-    { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "투어 페이지", "강연 페이지", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
+    { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보 관리", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "SEO", "설정", "데이터 정리"] },
   ];
@@ -4903,11 +4951,11 @@ const AdminPage = ({ go }) => {
         )}
 
         {tab === "추천 여행지" && <RecommendationsAdminPanel/>}
+        {tab === "놀자 시리즈" && <EatSleepShopAdminPanel/>}
         {/* 카테고리 CRUD */}
         {tab === "사이트 콘텐츠" && <SiteContentAdminPanel/>}
         {tab === "히어로" && <HeroEditorPanel/>}
-        {tab === "투어 페이지" && <TourPageEditorPanel/>}
-        {tab === "강연 페이지" && <LecturePageEditorPanel/>}
+        {/* v00.105 — '투어 페이지' / '강연 페이지' 탭 제거. TourAdminPanel / LectureAdminPanel 상단에 inline 통합. */}
         {tab === "카테고리" && <AdminCategoryPanel/>}
         {tab === "약관/개인정보" && <LegalAdminPanel/>}
         {tab === "자주 묻는 질문" && <FaqAdminPanel/>}

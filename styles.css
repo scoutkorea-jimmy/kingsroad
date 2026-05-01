@@ -1013,7 +1013,11 @@ main time, main .section-eyebrow {
   color: var(--ink-2);
   max-width: 640px;
   line-height: 1.7;
+  /* v00.105 — site_content 의 textarea 줄바꿈(\n) 을 그대로 표시. */
+  white-space: pre-wrap;
 }
+/* v00.105 — site_content 본문 multiline 필드 일반 처리 */
+.bgnj-multiline { white-space: pre-wrap; }
 .section-head {
   display: flex;
   justify-content: space-between;

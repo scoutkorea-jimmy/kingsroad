@@ -588,7 +588,7 @@ const Footer = ({ go }) => {
         <div className="footer-grid">
           <div>
             <Brand onClick={() => go("home")}/>
-            <p className="dim" style={{
+            <p className="dim bgnj-multiline" style={{
               marginTop:20,
               fontSize: fStyle.description.fontSize,
               fontWeight: fStyle.description.fontWeight,
@@ -821,4 +821,24 @@ const CookieConsent = () => {
   );
 };
 
-Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell, ScrollToTop, BanginojaIcon, CookieConsent });
+// v00.105 — 커버 이미지 placeholder. BANGINOJA 로고를 50% 투명도로 중앙 표시.
+// 사용처: 투어/강연 상세 페이지 cover 미설정 시 + 책 카탈로그 cover 미설정 시.
+const CoverPlaceholder = ({ aspectRatio = '16/10', label, iconSize = 88 }) => (
+  <div className="placeholder" style={{
+    aspectRatio, position: 'relative',
+    display: 'grid', placeItems: 'center',
+    background: 'var(--bg-2)',
+    border: '1px solid var(--line-2)',
+  }}>
+    <div style={{ opacity: 0.5, display: 'grid', placeItems: 'center', gap: 10 }}>
+      <BanginojaIcon size={iconSize}/>
+      {label && (
+        <span className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.22em' }}>
+          {label}
+        </span>
+      )}
+    </div>
+  </div>
+);
+
+Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell, ScrollToTop, BanginojaIcon, CoverPlaceholder, CookieConsent });
