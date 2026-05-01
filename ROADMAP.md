@@ -105,13 +105,8 @@
 
 ## 큐 3 — 메이저 마이그레이션 (별 사이클, 분리 진행)
 
-### ⏳ v00.090 — Tiptap 3 메이저
-- TiptapEditor.jsx + AdminColumnEditor 마이그레이션
-- extension API 변경 (StarterKit 분해 / Editor.create 시그니처 등)
-- 회귀 테스트: 칼럼 작성 / 게시글 모달 / 후기 작성
-- KMS 의존성 매트릭스의 risk: major 해소
-- **추정:** 3-5 시간.
-- **status:** pending
+### ✅ v00.090 — Tiptap 3 메이저
+- 완료: 17 ESM import @2.11.5→@3.22.5. StarterKit v3 가 Underline/Link/Dropcursor 기본 포함 → standalone 제거 + 옵션 StarterKit.configure 로 이전. AdminColumnEditor 는 wrapper 만 사용 → 코드 변경 0. DEPENDENCY_MATRIX risk major→patch.
 
 ### ⏳ v00.100 — React 19 메이저
 - UMD 19 교체 + concurrent features
@@ -154,4 +149,5 @@
 - **v00.078** ✅ AuthAdminPage 2차 분할 — AdminContentEditors.jsx 1300 줄 추출 (commit `7249dc5`)
 - **v00.079** ✅ legacy `bgnj_comments` 제거 + storage v6 + ★ wrangler deploy v00.062 metrics endpoint 활성화 (commit `5132fb5`)
 - **v00.081** ✅ 투어 D1 `cover_url` 컬럼 마이그레이션 + ★ wrangler deploy (commit `8356cef`)
-- **v00.082** ✅ R2 업로드 흐름 활성화 — admin 6 슬롯 (OG/로고/파비콘/auth/투어 커버/강연 커버) (commit 다음 sha)
+- **v00.082** ✅ R2 업로드 흐름 활성화 — admin 6 슬롯 (OG/로고/파비콘/auth/투어 커버/강연 커버) (commit `0707e00`)
+- **v00.090** ✅ Tiptap 3 메이저 — @tiptap/* 3.22.5 + StarterKit 중복 제거 (commit 다음 sha)

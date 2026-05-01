@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.090.000",
+    date: "2026-05-01",
+    summary: "🎯 Tiptap 3 메이저 마이그레이션 — @tiptap/* 2.11.5 → 3.22.5. StarterKit v3 가 Underline/Link/Dropcursor 기본 포함 → standalone import 3 종 제거 + 옵션을 StarterKit.configure 로 이전.",
+    details: [
+      "🎯 index.html — 17 ESM import 를 @2.11.5 → @3.22.5. 중복 제거 (Underline/Link/Dropcursor 는 StarterKit 가 포함). window.BGNJ_TIPTAP exposed 객체에서도 3 종 제거.",
+      "🎯 components/TiptapEditor.jsx — Link.configure / Dropcursor.configure 호출 제거. StarterKit.configure 에 link / dropcursor 옵션으로 이전. T.Underline 분기 제거 (StarterKit 기본).",
+      "ℹ Image 는 standalone 유지 (StarterKit 미포함). Image.configure 에 inline=false / allowBase64=true / class='tiptap-img' 로 column/rich preset 에서만 추가.",
+      "ℹ Highlight / TextAlign / Subscript / Superscript / TaskList / TaskItem / TextStyle / Color / Table / TableRow / TableCell / TableHeader / Youtube / Typography — 모두 v3 호환 standalone 유지.",
+      "🩹 DEPENDENCY_MATRIX 갱신 — @tiptap/* current 2.11.5 → 3.22.5, risk major → patch.",
+      "📦 cache-buster — `?v=00.090.000` (20곳).",
+      "ℹ ★ 워커 변경 X — 워커는 Tiptap 모름 (HTML 본문은 D1 TEXT 로 저장).",
+    ],
+    context: "v00.055 의 DEPENDENCY_MATRIX 가 매 사이클 검토하던 risk:major 항목 해소. Tiptap 3 의 핵심 변경: StarterKit 묶음 확장 (underline / link / list-keymap / dropcursor 추가). 우리 코드는 이 3 개를 standalone 으로 import 했었으므로 v3 에선 중복 등록 → 제거. Link/Dropcursor 의 customization 만 StarterKit.configure 의 nested options 로 이전. AdminColumnEditor 는 TiptapEditor wrapper 만 사용 (직접 Tiptap API 미사용) → 코드 변경 0. 다음 사이클(v00.100): React 19 마이그레이션 — UMD 18.3.1 → 19.x.",
+  },
+  {
     version: "00.082.000",
     date: "2026-05-01",
     summary: "🪣 R2 업로드 흐름 활성화 — admin 이미지 업로드를 dataURI 인라인 → R2 객체로 마이그레이션 (OG / 로고 / 파비콘 / auth 배경 / 투어·강연 커버).",
@@ -1753,7 +1768,7 @@ const DEPENDENCY_MATRIX = [
   // CDN — index.html 직접 참조
   { kind: 'CDN', name: '@babel/standalone', current: '7.29.3', latest: '7.29.3', risk: 'patch', location: 'index.html', notes: 'in-browser JSX 컴파일러. SRI hash 동시 갱신 필요.' },
   { kind: 'CDN', name: 'react / react-dom (UMD)', current: '18.3.1', latest: '19.2.5', risk: 'major', location: 'index.html', notes: 'React 19 마이그레이션 별도 사이클 — useEffect 동작 변경 + ref-as-prop + key 정합 검토.' },
-  { kind: 'CDN', name: '@tiptap/* (ESM)', current: '2.11.5', latest: '3.22.5', risk: 'major', location: 'index.html', notes: 'Tiptap 3 메이저 — extension API 변경. AdminColumnEditor + TiptapEditor.jsx 마이그레이션 별도 사이클.' },
+  { kind: 'CDN', name: '@tiptap/* (ESM)', current: '3.22.5', latest: '3.22.5', risk: 'patch', location: 'index.html', notes: 'v00.090 메이저 마이그레이션 완료 — StarterKit v3 가 underline/link/dropcursor 기본 포함. standalone import 제거 + 옵션 StarterKit.configure 로 이전.' },
   // npm — 로컬 도구
   { kind: 'npm', name: '@babel/parser', current: '7.29.3', latest: '7.29.3', risk: 'patch', location: 'tools/package.json', notes: 'pre-commit 훅 신택스 검증. `npm update` 로 자동 갱신.' },
   { kind: 'npm', name: 'wrangler', current: '4.87.0 (선언)', latest: '4.87.0', risk: 'patch', location: 'workers/package.json', notes: 'Cloudflare 워커 CLI. `cd workers && npm install` 후 `wrangler deploy`. 글로벌 설치 시 사용자 권한 필요.' },

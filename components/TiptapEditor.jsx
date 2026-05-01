@@ -21,19 +21,21 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
   React.useEffect(() => {
     if (!ready || !host.current) return;
     const T = window.BGNJ_TIPTAP;
-    const { Editor, StarterKit, Placeholder, Image, Link, Typography, Dropcursor } = T;
+    const { Editor, StarterKit, Placeholder, Image, Typography } = T;
 
+    // v00.090 — Tiptap 3: StarterKit 이 underline / link / dropcursor 를 기본 포함.
+    // 이전 standalone Underline / Link / Dropcursor 는 제거 + 옵션을 StarterKit.configure 로 이전.
     const extensions = [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        // codeBlock 은 StarterKit 의 기본값(true) 사용 — v00.068.
+        link: { openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer' } },
+        dropcursor: { color: 'var(--primary)', width: 2 },
+        // codeBlock / underline 등 기타 기본값 (true) 사용.
       }),
       Placeholder.configure({ placeholder }),
-      Link.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer' } }),
       Typography,
     ];
-    // v00.068: 무료 extension 풍부화 — 모든 preset 에서 사용 가능.
-    if (T.Underline)   extensions.push(T.Underline);
+    // v00.068: 무료 extension 풍부화 — 모든 preset 에서 사용 가능. (v3 호환)
     if (T.Highlight)   extensions.push(T.Highlight.configure({ multicolor: true }));
     if (T.TextAlign)   extensions.push(T.TextAlign.configure({ types: ['heading', 'paragraph'] }));
     if (T.Subscript)   extensions.push(T.Subscript);
@@ -52,10 +54,10 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
     }
     if (T.Youtube) extensions.push(T.Youtube.configure({ inline: false, controls: true, allowFullscreen: true }));
     // 본문 인라인 이미지 — column / rich preset 에서 활성. simple 은 첨부 슬라이드만 사용.
+    // (v3) Dropcursor 는 StarterKit 에 포함되어 자동 활성. Image 만 standalone.
     if (preset === "column" || preset === "rich") {
       extensions.push(
         Image.configure({ inline: false, allowBase64: true, HTMLAttributes: { class: 'tiptap-img' } }),
-        Dropcursor.configure({ color: 'var(--primary)', width: 2 }),
       );
     }
 

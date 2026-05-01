@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.082.000">
+<link rel="stylesheet" href="styles.css?v=00.090.000">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -88,32 +88,31 @@
 <!-- 감시 모드: `node tools/build.mjs --watch` (개발용). -->
 <!-- (빈 슬롯 — 향후 다른 CDN 추가 시 여기에) -->
 
-<!-- Tiptap via ESM — exposes factories to window.BGNJ_TIPTAP. v00.068: 무료 extension 풍부화. -->
+<!-- Tiptap v3 via ESM — exposes factories to window.BGNJ_TIPTAP. v00.090: Tiptap 3 메이저 마이그레이션. -->
+<!-- v3 변경점: StarterKit 이 Underline / Link / Dropcursor 를 기본 포함 → standalone import 제거. -->
+<!-- Link / Dropcursor 의 config 는 StarterKit.configure({ link: {...}, dropcursor: {...} }) 로 이전. -->
 <script type="module">
-  import { Editor } from 'https://esm.sh/@tiptap/core@2.11.5';
-  import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2.11.5';
-  import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@2.11.5';
-  import Image from 'https://esm.sh/@tiptap/extension-image@2.11.5';
-  import Link from 'https://esm.sh/@tiptap/extension-link@2.11.5';
-  import Typography from 'https://esm.sh/@tiptap/extension-typography@2.11.5';
-  import Dropcursor from 'https://esm.sh/@tiptap/extension-dropcursor@2.11.5';
-  import Underline from 'https://esm.sh/@tiptap/extension-underline@2.11.5';
-  import Highlight from 'https://esm.sh/@tiptap/extension-highlight@2.11.5';
-  import TextAlign from 'https://esm.sh/@tiptap/extension-text-align@2.11.5';
-  import Subscript from 'https://esm.sh/@tiptap/extension-subscript@2.11.5';
-  import Superscript from 'https://esm.sh/@tiptap/extension-superscript@2.11.5';
-  import TaskList from 'https://esm.sh/@tiptap/extension-task-list@2.11.5';
-  import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@2.11.5';
-  import Color from 'https://esm.sh/@tiptap/extension-color@2.11.5';
-  import TextStyle from 'https://esm.sh/@tiptap/extension-text-style@2.11.5';
-  import Table from 'https://esm.sh/@tiptap/extension-table@2.11.5';
-  import TableRow from 'https://esm.sh/@tiptap/extension-table-row@2.11.5';
-  import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@2.11.5';
-  import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@2.11.5';
-  import Youtube from 'https://esm.sh/@tiptap/extension-youtube@2.11.5';
+  import { Editor } from 'https://esm.sh/@tiptap/core@3.22.5';
+  import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.22.5';
+  import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@3.22.5';
+  import Image from 'https://esm.sh/@tiptap/extension-image@3.22.5';
+  import Typography from 'https://esm.sh/@tiptap/extension-typography@3.22.5';
+  import Highlight from 'https://esm.sh/@tiptap/extension-highlight@3.22.5';
+  import TextAlign from 'https://esm.sh/@tiptap/extension-text-align@3.22.5';
+  import Subscript from 'https://esm.sh/@tiptap/extension-subscript@3.22.5';
+  import Superscript from 'https://esm.sh/@tiptap/extension-superscript@3.22.5';
+  import TaskList from 'https://esm.sh/@tiptap/extension-task-list@3.22.5';
+  import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@3.22.5';
+  import Color from 'https://esm.sh/@tiptap/extension-color@3.22.5';
+  import TextStyle from 'https://esm.sh/@tiptap/extension-text-style@3.22.5';
+  import Table from 'https://esm.sh/@tiptap/extension-table@3.22.5';
+  import TableRow from 'https://esm.sh/@tiptap/extension-table-row@3.22.5';
+  import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@3.22.5';
+  import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@3.22.5';
+  import Youtube from 'https://esm.sh/@tiptap/extension-youtube@3.22.5';
   window.BGNJ_TIPTAP = {
-    Editor, StarterKit, Placeholder, Image, Link, Typography, Dropcursor,
-    Underline, Highlight, TextAlign, Subscript, Superscript,
+    Editor, StarterKit, Placeholder, Image, Typography,
+    Highlight, TextAlign, Subscript, Superscript,
     TaskList, TaskItem, Color, TextStyle,
     Table, TableRow, TableCell, TableHeader, Youtube,
   };
@@ -121,25 +120,25 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script src="api.js?v=00.082.000"></script>
-<script src="data.js?v=00.082.000"></script>
-<script src="components/KoreaMapData.js?v=00.082.000"></script>
-<script src="components/KoreaMap.js?v=00.082.000"></script>
-<script src="components/Shell.js?v=00.082.000"></script>
-<script src="components/TiptapEditor.js?v=00.082.000"></script>
-<script src="pages/HomePage.js?v=00.082.000"></script>
-<script src="pages/CommunityPage.js?v=00.082.000"></script>
-<script src="pages/WangsanamTourPage.js?v=00.082.000"></script>
-<script src="pages/ColumnPage.js?v=00.082.000"></script>
-<script src="pages/BookCheckoutPage.js?v=00.082.000"></script>
-<script src="pages/admin/AdminDesignHub.js?v=00.082.000"></script>
-<script src="pages/admin/AdminContentEditors.js?v=00.082.000"></script>
-<script src="pages/AuthAdminPage.js?v=00.082.000"></script>
-<script src="pages/EatSleepShopPages.js?v=00.082.000"></script>
-<script src="pages/LecturesPage.js?v=00.082.000"></script>
-<script src="pages/LegalFaqPages.js?v=00.082.000"></script>
-<script src="pages/MyPage.js?v=00.082.000"></script>
+<script src="api.js?v=00.090.000"></script>
+<script src="data.js?v=00.090.000"></script>
+<script src="components/KoreaMapData.js?v=00.090.000"></script>
+<script src="components/KoreaMap.js?v=00.090.000"></script>
+<script src="components/Shell.js?v=00.090.000"></script>
+<script src="components/TiptapEditor.js?v=00.090.000"></script>
+<script src="pages/HomePage.js?v=00.090.000"></script>
+<script src="pages/CommunityPage.js?v=00.090.000"></script>
+<script src="pages/WangsanamTourPage.js?v=00.090.000"></script>
+<script src="pages/ColumnPage.js?v=00.090.000"></script>
+<script src="pages/BookCheckoutPage.js?v=00.090.000"></script>
+<script src="pages/admin/AdminDesignHub.js?v=00.090.000"></script>
+<script src="pages/admin/AdminContentEditors.js?v=00.090.000"></script>
+<script src="pages/AuthAdminPage.js?v=00.090.000"></script>
+<script src="pages/EatSleepShopPages.js?v=00.090.000"></script>
+<script src="pages/LecturesPage.js?v=00.090.000"></script>
+<script src="pages/LegalFaqPages.js?v=00.090.000"></script>
+<script src="pages/MyPage.js?v=00.090.000"></script>
 
-<script src="boot.js?v=00.082.000"></script>
+<script src="boot.js?v=00.090.000"></script>
 </body>
 </html>
