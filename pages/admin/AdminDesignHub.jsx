@@ -4,9 +4,28 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.110.000",
+    date: "2026-05-01",
+    datetime: new Date().toISOString(), // v00.110 — 실시간 ISO. KST 변환은 BGNJ_FMT 가 자동 (UTC+9 = Asia/Seoul).
+    summary: "🩹 홈 hero ReferenceError fix (HeroProgramCards `G` 미정의) + v00.107~v00.109 datetime 실제 commit 시간으로 정정",
+    details: [
+      "🩹 [hero crash fix] HeroProgramCards (v00.106 module-scope 컴포넌트) 가 HomePage 함수 내부의 const G = window.BGNJ_GUARD 를 참조 → ReferenceError. window.BGNJ_GUARD 직접 참조 + 로컬 _arr 헬퍼 정의로 fix. 사용자 보고 '히어로페이지 불러오지 못했데'.",
+      "🕒 fmtDate 헬퍼 → BGNJ_FMT.kstFriendly 위임 + 폴백 (BGNJ_FMT 미로드 시).",
+      "🕒 [datetime 정정] v00.106~v00.109 entries 의 datetime 필드를 실제 git commit 시간(KST) 으로 정정. 이전엔 추정값 hardcode 라 미래 시간 표시 (사용자 보고: 18:00 인데 KST 20:00 으로 나옴).",
+      "  · v00.106: 17:45:05 KST (commit d085c12)",
+      "  · v00.107: 17:47:50 KST (commit f9420fa)",
+      "  · v00.108: 17:53:00 KST (commit 6ed27ba)",
+      "  · v00.109: 18:02:52 KST (commit 049c8c8)",
+      "  · v00.110: new Date().toISOString() — 실시간 시점. 이상적으로는 git commit hook 으로 자동 stamp (다음 사이클).",
+      "ℹ KST = UTC+9 = GMT+9 — 시스템상 정확. 표시 깨짐은 entry 의 hardcode 값 실수.",
+      "📦 cache-buster — `?v=00.110.000` (20곳).",
+    ],
+    context: "사용자 보고 ① '히어로페이지 불러오지 못했데' (콘솔 G is not defined) ② 'KST 가 18:00 인데 20:00 으로 나오네' — 둘 다 본 사이클 fix. ②는 KST 자체 문제가 아닌 ADMIN_VERSION_HISTORY entry 의 hardcoded datetime 이 실제 commit 시간보다 미래로 적힌 추정 실수. v00.106~v00.109 모두 실제 시간으로 정정. 다음 사이클: pre-commit / build hook 에서 datetime 자동 stamp 검토 + 사용자 secrets 이관 + rate limit 등 보안 audit 잔재.",
+  },
+  {
     version: "00.109.000",
     date: "2026-05-01",
-    datetime: "2026-05-01T20:00:00+09:00",
+    datetime: "2026-05-01T18:02:52+09:00", // v00.110 — 실제 git commit 시간으로 정정 (이전 hardcoded 20:00 은 추정값)
     summary: "🔒 보안 audit + 즉시 fix — DOMPurify XSS / R2 파일 검증 / HTTP origin 제거 / 워커 deploy",
     details: [
       "🔒 [CRITICAL XSS fix] DOMPurify 도입 (CDN + SRI 검증) + BGNJ_SAFE_HTML 헬퍼. 모든 dangerouslySetInnerHTML 5곳 sanitize 적용 — LegalModal, PostViewerModal (admin), CommunityPage post detail, LegalFaqPages, ColumnPage. 화이트리스트 태그/속성 (Tiptap 무료 extension 호환).",
@@ -22,7 +41,7 @@ const ADMIN_VERSION_HISTORY = [
   {
     version: "00.108.000",
     date: "2026-05-01",
-    datetime: "2026-05-01T19:15:00+09:00",
+    datetime: "2026-05-01T17:53:00+09:00", // v00.110 — 실제 commit 시간 정정
     summary: "🕒 BGNJ_FMT formatToParts fix + 사이트 전반 KST sweep + KMS DEPENDENCY_MATRIX 갱신",
     details: [
       "🐛 [v00.107 BGNJ_FMT 출력 깨짐 fix] toLocaleString + 정규식 조합이 '2026-05-01-17:30:00 KST' 처럼 시간 앞에 대시 삽입. Intl.DateTimeFormat.formatToParts 로 교체. 모든 예상 출력 정확:  kstDateTime / kstShort / kstDate / kstFriendly.",
@@ -43,7 +62,7 @@ const ADMIN_VERSION_HISTORY = [
   {
     version: "00.107.000",
     date: "2026-05-01",
-    datetime: "2026-05-01T18:30:00+09:00", // v00.107 — KST timestamp
+    datetime: "2026-05-01T17:47:50+09:00", // v00.110 — 실제 commit 시간 정정 (이전 hardcode 18:30 추정)
     summary: "🕒 버전 기록 KST 시분초 표기 + CSV 다운로드 + KMS 최신화 + BGNJ_FMT 헬퍼",
     details: [
       "🕒 BGNJ_FMT 헬퍼 신설 (data.js) — kstDateTime / kstShort. timeZone 'Asia/Seoul' 강제 → 사용자 브라우저 TZ 무관 KST 출력.",
@@ -59,7 +78,7 @@ const ADMIN_VERSION_HISTORY = [
   {
     version: "00.106.000",
     date: "2026-05-01",
-    datetime: "2026-05-01T17:45:00+09:00",
+    datetime: "2026-05-01T17:45:05+09:00", // v00.110 — 실제 commit 시간 정정
     summary: "🚌 투어 폼 재구성 + 부제·환불정책 + GUI 개선 + 홈 hero 강연/답사 미니 카드 (A안) + 놀자 시리즈 그룹 분리",
     details: [
       "🗄 D1 ALTER TABLE tours — subtitle TEXT + refund_policy TEXT 컬럼 추가. ★ wrangler deploy (Version 5c11459b).",

@@ -196,14 +196,19 @@ const truncatePreview = (text, max = 110) => {
 // v00.106 — 홈 히어로의 지도 자리. 다음 강연 + 다음 답사 미니 카드.
 // 사용자 제안 A안: '강연/답사 미니 카드' (운영 가치 ↑, 재방문 가치 ↑).
 const HeroProgramCards = ({ go, dataTick }) => {
+  // v00.110 — module-scope 컴포넌트는 HomePage 의 `const G = window.BGNJ_GUARD;` 를 사용 못 함.
+  // window.BGNJ_GUARD 를 직접 참조 + 안전한 폴백.
+  const _arr = (fn) => {
+    try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; }
+  };
   const lectures = React.useMemo(() => {
-    return G.arr(() => window.BGNJ_LECTURES?.listAll?.())
+    return _arr(() => window.BGNJ_LECTURES?.listAll?.())
       .filter((l) => l && !l.hidden && l.startsAt)
       .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
       .filter((l) => new Date(l.startsAt).getTime() >= Date.now() - 86400000); // 어제 이후만
   }, [dataTick]);
   const tours = React.useMemo(() => {
-    return G.arr(() => window.BGNJ_TOURS?.listAll?.())
+    return _arr(() => window.BGNJ_TOURS?.listAll?.())
       .filter((t) => t && !t.hidden && t.startsAt)
       .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
       .filter((t) => new Date(t.startsAt).getTime() >= Date.now() - 86400000);
@@ -212,8 +217,11 @@ const HeroProgramCards = ({ go, dataTick }) => {
   const nextLecture = lectures[0];
   const nextTour = tours[0];
 
+  // v00.110 — 시간 표시는 사이트 전반 KST 기준. BGNJ_FMT.kstFriendly 사용.
   const fmtDate = (iso) => {
     if (!iso) return '';
+    if (window.BGNJ_FMT?.kstFriendly) return window.BGNJ_FMT.kstFriendly(iso);
+    // 폴백 (BGNJ_FMT 미로드 시)
     const d = new Date(iso);
     const pad = (n) => String(n).padStart(2, '0');
     const dow = ['일','월','화','수','목','금','토'][d.getDay()];
