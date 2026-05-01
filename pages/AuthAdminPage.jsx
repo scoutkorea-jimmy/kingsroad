@@ -5716,6 +5716,19 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
   const [html, setHtml] = React.useState(initialColumn?.body?.html || "");
   const [text, setText] = React.useState(initialColumn?.body?.text || "");
   const [publishAt, setPublishAt] = React.useState(initialColumn?.publishAt || "");
+  // v00.115 — 표시 시간(created_at) 오버라이드. publishAt(예약 발행)과 별도.
+  // 'YYYY-MM-DDTHH:MM' datetime-local 포맷. 비우면 워커가 nowIso() 사용.
+  const _toLocalInput = (iso) => {
+    if (!iso) return "";
+    try {
+      const parts = window.BGNJ_FMT?.kstDateTime?.(iso);
+      if (parts) return parts.replace(' KST', '').replace(' ', 'T').slice(0, 16);
+      const d = new Date(iso);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch { return ""; }
+  };
+  const [createdAt, setCreatedAt] = React.useState(_toLocalInput(initialColumn?.createdAt || initialColumn?.created_at || ""));
   const [editorKey, setEditorKey] = React.useState(0);
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [tick, setTick] = React.useState(0);
@@ -5724,8 +5737,8 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
   // 모달 wrapper 에 dirty payload 전달 — 임시저장 prompt 용. (옵셔널)
   React.useEffect(() => {
     if (typeof onPayloadChange !== 'function') return;
-    onPayloadChange({ id: editingId, title, category, excerpt, html, text, publishAt });
-  }, [editingId, title, category, excerpt, html, text, publishAt, onPayloadChange]);
+    onPayloadChange({ id: editingId, title, category, excerpt, html, text, publishAt, createdAt });
+  }, [editingId, title, category, excerpt, html, text, publishAt, createdAt, onPayloadChange]);
 
   const all = React.useMemo(() => window.BGNJ_COLUMNS.listAll(), [tick]);
   const filtered = statusFilter === 'all' ? all : all.filter((c) => (c.status || 'published') === statusFilter);
@@ -5740,6 +5753,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     setEditingId(null);
     setTitle(""); setExcerpt(""); setHtml(""); setText("");
     setPublishAt("");
+    setCreatedAt("");
     setEditorKey((k) => k + 1);
   };
 
@@ -5751,6 +5765,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     setHtml(col.body?.html || "");
     setText(col.body?.text || "");
     setPublishAt(col.publishAt || "");
+    setCreatedAt(_toLocalInput(col.createdAt || col.created_at || ""));
     setEditorKey((k) => k + 1);
     setMsg("");
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5779,6 +5794,10 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
       base.publishAt = publishAt || null;
     } else if (status === 'draft') {
       base.publishAt = null;
+    }
+    // v00.115 — 표시 시간 오버라이드. 'YYYY-MM-DDTHH:MM' (KST 가정) → ISO with +09:00.
+    if (createdAt) {
+      base.createdAt = `${createdAt}:00+09:00`;
     }
     return base;
   };
@@ -5887,6 +5906,18 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
           <label className="field-label" htmlFor="col-publishAt">예약 발행 시각 (선택 — 비우면 즉시 발행)</label>
           <input id="col-publishAt" type="datetime-local" className="field-input"
             value={publishAt} onChange={(e) => setPublishAt(e.target.value)}/>
+        </div>
+        {/* v00.115 — 칼럼 표시 시간(created_at) 오버라이드. publishAt 과 별도. */}
+        <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)'}}>
+          <label className="field-label" htmlFor="col-createdAt" style={{display:'block', marginBottom:6}}>
+            업로드 시간 (선택 — 비우면 발행 시점의 현재 시간)
+          </label>
+          <input id="col-createdAt" type="datetime-local" className="field-input"
+            value={createdAt} onChange={(e) => setCreatedAt(e.target.value)}
+            style={{maxWidth:280}}/>
+          <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>
+            KST 기준. 입력 시 칼럼 표시 시각이 이 값으로 고정됨. 예약 발행과 무관 — 표시용 시간.
+          </div>
         </div>
         {msg && <div role="status" className="mono gold" style={{fontSize:12, padding:10, border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.06)', marginBottom:16}}>{msg}</div>}
         <div style={{display:'flex', gap:12, justifyContent:'flex-end', paddingTop:20, borderTop:'1px solid var(--line)', flexWrap:'wrap'}}>

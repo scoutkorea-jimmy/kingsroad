@@ -903,6 +903,20 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   const [attachments, setAttachments] = React.useState(initialPost?.attachments || initialDraft?.attachments || []);
   const [bodyHtml, setBodyHtml] = React.useState(initialPost?.body?.html || initialDraft?.bodyHtml || "");
   const [bodyText, setBodyText] = React.useState(initialPost?.body?.text || initialDraft?.bodyText || "");
+  // v00.115 — admin 만 표시: 업로드 시점 시간 오버라이드. 'YYYY-MM-DDTHH:MM' 형식 (datetime-local input).
+  // 기존 글 수정 시 initialPost.createdAt 의 KST 부분을 datetime-local 포맷으로 환산해 미리 채움.
+  const _toLocalInput = (iso) => {
+    if (!iso) return "";
+    try {
+      // KST 기준 'YYYY-MM-DDTHH:MM'.
+      const parts = window.BGNJ_FMT?.kstDateTime?.(iso);
+      if (parts) return parts.replace(' KST', '').replace(' ', 'T').slice(0, 16);
+      const d = new Date(iso);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch { return ""; }
+  };
+  const [createdAt, setCreatedAt] = React.useState(_toLocalInput(initialPost?.createdAt || initialPost?.created_at || ""));
   const [error, setError] = React.useState("");
   const [draftRestored, setDraftRestored] = React.useState(!!(initialDraft && (initialDraft.title || initialDraft.bodyText)));
   const [savedAt, setSavedAt] = React.useState(initialDraft?.savedAt || null);
@@ -969,7 +983,8 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     if (!isEditing) {
       try { localStorage.removeItem(draftKey); } catch {}
     }
-    onPublish({
+    // v00.115 — admin 만 createdAt 오버라이드 가능. 다른 사용자 값 전송은 워커가 무시.
+    const payload = {
       categoryId: cat.id,
       category: cat.label,
       prefix: prefix || "",
@@ -986,7 +1001,12 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       _new: true,
       _userCreated: true,
       body: { html: bodyHtml, text: bodyText },
-    });
+    };
+    if (user?.isAdmin && createdAt) {
+      // 'YYYY-MM-DDTHH:MM' (KST 가정) → ISO 8601 with +09:00.
+      payload.createdAt = `${createdAt}:00+09:00`;
+    }
+    onPublish(payload);
   };
 
   return (
@@ -1092,6 +1112,21 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
           <div className="field">
             <FileAttacher files={attachments} setFiles={setAttachments}/>
           </div>
+
+          {/* v00.115 — admin 만 표시: 업로드 시점 시간(표시용) 오버라이드. 비우면 현재 시간. */}
+          {user?.isAdmin && (
+            <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)', marginTop:12}}>
+              <label className="field-label" htmlFor="post-created-at" style={{display:'block', marginBottom:6}}>
+                업로드 시간 (관리자 전용 · 비워두면 현재 시간)
+              </label>
+              <input id="post-created-at" type="datetime-local" className="field-input"
+                value={createdAt} onChange={(e) => setCreatedAt(e.target.value)}
+                style={{maxWidth:280}}/>
+              <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>
+                KST 기준. 입력 시 게시글 표시 시각이 이 값으로 고정됨.
+              </div>
+            </div>
+          )}
 
           {error && (
             <div role="alert" style={{padding:'12px 16px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:13, marginBottom:16}}>

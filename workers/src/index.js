@@ -191,6 +191,23 @@ class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
+// === Admin createdAt 오버라이드 (v00.115) ==================================
+// admin 이 게시글/칼럼을 작성할 때 표시 시간(created_at) 을 임의 값으로 지정 가능.
+// 일반 사용자는 이 필드를 보내도 무시 (보안 — 시간 위조 방지).
+// 형식: ISO 8601 (예: '2026-05-01T18:30:00+09:00' 또는 '2026-05-01T09:30:00Z').
+const resolveCreatedAt = (user, body) => {
+  if (!user?.isAdmin) return nowIso();
+  const raw = String(body?.createdAt || '').trim();
+  if (!raw) return nowIso();
+  // ISO 8601 의 핵심 패턴 — date+time + (Z or ±HH:MM).
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/.test(raw)) {
+    throw new HttpError(400, 'createdAt 은 ISO 8601 형식이어야 합니다.');
+  }
+  const t = Date.parse(raw);
+  if (isNaN(t)) throw new HttpError(400, '잘못된 날짜.');
+  return raw;
+};
+
 // === Brute-force rate limiting (v00.113) ===================================
 // /api/auth/login + /api/auth/signup 에 대해 email + IP 단위로 최근 15분 실패 5회 → 잠금.
 // 스토리지: D1 login_attempts (schema-v4.sql).
@@ -400,10 +417,11 @@ const handlePostsCreate = async (req, env) => {
       throw new HttpError(403, `이 게시판은 레벨 ${minLevel} 이상만 작성할 수 있습니다. (현재 레벨 ${userLevel})`);
     }
   }
+  const createdAt = resolveCreatedAt(user, body);
   const r = await env.DB.prepare(
     `INSERT INTO posts (category_id, category, prefix, title, body, author_id, author, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(categoryId, cat?.label || categoryId, body.prefix || null, title, text, user.id, user.name, nowIso()).run();
+  ).bind(categoryId, cat?.label || categoryId, body.prefix || null, title, text, user.id, user.name, createdAt).run();
   return { id: r.meta.last_row_id };
 };
 
@@ -424,6 +442,10 @@ const handlePostPatch = async (req, env, id) => {
   const args = [];
   for (const k of ["title", "body", "prefix", "category_id"]) {
     if (k in body) { fields.push(`${k} = ?`); args.push(body[k]); }
+  }
+  // v00.115 — admin 만 created_at 수정 가능.
+  if (user.isAdmin && body.createdAt) {
+    fields.push("created_at = ?"); args.push(resolveCreatedAt(user, body));
   }
   if (!fields.length) return { ok: true };
   args.push(nowIso(), id);
@@ -1647,15 +1669,16 @@ const handleColumnCreate = async (req, env) => {
   const user = await requireUser(req, env);
   const body = await req.json().catch(() => ({}));
   const id = randomId("col");
+  const createdAt = resolveCreatedAt(user, body);
   await env.DB.prepare(
-    `INSERT INTO user_columns (id, author_id, author_name, title, excerpt, body, category, cover_url, status, scheduled_at, read_minutes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO user_columns (id, author_id, author_name, title, excerpt, body, category, cover_url, status, scheduled_at, read_minutes, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, user.id, user.name,
     body.title || '', body.excerpt || '', body.body || '',
     body.category || '', body.coverUrl || '',
     body.status || 'published', body.scheduledAt || null,
-    Number(body.readMinutes || 3)
+    Number(body.readMinutes || 3), createdAt
   ).run();
   return { id };
 };
@@ -1669,6 +1692,11 @@ const handleColumnPatch = async (req, env, id) => {
   const sets = []; const args = [];
   for (const [k, col] of [["title","title"],["excerpt","excerpt"],["body","body"],["category","category"],["status","status"],["scheduledAt","scheduled_at"],["coverUrl","cover_url"],["readMinutes","read_minutes"]]) {
     if (k in body) { sets.push(`${col} = ?`); args.push(body[k]); }
+  }
+  // v00.115 — admin 만 created_at 수정 가능 (표시 시간 조정).
+  if (user.isAdmin && body.createdAt) {
+    const validatedCreatedAt = resolveCreatedAt(user, body);
+    sets.push("created_at = ?"); args.push(validatedCreatedAt);
   }
   sets.push("updated_at = ?"); args.push(nowIso());
   args.push(id);

@@ -4,6 +4,25 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.115.000",
+    date: "2026-05-01",
+    datetime: "2026-05-02T07:50:35+09:00", // pre-commit stamp.
+    summary: "🕒 admin 게시글/칼럼 작성 시 표시 시간(created_at) 오버라이드 + 🛡 홈페이지 안정화 hardening",
+    details: [
+      "🕒 [admin createdAt 오버라이드] 워커 + 클라이언트 양쪽 — admin 이 글/칼럼 작성·수정 시 표시 시간을 임의 KST 시각으로 지정 가능. 일반 사용자는 createdAt 필드 무시(보안).",
+      "  · 워커: resolveCreatedAt 헬퍼 (ISO 8601 검증 + admin only). handlePostsCreate / handlePostPatch / handleColumnCreate / handleColumnPatch 4 endpoint 적용.",
+      "  · user_columns INSERT — created_at 컬럼 명시 추가 (이전엔 default 의존).",
+      "  · 클라이언트: BGNJ_COMMUNITY.createPostRemote / BGNJ_COLUMNS.saveColumn 가 payload.createdAt 있으면 body 에 포함.",
+      "  · UI: PostCompose (모든 사용자 게시글 작성, admin 만 표시) + AdminColumnEditor 에 datetime-local input. KST 가정 → '+09:00' 부착.",
+      "🛡 [홈페이지 안정화] HomePage.jsx — BGNJ_GUARD 미로드 race 시 인라인 fallback (arr/call) 으로 페이지 깨짐 방지. NaN startsAt 가 sort 결과 깨뜨리던 패턴을 _validStarts (Date.parse !isNaN) 로 차단.",
+      "  · HeroProgramCards 의 lectures/tours filter — _validStarts 로 invalid date 사전 제거.",
+      "  · HomePage main G 변수 fallback — arr/call 인라인 정의로 BGNJ_GUARD 미로드 시에도 동작.",
+      "ℹ 본 사이클은 워커 변경 포함 — ★ wrangler deploy 필요.",
+      "📦 cache-buster — `?v=00.115.000` (21곳).",
+    ],
+    context: "사용자 요청 1 — '관리자페이지에서 글을 쓸 때에는 업로드 시점에 찍히는 시간을 조정할 수 있게' = createdAt 오버라이드. 일반 홈페이지(작성 완료 = 업로드 시점)는 그대로 유지하고 admin 만 추가 input 노출. 사용자 요청 2 — '홈페이지 안정화' = HeroProgramCards 류 race condition 재발 방지. v00.110 의 G undefined 사고처럼 BGNJ_GUARD 미로드 시점이 다시 발생할 수 있어 인라인 fallback 추가.",
+  },
+  {
     version: "00.114.000",
     date: "2026-05-01",
     datetime: "2026-05-01T22:00:57+09:00", // pre-commit stamp.

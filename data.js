@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.114.000",
+  version: "00.115.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -1222,13 +1222,16 @@ window.BGNJ_COMMUNITY = {
     return nextPost;
   },
   // 비동기 — 서버에 INSERT 후 캐시 갱신.
+  // v00.115 — admin 이면 createdAt 오버라이드 가능 (워커가 검증).
   async createPostRemote(payload) {
-    const { id } = await window.BGNJ_API.posts.create({
+    const reqBody = {
       categoryId: payload.categoryId,
       title: payload.title,
       body: payload.body || '',
       prefix: payload.prefix || null,
-    });
+    };
+    if (payload.createdAt) reqBody.createdAt = payload.createdAt;
+    const { id } = await window.BGNJ_API.posts.create(reqBody);
     await this.refreshPosts();
     return this.getPost(id);
   },
@@ -1598,6 +1601,8 @@ window.BGNJ_COLUMNS = {
       status: payload.status, scheduledAt: payload.publishAt || payload.scheduledAt,
       readMinutes: Number(payload.readMinutes || 3),
     };
+    // v00.115 — admin 이면 표시 시간(created_at) 오버라이드 가능 (워커가 검증).
+    if (payload.createdAt) body.createdAt = payload.createdAt;
     if (exists) {
       await window.BGNJ_API.columns.update(payload.id, body);
     } else {

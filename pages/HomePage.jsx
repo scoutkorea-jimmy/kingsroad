@@ -201,15 +201,21 @@ const HeroProgramCards = ({ go, dataTick }) => {
   const _arr = (fn) => {
     try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; }
   };
+  // v00.115 — startsAt 가 invalid 한 row 가 sort 에 들어가면 결과 순서가 임의로 깨짐.
+  // 한 번 더 Date.parse !isNaN 로 거른 뒤 sort.
+  const _validStarts = (l) => {
+    if (!l || l.hidden || !l.startsAt) return false;
+    return !isNaN(Date.parse(l.startsAt));
+  };
   const lectures = React.useMemo(() => {
     return _arr(() => window.BGNJ_LECTURES?.listAll?.())
-      .filter((l) => l && !l.hidden && l.startsAt)
+      .filter(_validStarts)
       .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
       .filter((l) => new Date(l.startsAt).getTime() >= Date.now() - 86400000); // 어제 이후만
   }, [dataTick]);
   const tours = React.useMemo(() => {
     return _arr(() => window.BGNJ_TOURS?.listAll?.())
-      .filter((t) => t && !t.hidden && t.startsAt)
+      .filter(_validStarts)
       .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
       .filter((t) => new Date(t.startsAt).getTime() >= Date.now() - 86400000);
   }, [dataTick]);
@@ -344,7 +350,17 @@ const HomePage = ({ go }) => {
   const [recDetail, setRecDetail] = React.useState(null);
 
   // 실데이터만 — 시드 폴백 제거. 모든 헬퍼 호출은 BGNJ_GUARD.arr 로 try/catch + Array 가드.
-  const G = window.BGNJ_GUARD;
+  // v00.115 — BGNJ_GUARD 미로드 (script 로드 race) 시 인라인 fallback 으로 페이지 깨짐 방지.
+  const G = window.BGNJ_GUARD || {
+    arr: (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } },
+    call: (fn, fb) => { try { const v = fn(); return v === undefined ? fb : v; } catch { return fb; } },
+  };
+  // 유효한 startsAt(파싱 가능한 날짜) 만 통과 — NaN getTime 으로 sort 결과가 깨지는 것 방지.
+  const _hasValidDate = (iso) => {
+    if (!iso) return false;
+    const t = Date.parse(iso);
+    return !isNaN(t);
+  };
   const publicColumns = React.useMemo(() => G.arr(() => window.BGNJ_COLUMNS?.listPublic?.()), [dataTick]);
   const featuredColumn = publicColumns[0];
   const secondaryColumns = publicColumns.slice(1, 5);
