@@ -20,13 +20,9 @@
 ### ✅ v00.071 — 빌드 단계 도입 (esbuild) — Babel-standalone 제거 (commit 다음 sha)
 - 완료: tools/build.mjs (esbuild) + boot.jsx 분리 + index.html 재작성 (@babel/standalone CDN 제거) + pre-commit hook 자동 빌드 + check-syntax 가 jsx/js 짝 인식
 
-### ⏳ v00.072 — 홈 노출 축약 + 투어 admin 통합
-- [ ] 홈페이지 투어/강연 카드 description 축약 — 첫 ~120자 + "…" 또는 별도 `homePreview` site_content 슬롯
-- [ ] TourAdminPanel 에 일정/준비물/커버 inline 편집 통합 (현재는 별도 "투어 페이지" 탭) — 투어 카드 하단에 토글 섹션
-- [ ] 동일 패턴을 LectureAdminPanel 에도 적용 (강연 admin 에서 일정/준비물 편집)
-- [ ] 정원/난이도/소요시간 편집 가시성 개선 — "투어 정보 수정" 버튼이 묻히지 않도록 즉시 노출 또는 inline 편집
-- **동기:** 사용자 보고 "홈에 노출되는건 적당히 줄이거나 홈용으로 따로 글을 쓰게 해야지 / 투어프로그램 설정에 각 프로그램별 답사일정·준비물 설정할수있게해줘야지 / 정원·난이도·소요시간도 설정할수있게해주고". 현재 일부는 분산되어 있어 발견 어려움.
-- **status:** pending
+### ✅ v00.072 — 홈 노출 축약 + 투어 admin 통합
+- 완료: HomePage truncatePreview (110자) + TourAdminPanel inline 답사 일정·준비물·커버 편집 + 버튼 라벨 명시화 (제목·정원·난이도·소요시간·가격).
+- 미완 (v00.073 으로 이월): LectureAdminPanel 동일 패턴 — `lecturePages` site_content 신설 필요.
 
 ### ⏳ v00.073 — 전 페이지 헤더 + 푸터 admin 편집화 sweep
 - [ ] 모든 페이지의 eyebrow / title / subtitle / accent 를 `site_content_kv.<page>Intro` 패턴으로 추출 (LecturesPage / CommunityPage / ColumnPage / MyPage / EatPage / SleepPage / ShopPage / FaqPage / LegalPage)
@@ -186,4 +182,5 @@
 > 본 문서는 forward-looking. 완료 항목은 한 줄로 옮기고 본문에서 제거.
 
 - **v00.070** ✅ 투어 페이지 모든 항목 admin 편집 + AuthAdminPage 9332→6900 분할 (commit `3ccc6b9`)
-- **v00.071** ✅ 빌드 단계 도입 (esbuild) — Babel-standalone 제거, in-browser 경고 / 500KB deopt 근본 차단 (commit 다음 sha)
+- **v00.071** ✅ 빌드 단계 도입 (esbuild) — Babel-standalone 제거, in-browser 경고 / 500KB deopt 근본 차단 (commit `0dcf267`)
+- **v00.072** ✅ 홈 카드 desc 축약 + TourAdminPanel inline 답사 일정·준비물·커버 편집 통합 (commit 다음 sha)

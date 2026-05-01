@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.072.000",
+    date: "2026-05-01",
+    summary: "🏠 홈 투어/강연 카드 desc 축약 + TourAdminPanel 에 답사 일정·준비물·커버 inline 편집 통합.",
+    details: [
+      "🏠 HomePage truncatePreview 헬퍼 — 투어 desc / 강연 note 를 110자 단어 경계로 자르고 '…'. 카드 레이아웃 안정화 (사용자 보고: 홈에 본문 전체가 그대로 노출되어 페이지가 너무 길어짐).",
+      "🛠 TourAdminPanel — 각 투어 카드의 액션 버튼에 '✎ 투어 정보 (제목·정원·난이도·소요시간·가격)' 라벨 명시화 + '📋 답사 일정·준비물·커버' 버튼 신설. contentEditingId 별도 state.",
+      "🛠 inline 편집 영역 (per-tour) — 커버 이미지 업로드 (1.5MB 이하 dataURI) + TPE_ScheduleEditor + TPE_PrepEditor 재사용. 저장 시 site_content_kv.tourPages[id] 갱신.",
+      "ℹ TourPageEditorPanel (운영설정 → 투어 페이지) 의 글로벌 / 템플릿 / 투어별 모드는 그대로 유지 — TourAdminPanel inline 통합은 발견성 개선 목적.",
+      "📦 cache-buster — `?v=00.072.000` (19곳).",
+    ],
+    context: "사용자 보고 3 종: ① 홈에 노출되는건 적당히 줄이거나 홈용으로 따로 글을 쓰게 (투어/강연 카드 본문 전체 노출). ② 투어프로그램 설정에 각 프로그램별 답사 일정·준비물 설정. ③ 정원·난이도·소요시간도 설정. ②③ 은 v00.066/v00.070 부터 이미 가능했으나 별도 탭(투어 페이지) 분리 + 버튼 라벨 모호로 발견 어려움 — TourAdminPanel 에 inline 통합으로 한 곳 발견. 라벨 명시화로 capacity/level/duration 편집 인지도 ↑. 다음 사이클(v00.073) 후보: 전 페이지 hero/intro + 푸터 잔여 admin 편집화 sweep (사용자 추가 보고 '관리자페이지에서 각 메뉴들 제목·부제목 / 푸터정보도 수정').",
+  },
+  {
     version: "00.071.000",
     date: "2026-05-01",
     summary: "⚙ 빌드 단계 도입 (esbuild) — Babel-standalone 제거 + 인-브라우저 컴파일 경고 / 500KB deopt 노트 근본 차단.",

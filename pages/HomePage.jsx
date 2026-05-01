@@ -196,6 +196,19 @@ const RecommendationDetailModal = ({ rec, onClose, go }) => {
   );
 };
 
+// v00.072 — 홈 카드의 description / note 를 짧게 자르는 헬퍼.
+// 사용자 보고: "홈에 노출되는건 적당히 줄이거나 홈용으로 따로 글을 쓰게 해야지" — 우선 truncate.
+// 줄바꿈은 공백으로 변환해 카드 레이아웃이 안정. 단어 경계에 맞춰 자른 뒤 "…" 첨부.
+const truncatePreview = (text, max = 110) => {
+  const s = String(text || '').replace(/\s+/g, ' ').trim();
+  if (s.length <= max) return s;
+  // 단어 경계까지 backtrack — 한글은 공백이 적어 backtrack 실패하면 그냥 자르기.
+  const slice = s.slice(0, max);
+  const lastSpace = slice.lastIndexOf(' ');
+  const cut = lastSpace > max * 0.6 ? slice.slice(0, lastSpace) : slice;
+  return cut + '…';
+};
+
 const HomePage = ({ go }) => {
   const [mapOpen, setMapOpen] = React.useState(false);
   const [scTick, setScTick] = React.useState(0);
@@ -481,7 +494,7 @@ const HomePage = ({ go }) => {
                     {t.group && <span className="badge">{t.group}</span>}
                   </div>
                   <h3 className="card-title" style={{fontSize:22, marginBottom:10}}>{t.title}</h3>
-                  {t.desc && <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:20}}>{t.desc}</p>}
+                  {t.desc && <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:20}}>{truncatePreview(t.desc, 110)}</p>}
                   <div style={{
                     display:'flex', justifyContent:'space-between', alignItems:'center',
                     borderTop:'1px solid var(--line)', paddingTop:16,
@@ -647,7 +660,7 @@ const HomePage = ({ go }) => {
                   style={{cursor:'pointer'}}>
                   <span className="badge" style={{marginBottom:16}}>강연</span>
                   <h3 className="ko-serif" style={{fontSize:20, fontWeight:600, marginBottom:8}}>{lecture.topic || lecture.title}</h3>
-                  {lecture.note && <p style={{fontSize:13, lineHeight:1.7, color:'var(--ink-2)', marginBottom:16}}>{lecture.note}</p>}
+                  {lecture.note && <p style={{fontSize:13, lineHeight:1.7, color:'var(--ink-2)', marginBottom:16}}>{truncatePreview(lecture.note, 110)}</p>}
                   <div style={{borderTop:'1px solid var(--line)', paddingTop:12, display:'flex', justifyContent:'space-between'}}>
                     <span style={{fontSize:12, color:'var(--ink-2)'}}>{lecture.venue || '—'}</span>
                     <span style={{fontSize:12, fontFamily:'var(--font-mono)', fontWeight:600, color:'var(--ink)'}}>{lecture.next || '—'}</span>

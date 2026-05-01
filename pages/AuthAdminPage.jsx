@@ -892,8 +892,62 @@ const TourAdminPanel = ({ go }) => {
   const [editingId, setEditingId] = React.useState(null);
   const [draft, setDraft] = React.useState({});
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
+  // v00.072 — 투어별 답사 일정/준비물/커버 inline 편집용 별도 state.
+  // contentEditingId 가 set 되면 해당 투어 카드 하단에 TPE_ScheduleEditor/TPE_PrepEditor + 커버 업로드 노출.
+  const [contentEditingId, setContentEditingId] = React.useState(null);
+  const [contentSchedule, setContentSchedule] = React.useState([]);
+  const [contentPrep, setContentPrep] = React.useState([]);
+  const [contentCover, setContentCover] = React.useState('');
+  const [contentMsg, setContentMsg] = React.useState('');
   const refresh = () => setTick((v) => v + 1);
   const tours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
+
+  const startContentEdit = (t) => {
+    if (!t) return;
+    const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+    const ovr = (sc.tourPages || {})[t.id] || {};
+    setContentEditingId(t.id);
+    setContentSchedule(Array.isArray(ovr.schedule) ? ovr.schedule.slice() : []);
+    setContentPrep(Array.isArray(ovr.prep) ? ovr.prep.slice() : []);
+    setContentCover(ovr.coverDataUri || '');
+    setContentMsg('');
+  };
+  const cancelContentEdit = () => {
+    setContentEditingId(null); setContentSchedule([]); setContentPrep([]); setContentCover(''); setContentMsg('');
+  };
+  const saveContentEdit = async () => {
+    if (!contentEditingId) return;
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const tourPages = sc.tourPages || {};
+      const cleanS = contentSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
+      const cleanP = contentPrep.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
+      const next = { ...tourPages, [contentEditingId]: {
+        schedule: cleanS, prep: cleanP,
+        coverDataUri: contentCover || undefined,
+      } };
+      await window.BGNJ_SITE_CONTENT.saveSection('tourPages', next);
+      setContentMsg('저장됨 — 투어 페이지에 즉시 반영.');
+      setTimeout(() => setContentMsg(''), 2500);
+      refresh();
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+  const onPickContentCover = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      e.target.value = ''; return;
+    }
+    const dataUri = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    setContentCover(dataUri);
+    e.target.value = '';
+  };
 
   // 답사별 예약 목록을 mount 시 일괄 fetch.
   React.useEffect(() => {
@@ -1098,8 +1152,9 @@ const TourAdminPanel = ({ go }) => {
                     </div>
                   </div>
                 ) : (
-                  <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10}}>
-                    <button type="button" className="btn btn-small" onClick={() => startEdit(t)}>투어 정보 수정</button>
+                  <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10, flexWrap:'wrap'}}>
+                    <button type="button" className="btn btn-small btn-gold" onClick={() => startEdit(t)}>✎ 투어 정보 (제목·정원·난이도·소요시간·가격)</button>
+                    <button type="button" className="btn btn-small" onClick={() => startContentEdit(t)}>📋 답사 일정·준비물·커버</button>
                     <button type="button" className="btn btn-small"
                       onClick={() => toggleTourHidden(t)}
                       style={{marginLeft:'auto'}}>
@@ -1108,6 +1163,56 @@ const TourAdminPanel = ({ go }) => {
                     <button type="button" className="btn btn-small" onClick={() => removeTour(t.id)}
                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
                   </div>
+                )}
+
+                {/* v00.072 — 투어별 답사 일정·준비물·커버 inline 편집 (per-tour override) */}
+                {contentEditingId === t.id && (
+                  <section style={{marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10, flexWrap:'wrap', gap:8}}>
+                      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.22em'}}>이 투어의 답사 콘텐츠</div>
+                      <div className="dim-2" style={{fontSize:10, fontStyle:'italic'}}>
+                        비워두면 글로벌 답사 일정/준비물 (운영설정 → 투어 페이지) 사용. 커버 비면 placeholder.
+                      </div>
+                    </div>
+                    {/* 커버 이미지 */}
+                    <div className="card" style={{padding:12, marginBottom:12, display:'flex', gap:14, alignItems:'center'}}>
+                      <div style={{width:96, height:60, flexShrink:0, border:'1px solid var(--line)', background:'var(--bg-2)', display:'grid', placeItems:'center', overflow:'hidden'}}>
+                        {contentCover
+                          ? <img src={contentCover} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                          : <span className="dim-2 mono" style={{fontSize:9, letterSpacing:'0.18em'}}>NONE</span>}
+                      </div>
+                      <div style={{flex:1}}>
+                        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:3}}>커버 이미지</div>
+                        <div className="dim-2" style={{fontSize:11, lineHeight:1.5}}>1600×1000 권장 · 1.5MB 이하 · 비우면 placeholder.</div>
+                      </div>
+                      <div style={{display:'flex', gap:6}}>
+                        <label className="btn btn-small" style={{cursor:'pointer'}}>
+                          업로드
+                          <input type="file" accept="image/*" onChange={onPickContentCover} style={{display:'none'}}/>
+                        </label>
+                        {contentCover && (
+                          <button type="button" className="btn btn-small" onClick={() => setContentCover('')}
+                            style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
+                        )}
+                      </div>
+                    </div>
+                    {/* 답사 일정 / 준비물 (TPE_* 헬퍼는 모듈 최상위 — 호이스팅 후 lookup) */}
+                    <TPE_ScheduleEditor rows={contentSchedule}
+                      onAdd={() => setContentSchedule((a) => _arrAdd(a, { t: '', l: '' }))}
+                      onRemove={(i) => setContentSchedule((a) => _arrRemove(a, i))}
+                      onUpdate={(i, k, v) => setContentSchedule((a) => { const n = a.slice(); n[i] = { ...n[i], [k]: v }; return n; })}
+                      onMove={(i, d) => setContentSchedule((a) => _arrMove(a, i, d))}/>
+                    <TPE_PrepEditor rows={contentPrep}
+                      onAdd={() => setContentPrep((a) => _arrAdd(a, ''))}
+                      onRemove={(i) => setContentPrep((a) => _arrRemove(a, i))}
+                      onUpdate={(i, v) => setContentPrep((a) => _arrUpdate(a, i, v))}
+                      onMove={(i, d) => setContentPrep((a) => _arrMove(a, i, d))}/>
+                    <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:8}}>
+                      {contentMsg && <span role="status" className="mono" style={{fontSize:11, color:'var(--secondary)', fontWeight:600, marginRight:'auto'}}>{contentMsg}</span>}
+                      <button type="button" className="btn btn-small" onClick={cancelContentEdit}>닫기</button>
+                      <button type="button" className="btn btn-gold btn-small" onClick={saveContentEdit}>저장</button>
+                    </div>
+                  </section>
                 )}
 
                 {/* Roster */}
