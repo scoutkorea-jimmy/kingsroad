@@ -13,6 +13,11 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<!-- v00.111 — 클릭재킹 방어. 외부 도메인이 bgnj.net 을 iframe 으로 임베드 차단.
+     meta CSP 는 frame-ancestors 를 지원하지 않는 브라우저 다수 → X-Frame-Options 도 함께.
+     자체 도메인 iframe 임베드는 'self' 로 허용 (필요 시 future feature). -->
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+<meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'">
 <meta property="og:title" content="뱅기노자 — 뱅기 타고 한국을 느끼다">
 <meta property="og:description" content="뱅기노자 — 뱅기 타고 한국을 느끼다. 궁궐 답사부터 지역 여행까지, 한국의 역사·문화·자연을 함께 여행하는 커뮤니티.">
 <meta property="og:type" content="website">
@@ -29,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.110.000">
+<link rel="stylesheet" href="styles.css?v=00.111.000">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -123,25 +128,25 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script src="api.js?v=00.110.000"></script>
-<script src="data.js?v=00.110.000"></script>
-<script src="components/KoreaMapData.js?v=00.110.000"></script>
-<script src="components/KoreaMap.js?v=00.110.000"></script>
-<script src="components/Shell.js?v=00.110.000"></script>
-<script src="components/TiptapEditor.js?v=00.110.000"></script>
-<script src="pages/HomePage.js?v=00.110.000"></script>
-<script src="pages/CommunityPage.js?v=00.110.000"></script>
-<script src="pages/WangsanamTourPage.js?v=00.110.000"></script>
-<script src="pages/ColumnPage.js?v=00.110.000"></script>
-<script src="pages/BookCheckoutPage.js?v=00.110.000"></script>
-<script src="pages/admin/AdminDesignHub.js?v=00.110.000"></script>
-<script src="pages/admin/AdminContentEditors.js?v=00.110.000"></script>
-<script src="pages/AuthAdminPage.js?v=00.110.000"></script>
-<script src="pages/EatSleepShopPages.js?v=00.110.000"></script>
-<script src="pages/LecturesPage.js?v=00.110.000"></script>
-<script src="pages/LegalFaqPages.js?v=00.110.000"></script>
-<script src="pages/MyPage.js?v=00.110.000"></script>
+<script src="api.js?v=00.111.000"></script>
+<script src="data.js?v=00.111.000"></script>
+<script src="components/KoreaMapData.js?v=00.111.000"></script>
+<script src="components/KoreaMap.js?v=00.111.000"></script>
+<script src="components/Shell.js?v=00.111.000"></script>
+<script src="components/TiptapEditor.js?v=00.111.000"></script>
+<script src="pages/HomePage.js?v=00.111.000"></script>
+<script src="pages/CommunityPage.js?v=00.111.000"></script>
+<script src="pages/WangsanamTourPage.js?v=00.111.000"></script>
+<script src="pages/ColumnPage.js?v=00.111.000"></script>
+<script src="pages/BookCheckoutPage.js?v=00.111.000"></script>
+<script src="pages/admin/AdminDesignHub.js?v=00.111.000"></script>
+<script src="pages/admin/AdminContentEditors.js?v=00.111.000"></script>
+<script src="pages/AuthAdminPage.js?v=00.111.000"></script>
+<script src="pages/EatSleepShopPages.js?v=00.111.000"></script>
+<script src="pages/LecturesPage.js?v=00.111.000"></script>
+<script src="pages/LegalFaqPages.js?v=00.111.000"></script>
+<script src="pages/MyPage.js?v=00.111.000"></script>
 
-<script src="boot.js?v=00.110.000"></script>
+<script src="boot.js?v=00.111.000"></script>
 </body>
 </html>

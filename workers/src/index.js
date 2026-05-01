@@ -300,7 +300,22 @@ const handlePostsCreate = async (req, env) => {
   const title = String(body.title || "").trim();
   const text = String(body.body || "");
   if (!title) throw new HttpError(400, "제목을 입력해 주세요.");
-  const cat = await env.DB.prepare("SELECT label FROM categories WHERE id = ?").bind(categoryId).first();
+  // v00.111 — 게시판 작성 권한 검증.
+  // categories_kv.post_min_level vs grades_kv.level 비교. admin / 슈퍼 관리자는 항상 통과.
+  // categories_kv 누락된 카테고리는 기본 통과 (legacy 호환). post_min_level NULL/0 도 통과.
+  const cat = await env.DB.prepare(
+    "SELECT label, post_min_level FROM categories_kv WHERE id = ?"
+  ).bind(categoryId).first();
+  const minLevel = Number(cat?.post_min_level || 0);
+  if (!user.isAdmin && minLevel > 0) {
+    const grade = await env.DB.prepare(
+      "SELECT level FROM grades_kv WHERE id = ?"
+    ).bind(user.gradeId || 'member').first();
+    const userLevel = Number(grade?.level || 0);
+    if (userLevel < minLevel) {
+      throw new HttpError(403, `이 게시판은 레벨 ${minLevel} 이상만 작성할 수 있습니다. (현재 레벨 ${userLevel})`);
+    }
+  }
   const r = await env.DB.prepare(
     `INSERT INTO posts (category_id, category, prefix, title, body, author_id, author, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`

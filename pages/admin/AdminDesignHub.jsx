@@ -4,9 +4,28 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.111.000",
+    date: "2026-05-01",
+    datetime: "2026-05-01T18:36:47+09:00", // v00.111 — pre-commit 훅에서 tools/stamp-datetime.mjs 가 실제 commit 시간(KST)으로 자동 치환.
+    summary: "🤖 datetime 자동 stamp 도입 + 🔒 게시판 작성 권한 검증(post_min_level) + 🔒 클릭재킹 방어(X-Frame-Options/CSP frame-ancestors)",
+    details: [
+      "🤖 [tools/stamp-datetime.mjs] 신설 — pre-commit hook 단계에서 ADMIN_VERSION_HISTORY 첫 entry 의 `datetime: new Date().toISOString()` sentinel 을 실제 KST(+09:00) ISO 문자열로 자동 치환. v00.107~109 hardcode 추정값 사고 (사용자 보고 '18:00 인데 KST 20:00') 재발 방지.",
+      "  · install-hooks.sh — hook 순서: stamp-datetime → 자동 stage → build → stage .js → check-syntax.",
+      "  · 동작 검증: regex `/(datetime:\\s*)new Date\\(\\)\\.toISOString\\(\\)(\\s*,)/` 첫 매치만 치환 → 옛 entries hardcode datetime 은 보존.",
+      "🔒 [HIGH 게시판 권한 검증] 워커 handlePostsCreate — categories_kv.post_min_level vs grades_kv.level 비교, 미달 시 403. 이전엔 client-side 만 차단 → API 직접 호출로 우회 가능했음 (v00.109 audit MEDIUM).",
+      "  · 부수: SELECT 대상 categories → categories_kv 로 교체 (기존엔 legacy 테이블 참조).",
+      "  · admin / 슈퍼 관리자 / post_min_level 0 또는 미설정 카테고리는 통과.",
+      "🔒 [MEDIUM 클릭재킹] index.html — `<meta http-equiv=\"X-Frame-Options\" content=\"SAMEORIGIN\">` + `<meta http-equiv=\"Content-Security-Policy\" content=\"frame-ancestors 'self'\">`. 외부 도메인 iframe 임베드 차단.",
+      "  · meta CSP frame-ancestors 는 일부 브라우저 미지원 → X-Frame-Options 와 병행. 향후 워커가 전 응답에 헤더 부착 시 frame-ancestors 가 메인 방어선.",
+      "★ 워커 deploy 필요 — handlePostsCreate 변경.",
+      "📦 cache-buster — `?v=00.111.000` (20곳).",
+    ],
+    context: "v00.110 사용자 피드백 'datetime hardcode 가 미래 시간으로 적힘' → 재발 방지 자동화 (stamp-datetime). 동시에 v00.109 보안 audit 잔재 중 즉시 가능한 두 항목 처리: 게시판 권한 (board-level access control) + 클릭재킹. 남은 audit 항목: SUPER_ADMIN_EMAILS Cloudflare Secrets 이관 (사용자 수동), brute-force rate limiting (Workers KV), 전체 CSP 헤더 (script-src/style-src 등), SVG 본문 sanitize.",
+  },
+  {
     version: "00.110.000",
     date: "2026-05-01",
-    datetime: new Date().toISOString(), // v00.110 — 실시간 ISO. KST 변환은 BGNJ_FMT 가 자동 (UTC+9 = Asia/Seoul).
+    datetime: "2026-05-01T18:07:35+09:00", // v00.111 — 실제 git commit 시간 (f9a7363) 으로 정정. 이전 new Date().toISOString() 은 build 시점 추정.
     summary: "🩹 홈 hero ReferenceError fix (HeroProgramCards `G` 미정의) + v00.107~v00.109 datetime 실제 commit 시간으로 정정",
     details: [
       "🩹 [hero crash fix] HeroProgramCards (v00.106 module-scope 컴포넌트) 가 HomePage 함수 내부의 const G = window.BGNJ_GUARD 를 참조 → ReferenceError. window.BGNJ_GUARD 직접 참조 + 로컬 _arr 헬퍼 정의로 fix. 사용자 보고 '히어로페이지 불러오지 못했데'.",
