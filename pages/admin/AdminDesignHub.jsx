@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.076.000",
+    date: "2026-05-01",
+    summary: "🎨 Tiptap CSS 보강 — v00.068 의 14 extension (표/체크리스트/형광펜/Sub-Sup/정렬/코드블록/YouTube) 시각 스타일 완성.",
+    details: [
+      "🎨 styles.css — 표(table border-collapse + 헤더 강조 + selectedCell + tableWrapper overflow + column-resize-handle)",
+      "🎨 체크리스트 — ul[data-type=taskList] flex 정렬 + 체크박스 accent-color: gold + 완료 항목 line-through.",
+      "🎨 형광펜 — mark { background: rgba(gold,.35), padding, radius }. 다크 모드 .22 로 보정.",
+      "🎨 Sub/Sup — vertical-align + 0.75em.",
+      "🎨 정렬 — Tiptap 인라인 스타일 보강 cascade (center/right/justify).",
+      "🎨 코드블록 — pre { bg-2, mono, border, overflow-x } + pre code reset.",
+      "🎨 YouTube — [data-youtube-video] aspect-ratio 16/9 + 내부 iframe 100%.",
+      "🎨 다크 모드 보정 — 표 헤더 bg-3, 형광펜 alpha 낮춤.",
+      "📦 cache-buster — `?v=00.076.000` (19곳).",
+    ],
+    context: "v00.068 에서 Tiptap StarterKit + 13 extension (Underline/Highlight/TextAlign/Subscript/Superscript/TaskList/TaskItem/Color/TextStyle/Table/TableRow/TableCell/TableHeader/Youtube) 도구 풍부화. 도구만 추가하고 시각 스타일이 없어 글쓰기 결과 가독성 갭 존재 — v00.076 사이클에 styles.css 일괄 보강. 다음 사이클(v00.077~) 후보: ① useModalGuard 일괄 적용 (LegalModal / PostViewerModal / SuspendDialog) ② AuthAdminPage 2차 분할.",
+  },
+  {
     version: "00.075.000",
     date: "2026-05-01",
     summary: "🎤 강연 페이지 편집화 parity — 진행/참고/커버 per-lecture override + 후기 게이팅 안내 + LectureAdminPanel inline 편집 (투어 v00.070+v00.072 패턴 그대로 강연에 적용).",

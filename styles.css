@@ -521,6 +521,153 @@ main time, main .section-eyebrow {
 }
 .ProseMirror-selectednode { outline: 2px solid var(--gold); }
 
+/* === Tiptap v00.068 extensions — visual styles (v00.076) ================== */
+/* v00.068 에서 도구만 풍부화. 결과 렌더 시각 스타일을 v00.076 사이클에 보강. */
+
+/* 표 (Table / TableRow / TableCell / TableHeader) */
+.tiptap-editor table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0.9em 0;
+  overflow: hidden;
+}
+.tiptap-editor table td,
+.tiptap-editor table th {
+  border: 1px solid var(--line-2);
+  padding: 8px 12px;
+  vertical-align: top;
+  position: relative;
+  min-width: 80px;
+  font-size: 0.95em;
+  line-height: 1.6;
+}
+.tiptap-editor table th {
+  background: var(--bg-2);
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+}
+.tiptap-editor table .selectedCell:after {
+  content: "";
+  position: absolute; inset: 0;
+  background: rgba(245, 213, 72, 0.15);
+  pointer-events: none;
+}
+.tiptap-editor .tableWrapper {
+  overflow-x: auto;
+  margin: 0.9em 0;
+}
+.tiptap-editor .column-resize-handle {
+  position: absolute;
+  right: -2px; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--gold-dim);
+  pointer-events: none;
+}
+
+/* 체크리스트 (TaskList / TaskItem) */
+.tiptap-editor ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.4em;
+}
+.tiptap-editor ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+  margin: 0.3em 0;
+}
+.tiptap-editor ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-top: 0.25em;
+  user-select: none;
+}
+.tiptap-editor ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tiptap-editor ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: var(--ink-3);
+  text-decoration: line-through;
+}
+.tiptap-editor ul[data-type="taskList"] input[type="checkbox"] {
+  accent-color: var(--gold);
+  cursor: pointer;
+  width: 14px; height: 14px;
+}
+
+/* 형광펜 (Highlight) */
+.tiptap-editor mark {
+  background: rgba(245, 213, 72, 0.35);
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* Sub / Sup */
+.tiptap-editor sub,
+.tiptap-editor sup {
+  font-size: 0.75em;
+  line-height: 0;
+}
+.tiptap-editor sub { vertical-align: sub; }
+.tiptap-editor sup { vertical-align: super; }
+
+/* 정렬 (TextAlign) */
+.tiptap-editor [style*="text-align"] { /* Tiptap 은 인라인 스타일 직접 적용 — 기본 cascade OK */ }
+.tiptap-editor p[style*="text-align: center"],
+.tiptap-editor h1[style*="text-align: center"],
+.tiptap-editor h2[style*="text-align: center"],
+.tiptap-editor h3[style*="text-align: center"] { text-align: center; }
+.tiptap-editor p[style*="text-align: right"],
+.tiptap-editor h1[style*="text-align: right"],
+.tiptap-editor h2[style*="text-align: right"],
+.tiptap-editor h3[style*="text-align: right"] { text-align: right; }
+.tiptap-editor p[style*="text-align: justify"] { text-align: justify; }
+
+/* 코드 블록 (CodeBlock — StarterKit 포함이지만 시각 보강) */
+.tiptap-editor pre {
+  background: var(--bg-2);
+  color: var(--ink);
+  padding: 12px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  margin: 0.9em 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  line-height: 1.6;
+}
+.tiptap-editor pre code {
+  background: none;
+  padding: 0;
+  border: none;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* YouTube 임베드 — div data-youtube-video 안에 iframe */
+.tiptap-editor [data-youtube-video] {
+  margin: 0.9em 0;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.tiptap-editor [data-youtube-video] iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* 다크 모드에서 표 헤더/형광펜/코드블록 가독성 보정 */
+:root[data-theme="dark"] .tiptap-editor mark { background: rgba(245, 213, 72, 0.22); }
+:root[data-theme="dark"] .tiptap-editor table th { background: var(--bg-3); }
+
 /* === Hashtag chips input ================================================ */
 .tag-input-wrap {
   display: flex;

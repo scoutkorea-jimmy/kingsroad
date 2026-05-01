@@ -79,17 +79,8 @@
 - **추정:** 1 시간 (패턴 동일 묶음).
 - **status:** pending
 
-### ⏳ v00.076 — Tiptap CSS 보강
-- [ ] `styles.css` — 표 (border / padding / 헤더 강조 / responsive overflow)
-- [ ] 체크리스트 (`ul[data-type="taskList"]` + checkbox 정렬)
-- [ ] 형광펜 (`mark` 색상 토큰)
-- [ ] Sub / Sup (vertical-align + font-size)
-- [ ] 정렬 4 종 (text-align 명시)
-- [ ] 코드블록 (`pre code` background / padding / mono / 줄간격)
-- [ ] YouTube 임베드 (aspect-ratio)
-- **동기:** v00.068 에서 14 extension 도구만 풍부화 / 결과 렌더 styles.css 미완. 글쓰기 → 미리보기 가독성 갭.
-- **추정:** 1-2 시간.
-- **status:** pending
+### ✅ v00.076 — Tiptap CSS 보강
+- 완료: 표/체크리스트/형광펜/Sub-Sup/정렬/코드블록/YouTube 시각 스타일 일괄. 다크 모드 보정 포함.
 
 ### ⏳ v00.077 — useModalGuard 일괄 적용
 - [ ] LegalModal — ESC + 외부클릭
@@ -185,4 +176,5 @@
 - **v00.072** ✅ 홈 카드 desc 축약 + TourAdminPanel inline 답사 일정·준비물·커버 편집 통합 (commit `16940d3`)
 - **v00.073** ✅ 전 페이지 hero/intro + 푸터 잔재 admin 편집화 sweep — 9 페이지 + 푸터 4 필드 (commit `07a9ca0`)
 - **v00.074** ✅ 데이터 매퍼 audit — _toBook 양방향 silent 버그 fix + _toLecture/_toOrder 보강 (commit `726fbb1`)
-- **v00.075** ✅ 강연 페이지 편집화 parity — 진행/참고/커버 per-lecture + 후기 게이팅 + inline LectureAdminPanel (commit 다음 sha)
+- **v00.075** ✅ 강연 페이지 편집화 parity — 진행/참고/커버 per-lecture + 후기 게이팅 + inline LectureAdminPanel (commit `9bb52f8`)
+- **v00.076** ✅ Tiptap CSS 보강 — 14 extension 시각 스타일 일괄 (commit 다음 sha)
