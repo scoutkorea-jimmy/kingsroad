@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.078.000",
+  version: "00.079.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -246,13 +246,14 @@ const _asRecord = (value, fallback = {}) => (
   value && typeof value === "object" && !Array.isArray(value) ? value : fallback
 );
 
-const BGNJ_STORAGE_VERSION = "v5-reports-dead";
+const BGNJ_STORAGE_VERSION = "v6-comments-dead";
 
 // 마이그레이션 — storage version 기준 누적.
 //   v2-server-first (v00.046): 시드 박힌 bgnj_community_posts 정리.
 //   v3-no-overrides (v00.049): dead 4 키(lectureOverrides/lectureRegistrations/tourOverrides/tourReservations) + bgnj_users 시드 정리.
 //   v4-bookmarks-dead (v00.051): bgnj_bookmarks 정리 — BGNJ_COMMUNITY._bookmarks 서버 캐시만 사용.
 //   v5-reports-dead (v00.063): bgnj_reports 정리 — BGNJ_COMMUNITY._reports(서버 fetch) + 서버 metrics endpoint 가 source.
+//   v6-comments-dead (v00.079): bgnj_comments 정리 — D1.comments 가 source. _commentsCache 만 사용.
 //     모든 케이스에서 사용자 임시 글(bgnj_user_posts)은 보존.
 try {
   const prevVer = localStorage.getItem('bgnj_storage_version');
@@ -269,6 +270,8 @@ try {
     localStorage.removeItem('bgnj_bookmarks');
     // v5 — reports 캐시는 BGNJ_COMMUNITY._reports (서버 fetch) 만 사용. localStorage 잔재 정리.
     localStorage.removeItem('bgnj_reports');
+    // v6 — comments 캐시는 BGNJ_COMMUNITY._commentsCache (서버 fetch) 만 사용. localStorage 잔재 정리.
+    localStorage.removeItem('bgnj_comments');
     localStorage.setItem('bgnj_storage_version', BGNJ_STORAGE_VERSION);
   }
 } catch {}
@@ -709,7 +712,7 @@ const ensureCommunityPostsSeeded = (posts, legacyUserPosts) => {
 //   categories            🌐 server-backed (App init 에서 BGNJ_API.categories.list 로 덮어씀)
 //   communityPosts        ⚠ legacy — listPosts 가 _serverPosts merge 시 localOnly 필터로만 사용. v00.046 시드 주입 폐지
 //   userPosts             💾 local intentional — 사용자 작성 임시본 (서버 동기화 전)
-//   comments              ⚠ legacy — 서버 BGNJ_API.community.comments 로 점진 마이그레이션
+//   (v00.079 제거: comments — D1.comments 가 source. BGNJ_COMMUNITY._commentsCache 만 사용)
 //   userColumns           ⚠ legacy — BGNJ_COLUMNS._columns 가 서버 source. 호환 잔재
 //   users                 ⚠ legacy — 인증은 BGNJ_AUTH/D1.users 가 진실. 시드(DEFAULT_USERS) 잔재
 //   session               💾 local intentional — 세션 토큰 캐시 (서버 검증 후 보관)
@@ -742,7 +745,7 @@ window.BGNJ_STORES = {
   categories: _asArray(_lsGet('bgnj_categories', DEFAULT_CATEGORIES), DEFAULT_CATEGORIES.slice()),
   communityPosts: ensureCommunityPostsSeeded(_lsGet('bgnj_community_posts', []), _lsGet('bgnj_user_posts', [])),
   userPosts: _asArray(_lsGet('bgnj_user_posts', [])),
-  comments: _asRecord(_lsGet('bgnj_comments', {})),
+  // v00.079: comments 키 제거. BGNJ_COMMUNITY._commentsCache(서버 fetch) 가 단독 source. D1.comments 가 진실.
   userColumns: _asArray(_lsGet('bgnj_user_columns', [])),
   users: ensureUsersSeeded(_lsGet('bgnj_users', [])),
   session: _asRecord(_lsGet('bgnj_session', null), null),
@@ -774,7 +777,7 @@ window.BGNJ_SAVE = {
   categories: () => _lsSet('bgnj_categories', window.BGNJ_STORES.categories),
   communityPosts: () => _lsSet('bgnj_community_posts', window.BGNJ_STORES.communityPosts),
   userPosts: () => _lsSet('bgnj_user_posts', window.BGNJ_STORES.userPosts),
-  comments: () => _lsSet('bgnj_comments', window.BGNJ_STORES.comments),
+  // v00.079: comments save 핸들러 제거 — BGNJ_COMMUNITY._commentsCache(서버 fetch) 가 source.
   userColumns: () => _lsSet('bgnj_user_columns', window.BGNJ_STORES.userColumns),
   users: () => _lsSet('bgnj_users', window.BGNJ_STORES.users),
   session: () => _lsSet('bgnj_session', window.BGNJ_STORES.session),
@@ -989,8 +992,9 @@ window.BGNJ_AUTH = {
     if (!userId) return null;
     if (this._activityCache[userId]) return this._activityCache[userId];
     const posts = (window.BGNJ_COMMUNITY?.listPosts?.() || []).filter((p) => p.authorId === userId);
-    const comments = Object.values(window.BGNJ_STORES.comments || {})
-      .reduce((sum, list) => sum + (Array.isArray(list) ? list.filter((c) => c.authorId === userId).length : 0), 0);
+    // v00.079 — 서버 metrics endpoint(v00.062) 가 권위. fetchActivity 호출이 서버 commentCount 를 채움.
+    // 동기 path 의 폴백은 0 (서버 응답 도착 후 다시 set). 이전 BGNJ_STORES.comments 합산 폐지.
+    const comments = 0;
     const bookOrders = (window.BGNJ_BOOK_ORDERS?.listMine?.(userId) || []);
     const lectures = (window.BGNJ_LECTURES?.listMyRegistrations?.(userId) || []);
     const tours = (window.BGNJ_TOURS?.listMyReservations?.(userId) || []);
@@ -1134,8 +1138,7 @@ window.BGNJ_COMMUNITY = {
     }
     const nextPosts = this.listPosts().filter((post) => String(post.id) !== String(postId));
     this.savePosts(nextPosts.filter((p) => !p._remote));
-    delete window.BGNJ_STORES.comments[postId];
-    window.BGNJ_SAVE.comments();
+    // v00.079 — comments 는 서버 D1 의 ON DELETE CASCADE 또는 댓글 endpoint 가 처리. 로컬 정리 불필요.
     if (authorId) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
   },
   incrementViews(postId) {
@@ -1162,19 +1165,12 @@ window.BGNJ_COMMUNITY = {
     return this._commentsCache[String(postId)] || [];
   },
   getComments(postId) {
-    // 서버 게시글이면 서버 캐시 우선, 로컬 게시글이면 로컬 저장소.
-    const post = this.getPost(postId);
-    if (post && post._remote) return (this._commentsCache[String(postId)] || []).slice();
-    return (window.BGNJ_STORES.comments[String(postId)] || []).slice();
+    // v00.079 — D1.comments 가 단독 source. _commentsCache 만 사용. 로컬 게시글의 임시 댓글은 더 이상 지원 X.
+    return (this._commentsCache[String(postId)] || []).slice();
   },
-  saveComments(postId, comments) {
-    window.BGNJ_STORES.comments[String(postId)] = comments.slice();
-    window.BGNJ_SAVE.comments();
-    const post = this.getPost(postId);
-    if (post && !post._remote) {
-      this.updatePost(postId, { replies: comments.length });
-    }
-  },
+  // v00.079 — saveComments 는 deprecated. 새 댓글은 addCommentRemote 로 D1 에 직접 저장.
+  // 기존 호출자가 있으면 no-op (서버 fetch 결과만 권위).
+  saveComments(_postId, _comments) { /* no-op (v00.079) */ },
   async addCommentRemote(postId, payload) {
     await window.BGNJ_API.posts.comments.create(postId, { body: payload.body, parentId: payload.parentId });
     await this.refreshComments(postId);

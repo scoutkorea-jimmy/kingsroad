@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.079.000",
+    date: "2026-05-01",
+    summary: "🧹 legacy `bgnj_comments` 키 제거 — D1.comments 단일 source. storage v6-comments-dead 마이그레이션. 워커 미배포 v00.062 metrics endpoint 디플로이.",
+    details: [
+      "★ wrangler deploy — v00.062 metrics endpoint(/api/admin/users/:id/metrics) 가 코드만 있고 한 번도 배포 안 된 상태였음. 본 사이클에 banginoja-api Worker 디플로이. 모든 누적된 워커 변경 활성화 (Version 9ee114af).",
+      "🧹 BGNJ_STORES.comments / BGNJ_SAVE.comments 제거. _commentsCache (서버 fetch) 가 단독 source.",
+      "🧹 BGNJ_COMMUNITY.getComments — 로컬 fallback 제거 (이전 로컬 게시글 _remote=false 의 댓글 잔재). 로컬 임시 게시글의 댓글은 더 이상 지원 X.",
+      "🧹 BGNJ_COMMUNITY.saveComments — no-op deprecated. 새 댓글은 addCommentRemote → D1 직접 저장.",
+      "🧹 BGNJ_COMMUNITY.deletePost — `delete BGNJ_STORES.comments[postId]` 제거. D1 의 ON DELETE CASCADE 또는 댓글 endpoint 가 처리.",
+      "🧹 BGNJ_COMMUNITY.getActivity — comments 합산 0 으로 폴백. 정확한 카운트는 서버 metrics endpoint(v00.062, 본 사이클 활성화) fetchActivity 사용.",
+      "🧹 AuthAdminPage totalComments — _commentsCache 합산 (게시글 본문 모달 열 때 채워짐).",
+      "🧹 storage v6-comments-dead 마이그레이션 — bgnj_comments localStorage 키 제거.",
+      "📦 cache-buster — `?v=00.079.000` (20곳).",
+    ],
+    context: "v00.063 (reports 정리) 후 잔존 마지막 legacy localStorage 키 — bgnj_comments. 워커 D1.comments 테이블 + endpoint(/api/posts/:id/comments)가 v00.046 시점부터 server source 였으나 클라이언트가 듀얼 모드 (서버 게시글은 _commentsCache, 로컬 게시글은 BGNJ_STORES.comments) 로 운영. 로컬 임시 게시글이 더 이상 시드되지 않으므로(v00.046+), 로컬 댓글 저장소도 폐지. 추가로 v00.062 metrics endpoint 가 코드만 있고 배포 안 된 채로 누적되어 있어 본 사이클에 wrangler deploy. 다음 사이클(v00.080~) 후보: 투어 cover_url D1 컬럼 + R2 업로드 흐름.",
+  },
+  {
     version: "00.078.000",
     date: "2026-05-01",
     summary: "📂 AuthAdminPage 2차 분할 — pages/admin/AdminContentEditors.jsx (~1300 줄). 5904 줄 → defensive lint 여유 확보.",

@@ -92,13 +92,8 @@
 
 ## 큐 2 — 워커 배포 의존 (★ 사용자 wrangler deploy 필요)
 
-### ⏳ v00.079 — legacy `comments` 키 서버 일원화
-- 워커: 신규 comment 집계 endpoint (`/api/me/comments-count`, `/api/users/:id/comments-count` 등)
-- 클라이언트: BGNJ_STORES 에서 `comments` 키 제거
-- 마이그레이션: storage v6 (v5-reports-dead 다음)
-- **차단:** ★ wrangler deploy
-- **동기:** v00.063 에서 `reports` 키 제거 후 잔존 마지막 legacy 키.
-- **status:** pending
+### ✅ v00.079 — legacy `comments` 키 서버 일원화 + v00.062 metrics endpoint 디플로이
+- 완료: BGNJ_STORES.comments / BGNJ_SAVE.comments 제거 + getComments/saveComments/deletePost/getActivity 갱신 + storage v6-comments-dead 마이그레이션. ★ wrangler deploy 로 v00.062 metrics endpoint 활성화 (Version 9ee114af).
 
 ### ⏳ v00.080 — R2 업로드 흐름
 - 워커: R2 bucket 생성 + `wrangler.toml` binding
@@ -167,4 +162,5 @@
 - **v00.075** ✅ 강연 페이지 편집화 parity — 진행/참고/커버 per-lecture + 후기 게이팅 + inline LectureAdminPanel (commit `9bb52f8`)
 - **v00.076** ✅ Tiptap CSS 보강 — 14 extension 시각 스타일 일괄 (commit `5a918f7`)
 - **v00.077** ✅ useModalGuard 일괄 적용 — 5 모달 ESC+body lock+popstate 통일 (commit `bddd796`)
-- **v00.078** ✅ AuthAdminPage 2차 분할 — AdminContentEditors.jsx 1300 줄 추출 (commit 다음 sha)
+- **v00.078** ✅ AuthAdminPage 2차 분할 — AdminContentEditors.jsx 1300 줄 추출 (commit `7249dc5`)
+- **v00.079** ✅ legacy `bgnj_comments` 제거 + storage v6 + ★ wrangler deploy v00.062 metrics endpoint 활성화 (commit 다음 sha)
