@@ -468,6 +468,19 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.060.000",
+    date: "2026-05-01",
+    summary: "🖼 OG 이미지 관리 UI 명시 카드 — OgPreviewBlock 신설 (라이브 미리보기 + 플랫폼 호환성 + 업로드 안내).",
+    details: [
+      "🖼 OgPreviewBlock 컴포넌트 신설 (AuthAdminPage.jsx) — 현재 og:image 의 카카오톡/페이스북 풍 공유 카드 시뮬레이션 (이미지 + title + description + 도메인).",
+      "🖼 사용자 업로드 vs fallback SVG 자동 식별 — 업로드 없으면 'PNG 업로드 권장' 안내. data:image/svg 시작 여부로 isSvg 판정.",
+      "🖼 플랫폼 호환성 표 — Twitter/Discord/Slack/Facebook/KakaoTalk/LinkedIn 6개 행. SVG dataURI / PNG dataURI / 현재 상태 3 컬럼. 색상 코드(success/warning/danger)로 즉시 판독.",
+      "🖼 SiteContentAdminPanel OG 메타 섹션 — 기존 SectionForm + ImageUploader 다음에 OgPreviewBlock 인라인.",
+      "📦 cache-buster — `?v=00.060.000`.",
+    ],
+    context: "v00.052 의 OG 이미지 SVG fallback 도입 후 운영자 측에서 '실제로 어떤 게 적용되고 있는지' 확인 어려운 상태. v00.060 가 미리보기 카드 + 플랫폼 호환성 표로 즉시 진단 가능. 카카오톡/페이스북에서 빈 미리보기로 보이는 이유(SVG 미지원) 도 동일 화면에서 노출 → 운영자가 PNG 업로드 필요성 명확히 인지. 다음 사이클(v00.061) 후보: 추가 lint 룰 (unused import / 큰 파일 라인 limit / === 강제).",
+  },
+  {
     version: "00.059.000",
     date: "2026-05-01",
     summary: "🌓 다크 모드 인라인 hex 정합 (잔존부) — 환불 amber + 추천 카드 region 라벨 + 모달 닫기 버튼 + KMS shadow 카드 + styles.css 추가 룰.",
@@ -5321,6 +5334,80 @@ const SiteContentAdminPanel = () => {
       <ImageUploader section="og" field="imageDataUri" label="OG 이미지"
         hint="1200x630 PNG/JPG 권장 · 카카오톡/페이스북/X 공유 시 미리보기에 사용. 1.5MB 이하."
         previewSize={80}/>
+
+      {/* OG 라이브 미리보기 + 플랫폼 호환성 (v00.060) */}
+      <OgPreviewBlock sc={sc}/>
+    </div>
+  );
+};
+
+// === OG 라이브 미리보기 (v00.060) =========================================
+// 현재 og:image 의 실제 렌더 + 카카오톡/페이스북/Discord 공유 카드 시뮬레이션 + 플랫폼 호환성 표.
+// 관리자가 업로드한 imageDataUri 가 있으면 그것을, 없으면 index.html 의 fallback SVG meta 값을 사용.
+const OgPreviewBlock = ({ sc }) => {
+  const og = sc.og || {};
+  const title = og.title || '뱅기노자 — 뱅기 타고 한국을 느끼다';
+  const description = og.description || '뱅기노자 — 뱅기 타고 한국을 느끼다. 궁궐 답사부터 지역 여행까지, 한국의 역사·문화·자연을 함께 여행하는 커뮤니티.';
+  const imageSrc = og.imageDataUri || (typeof document !== 'undefined' ? document.querySelector('meta[property="og:image"]')?.getAttribute('content') : '') || '';
+  const isUserUpload = !!og.imageDataUri;
+  const isSvg = (imageSrc || '').startsWith('data:image/svg');
+  return (
+    <div style={{marginTop:20}}>
+      <h4 className="ko-serif" style={{fontSize:15, marginBottom:8}}>현재 OG 이미지 — 라이브 미리보기</h4>
+      <p className="dim-2" style={{fontSize:11, marginBottom:10, lineHeight:1.6}}>
+        {isUserUpload
+          ? '✓ 관리자가 업로드한 이미지가 적용되고 있습니다.'
+          : 'ⓘ 업로드된 이미지가 없어 브랜드 fallback SVG 가 사용됩니다. SVG 는 Twitter/Discord 에서만 인식 — Facebook/Kakao 공유 시 미리보기가 비어 보입니다. PNG 업로드 권장.'}
+      </p>
+      <div className="card" style={{padding:0, overflow:'hidden', maxWidth:520, marginBottom:18}}>
+        {imageSrc ? (
+          <img src={imageSrc} alt="현재 og:image"
+            style={{width:'100%', display:'block', aspectRatio:'1200/630', objectFit:'cover', background:'var(--bg-2)'}}/>
+        ) : (
+          <div style={{aspectRatio:'1200/630', display:'grid', placeItems:'center', background:'var(--bg-3)', color:'var(--ink-3)', fontSize:13}}>
+            og:image 미설정
+          </div>
+        )}
+        <div style={{padding:'12px 14px'}}>
+          <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.18em', marginBottom:4}}>BGNJ.NET</div>
+          <div className="ko-serif" style={{fontSize:15, fontWeight:600, color:'var(--ink)', marginBottom:4, lineHeight:1.3}}>{title}</div>
+          <div className="dim-2" style={{fontSize:12, lineHeight:1.5, color:'var(--ink-2)'}}>{description}</div>
+        </div>
+      </div>
+
+      <h4 className="ko-serif" style={{fontSize:15, marginBottom:8}}>플랫폼 호환성</h4>
+      <div style={{overflowX:'auto', marginBottom:14}}>
+        <table style={{width:'100%', minWidth:480, borderCollapse:'collapse', fontSize:12}}>
+          <thead>
+            <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.18em', color:'var(--ink-3)'}}>
+              <th scope="col" style={{padding:10, textAlign:'left'}}>플랫폼</th>
+              <th scope="col" style={{padding:10, textAlign:'left'}}>SVG dataURI</th>
+              <th scope="col" style={{padding:10, textAlign:'left'}}>PNG/JPG dataURI</th>
+              <th scope="col" style={{padding:10, textAlign:'left'}}>현재 상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { name: 'Twitter / X',     svg: '✓',  png: '✓', current: isSvg ? '✓' : (isUserUpload ? '✓' : '✗') },
+              { name: 'Discord',          svg: '✓',  png: '✓', current: isSvg ? '✓' : (isUserUpload ? '✓' : '✗') },
+              { name: 'Slack',            svg: '△', png: '✓', current: isUserUpload ? '✓' : '△' },
+              { name: 'Facebook',         svg: '✗', png: '✓', current: isSvg ? '✗' : (isUserUpload ? '✓' : '✗') },
+              { name: 'KakaoTalk',        svg: '✗', png: '✓', current: isSvg ? '✗' : (isUserUpload ? '✓' : '✗') },
+              { name: 'LinkedIn',         svg: '✗', png: '✓', current: isSvg ? '✗' : (isUserUpload ? '✓' : '✗') },
+            ].map((p) => (
+              <tr key={p.name} style={{borderBottom:'1px solid var(--line)'}}>
+                <td style={{padding:10, color:'var(--ink)', fontWeight:500}}>{p.name}</td>
+                <td className="mono" style={{padding:10, fontSize:13, color: p.svg === '✓' ? 'var(--success)' : p.svg === '△' ? 'var(--warning)' : 'var(--ink-3)'}}>{p.svg}</td>
+                <td className="mono" style={{padding:10, fontSize:13, color: p.png === '✓' ? 'var(--success)' : 'var(--ink-3)'}}>{p.png}</td>
+                <td className="mono" style={{padding:10, fontSize:13, color: p.current === '✓' ? 'var(--success)' : p.current === '△' ? 'var(--warning)' : 'var(--danger)', fontWeight:600}}>{p.current}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>
+        ⓘ <strong>전 플랫폼 커버 권장:</strong> 1200×630 PNG/JPG 를 업로드하면 SVG fallback 을 덮어쓰고 Facebook/Kakao 등에서도 미리보기가 표시됩니다.
+      </p>
     </div>
   );
 };
