@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.081.000",
+  version: "00.082.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -2570,6 +2570,33 @@ window.BGNJ_BOOKS = {
   },
   async removeReview(_id, reviewId) {
     return window.BGNJ_BOOK_ORDERS.deleteReview(reviewId);
+  },
+};
+
+// === BGNJ_MEDIA — R2 업로드 헬퍼 (v00.080) ==============================
+// 워커 endpoint: POST /api/media/upload (admin) + GET /api/media/:key (public).
+// 사용:
+//   const { key, url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'og', maxBytes: 1.5 * 1024 * 1024 });
+//   admin 이 업로드한 dataURI 인라인 대신 url 만 site_content_kv 등에 저장.
+// 폴더 명세:
+//   og / logos / auth / tour-covers / lecture-covers / book-covers / book-pdfs
+// 폴백: 업로드 실패(권한/크기/네트워크) 시 throw → 호출자가 dataURI fallback 또는 사용자 메시지로 처리.
+window.BGNJ_MEDIA = {
+  async uploadFile(file, { folder = 'uploads', maxBytes = 5 * 1024 * 1024 } = {}) {
+    if (!file) throw new Error('파일이 없습니다.');
+    if (file.size > maxBytes) {
+      throw new Error(`파일이 너무 큽니다 (${(file.size / 1024 / 1024).toFixed(1)}MB > ${(maxBytes / 1024 / 1024).toFixed(1)}MB).`);
+    }
+    const res = await window.BGNJ_API.media.upload(file, { folder });
+    if (!res?.url) throw new Error('업로드 응답 형식이 올바르지 않습니다.');
+    return res; // { key, url }
+  },
+  // 키만 저장된 옛 데이터를 라이브 URL 로 변환. dataURI / 절대 URL 은 그대로 통과.
+  resolveUrl(keyOrUrlOrDataUri) {
+    const v = String(keyOrUrlOrDataUri || '');
+    if (!v) return '';
+    if (v.startsWith('data:') || v.startsWith('http://') || v.startsWith('https://')) return v;
+    return window.BGNJ_API.media.url(v);
   },
 };
 

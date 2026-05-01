@@ -95,14 +95,8 @@
 ### ✅ v00.079 — legacy `comments` 키 서버 일원화 + v00.062 metrics endpoint 디플로이
 - 완료: BGNJ_STORES.comments / BGNJ_SAVE.comments 제거 + getComments/saveComments/deletePost/getActivity 갱신 + storage v6-comments-dead 마이그레이션. ★ wrangler deploy 로 v00.062 metrics endpoint 활성화 (Version 9ee114af).
 
-### ⏳ v00.080 — R2 업로드 흐름
-- 워커: R2 bucket 생성 + `wrangler.toml` binding
-- 워커 endpoint: `/api/uploads/sign` (presigned URL or direct upload)
-- 클라이언트 마이그레이션: 게시글 첨부 / 투어 커버 / OG 이미지 dataURI → R2 객체 URL
-- 호환성: 기존 dataURI 인라인 데이터 점진 마이그레이션 (양 형식 모두 표시)
-- **차단:** ★ R2 plan + wrangler deploy
-- **동기:** dataURI 인라인 → D1 응답 / localStorage 부담. 첨부 제한(10MB×3) 도 R2 도입 시 완화 가능.
-- **status:** pending
+### ✅ v00.082 — R2 업로드 흐름 활성화 (admin 이미지)
+- 완료: BGNJ_MEDIA 헬퍼 + ImageUploader R2 우선 + TourAdminPanel/LectureAdminPanel 커버 R2 우선. 워커 endpoint + bucket 은 v00.062 부터 존재했으나 호출자 0 → 본 사이클에 admin 6 슬롯(OG/로고/파비콘/auth/투어 커버/강연 커버) 활성화. 사용자측(post 첨부/책 PDF/추천 이미지) 는 차후 분리.
 
 ### ✅ v00.081 — 투어 schema `cover_url` 컬럼
 - 완료: D1 ALTER TABLE + 워커 tourRow/handleTourCreate/handleTourPatch + ★ wrangler deploy (e26bcb4c) + 클라 _toTour + WangsanamTourPage 우선순위 + TourAdminPanel 분기 저장. legacy site_content fallback 유지.
@@ -159,4 +153,5 @@
 - **v00.077** ✅ useModalGuard 일괄 적용 — 5 모달 ESC+body lock+popstate 통일 (commit `bddd796`)
 - **v00.078** ✅ AuthAdminPage 2차 분할 — AdminContentEditors.jsx 1300 줄 추출 (commit `7249dc5`)
 - **v00.079** ✅ legacy `bgnj_comments` 제거 + storage v6 + ★ wrangler deploy v00.062 metrics endpoint 활성화 (commit `5132fb5`)
-- **v00.081** ✅ 투어 D1 `cover_url` 컬럼 마이그레이션 + ★ wrangler deploy (commit 다음 sha)
+- **v00.081** ✅ 투어 D1 `cover_url` 컬럼 마이그레이션 + ★ wrangler deploy (commit `8356cef`)
+- **v00.082** ✅ R2 업로드 흐름 활성화 — admin 6 슬롯 (OG/로고/파비콘/auth/투어 커버/강연 커버) (commit 다음 sha)

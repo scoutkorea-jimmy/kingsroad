@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.082.000",
+    date: "2026-05-01",
+    summary: "🪣 R2 업로드 흐름 활성화 — admin 이미지 업로드를 dataURI 인라인 → R2 객체로 마이그레이션 (OG / 로고 / 파비콘 / auth 배경 / 투어·강연 커버).",
+    details: [
+      "🪣 BGNJ_MEDIA helper 신설 (data.js) — uploadFile(file, {folder, maxBytes}) + resolveUrl(keyOrUrl). 워커 /api/media/upload + /api/media/:key endpoint 활용 (이미 v00.062 시점부터 코드 존재, R2 bucket 'banginoja-media' 활성).",
+      "🛠 ImageUploader (SiteContentAdminPanel) — R2 우선 업로드 (5MB 한도). 실패 시 dataURI 폴백 (1.5MB). OG / 로고 / 파비콘 / auth 배경에 적용.",
+      "🛠 TourAdminPanel.onPickContentCover — folder='tour-covers'. 5MB R2 + dataURI 폴백.",
+      "🛠 LectureAdminPanel.onPickContentCover — folder='lecture-covers'. 5MB R2 + dataURI 폴백.",
+      "ℹ 라이브 페이지는 dataURI / R2 URL / 절대 URL 모두 동일하게 <img src> 로 렌더 — 마이그레이션 완료 후에도 기존 dataURI 콘텐츠 호환.",
+      "ℹ 적용 보류 (다음 사이클): 게시글 첨부 (CommunityPage user-facing, blast radius 큼) / 책 표지·PDF (BooksAdminPanel 별도 UI) / 추천 여행지 이미지 (RecommendationsAdminPanel).",
+      "📦 cache-buster — `?v=00.082.000` (20곳).",
+      "ℹ 사이클 번호 점프 (079→081→082): 081 cover_url (D1 only) 먼저 완료. 080 슬롯은 R2 였으나 release 버전 단조 증가 위해 082 채택.",
+    ],
+    context: "v00.062 부터 워커에 R2 endpoint 가 있었고 R2 bucket 'banginoja-media' 도 있었으나 어떤 클라이언트도 호출하지 않아 dataURI 인라인이 누적되어 D1 site_content_kv 행이 비대화 (각 이미지 ~수백KB base64). admin-side 업로드를 R2 로 일괄 마이그레이션 — 먼저 적은 surface (admin only, 6 슬롯) 부터. 사용자측 업로드(post 첨부 / 책 PDF) 는 다음 사이클로 분리. R2 실패 시 dataURI 폴백 유지 — 워커 미배포 / 권한 문제 / 네트워크 등 시점 안전.",
+  },
+  {
     version: "00.081.000",
     date: "2026-05-01",
     summary: "🚌 투어 D1 cover_url 컬럼 마이그레이션 — 워커 schema + tourRow + 클라이언트 _toTour + 라이브 cover 렌더 + admin 쓰기 분기. site_content_kv.tourPages legacy 폴백 유지.",

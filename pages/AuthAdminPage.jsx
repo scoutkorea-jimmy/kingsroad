@@ -646,8 +646,17 @@ const LectureAdminPanel = ({ go }) => {
   const onPickContentCover = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    try {
+      // v00.080 — R2 업로드 우선. 5MB 한도. 실패 시 dataURI 폴백.
+      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'lecture-covers', maxBytes: 5 * 1024 * 1024 });
+      setContentCover(url);
+      e.target.value = '';
+      return;
+    } catch (err) {
+      console.warn('[v00.080] R2 강연 커버 업로드 실패 — dataURI 폴백:', err);
+    }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
       e.target.value = ''; return;
     }
     const dataUri = await new Promise((resolve, reject) => {
@@ -1062,8 +1071,17 @@ const TourAdminPanel = ({ go }) => {
   const onPickContentCover = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    try {
+      // v00.080 — R2 업로드 우선. 5MB 한도. 실패 시 dataURI 폴백.
+      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'tour-covers', maxBytes: 5 * 1024 * 1024 });
+      setContentCover(url);
+      e.target.value = '';
+      return;
+    } catch (err) {
+      console.warn('[v00.080] R2 투어 커버 업로드 실패 — dataURI 폴백:', err);
+    }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
       e.target.value = ''; return;
     }
     const dataUri = await new Promise((resolve, reject) => {
@@ -2170,22 +2188,33 @@ const SiteContentAdminPanel = () => {
     );
   };
 
-  const ImageUploader = ({ section, field, label, hint, previewSize = 56, accept = 'image/*' }) => {
+  const ImageUploader = ({ section, field, label, hint, previewSize = 56, accept = 'image/*', folder }) => {
     const current = sc[section]?.[field] || '';
     const onPick = async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      // 1.5MB 이상은 거절 — base64는 약 33% 부풀어 localStorage(보통 5~10MB) 한도 위협.
-      if (file.size > 1.5 * 1024 * 1024) {
-        alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      try {
+        // v00.080 — R2 업로드 우선. 실패 시 dataURI 폴백 (워커 미배포 / 권한 / 네트워크 등).
+        // 5MB 까지 허용 (R2 는 dataURI 와 달리 base64 부풀림 X).
+        const r2Folder = folder || section;
+        const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: r2Folder, maxBytes: 5 * 1024 * 1024 });
+        window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: url });
+        setTick((v) => v + 1);
+        flash(`${label} 업로드 완료 (R2)`);
         e.target.value = '';
-        return;
+      } catch (err) {
+        console.warn('[v00.080] R2 업로드 실패 — dataURI 폴백:', err);
+        if (file.size > 1.5 * 1024 * 1024) {
+          alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 업로드 실패 + 1.5MB 폴백 한도 초과. 압축해 주세요.`);
+          e.target.value = '';
+          return;
+        }
+        const dataUri = await fileToDataUri(file);
+        window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: dataUri });
+        setTick((v) => v + 1);
+        flash(`${label} 업로드 완료 (dataURI 폴백)`);
+        e.target.value = '';
       }
-      const dataUri = await fileToDataUri(file);
-      window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: dataUri });
-      setTick((v) => v + 1);
-      flash(`${label} 업로드 완료`);
-      e.target.value = '';
     };
     const clear = () => {
       if (!confirm(`${label}을(를) 비울까요? (기본 마크로 되돌아갑니다)`)) return;
