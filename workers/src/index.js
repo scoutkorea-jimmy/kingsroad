@@ -538,6 +538,47 @@ const handleAdminUserDelete = async (req, env, id) => {
   return { ok: true };
 };
 
+// 회원 metrics (v00.062) — D1 정확 계산. 클라이언트 BGNJ_GRADE_PROMO.metrics 가 prefer.
+// 모든 카운트가 한 번의 round-trip 으로. 빈 결과는 0.
+const handleAdminUserMetrics = async (req, env, userId) => {
+  await requireAdmin(req, env);
+  if (!userId) throw new HttpError(400, "userId required");
+  // 사용자 자신의 글/댓글 수
+  const postsRow = await env.DB.prepare("SELECT COUNT(*) AS c FROM posts WHERE author_id = ?").bind(userId).first();
+  const commentsRow = await env.DB.prepare("SELECT COUNT(*) AS c FROM comments WHERE author_id = ?").bind(userId).first();
+  // 받은 좋아요 — 본인 글에 들어온 post_likes 합 + 본인 칼럼의 likes_json 길이 합
+  const likesPostsRow = await env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM post_likes WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)"
+  ).bind(userId).first();
+  let likesColumns = 0;
+  try {
+    const { results } = await env.DB.prepare("SELECT likes_json FROM user_columns WHERE author_id = ?").bind(userId).all();
+    for (const r of (results || [])) {
+      try { const arr = r.likes_json ? JSON.parse(r.likes_json) : []; if (Array.isArray(arr)) likesColumns += arr.length; } catch {}
+    }
+  } catch {} // user_columns 에 author_id 컬럼이 없을 수 있음 — 폴백 0
+  // 본인 글에 들어온 신고 수
+  const reportsRow = await env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM reports WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)"
+  ).bind(userId).first();
+  // 가입 경과 일수 — users.created_at 기준
+  const userRow = await env.DB.prepare("SELECT created_at FROM users WHERE id = ?").bind(userId).first();
+  let daysSinceSignup = 0;
+  if (userRow?.created_at) {
+    const ms = Date.now() - new Date(userRow.created_at).getTime();
+    daysSinceSignup = Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+  }
+  return {
+    userId,
+    posts: Number(postsRow?.c || 0),
+    comments: Number(commentsRow?.c || 0),
+    likesReceived: Number(likesPostsRow?.c || 0) + likesColumns,
+    reportCount: Number(reportsRow?.c || 0),
+    daysSinceSignup,
+    computedAt: nowIso(),
+  };
+};
+
 const handleAdminAuditList = async (req, env) => {
   await requireAdmin(req, env);
   const url = new URL(req.url);
@@ -1618,6 +1659,10 @@ const route = async (req, env) => {
     if (req.method === "DELETE") return json(await handleAdminUserDelete(req, env, g[1]));
   }
   if (req.method === "GET" && p === "/api/admin/audit") return json(await handleAdminAuditList(req, env));
+  // 관리자: 회원 metrics (v00.062) — D1 정확 계산. BGNJ_GRADE_PROMO 가 grade 자격 평가에 사용.
+  if ((g = m(/^\/api\/admin\/users\/([\w-]+)\/metrics$/))) {
+    if (req.method === "GET") return json(await handleAdminUserMetrics(req, env, g[1]));
+  }
 
   // 강연
   if (req.method === "GET" && p === "/api/lectures") return json(await handleLecturesList(req, env));

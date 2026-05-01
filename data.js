@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.061.000",
+  version: "00.062.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -2051,8 +2051,29 @@ window.BGNJ_VISITS = {
 };
 
 window.BGNJ_GRADE_PROMO = {
-  // 사용자 측정치 — 서버 활동 + 클라이언트 방문 + 가입 일수 + 신고/좋아요/활동일.
-  // 일부 필드는 서버 endpoint 가 없으면 클라이언트에서 best-effort 추정.
+  // 서버 metrics 캐시 (v00.062) — prefetchServerMetrics 또는 fetchServerMetrics 호출 후 채워짐.
+  // metrics(userId) 동기 함수가 이 캐시가 있으면 prefer.
+  _serverCache: {},
+  // 단일 사용자 서버 metrics 페치 + 캐시. 실패해도 throw 안 함.
+  async fetchServerMetrics(userId) {
+    try {
+      const r = await window.BGNJ_API?.admin?.users?.metrics?.(userId);
+      if (r && typeof r === 'object') {
+        this._serverCache[userId] = { ...r, fetchedAt: Date.now() };
+        return this._serverCache[userId];
+      }
+    } catch {}
+    return null;
+  },
+  // 전체 회원 metrics 페치 (관리자 reevaluateAll 직전 호출용). 직렬 — 서버 부하 절감.
+  async prefetchAllServerMetrics() {
+    const users = window.BGNJ_AUTH?._usersCache || [];
+    for (const u of users) {
+      if (!u?.id) continue;
+      await this.fetchServerMetrics(u.id);
+    }
+  },
+  // 사용자 측정치 — 서버 캐시 prefer, 없으면 클라이언트 best-effort.
   metrics(userId) {
     const a = window.BGNJ_AUTH.getActivity(userId) || {};
     const users = (window.BGNJ_AUTH._usersCache || []);
@@ -2060,31 +2081,32 @@ window.BGNJ_GRADE_PROMO = {
     const createdAt = user.createdAt || user.created_at;
     const signupTime = createdAt ? new Date(createdAt).getTime() : Date.now();
     const daysSinceSignup = Math.max(0, Math.floor((Date.now() - signupTime) / (24 * 60 * 60 * 1000)));
-    // 활동 unique 날짜 — posts 배열의 date 와 comments 의 date 합산
     const userPosts = Array.isArray(a.posts) ? a.posts : [];
     const dayKey = (d) => { try { return new Date(d).toDateString(); } catch { return null; } };
     const activeDaysSet = new Set(userPosts.map((p) => dayKey(p.date || p.createdAt)).filter(Boolean));
-    // 좋아요 받은 수 — 게시글 + 칼럼 likes 합산
+    // 클라이언트 best-effort.
     let likesReceived = 0;
     try {
       (window.BGNJ_COMMUNITY?.listPosts?.() || [])
         .filter((p) => p.authorId === userId)
         .forEach((p) => { likesReceived += Array.isArray(p.likes) ? p.likes.length : 0; });
     } catch {}
-    // 신고 받은 수 — BGNJ_COMMUNITY._reports 에서 targetUserId 매칭
     let reportCount = 0;
     try {
       const reports = window.BGNJ_COMMUNITY?._reports || [];
       reportCount = reports.filter((r) => r && (r.targetUserId === userId || r.target_user_id === userId)).length;
     } catch {}
+    // 서버 metrics 가 캐시되어 있으면 정확값 우선 사용.
+    const sv = this._serverCache[userId];
     return {
-      posts: a.postCount || 0,
-      comments: a.commentCount || 0,
-      visitsLast30Days: window.BGNJ_VISITS?.countLast30Days?.(userId) || 0,
-      daysSinceSignup,
-      likesReceived,
-      activeDays: activeDaysSet.size,
-      reportCount,
+      posts:               sv?.posts        ?? (a.postCount || 0),
+      comments:            sv?.comments     ?? (a.commentCount || 0),
+      visitsLast30Days:    window.BGNJ_VISITS?.countLast30Days?.(userId) || 0,
+      daysSinceSignup:     sv?.daysSinceSignup ?? daysSinceSignup,
+      likesReceived:       sv?.likesReceived ?? likesReceived,
+      activeDays:          activeDaysSet.size,
+      reportCount:         sv?.reportCount  ?? reportCount,
+      _source:             sv ? 'server' : 'client',
     };
   },
   evaluate(userId) {

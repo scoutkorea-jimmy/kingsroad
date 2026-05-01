@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.062.000",
+    date: "2026-05-01",
+    summary: "🎯 서버 endpoint 로 reportCount/likesReceived/posts/comments/daysSinceSignup 정확화. ★ 워커 배포 필요.",
+    details: [
+      "🎯 워커 신규 endpoint /api/admin/users/:id/metrics — D1 SQL 직접 카운트. posts(author_id) / comments(author_id) / post_likes(post_id IN posts.author_id) / user_columns.likes_json / reports(post_id IN posts.author_id) / users.created_at.",
+      "🎯 BGNJ_API.admin.users.metrics(id) — 클라이언트 헬퍼.",
+      "🎯 BGNJ_GRADE_PROMO._serverCache + fetchServerMetrics(userId) + prefetchAllServerMetrics() — 관리자 reevaluateAll 직전 호출. 캐시되면 metrics() 가 서버 값 prefer (없으면 클라이언트 fallback). _source 필드로 출처 표시.",
+      "🎯 GradePromotionPanel reevaluate — refreshUsers 후 prefetchAllServerMetrics 호출 (try/catch — 워커 미배포 시 silently 폴백).",
+      "⚠ 사용자 직접 deploy 필요 — `cd workers && wrangler deploy`. 미배포 시 GET /api/admin/users/:id/metrics 가 404 → 클라이언트 best-effort 로 자동 폴백 (안전).",
+      "📦 cache-buster — `?v=00.062.000`.",
+    ],
+    context: "백로그 v00.062 후보 — '서버 endpoint reportCount/likesReceived 정확화' 처리. 기존 클라이언트 best-effort 합산은 BGNJ_COMMUNITY._reports / posts.likes 같은 파편적 캐시에 의존 → 부정확. v00.062 가 D1 SQL 로 정확값 산출. 단일 round-trip per user (prefetchAll 직렬). 워커 미배포 시 fetchServerMetrics 가 throw 잡아 null 반환 → metrics() 가 클라이언트 값 사용 — 호환성 유지. 다음 사이클(v00.063) 후보: legacy 키 reports → comments 점진 마이그레이션 (워커 배포 동반).",
+  },
+  {
     version: "00.061.000",
     date: "2026-05-01",
     summary: "🩹 [핫픽스] 새 강연 추가 시 'startsAt' null 오류 수정 + 🔍 추가 lint 룰 (direct_fetch / equality_loose / large_file).",
@@ -8324,6 +8338,9 @@ const GradePromotionPanel = () => {
     try {
       // 정확한 평가를 위해 회원 목록을 새로 받음 (활동 카운트는 BGNJ_AUTH.getActivity 가 캐시).
       await window.BGNJ_AUTH?.refreshUsers?.();
+      // v00.062 — D1 정확 metrics 서버 prefetch (likesReceived/reportCount/posts/comments/daysSinceSignup).
+      // 워커 미배포 환경이면 silently 실패 → 클라이언트 best-effort 로 폴백.
+      try { await window.BGNJ_GRADE_PROMO?.prefetchAllServerMetrics?.(); } catch {}
       const summary = window.BGNJ_GRADE_PROMO?.reevaluateAll?.() || { promoted: 0, demoted: 0 };
       setResult(summary);
     } catch (err) {

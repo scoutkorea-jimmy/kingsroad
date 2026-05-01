@@ -219,6 +219,8 @@
         update: (id, patch) => request("PATCH", `/admin/users/${id}`, patch),
         remove: (id) => request("DELETE", `/admin/users/${id}`),
         activity: (id) => request("GET", `/admin/users/${id}/activity`),
+        // v00.062 — D1 정확 계산 metrics. BGNJ_GRADE_PROMO.metrics 가 prefer.
+        metrics: (id) => request("GET", `/admin/users/${id}/metrics`),
       },
       audit: {
         list: ({ limit } = {}) => request("GET", `/admin/audit${limit ? `?limit=${limit}` : ""}`),
