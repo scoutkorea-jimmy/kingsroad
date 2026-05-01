@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.060.000 · 2026-05-01 (OG 이미지 관리 UI — OgPreviewBlock + 플랫폼 호환성 표)
+> **마지막 업데이트:** v00.061.000 · 2026-05-01 (핫픽스 — addNewLecture await 누락 + lint 룰 확장)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.060)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.061)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -215,6 +215,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.058** | 2026-05-01 | 한글 IME 핫픽스 (내부 컴포넌트 호이스팅) + heroStyle 모바일 별도 트윗 + viewport 토글 미리보기 |
 | **v00.059** | 2026-05-01 | 다크 모드 인라인 hex 정합 잔존부 — 환불 amber #e8a020 → var(--warning), 추천 카드/모달 닫기 버튼, styles.css 추가 룰 |
 | **v00.060** | 2026-05-01 | OG 이미지 관리 UI — OgPreviewBlock (라이브 미리보기 + 플랫폼 호환성 표 + 업로드 안내) |
+| **v00.061** | 2026-05-01 | 핫픽스 addNewLecture await 누락 (startsAt null 오류) + lint 룰 (direct_fetch / equality_loose / large_file) |
 
 ---
 
@@ -245,10 +246,6 @@ URL 매핑 (`VALID_ROUTES`):
 
 
 
-
-### v00.061 — 추가 lint 룰
-`unused import` (간단 정규식) / 큰 파일 줄 수 limit / `===` 강제(`==` 금지) / async 함수 await 누락 감지.
-**위험도:** 낮음 (룰 추가만, 위반 발견 시 별도 fix 사이클).
 
 ### v00.062 — 서버 endpoint reportCount / likesReceived 정확화 ★ 워커 배포 동반
 현재 클라이언트 best-effort 합산. `/api/users/:id/metrics` 에서 D1 쿼리로 정확 계산 → BGNJ_GRADE_PROMO.metrics 가 prefer. legacy `reports` 키 정합 동반.

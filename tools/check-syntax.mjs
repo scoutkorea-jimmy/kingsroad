@@ -99,23 +99,46 @@ const RULES = [
     pattern: /(^|[\s;{(,])var\s+[a-zA-Z_$]/,
     msg: "var 키워드 금지 — let / const 사용",
   },
+  {
+    name: "direct_fetch",
+    // BGNJ_API wrapper 우회 차단 — 인증/CORS/error log/헬퍼가 보장되지 않음.
+    // api.js (실제 wrapper) + data.js (테스트 헬퍼) 만 허용.
+    allow: new Set(["api.js", "data.js"]),
+    pattern: /(^|[^.\w])fetch\s*\(/,
+    msg: "fetch 직접 호출 금지 — BGNJ_API 헬퍼 사용",
+  },
 ];
 
 // 추가 정보성 검사 — 위반이 있어도 차단은 안 하고 카운트만 보고.
+// 룰별로 첫 5건씩 묶어 출력.
 const INFO_RULES = [
   {
     name: "TODO",
     pattern: /\b(TODO|FIXME|HACK|XXX)\b/,
     msg: "잔재 마커",
   },
+  {
+    name: "equality_loose",
+    // == 와 != 사용. == null / != null 은 의도적 idiom 이지만 일관성을 위해 모두 카운트.
+    // === / !== 사용 권장.
+    pattern: /[^=!<>]==[^=]|[^=!]!=[^=]/,
+    msg: "느슨한 비교(==/!=) — === / !== 권장 (== null 은 idiom 허용)",
+  },
 ];
+
+// 파일 라인 수 limit — 정보성. 큰 파일은 분할 권장.
+const LARGE_FILE_LIMIT = 8000;
 
 const violations = [];
 const infos = [];
+const largeFiles = [];
 for (const f of targets) {
   const rel = path.relative(ROOT, f);
   const code = await fs.readFile(f, "utf8");
   const lines = code.split("\n");
+  if (lines.length > LARGE_FILE_LIMIT) {
+    largeFiles.push({ file: rel, lines: lines.length });
+  }
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     // 코드 상의 실제 매치만 검사 — 주석/백틱 제거.
@@ -143,10 +166,23 @@ for (const f of targets) {
 if (bad === 0 && violations.length === 0) {
   console.log(`✅ ${targets.length} files parsed cleanly.`);
   if (infos.length > 0) {
-    // 정보성 — 처음 5 건만 노출. 차단은 안 함.
-    console.log(`ℹ ${infos.length} 잔재 마커 (TODO/FIXME/HACK/XXX) — 처음 5 건:`);
-    for (const v of infos.slice(0, 5)) {
-      console.log(`  • [${v.rule}] ${v.file}:${v.line}`);
+    // 정보성 — 룰별 그룹화. 룰별 첫 3 건씩만 노출. 차단은 안 함.
+    const byRule = new Map();
+    for (const v of infos) {
+      if (!byRule.has(v.rule)) byRule.set(v.rule, []);
+      byRule.get(v.rule).push(v);
+    }
+    for (const [ruleName, items] of byRule) {
+      console.log(`ℹ [${ruleName}] ${items.length} 건 — 처음 3:`);
+      for (const v of items.slice(0, 3)) {
+        console.log(`    • ${v.file}:${v.line}`);
+      }
+    }
+  }
+  if (largeFiles.length > 0) {
+    console.log(`ℹ [large_file] ${largeFiles.length} 건 (> ${LARGE_FILE_LIMIT} 줄):`);
+    for (const lf of largeFiles) {
+      console.log(`    • ${lf.file} — ${lf.lines} 줄 (분할 권장)`);
     }
   }
   process.exit(0);

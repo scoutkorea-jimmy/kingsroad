@@ -468,6 +468,21 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.061.000",
+    date: "2026-05-01",
+    summary: "🩹 [핫픽스] 새 강연 추가 시 'startsAt' null 오류 수정 + 🔍 추가 lint 룰 (direct_fetch / equality_loose / large_file).",
+    details: [
+      "🩹 addNewLecture await 누락 핫픽스 — saveLecture 가 async 인데 await 없이 동기 getLecture(id) 호출 → 캐시 미반영 → null → startEdit(null) → 'Cannot read properties of null (reading startsAt)' TypeError. async/await + try/catch 추가 + saveLecture 가 반환한 lecture 객체 직접 사용.",
+      "🩹 audit log 도 await + try/catch 로 감쌈 — audit 500 응답이 강연 생성 흐름을 막지 않도록.",
+      "🔍 차단 룰 'direct_fetch' — `fetch(` 직접 호출은 BGNJ_API wrapper 우회. 인증/CORS/error log 보장 안 됨. api.js / data.js 만 허용. 코드베이스 위반 0.",
+      "🔍 정보성 룰 'equality_loose' — `==` 또는 `!=` 사용 카운트. `=== / !==` 권장. 현재 11 건 (대부분 `== null` idiom).",
+      "🔍 정보성 룰 'large_file' — 8000 줄 초과 파일. 현재 pages/AuthAdminPage.jsx 8672 줄 (분할 권장 — 차후 사이클).",
+      "🔍 보고 출력 형식 — 정보성 룰별 그룹화 + 룰별 첫 3 건만 노출 (이전엔 TODO 만 5 건 출력).",
+      "📦 cache-buster — `?v=00.061.000`.",
+    ],
+    context: "백로그 v00.061 후보 '추가 lint 룰' 처리. direct_fetch 차단으로 BGNJ_API 우회 방지. equality_loose / large_file 은 정보성으로 시작 (= idiom 허용 범위 결정 후 차단 승격 가능). large_file 알람으로 AuthAdminPage 분할 우선순위 가시화 — 추후 사이클에서 별도 admin/ 디렉터리로 컴포넌트 분할 고려. 다음 사이클(v00.062) 후보: ★ 서버 endpoint reportCount/likesReceived 정확화 (워커 배포 동반).",
+  },
+  {
     version: "00.060.000",
     date: "2026-05-01",
     summary: "🖼 OG 이미지 관리 UI 명시 카드 — OgPreviewBlock 신설 (라이브 미리보기 + 플랫폼 호환성 + 업로드 안내).",
@@ -3036,28 +3051,35 @@ const LectureAdminPanel = ({ go }) => {
     refresh();
   };
 
-  const addNewLecture = () => {
+  const addNewLecture = async () => {
     const id = `lecture-${Date.now()}`;
     const now = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // +1주
     const pad = (n) => String(n).padStart(2, '0');
     const startsAt = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T19:00:00+09:00`;
     const next = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} 19:00`;
-    window.BGNJ_LECTURES.saveLecture({
-      id,
-      title: '새 강연',
-      topic: '강연 주제를 입력하세요',
-      venue: '장소',
-      host: '뱅기노자',
-      next,
-      startsAt,
-      durationMinutes: 90,
-      capacity: 30,
-      price: 0,
-      note: '강연 안내를 입력하세요.',
-    });
-    window.BGNJ_AUDIT?.log({ action: 'lecture.create', target: `lecture:${id}` });
-    refresh();
-    startEdit(window.BGNJ_LECTURES.getLecture(id));
+    try {
+      // saveLecture 는 async — await 으로 서버 저장 + 캐시 refresh 완료 후 lecture 객체 반환.
+      // 이전엔 await 없이 호출 후 동기 getLecture(id) 가 null 을 반환 → startEdit(null) → 'startsAt' 읽기 오류.
+      const created = await window.BGNJ_LECTURES.saveLecture({
+        id,
+        title: '새 강연',
+        topic: '강연 주제를 입력하세요',
+        venue: '장소',
+        host: '뱅기노자',
+        next,
+        startsAt,
+        durationMinutes: 90,
+        capacity: 30,
+        price: 0,
+        note: '강연 안내를 입력하세요.',
+      });
+      try { await window.BGNJ_AUDIT?.log?.({ action: 'lecture.create', target: `lecture:${id}` }); } catch {}
+      refresh();
+      if (created) startEdit(created);
+      else alert('강연 생성 후 객체를 가져오지 못했습니다. 페이지를 새로고침해 주세요.');
+    } catch (err) {
+      alert('강연 생성 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
   };
 
   return (
