@@ -1028,7 +1028,8 @@ const TourAdminPanel = ({ go }) => {
     setContentEditingId(t.id);
     setContentSchedule(Array.isArray(ovr.schedule) ? ovr.schedule.slice() : []);
     setContentPrep(Array.isArray(ovr.prep) ? ovr.prep.slice() : []);
-    setContentCover(ovr.coverDataUri || '');
+    // v00.081 — D1 cover_url 우선, site_content_kv legacy 폴백.
+    setContentCover(t.coverUrl || ovr.coverDataUri || '');
     setContentMsg('');
   };
   const cancelContentEdit = () => {
@@ -1041,11 +1042,18 @@ const TourAdminPanel = ({ go }) => {
       const tourPages = sc.tourPages || {};
       const cleanS = contentSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
       const cleanP = contentPrep.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
+      // v00.081 — schedule / prep 만 site_content_kv 에. cover 는 D1 (tours.cover_url) 로 분기 저장.
+      // 기존 site_content_kv.tourPages[id].coverDataUri legacy 는 D1 비면 폴백으로 계속 동작.
       const next = { ...tourPages, [contentEditingId]: {
         schedule: cleanS, prep: cleanP,
-        coverDataUri: contentCover || undefined,
       } };
       await window.BGNJ_SITE_CONTENT.saveSection('tourPages', next);
+      // 커버는 D1 에 직접 저장 — saveTour 로 cover_url 패치.
+      try {
+        await window.BGNJ_TOURS.saveTour({ id: contentEditingId, coverUrl: contentCover || '' });
+      } catch (err) {
+        console.warn('[v00.081] cover_url save 실패 — site_content fallback 사용 가능', err);
+      }
       setContentMsg('저장됨 — 투어 페이지에 즉시 반영.');
       setTimeout(() => setContentMsg(''), 2500);
       refresh();

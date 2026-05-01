@@ -104,13 +104,8 @@
 - **동기:** dataURI 인라인 → D1 응답 / localStorage 부담. 첨부 제한(10MB×3) 도 R2 도입 시 완화 가능.
 - **status:** pending
 
-### ⏳ v00.081 — 투어 schema `cover_url` 컬럼
-- 워커: D1 schema migration (`ALTER TABLE tours ADD COLUMN cover_url TEXT`)
-- 워커: `tourRow` 매퍼 + `saveTour` payload 에 cover_url 포함
-- 클라이언트: `site_content_kv.tourPages[id].coverDataUri` 우회 폐기 (또는 v00.080 R2 와 결합)
-- **차단:** ★ wrangler d1 execute + deploy
-- **동기:** v00.070 에서 site_content_kv 우회로 임시 처리. 정식 컬럼화 + R2 와 결합 시 깔끔.
-- **status:** pending — v00.080 와 묶어 한 deploy 로 처리 권장.
+### ✅ v00.081 — 투어 schema `cover_url` 컬럼
+- 완료: D1 ALTER TABLE + 워커 tourRow/handleTourCreate/handleTourPatch + ★ wrangler deploy (e26bcb4c) + 클라 _toTour + WangsanamTourPage 우선순위 + TourAdminPanel 분기 저장. legacy site_content fallback 유지.
 
 ---
 
@@ -163,4 +158,5 @@
 - **v00.076** ✅ Tiptap CSS 보강 — 14 extension 시각 스타일 일괄 (commit `5a918f7`)
 - **v00.077** ✅ useModalGuard 일괄 적용 — 5 모달 ESC+body lock+popstate 통일 (commit `bddd796`)
 - **v00.078** ✅ AuthAdminPage 2차 분할 — AdminContentEditors.jsx 1300 줄 추출 (commit `7249dc5`)
-- **v00.079** ✅ legacy `bgnj_comments` 제거 + storage v6 + ★ wrangler deploy v00.062 metrics endpoint 활성화 (commit 다음 sha)
+- **v00.079** ✅ legacy `bgnj_comments` 제거 + storage v6 + ★ wrangler deploy v00.062 metrics endpoint 활성화 (commit `5132fb5`)
+- **v00.081** ✅ 투어 D1 `cover_url` 컬럼 마이그레이션 + ★ wrangler deploy (commit 다음 sha)

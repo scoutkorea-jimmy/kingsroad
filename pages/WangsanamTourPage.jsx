@@ -147,9 +147,9 @@ const TourPage = ({ go, user }) => {
         <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:60}} className="tour-grid">
           <div>
             {(() => {
-              // v00.070 — site_content_kv.tourPages[tour.id].coverDataUri 가 있으면 표시, 없으면 placeholder.
+              // v00.081 — 우선순위: D1.cover_url (tour.coverUrl) > site_content_kv.tourPages[id].coverDataUri (v00.070 legacy) > placeholder.
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
-              const coverUri = sc.tourPages?.[tour.id]?.coverDataUri || '';
+              const coverUri = tour.coverUrl || sc.tourPages?.[tour.id]?.coverDataUri || '';
               if (coverUri) {
                 return (
                   <div style={{aspectRatio:'16/10', marginBottom:32, overflow:'hidden', borderRadius:2, background:'var(--bg-2)'}}>

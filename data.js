@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.079.000",
+  version: "00.081.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -1948,6 +1948,8 @@ window.BGNJ_TOURS = {
       price, priceNumber: price,
       desc: r.description || r.desc || '',
       hidden: !!r.hidden,
+      // v00.081 — D1 cover_url 컬럼. 비면 site_content_kv.tourPages[id].coverDataUri 폴백 (legacy).
+      coverUrl: r.cover_url || r.coverUrl || '',
     };
   },
   async refresh({ includeHidden } = {}) {

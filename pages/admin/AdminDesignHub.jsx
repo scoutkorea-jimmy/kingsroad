@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.081.000",
+    date: "2026-05-01",
+    summary: "🚌 투어 D1 cover_url 컬럼 마이그레이션 — 워커 schema + tourRow + 클라이언트 _toTour + 라이브 cover 렌더 + admin 쓰기 분기. site_content_kv.tourPages legacy 폴백 유지.",
+    details: [
+      "🗄 D1 ALTER TABLE — `tours` 에 cover_url TEXT 컬럼 추가 (banginoja-db remote, ICN colo).",
+      "🛠 워커 — tourRow 에 coverUrl 패스스루. handleTourCreate 에 cover_url 컬럼 INSERT. handleTourPatch fieldMap 에 coverUrl→cover_url 매핑.",
+      "★ wrangler deploy — Version e26bcb4c. cover_url INSERT/UPDATE/SELECT 활성화.",
+      "🛠 클라이언트 _toTour — coverUrl 패스스루 (D1 cover_url 우선, site_content fallback 은 라이브 페이지 측에서).",
+      "🛠 WangsanamTourPage — 우선순위: tour.coverUrl (D1) > sc.tourPages[id].coverDataUri (v00.070 legacy) > placeholder.",
+      "🛠 TourAdminPanel — startContentEdit 가 D1 우선으로 cover 로드. saveContentEdit 가 schedule/prep 은 site_content, cover 는 BGNJ_TOURS.saveTour({coverUrl}) 로 분기 저장.",
+      "ℹ legacy site_content_kv.tourPages[id].coverDataUri 는 자동 마이그레이션 X — 기존 업로드 본은 그대로 표시되며, 다시 저장 시 D1 으로 이동.",
+      "📦 cache-buster — `?v=00.081.000` (20곳).",
+      "ℹ 사이클 번호 점프 (079→081): R2 가 v00.080 슬롯 점유 — 더 큰 외부 의존이라 마지막에 처리. cover_url 은 D1-only 라 먼저 진행.",
+    ],
+    context: "v00.070 의 site_content_kv.tourPages[id].coverDataUri 우회를 정식 D1 컬럼으로 마이그레이션. 데이터 모델 정합 (cover 는 투어 entity 의 일부 → D1 columns). schedule/prep 은 운영자 메타(편집 빈도 ↑, 임시 override 성격) 라 site_content_kv 유지가 적절. dataURI 인라인은 그대로 — D1 TEXT 컬럼 (사실상 무제한). R2 마이그레이션은 v00.080 사이클로 분리.",
+  },
+  {
     version: "00.079.000",
     date: "2026-05-01",
     summary: "🧹 legacy `bgnj_comments` 키 제거 — D1.comments 단일 source. storage v6-comments-dead 마이그레이션. 워커 미배포 v00.062 metrics endpoint 디플로이.",
