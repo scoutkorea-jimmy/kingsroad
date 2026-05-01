@@ -180,6 +180,10 @@
 :root[data-theme="dark"] tbody tr:hover { background: var(--bg-3); }
 :root[data-theme="dark"] th,
 :root[data-theme="dark"] td { border-color: var(--line); }
+/* 히어로 편집 패널 — 좁은 화면에서는 미리보기를 아래로 (1단) */
+@media (max-width: 1100px) {
+  .hero-editor-grid { grid-template-columns: 1fr !important; }
+}
 /* 테마 토글 버튼 */
 .theme-toggle {
   display: inline-flex; align-items: center; gap: 6px;

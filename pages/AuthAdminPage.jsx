@@ -468,6 +468,22 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.054.000",
+    date: "2026-05-01",
+    summary: "🎚 관리자 '히어로' 탭 — 홈페이지 히어로의 콘텐츠 8개 항목 + 스타일 4그룹(eyebrow/title/subtitle/cta) GUI 편집 + 라이브 미리보기.",
+    details: [
+      "🎚 새 탭 '히어로' (운영설정 그룹) — HeroEditorPanel 컴포넌트 신설. 좌측 콘텐츠 입력 + 스타일 트윗, 우측 라이브 미리보기 sticky 카드 (≤1100px 1단).",
+      "🎚 콘텐츠 입력 8 종 — eyebrow / title1 / title2 / title3 / subtitle / mapHint / ctaPrimary / ctaSecondary. 빈 값이면 default 사용.",
+      "🎚 스타일 트윗 — eyebrow(폰트크기/굵기/자간/색상/대소문자), title(폰트크기/굵기/행간/자간/색상/강조색상/정렬), subtitle(폰트크기/굵기/행간/색상/최대너비), cta(굵기). 슬라이더+숫자 입력 동시.",
+      "🎚 BGNJ_HERO_STYLE() 헬퍼 + BGNJ_HERO_STYLE_DEFAULT 신설 (data.js). site_content_kv.heroStyle 오버라이드 + 코드 default 머지. 일부 필드만 오버라이드 가능.",
+      "🎚 HomePage Hero 가 BGNJ_HERO_STYLE() 결과를 인라인 스타일로 적용 — h1/eyebrow/subtitle/CTA 모두. 정렬(left/center/right)이 텍스트와 버튼군 동시 정렬.",
+      "🎚 mapHint 활용 — 기존 하드코드 '지도에서 여행지 찾기 →' 버튼 텍스트가 hero.mapHint 로 편집 가능.",
+      "🎚 그룹별 default 복원 + 전체 default 복원 + 즉시 저장. 미리보기는 draft 변경 즉시 반영.",
+      "📦 cache-buster — `?v=00.054.000`.",
+    ],
+    context: "사용자 요청 '관리자페이지에서 히어로페이지의 항목들을 하나하나 모두 수정할수있는 탭을 만들어주고, 그 탭의 항목들을 트윅으로 내용뿐만 아니라 스타일로 변경할 수 있도록 만들것'. site_content_kv 패턴을 재사용해 워커 변경 없이 구현 — hero(콘텐츠) / heroStyle(스타일) 두 섹션 분리. 라이브 미리보기는 sticky 카드로 항상 함께 보이도록 (≤1100px 에선 아래로 1단). 다음 사이클(v00.055) 후보: ① 플러그인 업데이트 점검 (Wrangler/React/Babel/Tiptap 의존성 최신화) ② 히어로 외 다른 섹션도 동일 패턴(예: 통계 카드, 푸터) 으로 확장 ③ heroStyle 의 모바일 별도 트윗 (현재는 fontSize 만 clamp 자동, 행간/자간은 모바일 동일).",
+  },
+  {
     version: "00.053.000",
     date: "2026-05-01",
     summary: "🩹 다크 모드 가독성 핫픽스 + 🗺 KoreaMap stroke 강조 + 📊 자동승급 기준을 회원등급 표 인라인 통합 + 🖼 OG 가벼운 로고-only.",
@@ -4239,6 +4255,303 @@ const RecommendationsAdminPanel = () => {
   );
 };
 
+// === Hero Editor (v00.054) =========================================
+// 관리자 '히어로' 탭 — 홈페이지 히어로 영역의 모든 콘텐츠 + 스타일을 GUI 로 편집.
+// 콘텐츠 → site_content_kv.hero / 스타일 → site_content_kv.heroStyle 두 섹션 분리 저장.
+// 라이브 미리보기는 HomePage Hero 와 동일 마크업/스타일로 즉시 반영.
+const HERO_COLOR_OPTIONS = [
+  { value: '--ink',           label: '메인 잉크 (--ink)' },
+  { value: '--ink-2',         label: '보조 잉크 (--ink-2)' },
+  { value: '--ink-3',         label: '메타 잉크 (--ink-3)' },
+  { value: '--primary',       label: '옐로우 (--primary)' },
+  { value: '--primary-active',label: '딥 옐로우 (--primary-active)' },
+  { value: '--secondary',     label: '카라멜 (--secondary)' },
+  { value: '--tertiary',      label: '슬레이트 (--tertiary)' },
+];
+const HERO_WEIGHTS  = [300, 400, 500, 600, 700, 800, 900];
+const HERO_ALIGNS   = ['left', 'center', 'right'];
+const HERO_TFORMS   = ['none', 'uppercase', 'lowercase', 'capitalize'];
+
+const HeroEditorPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const [contentDraft, setContentDraft] = React.useState(() => ({ ...(sc.hero || {}) }));
+  const [styleDraft,   setStyleDraft]   = React.useState(() => ({ ...(sc.heroStyle && typeof sc.heroStyle === 'object' ? sc.heroStyle : {}) }));
+  const [msg, setMsg] = React.useState('');
+
+  const updateContent = (k, v) => setContentDraft((d) => ({ ...d, [k]: v }));
+  const updateStyle = (group, key, value) =>
+    setStyleDraft((d) => ({ ...d, [group]: { ...(d[group] || {}), [key]: value } }));
+  const resetGroup = (group) =>
+    setStyleDraft((d) => { const next = { ...d }; delete next[group]; return next; });
+
+  const eff = React.useMemo(() => {
+    const def = window.BGNJ_HERO_STYLE_DEFAULT;
+    return {
+      eyebrow:  { ...def.eyebrow,  ...(styleDraft.eyebrow  || {}) },
+      title:    { ...def.title,    ...(styleDraft.title    || {}) },
+      subtitle: { ...def.subtitle, ...(styleDraft.subtitle || {}) },
+      cta:      { ...def.cta,      ...(styleDraft.cta      || {}) },
+    };
+  }, [styleDraft]);
+
+  const save = async () => {
+    try {
+      await window.BGNJ_SITE_CONTENT.saveSection('hero', contentDraft);
+      await window.BGNJ_SITE_CONTENT.saveSection('heroStyle', styleDraft);
+      setTick((v) => v + 1);
+      setMsg('저장되었습니다 — 홈에 즉시 반영됩니다.');
+      setTimeout(() => setMsg(''), 2500);
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+  const resetAll = async () => {
+    if (!confirm('히어로 콘텐츠와 스타일을 모두 default 로 복원합니다. 진행할까요?')) return;
+    try {
+      await window.BGNJ_SITE_CONTENT.resetSection('hero');
+      await window.BGNJ_SITE_CONTENT.resetSection('heroStyle');
+      setContentDraft({});
+      setStyleDraft({});
+      setTick((v) => v + 1);
+      setMsg('default 로 복원됨.');
+      setTimeout(() => setMsg(''), 2500);
+    } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  const Field = ({ label, children, hint }) => (
+    <label style={{display:'block', marginBottom:14}}>
+      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:6}}>{label}</div>
+      {children}
+      {hint && <div className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.5}}>{hint}</div>}
+    </label>
+  );
+  const Input = (props) => (
+    <input {...props} className="field-input" style={{width:'100%', padding:'8px 10px', fontSize:13, ...props.style}}/>
+  );
+  const TextArea = (props) => (
+    <textarea {...props} className="field-input" style={{width:'100%', padding:'8px 10px', fontSize:13, minHeight:64, fontFamily:'inherit', resize:'vertical', ...props.style}}/>
+  );
+  const Select = ({ value, options, onChange, ...rest }) => (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="field-input"
+      style={{width:'100%', padding:'8px 10px', fontSize:13}} {...rest}>
+      {options.map((o) => typeof o === 'object'
+        ? <option key={o.value} value={o.value}>{o.label}</option>
+        : <option key={o} value={o}>{o}</option>)}
+    </select>
+  );
+  const NumberRange = ({ value, min, max, step, onChange }) => (
+    <div style={{display:'flex', gap:8, alignItems:'center'}}>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Number(e.target.value))} style={{flex:1}}/>
+      <input type="number" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="field-input" style={{width:80, padding:'4px 6px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
+    </div>
+  );
+  const StyleGroup = ({ title, group, children }) => (
+    <div className="card" style={{padding:16, marginBottom:14}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+        <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>{title}</div>
+        <button type="button" className="btn btn-small" onClick={() => resetGroup(group)} style={{fontSize:10}}>이 그룹 default</button>
+      </div>
+      {children}
+    </div>
+  );
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:16, lineHeight:1.8}}>
+        홈페이지 <strong className="gold">히어로 영역</strong> 의 콘텐츠와 스타일을 직접 편집합니다.
+        저장 시 즉시 홈에 반영됩니다 (관리자 외 회원에게도 영향). default 로 복원하려면 우측 상단 버튼.
+      </p>
+
+      <div style={{display:'grid', gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)', gap:20}} className="hero-editor-grid">
+        {/* 좌: 콘텐츠 + 스타일 */}
+        <div>
+          <h3 className="ko-serif" style={{fontSize:16, marginBottom:10}}>콘텐츠</h3>
+          <div className="card" style={{padding:16, marginBottom:20}}>
+            <Field label="EYEBROW (소제목)">
+              <Input value={contentDraft.eyebrow ?? ''} onChange={(e) => updateContent('eyebrow', e.target.value)}
+                placeholder="BANGINOJA · 뱅기타고 노자"/>
+            </Field>
+            <Field label="TITLE 1 (대제목 1행)">
+              <Input value={contentDraft.title1 ?? ''} onChange={(e) => updateContent('title1', e.target.value)} placeholder="뱅기타고"/>
+            </Field>
+            <Field label="TITLE 2 (대제목 2행 — 옐로우 강조)">
+              <Input value={contentDraft.title2 ?? ''} onChange={(e) => updateContent('title2', e.target.value)} placeholder="한국을"/>
+            </Field>
+            <Field label="TITLE 3 (대제목 3행)">
+              <Input value={contentDraft.title3 ?? ''} onChange={(e) => updateContent('title3', e.target.value)} placeholder="느끼다"/>
+            </Field>
+            <Field label="SUBTITLE (본문)">
+              <TextArea value={contentDraft.subtitle ?? ''} onChange={(e) => updateContent('subtitle', e.target.value)}
+                placeholder="궁궐 답사부터 …"/>
+            </Field>
+            <Field label="MAP HINT (지도 버튼 텍스트)">
+              <Input value={contentDraft.mapHint ?? ''} onChange={(e) => updateContent('mapHint', e.target.value)}
+                placeholder="지도에서 여행지 찾기 →"/>
+            </Field>
+            <Field label="CTA PRIMARY (커뮤니티 버튼)">
+              <Input value={contentDraft.ctaPrimary ?? ''} onChange={(e) => updateContent('ctaPrimary', e.target.value)} placeholder="커뮤니티 참여하기"/>
+            </Field>
+            <Field label="CTA SECONDARY (투어 버튼)" hint="비워두면 default 사용. 모든 트윗은 즉시 미리보기에 반영.">
+              <Input value={contentDraft.ctaSecondary ?? ''} onChange={(e) => updateContent('ctaSecondary', e.target.value)} placeholder="투어 프로그램 보기"/>
+            </Field>
+          </div>
+
+          <h3 className="ko-serif" style={{fontSize:16, marginBottom:10}}>스타일 트윗</h3>
+          <StyleGroup title="EYEBROW 스타일" group="eyebrow">
+            <Field label={`폰트 크기 · ${eff.eyebrow.fontSize}px`}>
+              <NumberRange value={eff.eyebrow.fontSize} min={8} max={24} step={1}
+                onChange={(v) => updateStyle('eyebrow', 'fontSize', v)}/>
+            </Field>
+            <Field label="굵기">
+              <Select value={String(eff.eyebrow.fontWeight)} options={HERO_WEIGHTS.map(String)}
+                onChange={(v) => updateStyle('eyebrow', 'fontWeight', Number(v))}/>
+            </Field>
+            <Field label={`자간 · ${eff.eyebrow.letterSpacing}em`}>
+              <NumberRange value={eff.eyebrow.letterSpacing} min={-0.05} max={0.5} step={0.01}
+                onChange={(v) => updateStyle('eyebrow', 'letterSpacing', v)}/>
+            </Field>
+            <Field label="색상">
+              <Select value={eff.eyebrow.color} options={HERO_COLOR_OPTIONS}
+                onChange={(v) => updateStyle('eyebrow', 'color', v)}/>
+            </Field>
+            <Field label="대소문자">
+              <Select value={eff.eyebrow.textTransform || 'uppercase'} options={HERO_TFORMS}
+                onChange={(v) => updateStyle('eyebrow', 'textTransform', v)}/>
+            </Field>
+          </StyleGroup>
+          <StyleGroup title="TITLE 스타일" group="title">
+            <Field label={`최대 폰트 크기 · ${eff.title.fontSize}px (모바일은 36px clamp)`}>
+              <NumberRange value={eff.title.fontSize} min={32} max={120} step={1}
+                onChange={(v) => updateStyle('title', 'fontSize', v)}/>
+            </Field>
+            <Field label="굵기">
+              <Select value={String(eff.title.fontWeight)} options={HERO_WEIGHTS.map(String)}
+                onChange={(v) => updateStyle('title', 'fontWeight', Number(v))}/>
+            </Field>
+            <Field label={`행간 · ${eff.title.lineHeight}`}>
+              <NumberRange value={eff.title.lineHeight} min={0.9} max={1.6} step={0.01}
+                onChange={(v) => updateStyle('title', 'lineHeight', v)}/>
+            </Field>
+            <Field label={`자간 · ${eff.title.letterSpacing}em`}>
+              <NumberRange value={eff.title.letterSpacing} min={-0.08} max={0.1} step={0.005}
+                onChange={(v) => updateStyle('title', 'letterSpacing', v)}/>
+            </Field>
+            <Field label="색상">
+              <Select value={eff.title.color} options={HERO_COLOR_OPTIONS}
+                onChange={(v) => updateStyle('title', 'color', v)}/>
+            </Field>
+            <Field label="강조 색상 (TITLE 2)">
+              <Select value={eff.title.accentColor} options={HERO_COLOR_OPTIONS}
+                onChange={(v) => updateStyle('title', 'accentColor', v)}/>
+            </Field>
+            <Field label="정렬 (히어로 전체)">
+              <Select value={eff.title.textAlign || 'left'} options={HERO_ALIGNS}
+                onChange={(v) => updateStyle('title', 'textAlign', v)}/>
+            </Field>
+          </StyleGroup>
+          <StyleGroup title="SUBTITLE 스타일" group="subtitle">
+            <Field label={`폰트 크기 · ${eff.subtitle.fontSize}px`}>
+              <NumberRange value={eff.subtitle.fontSize} min={12} max={28} step={1}
+                onChange={(v) => updateStyle('subtitle', 'fontSize', v)}/>
+            </Field>
+            <Field label="굵기">
+              <Select value={String(eff.subtitle.fontWeight)} options={HERO_WEIGHTS.map(String)}
+                onChange={(v) => updateStyle('subtitle', 'fontWeight', Number(v))}/>
+            </Field>
+            <Field label={`행간 · ${eff.subtitle.lineHeight}`}>
+              <NumberRange value={eff.subtitle.lineHeight} min={1.2} max={2.4} step={0.05}
+                onChange={(v) => updateStyle('subtitle', 'lineHeight', v)}/>
+            </Field>
+            <Field label="색상">
+              <Select value={eff.subtitle.color} options={HERO_COLOR_OPTIONS}
+                onChange={(v) => updateStyle('subtitle', 'color', v)}/>
+            </Field>
+            <Field label={`최대 너비 · ${eff.subtitle.maxWidth}px`}>
+              <NumberRange value={eff.subtitle.maxWidth} min={320} max={800} step={10}
+                onChange={(v) => updateStyle('subtitle', 'maxWidth', v)}/>
+            </Field>
+          </StyleGroup>
+          <StyleGroup title="CTA 버튼 스타일" group="cta">
+            <Field label="굵기">
+              <Select value={String(eff.cta.fontWeight)} options={HERO_WEIGHTS.map(String)}
+                onChange={(v) => updateStyle('cta', 'fontWeight', Number(v))}/>
+            </Field>
+          </StyleGroup>
+
+          <div style={{display:'flex', gap:10, marginTop:18, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-gold" onClick={save}>저장</button>
+            <button type="button" className="btn btn-small" onClick={resetAll} style={{borderColor:'var(--line-2)'}}>전체 default 복원</button>
+            {msg && <span role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, alignSelf:'center'}}>{msg}</span>}
+          </div>
+        </div>
+
+        {/* 우: 라이브 미리보기 */}
+        <div>
+          <h3 className="ko-serif" style={{fontSize:16, marginBottom:10}}>라이브 미리보기</h3>
+          <div className="card" style={{padding:0, overflow:'hidden', position:'sticky', top:24}}>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'8px 12px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
+              PREVIEW · 실제 홈 히어로와 동일 마크업
+            </div>
+            <div style={{padding:'40px 24px 32px', textAlign: eff.title.textAlign || 'left'}}>
+              <div style={{
+                fontFamily:'var(--font-mono)',
+                fontSize: eff.eyebrow.fontSize, fontWeight: eff.eyebrow.fontWeight,
+                letterSpacing: `${eff.eyebrow.letterSpacing}em`,
+                color: `var(${eff.eyebrow.color})`,
+                textTransform: eff.eyebrow.textTransform || 'uppercase',
+                marginBottom: 16,
+              }}>
+                {contentDraft.eyebrow || 'BANGINOJA · 뱅기타고 노자'}
+              </div>
+              <h1 style={{
+                fontFamily:'var(--font-display)',
+                fontSize: `clamp(28px, 5vw, ${eff.title.fontSize}px)`,
+                fontWeight: eff.title.fontWeight,
+                lineHeight: eff.title.lineHeight,
+                letterSpacing: `${eff.title.letterSpacing}em`,
+                marginBottom: 16,
+                color: `var(${eff.title.color})`,
+              }}>
+                {contentDraft.title1 || '뱅기타고'}<br/>
+                <span style={{color: `var(${eff.title.accentColor})`}}>{contentDraft.title2 || '한국을'}</span><br/>
+                {contentDraft.title3 || '느끼다'}
+              </h1>
+              <p style={{
+                fontSize: eff.subtitle.fontSize,
+                fontWeight: eff.subtitle.fontWeight,
+                lineHeight: eff.subtitle.lineHeight,
+                color: `var(${eff.subtitle.color})`,
+                maxWidth: eff.subtitle.maxWidth,
+                marginBottom: 22,
+                marginLeft: eff.title.textAlign === 'center' ? 'auto' : undefined,
+                marginRight: eff.title.textAlign === 'center' ? 'auto' : undefined,
+              }}>
+                {contentDraft.subtitle || '궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다.'}
+              </p>
+              <div style={{
+                display:'flex', gap:10, flexWrap:'wrap',
+                justifyContent: eff.title.textAlign === 'center' ? 'center' : (eff.title.textAlign === 'right' ? 'flex-end' : 'flex-start'),
+              }}>
+                <button type="button" className="btn btn-gold btn-small" style={{fontWeight: eff.cta.fontWeight}}>
+                  {contentDraft.mapHint || '지도에서 여행지 찾기 →'}
+                </button>
+                <button type="button" className="btn btn-small" style={{fontWeight: eff.cta.fontWeight}}>
+                  {contentDraft.ctaPrimary || '커뮤니티 참여하기'}
+                </button>
+                <button type="button" className="btn btn-small" style={{fontWeight: eff.cta.fontWeight}}>
+                  {contentDraft.ctaSecondary || '투어 프로그램 보기'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SiteContentAdminPanel = () => {
   const [tick, setTick] = React.useState(0);
   const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
@@ -5817,7 +6130,7 @@ const AdminPage = ({ go }) => {
     { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성", "추천 여행지"] },
     { group: "회원관리",      items: ["회원", "회원 등급"] },
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
-    { group: "운영설정",      items: ["사이트 콘텐츠", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
+    { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보 관리", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "SEO", "설정"] },
   ];
@@ -6796,6 +7109,7 @@ const AdminPage = ({ go }) => {
         {tab === "추천 여행지" && <RecommendationsAdminPanel/>}
         {/* 카테고리 CRUD */}
         {tab === "사이트 콘텐츠" && <SiteContentAdminPanel/>}
+        {tab === "히어로" && <HeroEditorPanel/>}
         {tab === "카테고리" && <AdminCategoryPanel/>}
         {tab === "약관/개인정보" && <LegalAdminPanel/>}
         {tab === "자주 묻는 질문" && <FaqAdminPanel/>}

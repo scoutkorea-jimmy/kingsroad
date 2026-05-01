@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.053.000 · 2026-05-01 (다크 nav/sidebar 가독성 핫픽스 + 지도 stroke 강조 + 자동승급 기준 등급표 인라인 + OG 가벼움)
+> **마지막 업데이트:** v00.054.000 · 2026-05-01 (관리자 히어로 편집 탭 — 콘텐츠 + 스타일 트윗 + 라이브 미리보기)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.053)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.054)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -208,6 +208,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.051** | 2026-05-01 | 자동승급 룰 GUI 편집 (BGNJ_GRADE_RULES_EFFECTIVE) + bookmarks 키 제거 (storage v4) |
 | **v00.052** | 2026-05-01 | 다크 모드 토큰 (BGNJ_THEME · light/dark/auto) + OG 이미지 SVG fallback + KMS 라이브 토큰 카드 |
 | **v00.053** | 2026-05-01 | 다크 nav/sidebar/footer 가독성 핫픽스 + KoreaMap stroke 강조 + 자동승급 기준 등급표 인라인 + OG 로고-only |
+| **v00.054** | 2026-05-01 | 관리자 '히어로' 탭 — 콘텐츠 8 항목 + 스타일 4 그룹(eyebrow/title/subtitle/cta) GUI 편집 + 라이브 미리보기 |
 
 ---
 
@@ -232,13 +233,10 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 7. 다음 사이클 (v00.054 / v00.055) 후보
-
-**v00.054 (큰 단위 — 사용자 요청 분리):**
-1. **관리자 히어로 편집 탭** (사용자 요청) — admin 콘솔에 신규 탭 추가. 히어로의 각 항목(eyebrow/title1-3/subtitle/CTA primary/secondary/mapHint) 인라인 편집 + **스타일 트윗** (폰트 크기/굵기/정렬/컬러/spacing 등). site_content_kv.hero 와 site_content_kv.heroStyle 분리 저장.
+## 7. 다음 사이클 (v00.055) 후보
 
 **v00.055 (의존성 점검 — 사용자 요청):**
-2. **플러그인 업데이트** (사용자 요청) — Wrangler / @babel/standalone / React UMD / Tiptap ESM / @babel/parser 의존성 최신 확인 + 호환성 테스트 + 보안 advisory 검토. Wrangler 는 사용자 wrangler deploy 직전 npm install 권장.
+1. **플러그인 업데이트** (사용자 요청) — Wrangler / @babel/standalone / React UMD / Tiptap ESM / @babel/parser 의존성 최신 확인 + 호환성 테스트 + 보안 advisory 검토. Wrangler 는 사용자 wrangler deploy 직전 npm install 권장.
 
 **일반 후보 (우선순위 정렬):**
 3. **서버 endpoint reportCount/likesReceived 정확화 (워커 배포 동반)** — 현재 클라이언트 best-effort 합산. `/api/users/:id/metrics` 에서 D1 쿼리로 정확 계산 → BGNJ_GRADE_PROMO.metrics 가 prefer.

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.053.000",
+  version: "00.054.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -356,6 +356,32 @@ const DEFAULT_SITE_CONTENT = {
   // 회원등급 자동승급 룰 오버라이드 — 관리자가 GradePromotionPanel 에서 편집. 빈 객체면 코드 default(BGNJ_GRADE_RULES) 사용.
   // 형태: { reader: { posts, comments, ... }, scholar: {...} }. 일부 필드만 오버라이드 가능 (default 위에 머지).
   gradeRules: {},
+  // 히어로 스타일 트윗 — 관리자 '히어로' 탭에서 편집. 빈 그룹이면 코드 default(아래 BGNJ_HERO_STYLE_DEFAULT) 사용.
+  // 형태: { eyebrow: {...}, title: {...}, subtitle: {...}, cta: {...} }. 일부만 오버라이드 가능.
+  heroStyle: {},
+};
+
+// 히어로 스타일 default — saveSection('heroStyle', value) 가 비면 이 값을 사용.
+// HomePage Hero 가 BGNJ_HERO_STYLE() 헬퍼로 읽어 인라인 스타일에 적용.
+window.BGNJ_HERO_STYLE_DEFAULT = {
+  eyebrow:  { fontSize: 11, fontWeight: 600, letterSpacing: 0.22, color: '--ink-2', textTransform: 'uppercase' },
+  title:    { fontSize: 56, fontWeight: 900, lineHeight: 1.05, letterSpacing: -0.02, color: '--ink', accentColor: '--primary', textAlign: 'left' },
+  subtitle: { fontSize: 16, fontWeight: 500, lineHeight: 1.85, color: '--ink-2', maxWidth: 520, textAlign: 'left' },
+  cta:      { fontWeight: 600, textTransform: 'uppercase' },
+};
+// 머지된 effective 스타일 (override + default).
+window.BGNJ_HERO_STYLE = function () {
+  try {
+    const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+    const o = (sc.heroStyle && typeof sc.heroStyle === 'object') ? sc.heroStyle : {};
+    const d = window.BGNJ_HERO_STYLE_DEFAULT;
+    return {
+      eyebrow:  { ...d.eyebrow,  ...(o.eyebrow  || {}) },
+      title:    { ...d.title,    ...(o.title    || {}) },
+      subtitle: { ...d.subtitle, ...(o.subtitle || {}) },
+      cta:      { ...d.cta,      ...(o.cta      || {}) },
+    };
+  } catch { return window.BGNJ_HERO_STYLE_DEFAULT; }
 };
 
 // 게시판 분류 — 각 카테고리에 최소 등급(minLevel) 지정 시 접근 제한

@@ -219,6 +219,7 @@ const HomePage = ({ go }) => {
 
   const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);
   const hero = sc.hero || {};
+  const heroStyle = React.useMemo(() => (window.BGNJ_HERO_STYLE?.() || window.BGNJ_HERO_STYLE_DEFAULT), [scTick]);
   const recommendations = Array.isArray(sc.recommendations) ? sc.recommendations.filter(Boolean) : [];
   const [recDetail, setRecDetail] = React.useState(null);
 
@@ -258,38 +259,57 @@ const HomePage = ({ go }) => {
           <div className="hero-grid" style={{
             display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:56, alignItems:'center',
           }}>
-            {/* 좌측: 텍스트 */}
-            <div>
-              <div className="section-eyebrow">
+            {/* 좌측: 텍스트 — heroStyle 트윗(관리자 '히어로' 탭) 인라인 적용 */}
+            <div style={{textAlign: heroStyle.title.textAlign || 'left'}}>
+              <div className="section-eyebrow" style={{
+                fontSize: heroStyle.eyebrow.fontSize,
+                fontWeight: heroStyle.eyebrow.fontWeight,
+                letterSpacing: `${heroStyle.eyebrow.letterSpacing}em`,
+                color: `var(${heroStyle.eyebrow.color})`,
+                textTransform: heroStyle.eyebrow.textTransform || 'uppercase',
+              }}>
                 <span>{hero.eyebrow || "BANGINOJA · 뱅기타고 노자"}</span>
               </div>
               <h1 style={{
                 fontFamily:'var(--font-display)',
-                fontSize:'clamp(36px, 5vw, 64px)',
-                fontWeight:900,
-                lineHeight:1.05,
-                letterSpacing:'-0.02em',
+                fontSize: `clamp(36px, 5vw, ${heroStyle.title.fontSize}px)`,
+                fontWeight: heroStyle.title.fontWeight,
+                lineHeight: heroStyle.title.lineHeight,
+                letterSpacing: `${heroStyle.title.letterSpacing}em`,
                 marginBottom:22,
-                color:'var(--ink)',
+                color:`var(${heroStyle.title.color})`,
               }}>
                 {hero.title1 || "뱅기타고"}<br/>
-                <span style={{color:'var(--primary)'}}>{hero.title2 || "한국을"}</span><br/>
+                <span style={{color:`var(${heroStyle.title.accentColor})`}}>{hero.title2 || "한국을"}</span><br/>
                 {hero.title3 || "느끼다"}
               </h1>
               <p style={{
-                fontSize:16, lineHeight:1.85, color:'var(--ink-2)',
-                maxWidth:520, marginBottom:32, fontWeight:500,
+                fontSize: heroStyle.subtitle.fontSize,
+                lineHeight: heroStyle.subtitle.lineHeight,
+                color: `var(${heroStyle.subtitle.color})`,
+                maxWidth: heroStyle.subtitle.maxWidth,
+                marginBottom:32,
+                fontWeight: heroStyle.subtitle.fontWeight,
+                marginLeft: heroStyle.title.textAlign === 'center' ? 'auto' : undefined,
+                marginRight: heroStyle.title.textAlign === 'center' ? 'auto' : undefined,
               }}>
                 {hero.subtitle || "궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다."}
               </p>
-              <div style={{display:'flex', gap:12, flexWrap:'wrap', marginBottom:40}}>
-                <button className="btn btn-gold" onClick={() => setMapOpen(true)} aria-haspopup="dialog">
-                  지도에서 여행지 찾기 →
+              <div style={{
+                display:'flex', gap:12, flexWrap:'wrap', marginBottom:40,
+                justifyContent: heroStyle.title.textAlign === 'center' ? 'center' : (heroStyle.title.textAlign === 'right' ? 'flex-end' : 'flex-start'),
+                fontWeight: heroStyle.cta.fontWeight,
+              }}>
+                <button className="btn btn-gold" onClick={() => setMapOpen(true)} aria-haspopup="dialog"
+                  style={{fontWeight: heroStyle.cta.fontWeight}}>
+                  {hero.mapHint || "지도에서 여행지 찾기 →"}
                 </button>
-                <button className="btn" onClick={() => go('community')}>
+                <button className="btn" onClick={() => go('community')}
+                  style={{fontWeight: heroStyle.cta.fontWeight}}>
                   {hero.ctaPrimary || "커뮤니티 참여하기"}
                 </button>
-                <button className="btn" onClick={() => go('tour')}>
+                <button className="btn" onClick={() => go('tour')}
+                  style={{fontWeight: heroStyle.cta.fontWeight}}>
                   {hero.ctaSecondary || "투어 프로그램 보기"}
                 </button>
               </div>
