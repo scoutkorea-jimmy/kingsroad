@@ -1274,7 +1274,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
         </header>
 
         {post.body?.html ? (
-          <div className="post-body" dangerouslySetInnerHTML={{__html: post.body.html}}/>
+          <div className="post-body" dangerouslySetInnerHTML={{__html: window.BGNJ_SAFE_HTML(post.body.html)}}/>
         ) : (
           <div className="post-body">
             <p>어제 창덕궁 후원 야간 답사를 다녀왔습니다. 원래 낮에만 가봤던 곳이어서, 해가 떨어진 후의 공간이 어떻게 다르게 다가올지 반신반의했는데요.</p>

@@ -14,10 +14,14 @@ bucket_name = "banginoja-media"
 
 [vars]
 # localhost / 127.0.0.1 의 임의 포트는 코드 측에서 자동 허용(isLocalDevOrigin).
-# HTTP 항목은 SSL 미도입 기간의 임시 허용 — HTTPS 도입 후 제거 권장.
-ALLOWED_ORIGINS = "https://bgnj.net,https://www.bgnj.net,https://scoutkorea-jimmy.github.io,http://bgnj.net,http://www.bgnj.net,http://scoutkorea-jimmy.github.io"
+# v00.109 — HTTP origin 제거 (보안 audit MEDIUM). HTTPS 만 허용.
+# 옛 http:// 항목은 SSL 미도입 시기 임시 허용이었음 (v00.064~v00.108). 이제 SSL 활성화 후 차단.
+# 만약 SSL 미도입 환경 (예: 로컬 IP 직접 접근) 이면 isLocalDevOrigin 로직이 자동 허용.
+ALLOWED_ORIGINS = "https://bgnj.net,https://www.bgnj.net,https://scoutkorea-jimmy.github.io"
 SESSION_TTL_SECONDS = "2592000"
 # 이 이메일로 회원가입하면 자동으로 is_admin=1로 등록된다 (한 번만 가능 — 두 번째 가입 시도는 409).
+# ★ TODO (v00.110+): Cloudflare Secrets 으로 이관 권장 (`wrangler secret put ADMIN_BOOTSTRAP_EMAIL`).
 ADMIN_BOOTSTRAP_EMAIL = "admin@admin.admin"
 # 슈퍼 관리자 — 콤마로 구분된 이메일은 로그인/세션 조회 시점에 항상 is_admin=1, grade_id='admin' 으로 강제된다.
+# ★ TODO (v00.110+): Cloudflare Secrets 으로 이관 (`wrangler secret put SUPER_ADMIN_EMAILS`).
 SUPER_ADMIN_EMAILS = "scoutkorea@kakao.com"

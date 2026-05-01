@@ -14,7 +14,7 @@ const LegalPage = ({ go, slug }) => {
           </div>
         )}
         <article className="post-body" style={{maxWidth:'68ch', margin:'0 auto'}}
-          dangerouslySetInnerHTML={{ __html: doc.body || '<p class="dim">아직 등록된 내용이 없습니다.</p>' }}/>
+          dangerouslySetInnerHTML={{ __html: window.BGNJ_SAFE_HTML(doc.body || '<p class="dim">아직 등록된 내용이 없습니다.</p>') }}/>
         <div style={{marginTop:60, paddingTop:32, borderTop:'1px solid var(--line-2)', display:'flex', justifyContent:'space-between', gap:12, flexWrap:'wrap'}}>
           <button type="button" className="btn btn-small" onClick={() => go('home')}>← 홈으로</button>
           {otherDoc && (

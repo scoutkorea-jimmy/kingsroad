@@ -148,7 +148,7 @@ const ColumnPage = ({ go, user }) => {
               {c.excerpt}
             </p>
             {c.body?.html ? (
-              <div dangerouslySetInnerHTML={{ __html: c.body.html }} />
+              <div dangerouslySetInnerHTML={{ __html: window.BGNJ_SAFE_HTML(c.body.html) }} />
             ) : (
               <>
                 <p style={{marginBottom:28}}>

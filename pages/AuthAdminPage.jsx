@@ -24,7 +24,7 @@ const LegalModal = ({ slug, onClose }) => {
           <button type="button" className="btn btn-small" onClick={onClose}>닫기</button>
         </div>
         <div className="legal-body" style={{fontSize:14, lineHeight:1.85, color:'var(--ink)'}}
-          dangerouslySetInnerHTML={{__html: doc.body || '<p>(준비 중)</p>'}}/>
+          dangerouslySetInnerHTML={{__html: window.BGNJ_SAFE_HTML(doc.body || '<p>(준비 중)</p>')}}/>
       </div>
     </div>
   );
@@ -3483,7 +3483,7 @@ const PostViewerModal = ({ postId, onClose }) => {
           fontFamily:'var(--font-reading)', fontSize:15, lineHeight:1.85, color:'var(--ink)',
         }}>
           {post.body?.html ? (
-            <div dangerouslySetInnerHTML={{__html: post.body.html}}/>
+            <div dangerouslySetInnerHTML={{__html: window.BGNJ_SAFE_HTML(post.body.html)}}/>
           ) : post.body?.text ? (
             <div style={{whiteSpace:'pre-wrap'}}>{post.body.text}</div>
           ) : (

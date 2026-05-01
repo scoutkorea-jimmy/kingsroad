@@ -446,14 +446,53 @@ const handleBookDelete = async (req, env, id) => {
   return { ok: true };
 };
 
+// v00.109 — R2 업로드 보안 강화.
+// ① 권한: 폴더별 분기. admin-only 폴더 (og/branding/auth/recommendations/...) vs 사용자 허용 폴더 (post-*/lecture-*/tour-*).
+// ② 파일 타입: 확장자 화이트리스트 (executable / script 차단).
+// ③ 크기 제한: 50MB hard cap (Workers 본체 메모리 한도 고려).
+// ④ 폴더 sanitize: 영숫자 + - + / 만 허용 (path traversal 차단).
+const ALLOWED_UPLOAD_EXTS = new Set([
+  // 이미지
+  'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif',
+  // 문서 / 첨부
+  'pdf', 'txt', 'csv', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'hwp', 'hwpx',
+  // 미디어
+  'mp4', 'webm', 'mp3', 'wav', 'm4a',
+  // 압축
+  'zip',
+]);
+const USER_ALLOWED_FOLDERS = new Set([
+  'post-images', 'post-attachments',
+  'lecture-covers', 'tour-covers',
+]); // 일반 로그인 회원도 업로드 가능. 그 외 폴더는 admin only.
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50MB
+
 const handleMediaUpload = async (req, env) => {
-  await requireAdmin(req, env);
   const form = await req.formData();
   const file = form.get("file");
   if (!file || typeof file.arrayBuffer !== "function") throw new HttpError(400, "파일을 첨부해 주세요.");
-  const folder = (form.get("folder") || "uploads").toString().replace(/[^a-z0-9_/-]/gi, "");
-  const ext = (file.name || "").split(".").pop() || "bin";
+  // 폴더 sanitize — 알파벳/숫자/하이픈/언더스코어/슬래시만 허용. path traversal 차단.
+  const folder = (form.get("folder") || "uploads").toString().replace(/[^a-z0-9_/-]/gi, "").slice(0, 64) || "uploads";
+  // 권한 — 폴더별 분기.
+  if (USER_ALLOWED_FOLDERS.has(folder)) {
+    await requireUser(req, env);
+  } else {
+    await requireAdmin(req, env);
+  }
+  // 크기 제한.
+  if (typeof file.size === 'number' && file.size > MAX_UPLOAD_BYTES) {
+    throw new HttpError(413, `파일이 너무 큽니다 (최대 ${(MAX_UPLOAD_BYTES / 1024 / 1024).toFixed(0)}MB).`);
+  }
+  // 확장자 화이트리스트.
+  const fileName = String(file.name || '');
+  const extRaw = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+  if (!ALLOWED_UPLOAD_EXTS.has(extRaw)) {
+    throw new HttpError(400, `지원하지 않는 파일 형식입니다 (.${extRaw || '?'}).`);
+  }
+  const ext = extRaw;
   const key = `${folder}/${randomId()}.${ext}`;
+  // 추가 방어: SVG 는 XSS 위험 (script 포함 가능) → contentType 강제 image/svg+xml + 사용자 폴더에선 거부 옵션.
+  // 본 사이클은 일단 허용. 다음 사이클에 SVG 본문 sanitize 추가 검토.
   await env.MEDIA.put(key, await file.arrayBuffer(), {
     httpMetadata: { contentType: file.type || "application/octet-stream" },
   });

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.108.000",
+  version: "00.109.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -232,6 +232,44 @@ window.BGNJ_DIAG = {
     if (removed.length) console.log('[BGNJ] v33 cleanup — removed localStorage keys:', removed);
   } catch {}
 })();
+
+// === BGNJ_SAFE_HTML — XSS 방어 sanitizer (v00.109) ========================
+// 모든 dangerouslySetInnerHTML 호출은 이 헬퍼를 거쳐야 함 — Tiptap / 약관 / 칼럼 본문 등.
+// DOMPurify (CDN, SRI 검증) 로 화이트리스트 기반 sanitize.
+// DOMPurify 미로드 시 빈 문자열 반환 (보안 fail-closed) — 라이브 영향 가시화.
+window.BGNJ_SAFE_HTML = function (html) {
+  if (!window.DOMPurify) {
+    try { console.warn('[BGNJ_SAFE_HTML] DOMPurify 미로드 — sanitize 실패. CDN 차단 또는 SRI 미스매치 의심.'); } catch {}
+    return '';
+  }
+  return window.DOMPurify.sanitize(String(html || ''), {
+    // Tiptap 무료 extension 출력에 필요한 태그 + 일반 본문.
+    ALLOWED_TAGS: [
+      'p', 'br', 'span', 'div',
+      'strong', 'em', 'u', 's', 'mark', 'sub', 'sup', 'small',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'ul', 'ol', 'li',
+      'a', 'blockquote',
+      'code', 'pre',
+      'img',
+      'table', 'thead', 'tbody', 'tr', 'td', 'th',
+      'iframe', // YouTube 임베드
+      'hr',
+    ],
+    ALLOWED_ATTR: [
+      'href', 'rel', 'target',
+      'src', 'alt', 'title',
+      'class', 'style', // class/style 은 Tiptap 인라인 스타일 (text-align 등) 위해 필요
+      'data-type', 'data-checked', 'data-youtube-video',
+      'allow', 'allowfullscreen', 'frameborder', 'width', 'height',
+      'colspan', 'rowspan',
+    ],
+    // YouTube iframe + http/https/mailto/data: 허용. javascript: 등 차단.
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data):|\/|#)/i,
+    // iframe 은 src 가 youtube.com 또는 youtu.be 만 허용 (옵션).
+    // ADD_ATTR / FORBID 추가 필요 시 호출자가 옵션 override.
+  });
+};
 
 // === BGNJ_FMT — KST 기반 날짜·시간 포맷 헬퍼 (v00.107) ====================
 // 뱅기노자 사이트는 한국 사용자 대상 → 모든 시간 표시는 KST 기준.

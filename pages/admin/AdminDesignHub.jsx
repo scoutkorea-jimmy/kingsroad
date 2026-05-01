@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.109.000",
+    date: "2026-05-01",
+    datetime: "2026-05-01T20:00:00+09:00",
+    summary: "🔒 보안 audit + 즉시 fix — DOMPurify XSS / R2 파일 검증 / HTTP origin 제거 / 워커 deploy",
+    details: [
+      "🔒 [CRITICAL XSS fix] DOMPurify 도입 (CDN + SRI 검증) + BGNJ_SAFE_HTML 헬퍼. 모든 dangerouslySetInnerHTML 5곳 sanitize 적용 — LegalModal, PostViewerModal (admin), CommunityPage post detail, LegalFaqPages, ColumnPage. 화이트리스트 태그/속성 (Tiptap 무료 extension 호환).",
+      "🔒 [HIGH R2 보안] 워커 handleMediaUpload 강화 — ① 폴더별 권한 분기 (post-*/lecture-*/tour-* 는 requireUser, 그 외 admin) — v00.103 사용자 첨부가 admin only 였던 모순 해소 ② 확장자 화이트리스트 (이미지/문서/미디어/압축 22종, 실행 파일 차단) ③ 50MB hard cap ④ 폴더명 path traversal 차단.",
+      "🔒 [MEDIUM CORS] wrangler.toml ALLOWED_ORIGINS 에서 http:// 항목 3개 제거. https-only.",
+      "🔒 [INFO] DOMPurify CDN — unpkg.com/dompurify@3.4.2 + sha384 SRI hash. 미로드 시 fail-closed (빈 문자열 반환).",
+      "★ wrangler deploy — Version c1f42817-9afa-4628-bc65-8aa88536262b.",
+      "📦 cache-buster — `?v=00.109.000` (20곳).",
+      "ℹ TODO (v00.110+): SUPER_ADMIN_EMAILS / ADMIN_BOOTSTRAP_EMAIL → Cloudflare Secrets (사용자 수동: `wrangler secret put`). brute-force rate limiting (Workers KV). CSP 헤더. SVG 본문 sanitize.",
+    ],
+    context: "사용자 요청 '보안 이슈 전반적으로 점검' → Explore agent 로 전수 audit. 결과: CRITICAL 1 (XSS) / MEDIUM 다수 (R2 검증 / HTTP origin / brute-force / SUPER_ADMIN secrets / CSP / 게시판 권한 / esm.sh SRI). 본 사이클에 즉시 fix 가능한 4종 (XSS / R2 / HTTP origin / DOMPurify CDN) 처리. 사용자 수동 작업이나 더 큰 구조적 변경 (rate limit / Secrets 이관 / CSP) 은 차후 사이클로 분리.",
+  },
+  {
     version: "00.108.000",
     date: "2026-05-01",
     datetime: "2026-05-01T19:15:00+09:00",
