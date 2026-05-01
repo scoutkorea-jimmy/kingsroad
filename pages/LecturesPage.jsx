@@ -34,7 +34,7 @@ const LecturesPage = ({ go, user }) => {
   const seats = G.call(() => window.BGNJ_LECTURES?.getSeats?.(lecture.id), { capacity: 0, taken: 0, waitlist: 0, remaining: 0 });
   const myReg = user ? G.call(() => window.BGNJ_LECTURES?.hasUserRegistered?.(lecture.id, user.id), null) : null;
 
-  const formatPrice = (p) => (p === 0 || p == null) ? "무료" : `${p.toLocaleString()}원`;
+  const formatPrice = (p) => (p === 0 || p == null) ? "무료" : window.BGNJ_FMT.won(p);
   const labelStatus = (s) => ({
     pending_payment: '입금 대기',
     confirmed: '참가 확정',

@@ -211,7 +211,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
                     }}>
                     <div className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: version === v.k ? 'var(--gold)' : 'var(--ink-3)'}}>{v.sub.toUpperCase()}</div>
                     <div className="ko-serif" style={{fontSize:20, marginTop:4}}>{v.label}</div>
-                    <div className="gold-2 ko-serif" style={{fontSize:20, marginTop:8}}>{v.price.toLocaleString()}원</div>
+                    <div className="gold-2 ko-serif" style={{fontSize:20, marginTop:8}}>{window.BGNJ_FMT.won(v.price)}</div>
                   </button>
                 ))}
               </div>
@@ -230,7 +230,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
             {/* total */}
             <div style={{padding:'24px 0', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
               <span className="mono dim-2" style={{letterSpacing:'0.2em', fontSize:11}}>TOTAL</span>
-              <span className="ko-serif gold-2" style={{fontSize:36}}>{(price * qty).toLocaleString()}원</span>
+              <span className="ko-serif gold-2" style={{fontSize:36}}>{window.BGNJ_FMT.won(price * qty)}</span>
             </div>
 
             <div style={{display:'flex', gap:12}}>
@@ -393,7 +393,7 @@ const CheckoutPage = ({ go, cart, user }) => {
               border:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'baseline',
             }}>
               <span className="dim">입금 금액</span>
-              <span className="gold ko-serif" style={{fontSize:22}}>{submittedOrder.total.toLocaleString()}원</span>
+              <span className="gold ko-serif" style={{fontSize:22}}>{window.BGNJ_FMT.won(submittedOrder.total)}</span>
             </div>
             <p className="dim" style={{fontSize:12, lineHeight:1.7, marginTop:10}}>
               입금자명에 <strong className="gold">{submittedOrder.recipient}</strong> 또는 주문번호 <strong className="gold">{submittedOrder.orderNo}</strong>를 남겨 주세요.
@@ -404,15 +404,15 @@ const CheckoutPage = ({ go, cart, user }) => {
             <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:12}}>ORDER SUMMARY</div>
             <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
               <span className="dim">『왕의길』 ({submittedOrder.version === "KR" ? "국문판" : "영문판"}) × {submittedOrder.qty}</span>
-              <span>{submittedOrder.subtotal.toLocaleString()}원</span>
+              <span>{window.BGNJ_FMT.won(submittedOrder.subtotal)}</span>
             </div>
             <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
               <span className="dim">배송비</span>
-              <span>{submittedOrder.shipping === 0 ? '무료' : `${submittedOrder.shipping.toLocaleString()}원`}</span>
+              <span>{submittedOrder.shipping === 0 ? '무료' : window.BGNJ_FMT.won(submittedOrder.shipping)}</span>
             </div>
             <div style={{display:'flex', justifyContent:'space-between', paddingTop:12, borderTop:'1px solid var(--line)', marginTop:6}}>
               <span>결제 금액</span>
-              <span className="gold-2 ko-serif" style={{fontSize:22}}>{submittedOrder.total.toLocaleString()}원</span>
+              <span className="gold-2 ko-serif" style={{fontSize:22}}>{window.BGNJ_FMT.won(submittedOrder.total)}</span>
             </div>
             <div style={{marginTop:14, paddingTop:12, borderTop:'1px dashed var(--line)', fontSize:13, lineHeight:1.7}}>
               <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>SHIPPING TO</div>
@@ -524,7 +524,7 @@ const CheckoutPage = ({ go, cart, user }) => {
 
             <div style={{display:'flex', gap:12, marginTop:24}}>
               <button type="button" className="btn btn-block" onClick={() => go("book")}>← 책 정보</button>
-              <button type="submit" className="btn btn-gold btn-block">주문 접수 · {total.toLocaleString()}원</button>
+              <button type="submit" className="btn btn-gold btn-block">주문 접수 · {window.BGNJ_FMT.won(total)}</button>
             </div>
           </div>
 
@@ -537,20 +537,20 @@ const CheckoutPage = ({ go, cart, user }) => {
                 <div>
                   <div className="ko-serif" style={{fontSize:17, marginBottom:4}}>『왕의길』</div>
                   <div className="dim-2 mono" style={{fontSize:11}}>{version === "KR" ? "국문판" : "영문판"} · {qty}권</div>
-                  <div className="gold ko-serif" style={{fontSize:16, marginTop:8}}>{subtotal.toLocaleString()}원</div>
+                  <div className="gold ko-serif" style={{fontSize:16, marginTop:8}}>{window.BGNJ_FMT.won(subtotal)}</div>
                 </div>
               </div>
               <div style={{display:'flex', justifyContent:'space-between', padding:'10px 0', color:'var(--ink-2)'}}>
                 <span>상품 합계</span>
-                <span>{subtotal.toLocaleString()}원</span>
+                <span>{window.BGNJ_FMT.won(subtotal)}</span>
               </div>
               <div style={{display:'flex', justifyContent:'space-between', padding:'10px 0', color:'var(--ink-2)'}}>
                 <span>배송비</span>
-                <span>{shipping === 0 ? "무료" : `${shipping.toLocaleString()}원`}</span>
+                <span>{shipping === 0 ? "무료" : window.BGNJ_FMT.won(shipping)}</span>
               </div>
               <div style={{display:'flex', justifyContent:'space-between', padding:'16px 0', borderTop:'1px solid var(--line)', marginTop:8}}>
                 <span>결제 금액</span>
-                <span className="gold-2 ko-serif" style={{fontSize:24}}>{total.toLocaleString()}원</span>
+                <span className="gold-2 ko-serif" style={{fontSize:24}}>{window.BGNJ_FMT.won(total)}</span>
               </div>
 
               <div style={{marginTop:24, padding:'16px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)'}}>

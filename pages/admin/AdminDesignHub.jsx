@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.117.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T08:42:28+09:00", // pre-commit stamp.
+    summary: "🧹 안정성 audit 잔재 일괄 정리 — BGNJ_FMT.currency + createPost createdAt 보존 + postMinLevel 기본값 trap 해소",
+    details: [
+      "💰 [BGNJ_FMT.currency / won] 헬퍼 신설 — 사용자 브라우저 locale 무관 ko-KR 강제 천 단위 콤마. won() = currency() + '원'.",
+      "💰 [toLocaleString sweep] 16곳 일괄 마이그 — 가격 포맷 (BookCheckout 11 / AuthAdmin 5 / Lectures 1 / Tour 1 / Home 1 / MyPage 1) + data.js 영수증 생성 3 (currency 1 + kstDateTime 2).",
+      "🩹 [createPost createdAt 보존] data.js BGNJ_COMMUNITY.createPost (sync local fallback) — payload.createdAt 명시 시 보존. 서버 실패 시 admin 의 시간 오버라이드가 로컬 표시에서도 일관 유지.",
+      "🛟 [postMinLevel UX trap 해소] AdminCategoryPanel 신규 카테고리 기본값 minLevel/postMinLevel 10 → 0. schema-v3.sql post_min_level DEFAULT 10 → 0. 신규 카테고리가 자동으로 일반 사용자 잠금되던 trap 차단.",
+      "📑 [BGNJ_GUARD load-order] 페이지의 `const G = window.BGNJ_GUARD` 는 컴포넌트 함수 본체 내부 호출 → render 시점 = data.js 로드 후라 race 없음. inline fallback 추가는 over-engineering 으로 판단, 본 사이클 미적용.",
+      "ℹ 워커 미변경 — schema-v3.sql 은 IF NOT EXISTS 라 기존 row 영향 없음. 신규 카테고리 생성 시점부터 새 default 적용.",
+      "📦 cache-buster — `?v=00.117.000` (21곳).",
+    ],
+    context: "사용자 요청 '기능 안정성 검토 결과를 기반으로 모두 수정 반영'. v00.115/116 audit 의 LOW 항목 4개 처리: ① toLocaleString 정합 (locale 의존성) ② 로컬 폴백 createdAt 미보존 ③ postMinLevel 기본값 10 (UX trap) ④ pages 의 G 변수 fallback. ④ 는 실측 결과 안전(load order 보장)으로 코드 변경 미적용. 나머지 3개 적용.",
+  },
+  {
     version: "00.116.000",
     date: "2026-05-02",
     datetime: "2026-05-02T08:07:00+09:00", // pre-commit stamp.

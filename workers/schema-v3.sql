@@ -57,7 +57,9 @@ CREATE TABLE IF NOT EXISTS categories_kv (
   label TEXT NOT NULL,
   board_type TEXT NOT NULL DEFAULT 'community',
   min_level INTEGER NOT NULL DEFAULT 0,
-  post_min_level INTEGER NOT NULL DEFAULT 10,
+  -- v00.117: post_min_level DEFAULT 10 → 0. 신규 카테고리가 자동으로 일반 사용자 잠금되던 UX trap 해소.
+  -- 명시적으로 작성 제한 필요 시 admin UI 에서 설정. (이미 생성된 row 의 값은 영향받지 않음 — IF NOT EXISTS.)
+  post_min_level INTEGER NOT NULL DEFAULT 0,
   description TEXT,
   prefixes_json TEXT,
   display_order INTEGER NOT NULL DEFAULT 0

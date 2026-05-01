@@ -304,7 +304,7 @@ const MyPage = ({ go, user, cart }) => {
                         <span className="mono" style={{ fontSize: 10, letterSpacing: '0.16em', color: orderStatusTone(o.status) }}>{orderStatusLabel(o.status)}</span>
                       </div>
                       <div style={{ fontSize: 13, lineHeight: 1.5 }}>
-                        『왕의길』 · {o.version === 'KR' ? '국문판' : '영문판'} × {o.qty} · <span className="gold">{o.total.toLocaleString()}원</span>
+                        『왕의길』 · {o.version === 'KR' ? '국문판' : '영문판'} × {o.qty} · <span className="gold">{window.BGNJ_FMT.won(o.total)}</span>
                       </div>
                       {o.tracking && (
                         <div className="dim-2 mono" style={{ fontSize: 10, marginTop: 4 }}>송장 {o.tracking}</div>

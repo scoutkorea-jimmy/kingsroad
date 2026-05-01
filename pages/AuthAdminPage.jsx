@@ -841,7 +841,7 @@ const LectureAdminPanel = ({ go }) => {
                     </span>
                     {seats.waitlist > 0 && <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)'}}>대기 {seats.waitlist}</span>}
                     {l.price > 0
-                      ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>유료 {l.price.toLocaleString()}원</span>
+                      ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>유료 {window.BGNJ_FMT.won(l.price)}</span>
                       : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--gold)', border:'1px solid var(--gold-dim)', padding:'1px 6px'}}>FREE</span>}
                   </div>
                 </header>
@@ -1321,7 +1321,7 @@ const TourAdminPanel = ({ go }) => {
                     </span>
                     {seats.waitlist > 0 && <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)'}}>대기 {seats.waitlist}</span>}
                     <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>
-                      {(t.priceNumber || 0).toLocaleString()}원
+                      {window.BGNJ_FMT.won(t.priceNumber)}
                     </span>
                   </div>
                 </header>
@@ -1931,8 +1931,8 @@ const BookOrderAdminPanel = ({ go }) => {
                 </div>
                 <div>
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:4}}>AMOUNT</div>
-                  <div className="gold ko-serif" style={{fontSize:18}}>{o.total.toLocaleString()}원</div>
-                  <div className="dim-2 mono" style={{fontSize:10}}>상품 {o.subtotal.toLocaleString()} + 배송 {o.shipping.toLocaleString()}</div>
+                  <div className="gold ko-serif" style={{fontSize:18}}>{window.BGNJ_FMT.won(o.total)}</div>
+                  <div className="dim-2 mono" style={{fontSize:10}}>상품 {window.BGNJ_FMT.currency(o.subtotal)} + 배송 {window.BGNJ_FMT.currency(o.shipping)}</div>
                 </div>
                 <div>
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:4}}>RECIPIENT</div>
@@ -3881,7 +3881,7 @@ const MemberAdminPanel = ({ go }) => {
               {activity.bookOrders.slice(0, 8).map((o) => (
                 <li key={o.id} style={{display:'flex', justifyContent:'space-between', gap:12, fontSize:12, padding:'6px 0', borderBottom:'1px solid var(--line)'}}>
                   <span className="mono">{o.orderNo}</span>
-                  <span>{o.version === 'KR' ? '국문' : '영문'} × {o.qty} · <span className="gold">{o.total.toLocaleString()}원</span></span>
+                  <span>{o.version === 'KR' ? '국문' : '영문'} × {o.qty} · <span className="gold">{window.BGNJ_FMT.won(o.total)}</span></span>
                   <span className="mono dim-2">{o.status}</span>
                 </li>
               ))}
@@ -4986,7 +4986,7 @@ const AdminPage = ({ go }) => {
                   <dl style={{display:'grid', gridTemplateColumns:'120px 1fr', gap:'4px 16px', fontSize:12, lineHeight:1.7}}>
                     <dt className="dim-2 mono" style={{fontSize:10}}>감지</dt><dd className="mono">{b.detectedAt}</dd>
                     <dt className="dim-2 mono" style={{fontSize:10}}>72h 기한</dt><dd className="mono">{b.notifyDueAt}</dd>
-                    <dt className="dim-2 mono" style={{fontSize:10}}>영향 주체</dt><dd>{b.affected.toLocaleString()}명</dd>
+                    <dt className="dim-2 mono" style={{fontSize:10}}>영향 주체</dt><dd>{window.BGNJ_FMT.currency(b.affected)}명</dd>
                     <dt className="dim-2 mono" style={{fontSize:10}}>당국 통지</dt><dd className={b.authorityNotified?'gold':'dim-2'}>{b.authorityNotified?'✓ 완료':'—'}</dd>
                     <dt className="dim-2 mono" style={{fontSize:10}}>주체 통지</dt><dd className={b.subjectNotified?'gold':'dim-2'}>{b.subjectNotified?'✓ 완료':'—'}</dd>
                   </dl>
@@ -5111,7 +5111,7 @@ const AdminPage = ({ go }) => {
 // === Admin: Category CRUD ==============================================
 const AdminCategoryPanel = () => {
   const [cats, setCats] = React.useState(() => window.BGNJ_STORES.categories.slice());
-  const [draft, setDraft] = React.useState({ id:"", label:"", boardType:"community", minLevel:10, postMinLevel:10, desc:"" });
+  const [draft, setDraft] = React.useState({ id:"", label:"", boardType:"community", minLevel:0, postMinLevel:0, desc:"" });
   const [error, setError] = React.useState("");
   const [prefixDrafts, setPrefixDrafts] = React.useState({});
 
@@ -5129,7 +5129,7 @@ const AdminCategoryPanel = () => {
     if (!id || !draft.label) return setError("ID와 이름은 필수입니다.");
     if (cats.find(c => c.id === id)) return setError("이미 존재하는 ID입니다.");
     save([...cats, { ...draft, id, minLevel: Number(draft.minLevel), postMinLevel: Number(draft.postMinLevel) }]);
-    setDraft({ id:"", label:"", boardType:"community", minLevel:10, postMinLevel:10, desc:"" });
+    setDraft({ id:"", label:"", boardType:"community", minLevel:0, postMinLevel:0, desc:"" });
   };
   const update = (i, key, val) => {
     const next = cats.slice();

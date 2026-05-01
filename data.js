@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.116.000",
+  version: "00.117.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -365,6 +365,15 @@ window.BGNJ_FMT = {
     if (!m) return '';
     return `${m.month}.${m.day} (${m.weekday}) ${m.hour}:${m.minute}`;
   },
+  // v00.117 — 한국 통화 포맷 (천 단위 콤마). 사용자 브라우저 locale 무관 ko-KR 강제.
+  // currency(10000) → '10,000' / currency(0) → '0' / currency(null|NaN) → '0'.
+  currency(n) {
+    const num = Number(n);
+    if (!isFinite(num)) return '0';
+    return num.toLocaleString('ko-KR');
+  },
+  // 'XXX원' 단축 — currency() + '원' 조합. price/total 표시 일관화.
+  won(n) { return `${this.currency(n)}원` },
 };
 
 // === 회원 등급/카테고리/해시태그 저장소 (localStorage 연동) ===
@@ -1208,10 +1217,13 @@ window.BGNJ_COMMUNITY = {
     window.BGNJ_SAVE.communityPosts();
   },
   // 동기 createPost — 호환용. 가능하면 createPostRemote 사용 권장.
+  // v00.117 — payload.createdAt 명시 시 보존 (admin 시간 오버라이드 + 서버 폴백 일관성).
   createPost(payload) {
+    const createdAt = payload.createdAt || new Date().toISOString();
     const nextPost = normalizeCommunityPost({
       ...payload,
       id: `post-${Date.now()}`,
+      createdAt,
       _userCreated: true,
       _new: true,
     });
@@ -1976,14 +1988,14 @@ window.BGNJ_BOOK_ORDERS = {
     const order = this.getOrder(id);
     if (!order) return null;
     const bank = (window.BGNJ_LECTURES?.getBankAccount?.()) || {};
-    const formatPrice = (p) => `${(p || 0).toLocaleString()}원`;
+    const formatPrice = (p) => window.BGNJ_FMT.won(p);
     const lines = [
       '╔════════════════════════════════════════════╗',
       '║         뱅기노자 · BANGINOJA 주문 영수증     ║',
       '╚════════════════════════════════════════════╝',
       '',
       `주문번호      ${order.orderNo}`,
-      `주문 일시     ${new Date(order.createdAt).toLocaleString('ko-KR')}`,
+      `주문 일시     ${window.BGNJ_FMT.kstDateTime(order.createdAt)}`,
       `상태          ${ ({pending_payment:'입금 대기', paid:'입금 확인', shipped:'배송중', delivered:'배송 완료', cancelled:'취소'})[order.status] || order.status }`,
       order.tracking ? `송장번호      ${order.tracking}` : '',
       '',
@@ -2008,7 +2020,7 @@ window.BGNJ_BOOK_ORDERS = {
       lines.push('');
     }
     lines.push('운영 문의 · hello@bgnj.net');
-    lines.push('영수증 발행 · ' + new Date().toLocaleString('ko-KR'));
+    lines.push('영수증 발행 · ' + window.BGNJ_FMT.kstDateTime(new Date().toISOString()));
     return lines.filter((l) => l != null).join('\n');
   },
   downloadReceipt(id) {

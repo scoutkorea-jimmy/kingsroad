@@ -597,7 +597,7 @@ const HomePage = ({ go }) => {
                     </div>
                     <div style={{textAlign:'right'}}>
                       <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>참가비</div>
-                      <div className="ko-serif" style={{fontSize:20, marginTop:4, color:'var(--ink)', fontWeight:600}}>{t.price ? (typeof t.price === 'number' ? `${t.price.toLocaleString()}원` : t.price) : '—'}</div>
+                      <div className="ko-serif" style={{fontSize:20, marginTop:4, color:'var(--ink)', fontWeight:600}}>{t.price ? (typeof t.price === 'number' ? window.BGNJ_FMT.won(t.price) : t.price) : '—'}</div>
                     </div>
                   </div>
                 </article>
