@@ -468,6 +468,19 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.063.000",
+    date: "2026-05-01",
+    summary: "🧹 legacy 키 'reports' 정리 — BGNJ_STORES 정의 + SAVE 핸들러 + bgnj_reports localStorage 키 제거. storage v5-reports-dead 마이그레이션.",
+    details: [
+      "🧹 BGNJ_STORES.reports 정의 제거 — 사용처 0 확인 (BGNJ_GRADE_PROMO 는 BGNJ_COMMUNITY._reports 만 참조). 서버 fetch 캐시가 단독 source.",
+      "🧹 BGNJ_SAVE.reports 핸들러 제거 — 동일 사유.",
+      "🧹 storage version v4-bookmarks-dead → v5-reports-dead — 일회성 마이그레이션으로 bgnj_reports localStorage 키 정리.",
+      "ℹ comments 키는 활성 사용 중 (BGNJ_COMMUNITY 댓글 추가/삭제/조회 다수). 서버 일원화 마이그레이션은 별도 사이클(v00.065+)로 분리.",
+      "📦 cache-buster — `?v=00.063.000`.",
+    ],
+    context: "백로그 v00.063 후보 'legacy 키 reports/comments 마이그레이션' 처리. reports 는 사용처 0 → 안전하게 제거. comments 는 BGNJ_STORES.comments[postId] 직접 read/write 가 다수 (data.js 806/951/982/985, AuthAdminPage 6800 등) — 서버 이전 시 BGNJ_API.community.comments 헬퍼 신설 + listComments 캐시 패턴 + BGNJ_GRADE_PROMO.metrics 정합 필요. 큰 작업으로 분리. v00.062 의 서버 metrics endpoint 가 commentsCount 를 D1 에서 정확 계산하므로 grade 평가 측면에선 이미 정확. 다음 사이클(v00.064) 후보: ★ HTTPS / SSL 도입 (인프라).",
+  },
+  {
     version: "00.062.000",
     date: "2026-05-01",
     summary: "🎯 서버 endpoint 로 reportCount/likesReceived/posts/comments/daysSinceSignup 정확화. ★ 워커 배포 필요.",

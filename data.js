@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.062.000",
+  version: "00.063.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -197,12 +197,13 @@ const _asRecord = (value, fallback = {}) => (
   value && typeof value === "object" && !Array.isArray(value) ? value : fallback
 );
 
-const BGNJ_STORAGE_VERSION = "v4-bookmarks-dead";
+const BGNJ_STORAGE_VERSION = "v5-reports-dead";
 
 // 마이그레이션 — storage version 기준 누적.
 //   v2-server-first (v00.046): 시드 박힌 bgnj_community_posts 정리.
 //   v3-no-overrides (v00.049): dead 4 키(lectureOverrides/lectureRegistrations/tourOverrides/tourReservations) + bgnj_users 시드 정리.
 //   v4-bookmarks-dead (v00.051): bgnj_bookmarks 정리 — BGNJ_COMMUNITY._bookmarks 서버 캐시만 사용.
+//   v5-reports-dead (v00.063): bgnj_reports 정리 — BGNJ_COMMUNITY._reports(서버 fetch) + 서버 metrics endpoint 가 source.
 //     모든 케이스에서 사용자 임시 글(bgnj_user_posts)은 보존.
 try {
   const prevVer = localStorage.getItem('bgnj_storage_version');
@@ -217,6 +218,8 @@ try {
     localStorage.removeItem('bgnj_users');  // BGNJ_AUTH 가 서버에서 다시 로드. 좀비 시드 사용자 제거.
     // v4 — bookmarks 캐시는 BGNJ_COMMUNITY._bookmarks (서버 캐시) 만 사용. localStorage 잔재 정리.
     localStorage.removeItem('bgnj_bookmarks');
+    // v5 — reports 캐시는 BGNJ_COMMUNITY._reports (서버 fetch) 만 사용. localStorage 잔재 정리.
+    localStorage.removeItem('bgnj_reports');
     localStorage.setItem('bgnj_storage_version', BGNJ_STORAGE_VERSION);
   }
 } catch {}
@@ -561,7 +564,7 @@ window.BGNJ_STORES = {
   users: ensureUsersSeeded(_lsGet('bgnj_users', [])),
   session: _asRecord(_lsGet('bgnj_session', null), null),
   // v00.051: bookmarks 키 제거. BGNJ_COMMUNITY._bookmarks(서버 캐시)가 단독 source.
-  reports: _asArray(_lsGet('bgnj_reports', [])),
+  // v00.063: reports 키 제거. BGNJ_COMMUNITY._reports(서버 fetch 캐시) + 서버 metrics endpoint(v00.062) 가 source.
   notifications: _asRecord(_lsGet('bgnj_notifications', {})),
   columnEngagement: _asRecord(_lsGet('bgnj_column_engagement', {})),
   // v00.049: lectureOverrides / lectureRegistrations / tourOverrides / tourReservations 제거 (dead).
@@ -593,7 +596,7 @@ window.BGNJ_SAVE = {
   users: () => _lsSet('bgnj_users', window.BGNJ_STORES.users),
   session: () => _lsSet('bgnj_session', window.BGNJ_STORES.session),
   // v00.051: bookmarks save 핸들러 제거 — BGNJ_COMMUNITY._bookmarks(서버 캐시) 가 source.
-  reports: () => _lsSet('bgnj_reports', window.BGNJ_STORES.reports),
+  // v00.063: reports save 핸들러 제거 — BGNJ_COMMUNITY._reports(서버 fetch) 가 source.
   notifications: () => _lsSet('bgnj_notifications', window.BGNJ_STORES.notifications),
   columnEngagement: () => _lsSet('bgnj_column_engagement', window.BGNJ_STORES.columnEngagement),
   // v00.049: lectureOverrides / lectureRegistrations / tourOverrides / tourReservations save 핸들러 제거.

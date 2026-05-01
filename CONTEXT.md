@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.062.000 · 2026-05-01 (서버 metrics endpoint — D1 정확 카운트 + 클라이언트 캐시 prefer · ★ 워커 배포 필요)
+> **마지막 업데이트:** v00.063.000 · 2026-05-01 (legacy 키 'reports' 정리 + storage v5-reports-dead 마이그레이션)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.062)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.063)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -217,6 +217,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.060** | 2026-05-01 | OG 이미지 관리 UI — OgPreviewBlock (라이브 미리보기 + 플랫폼 호환성 표 + 업로드 안내) |
 | **v00.061** | 2026-05-01 | 핫픽스 addNewLecture await 누락 (startsAt null 오류) + lint 룰 (direct_fetch / equality_loose / large_file) |
 | **v00.062** | 2026-05-01 | 서버 metrics endpoint (/api/admin/users/:id/metrics) + BGNJ_GRADE_PROMO 캐시 prefer · ★ 워커 배포 필요 |
+| **v00.063** | 2026-05-01 | legacy 'reports' 키 제거 (BGNJ_STORES + SAVE + localStorage) + storage v5-reports-dead. comments 는 v00.065+ 분리 |
 
 ---
 
@@ -249,9 +250,9 @@ URL 매핑 (`VALID_ROUTES`):
 
 
 
-### v00.063 — legacy 키 마이그레이션 (`reports` → `comments`)
-admin Report 패널 + comments BGNJ_API.community.comments 일원화. v00.061 의 metrics endpoint 와 동행.
-**위험도:** 중간 — 데이터 마이그레이션 + 워커 배포.
+### v00.065 — legacy 'comments' 키 서버 일원화
+data.js 의 BGNJ_STORES.comments[postId] 직접 read/write 패턴(다수)을 BGNJ_API.community.comments 헬퍼 + BGNJ_COMMUNITY._comments 캐시로 전환. AuthAdminPage 6800 totalComments 등 호출처 정합. storage v6-comments-dead 마이그레이션.
+**위험도:** 중간 — 데이터 흐름 변경 + 호출처 다수.
 
 ### v00.064 — HTTPS / SSL 도입 ★ 인프라 변경
 http://bgnj.net → https://bgnj.net. og:image dataURI 안정화, Service Worker 재활성화 가능. SSL 인증서 발급(Cloudflare) + ALLOWED_ORIGINS 정합.
