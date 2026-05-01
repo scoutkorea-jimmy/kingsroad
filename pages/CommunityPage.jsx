@@ -477,32 +477,46 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   React.useEffect(() => { setPage(1); }, [tab, search, sort, activePrefix]);
   // ─────────────────────────────────────────────────────────────────────
 
-  if (writing) {
-    return <PostCompose
-      key={writing === true ? "new" : String(writing.id)}
-      user={user}
-      initialPost={writing === true ? null : writing}
-      onCancel={() => setWriting(null)}
-      onPublish={async (payload) => {
-        let savedPost;
-        try {
-          savedPost = writing === true
-            ? await window.BGNJ_COMMUNITY.createPostRemote(payload)
-            : await window.BGNJ_COMMUNITY.updatePostRemote(writing.id, payload);
-        } catch (err) {
-          // 서버 실패 시 로컬 폴백 — 비로그인/네트워크 단절 환경에서도 작성은 보존.
-          savedPost = writing === true
-            ? window.BGNJ_COMMUNITY.createPost(payload)
-            : window.BGNJ_COMMUNITY.updatePost(writing.id, payload);
-        }
-        setWriting(null);
-        setRefreshKey((value) => value + 1);
-        if (savedPost) setPostId(savedPost.id);
-      }}
-      categories={categories}
-      userLevel={userLevel}
-    />;
-  }
+  // v00.068 — PostCompose 모달 wrapper. 목록 위에 모달로 표시. ESC/외부클릭 시 useModalGuard 가 임시저장 prompt.
+  // PostCompose 의 onCancel 이 closeModal 으로 연결됨 (취소 버튼 = 즉시 닫기).
+  const PostComposeModal = ({ onClose }) => {
+    const guard = window.useModalGuard?.({ open: true, dirty: true, onClose, onSaveDraft: null, label: '게시글' }) || {};
+    return (
+      <div role="dialog" aria-modal="true" aria-label={writing === true ? '새 글 작성' : '게시글 수정'}
+        onClick={guard.onBackdropClick}
+        style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'grid', placeItems:'start center', padding:24, overflowY:'auto'}}>
+        <div onClick={(e) => e.stopPropagation()} style={{
+          width:'min(1100px, 100%)', background:'var(--bg)', boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+          padding:24, marginTop:24, marginBottom:48,
+        }}>
+          <PostCompose
+            key={writing === true ? "new" : String(writing.id)}
+            user={user}
+            initialPost={writing === true ? null : writing}
+            onCancel={onClose}
+            onPublish={async (payload) => {
+              let savedPost;
+              try {
+                savedPost = writing === true
+                  ? await window.BGNJ_COMMUNITY.createPostRemote(payload)
+                  : await window.BGNJ_COMMUNITY.updatePostRemote(writing.id, payload);
+              } catch (err) {
+                // 서버 실패 시 로컬 폴백.
+                savedPost = writing === true
+                  ? window.BGNJ_COMMUNITY.createPost(payload)
+                  : window.BGNJ_COMMUNITY.updatePost(writing.id, payload);
+              }
+              onClose();
+              setRefreshKey((value) => value + 1);
+              if (savedPost) setPostId(savedPost.id);
+            }}
+            categories={categories}
+            userLevel={userLevel}
+          />
+        </div>
+      </div>
+    );
+  };
 
   if (postId) {
     const post = allPosts.find(p => String(p.id) === String(postId)) || null;
@@ -740,6 +754,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           </button>
         </div>
       </div>
+      {/* v00.068 — 글쓰기 모달 (목록 위에 표시). useModalGuard 로 ESC/외부클릭 임시저장 prompt. */}
+      {writing && <PostComposeModal onClose={() => setWriting(null)}/>}
     </div>
   );
 };

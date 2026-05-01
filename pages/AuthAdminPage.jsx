@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.068.000",
+    date: "2026-05-01",
+    summary: "📝 Tiptap 무료 extension 풍부화 + 일반 사용자 글쓰기 모달 (커뮤니티) — 목록 위에 모달.",
+    details: [
+      "📝 index.html Tiptap ESM imports — Underline / Highlight / TextAlign / Subscript / Superscript / TaskList / TaskItem / Color / TextStyle / Table / TableRow / TableHeader / TableCell / Youtube. 모두 무료(MIT) extension.",
+      "📝 components/TiptapEditor.jsx — 모든 preset 에서 새 extension 사용. 도구모음 풍부화: U(밑줄), 형광펜, X²/X₂, 색상, ☐ 체크리스트, { } 코드블록, 정렬 4종 (왼쪽/가운데/오른쪽/양쪽), YouTube 임베드, ⊞ 표 삽입.",
+      "📝 column / rich preset 에서 Image + Dropcursor (시뮬레이션 색상 var(--primary) 토큰화).",
+      "📝 CommunityPage.jsx PostComposeModal — 기존 'if (writing) return <PostCompose>' 분기 → 메인 return 후 모달 wrapper. 목록이 항상 보이고 모달이 그 위에 표시. useModalGuard 로 ESC + 외부클릭 → 임시저장 prompt.",
+      "ℹ 파일 첨부(10MB×3) + 이미지(10장) 업로드 + 하단 슬라이드 갤러리는 v00.069 분리 (스토리지 인프라 + 게시글 모델 확장 작업 큼).",
+      "📦 cache-buster — `?v=00.068.000`.",
+    ],
+    context: "사용자 요청 — 'Tiptap 무료 모든 기능' + '일반인이 홈페이지 모달로 글쓰기'. Tiptap 측은 표/유튜브/체크리스트/색상/정렬 등 사용자 UX 큰 영향 항목 일괄 도입. 모달은 useModalGuard 재사용으로 ESC + 외부클릭 임시저장 prompt 통일. 다음 사이클(v00.069): 파일/이미지 업로드 + 슬라이드 갤러리 (게시글 model 에 attachments_json / gallery_json 추가 필요 — 워커/D1 영향 작은 인라인 JSON 패턴 검토).",
+  },
+  {
     version: "00.067.000",
     date: "2026-05-01",
     summary: "📝 칼럼 작성/목록 통합 + 🔒 모달 인프라 (ESC + 외부클릭 임시저장 prompt + 7일/10개 정책) + ♿ Tab 접근성.",
