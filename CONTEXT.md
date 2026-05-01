@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.057.000 · 2026-05-01 (푸터 스타일 GUI 편집 — FooterStyleEditor + 라이브 미리보기)
+> **마지막 업데이트:** v00.058.000 · 2026-05-01 (한글 IME 핫픽스 + heroStyle 모바일 + viewport 토글 미리보기)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.057)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.058)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -212,6 +212,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.055** | 2026-05-01 | 의존성 patch 갱신 (@babel/parser, @babel/standalone) + workers/package.json + KMS 의존성 매트릭스 |
 | **v00.056** | 2026-05-01 | 히어로 통계 카드 GUI 편집 (hero.stats + heroStyle.stats) + footerStyle 토큰 베이스 |
 | **v00.057** | 2026-05-01 | 푸터 스타일 GUI 편집 — FooterStyleEditor (description/signature/heading 3 그룹) + 라이브 미리보기 |
+| **v00.058** | 2026-05-01 | 한글 IME 핫픽스 (내부 컴포넌트 호이스팅) + heroStyle 모바일 별도 트윗 + viewport 토글 미리보기 |
 
 ---
 
@@ -240,9 +241,6 @@ URL 매핑 (`VALID_ROUTES`):
 
 각 사이클은 1 패치 단위로 commit/push (auto deploy). 우선순위 순:
 
-### v00.058 — heroStyle 모바일 별도 트윗 + viewport 토글 미리보기
-heroStyle 에 mobile sub-overrides 추가 (모바일 전용 fontSize/lineHeight/letterSpacing). HomePage 가 matchMedia 로 모드 분기. HeroEditorPanel 미리보기에 [데스크탑/모바일] 토글 → 좁은 폭 시뮬레이션 + mobile override 적용.
-**위험도:** 낮음.
 
 ### v00.058 — 다크 모드 인라인 hex 정합 (잔존부)
 HomePage/AdminPage/모달 잔존 인라인 hex 점진 정리. KMS 라이브 토큰 카드로 drift 발견부터.

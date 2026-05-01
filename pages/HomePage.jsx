@@ -219,7 +219,26 @@ const HomePage = ({ go }) => {
 
   const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);
   const hero = sc.hero || {};
-  const heroStyle = React.useMemo(() => (window.BGNJ_HERO_STYLE?.() || window.BGNJ_HERO_STYLE_DEFAULT), [scTick]);
+  // 모바일 분기 — matchMedia 변경 시 자동 재렌더 (heroStyle 도 갱신).
+  const [isMobile, setIsMobile] = React.useState(() => {
+    try { return !!(window.matchMedia && window.matchMedia('(max-width: 600px)').matches); } catch { return false; }
+  });
+  React.useEffect(() => {
+    try {
+      const mq = window.matchMedia('(max-width: 600px)');
+      const handler = (e) => setIsMobile(e.matches);
+      if (mq.addEventListener) mq.addEventListener('change', handler);
+      else if (mq.addListener) mq.addListener(handler);
+      return () => {
+        if (mq.removeEventListener) mq.removeEventListener('change', handler);
+        else if (mq.removeListener) mq.removeListener(handler);
+      };
+    } catch {}
+  }, []);
+  const heroStyle = React.useMemo(
+    () => (window.BGNJ_HERO_STYLE?.(isMobile ? 'mobile' : 'desktop') || window.BGNJ_HERO_STYLE_DEFAULT),
+    [scTick, isMobile]
+  );
   const recommendations = Array.isArray(sc.recommendations) ? sc.recommendations.filter(Boolean) : [];
   const [recDetail, setRecDetail] = React.useState(null);
 

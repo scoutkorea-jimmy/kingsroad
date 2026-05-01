@@ -468,6 +468,21 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.058.000",
+    date: "2026-05-01",
+    summary: "🩹 한글 입력(IME) 핫픽스 + 📱 heroStyle 모바일 별도 트윗 + viewport 토글 미리보기.",
+    details: [
+      "🩹 [핫픽스] HeroEditorPanel + FooterStyleEditor 의 내부 컴포넌트(Field/Input/TextArea/Select/NumberRange/StyleGroup) 를 모듈 최상위(HE_*) 로 호이스팅. 부모 함수 안에 정의하면 매 렌더 새 함수 ref → input 매번 unmount/mount → IME composition 끊김. 사용자 보고: '히어로 트윗에서 한글 입력이 잘 안되네' (감사한 발견).",
+      "📱 BGNJ_HERO_STYLE_DEFAULT.mobile 신설 — title(fontSize/lineHeight) / subtitle(fontSize/lineHeight/maxWidth) / stats(label/value/sub fontSize) 모바일 전용 오버라이드. 비어있는 필드는 데스크탑 그대로.",
+      "📱 BGNJ_HERO_STYLE(force) 시그니처 — force ∈ {'desktop','mobile'} 또는 undefined(자동 — matchMedia ≤600px). 데스크탑 effective 위에 mobile override 머지.",
+      "📱 HomePage Hero — matchMedia ≤600px listen + change 이벤트 자동 재렌더. heroStyle 도 mobile/desktop 자동 전환.",
+      "📱 HeroEditorPanel 미리보기 viewport 토글 [데스크탑/모바일] — sticky 카드 우상단. 모바일 모드에서 360px 시뮬레이션 + mobile override 적용. 토글 색상 active 가독성 보강.",
+      "📱 모바일 별도 트윗 폼 3 그룹 — MOBILE 타이틀/서브타이틀/통계 카드. 슬라이더 + 그룹별 default 복원.",
+      "📦 cache-buster — `?v=00.058.000`.",
+    ],
+    context: "사용자 두 보고 동시 처리: ① '히어로 트윗 한글 입력 잘 안된다' → 진단 결과 React 가 부모 함수 내부 정의 컴포넌트를 매 렌더마다 새 함수로 인식해 input 을 remount → IME composition 끊김. HE_Field/HE_Input/HE_TextArea/HE_Select/HE_NumberRange/HE_StyleGroup 6개를 모듈 최상위로 호이스팅. FooterStyleEditor 도 동일 fix. ② '다음꺼 진행' → v00.058 본 작업 (heroStyle 모바일). 결과: 사용자가 모바일에서 보일 히어로의 폰트/행간/너비를 데스크탑과 별도로 트윗 가능 + 즉시 미리보기 토글. site_content_kv.heroStyle.mobile 슬롯 신설로 호환 유지. 다음 사이클(v00.059) 후보: 다크 모드 인라인 hex 정합 잔존부 (HomePage 다른 섹션 + 모달).",
+  },
+  {
     version: "00.057.000",
     date: "2026-05-01",
     summary: "🎨 푸터 스타일 GUI 편집 — FooterStyleEditor 신설. description/signature/heading 3 그룹 폰트·색상 + 라이브 미리보기.",
@@ -4424,38 +4439,10 @@ const FooterStyleEditor = () => {
     } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
-  const Field = ({ label, children }) => (
-    <label style={{display:'block', marginBottom:10}}>
-      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:5}}>{label}</div>
-      {children}
-    </label>
-  );
-  const NumberRange = ({ value, min, max, step, onChange }) => (
-    <div style={{display:'flex', gap:8, alignItems:'center'}}>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))} style={{flex:1}}/>
-      <input type="number" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="field-input" style={{width:80, padding:'4px 6px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
-    </div>
-  );
-  const Select = ({ value, options, onChange }) => (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="field-input"
-      style={{width:'100%', padding:'8px 10px', fontSize:13}}>
-      {options.map((o) => typeof o === 'object'
-        ? <option key={o.value} value={o.value}>{o.label}</option>
-        : <option key={o} value={o}>{o}</option>)}
-    </select>
-  );
-  const Group = ({ title, group, children }) => (
-    <div className="card" style={{padding:14, marginBottom:12}}>
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
-        <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>{title}</div>
-        <button type="button" className="btn btn-small" onClick={() => resetGroup(group)} style={{fontSize:10}}>이 그룹 default</button>
-      </div>
-      {children}
-    </div>
-  );
+  // 모듈 최상위 HE_* 재사용 — IME 입력 안전 (v00.058 핫픽스).
+  const Field = HE_Field;
+  const NumberRange = HE_NumberRange;
+  const Select = HE_Select;
 
   return (
     <div style={{marginTop:24, marginBottom:24}}>
@@ -4465,7 +4452,7 @@ const FooterStyleEditor = () => {
       </p>
       <div style={{display:'grid', gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)', gap:16}} className="hero-editor-grid">
         <div>
-          <Group title="DESCRIPTION (소개 문단)" group="description">
+          <HE_StyleGroup title="DESCRIPTION (소개 문단)" onResetGroup={() => resetGroup("description")}>
             <Field label={`폰트 크기 · ${eff.description.fontSize}px`}>
               <NumberRange value={eff.description.fontSize} min={11} max={20} step={1}
                 onChange={(v) => set('description', 'fontSize', v)}/>
@@ -4486,8 +4473,8 @@ const FooterStyleEditor = () => {
               <NumberRange value={eff.description.maxWidth} min={240} max={600} step={10}
                 onChange={(v) => set('description', 'maxWidth', v)}/>
             </Field>
-          </Group>
-          <Group title="HEADING (콘텐츠/정보/연락)" group="heading">
+          </HE_StyleGroup>
+          <HE_StyleGroup title="HEADING (콘텐츠/정보/연락)" onResetGroup={() => resetGroup("heading")}>
             <Field label={`폰트 크기 · ${eff.heading.fontSize}px`}>
               <NumberRange value={eff.heading.fontSize} min={10} max={20} step={1}
                 onChange={(v) => set('heading', 'fontSize', v)}/>
@@ -4504,8 +4491,8 @@ const FooterStyleEditor = () => {
               <Select value={eff.heading.color} options={FOOTER_COLOR_OPTIONS}
                 onChange={(v) => set('heading', 'color', v)}/>
             </Field>
-          </Group>
-          <Group title="SIGNATURE (하단 서명)" group="signature">
+          </HE_StyleGroup>
+          <HE_StyleGroup title="SIGNATURE (하단 서명)" onResetGroup={() => resetGroup("signature")}>
             <Field label={`폰트 크기 · ${eff.signature.fontSize}px`}>
               <NumberRange value={eff.signature.fontSize} min={9} max={16} step={1}
                 onChange={(v) => set('signature', 'fontSize', v)}/>
@@ -4526,7 +4513,7 @@ const FooterStyleEditor = () => {
               <Select value={eff.signature.textTransform || 'uppercase'} options={HERO_TFORMS}
                 onChange={(v) => set('signature', 'textTransform', v)}/>
             </Field>
-          </Group>
+          </HE_StyleGroup>
           <div style={{display:'flex', gap:10, marginTop:12, flexWrap:'wrap'}}>
             <button type="button" className="btn btn-gold btn-small" onClick={save}>저장</button>
             <button type="button" className="btn btn-small" onClick={resetAll} style={{borderColor:'var(--line-2)'}}>전체 default 복원</button>
@@ -4592,6 +4579,50 @@ const FooterStyleEditor = () => {
 // 관리자 '히어로' 탭 — 홈페이지 히어로 영역의 모든 콘텐츠 + 스타일을 GUI 로 편집.
 // 콘텐츠 → site_content_kv.hero / 스타일 → site_content_kv.heroStyle 두 섹션 분리 저장.
 // 라이브 미리보기는 HomePage Hero 와 동일 마크업/스타일로 즉시 반영.
+//
+// 내부 컴포넌트(Field/Input/TextArea/Select/NumberRange/StyleGroup) 를 모듈 최상위로 호이스팅.
+// HeroEditorPanel 안에 두면 매 렌더마다 새 함수 ref 가 만들어져 React 가 다른 컴포넌트로 인식 →
+// input element 가 매번 unmount/mount → IME(한글) composition 끊김 (v00.058 핫픽스).
+const HE_Field = ({ label, children, hint }) => (
+  <label style={{display:'block', marginBottom:14}}>
+    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:6}}>{label}</div>
+    {children}
+    {hint && <div className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.5}}>{hint}</div>}
+  </label>
+);
+const HE_Input = (props) => (
+  <input {...props} className="field-input" style={{width:'100%', padding:'8px 10px', fontSize:13, ...props.style}}/>
+);
+const HE_TextArea = (props) => (
+  <textarea {...props} className="field-input" style={{width:'100%', padding:'8px 10px', fontSize:13, minHeight:64, fontFamily:'inherit', resize:'vertical', ...props.style}}/>
+);
+const HE_Select = ({ value, options, onChange, ...rest }) => (
+  <select value={value} onChange={(e) => onChange(e.target.value)} className="field-input"
+    style={{width:'100%', padding:'8px 10px', fontSize:13}} {...rest}>
+    {options.map((o) => typeof o === 'object'
+      ? <option key={o.value} value={o.value}>{o.label}</option>
+      : <option key={o} value={o}>{o}</option>)}
+  </select>
+);
+const HE_NumberRange = ({ value, min, max, step, onChange }) => (
+  <div style={{display:'flex', gap:8, alignItems:'center'}}>
+    <input type="range" min={min} max={max} step={step} value={value}
+      onChange={(e) => onChange(Number(e.target.value))} style={{flex:1}}/>
+    <input type="number" min={min} max={max} step={step} value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="field-input" style={{width:80, padding:'4px 6px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
+  </div>
+);
+const HE_StyleGroup = ({ title, children, onResetGroup }) => (
+  <div className="card" style={{padding:16, marginBottom:14}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>{title}</div>
+      {onResetGroup && <button type="button" className="btn btn-small" onClick={onResetGroup} style={{fontSize:10}}>이 그룹 default</button>}
+    </div>
+    {children}
+  </div>
+);
+
 const HERO_COLOR_OPTIONS = [
   { value: '--ink',           label: '메인 잉크 (--ink)' },
   { value: '--ink-2',         label: '보조 잉크 (--ink-2)' },
@@ -4631,6 +4662,7 @@ const HeroEditorPanel = () => {
   const resetGroup = (group) =>
     setStyleDraft((d) => { const next = { ...d }; delete next[group]; return next; });
 
+  // 데스크탑 effective.
   const eff = React.useMemo(() => {
     const def = window.BGNJ_HERO_STYLE_DEFAULT;
     return {
@@ -4645,10 +4677,49 @@ const HeroEditorPanel = () => {
       },
     };
   }, [styleDraft]);
+  // 모바일 effective (v00.058) — 데스크탑 위에 mobile override 머지.
+  const effMobile = React.useMemo(() => {
+    const def = window.BGNJ_HERO_STYLE_DEFAULT;
+    const m = { ...(def.mobile || {}), ...(styleDraft.mobile || {}) };
+    const merge = (k) => ({ ...def[k], ...(styleDraft[k] || {}), ...(m[k] || {}) });
+    const stats = {};
+    for (const sub of ['label', 'value', 'sub']) {
+      stats[sub] = {
+        ...def.stats[sub], ...(styleDraft.stats?.[sub] || {}),
+        ...(def.mobile?.stats?.[sub] || {}), ...(m.stats?.[sub] || {}),
+      };
+    }
+    return { eyebrow: merge('eyebrow'), title: merge('title'), subtitle: merge('subtitle'), cta: merge('cta'), stats };
+  }, [styleDraft]);
+  const [previewMode, setPreviewMode] = React.useState('desktop');
+  const effPreview = previewMode === 'mobile' ? effMobile : eff;
+
   const updateStatsStyle = (sub, key, value) =>
     setStyleDraft((d) => ({ ...d, stats: { ...(d.stats || {}), [sub]: { ...((d.stats || {})[sub] || {}), [key]: value } } }));
   const resetStatsGroup = (sub) =>
     setStyleDraft((d) => { const stats = { ...(d.stats || {}) }; delete stats[sub]; return { ...d, stats }; });
+  // 모바일 override 헬퍼 (v00.058) — styleDraft.mobile.{group} 편집.
+  const updateMobile = (group, key, value) =>
+    setStyleDraft((d) => ({
+      ...d,
+      mobile: {
+        ...(d.mobile || {}),
+        [group]: { ...((d.mobile || {})[group] || {}), [key]: value },
+      },
+    }));
+  const updateMobileStats = (sub, key, value) =>
+    setStyleDraft((d) => {
+      const mob = { ...(d.mobile || {}) };
+      mob.stats = { ...(mob.stats || {}) };
+      mob.stats[sub] = { ...(mob.stats[sub] || {}), [key]: value };
+      return { ...d, mobile: mob };
+    });
+  const resetMobileGroup = (group) =>
+    setStyleDraft((d) => {
+      const mob = { ...(d.mobile || {}) };
+      delete mob[group];
+      return { ...d, mobile: mob };
+    });
 
   const save = async () => {
     try {
@@ -4675,45 +4746,13 @@ const HeroEditorPanel = () => {
     } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
-  const Field = ({ label, children, hint }) => (
-    <label style={{display:'block', marginBottom:14}}>
-      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:6}}>{label}</div>
-      {children}
-      {hint && <div className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.5}}>{hint}</div>}
-    </label>
-  );
-  const Input = (props) => (
-    <input {...props} className="field-input" style={{width:'100%', padding:'8px 10px', fontSize:13, ...props.style}}/>
-  );
-  const TextArea = (props) => (
-    <textarea {...props} className="field-input" style={{width:'100%', padding:'8px 10px', fontSize:13, minHeight:64, fontFamily:'inherit', resize:'vertical', ...props.style}}/>
-  );
-  const Select = ({ value, options, onChange, ...rest }) => (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="field-input"
-      style={{width:'100%', padding:'8px 10px', fontSize:13}} {...rest}>
-      {options.map((o) => typeof o === 'object'
-        ? <option key={o.value} value={o.value}>{o.label}</option>
-        : <option key={o} value={o}>{o}</option>)}
-    </select>
-  );
-  const NumberRange = ({ value, min, max, step, onChange }) => (
-    <div style={{display:'flex', gap:8, alignItems:'center'}}>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))} style={{flex:1}}/>
-      <input type="number" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="field-input" style={{width:80, padding:'4px 6px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
-    </div>
-  );
-  const StyleGroup = ({ title, group, children }) => (
-    <div className="card" style={{padding:16, marginBottom:14}}>
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
-        <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>{title}</div>
-        <button type="button" className="btn btn-small" onClick={() => resetGroup(group)} style={{fontSize:10}}>이 그룹 default</button>
-      </div>
-      {children}
-    </div>
-  );
+  // 작은 컴포넌트들은 모듈 최상위(HE_*)에 정의되어 있음 — IME/한글 입력 핫픽스(v00.058).
+  // 부모 함수 안에서 정의하면 매 렌더 새 함수 ref → input remount → composition 끊김.
+  const Field = HE_Field;
+  const Input = HE_Input;
+  const TextArea = HE_TextArea;
+  const Select = HE_Select;
+  const NumberRange = HE_NumberRange;
 
   return (
     <div>
@@ -4757,7 +4796,7 @@ const HeroEditorPanel = () => {
           </div>
 
           <h3 className="ko-serif" style={{fontSize:16, marginBottom:10}}>스타일 트윗</h3>
-          <StyleGroup title="EYEBROW 스타일" group="eyebrow">
+          <HE_StyleGroup title="EYEBROW 스타일" onResetGroup={() => resetGroup("eyebrow")}>
             <Field label={`폰트 크기 · ${eff.eyebrow.fontSize}px`}>
               <NumberRange value={eff.eyebrow.fontSize} min={8} max={24} step={1}
                 onChange={(v) => updateStyle('eyebrow', 'fontSize', v)}/>
@@ -4778,8 +4817,8 @@ const HeroEditorPanel = () => {
               <Select value={eff.eyebrow.textTransform || 'uppercase'} options={HERO_TFORMS}
                 onChange={(v) => updateStyle('eyebrow', 'textTransform', v)}/>
             </Field>
-          </StyleGroup>
-          <StyleGroup title="TITLE 스타일" group="title">
+          </HE_StyleGroup>
+          <HE_StyleGroup title="TITLE 스타일" onResetGroup={() => resetGroup("title")}>
             <Field label={`최대 폰트 크기 · ${eff.title.fontSize}px (모바일은 36px clamp)`}>
               <NumberRange value={eff.title.fontSize} min={32} max={120} step={1}
                 onChange={(v) => updateStyle('title', 'fontSize', v)}/>
@@ -4808,8 +4847,8 @@ const HeroEditorPanel = () => {
               <Select value={eff.title.textAlign || 'left'} options={HERO_ALIGNS}
                 onChange={(v) => updateStyle('title', 'textAlign', v)}/>
             </Field>
-          </StyleGroup>
-          <StyleGroup title="SUBTITLE 스타일" group="subtitle">
+          </HE_StyleGroup>
+          <HE_StyleGroup title="SUBTITLE 스타일" onResetGroup={() => resetGroup("subtitle")}>
             <Field label={`폰트 크기 · ${eff.subtitle.fontSize}px`}>
               <NumberRange value={eff.subtitle.fontSize} min={12} max={28} step={1}
                 onChange={(v) => updateStyle('subtitle', 'fontSize', v)}/>
@@ -4830,13 +4869,61 @@ const HeroEditorPanel = () => {
               <NumberRange value={eff.subtitle.maxWidth} min={320} max={800} step={10}
                 onChange={(v) => updateStyle('subtitle', 'maxWidth', v)}/>
             </Field>
-          </StyleGroup>
-          <StyleGroup title="CTA 버튼 스타일" group="cta">
+          </HE_StyleGroup>
+          <HE_StyleGroup title="CTA 버튼 스타일" onResetGroup={() => resetGroup("cta")}>
             <Field label="굵기">
               <Select value={String(eff.cta.fontWeight)} options={HERO_WEIGHTS.map(String)}
                 onChange={(v) => updateStyle('cta', 'fontWeight', Number(v))}/>
             </Field>
-          </StyleGroup>
+          </HE_StyleGroup>
+
+          {/* 모바일 별도 트윗 (v00.058) — 데스크탑 위에 머지. 비우면 데스크탑 그대로. */}
+          <h3 className="ko-serif" style={{fontSize:16, marginBottom:10, marginTop:20}}>모바일 별도 트윗 (≤600px)</h3>
+          <p className="dim-2" style={{fontSize:11, marginBottom:10, lineHeight:1.6}}>
+            ⓘ 데스크탑 스타일 위에 머지됩니다. 빈 슬롯은 데스크탑 값 그대로 사용. 미리보기 우상단의 [모바일] 토글로 즉시 시뮬레이션.
+          </p>
+          <HE_StyleGroup title="MOBILE — 타이틀" onResetGroup={() => resetMobileGroup("title")}>
+            <Field label={`폰트 크기 · ${effMobile.title.fontSize}px`}>
+              <NumberRange value={effMobile.title.fontSize} min={20} max={72} step={1}
+                onChange={(v) => updateMobile('title', 'fontSize', v)}/>
+            </Field>
+            <Field label={`행간 · ${effMobile.title.lineHeight}`}>
+              <NumberRange value={effMobile.title.lineHeight} min={0.95} max={1.6} step={0.01}
+                onChange={(v) => updateMobile('title', 'lineHeight', v)}/>
+            </Field>
+            <Field label={`자간 · ${effMobile.title.letterSpacing}em`}>
+              <NumberRange value={effMobile.title.letterSpacing} min={-0.05} max={0.05} step={0.005}
+                onChange={(v) => updateMobile('title', 'letterSpacing', v)}/>
+            </Field>
+          </HE_StyleGroup>
+          <HE_StyleGroup title="MOBILE — 서브타이틀" onResetGroup={() => resetMobileGroup("subtitle")}>
+            <Field label={`폰트 크기 · ${effMobile.subtitle.fontSize}px`}>
+              <NumberRange value={effMobile.subtitle.fontSize} min={11} max={22} step={1}
+                onChange={(v) => updateMobile('subtitle', 'fontSize', v)}/>
+            </Field>
+            <Field label={`행간 · ${effMobile.subtitle.lineHeight}`}>
+              <NumberRange value={effMobile.subtitle.lineHeight} min={1.3} max={2.2} step={0.05}
+                onChange={(v) => updateMobile('subtitle', 'lineHeight', v)}/>
+            </Field>
+            <Field label={`최대 너비 · ${effMobile.subtitle.maxWidth}px`}>
+              <NumberRange value={effMobile.subtitle.maxWidth} min={240} max={500} step={10}
+                onChange={(v) => updateMobile('subtitle', 'maxWidth', v)}/>
+            </Field>
+          </HE_StyleGroup>
+          <HE_StyleGroup title="MOBILE — 통계 카드 값" onResetGroup={() => resetMobileGroup("stats")}>
+            <Field label={`값 폰트 크기 · ${effMobile.stats.value.fontSize}px`}>
+              <NumberRange value={effMobile.stats.value.fontSize} min={14} max={32} step={1}
+                onChange={(v) => updateMobileStats('value', 'fontSize', v)}/>
+            </Field>
+            <Field label={`라벨 폰트 크기 · ${effMobile.stats.label.fontSize}px`}>
+              <NumberRange value={effMobile.stats.label.fontSize} min={8} max={14} step={1}
+                onChange={(v) => updateMobileStats('label', 'fontSize', v)}/>
+            </Field>
+            <Field label={`부연 폰트 크기 · ${effMobile.stats.sub.fontSize}px`}>
+              <NumberRange value={effMobile.stats.sub.fontSize} min={9} max={16} step={1}
+                onChange={(v) => updateMobileStats('sub', 'fontSize', v)}/>
+            </Field>
+          </HE_StyleGroup>
 
           {/* 통계 카드 — 콘텐츠 + 스타일 (v00.056) */}
           <h3 className="ko-serif" style={{fontSize:16, marginBottom:10, marginTop:20}}>통계 카드 콘텐츠</h3>
@@ -4858,7 +4945,7 @@ const HeroEditorPanel = () => {
               ⓘ #2(투어)·#3(커뮤니티)는 콘텐츠가 있으면 갯수(예: <code>3개</code>) 가 우선 표시되고, 없을 때만 폴백 값이 사용됩니다.
             </p>
           </div>
-          <StyleGroup title="통계 카드 — 라벨 스타일" group="stats.label">
+          <HE_StyleGroup title="통계 카드 — 라벨 스타일" onResetGroup={() => resetStatsGroup("label")}>
             <Field label={`폰트 크기 · ${eff.stats.label.fontSize}px`}>
               <NumberRange value={eff.stats.label.fontSize} min={8} max={20} step={1}
                 onChange={(v) => updateStatsStyle('label', 'fontSize', v)}/>
@@ -4879,9 +4966,8 @@ const HeroEditorPanel = () => {
               <Select value={eff.stats.label.textTransform || 'uppercase'} options={HERO_TFORMS}
                 onChange={(v) => updateStatsStyle('label', 'textTransform', v)}/>
             </Field>
-            <button type="button" className="btn btn-small" onClick={() => resetStatsGroup('label')} style={{fontSize:10, marginTop:6}}>이 그룹 default</button>
-          </StyleGroup>
-          <StyleGroup title="통계 카드 — 값 스타일" group="stats.value">
+          </HE_StyleGroup>
+          <HE_StyleGroup title="통계 카드 — 값 스타일" onResetGroup={() => resetStatsGroup("value")}>
             <Field label={`폰트 크기 · ${eff.stats.value.fontSize}px`}>
               <NumberRange value={eff.stats.value.fontSize} min={14} max={48} step={1}
                 onChange={(v) => updateStatsStyle('value', 'fontSize', v)}/>
@@ -4894,9 +4980,8 @@ const HeroEditorPanel = () => {
               <Select value={eff.stats.value.color} options={HERO_COLOR_OPTIONS}
                 onChange={(v) => updateStatsStyle('value', 'color', v)}/>
             </Field>
-            <button type="button" className="btn btn-small" onClick={() => resetStatsGroup('value')} style={{fontSize:10, marginTop:6}}>이 그룹 default</button>
-          </StyleGroup>
-          <StyleGroup title="통계 카드 — 부연 스타일" group="stats.sub">
+          </HE_StyleGroup>
+          <HE_StyleGroup title="통계 카드 — 부연 스타일" onResetGroup={() => resetStatsGroup("sub")}>
             <Field label={`폰트 크기 · ${eff.stats.sub.fontSize}px`}>
               <NumberRange value={eff.stats.sub.fontSize} min={10} max={20} step={1}
                 onChange={(v) => updateStatsStyle('sub', 'fontSize', v)}/>
@@ -4905,8 +4990,7 @@ const HeroEditorPanel = () => {
               <Select value={eff.stats.sub.color} options={HERO_COLOR_OPTIONS}
                 onChange={(v) => updateStatsStyle('sub', 'color', v)}/>
             </Field>
-            <button type="button" className="btn btn-small" onClick={() => resetStatsGroup('sub')} style={{fontSize:10, marginTop:6}}>이 그룹 default</button>
-          </StyleGroup>
+          </HE_StyleGroup>
 
           <div style={{display:'flex', gap:10, marginTop:18, flexWrap:'wrap'}}>
             <button type="button" className="btn btn-gold" onClick={save}>저장</button>
@@ -4917,58 +5001,79 @@ const HeroEditorPanel = () => {
 
         {/* 우: 라이브 미리보기 */}
         <div>
-          <h3 className="ko-serif" style={{fontSize:16, marginBottom:10}}>라이브 미리보기</h3>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10, flexWrap:'wrap', gap:8}}>
+            <h3 className="ko-serif" style={{fontSize:16}}>라이브 미리보기</h3>
+            <div role="tablist" aria-label="미리보기 viewport" style={{display:'flex', gap:6}}>
+              {[{ key:'desktop', label:'데스크탑' }, { key:'mobile', label:'모바일' }].map((m) => (
+                <button key={m.key} type="button" role="tab" aria-selected={previewMode === m.key}
+                  onClick={() => setPreviewMode(m.key)}
+                  className="btn btn-small"
+                  style={{
+                    fontSize:11,
+                    borderColor: previewMode === m.key ? 'var(--primary)' : 'var(--line-2)',
+                    color: previewMode === m.key ? 'var(--primary)' : 'var(--ink-2)',
+                    background: previewMode === m.key ? 'rgba(245,213,72,0.10)' : 'var(--bg-2)',
+                    fontWeight: previewMode === m.key ? 700 : 500,
+                  }}>{m.label}</button>
+              ))}
+            </div>
+          </div>
           <div className="card" style={{padding:0, overflow:'hidden', position:'sticky', top:24}}>
             <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'8px 12px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
-              PREVIEW · 실제 홈 히어로와 동일 마크업
+              PREVIEW · {previewMode === 'mobile' ? '360px 모바일 시뮬레이션' : '실제 홈 히어로와 동일 마크업'}
             </div>
-            <div style={{padding:'40px 24px 32px', textAlign: eff.title.textAlign || 'left'}}>
+            <div style={{
+              padding: previewMode === 'mobile' ? '24px 16px 24px' : '40px 24px 32px',
+              maxWidth: previewMode === 'mobile' ? 360 : '100%',
+              margin: previewMode === 'mobile' ? '0 auto' : undefined,
+              textAlign: effPreview.title.textAlign || 'left',
+            }}>
               <div style={{
                 fontFamily:'var(--font-mono)',
-                fontSize: eff.eyebrow.fontSize, fontWeight: eff.eyebrow.fontWeight,
-                letterSpacing: `${eff.eyebrow.letterSpacing}em`,
-                color: `var(${eff.eyebrow.color})`,
-                textTransform: eff.eyebrow.textTransform || 'uppercase',
+                fontSize: effPreview.eyebrow.fontSize, fontWeight: effPreview.eyebrow.fontWeight,
+                letterSpacing: `${effPreview.eyebrow.letterSpacing}em`,
+                color: `var(${effPreview.eyebrow.color})`,
+                textTransform: effPreview.eyebrow.textTransform || 'uppercase',
                 marginBottom: 16,
               }}>
                 {contentDraft.eyebrow || 'BANGINOJA · 뱅기타고 노자'}
               </div>
               <h1 style={{
                 fontFamily:'var(--font-display)',
-                fontSize: `clamp(28px, 5vw, ${eff.title.fontSize}px)`,
-                fontWeight: eff.title.fontWeight,
-                lineHeight: eff.title.lineHeight,
-                letterSpacing: `${eff.title.letterSpacing}em`,
+                fontSize: previewMode === 'mobile' ? `${effPreview.title.fontSize}px` : `clamp(28px, 5vw, ${effPreview.title.fontSize}px)`,
+                fontWeight: effPreview.title.fontWeight,
+                lineHeight: effPreview.title.lineHeight,
+                letterSpacing: `${effPreview.title.letterSpacing}em`,
                 marginBottom: 16,
-                color: `var(${eff.title.color})`,
+                color: `var(${effPreview.title.color})`,
               }}>
                 {contentDraft.title1 || '뱅기타고'}<br/>
-                <span style={{color: `var(${eff.title.accentColor})`}}>{contentDraft.title2 || '한국을'}</span><br/>
+                <span style={{color: `var(${effPreview.title.accentColor})`}}>{contentDraft.title2 || '한국을'}</span><br/>
                 {contentDraft.title3 || '느끼다'}
               </h1>
               <p style={{
-                fontSize: eff.subtitle.fontSize,
-                fontWeight: eff.subtitle.fontWeight,
-                lineHeight: eff.subtitle.lineHeight,
-                color: `var(${eff.subtitle.color})`,
-                maxWidth: eff.subtitle.maxWidth,
+                fontSize: effPreview.subtitle.fontSize,
+                fontWeight: effPreview.subtitle.fontWeight,
+                lineHeight: effPreview.subtitle.lineHeight,
+                color: `var(${effPreview.subtitle.color})`,
+                maxWidth: effPreview.subtitle.maxWidth,
                 marginBottom: 22,
-                marginLeft: eff.title.textAlign === 'center' ? 'auto' : undefined,
-                marginRight: eff.title.textAlign === 'center' ? 'auto' : undefined,
+                marginLeft: effPreview.title.textAlign === 'center' ? 'auto' : undefined,
+                marginRight: effPreview.title.textAlign === 'center' ? 'auto' : undefined,
               }}>
                 {contentDraft.subtitle || '궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다.'}
               </p>
               <div style={{
                 display:'flex', gap:10, flexWrap:'wrap',
-                justifyContent: eff.title.textAlign === 'center' ? 'center' : (eff.title.textAlign === 'right' ? 'flex-end' : 'flex-start'),
+                justifyContent: effPreview.title.textAlign === 'center' ? 'center' : (effPreview.title.textAlign === 'right' ? 'flex-end' : 'flex-start'),
               }}>
-                <button type="button" className="btn btn-gold btn-small" style={{fontWeight: eff.cta.fontWeight}}>
+                <button type="button" className="btn btn-gold btn-small" style={{fontWeight: effPreview.cta.fontWeight}}>
                   {contentDraft.mapHint || '지도에서 여행지 찾기 →'}
                 </button>
-                <button type="button" className="btn btn-small" style={{fontWeight: eff.cta.fontWeight}}>
+                <button type="button" className="btn btn-small" style={{fontWeight: effPreview.cta.fontWeight}}>
                   {contentDraft.ctaPrimary || '커뮤니티 참여하기'}
                 </button>
-                <button type="button" className="btn btn-small" style={{fontWeight: eff.cta.fontWeight}}>
+                <button type="button" className="btn btn-small" style={{fontWeight: effPreview.cta.fontWeight}}>
                   {contentDraft.ctaSecondary || '투어 프로그램 보기'}
                 </button>
               </div>
@@ -4978,20 +5083,20 @@ const HeroEditorPanel = () => {
                   <div key={i}>
                     <div style={{
                       fontFamily:'var(--font-serif)',
-                      fontSize: eff.stats.value.fontSize, fontWeight: eff.stats.value.fontWeight,
-                      color: `var(${eff.stats.value.color})`, marginBottom:4,
+                      fontSize: effPreview.stats.value.fontSize, fontWeight: effPreview.stats.value.fontWeight,
+                      color: `var(${effPreview.stats.value.color})`, marginBottom:4,
                     }}>{s.valueFallback || '—'}</div>
                     <div style={{
                       fontFamily:'var(--font-mono)',
-                      fontSize: eff.stats.label.fontSize, fontWeight: eff.stats.label.fontWeight,
-                      letterSpacing: `${eff.stats.label.letterSpacing}em`,
-                      color: `var(${eff.stats.label.color})`,
-                      textTransform: eff.stats.label.textTransform || 'uppercase',
+                      fontSize: effPreview.stats.label.fontSize, fontWeight: effPreview.stats.label.fontWeight,
+                      letterSpacing: `${effPreview.stats.label.letterSpacing}em`,
+                      color: `var(${effPreview.stats.label.color})`,
+                      textTransform: effPreview.stats.label.textTransform || 'uppercase',
                       marginBottom:3,
                     }}>{s.label || '라벨'}</div>
                     <div style={{
-                      fontSize: eff.stats.sub.fontSize,
-                      color: `var(${eff.stats.sub.color})`,
+                      fontSize: effPreview.stats.sub.fontSize,
+                      color: `var(${effPreview.stats.sub.color})`,
                     }}>{s.sub || '부연'}</div>
                   </div>
                 ))}

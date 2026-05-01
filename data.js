@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.057.000",
+  version: "00.058.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -382,23 +382,43 @@ window.BGNJ_HERO_STYLE_DEFAULT = {
     value: { fontSize: 22, fontWeight: 600, color: '--ink' },
     sub:   { fontSize: 12, color: '--ink-3' },
   },
+  // 모바일 별도 트윗 (v00.058) — 일부 필드만 오버라이드 가능.
+  // ≤600px (matchMedia) 에서 데스크탑 위에 머지. 비어있으면 데스크탑 그대로.
+  mobile: {
+    title:    { fontSize: 36, lineHeight: 1.15 },
+    subtitle: { fontSize: 14, lineHeight: 1.7, maxWidth: 360 },
+    stats:    { value: { fontSize: 18 }, label: { fontSize: 9 }, sub: { fontSize: 11 } },
+  },
 };
 // 머지된 effective 스타일 (override + default).
-window.BGNJ_HERO_STYLE = function () {
+// force ∈ {'desktop', 'mobile'} 또는 undefined(자동 — matchMedia ≤600px).
+window.BGNJ_HERO_STYLE = function (force) {
   try {
     const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
     const o = (sc.heroStyle && typeof sc.heroStyle === 'object') ? sc.heroStyle : {};
     const d = window.BGNJ_HERO_STYLE_DEFAULT;
+    const isMobile = force === 'mobile' || (force == null && (window.matchMedia && window.matchMedia('(max-width: 600px)').matches));
+    const mob = isMobile ? { ...(d.mobile || {}), ...(o.mobile || {}) } : {};
+    const mergeWithMobile = (group, defaultMobile) => {
+      const desktop = { ...d[group], ...(o[group] || {}) };
+      const mobileGroup = isMobile ? { ...(defaultMobile || {}), ...(mob[group] || {}) } : {};
+      return { ...desktop, ...mobileGroup };
+    };
+    const mergeStats = () => {
+      const result = { label: {}, value: {}, sub: {} };
+      for (const k of ['label', 'value', 'sub']) {
+        const desktop = { ...d.stats[k], ...(o.stats?.[k] || {}) };
+        const mobileK = isMobile ? { ...(d.mobile?.stats?.[k] || {}), ...(mob.stats?.[k] || {}) } : {};
+        result[k] = { ...desktop, ...mobileK };
+      }
+      return result;
+    };
     return {
-      eyebrow:  { ...d.eyebrow,  ...(o.eyebrow  || {}) },
-      title:    { ...d.title,    ...(o.title    || {}) },
-      subtitle: { ...d.subtitle, ...(o.subtitle || {}) },
-      cta:      { ...d.cta,      ...(o.cta      || {}) },
-      stats:    {
-        label: { ...d.stats.label, ...(o.stats?.label || {}) },
-        value: { ...d.stats.value, ...(o.stats?.value || {}) },
-        sub:   { ...d.stats.sub,   ...(o.stats?.sub   || {}) },
-      },
+      eyebrow:  mergeWithMobile('eyebrow',  d.mobile?.eyebrow),
+      title:    mergeWithMobile('title',    d.mobile?.title),
+      subtitle: mergeWithMobile('subtitle', d.mobile?.subtitle),
+      cta:      mergeWithMobile('cta',      d.mobile?.cta),
+      stats:    mergeStats(),
     };
   } catch { return window.BGNJ_HERO_STYLE_DEFAULT; }
 };
