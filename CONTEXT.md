@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.065.000 · 2026-05-01 (투어 페이지 답사 일정 + 준비물 GUI 편집)
+> **마지막 업데이트:** v00.066.000 · 2026-05-01 (투어 답사 일정/준비물 템플릿 시스템 + per-tour override · 3 모드)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.065)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.066)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -220,6 +220,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.063** | 2026-05-01 | legacy 'reports' 키 제거 (BGNJ_STORES + SAVE + localStorage) + storage v5-reports-dead. comments 는 v00.065+ 분리 |
 | **v00.064** | 2026-05-01 | HTTPS/SSL 코드 측 정합 — og:url + og:site_name + opt-in HTTPS 강제 헬퍼 + CONTEXT §7.5 인프라 가이드 |
 | **v00.065** | 2026-05-01 | 투어 페이지 답사 일정 + 준비물 GUI 편집 (TourPageEditorPanel + site_content_kv.tourSchedule / tourPrep) |
+| **v00.066** | 2026-05-01 | 답사 일정/준비물 템플릿 시스템 + per-tour override · 3 모드 (글로벌/템플릿/투어별) |
 
 ---
 

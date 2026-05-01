@@ -151,10 +151,18 @@ const TourPage = ({ go, user }) => {
             <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{tour.desc}</p>
 
             {(() => {
-              // v00.065 — site_content_kv.tourSchedule / .tourPrep 가 source. 빈 배열이면 섹션 미노출.
+              // v00.066 — per-tour override(tourPages[tourId]) 우선, 없으면 글로벌(tourSchedule/tourPrep) fallback.
+              // 둘 다 빈 배열이면 섹션 미노출.
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
-              const schedule = Array.isArray(sc.tourSchedule) ? sc.tourSchedule.filter((s) => s && (s.t || s.l)) : [];
-              const prep = Array.isArray(sc.tourPrep) ? sc.tourPrep.filter(Boolean) : [];
+              const perTour = (sc.tourPages && typeof sc.tourPages === 'object' && tour?.id) ? (sc.tourPages[tour.id] || null) : null;
+              const ovrSchedule = Array.isArray(perTour?.schedule) ? perTour.schedule : null;
+              const ovrPrep     = Array.isArray(perTour?.prep)     ? perTour.prep     : null;
+              const schedule = (ovrSchedule && ovrSchedule.length > 0)
+                ? ovrSchedule.filter((s) => s && (s.t || s.l))
+                : (Array.isArray(sc.tourSchedule) ? sc.tourSchedule.filter((s) => s && (s.t || s.l)) : []);
+              const prep = (ovrPrep && ovrPrep.length > 0)
+                ? ovrPrep.filter(Boolean)
+                : (Array.isArray(sc.tourPrep) ? sc.tourPrep.filter(Boolean) : []);
               return (
                 <>
                   {schedule.length > 0 && (

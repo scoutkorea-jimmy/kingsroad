@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.065.000",
+  version: "00.066.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -385,6 +385,14 @@ const DEFAULT_SITE_CONTENT = {
     '따뜻한 겉옷 (야간 프로그램 시)',
     '사전 배포되는 자료집은 현장에서 제공됩니다',
   ],
+  // 투어별 override (v00.066) — { [tourId]: { schedule: [{t,l}], prep: [str], templateId?: string } }.
+  // per-tour 차별화. 키 누락 또는 빈 배열이면 위 글로벌(tourSchedule/tourPrep) fallback.
+  // templateId 가 있으면 그 템플릿의 schedule/prep 사용 (직접 편집한 schedule/prep 보다 우선순위 낮음).
+  tourPages: {},
+  // 답사 일정/준비물 템플릿 모음 (v00.066) — 운영자가 자주 쓰는 패턴 저장.
+  // 각 항목: { id, name, schedule: [{t,l}], prep: [str] }.
+  // 투어편집 시 드롭다운에서 선택 → 자동 채움. 직접 편집도 동시 가능.
+  tourTemplates: [],
   // 푸터 스타일 트윗 — 관리자 '사이트 콘텐츠' 푸터 섹션에서 편집. 빈 그룹이면 코드 default(BGNJ_FOOTER_STYLE_DEFAULT).
   // 형태: { description: {...}, signature: {...}, heading: {...} }.
   footerStyle: {},

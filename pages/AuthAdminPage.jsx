@@ -468,6 +468,21 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.066.000",
+    date: "2026-05-01",
+    summary: "🚌 투어 답사 일정/준비물 — 템플릿 시스템 + per-tour override (3 모드: 글로벌 / 템플릿 / 투어별).",
+    details: [
+      "🚌 site_content_kv.tourTemplates [{id, name, schedule, prep}] 신설 — 자주 쓰는 패턴 저장.",
+      "🚌 site_content_kv.tourPages { [tourId]: { schedule, prep, templateId? } } 신설 — per-tour override.",
+      "🚌 WangsanamTourPage 우선순위: per-tour override(직접 편집) > 글로벌 fallback > 코드 default. 둘 다 빈 배열이면 섹션 미노출.",
+      "🚌 TourPageEditorPanel 재구조화 — 모드 토글 [글로벌 / 템플릿 / 투어별]. 모듈 최상위 헬퍼(TPE_*) 호이스팅 (IME 핫픽스 v00.058 패턴).",
+      "🚌 글로벌 모드: 기존 v00.065 폼. 템플릿 모드: 템플릿 추가/이름변경/삭제 + 각 템플릿의 schedule/prep 편집. 투어별 모드: 투어 드롭다운 + 템플릿 적용 드롭다운 + override 직접 편집 + override 제거(글로벌 fallback).",
+      "🚌 라이브 미리보기 sticky 카드 — 현재 모드의 schedule/prep 시뮬레이션.",
+      "📦 cache-buster — `?v=00.066.000`.",
+    ],
+    context: "사용자 요청 '준비물과 설명들 모두 템플릿을 만들 수 있게 + 템플릿 선택/생성 + 템플릿 미선택 운영'. site_content_kv 패턴으로 D1 schema 변경 없이 구현. 우선순위 체계로 글로벌→템플릿(드롭다운 적용)→투어별 직접 편집 모두 가능. 다음 사이클(v00.067) — 사용자 추가 요청 묶음: ① 칼럼 작성/목록 통합 (모달 글쓰기) ② 모달 외부클릭/뒤로가기 시 즉시 닫지 말고 임시저장 prompt ③ 임시저장 정책 (7일·10개 한도) ④ ESC 키로 모달 닫기 ⑤ Tab 키 메뉴 이동 웹 접근성.",
+  },
+  {
     version: "00.065.000",
     date: "2026-05-01",
     summary: "🚌 투어 페이지 답사 일정 + 준비물 GUI 편집 — site_content_kv 통해 항목별 add/remove/edit + 라이브 미리보기.",
@@ -4492,165 +4507,377 @@ const RecommendationsAdminPanel = () => {
   );
 };
 
-// === Tour Schedule / Prep Editor (v00.065) =============================
-// 투어 페이지 '답사 일정' + '준비물' 항목을 site_content_kv.tourSchedule / .tourPrep 로 편집.
-// 각 항목 add/remove/edit + 라이브 미리보기. 빈 배열이면 페이지에서 섹션 미노출.
+// === Tour Schedule / Prep Editor (v00.065 / v00.066) ====================
+// 투어 페이지 '답사 일정' + '준비물' 편집. 3 모드:
+//   - 글로벌: site_content_kv.tourSchedule / .tourPrep — 기본 폴백.
+//   - 템플릿: site_content_kv.tourTemplates [{id, name, schedule, prep}] — 자주 쓰는 패턴.
+//   - 투어별: site_content_kv.tourPages[tourId] = { schedule, prep, templateId? } — per-tour override.
+// 우선순위: per-tour override(직접 편집) > per-tour templateId > 글로벌 > 코드 default.
+
+// 모듈 최상위 헬퍼 — IME 안전 (한글 입력 핫픽스 v00.058 패턴).
+const TPE_RowActions = ({ i, total, onMove, onRemove }) => (
+  <div style={{display:'flex', gap:4}}>
+    <button type="button" className="btn btn-small" disabled={i === 0} onClick={() => onMove(i, -1)} aria-label="위로" style={{padding:'4px 8px', fontSize:11}}>↑</button>
+    <button type="button" className="btn btn-small" disabled={i === total - 1} onClick={() => onMove(i, 1)} aria-label="아래로" style={{padding:'4px 8px', fontSize:11}}>↓</button>
+    <button type="button" className="btn btn-small" onClick={() => onRemove(i)} aria-label="삭제" style={{padding:'4px 8px', fontSize:11, borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+  </div>
+);
+const TPE_ScheduleEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
+  <div className="card" style={{padding:16, marginBottom:14}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>답사 일정</div>
+      <button type="button" className="btn btn-small" onClick={onAdd}>＋ 항목 추가</button>
+    </div>
+    {rows.length === 0 && (
+      <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>ⓘ 항목이 없으면 페이지에서 '답사 일정' 섹션이 노출되지 않습니다.</p>
+    )}
+    {rows.map((s, i) => (
+      <div key={i} style={{display:'grid', gridTemplateColumns:'90px 1fr auto', gap:8, marginBottom:8, alignItems:'center'}}>
+        <input type="text" className="field-input" value={s.t || ''}
+          onChange={(e) => onUpdate(i, 't', e.target.value)} placeholder="0h 30m"
+          style={{padding:'6px 8px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
+        <input type="text" className="field-input" value={s.l || ''}
+          onChange={(e) => onUpdate(i, 'l', e.target.value)} placeholder="주요 공간 답사"
+          style={{padding:'6px 8px', fontSize:13}}/>
+        <TPE_RowActions i={i} total={rows.length} onMove={onMove} onRemove={onRemove}/>
+      </div>
+    ))}
+  </div>
+);
+const TPE_PrepEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
+  <div className="card" style={{padding:16, marginBottom:14}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>준비물</div>
+      <button type="button" className="btn btn-small" onClick={onAdd}>＋ 항목 추가</button>
+    </div>
+    {rows.length === 0 && (
+      <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>ⓘ 항목이 없으면 페이지에서 '준비물' 섹션이 노출되지 않습니다.</p>
+    )}
+    {rows.map((p, i) => (
+      <div key={i} style={{display:'grid', gridTemplateColumns:'1fr auto', gap:8, marginBottom:8, alignItems:'center'}}>
+        <input type="text" className="field-input" value={p || ''}
+          onChange={(e) => onUpdate(i, e.target.value)} placeholder="편한 신발"
+          style={{padding:'6px 8px', fontSize:13}}/>
+        <TPE_RowActions i={i} total={rows.length} onMove={onMove} onRemove={onRemove}/>
+      </div>
+    ))}
+  </div>
+);
+const TPE_PreviewCard = ({ schedule, prep }) => (
+  <div className="card" style={{padding:0, overflow:'hidden', position:'sticky', top:24}}>
+    <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'8px 12px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
+      PREVIEW · 투어 페이지
+    </div>
+    <div style={{padding:'24px'}}>
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:14, paddingBottom:10, borderBottom:'1px solid var(--line)'}}>답사 일정</h3>
+      {schedule.filter((s) => s && (s.t || s.l)).length > 0 ? schedule.filter((s) => s && (s.t || s.l)).map((s, i) => (
+        <div key={i} style={{display:'grid', gridTemplateColumns:'80px 1fr', gap:16, padding:'10px 0', borderBottom:'1px dashed var(--line)'}}>
+          <div className="mono gold" style={{fontSize:11, letterSpacing:'0.1em'}}>{s.t || '—'}</div>
+          <div className="ko-serif" style={{fontSize:13}}>{s.l || '내용 미입력'}</div>
+        </div>
+      )) : (
+        <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>(미노출)</p>
+      )}
+      <h3 className="ko-serif" style={{fontSize:18, marginTop:24, marginBottom:14, paddingBottom:10, borderBottom:'1px solid var(--line)'}}>준비물</h3>
+      {prep.filter(Boolean).length > 0 ? (
+        <ul style={{paddingLeft:18, color:'var(--ink-2)', fontSize:13, lineHeight:1.9}}>
+          {prep.filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}
+        </ul>
+      ) : (
+        <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>(미노출)</p>
+      )}
+    </div>
+  </div>
+);
+
+// 배열 helper — 비파괴 조작.
+const _arrAdd = (arr, item) => [...arr, item];
+const _arrRemove = (arr, i) => arr.filter((_, j) => j !== i);
+const _arrUpdate = (arr, i, value) => { const next = arr.slice(); next[i] = value; return next; };
+const _arrMove = (arr, i, dir) => {
+  const next = arr.slice();
+  const j = i + dir;
+  if (j < 0 || j >= next.length) return arr;
+  [next[i], next[j]] = [next[j], next[i]];
+  return next;
+};
+
 const TourPageEditorPanel = () => {
   const [tick, setTick] = React.useState(0);
   const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
-  const [schedule, setSchedule] = React.useState(() => Array.isArray(sc.tourSchedule) ? sc.tourSchedule.slice() : []);
-  const [prep, setPrep] = React.useState(() => Array.isArray(sc.tourPrep) ? sc.tourPrep.slice() : []);
+  const [mode, setMode] = React.useState('global'); // 'global' | 'templates' | 'per_tour'
   const [msg, setMsg] = React.useState('');
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2500); };
 
-  const addSchedule = () => setSchedule((arr) => [...arr, { t: '', l: '' }]);
-  const removeSchedule = (i) => setSchedule((arr) => arr.filter((_, j) => j !== i));
-  const updateSchedule = (i, key, value) => setSchedule((arr) => {
-    const next = arr.slice();
-    next[i] = { ...next[i], [key]: value };
-    return next;
-  });
-  const moveSchedule = (i, dir) => setSchedule((arr) => {
-    const next = arr.slice();
-    const j = i + dir;
-    if (j < 0 || j >= next.length) return arr;
-    [next[i], next[j]] = [next[j], next[i]];
-    return next;
-  });
-
-  const addPrep = () => setPrep((arr) => [...arr, '']);
-  const removePrep = (i) => setPrep((arr) => arr.filter((_, j) => j !== i));
-  const updatePrep = (i, value) => setPrep((arr) => { const next = arr.slice(); next[i] = value; return next; });
-  const movePrep = (i, dir) => setPrep((arr) => {
-    const next = arr.slice();
-    const j = i + dir;
-    if (j < 0 || j >= next.length) return arr;
-    [next[i], next[j]] = [next[j], next[i]];
-    return next;
-  });
-
-  const save = async () => {
+  // ── 글로벌 ─────────────────────────────────────
+  const [gSchedule, setGSchedule] = React.useState(() => Array.isArray(sc.tourSchedule) ? sc.tourSchedule.slice() : []);
+  const [gPrep, setGPrep] = React.useState(() => Array.isArray(sc.tourPrep) ? sc.tourPrep.slice() : []);
+  const saveGlobal = async () => {
     try {
-      // 빈 항목 정리.
-      const cleanSchedule = schedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
-      const cleanPrep = prep.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
-      await window.BGNJ_SITE_CONTENT.saveSection('tourSchedule', cleanSchedule);
-      await window.BGNJ_SITE_CONTENT.saveSection('tourPrep', cleanPrep);
+      const cleanS = gSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
+      const cleanP = gPrep.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
+      await window.BGNJ_SITE_CONTENT.saveSection('tourSchedule', cleanS);
+      await window.BGNJ_SITE_CONTENT.saveSection('tourPrep', cleanP);
       setTick((v) => v + 1);
-      setMsg('저장되었습니다 — 투어 페이지에 즉시 반영.');
-      setTimeout(() => setMsg(''), 2500);
+      flash('글로벌 저장됨 — 투어 페이지에 즉시 반영.');
     } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
-  const resetAll = async () => {
-    if (!confirm('답사 일정과 준비물을 default 로 복원합니다. 진행할까요?')) return;
+  const resetGlobal = async () => {
+    if (!confirm('글로벌 답사 일정/준비물을 default 로 복원합니다. 진행할까요?')) return;
     try {
       await window.BGNJ_SITE_CONTENT.resetSection('tourSchedule');
       await window.BGNJ_SITE_CONTENT.resetSection('tourPrep');
       const next = window.BGNJ_SITE_CONTENT.get();
-      setSchedule(Array.isArray(next.tourSchedule) ? next.tourSchedule.slice() : []);
-      setPrep(Array.isArray(next.tourPrep) ? next.tourPrep.slice() : []);
+      setGSchedule(Array.isArray(next.tourSchedule) ? next.tourSchedule.slice() : []);
+      setGPrep(Array.isArray(next.tourPrep) ? next.tourPrep.slice() : []);
       setTick((v) => v + 1);
-      setMsg('default 로 복원됨.');
-      setTimeout(() => setMsg(''), 2500);
+      flash('글로벌 default 복원됨.');
     } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
-  const RowActions = ({ i, total, onMove, onRemove }) => (
-    <div style={{display:'flex', gap:4}}>
-      <button type="button" className="btn btn-small" disabled={i === 0} onClick={() => onMove(i, -1)} aria-label="위로" style={{padding:'4px 8px', fontSize:11}}>↑</button>
-      <button type="button" className="btn btn-small" disabled={i === total - 1} onClick={() => onMove(i, 1)} aria-label="아래로" style={{padding:'4px 8px', fontSize:11}}>↓</button>
-      <button type="button" className="btn btn-small" onClick={() => onRemove(i)} aria-label="삭제" style={{padding:'4px 8px', fontSize:11, borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
-    </div>
-  );
+  // ── 템플릿 ─────────────────────────────────────
+  const [templates, setTemplates] = React.useState(() => Array.isArray(sc.tourTemplates) ? sc.tourTemplates.slice() : []);
+  const [activeTplIdx, setActiveTplIdx] = React.useState(-1);
+  const activeTpl = activeTplIdx >= 0 ? templates[activeTplIdx] : null;
+  const addTemplate = () => {
+    const id = `tpl-${Date.now()}`;
+    setTemplates((arr) => [...arr, { id, name: '새 템플릿', schedule: [], prep: [] }]);
+    setActiveTplIdx(templates.length);
+  };
+  const removeTemplate = (i) => {
+    if (!confirm(`"${templates[i]?.name || '템플릿'}" 을 삭제하시겠어요?`)) return;
+    setTemplates((arr) => arr.filter((_, j) => j !== i));
+    if (activeTplIdx >= templates.length - 1) setActiveTplIdx(-1);
+  };
+  const updateActiveTpl = (patch) => {
+    if (activeTplIdx < 0) return;
+    setTemplates((arr) => arr.map((t, j) => j === activeTplIdx ? { ...t, ...patch } : t));
+  };
+  const saveTemplates = async () => {
+    try {
+      const clean = templates.map((t) => ({
+        id: t.id || `tpl-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+        name: String(t.name || '이름 없음'),
+        schedule: (Array.isArray(t.schedule) ? t.schedule : []).filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') })),
+        prep: (Array.isArray(t.prep) ? t.prep : []).filter((p) => p && String(p).trim()).map((p) => String(p).trim()),
+      }));
+      await window.BGNJ_SITE_CONTENT.saveSection('tourTemplates', clean);
+      setTick((v) => v + 1);
+      flash('템플릿 저장됨.');
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  // ── 투어별 ─────────────────────────────────────
+  const tours = React.useMemo(() => {
+    try { return (window.BGNJ_TOURS?.listAll?.() || []).slice(); } catch { return []; }
+  }, [tick]);
+  const [activeTourId, setActiveTourId] = React.useState('');
+  const tourPages = sc.tourPages || {};
+  const activeOverride = activeTourId ? (tourPages[activeTourId] || null) : null;
+  const [pSchedule, setPSchedule] = React.useState([]);
+  const [pPrep, setPPrep] = React.useState([]);
+  const [pTemplateId, setPTemplateId] = React.useState('');
+  React.useEffect(() => {
+    if (!activeTourId) { setPSchedule([]); setPPrep([]); setPTemplateId(''); return; }
+    const ovr = tourPages[activeTourId] || {};
+    setPSchedule(Array.isArray(ovr.schedule) ? ovr.schedule.slice() : []);
+    setPPrep(Array.isArray(ovr.prep) ? ovr.prep.slice() : []);
+    setPTemplateId(ovr.templateId || '');
+  }, [activeTourId, tick]);
+  const applyTplToPerTour = (tplId) => {
+    const tpl = templates.find((t) => t.id === tplId);
+    if (!tpl) return;
+    setPSchedule(Array.isArray(tpl.schedule) ? tpl.schedule.map((s) => ({ ...s })) : []);
+    setPPrep(Array.isArray(tpl.prep) ? tpl.prep.slice() : []);
+    setPTemplateId(tplId);
+  };
+  const savePerTour = async () => {
+    if (!activeTourId) { alert('투어를 먼저 선택해 주세요.'); return; }
+    try {
+      const cleanS = pSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
+      const cleanP = pPrep.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
+      const next = { ...tourPages, [activeTourId]: { schedule: cleanS, prep: cleanP, templateId: pTemplateId || undefined } };
+      await window.BGNJ_SITE_CONTENT.saveSection('tourPages', next);
+      setTick((v) => v + 1);
+      flash(`'${activeTourId}' 투어 override 저장됨.`);
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+  const clearPerTour = async () => {
+    if (!activeTourId) return;
+    if (!confirm(`'${activeTourId}' 투어의 override 를 제거하고 글로벌로 폴백하시겠어요?`)) return;
+    try {
+      const next = { ...tourPages };
+      delete next[activeTourId];
+      await window.BGNJ_SITE_CONTENT.saveSection('tourPages', next);
+      setPSchedule([]); setPPrep([]); setPTemplateId('');
+      setTick((v) => v + 1);
+      flash('override 제거됨 — 글로벌 fallback 적용.');
+    } catch (err) { alert('실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  // 미리보기 입력 (모드별).
+  const previewSchedule = mode === 'global' ? gSchedule : (mode === 'templates' ? (activeTpl?.schedule || []) : pSchedule);
+  const previewPrep     = mode === 'global' ? gPrep     : (mode === 'templates' ? (activeTpl?.prep     || []) : pPrep);
 
   return (
     <div>
-      <p className="dim" style={{fontSize:13, marginBottom:16, lineHeight:1.8}}>
-        <code>/tour</code> 페이지의 <strong className="gold">답사 일정</strong>과 <strong className="gold">준비물</strong> 항목을 편집합니다.
-        모든 투어에 공통 적용 (per-tour 차별화는 추후 사이클).
+      <p className="dim" style={{fontSize:13, marginBottom:14, lineHeight:1.8}}>
+        <code>/tour</code> 페이지의 <strong className="gold">답사 일정</strong>과 <strong className="gold">준비물</strong> 편집.
+        우선순위: <strong>투어별 override</strong> &gt; <strong>템플릿</strong> &gt; <strong>글로벌</strong> &gt; 코드 default.
       </p>
+      <div role="tablist" aria-label="편집 모드" style={{display:'flex', gap:6, marginBottom:14, flexWrap:'wrap'}}>
+        {[
+          { key: 'global',    label: '글로벌 (모든 투어 공통)' },
+          { key: 'templates', label: '템플릿' },
+          { key: 'per_tour',  label: '투어별 override' },
+        ].map((m) => {
+          const on = mode === m.key;
+          return (
+            <button key={m.key} type="button" role="tab" aria-selected={on}
+              onClick={() => setMode(m.key)}
+              className="btn btn-small"
+              style={{
+                fontSize:12,
+                borderColor: on ? 'var(--primary)' : 'var(--line-2)',
+                color: on ? 'var(--primary)' : 'var(--ink)',
+                background: on ? 'rgba(245,213,72,0.10)' : 'var(--bg-2)',
+                fontWeight: on ? 700 : 500,
+              }}>{m.label}</button>
+          );
+        })}
+      </div>
+
       <div style={{display:'grid', gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)', gap:20}} className="hero-editor-grid">
         {/* 좌: 편집 */}
         <div>
-          {/* 답사 일정 */}
-          <div className="card" style={{padding:16, marginBottom:18}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
-              <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>답사 일정</div>
-              <button type="button" className="btn btn-small" onClick={addSchedule}>＋ 항목 추가</button>
-            </div>
-            {schedule.length === 0 && (
-              <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>
-                ⓘ 항목이 없으면 페이지에서 '답사 일정' 섹션이 노출되지 않습니다.
-              </p>
-            )}
-            {schedule.map((s, i) => (
-              <div key={i} style={{display:'grid', gridTemplateColumns:'90px 1fr auto', gap:8, marginBottom:8, alignItems:'center'}}>
-                <input type="text" className="field-input" value={s.t || ''}
-                  onChange={(e) => updateSchedule(i, 't', e.target.value)} placeholder="0h 30m"
-                  style={{padding:'6px 8px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
-                <input type="text" className="field-input" value={s.l || ''}
-                  onChange={(e) => updateSchedule(i, 'l', e.target.value)} placeholder="주요 공간 답사"
-                  style={{padding:'6px 8px', fontSize:13}}/>
-                <RowActions i={i} total={schedule.length} onMove={moveSchedule} onRemove={removeSchedule}/>
+          {mode === 'global' && (
+            <>
+              <TPE_ScheduleEditor rows={gSchedule}
+                onAdd={() => setGSchedule((a) => _arrAdd(a, { t: '', l: '' }))}
+                onRemove={(i) => setGSchedule((a) => _arrRemove(a, i))}
+                onUpdate={(i, k, v) => setGSchedule((a) => { const n = a.slice(); n[i] = { ...n[i], [k]: v }; return n; })}
+                onMove={(i, d) => setGSchedule((a) => _arrMove(a, i, d))}/>
+              <TPE_PrepEditor rows={gPrep}
+                onAdd={() => setGPrep((a) => _arrAdd(a, ''))}
+                onRemove={(i) => setGPrep((a) => _arrRemove(a, i))}
+                onUpdate={(i, v) => setGPrep((a) => _arrUpdate(a, i, v))}
+                onMove={(i, d) => setGPrep((a) => _arrMove(a, i, d))}/>
+              <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+                <button type="button" className="btn btn-gold" onClick={saveGlobal}>저장</button>
+                <button type="button" className="btn btn-small" onClick={resetGlobal} style={{borderColor:'var(--line-2)'}}>default 복원</button>
               </div>
-            ))}
-          </div>
+            </>
+          )}
 
-          {/* 준비물 */}
-          <div className="card" style={{padding:16, marginBottom:14}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
-              <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>준비물</div>
-              <button type="button" className="btn btn-small" onClick={addPrep}>＋ 항목 추가</button>
-            </div>
-            {prep.length === 0 && (
-              <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>
-                ⓘ 항목이 없으면 페이지에서 '준비물' 섹션이 노출되지 않습니다.
-              </p>
-            )}
-            {prep.map((p, i) => (
-              <div key={i} style={{display:'grid', gridTemplateColumns:'1fr auto', gap:8, marginBottom:8, alignItems:'center'}}>
-                <input type="text" className="field-input" value={p || ''}
-                  onChange={(e) => updatePrep(i, e.target.value)} placeholder="편한 신발"
-                  style={{padding:'6px 8px', fontSize:13}}/>
-                <RowActions i={i} total={prep.length} onMove={movePrep} onRemove={removePrep}/>
+          {mode === 'templates' && (
+            <>
+              <div className="card" style={{padding:14, marginBottom:14}}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+                  <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>템플릿 목록</div>
+                  <button type="button" className="btn btn-small" onClick={addTemplate}>＋ 새 템플릿</button>
+                </div>
+                {templates.length === 0 && (
+                  <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>아직 템플릿이 없습니다. 자주 쓰는 답사 일정/준비물 패턴을 저장해 두면 투어별 override 에서 빠르게 적용할 수 있습니다.</p>
+                )}
+                <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+                  {templates.map((t, i) => (
+                    <button key={t.id || i} type="button" className="btn btn-small"
+                      onClick={() => setActiveTplIdx(i)}
+                      style={{
+                        fontSize:11,
+                        borderColor: activeTplIdx === i ? 'var(--primary)' : 'var(--line-2)',
+                        color: activeTplIdx === i ? 'var(--primary)' : 'var(--ink)',
+                        fontWeight: activeTplIdx === i ? 700 : 500,
+                      }}>{t.name || '이름 없음'}</button>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
+              {activeTpl && (
+                <>
+                  <div className="card" style={{padding:14, marginBottom:14}}>
+                    <label style={{display:'block', marginBottom:8}}>
+                      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:5}}>템플릿 이름</div>
+                      <input type="text" className="field-input" value={activeTpl.name || ''}
+                        onChange={(e) => updateActiveTpl({ name: e.target.value })}
+                        style={{width:'100%', padding:'6px 10px', fontSize:13}}/>
+                    </label>
+                    <button type="button" className="btn btn-small" onClick={() => removeTemplate(activeTplIdx)}
+                      style={{borderColor:'var(--danger)', color:'var(--danger)', fontSize:10}}>이 템플릿 삭제</button>
+                  </div>
+                  <TPE_ScheduleEditor rows={activeTpl.schedule || []}
+                    onAdd={() => updateActiveTpl({ schedule: _arrAdd(activeTpl.schedule || [], { t: '', l: '' }) })}
+                    onRemove={(i) => updateActiveTpl({ schedule: _arrRemove(activeTpl.schedule || [], i) })}
+                    onUpdate={(i, k, v) => { const n = (activeTpl.schedule || []).slice(); n[i] = { ...n[i], [k]: v }; updateActiveTpl({ schedule: n }); }}
+                    onMove={(i, d) => updateActiveTpl({ schedule: _arrMove(activeTpl.schedule || [], i, d) })}/>
+                  <TPE_PrepEditor rows={activeTpl.prep || []}
+                    onAdd={() => updateActiveTpl({ prep: _arrAdd(activeTpl.prep || [], '') })}
+                    onRemove={(i) => updateActiveTpl({ prep: _arrRemove(activeTpl.prep || [], i) })}
+                    onUpdate={(i, v) => updateActiveTpl({ prep: _arrUpdate(activeTpl.prep || [], i, v) })}
+                    onMove={(i, d) => updateActiveTpl({ prep: _arrMove(activeTpl.prep || [], i, d) })}/>
+                </>
+              )}
+              <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+                <button type="button" className="btn btn-gold" onClick={saveTemplates}>모든 템플릿 저장</button>
+              </div>
+            </>
+          )}
 
-          <div style={{display:'flex', gap:10, marginTop:12, flexWrap:'wrap'}}>
-            <button type="button" className="btn btn-gold" onClick={save}>저장</button>
-            <button type="button" className="btn btn-small" onClick={resetAll} style={{borderColor:'var(--line-2)'}}>전체 default 복원</button>
-            {msg && <span role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, alignSelf:'center'}}>{msg}</span>}
-          </div>
+          {mode === 'per_tour' && (
+            <>
+              <div className="card" style={{padding:14, marginBottom:14}}>
+                <label style={{display:'block', marginBottom:10}}>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:5}}>투어 선택</div>
+                  <select value={activeTourId} onChange={(e) => setActiveTourId(e.target.value)} className="field-input"
+                    style={{width:'100%', padding:'8px 10px', fontSize:13}}>
+                    <option value="">— 투어를 선택 —</option>
+                    {tours.map((t) => (
+                      <option key={t.id} value={t.id}>{t.title || t.id} {tourPages[t.id] ? '· override 있음' : ''}</option>
+                    ))}
+                  </select>
+                </label>
+                {activeTourId && (
+                  <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                    <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.16em'}}>템플릿 적용:</span>
+                    <select value={pTemplateId || ''} onChange={(e) => applyTplToPerTour(e.target.value)} className="field-input"
+                      style={{padding:'6px 8px', fontSize:12, minWidth:160}}>
+                      <option value="">— 직접 편집 —</option>
+                      {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+              {activeTourId ? (
+                <>
+                  <TPE_ScheduleEditor rows={pSchedule}
+                    onAdd={() => setPSchedule((a) => _arrAdd(a, { t: '', l: '' }))}
+                    onRemove={(i) => setPSchedule((a) => _arrRemove(a, i))}
+                    onUpdate={(i, k, v) => setPSchedule((a) => { const n = a.slice(); n[i] = { ...n[i], [k]: v }; return n; })}
+                    onMove={(i, d) => setPSchedule((a) => _arrMove(a, i, d))}/>
+                  <TPE_PrepEditor rows={pPrep}
+                    onAdd={() => setPPrep((a) => _arrAdd(a, ''))}
+                    onRemove={(i) => setPPrep((a) => _arrRemove(a, i))}
+                    onUpdate={(i, v) => setPPrep((a) => _arrUpdate(a, i, v))}
+                    onMove={(i, d) => setPPrep((a) => _arrMove(a, i, d))}/>
+                  <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+                    <button type="button" className="btn btn-gold" onClick={savePerTour}>이 투어 저장</button>
+                    {activeOverride && (
+                      <button type="button" className="btn btn-small" onClick={clearPerTour}
+                        style={{borderColor:'var(--danger)', color:'var(--danger)'}}>override 제거 (글로벌 fallback)</button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>투어를 선택하면 그 투어의 답사 일정/준비물을 편집할 수 있습니다. 저장된 override 가 없으면 글로벌이 사용됩니다.</p>
+              )}
+            </>
+          )}
+
+          {msg && <p role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, marginTop:10}}>{msg}</p>}
         </div>
 
         {/* 우: 미리보기 */}
         <div>
-          <div className="card" style={{padding:0, overflow:'hidden', position:'sticky', top:24}}>
-            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'8px 12px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
-              PREVIEW · 투어 페이지
-            </div>
-            <div style={{padding:'24px'}}>
-              <h3 className="ko-serif" style={{fontSize:18, marginBottom:14, paddingBottom:10, borderBottom:'1px solid var(--line)'}}>답사 일정</h3>
-              {schedule.filter((s) => s && (s.t || s.l)).map((s, i) => (
-                <div key={i} style={{display:'grid', gridTemplateColumns:'80px 1fr', gap:16, padding:'10px 0', borderBottom:'1px dashed var(--line)'}}>
-                  <div className="mono gold" style={{fontSize:11, letterSpacing:'0.1em'}}>{s.t || '—'}</div>
-                  <div className="ko-serif" style={{fontSize:13}}>{s.l || '내용 미입력'}</div>
-                </div>
-              ))}
-              {schedule.filter((s) => s && (s.t || s.l)).length === 0 && (
-                <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>(미노출)</p>
-              )}
-
-              <h3 className="ko-serif" style={{fontSize:18, marginTop:24, marginBottom:14, paddingBottom:10, borderBottom:'1px solid var(--line)'}}>준비물</h3>
-              {prep.filter(Boolean).length > 0 ? (
-                <ul style={{paddingLeft:18, color:'var(--ink-2)', fontSize:13, lineHeight:1.9}}>
-                  {prep.filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}
-                </ul>
-              ) : (
-                <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>(미노출)</p>
-              )}
-            </div>
-          </div>
+          <TPE_PreviewCard schedule={previewSchedule} prep={previewPrep}/>
         </div>
       </div>
     </div>
