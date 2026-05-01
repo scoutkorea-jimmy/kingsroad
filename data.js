@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.107.000",
+  version: "00.108.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -239,33 +239,50 @@ window.BGNJ_DIAG = {
 //   BGNJ_FMT.kstDateTime('2026-05-01T08:23:45Z') → '2026-05-01 17:23:45 KST'
 //   BGNJ_FMT.kstShort(iso) → '2026.05.01 17:23'
 window.BGNJ_FMT = {
-  // 한국 표준시 (UTC+9) 로 ISO → 'YYYY-MM-DD HH:MM:SS KST' 형식.
-  // 잘못된 입력은 빈 문자열.
-  kstDateTime(iso) {
-    if (!iso) return '';
+  // v00.108 — Intl.DateTimeFormat.formatToParts 사용 (정확한 KST 조합).
+  // 이전 toLocaleString + 정규식 방식은 출력 정합 깨짐 (예: '2026-05-01-17:30:00').
+  _kstParts(iso, opts) {
+    const d = iso instanceof Date ? iso : new Date(iso);
+    if (isNaN(d.getTime())) return null;
     try {
-      const d = new Date(iso);
-      if (isNaN(d.getTime())) return '';
-      // toLocaleString 'ko-KR' + timeZone Asia/Seoul → 일관된 KST 출력 (사용자 브라우저 TZ 무관).
-      const out = d.toLocaleString('ko-KR', {
-        timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-      });
-      // ko-KR 출력: '2026. 05. 01. 17:23:45' → '2026-05-01 17:23:45'
-      return out.replace(/\.\s?/g, '-').replace(/-\s/, ' ').replace(/-$/, '').trim() + ' KST';
-    } catch { return ''; }
+      const parts = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour12: false, ...opts }).formatToParts(d);
+      const m = {};
+      for (const p of parts) m[p.type] = p.value;
+      return m;
+    } catch { return null; }
   },
+  // 'YYYY-MM-DD HH:MM:SS KST' (예: '2026-05-01 17:30:00 KST')
+  kstDateTime(iso) {
+    const m = this._kstParts(iso, {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+    if (!m) return '';
+    return `${m.year}-${m.month}-${m.day} ${m.hour}:${m.minute}:${m.second} KST`;
+  },
+  // 'YYYY.MM.DD HH:MM' (사이드 카드 등 좁은 영역)
   kstShort(iso) {
-    if (!iso) return '';
-    try {
-      const d = new Date(iso);
-      if (isNaN(d.getTime())) return '';
-      const out = d.toLocaleString('ko-KR', {
-        timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', hour12: false,
-      });
-      return out.replace(/\.\s?/g, '.').replace(/\.\s/, ' ').replace(/\.$/, '');
-    } catch { return ''; }
+    const m = this._kstParts(iso, {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+    });
+    if (!m) return '';
+    return `${m.year}.${m.month}.${m.day} ${m.hour}:${m.minute}`;
+  },
+  // 'YYYY-MM-DD' (날짜만)
+  kstDate(iso) {
+    const m = this._kstParts(iso, { year: 'numeric', month: '2-digit', day: '2-digit' });
+    if (!m) return '';
+    return `${m.year}-${m.month}-${m.day}`;
+  },
+  // 'M.DD (요일) HH:MM' — 사용자 facing 짧은 형식
+  kstFriendly(iso) {
+    const m = this._kstParts(iso, {
+      month: 'numeric', day: '2-digit', weekday: 'short',
+      hour: '2-digit', minute: '2-digit',
+    });
+    if (!m) return '';
+    return `${m.month}.${m.day} (${m.weekday}) ${m.hour}:${m.minute}`;
   },
 };
 

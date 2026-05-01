@@ -583,7 +583,7 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
                     <AuthorGradeBadge authorId={r.userId} author={r.author}/>
                   </span>
                   <span className="gold" style={{fontSize:14}}>{stars(r.rating)}</span>
-                  <span className="dim-2 mono" style={{fontSize:11}}>{new Date(r.createdAt).toLocaleDateString('ko-KR')}</span>
+                  <span className="dim-2 mono" style={{fontSize:11}}>{window.BGNJ_FMT.kstDate(r.createdAt)}</span>
                 </div>
                 {!!user && (user.isAdmin || r.userId === user.id) && (
                   <button type="button" className="btn-ghost"

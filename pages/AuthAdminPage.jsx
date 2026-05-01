@@ -566,7 +566,7 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
                     {r.reason}
                   </div>
                   <div className="dim-2 mono" style={{fontSize:11}}>
-                    신고자 {r.reporterName} · {new Date(r.createdAt).toLocaleString('ko-KR')}
+                    신고자 {r.reporterName} · {window.BGNJ_FMT.kstDateTime(r.createdAt)}
                   </div>
                 </div>
                 <div style={{display:'flex', gap:8, justifyContent:'flex-end', flexWrap:'wrap'}}>
@@ -1917,7 +1917,7 @@ const BookOrderAdminPanel = ({ go }) => {
               <header style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:10}}>
                 <div style={{display:'flex', gap:10, alignItems:'baseline', flexWrap:'wrap'}}>
                   <span className="mono gold" style={{fontSize:12, letterSpacing:'0.16em'}}>{o.orderNo}</span>
-                  <span className="mono dim-2" style={{fontSize:11}}>{new Date(o.createdAt).toLocaleString('ko-KR')}</span>
+                  <span className="mono dim-2" style={{fontSize:11}}>{window.BGNJ_FMT.kstDateTime(o.createdAt)}</span>
                 </div>
                 <span className="mono" style={{fontSize:10, letterSpacing:'0.22em', color: statusTone(o.status)}}>
                   {statusLabel(o.status).toUpperCase()}{o.paid && o.status === 'paid' && ' · 입금 ✓'}
@@ -1985,7 +1985,7 @@ const BookOrderAdminPanel = ({ go }) => {
                   </>
                 )}
                 {o.status === 'delivered' && o.tracking && (
-                  <span className="mono dim-2" style={{fontSize:11}}>송장 {o.tracking} · 도착 {o.deliveredAt ? new Date(o.deliveredAt).toLocaleDateString('ko-KR') : ''}</span>
+                  <span className="mono dim-2" style={{fontSize:11}}>송장 {o.tracking} · 도착 {o.deliveredAt ? window.BGNJ_FMT.kstDate(o.deliveredAt) : ''}</span>
                 )}
                 {(o.status === 'pending_payment' || o.status === 'paid') && (
                   <button type="button" className="btn btn-small"
@@ -2132,7 +2132,7 @@ const LegalAdminPanel = () => {
         </div>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, gap:12, flexWrap:'wrap'}}>
           {doc.updatedAt ? (
-            <div className="dim-2 mono" style={{fontSize:11}}>최근 수정 · {new Date(doc.updatedAt).toLocaleString('ko-KR')}</div>
+            <div className="dim-2 mono" style={{fontSize:11}}>최근 수정 · {window.BGNJ_FMT.kstDateTime(doc.updatedAt)}</div>
           ) : (
             <div className="dim-2 mono" style={{fontSize:11}}>저장 이력 없음 — 처음 저장하시면 회원가입 모달과 푸터에 노출됩니다.</div>
           )}
@@ -3040,7 +3040,7 @@ const BooksAdminPanel = () => {
                           <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:4}}>
                             <span className="gold" style={{fontSize:13}}>{'★'.repeat(r.rating || 5)}</span>
                             <span className="mono dim-2" style={{fontSize:11}}>{r.userName}</span>
-                            <span className="mono dim-2" style={{fontSize:10}}>{new Date(r.createdAt).toLocaleDateString('ko-KR')}</span>
+                            <span className="mono dim-2" style={{fontSize:10}}>{window.BGNJ_FMT.kstDate(r.createdAt)}</span>
                           </div>
                           <p className="ko-serif" style={{fontSize:13, lineHeight:1.7, margin:0}}>{r.text}</p>
                         </div>
@@ -3145,7 +3145,7 @@ const ErrorLogPanel = () => {
             ) : filtered.map((e) => (
               <tr key={e.id} style={{borderTop:'1px solid var(--line)'}}>
                 <td className="mono dim-2" style={{padding:'10px 12px', fontSize:11, verticalAlign:'top'}}>
-                  {e.ts ? new Date(e.ts).toLocaleString('ko-KR') : '-'}
+                  {e.ts ? window.BGNJ_FMT.kstDateTime(e.ts) : '-'}
                 </td>
                 <td className="mono" style={{padding:'10px 12px', fontSize:11, verticalAlign:'top', color:'var(--danger)', letterSpacing:'0.1em'}}>
                   {e.code || '-'}
@@ -3377,7 +3377,7 @@ const AuditLogPanel = () => {
           <tbody>
             {list.map((e) => (
               <tr key={e.id} style={{borderBottom:'1px solid var(--line)'}}>
-                <td className="mono dim-2" style={{padding:10, fontSize:11}}>{new Date(e.ts).toLocaleString('ko-KR')}</td>
+                <td className="mono dim-2" style={{padding:10, fontSize:11}}>{window.BGNJ_FMT.kstDateTime(e.ts)}</td>
                 <td className="mono gold" style={{padding:10, fontSize:11}}>{e.action}</td>
                 <td className="mono" style={{padding:10, fontSize:11}}>{e.target}</td>
                 <td style={{padding:10, fontSize:12}}>{e.by}</td>
@@ -3465,7 +3465,7 @@ const PostViewerModal = ({ postId, onClose }) => {
         }}>
           {[
             ['작성자', post.author || '-'],
-            ['작성일', post.date || (post.createdAt ? new Date(post.createdAt).toLocaleString('ko-KR') : '-')],
+            ['작성일', post.date || (post.createdAt ? window.BGNJ_FMT.kstDateTime(post.createdAt) : '-')],
             ['조회', post.views ?? 0],
             ['공감', likes],
             ['댓글', comments.length],
@@ -3519,7 +3519,7 @@ const PostViewerModal = ({ postId, onClose }) => {
                     <span className="gold mono" style={{fontSize:11, letterSpacing:'0.1em'}}>
                       {c.parentId ? '↳ ' : ''}{c.author || '-'}
                     </span>
-                    <span className="mono dim-2" style={{fontSize:10}}>{c.date || (c.createdAt ? new Date(c.createdAt).toLocaleString('ko-KR') : '')}</span>
+                    <span className="mono dim-2" style={{fontSize:10}}>{c.date || (c.createdAt ? window.BGNJ_FMT.kstDateTime(c.createdAt) : '')}</span>
                   </div>
                   <div style={{lineHeight:1.7, whiteSpace:'pre-wrap'}}>{c.text || c.body || '-'}</div>
                 </li>
@@ -3756,7 +3756,7 @@ const MemberAdminPanel = ({ go }) => {
   const gradeOf = (id) => grades.find((g) => g.id === id);
   const formatDate = (iso) => {
     if (!iso) return '-';
-    try { return new Date(iso).toLocaleString('ko-KR'); } catch { return iso; }
+    try { return window.BGNJ_FMT.kstDateTime(iso); } catch { return iso; }
   };
 
   // ── 상세 ──
@@ -3996,7 +3996,7 @@ const MemberAdminPanel = ({ go }) => {
                     <span className="dim-2 mono" style={{fontSize:10}}>—</span>
                   )}
                 </td>
-                <td className="mono dim-2" style={{padding:12, fontSize:11}}>{u.joinedAt ? new Date(u.joinedAt).toLocaleDateString('ko-KR') : '-'}</td>
+                <td className="mono dim-2" style={{padding:12, fontSize:11}}>{u.joinedAt ? window.BGNJ_FMT.kstDate(u.joinedAt) : '-'}</td>
                 <td className="mono dim-2" style={{padding:12, fontSize:10, textAlign:'right'}}>{activitySummary}</td>
                 <td style={{padding:12, textAlign:'right'}}>
                   <button type="button" className="btn btn-small" onClick={() => setSelectedId(u.id)}>상세</button>
@@ -4217,7 +4217,7 @@ const AdminPage = ({ go }) => {
             <h1 className="ko-serif" style={{fontSize:32, fontWeight:500, marginTop:6}}>{tab}</h1>
           </div>
           <time className="mono dim-2" style={{fontSize:11}} dateTime={new Date().toISOString()}>
-            {new Date().toLocaleString('ko-KR')}
+            {window.BGNJ_FMT.kstDateTime()}
           </time>
         </div>
 
@@ -5936,7 +5936,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
                 <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:8}}>{c.excerpt}</p>
                 {c.status === 'scheduled' && c.publishAt && (
                   <div className="mono" style={{fontSize:11, color:'var(--ink-2)', marginBottom:12}}>
-                    예약 시각 · {new Date(c.publishAt).toLocaleString('ko-KR')}
+                    예약 시각 · {window.BGNJ_FMT.kstDateTime(c.publishAt)}
                   </div>
                 )}
                 <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>

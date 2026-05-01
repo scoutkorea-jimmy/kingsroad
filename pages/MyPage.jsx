@@ -161,7 +161,7 @@ const MyPage = ({ go, user, cart }) => {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                 <span className="dim">가입 시각</span>
-                <span>{user.joinedAt ? new Date(user.joinedAt).toLocaleDateString("ko-KR") : "미기록"}</span>
+                <span>{user.joinedAt ? window.BGNJ_FMT.kstDate(user.joinedAt) : "미기록"}</span>
               </div>
             </div>
           </div>
@@ -486,7 +486,7 @@ const MyPage = ({ go, user, cart }) => {
                         </div>
                       )}
                       <div className="mono dim-2" style={{ fontSize: 10, marginTop: 4, letterSpacing: '0.1em' }}>
-                        {new Date(n.createdAt).toLocaleString('ko-KR')}
+                        {window.BGNJ_FMT.kstDateTime(n.createdAt)}
                       </div>
                     </button>
                   </li>

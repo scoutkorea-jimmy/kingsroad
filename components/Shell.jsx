@@ -263,7 +263,7 @@ const NotificationBell = ({ user, onPick }) => {
                       </div>
                     )}
                     <div className="mono dim-2" style={{ fontSize: 10, marginTop: 4, letterSpacing: '0.1em' }}>
-                      {new Date(n.createdAt).toLocaleString('ko-KR')}
+                      {window.BGNJ_FMT.kstDateTime(n.createdAt)}
                     </div>
                   </button>
                 </li>

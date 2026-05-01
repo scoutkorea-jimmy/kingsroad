@@ -72,7 +72,7 @@ const BookReviewSection = ({ user }) => {
               <div style={{display:'flex', gap:12, alignItems:'center'}}>
                 <span className="gold" style={{fontSize:16}}>{STARS[r.rating - 1]}</span>
                 <span className="mono dim-2" style={{fontSize:11}}>{r.userName}</span>
-                <span className="mono dim-2" style={{fontSize:10}}>{new Date(r.createdAt).toLocaleDateString('ko-KR')}</span>
+                <span className="mono dim-2" style={{fontSize:10}}>{window.BGNJ_FMT.kstDate(r.createdAt)}</span>
               </div>
               {(isAdmin || user?.id === r.userId) && (
                 <button type="button" className="btn-ghost"

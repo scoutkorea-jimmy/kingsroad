@@ -4,6 +4,27 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.108.000",
+    date: "2026-05-01",
+    datetime: "2026-05-01T19:15:00+09:00",
+    summary: "🕒 BGNJ_FMT formatToParts fix + 사이트 전반 KST sweep + KMS DEPENDENCY_MATRIX 갱신",
+    details: [
+      "🐛 [v00.107 BGNJ_FMT 출력 깨짐 fix] toLocaleString + 정규식 조합이 '2026-05-01-17:30:00 KST' 처럼 시간 앞에 대시 삽입. Intl.DateTimeFormat.formatToParts 로 교체. 모든 예상 출력 정확:  kstDateTime / kstShort / kstDate / kstFriendly.",
+      "🕒 [사이트 전반 KST sweep] 7 파일 19 toLocaleString/toLocaleDateString 호출 → window.BGNJ_FMT 일괄 마이그.",
+      "  · pages/AuthAdminPage.jsx — 신고 시각 / 주문 시각 / 도착일 / 약관 갱신 / 강연 후기 / 감사 로그 / 게시글 작성 / 댓글 작성 / 등 13곳",
+      "  · pages/MyPage.jsx — 가입 시각",
+      "  · pages/BookCheckoutPage.jsx — 책 후기 작성일",
+      "  · pages/WangsanamTourPage.jsx — 답사 후기 작성일",
+      "  · pages/LecturesPage.jsx — 강연 후기 작성일",
+      "  · pages/LegalFaqPages.jsx — 약관 최근 갱신일",
+      "  · components/Shell.jsx — 알림 시각",
+      "📑 DEPENDENCY_MATRIX 갱신 — @babel/standalone 항목 '폐기' kind 로 이동 (v00.071 esbuild 도입). esbuild + D1 + R2 인프라 항목 추가. tiptap 노트에 v00.105 핫픽스 반영.",
+      "📦 cache-buster — `?v=00.108.000` (20곳).",
+      "ℹ KMS FEATURE_DOMAINS 본문 (~750 줄) 본격 갱신은 다음 사이클로 분리 — 큰 작업이라 별도 처리.",
+    ],
+    context: "v00.107 의 BGNJ_FMT 가 사용자 검증 없이 deploy 되어 출력 깨짐 발견. formatToParts 로 안정 fix. 동시에 사용자 가시 시간 표시 19곳을 일괄 KST 적용 — 이제 일본/유럽 등 비-KR 타임존 사용자도 한국 시간으로 본다. KMS 갱신은 DEPENDENCY_MATRIX 만 본 사이클 — FEATURE_DOMAINS 는 다음 사이클.",
+  },
+  {
     version: "00.107.000",
     date: "2026-05-01",
     datetime: "2026-05-01T18:30:00+09:00", // v00.107 — KST timestamp
@@ -1887,14 +1908,19 @@ const DesignSystemView = () => {
 // 최신 버전은 KMS 사이클 마지막 npm registry 조회 시점 기준. 자동 갱신 X (수동 검토).
 const DEPENDENCY_MATRIX = [
   // CDN — index.html 직접 참조
-  { kind: 'CDN', name: '@babel/standalone', current: '7.29.3', latest: '7.29.3', risk: 'patch', location: 'index.html', notes: 'in-browser JSX 컴파일러. SRI hash 동시 갱신 필요.' },
   { kind: 'CDN', name: 'react / react-dom (UMD)', current: '18.3.1', latest: '18.3.1 (UMD 라인 끝)', risk: 'lts', location: 'index.html', notes: 'v00.100 분석: React 19 는 UMD 미배포. 마이그레이션은 전 페이지 ESM 재구조화(boot.jsx + 16 페이지 + 워크플로 변경) 가 필요한 다중-사이클 작업 → 보류. 18.3.1 은 LTS 라 보안 패치 지속.' },
-  { kind: 'CDN', name: '@tiptap/* (ESM)', current: '3.22.5', latest: '3.22.5', risk: 'patch', location: 'index.html', notes: 'v00.090 메이저 마이그레이션 완료 — StarterKit v3 가 underline/link/dropcursor 기본 포함. standalone import 제거 + 옵션 StarterKit.configure 로 이전.' },
+  { kind: 'CDN', name: '@tiptap/* (ESM)', current: '3.22.5', latest: '3.22.5', risk: 'patch', location: 'index.html', notes: 'v00.090 메이저 마이그 + v00.105 핫픽스 — StarterKit v3 가 underline/link/dropcursor 기본 포함. text-style/table 은 named import.' },
   // npm — 로컬 도구
+  { kind: 'npm', name: 'esbuild', current: '0.28.x', latest: '0.28.x', risk: 'patch', location: 'tools/package.json', notes: 'v00.071 도입 — JSX 사전 컴파일 (tools/build.mjs). 80ms/run. pre-commit hook 자동 실행.' },
   { kind: 'npm', name: '@babel/parser', current: '7.29.3', latest: '7.29.3', risk: 'patch', location: 'tools/package.json', notes: 'pre-commit 훅 신택스 검증. `npm update` 로 자동 갱신.' },
   { kind: 'npm', name: 'wrangler', current: '4.87.0 (선언)', latest: '4.87.0', risk: 'patch', location: 'workers/package.json', notes: 'Cloudflare 워커 CLI. `cd workers && npm install` 후 `wrangler deploy`. 글로벌 설치 시 사용자 권한 필요.' },
   // 외부 BGNJ
   { kind: '폰트', name: 'Wanted Sans / KBL Jump / Noto Serif KR', current: 'CDN', latest: 'CDN', risk: 'auto', location: 'styles.css @import', notes: 'CDN @import — 자동 갱신.' },
+  // 인프라 (워커)
+  { kind: '인프라', name: 'D1 (banginoja-db)', current: 'production', latest: '—', risk: 'managed', location: 'wrangler.toml', notes: 'tours / lectures / posts / comments / books / book_orders / user_columns / users / 등. v00.081 cover_url + v00.106 subtitle/refund_policy 컬럼 추가.' },
+  { kind: '인프라', name: 'R2 (banginoja-media)', current: 'active', latest: '—', risk: 'managed', location: 'wrangler.toml', notes: 'v00.082~v00.106 — admin 9 슬롯 + 사용자 콘텐츠 (게시글 첨부/이미지) + 놀자 items 이미지. /api/media/upload + /api/media/:key.' },
+  // 제거된 의존성 (v00.071 esbuild 도입으로 폐기)
+  { kind: '폐기', name: '@babel/standalone (v00.070 까지 사용)', current: '제거됨', latest: '—', risk: 'gone', location: 'index.html (v00.071 제거)', notes: 'v00.071 esbuild 사전 컴파일 도입으로 in-browser JSX 컴파일러 제거. 첫 로드 ~3MB 절감.' },
 ];
 const DependencyMatrix = () => {
   const reviewedAt = '2026-05-01';

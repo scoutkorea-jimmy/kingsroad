@@ -10,7 +10,7 @@ const LegalPage = ({ go, slug }) => {
         <h1 className="section-title" style={{marginBottom:14}}>{doc.title}</h1>
         {doc.updatedAt && (
           <div className="dim-2 mono" style={{fontSize:11, marginBottom:32, letterSpacing:'0.16em'}}>
-            최근 갱신 · {new Date(doc.updatedAt).toLocaleDateString('ko-KR')}
+            최근 갱신 · {window.BGNJ_FMT.kstDate(doc.updatedAt)}
           </div>
         )}
         <article className="post-body" style={{maxWidth:'68ch', margin:'0 auto'}}
