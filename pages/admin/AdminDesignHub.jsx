@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.116.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T08:07:00+09:00", // pre-commit stamp.
+    summary: "🩹 v00.115 안정성 hotfix — 슈퍼 admin rate limit 예외 + updatePostRemote createdAt 전달",
+    details: [
+      "🚨 [HIGH 운영위험 fix] checkRateLimit — SUPER_ADMIN_EMAILS / ADMIN_BOOTSTRAP_EMAIL 매칭 이메일은 throttle 제외. 슈퍼 관리자가 비번 5회 실수 시 15분 잠금되던 운영 위험 차단.",
+      "🩹 [MEDIUM 데이터 흐름 fix] BGNJ_COMMUNITY.updatePostRemote — patch.createdAt 가 있으면 apiPatch 에 포함 → 워커 handlePostPatch 까지 전달. 기존엔 admin 이 글 수정 시 createdAt input 입력해도 워커로 전송 안 됐음.",
+      "ℹ 발견 출처: v00.115 직후 기능 안정성 재검토 audit. HIGH 1, MEDIUM 1 처리.",
+      "ℹ 미처리 LOW 항목 (다음 사이클 후보): toLocaleString 11곳 → BGNJ_FMT.currency 도입 검토. CommunityPage 로컬 폴백 createPost 가 createdAt 미보존 (서버 실패 시 표시 시간 mismatch — 드문 edge case).",
+      "★ 워커 deploy 필요 — checkRateLimit 변경.",
+      "📦 cache-buster — `?v=00.116.000` (21곳).",
+    ],
+    context: "사용자 요청 '기능적 안정성 재검토' → Explore agent 로 전수 audit. v00.115 의 admin createdAt + 홈페이지 안정화 변경분이 운영 회로에 어떻게 통합됐는지 검증. HIGH 1건 (admin 본인이 자기 잠금 trap) + MEDIUM 1건 (수정 흐름 데이터 누락) 즉시 fix. 나머지는 정보성 (LOW) 또는 미래 사이클 (toLocaleString sweep, fallback createPost 보강).",
+  },
+  {
     version: "00.115.000",
     date: "2026-05-01",
     datetime: "2026-05-02T07:50:35+09:00", // pre-commit stamp.

@@ -223,6 +223,11 @@ const clientIp = (req) => {
 };
 
 const checkRateLimit = async (env, email, ip) => {
+  // v00.116 — 슈퍼 관리자 / bootstrap admin 이메일은 throttle 제외 (운영 위험 차단).
+  // 일반 admin (DB is_admin=1) 은 비밀번호 검증 후에만 admin 으로 인식되므로 throttle 시점엔 모름 — 이메일 매칭만 사용.
+  if (isSuperAdminEmail(email, env)) return;
+  const bootstrap = String(env.ADMIN_BOOTSTRAP_EMAIL || '').trim().toLowerCase();
+  if (bootstrap && email === bootstrap) return;
   // login_attempts 테이블 부재 시 (schema-v4 미적용) 통과 — graceful degradation.
   try {
     const since = Date.now() - RATE_WINDOW_MS;

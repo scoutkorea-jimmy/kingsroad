@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.115.000",
-  build: "2026.05.01",
+  version: "00.116.000",
+  build: "2026.05.02",
   channel: "preview",
 };
 
@@ -1245,6 +1245,8 @@ window.BGNJ_COMMUNITY = {
     if ('body' in patch) apiPatch.body = patch.body;
     if ('prefix' in patch) apiPatch.prefix = patch.prefix;
     if ('categoryId' in patch) apiPatch.category_id = patch.categoryId;
+    // v00.116 — admin 만 createdAt 수정 가능 (워커가 검증). admin 외 보내도 무시됨.
+    if ('createdAt' in patch && patch.createdAt) apiPatch.createdAt = patch.createdAt;
     await window.BGNJ_API.posts.update(postId, apiPatch);
     await this.refreshPosts();
     return this.getPost(postId);
