@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.069.000",
+  version: "00.070.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -434,10 +434,24 @@ const DEFAULT_SITE_CONTENT = {
     '따뜻한 겉옷 (야간 프로그램 시)',
     '사전 배포되는 자료집은 현장에서 제공됩니다',
   ],
-  // 투어별 override (v00.066) — { [tourId]: { schedule: [{t,l}], prep: [str], templateId?: string } }.
+  // 투어별 override (v00.066) — { [tourId]: { schedule: [{t,l}], prep: [str], templateId?: string, coverDataUri?: string } }.
   // per-tour 차별화. 키 누락 또는 빈 배열이면 위 글로벌(tourSchedule/tourPrep) fallback.
   // templateId 가 있으면 그 템플릿의 schedule/prep 사용 (직접 편집한 schedule/prep 보다 우선순위 낮음).
+  // coverDataUri (v00.070) — 투어 상세 페이지 좌측 커버 이미지. 비면 placeholder.
   tourPages: {},
+  // 투어 페이지 상단 인트로 (v00.070) — 답사 리스트 페이지 hero. 비면 코드 default.
+  tourIntro: {
+    eyebrow: 'TOUR · 답사',
+    titlePrefix: '발로 읽는 ',
+    titleAccent: '조선',
+    subtitle: '뱅기노자와 왕사남이 직접 운영하는 프로그램. 회원 전용 신청 · 무통장 입금 결제.',
+  },
+  // 후기 게이팅/익명 안내 (v00.070) — TourReviewsSection 의 안내 문구. 비면 코드 default.
+  tourReviewsGate: {
+    gate: '후기는 참가 확정된 회원만 작성할 수 있습니다. 아직 신청 전이라면 사이드바에서 답사를 신청하고 운영자 입금 확인을 받은 뒤 다시 와 주세요.',
+    anonymous: '후기 작성은 회원 전용입니다.',
+    empty: '아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.',
+  },
   // 답사 일정/준비물 템플릿 모음 (v00.066) — 운영자가 자주 쓰는 패턴 저장.
   // 각 항목: { id, name, schedule: [{t,l}], prep: [str] }.
   // 투어편집 시 드롭다운에서 선택 → 자동 채움. 직접 편집도 동시 가능.
@@ -1831,6 +1845,11 @@ window.BGNJ_TOURS = {
       endsAt: r.ends_at || r.endsAt || null,
       durationMinutes: r.duration_minutes || r.durationMinutes || 0,
       capacity: r.capacity || 0,
+      // v00.070 — 워커 tourRow 가 보내는 표시용 필드를 그대로 패스. 이전엔 누락되어 라이브가 빈 값.
+      duration: r.duration || '',
+      group: r.group_size || r.group || '',
+      level: r.level || '',
+      next: r.next || '',
       price, priceNumber: price,
       desc: r.description || r.desc || '',
       hidden: !!r.hidden,

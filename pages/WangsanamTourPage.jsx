@@ -107,13 +107,21 @@ const TourPage = ({ go, user }) => {
     refund_requested: 'var(--warning)',
   }[s] || 'var(--ink-2)');
 
+  // v00.070 — 인트로(eyebrow/titlePrefix/titleAccent/subtitle) 를 site_content_kv.tourIntro 에서 읽어옴. 비면 코드 default.
+  const sc070 = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+  const intro = (sc070.tourIntro && typeof sc070.tourIntro === 'object') ? sc070.tourIntro : {};
+  const introEyebrow = intro.eyebrow || 'TOUR · 답사';
+  const introPrefix  = intro.titlePrefix ?? '발로 읽는 ';
+  const introAccent  = intro.titleAccent ?? '조선';
+  const introSubtitle = intro.subtitle || '뱅기노자와 왕사남이 직접 운영하는 프로그램. 회원 전용 신청 · 무통장 입금 결제.';
+
   return (
     <div className="section">
       <div className="container">
         <div style={{marginBottom:48}}>
-          <div className="section-eyebrow">TOUR · 답사</div>
-          <h1 className="section-title">발로 읽는 <span className="accent">조선</span></h1>
-          <p className="section-subtitle">뱅기노자와 왕사남이 직접 운영하는 프로그램. 회원 전용 신청 · 무통장 입금 결제.</p>
+          <div className="section-eyebrow">{introEyebrow}</div>
+          <h1 className="section-title">{introPrefix}<span className="accent">{introAccent}</span></h1>
+          <p className="section-subtitle">{introSubtitle}</p>
         </div>
 
         {/* Tabs */}
@@ -138,9 +146,24 @@ const TourPage = ({ go, user }) => {
 
         <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:60}} className="tour-grid">
           <div>
-            <div className="placeholder" style={{aspectRatio:'16/10', marginBottom:32, fontSize:11}}>
-              {String(tour.title || '').toUpperCase()} · 1600×1000
-            </div>
+            {(() => {
+              // v00.070 — site_content_kv.tourPages[tour.id].coverDataUri 가 있으면 표시, 없으면 placeholder.
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const coverUri = sc.tourPages?.[tour.id]?.coverDataUri || '';
+              if (coverUri) {
+                return (
+                  <div style={{aspectRatio:'16/10', marginBottom:32, overflow:'hidden', borderRadius:2, background:'var(--bg-2)'}}>
+                    <img src={coverUri} alt={tour.title || '투어 커버'}
+                      style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                  </div>
+                );
+              }
+              return (
+                <div className="placeholder" style={{aspectRatio:'16/10', marginBottom:32, fontSize:11}}>
+                  {String(tour.title || '').toUpperCase()} · 1600×1000
+                </div>
+              );
+            })()}
             <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap'}}>
               <span className="badge badge-gold">{tour.level}</span>
               <span className="badge">{tour.duration}</span>
@@ -500,6 +523,16 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
   const [rating, setRating] = React.useState(5);
   const [text, setText] = React.useState("");
   const [error, setError] = React.useState("");
+  // v00.070 — 게이트/익명/empty 안내 문구를 site_content_kv.tourReviewsGate 에서 읽음. 비면 코드 default.
+  const gateContent = (() => {
+    const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+    const g = (sc.tourReviewsGate && typeof sc.tourReviewsGate === 'object') ? sc.tourReviewsGate : {};
+    return {
+      gate: g.gate || '후기는 참가 확정된 회원만 작성할 수 있습니다. 아직 신청 전이라면 사이드바에서 답사를 신청하고 운영자 입금 확인을 받은 뒤 다시 와 주세요.',
+      anonymous: g.anonymous || '후기 작성은 회원 전용입니다.',
+      empty: g.empty || '아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.',
+    };
+  })();
 
   const submit = (e) => {
     e.preventDefault();
@@ -586,14 +619,13 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
             </div>
           </form>
         ) : (
-          <div className="card dim" style={{padding:16, marginBottom:24, fontSize:13, lineHeight:1.7}}>
-            후기는 <strong className="gold">참가 확정</strong>된 회원만 작성할 수 있습니다.
-            아직 신청 전이라면 사이드바에서 답사를 신청하고 운영자 입금 확인을 받은 뒤 다시 와 주세요.
+          <div className="card dim" style={{padding:16, marginBottom:24, fontSize:13, lineHeight:1.7, whiteSpace:'pre-wrap'}}>
+            {gateContent.gate}
           </div>
         )
       ) : (
         <div className="card" style={{padding:16, marginBottom:24, textAlign:'center', background:'rgba(245,213,72,0.04)'}}>
-          <p className="dim" style={{fontSize:13, marginBottom:10}}>후기 작성은 회원 전용입니다.</p>
+          <p className="dim" style={{fontSize:13, marginBottom:10, whiteSpace:'pre-wrap'}}>{gateContent.anonymous}</p>
           <div style={{display:'flex', gap:8, justifyContent:'center'}}>
             <button type="button" className="btn btn-gold btn-small" onClick={() => go('login')}>로그인</button>
             <button type="button" className="btn btn-small" onClick={() => go('signup')}>회원가입</button>
@@ -602,8 +634,8 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
       )}
 
       {reviews.length === 0 ? (
-        <div className="dim" style={{fontSize:13, padding:'24px 0', textAlign:'center'}}>
-          아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.
+        <div className="dim" style={{fontSize:13, padding:'24px 0', textAlign:'center', whiteSpace:'pre-wrap'}}>
+          {gateContent.empty}
         </div>
       ) : (
         <ol style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:12}}>
