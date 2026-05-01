@@ -108,12 +108,8 @@
 ### ✅ v00.090 — Tiptap 3 메이저
 - 완료: 17 ESM import @2.11.5→@3.22.5. StarterKit v3 가 Underline/Link/Dropcursor 기본 포함 → standalone 제거 + 옵션 StarterKit.configure 로 이전. AdminColumnEditor 는 wrapper 만 사용 → 코드 변경 0. DEPENDENCY_MATRIX risk major→patch.
 
-### ⏳ v00.100 — React 19 메이저
-- UMD 19 교체 + concurrent features
-- 모든 페이지 smoke test (16 페이지)
-- 회귀: ErrorBoundary 동작 / Tiptap 호환 / Babel-standalone 호환
-- **추정:** 4-6 시간.
-- **status:** pending
+### ✅ v00.100 — React 19 마이그레이션 평가 (보류 결정)
+- 완료: 분석 결과 React 19 UMD 단종 확인 → 현재 IIFE 클래식 아키텍처(v00.071) 와 호환 불가. 마이그레이션은 전 페이지 ESM 재구조화 다중-사이클 작업 → 보류. 18.3.1 LTS 유지. DEPENDENCY_MATRIX 갱신 (risk major → lts).
 
 ---
 
@@ -150,4 +146,5 @@
 - **v00.079** ✅ legacy `bgnj_comments` 제거 + storage v6 + ★ wrangler deploy v00.062 metrics endpoint 활성화 (commit `5132fb5`)
 - **v00.081** ✅ 투어 D1 `cover_url` 컬럼 마이그레이션 + ★ wrangler deploy (commit `8356cef`)
 - **v00.082** ✅ R2 업로드 흐름 활성화 — admin 6 슬롯 (OG/로고/파비콘/auth/투어 커버/강연 커버) (commit `0707e00`)
-- **v00.090** ✅ Tiptap 3 메이저 — @tiptap/* 3.22.5 + StarterKit 중복 제거 (commit 다음 sha)
+- **v00.090** ✅ Tiptap 3 메이저 — @tiptap/* 3.22.5 + StarterKit 중복 제거 (commit `2115b77`)
+- **v00.100** ✅ React 19 마이그레이션 평가 — UMD 단종으로 보류 + 18.3.1 LTS 유지 + DEPENDENCY_MATRIX 갱신 (commit 다음 sha)

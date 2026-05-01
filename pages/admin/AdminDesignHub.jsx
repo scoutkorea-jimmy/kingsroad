@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.100.000",
+    date: "2026-05-01",
+    summary: "🔬 React 19 마이그레이션 평가 — UMD 단종 확인 후 18.3.1 유지 결정. DEPENDENCY_MATRIX 갱신 (risk major → lts). 코드 변경 없는 분석 사이클.",
+    details: [
+      "🔬 React 19 (latest 19.2.5) 는 UMD 번들을 단종. `unpkg.com/react@19/umd/...` 와 cdnjs 모두 404. 공식 패키지에 umd/ 디렉터리 없음.",
+      "🔬 esm.sh 는 React 19 를 ESM 으로 서빙 — 그러나 `<script type=\"module\">` 은 deferred 실행이라 클래식 IIFE 페이지 스크립트(v00.071 빌드 산출물) 의 React.createElement 호출 시점 보장 불가.",
+      "🔬 진정한 R19 도입 요구: ① boot.jsx + 16 페이지 + components/ 모두 ESM module 로 재구조화 ② tools/build.mjs IIFE 래핑 폐기 + ESM 출력 ③ index.html 스크립트 로드 순서 재조정 ④ window.React 경로 폐지 — 다중-사이클 작업.",
+      "🔬 ROI 평가: R19 의 새 기능 (ref-as-prop / useFormStatus / useActionState / useOptimistic / Server Components) 중 본 사이트가 즉시 활용할 항목 거의 없음. 18.3.1 은 LTS 로 보안 패치 지속. 본 사이클 시점 18.3.1 → 18.3.1 (변동 없음).",
+      "📑 DEPENDENCY_MATRIX 갱신 — react/react-dom risk major → lts. 노트: 'React 19 는 UMD 미배포. 마이그레이션은 전 페이지 ESM 재구조화가 필요한 다중-사이클 작업 → 보류'.",
+      "ℹ 코드 변경: 없음. 본 사이클은 분석 + 의존성 매트릭스 + ADMIN_VERSION_HISTORY 갱신.",
+      "📦 cache-buster — `?v=00.100.000` (20곳 — 분석 사이클이지만 매트릭스 표시 갱신 위해 새 빌드).",
+    ],
+    context: "큐 3 메이저 마지막 항목. v00.090 Tiptap 3 와 달리 React 19 는 단순 버전 bump 불가 — UMD 단종이라 현재 아키텍처(클래식 IIFE + window.React) 를 보존하는 마이그레이션 경로가 없음. 두 옵션 ① 18.3.1 유지(LTS) ② 전 페이지 ESM 재구조화 (다중 사이클, 라이브 페이지 회귀 위험 큼) 중 ① 채택. 저ROI / 고비용 마이그레이션은 미래 사이클로 분리 — 시점은 R18 보안 EOL 또는 R19 신기능 직접 필요 시점. 큐 3 종료 — 추가 작업 없음.",
+  },
+  {
     version: "00.090.000",
     date: "2026-05-01",
     summary: "🎯 Tiptap 3 메이저 마이그레이션 — @tiptap/* 2.11.5 → 3.22.5. StarterKit v3 가 Underline/Link/Dropcursor 기본 포함 → standalone import 3 종 제거 + 옵션을 StarterKit.configure 로 이전.",
@@ -1767,7 +1782,7 @@ const DesignSystemView = () => {
 const DEPENDENCY_MATRIX = [
   // CDN — index.html 직접 참조
   { kind: 'CDN', name: '@babel/standalone', current: '7.29.3', latest: '7.29.3', risk: 'patch', location: 'index.html', notes: 'in-browser JSX 컴파일러. SRI hash 동시 갱신 필요.' },
-  { kind: 'CDN', name: 'react / react-dom (UMD)', current: '18.3.1', latest: '19.2.5', risk: 'major', location: 'index.html', notes: 'React 19 마이그레이션 별도 사이클 — useEffect 동작 변경 + ref-as-prop + key 정합 검토.' },
+  { kind: 'CDN', name: 'react / react-dom (UMD)', current: '18.3.1', latest: '18.3.1 (UMD 라인 끝)', risk: 'lts', location: 'index.html', notes: 'v00.100 분석: React 19 는 UMD 미배포. 마이그레이션은 전 페이지 ESM 재구조화(boot.jsx + 16 페이지 + 워크플로 변경) 가 필요한 다중-사이클 작업 → 보류. 18.3.1 은 LTS 라 보안 패치 지속.' },
   { kind: 'CDN', name: '@tiptap/* (ESM)', current: '3.22.5', latest: '3.22.5', risk: 'patch', location: 'index.html', notes: 'v00.090 메이저 마이그레이션 완료 — StarterKit v3 가 underline/link/dropcursor 기본 포함. standalone import 제거 + 옵션 StarterKit.configure 로 이전.' },
   // npm — 로컬 도구
   { kind: 'npm', name: '@babel/parser', current: '7.29.3', latest: '7.29.3', risk: 'patch', location: 'tools/package.json', notes: 'pre-commit 훅 신택스 검증. `npm update` 로 자동 갱신.' },
