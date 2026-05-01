@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.111.000",
+  version: "00.112.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -233,43 +233,86 @@ window.BGNJ_DIAG = {
   } catch {}
 })();
 
-// === BGNJ_SAFE_HTML — XSS 방어 sanitizer (v00.109) ========================
+// === BGNJ_SAFE_HTML — XSS 방어 sanitizer (v00.109, v00.112 hardening) =====
 // 모든 dangerouslySetInnerHTML 호출은 이 헬퍼를 거쳐야 함 — Tiptap / 약관 / 칼럼 본문 등.
 // DOMPurify (CDN, SRI 검증) 로 화이트리스트 기반 sanitize.
 // DOMPurify 미로드 시 빈 문자열 반환 (보안 fail-closed) — 라이브 영향 가시화.
-window.BGNJ_SAFE_HTML = function (html) {
-  if (!window.DOMPurify) {
-    try { console.warn('[BGNJ_SAFE_HTML] DOMPurify 미로드 — sanitize 실패. CDN 차단 또는 SRI 미스매치 의심.'); } catch {}
-    return '';
-  }
-  return window.DOMPurify.sanitize(String(html || ''), {
-    // Tiptap 무료 extension 출력에 필요한 태그 + 일반 본문.
-    ALLOWED_TAGS: [
-      'p', 'br', 'span', 'div',
-      'strong', 'em', 'u', 's', 'mark', 'sub', 'sup', 'small',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'ul', 'ol', 'li',
-      'a', 'blockquote',
-      'code', 'pre',
-      'img',
-      'table', 'thead', 'tbody', 'tr', 'td', 'th',
-      'iframe', // YouTube 임베드
-      'hr',
-    ],
-    ALLOWED_ATTR: [
-      'href', 'rel', 'target',
-      'src', 'alt', 'title',
-      'class', 'style', // class/style 은 Tiptap 인라인 스타일 (text-align 등) 위해 필요
-      'data-type', 'data-checked', 'data-youtube-video',
-      'allow', 'allowfullscreen', 'frameborder', 'width', 'height',
-      'colspan', 'rowspan',
-    ],
-    // YouTube iframe + http/https/mailto/data: 허용. javascript: 등 차단.
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data):|\/|#)/i,
-    // iframe 은 src 가 youtube.com 또는 youtu.be 만 허용 (옵션).
-    // ADD_ATTR / FORBID 추가 필요 시 호출자가 옵션 override.
-  });
-};
+//
+// v00.112 hardening:
+//   ① data: URI 는 data:image/* 만 허용 (data:text/html XSS 차단).
+//   ② iframe src 는 YouTube/Vimeo 도메인만 허용 (DOMPurify uponSanitizeElement hook).
+//   ③ a[target=_blank] 자동 rel="noopener noreferrer" 강제 (tabnabbing 차단).
+(function () {
+  const SAFE_IFRAME_HOSTS = /^(www\.)?(youtube(-nocookie)?\.com|youtu\.be|player\.vimeo\.com)$/i;
+  const DATA_IMAGE_RE = /^data:image\/(png|jpe?g|gif|webp|svg\+xml|avif);/i;
+
+  // DOMPurify hook 1회 등록 — iframe 도메인 화이트리스트 + a[target=_blank] noopener 강제 + data: 제한.
+  let _hooksInstalled = false;
+  const installHooks = () => {
+    if (_hooksInstalled || !window.DOMPurify || !window.DOMPurify.addHook) return;
+    window.DOMPurify.addHook('uponSanitizeElement', (node, data) => {
+      if (data.tagName === 'iframe') {
+        const src = node.getAttribute('src') || '';
+        try {
+          const u = new URL(src, location.href);
+          if (u.protocol !== 'https:' || !SAFE_IFRAME_HOSTS.test(u.host)) {
+            node.parentNode?.removeChild(node);
+          }
+        } catch {
+          node.parentNode?.removeChild(node);
+        }
+      }
+    });
+    window.DOMPurify.addHook('uponSanitizeAttribute', (node, data) => {
+      // a[target=_blank] 자동 noopener noreferrer.
+      if (node.tagName === 'A' && data.attrName === 'target' && /_blank/i.test(data.attrValue)) {
+        node.setAttribute('rel', 'noopener noreferrer');
+      }
+      // img/audio/video 등의 src 가 data: 면 image MIME 만 허용.
+      if (data.attrName === 'src' && /^data:/i.test(data.attrValue) && !DATA_IMAGE_RE.test(data.attrValue)) {
+        data.keepAttr = false;
+      }
+      // href 가 data: 면 차단 (data:text/html 다운로드 트릭).
+      if (data.attrName === 'href' && /^data:/i.test(data.attrValue)) {
+        data.keepAttr = false;
+      }
+    });
+    _hooksInstalled = true;
+  };
+
+  window.BGNJ_SAFE_HTML = function (html) {
+    if (!window.DOMPurify) {
+      try { console.warn('[BGNJ_SAFE_HTML] DOMPurify 미로드 — sanitize 실패. CDN 차단 또는 SRI 미스매치 의심.'); } catch {}
+      return '';
+    }
+    installHooks();
+    return window.DOMPurify.sanitize(String(html || ''), {
+      // Tiptap 무료 extension 출력에 필요한 태그 + 일반 본문.
+      ALLOWED_TAGS: [
+        'p', 'br', 'span', 'div',
+        'strong', 'em', 'u', 's', 'mark', 'sub', 'sup', 'small',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'ul', 'ol', 'li',
+        'a', 'blockquote',
+        'code', 'pre',
+        'img',
+        'table', 'thead', 'tbody', 'tr', 'td', 'th',
+        'iframe', // YouTube/Vimeo 임베드 — hook 으로 도메인 검증.
+        'hr',
+      ],
+      ALLOWED_ATTR: [
+        'href', 'rel', 'target',
+        'src', 'alt', 'title',
+        'class', 'style', // class/style 은 Tiptap 인라인 스타일 (text-align 등) 위해 필요
+        'data-type', 'data-checked', 'data-youtube-video',
+        'allow', 'allowfullscreen', 'frameborder', 'width', 'height',
+        'colspan', 'rowspan',
+      ],
+      // 허용 URI scheme — javascript:/vbscript: 차단. data: 는 hook 이 image MIME 만 통과.
+      ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data):|\/|#)/i,
+    });
+  };
+})();
 
 // === BGNJ_FMT — KST 기반 날짜·시간 포맷 헬퍼 (v00.107) ====================
 // 뱅기노자 사이트는 한국 사용자 대상 → 모든 시간 표시는 KST 기준.

@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.112.000",
+    date: "2026-05-01",
+    datetime: "2026-05-01T18:43:32+09:00", // v00.111+ — pre-commit 훅에서 tools/stamp-datetime.mjs 가 실제 commit 시간(KST)으로 자동 치환.
+    summary: "🔒 BGNJ_SAFE_HTML hardening — iframe src 화이트리스트 / data: URI image-only / target=_blank noopener 강제 + ROADMAP 갱신",
+    details: [
+      "🔒 [BGNJ_SAFE_HTML hooks] DOMPurify hook 3종 등록 — sanitize 호출 시 1회 install (idempotent).",
+      "  · uponSanitizeElement(iframe) — src URL 파싱 후 host 가 (www.)?youtube.com / youtube-nocookie.com / youtu.be / player.vimeo.com 만 통과. 그 외 노드 자체 제거.",
+      "  · uponSanitizeAttribute(a, target=_blank) — rel='noopener noreferrer' 자동 부여. tabnabbing 방어.",
+      "  · uponSanitizeAttribute(* src, data:*) — data:image/(png|jpe?g|gif|webp|svg+xml|avif) 만 keepAttr. data:text/html 등 차단.",
+      "  · uponSanitizeAttribute(a href, data:*) — 무조건 차단 (data:text/html 다운로드 트릭).",
+      "📑 ROADMAP.md 갱신 — v00.105~111 회고 1줄씩 추가 + 큐 1 (v00.113 CSP / v00.114 rate limit / v00.115 Secrets) + 큐 2 (v00.111 worker deploy 보류) 분류.",
+      "📦 cache-buster — `?v=00.112.000` (20곳).",
+      "ℹ 워커 미변경 — 본 사이클은 정적 자산만. v00.111 worker (post_min_level) deploy 는 별도 인가 사이클.",
+    ],
+    context: "v00.109 audit 잔재 마무리 — DOMPurify 가 화이트리스트 모드라 SVG 등 default 차단되지만 ① iframe 도메인 미검증 ② data: URI src 가 image MIME 외도 통과 ③ a[target=_blank] noopener 미강제 (tabnabbing) 3가지 hardening 필요. uponSanitizeElement/Attribute hook 으로 통합 처리. 큐 1 의 다음 사이클 v00.113 (전체 CSP) 은 inline script 의존도 분석 + nonce 검토 필요해 별 사이클로 분리.",
+  },
+  {
     version: "00.111.000",
     date: "2026-05-01",
     datetime: "2026-05-01T18:36:47+09:00", // v00.111 — pre-commit 훅에서 tools/stamp-datetime.mjs 가 실제 commit 시간(KST)으로 자동 치환.

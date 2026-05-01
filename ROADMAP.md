@@ -2,7 +2,7 @@
 
 > **목적:** 향후 작업 단위(사이클)의 단일 백로그. 사이클 시작 시 이 문서에서 다음 항목을 가져오고, 완료 시 status 갱신.
 > **연관 문서:** 완료된 사이클 회고는 `pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY` 와 `CONTEXT.md §5` 에 기록.
-> **마지막 갱신:** 2026-05-01 (v00.100 직후 — 일관성 검증 보고 반영)
+> **마지막 갱신:** 2026-05-01 (v00.112 — 보안 audit 잔재 분류 + v00.105~111 회고 반영)
 
 ---
 
@@ -17,13 +17,17 @@
 
 ## 큐 1 — 다음 사이클 (검증 보고 후 명시 갱신)
 
-(현재 비어있음 — v00.083~086 모두 완료. 다음 보고 / 사용자 신호 시 신규 사이클 추가)
+> v00.109 보안 audit 잔재. 본 사이클(v00.112) 까지 BGNJ_SAFE_HTML hardening + 게시판 권한 + 클릭재킹 완료.
+
+- **v00.113 (코드)** — 전체 CSP 헤더 (script-src / style-src / img-src / connect-src / font-src). 외부 CDN 화이트리스트 (esm.sh / unpkg / fonts.googleapis / fonts.gstatic / banginoja-api.scoutkorea.workers.dev / youtube.com / vimeo.com). meta CSP 우선 + 향후 워커 헤더 부착으로 강화. *위험: inline `<script>` 부트스트랩 / `'unsafe-inline'` 의존 — 'self' 만 으로는 깨짐 → strict-dynamic + nonce 검토.*
+- **v00.114 (★ 워커 deploy)** — brute-force rate limiting. /api/auth/login + /api/auth/signup 에 IP+이메일 단위 throttle (Workers KV). 5회 실패/15분 lock.
+- **v00.115 (★ 사용자 수동)** — Cloudflare Secrets 이관. `wrangler secret put SUPER_ADMIN_EMAILS` + `wrangler secret put ADMIN_BOOTSTRAP_EMAIL` 후 wrangler.toml [vars] 에서 제거.
 
 ---
 
 ## 큐 2 — 워커 배포 의존 (★ wrangler deploy 필요)
 
-(현재 비어있음 — v00.079 / v00.081 에서 처리. 향후 워커 변경 발생 시 추가)
+- **v00.111 worker** — handlePostsCreate post_min_level 검증 (코드 commit `5ddcf25`, deploy 보류). 인가 후: `cd workers && npx wrangler deploy`.
 
 ---
 
@@ -87,3 +91,11 @@
 - **v00.102** ✅ R2 admin 확장 — Books 표지/PDF + Recommendations 이미지 (ROADMAP v00.084, commit `983d094`)
 - **v00.103** ✅ R2 사용자 콘텐츠 — 게시글 첨부 + 이미지 (ROADMAP v00.085, commit `0eaf1d2`)
 - **v00.104** ✅ LegacyMigrationPanel — 누적 legacy cover 일괄 마이그 (ROADMAP v00.086, commit 다음 sha)
+- **v00.105** ✅ 홈 hero 지도 제거 + 빈 섹션 미노출 + 커버 placeholder 통합 + 책 추가 fix + site_content 줄바꿈 + 투어/강연 admin 통합 + 놀자 시리즈 그룹화 + Tiptap 3 named imports
+- **v00.106** ✅ TourAdminPanel 폼 재구조화 (필드 그룹 6) + 부제/환불정책 D1 컬럼 + GUI 일정/준비물 편집 (zebra cards) + ★ wrangler deploy
+- **v00.107** ✅ ADMIN_VERSION_HISTORY datetime + KST 헬퍼 (BGNJ_FMT) + CSV 다운로드 + 사이트 KST sweep 시작
+- **v00.108** ✅ BGNJ_FMT formatToParts fix (정규식 출력 깨짐 해소) + 사이트 전반 KST sweep 19곳 + DEPENDENCY_MATRIX 갱신
+- **v00.109** ✅ 보안 audit — DOMPurify XSS sanitize 5곳 + R2 폴더 권한 분기 + HTTP origin 제거 + ★ wrangler deploy
+- **v00.110** ✅ 홈 hero ReferenceError fix (HeroProgramCards G 미정의) + v00.106~109 datetime 실제 commit 시간 정정
+- **v00.111** ✅ datetime auto-stamp (tools/stamp-datetime.mjs) + 게시판 작성 권한 검증(post_min_level) + X-Frame-Options/CSP frame-ancestors (commit `5ddcf25`) — *★ 워커 deploy 보류*
+- **v00.112** ✅ BGNJ_SAFE_HTML hardening — iframe src 화이트리스트(YouTube/Vimeo) + data: URI image-only + a[target=_blank] noopener 강제 + ROADMAP 갱신
