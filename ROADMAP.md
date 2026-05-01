@@ -24,13 +24,9 @@
 - 완료: HomePage truncatePreview (110자) + TourAdminPanel inline 답사 일정·준비물·커버 편집 + 버튼 라벨 명시화 (제목·정원·난이도·소요시간·가격).
 - 미완 (v00.073 으로 이월): LectureAdminPanel 동일 패턴 — `lecturePages` site_content 신설 필요.
 
-### ⏳ v00.073 — 전 페이지 헤더 + 푸터 admin 편집화 sweep
-- [ ] 모든 페이지의 eyebrow / title / subtitle / accent 를 `site_content_kv.<page>Intro` 패턴으로 추출 (LecturesPage / CommunityPage / ColumnPage / MyPage / EatPage / SleepPage / ShopPage / FaqPage / LegalPage)
-- [ ] WangsanamTourPage 에서 이미 적용된 tourIntro 패턴(v00.070) 그대로 재사용
-- [ ] SiteContentAdminPanel 에 페이지별 SectionForm 일괄 추가 (또는 페이지 단위 폴더 구조)
-- [ ] 푸터 잔여 하드코드 audit — 카피라이트 라인 / 보조 메뉴 라벨 / 안내 문구 등 site_content 로 이관
-- **동기:** 사용자 보고 "관리자페이지에서 각 메뉴들 제목·부제목들을 수정할 수 있게 세팅해줘 / 푸터정보도 관리자페이지에서 수정할수있게해줘". v00.054(hero) / v00.057(footer) / v00.070(tour) 의 패턴을 사이트 전체에 일관 적용.
-- **status:** pending
+### ✅ v00.073 — 전 페이지 헤더 + 푸터 admin 편집화 sweep
+- 완료: 9 신규 site_content 키 (lecture/community/column/bookCheckout/faq/myPage/eat/sleep/shopIntro) + 푸터 4 필드 (copyright/headingContent/Info/Contact) + 9 SectionForm. myPageIntro 의 {name} 토큰 치환.
+- 미완 (v00.075+ 으로 이월): LecturePageEditorPanel 신설 (강연 페이지에 투어와 동일한 일정/준비물/커버 per-lecture 편집), 후기 게이팅 등 lectureReviewsGate 등.
 
 ### ⏳ v00.074 — 데이터 매퍼 audit
 - [ ] `data.js` 의 모든 `_toX` 매퍼 함수가 워커 응답 필드를 보존하는지 점검
@@ -183,4 +179,5 @@
 
 - **v00.070** ✅ 투어 페이지 모든 항목 admin 편집 + AuthAdminPage 9332→6900 분할 (commit `3ccc6b9`)
 - **v00.071** ✅ 빌드 단계 도입 (esbuild) — Babel-standalone 제거, in-browser 경고 / 500KB deopt 근본 차단 (commit `0dcf267`)
-- **v00.072** ✅ 홈 카드 desc 축약 + TourAdminPanel inline 답사 일정·준비물·커버 편집 통합 (commit 다음 sha)
+- **v00.072** ✅ 홈 카드 desc 축약 + TourAdminPanel inline 답사 일정·준비물·커버 편집 통합 (commit `16940d3`)
+- **v00.073** ✅ 전 페이지 hero/intro + 푸터 잔재 admin 편집화 sweep — 9 페이지 + 푸터 4 필드 (commit 다음 sha)

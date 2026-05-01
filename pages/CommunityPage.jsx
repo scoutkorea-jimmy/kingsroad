@@ -647,9 +647,21 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     <div className="section">
       <div className="container">
         <header style={{marginBottom:24}}>
-          <div className="section-eyebrow" aria-hidden="true">COMMUNITY · 커뮤니티</div>
-          <h1 className="section-title">다섯 봉우리 <span className="accent">광장</span></h1>
-          <p className="section-subtitle">뱅기노자이 모여 나누는 이야기. 질문도 답도 환영합니다.</p>
+          {(() => {
+            // v00.073 — site_content_kv.communityIntro 에서 hero 읽기.
+            const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).communityIntro || {};
+            const eb = _i.eyebrow || 'COMMUNITY · 커뮤니티';
+            const tp = _i.titlePrefix ?? '다섯 봉우리 ';
+            const ta = _i.titleAccent ?? '광장';
+            const sb = _i.subtitle || '뱅기노자이 모여 나누는 이야기. 질문도 답도 환영합니다.';
+            return (
+              <>
+                <div className="section-eyebrow" aria-hidden="true">{eb}</div>
+                <h1 className="section-title">{tp}<span className="accent">{ta}</span></h1>
+                <p className="section-subtitle">{sb}</p>
+              </>
+            );
+          })()}
         </header>
 
 

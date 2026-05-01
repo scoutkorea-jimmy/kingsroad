@@ -48,13 +48,22 @@ const FaqPage = ({ go }) => {
     <div className="section">
       <div className="container" style={{maxWidth:840}}>
         <div style={{textAlign:'center', marginBottom:48}}>
-          <div className="section-eyebrow" style={{justifyContent:'center'}}>FAQ · 자주 묻는 질문</div>
-          <h1 className="section-title">
-            <span className="accent">자주 묻는</span> 질문
-          </h1>
-          <p className="section-subtitle" style={{margin:'16px auto 0'}}>
-            가입·결제·강연·답사·책 주문에 관해 자주 들어오는 질문을 정리했습니다.
-          </p>
+          {(() => {
+            // v00.073 — site_content_kv.faqIntro
+            const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).faqIntro || {};
+            const eb = _i.eyebrow || 'FAQ · 자주 묻는 질문';
+            const tp = _i.titlePrefix ?? '';
+            const ta = _i.titleAccent ?? '자주 묻는';
+            const ts = _i.titleSuffix ?? ' 질문';
+            const sb = _i.subtitle || '가입·결제·강연·답사·책 주문에 관해 자주 들어오는 질문을 정리했습니다.';
+            return (
+              <>
+                <div className="section-eyebrow" style={{justifyContent:'center'}}>{eb}</div>
+                <h1 className="section-title">{tp}<span className="accent">{ta}</span>{ts}</h1>
+                <p className="section-subtitle" style={{margin:'16px auto 0'}}>{sb}</p>
+              </>
+            );
+          })()}
         </div>
 
         <div style={{display:'flex', justifyContent:'center', alignItems:'center', gap:16, marginBottom:24, flexWrap:'wrap'}}>

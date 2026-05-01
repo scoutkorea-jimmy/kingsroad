@@ -6,21 +6,23 @@
 //   - 다음 사이클에 D1 테이블(`venues` / `lodgings` / `goods`) 신설 + 관리자 입력 폼 + 예약 흐름.
 
 const PlacePage = ({ go, kind, user }) => {
-  const KIND_META = {
-    eat:   { eyebrow: 'EAT · 먹고 놀자',   title: '먹고 놀자',   sub: '한국의 맛, 한 끼의 인문학',
-             desc: '식(食) — 지역의 식재료와 손맛을 따라가는 여정. 뱅기노자와 함께 검증된 식당과 종가 음식을 만납니다.',
-             accent: '#E8A540',
-             categories: ['전통 한정식', '향토 음식', '시장 먹거리', '제철 식재', '주안상·발효'] },
-    sleep: { eyebrow: 'STAY · 자고 놀자', title: '자고 놀자', sub: '머무는 곳에서 시작되는 여행',
-             desc: '주(住) — 한옥·전통 게스트하우스·고택 스테이까지. 머무는 시간이 곧 풍경이 되는 숙박을 큐레이션합니다.',
-             accent: '#5A8FBF',
-             categories: ['한옥 스테이', '고택 / 종가', '게스트하우스', '템플 스테이', '농가 체험'] },
-    shop:  { eyebrow: 'SHOP · 사고 놀자',  title: '사고 놀자',  sub: '집으로 가져오는 한국의 손길',
-             desc: '의(衣) + 토산 — 지역 장인의 공예와 토산물을 한자리에. 손에 닿는 한국을 가져갑니다.',
-             accent: '#9C6FB3',
-             categories: ['전통 공예', '지역 토산물', '의류·전통 직물', '도자·금속', '보존·발효 식품'] },
+  // v00.073 — eyebrow / title / sub / desc / accent 는 site_content_kv.{eat|sleep|shop}Intro 에서.
+  // categories 는 코드 default 유지 (D1 marketplace 도입 시 마이그레이션).
+  const KIND_DEFAULT = {
+    eat:   { categories: ['전통 한정식', '향토 음식', '시장 먹거리', '제철 식재', '주안상·발효'] },
+    sleep: { categories: ['한옥 스테이', '고택 / 종가', '게스트하우스', '템플 스테이', '농가 체험'] },
+    shop:  { categories: ['전통 공예', '지역 토산물', '의류·전통 직물', '도자·금속', '보존·발효 식품'] },
   };
-  const meta = KIND_META[kind] || KIND_META.eat;
+  const _sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+  const _intro = (_sc[`${kind}Intro`] || _sc.eatIntro || {});
+  const meta = {
+    eyebrow: _intro.eyebrow || 'EAT · 먹고 놀자',
+    title:   _intro.title   || '먹고 놀자',
+    sub:     _intro.sub     || '한국의 맛, 한 끼의 인문학',
+    desc:    _intro.desc    || '식(食) — 지역의 식재료와 손맛을 따라가는 여정. 뱅기노자와 함께 검증된 식당과 종가 음식을 만납니다.',
+    accent:  _intro.accent  || '#E8A540',
+    categories: (KIND_DEFAULT[kind] || KIND_DEFAULT.eat).categories,
+  };
 
   return (
     <div className="section">

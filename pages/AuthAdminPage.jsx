@@ -3442,10 +3442,14 @@ const SiteContentAdminPanel = () => {
         { key: 'mapHint', label: '지도 안내 문구', full: true },
       ]}/>
 
-      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>푸터 — 소개·서명</h3>
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>푸터 — 소개·서명·헤딩·카피라이트</h3>
       <SectionForm key={`footer-${tick}`} section="footer" fields={[
-        { key: 'description', label: '소개 문단', full: true, multiline: true },
-        { key: 'signature', label: '하단 서명', full: true },
+        { key: 'description',    label: '소개 문단', full: true, multiline: true },
+        { key: 'signature',      label: '하단 서명 (예: 뱅기타고 노자 · DESIGNED IN SEOUL)', full: true },
+        { key: 'copyright',      label: '카피라이트 (© 라인)', full: true },
+        { key: 'headingContent', label: '콘텐츠 섹션 헤딩 (기본: 콘텐츠)' },
+        { key: 'headingInfo',    label: '정보 섹션 헤딩 (기본: 정보)' },
+        { key: 'headingContact', label: '연락 섹션 헤딩 (기본: 연락)' },
       ]}/>
 
       <FooterStyleEditor/>
@@ -3500,6 +3504,87 @@ const SiteContentAdminPanel = () => {
         { key: 'gate',      label: '미참가 회원 안내 (참가 확정 회원만 작성 가능 안내)', full: true, multiline: true },
         { key: 'anonymous', label: '비로그인 안내 (로그인 후 작성 가능 안내)', full: true, multiline: true },
         { key: 'empty',     label: '후기가 0건일 때 안내', full: true, multiline: true },
+      ]}/>
+
+      {/* v00.073 — 전 페이지 hero/intro 일괄 편집 */}
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>강연 페이지 — 상단 인트로</h3>
+      <SectionForm key={`lectureIntro-${tick}`} section="lectureIntro" fields={[
+        { key: 'eyebrow',     label: '아이브로우 (예: LECTURE · 왕사남 강연)', full: true },
+        { key: 'titlePrefix', label: '큰 제목 앞부분 (예: 왕사남 )' },
+        { key: 'titleAccent', label: '큰 제목 강조어 (예: 강연 일정)' },
+        { key: 'subtitle',    label: '본문 설명', full: true, multiline: true },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>커뮤니티 페이지 — 상단 인트로</h3>
+      <SectionForm key={`communityIntro-${tick}`} section="communityIntro" fields={[
+        { key: 'eyebrow',     label: '아이브로우 (예: COMMUNITY · 커뮤니티)', full: true },
+        { key: 'titlePrefix', label: '큰 제목 앞부분 (예: 다섯 봉우리 )' },
+        { key: 'titleAccent', label: '큰 제목 강조어 (예: 광장)' },
+        { key: 'subtitle',    label: '본문 설명', full: true, multiline: true },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>칼럼 페이지 — 상단 인트로</h3>
+      <SectionForm key={`columnIntro-${tick}`} section="columnIntro" fields={[
+        { key: 'eyebrow',     label: '아이브로우', full: true },
+        { key: 'titlePrefix', label: '큰 제목 앞부분' },
+        { key: 'titleAccent', label: '큰 제목 강조어 (예: 뱅기노자)' },
+        { key: 'titleSuffix', label: '큰 제목 뒷부분 (예: 가 쓰다)' },
+        { key: 'subtitle',    label: '본문 설명', full: true, multiline: true },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>FAQ 페이지 — 상단 인트로</h3>
+      <SectionForm key={`faqIntro-${tick}`} section="faqIntro" fields={[
+        { key: 'eyebrow',     label: '아이브로우', full: true },
+        { key: 'titlePrefix', label: '큰 제목 앞부분' },
+        { key: 'titleAccent', label: '큰 제목 강조어 (예: 자주 묻는)' },
+        { key: 'titleSuffix', label: '큰 제목 뒷부분 (예:  질문)' },
+        { key: 'subtitle',    label: '본문 설명', full: true, multiline: true },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>주문/결제 페이지 — 상단 인트로</h3>
+      <SectionForm key={`bookCheckoutIntro-${tick}`} section="bookCheckoutIntro" fields={[
+        { key: 'eyebrow',     label: '아이브로우 (예: CHECKOUT · 결제)', full: true },
+        { key: 'titlePrefix', label: '큰 제목 앞부분 (예: 주문 / )' },
+        { key: 'titleAccent', label: '큰 제목 강조어 (예: 결제)' },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>마이페이지 — 상단 인트로</h3>
+      <p className="dim-2" style={{fontSize:11, marginBottom:8, lineHeight:1.7}}>
+        강조어에 <code>{'{name}'}</code> 토큰을 쓰면 사용자 이름으로 치환됩니다 (예: 홍길동 님의 서재).
+      </p>
+      <SectionForm key={`myPageIntro-${tick}`} section="myPageIntro" fields={[
+        { key: 'eyebrow',     label: '아이브로우 (예: MY PAGE · 회원 정보)', full: true },
+        { key: 'titlePrefix', label: '큰 제목 앞부분' },
+        { key: 'titleAccent', label: '큰 제목 강조어 (예: {name})' },
+        { key: 'titleSuffix', label: '큰 제목 뒷부분 (예:  님의 서재)' },
+        { key: 'subtitle',    label: '본문 설명', full: true, multiline: true },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>먹고 놀자 (/eat) 페이지</h3>
+      <SectionForm key={`eatIntro-${tick}`} section="eatIntro" fields={[
+        { key: 'eyebrow', label: '아이브로우', full: true },
+        { key: 'title',   label: '큰 제목 (예: 먹고 놀자)' },
+        { key: 'sub',     label: '제목 우측 작은 부제 (예: 한국의 맛, 한 끼의 인문학)' },
+        { key: 'desc',    label: '본문 설명', full: true, multiline: true },
+        { key: 'accent',  label: '부제 강조 색상 (HEX, 예: #E8A540)' },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>자고 놀자 (/sleep) 페이지</h3>
+      <SectionForm key={`sleepIntro-${tick}`} section="sleepIntro" fields={[
+        { key: 'eyebrow', label: '아이브로우', full: true },
+        { key: 'title',   label: '큰 제목' },
+        { key: 'sub',     label: '제목 우측 작은 부제' },
+        { key: 'desc',    label: '본문 설명', full: true, multiline: true },
+        { key: 'accent',  label: '부제 강조 색상 (HEX)' },
+      ]}/>
+
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>사고 놀자 (/shop) 페이지</h3>
+      <SectionForm key={`shopIntro-${tick}`} section="shopIntro" fields={[
+        { key: 'eyebrow', label: '아이브로우', full: true },
+        { key: 'title',   label: '큰 제목' },
+        { key: 'sub',     label: '제목 우측 작은 부제' },
+        { key: 'desc',    label: '본문 설명', full: true, multiline: true },
+        { key: 'accent',  label: '부제 강조 색상 (HEX)' },
       ]}/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>OG 메타 (공유 미리보기)</h3>

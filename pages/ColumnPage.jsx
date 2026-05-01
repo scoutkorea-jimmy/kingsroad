@@ -263,13 +263,22 @@ const ColumnPage = ({ go, user }) => {
     <div className="section">
       <div className="container">
         <div style={{textAlign:'center', marginBottom:48}}>
-          <div className="section-eyebrow" style={{justifyContent:'center'}}>COLUMN · 뱅기노자의 글</div>
-          <h1 className="section-title">
-            <span className="accent">뱅기노자</span>가 쓰다
-          </h1>
-          <p className="section-subtitle" style={{margin:'16px auto 0'}}>
-            커뮤니티장 뱅기노자의 정기 칼럼. 조선의 왕들을 경유해 오늘을 묻는다.
-          </p>
+          {(() => {
+            // v00.073 — site_content_kv.columnIntro 에서 hero 읽기.
+            const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).columnIntro || {};
+            const eb = _i.eyebrow || 'COLUMN · 뱅기노자의 글';
+            const tp = _i.titlePrefix ?? '';
+            const ta = _i.titleAccent ?? '뱅기노자';
+            const ts = _i.titleSuffix ?? '가 쓰다';
+            const sb = _i.subtitle || '커뮤니티장 뱅기노자의 정기 칼럼. 조선의 왕들을 경유해 오늘을 묻는다.';
+            return (
+              <>
+                <div className="section-eyebrow" style={{justifyContent:'center'}}>{eb}</div>
+                <h1 className="section-title">{tp}<span className="accent">{ta}</span>{ts}</h1>
+                <p className="section-subtitle" style={{margin:'16px auto 0'}}>{sb}</p>
+              </>
+            );
+          })()}
         </div>
 
         {/* 검색 + 카테고리 */}

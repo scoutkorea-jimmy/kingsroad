@@ -50,13 +50,20 @@ const LecturesPage = ({ go, user }) => {
     refund_requested: 'var(--warning)',
   }[s] || 'var(--ink-2)');
 
+  // v00.073 — site_content_kv.lectureIntro 에서 hero 읽기 (투어 패턴 동일).
+  const _lscI = (window.BGNJ_SITE_CONTENT?.get?.() || {}).lectureIntro || {};
+  const _lEyebrow  = _lscI.eyebrow     || 'LECTURE · 왕사남 강연';
+  const _lPrefix   = _lscI.titlePrefix ?? '왕사남 ';
+  const _lAccent   = _lscI.titleAccent ?? '강연 일정';
+  const _lSubtitle = _lscI.subtitle    || '공개 / 심화 / 현장 강연. 회원 전용 신청 · 무통장 입금 결제.';
+
   return (
     <div className="section">
       <div className="container">
         <div style={{marginBottom:48}}>
-          <div className="section-eyebrow">LECTURE · 왕사남 강연</div>
-          <h1 className="section-title">왕사남 <span className="accent">강연 일정</span></h1>
-          <p className="section-subtitle">공개 / 심화 / 현장 강연. 회원 전용 신청 · 무통장 입금 결제.</p>
+          <div className="section-eyebrow">{_lEyebrow}</div>
+          <h1 className="section-title">{_lPrefix}<span className="accent">{_lAccent}</span></h1>
+          <p className="section-subtitle">{_lSubtitle}</p>
         </div>
 
         {/* Tabs — 투어 페이지와 동일한 스타일 */}

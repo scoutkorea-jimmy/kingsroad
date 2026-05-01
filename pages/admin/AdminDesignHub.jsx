@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.073.000",
+    date: "2026-05-01",
+    summary: "🪧 전 페이지 hero/intro + 푸터 잔재 admin 편집화 sweep — 9 페이지 + 푸터 4 필드 신설.",
+    details: [
+      "🪧 9 신규 site_content_kv 키 — lectureIntro / communityIntro / columnIntro / bookCheckoutIntro / faqIntro / myPageIntro / eatIntro / sleepIntro / shopIntro. 모두 { eyebrow, titlePrefix, titleAccent, [titleSuffix], subtitle } 패턴 (tourIntro v00.070 동일). 비면 코드 default fallback.",
+      "🪧 EatSleepShop 3 페이지 — { eyebrow, title, sub, desc, accent } 구조 유지 (페이지 레이아웃 차별화). categories 만 코드 default 잔존 (D1 marketplace 도입 시 마이그레이션).",
+      "🪧 myPageIntro — `titleAccent` 에 `{name}` 토큰을 사용자 이름으로 치환 (예: '홍길동 님의 서재'). 관리자가 토큰 사용 안 하면 정적 텍스트.",
+      "🛠 SiteContentAdminPanel — 9 신규 SectionForm 일괄 추가 (강연/커뮤니티/칼럼/FAQ/주문결제/마이페이지/먹고-자고-사고).",
+      "🦶 푸터 잔재 추출 — footer 섹션에 copyright / headingContent / headingInfo / headingContact 4 필드 추가. Shell.jsx 의 © 라인 + 콘텐츠/정보/연락 헤딩 하드코드 제거.",
+      "🛠 footer SectionForm 확장 — description / signature 외에 4 필드 + 라벨 명시화.",
+      "📦 cache-buster — `?v=00.073.000` (19곳).",
+    ],
+    context: "사용자 보고 '관리자페이지에서 각 메뉴들 제목·부제목들을 수정할 수 있게 세팅해줘 / 푸터정보도 관리자페이지에서 수정할수있게해줘'. v00.054(hero) / v00.057(footer style) / v00.070(tourIntro/tourReviewsGate) 의 패턴을 사이트 전체에 일괄 적용. 다음 사이클(v00.074+) 후보: 데이터 매퍼 audit (_toLecture/_toColumn/_toBook 등 워커 응답 보존 검증) + LectureAdminPanel 에 v00.072 의 투어 inline 패턴 동일 적용.",
+  },
+  {
     version: "00.072.000",
     date: "2026-05-01",
     summary: "🏠 홈 투어/강연 카드 desc 축약 + TourAdminPanel 에 답사 일정·준비물·커버 inline 편집 통합.",

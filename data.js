@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.072.000",
+  version: "00.073.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -386,6 +386,11 @@ const DEFAULT_SITE_CONTENT = {
   footer: {
     description: "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행.",
     signature: "뱅기타고 노자 · DESIGNED IN SEOUL",
+    // v00.073 — 푸터 잔존 하드코드 추출. 비면 코드 default.
+    copyright: "© 2026 뱅기노자 BANGINOJA — ALL RIGHTS RESERVED",
+    headingContent: "콘텐츠",
+    headingInfo: "정보",
+    headingContact: "연락",
   },
   // 이미지는 dataURI(base64)로 저장한다. 비워두면 기본 SVG/이모지 마크가 사용된다.
   branding: { logoDataUri: "", faviconDataUri: "" },
@@ -451,6 +456,71 @@ const DEFAULT_SITE_CONTENT = {
     gate: '후기는 참가 확정된 회원만 작성할 수 있습니다. 아직 신청 전이라면 사이드바에서 답사를 신청하고 운영자 입금 확인을 받은 뒤 다시 와 주세요.',
     anonymous: '후기 작성은 회원 전용입니다.',
     empty: '아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.',
+  },
+  // === v00.073 — 전 페이지 hero/intro admin 편집화 ===========================
+  // 모두 { eyebrow, titlePrefix, titleAccent, subtitle } 패턴 (tourIntro 와 동일).
+  // 비우면 코드 default. SiteContentAdminPanel 에서 SectionForm 으로 편집.
+  lectureIntro: {
+    eyebrow: 'LECTURE · 왕사남 강연',
+    titlePrefix: '왕사남 ',
+    titleAccent: '강연 일정',
+    subtitle: '공개 / 심화 / 현장 강연. 회원 전용 신청 · 무통장 입금 결제.',
+  },
+  communityIntro: {
+    eyebrow: 'COMMUNITY · 커뮤니티',
+    titlePrefix: '다섯 봉우리 ',
+    titleAccent: '광장',
+    subtitle: '뱅기노자이 모여 나누는 이야기. 질문도 답도 환영합니다.',
+  },
+  columnIntro: {
+    eyebrow: 'COLUMN · 뱅기노자의 글',
+    titlePrefix: '',
+    titleAccent: '뱅기노자',
+    titleSuffix: '가 쓰다',
+    subtitle: '커뮤니티장 뱅기노자의 정기 칼럼. 조선의 왕들을 경유해 오늘을 묻는다.',
+  },
+  bookCheckoutIntro: {
+    eyebrow: 'CHECKOUT · 결제',
+    titlePrefix: '주문 / ',
+    titleAccent: '결제',
+    subtitle: '',
+  },
+  faqIntro: {
+    eyebrow: 'FAQ · 자주 묻는 질문',
+    titlePrefix: '',
+    titleAccent: '자주 묻는',
+    titleSuffix: ' 질문',
+    subtitle: '가입·결제·강연·답사·책 주문에 관해 자주 들어오는 질문을 정리했습니다.',
+  },
+  myPageIntro: {
+    eyebrow: 'MY PAGE · 회원 정보',
+    // {name} 토큰은 사용자 이름으로 치환. 한국어 자연스러움 위해 prefix 비고 toggleAccent 만 {name}.
+    titlePrefix: '',
+    titleAccent: '{name}',
+    titleSuffix: ' 님의 서재',
+    subtitle: '뱅기노자에서의 계정 상태, 예정된 프로그램, 최근 활동을 한 곳에서 확인합니다.',
+  },
+  // EatSleepShop 3 페이지 — { eyebrow, title, sub, desc, accent } 구조 유지 (페이지 레이아웃 차별화).
+  eatIntro: {
+    eyebrow: 'EAT · 먹고 놀자',
+    title: '먹고 놀자',
+    sub: '한국의 맛, 한 끼의 인문학',
+    desc: '식(食) — 지역의 식재료와 손맛을 따라가는 여정. 뱅기노자와 함께 검증된 식당과 종가 음식을 만납니다.',
+    accent: '#E8A540',
+  },
+  sleepIntro: {
+    eyebrow: 'STAY · 자고 놀자',
+    title: '자고 놀자',
+    sub: '머무는 곳에서 시작되는 여행',
+    desc: '주(住) — 한옥·전통 게스트하우스·고택 스테이까지. 머무는 시간이 곧 풍경이 되는 숙박을 큐레이션합니다.',
+    accent: '#5A8FBF',
+  },
+  shopIntro: {
+    eyebrow: 'SHOP · 사고 놀자',
+    title: '사고 놀자',
+    sub: '집으로 가져오는 한국의 손길',
+    desc: '의(衣) + 토산 — 지역 장인의 공예와 토산물을 한자리에. 손에 닿는 한국을 가져갑니다.',
+    accent: '#9C6FB3',
   },
   // 답사 일정/준비물 템플릿 모음 (v00.066) — 운영자가 자주 쓰는 패턴 저장.
   // 각 항목: { id, name, schedule: [{t,l}], prep: [str] }.

@@ -600,7 +600,7 @@ const Footer = ({ go }) => {
             </p>
           </div>
           <nav aria-label="콘텐츠 바로가기">
-            <h4 id="ft-content" style={headingStyle}>콘텐츠</h4>
+            <h4 id="ft-content" style={headingStyle}>{footer.headingContent || "콘텐츠"}</h4>
             <ul aria-labelledby="ft-content">
               <li><button type="button" onClick={() => go("column")}>뱅기노자 칼럼</button></li>
               <li><button type="button" onClick={() => go("tour")}>투어 프로그램</button></li>
@@ -609,7 +609,7 @@ const Footer = ({ go }) => {
             </ul>
           </nav>
           <nav aria-label="정보 바로가기">
-            <h4 id="ft-info" style={headingStyle}>정보</h4>
+            <h4 id="ft-info" style={headingStyle}>{footer.headingInfo || "정보"}</h4>
             <ul aria-labelledby="ft-info">
               <li><button type="button" onClick={() => go("home")}>강연 일정</button></li>
               <li><button type="button" onClick={() => go("community")}>공지사항</button></li>
@@ -619,7 +619,7 @@ const Footer = ({ go }) => {
             </ul>
           </nav>
           <address style={{fontStyle:'normal'}}>
-            <h4 id="ft-contact" style={headingStyle}>연락</h4>
+            <h4 id="ft-contact" style={headingStyle}>{footer.headingContact || "연락"}</h4>
             <ul aria-labelledby="ft-contact">
               {email && <li><a href={`mailto:${email}`}>{email}</a></li>}
               {phone && <li><a href={phoneHref}>{phone}</a></li>}
@@ -628,7 +628,7 @@ const Footer = ({ go }) => {
           </address>
         </div>
         <div className="footer-bottom" style={{marginTop:24}}>
-          <span>© 2026 뱅기노자 BANGINOJA — ALL RIGHTS RESERVED</span>
+          <span>{footer.copyright || "© 2026 뱅기노자 BANGINOJA — ALL RIGHTS RESERVED"}</span>
           <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em'}}>
             v{window.BGNJ_VERSION?.version || '0.0.0'} · {window.BGNJ_VERSION?.build || '—'}
           </span>

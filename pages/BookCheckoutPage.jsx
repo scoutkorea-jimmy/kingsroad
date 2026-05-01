@@ -459,8 +459,19 @@ const CheckoutPage = ({ go, cart, user }) => {
     <div className="section">
       <div className="container">
         <div style={{marginBottom:32}}>
-          <div className="section-eyebrow">CHECKOUT · 결제</div>
-          <h1 className="section-title">주문 / <span className="accent">결제</span></h1>
+          {(() => {
+            // v00.073 — site_content_kv.bookCheckoutIntro
+            const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).bookCheckoutIntro || {};
+            const eb = _i.eyebrow || 'CHECKOUT · 결제';
+            const tp = _i.titlePrefix ?? '주문 / ';
+            const ta = _i.titleAccent ?? '결제';
+            return (
+              <>
+                <div className="section-eyebrow">{eb}</div>
+                <h1 className="section-title">{tp}<span className="accent">{ta}</span></h1>
+              </>
+            );
+          })()}
           <p className="dim" style={{fontSize:13, lineHeight:1.8, marginTop:14, maxWidth:680}}>
             현재 결제 수단은 <strong className="gold">무통장 입금</strong>만 지원합니다. 주문 후 안내된 계좌로 입금하시면 운영자가 확인 후 발송을 시작합니다.
           </p>

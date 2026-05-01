@@ -123,12 +123,24 @@ const MyPage = ({ go, user, cart }) => {
   return (
     <div className="section">
       <div className="container">
-        <SectionHead
-          eyebrow="MY PAGE · 회원 정보"
-          title={<><span className="accent">{user.name}</span> 님의 서재</>}
-          subtitle="뱅기노자에서의 계정 상태, 예정된 프로그램, 최근 활동을 한 곳에서 확인합니다."
-          action={<button type="button" className="btn btn-small" onClick={() => go("community")}>커뮤니티로 이동</button>}
-        />
+        {(() => {
+          // v00.073 — site_content_kv.myPageIntro. titleAccent 는 {name} 토큰을 사용자 이름으로 치환.
+          const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).myPageIntro || {};
+          const eb = _i.eyebrow || 'MY PAGE · 회원 정보';
+          const tp = _i.titlePrefix ?? '';
+          const taTpl = _i.titleAccent ?? '{name}';
+          const ts = _i.titleSuffix ?? ' 님의 서재';
+          const sb = _i.subtitle || '뱅기노자에서의 계정 상태, 예정된 프로그램, 최근 활동을 한 곳에서 확인합니다.';
+          const ta = String(taTpl).replace('{name}', user.name || '회원');
+          return (
+            <SectionHead
+              eyebrow={eb}
+              title={<>{tp}<span className="accent">{ta}</span>{ts}</>}
+              subtitle={sb}
+              action={<button type="button" className="btn btn-small" onClick={() => go("community")}>커뮤니티로 이동</button>}
+            />
+          );
+        })()}
 
         <div className="grid grid-2" style={{ alignItems: "start", marginBottom: 32 }}>
           <div className="card card-gold">
