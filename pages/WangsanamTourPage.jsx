@@ -150,33 +150,41 @@ const TourPage = ({ go, user }) => {
             <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24}}>{tour.title}</h2>
             <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{tour.desc}</p>
 
-            <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
-              답사 일정
-            </h3>
-            <div style={{marginBottom:32}}>
-              {[
-                { t: "0h 00m", l: "집결 · 인트로 강연" },
-                { t: "0h 30m", l: "주요 공간 답사 — 뱅기노자 해설" },
-                { t: "1h 30m", l: "휴식 · 질의응답" },
-                { t: "2h 00m", l: "사료와 함께 읽기" },
-                { t: "2h 45m", l: "마무리 · 다음 회차 안내" },
-              ].map((s, i) => (
-                <div key={i} style={{display:'grid', gridTemplateColumns:'100px 1fr', gap:24, padding:'14px 0', borderBottom:'1px dashed var(--line)'}}>
-                  <div className="mono gold" style={{fontSize:12, letterSpacing:'0.1em'}}>{s.t}</div>
-                  <div className="ko-serif" style={{fontSize:15}}>{s.l}</div>
-                </div>
-              ))}
-            </div>
-
-            <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
-              준비물
-            </h3>
-            <ul style={{paddingLeft:20, color:'var(--ink-2)', lineHeight:2, fontSize:14, marginBottom:48}}>
-              <li>편한 신발 (3~5km 보행)</li>
-              <li>필기구 · 노트</li>
-              <li>따뜻한 겉옷 (야간 프로그램 시)</li>
-              <li>사전 배포되는 자료집은 현장에서 제공됩니다</li>
-            </ul>
+            {(() => {
+              // v00.065 — site_content_kv.tourSchedule / .tourPrep 가 source. 빈 배열이면 섹션 미노출.
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const schedule = Array.isArray(sc.tourSchedule) ? sc.tourSchedule.filter((s) => s && (s.t || s.l)) : [];
+              const prep = Array.isArray(sc.tourPrep) ? sc.tourPrep.filter(Boolean) : [];
+              return (
+                <>
+                  {schedule.length > 0 && (
+                    <>
+                      <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
+                        답사 일정
+                      </h3>
+                      <div style={{marginBottom:32}}>
+                        {schedule.map((s, i) => (
+                          <div key={i} style={{display:'grid', gridTemplateColumns:'100px 1fr', gap:24, padding:'14px 0', borderBottom:'1px dashed var(--line)'}}>
+                            <div className="mono gold" style={{fontSize:12, letterSpacing:'0.1em'}}>{s.t}</div>
+                            <div className="ko-serif" style={{fontSize:15}}>{s.l}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {prep.length > 0 && (
+                    <>
+                      <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
+                        준비물
+                      </h3>
+                      <ul style={{paddingLeft:20, color:'var(--ink-2)', lineHeight:2, fontSize:14, marginBottom:48}}>
+                        {prep.map((p, i) => <li key={i}>{p}</li>)}
+                      </ul>
+                    </>
+                  )}
+                </>
+              );
+            })()}
 
             <TourReviewsSection tour={tour} user={user} go={go} onRefresh={refresh}/>
           </div>

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.064.000",
+  version: "00.065.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -368,6 +368,23 @@ const DEFAULT_SITE_CONTENT = {
   // 히어로 스타일 트윗 — 관리자 '히어로' 탭에서 편집. 빈 그룹이면 코드 default(아래 BGNJ_HERO_STYLE_DEFAULT) 사용.
   // 형태: { eyebrow: {...}, title: {...}, subtitle: {...}, cta: {...}, stats: { label, value, sub } }. 일부만 오버라이드 가능.
   heroStyle: {},
+  // 투어 페이지 답사 일정 — 관리자에서 항목별 편집. 빈 배열이면 코드 default 사용.
+  // 각 항목: { t: '시간 라벨 (예: 0h 30m)', l: '내용 (예: 주요 공간 답사)' }.
+  tourSchedule: [
+    { t: '0h 00m', l: '집결 · 인트로 강연' },
+    { t: '0h 30m', l: '주요 공간 답사 — 뱅기노자 해설' },
+    { t: '1h 30m', l: '휴식 · 질의응답' },
+    { t: '2h 00m', l: '사료와 함께 읽기' },
+    { t: '2h 45m', l: '마무리 · 다음 회차 안내' },
+  ],
+  // 투어 페이지 준비물 — 관리자에서 항목별 편집. 빈 배열이면 코드 default.
+  // 각 항목: 문자열.
+  tourPrep: [
+    '편한 신발 (3~5km 보행)',
+    '필기구 · 노트',
+    '따뜻한 겉옷 (야간 프로그램 시)',
+    '사전 배포되는 자료집은 현장에서 제공됩니다',
+  ],
   // 푸터 스타일 트윗 — 관리자 '사이트 콘텐츠' 푸터 섹션에서 편집. 빈 그룹이면 코드 default(BGNJ_FOOTER_STYLE_DEFAULT).
   // 형태: { description: {...}, signature: {...}, heading: {...} }.
   footerStyle: {},

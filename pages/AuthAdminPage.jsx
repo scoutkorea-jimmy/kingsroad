@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.065.000",
+    date: "2026-05-01",
+    summary: "🚌 투어 페이지 답사 일정 + 준비물 GUI 편집 — site_content_kv 통해 항목별 add/remove/edit + 라이브 미리보기.",
+    details: [
+      "🚌 DEFAULT_SITE_CONTENT.tourSchedule (배열 [{t, l}]) + tourPrep (문자열 배열) 신설. 코드 default 5+4 항목 (기존 하드코딩 그대로 이전).",
+      "🚌 WangsanamTourPage — 하드코딩된 답사 일정/준비물 제거. site_content_kv 의 tourSchedule/tourPrep 사용. 빈 배열이면 섹션 자체 미노출.",
+      "🚌 새 관리자 탭 '투어 페이지' (운영설정 그룹) — TourPageEditorPanel 컴포넌트. 좌측 항목별 편집(시간/내용 input + 위/아래 이동 + 삭제 + 추가), 우측 sticky 미리보기.",
+      "🚌 항목 0 처리 — 빈 배열이면 페이지에서 '답사 일정' 또는 '준비물' 섹션 자체가 안 보이도록 안내.",
+      "ℹ per-tour 차별화(투어마다 다른 schedule/prep)는 별도 사이클(tours 테이블 schema 확장 필요)로 분리.",
+      "📦 cache-buster — `?v=00.065.000`.",
+    ],
+    context: "사용자 보고 — 투어 페이지의 답사 일정 5 항목 + 준비물 4 항목이 하드코딩되어 운영자가 코드 수정 없이 변경 불가. v00.065 가 site_content_kv 패턴으로 전환 (히어로/푸터/추천 동일 패턴). 항목별 add/remove/edit + 위/아래 정렬 + 라이브 미리보기. per-tour 차별화는 D1 schema 변경 필요해 별도 사이클로 미룸. 다음 사이클 후보: ① 강연 페이지에 동일 패턴(있다면) ② per-tour schedule (D1 schema_json 컬럼 추가).",
+  },
+  {
     version: "00.064.000",
     date: "2026-05-01",
     summary: "🔒 HTTPS / SSL 도입 코드 측 정합 — og:url + og:site_name 메타 + opt-in HTTPS 강제 헬퍼 + 사용자 인프라 가이드.",
@@ -4478,6 +4492,171 @@ const RecommendationsAdminPanel = () => {
   );
 };
 
+// === Tour Schedule / Prep Editor (v00.065) =============================
+// 투어 페이지 '답사 일정' + '준비물' 항목을 site_content_kv.tourSchedule / .tourPrep 로 편집.
+// 각 항목 add/remove/edit + 라이브 미리보기. 빈 배열이면 페이지에서 섹션 미노출.
+const TourPageEditorPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const [schedule, setSchedule] = React.useState(() => Array.isArray(sc.tourSchedule) ? sc.tourSchedule.slice() : []);
+  const [prep, setPrep] = React.useState(() => Array.isArray(sc.tourPrep) ? sc.tourPrep.slice() : []);
+  const [msg, setMsg] = React.useState('');
+
+  const addSchedule = () => setSchedule((arr) => [...arr, { t: '', l: '' }]);
+  const removeSchedule = (i) => setSchedule((arr) => arr.filter((_, j) => j !== i));
+  const updateSchedule = (i, key, value) => setSchedule((arr) => {
+    const next = arr.slice();
+    next[i] = { ...next[i], [key]: value };
+    return next;
+  });
+  const moveSchedule = (i, dir) => setSchedule((arr) => {
+    const next = arr.slice();
+    const j = i + dir;
+    if (j < 0 || j >= next.length) return arr;
+    [next[i], next[j]] = [next[j], next[i]];
+    return next;
+  });
+
+  const addPrep = () => setPrep((arr) => [...arr, '']);
+  const removePrep = (i) => setPrep((arr) => arr.filter((_, j) => j !== i));
+  const updatePrep = (i, value) => setPrep((arr) => { const next = arr.slice(); next[i] = value; return next; });
+  const movePrep = (i, dir) => setPrep((arr) => {
+    const next = arr.slice();
+    const j = i + dir;
+    if (j < 0 || j >= next.length) return arr;
+    [next[i], next[j]] = [next[j], next[i]];
+    return next;
+  });
+
+  const save = async () => {
+    try {
+      // 빈 항목 정리.
+      const cleanSchedule = schedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
+      const cleanPrep = prep.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
+      await window.BGNJ_SITE_CONTENT.saveSection('tourSchedule', cleanSchedule);
+      await window.BGNJ_SITE_CONTENT.saveSection('tourPrep', cleanPrep);
+      setTick((v) => v + 1);
+      setMsg('저장되었습니다 — 투어 페이지에 즉시 반영.');
+      setTimeout(() => setMsg(''), 2500);
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+  const resetAll = async () => {
+    if (!confirm('답사 일정과 준비물을 default 로 복원합니다. 진행할까요?')) return;
+    try {
+      await window.BGNJ_SITE_CONTENT.resetSection('tourSchedule');
+      await window.BGNJ_SITE_CONTENT.resetSection('tourPrep');
+      const next = window.BGNJ_SITE_CONTENT.get();
+      setSchedule(Array.isArray(next.tourSchedule) ? next.tourSchedule.slice() : []);
+      setPrep(Array.isArray(next.tourPrep) ? next.tourPrep.slice() : []);
+      setTick((v) => v + 1);
+      setMsg('default 로 복원됨.');
+      setTimeout(() => setMsg(''), 2500);
+    } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  const RowActions = ({ i, total, onMove, onRemove }) => (
+    <div style={{display:'flex', gap:4}}>
+      <button type="button" className="btn btn-small" disabled={i === 0} onClick={() => onMove(i, -1)} aria-label="위로" style={{padding:'4px 8px', fontSize:11}}>↑</button>
+      <button type="button" className="btn btn-small" disabled={i === total - 1} onClick={() => onMove(i, 1)} aria-label="아래로" style={{padding:'4px 8px', fontSize:11}}>↓</button>
+      <button type="button" className="btn btn-small" onClick={() => onRemove(i)} aria-label="삭제" style={{padding:'4px 8px', fontSize:11, borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+    </div>
+  );
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:16, lineHeight:1.8}}>
+        <code>/tour</code> 페이지의 <strong className="gold">답사 일정</strong>과 <strong className="gold">준비물</strong> 항목을 편집합니다.
+        모든 투어에 공통 적용 (per-tour 차별화는 추후 사이클).
+      </p>
+      <div style={{display:'grid', gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)', gap:20}} className="hero-editor-grid">
+        {/* 좌: 편집 */}
+        <div>
+          {/* 답사 일정 */}
+          <div className="card" style={{padding:16, marginBottom:18}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+              <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>답사 일정</div>
+              <button type="button" className="btn btn-small" onClick={addSchedule}>＋ 항목 추가</button>
+            </div>
+            {schedule.length === 0 && (
+              <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>
+                ⓘ 항목이 없으면 페이지에서 '답사 일정' 섹션이 노출되지 않습니다.
+              </p>
+            )}
+            {schedule.map((s, i) => (
+              <div key={i} style={{display:'grid', gridTemplateColumns:'90px 1fr auto', gap:8, marginBottom:8, alignItems:'center'}}>
+                <input type="text" className="field-input" value={s.t || ''}
+                  onChange={(e) => updateSchedule(i, 't', e.target.value)} placeholder="0h 30m"
+                  style={{padding:'6px 8px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
+                <input type="text" className="field-input" value={s.l || ''}
+                  onChange={(e) => updateSchedule(i, 'l', e.target.value)} placeholder="주요 공간 답사"
+                  style={{padding:'6px 8px', fontSize:13}}/>
+                <RowActions i={i} total={schedule.length} onMove={moveSchedule} onRemove={removeSchedule}/>
+              </div>
+            ))}
+          </div>
+
+          {/* 준비물 */}
+          <div className="card" style={{padding:16, marginBottom:14}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
+              <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>준비물</div>
+              <button type="button" className="btn btn-small" onClick={addPrep}>＋ 항목 추가</button>
+            </div>
+            {prep.length === 0 && (
+              <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>
+                ⓘ 항목이 없으면 페이지에서 '준비물' 섹션이 노출되지 않습니다.
+              </p>
+            )}
+            {prep.map((p, i) => (
+              <div key={i} style={{display:'grid', gridTemplateColumns:'1fr auto', gap:8, marginBottom:8, alignItems:'center'}}>
+                <input type="text" className="field-input" value={p || ''}
+                  onChange={(e) => updatePrep(i, e.target.value)} placeholder="편한 신발"
+                  style={{padding:'6px 8px', fontSize:13}}/>
+                <RowActions i={i} total={prep.length} onMove={movePrep} onRemove={removePrep}/>
+              </div>
+            ))}
+          </div>
+
+          <div style={{display:'flex', gap:10, marginTop:12, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-gold" onClick={save}>저장</button>
+            <button type="button" className="btn btn-small" onClick={resetAll} style={{borderColor:'var(--line-2)'}}>전체 default 복원</button>
+            {msg && <span role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, alignSelf:'center'}}>{msg}</span>}
+          </div>
+        </div>
+
+        {/* 우: 미리보기 */}
+        <div>
+          <div className="card" style={{padding:0, overflow:'hidden', position:'sticky', top:24}}>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'8px 12px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
+              PREVIEW · 투어 페이지
+            </div>
+            <div style={{padding:'24px'}}>
+              <h3 className="ko-serif" style={{fontSize:18, marginBottom:14, paddingBottom:10, borderBottom:'1px solid var(--line)'}}>답사 일정</h3>
+              {schedule.filter((s) => s && (s.t || s.l)).map((s, i) => (
+                <div key={i} style={{display:'grid', gridTemplateColumns:'80px 1fr', gap:16, padding:'10px 0', borderBottom:'1px dashed var(--line)'}}>
+                  <div className="mono gold" style={{fontSize:11, letterSpacing:'0.1em'}}>{s.t || '—'}</div>
+                  <div className="ko-serif" style={{fontSize:13}}>{s.l || '내용 미입력'}</div>
+                </div>
+              ))}
+              {schedule.filter((s) => s && (s.t || s.l)).length === 0 && (
+                <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>(미노출)</p>
+              )}
+
+              <h3 className="ko-serif" style={{fontSize:18, marginTop:24, marginBottom:14, paddingBottom:10, borderBottom:'1px solid var(--line)'}}>준비물</h3>
+              {prep.filter(Boolean).length > 0 ? (
+                <ul style={{paddingLeft:18, color:'var(--ink-2)', fontSize:13, lineHeight:1.9}}>
+                  {prep.filter(Boolean).map((p, i) => <li key={i}>{p}</li>)}
+                </ul>
+              ) : (
+                <p className="dim-2" style={{fontSize:12, fontStyle:'italic'}}>(미노출)</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // === Footer Style Editor (v00.057) =====================================
 // 푸터 3 그룹(description/signature/heading) 의 폰트·색상 GUI 편집.
 // site_content_kv.footerStyle 저장 → Shell.jsx Footer 가 BGNJ_FOOTER_STYLE() 로 인라인 적용.
@@ -6852,7 +7031,7 @@ const AdminPage = ({ go }) => {
     { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성", "추천 여행지"] },
     { group: "회원관리",      items: ["회원", "회원 등급"] },
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
-    { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
+    { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "투어 페이지", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보 관리", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "SEO", "설정"] },
   ];
@@ -7832,6 +8011,7 @@ const AdminPage = ({ go }) => {
         {/* 카테고리 CRUD */}
         {tab === "사이트 콘텐츠" && <SiteContentAdminPanel/>}
         {tab === "히어로" && <HeroEditorPanel/>}
+        {tab === "투어 페이지" && <TourPageEditorPanel/>}
         {tab === "카테고리" && <AdminCategoryPanel/>}
         {tab === "약관/개인정보" && <LegalAdminPanel/>}
         {tab === "자주 묻는 질문" && <FaqAdminPanel/>}
