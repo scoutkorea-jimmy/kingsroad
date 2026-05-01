@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.066.000",
+  version: "00.067.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -42,6 +42,55 @@ window.BGNJ_GUARD = {
     catch { return fallback; }
   },
 };
+
+// === 임시저장 (BGNJ_DRAFTS · v00.067) ====================================
+// 글 작성 모달이 외부 클릭/ESC/뒤로가기 시 즉시 닫지 않고 사용자에게 임시저장 prompt.
+// localStorage 'bgnj_drafts' 에 [{id, kind, title, body, savedAt}] 저장.
+// 정책: 최대 10 개 + 7 일 보관. 초과/만료 자동 제거.
+window.BGNJ_DRAFTS = {
+  KEY: 'bgnj_drafts',
+  MAX_COUNT: 10,
+  MAX_AGE_DAYS: 7,
+  _read() {
+    try { return JSON.parse(localStorage.getItem(this.KEY) || '[]') || []; } catch { return []; }
+  },
+  _write(arr) {
+    try { localStorage.setItem(this.KEY, JSON.stringify(arr)); } catch {}
+  },
+  // 만료/초과 정리. 호출 시점에 lazy 정리.
+  purge() {
+    const now = Date.now();
+    const ageMs = this.MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+    let arr = this._read().filter((d) => d && d.savedAt && (now - new Date(d.savedAt).getTime()) < ageMs);
+    arr.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
+    if (arr.length > this.MAX_COUNT) arr = arr.slice(0, this.MAX_COUNT);
+    this._write(arr);
+    return arr;
+  },
+  list(kind) {
+    const all = this.purge();
+    return kind ? all.filter((d) => d.kind === kind) : all;
+  },
+  save(payload) {
+    // payload: { id?, kind, title, body, ... }. id 없으면 자동 생성.
+    const arr = this.purge();
+    const id = payload.id || `draft-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+    const draft = { ...payload, id, savedAt: new Date().toISOString() };
+    const idx = arr.findIndex((d) => d.id === id);
+    if (idx >= 0) arr[idx] = draft; else arr.unshift(draft);
+    if (arr.length > this.MAX_COUNT) arr.length = this.MAX_COUNT;
+    this._write(arr);
+    try { window.dispatchEvent(new CustomEvent('bgnj-drafts-change')); } catch {}
+    return draft;
+  },
+  remove(id) {
+    const arr = this._read().filter((d) => d.id !== id);
+    this._write(arr);
+    try { window.dispatchEvent(new CustomEvent('bgnj-drafts-change')); } catch {}
+  },
+  get(id) { return this._read().find((d) => d.id === id) || null; },
+};
+try { window.BGNJ_DRAFTS.purge(); } catch {}
 
 // === 테마 헬퍼 (BGNJ_THEME · v00.052) ====================================
 // localStorage(bgnj_theme) ∈ {auto, light, dark}. auto 면 prefers-color-scheme 에 위임.

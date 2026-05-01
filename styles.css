@@ -210,6 +210,18 @@
 }
 .theme-toggle:hover { border-color: var(--primary); color: var(--ink); }
 .theme-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* Tab 키 메뉴 이동 접근성 (v00.067) — 모든 인터랙티브 요소가 키보드 포커스 시 또렷한 outline. */
+button:focus-visible,
+[role="button"]:focus-visible,
+a.nav-link:focus-visible,
+.nav-link:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+/* 모달은 ESC 또는 backdrop 클릭 시 useModalGuard 가 처리 — CSS 는 visual feedback 만. */
+[role="dialog"][aria-modal="true"]:focus-visible { outline: none; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-weight: 500; letter-spacing: -0.01em; }

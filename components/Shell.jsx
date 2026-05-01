@@ -1,5 +1,68 @@
 // 공통 컴포넌트: Nav, Footer, Tweaks, Brand, AuthorGradeBadge, NotificationBell, ScrollToTop
 
+// === 모달 가드 훅 (v00.067) ====================================
+// ESC 키 + 외부 클릭(backdrop) + 브라우저 뒤로가기 시 모달을 닫기 전에 dirty 상태면 사용자에게 confirm.
+// 사용법:
+//   const { onBackdropClick } = useModalGuard({ open, dirty, onClose, onSaveDraft });
+//   <div onClick={onBackdropClick}>...</div>
+// onSaveDraft 가 있고 dirty 면 prompt — 저장 / 버리기 / 취소.
+window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label }) {
+  const promptName = label || '작성 중인 내용';
+  const handleAttemptClose = React.useCallback(() => {
+    if (!dirty) { onClose?.(); return; }
+    if (onSaveDraft) {
+      // 저장(OK) / 그냥 닫기(Cancel). 더 풍부한 3-way 다이얼로그는 후속 사이클.
+      const yes = window.confirm(`${promptName}이(가) 저장되지 않았습니다.\n임시저장 하시겠어요?\n\n[확인] = 임시저장 후 닫기\n[취소] = 그냥 닫기 (변경 내용 버림)`);
+      if (yes) {
+        try { onSaveDraft(); } catch {}
+      }
+      onClose?.();
+    } else {
+      const ok = window.confirm(`${promptName}이(가) 저장되지 않았습니다. 정말 닫으시겠어요?`);
+      if (ok) onClose?.();
+    }
+  }, [dirty, onClose, onSaveDraft, promptName]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    // ESC 키 처리
+    const onKey = (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        e.preventDefault();
+        handleAttemptClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    // body scroll lock
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    // history 뒤로가기 처리 — pushState + popstate
+    let pushed = false;
+    try {
+      window.history.pushState({ bgnjModal: true }, '');
+      pushed = true;
+    } catch {}
+    const onPop = (e) => { handleAttemptClose(); };
+    if (pushed) window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+      if (pushed) {
+        window.removeEventListener('popstate', onPop);
+        // 모달이 정상 닫혔으면 history pushState 도 되돌림.
+        try { if (window.history.state?.bgnjModal) window.history.back(); } catch {}
+      }
+    };
+  }, [open, handleAttemptClose]);
+
+  // backdrop 클릭 핸들러 — content 외부 클릭만 attemptClose.
+  const onBackdropClick = React.useCallback((e) => {
+    if (e.target === e.currentTarget) handleAttemptClose();
+  }, [handleAttemptClose]);
+
+  return { onBackdropClick, handleAttemptClose };
+};
+
 // 페이지 우하단 '맨 위로' 플로팅 버튼 — 일정 거리 이상 스크롤된 후 노출
 const ScrollToTop = () => {
   const [visible, setVisible] = React.useState(false);

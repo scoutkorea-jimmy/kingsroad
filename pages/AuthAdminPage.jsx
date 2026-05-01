@@ -468,6 +468,22 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.067.000",
+    date: "2026-05-01",
+    summary: "📝 칼럼 작성/목록 통합 + 🔒 모달 인프라 (ESC + 외부클릭 임시저장 prompt + 7일/10개 정책) + ♿ Tab 접근성.",
+    details: [
+      "📝 ColumnsHubPanel 신설 — 기존 별도 '칼럼 작성' 탭 흡수. 목록 + 상태 필터 + 임시저장 목록 + ＋ 글쓰기 버튼 + 편집 버튼 모두 모달.",
+      "📝 ColumnEditorModalContent — AdminColumnEditor 모달 wrapper. initialColumn / onPayloadChange prop 으로 dirty 추적 + 임시저장.",
+      "🔒 BGNJ_DRAFTS 헬퍼 (data.js) — localStorage 'bgnj_drafts' [{id, kind, ...}] 저장. 정책: 최대 10 개 + 7 일 보관, 만료/초과 자동 purge.",
+      "🔒 useModalGuard 훅 (Shell.jsx) — ESC 키 + body scroll lock + history pushState/popstate. dirty 시 외부클릭/ESC/뒤로가기 → 임시저장 confirm. 임시저장 후 닫기 / 그냥 닫기.",
+      "🔒 사이드바 '칼럼 작성' 탭 제거 — 운영설정 그룹에서 정리. 구 진입 경로(setTab('칼럼 작성'))는 ColumnsHubPanel 로 폴백.",
+      "♿ styles.css focus-visible 보강 — button / [role=button] / nav-link / .btn 모두 outline:2px var(--focus). Tab 키로 메뉴 이동 시 또렷한 시각 피드백.",
+      "ℹ 임시저장은 칼럼 모달에 우선 적용. 다른 모달(LegalModal 등) 은 후속 사이클에 동일 패턴 적용.",
+      "📦 cache-buster — `?v=00.067.000`.",
+    ],
+    context: "사용자 요청 4 종 묶음 처리: ① 칼럼 작성/목록 한 탭 통합 + 모달 글쓰기 ② 모달 외부클릭/뒤로가기 시 즉시 닫지 말고 임시저장 prompt ③ 임시저장 정책 7일·10개 ④ ESC 키 모달 닫기 ⑤ Tab 키 메뉴 이동 웹 접근성. 일반 사용자(관리자 외) 홈페이지 글쓰기 모달 + Tiptap 풍부화 + 파일/이미지 업로드 + 슬라이드 갤러리는 v00.068 로 분리 (작업 양 큼).",
+  },
+  {
     version: "00.066.000",
     date: "2026-05-01",
     summary: "🚌 투어 답사 일정/준비물 — 템플릿 시스템 + per-tour override (3 모드: 글로벌 / 템플릿 / 투어별).",
@@ -7255,7 +7271,7 @@ const AdminPage = ({ go }) => {
   // 7개 대카테고리: 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리
   const tabGroups = [
     { group: "요약",          items: ["대시보드"] },
-    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "칼럼 작성", "추천 여행지"] },
+    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "추천 여행지"] },
     { group: "회원관리",      items: ["회원", "회원 등급"] },
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
     { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "투어 페이지", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
@@ -7954,26 +7970,8 @@ const AdminPage = ({ go }) => {
           <ReportQueuePanel onRefresh={() => setPostRefreshKey((v) => v + 1)} go={go}/>
         )}
 
-        {/* 칼럼 — 서버 발행분 (BGNJ_COLUMNS.listPublic). */}
-        {tab === "뱅기노자 칼럼" && (
-          <div className="grid grid-2">
-            {allColumns.length === 0 ? (
-              <p style={{fontSize:13, color:'var(--ink-3)', padding:'24px 0', gridColumn:'1 / -1'}}>발행된 칼럼이 없습니다. '칼럼 작성' 탭에서 새 칼럼을 작성하세요.</p>
-            ) : allColumns.map((c) => (
-              <article key={c.id} className="card">
-                <div style={{display:'flex', justifyContent:'space-between', marginBottom:12}}>
-                  <span className="pill">{c.category}</span>
-                  <span className="mono dim-2" style={{fontSize:10}}>#{String(c.id).slice(-6)}</span>
-                </div>
-                <h3 className="ko-serif" style={{fontSize:17, marginBottom:8}}>{c.title}</h3>
-                <div className="dim-2 mono" style={{fontSize:11, marginBottom:12}}>{c.date || ''} {c.readTime ? `· ${c.readTime}` : ''}</div>
-                <div style={{display:'flex', gap:8}}>
-                  <button type="button" className="btn btn-small" onClick={() => setTab('칼럼 작성')}>편집</button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
+        {/* 칼럼 — 통합 허브 (목록 + 글쓰기 모달). v00.067 */}
+        {tab === "뱅기노자 칼럼" && <ColumnsHubPanel allColumns={allColumns}/>}
 
         {/* 강연 */}
         {tab === "강연" && <LectureAdminPanel go={go}/>}
@@ -8250,7 +8248,8 @@ const AdminPage = ({ go }) => {
         {tab === "회원 등급" && <AdminGradePanel/>}
 
         {/* 칼럼 작성 (관리자 전용, Tiptap column preset — 이미지 본문 삽입/이동 가능) */}
-        {tab === "칼럼 작성" && <AdminColumnEditor/>}
+        {/* '칼럼 작성' 탭은 v00.067 에 '뱅기노자 칼럼' 의 모달로 통합 (구 진입 경로 호환). */}
+        {tab === "칼럼 작성" && <ColumnsHubPanel allColumns={allColumns}/>}
 
         {/* 계좌번호 설정 */}
         {tab === "계좌번호 설정" && <BankAccountPanel/>}
@@ -8879,18 +8878,25 @@ const GradePromotionPanel = () => {
 };
 
 // === Admin: Column Editor (Tiptap column preset — inline draggable images)
-const AdminColumnEditor = () => {
-  const [editingId, setEditingId] = React.useState(null);
-  const [title, setTitle] = React.useState("");
-  const [category, setCategory] = React.useState("왕의 미학");
-  const [excerpt, setExcerpt] = React.useState("");
-  const [html, setHtml] = React.useState("");
-  const [text, setText] = React.useState("");
-  const [publishAt, setPublishAt] = React.useState("");
+// v00.067: initialColumn prop + onPayloadChange callback 추가 — 모달 안에서 사용 시 임시저장 추적용.
+const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {}) => {
+  const [editingId, setEditingId] = React.useState(initialColumn?.id || null);
+  const [title, setTitle] = React.useState(initialColumn?.title || "");
+  const [category, setCategory] = React.useState(initialColumn?.category || "왕의 미학");
+  const [excerpt, setExcerpt] = React.useState(initialColumn?.excerpt || "");
+  const [html, setHtml] = React.useState(initialColumn?.body?.html || "");
+  const [text, setText] = React.useState(initialColumn?.body?.text || "");
+  const [publishAt, setPublishAt] = React.useState(initialColumn?.publishAt || "");
   const [editorKey, setEditorKey] = React.useState(0);
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [tick, setTick] = React.useState(0);
   const [msg, setMsg] = React.useState("");
+
+  // 모달 wrapper 에 dirty payload 전달 — 임시저장 prompt 용. (옵셔널)
+  React.useEffect(() => {
+    if (typeof onPayloadChange !== 'function') return;
+    onPayloadChange({ id: editingId, title, category, excerpt, html, text, publishAt });
+  }, [editingId, title, category, excerpt, html, text, publishAt, onPayloadChange]);
 
   const all = React.useMemo(() => window.BGNJ_COLUMNS.listAll(), [tick]);
   const filtered = statusFilter === 'all' ? all : all.filter((c) => (c.status || 'published') === statusFilter);
@@ -9116,6 +9122,161 @@ const AdminColumnEditor = () => {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+// === Columns Hub Panel (v00.067) ====================================
+// 칼럼 목록 + 글쓰기 모달 통합. 기존 별도 '칼럼 작성' 탭 흡수.
+// "글쓰기" / "편집" 버튼 → 모달 (AdminColumnEditor) + 외부클릭/ESC 시 임시저장 prompt.
+const ColumnsHubPanel = ({ allColumns }) => {
+  const [tick, setTick] = React.useState(0);
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [initialCol, setInitialCol] = React.useState(null);
+  const [statusFilter, setStatusFilter] = React.useState('all');
+  const [drafts, setDrafts] = React.useState(() => window.BGNJ_DRAFTS?.list?.('column') || []);
+  React.useEffect(() => {
+    const onChange = () => setDrafts(window.BGNJ_DRAFTS?.list?.('column') || []);
+    window.addEventListener('bgnj-drafts-change', onChange);
+    return () => window.removeEventListener('bgnj-drafts-change', onChange);
+  }, []);
+
+  const all = React.useMemo(() => {
+    try { return window.BGNJ_COLUMNS.listAll(); } catch { return allColumns || []; }
+  }, [tick, allColumns]);
+  const filtered = statusFilter === 'all' ? all : all.filter((c) => (c.status || 'published') === statusFilter);
+  const counts = {
+    all: all.length,
+    draft: all.filter((c) => c.status === 'draft').length,
+    scheduled: all.filter((c) => c.status === 'scheduled').length,
+    published: all.filter((c) => (c.status || 'published') === 'published').length,
+  };
+
+  const openCreate = () => { setInitialCol(null); setModalOpen(true); };
+  const openCreateFromDraft = (d) => {
+    setInitialCol({ id: null, title: d.title || '', category: d.category || '왕의 미학', excerpt: d.excerpt || '',
+      body: { html: d.html || '', text: d.text || '' }, publishAt: d.publishAt || '' });
+    setModalOpen(true);
+  };
+  const openEdit = (col) => {
+    setInitialCol(col);
+    setModalOpen(true);
+  };
+  const closeModal = () => { setModalOpen(false); setInitialCol(null); setTick((v) => v + 1); };
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, flexWrap:'wrap', marginBottom:18}}>
+        <p className="dim" style={{fontSize:13, lineHeight:1.8, margin:0, flex:1, minWidth:280}}>
+          뱅기노자 칼럼 목록입니다. <strong className="gold">＋ 글쓰기</strong> 로 새 칼럼을 모달에서 작성하세요.
+          모달 외부 클릭 또는 ESC 시 임시저장 프롬프트가 표시됩니다 (최대 7일·10개 보관).
+        </p>
+        <button type="button" className="btn btn-gold btn-small" onClick={openCreate}>＋ 글쓰기</button>
+      </div>
+
+      {drafts.length > 0 && (
+        <div className="card" style={{padding:14, marginBottom:18}}>
+          <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>임시저장 ({drafts.length}/{window.BGNJ_DRAFTS?.MAX_COUNT || 10})</div>
+          <ul style={{listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:6}}>
+            {drafts.map((d) => (
+              <li key={d.id} style={{display:'flex', alignItems:'center', gap:8, fontSize:12}}>
+                <span className="mono dim-2" style={{fontSize:10, minWidth:120}}>{(d.savedAt || '').slice(0, 16).replace('T', ' ')}</span>
+                <span style={{flex:1, color:'var(--ink)'}}>{d.title || '(제목 없음)'}</span>
+                <button type="button" className="btn btn-small" style={{fontSize:10}} onClick={() => openCreateFromDraft(d)}>이어쓰기</button>
+                <button type="button" className="btn btn-small" style={{fontSize:10, borderColor:'var(--danger)', color:'var(--danger)'}}
+                  onClick={() => { window.BGNJ_DRAFTS.remove(d.id); }}>삭제</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:14}}>
+        {[
+          { k: 'all', label: `전체 (${counts.all})` },
+          { k: 'published', label: `발행 (${counts.published})` },
+          { k: 'scheduled', label: `예약 (${counts.scheduled})` },
+          { k: 'draft', label: `초안 (${counts.draft})` },
+        ].map((f) => (
+          <button key={f.k} type="button" className="btn btn-small"
+            onClick={() => setStatusFilter(f.k)}
+            style={{
+              fontSize:11,
+              borderColor: statusFilter === f.k ? 'var(--primary)' : 'var(--line-2)',
+              color: statusFilter === f.k ? 'var(--primary)' : 'var(--ink)',
+              background: statusFilter === f.k ? 'rgba(245,213,72,0.10)' : 'var(--bg-2)',
+              fontWeight: statusFilter === f.k ? 700 : 500,
+            }}>{f.label}</button>
+        ))}
+      </div>
+
+      <div className="grid grid-2">
+        {filtered.length === 0 ? (
+          <p style={{fontSize:13, color:'var(--ink-3)', padding:'24px 0', gridColumn:'1 / -1'}}>
+            {statusFilter === 'all' ? '칼럼이 없습니다. ＋ 글쓰기 로 시작하세요.' : '필터 조건에 맞는 칼럼이 없습니다.'}
+          </p>
+        ) : filtered.map((c) => (
+          <article key={c.id} className="card">
+            <div style={{display:'flex', justifyContent:'space-between', marginBottom:12}}>
+              <span className="pill">{c.category}</span>
+              <span className="mono dim-2" style={{fontSize:10}}>#{String(c.id).slice(-6)} · {c.status || 'published'}</span>
+            </div>
+            <h3 className="ko-serif" style={{fontSize:17, marginBottom:8}}>{c.title}</h3>
+            <div className="dim-2 mono" style={{fontSize:11, marginBottom:12}}>{c.date || ''} {c.readTime ? `· ${c.readTime}` : ''}</div>
+            <div style={{display:'flex', gap:8}}>
+              <button type="button" className="btn btn-small" onClick={() => openEdit(c)}>편집</button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {modalOpen && <ColumnEditorModalContent initialColumn={initialCol} onClose={closeModal}/>}
+    </div>
+  );
+};
+
+const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
+  const [payload, setPayload] = React.useState(null);
+  // dirty 판정 — 처음 렌더 후 사용자 입력이 있었는지. 단순히 title/text 가 비어있지 않으면 dirty 처리.
+  const dirty = !!(payload && (payload.title?.trim() || payload.text?.trim()));
+  const saveDraft = React.useCallback(() => {
+    if (!payload) return;
+    try {
+      window.BGNJ_DRAFTS.save({
+        kind: 'column',
+        title: payload.title || '',
+        category: payload.category || '',
+        excerpt: payload.excerpt || '',
+        html: payload.html || '',
+        text: payload.text || '',
+        publishAt: payload.publishAt || '',
+      });
+    } catch {}
+  }, [payload]);
+  const { onBackdropClick } = window.useModalGuard({
+    open: true, dirty, onClose, onSaveDraft: saveDraft, label: '칼럼',
+  });
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="칼럼 작성"
+      onClick={onBackdropClick}
+      style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'grid', placeItems:'start center', padding:24, overflowY:'auto'}}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        width:'min(1100px, 100%)', background:'var(--bg)', boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+        padding:24, marginTop:24, marginBottom:48,
+      }}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>{initialColumn?.id ? '칼럼 편집' : '새 칼럼 작성'}</h2>
+          <button type="button" className="btn btn-small" onClick={() => { /* 명시적 닫기 — 가드 통과 */
+            const ok = !dirty || window.confirm('작성 중인 내용을 임시저장 후 닫으시겠어요?\n[확인]=임시저장 후 닫기 / [취소]=그냥 닫기');
+            if (ok && dirty) saveDraft();
+            onClose?.();
+          }}>닫기</button>
+        </div>
+        <AdminColumnEditor initialColumn={initialColumn || undefined}
+          onPayloadChange={setPayload}
+          onAfterSave={() => { /* 발행 후에도 모달 유지 — 사용자가 명시적으로 닫음 */ }}/>
       </div>
     </div>
   );
