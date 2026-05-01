@@ -181,6 +181,78 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
   );
 };
 
+// === File attacher (v00.069) — 비-이미지 파일 첨부, 10MB × 최대 3 ======
+// 게시글에 attachments: [{ name, type, size, dataUrl }] 으로 저장. dataUrl 은 base64.
+// 보관 한도가 작아 v1 은 D1 인라인 JSON. 추후 R2 업로드 흐름은 별도 사이클.
+const FILE_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+const FILE_MAX_COUNT = 3;
+const _fmtSize = (n) => {
+  if (!n && n !== 0) return '';
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+};
+const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MAX_SIZE }) => {
+  const inputRef = React.useRef(null);
+  const [error, setError] = React.useState('');
+
+  const handleFiles = async (fileList) => {
+    setError('');
+    const incoming = Array.from(fileList || []);
+    const remaining = max - files.length;
+    if (remaining <= 0) { setError(`첨부는 최대 ${max}개까지 가능합니다.`); return; }
+    const accepted = [];
+    for (const f of incoming.slice(0, remaining)) {
+      if (f.size > maxSize) { setError(`'${f.name}' 은(는) ${_fmtSize(maxSize)} 초과 — 첨부 불가.`); continue; }
+      accepted.push(f);
+    }
+    const results = await Promise.all(accepted.map((f) => new Promise((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve({ name: f.name, type: f.type || '', size: f.size, dataUrl: r.result });
+      r.readAsDataURL(f);
+    })));
+    setFiles([...files, ...results]);
+  };
+
+  const remove = (i) => setFiles(files.filter((_, j) => j !== i));
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+        <div className="field-label">첨부 파일 <span className="dim-2">({files.length}/{max} · 각 {_fmtSize(maxSize)} 이하)</span></div>
+        <button type="button" className="btn btn-small"
+          disabled={files.length >= max}
+          onClick={() => inputRef.current?.click()}>
+          + 파일 선택
+        </button>
+      </div>
+      <input ref={inputRef} type="file" multiple
+        style={{display:'none'}}
+        onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}/>
+      {error && (
+        <div role="alert" style={{fontSize:11, color:'var(--danger)', marginBottom:8}}>{error}</div>
+      )}
+      {files.length > 0 ? (
+        <ul style={{listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:6}}>
+          {files.map((f, i) => (
+            <li key={i} style={{display:'flex', alignItems:'center', gap:10, padding:'8px 10px', border:'1px solid var(--line)', background:'var(--bg-2)', fontSize:12}}>
+              <span aria-hidden="true">📎</span>
+              <span style={{flex:1, color:'var(--ink)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{f.name}</span>
+              <span className="mono dim-2" style={{fontSize:10}}>{_fmtSize(f.size)}</span>
+              <button type="button" onClick={() => remove(i)} aria-label={`${f.name} 제거`}
+                style={{background:'none', border:'none', color:'var(--danger)', fontSize:14, cursor:'pointer', padding:'2px 6px'}}>✕</button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="placeholder" style={{aspectRatio:'8/1', fontSize:10}}>
+          PDF · DOCX · 이미지 외 자료를 첨부 (게시글 본문 하단에 다운로드 링크로 표시)
+        </div>
+      )}
+    </div>
+  );
+};
+
 // === Comment tree (다단계 답글, 최대 깊이 MAX_DEPTH) ======================
 // @멘션은 본문에 @이름 토큰을 골드 chip 으로 렌더링.
 // 답글 트리 — 시각적 들여쓰기 기본 캡(3). 그 이상은 자동 펼침/접기 토글로 노출.
@@ -784,6 +856,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   const [prefix, setPrefix] = React.useState(initialPost?.prefix || initialDraft?.prefix || "");
   const [tags, setTags] = React.useState(initialPost?.tags || initialDraft?.tags || []);
   const [images, setImages] = React.useState(initialPost?.images || initialDraft?.images || []);
+  const [attachments, setAttachments] = React.useState(initialPost?.attachments || initialDraft?.attachments || []);
   const [bodyHtml, setBodyHtml] = React.useState(initialPost?.body?.html || initialDraft?.bodyHtml || "");
   const [bodyText, setBodyText] = React.useState(initialPost?.body?.text || initialDraft?.bodyText || "");
   const [error, setError] = React.useState("");
@@ -794,11 +867,11 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   // 임시저장 — 수정 모드 제외, 1초 디바운스로 저장.
   React.useEffect(() => {
     if (isEditing) return;
-    const hasContent = !!(title.trim() || bodyText.trim() || (tags && tags.length) || (images && images.length));
+    const hasContent = !!(title.trim() || bodyText.trim() || (tags && tags.length) || (images && images.length) || (attachments && attachments.length));
     const t = setTimeout(() => {
       try {
         if (hasContent) {
-          const snapshot = { categoryId, title, prefix, tags, images, bodyHtml, bodyText, savedAt: new Date().toISOString() };
+          const snapshot = { categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText, savedAt: new Date().toISOString() };
           localStorage.setItem(draftKey, JSON.stringify(snapshot));
           setSavedAt(snapshot.savedAt);
         } else {
@@ -808,7 +881,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       } catch {}
     }, 800);
     return () => clearTimeout(t);
-  }, [draftKey, isEditing, categoryId, title, prefix, tags, images, bodyHtml, bodyText]);
+  }, [draftKey, isEditing, categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText]);
 
   const clearDraft = () => {
     try { localStorage.removeItem(draftKey); } catch {}
@@ -822,6 +895,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     setPrefix(initialPost?.prefix || "");
     setTags(initialPost?.tags || []);
     setImages(initialPost?.images || []);
+    setAttachments(initialPost?.attachments || []);
     setBodyHtml(initialPost?.body?.html || "");
     setBodyText(initialPost?.body?.text || "");
     setError("");
@@ -864,6 +938,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`,
       tags,
       images,
+      attachments,
       _new: true,
       _userCreated: true,
       body: { html: bodyHtml, text: bodyText },
@@ -967,6 +1042,11 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
           {/* Image attachments */}
           <div className="field">
             <ImageAttacher images={images} setImages={setImages} max={10}/>
+          </div>
+
+          {/* File attachments (v00.069) */}
+          <div className="field">
+            <FileAttacher files={attachments} setFiles={setAttachments}/>
           </div>
 
           {error && (
@@ -1168,6 +1248,25 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
           <section aria-label="첨부 이미지" style={{margin:'48px 0'}}>
             <div className="section-eyebrow" aria-hidden="true" style={{marginBottom:16}}>ATTACHMENTS · 첨부 이미지 ({post.images.length}장)</div>
             <ImageSlider images={post.images}/>
+          </section>
+        )}
+
+        {/* File attachments (v00.069) */}
+        {post.attachments?.length > 0 && (
+          <section aria-label="첨부 파일" style={{margin:'40px 0'}}>
+            <div className="section-eyebrow" aria-hidden="true" style={{marginBottom:14}}>FILES · 첨부 파일 ({post.attachments.length})</div>
+            <ul style={{listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:8}}>
+              {post.attachments.map((a, i) => (
+                <li key={i} style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', border:'1px solid var(--line)', background:'var(--bg-2)', fontSize:13}}>
+                  <span aria-hidden="true">📎</span>
+                  <span style={{flex:1, color:'var(--ink)'}}>{a.name}</span>
+                  <span className="mono dim-2" style={{fontSize:11}}>{_fmtSize(a.size)}</span>
+                  <a href={a.dataUrl} download={a.name}
+                    className="btn btn-small" style={{fontSize:11, padding:'4px 10px'}}
+                    aria-label={`${a.name} 다운로드`}>다운로드</a>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 

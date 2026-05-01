@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.069.000",
+    date: "2026-05-01",
+    summary: "📎 게시글 파일 첨부 (10MB × 최대 3개) — FileAttacher 신설 + PostCompose 통합 + 상세에 다운로드 링크.",
+    details: [
+      "📎 FileAttacher 컴포넌트 (CommunityPage.jsx) — name/type/size/dataUrl 배열. 10MB 초과 시 거부. 동일 모달에서 ImageAttacher(이미지 10장) 와 별도 슬롯.",
+      "📎 PostCompose 폼 — Image 첨부 다음에 File 첨부 슬롯. payload 에 attachments 배열 포함. 임시저장 스냅샷에도 attachments 포함.",
+      "📎 게시글 상세 — 본문 + 이미지 슬라이드 다음에 'FILES · 첨부 파일' 섹션 추가. 각 파일 다운로드 링크(<a download>).",
+      "ℹ 이미지 (최대 10장) + 하단 슬라이드 갤러리는 ImageAttacher / ImageSlider 로 v00.068 이전부터 이미 구현. 본 사이클에 파일 첨부만 신규.",
+      "ℹ 현재 dataUrl 인라인 저장 — D1 인라인 JSON 패턴. 30MB+ 첨부 시 응답 크기 부담 가능. 후속 사이클에 R2 업로드 흐름 검토.",
+      "📦 cache-buster — `?v=00.069.000`.",
+    ],
+    context: "사용자 요청 5 종 중 잔여 3 종 처리 — 파일 첨부(10MB×3) + 이미지(10장) + 하단 슬라이드 갤러리. 이미지/슬라이드는 이미 구현되어 있어 점검만. 파일 첨부 (FileAttacher) 신설 + 통합. 현재는 dataUrl base64 인라인 — 게시글 페이로드가 커질 위험 있어 R2 업로드 흐름은 다음 사이클에. 백로그 종료 — 사용자 추가 요청 시 신규 사이클 정의.",
+  },
+  {
     version: "00.068.000",
     date: "2026-05-01",
     summary: "📝 Tiptap 무료 extension 풍부화 + 일반 사용자 글쓰기 모달 (커뮤니티) — 목록 위에 모달.",
