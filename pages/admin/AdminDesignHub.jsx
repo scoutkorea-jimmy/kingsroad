@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.102.000",
+    date: "2026-05-01",
+    summary: "🪣 R2 admin 확장 — BooksAdminPanel (책 표지/PDF) + RecommendationsAdminPanel (이미지) 가 BGNJ_MEDIA.uploadFile 호출.",
+    details: [
+      "🪣 BooksAdminPanel.onUploadCover — R2 (folder='book-covers', 5MB) → dataURI 폴백 (1.5MB).",
+      "🪣 BooksAdminPanel.onUploadPdf — R2 (folder='book-pdfs', 20MB) → dataURI 폴백 (3MB). PDF 한도 R2 도입으로 ~7배 증가 (3→20MB).",
+      "🪣 RecommendationsAdminPanel.onPickImage — R2 (folder='recommendations', 5MB) → dataURI 폴백 (1.5MB).",
+      "ℹ 기존 dataURI 데이터 호환 — 모든 렌더 site 가 dataURI / R2 URL 양쪽 처리. 재업로드 시에만 R2 이동.",
+      "📦 cache-buster — `?v=00.102.000` (20곳).",
+    ],
+    context: "v00.082 가 admin 6 슬롯만 처리. 검증 보고에서 BooksAdminPanel(line 2596) + RecommendationsAdminPanel(line 2610) 의 fileToDataUri 직접 호출 잔재 식별 → 본 사이클에 R2 호출 추가. PDF 한도 3MB→20MB 로 큰 폭 증가 (R2 의 dataURI 미적용 시 D1 행 한도 부담 차단). 다음 사이클(v00.103): 사용자 콘텐츠 (게시글 첨부+이미지) R2 마이그레이션.",
+  },
+  {
     version: "00.101.000",
     date: "2026-05-01",
     summary: "🎤 LecturePageEditorPanel 신설 (강연 페이지 글로벌/템플릿/per-lecture 편집) + HomePage 추천 섹션 헤딩 site_content 연동.",

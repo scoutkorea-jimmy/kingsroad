@@ -50,12 +50,20 @@ const RecommendationsAdminPanel = () => {
       return next;
     });
   };
+  // v00.084 — R2 우선 (5MB) + dataURI 폴백 (1.5MB).
   const onPickImage = async (idx, e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    try {
+      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'recommendations', maxBytes: 5 * 1024 * 1024 });
+      setItem(idx, { imageDataUri: url });
+      return;
+    } catch (err) {
+      console.warn('[v00.084] R2 추천 이미지 업로드 실패 — dataURI 폴백:', err);
+    }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
       return;
     }
     const dataUri = await fileToDataUri(file);

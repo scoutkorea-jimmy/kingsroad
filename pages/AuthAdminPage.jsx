@@ -2596,30 +2596,50 @@ const BooksAdminPanel = () => {
     refresh();
   };
 
+  // v00.084 — R2 우선 업로드 (5MB 표지 / 20MB PDF) + dataURI 폴백 (1.5MB / 3MB).
+  // dataURI 폴백 시 D1 행 비대화 위험 — 사용자에게 R2 가능 시점으로 안내.
   const onUploadCover = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    try {
+      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'book-covers', maxBytes: 5 * 1024 * 1024 });
+      patch({ coverDataUri: url });
+      flash('표지 업로드 완료 (R2)');
+      e.target.value = '';
+      return;
+    } catch (err) {
+      console.warn('[v00.084] R2 책 표지 업로드 실패 — dataURI 폴백:', err);
+    }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`표지 이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      alert(`표지 이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
       e.target.value = ''; return;
     }
     const dataUri = await fileToDataUri(file);
     patch({ coverDataUri: dataUri });
-    flash('표지 업로드 완료');
+    flash('표지 업로드 완료 (dataURI 폴백)');
     e.target.value = '';
   };
 
   const onUploadPdf = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // PDF는 미리보기 분량만 — localStorage 한도 고려해 3MB로 캡.
+    try {
+      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'book-pdfs', maxBytes: 20 * 1024 * 1024 });
+      patch({ pdfPreviewDataUri: url });
+      flash('PDF 미리보기 업로드 완료 (R2)');
+      e.target.value = '';
+      return;
+    } catch (err) {
+      console.warn('[v00.084] R2 책 PDF 업로드 실패 — dataURI 폴백:', err);
+    }
+    // PDF dataURI 폴백 — localStorage / D1 한도 고려해 3MB로 캡.
     if (file.size > 3 * 1024 * 1024) {
-      alert(`PDF가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 미리보기용으로 3MB 이하 권장.`);
+      alert(`PDF가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 3MB 폴백 한도 초과.`);
       e.target.value = ''; return;
     }
     const dataUri = await fileToDataUri(file);
     patch({ pdfPreviewDataUri: dataUri });
-    flash('PDF 미리보기 업로드 완료');
+    flash('PDF 미리보기 업로드 완료 (dataURI 폴백)');
     e.target.value = '';
   };
 
