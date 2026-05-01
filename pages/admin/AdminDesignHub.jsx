@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.077.000",
+    date: "2026-05-01",
+    summary: "🔒 useModalGuard 일괄 적용 — 5 모달 (LegalModal / PostViewerModal / SuspendDialog / DestinationMapModal / RecommendationDetailModal) ESC+body lock+popstate 통일.",
+    details: [
+      "🔒 LegalModal (AuthAdminPage.jsx) — 수동 keydown 핸들러 → useModalGuard. 읽기 전용 (dirty=false).",
+      "🔒 PostViewerModal (AuthAdminPage.jsx) — 수동 keydown → useModalGuard. dirty=false.",
+      "🔒 SuspendDialog (AuthAdminPage.jsx) — 수동 keydown → useModalGuard. dirty=false (정지 사유 텍스트 임시저장 가치 적음).",
+      "🔒 DestinationMapModal (HomePage.jsx) — 수동 keydown + body lock → useModalGuard 가 처리.",
+      "🔒 RecommendationDetailModal (HomePage.jsx) — 수동 keydown + body lock → useModalGuard.",
+      "ℹ PostComposeModal (CommunityPage v00.068) + ColumnEditorModal (v00.067) 은 이미 useModalGuard 사용 — dirty=true 라 ESC/외부클릭 시 임시저장 prompt.",
+      "📦 cache-buster — `?v=00.077.000` (19곳).",
+    ],
+    context: "v00.067 에서 useModalGuard 도입 + ColumnEditorModal 적용. v00.068 PostComposeModal 도 적용. 그 외 모달들은 수동 keydown + body overflow lock 으로 산재 → 일관성 갭. v00.077 사이클에 5 모달 일괄 통일. dirty=true (임시저장 prompt) 인 모달은 작성 폼 (PostCompose / ColumnEditor); 나머지는 dirty=false (ESC 즉시 닫기). 다음 사이클(v00.078~) 후보: AuthAdminPage 2차 분할 (defensive — 다음 큰 패널 추가 전 7000 줄 도달 시).",
+  },
+  {
     version: "00.076.000",
     date: "2026-05-01",
     summary: "🎨 Tiptap CSS 보강 — v00.068 의 14 extension (표/체크리스트/형광펜/Sub-Sup/정렬/코드블록/YouTube) 시각 스타일 완성.",

@@ -11,16 +11,8 @@
 
 const DestinationMapModal = ({ onClose, go }) => {
   const [selectedDest, setSelectedDest] = React.useState(null);
-  React.useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [onClose]);
+  // v00.077 — useModalGuard 통일 (ESC + body scroll lock + popstate). 읽기 전용 → dirty=false.
+  window.useModalGuard?.({ open: true, dirty: false, onClose, onSaveDraft: null, label: '여행지 지도 탐색' });
   return (
     <div role="dialog" aria-modal="true" aria-label="여행지 지도 탐색"
       style={{
@@ -117,16 +109,8 @@ class HomeSectionBoundary extends React.Component {
 
 // 추천 여행지 상세 모달 — 카드 클릭 시 더 큰 이미지 + 전체 설명 + 태그 + 투어 보기 CTA.
 const RecommendationDetailModal = ({ rec, onClose, go }) => {
-  React.useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [onClose]);
+  // v00.077 — useModalGuard 통일 (ESC + body scroll lock + popstate). 읽기 전용 → dirty=false.
+  window.useModalGuard?.({ open: true, dirty: false, onClose, onSaveDraft: null, label: rec?.name || '여행지 상세' });
   const tags = Array.isArray(rec.tags)
     ? rec.tags
     : (typeof rec.tags === 'string' ? rec.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : []);

@@ -82,15 +82,8 @@
 ### ✅ v00.076 — Tiptap CSS 보강
 - 완료: 표/체크리스트/형광펜/Sub-Sup/정렬/코드블록/YouTube 시각 스타일 일괄. 다크 모드 보정 포함.
 
-### ⏳ v00.077 — useModalGuard 일괄 적용
-- [ ] LegalModal — ESC + 외부클릭
-- [ ] PostViewerModal — ESC + 외부클릭
-- [ ] SuspendDialog — ESC
-- [ ] 추천 카드 상세 모달 — ESC + body scroll lock 정합
-- [ ] 기타 모달 audit
-- **동기:** v00.067 에서 useModalGuard 도입 후 일부 모달만 적용. UX 일관성.
-- **추정:** 1-2 시간.
-- **status:** pending
+### ✅ v00.077 — useModalGuard 일괄 적용
+- 완료: LegalModal / PostViewerModal / SuspendDialog (AuthAdminPage) + DestinationMapModal / RecommendationDetailModal (HomePage) 5 모달 통일. 수동 keydown + body overflow lock 핸들러 제거.
 
 ### ⏳ v00.078 — AuthAdminPage 2차 분할
 - [ ] HeroEditorPanel + FooterStyleEditor + TourPageEditorPanel + RecommendationsAdminPanel → `pages/admin/AdminContentEditors.jsx` (~1500 줄 이동)
@@ -177,4 +170,5 @@
 - **v00.073** ✅ 전 페이지 hero/intro + 푸터 잔재 admin 편집화 sweep — 9 페이지 + 푸터 4 필드 (commit `07a9ca0`)
 - **v00.074** ✅ 데이터 매퍼 audit — _toBook 양방향 silent 버그 fix + _toLecture/_toOrder 보강 (commit `726fbb1`)
 - **v00.075** ✅ 강연 페이지 편집화 parity — 진행/참고/커버 per-lecture + 후기 게이팅 + inline LectureAdminPanel (commit `9bb52f8`)
-- **v00.076** ✅ Tiptap CSS 보강 — 14 extension 시각 스타일 일괄 (commit 다음 sha)
+- **v00.076** ✅ Tiptap CSS 보강 — 14 extension 시각 스타일 일괄 (commit `5a918f7`)
+- **v00.077** ✅ useModalGuard 일괄 적용 — 5 모달 ESC+body lock+popstate 통일 (commit 다음 sha)

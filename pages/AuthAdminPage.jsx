@@ -3,11 +3,9 @@
 // 회원가입 시 이용약관 텍스트를 클릭하면 모달로 본문을 노출.
 const LegalModal = ({ slug, onClose }) => {
   const doc = (window.BGNJ_LEGAL?.get(slug)) || { title: slug === 'terms' ? '이용약관' : '개인정보 처리방침', body: '<p>(준비 중)</p>' };
-  React.useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // v00.077 — useModalGuard 통일: ESC + body scroll lock + history pushState/popstate.
+  // dirty=false (읽기 전용 모달) → 즉시 닫기, 임시저장 prompt 없음.
+  window.useModalGuard?.({ open: true, dirty: false, onClose, onSaveDraft: null, label: doc.title });
   return (
     <div role="dialog" aria-modal="true" aria-label={doc.title}
       onClick={onClose}
@@ -4505,15 +4503,14 @@ const AuditLogPanel = () => {
 const PostViewerModal = ({ postId, onClose }) => {
   const [post, setPost] = React.useState(() => window.BGNJ_COMMUNITY?.getPost?.(postId) || null);
   const [comments, setComments] = React.useState(() => window.BGNJ_COMMUNITY?.getComments?.(postId) || []);
+  // v00.077 — useModalGuard 통일 (ESC + body lock + popstate). 읽기 전용 → dirty=false.
+  window.useModalGuard?.({ open: true, dirty: false, onClose, onSaveDraft: null, label: '게시글 보기' });
   React.useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
     // 서버 게시글이면 댓글 동기화 시도.
     try { window.BGNJ_COMMUNITY?.refreshComments?.(postId).then(() => {
       setComments(window.BGNJ_COMMUNITY.getComments(postId));
     }); } catch {}
-    return () => window.removeEventListener('keydown', onKey);
-  }, [postId, onClose]);
+  }, [postId]);
 
   if (!post) {
     return (
@@ -4640,11 +4637,9 @@ const PostViewerModal = ({ postId, onClose }) => {
 
 // 정지 사유 입력 모달 — prompt() 대신 GUI.
 const SuspendDialog = ({ target, reason, onChange, onConfirm, onCancel }) => {
-  React.useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  // v00.077 — useModalGuard 통일 (ESC + body scroll lock + history pushState).
+  // 사유 텍스트는 임시저장 prompt 가치 적음 → dirty=false.
+  window.useModalGuard?.({ open: true, dirty: false, onClose: onCancel, onSaveDraft: null, label: '회원 정지' });
   return (
     <div role="dialog" aria-modal="true" aria-label="회원 정지"
       onClick={onCancel}
