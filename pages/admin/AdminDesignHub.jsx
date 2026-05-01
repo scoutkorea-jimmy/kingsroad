@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.074.000",
+    date: "2026-05-01",
+    summary: "🔍 데이터 매퍼 audit — _toBook 양방향 silent 버그 fix + _toLecture/_toOrder 누락 필드 보강.",
+    details: [
+      "🐛 [핵심 fix] BGNJ_BOOKS — DB 컬럼 (cover_key / pdf_key / is_primary / sort_order) 을 잘못된 키로 읽어 admin 의 표지/PDF/대표/순서 변경이 silent 누락. _toBook 이 DB 컬럼명 우선으로 read + 신규 _toBookPayload 가 클라 → 워커 키 변환 (coverDataUri→coverKey, pdfPreviewDataUri→pdfKey, primary→isPrimary, order→sortOrder). create/update/reorder 모두 변환 거침.",
+      "🩹 _toLecture — 워커 lectureRow 가 보내는 createdAt / updatedAt 패스스루 (이전 누락; 표시 영향 X 지만 일관성).",
+      "🩹 _toOrder — bookId 필드 추가 (FK book_id 노출 — 어떤 책 주문인지 식별).",
+      "✅ _toTour (v00.070 fix), _toColumn, 강연/투어 reservation mapper 는 audit 결과 깨끗.",
+      "📦 cache-buster — `?v=00.074.000` (19곳).",
+    ],
+    context: "v00.070 의 _toTour 누락 4 필드 fix 가 'silent drop 버그가 다른 매퍼에도 있을 가능성' 을 시사 → ROADMAP v00.074 audit. 결과: _toBook 이 DB 스키마 컬럼명(snake_case + is_/sort_) 을 직접 매칭하지 않아 admin BooksAdminPanel 의 cover/PDF/primary/order 변경이 silent 무시되던 큰 버그 발견. handleBookPatch 의 fieldMap 이 isPrimary/sortOrder/coverKey/pdfKey 를 기대하는데 클라가 primary/order/coverDataUri/pdfPreviewDataUri 로 보냄. 양방향(_toBook 읽기 + _toBookPayload 쓰기) 동시 fix. 워커 변경 불필요. 다음 사이클(v00.075+) 후보: LecturePageEditorPanel 신설 (강연 페이지 일정·준비물·커버 per-lecture).",
+  },
+  {
     version: "00.073.000",
     date: "2026-05-01",
     summary: "🪧 전 페이지 hero/intro + 푸터 잔재 admin 편집화 sweep — 9 페이지 + 푸터 4 필드 신설.",

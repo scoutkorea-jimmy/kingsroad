@@ -28,7 +28,10 @@
 - 완료: 9 신규 site_content 키 (lecture/community/column/bookCheckout/faq/myPage/eat/sleep/shopIntro) + 푸터 4 필드 (copyright/headingContent/Info/Contact) + 9 SectionForm. myPageIntro 의 {name} 토큰 치환.
 - 미완 (v00.075+ 으로 이월): LecturePageEditorPanel 신설 (강연 페이지에 투어와 동일한 일정/준비물/커버 per-lecture 편집), 후기 게이팅 등 lectureReviewsGate 등.
 
-### ⏳ v00.074 — 데이터 매퍼 audit
+### ✅ v00.074 — 데이터 매퍼 audit
+- 완료: _toBook 양방향 silent 버그 fix (DB cover_key/pdf_key/is_primary/sort_order 직접 매칭 + _toBookPayload 변환). _toLecture createdAt/updatedAt 패스스루. _toOrder bookId 추가. _toColumn / _toTour / reservation mapper 는 audit 결과 깨끗.
+
+### ⏳ v00.075 — (이전 v00.074) 데이터 매퍼 audit (예약 슬롯)
 - [ ] `data.js` 의 모든 `_toX` 매퍼 함수가 워커 응답 필드를 보존하는지 점검
   - [ ] `_toTour` (v00.070 fix 완료, 회귀 검증)
   - [ ] `_toLecture` (또는 LECTURES 헬퍼 내부 매퍼)
@@ -180,4 +183,5 @@
 - **v00.070** ✅ 투어 페이지 모든 항목 admin 편집 + AuthAdminPage 9332→6900 분할 (commit `3ccc6b9`)
 - **v00.071** ✅ 빌드 단계 도입 (esbuild) — Babel-standalone 제거, in-browser 경고 / 500KB deopt 근본 차단 (commit `0dcf267`)
 - **v00.072** ✅ 홈 카드 desc 축약 + TourAdminPanel inline 답사 일정·준비물·커버 편집 통합 (commit `16940d3`)
-- **v00.073** ✅ 전 페이지 hero/intro + 푸터 잔재 admin 편집화 sweep — 9 페이지 + 푸터 4 필드 (commit 다음 sha)
+- **v00.073** ✅ 전 페이지 hero/intro + 푸터 잔재 admin 편집화 sweep — 9 페이지 + 푸터 4 필드 (commit `07a9ca0`)
+- **v00.074** ✅ 데이터 매퍼 audit — _toBook 양방향 silent 버그 fix + _toLecture/_toOrder 보강 (commit 다음 sha)

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.073.000",
+  version: "00.074.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -1478,6 +1478,7 @@ window.BGNJ_LECTURES = {
   _reviewsByLecture: {},
   _toLecture(r) {
     if (!r) return null;
+    // v00.074 audit — 워커 lectureRow 가 보내는 createdAt / updatedAt 도 패스스루 (이전 누락).
     return {
       id: r.id, title: r.title, topic: r.topic, venue: r.venue, host: r.host,
       next: r.next,
@@ -1487,6 +1488,8 @@ window.BGNJ_LECTURES = {
       price: r.price || 0,
       note: r.note || '',
       hidden: !!r.hidden,
+      createdAt: r.created_at || r.createdAt,
+      updatedAt: r.updated_at || r.updatedAt,
     };
   },
   async refresh({ admin, includeHidden } = {}) {
@@ -1708,6 +1711,7 @@ window.BGNJ_BOOK_ORDERS = {
     return {
       id: r.id,
       orderNo: r.order_no || r.orderNo,
+      bookId: r.book_id || r.bookId, // v00.074 audit — 어떤 책 주문인지 식별 (FK)
       userId: r.user_id,
       version: r.version,
       qty: r.qty,
@@ -2464,6 +2468,8 @@ try { window.BGNJ_SITE_CONTENT.applyHead(); } catch {}
 // === 책 카탈로그(BGNJ_BOOKS) — 서버(D1.books) source of truth =============
 window.BGNJ_BOOKS = {
   _books: [],
+  // v00.074 audit fix — DB 컬럼 (cover_key / pdf_key / is_primary / sort_order) 을 정확히 읽음.
+  // 이전엔 r.cover_url / r.primary / r.display_order 같은 존재하지 않는 키를 읽어 항상 undefined → silent 누락.
   _toBook(r) {
     return {
       id: r.id, slug: r.slug || r.id, title: r.title, subtitle: r.subtitle,
@@ -2472,15 +2478,26 @@ window.BGNJ_BOOKS = {
       desc: r.description || r.desc, intro: r.intro,
       chapters: typeof r.chapters_json === 'string' ? (JSON.parse(r.chapters_json || '[]')) : (r.chapters || []),
       authorBio: r.author_bio || r.authorBio,
-      coverDataUri: r.cover_url || r.coverDataUri || '',
-      pdfPreviewDataUri: r.pdf_preview_url || r.pdfPreviewDataUri || '',
+      coverDataUri: r.cover_key || r.cover_url || r.coverDataUri || '',
+      pdfPreviewDataUri: r.pdf_key || r.pdf_preview_url || r.pdfPreviewDataUri || '',
       badges: typeof r.badges_json === 'string' ? (JSON.parse(r.badges_json || '[]')) : (r.badges || []),
       status: r.status || 'published',
       publishedAt: r.published_at || r.publishedAt,
-      primary: !!r.primary,
-      order: r.display_order ?? r.order ?? 0,
+      primary: !!(r.is_primary || r.primary),
+      order: r.sort_order ?? r.display_order ?? r.order ?? 0,
+      createdAt: r.created_at || r.createdAt,
+      updatedAt: r.updated_at || r.updatedAt,
       reviews: [],
     };
+  },
+  // v00.074 — 클라이언트 필드명 → 워커 필드명 변환. UI 측 코드 무수정 유지.
+  _toBookPayload(payload = {}) {
+    const out = { ...payload };
+    if ('coverDataUri' in out) { out.coverKey = out.coverDataUri; delete out.coverDataUri; }
+    if ('pdfPreviewDataUri' in out) { out.pdfKey = out.pdfPreviewDataUri; delete out.pdfPreviewDataUri; }
+    if ('primary' in out) { out.isPrimary = !!out.primary; delete out.primary; }
+    if ('order' in out) { out.sortOrder = Number(out.order) || 0; delete out.order; }
+    return out;
   },
   async refresh() {
     try {
@@ -2506,12 +2523,12 @@ window.BGNJ_BOOKS = {
       || null;
   },
   async create(payload = {}) {
-    const res = await window.BGNJ_API.books.create(payload);
+    const res = await window.BGNJ_API.books.create(this._toBookPayload(payload));
     await this.refresh();
     return res?.id ? this.get(res.id) : null;
   },
   async update(id, patch = {}) {
-    await window.BGNJ_API.books.update(id, patch);
+    await window.BGNJ_API.books.update(id, this._toBookPayload(patch));
     await this.refresh();
     return this.get(id);
   },
@@ -2520,7 +2537,8 @@ window.BGNJ_BOOKS = {
     await this.refresh();
   },
   async reorder(ids) {
-    await Promise.all(ids.map((id, i) => window.BGNJ_API.books.update(id, { order: i })));
+    // v00.074 — 워커는 sortOrder 를 기대. _toBookPayload 가 변환.
+    await Promise.all(ids.map((id, i) => window.BGNJ_API.books.update(id, this._toBookPayload({ order: i }))));
     await this.refresh();
   },
   // 책별 리뷰는 BGNJ_BOOK_ORDERS 측에서도 관리. 여기선 위임.
