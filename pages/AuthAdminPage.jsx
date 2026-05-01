@@ -468,6 +468,19 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.057.000",
+    date: "2026-05-01",
+    summary: "🎨 푸터 스타일 GUI 편집 — FooterStyleEditor 신설. description/signature/heading 3 그룹 폰트·색상 + 라이브 미리보기.",
+    details: [
+      "🎨 FooterStyleEditor 컴포넌트 신설 (AuthAdminPage.jsx) — 3 그룹(description/signature/heading) 각각 fontSize/fontWeight/letterSpacing/color/textTransform/maxWidth 등 슬라이더+드롭다운.",
+      "🎨 라이브 미리보기 sticky 카드 — 실제 푸터 마크업과 동일 스타일. ≤1100px 1단(.hero-editor-grid 재사용).",
+      "🎨 그룹별 default 복원 + 전체 default 복원 + 즉시 저장. site_content_kv.footerStyle 저장 → Shell.jsx Footer 가 BGNJ_FOOTER_STYLE() 로 인라인 적용 (v00.056 베이스).",
+      "🎨 SiteContentAdminPanel 푸터 섹션 — 콘텐츠 폼 다음에 FooterStyleEditor 인라인 통합. 안내 텍스트 제거.",
+      "📦 cache-buster — `?v=00.057.000`.",
+    ],
+    context: "v00.056 의 footerStyle 토큰 베이스에 GUI 편집을 얹어 사용자가 코드 수정 없이 푸터 폰트·색상을 직접 트윗 가능. 단일 사이클로 작게 분리해 안전. 다음 사이클(v00.058) 후보: heroStyle 모바일 별도 트윗 + viewport 토글 미리보기 (히어로 편집 탭 데스크탑/모바일 시뮬레이션).",
+  },
+  {
     version: "00.056.000",
     date: "2026-05-01",
     summary: "📊 히어로 통계 카드 GUI 편집 + footerStyle 토큰 베이스 — 다른 섹션 GUI 편집 패턴 확장 1단계.",
@@ -4361,6 +4374,220 @@ const RecommendationsAdminPanel = () => {
   );
 };
 
+// === Footer Style Editor (v00.057) =====================================
+// 푸터 3 그룹(description/signature/heading) 의 폰트·색상 GUI 편집.
+// site_content_kv.footerStyle 저장 → Shell.jsx Footer 가 BGNJ_FOOTER_STYLE() 로 인라인 적용.
+const FOOTER_COLOR_OPTIONS = [
+  { value: '--ink',           label: '메인 잉크 (--ink)' },
+  { value: '--ink-2',         label: '보조 잉크 (--ink-2)' },
+  { value: '--ink-3',         label: '메타 잉크 (--ink-3)' },
+  { value: '--primary',       label: '옐로우 (--primary)' },
+  { value: '--secondary',     label: '카라멜 (--secondary)' },
+  { value: '--tertiary',      label: '슬레이트 (--tertiary)' },
+];
+const FooterStyleEditor = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const [draft, setDraft] = React.useState(() => ({ ...(sc.footerStyle && typeof sc.footerStyle === 'object' ? sc.footerStyle : {}) }));
+  const [msg, setMsg] = React.useState('');
+
+  const eff = React.useMemo(() => {
+    const def = window.BGNJ_FOOTER_STYLE_DEFAULT;
+    return {
+      description: { ...def.description, ...(draft.description || {}) },
+      signature:   { ...def.signature,   ...(draft.signature   || {}) },
+      heading:     { ...def.heading,     ...(draft.heading     || {}) },
+    };
+  }, [draft]);
+
+  const set = (group, key, value) =>
+    setDraft((d) => ({ ...d, [group]: { ...(d[group] || {}), [key]: value } }));
+  const resetGroup = (group) =>
+    setDraft((d) => { const next = { ...d }; delete next[group]; return next; });
+
+  const save = async () => {
+    try {
+      await window.BGNJ_SITE_CONTENT.saveSection('footerStyle', draft);
+      setTick((v) => v + 1);
+      setMsg('저장되었습니다 — 푸터에 즉시 반영.');
+      setTimeout(() => setMsg(''), 2500);
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+  const resetAll = async () => {
+    if (!confirm('푸터 스타일을 default 로 복원합니다. 진행할까요?')) return;
+    try {
+      await window.BGNJ_SITE_CONTENT.resetSection('footerStyle');
+      setDraft({});
+      setTick((v) => v + 1);
+      setMsg('default 로 복원됨.');
+      setTimeout(() => setMsg(''), 2500);
+    } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  const Field = ({ label, children }) => (
+    <label style={{display:'block', marginBottom:10}}>
+      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:5}}>{label}</div>
+      {children}
+    </label>
+  );
+  const NumberRange = ({ value, min, max, step, onChange }) => (
+    <div style={{display:'flex', gap:8, alignItems:'center'}}>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Number(e.target.value))} style={{flex:1}}/>
+      <input type="number" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="field-input" style={{width:80, padding:'4px 6px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
+    </div>
+  );
+  const Select = ({ value, options, onChange }) => (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="field-input"
+      style={{width:'100%', padding:'8px 10px', fontSize:13}}>
+      {options.map((o) => typeof o === 'object'
+        ? <option key={o.value} value={o.value}>{o.label}</option>
+        : <option key={o} value={o}>{o}</option>)}
+    </select>
+  );
+  const Group = ({ title, group, children }) => (
+    <div className="card" style={{padding:14, marginBottom:12}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
+        <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>{title}</div>
+        <button type="button" className="btn btn-small" onClick={() => resetGroup(group)} style={{fontSize:10}}>이 그룹 default</button>
+      </div>
+      {children}
+    </div>
+  );
+
+  return (
+    <div style={{marginTop:24, marginBottom:24}}>
+      <h3 className="ko-serif" style={{fontSize:16, marginBottom:6}}>푸터 스타일 트윗</h3>
+      <p className="dim" style={{fontSize:12, marginBottom:14, lineHeight:1.7}}>
+        푸터 영역의 헤딩(콘텐츠/정보/연락) · 소개 문단 · 하단 서명의 폰트와 색상을 직접 편집합니다. 저장 시 즉시 반영.
+      </p>
+      <div style={{display:'grid', gridTemplateColumns:'minmax(0, 1fr) minmax(0, 1fr)', gap:16}} className="hero-editor-grid">
+        <div>
+          <Group title="DESCRIPTION (소개 문단)" group="description">
+            <Field label={`폰트 크기 · ${eff.description.fontSize}px`}>
+              <NumberRange value={eff.description.fontSize} min={11} max={20} step={1}
+                onChange={(v) => set('description', 'fontSize', v)}/>
+            </Field>
+            <Field label="굵기">
+              <Select value={String(eff.description.fontWeight)} options={HERO_WEIGHTS.map(String)}
+                onChange={(v) => set('description', 'fontWeight', Number(v))}/>
+            </Field>
+            <Field label={`행간 · ${eff.description.lineHeight}`}>
+              <NumberRange value={eff.description.lineHeight} min={1.2} max={2.4} step={0.05}
+                onChange={(v) => set('description', 'lineHeight', v)}/>
+            </Field>
+            <Field label="색상">
+              <Select value={eff.description.color} options={FOOTER_COLOR_OPTIONS}
+                onChange={(v) => set('description', 'color', v)}/>
+            </Field>
+            <Field label={`최대 너비 · ${eff.description.maxWidth}px`}>
+              <NumberRange value={eff.description.maxWidth} min={240} max={600} step={10}
+                onChange={(v) => set('description', 'maxWidth', v)}/>
+            </Field>
+          </Group>
+          <Group title="HEADING (콘텐츠/정보/연락)" group="heading">
+            <Field label={`폰트 크기 · ${eff.heading.fontSize}px`}>
+              <NumberRange value={eff.heading.fontSize} min={10} max={20} step={1}
+                onChange={(v) => set('heading', 'fontSize', v)}/>
+            </Field>
+            <Field label="굵기">
+              <Select value={String(eff.heading.fontWeight)} options={HERO_WEIGHTS.map(String)}
+                onChange={(v) => set('heading', 'fontWeight', Number(v))}/>
+            </Field>
+            <Field label={`자간 · ${eff.heading.letterSpacing}em`}>
+              <NumberRange value={eff.heading.letterSpacing} min={0} max={0.3} step={0.01}
+                onChange={(v) => set('heading', 'letterSpacing', v)}/>
+            </Field>
+            <Field label="색상">
+              <Select value={eff.heading.color} options={FOOTER_COLOR_OPTIONS}
+                onChange={(v) => set('heading', 'color', v)}/>
+            </Field>
+          </Group>
+          <Group title="SIGNATURE (하단 서명)" group="signature">
+            <Field label={`폰트 크기 · ${eff.signature.fontSize}px`}>
+              <NumberRange value={eff.signature.fontSize} min={9} max={16} step={1}
+                onChange={(v) => set('signature', 'fontSize', v)}/>
+            </Field>
+            <Field label="굵기">
+              <Select value={String(eff.signature.fontWeight)} options={HERO_WEIGHTS.map(String)}
+                onChange={(v) => set('signature', 'fontWeight', Number(v))}/>
+            </Field>
+            <Field label={`자간 · ${eff.signature.letterSpacing}em`}>
+              <NumberRange value={eff.signature.letterSpacing} min={0} max={0.4} step={0.01}
+                onChange={(v) => set('signature', 'letterSpacing', v)}/>
+            </Field>
+            <Field label="색상">
+              <Select value={eff.signature.color} options={FOOTER_COLOR_OPTIONS}
+                onChange={(v) => set('signature', 'color', v)}/>
+            </Field>
+            <Field label="대소문자">
+              <Select value={eff.signature.textTransform || 'uppercase'} options={HERO_TFORMS}
+                onChange={(v) => set('signature', 'textTransform', v)}/>
+            </Field>
+          </Group>
+          <div style={{display:'flex', gap:10, marginTop:12, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-gold btn-small" onClick={save}>저장</button>
+            <button type="button" className="btn btn-small" onClick={resetAll} style={{borderColor:'var(--line-2)'}}>전체 default 복원</button>
+            {msg && <span role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, alignSelf:'center'}}>{msg}</span>}
+          </div>
+        </div>
+
+        {/* 미리보기 */}
+        <div>
+          <div className="card" style={{padding:0, overflow:'hidden', position:'sticky', top:24}}>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'8px 12px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
+              PREVIEW · 푸터
+            </div>
+            <div style={{padding:'24px', background:'var(--bg)'}}>
+              <p style={{
+                fontSize: eff.description.fontSize,
+                fontWeight: eff.description.fontWeight,
+                lineHeight: eff.description.lineHeight,
+                color: `var(${eff.description.color})`,
+                maxWidth: eff.description.maxWidth,
+                marginBottom: 24,
+              }}>
+                {sc.footer?.description || '뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다.'}
+              </p>
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20}}>
+                {['콘텐츠', '정보'].map((h) => (
+                  <div key={h}>
+                    <h4 style={{
+                      fontSize: eff.heading.fontSize,
+                      fontWeight: eff.heading.fontWeight,
+                      letterSpacing: `${eff.heading.letterSpacing}em`,
+                      color: `var(${eff.heading.color})`,
+                      marginBottom:8,
+                    }}>{h}</h4>
+                    <ul style={{listStyle:'none', padding:0, margin:0, fontSize:12, color:'var(--ink-2)'}}>
+                      <li style={{marginBottom:4}}>예시 항목 1</li>
+                      <li style={{marginBottom:4}}>예시 항목 2</li>
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <div style={{paddingTop:14, borderTop:'1px solid var(--line)', display:'flex', gap:12, flexWrap:'wrap', alignItems:'center'}}>
+                <span style={{fontSize:11, color:'var(--ink-3)'}}>© 2026 뱅기노자 BANGINOJA</span>
+                <span style={{
+                  fontSize: eff.signature.fontSize,
+                  fontWeight: eff.signature.fontWeight,
+                  letterSpacing: `${eff.signature.letterSpacing}em`,
+                  color: `var(${eff.signature.color})`,
+                  textTransform: eff.signature.textTransform || 'uppercase',
+                }}>
+                  {sc.footer?.signature || '뱅기타고 노자 · DESIGNED IN SEOUL'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // === Hero Editor (v00.054) =========================================
 // 관리자 '히어로' 탭 — 홈페이지 히어로 영역의 모든 콘텐츠 + 스타일을 GUI 로 편집.
 // 콘텐츠 → site_content_kv.hero / 스타일 → site_content_kv.heroStyle 두 섹션 분리 저장.
@@ -4929,13 +5156,12 @@ const SiteContentAdminPanel = () => {
       ]}/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>푸터 — 소개·서명</h3>
-      <p className="dim-2" style={{fontSize:11, marginBottom:8, lineHeight:1.6}}>
-        ⓘ v00.056 부터 footerStyle (헤딩/소개/서명 폰트·색상) 토큰이 코드에 적용됨. GUI 편집은 v00.057 사이클에 추가 예정.
-      </p>
       <SectionForm key={`footer-${tick}`} section="footer" fields={[
         { key: 'description', label: '소개 문단', full: true, multiline: true },
         { key: 'signature', label: '하단 서명', full: true },
       ]}/>
+
+      <FooterStyleEditor/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>푸터 — 연락 정보</h3>
       <p className="dim-2" style={{fontSize:12, marginBottom:12, lineHeight:1.7}}>
