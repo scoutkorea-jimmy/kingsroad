@@ -182,49 +182,108 @@ const RecommendationsAdminPanel = () => {
 // 우선순위: per-tour override(직접 편집) > per-tour templateId > 글로벌 > 코드 default.
 
 // 모듈 최상위 헬퍼 — IME 안전 (한글 입력 핫픽스 v00.058 패턴).
+// v00.106 — GUI 직관성 개선. 행 번호 prominent + 큰 카드 + 시간 split (시/분).
 const TPE_RowActions = ({ i, total, onMove, onRemove }) => (
   <div style={{display:'flex', gap:4}}>
-    <button type="button" className="btn btn-small" disabled={i === 0} onClick={() => onMove(i, -1)} aria-label="위로" style={{padding:'4px 8px', fontSize:11}}>↑</button>
-    <button type="button" className="btn btn-small" disabled={i === total - 1} onClick={() => onMove(i, 1)} aria-label="아래로" style={{padding:'4px 8px', fontSize:11}}>↓</button>
-    <button type="button" className="btn btn-small" onClick={() => onRemove(i)} aria-label="삭제" style={{padding:'4px 8px', fontSize:11, borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+    <button type="button" className="btn btn-small" disabled={i === 0} onClick={() => onMove(i, -1)} aria-label="위로" title="위로" style={{padding:'6px 10px', fontSize:13}}>↑</button>
+    <button type="button" className="btn btn-small" disabled={i === total - 1} onClick={() => onMove(i, 1)} aria-label="아래로" title="아래로" style={{padding:'6px 10px', fontSize:13}}>↓</button>
+    <button type="button" className="btn btn-small" onClick={() => onRemove(i)} aria-label="삭제" title="삭제" style={{padding:'6px 10px', fontSize:11, borderColor:'var(--danger)', color:'var(--danger)'}}>✕</button>
   </div>
 );
+
+// v00.106 — 시간 라벨 (예: "0h 30m") 을 시/분 분리 input 으로 편집. 출력은 자동 format.
+const _parseTimeLabel = (label) => {
+  // "0h 30m" / "1h" / "30m" / "1h 5m" 등 파싱.
+  const s = String(label || '').trim();
+  const hMatch = s.match(/(\d+)\s*h/i);
+  const mMatch = s.match(/(\d+)\s*m(?!s)/i);
+  return {
+    h: hMatch ? Number(hMatch[1]) : 0,
+    m: mMatch ? Number(mMatch[1]) : 0,
+  };
+};
+const _formatTimeLabel = (h, m) => {
+  const hi = Math.max(0, Math.min(99, Number(h) || 0));
+  const mi = Math.max(0, Math.min(59, Number(m) || 0));
+  return `${hi}h ${String(mi).padStart(2, '0')}m`;
+};
+const TPE_TimeInput = ({ value, onChange }) => {
+  const { h, m } = _parseTimeLabel(value);
+  return (
+    <div style={{display:'flex', gap:4, alignItems:'center'}}>
+      <input type="number" min="0" max="99" value={h}
+        onChange={(e) => onChange(_formatTimeLabel(e.target.value, m))}
+        style={{
+          width:50, padding:'7px 6px', fontSize:13, textAlign:'center',
+          fontFamily:'var(--font-mono)',
+          background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:2, color:'var(--ink)',
+        }}
+        aria-label="시간 (h)"/>
+      <span className="dim-2 mono" style={{fontSize:11}}>h</span>
+      <input type="number" min="0" max="59" value={m}
+        onChange={(e) => onChange(_formatTimeLabel(h, e.target.value))}
+        style={{
+          width:50, padding:'7px 6px', fontSize:13, textAlign:'center',
+          fontFamily:'var(--font-mono)',
+          background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:2, color:'var(--ink)',
+        }}
+        aria-label="분 (m)"/>
+      <span className="dim-2 mono" style={{fontSize:11}}>m</span>
+    </div>
+  );
+};
 const TPE_ScheduleEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
-  <div className="card" style={{padding:16, marginBottom:14}}>
-    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
-      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>답사 일정</div>
-      <button type="button" className="btn btn-small" onClick={onAdd}>＋ 항목 추가</button>
+  <div className="card" style={{padding:18, marginBottom:14}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+      <div>
+        <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>답사 일정</div>
+        <p className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.6}}>시작 시각으로부터 경과 시간 단위. 첫 항목은 보통 0h 0m.</p>
+      </div>
+      <button type="button" className="btn btn-gold btn-small" onClick={onAdd}>＋ 항목 추가</button>
     </div>
     {rows.length === 0 && (
-      <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>ⓘ 항목이 없으면 페이지에서 '답사 일정' 섹션이 노출되지 않습니다.</p>
+      <p className="dim-2" style={{fontSize:12, lineHeight:1.6, padding:'14px 0', textAlign:'center', background:'var(--bg-2)', border:'1px dashed var(--line)', borderRadius:2}}>
+        ⓘ 항목이 없으면 페이지에서 '답사 일정' 섹션 미노출.
+      </p>
     )}
     {rows.map((s, i) => (
-      <div key={i} style={{display:'grid', gridTemplateColumns:'90px 1fr auto', gap:8, marginBottom:8, alignItems:'center'}}>
-        <input type="text" className="field-input" value={s.t || ''}
-          onChange={(e) => onUpdate(i, 't', e.target.value)} placeholder="0h 30m"
-          style={{padding:'6px 8px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
+      <div key={i} style={{
+        display:'grid', gridTemplateColumns:'24px 145px 1fr auto', gap:10, marginBottom:10, alignItems:'center',
+        padding:'8px', background: i % 2 === 0 ? 'var(--bg-2)' : 'var(--bg)', borderRadius:2,
+      }}>
+        <span className="mono dim-2" style={{fontSize:11, textAlign:'center', fontWeight:600}}>{String(i + 1).padStart(2, '0')}</span>
+        <TPE_TimeInput value={s.t || ''} onChange={(v) => onUpdate(i, 't', v)}/>
         <input type="text" className="field-input" value={s.l || ''}
-          onChange={(e) => onUpdate(i, 'l', e.target.value)} placeholder="주요 공간 답사"
-          style={{padding:'6px 8px', fontSize:13}}/>
+          onChange={(e) => onUpdate(i, 'l', e.target.value)} placeholder="진행 내용 (예: 주요 공간 답사)"
+          style={{padding:'7px 10px', fontSize:14}}/>
         <TPE_RowActions i={i} total={rows.length} onMove={onMove} onRemove={onRemove}/>
       </div>
     ))}
   </div>
 );
 const TPE_PrepEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
-  <div className="card" style={{padding:16, marginBottom:14}}>
-    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
-      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>준비물</div>
-      <button type="button" className="btn btn-small" onClick={onAdd}>＋ 항목 추가</button>
+  <div className="card" style={{padding:18, marginBottom:14}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+      <div>
+        <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>준비물</div>
+        <p className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.6}}>참가자가 가져와야 할 물품 / 안내 사항.</p>
+      </div>
+      <button type="button" className="btn btn-gold btn-small" onClick={onAdd}>＋ 항목 추가</button>
     </div>
     {rows.length === 0 && (
-      <p className="dim-2" style={{fontSize:11, lineHeight:1.6}}>ⓘ 항목이 없으면 페이지에서 '준비물' 섹션이 노출되지 않습니다.</p>
+      <p className="dim-2" style={{fontSize:12, lineHeight:1.6, padding:'14px 0', textAlign:'center', background:'var(--bg-2)', border:'1px dashed var(--line)', borderRadius:2}}>
+        ⓘ 항목이 없으면 페이지에서 '준비물' 섹션 미노출.
+      </p>
     )}
     {rows.map((p, i) => (
-      <div key={i} style={{display:'grid', gridTemplateColumns:'1fr auto', gap:8, marginBottom:8, alignItems:'center'}}>
+      <div key={i} style={{
+        display:'grid', gridTemplateColumns:'24px 1fr auto', gap:10, marginBottom:10, alignItems:'center',
+        padding:'8px', background: i % 2 === 0 ? 'var(--bg-2)' : 'var(--bg)', borderRadius:2,
+      }}>
+        <span className="gold mono" style={{fontSize:13, textAlign:'center', fontWeight:600}}>•</span>
         <input type="text" className="field-input" value={p || ''}
-          onChange={(e) => onUpdate(i, e.target.value)} placeholder="편한 신발"
-          style={{padding:'6px 8px', fontSize:13}}/>
+          onChange={(e) => onUpdate(i, e.target.value)} placeholder="편한 신발 (3~5km 보행)"
+          style={{padding:'7px 10px', fontSize:14}}/>
         <TPE_RowActions i={i} total={rows.length} onMove={onMove} onRemove={onRemove}/>
       </div>
     ))}
@@ -1849,6 +1908,276 @@ const EatSleepShopAdminPanel = () => {
   );
 };
 
+// === Kind Page Panel (v00.106) — 먹고/자고/사고 놀자 단일 페이지 admin ====
+// 사용자 요청: '놀자 시리즈' 그룹 분리 + 각 페이지(eat/sleep/shop)별 콘텐츠(파트너 가게 / 추천 숙소 / 특산품) 등록.
+//
+// 두 영역:
+//   ① 인트로 (eyebrow / title / sub / desc / accent / categories) — site_content_kv.{kind}Intro
+//   ② 콘텐츠 items (파트너/숙소/특산품 list) — site_content_kv.{kind}Items
+//
+// items 항목 셰이프: { id, name, region, address, category, desc, imageUrl, link, tags }
+
+const KIND_META = {
+  eat:   { label: '먹고 놀자',  hint: '뱅기노자가 추천하는 식당, 시장, 향토 음식, 지역 축제. 파트너 가게 등록.', accentDefault: '#E8A540' },
+  sleep: { label: '자고 놀자',  hint: '뱅기노자 파트너 숙소 / 한옥 스테이 / 고택 / 추천 머무름.',                  accentDefault: '#5A8FBF' },
+  shop:  { label: '사고 놀자',  hint: '지역 특산품 / 공예 / 행사 / 추천 구매처.',                                accentDefault: '#9C6FB3' },
+};
+
+const KindPagePanel = ({ kind = 'eat' }) => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const [msg, setMsg] = React.useState('');
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2200); };
+  const meta = KIND_META[kind] || KIND_META.eat;
+  const introKey = `${kind}Intro`;
+  const itemsKey = `${kind}Items`;
+
+  // ── 인트로 draft ─────────────────────────────────
+  const initIntro = () => {
+    const cur = sc[introKey] || {};
+    return {
+      eyebrow: cur.eyebrow || '',
+      title: cur.title || '',
+      sub: cur.sub || '',
+      desc: cur.desc || '',
+      accent: cur.accent || meta.accentDefault,
+      categories: Array.isArray(cur.categories) ? cur.categories.slice() : [],
+    };
+  };
+  const [intro, setIntro] = React.useState(initIntro);
+  React.useEffect(() => { setIntro(initIntro()); }, [tick, kind]); // eslint-disable-line
+
+  const saveIntro = async () => {
+    try {
+      const clean = {
+        eyebrow: String(intro.eyebrow || ''),
+        title: String(intro.title || ''),
+        sub: String(intro.sub || ''),
+        desc: String(intro.desc || ''),
+        accent: String(intro.accent || ''),
+        categories: (Array.isArray(intro.categories) ? intro.categories : []).filter((c) => c && String(c).trim()).map((c) => String(c).trim()),
+      };
+      await window.BGNJ_SITE_CONTENT.saveSection(introKey, clean);
+      setTick((v) => v + 1);
+      flash('인트로 저장됨.');
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  // ── items draft ─────────────────────────────────
+  const initItems = () => Array.isArray(sc[itemsKey]) ? sc[itemsKey].slice() : [];
+  const [items, setItems] = React.useState(initItems);
+  React.useEffect(() => { setItems(initItems()); }, [tick, kind]); // eslint-disable-line
+  const updateItem = (i, patch) => setItems((arr) => arr.map((it, j) => j === i ? { ...it, ...patch } : it));
+  const addItem = () => {
+    setItems((arr) => [...arr, {
+      id: `${kind}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+      name: '', region: '', address: '', category: '', desc: '', imageUrl: '', link: '', tags: '',
+    }]);
+  };
+  const removeItem = (i) => {
+    if (!confirm(`"${items[i]?.name || '항목'}" 을 삭제하시겠어요?`)) return;
+    setItems((arr) => arr.filter((_, j) => j !== i));
+  };
+  const moveItem = (i, dir) => {
+    setItems((arr) => {
+      const next = arr.slice();
+      const j = i + dir;
+      if (j < 0 || j >= next.length) return arr;
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  };
+  const onPickItemImage = async (i, e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: `${kind}-items`, maxBytes: 5 * 1024 * 1024 });
+      updateItem(i, { imageUrl: url });
+      return;
+    } catch (err) {
+      console.warn('[v00.106] R2 놀자 아이템 이미지 업로드 실패 — dataURI 폴백:', err);
+    }
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
+      return;
+    }
+    const dataUri = await new Promise((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.readAsDataURL(file);
+    });
+    updateItem(i, { imageUrl: dataUri });
+  };
+  const saveItems = async () => {
+    try {
+      const clean = items.map((it) => ({
+        id: it.id || `${kind}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+        name: String(it.name || '').trim(),
+        region: String(it.region || '').trim(),
+        address: String(it.address || '').trim(),
+        category: String(it.category || '').trim(),
+        desc: String(it.desc || '').trim(),
+        imageUrl: String(it.imageUrl || ''),
+        link: String(it.link || '').trim(),
+        tags: String(it.tags || '').trim(),
+      })).filter((it) => it.name);
+      await window.BGNJ_SITE_CONTENT.saveSection(itemsKey, clean);
+      setTick((v) => v + 1);
+      flash(`${meta.label} 콘텐츠 ${clean.length}개 저장됨.`);
+    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        <strong className="gold">{meta.label}</strong> — {meta.hint}
+      </p>
+
+      {/* 인트로 섹션 */}
+      <section className="card" style={{padding:18, marginBottom:18}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+          <h3 className="ko-serif" style={{fontSize:16, margin:0}}>① 인트로 (페이지 상단)</h3>
+          <button type="button" className="btn btn-gold btn-small" onClick={saveIntro}>인트로 저장</button>
+        </div>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:10}}>
+          <label className="field" style={{margin:0}}>
+            <span className="field-label">아이브로우</span>
+            <input className="field-input" value={intro.eyebrow} onChange={(e) => setIntro({ ...intro, eyebrow: e.target.value })}/>
+          </label>
+          <label className="field" style={{margin:0}}>
+            <span className="field-label">큰 제목</span>
+            <input className="field-input" value={intro.title} onChange={(e) => setIntro({ ...intro, title: e.target.value })}/>
+          </label>
+          <label className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+            <span className="field-label">제목 우측 작은 부제</span>
+            <input className="field-input" value={intro.sub} onChange={(e) => setIntro({ ...intro, sub: e.target.value })}/>
+          </label>
+          <label className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+            <span className="field-label">본문 설명</span>
+            <textarea className="field-input" rows={3} value={intro.desc} onChange={(e) => setIntro({ ...intro, desc: e.target.value })}/>
+          </label>
+          <label className="field" style={{margin:0}}>
+            <span className="field-label">부제 강조 색상 (HEX)</span>
+            <input className="field-input" value={intro.accent} placeholder={meta.accentDefault}
+              onChange={(e) => setIntro({ ...intro, accent: e.target.value })}/>
+          </label>
+          <div style={{margin:0}}>
+            <span className="field-label">색상 미리보기</span>
+            <div style={{display:'flex', alignItems:'center', gap:10, padding:'7px 10px', border:'1px solid var(--line-2)', background:'var(--bg-2)', borderRadius:2}}>
+              <span style={{display:'inline-block', width:24, height:24, borderRadius:3, background: intro.accent || meta.accentDefault, border:'1px solid var(--line-2)'}}/>
+              <span className="mono dim-2" style={{fontSize:11}}>{intro.accent || meta.accentDefault}</span>
+            </div>
+          </div>
+        </div>
+        <ESS_CategoryEditor rows={intro.categories}
+          onAdd={() => setIntro({ ...intro, categories: _arrAdd(intro.categories, '') })}
+          onRemove={(i) => setIntro({ ...intro, categories: _arrRemove(intro.categories, i) })}
+          onUpdate={(i, v) => setIntro({ ...intro, categories: _arrUpdate(intro.categories, i, v) })}
+          onMove={(i, dir) => setIntro({ ...intro, categories: _arrMove(intro.categories, i, dir) })}/>
+      </section>
+
+      {/* 콘텐츠 items 섹션 */}
+      <section className="card" style={{padding:18, marginBottom:18}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14, flexWrap:'wrap', gap:8}}>
+          <div>
+            <h3 className="ko-serif" style={{fontSize:16, margin:0}}>② 콘텐츠 (파트너·추천·특산품)</h3>
+            <p className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.6}}>각 항목: 이름·지역·주소·카테고리·설명·이미지·링크·태그.</p>
+          </div>
+          <div style={{display:'flex', gap:6}}>
+            <button type="button" className="btn btn-small" onClick={addItem}>＋ 항목 추가</button>
+            <button type="button" className="btn btn-gold btn-small" onClick={saveItems}>모든 항목 저장</button>
+          </div>
+        </div>
+        {items.length === 0 && (
+          <p className="dim-2" style={{fontSize:12, textAlign:'center', padding:'24px 0', background:'var(--bg-2)', border:'1px dashed var(--line)', borderRadius:2}}>
+            ⓘ 항목이 없으면 페이지에서 콘텐츠 섹션 미노출.
+          </p>
+        )}
+        {items.map((it, i) => (
+          <div key={it.id || i} style={{
+            padding:'14px', marginBottom:10, background: i % 2 === 0 ? 'var(--bg-2)' : 'var(--bg)',
+            border:'1px solid var(--line)', borderRadius:2,
+          }}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10, gap:8}}>
+              <div style={{display:'flex', alignItems:'baseline', gap:8}}>
+                <span className="mono dim-2" style={{fontSize:11, fontWeight:600}}>{String(i + 1).padStart(2, '0')}</span>
+                <span className="ko-serif" style={{fontSize:14, color:'var(--ink)'}}>{it.name || '(이름 미입력)'}</span>
+              </div>
+              <TPE_RowActions i={i} total={items.length} onMove={moveItem} onRemove={removeItem}/>
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'140px 1fr', gap:12}}>
+              {/* 이미지 */}
+              <div>
+                <div style={{
+                  width:'100%', aspectRatio:'4/3', flexShrink:0,
+                  border:'1px solid var(--line)', background:'var(--bg)',
+                  display:'grid', placeItems:'center', overflow:'hidden', marginBottom:6,
+                }}>
+                  {it.imageUrl
+                    ? <img src={it.imageUrl} alt={it.name || ''} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                    : <span className="dim-2 mono" style={{fontSize:9, letterSpacing:'0.18em'}}>NONE</span>}
+                </div>
+                <label className="btn btn-small" style={{cursor:'pointer', width:'100%', textAlign:'center', display:'block'}}>
+                  이미지 업로드
+                  <input type="file" accept="image/*" onChange={(e) => onPickItemImage(i, e)} style={{display:'none'}}/>
+                </label>
+                {it.imageUrl && (
+                  <button type="button" className="btn btn-small" onClick={() => updateItem(i, { imageUrl: '' })}
+                    style={{borderColor:'var(--danger)', color:'var(--danger)', width:'100%', marginTop:4, fontSize:10}}>이미지 제거</button>
+                )}
+              </div>
+              {/* 텍스트 필드 */}
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+                <label className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                  <span className="field-label" style={{fontSize:10}}>이름</span>
+                  <input className="field-input" value={it.name || ''} onChange={(e) => updateItem(i, { name: e.target.value })}
+                    style={{padding:'6px 8px', fontSize:13}}/>
+                </label>
+                <label className="field" style={{margin:0}}>
+                  <span className="field-label" style={{fontSize:10}}>지역</span>
+                  <input className="field-input" value={it.region || ''} onChange={(e) => updateItem(i, { region: e.target.value })}
+                    placeholder="예: 서울 종로구" style={{padding:'6px 8px', fontSize:13}}/>
+                </label>
+                <label className="field" style={{margin:0}}>
+                  <span className="field-label" style={{fontSize:10}}>카테고리</span>
+                  <select className="field-input" value={it.category || ''} onChange={(e) => updateItem(i, { category: e.target.value })}
+                    style={{padding:'6px 8px', fontSize:13}}>
+                    <option value="">— 선택 —</option>
+                    {(intro.categories || []).map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+                <label className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                  <span className="field-label" style={{fontSize:10}}>주소</span>
+                  <input className="field-input" value={it.address || ''} onChange={(e) => updateItem(i, { address: e.target.value })}
+                    style={{padding:'6px 8px', fontSize:13}}/>
+                </label>
+                <label className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                  <span className="field-label" style={{fontSize:10}}>설명</span>
+                  <textarea className="field-input" rows={2} value={it.desc || ''} onChange={(e) => updateItem(i, { desc: e.target.value })}
+                    style={{padding:'6px 8px', fontSize:13}}/>
+                </label>
+                <label className="field" style={{margin:0}}>
+                  <span className="field-label" style={{fontSize:10}}>외부 링크 (선택)</span>
+                  <input className="field-input" value={it.link || ''} onChange={(e) => updateItem(i, { link: e.target.value })}
+                    placeholder="https://..." style={{padding:'6px 8px', fontSize:13}}/>
+                </label>
+                <label className="field" style={{margin:0}}>
+                  <span className="field-label" style={{fontSize:10}}>태그 (콤마 구분)</span>
+                  <input className="field-input" value={it.tags || ''} onChange={(e) => updateItem(i, { tags: e.target.value })}
+                    placeholder="예: 한정식, 종가" style={{padding:'6px 8px', fontSize:13}}/>
+                </label>
+              </div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      {msg && <p role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, marginTop:10}}>{msg}</p>}
+    </div>
+  );
+};
+
 // === Legacy Migration Panel (v00.086) ===================================
 // 운영자 1회성 도구. 누적된 legacy 데이터를 정식 위치로 일괄 이동.
 //   ① 투어 cover: site_content_kv.tourPages[id].coverDataUri → D1.tours.cover_url
@@ -2067,4 +2396,6 @@ Object.assign(window, {
   HeroEditorPanel,
   LegacyMigrationPanel, // v00.086
   EatSleepShopAdminPanel, ESS_CategoryEditor, // v00.105
+  KindPagePanel, // v00.106
+  TPE_TimeInput, // v00.106 (헬퍼 — 외부 호출자 없음, 노출만)
 });

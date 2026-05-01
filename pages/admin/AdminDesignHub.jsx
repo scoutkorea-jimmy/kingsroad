@@ -4,6 +4,25 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.106.000",
+    date: "2026-05-01",
+    summary: "🚌 투어 폼 재구성 + 부제·환불정책 + GUI 개선 + 홈 hero 강연/답사 미니 카드 (A안) + 놀자 시리즈 그룹 분리",
+    details: [
+      "🗄 D1 ALTER TABLE tours — subtitle TEXT + refund_policy TEXT 컬럼 추가. ★ wrangler deploy (Version 5c11459b).",
+      "🛠 워커 — tourRow / handleTourCreate / handleTourPatch 가 subtitle / refundPolicy 패스. 클라 _toTour 도 패스스루.",
+      "📝 TourAdminPanel 폼 재구성 (사용자 요청 순서) — 투어명 / 부제 / 난이도·소요(표시)·정원(표시) / 일정(통합) / 소요시간(분)·정원·참가비 / 설명 / 환불정책. 표시용 일정 문구 + 실제 시작 시간 통합 → startsAt 만 입력, next 표시 문구는 자동 derive.",
+      "🎨 TPE_ScheduleEditor — 시간 라벨 (0h 30m) 을 시/분 split number input + 행 번호 prominent + 카드 레이아웃 (zebra striping).",
+      "🎨 TPE_PrepEditor — 큰 input + 행 번호 + bullet point. 액션 버튼도 좀 더 큼.",
+      "🚌 WangsanamTourPage — 부제 (italic gold) + 환불정책 섹션 추가. site_content_kv.tourRefundPolicy 글로벌 default. per-tour > 글로벌 fallback.",
+      "🏠 홈 히어로 — KoreaMap 미리보기 → HeroProgramCards (다음 강연 + 다음 답사 미니 카드). 사용자 제안 A안 채택. 빈 상태 안내 포함.",
+      "📂 admin 사이드바 '놀자 시리즈' 별도 그룹 분리 — 3 sub-tab (먹고 / 자고 / 사고). 콘텐츠 그룹의 옛 단일 탭 제거.",
+      "🛠 KindPagePanel — 단일 kind 의 인트로 + 콘텐츠 items (파트너 가게 / 추천 숙소 / 특산품). 각 item: 이름·지역·주소·카테고리·설명·이미지(R2)·외부 링크·태그.",
+      "🛠 EatSleepShopPages — 카테고리 칩 (필터 역할) + items 카드 그리드. items 비면 '준비 중' fallback.",
+      "📦 cache-buster — `?v=00.106.000` (20곳).",
+    ],
+    context: "사용자 보고 동시 처리: ① 투어 폼 입력 순서 재정의 + 부제 + 환불정책 + 일정 통합 ② 세부 일정/준비물 GUI 직관성 ③ 홈 히어로 지도 제거 후 A안 (강연/답사 미니 카드) ④ 놀자 시리즈 그룹 분리 + 각 sub-page 콘텐츠 등록 (파트너 가게 / 추천 숙소 / 특산품). D1 schema 변경 + 워커 deploy 1 회. 다음 사이클(v00.107): 버전 기록 KST 시분초 표기 + CSV 다운로드 + KMS 최신화.",
+  },
+  {
     version: "00.105.000",
     date: "2026-05-01",
     summary: "🩹 핫픽스 묶음 — Tiptap 3 named import / 빈 default 미노출 / BANGINOJA 로고 placeholder / 투어·강연 admin 통합 / 놀자 admin 탭 / 줄바꿈 적용",

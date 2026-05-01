@@ -1142,15 +1142,16 @@ const TourAdminPanel = ({ go }) => {
     setEditingId(t.id);
     setDraft({
       title: t.title || '',
+      subtitle: t.subtitle || '', // v00.106
       level: t.level || '입문',
       duration: t.duration || '',
       group: t.group || '',
-      next: t.next || '',
-      startsAt: startsAtLocal,
+      startsAt: startsAtLocal, // v00.106 — next 와 통합. next 는 startsAt 에서 자동 derive.
       durationMinutes: t.durationMinutes || 180,
       capacity: t.capacity || 12,
       priceNumber: t.priceNumber || 0,
       desc: t.desc || '',
+      refundPolicy: t.refundPolicy || '', // v00.106
     });
   };
 
@@ -1159,19 +1160,28 @@ const TourAdminPanel = ({ go }) => {
     const tour = window.BGNJ_TOURS.getTour(editingId);
     if (!tour) return;
     const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : tour.startsAt;
+    // v00.106 — next 표시 문구는 startsAt 에서 자동 생성. "2026.05.15 10:00" 형태.
+    const nextLabel = (() => {
+      if (!startsAtIso) return tour.next || '';
+      const d = new Date(startsAtIso);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    })();
     window.BGNJ_TOURS.saveTour({
       id: tour.id,
       title: draft.title,
+      subtitle: draft.subtitle, // v00.106
       level: draft.level,
       duration: draft.duration,
       group: draft.group,
-      next: draft.next || tour.next,
+      next: nextLabel,
       startsAt: startsAtIso,
       durationMinutes: Number(draft.durationMinutes) || 180,
       capacity: Number(draft.capacity) || tour.capacity,
       priceNumber: Number(draft.priceNumber) || 0,
       price: Number(draft.priceNumber) || 0,
       desc: draft.desc,
+      refundPolicy: draft.refundPolicy, // v00.106
     });
     setEditingId(null);
     refresh();
@@ -1317,34 +1327,97 @@ const TourAdminPanel = ({ go }) => {
                 </header>
 
                 {isEditing ? (
-                  <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10, padding:'14px 0', borderTop:'1px solid var(--line)'}}>
-                    {[
-                      { k: 'title',           l: '제목',           type: 'text' },
-                      { k: 'level',           l: '난이도',         type: 'text', placeholder: '입문 / 심화' },
-                      { k: 'duration',        l: '소요(표시)',     type: 'text', placeholder: '3시간' },
-                      { k: 'group',           l: '정원(표시)',     type: 'text', placeholder: '12인 이하' },
-                      { k: 'next',            l: '표시용 일정 문구', type: 'text', placeholder: '2026.05.04 · 토' },
-                      { k: 'startsAt',        l: '실제 시작(로컬)', type: 'datetime-local' },
-                      { k: 'durationMinutes', l: '소요(분)',       type: 'number' },
-                      { k: 'capacity',        l: '정원(숫자)',     type: 'number' },
-                      { k: 'priceNumber',     l: '참가비(원)',     type: 'number' },
-                    ].map((f) => (
-                      <div key={f.k} className="field" style={{margin:0}}>
-                        <label className="field-label">{f.l}</label>
-                        <input className="field-input" type={f.type} placeholder={f.placeholder || ''}
-                          value={draft[f.k] ?? ''}
-                          onChange={(e) => setDraft({ ...draft, [f.k]: e.target.value })}/>
+                  // v00.106 — 폼 재구성: 사용자 요청 순서. 표시 일정 문구 + startsAt 통합 (next 자동 derive).
+                  <div style={{padding:'14px 0', borderTop:'1px solid var(--line)'}}>
+                    {/* 그룹 1: 제목 / 부제 (full-width) */}
+                    <div style={{display:'grid', gridTemplateColumns:'1fr', gap:10, marginBottom:10}}>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">투어명</label>
+                        <input className="field-input" type="text"
+                          value={draft.title || ''}
+                          onChange={(e) => setDraft({ ...draft, title: e.target.value })}/>
                       </div>
-                    ))}
-                    <div className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">부제</label>
+                        <input className="field-input" type="text" placeholder="예: 왕의 발자취를 따라"
+                          value={draft.subtitle || ''}
+                          onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })}/>
+                      </div>
+                    </div>
+                    {/* 그룹 2: 표시용 메타 (난이도 / 소요(표시) / 정원(표시)) */}
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginBottom:10}}>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">난이도</label>
+                        <input className="field-input" type="text" placeholder="입문 / 심화"
+                          value={draft.level || ''}
+                          onChange={(e) => setDraft({ ...draft, level: e.target.value })}/>
+                      </div>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">소요 (표시)</label>
+                        <input className="field-input" type="text" placeholder="3시간"
+                          value={draft.duration || ''}
+                          onChange={(e) => setDraft({ ...draft, duration: e.target.value })}/>
+                      </div>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">정원 (표시)</label>
+                        <input className="field-input" type="text" placeholder="12인 이하"
+                          value={draft.group || ''}
+                          onChange={(e) => setDraft({ ...draft, group: e.target.value })}/>
+                      </div>
+                    </div>
+                    {/* 그룹 3: 일정 (통합) — startsAt 만 입력. next 표시 문구는 자동 derive */}
+                    <div style={{display:'grid', gridTemplateColumns:'1fr', gap:10, marginBottom:10}}>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">일정 (실제 시작 시간 — 표시 문구는 자동 생성)</label>
+                        <input className="field-input" type="datetime-local"
+                          value={draft.startsAt || ''}
+                          onChange={(e) => setDraft({ ...draft, startsAt: e.target.value })}/>
+                      </div>
+                    </div>
+                    {/* 그룹 4: 숫자 메타 (소요시간 / 정원 / 참가비) */}
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginBottom:10}}>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">소요 시간 (분)</label>
+                        <input className="field-input" type="number" placeholder="180"
+                          value={draft.durationMinutes ?? ''}
+                          onChange={(e) => setDraft({ ...draft, durationMinutes: e.target.value })}/>
+                      </div>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">정원 (숫자)</label>
+                        <input className="field-input" type="number" placeholder="12"
+                          value={draft.capacity ?? ''}
+                          onChange={(e) => setDraft({ ...draft, capacity: e.target.value })}/>
+                      </div>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">참가비 (원)</label>
+                        <input className="field-input" type="number" placeholder="80000"
+                          value={draft.priceNumber ?? ''}
+                          onChange={(e) => setDraft({ ...draft, priceNumber: e.target.value })}/>
+                      </div>
+                    </div>
+                    {/* 그룹 5: 설명 */}
+                    <div className="field" style={{margin:0, marginBottom:10}}>
                       <label className="field-label">설명</label>
-                      <textarea className="field-input" rows={2} value={draft.desc}
+                      <textarea className="field-input" rows={3} value={draft.desc || ''}
                         onChange={(e) => setDraft({ ...draft, desc: e.target.value })}/>
                     </div>
-                    <div style={{gridColumn:'1 / -1', display:'flex', justifyContent:'flex-end', gap:8}}>
+                    {/* 그룹 6: 환불정책 */}
+                    <div className="field" style={{margin:0, marginBottom:10}}>
+                      <label className="field-label">환불정책</label>
+                      <textarea className="field-input" rows={3} value={draft.refundPolicy || ''}
+                        placeholder={'예: 출발 7일 전까지 100% 환불 / 3일 전까지 50% / 이후 환불 불가'}
+                        onChange={(e) => setDraft({ ...draft, refundPolicy: e.target.value })}/>
+                      <p className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.5}}>
+                        ⓘ 비우면 운영설정의 글로벌 환불정책 사용 (다음 사이클 도입 예정).
+                      </p>
+                    </div>
+                    <div style={{display:'flex', justifyContent:'flex-end', gap:8}}>
                       <button type="button" className="btn btn-small" onClick={() => setEditingId(null)}>취소</button>
                       <button type="button" className="btn btn-gold btn-small" onClick={saveEdit}>저장</button>
                     </div>
+                    <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
+                      ※ 세부 일정 / 준비물 은 아래 <strong>📋 답사 일정·준비물·커버</strong> 버튼에서 편집 (진행 흐름 + 준비물 list + 커버 이미지).
+                    </p>
                   </div>
                 ) : (
                   <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10, flexWrap:'wrap'}}>
@@ -3989,7 +4062,9 @@ const AdminPage = ({ go }) => {
   // 7개 대카테고리: 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리
   const tabGroups = [
     { group: "요약",          items: ["대시보드"] },
-    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "추천 여행지", "놀자 시리즈"] },
+    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "추천 여행지"] },
+    // v00.106 — 놀자 시리즈 별도 그룹화. 3 sub-tab: 먹고 / 자고 / 사고.
+    { group: "놀자 시리즈",     items: ["먹고 놀자", "자고 놀자", "사고 놀자"] },
     { group: "회원관리",      items: ["회원", "회원 등급"] },
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
     { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
@@ -4951,7 +5026,10 @@ const AdminPage = ({ go }) => {
         )}
 
         {tab === "추천 여행지" && <RecommendationsAdminPanel/>}
-        {tab === "놀자 시리즈" && <EatSleepShopAdminPanel/>}
+        {/* v00.106 — 놀자 시리즈 3개 sub-tab: KindPagePanel(kind) */}
+        {tab === "먹고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="eat"/>}
+        {tab === "자고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="sleep"/>}
+        {tab === "사고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="shop"/>}
         {/* 카테고리 CRUD */}
         {tab === "사이트 콘텐츠" && <SiteContentAdminPanel/>}
         {tab === "히어로" && <HeroEditorPanel/>}

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.105.000",
+  version: "00.106.000",
   build: "2026.05.01",
   channel: "preview",
 };
@@ -450,6 +450,8 @@ const DEFAULT_SITE_CONTENT = {
     anonymous: '후기 작성은 회원 전용입니다.',
     empty: '아직 등록된 후기가 없습니다. 첫 번째 후기를 남겨 주세요.',
   },
+  // 글로벌 환불정책 (v00.106) — per-tour refundPolicy 가 비면 fallback. 비우면 페이지에 미노출.
+  tourRefundPolicy: '',
   // === v00.073 — 전 페이지 hero/intro admin 편집화 ===========================
   // 모두 { eyebrow, titlePrefix, titleAccent, subtitle } 패턴 (tourIntro 와 동일).
   // 비우면 코드 default. SiteContentAdminPanel 에서 SectionForm 으로 편집.
@@ -544,6 +546,12 @@ const DEFAULT_SITE_CONTENT = {
     accent: '#9C6FB3',
     categories: ['전통 공예', '지역 토산물', '의류·전통 직물', '도자·금속', '보존·발효 식품'],
   },
+  // v00.106 — 놀자 시리즈 콘텐츠 (파트너 가게 / 추천 숙소 / 특산품 등). 각 항목:
+  //   { id, name, region, address, category, desc, imageUrl, link, tags }
+  // 비면 페이지에서 콘텐츠 섹션 미노출 (인트로만 표시).
+  eatItems: [],
+  sleepItems: [],
+  shopItems: [],
   // 답사 일정/준비물 템플릿 모음 (v00.066) — 운영자가 자주 쓰는 패턴 저장.
   // 각 항목: { id, name, schedule: [{t,l}], prep: [str] }.
   // 투어편집 시 드롭다운에서 선택 → 자동 채움. 직접 편집도 동시 가능.
@@ -1944,6 +1952,9 @@ window.BGNJ_TOURS = {
       hidden: !!r.hidden,
       // v00.081 — D1 cover_url 컬럼. 비면 site_content_kv.tourPages[id].coverDataUri 폴백 (legacy).
       coverUrl: r.cover_url || r.coverUrl || '',
+      // v00.106 — 부제 + 환불정책 (D1 신규 컬럼).
+      subtitle: r.subtitle || '',
+      refundPolicy: r.refund_policy || r.refundPolicy || '',
     };
   },
   async refresh({ includeHidden } = {}) {

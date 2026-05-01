@@ -193,6 +193,102 @@ const truncatePreview = (text, max = 110) => {
   return cut + '…';
 };
 
+// v00.106 — 홈 히어로의 지도 자리. 다음 강연 + 다음 답사 미니 카드.
+// 사용자 제안 A안: '강연/답사 미니 카드' (운영 가치 ↑, 재방문 가치 ↑).
+const HeroProgramCards = ({ go, dataTick }) => {
+  const lectures = React.useMemo(() => {
+    return G.arr(() => window.BGNJ_LECTURES?.listAll?.())
+      .filter((l) => l && !l.hidden && l.startsAt)
+      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+      .filter((l) => new Date(l.startsAt).getTime() >= Date.now() - 86400000); // 어제 이후만
+  }, [dataTick]);
+  const tours = React.useMemo(() => {
+    return G.arr(() => window.BGNJ_TOURS?.listAll?.())
+      .filter((t) => t && !t.hidden && t.startsAt)
+      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+      .filter((t) => new Date(t.startsAt).getTime() >= Date.now() - 86400000);
+  }, [dataTick]);
+
+  const nextLecture = lectures[0];
+  const nextTour = tours[0];
+
+  const fmtDate = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const pad = (n) => String(n).padStart(2, '0');
+    const dow = ['일','월','화','수','목','금','토'][d.getDay()];
+    return `${d.getMonth()+1}.${pad(d.getDate())} (${dow}) ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  return (
+    <div style={{display:'grid', gap:14}}>
+      {/* 다음 강연 카드 */}
+      <article
+        onClick={() => { if (nextLecture) go('lectures'); }}
+        style={{
+          padding:'20px 22px', cursor: nextLecture ? 'pointer' : 'default',
+          background:'var(--bg-2)', border:'1px solid var(--line)',
+          transition:'all 0.15s',
+        }}
+        role={nextLecture ? 'button' : undefined}
+        tabIndex={nextLecture ? 0 : undefined}
+        onKeyDown={(e) => { if (nextLecture && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go('lectures'); } }}>
+        <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.24em', color:'var(--ink-2)', marginBottom:10}}>
+          NEXT LECTURE · 다음 강연
+        </div>
+        {nextLecture ? (
+          <>
+            <h3 className="ko-serif" style={{fontSize:20, marginBottom:8, color:'var(--ink)'}}>{nextLecture.topic || nextLecture.title}</h3>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10}}>
+              <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{fmtDate(nextLecture.startsAt)}</span>
+              <span className="dim-2" style={{fontSize:12}}>{nextLecture.venue || '장소 미정'}</span>
+            </div>
+          </>
+        ) : (
+          <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
+            예정된 강연이 아직 없습니다. <button type="button" className="btn-ghost gold" onClick={(e) => { e.stopPropagation(); go('lectures'); }}>전체 강연 보기 →</button>
+          </p>
+        )}
+      </article>
+
+      {/* 다음 답사 카드 */}
+      <article
+        onClick={() => { if (nextTour) go('tour'); }}
+        style={{
+          padding:'20px 22px', cursor: nextTour ? 'pointer' : 'default',
+          background:'var(--bg-2)', border:'1px solid var(--line)',
+          transition:'all 0.15s',
+        }}
+        role={nextTour ? 'button' : undefined}
+        tabIndex={nextTour ? 0 : undefined}
+        onKeyDown={(e) => { if (nextTour && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go('tour'); } }}>
+        <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.24em', color:'var(--ink-2)', marginBottom:10}}>
+          NEXT TOUR · 다음 답사
+        </div>
+        {nextTour ? (
+          <>
+            <h3 className="ko-serif" style={{fontSize:20, marginBottom:8, color:'var(--ink)'}}>{nextTour.title}</h3>
+            {nextTour.subtitle && (
+              <p className="dim-2" style={{fontSize:13, marginBottom:8, fontStyle:'italic'}}>{nextTour.subtitle}</p>
+            )}
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10}}>
+              <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{fmtDate(nextTour.startsAt)}</span>
+              <span className="dim-2" style={{fontSize:12}}>
+                {nextTour.level && <span style={{marginRight:8}}>{nextTour.level}</span>}
+                {nextTour.duration}
+              </span>
+            </div>
+          </>
+        ) : (
+          <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
+            예정된 답사가 아직 없습니다. <button type="button" className="btn-ghost gold" onClick={(e) => { e.stopPropagation(); go('tour'); }}>전체 답사 보기 →</button>
+          </p>
+        )}
+      </article>
+    </div>
+  );
+};
+
 const HomePage = ({ go }) => {
   const [mapOpen, setMapOpen] = React.useState(false);
   const [scTick, setScTick] = React.useState(0);
@@ -367,31 +463,8 @@ const HomePage = ({ go }) => {
             </div>
 
             {/* 우측: 지도 미리보기 — 시도 클릭 → 전체 모달 (a11y: 외곽 div 는 단순 컨테이너, 실제 버튼은 region path 와 우상단 텍스트 버튼). 폰(≤600px) 에서는 hero-map-preview CSS 로 숨김 + CTA 버튼만 노출. */}
-            <div className="hero-map-preview" style={{
-              position:'relative',
-              padding:'48px 16px 16px',
-              border:'1px solid var(--line)', background:'var(--bg-2)',
-            }}>
-              <div className="mono" style={{
-                position:'absolute', top:14, left:16,
-                fontSize:10, fontWeight:600, letterSpacing:'0.24em', color:'var(--ink-2)',
-              }}>KOREA</div>
-              <button type="button"
-                onClick={() => setMapOpen(true)}
-                aria-haspopup="dialog"
-                style={{
-                  position:'absolute', top:10, right:10,
-                  fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700,
-                  letterSpacing:'0.18em', color:'var(--secondary)',
-                  background:'transparent', border:'1px solid var(--line)',
-                  padding:'4px 10px', cursor:'pointer',
-                }}>전체 보기 →</button>
-              {typeof KoreaMap === 'function' ? (
-                <KoreaMap onSelect={() => setMapOpen(true)} selected={null}/>
-              ) : (
-                <div style={{height:280, display:'grid', placeItems:'center', color:'var(--ink-3)', fontSize:13}}>지도 로딩 중…</div>
-              )}
-            </div>
+            {/* v00.106 — 지도 → 다음 강연 / 다음 답사 미니 카드 (A안) */}
+            <HeroProgramCards go={go} dataTick={dataTick}/>
           </div>
         </div>
       </section>

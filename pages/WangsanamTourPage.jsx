@@ -173,8 +173,14 @@ const TourPage = ({ go, user }) => {
               <span className="badge">{tour.group}</span>
               <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>
             </div>
-            <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24}}>{tour.title}</h2>
-            <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{tour.desc}</p>
+            {/* v00.106 — 제목 + 부제 + 설명 */}
+            <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom: tour.subtitle ? 6 : 24}}>{tour.title}</h2>
+            {tour.subtitle && (
+              <p className="ko-serif gold-2" style={{fontSize:18, lineHeight:1.4, marginBottom:24, fontStyle:'italic'}}>
+                {tour.subtitle}
+              </p>
+            )}
+            <p className="dim bgnj-multiline" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{tour.desc}</p>
 
             {(() => {
               // v00.066 — per-tour override(tourPages[tourId]) 우선, 없으면 글로벌(tourSchedule/tourPrep) fallback.
@@ -216,6 +222,25 @@ const TourPage = ({ go, user }) => {
                       </ul>
                     </>
                   )}
+                </>
+              );
+            })()}
+
+            {/* v00.106 — 환불정책. per-tour > 글로벌 default. 둘 다 비면 미노출. */}
+            {(() => {
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const policy = (tour.refundPolicy && tour.refundPolicy.trim())
+                || (sc.tourRefundPolicy && String(sc.tourRefundPolicy).trim())
+                || '';
+              if (!policy) return null;
+              return (
+                <>
+                  <h3 className="ko-serif" style={{fontSize:20, marginBottom:16, paddingBottom:12, borderBottom:'1px solid var(--line)'}}>
+                    환불정책
+                  </h3>
+                  <p className="dim bgnj-multiline" style={{fontSize:14, lineHeight:1.9, marginBottom:48}}>
+                    {policy}
+                  </p>
                 </>
               );
             })()}

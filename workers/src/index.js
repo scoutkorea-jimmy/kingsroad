@@ -693,6 +693,8 @@ const tourRow = (t) => t && ({
   durationMinutes: t.duration_minutes, capacity: t.capacity, price: t.price,
   hidden: !!t.hidden, createdAt: t.created_at, updatedAt: t.updated_at,
   coverUrl: t.cover_url || "", // v00.081 — 투어 커버 이미지 (dataURI 또는 R2 URL)
+  subtitle: t.subtitle || "", // v00.106 — 투어 부제 (별도 컬럼)
+  refundPolicy: t.refund_policy || "", // v00.106 — 환불정책 (per-tour)
 });
 
 const handleToursList = async (req, env) => {
@@ -728,8 +730,8 @@ const handleTourCreate = async (req, env) => {
   const body = await req.json().catch(() => ({}));
   const id = body.id || randomId("tour");
   await env.DB.prepare(
-    `INSERT INTO tours (id, title, description, duration, group_size, level, next, starts_at, duration_minutes, capacity, price, hidden, cover_url)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO tours (id, title, description, duration, group_size, level, next, starts_at, duration_minutes, capacity, price, hidden, cover_url, subtitle, refund_policy)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, body.title || "새 투어", body.desc || "", body.duration || "",
     body.group || "", body.level || "", body.next || "", body.startsAt || null,
@@ -738,6 +740,8 @@ const handleTourCreate = async (req, env) => {
     parsePrice(body),
     body.hidden ? 1 : 0,
     body.coverUrl || "", // v00.081
+    body.subtitle || "", // v00.106
+    body.refundPolicy || "", // v00.106
   ).run();
   await auditWrite(env, admin.email, "tour.create", `tour:${id}`);
   return { id };
@@ -748,7 +752,8 @@ const handleTourPatch = async (req, env, id) => {
   const body = await req.json().catch(() => ({}));
   const map = { title: "title", desc: "description", duration: "duration", group: "group_size",
     level: "level", next: "next", startsAt: "starts_at", durationMinutes: "duration_minutes",
-    capacity: "capacity", hidden: "hidden", coverUrl: "cover_url" /* v00.081 */ };
+    capacity: "capacity", hidden: "hidden", coverUrl: "cover_url" /* v00.081 */,
+    subtitle: "subtitle", refundPolicy: "refund_policy" /* v00.106 */ };
   const fields = []; const args = [];
   for (const [k, col] of Object.entries(map)) {
     if (k in body) { fields.push(`${col} = ?`); args.push(k === "hidden" ? (body[k] ? 1 : 0) : body[k]); }

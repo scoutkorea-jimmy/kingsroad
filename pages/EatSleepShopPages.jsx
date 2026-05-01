@@ -52,37 +52,73 @@ const PlacePage = ({ go, kind, user }) => {
         </div>
 
         {/* 카테고리 그리드 — placeholder */}
-        <h2 className="ko-serif" style={{fontSize:24, marginBottom:18}}>카테고리</h2>
-        <div className="grid grid-3" style={{marginBottom:48}}>
-          {meta.categories.map((c, i) => (
-            <article key={c} className="card" style={{padding:22, position:'relative'}}>
-              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>
-                {String(i+1).padStart(2,'0')} · {meta.eyebrow.split(' · ')[0]}
-              </div>
-              <h3 className="ko-serif" style={{fontSize:20, marginBottom:8}}>{c}</h3>
-              <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:14}}>
-                지역 큐레이터가 직접 다녀와 검증한 곳들을 묶어 소개합니다.
-              </p>
-              <span className="badge" style={{borderColor:'var(--gold-dim)', color:'var(--gold)'}}>준비 중</span>
-            </article>
-          ))}
-        </div>
-
-        {/* 예약 안내 — placeholder */}
-        <section className="card" style={{padding:32, textAlign:'center'}}>
-          <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:10}}>RESERVATION · 예약 안내</div>
-          <h2 className="ko-serif" style={{fontSize:26, marginBottom:14}}>곧 만나요</h2>
-          <p className="dim" style={{fontSize:14, lineHeight:1.9, maxWidth:560, margin:'0 auto 22px'}}>
-            큐레이션·검증을 거친 {meta.title.replace('놀자','').trim()} 목록과 예약 시스템이 곧 열립니다.
-            업데이트 알림을 받고 싶으시면 회원가입 후 알림 설정을 켜 주세요.
-          </p>
-          <div style={{display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap'}}>
-            {!user
-              ? <button type="button" className="btn btn-gold" onClick={() => go('signup')}>회원가입 →</button>
-              : <button type="button" className="btn btn-gold" onClick={() => go('community')}>커뮤니티에서 함께 이야기 →</button>}
-            <button type="button" className="btn" onClick={() => go('tour')}>투어 프로그램 둘러보기</button>
+        {/* v00.106 — 카테고리 칩 (목록 위 필터 역할) */}
+        {meta.categories && meta.categories.length > 0 && (
+          <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:32}}>
+            {meta.categories.map((c) => (
+              <span key={c} className="badge" style={{borderColor:'var(--gold-dim)', color:'var(--gold)'}}>{c}</span>
+            ))}
           </div>
-        </section>
+        )}
+
+        {/* v00.106 — 콘텐츠 items (admin → 놀자 시리즈에서 등록한 파트너/추천/특산품) */}
+        {(() => {
+          const items = Array.isArray(_sc[`${kind}Items`]) ? _sc[`${kind}Items`].filter(Boolean) : [];
+          if (items.length === 0) {
+            return (
+              <section className="card" style={{padding:32, textAlign:'center'}}>
+                <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:10}}>RESERVATION · 예약 안내</div>
+                <h2 className="ko-serif" style={{fontSize:26, marginBottom:14}}>곧 만나요</h2>
+                <p className="dim" style={{fontSize:14, lineHeight:1.9, maxWidth:560, margin:'0 auto 22px'}}>
+                  큐레이션·검증을 거친 {meta.title.replace('놀자','').trim()} 목록이 곧 열립니다.
+                  업데이트 알림을 받고 싶으시면 회원가입 후 알림 설정을 켜 주세요.
+                </p>
+                <div style={{display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap'}}>
+                  {!user
+                    ? <button type="button" className="btn btn-gold" onClick={() => go('signup')}>회원가입 →</button>
+                    : <button type="button" className="btn btn-gold" onClick={() => go('community')}>커뮤니티에서 함께 이야기 →</button>}
+                  <button type="button" className="btn" onClick={() => go('tour')}>투어 프로그램 둘러보기</button>
+                </div>
+              </section>
+            );
+          }
+          return (
+            <>
+              <h2 className="ko-serif" style={{fontSize:24, marginBottom:18}}>{meta.title.replace('놀자','').trim()}</h2>
+              <div className="grid grid-3" style={{marginBottom:48}}>
+                {items.map((it, i) => {
+                  const tagList = (typeof it.tags === 'string' ? it.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : []);
+                  const Wrap = it.link ? 'a' : 'article';
+                  const wrapProps = it.link ? { href: it.link, target: '_blank', rel: 'noopener noreferrer' } : {};
+                  return (
+                    <Wrap key={it.id || i} className="card" {...wrapProps}
+                      style={{padding:0, overflow:'hidden', display:'block', textDecoration:'none', color:'inherit', background:'var(--bg)'}}>
+                      <div style={{aspectRatio:'4/3', background:'var(--bg-2)', overflow:'hidden'}}>
+                        {it.imageUrl
+                          ? <img src={it.imageUrl} alt={it.name || ''} style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                          : (window.CoverPlaceholder ? <window.CoverPlaceholder aspectRatio="4/3" iconSize={64}/> : null)}
+                      </div>
+                      <div style={{padding:'18px 20px'}}>
+                        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:8, display:'flex', justifyContent:'space-between', flexWrap:'wrap', gap:6}}>
+                          <span>{String(i+1).padStart(2,'0')}{it.region ? ` · ${it.region}` : ''}</span>
+                          {it.category && <span style={{color: meta.accent}}>{it.category}</span>}
+                        </div>
+                        <h3 className="ko-serif" style={{fontSize:18, marginBottom:6}}>{it.name}</h3>
+                        {it.address && <p className="dim-2" style={{fontSize:11, marginBottom:8}}>{it.address}</p>}
+                        {it.desc && <p className="dim bgnj-multiline" style={{fontSize:13, lineHeight:1.6, marginBottom:tagList.length > 0 ? 10 : 0}}>{it.desc}</p>}
+                        {tagList.length > 0 && (
+                          <div style={{display:'flex', gap:5, flexWrap:'wrap'}}>
+                            {tagList.slice(0, 4).map((t) => <span key={t} className="badge" style={{fontSize:9}}>{t}</span>)}
+                          </div>
+                        )}
+                      </div>
+                    </Wrap>
+                  );
+                })}
+              </div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );
