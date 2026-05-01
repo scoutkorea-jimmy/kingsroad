@@ -17,17 +17,14 @@
 
 ## 큐 1 — 다음 사이클 (검증 보고 후 명시 갱신)
 
-> v00.109 보안 audit 잔재. 본 사이클(v00.112) 까지 BGNJ_SAFE_HTML hardening + 게시판 권한 + 클릭재킹 완료.
+> v00.113 까지 보안 audit 잔재 대부분 마무리. 남은 작업은 사용자 수동 (Secrets) 과 nonce 기반 CSP 강화.
 
-- **v00.113 (코드)** — 전체 CSP 헤더 (script-src / style-src / img-src / connect-src / font-src). 외부 CDN 화이트리스트 (esm.sh / unpkg / fonts.googleapis / fonts.gstatic / banginoja-api.scoutkorea.workers.dev / youtube.com / vimeo.com). meta CSP 우선 + 향후 워커 헤더 부착으로 강화. *위험: inline `<script>` 부트스트랩 / `'unsafe-inline'` 의존 — 'self' 만 으로는 깨짐 → strict-dynamic + nonce 검토.*
-- **v00.114 (★ 워커 deploy)** — brute-force rate limiting. /api/auth/login + /api/auth/signup 에 IP+이메일 단위 throttle (Workers KV). 5회 실패/15분 lock.
-- **v00.115 (★ 사용자 수동)** — Cloudflare Secrets 이관. `wrangler secret put SUPER_ADMIN_EMAILS` + `wrangler secret put ADMIN_BOOTSTRAP_EMAIL` 후 wrangler.toml [vars] 에서 제거.
-
----
+- **v00.116+ (코드)** — CSP nonce 기반 strict-dynamic 전환. inline `<script>` 부트스트랩 4종에 nonce 부여 → 'unsafe-inline' 제거. SRI 누락 inline 도 같이 점검.
+- **v00.117+ (별 사이클)** — 옛 schema.sql `categories` / `grades` 테이블 deprecation. categories_kv / grades_kv 로 일원화 후 legacy 테이블 DROP.
 
 ## 큐 2 — 워커 배포 의존 (★ wrangler deploy 필요)
 
-- **v00.111 worker** — handlePostsCreate post_min_level 검증 (코드 commit `5ddcf25`, deploy 보류). 인가 후: `cd workers && npx wrangler deploy`.
+(현재 비어있음 — v00.113 에서 v00.111 + rate limit 일괄 deploy 처리.)
 
 ---
 
@@ -46,6 +43,8 @@
 | 항목 | 차단 영향 | 비고 |
 |---|---|---|
 | **★ HTTPS/SSL 인프라 도입** | bgnj.net SSL 활성화 | CONTEXT.md §7.5 가이드 — Cloudflare 대시보드 + GitHub Pages 설정 |
+| **★ Cloudflare Secrets 이관** | SUPER_ADMIN/ADMIN_BOOTSTRAP 평문 노출 제거 | `wrangler secret put SUPER_ADMIN_EMAILS` + `wrangler secret put ADMIN_BOOTSTRAP_EMAIL` 후 wrangler.toml [vars] 에서 두 항목 제거. |
+| **★ schema-v4.sql 적용** | rate limit 활성화 | `cd workers && wrangler d1 execute banginoja-db --remote --file=schema-v4.sql` (1회). |
 
 ---
 
@@ -99,3 +98,4 @@
 - **v00.110** ✅ 홈 hero ReferenceError fix (HeroProgramCards G 미정의) + v00.106~109 datetime 실제 commit 시간 정정
 - **v00.111** ✅ datetime auto-stamp (tools/stamp-datetime.mjs) + 게시판 작성 권한 검증(post_min_level) + X-Frame-Options/CSP frame-ancestors (commit `5ddcf25`) — *★ 워커 deploy 보류*
 - **v00.112** ✅ BGNJ_SAFE_HTML hardening — iframe src 화이트리스트(YouTube/Vimeo) + data: URI image-only + a[target=_blank] noopener 강제 + ROADMAP 갱신
+- **v00.113** ✅ 전체 CSP 메타 + brute-force rate limit (D1 login_attempts) + ★ wrangler deploy v00.111 post_min_level + rate limit 일괄

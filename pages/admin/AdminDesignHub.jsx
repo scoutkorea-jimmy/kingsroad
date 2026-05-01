@@ -4,6 +4,24 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.113.000",
+    date: "2026-05-01",
+    datetime: "2026-05-01T19:44:52+09:00", // pre-commit stamp.
+    summary: "🔒 전체 CSP 헤더 + 🔒 brute-force rate limiting (D1 login_attempts) + 🔒 v00.111 post_min_level deploy",
+    details: [
+      "🔒 [CSP 전체] index.html meta — default-src 'self' / script-src 'self' 'unsafe-inline' + esm.sh + unpkg / style-src 'self' 'unsafe-inline' + googleapis / font-src 'self' + gstatic / img-src 'self' data: blob: https: / connect-src 'self' + 워커 + esm.sh / frame-src YouTube/Vimeo / object-src 'none' / base-uri 'self' / form-action 'self' / frame-ancestors 'self'.",
+      "  · 'unsafe-inline' 유지 — 부트스트랩 inline `<script>` (theme/SW unregister/Tiptap import map) 의존. nonce 기반 strict-dynamic 은 별 사이클.",
+      "🔒 [brute-force rate limit] 워커 — login + signup 에 IP+이메일 단위 throttle. 최근 15분 실패 5회 이상이면 429 + remaining 분.",
+      "  · D1 schema-v4.sql 신설 — login_attempts (id/email/ip/ok/attempted_at) + idx_email_time + idx_ip_time. ★ 사용자 1회 실행 필요: `wrangler d1 execute banginoja-db --remote --file=workers/schema-v4.sql`",
+      "  · INSERT 시 1/10 확률 GC — 24h 이전 행 삭제 (테이블 무한 증가 방지).",
+      "  · 테이블 부재 시 graceful pass — schema 미적용해도 라이브 영향 없음.",
+      "🔒 [워커 deploy 일괄] v00.111 (post_min_level) + v00.113 (rate limit) 묶어서 wrangler deploy.",
+      "📦 cache-buster — `?v=00.113.000` (20곳).",
+      "ℹ 남은 audit 잔재: SUPER_ADMIN_EMAILS / ADMIN_BOOTSTRAP_EMAIL → Cloudflare Secrets (사용자 수동 — `wrangler secret put`).",
+    ],
+    context: "v00.109 audit 잔재 일괄 마무리. CSP 는 break 위험 (script-src 누락 도메인 시 사이트 깨짐) 대비 'unsafe-inline' + esm.sh/unpkg 화이트리스트로 보수적 설정. rate limit 은 D1 기반 (KV namespace 셋업 불필요) — 향후 트래픽 증가 시 KV/Durable Objects 로 이전. v00.111 worker 코드는 commit 5ddcf25 부터 대기 중이었음 — 본 사이클에 함께 deploy.",
+  },
+  {
     version: "00.112.000",
     date: "2026-05-01",
     datetime: "2026-05-01T18:43:32+09:00", // v00.111+ — pre-commit 훅에서 tools/stamp-datetime.mjs 가 실제 commit 시간(KST)으로 자동 치환.

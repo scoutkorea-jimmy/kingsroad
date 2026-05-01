@@ -191,6 +191,61 @@ class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 
+// === Brute-force rate limiting (v00.113) ===================================
+// /api/auth/login + /api/auth/signup 에 대해 email + IP 단위로 최근 15분 실패 5회 → 잠금.
+// 스토리지: D1 login_attempts (schema-v4.sql).
+// 운영: wrangler d1 execute banginoja-db --remote --file=workers/schema-v4.sql 1회 실행 필요.
+const RATE_WINDOW_MS = 15 * 60 * 1000;
+const RATE_MAX_FAILS = 5;
+const RATE_GC_MS = 24 * 3600 * 1000;
+
+const clientIp = (req) => {
+  return req.headers.get('CF-Connecting-IP')
+      || req.headers.get('X-Forwarded-For')?.split(',')[0]?.trim()
+      || '';
+};
+
+const checkRateLimit = async (env, email, ip) => {
+  // login_attempts 테이블 부재 시 (schema-v4 미적용) 통과 — graceful degradation.
+  try {
+    const since = Date.now() - RATE_WINDOW_MS;
+    const row = await env.DB.prepare(
+      `SELECT COUNT(*) AS c FROM login_attempts
+       WHERE ok = 0 AND attempted_at > ? AND (email = ? OR ip = ?)`
+    ).bind(since, email || '', ip || '').first();
+    const fails = Number(row?.c || 0);
+    if (fails >= RATE_MAX_FAILS) {
+      // 가장 오래된 실패 시점 + window = 잠금 해제 시점.
+      const oldest = await env.DB.prepare(
+        `SELECT MIN(attempted_at) AS t FROM login_attempts
+         WHERE ok = 0 AND attempted_at > ? AND (email = ? OR ip = ?)`
+      ).bind(since, email || '', ip || '').first();
+      const unlockAt = Number(oldest?.t || Date.now()) + RATE_WINDOW_MS;
+      const remainSec = Math.max(60, Math.ceil((unlockAt - Date.now()) / 1000));
+      throw new HttpError(429, `너무 많은 시도. ${Math.ceil(remainSec / 60)}분 뒤 다시 시도해 주세요.`);
+    }
+  } catch (e) {
+    if (e instanceof HttpError) throw e;
+    // 테이블 없음 / 일시 오류 → 통과 (보안 < 가용성).
+  }
+};
+
+const recordAttempt = async (env, email, ip, success) => {
+  try {
+    await env.DB.prepare(
+      `INSERT INTO login_attempts (email, ip, ok, attempted_at) VALUES (?, ?, ?, ?)`
+    ).bind(String(email || '').toLowerCase(), String(ip || ''), success ? 1 : 0, Date.now()).run();
+    // GC — 24h 이전 행 삭제 (확률적 1/10 호출).
+    if (Math.random() < 0.1) {
+      await env.DB.prepare(
+        `DELETE FROM login_attempts WHERE attempted_at < ?`
+      ).bind(Date.now() - RATE_GC_MS).run();
+    }
+  } catch {
+    // 테이블 없음 시 무시.
+  }
+};
+
 // ──────── 핸들러 ──────────────────────────────────────────
 
 const handleAuthSignup = async (req, env) => {
@@ -198,12 +253,27 @@ const handleAuthSignup = async (req, env) => {
   const email = String(body.email || "").trim().toLowerCase();
   const name = String(body.name || "").trim();
   const password = String(body.password || "");
-  if (!isEmail(email)) throw new HttpError(400, "올바른 이메일을 입력해 주세요.");
-  if (name.length < 1) throw new HttpError(400, "이름을 입력해 주세요.");
-  if (password.length < 6) throw new HttpError(400, "비밀번호는 6자 이상이어야 합니다.");
+  const ip = clientIp(req);
+  // v00.113 — IP 단위 가입 spam 방어. login_attempts 공유 카운터로 합산.
+  await checkRateLimit(env, email, ip);
+  if (!isEmail(email)) {
+    await recordAttempt(env, email, ip, false);
+    throw new HttpError(400, "올바른 이메일을 입력해 주세요.");
+  }
+  if (name.length < 1) {
+    await recordAttempt(env, email, ip, false);
+    throw new HttpError(400, "이름을 입력해 주세요.");
+  }
+  if (password.length < 6) {
+    await recordAttempt(env, email, ip, false);
+    throw new HttpError(400, "비밀번호는 6자 이상이어야 합니다.");
+  }
 
   const exists = await env.DB.prepare("SELECT 1 FROM users WHERE email = ?").bind(email).first();
-  if (exists) throw new HttpError(409, "이미 가입된 이메일입니다.");
+  if (exists) {
+    await recordAttempt(env, email, ip, false);
+    throw new HttpError(409, "이미 가입된 이메일입니다.");
+  }
 
   const { hash, salt } = await hashPassword(password);
   const id = randomId("u");
@@ -228,6 +298,7 @@ const handleAuthSignup = async (req, env) => {
     `INSERT INTO users (id, email, name, password_hash, password_salt, is_admin, grade_id, profile_json, consents_json, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(id, email, name, hash, salt, isAdmin, gradeId, profile ? JSON.stringify(profile) : null, JSON.stringify(body.consents || {}), nowIso()).run();
+  await recordAttempt(env, email, ip, true);
 
   const token = newSessionToken();
   const ttl = Number(env.SESSION_TTL_SECONDS || 2592000);
@@ -242,13 +313,26 @@ const handleAuthLogin = async (req, env) => {
   const body = await req.json().catch(() => ({}));
   const email = String(body.email || "").trim().toLowerCase();
   const password = String(body.password || "");
+  const ip = clientIp(req);
+  // v00.113 — brute-force 방어. throttle 시 즉시 429.
+  await checkRateLimit(env, email, ip);
   const row = await env.DB.prepare(
     "SELECT id, email, name, password_hash, password_salt, is_admin, grade_id, suspended, suspended_reason FROM users WHERE email = ?"
   ).bind(email).first();
-  if (!row) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않습니다.");
+  if (!row) {
+    await recordAttempt(env, email, ip, false);
+    throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않습니다.");
+  }
   const ok = await verifyPassword(password, row.password_hash, row.password_salt);
-  if (!ok) throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않습니다.");
-  if (row.suspended) throw new HttpError(403, `정지된 계정입니다.${row.suspended_reason ? ' 사유: ' + row.suspended_reason : ''}`);
+  if (!ok) {
+    await recordAttempt(env, email, ip, false);
+    throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않습니다.");
+  }
+  if (row.suspended) {
+    await recordAttempt(env, email, ip, false);
+    throw new HttpError(403, `정지된 계정입니다.${row.suspended_reason ? ' 사유: ' + row.suspended_reason : ''}`);
+  }
+  await recordAttempt(env, email, ip, true);
 
   // 슈퍼 관리자 자동 승격
   let isAdmin = !!row.is_admin;
