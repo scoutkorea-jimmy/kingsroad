@@ -16,6 +16,8 @@
 <meta property="og:title" content="뱅기노자 — 뱅기 타고 한국을 느끼다">
 <meta property="og:description" content="뱅기노자 — 뱅기 타고 한국을 느끼다. 궁궐 답사부터 지역 여행까지, 한국의 역사·문화·자연을 함께 여행하는 커뮤니티.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://bgnj.net">
+<meta property="og:site_name" content="뱅기노자 BANGINOJA">
 <!-- 브랜드 OG 이미지 — 인라인 SVG fallback (1200x630). 가벼운 로고-only 디자인.
      관리자가 og.imageDataUri 업로드하면 applyHead 가 덮어씀.
      SVG OG image 는 Twitter/Discord 등에서 인식. Facebook/Kakao 는 PNG 업로드 필요. -->
@@ -27,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.063.000">
+<link rel="stylesheet" href="styles.css?v=00.064.000">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -55,13 +57,24 @@
   })();
   // SPA fallback 복원 — 404.html이 ?p=/community 같은 형태로 리다이렉트시켰으면
   // 진짜 경로를 복원해 클라이언트 라우터가 인식하게 한다.
-  // (HTTPS 강제 리다이렉트는 SSL 도입 후 다시 활성화 — 현재는 http://bgnj.net 운영.)
   (function () {
     try {
       var url = new URL(location.href);
       var p = url.searchParams.get('p');
       if (p) {
         history.replaceState(null, '', p);
+      }
+    } catch {}
+  })();
+  // 조건부 HTTPS 강제 (v00.064) — SSL 도입 후 콘솔에서 opt-in:
+  //   localStorage.setItem('bgnj_force_https', '1')
+  // 활성화 시 http:// 진입을 즉시 https:// 로 redirect. SSL 미도입 환경에서 활성화 금지 (사이트 접속 불가).
+  (function () {
+    try {
+      if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        if (localStorage.getItem('bgnj_force_https') === '1') {
+          location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+        }
       }
     } catch {}
   })();
@@ -85,22 +98,22 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script src="api.js?v=00.063.000"></script>
-<script src="data.js?v=00.063.000"></script>
-<script src="components/KoreaMapData.js?v=00.063.000"></script>
-<script type="text/babel" src="components/KoreaMap.jsx?v=00.063.000"></script>
-<script type="text/babel" src="components/Shell.jsx?v=00.063.000"></script>
-<script type="text/babel" src="components/TiptapEditor.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/HomePage.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/CommunityPage.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/ColumnPage.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/EatSleepShopPages.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/LecturesPage.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.063.000"></script>
-<script type="text/babel" src="pages/MyPage.jsx?v=00.063.000"></script>
+<script src="api.js?v=00.064.000"></script>
+<script src="data.js?v=00.064.000"></script>
+<script src="components/KoreaMapData.js?v=00.064.000"></script>
+<script type="text/babel" src="components/KoreaMap.jsx?v=00.064.000"></script>
+<script type="text/babel" src="components/Shell.jsx?v=00.064.000"></script>
+<script type="text/babel" src="components/TiptapEditor.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/HomePage.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/CommunityPage.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/WangsanamTourPage.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/ColumnPage.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/BookCheckoutPage.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/AuthAdminPage.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/EatSleepShopPages.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/LecturesPage.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/LegalFaqPages.jsx?v=00.064.000"></script>
+<script type="text/babel" src="pages/MyPage.jsx?v=00.064.000"></script>
 
 <script type="text/babel">
 // 전체 앱 에러 바운더리 — 흰 화면 방지 + 정확한 진단 정보 노출.

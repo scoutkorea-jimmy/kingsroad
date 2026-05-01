@@ -468,6 +468,19 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.064.000",
+    date: "2026-05-01",
+    summary: "🔒 HTTPS / SSL 도입 코드 측 정합 — og:url + og:site_name 메타 + opt-in HTTPS 강제 헬퍼 + 사용자 인프라 가이드.",
+    details: [
+      "🔒 og:url 'https://bgnj.net' + og:site_name '뱅기노자 BANGINOJA' 메타 추가 — 카카오톡/페이스북/X 공유 카드 정합.",
+      "🔒 조건부 HTTPS 강제 헬퍼 (index.html) — localStorage.bgnj_force_https === '1' 일 때만 http:// 진입을 https:// 로 redirect. SSL 도입 전 활성화 시 사이트 접속 불가 위험 — 사용자 explicit opt-in 패턴.",
+      "🔒 CONTEXT.md §7.5 'HTTPS / SSL 도입 가이드' 신설 — Cloudflare DNS/SSL → GitHub Pages → ALLOWED_ORIGINS → 클라이언트 활성화 4 단계 + 검증 명령.",
+      "ℹ 본 사이클은 코드 측 정합만. 실제 SSL 인증서 발급은 Cloudflare 대시보드 / GitHub Pages settings 에서 사용자가 직접.",
+      "📦 cache-buster — `?v=00.064.000`.",
+    ],
+    context: "백로그 마지막 v00.064 후보 'HTTPS / SSL 도입' 처리. 인프라 변경은 사용자 직접 작업이라 코드 측에서 가능한 범위는 ① og 메타 정합 ② opt-in HTTPS 강제 헬퍼 ③ 가이드 문서. 사용자가 SSL 도입 완료 후 콘솔에서 'localStorage.setItem(...)' 활성화하면 http→https 자동 redirect. wrangler.toml ALLOWED_ORIGINS 의 http:// 항목은 SSL 도입 후 사용자가 제거 + wrangler deploy. 백로그 모두 소진 — 다음 사이클 정의는 사용자 요청 또는 KMS DesignSystemView 의 LiveColorCards drift 검출 등 자동 식별된 후속 작업으로 결정.",
+  },
+  {
     version: "00.063.000",
     date: "2026-05-01",
     summary: "🧹 legacy 키 'reports' 정리 — BGNJ_STORES 정의 + SAVE 핸들러 + bgnj_reports localStorage 키 제거. storage v5-reports-dead 마이그레이션.",

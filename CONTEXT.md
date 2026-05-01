@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.063.000 · 2026-05-01 (legacy 키 'reports' 정리 + storage v5-reports-dead 마이그레이션)
+> **마지막 업데이트:** v00.064.000 · 2026-05-01 (HTTPS/SSL 코드 측 정합 — og:url + opt-in HTTPS 강제 + 인프라 가이드)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.063)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.064)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -218,6 +218,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.061** | 2026-05-01 | 핫픽스 addNewLecture await 누락 (startsAt null 오류) + lint 룰 (direct_fetch / equality_loose / large_file) |
 | **v00.062** | 2026-05-01 | 서버 metrics endpoint (/api/admin/users/:id/metrics) + BGNJ_GRADE_PROMO 캐시 prefer · ★ 워커 배포 필요 |
 | **v00.063** | 2026-05-01 | legacy 'reports' 키 제거 (BGNJ_STORES + SAVE + localStorage) + storage v5-reports-dead. comments 는 v00.065+ 분리 |
+| **v00.064** | 2026-05-01 | HTTPS/SSL 코드 측 정합 — og:url + og:site_name + opt-in HTTPS 강제 헬퍼 + CONTEXT §7.5 인프라 가이드 |
 
 ---
 
@@ -254,15 +255,42 @@ URL 매핑 (`VALID_ROUTES`):
 data.js 의 BGNJ_STORES.comments[postId] 직접 read/write 패턴(다수)을 BGNJ_API.community.comments 헬퍼 + BGNJ_COMMUNITY._comments 캐시로 전환. AuthAdminPage 6800 totalComments 등 호출처 정합. storage v6-comments-dead 마이그레이션.
 **위험도:** 중간 — 데이터 흐름 변경 + 호출처 다수.
 
-### v00.064 — HTTPS / SSL 도입 ★ 인프라 변경
-http://bgnj.net → https://bgnj.net. og:image dataURI 안정화, Service Worker 재활성화 가능. SSL 인증서 발급(Cloudflare) + ALLOWED_ORIGINS 정합.
-**위험도:** 높음 — 사용자 직접 진행. AI 는 코드 측 정합만 지원.
 
 ### 별도 메이저 마이그레이션 (사이클 외)
 - **React 19** (현재 18.3.1 → 19.2.5) — ref-as-prop, useEffect 동작 변경 검증.
 - **Tiptap 3** (현재 2.11.5 → 3.22.5) — extension API 브레이킹 체인지. AdminColumnEditor + TiptapEditor.jsx 마이그레이션.
 
 각 메이저는 1 사이클 단독. 일반 사이클과 분리.
+
+---
+
+## 7.5. HTTPS / SSL 도입 가이드 (v00.064 — 사용자 직접 작업)
+
+현재 `http://bgnj.net` 운영. HTTPS 도입은 인프라 작업으로 **사용자가 직접 진행해야 함**. 코드 측 정합은 v00.064 에서 완료 (og:url 메타 + 조건부 HTTPS 강제 헬퍼).
+
+### 단계 1 — Cloudflare DNS / SSL 설정
+1. Cloudflare 대시보드 → bgnj.net → SSL/TLS → "Full" 또는 "Full (strict)" 모드.
+2. SSL/TLS → Edge Certificates → "Always Use HTTPS" ON.
+3. SSL/TLS → Edge Certificates → "Automatic HTTPS Rewrites" ON.
+
+### 단계 2 — GitHub Pages 커스텀 도메인 SSL
+1. GitHub repo → Settings → Pages → Custom domain `bgnj.net` 입력.
+2. "Enforce HTTPS" 체크 (DNS 전파 후 자동 활성화 가능).
+
+### 단계 3 — 워커 ALLOWED_ORIGINS http 항목 제거
+`workers/wrangler.toml` 의 `ALLOWED_ORIGINS` 에서 `http://bgnj.net,http://www.bgnj.net,http://scoutkorea-jimmy.github.io` 제거. https 만 남김. `wrangler deploy` 재배포.
+
+### 단계 4 — 클라이언트 HTTPS 강제 활성화
+브라우저 콘솔에서:
+```js
+localStorage.setItem('bgnj_force_https', '1')
+```
+이후 http:// 진입은 자동 https 리다이렉트.
+
+### 검증
+- `curl -I http://bgnj.net` → 301 / Location https://bgnj.net 확인.
+- `curl -I https://bgnj.net` → 200 OK + valid SSL.
+- 카카오톡/페이스북 공유 미리보기 → og:image PNG 정상 노출 (https 필수).
 
 ---
 
