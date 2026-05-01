@@ -180,6 +180,22 @@
 :root[data-theme="dark"] tbody tr:hover { background: var(--bg-3); }
 :root[data-theme="dark"] th,
 :root[data-theme="dark"] td { border-color: var(--line); }
+/* 다크 추가 정합 (v00.059) — code/hr/details/dt/dd/pre */
+:root[data-theme="dark"] code,
+:root[data-theme="dark"] pre { background: var(--bg-3); color: var(--ink); border-color: var(--line); }
+:root[data-theme="dark"] hr { border-color: var(--line); }
+:root[data-theme="dark"] details > summary { color: var(--ink); }
+:root[data-theme="dark"] dt { color: var(--ink-3); }
+:root[data-theme="dark"] dd { color: var(--ink); }
+/* warning amber 칩 (환불 신청 등) — light 에서는 #D97706 base, dark 에서는 #F59E0B 자연 적용 */
+:root[data-theme="dark"] .grade-badge { color: inherit; }
+/* admin-shell 본문 — 다크에서 카드들이 카드 자체 배경 var(--bg-2) 라 main 배경은 var(--bg) 유지 */
+:root[data-theme="dark"] .admin-shell { background: var(--bg); color: var(--ink); }
+:root[data-theme="dark"] .admin-main { background: var(--bg); color: var(--ink); }
+/* a11y focus */
+:root[data-theme="dark"] :focus-visible { outline-color: var(--primary); }
+/* tweaks panel */
+:root[data-theme="dark"] .tweaks { background: var(--bg-2); color: var(--ink); border-color: var(--line); }
 /* 히어로 편집 패널 — 좁은 화면에서는 미리보기를 아래로 (1단) */
 @media (max-width: 1100px) {
   .hero-editor-grid { grid-template-columns: 1fr !important; }

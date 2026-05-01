@@ -147,7 +147,7 @@ const RecommendationDetailModal = ({ rec, onClose, go }) => {
           style={{
             position:'absolute', top:14, right:14, zIndex:2,
             width:36, height:36, fontSize:24,
-            background:'rgba(255,255,255,0.92)', border:'1px solid var(--line)', cursor:'pointer',
+            background:'var(--bg-2)', border:'1px solid var(--line)', cursor:'pointer',
             color:'var(--ink)', lineHeight:1, fontWeight:600,
           }}>×</button>
         {rec.imageDataUri && (
@@ -427,7 +427,7 @@ const HomePage = ({ go }) => {
                       {r.region && (
                         <div style={{
                           position:'absolute', top:10, left:12,
-                          padding:'3px 8px', background:'rgba(255,255,255,0.92)',
+                          padding:'3px 8px', background:'var(--bg-2)',
                           fontFamily:'var(--font-mono)', fontSize:10, fontWeight:600,
                           letterSpacing:'0.18em', color:'var(--ink-2)',
                         }}>{r.region}</div>

@@ -1,6 +1,6 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.058.000 · 2026-05-01 (한글 IME 핫픽스 + heroStyle 모바일 + viewport 토글 미리보기)
+> **마지막 업데이트:** v00.059.000 · 2026-05-01 (다크 모드 인라인 hex 정합 잔존부 — 환불 amber + region 라벨 + 모달 닫기 버튼 + 추가 styles.css 룰)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
@@ -185,7 +185,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.058)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.059)
 
 | 버전 | 날짜 | 핵심 |
 |---|---|---|
@@ -213,6 +213,7 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.056** | 2026-05-01 | 히어로 통계 카드 GUI 편집 (hero.stats + heroStyle.stats) + footerStyle 토큰 베이스 |
 | **v00.057** | 2026-05-01 | 푸터 스타일 GUI 편집 — FooterStyleEditor (description/signature/heading 3 그룹) + 라이브 미리보기 |
 | **v00.058** | 2026-05-01 | 한글 IME 핫픽스 (내부 컴포넌트 호이스팅) + heroStyle 모바일 별도 트윗 + viewport 토글 미리보기 |
+| **v00.059** | 2026-05-01 | 다크 모드 인라인 hex 정합 잔존부 — 환불 amber #e8a020 → var(--warning), 추천 카드/모달 닫기 버튼, styles.css 추가 룰 |
 
 ---
 
@@ -242,27 +243,24 @@ URL 매핑 (`VALID_ROUTES`):
 각 사이클은 1 패치 단위로 commit/push (auto deploy). 우선순위 순:
 
 
-### v00.058 — 다크 모드 인라인 hex 정합 (잔존부)
-HomePage/AdminPage/모달 잔존 인라인 hex 점진 정리. KMS 라이브 토큰 카드로 drift 발견부터.
-**위험도:** 낮음 (visual regression 가능, 단계 검토).
 
-### v00.059 — 관리자 OG 이미지 업로드 UI 명시 카드
+### v00.060 — 관리자 OG 이미지 업로드 UI 명시 카드
 site_content_kv.og.imageDataUri 업로드 + 미리보기 + reset. PNG 권장 (FB/Kakao 호환).
 **위험도:** 낮음.
 
-### v00.060 — 추가 lint 룰
+### v00.061 — 추가 lint 룰
 `unused import` (간단 정규식) / 큰 파일 줄 수 limit / `===` 강제(`==` 금지) / async 함수 await 누락 감지.
 **위험도:** 낮음 (룰 추가만, 위반 발견 시 별도 fix 사이클).
 
-### v00.061 — 서버 endpoint reportCount / likesReceived 정확화 ★ 워커 배포 동반
+### v00.062 — 서버 endpoint reportCount / likesReceived 정확화 ★ 워커 배포 동반
 현재 클라이언트 best-effort 합산. `/api/users/:id/metrics` 에서 D1 쿼리로 정확 계산 → BGNJ_GRADE_PROMO.metrics 가 prefer. legacy `reports` 키 정합 동반.
 **위험도:** 중간 — 워커 배포 필요 (사용자 직접 `wrangler deploy`).
 
-### v00.062 — legacy 키 마이그레이션 (`reports` → `comments`)
+### v00.063 — legacy 키 마이그레이션 (`reports` → `comments`)
 admin Report 패널 + comments BGNJ_API.community.comments 일원화. v00.061 의 metrics endpoint 와 동행.
 **위험도:** 중간 — 데이터 마이그레이션 + 워커 배포.
 
-### v00.063 — HTTPS / SSL 도입 ★ 인프라 변경
+### v00.064 — HTTPS / SSL 도입 ★ 인프라 변경
 http://bgnj.net → https://bgnj.net. og:image dataURI 안정화, Service Worker 재활성화 가능. SSL 인증서 발급(Cloudflare) + ALLOWED_ORIGINS 정합.
 **위험도:** 높음 — 사용자 직접 진행. AI 는 코드 측 정합만 지원.
 

@@ -56,7 +56,7 @@ const MyPage = ({ go, user, cart }) => {
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
-    refund_requested: '#e8a020',
+    refund_requested: 'var(--warning)',
   }[s] || 'var(--ink-2)');
   const goToTour = (tourId) => {
     try { sessionStorage.setItem('bgnj_pending_tour_id', String(tourId)); } catch {}
@@ -75,7 +75,7 @@ const MyPage = ({ go, user, cart }) => {
     paid: 'var(--gold)',
     shipped: 'var(--gold)',
     delivered: 'var(--gold)',
-    refund_requested: '#e8a020',
+    refund_requested: 'var(--warning)',
     cancelled: 'var(--danger)',
   }[s] || 'var(--ink-2)');
 
@@ -99,7 +99,7 @@ const MyPage = ({ go, user, cart }) => {
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
-    refund_requested: '#e8a020',
+    refund_requested: 'var(--warning)',
   }[s] || 'var(--ink-2)');
 
   if (!user) {
@@ -327,7 +327,7 @@ const MyPage = ({ go, user, cart }) => {
                         {['paid', 'shipped'].includes(o.status) && (
                           <button type="button" className="btn-ghost"
                             onClick={() => { setRefundTarget(o); setRefundReason(''); setRefundError(''); }}
-                            style={{ fontSize: 11, color: '#e8a020' }}>
+                            style={{ fontSize: 11, color: 'var(--warning)' }}>
                             환불 신청
                           </button>
                         )}
@@ -337,8 +337,8 @@ const MyPage = ({ go, user, cart }) => {
                 </ul>
                 {/* 환불 신청 폼 모달 */}
                 {refundTarget && (
-                  <div style={{ padding: '16px', border: '1px solid #e8a020', borderRadius: 4, marginBottom: 14, background: 'rgba(232,160,32,0.06)' }}>
-                    <div className="mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: '#e8a020', marginBottom: 10 }}>REFUND REQUEST · {refundTarget.orderNo}</div>
+                  <div style={{ padding: '16px', border: '1px solid var(--warning)', borderRadius: 4, marginBottom: 14, background: 'rgba(217,119,6,0.10)' }}>
+                    <div className="mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'var(--warning)', marginBottom: 10 }}>REFUND REQUEST · {refundTarget.orderNo}</div>
                     <p className="dim" style={{ fontSize: 12, lineHeight: 1.7, marginBottom: 10 }}>
                       환불 신청 후 운영자 확인을 거쳐 처리됩니다. 이미 입금된 경우 환불 계좌를 메모란에 남겨 주세요.
                     </p>
@@ -349,7 +349,7 @@ const MyPage = ({ go, user, cart }) => {
                     {refundError && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{refundError}</p>}
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button type="button" className="btn btn-small"
-                        style={{ borderColor: '#e8a020', color: '#e8a020' }}
+                        style={{ borderColor: 'var(--warning)', color: 'var(--warning)' }}
                         onClick={async () => {
                           setRefundError('');
                           if (!refundReason.trim()) { setRefundError('환불 사유를 입력해 주세요.'); return; }

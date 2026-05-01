@@ -468,6 +468,20 @@ const formatTimeLeft = (dueIso) => {
 
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.059.000",
+    date: "2026-05-01",
+    summary: "🌓 다크 모드 인라인 hex 정합 (잔존부) — 환불 amber + 추천 카드 region 라벨 + 모달 닫기 버튼 + KMS shadow 카드 + styles.css 추가 룰.",
+    details: [
+      "🌓 환불 신청 amber #e8a020 → var(--warning) 일괄 (MyPage / WangsanamTourPage / LecturesPage / AuthAdminPage 4 파일 7곳). 다크 모드에서 #F59E0B 로 자동 전환.",
+      "🌓 환불 안내 박스 background rgba(232,160,32,0.06) → rgba(217,119,6,0.10) — warning hue 일관 정합.",
+      "🌓 HomePage 추천 카드 region 라벨 + 모달 닫기 버튼의 rgba(255,255,255,0.92) → var(--bg-2) — 다크 모드에서도 적절한 대비.",
+      "🌓 AuthAdminPage DesignSystemView shadow 카드 '#fff' → var(--bg) — 다크에서 카드 배경 정합.",
+      "🌓 styles.css 다크 모드 추가 룰 — code/pre/hr/details/dt/dd/.admin-shell/.admin-main/.tweaks/:focus-visible. 카드 외 영역에서 발생하던 잔존 라이트 hex 정합.",
+      "📦 cache-buster — `?v=00.059.000`.",
+    ],
+    context: "v00.052 다크 모드 도입, v00.053 nav/sidebar 핫픽스, v00.059 잔존부 정합 — 다크 모드 정합 3차 사이클로 거의 완료. 인라인 hex 가 남은 곳은 사용자 입력 default(예: AdminGradePanel 의 #D4AF37) 정도로 디자인 토큰 아님. KMS DesignSystemView 의 LiveColorCards 가 drift 자동 발견하므로 추후 회귀 시점에 즉시 식별 가능. 다음 사이클(v00.060) 후보: 관리자 OG 이미지 업로드 UI 명시 카드.",
+  },
+  {
     version: "00.058.000",
     date: "2026-05-01",
     summary: "🩹 한글 입력(IME) 핫픽스 + 📱 heroStyle 모바일 별도 트윗 + viewport 토글 미리보기.",
@@ -1560,7 +1574,7 @@ const DesignSystemView = () => {
         <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em', marginBottom:8}}>SHADOW</div>
         <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(200px, 1fr))', gap:12}}>
           {SHADOW.map((s) => (
-            <div key={s.name} style={{padding:'14px 16px', background:'#fff', boxShadow: s.value, border:'1px solid var(--line)'}}>
+            <div key={s.name} style={{padding:'14px 16px', background:'var(--bg)', boxShadow: s.value, border:'1px solid var(--line)'}}>
               <div className="mono gold" style={{fontSize:10}}>{s.name}</div>
               <div className="mono dim-2" style={{fontSize:10, marginTop:2, wordBreak:'break-all'}}>{s.value}</div>
               <div style={{fontSize:11, marginTop:4, color:'var(--ink-2)'}}>{s.usage}</div>
@@ -3208,7 +3222,7 @@ const LectureAdminPanel = ({ go }) => {
                                 )}
                                 {r.status === 'refund_requested' && (
                                   <>
-                                    <span className="mono" style={{fontSize:9, color:'#e8a020', letterSpacing:'0.15em'}}>환불신청</span>
+                                    <span className="mono" style={{fontSize:9, color:'var(--warning)', letterSpacing:'0.15em'}}>환불신청</span>
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
                                       onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.BGNJ_LECTURES.approveRefund(l.id, r.id); refresh(); }}
@@ -3521,7 +3535,7 @@ const TourAdminPanel = ({ go }) => {
                                 )}
                                 {r.status === 'refund_requested' && (
                                   <>
-                                    <span className="mono" style={{fontSize:9, color:'#e8a020', letterSpacing:'0.15em'}}>환불신청</span>
+                                    <span className="mono" style={{fontSize:9, color:'var(--warning)', letterSpacing:'0.15em'}}>환불신청</span>
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
                                       onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.BGNJ_TOURS.approveRefund(t.id, r.id); refresh(); }}
@@ -3851,7 +3865,7 @@ const BookOrderAdminPanel = ({ go }) => {
     paid: 'var(--gold)',
     shipped: 'var(--gold)',
     delivered: 'var(--gold-2)',
-    refund_requested: '#e8a020',
+    refund_requested: 'var(--warning)',
     cancelled: 'var(--danger)',
   }[s] || 'var(--ink-2)');
 
@@ -3982,7 +3996,7 @@ const BookOrderAdminPanel = ({ go }) => {
                   <>
                     <div style={{width:'100%', paddingTop:8, borderTop:'1px solid var(--line)', marginTop:4}}>
                       <div style={{display:'flex', gap:6, alignItems:'center', marginBottom:6}}>
-                        <span className="mono" style={{fontSize:10, color:'#e8a020', letterSpacing:'0.2em'}}>REFUND REQUEST</span>
+                        <span className="mono" style={{fontSize:10, color:'var(--warning)', letterSpacing:'0.2em'}}>REFUND REQUEST</span>
                         <span className="dim" style={{fontSize:12}}>사유: {o.refundReason || '(미입력)'}</span>
                       </div>
                       <div style={{display:'flex', gap:6, alignItems:'center', flexWrap:'wrap'}}>

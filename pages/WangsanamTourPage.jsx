@@ -104,7 +104,7 @@ const TourPage = ({ go, user }) => {
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
-    refund_requested: '#e8a020',
+    refund_requested: 'var(--warning)',
   }[s] || 'var(--ink-2)');
 
   return (
@@ -347,14 +347,14 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
                 isPaidConfirmed
                   ? <button type="button" className="btn btn-small"
                       onClick={() => setRefundMode(true)}
-                      style={{borderColor:'#e8a020', color:'#e8a020', marginLeft:'auto'}}>환불 신청</button>
+                      style={{borderColor:'var(--warning)', color:'var(--warning)', marginLeft:'auto'}}>환불 신청</button>
                   : <button type="button" className="btn btn-small" onClick={cancelMyReg}
                       style={{borderColor:'var(--danger)', color:'var(--danger)', marginLeft:'auto'}}>신청 취소</button>
               )}
             </div>
           )}
           {refundMode && (
-            <div style={{marginTop:10, padding:12, background:'rgba(232,160,32,0.06)', border:'1px solid #e8a020', borderRadius:4}}>
+            <div style={{marginTop:10, padding:12, background:'rgba(217,119,6,0.10)', border:'1px solid var(--warning)', borderRadius:4}}>
               <p className="dim" style={{fontSize:11, lineHeight:1.7, marginBottom:8}}>
                 환불 신청 후 운영자 확인을 거쳐 처리됩니다.
               </p>
@@ -365,7 +365,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
               {refundError && <p style={{color:'var(--danger)', fontSize:11, marginBottom:6}}>{refundError}</p>}
               <div style={{display:'flex', gap:6}}>
                 <button type="button" className="btn btn-small"
-                  style={{borderColor:'#e8a020', color:'#e8a020'}}
+                  style={{borderColor:'var(--warning)', color:'var(--warning)'}}
                   onClick={submitRefund}>신청하기</button>
                 <button type="button" className="btn btn-small"
                   onClick={() => { setRefundMode(false); setRefundReason(''); setRefundError(''); }}>취소</button>
