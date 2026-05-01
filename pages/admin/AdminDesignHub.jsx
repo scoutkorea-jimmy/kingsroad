@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.103.000",
+    date: "2026-05-01",
+    summary: "🪣 R2 사용자 콘텐츠 — 게시글 첨부 + 이미지 업로드가 BGNJ_MEDIA.uploadFile 호출. 가장 큰 데이터 비대화 잠재 차단.",
+    details: [
+      "🪣 ImageAttacher.handleFiles (CommunityPage) — R2 (folder='post-images', 10MB) → dataURI 폴백 (5MB). 게시글 이미지 최대 10장 × 10MB → 100MB 단일 게시글 가능.",
+      "🪣 FileAttacher.handleFiles (CommunityPage) — R2 (folder='post-attachments', maxSize=10MB) → dataURI 폴백 (5MB). 첨부 최대 3개 × 10MB.",
+      "ℹ dataUrl 필드명 유지 — R2 URL 도 <img src> / <a href download> 모두 호환. 기존 dataURI 게시글 호환.",
+      "ℹ 폴백 한도 5MB — R2 실패(권한/네트워크/할당량) 시에도 안전하게 D1 인라인. 5MB 초과 시 사용자에게 알림 + 건너뜀.",
+      "📦 cache-buster — `?v=00.103.000` (20곳).",
+    ],
+    context: "v00.082 admin 6 슬롯 + v00.102 admin 확장(Books/Recommendations) 후 마지막 surface — 사용자측 게시글 콘텐츠. 게시글 단일 첨부 한도 10MB×3=30MB + 이미지 10MB×10=100MB 까지 가능 → R2 객체로 분리되면 D1 posts 행 비대화 차단. 다음 사이클(v00.104): legacy site_content_kv.tourPages[id].coverDataUri / 기존 dataURI 콘텐츠 일괄 마이그레이션 운영자 도구.",
+  },
+  {
     version: "00.102.000",
     date: "2026-05-01",
     summary: "🪣 R2 admin 확장 — BooksAdminPanel (책 표지/PDF) + RecommendationsAdminPanel (이미지) 가 BGNJ_MEDIA.uploadFile 호출.",

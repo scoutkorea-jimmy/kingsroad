@@ -122,12 +122,28 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
     const remaining = max - images.length;
     if (remaining <= 0) return;
     const toAdd = files.slice(0, remaining);
-    const results = await Promise.all(toAdd.map(f => new Promise((resolve) => {
-      const r = new FileReader();
-      r.onload = () => resolve({ dataUrl: r.result, name: f.name, size: f.size, alt: f.name.replace(/\.[^.]+$/, '') });
-      r.readAsDataURL(f);
-    })));
-    setImages([...images, ...results]);
+    // v00.085 — R2 우선 (10MB) + dataURI 폴백. dataUrl 필드명 유지 — R2 URL 도 <img src> 로 호환.
+    const results = await Promise.all(toAdd.map(async (f) => {
+      const meta = { name: f.name, size: f.size, alt: f.name.replace(/\.[^.]+$/, '') };
+      try {
+        const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-images', maxBytes: 10 * 1024 * 1024 });
+        return { ...meta, dataUrl: url };
+      } catch (err) {
+        console.warn('[v00.085] R2 게시글 이미지 업로드 실패 — dataURI 폴백:', err);
+      }
+      // 폴백: 5MB 이하만 dataURI 인라인 (D1 부담 감안). 초과 시 거부.
+      if (f.size > 5 * 1024 * 1024) {
+        alert(`'${f.name}' R2 실패 + dataURI 폴백 한도 5MB 초과 — 건너뜀.`);
+        return null;
+      }
+      const dataUrl = await new Promise((resolve) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.readAsDataURL(f);
+      });
+      return { ...meta, dataUrl };
+    }));
+    setImages([...images, ...results.filter(Boolean)]);
   };
 
   const remove = (i) => setImages(images.filter((_, j) => j !== i));
@@ -206,12 +222,28 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
       if (f.size > maxSize) { setError(`'${f.name}' 은(는) ${_fmtSize(maxSize)} 초과 — 첨부 불가.`); continue; }
       accepted.push(f);
     }
-    const results = await Promise.all(accepted.map((f) => new Promise((resolve) => {
-      const r = new FileReader();
-      r.onload = () => resolve({ name: f.name, type: f.type || '', size: f.size, dataUrl: r.result });
-      r.readAsDataURL(f);
-    })));
-    setFiles([...files, ...results]);
+    // v00.085 — R2 우선 (maxSize=10MB) + dataURI 폴백. dataUrl 필드명 유지 — <a href={dataUrl} download> 도 R2 URL 로 호환.
+    const results = await Promise.all(accepted.map(async (f) => {
+      const meta = { name: f.name, type: f.type || '', size: f.size };
+      try {
+        const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-attachments', maxBytes: maxSize });
+        return { ...meta, dataUrl: url };
+      } catch (err) {
+        console.warn('[v00.085] R2 게시글 첨부 업로드 실패 — dataURI 폴백:', err);
+      }
+      // 폴백: 5MB 이하만 dataURI 인라인. 초과 시 거부.
+      if (f.size > 5 * 1024 * 1024) {
+        setError(`'${f.name}' R2 실패 + dataURI 폴백 한도 5MB 초과 — 첨부 불가.`);
+        return null;
+      }
+      const dataUrl = await new Promise((resolve) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.readAsDataURL(f);
+      });
+      return { ...meta, dataUrl };
+    }));
+    setFiles([...files, ...results.filter(Boolean)]);
   };
 
   const remove = (i) => setFiles(files.filter((_, j) => j !== i));
