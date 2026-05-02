@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.118.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T10:46:44+09:00", // pre-commit stamp.
+    summary: "🔒 CSP `'unsafe-inline'` (script-src) 제거 — 인라인 script SHA-256 해시 자동 동기 (ROADMAP 큐 1)",
+    details: [
+      "🔒 [strict-script] CSP `script-src` 디렉티브에서 `'unsafe-inline'` 제거. 인라인 `<script>` 3종(theme bootstrap / SW unregister+SPA fallback+force-https / Tiptap importmap) 은 각각 `'sha256-XXX'` 해시로 명시 화이트리스트.",
+      "🤖 [tools/csp-hashes.mjs] 신설 — index.html 의 인라인 `<script>` 본문을 자동 추출 → SHA-256 base64 해시 → CSP meta 의 script-src 디렉티브 자동 갱신. idempotent.",
+      "  · pre-commit hook 에 통합 (stamp-datetime 다음, build 이전). 인라인 script 변경 시 해시 자동 동기.",
+      "  · install-hooks.sh 갱신 — 단계 1~6 (stamp / csp / stage / build / stage / lint).",
+      "ℹ 정적 호스팅(GitHub Pages) 환경에서는 server-side nonce 주입 불가 — SHA-256 해시가 정적 콘텐츠 표준 해법. nonce 와 동등한 보안 수준 (실행 가능한 정확한 본문만 허용).",
+      "ℹ style-src 'unsafe-inline' 은 유지 — Tiptap 의 인라인 style 의존도 + React 컴포넌트 JSX style prop 가 광범위. style 별 사이클로 분리.",
+      "📦 cache-buster — `?v=00.118.000` (21곳).",
+    ],
+    context: "ROADMAP 큐 1 v00.116+ 항목 처리. 큐 1 의 다른 항목(legacy schema cleanup) 은 v00.119 별 사이클로. style-src 'unsafe-inline' 은 Tiptap 마이그레이션 또는 CSS-in-JS 분리 후 별도 처리. v00.118 은 이미 가장 영향 큰 attack surface(XSS payload 인라인 주입)을 차단.",
+  },
+  {
     version: "00.117.000",
     date: "2026-05-02",
     datetime: "2026-05-02T08:42:28+09:00", // pre-commit stamp.

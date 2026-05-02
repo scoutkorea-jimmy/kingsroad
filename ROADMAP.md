@@ -19,8 +19,8 @@
 
 > v00.113 까지 보안 audit 잔재 대부분 마무리. 남은 작업은 사용자 수동 (Secrets) 과 nonce 기반 CSP 강화.
 
-- **v00.116+ (코드)** — CSP nonce 기반 strict-dynamic 전환. inline `<script>` 부트스트랩 4종에 nonce 부여 → 'unsafe-inline' 제거. SRI 누락 inline 도 같이 점검.
-- **v00.117+ (별 사이클)** — 옛 schema.sql `categories` / `grades` 테이블 deprecation. categories_kv / grades_kv 로 일원화 후 legacy 테이블 DROP.
+- **v00.118 ✅ (코드)** — CSP `'unsafe-inline'` 제거 (script-src 한정). 정적 호스팅 환경에서는 nonce 가 의미 없으므로 SHA-256 해시 방식 채택. tools/csp-hashes.mjs 가 pre-commit 시 자동 동기. style-src 'unsafe-inline' 은 Tiptap 인라인 스타일 의존도 때문에 유지.
+- **v00.119+ (별 사이클)** — 옛 schema.sql `categories` / `grades` 테이블 deprecation. categories_kv / grades_kv 로 일원화 후 legacy 테이블 DROP.
 
 ## 큐 2 — 워커 배포 의존 (★ wrangler deploy 필요)
 
