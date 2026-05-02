@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.122.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T01:32:58+09:00", // pre-commit stamp.
+    summary: "🌱 categories_kv / grades_kv 시드 마이그 SQL 신설 (seed-kv.sql) — production D1 source-of-truth 회복 준비",
+    details: [
+      "🌱 [workers/seed-kv.sql] 신설 — DEFAULT_CATEGORIES 5종 + DEFAULT_GRADES 6종 → categories_kv / grades_kv 로 INSERT OR IGNORE. 멱등 (여러 번 실행 안전).",
+      "  · 카테고리: notice / free / question / info / column. notice/column 만 admin only (post_min_level 100), 나머지는 0 (v00.117 trap 해소 정합).",
+      "  · 등급: guest / member / reader / scholar / wangsanam / admin. DEFAULT_GRADES 와 색상/레벨 1:1 일치.",
+      "🩹 [순서] (1) seed-kv.sql 적용으로 _kv 채움 → (2) 검증 → (3) schema-v5.sql DROP. 한 번에 두 명령 실행 시 데이터 손실 없음 보장.",
+      "📑 ROADMAP.md 큐 4 — 'seed-kv.sql 적용' 신규 항목 추가, schema-v5 는 seed 이후로 명시.",
+      "ℹ 사이트 동작 변화 없음 — 클라이언트 시드 + localStorage 가 이미 동일 데이터 보유. seed-kv 이후엔 server-first 가 작동, boot.jsx:258-279 가 응답으로 BGNJ_STORES 정상 덮어씀.",
+      "📦 cache-buster — `?v=00.122.000` (21곳).",
+    ],
+    context: "v00.121 진단으로 발견된 _kv empty + legacy 잔재 정리 작업. schema-v5 DROP 의 안전 사전 단계. seed → schema-v5 순서로 두 사용자 인가 필요. 본 사이클은 SQL 작성 + 문서화만, 실제 production 적용은 사용자 인가 시점.",
+  },
+  {
     version: "00.121.000",
     date: "2026-05-03",
     datetime: "2026-05-03T01:29:01+09:00", // pre-commit stamp.
