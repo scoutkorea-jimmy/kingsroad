@@ -119,6 +119,13 @@ CREATE TABLE IF NOT EXISTS book_orders (
 CREATE INDEX IF NOT EXISTS idx_orders_user ON book_orders(user_id);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON book_orders(status);
 
+-- ⚠ DEPRECATED (v00.119) — 아래 3개 테이블(categories / grades / site_content) 은 schema-v3.sql 의
+--    `_kv` 변종으로 일원화됨. 워커 코드(workers/src/index.js)는 더 이상 이 테이블을 read/write 하지 않음.
+--    신규 D1 인스턴스에는 생성 자체가 불필요. 기존 production D1 의 잔재 row 는 schema-v5.sql 의
+--    DROP TABLE 명령으로 사용자가 수동 정리 (한 번만 실행).
+--    호환을 위해 정의는 남겨두지만 실제 사용 0. 신규 인스턴스에선 schema-v5.sql 의 DROP 후 무시.
+--
+-- ↓↓↓ 아래 블록은 v00.119 이후 deprecated. 새 코드에서 이 테이블들에 INSERT/SELECT 하지 말 것. ↓↓↓
 CREATE TABLE IF NOT EXISTS categories (
   id TEXT PRIMARY KEY,
   label TEXT NOT NULL,
@@ -138,7 +145,7 @@ CREATE TABLE IF NOT EXISTS grades (
   sort_order INTEGER NOT NULL DEFAULT 0
 );
 
--- 사이트 콘텐츠 (단일 행 JSON blob)
+-- 사이트 콘텐츠 (단일 행 JSON blob) — DEPRECATED, site_content_kv (key/value) 로 대체.
 CREATE TABLE IF NOT EXISTS site_content (
   id INTEGER PRIMARY KEY DEFAULT 1,
   data_json TEXT NOT NULL,
@@ -146,7 +153,7 @@ CREATE TABLE IF NOT EXISTS site_content (
   CHECK (id = 1)
 );
 
--- 시드: 기본 카테고리, 등급
+-- ⚠ DEPRECATED 시드 — 신규 인스턴스 호환용. 기존 production 에는 categories_kv / grades_kv 가 source-of-truth.
 INSERT OR IGNORE INTO categories (id, label, board_type, min_level, post_min_level, description, sort_order) VALUES
   ('notice', '공지', 'community', 0, 100, '운영진 공지 (읽기: 누구나 · 쓰기: 관리자)', 0),
   ('free', '자유', 'community', 10, 10, '자유 게시판 (쓰기: 회원)', 1),
@@ -161,3 +168,4 @@ INSERT OR IGNORE INTO grades (id, label, level, color, description, sort_order) 
   ('scholar', '사관', 60, '#3B82F6', '열성 회원 (칼럼 기고 가능)', 3),
   ('wangsanam', '왕사남', 90, '#2563EB', '운영진', 4),
   ('admin', '관리자', 100, '#1E3A8A', '최고 관리자', 5);
+-- ↑↑↑ DEPRECATED 블록 끝 ↑↑↑

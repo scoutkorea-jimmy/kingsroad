@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.119.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T15:04:41+09:00", // pre-commit stamp.
+    summary: "🧹 legacy `categories` / `grades` / `site_content` 테이블 deprecation (ROADMAP 큐 1 마무리)",
+    details: [
+      "🧹 [legacy 테이블 정리] schema.sql 의 `categories` / `grades` / `site_content` 정의 + 시드 INSERT 블록에 DEPRECATED 마커 + 안내 주석 추가. 워커 코드는 이미 v00.040+ 부터 `categories_kv` / `grades_kv` / `site_content_kv` (schema-v3.sql) 만 read/write — legacy 테이블은 무시되는 row 잔재 상태.",
+      "📑 [workers/schema-v5.sql 신설] legacy 테이블 3개 DROP 명령. 사용자가 검증 후 1회 수동 실행 (★ ROADMAP 큐 4 항목): `wrangler d1 execute banginoja-db --remote --file=schema-v5.sql`. 안전 검증 명령(SELECT COUNT) 안내 포함.",
+      "ℹ 워커 바이너리 변경 없음 — schema-v5.sql 적용 전후로 워커 read/write 흐름 동일. 디스크/관리 부담 정리 효과만.",
+      "ℹ schema.sql 의 DEPRECATED 블록은 호환성 위해 정의 보존. 신규 D1 인스턴스에서 IF NOT EXISTS 가 빈 테이블 생성하지만 즉시 schema-v5.sql DROP 으로 정리 가능.",
+      "📦 cache-buster — `?v=00.119.000` (21곳).",
+    ],
+    context: "ROADMAP 큐 1 두 번째이자 마지막 항목 처리. v00.118 (CSP) + v00.119 (legacy schema) 로 큐 1 완료. 큐 2 (워커 deploy) 는 v00.116 hotfix 로 비어있음. 큐 4 (사용자 수동) 에 schema-v4 / schema-v5 / Cloudflare Secrets / HTTPS SSL 4 항목.",
+  },
+  {
     version: "00.118.000",
     date: "2026-05-02",
     datetime: "2026-05-02T10:46:44+09:00", // pre-commit stamp.
