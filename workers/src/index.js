@@ -638,11 +638,20 @@ const handleMediaGet = async (req, env, key) => {
 
 // ──────── 감사 로그 ───────────────────────────────────────
 
+// v00.120 — audit_log GC: 30일 이상 된 row 1/20 확률로 일괄 삭제. unbounded growth 방지.
+const AUDIT_LOG_RETENTION_MS = 30 * 24 * 3600 * 1000;
 const auditWrite = async (env, actor, action, target, details, ip) => {
   try {
     await env.DB.prepare(
       "INSERT INTO audit_log (actor, action, target, details_json, ip) VALUES (?, ?, ?, ?, ?)"
     ).bind(actor || null, action, target || null, details ? JSON.stringify(details) : null, ip || null).run();
+    if (Math.random() < 0.05) {
+      // ts 컬럼이 ISO 문자열 또는 epoch ms — 둘 다 호환되도록 datetime() 비교.
+      try {
+        const cutoff = new Date(Date.now() - AUDIT_LOG_RETENTION_MS).toISOString();
+        await env.DB.prepare("DELETE FROM audit_log WHERE ts < ?").bind(cutoff).run();
+      } catch {}
+    }
   } catch {}
 };
 
@@ -1640,6 +1649,8 @@ const handleColumnView = async (req, env, id) => {
 
 // ── 알림 자동 발급 헬퍼 (서버 부수효과 패턴) ──
 // 댓글 작성 / 등록 / 주문 등 행위 시 호출. 익명 안전(throw 안 함).
+// v00.120 — GC: 90일 이상 된 read=1 알림 1/50 확률로 삭제. unread 는 보존.
+const NOTIFICATIONS_RETENTION_MS = 90 * 24 * 3600 * 1000;
 const insertNotification = async (env, { userId, type, message, fromName, postId, postTitle, lectureId, tourId }) => {
   if (!userId) return;
   try {
@@ -1649,6 +1660,14 @@ const insertNotification = async (env, { userId, type, message, fromName, postId
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`
     ).bind(id, userId, type || 'general', message || '', fromName || '운영자',
       postId || null, postTitle || null, lectureId || null, tourId || null).run();
+    if (Math.random() < 0.02) {
+      try {
+        const cutoff = new Date(Date.now() - NOTIFICATIONS_RETENTION_MS).toISOString();
+        await env.DB.prepare(
+          "DELETE FROM notifications WHERE read = 1 AND created_at < ?"
+        ).bind(cutoff).run();
+      } catch {}
+    }
   } catch {}
 };
 

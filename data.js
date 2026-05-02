@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.119.000",
+  version: "00.120.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -374,6 +374,11 @@ window.BGNJ_FMT = {
   },
   // 'XXX원' 단축 — currency() + '원' 조합. price/total 표시 일관화.
   won(n) { return `${this.currency(n)}원` },
+  // v00.120 — 페이지 별 중복 formatPrice 헬퍼 통합. 0 / null / undefined / "무료" 모두 처리.
+  priceOrFree(n) {
+    if (n === 0 || n == null) return '무료';
+    return this.won(n);
+  },
 };
 
 // === 회원 등급/카테고리/해시태그 저장소 (localStorage 연동) ===

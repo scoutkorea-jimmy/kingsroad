@@ -90,7 +90,7 @@ const TourPage = ({ go, user }) => {
   const tour = tours[safeIdx];
   const seats = G.call(() => window.BGNJ_TOURS?.getSeats?.(tour.id), { capacity: 0, taken: 0, waitlist: 0, remaining: 0 });
   const myReg = user ? G.call(() => window.BGNJ_TOURS?.hasUserReserved?.(tour.id, user.id), null) : null;
-  const formatPrice = (p) => (p === 0 || p == null) ? "무료" : window.BGNJ_FMT.won(p);
+  const formatPrice = (p) => window.BGNJ_FMT.priceOrFree(p);
 
   const labelStatus = (s) => ({
     pending_payment: '입금 대기',

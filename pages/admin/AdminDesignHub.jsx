@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.120.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T15:45:15+09:00", // pre-commit stamp.
+    summary: "🧹 정적 audit 후속 5종 일괄 — formatPrice 통합 + JSON-LD + version 검증 hook + audit_log/notifications GC",
+    details: [
+      "💰 [BGNJ_FMT.priceOrFree] 통합 헬퍼 — 0/null/undefined → '무료', 그 외 won() 적용. LecturesPage / WangsanamTourPage 의 중복 formatPrice 호출 위임.",
+      "🔍 [JSON-LD structured data] index.html 에 Organization + WebSite 스키마 inline. 검색엔진/소셜 카드 풍부화. 현재 sameAs 빈 배열 — SNS 계정 도입 시 추가.",
+      "🤖 [tools/check-version.mjs] 신설 — BGNJ_VERSION.version 과 index.html 의 모든 ?v= cache-buster 일치 검증. 불일치 시 pre-commit 차단. install-hooks.sh 단계 3에 통합.",
+      "🧹 [audit_log GC] auditWrite 헬퍼 — INSERT 후 1/20 확률로 30일 이상 된 row DELETE. unbounded growth 차단.",
+      "🧹 [notifications GC] insertNotification 헬퍼 — INSERT 후 1/50 확률로 90일 이상 + read=1 row DELETE. unread 알림은 보존 (사용자가 미열람).",
+      "ℹ login_attempts 는 v00.113 부터 1/10 확률 24h GC 이미 적용. 이번 사이클로 모든 unbounded 테이블 GC 완비.",
+      "★ 워커 deploy 필요 — auditWrite / insertNotification 변경.",
+      "📦 cache-buster — `?v=00.120.000` (21곳).",
+    ],
+    context: "ROADMAP 큐 1 빈 상태에서 Explore audit 으로 신규 후보 발굴. 5종 모두 LOW~MED, 위험도 낮음. JSON-LD 는 SEO 풍부화, version-check 은 사고 방지(브라우저가 옛 JS 캐시), GC 는 D1 디스크 압박 차단. 큐 1 다음 후보: style-src 'unsafe-inline' 제거 (Tiptap 마이그 또는 className 일괄 refactor 필요 — 별 사이클).",
+  },
+  {
     version: "00.119.000",
     date: "2026-05-02",
     datetime: "2026-05-02T15:04:41+09:00", // pre-commit stamp.
