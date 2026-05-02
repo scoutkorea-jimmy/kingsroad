@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.121.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T01:29:01+09:00", // pre-commit stamp.
+    summary: "🚧 홈페이지 개발 중 배너 + schema-v5 DROP 보류 (legacy/_kv 진단 재검증)",
+    details: [
+      "🚧 [개발 중 배너] HomePage 상단 — '개발 중입니다. 오류 발견 시 왕사들 오픈톡방에 알려주세요' 배너 추가. 옐로우 5% 적용 (--gold-dim border + 12% bg). role='status' aria-label 적용.",
+      "🩹 [schema-v5 DROP 보류] production D1 검증 결과 categories_kv (0 rows) / grades_kv (0 rows) — 실제로 비어있음. legacy categories (5) / grades (6) 에 row 가 있으나 워커는 _kv 만 read, 클라는 boot.jsx:258-279 에서 빈 응답 시 BGNJ_STORES seed (DEFAULT_CATEGORIES/GRADES) 폴백. → 사이트는 클라이언트 시드 + localStorage 만으로 동작. legacy/_kv 모두 사이트 의존성 없음.",
+      "ℹ DROP 자체는 안전(아무도 read 안 함)하나 데이터 정합성 측면에서 _kv 가 비어있는 게 정상은 아님. 별 사이클(v00.122+)에서 admin UI 로 카테고리/등급 명시 INSERT 한 뒤 정리 권장.",
+      "📦 cache-buster — `?v=00.121.000` (21곳).",
+    ],
+    context: "v00.120 worker GC deploy 후 사용자가 schema-v5 DROP 인가 → pre-DROP 검증 단계에서 _kv 비어있음 발견 → DROP 보류 + 진단 재검증. 시나리오 #2 (클라이언트 시드 폴백) 확정. 사용자 요청에 따라 홈페이지 베타 안내 배너 추가.",
+  },
+  {
     version: "00.120.000",
     date: "2026-05-02",
     datetime: "2026-05-02T15:45:15+09:00", // pre-commit stamp.
