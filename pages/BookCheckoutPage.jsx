@@ -1,7 +1,9 @@
 // === 독자 리뷰 서브컴포넌트 ============================================
 const STARS = ['★', '★★', '★★★', '★★★★', '★★★★★'];
 
-const BookReviewSection = ({ user }) => {
+const BookReviewSection = ({ user, bookTitle }) => {
+  // v00.153 — 책 제목 동적화. props 미전달 시 빈 문자열로 안전 폴백.
+  const _t = bookTitle || '책';
   const [reviews, setReviews] = React.useState(() => window.BGNJ_BOOK_ORDERS.listReviews());
   const [rating, setRating] = React.useState(5);
   const [text, setText] = React.useState('');
@@ -44,7 +46,7 @@ const BookReviewSection = ({ user }) => {
             <span className="gold mono" style={{fontSize:12, marginLeft:4}}>{rating}/5</span>
           </div>
           <textarea value={text} onChange={e => setText(e.target.value)}
-            placeholder="『왕의길』을 읽고 느낀 점을 자유롭게 써 주세요."
+            placeholder={`『${_t}』을 읽고 느낀 점을 자유롭게 써 주세요.`}
             className="field-input" rows={3}
             style={{width:'100%', resize:'vertical', padding:12, fontSize:14, lineHeight:1.7}}/>
           {error && <p style={{color:'var(--danger)', fontSize:13, marginTop:8}}>{error}</p>}
@@ -56,7 +58,7 @@ const BookReviewSection = ({ user }) => {
         <p className="dim" style={{fontSize:13, marginBottom:20}}>이미 리뷰를 작성하셨습니다.</p>
       )}
       {!user && (
-        <p className="dim" style={{fontSize:13, marginBottom:20}}>리뷰는 『왕의길』 배송 완료 회원만 작성할 수 있습니다.</p>
+        <p className="dim" style={{fontSize:13, marginBottom:20}}>리뷰는 『{_t}』 배송 완료 회원만 작성할 수 있습니다.</p>
       )}
       {user && !canReview && !hasReviewed && (
         <p className="dim" style={{fontSize:13, marginBottom:20}}>배송 완료된 주문이 확인되면 리뷰를 작성할 수 있습니다.</p>
@@ -89,7 +91,8 @@ const BookReviewSection = ({ user }) => {
 };
 
 // 책 구매 페이지
-// 데이터 원칙: BGNJ_BOOKS.primary() 가 D1.books 의 primary 책 + 폴백. 시드(BANGINOJA_DATA.book) 직접 참조 금지.
+// v00.153 — 다권 지원. 책 ≥2권일 때 상단 책 선택 탭 노출.
+// 데이터 원칙: BGNJ_BOOKS.list({status:'published'}). primary 우선 → order. 시드(BANGINOJA_DATA.book) 직접 참조 금지.
 const BookPage = ({ go, cart, setCart, user }) => {
   const G = window.BGNJ_GUARD;
   const [tick, setTick] = React.useState(0);
@@ -99,10 +102,30 @@ const BookPage = ({ go, cart, setCart, user }) => {
     window.addEventListener('bgnj-books-refresh', onR);
     return () => window.removeEventListener('bgnj-books-refresh', onR);
   }, []);
-  const book = React.useMemo(() => G.call(() => window.BGNJ_BOOKS?.primary?.(), null), [tick]);
+  const books = React.useMemo(() => {
+    const all = G.arr(() => window.BGNJ_BOOKS?.list?.({ status: 'published' }));
+    return all.slice().sort((a, b) => {
+      if (a.primary && !b.primary) return -1;
+      if (!a.primary && b.primary) return 1;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+  }, [tick]);
+  const [selectedId, setSelectedId] = React.useState(null);
+  // books 변경 시 selectedId 가 유효하지 않으면 첫 권으로 폴백.
+  React.useEffect(() => {
+    if (books.length === 0) return;
+    if (!selectedId || !books.find((b) => b.id === selectedId)) {
+      setSelectedId(books[0].id);
+    }
+  }, [books, selectedId]);
+  const book = books.find((b) => b.id === selectedId) || books[0] || null;
   const [version, setVersion] = React.useState("KR");
   const [qty, setQty] = React.useState(1);
   const [tab, setTab] = React.useState("소개");
+  // 책 변경 시 판본/수량/탭 초기화 — 새 책의 판매 가능 판본이 다를 수 있음.
+  React.useEffect(() => {
+    setVersion("KR"); setQty(1); setTab("소개");
+  }, [selectedId]);
 
   if (!book) {
     return (
@@ -124,6 +147,32 @@ const BookPage = ({ go, cart, setCart, user }) => {
   return (
     <div className="section">
       <div className="container">
+        {/* v00.153 — 다권 책 선택 탭. ≥2권일 때만 노출. */}
+        {books.length > 1 && (
+          <div style={{
+            display:'flex', gap:0, borderBottom:'1px solid var(--line)',
+            marginBottom:48, overflowX:'auto',
+          }}>
+            {books.map((b) => (
+              <button key={b.id}
+                type="button"
+                onClick={() => setSelectedId(b.id)}
+                style={{
+                  padding:'14px 28px',
+                  fontFamily:'var(--font-serif)', fontSize:16,
+                  color: b.id === book.id ? 'var(--gold)' : 'var(--ink-2)',
+                  borderBottom: b.id === book.id ? '2px solid var(--gold)' : '2px solid transparent',
+                  marginBottom:-1, whiteSpace:'nowrap',
+                  background:'none', border:'none', borderBottomWidth:2,
+                  borderBottomStyle:'solid',
+                  borderBottomColor: b.id === book.id ? 'var(--gold)' : 'transparent',
+                  cursor:'pointer',
+                }}>
+                『{b.title}』
+              </button>
+            ))}
+          </div>
+        )}
         <div style={{display:'grid', gridTemplateColumns:'1fr 1.1fr', gap:80}} className="book-grid">
           {/* LEFT: cover — v00.151 실제 book.coverDataUri 우선, 없으면 generic placeholder. */}
           <div style={{position:'sticky', top:100, alignSelf:'start'}}>
@@ -192,7 +241,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
           <div>
             <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:16}}>NEW RELEASE · 2026</div>
             <h1 style={{fontFamily:'var(--font-serif)', fontSize:56, fontWeight:500, lineHeight:1.05, marginBottom:12}}>
-              『<span className="gold">왕의길</span>』
+              『<span className="gold">{book.title}</span>』
             </h1>
             <div className="ko-serif dim" style={{fontSize:20, marginBottom:24, fontStyle:'italic'}}>
               {book.subtitle}
@@ -278,9 +327,12 @@ const BookPage = ({ go, cart, setCart, user }) => {
 
               {tab === "소개" && (
                 <div style={{fontFamily:'var(--font-serif)', fontSize:15, lineHeight:1.9, color:'var(--ink-2)'}}>
-                  <p style={{marginBottom:16}}>왕의 자리에 선 자는 누구인가. 이 책은 그 자리에서 무엇을 보았는지를 묻는다.</p>
-                  <p style={{marginBottom:16}}>저자 뱅기노자는 15년간 실록과 궁궐을 오가며 쌓아올린 기록을 한 권으로 엮었다. 왕의 자리가 아니라 왕이 바라본 길 — 그 시선의 각도를 오늘의 언어로 재구성한다.</p>
-                  <p>총 5부 22장. 조선 27명의 왕 중 11명을 깊이 있게 다룬다.</p>
+                  {/* v00.153 — book.intro 우선, 없으면 desc 폴백, 둘 다 없으면 안내. 줄바꿈 공백 보존. */}
+                  {(book.intro || book.desc) ? (
+                    <p style={{whiteSpace:'pre-wrap', margin:0}}>{book.intro || book.desc}</p>
+                  ) : (
+                    <p className="dim" style={{fontSize:13}}>책 소개가 아직 입력되지 않았습니다.</p>
+                  )}
                 </div>
               )}
               {tab === "목차" && (
@@ -298,16 +350,19 @@ const BookPage = ({ go, cart, setCart, user }) => {
               )}
               {tab === "저자" && (
                 <div style={{display:'flex', gap:24, alignItems:'flex-start'}}>
-                  <div className="placeholder" style={{width:140, aspectRatio:'3/4', flexShrink:0}}>뱅기노자</div>
+                  <div className="placeholder" style={{width:140, aspectRatio:'3/4', flexShrink:0}}>{book.author || '저자'}</div>
                   <div>
-                    <h4 className="ko-serif gold" style={{fontSize:22, marginBottom:12}}>뱅기노자 · BANGINOJA</h4>
-                    <p className="dim" style={{fontSize:14, lineHeight:1.9}}>
-                      뱅기노자 커뮤니티 창립자. 15년간 조선왕조실록과 궁궐을 오갔다. 답사와 강연을 통해 조선의 왕들을 오늘의 자리에 소환한다. 『왕의길』은 그의 첫 단독 저서다.
-                    </p>
+                    <h4 className="ko-serif gold" style={{fontSize:22, marginBottom:12}}>{book.author || '저자 미입력'}</h4>
+                    {/* v00.153 — book.authorBio 사용. 없으면 안내. */}
+                    {book.authorBio ? (
+                      <p className="dim" style={{fontSize:14, lineHeight:1.9, whiteSpace:'pre-wrap'}}>{book.authorBio}</p>
+                    ) : (
+                      <p className="dim" style={{fontSize:13}}>저자 소개가 아직 입력되지 않았습니다.</p>
+                    )}
                   </div>
                 </div>
               )}
-              {tab === "리뷰" && <BookReviewSection user={user} />}
+              {tab === "리뷰" && <BookReviewSection user={user} bookTitle={book.title} />}
             </div>
           </div>
         </div>

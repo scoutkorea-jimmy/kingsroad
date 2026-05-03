@@ -3116,7 +3116,7 @@ const SiteContentAdminPanel = () => {
         { key: 'lectures', label: '강연' },
         { key: 'tour', label: '투어 프로그램' },
         { key: 'column', label: '뱅기노자 칼럼' },
-        { key: 'book', label: '뱅기노자의 길' },
+        { key: 'book', label: '뱅기노자 도서' },
       ]}/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>브랜드</h3>

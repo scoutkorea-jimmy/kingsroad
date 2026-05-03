@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.152.000",
+  version: "00.153.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -586,7 +586,7 @@ const DEFAULT_SITE_CONTENT = {
     lectures: "강연",
     column: "뱅기노자 칼럼",
     community: "커뮤니티",
-    book: "뱅기노자의 길",
+    book: "뱅기노자 도서",
   },
   brand: { name: "뱅기노자", sub: "BANGINOJA" },
   hero: {

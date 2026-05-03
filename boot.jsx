@@ -373,7 +373,7 @@ const App = () => {
       lectures: '강연',
       column: '뱅기노자 칼럼',
       community: '커뮤니티',
-      book: '뱅기노자의 길',
+      book: '뱅기노자 도서',
       checkout: '결제',
       mypage: '마이페이지',
       admin: '관리자',

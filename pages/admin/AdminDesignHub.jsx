@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.153.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T23:44:22+09:00",
+    summary: "✨ 메뉴 '뱅기노자 도서' + BookPage 다권 탭 + 책 메인 제목/소개/저자 하드코드 제거",
+    details: [
+      "🪶 [메뉴 라벨] 사용자 요청 '뱅기노자의 길 → 뱅기노자 도서'. boot.jsx routeTitles / data.js seed nav / AuthAdminPage 사이트 콘텐츠 admin 라벨 3 곳 일괄. 단 D1 site_content_kv 의 nav.book 값이 옛 값으로 저장돼 있다면 admin → 사이트 콘텐츠 → 메뉴에서 사용자가 직접 갱신 필요 (server-first 원칙).",
+      "✨ [BookPage 다권 탭] /book 진입 시 책 ≥2권이면 상단에 책 선택 탭 노출 (책 1권이면 미노출). 데이터 소스 BGNJ_BOOKS.list({status:'published'}) — primary 우선 → order. 책 변경 시 판본/수량/탭 상태 초기화 (새 책의 판매 가능 판본이 다를 수 있음).",
+      "🩹 [책 제목 root cause] 사용자 보고 '책 제목이 잘못 연결됨'. 원인: BookCheckoutPage.jsx:195 H1 이 『왕의길』 하드코드 — v00.151 표지/판본 fix 가 메인 제목·소개 탭(281-283)·저자 탭(303-306)은 안 건드림. 표지 업로드 후 제목만 안 바뀐 걸로 보임. 모두 book.title / book.intro || book.desc / book.author / book.authorBio 로 교체.",
+      "🩹 [BookReviewSection] bookTitle prop 추가 — placeholder/안내문 동적. BookPage 가 자동 전달.",
+      "ℹ [후속] CheckoutPage / 주문 영수증(workers) / MyPage 의 『왕의길』 하드코드 5+ 곳도 같은 root cause. cart 에 bookId 가 없어 cart-flow 다권화는 별 사이클 (v00.154 후보).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.153.000`.",
+    ],
+    context: "사용자가 /book 스크린샷 첨부하며 (a) 메뉴명 변경 (b) 다권 탭 (c) 제목 잘못 연결 동시 지시. (c)는 D1 데이터 문제가 아닌 코드 잔재 — v00.151 의 부분 fix 를 본 사이클에서 마무리. 본 사이클부터 plans/<버전>.md 선작성 룰 (v00.152 신설) 두 번째 적용 — plans/v00.153.000-book-page-rework.md.",
+  },
+  {
     version: "00.152.000",
     date: "2026-05-03",
     datetime: "2026-05-03T23:37:31+09:00",
