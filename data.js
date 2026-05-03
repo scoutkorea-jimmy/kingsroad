@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.135.000",
+  version: "00.136.000",
   build: "2026.05.03",
   channel: "preview",
 };
@@ -1635,6 +1635,8 @@ window.BGNJ_COLUMNS = {
       createdAt: r.created_at, updatedAt: r.updated_at,
       // v00.127 — 외부 기고처 + 원문 링크 (schema-v6 ALTER TABLE).
       sourceCredit: r.source_credit || '', sourceUrl: r.source_url || '',
+      // v00.136 — 대표이미지 출처 (schema-v7 ALTER TABLE).
+      coverCredit: r.cover_credit || '',
     };
   },
   estimateReadTime(text) {
@@ -1700,6 +1702,8 @@ window.BGNJ_COLUMNS = {
     // v00.127 — 외부 기고처 + 원문 링크.
     if ('sourceCredit' in payload) body.sourceCredit = payload.sourceCredit || '';
     if ('sourceUrl' in payload) body.sourceUrl = payload.sourceUrl || '';
+    // v00.136 — 대표이미지 출처.
+    if ('coverCredit' in payload) body.coverCredit = payload.coverCredit || '';
     if (exists) {
       await window.BGNJ_API.columns.update(payload.id, body);
     } else {
@@ -2420,36 +2424,56 @@ window.BGNJ_AUDIT = {
 //   maxReports       — 이 값 미만의 신고 횟수만 자격 (이상이면 자격 박탈)
 //
 // 강제 강등: 신고가 REPORT_DEMOTE_THRESHOLD 이상이면 자격 무관 강제 member 로.
+// v00.136 — 모든 등급(member 부터 wangsanam 까지) 자동 승급 기준 default 제공. 사용자 요청
+// '회원등급에서 자동 승급기준을 모든 등급에 설정할 수 있게'. admin 은 운영자 보호 — 자동 승급 X.
 window.BGNJ_GRADE_RULES = {
+  member: {
+    posts: 0, comments: 0,
+    visitsLast30Days: 0, daysSinceSignup: 0,
+    likesReceived: 0, activeDays: 0,
+    toursAttended: 0, lecturesAttended: 0,
+    maxReports: 5,
+  },
   reader: {
     posts: 0, comments: 5,
-    visitsLast30Days: 3,
-    daysSinceSignup: 7,
-    likesReceived: 0,
-    activeDays: 2,
+    visitsLast30Days: 3, daysSinceSignup: 7,
+    likesReceived: 0, activeDays: 2,
+    toursAttended: 0, lecturesAttended: 0,
     maxReports: 3,
   },
   scholar: {
     posts: 3, comments: 15,
-    visitsLast30Days: 10,
-    daysSinceSignup: 30,
-    likesReceived: 10,
-    activeDays: 7,
+    visitsLast30Days: 10, daysSinceSignup: 30,
+    likesReceived: 10, activeDays: 7,
+    toursAttended: 1, lecturesAttended: 1,
+    maxReports: 1,
+  },
+  wangsanam: {
+    posts: 20, comments: 100,
+    visitsLast30Days: 25, daysSinceSignup: 365,
+    likesReceived: 100, activeDays: 20,
+    toursAttended: 5, lecturesAttended: 5,
     maxReports: 1,
   },
 };
 const REPORT_DEMOTE_THRESHOLD = 5;  // 신고 5회 이상 → 강제 member 강등
-const PROMOTION_PROTECTED = new Set(['admin', 'wangsanam']);
+// v00.136 — admin 만 자동 변경 보호 (사용자 요청 모든 등급 자동 승급 가능). wangsanam 도 자동 승급 가능.
+const PROMOTION_PROTECTED = new Set(['admin']);
 
 // 운영자 GUI 오버라이드(site_content_kv.gradeRules) 와 코드 default 를 머지해 effective 룰 반환.
 // 각 등급마다 일부 필드만 오버라이드해도 나머지는 코드 default 를 유지.
+// v00.136 — BGNJ_STORES.grades 의 모든 등급을 노출 (admin 은 자동 승급 안 되지만 GUI 표기만).
 window.BGNJ_GRADE_RULES_EFFECTIVE = () => {
   const defaults = window.BGNJ_GRADE_RULES || {};
   const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {}).gradeRules || {};
+  const allGrades = (window.BGNJ_STORES?.grades || []).filter((g) => !PROMOTION_PROTECTED.has(g.id) && g.id !== 'guest');
   const merged = {};
-  for (const gid of Object.keys(defaults)) {
-    const override = (sc[gid] && typeof sc[gid] === 'object' && !Array.isArray(sc[gid])) ? sc[gid] : {};
-    merged[gid] = { ...defaults[gid], ...override };
+  // BGNJ_STORES.grades 순서대로 (level asc) 추가. 기본값이 없으면 0 으로.
+  const empty = { posts: 0, comments: 0, visitsLast30Days: 0, daysSinceSignup: 0, likesReceived: 0, activeDays: 0, toursAttended: 0, lecturesAttended: 0, maxReports: 999 };
+  for (const g of allGrades) {
+    const def = defaults[g.id] || empty;
+    const override = (sc[g.id] && typeof sc[g.id] === 'object' && !Array.isArray(sc[g.id])) ? sc[g.id] : {};
+    merged[g.id] = { ...empty, ...def, ...override };
   }
   return merged;
 };
@@ -2531,6 +2555,7 @@ window.BGNJ_GRADE_PROMO = {
       reportCount = reports.filter((r) => r && (r.targetUserId === userId || r.target_user_id === userId)).length;
     } catch {}
     // 서버 metrics 가 캐시되어 있으면 정확값 우선 사용.
+    // v00.136 — toursAttended / lecturesAttended 포함 (서버 only 정확값, 폴백 0).
     const sv = this._serverCache[userId];
     return {
       posts:               sv?.posts        ?? (a.postCount || 0),
@@ -2540,6 +2565,8 @@ window.BGNJ_GRADE_PROMO = {
       likesReceived:       sv?.likesReceived ?? likesReceived,
       activeDays:          activeDaysSet.size,
       reportCount:         sv?.reportCount  ?? reportCount,
+      toursAttended:       sv?.toursAttended ?? 0,
+      lecturesAttended:    sv?.lecturesAttended ?? 0,
       _source:             sv ? 'server' : 'client',
     };
   },
@@ -2548,18 +2575,26 @@ window.BGNJ_GRADE_PROMO = {
     if (!m) return null;
     // 강제 강등 — 신고 임계 초과면 자격 무관 member.
     if (m.reportCount >= REPORT_DEMOTE_THRESHOLD) return 'member';
+    // v00.136 — 등급을 level asc 정렬 후 평가. 가장 높은 자격 등급이 최종 qualified.
+    // (Object 순서가 신뢰 불가한 환경 + 사용자 추가 등급 대비 안전한 명시 sort.)
     let qualified = 'member';
     const rules = window.BGNJ_GRADE_RULES_EFFECTIVE();
-    Object.entries(rules || {}).forEach(([gid, rule]) => {
+    const grades = (window.BGNJ_STORES?.grades || []).slice().sort((a, b) => (a.level ?? 0) - (b.level ?? 0));
+    for (const g of grades) {
+      const rule = rules[g.id];
+      if (!rule) continue;
       const ok = (m.posts >= (rule.posts || 0))
         && (m.comments >= (rule.comments || 0))
         && (m.visitsLast30Days >= (rule.visitsLast30Days || 0))
         && (m.daysSinceSignup >= (rule.daysSinceSignup || 0))
         && (m.likesReceived >= (rule.likesReceived || 0))
         && (m.activeDays >= (rule.activeDays || 0))
+        // v00.136 — 투어/강연 실 참여 (노쇼 제외) 기준.
+        && (m.toursAttended >= (rule.toursAttended || 0))
+        && (m.lecturesAttended >= (rule.lecturesAttended || 0))
         && (m.reportCount < (rule.maxReports ?? Infinity));
-      if (ok) qualified = gid;
-    });
+      if (ok) qualified = g.id;
+    }
     return qualified;
   },
   // 사용자 행동 후 호출 — 새 등급이 더 높을 때만 승격. async setGrade 는 fire-and-forget.

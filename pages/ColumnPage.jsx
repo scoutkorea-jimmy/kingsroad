@@ -141,15 +141,28 @@ const ColumnPage = ({ go, user }) => {
               {c.title}
             </h1>
             <div style={{display:'flex', gap:20, justifyContent:'center', fontFamily:'var(--font-mono)', fontSize:12, color:'var(--ink-3)', flexWrap:'wrap'}}>
-              <span className="gold">뱅기노자</span>
-              <span>{c.date}</span>
+              <span className="gold">{c.author || '뱅기노자'}</span>
+              {/* v00.136 — 작성일 KST. createdAt 없으면 date(YYYY.MM.DD) 폴백. */}
+              <span>{c.createdAt ? window.BGNJ_FMT.kstShort(c.createdAt) : (c.date || '')}</span>
               <span>읽는 시간 · {readTime}</span>
               <span>조회 {views}</span>
               <span>공감 {likes.length}</span>
               <span>댓글 {comments.length}</span>
             </div>
           </div>
-          {!c.body?.html && (
+          {/* v00.136 — 칼럼 대표이미지 + 출처 표기 (사용자 요청). coverUrl 있으면 표시. */}
+          {c.coverUrl && (
+            <div style={{marginBottom:40}}>
+              <img src={c.coverUrl} alt={c.title || '칼럼 대표 이미지'}
+                style={{width:'100%', display:'block', objectFit:'cover'}}/>
+              {c.coverCredit && (
+                <div className="mono dim-2" style={{fontSize:10, textAlign:'right', marginTop:6, letterSpacing:'0.08em'}}>
+                  © {c.coverCredit}
+                </div>
+              )}
+            </div>
+          )}
+          {!c.coverUrl && !c.body?.html && (
             <div className="placeholder" style={{aspectRatio:'16/9', marginBottom:40, fontSize:11}}>
               COLUMN HERO IMAGE · 1600×900
             </div>

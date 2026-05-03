@@ -755,6 +755,20 @@ const handleAdminUserMetrics = async (req, env, userId) => {
     const ms = Date.now() - new Date(userRow.created_at).getTime();
     daysSinceSignup = Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
   }
+  // v00.136 — 투어/강연 실 참여 횟수 (attended=1 만 카운트, 노쇼/미정 제외).
+  let toursAttended = 0, lecturesAttended = 0;
+  try {
+    const r = await env.DB.prepare(
+      "SELECT COUNT(*) AS c FROM tour_reservations WHERE user_id = ? AND attended = 1"
+    ).bind(userId).first();
+    toursAttended = Number(r?.c || 0);
+  } catch {}
+  try {
+    const r = await env.DB.prepare(
+      "SELECT COUNT(*) AS c FROM lecture_registrations WHERE user_id = ? AND attended = 1"
+    ).bind(userId).first();
+    lecturesAttended = Number(r?.c || 0);
+  } catch {}
   return {
     userId,
     posts: Number(postsRow?.c || 0),
@@ -762,6 +776,8 @@ const handleAdminUserMetrics = async (req, env, userId) => {
     likesReceived: Number(likesPostsRow?.c || 0) + likesColumns,
     reportCount: Number(reportsRow?.c || 0),
     daysSinceSignup,
+    toursAttended,
+    lecturesAttended,
     computedAt: nowIso(),
   };
 };
@@ -799,7 +815,7 @@ const handleLectureGet = async (req, env, id) => {
   const l = await env.DB.prepare("SELECT * FROM lectures WHERE id = ?").bind(id).first();
   if (!l) throw new HttpError(404, "강연을 찾을 수 없습니다.");
   const { results: regs } = await env.DB.prepare(
-    "SELECT id, user_id, user_name, status, created_at FROM lecture_registrations WHERE lecture_id = ? ORDER BY created_at ASC"
+    "SELECT id, user_id, user_name, status, attended, created_at FROM lecture_registrations WHERE lecture_id = ? ORDER BY created_at ASC"
   ).bind(id).all();
   return { lecture: lectureRow(l), registrations: regs };
 };
@@ -896,7 +912,7 @@ const handleTourGet = async (req, env, id) => {
   const t = await env.DB.prepare("SELECT * FROM tours WHERE id = ?").bind(id).first();
   if (!t) throw new HttpError(404, "투어를 찾을 수 없습니다.");
   const { results: regs } = await env.DB.prepare(
-    "SELECT id, user_id, user_name, qty, status, created_at FROM tour_reservations WHERE tour_id = ? ORDER BY created_at ASC"
+    "SELECT id, user_id, user_name, qty, status, attended, created_at FROM tour_reservations WHERE tour_id = ? ORDER BY created_at ASC"
   ).bind(id).all();
   return { tour: tourRow(t), reservations: regs };
 };
@@ -1111,6 +1127,11 @@ const handleLectureRegistrationPatch = async (req, env, regId) => {
   const sets = []; const args = [];
   if (body.status) { sets.push("status = ?"); args.push(body.status); }
   if (body.status === 'confirmed') { sets.push("paid_at = ?"); args.push(nowIso()); }
+  // v00.136 — attended (NULL/1/0) 마킹. body.attended 가 명시되면 적용.
+  if ('attended' in body) {
+    const v = body.attended === null ? null : (body.attended ? 1 : 0);
+    sets.push("attended = ?"); args.push(v);
+  }
   if (!sets.length) return { ok: true };
   args.push(regId);
   await env.DB.prepare(`UPDATE lecture_registrations SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
@@ -1211,6 +1232,11 @@ const handleTourReservationPatch = async (req, env, regId) => {
   const sets = []; const args = [];
   if (body.status) { sets.push("status = ?"); args.push(body.status); }
   if (body.status === 'confirmed') { sets.push("paid_at = ?"); args.push(nowIso()); }
+  // v00.136 — attended (NULL/1/0) 마킹.
+  if ('attended' in body) {
+    const v = body.attended === null ? null : (body.attended ? 1 : 0);
+    sets.push("attended = ?"); args.push(v);
+  }
   if (!sets.length) return { ok: true };
   args.push(regId);
   await env.DB.prepare(`UPDATE tour_reservations SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
@@ -1708,16 +1734,18 @@ const handleColumnCreate = async (req, env) => {
   const id = randomId("col");
   const createdAt = resolveCreatedAt(user, body);
   // v00.127 — source_credit / source_url 칼럼 (schema-v6). NULLABLE — 누락 시 NULL.
+  // v00.136 — schema-v7 cover_credit 컬럼 추가.
   await env.DB.prepare(
-    `INSERT INTO user_columns (id, author_id, author_name, title, excerpt, body, category, cover_url, status, scheduled_at, read_minutes, created_at, source_credit, source_url)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO user_columns (id, author_id, author_name, title, excerpt, body, category, cover_url, status, scheduled_at, read_minutes, created_at, source_credit, source_url, cover_credit)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, user.id, user.name,
     body.title || '', body.excerpt || '', body.body || '',
     body.category || '', body.coverUrl || '',
     body.status || 'published', body.scheduledAt || null,
     Number(body.readMinutes || 3), createdAt,
-    body.sourceCredit || null, body.sourceUrl || null
+    body.sourceCredit || null, body.sourceUrl || null,
+    body.coverCredit || null
   ).run();
   return { id };
 };
@@ -1729,8 +1757,8 @@ const handleColumnPatch = async (req, env, id) => {
   if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403);
   const body = await req.json().catch(() => ({}));
   const sets = []; const args = [];
-  // v00.127 — sourceCredit / sourceUrl 컬럼 (schema-v6) 도 patch 가능.
-  for (const [k, col] of [["title","title"],["excerpt","excerpt"],["body","body"],["category","category"],["status","status"],["scheduledAt","scheduled_at"],["coverUrl","cover_url"],["readMinutes","read_minutes"],["sourceCredit","source_credit"],["sourceUrl","source_url"]]) {
+  // v00.127 — sourceCredit / sourceUrl 컬럼 (schema-v6) 도 patch 가능. v00.136 — coverCredit 추가.
+  for (const [k, col] of [["title","title"],["excerpt","excerpt"],["body","body"],["category","category"],["status","status"],["scheduledAt","scheduled_at"],["coverUrl","cover_url"],["readMinutes","read_minutes"],["sourceCredit","source_credit"],["sourceUrl","source_url"],["coverCredit","cover_credit"]]) {
     if (k in body) { sets.push(`${col} = ?`); args.push(body[k]); }
   }
   // v00.115 — admin 만 created_at 수정 가능 (표시 시간 조정).

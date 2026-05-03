@@ -5840,6 +5840,9 @@ const GradePromotionPanel = () => {
                 <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>가입경과(일)</th>
                 <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>받은 좋아요</th>
                 <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>활동일</th>
+                {/* v00.136 — 투어/강연 실 참여 (노쇼 제외). */}
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>투어 참석</th>
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>강연 참석</th>
                 <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>신고 한계</th>
               </tr>
             </thead>
@@ -5869,6 +5872,8 @@ const GradePromotionPanel = () => {
                     <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('daysSinceSignup')}</td>
                     <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('likesReceived')}</td>
                     <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('activeDays')}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('toursAttended')}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('lecturesAttended')}</td>
                     <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('maxReports', '< ')}</td>
                   </tr>
                 );
@@ -6023,6 +6028,9 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
   // v00.127 — 외부 기고처 + 원문 링크 (schema-v6).
   const [sourceCredit, setSourceCredit] = React.useState(initialColumn?.sourceCredit || "");
   const [sourceUrl, setSourceUrl] = React.useState(initialColumn?.sourceUrl || "");
+  // v00.136 — 대표이미지 URL + 출처. coverUrl 은 기존 c.coverUrl, coverCredit 은 신규.
+  const [coverUrl, setCoverUrl] = React.useState(initialColumn?.coverUrl || "");
+  const [coverCredit, setCoverCredit] = React.useState(initialColumn?.coverCredit || "");
   // v00.115 — 표시 시간(created_at) 오버라이드. publishAt(예약 발행)과 별도.
   // 'YYYY-MM-DDTHH:MM' datetime-local 포맷. 비우면 워커가 nowIso() 사용.
   const _toLocalInput = (iso) => {
@@ -6063,6 +6071,8 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     setCreatedAt("");
     setSourceCredit("");
     setSourceUrl("");
+    setCoverUrl("");
+    setCoverCredit("");
     setEditorKey((k) => k + 1);
   };
 
@@ -6077,6 +6087,8 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     setCreatedAt(_toLocalInput(col.createdAt || col.created_at || ""));
     setSourceCredit(col.sourceCredit || "");
     setSourceUrl(col.sourceUrl || "");
+    setCoverUrl(col.coverUrl || "");
+    setCoverCredit(col.coverCredit || "");
     setEditorKey((k) => k + 1);
     setMsg("");
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -6113,6 +6125,9 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     // v00.127 — 외부 기고처 + 원문 링크. 둘 다 옵셔널 (빈 문자열 허용).
     base.sourceCredit = sourceCredit.trim();
     base.sourceUrl = sourceUrl.trim();
+    // v00.136 — 대표이미지 URL + 출처 (옵셔널).
+    base.coverUrl = coverUrl.trim();
+    base.coverCredit = coverCredit.trim();
     return base;
   };
 
@@ -6260,6 +6275,28 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
               value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)}/>
             <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>
               둘 다 비어있으면 출처 표기 없이 게재. 기고처만 있으면 텍스트로, 링크까지 있으면 클릭 가능 링크로 표시.
+            </div>
+          </div>
+        </div>
+        {/* v00.136 — 대표이미지 URL + 출처 (옵셔널). 사용자 요청 '대표이미지에는 출처를 작성할 수 있게'. */}
+        <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)', display:'grid', gap:10}}>
+          <div>
+            <label className="field-label" htmlFor="col-cover-url" style={{display:'block', marginBottom:6}}>
+              대표 이미지 URL (선택)
+            </label>
+            <input id="col-cover-url" type="url" className="field-input"
+              placeholder="https://... 또는 R2 업로드 후 자동 URL"
+              value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)}/>
+          </div>
+          <div>
+            <label className="field-label" htmlFor="col-cover-credit" style={{display:'block', marginBottom:6}}>
+              대표 이미지 출처 (선택)
+            </label>
+            <input id="col-cover-credit" type="text" className="field-input"
+              placeholder="예: Unsplash / Sarah Kim, 본인 촬영"
+              value={coverCredit} onChange={(e) => setCoverCredit(e.target.value)}/>
+            <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>
+              칼럼 페이지의 대표 이미지 우하단에 © 표기로 노출. 비우면 표기 없이 게재.
             </div>
           </div>
         </div>
