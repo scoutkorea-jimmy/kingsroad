@@ -165,12 +165,29 @@ const BookPage = ({ go, cart, setCart, user }) => {
               <div style={{position:'absolute', top:16, left:16, right:-16, bottom:-16, border:'1px solid var(--line-2)', zIndex:-1}}/>
             </div>
 
-            {/* thumbnails */}
-            <div style={{display:'flex', gap:12, justifyContent:'center', marginTop:32}}>
-              {["앞표지","뒷표지","미리보기 1","미리보기 2"].map((t, i) => (
-                <div key={i} className="placeholder" style={{width:60, aspectRatio:'3/4', fontSize:8, padding:4}}>{i+1}</div>
-              ))}
-            </div>
+            {/* v00.147 — thumbnails 는 실제 표지 / 뒷표지 / PDF 미리보기 자산이 있을 때만 노출.
+                사용자 요청 '본문 미리보기 없으면 노출하지 말고 보여주지 마'. */}
+            {(book.coverDataUri || book.backCoverDataUri || book.pdfPreviewDataUri) && (
+              <div style={{display:'flex', gap:12, justifyContent:'center', marginTop:32}}>
+                {book.coverDataUri && (
+                  <div style={{width:60, aspectRatio:'3/4', border:'1px solid var(--line)', overflow:'hidden'}}>
+                    <img src={book.coverDataUri} alt="앞표지" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                  </div>
+                )}
+                {book.backCoverDataUri && (
+                  <div style={{width:60, aspectRatio:'3/4', border:'1px solid var(--line)', overflow:'hidden'}}>
+                    <img src={book.backCoverDataUri} alt="뒷표지" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                  </div>
+                )}
+                {book.pdfPreviewDataUri && (
+                  <a href={book.pdfPreviewDataUri} target="_blank" rel="noopener noreferrer"
+                    style={{width:60, aspectRatio:'3/4', border:'1px solid var(--gold-dim)', display:'grid', placeItems:'center', textDecoration:'none', color:'var(--gold)', fontSize:9, padding:4, textAlign:'center', lineHeight:1.3}}
+                    title="본문 미리보기 (PDF)">
+                    📄<br/>본문<br/>미리보기
+                  </a>
+                )}
+              </div>
+            )}
           </div>
 
           {/* RIGHT: purchase panel */}

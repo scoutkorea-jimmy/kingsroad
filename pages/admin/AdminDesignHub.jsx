@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.147.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🚨 책 카탈로그 한글 IME fix + 명시 저장 + 업로드 busy + 책 메뉴 추가 + 미리보기 hide",
+    details: [
+      "🚨 [한글 IME root cause + 자동저장 제거] 사용자 보고 '책 카탈로그 한글 입력 안됨'. 원인: input 마다 onChange → patch → window.BGNJ_BOOKS.update 동기 호출 → setState/server fetch 가 한글 composition 중간에 React 가 re-render 하면서 IME 상태 깨짐.",
+      "🩹 BooksAdminPanel local state(editing) 도입 + dirty 추적. 텍스트 필드는 local state 만 갱신, [💾 저장] 버튼 누를 때 일괄 PATCH. 책 전환 시 dirty 면 confirm. 사용자 요청 '저장 버튼 누르면 저장 반영'.",
+      "🆕 [업로드 busy state] 표지/PDF 업로드 — uploadingCover / uploadingPdf state + 미리보기 영역 'overlay 표시' + 버튼 disabled + '⏳ 업로드 중…' 라벨. 업로드 자체는 즉시 patch (파일 액션은 명시 클릭).",
+      "🩹 [BookPage thumbnails fix] 사용자 보고 '본문 미리보기 없으면 노출하지 마'. 이전엔 '미리보기 1/2' 빈 placeholder 항상 노출. 이제는 coverDataUri / backCoverDataUri / pdfPreviewDataUri 가 실제 있을 때만 thumbnail 노출. PDF 는 새 탭 열기 링크.",
+      "🆕 [Top nav '책' 메뉴] 사용자 요청 '상단에 뱅기노자 책 볼 수 있는 메뉴'. items 배열에 { key:'book', label:'책' } 추가. column 과 community 사이.",
+      "🩹 [Footer '왕의길' 제거] 사용자 요청 '하단에 왕의길은 삭제'. 책 진입은 상단 nav '책' 메뉴로 통일.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.147.000`.",
+    ],
+    context: "사용자 보고 4건 동시 처리. 한글 IME 는 자동저장 패턴의 근본 문제 — 모든 admin 패널이 동일 위험 (lecture/tour/category/grade 는 이미 명시 저장 또는 빠른 input). 다음 사이클에서 다른 패널도 같은 패턴 도입 검토.",
+  },
+  {
     version: "00.146.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",

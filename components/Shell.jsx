@@ -353,12 +353,14 @@ const Nav = ({ route, go, user, onLogout }) => {
   ];
   const playKeys = playChildren.map((p) => p.key);
 
+  // v00.147 — '책' 메뉴 추가. 사용자 요청 '상단에 뱅기노자 책을 볼 수 있는 메뉴'.
   const items = [
     { key: "home", label: navL.home || "홈" },
     { key: "play", label: navL.play || "놀자", isMega: 'play', defaultRoute: 'eat' },
     { key: "tour", label: navL.tour || "투어" },
     { key: "lectures", label: navL.lectures || "강연" },
     { key: "column", label: navL.column || "칼럼" },
+    { key: "book", label: navL.book || "책" },
     { key: "community", label: navL.community || "커뮤니티", isMega: 'community' },
   ];
   // 커뮤니티 메가메뉴: BGNJ_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
@@ -608,7 +610,7 @@ const Footer = ({ go }) => {
             <ul aria-labelledby="ft-content">
               <li><button type="button" onClick={() => go("column")}>뱅기노자 칼럼</button></li>
               <li><button type="button" onClick={() => go("tour")}>투어 프로그램</button></li>
-              <li><button type="button" onClick={() => go("book")}>『왕의길』</button></li>
+              {/* v00.147 — 사용자 요청 '하단에 왕의길은 삭제'. 책은 상단 nav 의 '책' 메뉴에서 진입. */}
               <li><button type="button" onClick={() => go("community")}>커뮤니티</button></li>
             </ul>
           </nav>

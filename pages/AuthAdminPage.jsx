@@ -3172,6 +3172,62 @@ const BooksAdminPanel = () => {
   const [msg, setMsg] = React.useState('');
   const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2000); };
   const refresh = () => setTick((v) => v + 1);
+  // v00.147 — 자동 저장 → 명시적 저장 버튼. 한글 IME 문제 + 사용자 요청 '저장 버튼 누르면 저장 반영'.
+  // 모든 텍스트 입력은 local state(editing) 에만 반영, [💾 저장] 클릭 시 일괄 PATCH.
+  const [editing, setEditing] = React.useState(null);    // 책 객체 카피
+  const [dirty, setDirty] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [uploadingCover, setUploadingCover] = React.useState(false);
+  const [uploadingPdf, setUploadingPdf] = React.useState(false);
+
+  // selected 가 바뀌면 editing 을 새 책으로 동기화 (단, dirty 미저장 변경 있으면 confirm).
+  React.useEffect(() => {
+    if (!selected) { setEditing(null); setDirty(false); return; }
+    if (dirty && editing && editing.id !== selected.id) {
+      const ok = window.confirm('저장하지 않은 변경 사항이 있습니다. 그래도 다른 책으로 이동할까요?');
+      if (!ok) {
+        // 사용자 취소 — 이전 selection 으로 되돌리기 (best-effort)
+        if (editing.id) setSelectedId(editing.id);
+        return;
+      }
+    }
+    setEditing({ ...selected });
+    setDirty(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, tick]);
+
+  const setField = (key, val) => {
+    setEditing((cur) => cur ? { ...cur, [key]: val } : cur);
+    setDirty(true);
+  };
+  // 즉시 저장 (cover/pdf 업로드 + primary toggle 등 즉시 반영해야 하는 액션) — local 도 같이 동기화.
+  const patchImmediate = (changes) => {
+    if (!selectedId) return;
+    window.BGNJ_BOOKS.update(selectedId, changes);
+    setEditing((cur) => cur ? { ...cur, ...changes } : cur);
+    refresh();
+  };
+  const commit = async () => {
+    if (!editing || !dirty || saving) return;
+    setSaving(true);
+    try {
+      // 변경된 필드만 추려 patch (전체 객체 보내도 OK 지만 noise 줄임).
+      const changes = {};
+      Object.keys(editing).forEach((k) => {
+        if (selected && JSON.stringify(editing[k]) !== JSON.stringify(selected[k])) {
+          changes[k] = editing[k];
+        }
+      });
+      if (Object.keys(changes).length === 0) { setDirty(false); flash('변경 없음'); return; }
+      window.BGNJ_BOOKS.update(selectedId, changes);
+      try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
+      setDirty(false);
+      flash(`✓ 저장 완료 (${Object.keys(changes).length}개 필드)`);
+      refresh();
+    } catch (err) {
+      flash('✗ 저장 실패: ' + (err?.message || '알 수 없는 오류'));
+    } finally { setSaving(false); }
+  };
 
   const fileToDataUri = (file) => new Promise((resolve, reject) => {
     if (!file) { resolve(''); return; }
@@ -3234,50 +3290,59 @@ const BooksAdminPanel = () => {
   };
 
   // v00.084 — R2 우선 업로드 (5MB 표지 / 20MB PDF) + dataURI 폴백 (1.5MB / 3MB).
-  // dataURI 폴백 시 D1 행 비대화 위험 — 사용자에게 R2 가능 시점으로 안내.
+  // v00.147 — busy state + 즉시 patch (파일 업로드는 명시 클릭 액션이라 즉시 영속화).
   const onUploadCover = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploadingCover(true);
+    flash('표지 업로드 중…');
     try {
-      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'book-covers', maxBytes: 5 * 1024 * 1024 });
-      patch({ coverDataUri: url });
-      flash('표지 업로드 완료 (R2)');
+      try {
+        const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'book-covers', maxBytes: 5 * 1024 * 1024 });
+        patchImmediate({ coverDataUri: url });
+        flash('✓ 표지 업로드 완료 (R2)');
+        return;
+      } catch (err) {
+        console.warn('[v00.084] R2 책 표지 업로드 실패 — dataURI 폴백:', err);
+      }
+      if (file.size > 1.5 * 1024 * 1024) {
+        alert(`표지 이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
+        return;
+      }
+      const dataUri = await fileToDataUri(file);
+      patchImmediate({ coverDataUri: dataUri });
+      flash('✓ 표지 업로드 완료 (dataURI 폴백)');
+    } finally {
+      setUploadingCover(false);
       e.target.value = '';
-      return;
-    } catch (err) {
-      console.warn('[v00.084] R2 책 표지 업로드 실패 — dataURI 폴백:', err);
     }
-    if (file.size > 1.5 * 1024 * 1024) {
-      alert(`표지 이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
-      e.target.value = ''; return;
-    }
-    const dataUri = await fileToDataUri(file);
-    patch({ coverDataUri: dataUri });
-    flash('표지 업로드 완료 (dataURI 폴백)');
-    e.target.value = '';
   };
 
   const onUploadPdf = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploadingPdf(true);
+    flash('PDF 업로드 중…');
     try {
-      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'book-pdfs', maxBytes: 20 * 1024 * 1024 });
-      patch({ pdfPreviewDataUri: url });
-      flash('PDF 미리보기 업로드 완료 (R2)');
+      try {
+        const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'book-pdfs', maxBytes: 20 * 1024 * 1024 });
+        patchImmediate({ pdfPreviewDataUri: url });
+        flash('✓ PDF 미리보기 업로드 완료 (R2)');
+        return;
+      } catch (err) {
+        console.warn('[v00.084] R2 책 PDF 업로드 실패 — dataURI 폴백:', err);
+      }
+      if (file.size > 3 * 1024 * 1024) {
+        alert(`PDF가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 3MB 폴백 한도 초과.`);
+        return;
+      }
+      const dataUri = await fileToDataUri(file);
+      patchImmediate({ pdfPreviewDataUri: dataUri });
+      flash('✓ PDF 미리보기 업로드 완료 (dataURI 폴백)');
+    } finally {
+      setUploadingPdf(false);
       e.target.value = '';
-      return;
-    } catch (err) {
-      console.warn('[v00.084] R2 책 PDF 업로드 실패 — dataURI 폴백:', err);
     }
-    // PDF dataURI 폴백 — localStorage / D1 한도 고려해 3MB로 캡.
-    if (file.size > 3 * 1024 * 1024) {
-      alert(`PDF가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 3MB 폴백 한도 초과.`);
-      e.target.value = ''; return;
-    }
-    const dataUri = await fileToDataUri(file);
-    patch({ pdfPreviewDataUri: dataUri });
-    flash('PDF 미리보기 업로드 완료 (dataURI 폴백)');
-    e.target.value = '';
   };
 
   const tabs = [
@@ -3383,43 +3448,43 @@ const BooksAdminPanel = () => {
                   style={{borderColor:'var(--danger)', color:'var(--danger)'}}>책 삭제</button>
               </div>
 
-              {editTab === 'meta' && (
+              {editTab === 'meta' && editing && (
                 <div className="card" style={{padding:20, display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:14}}>
                   <div className="field" style={{gridColumn:'1 / -1'}}>
                     <label className="field-label">제목</label>
-                    <input className="field-input" value={selected.title} onChange={(e) => patch({ title: e.target.value })}/>
+                    <input className="field-input" value={editing.title || ''} onChange={(e) => setField('title', e.target.value)}/>
                   </div>
                   <div className="field" style={{gridColumn:'1 / -1'}}>
                     <label className="field-label">부제</label>
-                    <input className="field-input" value={selected.subtitle} onChange={(e) => patch({ subtitle: e.target.value })}/>
+                    <input className="field-input" value={editing.subtitle || ''} onChange={(e) => setField('subtitle', e.target.value)}/>
                   </div>
                   <div className="field">
                     <label className="field-label">저자</label>
-                    <input className="field-input" value={selected.author} onChange={(e) => patch({ author: e.target.value })}/>
+                    <input className="field-input" value={editing.author || ''} onChange={(e) => setField('author', e.target.value)}/>
                   </div>
                   <div className="field">
                     <label className="field-label">출판사</label>
-                    <input className="field-input" value={selected.publisher} onChange={(e) => patch({ publisher: e.target.value })}/>
+                    <input className="field-input" value={editing.publisher || ''} onChange={(e) => setField('publisher', e.target.value)}/>
                   </div>
                   <div className="field">
                     <label className="field-label">페이지 수</label>
-                    <input type="number" className="field-input" value={selected.pages} onChange={(e) => patch({ pages: Number(e.target.value) })}/>
+                    <input type="number" className="field-input" value={editing.pages ?? 0} onChange={(e) => setField('pages', Number(e.target.value))}/>
                   </div>
                   <div className="field">
                     <label className="field-label">ISBN</label>
-                    <input className="field-input" value={selected.isbn} onChange={(e) => patch({ isbn: e.target.value })}/>
+                    <input className="field-input" value={editing.isbn || ''} onChange={(e) => setField('isbn', e.target.value)}/>
                   </div>
                   <div className="field">
                     <label className="field-label">국문판 가격(원)</label>
-                    <input type="number" className="field-input" value={selected.priceKR} onChange={(e) => patch({ priceKR: Number(e.target.value) })}/>
+                    <input type="number" className="field-input" value={editing.priceKR ?? 0} onChange={(e) => setField('priceKR', Number(e.target.value))}/>
                   </div>
                   <div className="field">
                     <label className="field-label">영문판 가격(원)</label>
-                    <input type="number" className="field-input" value={selected.priceEN} onChange={(e) => patch({ priceEN: Number(e.target.value) })}/>
+                    <input type="number" className="field-input" value={editing.priceEN ?? 0} onChange={(e) => setField('priceEN', Number(e.target.value))}/>
                   </div>
                   <div className="field">
                     <label className="field-label">상태</label>
-                    <select className="field-input" value={selected.status} onChange={(e) => patch({ status: e.target.value })}>
+                    <select className="field-input" value={editing.status || 'draft'} onChange={(e) => setField('status', e.target.value)}>
                       <option value="published">출간</option>
                       <option value="coming_soon">출간 예정</option>
                       <option value="draft">초안 (비공개)</option>
@@ -3427,83 +3492,100 @@ const BooksAdminPanel = () => {
                   </div>
                   <div className="field">
                     <label className="field-label">출간일</label>
-                    <input type="date" className="field-input" value={selected.publishedAt || ''} onChange={(e) => patch({ publishedAt: e.target.value })}/>
+                    <input type="date" className="field-input" value={editing.publishedAt || ''} onChange={(e) => setField('publishedAt', e.target.value)}/>
                   </div>
                   <div className="field" style={{gridColumn:'1 / -1', display:'flex', alignItems:'center', gap:10}}>
-                    <input id="book-primary" type="checkbox" checked={!!selected.primary} onChange={(e) => patch({ primary: e.target.checked })}/>
+                    <input id="book-primary" type="checkbox" checked={!!editing.primary} onChange={(e) => setField('primary', e.target.checked)}/>
                     <label htmlFor="book-primary" className="field-label" style={{margin:0}}>대표 책 (홈 CTA에 노출되는 메인 책)</label>
                   </div>
                   <div className="field" style={{gridColumn:'1 / -1'}}>
                     <label className="field-label">짧은 설명 (카탈로그 카드용)</label>
-                    <textarea className="field-input" rows={3} value={selected.desc} onChange={(e) => patch({ desc: e.target.value })}/>
+                    <textarea className="field-input" rows={3} value={editing.desc || ''} onChange={(e) => setField('desc', e.target.value)}/>
                   </div>
                 </div>
               )}
 
-              {editTab === 'media' && (
+              {editTab === 'media' && editing && (
                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:18}}>
                   <div className="card" style={{padding:18}}>
                     <h4 className="ko-serif" style={{fontSize:14, marginBottom:10}}>표지 (PNG/JPG)</h4>
                     <div style={{
-                      aspectRatio:'3/4', maxWidth:200, marginBottom:12,
+                      aspectRatio:'3/4', maxWidth:200, marginBottom:12, position:'relative',
                       border:'1px solid var(--line)', background:'var(--bg-2)',
                       display:'grid', placeItems:'center', overflow:'hidden',
                     }}>
-                      {selected.coverDataUri
-                        ? <img src={selected.coverDataUri} alt={`${selected.title} 표지`} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                      {editing.coverDataUri
+                        ? <img src={editing.coverDataUri} alt={`${editing.title} 표지`} style={{width:'100%', height:'100%', objectFit:'cover'}}/>
                         : <span className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>NO COVER</span>}
+                      {uploadingCover && (
+                        <div style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.55)', display:'grid', placeItems:'center', color:'#fff', fontSize:13, fontWeight:600}}>
+                          ⏳ 업로드 중…
+                        </div>
+                      )}
                     </div>
                     <div style={{display:'flex', gap:8}}>
-                      <label className="btn btn-small" style={{cursor:'pointer'}}>
-                        업로드
-                        <input type="file" accept="image/png,image/jpeg" onChange={onUploadCover} style={{display:'none'}}/>
+                      <label className={`btn btn-small ${uploadingCover ? 'disabled' : ''}`}
+                        style={{cursor: uploadingCover ? 'not-allowed' : 'pointer', opacity: uploadingCover ? 0.6 : 1}}>
+                        {uploadingCover ? '⏳ 업로드 중…' : '업로드'}
+                        <input type="file" accept="image/png,image/jpeg" onChange={onUploadCover} disabled={uploadingCover} style={{display:'none'}}/>
                       </label>
-                      {selected.coverDataUri && (
+                      {editing.coverDataUri && !uploadingCover && (
                         <button type="button" className="btn btn-small"
-                          onClick={() => { if (confirm('표지를 비울까요?')) patch({ coverDataUri: '' }); }}
+                          onClick={() => { if (confirm('표지를 비울까요?')) patchImmediate({ coverDataUri: '' }); }}
                           style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
                       )}
                     </div>
                     <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.5}}>
-                      권장 비율 3:4. 1.5MB 이하 PNG/JPG. 카탈로그·상세 페이지에 노출됩니다.
+                      권장 비율 3:4. 5MB 이하 PNG/JPG (R2). 업로드 즉시 반영 — 별도 [저장] 불필요.
                     </p>
                   </div>
                   <div className="card" style={{padding:18}}>
-                    <h4 className="ko-serif" style={{fontSize:14, marginBottom:10}}>본문 미리보기 (PDF)</h4>
-                    {selected.pdfPreviewDataUri ? (
-                      <div style={{height:240, border:'1px solid var(--line)', marginBottom:12}}>
-                        <iframe src={selected.pdfPreviewDataUri} title={`${selected.title} 미리보기`}
-                          style={{width:'100%', height:'100%', border:'none'}}/>
-                      </div>
-                    ) : (
-                      <div style={{height:240, border:'1px dashed var(--line-2)', marginBottom:12, display:'grid', placeItems:'center'}}>
-                        <span className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>NO PDF</span>
-                      </div>
-                    )}
+                    <h4 className="ko-serif" style={{fontSize:14, marginBottom:10}}>본문 미리보기 (PDF) — 선택</h4>
+                    <div style={{position:'relative'}}>
+                      {editing.pdfPreviewDataUri ? (
+                        <div style={{height:240, border:'1px solid var(--line)', marginBottom:12}}>
+                          <iframe src={editing.pdfPreviewDataUri} title={`${editing.title} 미리보기`}
+                            style={{width:'100%', height:'100%', border:'none'}}/>
+                        </div>
+                      ) : (
+                        <div style={{height:240, border:'1px dashed var(--line-2)', marginBottom:12, display:'grid', placeItems:'center', textAlign:'center', padding:'0 14px'}}>
+                          <div>
+                            <span className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em', display:'block', marginBottom:6}}>NO PDF</span>
+                            <span className="dim-2" style={{fontSize:11}}>업로드 안 하면 공개 페이지에서 미리보기 섹션 자체를 숨김.</span>
+                          </div>
+                        </div>
+                      )}
+                      {uploadingPdf && (
+                        <div style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.55)', display:'grid', placeItems:'center', color:'#fff', fontSize:13, fontWeight:600, marginBottom:12}}>
+                          ⏳ 업로드 중…
+                        </div>
+                      )}
+                    </div>
                     <div style={{display:'flex', gap:8}}>
-                      <label className="btn btn-small" style={{cursor:'pointer'}}>
-                        업로드
-                        <input type="file" accept="application/pdf" onChange={onUploadPdf} style={{display:'none'}}/>
+                      <label className={`btn btn-small ${uploadingPdf ? 'disabled' : ''}`}
+                        style={{cursor: uploadingPdf ? 'not-allowed' : 'pointer', opacity: uploadingPdf ? 0.6 : 1}}>
+                        {uploadingPdf ? '⏳ 업로드 중…' : '업로드'}
+                        <input type="file" accept="application/pdf" onChange={onUploadPdf} disabled={uploadingPdf} style={{display:'none'}}/>
                       </label>
-                      {selected.pdfPreviewDataUri && (
+                      {editing.pdfPreviewDataUri && !uploadingPdf && (
                         <button type="button" className="btn btn-small"
-                          onClick={() => { if (confirm('PDF 미리보기를 비울까요?')) patch({ pdfPreviewDataUri: '' }); }}
+                          onClick={() => { if (confirm('PDF 미리보기를 비울까요?')) patchImmediate({ pdfPreviewDataUri: '' }); }}
                           style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
                       )}
                     </div>
                     <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.5}}>
-                      미리보기 분량(2~3MB)만 권장. 사용자는 도서 상세 페이지의 "PDF 미리보기" 버튼으로 열람합니다.
+                      비워두면 공개 페이지에서 "미리보기" 섹션 자체가 숨겨집니다. (R2 20MB / 폴백 3MB)
                     </p>
                   </div>
                 </div>
               )}
 
-              {editTab === 'intro' && (
+              {editTab === 'intro' && editing && (
                 <div className="card" style={{padding:20}}>
                   <label className="field-label">소개 (HTML 허용)</label>
                   <textarea className="field-input" rows={12}
-                    value={selected.intro || ''}
-                    onChange={(e) => patch({ intro: e.target.value })}
+                    value={editing.intro || ''}
+                    onChange={(e) => setField('intro', e.target.value)}
                     style={{fontFamily:'var(--font-mono)', fontSize:13, lineHeight:1.7}}/>
                   <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.5}}>
                     문단은 &lt;p&gt;…&lt;/p&gt;로 구분. 강조는 &lt;strong&gt;…&lt;/strong&gt;.
@@ -3511,22 +3593,22 @@ const BooksAdminPanel = () => {
                 </div>
               )}
 
-              {editTab === 'toc' && (
+              {editTab === 'toc' && editing && (
                 <div className="card" style={{padding:20}}>
                   <label className="field-label">목차 (한 줄에 한 항목)</label>
                   <textarea className="field-input" rows={12}
-                    value={(selected.chapters || []).join('\n')}
-                    onChange={(e) => patch({ chapters: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })}
+                    value={(editing.chapters || []).join('\n')}
+                    onChange={(e) => setField('chapters', e.target.value.split('\n').map((s) => s.trim()).filter(Boolean))}
                     style={{fontFamily:'var(--font-serif)', fontSize:14, lineHeight:1.8}}/>
                 </div>
               )}
 
-              {editTab === 'author' && (
+              {editTab === 'author' && editing && (
                 <div className="card" style={{padding:20}}>
                   <label className="field-label">저자 소개</label>
                   <textarea className="field-input" rows={8}
-                    value={selected.authorBio || ''}
-                    onChange={(e) => patch({ authorBio: e.target.value })}
+                    value={editing.authorBio || ''}
+                    onChange={(e) => setField('authorBio', e.target.value)}
                     style={{fontSize:14, lineHeight:1.8}}/>
                 </div>
               )}
@@ -3562,6 +3644,24 @@ const BooksAdminPanel = () => {
                     리뷰는 사용자가 도서 상세 페이지에서 직접 등록합니다. 여기서는 부적절한 리뷰만 삭제할 수 있습니다.
                   </p>
                 </div>
+              )}
+              {/* v00.147 — 명시 저장 버튼. 텍스트 필드는 dirty 시점에만 commit. media 업로드는 즉시 patch. */}
+              {editing && editTab !== 'reviews' && (
+                <AdminSaveBar>
+                  <button type="button" className="btn btn-gold" onClick={commit} disabled={saving || !dirty}>
+                    {saving ? '저장 중…' : (dirty ? '💾 저장' : '저장됨 ✓')}
+                  </button>
+                  {dirty && (
+                    <button type="button" className="btn btn-small"
+                      onClick={() => { if (confirm('변경 사항을 버리고 마지막 저장 시점으로 되돌릴까요?')) { setEditing({ ...selected }); setDirty(false); } }}>
+                      변경 취소
+                    </button>
+                  )}
+                  <span className="admin-savebar__spacer"/>
+                  <span className="dim-2 mono" style={{fontSize:11}}>
+                    {dirty ? '● 미저장 변경 있음' : '○ 모든 변경 저장됨'}
+                  </span>
+                </AdminSaveBar>
               )}
             </>
           )}
