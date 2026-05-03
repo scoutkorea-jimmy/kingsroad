@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.141.000",
+  version: "00.142.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -2925,6 +2925,9 @@ window.BGNJ_LEGAL = {
     const next = { title: payload.title || slug, body: payload.body || '' };
     await window.BGNJ_API.legal.put(slug, next);
     this._cache[slug] = { ...next, updatedAt: new Date().toISOString() };
+    // v00.142 — 다른 탭/창의 LegalPage 자동 갱신.
+    try { window.BGNJ_BROADCAST?.publish?.('legal'); } catch {}
+    try { window.dispatchEvent(new CustomEvent('bgnj-legal-refresh', { detail: { slug } })); } catch {}
     return this._cache[slug];
   },
   listSlugs() { return ['privacy', 'terms']; },

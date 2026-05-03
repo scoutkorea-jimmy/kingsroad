@@ -1,5 +1,21 @@
 // 약관 / 개인정보 처리방침 / FAQ 공개 페이지
 const LegalPage = ({ go, slug }) => {
+  // v00.142 — mount 시 + slug 변경 시 + broadcast 시 항상 서버에서 fresh fetch.
+  // 사용자 보고 '개인정보처리방침 업데이트했는데 홈페이지에서 안 보여' — 이전엔 boot.jsx 의 1회 prefetch 만 의존,
+  // 그 이후 admin 에서 저장해도 다른 탭/창의 _cache 는 stale.
+  const [tick, setTick] = React.useState(0);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await window.BGNJ_LEGAL?.refresh?.(slug);
+      const other = slug === 'privacy' ? 'terms' : 'privacy';
+      await window.BGNJ_LEGAL?.refresh?.(other);
+      if (!cancelled) setTick((t) => t + 1);
+    })();
+    const onRefresh = () => setTick((t) => t + 1);
+    window.addEventListener('bgnj-legal-refresh', onRefresh);
+    return () => { cancelled = true; window.removeEventListener('bgnj-legal-refresh', onRefresh); };
+  }, [slug]);
   const doc = window.BGNJ_LEGAL.get(slug) || { title: '', body: '' };
   const otherSlug = slug === 'privacy' ? 'terms' : 'privacy';
   const otherDoc = window.BGNJ_LEGAL.get(otherSlug);

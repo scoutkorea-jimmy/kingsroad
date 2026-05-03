@@ -4,6 +4,24 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.142.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🎨 Admin UI primitives 통일 + 개인정보처리방침 미반영 fix",
+    details: [
+      "🎨 [Admin UI primitives] styles.css 에 .admin-panel-header / .admin-table / .status-badge / .admin-form-card / .admin-empty / .admin-toolbar / .admin-filter-chip / .admin-savebar 추가. React primitives (AdminPanelHeader, StatusBadge, AdminEmpty, AdminFilterChips, AdminSaveBar) AuthAdminPage.jsx 상단 정의.",
+      "🎨 [3개 패널 통일] AdminGradePanel + AdminCategoryPanel + AuditLogPanel 을 새 primitives 로 리팩터. 헤더 (eyebrow + title + description + actions), form-card, table-wrap, status-badge, savebar 일관 적용. 인라인 style 들 중복 제거.",
+      "🎨 [GradePanel SaveBar] 통합 저장 + 재산정 + 복원 버튼이 sticky 가 아닌 일관 SaveBar 로 정렬. 자동 승급 기준은 grade 행 바로 아래 dashed 선과 함께 inline 노출.",
+      "🚨 [개인정보처리방침 fix] 사용자 보고 '업데이트했는데 홈페이지에서 안 보여'. 원인: LegalPage 가 boot 시점 _cache 만 의존 → admin 에서 저장해도 다른 탭/창의 페이지는 stale.",
+      "🩹 LegalPage useEffect — mount 시 + slug 변경 시 + bgnj-legal-refresh 이벤트 시 항상 BGNJ_LEGAL.refresh(slug) 호출 + 강제 재렌더.",
+      "🩹 BGNJ_LEGAL.save — 저장 후 BGNJ_BROADCAST.publish('legal') + 같은 탭 dispatchEvent('bgnj-legal-refresh').",
+      "🩹 boot.jsx broadcast subscribe — 'legal' domain 시 두 slug 모두 refresh + 이벤트 dispatch.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.142.000`.",
+    ],
+    context: "v00.141 사용자 요청 '관리자페이지의 모든 GUI 통일성' 1차 패스 (3개 핵심 패널). 잔여 패널 (Lecture/Tour/Books/Member/SEO/Legal/FAQ/SiteContent) 은 다음 사이클로 분리. 동시에 사용자 보고 '개인정보처리방침 미반영' 즉시 fix — broadcast + cross-tab refresh 패턴이 사이클 v00.129 컬럼 fix 와 동일.",
+  },
+  {
     version: "00.141.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",

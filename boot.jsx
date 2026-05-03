@@ -300,6 +300,12 @@ const App = () => {
         else if (d === 'posts') await window.BGNJ_COMMUNITY?.refreshPosts?.();
         else if (d === 'books') await window.BGNJ_BOOKS?.refresh?.();
         else if (d === 'site-content') await window.BGNJ_SITE_CONTENT?.refresh?.();
+        // v00.142 — 약관/개인정보 변경 broadcast → 두 slug 모두 refresh + LegalPage 재렌더 이벤트.
+        else if (d === 'legal') {
+          await window.BGNJ_LEGAL?.refresh?.('terms');
+          await window.BGNJ_LEGAL?.refresh?.('privacy');
+          try { window.dispatchEvent(new CustomEvent('bgnj-legal-refresh')); } catch {}
+        }
       } catch {}
     });
     return unsub;

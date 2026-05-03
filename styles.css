@@ -1529,3 +1529,201 @@ main time, main .section-eyebrow {
 .app.reading-myungjo .read-toggle button[style*="ChosunIlboMyungjo"] {
   font-family: 'ChosunIlboMyungjo', serif !important;
 }
+
+/* =====================================================================
+   Admin UI primitives — v00.142
+   사용자 요청 '관리자페이지의 모든 GUI를 통일성 있게'.
+   ===================================================================== */
+
+/* 패널 헤더 — eyebrow + title + description + actions row */
+.admin-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-panel-header__main { flex: 1; min-width: 280px; }
+.admin-panel-header__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.admin-panel-header__title {
+  font-family: var(--font-serif, 'ChosunIlboMyungjo', serif);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.admin-panel-header__desc {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 720px;
+}
+.admin-panel-header__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 통일 테이블 — 헤더 / 행 / 셀 일관 */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-table thead {
+  background: var(--bg-2);
+}
+.admin-table thead th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 12px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.admin-table thead th.right { text-align: right; }
+.admin-table thead th.center { text-align: center; }
+.admin-table tbody td {
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  color: var(--ink);
+}
+.admin-table tbody tr:last-child td { border-bottom: none; }
+.admin-table tbody tr:hover { background: rgba(245, 213, 72, 0.04); }
+.admin-table .right { text-align: right; }
+.admin-table .center { text-align: center; }
+.admin-table-wrap {
+  border: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+/* 상태 뱃지 — 통일 변형 */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+.status-badge--gold { color: var(--gold); }
+.status-badge--neutral { color: var(--ink-2); }
+.status-badge--ink { color: var(--ink-3); }
+.status-badge--danger { color: var(--danger); }
+.status-badge--success { color: var(--secondary, #1F7A8C); }
+
+/* 추가 폼 카드 */
+.admin-form-card {
+  padding: 18px;
+  margin-bottom: 20px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+}
+.admin-form-card__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+/* 빈 상태 */
+.admin-empty {
+  padding: 40px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-3);
+  border: 1px dashed var(--line-2);
+  background: var(--bg-2);
+}
+
+/* 툴바 — 필터 + 검색 + 액션 */
+.admin-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.admin-toolbar__filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.admin-filter-chip {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.admin-filter-chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.admin-filter-chip--active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(245, 213, 72, 0.10);
+  font-weight: 700;
+}
+
+/* 저장 바 — sticky 하단 액션 */
+.admin-savebar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  margin-top: 24px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--gold-dim);
+}
+.admin-savebar__msg {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+.admin-savebar__msg--success { color: var(--secondary, #1F7A8C); }
+.admin-savebar__msg--danger { color: var(--danger); }
+.admin-savebar__spacer { margin-left: auto; }
+
+/* 섹션 — title + body */
+.admin-section {
+  margin-bottom: 24px;
+}
+.admin-section__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+/* 다크 모드 보호 */
+:root[data-theme="dark"] .admin-table thead { background: var(--bg-2); }
+:root[data-theme="dark"] .admin-form-card { background: var(--bg-2); border-color: var(--line); }
+:root[data-theme="dark"] .admin-empty { background: var(--bg-2); border-color: var(--line); }
+:root[data-theme="dark"] .admin-savebar { background: var(--bg-2); border-color: var(--line); border-top-color: var(--gold-dim); }
+:root[data-theme="dark"] .admin-filter-chip { background: var(--bg-2); border-color: var(--line); }
+

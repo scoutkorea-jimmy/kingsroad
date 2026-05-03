@@ -650,6 +650,55 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
   );
 };
 
+// === Admin UI primitives (v00.142) ================================
+// 사용자 요청 '관리자페이지의 모든 GUI를 통일성 있게'.
+// 모든 panel 에서 재사용. 기존 인라인 style 들을 점진 교체.
+
+const AdminPanelHeader = ({ eyebrow, title, description, actions }) => (
+  <header className="admin-panel-header">
+    <div className="admin-panel-header__main">
+      {eyebrow && <div className="admin-panel-header__eyebrow">{eyebrow}</div>}
+      {title && <h2 className="admin-panel-header__title">{title}</h2>}
+      {description && <p className="admin-panel-header__desc">{description}</p>}
+    </div>
+    {actions && <div className="admin-panel-header__actions">{actions}</div>}
+  </header>
+);
+
+// 상태 뱃지 — variant: gold | neutral | ink | danger | success
+const StatusBadge = ({ variant = 'neutral', children, title }) => (
+  <span className={`status-badge status-badge--${variant}`} title={title}>{children}</span>
+);
+
+// 빈 상태
+const AdminEmpty = ({ children }) => (
+  <div className="admin-empty">{children}</div>
+);
+
+// 필터 chips — items: [{ key, label, count? }]
+const AdminFilterChips = ({ items, value, onChange, ariaLabel = '필터' }) => (
+  <div className="admin-toolbar__filters" role="tablist" aria-label={ariaLabel}>
+    {items.map((it) => (
+      <button key={it.key} type="button" role="tab"
+        aria-selected={value === it.key}
+        className={`admin-filter-chip ${value === it.key ? 'admin-filter-chip--active' : ''}`}
+        onClick={() => onChange?.(it.key)}>
+        {it.label}{typeof it.count === 'number' ? ` (${it.count})` : ''}
+      </button>
+    ))}
+  </div>
+);
+
+// 저장 바
+const AdminSaveBar = ({ children, message, messageVariant = 'success' }) => (
+  <div className="admin-savebar">
+    {children}
+    {message && (
+      <span className={`admin-savebar__msg admin-savebar__msg--${messageVariant}`}>{message}</span>
+    )}
+  </div>
+);
+
 // === Lecture Admin Panel ==========================================
 // v00.131 — 강연 일괄 등록 컴포넌트. CSV / pipe-separated 파싱.
 // 사용자 요청 '관리자페이지 강연 탭에서 일괄 등록'.
@@ -3557,45 +3606,52 @@ const AuditLogPanel = () => {
 
   return (
     <div>
-      <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:14}}>
-        운영자가 회원·강연·투어·책 주문에 대해 행한 변경 내역이 시각순으로 기록됩니다.
-        최근 500건까지 보관되며, 정지·삭제·입금 확인·발송·등급 변경 같은 핵심 액션이 자동으로 남습니다.
-      </p>
-      <div style={{display:'flex', gap:10, marginBottom:14, alignItems:'center', flexWrap:'wrap'}}>
+      <AdminPanelHeader
+        eyebrow="AUDIT · 감사 로그"
+        title="운영자 액션 이력"
+        description="운영자가 회원·강연·투어·책 주문에 대해 행한 변경이 시각순으로 기록됩니다. 최근 500건까지 보관, 정지·삭제·입금 확인·발송·등급 변경 등 핵심 액션 자동 기록."
+        actions={(
+          <>
+            <button type="button" className="btn btn-small" onClick={exportCsv}>CSV 다운로드</button>
+            <button type="button" className="btn btn-small" onClick={clear}
+              style={{borderColor:'var(--danger)', color:'var(--danger)'}}>전체 삭제</button>
+          </>
+        )}/>
+
+      <div className="admin-toolbar">
         <input className="field-input" placeholder="액션 / 대상 / 작업자 검색..." style={{flex:1, minWidth:240}}
           value={search} onChange={(e) => setSearch(e.target.value)}/>
-        <button type="button" className="btn btn-small" onClick={exportCsv}>CSV 다운로드</button>
-        <button type="button" className="btn btn-small" onClick={clear}
-          style={{borderColor:'var(--danger)', color:'var(--danger)'}}>전체 삭제</button>
       </div>
 
       {list.length === 0 ? (
-        <div className="card dim" style={{padding:32, textAlign:'center'}}>표시할 감사 로그가 없습니다.</div>
+        <AdminEmpty>표시할 감사 로그가 없습니다.</AdminEmpty>
       ) : (
-        <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
-          <thead>
-            <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
-              <th scope="col" style={{padding:10, textAlign:'left', width:160}}>시각</th>
-              <th scope="col" style={{padding:10, textAlign:'left', width:200}}>액션</th>
-              <th scope="col" style={{padding:10, textAlign:'left'}}>대상</th>
-              <th scope="col" style={{padding:10, textAlign:'left'}}>작업자</th>
-              <th scope="col" style={{padding:10, textAlign:'left'}}>세부</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((e) => (
-              <tr key={e.id} style={{borderBottom:'1px solid var(--line)'}}>
-                <td className="mono dim-2" style={{padding:10, fontSize:11}}>{window.BGNJ_FMT.kstDateTime(e.ts)}</td>
-                <td className="mono gold" style={{padding:10, fontSize:11}}>{e.action}</td>
-                <td className="mono" style={{padding:10, fontSize:11}}>{e.target}</td>
-                <td style={{padding:10, fontSize:12}}>{e.by}</td>
-                <td style={{padding:10, fontSize:11, lineHeight:1.6}}>
-                  <AuditDetailsCell details={e.details}/>
-                </td>
+        <div className="admin-table-wrap">
+          <table className="admin-table" style={{fontSize:12}}>
+            <thead>
+              <tr>
+                <th scope="col" style={{width:170}}>시각</th>
+                <th scope="col" style={{width:220}}>액션</th>
+                <th scope="col">대상</th>
+                <th scope="col">작업자</th>
+                <th scope="col">세부</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {list.map((e) => (
+                <tr key={e.id}>
+                  <td className="mono dim-2" style={{fontSize:11}}>{window.BGNJ_FMT.kstDateTime(e.ts)}</td>
+                  <td className="mono gold" style={{fontSize:11}}>{e.action}</td>
+                  <td className="mono" style={{fontSize:11}}>{e.target}</td>
+                  <td style={{fontSize:12}}>{e.by}</td>
+                  <td style={{fontSize:11, lineHeight:1.6}}>
+                    <AuditDetailsCell details={e.details}/>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       <div className="dim-2 mono" style={{fontSize:11, marginTop:12, textAlign:'right'}}>
         표시 {list.length}건 (전체 최근 500건 중)
@@ -5398,14 +5454,14 @@ const AdminCategoryPanel = () => {
 
   return (
     <>
-      <p className="dim" style={{fontSize:13, marginBottom:16, lineHeight:1.8}}>
-        게시판을 추가/삭제하고, 각 게시판의 <strong className="gold">읽기 최소 등급</strong> · <strong className="gold">쓰기 최소 등급</strong>을 설정합니다.
-        순서를 바꾸면 사이트 내비 메가메뉴와 커뮤니티 탭에 그대로 반영됩니다.
-      </p>
+      <AdminPanelHeader
+        eyebrow="BOARDS · 카테고리"
+        title="게시판 카테고리 + 권한"
+        description="게시판을 추가/삭제하고 각 게시판의 읽기·쓰기 최소 등급 + 4종 권한(글읽/글쓰/댓읽/댓쓰)을 체크박스로 설정합니다. 순서를 바꾸면 사이트 내비와 커뮤니티 탭에 즉시 반영됩니다."/>
 
-      {/* 게시판 추가 — 카드형 폼 */}
-      <article className="card" style={{padding:18, marginBottom:20}}>
-        <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>NEW BOARD</div>
+      {/* 게시판 추가 — 통일 form 카드 */}
+      <article className="admin-form-card">
+        <div className="admin-form-card__eyebrow">＋ 새 게시판 추가</div>
         <form onSubmit={add} style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))', gap:10, alignItems:'end'}}>
           <div className="field" style={{margin:0}}>
             <label className="field-label" htmlFor="cat-label">이름 <span className="gold" aria-hidden="true">*</span></label>
@@ -5778,11 +5834,13 @@ const AdminGradePanel = () => {
 
   return (
     <>
-      <p className="dim" style={{fontSize:13, marginBottom:16, lineHeight:1.8}}>
-        회원 등급의 이름·단계(level)·색상을 관리합니다. <strong className="gold">level</strong>이 높을수록 권한이 큽니다.
-        카테고리의 <code>minLevel / postMinLevel</code>과 비교해 접근이 결정됩니다.
-      </p>
-      <div className="card" style={{marginBottom:20}}>
+      <AdminPanelHeader
+        eyebrow="MEMBERSHIP · 회원 등급"
+        title="회원 등급 + 자동 승급/강등"
+        description="회원 등급의 이름·단계·색상을 관리하고, 각 등급의 자동 승급 기준을 함께 편집합니다. 변경 사항은 [💾 저장] 버튼을 누를 때만 적용됩니다."/>
+
+      <article className="admin-form-card">
+        <div className="admin-form-card__eyebrow">＋ 새 등급 추가</div>
         <form onSubmit={add} style={{display:'grid', gridTemplateColumns:'1fr 1fr 100px 100px 1fr auto', gap:10, alignItems:'end'}}>
           <div className="field" style={{margin:0}}>
             <label className="field-label" htmlFor="grade-id">ID</label>
@@ -5812,18 +5870,19 @@ const AdminGradePanel = () => {
           <button type="submit" className="btn btn-gold btn-small">추가</button>
         </form>
         {error && <div role="alert" className="mono" style={{color:'var(--danger)', fontSize:11, marginTop:10}}>{error}</div>}
-      </div>
+      </article>
 
-      <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+      <div className="admin-table-wrap">
+      <table className="admin-table">
         <thead>
-          <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>배지</th>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>이름</th>
-            <th scope="col" style={{padding:12, textAlign:'right'}}>단계</th>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>색상</th>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>설명</th>
-            <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
+          <tr>
+            <th scope="col">배지</th>
+            <th scope="col">ID</th>
+            <th scope="col">이름</th>
+            <th scope="col" className="right">단계</th>
+            <th scope="col">색상</th>
+            <th scope="col">설명</th>
+            <th scope="col" className="right">액션</th>
           </tr>
         </thead>
         <tbody>
@@ -5842,47 +5901,46 @@ const AdminGradePanel = () => {
             ];
             return (
               <React.Fragment key={g.id}>
-                <tr style={{borderBottom: rule ? 'none' : '1px solid var(--line)'}}>
-                  <td style={{padding:10}}>
+                <tr style={{borderBottom: rule ? 'none' : undefined}}>
+                  <td>
                     <span className="grade-badge" style={{color: g.color}}>{g.label}</span>
                   </td>
-                  <td className="mono gold" style={{padding:10}}>{g.id}</td>
-                  <td style={{padding:10}}>
-                    <input className="field-input" style={{padding:'4px 8px'}} value={g.label}
+                  <td className="mono gold">{g.id}</td>
+                  <td>
+                    <input className="field-input" style={{padding:'6px 10px'}} value={g.label}
                       onChange={e => update(i, 'label', e.target.value)}/>
                   </td>
-                  <td style={{padding:10, textAlign:'right'}}>
-                    <input type="number" className="field-input" style={{padding:'4px 8px', width:80, textAlign:'right'}}
+                  <td className="right">
+                    <input type="number" className="field-input" style={{padding:'6px 10px', width:80, textAlign:'right'}}
                       value={g.level} onChange={e => update(i, 'level', e.target.value)}/>
                   </td>
-                  <td style={{padding:10}}>
-                    <input type="color" className="field-input" style={{padding:0, width:60, height:30}}
+                  <td>
+                    <input type="color" className="field-input" style={{padding:0, width:60, height:32}}
                       value={g.color} onChange={e => update(i, 'color', e.target.value)}/>
                   </td>
-                  <td style={{padding:10, fontSize:11}} className="dim">
-                    <input className="field-input" style={{padding:'4px 8px'}} value={g.desc}
+                  <td>
+                    <input className="field-input" style={{padding:'6px 10px'}} value={g.desc || ''}
                       onChange={e => update(i, 'desc', e.target.value)}/>
                   </td>
-                  <td style={{padding:10, textAlign:'right'}}>
+                  <td className="right">
                     <button type="button" className="btn btn-small" onClick={() => remove(i)}
                       style={{borderColor:'var(--danger)', color:'var(--danger)'}} disabled={g.id === "admin" || g.id === "guest"}>삭제</button>
                   </td>
                 </tr>
-                {/* v00.141 — 자동 승급 기준 inline 편집 (구 GradePromotionPanel 통합). */}
                 {rule && (
-                  <tr style={{borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
-                    <td colSpan={7} style={{padding:'8px 12px 14px'}}>
+                  <tr style={{background:'var(--bg-2)'}}>
+                    <td colSpan={7} style={{padding:'10px 14px 16px', borderTop:'1px dashed var(--line)'}}>
                       <div className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--ink-3)', marginBottom:8}}>
                         ↳ 자동 승급 기준 — 모두 동시 충족 시 <strong style={{color: g.color}}>{g.label}</strong> 자동 부여
                       </div>
                       <div style={{display:'flex', flexWrap:'wrap', gap:8, fontFamily:'var(--font-mono)', fontSize:11}}>
                         {RULE_KEYS.map(({k, l, tone}) => (
-                          <label key={k} style={{display:'inline-flex', alignItems:'center', gap:4, padding:'4px 8px', border:'1px solid var(--line-2)', background:'var(--bg)'}}>
-                            <span className="dim-2" style={{fontSize:10}}>{l}</span>
+                          <label key={k} style={{display:'inline-flex', alignItems:'center', gap:6, padding:'4px 10px', border:'1px solid var(--line-2)', background:'var(--bg)'}}>
+                            <span className="dim-2" style={{fontSize:10, letterSpacing:'0.08em'}}>{l}</span>
                             <input type="number" min={0}
                               value={rule[k] ?? 0}
                               onChange={(e) => setRuleField(g.id, k, e.target.value)}
-                              style={{width:54, padding:'2px 4px', textAlign:'right', border:'1px solid var(--line-2)', background:'var(--bg)', color: tone === 'danger' ? 'var(--danger)' : 'var(--ink)', fontFamily:'var(--font-mono)', fontSize:11}}/>
+                              style={{width:60, padding:'2px 6px', textAlign:'right', border:'1px solid var(--line-2)', background:'var(--bg)', color: tone === 'danger' ? 'var(--danger)' : 'var(--ink)', fontFamily:'var(--font-mono)', fontSize:11}}/>
                           </label>
                         ))}
                       </div>
@@ -5894,9 +5952,11 @@ const AdminGradePanel = () => {
           })}
         </tbody>
       </table>
+      </div>
 
-      {/* v00.141 — 통합 저장 + 보조 액션. dirty 가 있어야 저장 활성. */}
-      <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', marginTop:24, paddingTop:16, borderTop:'2px solid var(--gold-dim)'}}>
+      <AdminSaveBar
+        message={saveMsg || null}
+        messageVariant={saveMsg.startsWith('✗') ? 'danger' : 'success'}>
         <button type="button" className="btn btn-gold" onClick={commitAll} disabled={saving || !dirty}>
           {saving ? '저장 중…' : (dirty ? '💾 저장 (등급 + 자동 승급 기준)' : '저장됨 ✓')}
         </button>
@@ -5908,16 +5968,14 @@ const AdminGradePanel = () => {
             ✓ 승급 {reevalResult.promoted} · 강등 {reevalResult.demoted}
           </span>
         )}
-        <button type="button" className="btn btn-small" onClick={resetAll} style={{marginLeft:'auto', borderColor:'var(--line-2)'}}>
+        <span className="admin-savebar__spacer"/>
+        <button type="button" className="btn btn-small" onClick={resetAll} style={{borderColor:'var(--line-2)'}}>
           기본값 복원
         </button>
-      </div>
-      {saveMsg && (
-        <p role="status" className="mono" style={{fontSize:12, fontWeight:600, marginTop:10, color: saveMsg.startsWith('✗') ? 'var(--danger)' : 'var(--secondary)'}}>{saveMsg}</p>
-      )}
+      </AdminSaveBar>
       <p style={{fontSize:11, color:'var(--ink-3)', marginTop:10, lineHeight:1.6}}>
         ⓘ 자동 승급 기준은 <code>모든 조건 동시 충족</code> 시에만 자격 부여. 신고 한계 초과 시 자격 무관 강제 강등(member).
-        승급/강등 시 본인에게 알림 자동 발송. 변경 사항은 <strong>저장 버튼</strong> 클릭 시점에만 영속화됩니다.
+        승급/강등 시 본인에게 알림 자동 발송. 변경은 <strong>저장 버튼</strong> 클릭 시점에만 영속화됩니다.
       </p>
     </>
   );
