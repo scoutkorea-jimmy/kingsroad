@@ -365,9 +365,18 @@ const ColumnPage = ({ go, user }) => {
                   onClick={() => setSelectedId(c.id)}
                   className="card"
                   style={{padding:0, cursor:'pointer', overflow:'hidden'}}>
-                  <div className="placeholder" style={{aspectRatio:'4/3', borderLeft:'none', borderRight:'none', borderTop:'none', fontSize:9}}>
-                    0{i+1}
-                  </div>
+                  {/* v00.140 — coverUrl 있으면 표시, 없으면 placeholder. 사용자 보고 '대표이미지 설정했는데 반영 안 됨'. */}
+                  {c.coverUrl ? (
+                    <div style={{aspectRatio:'4/3', borderBottom:'1px solid var(--line)', overflow:'hidden', background:'var(--bg-2)'}}>
+                      <img src={c.coverUrl} alt={c.title || '칼럼 대표 이미지'}
+                        loading="lazy"
+                        style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                    </div>
+                  ) : (
+                    <div className="placeholder" style={{aspectRatio:'4/3', borderLeft:'none', borderRight:'none', borderTop:'none', fontSize:9}}>
+                      0{i+1}
+                    </div>
+                  )}
                   <div style={{padding:28}}>
                     <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:12, flexWrap:'wrap'}}>
                       <span className="pill">{c.category}</span>

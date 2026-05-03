@@ -708,9 +708,10 @@ const HomePage = ({ go }) => {
               <div className="card"
                 style={{padding:0, overflow:'hidden', cursor:'pointer'}}
                 {...clickable(() => go('column'), `칼럼: ${featuredColumn.title}`)}>
-                {featuredColumn.coverImage ? (
+                {/* v00.140 — coverUrl 사용 (stale field 이름 coverImage 가 아니라). */}
+                {(featuredColumn.coverUrl || featuredColumn.coverImage) ? (
                   <div style={{
-                    height:200, backgroundImage:`url(${featuredColumn.coverImage})`,
+                    height:200, backgroundImage:`url(${featuredColumn.coverUrl || featuredColumn.coverImage})`,
                     backgroundSize:'cover', backgroundPosition:'center',
                   }}/>
                 ) : (

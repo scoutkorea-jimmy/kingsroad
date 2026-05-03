@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.140.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🚨 [HOTFIX] 칼럼 대표이미지 미반영 — /column 목록 + 홈 featured 둘 다 fix",
+    details: [
+      "🚨 [/column 목록] ColumnPage list 의 카드 이미지 영역이 항상 placeholder('01', '02'…) 만 출력 — c.coverUrl 무시. 사용자 보고 '대표이미지 설정했는데 반영이 안 되네'.",
+      "🩹 ColumnPage list — c.coverUrl 있으면 <img loading=lazy objectFit=cover>, 없으면 placeholder.",
+      "🚨 [홈 featured] HomePage featuredColumn 이 c.coverImage(stale field) 참조 → coverUrl 저장값과 일치 안 함. 둘 다 폴백 (coverUrl || coverImage) 으로 변경.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.140.000`.",
+    ],
+    context: "v00.139 직후 사용자 즉시 보고. 대표이미지 저장은 정상 작동했지만 (admin 미리보기 + DB 저장 OK) 노출 측이 stale 필드명/placeholder 만 사용해 안 보였던 것.",
+  },
+  {
     version: "00.139.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",
