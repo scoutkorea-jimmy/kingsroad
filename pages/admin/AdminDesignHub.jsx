@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.152.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T23:37:31+09:00",
+    summary: "✨ 홈 책 CTA 다권 카루셀 + hero 지도 버튼 제거 + 작업 가이드 룰 2 (plan-md / 오류 우선)",
+    details: [
+      "✨ [홈 책 CTA 다권 카루셀] v00.151 단일 책 IIFE → BookCarouselSection 컴포넌트화. 데이터 소스 BGNJ_BOOKS.list({status:'published'}), 정렬 primary 우선 → order. 좌우 ‹/› 원형 버튼 + 하단 dot indicator + autoplay 7s + hover 시 정지 + 좌우 무한 wrap (modulo).",
+      "✨ 1권일 때: chrome (좌우 버튼 / dot) hide → 정적 카드. 0권일 때: 섹션 자체 hide (return null).",
+      "✨ admin 변경 즉시 반영 — bgnj-books-refresh event + dataTick prop 양쪽 청취. 새로고침 불필요.",
+      "🩹 [홈 hero CTA] 사용자 요청 '지도에서 여행지 찾기 버튼 삭제'. 옆 '커뮤니티 참여하기' 버튼이 btn-gold 로 격상되어 단독 CTA.",
+      "📋 [작업 가이드 룰 신설] 사용자 명시 — (1) 새 작업 접수 시 plans/<버전>.md 작업계획서를 코드/명령보다 먼저 작성. (2) 명령 실행 직후 출력의 오류 로그 파싱·해결을 다음 작업보다 우선. plans/v00.152.000-book-carousel.md 를 본 사이클 첫 적용. memory 시스템에 feedback 2건 + MEMORY.md 갱신.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.152.000`.",
+    ],
+    context: "사용자가 '남은 작업 진행' (책 카루셀 미완 마무리) + 작업 가이드 2건 등록 (plan-md / 오류 우선) 동시 지시. 본 사이클부터 모든 작업은 plans/ 폴더 계획서 선작성 → 구현 → 빌드 → commit/push 순. UserPromptSubmit hook 자가-수정은 권한 거부 → memory + plan 문서로 enforcement (사용자가 직접 settings.local.json 의 hooks 블록 승인 가능).",
+  },
+  {
     version: "00.151.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",

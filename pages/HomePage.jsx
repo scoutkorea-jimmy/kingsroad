@@ -316,6 +316,151 @@ const HeroProgramCards = ({ go, dataTick }) => {
   );
 };
 
+// v00.152 — 홈 책 CTA 다권 카루셀. v00.151 단일-책 IIFE 를 컴포넌트화 + 좌우 무한 wrap + autoplay.
+// 데이터 소스: BGNJ_BOOKS.list({status:'published'}). 정렬: primary 우선 → order. 0권이면 섹션 hide.
+const BookCarouselSection = ({ go, dataTick }) => {
+  const _arr = (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } };
+  // admin 의 책 변경을 새로고침 없이 즉시 반영. dataTick + bgnj-books-refresh 둘 다 청취.
+  const [bookTick, setBookTick] = React.useState(0);
+  React.useEffect(() => {
+    const onR = () => setBookTick((v) => v + 1);
+    window.addEventListener('bgnj-books-refresh', onR);
+    return () => window.removeEventListener('bgnj-books-refresh', onR);
+  }, []);
+  const books = React.useMemo(() => {
+    const all = _arr(() => window.BGNJ_BOOKS?.list?.({ status: 'published' }));
+    return all.slice().sort((a, b) => {
+      if (a.primary && !b.primary) return -1;
+      if (!a.primary && b.primary) return 1;
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
+  }, [dataTick, bookTick]);
+
+  const [idx, setIdx] = React.useState(0);
+  const [paused, setPaused] = React.useState(false);
+  // 책 목록 길이 변동 시 idx 재정렬.
+  React.useEffect(() => {
+    if (books.length > 0 && idx >= books.length) setIdx(0);
+  }, [books.length, idx]);
+
+  const wrap = (n) => books.length === 0 ? 0 : (n + books.length) % books.length;
+  const goPrev = () => setIdx((i) => wrap(i - 1));
+  const goNext = () => setIdx((i) => wrap(i + 1));
+
+  // autoplay 7s — 2권 이상 + hover 정지 아닐 때만.
+  React.useEffect(() => {
+    if (books.length < 2 || paused) return;
+    const t = setTimeout(() => setIdx((i) => wrap(i + 1)), 7000);
+    return () => clearTimeout(t);
+  }, [idx, books.length, paused]);
+
+  if (books.length === 0) return null;
+  const cur = books[idx] || books[0];
+  const hasPriceKR = Number(cur.priceKR) > 0;
+  const hasPriceEN = Number(cur.priceEN) > 0;
+  const yr = cur.publishedAt ? new Date(cur.publishedAt).getFullYear() : new Date().getFullYear();
+  const showChrome = books.length > 1;
+
+  return (
+    <HomeSectionBoundary label="책 CTA"><section className="section">
+      <div className="container">
+        <div
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          style={{position:'relative'}}>
+          <div className="card cta-grid" style={{
+            padding:'72px 60px',
+            display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center',
+            background:'var(--bg-2)', border:'1px solid var(--line)',
+          }}>
+            <div>
+              <div className="section-eyebrow">뱅기노자 출판 · {yr}</div>
+              <h2 style={{
+                fontFamily:'var(--font-serif)', fontSize:'clamp(36px, 4vw, 52px)',
+                fontWeight:600, lineHeight:1.1, marginBottom:16,
+              }}>
+                『{cur.title}』
+              </h2>
+              {cur.desc && (
+                <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:28, whiteSpace:'pre-wrap'}}>
+                  {cur.desc}
+                </p>
+              )}
+              {(hasPriceKR || hasPriceEN) && (
+                <div style={{display:'flex', gap:20, marginBottom:32, alignItems:'flex-end'}}>
+                  {hasPriceKR && (
+                    <div>
+                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>국문판</div>
+                      <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(cur.priceKR).toLocaleString()}원</div>
+                    </div>
+                  )}
+                  {hasPriceKR && hasPriceEN && <div style={{width:1, background:'var(--line-2)', alignSelf:'stretch'}}/>}
+                  {hasPriceEN && (
+                    <div>
+                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>영문판</div>
+                      <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(cur.priceEN).toLocaleString()}원</div>
+                    </div>
+                  )}
+                </div>
+              )}
+              <button className="btn btn-gold" onClick={() => go('book')}>구매하기 →</button>
+            </div>
+            <div style={{
+              aspectRatio:'3/4', maxWidth:280, margin:'0 auto',
+              background:'var(--bg)', border:'1px solid var(--line-2)',
+              display:'grid', placeItems:'center', overflow:'hidden',
+            }}>
+              {cur.coverDataUri ? (
+                <img src={cur.coverDataUri} alt={`${cur.title} 표지`}
+                  style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+              ) : (
+                <div style={{textAlign:'center', padding:'0 24px'}}>
+                  <div style={{fontFamily:'var(--font-serif)', fontSize:28, color:'var(--ink)', marginBottom:10, fontWeight:600}}>{cur.title}</div>
+                  <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.2em'}}>{cur.author || '뱅기노자'} 지음</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {showChrome && (
+            <>
+              <button type="button" aria-label="이전 책" onClick={goPrev}
+                style={{
+                  position:'absolute', left:-8, top:'50%', transform:'translate(-100%, -50%)',
+                  width:44, height:44, borderRadius:'50%', border:'1px solid var(--line)',
+                  background:'var(--bg)', color:'var(--ink)', cursor:'pointer',
+                  display:'grid', placeItems:'center', fontSize:22, fontWeight:600, lineHeight:1,
+                }}>‹</button>
+              <button type="button" aria-label="다음 책" onClick={goNext}
+                style={{
+                  position:'absolute', right:-8, top:'50%', transform:'translate(100%, -50%)',
+                  width:44, height:44, borderRadius:'50%', border:'1px solid var(--line)',
+                  background:'var(--bg)', color:'var(--ink)', cursor:'pointer',
+                  display:'grid', placeItems:'center', fontSize:22, fontWeight:600, lineHeight:1,
+                }}>›</button>
+            </>
+          )}
+        </div>
+
+        {showChrome && (
+          <div style={{display:'flex', justifyContent:'center', gap:8, marginTop:18}}>
+            {books.map((b, i) => (
+              <button key={b.id || i} type="button" aria-label={`${i+1}번째 책으로 이동`}
+                onClick={() => setIdx(i)}
+                style={{
+                  width: i === idx ? 24 : 8, height: 8, padding: 0,
+                  borderRadius: 4, border: 'none', cursor: 'pointer',
+                  background: i === idx ? 'var(--gold)' : 'var(--line-2)',
+                  transition: 'all 0.2s',
+                }}/>
+            ))}
+          </div>
+        )}
+      </div>
+    </section></HomeSectionBoundary>
+  );
+};
+
 const HomePage = ({ go }) => {
   const [mapOpen, setMapOpen] = React.useState(false);
   const [scTick, setScTick] = React.useState(0);
@@ -457,11 +602,8 @@ const HomePage = ({ go }) => {
                 justifyContent: heroStyle.title.textAlign === 'center' ? 'center' : (heroStyle.title.textAlign === 'right' ? 'flex-end' : 'flex-start'),
                 fontWeight: heroStyle.cta.fontWeight,
               }}>
-                <button className="btn btn-gold" onClick={() => setMapOpen(true)} aria-haspopup="dialog"
-                  style={{fontWeight: heroStyle.cta.fontWeight}}>
-                  {hero.mapHint || "지도에서 여행지 찾기 →"}
-                </button>
-                <button className="btn" onClick={() => go('community')}
+                {/* v00.152 — 사용자 요청 '지도에서 여행지 찾기 버튼 삭제'. */}
+                <button className="btn btn-gold" onClick={() => go('community')}
                   style={{fontWeight: heroStyle.cta.fontWeight}}>
                   {hero.ctaPrimary || "커뮤니티 참여하기"}
                 </button>
@@ -780,73 +922,8 @@ const HomePage = ({ go }) => {
         </section></HomeSectionBoundary>
       )}
 
-      {/* ── 책 CTA — v00.151 BGNJ_BOOKS.primary() 실 데이터 사용 ──────── */}
-      {(() => {
-        const primaryBook = G.call(() => window.BGNJ_BOOKS?.primary?.(), null);
-        if (!primaryBook) return null; // 대표 책 없으면 섹션 자체 hide.
-        const hasPriceKR = Number(primaryBook.priceKR) > 0;
-        const hasPriceEN = Number(primaryBook.priceEN) > 0;
-        return (
-        <HomeSectionBoundary label="책 CTA"><section className="section">
-          <div className="container">
-            <div className="card cta-grid" style={{
-              padding:'72px 60px',
-              display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center',
-              background:'var(--bg-2)', border:'1px solid var(--line)',
-            }}>
-              <div>
-                <div className="section-eyebrow">뱅기노자 출판 · {primaryBook.publishedAt ? new Date(primaryBook.publishedAt).getFullYear() : new Date().getFullYear()}</div>
-                <h2 style={{
-                  fontFamily:'var(--font-serif)', fontSize:'clamp(36px, 4vw, 52px)',
-                  fontWeight:600, lineHeight:1.1, marginBottom:16,
-                }}>
-                  『{primaryBook.title}』
-                </h2>
-                {primaryBook.desc && (
-                  <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:28, whiteSpace:'pre-wrap'}}>
-                    {primaryBook.desc}
-                  </p>
-                )}
-                {(hasPriceKR || hasPriceEN) && (
-                  <div style={{display:'flex', gap:20, marginBottom:32, alignItems:'flex-end'}}>
-                    {hasPriceKR && (
-                      <div>
-                        <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>국문판</div>
-                        <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(primaryBook.priceKR).toLocaleString()}원</div>
-                      </div>
-                    )}
-                    {hasPriceKR && hasPriceEN && <div style={{width:1, background:'var(--line-2)', alignSelf:'stretch'}}/>}
-                    {hasPriceEN && (
-                      <div>
-                        <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>영문판</div>
-                        <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(primaryBook.priceEN).toLocaleString()}원</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <button className="btn btn-gold" onClick={() => go('book')}>구매하기 →</button>
-              </div>
-              {/* 표지 — coverDataUri 있으면 실제 이미지, 없으면 placeholder */}
-              <div style={{
-                aspectRatio:'3/4', maxWidth:280, margin:'0 auto',
-                background:'var(--bg)', border:'1px solid var(--line-2)',
-                display:'grid', placeItems:'center', overflow:'hidden',
-              }}>
-                {primaryBook.coverDataUri ? (
-                  <img src={primaryBook.coverDataUri} alt={`${primaryBook.title} 표지`}
-                    style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
-                ) : (
-                  <div style={{textAlign:'center', padding:'0 24px'}}>
-                    <div style={{fontFamily:'var(--font-serif)', fontSize:28, color:'var(--ink)', marginBottom:10, fontWeight:600}}>{primaryBook.title}</div>
-                    <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.2em'}}>{primaryBook.author || '뱅기노자'} 지음</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section></HomeSectionBoundary>
-        );
-      })()}
+      {/* ── 책 CTA — v00.152 다권 카루셀 + 좌우 무한 반복 ────────────── */}
+      <BookCarouselSection go={go} dataTick={dataTick}/>
 
     </div>
   );
