@@ -1308,17 +1308,15 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
           </div>
         </header>
 
+        {/* v00.130 — body 가 항상 {html, text} 로 정규화되므로 fallback placeholder 제거.
+            손상된 옛 row 는 _normalizePostBody 가 경고 텍스트로 대체. */}
         {post.body?.html ? (
           <div className="post-body" dangerouslySetInnerHTML={{__html: window.BGNJ_SAFE_HTML(post.body.html)}}/>
+        ) : post.body?.text ? (
+          <div className="post-body" style={{whiteSpace:'pre-wrap'}}>{post.body.text}</div>
         ) : (
-          <div className="post-body">
-            <p>어제 창덕궁 후원 야간 답사를 다녀왔습니다. 원래 낮에만 가봤던 곳이어서, 해가 떨어진 후의 공간이 어떻게 다르게 다가올지 반신반의했는데요.</p>
-            <p>관람정 앞에 섰을 때, 문득 왕이 이 자리에서 무엇을 보았을까 — 라는 질문이 떠올랐습니다.</p>
-            <blockquote>
-              <p>"왕의 자리가 아니라 왕이 바라본 길을 따라가라."</p>
-              <cite>— 뱅기노자, 『왕의길』 서문</cite>
-            </blockquote>
-            <p>다음 답사가 벌써 기다려집니다.</p>
+          <div className="post-body dim-2" style={{fontStyle:'italic'}}>
+            본문이 비어있습니다.
           </div>
         )}
 

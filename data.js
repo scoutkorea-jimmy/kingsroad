@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.129.000",
+  version: "00.130.000",
   build: "2026.05.03",
   channel: "preview",
 };
@@ -1198,13 +1198,32 @@ window.BGNJ_AUTH = {
 };
 
 // 서버(D1) 게시글을 UI 형식으로 매핑.
+// v00.130 — body 를 {html, text} 객체 형태로 정규화. PostDetail 의 `post.body?.html` 체크 호환.
+// 이전엔 raw string 만 반환 → PostDetail 이 placeholder 로 fallback 하던 데이터 손상 버그.
+// "[object Object]" 로 손상된 옛 row 는 안내 텍스트로 대체 (사용자에게 가시화).
+const _normalizePostBody = (raw) => {
+  if (raw == null || raw === '') return { html: '', text: '' };
+  if (typeof raw === 'object') {
+    const html = String(raw.html || '');
+    const text = String(raw.text || '');
+    return { html: html || text, text: text || html };
+  }
+  const s = String(raw);
+  if (s === '[object Object]') {
+    // v00.130 이전 버전이 저장한 손상 데이터 — admin 이 글 수정으로 정상화 가능.
+    const msg = '⚠ 본문 데이터 손상 (v00.129 이하 작성 글). 작성자가 글을 수정 후 다시 저장하면 정상 표시됩니다.';
+    return { html: `<p><em>${msg}</em></p>`, text: msg };
+  }
+  return { html: s, text: s };
+};
+
 const _serverPostToUi = (p) => ({
   id: p.id,
   categoryId: p.category_id || p.categoryId,
   category: p.category,
   prefix: p.prefix || null,
   title: p.title,
-  body: p.body || '',
+  body: _normalizePostBody(p.body),
   author: p.author,
   authorId: p.author_id || p.authorId,
   views: Number(p.views || 0),
@@ -1272,11 +1291,20 @@ window.BGNJ_COMMUNITY = {
   },
   // 비동기 — 서버에 INSERT 후 캐시 갱신.
   // v00.115 — admin 이면 createdAt 오버라이드 가능 (워커가 검증).
+  // v00.130 — body 가 {html, text} 객체로 들어오면 html 문자열만 추출해서 보냄.
+  // 이전엔 객체 그대로 보내서 워커에서 String({...}) = "[object Object]" 로 저장됨 → 본문이 placeholder 로 표시되던 데이터 손상 버그.
+  // 사용자 보고 '커뮤니티에 글을 썼는데 글의 내용이 정상적으로 안보이고 다른 내용이 보이네'.
+  _bodyHtmlFromPayload(b) {
+    if (b == null) return '';
+    if (typeof b === 'string') return b;
+    if (typeof b === 'object') return b.html || b.text || '';
+    return String(b);
+  },
   async createPostRemote(payload) {
     const reqBody = {
       categoryId: payload.categoryId,
       title: payload.title,
-      body: payload.body || '',
+      body: this._bodyHtmlFromPayload(payload.body),
       prefix: payload.prefix || null,
     };
     if (payload.createdAt) reqBody.createdAt = payload.createdAt;
@@ -1291,7 +1319,7 @@ window.BGNJ_COMMUNITY = {
   async updatePostRemote(postId, patch) {
     const apiPatch = {};
     if ('title' in patch) apiPatch.title = patch.title;
-    if ('body' in patch) apiPatch.body = patch.body;
+    if ('body' in patch) apiPatch.body = this._bodyHtmlFromPayload(patch.body);
     if ('prefix' in patch) apiPatch.prefix = patch.prefix;
     if ('categoryId' in patch) apiPatch.category_id = patch.categoryId;
     // v00.116 — admin 만 createdAt 수정 가능 (워커가 검증). admin 외 보내도 무시됨.
