@@ -3870,10 +3870,15 @@ const BooksAdminPanel = () => {
 
               {editTab === 'toc' && editing && (
                 <div className="card" style={{padding:20}}>
-                  <label className="field-label">목차 (한 줄에 한 항목)</label>
-                  <textarea className="field-input" rows={12}
+                  <label className="field-label">목차</label>
+                  {/* v00.155 — 입력 규칙: 한 줄 = 한 챕터, '- ' 시작 = 직전 챕터의 하위 설명 (들여쓰기 표시). */}
+                  <p className="dim" style={{fontSize:12, lineHeight:1.7, margin:'4px 0 10px'}}>
+                    한 줄 = 한 챕터로 표시됩니다. 줄 시작에 <code style={{padding:'1px 6px', background:'var(--bg-2)', border:'1px solid var(--line-2)', borderRadius:3, fontFamily:'var(--font-mono)', fontSize:11}}>- </code>(하이픈+공백) 을 붙이면 직전 챕터의 <strong>하위 설명</strong>으로 들여쓰기 표시됩니다.
+                  </p>
+                  <textarea className="field-input" rows={14}
+                    placeholder={"예)\n1부. 시작\n- 첫 번째 길\n- 두 번째 길\n2부. 끝나는 자리\n- 마지막 풍경"}
                     value={(editing.chapters || []).join('\n')}
-                    onChange={(e) => setField('chapters', e.target.value.split('\n').map((s) => s.trim()).filter(Boolean))}
+                    onChange={(e) => setField('chapters', e.target.value.split('\n').map((s) => s.replace(/^\s+|\s+$/g, '')).filter(Boolean))}
                     style={{fontFamily:'var(--font-serif)', fontSize:14, lineHeight:1.8}}/>
                 </div>
               )}

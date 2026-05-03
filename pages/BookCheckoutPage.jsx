@@ -336,19 +336,52 @@ const BookPage = ({ go, cart, setCart, user }) => {
                   )}
                 </div>
               )}
-              {tab === "목차" && (
-                <div>
-                  {(Array.isArray(book.chapters) ? book.chapters : []).map((c, i) => (
-                    <div key={i} style={{padding:'16px 0', borderBottom:'1px solid var(--line)', display:'flex', gap:24}}>
-                      <span className="mono" style={{width:40, fontSize:12, color:'var(--secondary)', fontWeight:700}}>0{i+1}</span>
-                      <span className="ko-serif" style={{fontSize:17}}>{c}</span>
-                    </div>
-                  ))}
-                  {(!Array.isArray(book.chapters) || book.chapters.length === 0) && (
-                    <p style={{fontSize:13, color:'var(--ink-3)', padding:'16px 0'}}>목차 정보가 아직 입력되지 않았습니다.</p>
-                  )}
-                </div>
-              )}
+              {tab === "목차" && (() => {
+                // v00.155 — chapters string[] 그룹핑. '- ' 로 시작하면 직전 챕터의 sub-item.
+                // 데이터 구조 변경 없이 표시만 그룹화. 첫 줄이 sub 면 챕터로 격상 (데이터 손실 방지).
+                const groupChapters = (chapters) => {
+                  const out = [];
+                  for (const raw of (Array.isArray(chapters) ? chapters : [])) {
+                    if (typeof raw !== 'string') continue;
+                    const trimmed = raw.replace(/^\s+/, '');
+                    if (trimmed.startsWith('- ')) {
+                      const sub = trimmed.slice(2).trim();
+                      if (!sub) continue;
+                      if (out.length === 0) { out.push({ title: sub, items: [] }); continue; }
+                      out[out.length - 1].items.push(sub);
+                    } else if (trimmed) {
+                      out.push({ title: trimmed, items: [] });
+                    }
+                  }
+                  return out;
+                };
+                const groups = groupChapters(book.chapters);
+                if (groups.length === 0) {
+                  return <p style={{fontSize:13, color:'var(--ink-3)', padding:'16px 0'}}>목차 정보가 아직 입력되지 않았습니다.</p>;
+                }
+                return (
+                  <div>
+                    {groups.map((g, i) => (
+                      <div key={i} style={{padding:'16px 0', borderBottom:'1px solid var(--line)', display:'flex', gap:24}}>
+                        <span className="mono" style={{width:40, fontSize:12, color:'var(--secondary)', fontWeight:700, flexShrink:0}}>{String(i+1).padStart(2,'0')}</span>
+                        <div style={{flex:1, minWidth:0}}>
+                          <div className="ko-serif" style={{fontSize:17}}>{g.title}</div>
+                          {g.items.length > 0 && (
+                            <ul style={{margin:'10px 0 0 0', padding:0, listStyle:'none', display:'grid', gap:4}}>
+                              {g.items.map((it, j) => (
+                                <li key={j} className="dim" style={{fontSize:14, lineHeight:1.7, paddingLeft:16, position:'relative'}}>
+                                  <span aria-hidden="true" style={{position:'absolute', left:0, top:0, color:'var(--ink-3)'}}>·</span>
+                                  {it}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               {tab === "저자" && (
                 <div style={{display:'flex', gap:24, alignItems:'flex-start'}}>
                   <div className="placeholder" style={{width:140, aspectRatio:'3/4', flexShrink:0}}>{book.author || '저자'}</div>

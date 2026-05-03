@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.155.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T23:58:39+09:00",
+    summary: "✨ 책 목차 sub-item 문법 ('- ' prefix → 직전 챕터 하위 설명) + 입력 규칙",
+    details: [
+      "✨ [목차 sub-item 표시] 사용자 요청 '- 로 시작하면 해당 세션에 설명으로 들어가게'. BookCheckoutPage 의 목차 탭이 chapters string[] 을 그룹핑 (`{title, items[]}`) 후 챕터/하위 항목 분리 렌더. 챕터 번호는 본 챕터에만, sub-item 은 들여쓰기 + dim 컬러 + · bullet.",
+      "✨ [admin textarea hint + placeholder] 목차 입력 textarea 라벨 아래에 입력 규칙 안내 (`- ` 하이픈+공백 = 직전 챕터 하위 설명). placeholder 에 예시 5줄 (1부/2부 + sub).",
+      "✨ [데이터 구조 무변경] chapters 는 여전히 string[]. 표시 로직만 그룹핑. D1 schema/마이그레이션 0건. admin onChange 에서 양쪽 공백 trim 후 빈 줄 제거.",
+      "✨ [엣지 케이스] 첫 줄이 sub 면 챕터로 격상 (데이터 손실 방지). 빈 sub('- '만) 은 무시. 깊은 들여쓰기(--)는 1차 미지원 — 필요 시 후속.",
+      "📚 [규칙 문서] kms.md 영역 5 책 상세 섹션에 입력 규칙 한 줄 추가. v00.153/v00.154 의 cart bookId/탭 변화도 함께 반영.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.155.000`.",
+    ],
+    context: "v00.153 작업 중 사용자가 보류했던 '책 목차 - sub-item' 요청 마무리. 데이터 구조 호환성을 위해 chapters string[] 그대로 두고 표시만 그룹화. admin 의 textarea 도 동일 hint/placeholder 로 룰을 사용자에게 가시화. v00.152 신설 plan-md 룰의 네 번째 적용 — plans/v00.155.000-chapter-subitems.md.",
+  },
+  {
     version: "00.154.000",
     date: "2026-05-03",
     datetime: "2026-05-03T23:56:18+09:00",

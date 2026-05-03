@@ -422,7 +422,8 @@ KMS의 제1 기능은 `기능정의서`다.
 #### 책 상세 (`BookPage`) — 구현됨
 
 - 요소: 표지 / 저자 / 출판사 / ISBN / 페이지 수 / 국문·영문 가격 / 챕터 목차 / 설명 본문 / 판본 토글 / 수량 ± / 합계 / 바로 구매 버튼
-- 기술 스펙: `BANGINOJA_DATA.book` 정적 객체를 `BookPage`가 렌더. 바로 구매 → `cart` 상태 저장 → `checkout` 라우트.
+- 기술 스펙: `BGNJ_BOOKS.list({status:'published'})` (primary 우선 → order). 책 ≥2권일 때 상단 책 선택 탭. 바로 구매 → `cart={bookId,version,qty,price}` 저장 → `checkout` 라우트 (v00.153/v00.154).
+- **목차 입력 규칙 (v00.155):** admin 의 목차 textarea 는 한 줄 = 한 챕터. 줄 시작에 `- ` (하이픈+공백) 을 붙이면 직전 챕터의 하위 설명으로 들여쓰기 표시. 데이터는 `chapters: string[]` 그대로 유지하고 표시 시 그룹핑.
 
 #### 장바구니 — 구현됨 (localStorage 영속화)
 
