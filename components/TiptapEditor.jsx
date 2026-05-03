@@ -72,6 +72,32 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
           class: 'tiptap-editor',
           'aria-label': '본문 에디터 — 마크다운 단축키 지원',
         },
+        // v00.139 — Enter 1회=<br>(hard break, 공백 없음), Enter 2회=<p>(새 단락, 공백 1줄).
+        // 사용자 요청 '엔터 1번 치면 줄바꿈, 엔터 2번 치면 줄바꿈+공백 1줄'. ProseMirror 기본은 반대 (Enter=새 단락).
+        // 단락(paragraph) 안에서만 적용 — 헤딩/리스트/코드블록/인용/표는 default (Enter=split block) 유지.
+        handleKeyDown: (view, event) => {
+          if (event.key !== 'Enter' || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey || event.isComposing) return false;
+          const { state } = view;
+          const { $from, empty } = state.selection;
+          if (!empty) return false;
+          if ($from.parent.type.name !== 'paragraph') return false;
+          const schema = state.schema;
+          if (!schema.nodes.hardBreak) return false;
+          const before = $from.nodeBefore;
+          // 직전 노드가 hardBreak 면 두 번째 Enter — hardBreak 제거 + 단락 분할.
+          if (before && before.type.name === 'hardBreak') {
+            event.preventDefault();
+            const tr = state.tr.delete($from.pos - before.nodeSize, $from.pos);
+            const splitPos = tr.selection.from;
+            tr.split(splitPos);
+            view.dispatch(tr.scrollIntoView());
+            return true;
+          }
+          // 첫 번째 Enter — hard break 삽입.
+          event.preventDefault();
+          view.dispatch(state.tr.replaceSelectionWith(schema.nodes.hardBreak.create()).scrollIntoView());
+          return true;
+        },
         // v00.135 — plain text 붙여넣기 시 줄바꿈 보존. 사용자 보고 '외부 글을 갈무리해서 올 때 줄바꿈이 적용 안 됨'.
         // ProseMirror 기본은 plain text 의 단일 \n 을 무시하고 공백으로 처리. 단일 \n → <br/>,
         // 빈 줄(\n\n) → 새 단락 으로 정상 변환. text/html 페이로드가 있으면 default 처리(예: HTML 보존).

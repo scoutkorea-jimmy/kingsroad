@@ -6049,6 +6049,8 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [tick, setTick] = React.useState(0);
   const [msg, setMsg] = React.useState("");
+  // v00.139 — 대표 이미지 R2 업로드 상태.
+  const [uploadingCover, setUploadingCover] = React.useState(false);
 
   // 모달 wrapper 에 dirty payload 전달 — 임시저장 prompt 용. (옵셔널)
   React.useEffect(() => {
@@ -6127,7 +6129,13 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     base.sourceCredit = sourceCredit.trim();
     base.sourceUrl = sourceUrl.trim();
     // v00.136 — 대표이미지 URL + 출처 (옵셔널).
-    base.coverUrl = coverUrl.trim();
+    // v00.139 — coverUrl 비어있으면 본문 HTML 의 첫 <img src> 를 자동 대표 이미지로 사용.
+    let resolvedCover = coverUrl.trim();
+    if (!resolvedCover && html) {
+      const m = String(html).match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (m && m[1]) resolvedCover = m[1];
+    }
+    base.coverUrl = resolvedCover;
     base.coverCredit = coverCredit.trim();
     return base;
   };
@@ -6279,14 +6287,42 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
             </div>
           </div>
         </div>
-        {/* v00.136 — 대표이미지 URL + 출처 (옵셔널). 사용자 요청 '대표이미지에는 출처를 작성할 수 있게'. */}
+        {/* v00.136 — 대표이미지 + 출처. v00.139 — 파일 업로드 + 본문 첫 이미지 자동 폴백. */}
         <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)', display:'grid', gap:10}}>
           <div>
-            <label className="field-label" htmlFor="col-cover-url" style={{display:'block', marginBottom:6}}>
-              대표 이미지 URL (선택)
+            <label className="field-label" style={{display:'block', marginBottom:6}}>
+              대표 이미지 (선택 — 비우면 본문 첫 이미지 자동 사용)
             </label>
-            <input id="col-cover-url" type="url" className="field-input"
-              placeholder="https://... 또는 R2 업로드 후 자동 URL"
+            <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+              <button type="button" className="btn btn-small" disabled={uploadingCover}
+                onClick={async () => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = async () => {
+                    const f = input.files?.[0];
+                    if (!f) return;
+                    try {
+                      setUploadingCover(true);
+                      const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'column-covers', maxBytes: 10 * 1024 * 1024 });
+                      setCoverUrl(url);
+                    } catch (err) {
+                      try { window.alert('대표 이미지 업로드 실패: ' + (err?.message || err)); } catch {}
+                    } finally { setUploadingCover(false); }
+                  };
+                  input.click();
+                }}>
+                {uploadingCover ? '⏳ 업로드 중…' : '🖼 파일 업로드'}
+              </button>
+              {coverUrl && (
+                <>
+                  <img src={coverUrl} alt="cover preview" style={{width:60, height:40, objectFit:'cover', border:'1px solid var(--line)'}}/>
+                  <button type="button" className="btn btn-small" onClick={() => setCoverUrl('')}>제거</button>
+                </>
+              )}
+            </div>
+            <input id="col-cover-url" type="url" className="field-input" style={{marginTop:8}}
+              placeholder="또는 URL 직접 입력 — 비우면 본문 첫 이미지가 자동 대표 이미지가 됩니다"
               value={coverUrl} onChange={(e) => setCoverUrl(e.target.value)}/>
           </div>
           <div>
@@ -6508,25 +6544,51 @@ const ColumnsHubPanel = ({ allColumns }) => {
         ))}
       </div>
 
-      <div className="grid grid-2">
-        {filtered.length === 0 ? (
-          <p style={{fontSize:13, color:'var(--ink-3)', padding:'24px 0', gridColumn:'1 / -1'}}>
-            {statusFilter === 'all' ? '칼럼이 없습니다. ＋ 글쓰기 로 시작하세요.' : '필터 조건에 맞는 칼럼이 없습니다.'}
-          </p>
-        ) : filtered.map((c) => (
-          <article key={c.id} className="card">
-            <div style={{display:'flex', justifyContent:'space-between', marginBottom:12}}>
-              <span className="pill">{c.category}</span>
-              <span className="mono dim-2" style={{fontSize:10}}>#{String(c.id).slice(-6)} · {c.status || 'published'}</span>
-            </div>
-            <h3 className="ko-serif" style={{fontSize:17, marginBottom:8}}>{c.title}</h3>
-            <div className="dim-2 mono" style={{fontSize:11, marginBottom:12}}>{c.date || ''} {c.readTime ? `· ${c.readTime}` : ''}</div>
-            <div style={{display:'flex', gap:8}}>
-              <button type="button" className="btn btn-small" onClick={() => openEdit(c)}>편집</button>
-            </div>
-          </article>
-        ))}
-      </div>
+      {/* v00.139 — 카드형 → 목록(테이블)형. 사용자 요청 '카드형이 아니라 목록형으로'. */}
+      {filtered.length === 0 ? (
+        <p style={{fontSize:13, color:'var(--ink-3)', padding:'24px 0'}}>
+          {statusFilter === 'all' ? '칼럼이 없습니다. ＋ 글쓰기 로 시작하세요.' : '필터 조건에 맞는 칼럼이 없습니다.'}
+        </p>
+      ) : (
+        <div style={{overflowX:'auto', border:'1px solid var(--line)'}}>
+          <table className="admin-table" style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+            <thead>
+              <tr style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
+                <th style={{textAlign:'left', padding:'10px 12px', fontWeight:600, width:90}}>카테고리</th>
+                <th style={{textAlign:'left', padding:'10px 12px', fontWeight:600}}>제목</th>
+                <th style={{textAlign:'left', padding:'10px 12px', fontWeight:600, width:110}}>상태</th>
+                <th style={{textAlign:'left', padding:'10px 12px', fontWeight:600, width:140}}>작성일</th>
+                <th style={{textAlign:'left', padding:'10px 12px', fontWeight:600, width:80}}>읽기시간</th>
+                <th style={{textAlign:'right', padding:'10px 12px', fontWeight:600, width:80}}>액션</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((c) => (
+                <tr key={c.id} style={{borderBottom:'1px solid var(--line)'}}>
+                  <td style={{padding:'10px 12px'}}><span className="pill" style={{fontSize:11}}>{c.category}</span></td>
+                  <td style={{padding:'10px 12px'}}>
+                    <div className="ko-serif" style={{fontSize:14, fontWeight:600}}>{c.title}</div>
+                    <div className="mono dim-2" style={{fontSize:10, marginTop:2}}>#{String(c.id).slice(-6)}</div>
+                  </td>
+                  <td style={{padding:'10px 12px'}}>{(() => {
+                    const m = ({
+                      draft: { label: 'DRAFT', color: 'var(--ink-3)' },
+                      scheduled: { label: 'SCHEDULED', color: 'var(--ink-2)' },
+                      published: { label: 'PUBLISHED', color: 'var(--gold)' },
+                    })[c.status || 'published'];
+                    return <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color: m.color, border:`1px solid ${m.color}`, padding:'1px 6px'}}>{m.label}</span>;
+                  })()}</td>
+                  <td style={{padding:'10px 12px'}} className="mono dim-2">{c.date || (c.createdAt ? (window.BGNJ_FMT?.kstShort?.(c.createdAt) || '') : '')}</td>
+                  <td style={{padding:'10px 12px'}} className="mono dim-2">{c.readTime || ''}</td>
+                  <td style={{padding:'10px 12px', textAlign:'right'}}>
+                    <button type="button" className="btn btn-small" onClick={() => openEdit(c)}>편집</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {modalOpen && <ColumnEditorModalContent initialColumn={initialCol} onClose={closeModal}/>}
     </div>

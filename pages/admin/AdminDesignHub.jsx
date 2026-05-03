@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.139.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🆕 칼럼 대표이미지 파일 업로드 + 본문 첫 이미지 자동 폴백 + Enter 동작 합리화 + 칼럼 목록 테이블화",
+    details: [
+      "🆕 [대표이미지 파일 업로드] AdminColumnEditor 의 cover 필드가 URL 입력만 지원했으나, 파일 업로드 버튼 추가 (column-covers 폴더, R2). 미리보기 + 제거 버튼.",
+      "🆕 [본문 첫 이미지 자동 폴백] coverUrl 빈 채로 저장하면 buildPayload 가 본문 HTML 의 첫 <img src> 를 자동으로 대표 이미지로 사용. 사용자 요청 '제일 위에 있는 이미지가 대표이미지가 되거나 혹은 대표이미지를 올리면 그걸 대표이미지로 설정'.",
+      "🆕 [Enter 동작 합리화] TiptapEditor handleKeyDown — Enter 1회=<br>(hard break, 공백 없음), Enter 2회=<p>(새 단락, 공백 1줄). 단락 안에서만 적용 — 헤딩/리스트/코드블록은 default 유지. 사용자 요청 '엔터 1번 치면 줄바꿈, 2번 치면 줄바꿈+공백 1줄이 합리적'.",
+      "🆕 [칼럼 목록 테이블화] ColumnsHubPanel 의 카드 그리드 → 테이블 (카테고리/제목/상태/작성일/읽기시간/액션). 사용자 요청 '카드형이 아니라 목록형으로'.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.139.000`.",
+    ],
+    context: "v00.138 직후 사용자 연속 보고 — 대표이미지 파일 업로드 + 본문 첫 이미지 폴백 + Enter UX + 칼럼 목록 테이블화. 강연/투어 패널은 inline 편집 UI 가 풍부해 동일 변환은 다음 사이클로 분리.",
+  },
+  {
     version: "00.138.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",
