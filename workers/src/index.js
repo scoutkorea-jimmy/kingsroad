@@ -415,6 +415,10 @@ const handlePostsCreate = async (req, env) => {
   const title = String(body.title || "").trim();
   const text = String(body.body || "");
   if (!title) throw new HttpError(400, "제목을 입력해 주세요.");
+  // v00.146 — 공지 게시판은 어떠한 경우에도 관리자만 작성. allow_write 체크박스 / postMinLevel 설정과 무관.
+  if (categoryId === 'notice' && !user.isAdmin) {
+    throw new HttpError(403, "공지 게시판은 관리자만 작성할 수 있습니다.");
+  }
   // v00.111 — 게시판 작성 권한 (등급 게이트). v00.141 — allow_write 마스터 스위치 추가.
   const cat = await env.DB.prepare(
     "SELECT * FROM categories_kv WHERE id = ?"

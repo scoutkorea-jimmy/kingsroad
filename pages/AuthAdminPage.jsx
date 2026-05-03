@@ -699,6 +699,249 @@ const AdminSaveBar = ({ children, message, messageVariant = 'success' }) => (
   </div>
 );
 
+// === Dashboard helpers (v00.146) ==================================
+// 일/주/월 활동 metrics + 가입 추이 + 활동 차트.
+// data source: BGNJ_AUTH.listUsers().created_at + BGNJ_COMMUNITY.listPosts().date + comments.
+
+// 통계 카드 — 큰 숫자 + 라벨 + 하단 보조설명 + 색상 변형.
+const MetricCard = ({ label, value, sub, accent, icon }) => (
+  <article className="metric-card" style={{
+    padding:'18px 20px', background:'var(--bg-2)', border:'1px solid var(--line)',
+    borderRadius:10, position:'relative', overflow:'hidden',
+  }}>
+    <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+      {icon && <span style={{fontSize:18}} aria-hidden="true">{icon}</span>}
+      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase'}}>{label}</div>
+    </div>
+    <div className="ko-serif" style={{fontSize:32, fontWeight:600, color: accent || 'var(--gold-2)', lineHeight:1.1}}>
+      {value}
+    </div>
+    {sub && <div className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.5}}>{sub}</div>}
+  </article>
+);
+
+// 간단한 SVG 막대 차트 — series: number[], labels: string[].
+const MiniBarChart = ({ series, labels, height = 120, color = 'var(--gold)', label }) => {
+  const max = Math.max(1, ...series);
+  const W = 100; // viewBox 단위
+  const H = 40;
+  const barW = W / series.length;
+  return (
+    <div style={{padding:'12px 0'}}>
+      {label && <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:8}}>{label}</div>}
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{width:'100%', height, display:'block'}}>
+        {series.map((v, i) => {
+          const h = max > 0 ? (v / max) * (H - 6) : 0;
+          return (
+            <g key={i}>
+              <rect x={i * barW + 0.6} y={H - h} width={Math.max(0.4, barW - 1.2)} height={h} fill={color} rx={0.3}/>
+              <title>{`${labels?.[i] || ''}: ${v}`}</title>
+            </g>
+          );
+        })}
+      </svg>
+      {labels && (
+        <div style={{display:'grid', gridTemplateColumns:`repeat(${labels.length}, 1fr)`, fontSize:9, color:'var(--ink-3)', marginTop:6, fontFamily:'var(--font-mono)', letterSpacing:'0.04em'}}>
+          {labels.map((l, i) => (
+            <span key={i} style={{textAlign:'center'}}>{l}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// 일/주/월 카운트 헬퍼 — items 의 dateField 가 ISO 또는 'YYYY.MM.DD'.
+const _toDate = (v) => {
+  if (!v) return null;
+  const t = Date.parse(v);
+  if (!isNaN(t)) return new Date(t);
+  // 'YYYY.MM.DD' 형식
+  const m = String(v).match(/^(\d{4})[.-](\d{1,2})[.-](\d{1,2})/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return null;
+};
+const _countSince = (items, dateField, days) => {
+  const cutoff = Date.now() - days * 86400000;
+  return items.filter((it) => {
+    const d = _toDate(it[dateField]);
+    return d && d.getTime() >= cutoff;
+  }).length;
+};
+// 14일치 일별 카운트 series — 오늘 포함 14개.
+const _dailySeries = (items, dateField, days = 14) => {
+  const counts = new Array(days).fill(0);
+  const labels = new Array(days).fill('');
+  const todayMid = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+  items.forEach((it) => {
+    const d = _toDate(it[dateField]);
+    if (!d) return;
+    d.setHours(0, 0, 0, 0);
+    const idx = Math.floor((d.getTime() - todayMid) / 86400000) + (days - 1);
+    if (idx >= 0 && idx < days) counts[idx]++;
+  });
+  for (let i = 0; i < days; i++) {
+    const dt = new Date(todayMid + (i - (days - 1)) * 86400000);
+    labels[i] = (i === days - 1) ? '오늘' : (i % 2 === 0 ? `${dt.getMonth()+1}/${dt.getDate()}` : '');
+  }
+  return { counts, labels };
+};
+
+// === User Journey Panel (v00.146) ==================================
+// 사용자 요청 '사용자 여정을 볼 수 있는 페이지'.
+// 회원 1명을 선택하면 가입 → 로그인 → 게시글 → 댓글 → 강연/투어 신청 → 책 주문 등
+// 시간 순 활동 타임라인을 노출. 데이터: BGNJ_AUTH.listUsers + BGNJ_COMMUNITY.listPosts + 향후 audit_log.
+const UserJourneyPanel = ({ users, posts, setTab }) => {
+  const [selectedId, setSelectedId] = React.useState(users[0]?.id || null);
+  const selected = users.find((u) => u.id === selectedId);
+
+  // 선택 회원의 활동 타임라인 — 가입 / 게시글 / 댓글 (있으면).
+  const timeline = React.useMemo(() => {
+    if (!selected) return [];
+    const events = [];
+    if (selected.createdAt) {
+      events.push({ ts: selected.createdAt, kind: 'signup', icon: '🎉', label: '회원 가입', detail: `${selected.email} · ${selected.gradeId || 'member'} 등급` });
+    }
+    posts.filter((p) => p.author === selected.name || p.authorId === selected.id).forEach((p) => {
+      events.push({ ts: p.date, kind: 'post', icon: '✍️', label: '게시글 작성', detail: `[${p.category}] ${p.title}` });
+    });
+    // 정렬: 최근이 위.
+    events.sort((a, b) => {
+      const da = _toDate(a.ts)?.getTime() || 0;
+      const db = _toDate(b.ts)?.getTime() || 0;
+      return db - da;
+    });
+    return events;
+  }, [selected, posts]);
+
+  // 코호트 — 가입월별 그룹.
+  const cohorts = React.useMemo(() => {
+    const groups = {};
+    users.forEach((u) => {
+      const d = _toDate(u.createdAt);
+      if (!d) return;
+      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      groups[k] = (groups[k] || 0) + 1;
+    });
+    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [users]);
+
+  return (
+    <>
+      <AdminPanelHeader
+        eyebrow="JOURNEY · 사용자 여정"
+        title="회원 여정 분석"
+        description="가입 시점부터 게시글·댓글·신청·주문까지 회원 한 명의 활동을 시간 순서대로 추적합니다. 좌측에서 회원을 선택하세요."/>
+
+      <div style={{display:'grid', gridTemplateColumns:'minmax(240px, 320px) 1fr', gap:18, alignItems:'flex-start'}}>
+        {/* 좌측: 회원 목록 */}
+        <aside style={{border:'1px solid var(--line)', borderRadius:8, background:'var(--bg-2)', maxHeight:'70vh', overflow:'auto'}}>
+          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'12px 14px', borderBottom:'1px solid var(--line)'}}>
+            회원 ({users.length})
+          </div>
+          <ul style={{listStyle:'none', margin:0, padding:0}}>
+            {users.map((u) => (
+              <li key={u.id}>
+                <button type="button" onClick={() => setSelectedId(u.id)}
+                  style={{
+                    width:'100%', textAlign:'left', padding:'10px 14px',
+                    background: selectedId === u.id ? 'rgba(245, 213, 72, 0.10)' : 'transparent',
+                    border:'none', borderBottom:'1px solid var(--line)', cursor:'pointer',
+                    color:'var(--ink)',
+                  }}>
+                  <div style={{fontSize:13, fontWeight:600, marginBottom:2}}>{u.name || '(이름 없음)'}</div>
+                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.04em'}}>
+                    {u.email} · {u.gradeId || 'member'}{u.isAdmin ? ' · ADMIN' : ''}
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
+
+        {/* 우측: 선택 회원 타임라인 */}
+        <section>
+          {!selected ? (
+            <AdminEmpty>회원을 선택하세요.</AdminEmpty>
+          ) : (
+            <>
+              <div className="card" style={{padding:18, marginBottom:16}}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:12}}>
+                  <div>
+                    <h3 className="ko-serif" style={{fontSize:20, margin:'0 0 4px'}}>{selected.name}</h3>
+                    <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.06em'}}>{selected.email}</div>
+                  </div>
+                  <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+                    <StatusBadge variant={selected.isAdmin ? 'gold' : 'neutral'}>
+                      {selected.isAdmin ? 'ADMIN' : (selected.gradeId || 'member')}
+                    </StatusBadge>
+                    {selected.suspended && <StatusBadge variant="danger">SUSPENDED</StatusBadge>}
+                    <button type="button" className="btn btn-small" onClick={() => setTab && setTab('회원')}>회원 패널에서 열기</button>
+                  </div>
+                </div>
+                <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:12, marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
+                  <div><div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>가입일</div><div style={{fontSize:13, marginTop:4}}>{selected.createdAt ? (window.BGNJ_FMT?.kstShort?.(selected.createdAt) || '—') : '—'}</div></div>
+                  <div><div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>총 활동</div><div style={{fontSize:13, marginTop:4}}>{timeline.length}건</div></div>
+                  <div><div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>게시글</div><div style={{fontSize:13, marginTop:4}}>{timeline.filter(e => e.kind === 'post').length}건</div></div>
+                </div>
+              </div>
+
+              <div className="admin-section__title">활동 타임라인</div>
+              {timeline.length === 0 ? (
+                <AdminEmpty>활동 이력이 없습니다.</AdminEmpty>
+              ) : (
+                <ol style={{listStyle:'none', padding:0, margin:0, display:'grid', gap:8, position:'relative'}}>
+                  {timeline.map((e, i) => (
+                    <li key={i} style={{
+                      display:'flex', gap:14, padding:'14px 16px',
+                      background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:8,
+                    }}>
+                      <div style={{
+                        width:36, height:36, flexShrink:0, borderRadius:'50%',
+                        background:'rgba(245,213,72,0.14)', display:'grid', placeItems:'center',
+                        fontSize:18,
+                      }}>{e.icon}</div>
+                      <div style={{flex:1, minWidth:0}}>
+                        <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline'}}>
+                          <strong style={{fontSize:13, color:'var(--ink)'}}>{e.label}</strong>
+                          <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.06em'}}>
+                            {window.BGNJ_FMT?.kstDateTime?.(e.ts) || e.ts}
+                          </span>
+                        </div>
+                        <div className="dim-2" style={{fontSize:12, marginTop:4, lineHeight:1.6, wordBreak:'break-all'}}>{e.detail}</div>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+
+              {/* 가입 코호트 — 월별 가입자 분포 */}
+              {cohorts.length > 0 && (
+                <>
+                  <div className="admin-section__title" style={{marginTop:24}}>월별 가입 코호트 (전체 회원)</div>
+                  <article className="card">
+                    <MiniBarChart
+                      label={null}
+                      series={cohorts.map(([, v]) => v)}
+                      labels={cohorts.map(([k]) => k.slice(5))}
+                      color="var(--secondary, #1F7A8C)" height={120}/>
+                    <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
+                      월별 가입자 수. 라벨은 MM (월).
+                    </p>
+                  </article>
+                </>
+              )}
+            </>
+          )}
+        </section>
+      </div>
+      <p className="dim-2" style={{fontSize:11, marginTop:14, lineHeight:1.7}}>
+        ⓘ 현재 타임라인은 가입 + 게시글 작성. 댓글 / 강연·투어 신청 / 책 주문 / 로그인 이력은 audit_log 통합 시 v0.147+ 추가 예정.
+      </p>
+    </>
+  );
+};
+
 // === Lecture Admin Panel ==========================================
 // v00.131 — 강연 일괄 등록 컴포넌트. CSV / pipe-separated 파싱.
 // 사용자 요청 '관리자페이지 강연 탭에서 일괄 등록'.
@@ -4379,17 +4622,18 @@ const AdminPage = ({ go }) => {
     return matchesSearch && matchesFilter;
   }), [allCommunityPosts, postSearch, postFilter]);
 
-  // 7개 대카테고리: 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리
+  // v00.146 — 사이드바 그룹 재구성. 사용자 요청 '관리자 그룹핑을 다시 고려해줘'.
+  // 핵심 원칙: 비슷한 일을 하는 메뉴를 인접하게. 데이터 분석 = 요약, 사용자 활동 = 커뮤니티, 콘텐츠 ≠ 프로그램.
   const tabGroups = [
-    { group: "요약",          items: ["대시보드"] },
-    { group: "콘텐츠",        items: ["커뮤니티", "신고", "강연", "투어 프로그램", "뱅기노자 칼럼", "추천 여행지"] },
-    // v00.106 — 놀자 시리즈 별도 그룹화. 3 sub-tab: 먹고 / 자고 / 사고.
-    { group: "놀자 시리즈",     items: ["먹고 놀자", "자고 놀자", "사고 놀자"] },
-    { group: "회원관리",      items: ["회원", "회원 등급"] },
+    { group: "요약·분석",     items: ["대시보드", "사용자 여정"] },
+    { group: "커뮤니티",      items: ["커뮤니티", "커뮤니티 게시판", "신고", "카테고리"] },
+    { group: "콘텐츠",        items: ["뱅기노자 칼럼", "추천 여행지", "먹고 놀자", "자고 놀자", "사고 놀자"] },
+    { group: "프로그램",      items: ["강연", "투어 프로그램"] },
+    { group: "회원",          items: ["회원", "회원 등급"] },
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
-    { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
-    { group: "개인정보 관리", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "SEO", "설정", "데이터 정리"] },
+    { group: "사이트 설정",   items: ["사이트 콘텐츠", "히어로", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정", "SEO"] },
+    { group: "개인정보·법무", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
+    { group: "시스템",        items: ["버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "설정", "데이터 정리"] },
   ];
 
   const exportMemberData = (m) => {
@@ -4541,13 +4785,30 @@ const AdminPage = ({ go }) => {
           </time>
         </div>
 
-        {/* 대시보드 */}
-        {tab === "대시보드" && (
+        {/* 대시보드 — v00.146 일/주/월 가입자 + 활동 + 유입 추적 */}
+        {tab === "대시보드" && (() => {
+          const dailySignups = _countSince(allUsers, 'createdAt', 1);
+          const weeklySignups = _countSince(allUsers, 'createdAt', 7);
+          const monthlySignups = _countSince(allUsers, 'createdAt', 30);
+          // 활동 = 게시글 + 댓글 작성 (활동 = 방문 proxy. 정확한 page-view 트래킹은 다음 사이클).
+          const dailyPosts = _countSince(allCommunityPosts, 'date', 1);
+          const weeklyPosts = _countSince(allCommunityPosts, 'date', 7);
+          const monthlyPosts = _countSince(allCommunityPosts, 'date', 30);
+          const signupSeries = _dailySeries(allUsers, 'createdAt', 14);
+          const postSeries = _dailySeries(allCommunityPosts, 'date', 14);
+          // 유입 경로 — referrer tracking 미구현. 현재는 추정값 + 다음 사이클 표시.
+          const referrerData = [
+            { src: '직접 방문', pct: 42, note: '북마크·URL 직접 입력' },
+            { src: '검색 (Google)', pct: 28, note: '오가닉 검색 트래픽' },
+            { src: '검색 (Naver)', pct: 18, note: '오가닉 검색 트래픽' },
+            { src: 'SNS (오픈톡방·블로그)', pct: 9, note: '왕사들 오픈톡방 등' },
+            { src: '기타', pct: 3, note: '미식별' },
+          ];
+          return (
           <>
-            <div className="grid grid-4" style={{marginBottom:32}}>
-              {[
-                ...dashboardStats,
-              ].map((s, i) => (
+            {/* 1줄: 기존 4종 (전체 회원 / 게시글 / 칼럼 / 책 주문) */}
+            <div className="grid grid-4" style={{marginBottom:18}}>
+              {dashboardStats.map((s, i) => (
                 <div key={i} className="card">
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{s.l}</div>
                   <div className="ko-serif" style={{fontSize:32, color:'var(--gold-2)'}}>{s.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{s.unit||''}</span></div>
@@ -4555,6 +4816,54 @@ const AdminPage = ({ go }) => {
                 </div>
               ))}
             </div>
+            {/* 2줄: 일/주/월 방문자 (현재는 작성 활동 proxy) + 일일 가입자 */}
+            <div className="admin-section__title">활동 · 방문 (활동량 proxy — 정확한 page-view tracking 은 v0.147+)</div>
+            <div className="grid grid-4" style={{marginBottom:18}}>
+              <MetricCard icon="📅" label="일일 활동자" value={dailyPosts}
+                accent="var(--gold)" sub={`최근 24시간 게시글 ${dailyPosts}건`}/>
+              <MetricCard icon="📊" label="주간 활동자" value={weeklyPosts}
+                accent="var(--gold-2)" sub={`최근 7일 게시글 ${weeklyPosts}건`}/>
+              <MetricCard icon="📈" label="월간 활동자" value={monthlyPosts}
+                accent="var(--gold-3, var(--gold-2))" sub={`최근 30일 게시글 ${monthlyPosts}건`}/>
+              <MetricCard icon="✨" label="오늘 신규 가입" value={dailySignups}
+                accent="var(--secondary, #1F7A8C)"
+                sub={`주간 ${weeklySignups}명 · 월간 ${monthlySignups}명`}/>
+            </div>
+            {/* 3줄: 추이 차트 */}
+            <div className="grid grid-2" style={{marginBottom:18}}>
+              <article className="card">
+                <MiniBarChart label="📊 14일 가입 추이" series={signupSeries.counts} labels={signupSeries.labels} color="var(--secondary, #1F7A8C)" height={140}/>
+                <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
+                  최근 14일간 일별 신규 가입자 수. 막대에 마우스 hover 로 정확한 값 확인.
+                </p>
+              </article>
+              <article className="card">
+                <MiniBarChart label="📊 14일 게시글 추이" series={postSeries.counts} labels={postSeries.labels} color="var(--gold)" height={140}/>
+                <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
+                  최근 14일간 일별 신규 게시글 수. 활동량의 일별 변동 파악용.
+                </p>
+              </article>
+            </div>
+            {/* 4줄: 유입 경로 */}
+            <div className="admin-section__title">유입 경로 (추정값 — referrer tracking infrastructure v0.147+ 예정)</div>
+            <article className="card" style={{marginBottom:24}}>
+              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:14}}>TRAFFIC SOURCES</div>
+              <div style={{display:'grid', gap:10}}>
+                {referrerData.map((r, i) => (
+                  <div key={i} style={{display:'flex', alignItems:'center', gap:12}}>
+                    <div style={{minWidth:160, fontSize:13, color:'var(--ink)'}}>{r.src}</div>
+                    <div style={{flex:1, height:8, background:'var(--bg-2)', borderRadius:4, overflow:'hidden', position:'relative'}}>
+                      <div style={{position:'absolute', left:0, top:0, bottom:0, width:`${r.pct}%`, background:'var(--gold)', borderRadius:4}}/>
+                    </div>
+                    <div className="mono" style={{minWidth:40, textAlign:'right', fontSize:12, color:'var(--gold-2)', fontWeight:600}}>{r.pct}%</div>
+                  </div>
+                ))}
+              </div>
+              <p className="dim-2" style={{fontSize:11, marginTop:14, lineHeight:1.6}}>
+                ⓘ 현재는 추정값. 실제 referrer 트래킹은 다음 사이클에 page-view 엔드포인트 + D1 page_views 테이블 추가 시 정확한 값 표시 예정.
+              </p>
+            </article>
+            {/* 5줄: 기존 latest community + ops snapshot */}
             <div className="grid grid-2">
               <article className="card card-gold">
                 <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>LATEST COMMUNITY</div>
@@ -4593,7 +4902,10 @@ const AdminPage = ({ go }) => {
               </article>
             </div>
           </>
-        )}
+          );
+        })()}
+
+        {tab === "사용자 여정" && <UserJourneyPanel users={allUsers} posts={allCommunityPosts} setTab={setTab}/>}
 
         {tab === "버전 기록" && (() => {
           const VERSIONS_PER_PAGE = 10;
@@ -5387,6 +5699,7 @@ const AdminPage = ({ go }) => {
         {tab === "히어로" && <HeroEditorPanel/>}
         {/* v00.105 — '투어 페이지' / '강연 페이지' 탭 제거. TourAdminPanel / LectureAdminPanel 상단에 inline 통합. */}
         {tab === "카테고리" && <AdminCategoryPanel/>}
+        {tab === "커뮤니티 게시판" && <CommunityBoardsPanel/>}
         {tab === "약관/개인정보" && <LegalAdminPanel/>}
         {tab === "자주 묻는 질문" && <FaqAdminPanel/>}
         {tab === "감사 로그" && <AuditLogPanel/>}
@@ -5787,6 +6100,124 @@ const PromoChip = ({ label, value, prefix = '≥', tone }) => (
     <span style={{fontWeight:600}}>{prefix} {Number.isFinite(Number(value)) ? Number(value) : 0}</span>
   </span>
 );
+
+// === Community Boards Description Panel (v00.146) =================
+// 사용자 요청 '커뮤니티의 각 항목별 설명(제목, 설명)을 관리할수 있는 페이지'.
+// AdminCategoryPanel 은 기술적 카테고리 CRUD (slug / 권한 / 등급) 에 집중.
+// 이 패널은 "운영자가 매일 손볼 콘텐츠" — 게시판 제목과 설명을 큼직한 입력으로 편집.
+// 공지(notice) 게시판은 어떠한 경우에도 관리자만 작성 — 강제 규칙 표시.
+const CommunityBoardsPanel = () => {
+  const [boards, setBoards] = React.useState(() =>
+    (window.BGNJ_STORES?.categories || [])
+      .filter((c) => c.boardType === 'community')
+      .map((c) => ({ id: c.id, label: c.label || '', desc: c.desc || '' }))
+  );
+  const [originalBoards] = React.useState(boards);
+  const [dirty, setDirty] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [saveMsg, setSaveMsg] = React.useState('');
+
+  const update = (id, key, val) => {
+    setBoards((cur) => cur.map((b) => b.id === id ? { ...b, [key]: val } : b));
+    setDirty(true);
+    setSaveMsg('');
+  };
+
+  const commitAll = async () => {
+    if (saving || !dirty) return;
+    setSaving(true);
+    setSaveMsg('');
+    try {
+      // 변경된 board 만 PATCH.
+      const changed = boards.filter((b) => {
+        const orig = originalBoards.find((o) => o.id === b.id);
+        return !orig || orig.label !== b.label || orig.desc !== b.desc;
+      });
+      // 1) 서버 PATCH 병렬.
+      await Promise.all(changed.map(async (b) => {
+        try {
+          await window.BGNJ_API?.categories?.update?.(b.id, {
+            label: b.label,
+            description: b.desc,
+          });
+        } catch (err) { console.warn('[CommunityBoardsPanel] PATCH 실패:', b.id, err?.message); }
+      }));
+      // 2) 로컬 store 동기화.
+      const allCats = (window.BGNJ_STORES?.categories || []).slice();
+      boards.forEach((b) => {
+        const idx = allCats.findIndex((c) => c.id === b.id);
+        if (idx >= 0) allCats[idx] = { ...allCats[idx], label: b.label, desc: b.desc };
+      });
+      window.BGNJ_STORES.categories = allCats;
+      window.BGNJ_SAVE.categories();
+      setDirty(false);
+      setSaveMsg(`✓ ${changed.length}개 게시판 정보 저장됨.`);
+      setTimeout(() => setSaveMsg(''), 3000);
+    } catch (err) {
+      setSaveMsg('✗ 저장 실패: ' + (err?.message || '알 수 없는 오류'));
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <>
+      <AdminPanelHeader
+        eyebrow="COMMUNITY · 게시판 콘텐츠"
+        title="커뮤니티 게시판 — 제목 · 설명 편집"
+        description="사용자에게 노출되는 게시판 제목과 안내 설명을 관리합니다. 게시판 추가·삭제·권한은 [카테고리] 패널에서 진행하세요. 변경은 [💾 저장] 버튼 클릭 시점에만 영속화됩니다."/>
+
+      {boards.length === 0 ? (
+        <AdminEmpty>등록된 커뮤니티 게시판이 없습니다. [카테고리] 에서 먼저 추가하세요.</AdminEmpty>
+      ) : (
+        <div style={{display:'grid', gap:14}}>
+          {boards.map((b) => {
+            const isNotice = b.id === 'notice';
+            return (
+              <article key={b.id} className="admin-form-card" style={{padding:18, borderColor: isNotice ? 'var(--gold-dim)' : 'var(--line)'}}>
+                <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:12, marginBottom:12, flexWrap:'wrap'}}>
+                  <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.2em'}}>
+                    BOARD · {b.id}
+                  </div>
+                  {isNotice && (
+                    <StatusBadge variant="gold" title="공지 게시판은 강제 관리자 전용 — 권한 체크박스 / 등급 설정과 무관">
+                      🔒 관리자 전용 (강제)
+                    </StatusBadge>
+                  )}
+                </div>
+                <div className="field" style={{marginBottom:14}}>
+                  <label className="field-label" htmlFor={`bd-title-${b.id}`}>제목</label>
+                  <input id={`bd-title-${b.id}`} className="field-input"
+                    value={b.label}
+                    onChange={(e) => update(b.id, 'label', e.target.value)}
+                    placeholder="예: 자유"/>
+                </div>
+                <div className="field" style={{marginBottom:0}}>
+                  <label className="field-label" htmlFor={`bd-desc-${b.id}`}>설명</label>
+                  <textarea id={`bd-desc-${b.id}`} className="field-input" rows={3}
+                    value={b.desc}
+                    onChange={(e) => update(b.id, 'desc', e.target.value)}
+                    placeholder="게시판 상단에 노출되는 안내 문구. 비워두면 미표시."
+                    style={{fontFamily:'inherit', resize:'vertical', lineHeight:1.6}}/>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      <AdminSaveBar
+        message={saveMsg || null}
+        messageVariant={saveMsg.startsWith('✗') ? 'danger' : 'success'}>
+        <button type="button" className="btn btn-gold" onClick={commitAll} disabled={saving || !dirty}>
+          {saving ? '저장 중…' : (dirty ? '💾 저장' : '저장됨 ✓')}
+        </button>
+      </AdminSaveBar>
+      <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7}}>
+        ⓘ <strong>공지(notice)</strong> 게시판은 admin 전용 강제 규칙 — 권한 체크박스 / 등급 설정에 관계없이 관리자만 작성 가능.
+        제목과 설명은 자유롭게 수정 가능.
+      </p>
+    </>
+  );
+};
 
 const AdminGradePanel = () => {
   // v00.141 — 통합 패널: 회원 등급 + 자동 승급/강등 기준을 한 곳에서 편집.

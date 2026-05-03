@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.146.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🆕 커뮤니티 게시판 패널 + 사이드바 재구성 + 대시보드 6 카드 + 사용자 여정 + 공지 강제 admin",
+    details: [
+      "🆕 [CommunityBoardsPanel] 커뮤니티 게시판 제목/설명 전용 편집 패널. AdminCategoryPanel 의 기술적 카테고리 CRUD 와 분리. 큼직한 textarea + dirty 추적 + 단일 [💾 저장]. notice 게시판은 🔒 강제 관리자 전용 뱃지 노출.",
+      "🆕 [공지 강제 admin] 워커 handlePostsCreate + 클라이언트 CommunityPage handleWrite — categoryId === 'notice' 면 비관리자 차단 (allow_write 체크박스 / postMinLevel 설정과 무관).",
+      "🆕 [사이드바 그룹 재구성] 9개 그룹 — 요약·분석 / 커뮤니티 / 콘텐츠 / 프로그램 / 회원 / 쇼핑 / 사이트 설정 / 개인정보·법무 / 시스템. 비슷한 일을 하는 메뉴 인접 배치. '카테고리' → 커뮤니티 그룹, '놀자 시리즈' 흡수 → 콘텐츠 그룹, 'SEO' → 사이트 설정 그룹.",
+      "🆕 [대시보드 메트릭 카드] 일/주/월 활동자 + 일일 신규 가입 4 카드 (MetricCard 컴포넌트). 14일 가입 추이 + 게시글 추이 SVG MiniBarChart 2 카드. 유입 경로 percentage bar 5 항목 (현재는 추정값 + v0.147+ 실제 referrer tracking 예정 안내).",
+      "🆕 [사용자 여정 패널] 좌측 회원 목록 + 우측 선택 회원의 가입→게시글 시간순 타임라인. 월별 가입 코호트 차트. 댓글/신청/주문은 audit_log 통합 시 v0.147+ 추가 예정.",
+      "ℹ 워커 deploy 필요 (handlePostsCreate notice 차단). 미배포 시 클라이언트 차단만 작동.",
+      "📦 cache-buster — `?v=00.146.000`.",
+    ],
+    context: "사용자 요청 4건 동시 처리 — (1) 커뮤니티 게시판 콘텐츠 편집 패널 (2) 공지 강제 관리자 (3) 사이드바 재구성 (4) 대시보드 카드 + 사용자 여정. 추가로 활동량 차트 + 유입 경로 placeholder. 정확한 page-view tracking infrastructure (D1 page_views 테이블 + 워커 endpoint) 는 다음 사이클로 분리.",
+  },
+  {
     version: "00.145.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",

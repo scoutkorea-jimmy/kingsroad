@@ -668,8 +668,10 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     }
     // Writable categories for current user.
     // v00.141 — allow_write 가 명시 false 인 게시판은 비관리자 제외.
+    // v00.146 — 공지(notice) 는 어떠한 경우에도 관리자만 작성 (강제 규칙).
     const isAdmin = !!(user?.isAdmin || user?.gradeId === 'admin');
     const writable = categories.filter((c) => {
+      if (c.id === 'notice' && !isAdmin) return false;
       if (c.allowWrite === false && !isAdmin) return false;
       return userLevel >= (c.postMinLevel ?? c.minLevel ?? 0);
     });
