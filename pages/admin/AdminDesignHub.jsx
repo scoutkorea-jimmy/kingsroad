@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.151.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🩹 책 CTA 실 데이터 사용 + 영문판 미입력 시 hide + BookPage 표지",
+    details: [
+      "🩹 [홈 책 CTA root cause] 사용자 보고 '책 이미지 올라가있는데 홈에 반영 안 됨'. 원인: HomePage 책 CTA 섹션이 완전 하드코드 — title='왕의길', 가격 28,000/35,000, 표지 placeholder div 모두 BGNJ_BOOKS 데이터 무시.",
+      "🩹 BGNJ_BOOKS.primary() 실 데이터 사용 — 대표 책 없으면 섹션 자체 hide. title / desc / publishedAt 연도 / coverDataUri (있으면 <img>, 없으면 generic placeholder).",
+      "🩹 [영문판 미입력 hide] 사용자 요청 '영문판 정보 입력 안 하면 비워놔'. priceKR / priceEN > 0 인 판본만 노출. 영문판 가격 0/null 이면 영문판 카드 자체 hide. BookPage 의 판본 선택 버튼도 동일 — 단일 판본이면 1열 grid.",
+      "🩹 [BookPage 표지 root fix] 'コ의길' 한자 하드코드 제거. book.coverDataUri 있으면 <img>, 없으면 generic placeholder (BANGINOJA PRESS + book.title + book.author).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.151.000`.",
+    ],
+    context: "사용자 보고 책 정보가 admin → public 반영 안 됨. 원인은 home/BookPage 의 하드코드. 모든 책 정보가 admin 편집 → 즉시 public 반영되도록 정리.",
+  },
+  {
     version: "00.150.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",

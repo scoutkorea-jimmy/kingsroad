@@ -780,53 +780,73 @@ const HomePage = ({ go }) => {
         </section></HomeSectionBoundary>
       )}
 
-      {/* ── 책 CTA ───────────────────────────────────────────────────── */}
-      <HomeSectionBoundary label="책 CTA"><section className="section">
-        <div className="container">
-          <div className="card cta-grid" style={{
-            padding:'72px 60px',
-            display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center',
-            background:'var(--bg-2)', border:'1px solid var(--line)',
-          }}>
-            <div>
-              <div className="section-eyebrow">뱅기노자 출판 · 2026</div>
-              <h2 style={{
-                fontFamily:'var(--font-serif)', fontSize:'clamp(36px, 4vw, 52px)',
-                fontWeight:600, lineHeight:1.1, marginBottom:16,
-              }}>
-                『왕의길』
-              </h2>
-              <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:28}}>
-                뱅기노자가 15년간 쌓아올린 궁궐 답사와 역사 독해의 결실.
-                조선의 왕들이 걸었던 길을 통해 오늘의 여행을 다시 읽다.
-              </p>
-              <div style={{display:'flex', gap:20, marginBottom:32}}>
-                <div>
-                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>국문판</div>
-                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>28,000원</div>
-                </div>
-                <div style={{width:1, background:'var(--line-2)'}}/>
-                <div>
-                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>영문판</div>
-                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>35,000원</div>
-                </div>
-              </div>
-              <button className="btn btn-gold" onClick={() => go('book')}>구매하기 →</button>
-            </div>
-            <div style={{
-              aspectRatio:'3/4', maxWidth:280, margin:'0 auto',
-              background:'var(--bg)', border:'1px solid var(--line-2)',
-              display:'grid', placeItems:'center',
+      {/* ── 책 CTA — v00.151 BGNJ_BOOKS.primary() 실 데이터 사용 ──────── */}
+      {(() => {
+        const primaryBook = G.call(() => window.BGNJ_BOOKS?.primary?.(), null);
+        if (!primaryBook) return null; // 대표 책 없으면 섹션 자체 hide.
+        const hasPriceKR = Number(primaryBook.priceKR) > 0;
+        const hasPriceEN = Number(primaryBook.priceEN) > 0;
+        return (
+        <HomeSectionBoundary label="책 CTA"><section className="section">
+          <div className="container">
+            <div className="card cta-grid" style={{
+              padding:'72px 60px',
+              display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center',
+              background:'var(--bg-2)', border:'1px solid var(--line)',
             }}>
-              <div style={{textAlign:'center', padding:'0 24px'}}>
-                <div style={{fontFamily:'var(--font-serif)', fontSize:28, color:'var(--ink)', marginBottom:10, fontWeight:600}}>왕의길</div>
-                <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.28em', marginBottom:6}}>WANG-EUI-GIL</div>
-                <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.2em'}}>뱅기노자 지음</div>
+              <div>
+                <div className="section-eyebrow">뱅기노자 출판 · {primaryBook.publishedAt ? new Date(primaryBook.publishedAt).getFullYear() : new Date().getFullYear()}</div>
+                <h2 style={{
+                  fontFamily:'var(--font-serif)', fontSize:'clamp(36px, 4vw, 52px)',
+                  fontWeight:600, lineHeight:1.1, marginBottom:16,
+                }}>
+                  『{primaryBook.title}』
+                </h2>
+                {primaryBook.desc && (
+                  <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:28, whiteSpace:'pre-wrap'}}>
+                    {primaryBook.desc}
+                  </p>
+                )}
+                {(hasPriceKR || hasPriceEN) && (
+                  <div style={{display:'flex', gap:20, marginBottom:32, alignItems:'flex-end'}}>
+                    {hasPriceKR && (
+                      <div>
+                        <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>국문판</div>
+                        <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(primaryBook.priceKR).toLocaleString()}원</div>
+                      </div>
+                    )}
+                    {hasPriceKR && hasPriceEN && <div style={{width:1, background:'var(--line-2)', alignSelf:'stretch'}}/>}
+                    {hasPriceEN && (
+                      <div>
+                        <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>영문판</div>
+                        <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(primaryBook.priceEN).toLocaleString()}원</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <button className="btn btn-gold" onClick={() => go('book')}>구매하기 →</button>
+              </div>
+              {/* 표지 — coverDataUri 있으면 실제 이미지, 없으면 placeholder */}
+              <div style={{
+                aspectRatio:'3/4', maxWidth:280, margin:'0 auto',
+                background:'var(--bg)', border:'1px solid var(--line-2)',
+                display:'grid', placeItems:'center', overflow:'hidden',
+              }}>
+                {primaryBook.coverDataUri ? (
+                  <img src={primaryBook.coverDataUri} alt={`${primaryBook.title} 표지`}
+                    style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                ) : (
+                  <div style={{textAlign:'center', padding:'0 24px'}}>
+                    <div style={{fontFamily:'var(--font-serif)', fontSize:28, color:'var(--ink)', marginBottom:10, fontWeight:600}}>{primaryBook.title}</div>
+                    <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.2em'}}>{primaryBook.author || '뱅기노자'} 지음</div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      </section></HomeSectionBoundary>
+        </section></HomeSectionBoundary>
+        );
+      })()}
 
     </div>
   );

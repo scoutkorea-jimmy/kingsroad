@@ -125,42 +125,40 @@ const BookPage = ({ go, cart, setCart, user }) => {
     <div className="section">
       <div className="container">
         <div style={{display:'grid', gridTemplateColumns:'1fr 1.1fr', gap:80}} className="book-grid">
-          {/* LEFT: cover */}
+          {/* LEFT: cover — v00.151 실제 book.coverDataUri 우선, 없으면 generic placeholder. */}
           <div style={{position:'sticky', top:100, alignSelf:'start'}}>
             <div style={{position:'relative', maxWidth:440, margin:'0 auto'}}>
-              <div className="placeholder" style={{
-                aspectRatio:'3/4',
-                background:`linear-gradient(135deg, var(--bg-3), #000),
-                  repeating-linear-gradient(45deg, rgba(245,213,72,0.06) 0 6px, transparent 6px 12px)`,
-                border:'1px solid var(--gold-dim)',
-                display:'flex',
-                flexDirection:'column',
-                justifyContent:'space-between',
-                padding:'40px 32px',
-                fontSize:12,
-                color:'var(--gold)',
-              }}>
-                <div>
-                  <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', marginBottom:8}}>BANGINOJA PRESS · 2026</div>
-                  <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.2em'}}>{version === "KR" ? "KR EDITION" : "EN EDITION"}</div>
+              {book.coverDataUri ? (
+                <div style={{aspectRatio:'3/4', border:'1px solid var(--gold-dim)', overflow:'hidden', background:'var(--bg-2)'}}>
+                  <img src={book.coverDataUri} alt={`${book.title} 표지`}
+                    style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
                 </div>
-                <div style={{textAlign:'center'}}>
-                  <div style={{fontFamily:'var(--font-serif)', fontSize:68, color:'var(--gold-2)', lineHeight:1}}>
-                    {version === "KR" ? "王의길" : "The"}
+              ) : (
+                <div className="placeholder" style={{
+                  aspectRatio:'3/4',
+                  background:`linear-gradient(135deg, var(--bg-3), #000),
+                    repeating-linear-gradient(45deg, rgba(245,213,72,0.06) 0 6px, transparent 6px 12px)`,
+                  border:'1px solid var(--gold-dim)',
+                  display:'flex', flexDirection:'column', justifyContent:'space-between',
+                  padding:'40px 32px', fontSize:12, color:'var(--gold)',
+                }}>
+                  <div>
+                    <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', marginBottom:8}}>BANGINOJA PRESS</div>
+                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.2em'}}>{version === "KR" ? "KR EDITION" : "EN EDITION"}</div>
                   </div>
-                  {version === "EN" && (
-                    <div style={{fontFamily:'var(--font-serif)', fontSize:38, color:'var(--gold-2)', marginTop:8}}>
-                      King's<br/>Path
+                  <div style={{textAlign:'center'}}>
+                    <div style={{fontFamily:'var(--font-serif)', fontSize:36, color:'var(--gold-2)', lineHeight:1.2}}>
+                      {book.title}
                     </div>
-                  )}
-                  <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', marginTop:20, color:'var(--ink-2)'}}>
-                    {version === "KR" ? "— 뱅기노자 —" : "— BANGINOJA —"}
+                    <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', marginTop:20, color:'var(--ink-2)'}}>
+                      — {book.author || '뱅기노자'} —
+                    </div>
+                  </div>
+                  <div style={{textAlign:'center'}}>
+                    <BanginojaIcon size={28}/>
                   </div>
                 </div>
-                <div style={{textAlign:'center'}}>
-                  <BanginojaIcon size={28}/>
-                </div>
-              </div>
+              )}
               {/* subtle shadow offset */}
               <div style={{position:'absolute', top:16, left:16, right:-16, bottom:-16, border:'1px solid var(--line-2)', zIndex:-1}}/>
             </div>
@@ -212,26 +210,32 @@ const BookPage = ({ go, cart, setCart, user }) => {
               <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12, textTransform:'uppercase'}}>
                 판본 선택
               </div>
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
-                {[
-                  { k: "KR", label: "국문판", sub: "Korean", price: book.priceKR },
-                  { k: "EN", label: "영문판", sub: "English", price: book.priceEN },
-                ].map(v => (
-                  <button key={v.k}
-                    onClick={() => setVersion(v.k)}
-                    style={{
-                      padding:'20px',
-                      border: version === v.k ? '1px solid var(--gold)' : '1px solid var(--line-2)',
-                      background: version === v.k ? 'rgba(245,213,72,0.05)' : 'transparent',
-                      textAlign:'left',
-                      cursor:'pointer',
-                    }}>
-                    <div className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: version === v.k ? 'var(--gold)' : 'var(--ink-3)'}}>{v.sub.toUpperCase()}</div>
-                    <div className="ko-serif" style={{fontSize:20, marginTop:4}}>{v.label}</div>
-                    <div className="gold-2 ko-serif" style={{fontSize:20, marginTop:8}}>{window.BGNJ_FMT.won(v.price)}</div>
-                  </button>
-                ))}
-              </div>
+              {/* v00.151 — 입력된 가격만 노출. priceEN 0/null 이면 영문판 버튼 자체 hide. */}
+              {(() => {
+                const versions = [];
+                if (Number(book.priceKR) > 0) versions.push({ k: 'KR', label: '국문판', sub: 'Korean', price: book.priceKR });
+                if (Number(book.priceEN) > 0) versions.push({ k: 'EN', label: '영문판', sub: 'English', price: book.priceEN });
+                if (versions.length === 0) return <p className="dim" style={{fontSize:13}}>판매 준비 중입니다.</p>;
+                return (
+                  <div style={{display:'grid', gridTemplateColumns: versions.length === 1 ? '1fr' : '1fr 1fr', gap:12}}>
+                    {versions.map(v => (
+                      <button key={v.k}
+                        onClick={() => setVersion(v.k)}
+                        style={{
+                          padding:'20px',
+                          border: version === v.k ? '1px solid var(--gold)' : '1px solid var(--line-2)',
+                          background: version === v.k ? 'rgba(245,213,72,0.05)' : 'transparent',
+                          textAlign:'left',
+                          cursor:'pointer',
+                        }}>
+                        <div className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: version === v.k ? 'var(--gold)' : 'var(--ink-3)'}}>{v.sub.toUpperCase()}</div>
+                        <div className="ko-serif" style={{fontSize:20, marginTop:4}}>{v.label}</div>
+                        <div className="gold-2 ko-serif" style={{fontSize:20, marginTop:8}}>{window.BGNJ_FMT.won(v.price)}</div>
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* qty */}
