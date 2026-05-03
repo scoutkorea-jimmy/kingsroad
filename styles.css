@@ -214,11 +214,16 @@
 button:focus-visible,
 [role="button"]:focus-visible,
 a.nav-link:focus-visible,
-.nav-link:focus-visible,
-.btn:focus-visible {
+.nav-link:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: 2px;
+}
+/* .btn 은 자체 border-radius 8px (v00.158) — outline 도 정합. */
+.btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 /* 모달은 ESC 또는 backdrop 클릭 시 useModalGuard 가 처리 — CSS 는 visual feedback 만. */
 [role="dialog"][aria-modal="true"]:focus-visible { outline: none; }
@@ -947,7 +952,9 @@ main time, main .section-eyebrow {
   align-items: center;
 }
 
-/* ---- Buttons ---- */
+/* ---- Buttons (v00.158 — 사용자 요청 '버튼이 너무 정사각형이라 바이브코딩 티') ---- */
+/* sharp 카드 디자인 언어를 유지하면서 인터랙티브 요소만 살짝 부드럽게:
+   border-radius 8px + subtle shadow + hover 시 살짝 떠오르는 micro-interaction. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -957,24 +964,69 @@ main time, main .section-eyebrow {
   font-size: 13px;
   letter-spacing: 0.12em;
   border: 1px solid var(--line-2);
+  border-radius: 8px;
   color: var(--ink);
   cursor: pointer;
-  transition: all .25s;
   background: transparent;
   text-transform: uppercase;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: background-color .2s cubic-bezier(.2,.7,.2,1),
+              border-color .2s cubic-bezier(.2,.7,.2,1),
+              color .2s cubic-bezier(.2,.7,.2,1),
+              box-shadow .2s cubic-bezier(.2,.7,.2,1),
+              transform .2s cubic-bezier(.2,.7,.2,1);
 }
-.btn:hover { border-color: var(--gold); color: var(--gold); }
+.btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition-duration: .08s;
+}
 .btn-gold {
   border-color: var(--cta-rest);
   color: var(--cta-ink);
   background: var(--cta-rest);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
-.btn-gold:hover  { background: var(--cta-hover);  border-color: var(--cta-hover);  color: var(--cta-ink); }
-.btn-gold:active { background: var(--cta-active); border-color: var(--cta-active); color: var(--cta-ink); }
-.btn-ghost { border-color: transparent; color: var(--ink-2); padding: 8px 0; }
-.btn-ghost:hover { color: var(--gold); border-color: transparent; }
-.btn-small { padding: 8px 16px; font-size: 11px; }
+.btn-gold:hover  {
+  background: var(--cta-hover);
+  border-color: var(--cta-hover);
+  color: var(--cta-ink);
+  box-shadow: 0 6px 16px rgba(245, 213, 72, 0.28);
+}
+.btn-gold:active {
+  background: var(--cta-active);
+  border-color: var(--cta-active);
+  color: var(--cta-ink);
+  box-shadow: 0 1px 2px rgba(245, 213, 72, 0.18);
+}
+/* ghost = 텍스트 링크 성격. radius/shadow/lift 미적용. */
+.btn-ghost {
+  border-color: transparent;
+  color: var(--ink-2);
+  padding: 8px 0;
+  border-radius: 4px;
+  box-shadow: none;
+}
+.btn-ghost:hover {
+  color: var(--gold);
+  border-color: transparent;
+  transform: none;
+  box-shadow: none;
+}
+.btn-ghost:active { transform: none; box-shadow: none; }
+.btn-small { padding: 8px 16px; font-size: 11px; border-radius: 6px; }
 .btn-block { width: 100%; }
+/* 모션 민감 사용자 — transform 비활성. 그림자는 정적 유지. */
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: background-color .15s, border-color .15s, color .15s; }
+  .btn:hover, .btn:active { transform: none; }
+}
 
 /* ---- Section header ---- */
 .section {

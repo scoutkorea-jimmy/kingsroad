@@ -4,6 +4,25 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.158.000",
+    date: "2026-05-04",
+    datetime: "2026-05-04T00:35:15+09:00",
+    summary: "🎨 버튼 모양 자연스럽게 — border-radius 8px + subtle shadow + hover lift (사용자: '바이브코딩 티')",
+    details: [
+      "🎨 [.btn radius 0 → 8px] 사용자 보고 '버튼이 너무 정사각형이라 바이브코딩 티'. 진단: styles.css:951 `.btn` 정의가 border-radius 미지정 (브라우저 기본 0). 카드/입력 등 다른 박스는 sharp 디자인 언어 일관 — 버튼만 살짝 부드럽게 해 인터랙티브 요소가 카드와 시각 위계로 구별되게.",
+      "🎨 [subtle shadow 도입] rest `0 1px 2px rgba(15,23,42,0.04)` / hover `0 4px 12px rgba(15,23,42,0.08)`. .btn-gold 는 gold tint shadow `0 6px 16px rgba(245,213,72,0.28)` (브랜드 호흡). hover 시 `translateY(-1px)` 떠오름, active 에 `translateY(0)` + 그림자 줄임 (누르는 느낌).",
+      "🎨 [.btn-ghost 보호] 텍스트 링크 성격이라 그림자/transform/큰 radius 미적용 (radius 4px 만 살짝). hover 도 색만 변화.",
+      "🎨 [.btn-small radius 6px] 작은 버튼은 더 작은 radius — visual scale 정합.",
+      "♿ [a11y] :focus-visible outline border-radius 도 8px (.btn 한정) 로 정합. prefers-reduced-motion: reduce 시 transform 비활성화 (그림자는 정적 유지).",
+      "✨ [transition tuning] `cubic-bezier(.2,.7,.2,1)` ease-out 곡선 + 0.2s + active 시 .08s 빠른 응답. 사용자가 누르는 동작에 즉시 시각 반응.",
+      "ℹ 다크/라이트 모드 둘 다 자연스러움 (그림자 alpha 가 작아 별도 override 불필요). 카드/입력은 변경 없음 (사용자 지시 대상 아님).",
+      "ℹ 인라인 정사각형 버튼 (BookCheckoutPage.jsx:295,297 의 +/− 수량) 은 인라인 style 이라 본 변경 영향 안 받음 — 별 사이클에서 일괄 정리 후보.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.158.000`.",
+    ],
+    context: "사용자가 '바이브코딩 티' 라는 표현으로 디자인 수정 요청. 진단 결과 .btn / .card / .field-input 모두 border-radius 0 — sharp wireframe 느낌이 사이트 전반. 버튼만 8px + shadow + lift 로 인터랙티브 시그널을 시각 위계로 분리. 카드는 sharp 유지로 시각 다양성 확보.",
+  },
+  {
     version: "00.157.000",
     date: "2026-05-04",
     datetime: "2026-05-04T00:19:38+09:00",
