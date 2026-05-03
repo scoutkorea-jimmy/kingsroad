@@ -6,7 +6,7 @@
 //   const { onBackdropClick } = useModalGuard({ open, dirty, onClose, onSaveDraft });
 //   <div onClick={onBackdropClick}>...</div>
 // onSaveDraft 가 있고 dirty 면 prompt — 저장 / 버리기 / 취소.
-window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label }) {
+window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label, contentRef }) {
   const promptName = label || '작성 중인 내용';
   // v00.127 — handleAttemptClose 를 ref 로 안정화. 이전엔 dirty/onClose/onSaveDraft 가 부모
   // re-render 마다 새 ref → handleAttemptClose 새 ref → useEffect 의 deps 변경 → cleanup 실행
@@ -59,6 +59,55 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
   const onBackdropClick = React.useCallback((e) => {
     if (e.target === e.currentTarget) handleAttemptClose();
   }, [handleAttemptClose]);
+
+  // v00.160 — focus trap (a11y P1-1). 모달 open 시 첫 focusable focus + Tab 순환 + 닫힐 때 직전 focus 복원.
+  // contentRef 미전달 시 [role="dialog"][aria-modal="true"] 또는 [data-bgnj-modal="true"] 폴백 selector.
+  // 5 호출 사이트는 변경 0 — selector 미매치 시 trap 비활성 (회귀 안전).
+  React.useEffect(() => {
+    if (!open) return;
+    const prevFocus = document.activeElement;
+    // 모달이 mount 되기 전에 effect 가 돌면 querySelector null → 다음 프레임에서 재시도.
+    let container = null;
+    const findContainer = () => contentRef?.current
+      || document.querySelector('[role="dialog"][aria-modal="true"]')
+      || document.querySelector('[data-bgnj-modal="true"]');
+    container = findContainer();
+    let raf = null;
+    if (!container) {
+      raf = requestAnimationFrame(() => { container = findContainer(); attach(); });
+    }
+    const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const listFocusables = () => {
+      if (!container) return [];
+      return Array.from(container.querySelectorAll(FOCUSABLE))
+        .filter((el) => el.offsetParent !== null);
+    };
+    const onKey = (e) => {
+      if (e.key !== 'Tab') return;
+      const fs = listFocusables();
+      if (fs.length === 0) return;
+      const first = fs[0], last = fs[fs.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) { e.preventDefault(); try { last.focus(); } catch {} }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); try { first.focus(); } catch {} }
+    };
+    function attach() {
+      if (!container) return;
+      // 첫 focus — 이미 모달 안에 focus 가 있지 않을 때만.
+      const fs = listFocusables();
+      if (fs.length > 0 && !container.contains(document.activeElement)) {
+        try { fs[0].focus(); } catch {}
+      }
+      container.addEventListener('keydown', onKey);
+    }
+    attach();
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      if (container) container.removeEventListener('keydown', onKey);
+      // 직전 focus 복원 — element 가 unmount 됐으면 silent.
+      try { prevFocus?.focus?.(); } catch {}
+    };
+  }, [open, contentRef]);
 
   return { onBackdropClick, handleAttemptClose };
 };

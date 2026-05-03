@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.160.000",
+    date: "2026-05-04",
+    datetime: "2026-05-04T00:46:11+09:00",
+    summary: "♿ useModalGuard focus trap (P1 a11y) + ★ 워커 deploy (v00.154 영수증 mail subject 동적화)",
+    details: [
+      "♿ [P1-1 focus trap] useModalGuard 에 (a) 모달 open 시 첫 focusable 자동 focus, (b) Tab/Shift+Tab 시 첫↔마지막 wrap, (c) 모달 닫힐 때 직전 focus 복원 추가. 5 호출 사이트 (HomePage 지도/추천 + AuthAdminPage 문서뷰어/게시글뷰) 변경 0 — `[role='dialog'][aria-modal='true']` 또는 `[data-bgnj-modal='true']` 폴백 selector 사용. 미부착 모달은 trap 비활성 (회귀 안전).",
+      "♿ [메가메뉴 :focus-within 진단 정정] v00.156 검토 보고서가 'focus-within 누락' 으로 본 것은 오진단. styles.css:1546-1547 에 이미 `.nav-has-mega:focus-within .nav-mega { ... }` 적용되어 있었음. 키보드로 헤더 메가메뉴 진입 정상.",
+      "★ [워커 deploy] v00.154 에서 push 한 workers/src/index.js:1530 의 영수증 mail subject 동적화 (book_orders LEFT JOIN books) 활성화. cd workers && wrangler deploy. 효과: 주문 상태 변경 시 이메일 알림 제목이 동적 책 제목.",
+      "ℹ contentRef 옵션 — useModalGuard 시그니처에 추가했으나 5 기존 호출 사이트는 미전달 → 폴백 selector. dialog 컴포넌트가 `role='dialog' aria-modal='true'` 어트리뷰트 부착 시 자동 trap.",
+      "ℹ requestAnimationFrame 으로 모달 mount 직후 트라이 (race 흡수).",
+      "📦 cache-buster — `?v=00.160.000`.",
+    ],
+    context: "v00.156 검토 보고서의 P1-1 a11y (focus trap) 마무리 + 큐 2 의 v00.154 워커 deploy 잔여를 한 사이클로 묶음. 사용자 명시 '디플로이가 필요하면 디플로이 진행해'. P1-2 (성능: React production build / script defer / PII localStorage) 는 v00.161 별 사이클 — 더 큰 변화라 분리.",
+  },
+  {
     version: "00.159.000",
     date: "2026-05-04",
     datetime: "2026-05-04T00:39:10+09:00",
