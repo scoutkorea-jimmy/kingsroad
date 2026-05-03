@@ -1,7 +1,9 @@
 // 마이페이지
 // 데이터 원칙: 모든 콘텐츠 데이터는 서버(D1) source-of-truth — BGNJ_LECTURES/TOURS/COMMUNITY/BOOK_ORDERS.
 // BANGINOJA_DATA 정적 시드는 더 이상 참조하지 않는다 (v00.046 정합).
+// v00.131 — 탭 구조 (강연/답사/주문/알림/커뮤니티/프로필 수정). 추천동선/북마크 섹션 제거 (사용자 요청).
 const MyPage = ({ go, user, cart }) => {
+  const [tab, setTab] = React.useState('lectures'); // 'lectures' | 'tours' | 'orders' | 'notifications' | 'community' | 'profile'
   const [orderTick, setOrderTick] = React.useState(0);
   const [refundTarget, setRefundTarget] = React.useState(null);
   const [refundReason, setRefundReason] = React.useState('');
@@ -37,8 +39,9 @@ const MyPage = ({ go, user, cart }) => {
   const upcomingLecture = G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden)[0];
   const upcomingTour = G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden)[0];
   const communityPosts = G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.());
-  const recentPost = communityPosts.find((post) => post.authorId === user?.id || post.author === user?.name) || communityPosts[0];
-  const bookmarkedPosts = user ? G.arr(() => window.BGNJ_COMMUNITY?.listBookmarkedPosts?.(user.id)) : [];
+  // v00.131 — 본인이 작성한 글 목록 (커뮤니티 탭).
+  const myCommunityPosts = communityPosts.filter((post) => post.authorId === user?.id || post.author === user?.name);
+  const recentPost = myCommunityPosts[0] || communityPosts[0];
   const notifications = user ? G.arr(() => window.BGNJ_COMMUNITY?.listNotifications?.(user.id)) : [];
   const unreadCount = notifications.filter((n) => n && !n.read).length;
   const myLectureRegs = user ? G.arr(() => window.BGNJ_LECTURES?.listMyRegistrations?.(user.id)) : [];
@@ -190,6 +193,30 @@ const MyPage = ({ go, user, cart }) => {
           </div>
         </div>
 
+        {/* v00.131 — 탭 nav. 5+1 탭 (강연/답사/주문/알림/커뮤니티/프로필 수정). */}
+        <div role="tablist" style={{ display:'flex', gap:0, borderBottom:'1px solid var(--line-2)', marginBottom:32, overflowX:'auto' }}>
+          {[
+            { k: 'lectures',      label: `내 신청 강연 (${myLectureRegs.length})` },
+            { k: 'tours',         label: `내 답사 신청 (${myTourRegs.length})` },
+            { k: 'orders',        label: `내 주문 (${myOrders.length})` },
+            { k: 'notifications', label: `알림 (${notifications.length}${unreadCount > 0 ? ` · 안읽음 ${unreadCount}` : ''})` },
+            { k: 'community',     label: `커뮤니티 활동 (${myCommunityPosts.length})` },
+            { k: 'profile',       label: `프로필 수정` },
+          ].map((t) => (
+            <button key={t.k} type="button" role="tab" aria-selected={tab === t.k}
+              onClick={() => setTab(t.k)}
+              style={{
+                padding:'14px 22px', fontSize:13, whiteSpace:'nowrap', cursor:'pointer',
+                fontFamily:'var(--font-serif)',
+                color: tab === t.k ? 'var(--gold)' : 'var(--ink-2)',
+                background:'transparent', border:'none',
+                borderBottom: tab === t.k ? '2px solid var(--gold)' : '2px solid transparent',
+                marginBottom:-1,
+              }}>{t.label}</button>
+          ))}
+        </div>
+
+        {tab === 'lectures' && (
         <div className="grid grid-3" style={{ marginBottom: 32 }}>
           <article className="card">
             <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>MY LECTURES</div>
@@ -231,7 +258,11 @@ const MyPage = ({ go, user, cart }) => {
               </>
             )}
           </article>
+        </div>
+        )}
 
+        {tab === 'tours' && (
+        <div>
           <article className="card">
             <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>MY TOURS</div>
             <h3 className="ko-serif" style={{ fontSize: 20, marginBottom: 10 }}>
@@ -274,7 +305,11 @@ const MyPage = ({ go, user, cart }) => {
               </>
             )}
           </article>
+        </div>
+        )}
 
+        {tab === 'orders' && (
+        <div>
           <article className="card">
             <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>『왕의길』 ORDERS</div>
             <h3 className="ko-serif" style={{ fontSize: 20, marginBottom: 10 }}>
@@ -391,115 +426,196 @@ const MyPage = ({ go, user, cart }) => {
             )}
           </article>
         </div>
+        )}
 
-        <div className="grid grid-2" style={{ alignItems: "start" }}>
-          <article className="card">
-            <div className="mono gold" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 }}>RECENT ACTIVITY</div>
-            <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 12 }}>최근 커뮤니티 활동</h3>
-            {recentPost ? (
-              <>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
-                  <span className="pill">{recentPost.category}</span>
-                  <span className="mono dim-2" style={{ fontSize: 10 }}>{recentPost.date}</span>
-                </div>
-                <p style={{ fontSize: 15, marginBottom: 8 }}>{recentPost.title}</p>
-                <p className="dim" style={{ fontSize: 13, lineHeight: 1.8 }}>
-                  댓글 {recentPost.replies}개 · 조회 {recentPost.views}회
-                </p>
-              </>
-            ) : (
-              <p className="dim">아직 활동 내역이 없습니다.</p>
-            )}
-          </article>
-
-          <article className="card">
-            <div className="mono gold" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 }}>NEXT STEP</div>
-            <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 12 }}>추천 동선</h3>
-            <div style={{ display: "grid", gap: 10 }}>
-              <button type="button" className="btn btn-small" onClick={() => go("home")}>메인 홈에서 강연 일정 확인</button>
-              <button type="button" className="btn btn-small" onClick={() => go("column")}>뱅기노자 칼럼 읽기</button>
-              <button type="button" className="btn btn-small" onClick={() => go("community")}>커뮤니티 참여하기</button>
-            </div>
-          </article>
-        </div>
-
-        <div className="grid grid-2" style={{ alignItems: "start", marginTop: 32 }}>
-          <article className="card">
-            <div className="mono gold" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 }}>BOOKMARKS</div>
-            <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 12 }}>북마크한 글 <span className="dim-2 mono" style={{ fontSize: 12 }}>{bookmarkedPosts.length}건</span></h3>
-            {bookmarkedPosts.length === 0 ? (
-              <p className="dim" style={{ fontSize: 13, lineHeight: 1.8 }}>커뮤니티 글 상세에서 ☆ 북마크 버튼을 눌러 보관할 수 있어요.</p>
-            ) : (
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
-                {bookmarkedPosts.slice(0, 8).map((post) => (
-                  <li key={post.id}>
-                    <button type="button" onClick={() => goToPost(post.id)}
-                      style={{
-                        all: 'unset', cursor: 'pointer', width: '100%',
-                        padding: '10px 12px', borderLeft: '2px solid var(--gold-dim)',
-                        background: 'rgba(245,213,72,0.04)',
-                      }}>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
-                        <span className="pill" style={{ fontSize: 9 }}>{post.category}</span>
-                        <span className="mono dim-2" style={{ fontSize: 10 }}>{post.date}</span>
+        {/* v00.131 — 알림 탭 (이전엔 우하단 카드). */}
+        {tab === 'notifications' && (
+        <article className="card">
+          <div className="mono gold" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 }}>NOTIFICATIONS</div>
+          <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 12 }}>
+            알림 <span className="dim-2 mono" style={{ fontSize: 12 }}>{notifications.length}건</span>
+            {unreadCount > 0 && <span className="gold mono" style={{ fontSize: 11, marginLeft: 8 }}>· 안 읽음 {unreadCount}</span>}
+          </h3>
+          {notifications.length === 0 ? (
+            <p className="dim" style={{ fontSize: 13, lineHeight: 1.8 }}>아직 받은 알림이 없습니다. 내가 작성한 글에 댓글이 달리면 여기에서 확인할 수 있어요.</p>
+          ) : (
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
+              {notifications.map((n) => (
+                <li key={n.id}>
+                  <button type="button" onClick={() => {
+                      window.BGNJ_COMMUNITY.markNotificationRead(user.id, n.id);
+                      if (n.postId) goToPost(n.postId);
+                    }}
+                    style={{
+                      all: 'unset', cursor: 'pointer', width: '100%',
+                      padding: '10px 12px',
+                      borderLeft: '2px solid ' + (n.read ? 'var(--line)' : 'var(--gold)'),
+                      background: n.read ? 'transparent' : 'rgba(245,213,72,0.04)',
+                    }}>
+                    <div style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
+                      <span className="gold">{n.fromName}</span>
+                      <span className="dim"> · {n.message || '새 알림'}</span>
+                    </div>
+                    {n.postTitle && (
+                      <div className="dim" style={{ fontSize: 12, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        ▸ {n.postTitle}
                       </div>
-                      <div style={{ fontSize: 14, lineHeight: 1.5 }}>{post.title}</div>
-                    </button>
-                  </li>
-                ))}
-                {bookmarkedPosts.length > 8 && (
-                  <li className="dim-2 mono" style={{ fontSize: 11, textAlign: 'right' }}>외 {bookmarkedPosts.length - 8}건</li>
-                )}
-              </ul>
-            )}
-          </article>
+                    )}
+                    <div className="mono dim-2" style={{ fontSize: 10, marginTop: 4, letterSpacing: '0.1em' }}>
+                      {window.BGNJ_FMT.kstDateTime(n.createdAt)}
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+        )}
 
-          <article className="card">
-            <div className="mono gold" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 }}>NOTIFICATIONS</div>
-            <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 12 }}>
-              알림 <span className="dim-2 mono" style={{ fontSize: 12 }}>{notifications.length}건</span>
-              {unreadCount > 0 && <span className="gold mono" style={{ fontSize: 11, marginLeft: 8 }}>· 안 읽음 {unreadCount}</span>}
-            </h3>
-            {notifications.length === 0 ? (
-              <p className="dim" style={{ fontSize: 13, lineHeight: 1.8 }}>아직 받은 알림이 없습니다. 내가 작성한 글에 댓글이 달리면 여기에서 확인할 수 있어요.</p>
-            ) : (
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
-                {notifications.slice(0, 6).map((n) => (
-                  <li key={n.id}>
-                    <button type="button" onClick={() => {
-                        window.BGNJ_COMMUNITY.markNotificationRead(user.id, n.id);
-                        if (n.postId) goToPost(n.postId);
-                      }}
-                      style={{
-                        all: 'unset', cursor: 'pointer', width: '100%',
-                        padding: '10px 12px',
-                        borderLeft: '2px solid ' + (n.read ? 'var(--line)' : 'var(--gold)'),
-                        background: n.read ? 'transparent' : 'rgba(245,213,72,0.04)',
-                      }}>
-                      <div style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
-                        <span className="gold">{n.fromName}</span>
-                        <span className="dim"> · {n.message || '새 알림'}</span>
-                      </div>
-                      {n.postTitle && (
-                        <div className="dim" style={{ fontSize: 12, lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          ▸ {n.postTitle}
-                        </div>
-                      )}
-                      <div className="mono dim-2" style={{ fontSize: 10, marginTop: 4, letterSpacing: '0.1em' }}>
-                        {window.BGNJ_FMT.kstDateTime(n.createdAt)}
-                      </div>
-                    </button>
-                  </li>
-                ))}
-                {notifications.length > 6 && (
-                  <li className="dim-2 mono" style={{ fontSize: 11, textAlign: 'right' }}>외 {notifications.length - 6}건</li>
-                )}
-              </ul>
-            )}
-          </article>
-        </div>
+        {/* v00.131 — 커뮤니티 활동 탭 (본인이 작성한 글 목록). */}
+        {tab === 'community' && (
+        <article className="card">
+          <div className="mono gold" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 }}>MY COMMUNITY</div>
+          <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 12 }}>
+            내가 작성한 글 <span className="dim-2 mono" style={{ fontSize: 12 }}>{myCommunityPosts.length}건</span>
+          </h3>
+          {myCommunityPosts.length === 0 ? (
+            <>
+              <p className="dim" style={{ fontSize: 13, lineHeight: 1.8, marginBottom: 14 }}>아직 작성한 글이 없습니다.</p>
+              <button type="button" className="btn btn-small" onClick={() => go('community')}>커뮤니티로 이동</button>
+            </>
+          ) : (
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 }}>
+              {myCommunityPosts.map((post) => (
+                <li key={post.id}>
+                  <button type="button" onClick={() => goToPost(post.id)}
+                    style={{
+                      all: 'unset', cursor: 'pointer', width: '100%',
+                      padding: '10px 12px', borderLeft: '2px solid var(--gold-dim)',
+                      background: 'rgba(245,213,72,0.04)',
+                    }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
+                      <span className="pill" style={{ fontSize: 9 }}>{post.category}</span>
+                      <span className="mono dim-2" style={{ fontSize: 10 }}>{post.date}</span>
+                    </div>
+                    <div style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 4 }}>{post.title}</div>
+                    <div className="dim-2 mono" style={{ fontSize: 10 }}>댓글 {post.replies}개 · 조회 {post.views}회</div>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+        )}
+
+        {/* v00.131 — 프로필 수정 탭 (사용자 요청 '내 개인정보를 수정할수도 있게'). */}
+        {tab === 'profile' && (
+          <ProfileEditor user={user} onSaved={() => { /* refreshSession 트리거됨, App rerender. */ }}/>
+        )}
+
       </div>
     </div>
+  );
+};
+
+// v00.131 — 프로필 수정 폼. BGNJ_AUTH.updateProfile → 워커 PATCH /api/me.
+const ProfileEditor = ({ user, onSaved }) => {
+  const [name, setName] = React.useState(user?.name || '');
+  const [phone, setPhone] = React.useState(user?.profile?.phone || '');
+  const [birthdate, setBirthdate] = React.useState(user?.profile?.birthdate || '');
+  const [address, setAddress] = React.useState(user?.profile?.address || '');
+  const [addressDetail, setAddressDetail] = React.useState(user?.profile?.addressDetail || '');
+  const [interest, setInterest] = React.useState(user?.profile?.interest || '');
+  const [saving, setSaving] = React.useState(false);
+  const [msg, setMsg] = React.useState(null); // { kind: 'ok' | 'err', text }
+
+  const submit = async (e) => {
+    e?.preventDefault?.();
+    setMsg(null);
+    setSaving(true);
+    try {
+      const result = await window.BGNJ_AUTH.updateProfile({
+        name: name.trim(),
+        profile: {
+          ...(user?.profile || {}),
+          phone: phone.trim(),
+          birthdate: birthdate.trim(),
+          address: address.trim(),
+          addressDetail: addressDetail.trim(),
+          interest: interest.trim(),
+        },
+      });
+      if (!result?.ok) {
+        setMsg({ kind: 'err', text: result?.message || result?.hint || '저장 실패' });
+      } else {
+        setMsg({ kind: 'ok', text: '저장되었습니다. 사이트 전체에 반영됩니다.' });
+        onSaved?.();
+      }
+    } catch (err) {
+      setMsg({ kind: 'err', text: err?.message || '저장 실패' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <article className="card">
+      <div className="mono gold" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 }}>PROFILE EDIT</div>
+      <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 16 }}>개인정보 수정</h3>
+      <p className="dim" style={{ fontSize: 12, lineHeight: 1.7, marginBottom: 18 }}>
+        이름과 프로필 정보(전화번호 / 생년월일 / 주소 / 관심 분야)를 변경할 수 있습니다.
+        이메일·비밀번호 변경은 별도 흐름으로 제공됩니다 (다음 사이클).
+      </p>
+      <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field-label" htmlFor="profile-name">이름</label>
+          <input id="profile-name" className="field-input" value={name}
+            onChange={(e) => setName(e.target.value)} required maxLength={50}/>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field-label" htmlFor="profile-phone">전화번호</label>
+            <input id="profile-phone" type="tel" className="field-input" value={phone}
+              onChange={(e) => setPhone(e.target.value)} placeholder="010-0000-0000"/>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field-label" htmlFor="profile-birth">생년월일</label>
+            <input id="profile-birth" type="date" className="field-input" value={birthdate}
+              onChange={(e) => setBirthdate(e.target.value)}/>
+          </div>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field-label" htmlFor="profile-addr">주소</label>
+          <input id="profile-addr" className="field-input" value={address}
+            onChange={(e) => setAddress(e.target.value)} placeholder="도/시/구/동까지"/>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field-label" htmlFor="profile-addr2">상세 주소</label>
+          <input id="profile-addr2" className="field-input" value={addressDetail}
+            onChange={(e) => setAddressDetail(e.target.value)} placeholder="동/호수 등"/>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field-label" htmlFor="profile-interest">관심 분야</label>
+          <input id="profile-interest" className="field-input" value={interest}
+            onChange={(e) => setInterest(e.target.value)} placeholder="예: 궁궐 답사, 조선왕조 역사"/>
+        </div>
+        {msg && (
+          <div role="status" style={{
+            padding: '10px 14px', fontSize: 13, lineHeight: 1.6,
+            border: '1px solid ' + (msg.kind === 'ok' ? 'var(--gold-dim)' : 'var(--danger)'),
+            background: msg.kind === 'ok' ? 'rgba(245,213,72,0.06)' : 'rgba(194,74,61,0.08)',
+            color: msg.kind === 'ok' ? 'var(--ink)' : 'var(--danger)',
+          }}>
+            {msg.text}
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8 }}>
+          <button type="submit" className="btn btn-gold" disabled={saving || !name.trim()}>
+            {saving ? '저장 중…' : '저장'}
+          </button>
+        </div>
+      </form>
+    </article>
   );
 };
 

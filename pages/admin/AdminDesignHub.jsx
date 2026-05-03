@@ -4,6 +4,35 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.131.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T12:53:59+09:00", // pre-commit stamp.
+    summary: "🆕 deferred 5건 일괄 — 마이페이지 재구조 + 책 추가 fix + admin broadcast + 강연 일괄 등록 + 손상 본문 점검",
+    details: [
+      "🆕 [마이페이지 재구조] 사용자 요청 — 추천동선/북마크 섹션 삭제. 5+1 탭 구조 (강연/답사/주문/알림/커뮤니티 활동/프로필 수정). 각 탭은 단일 카드 풀폭 레이아웃.",
+      "  · 알림 탭 — slice(0,6) 제한 제거. 전체 노출.",
+      "  · 커뮤니티 활동 탭 — '내가 작성한 글' 목록 (myCommunityPosts).",
+      "  · 프로필 수정 탭 — ProfileEditor 컴포넌트. 이름/전화/생년월일/주소/상세주소/관심분야 PATCH /api/me. BGNJ_AUTH.updateProfile 신설.",
+      "🩹 [책 추가 fix + UI 투어 패턴] 인라인 mini-form 제거. addBook → 즉시 BGNJ_BOOKS.create 기본값 + setSelectedId + setEditTab('meta'). addNewTour 와 동일 패턴. 실패 시 alert + console.error.",
+      "🆕 [Admin broadcast 일관] 강연/투어/책 add·delete·save 모두 BGNJ_BROADCAST.publish 추가. 다른 탭 자동 캐시 퍼지.",
+      "🆕 [강연 일괄 등록] BulkLectureImport 컴포넌트 — CSV 입력 (header + N rows). title/topic/venue/host/startsAt/durationMinutes/capacity/price/note 9 columns. 파싱 에러 행별 보고.",
+      "🆕 [손상 본문 점검 도구] CorruptedBodyInspector — admin 신고 탭 상단. /v00\\.129 이하/ 또는 [object Object] 패턴 매칭. '열기' 버튼으로 원글 진입 → 작성자 재저장 시 정상화.",
+      "ℹ 워커 미변경 (deploy 불필요). 모든 변경 클라이언트 측.",
+      "📦 cache-buster — `?v=00.131.000` (21곳).",
+    ],
+    context: "사용자 '모두 일괄처리' 명시 → 5 deferred 일괄. 예상보다 광범위한 변경이지만 위험도 낮음 (각 변경 독립). 다음 사이클: 워커 endpoint 단위 테스트 + a11y audit + admin UX 추가 일관화 (회원/카테고리/등급 패널의 add/delete) 검토.",
+  },
+  {
+    version: "00.130.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T12:46:00+09:00",
+    summary: "🚨 [HOTFIX] 커뮤니티 글 본문 데이터 손상 — body 객체 → 문자열 변환 + placeholder fallback 제거",
+    details: [
+      "🚨 PostCompose body 객체 → 워커 String() 으로 [object Object] 저장 → placeholder 노출. _bodyHtmlFromPayload + _normalizePostBody 추가.",
+    ],
+    context: "v00.129 직후 hotfix.",
+  },
+  {
     version: "00.129.000",
     date: "2026-05-03",
     datetime: "2026-05-03T12:40:17+09:00", // pre-commit stamp.

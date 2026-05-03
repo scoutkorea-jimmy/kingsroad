@@ -494,6 +494,58 @@ const HeroEditorPanel     = window.HeroEditorPanel;
 
 
 // === Report Queue Panel ===========================================
+// v00.131 — 커뮤니티 게시글 본문 손상 점검. v00.129 이하에서 작성된 글은 D1 에 "[object Object]"
+// 로 저장됐을 수 있음 (v00.130 hotfix 이전). 본 도구가 그 row 들을 찾아 작성자에게 알려줌 +
+// 본문 직접 수정 빠른 진입.
+const CorruptedBodyInspector = ({ go }) => {
+  const [tick, setTick] = React.useState(0);
+  const G = window.BGNJ_GUARD;
+  React.useEffect(() => {
+    window.BGNJ_COMMUNITY?.refreshPosts?.().finally(() => setTick((v) => v + 1));
+  }, []);
+  const posts = G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.());
+  const corrupted = posts.filter((p) => {
+    const html = p?.body?.html || '';
+    const text = p?.body?.text || '';
+    // v00.130 _normalizePostBody 가 손상 row 를 경고 텍스트로 wrap. 'v00.129 이하 작성' 패턴 매칭.
+    return /v00\.129 이하/.test(html) || /v00\.129 이하/.test(text) || html === '[object Object]' || text === '[object Object]';
+  });
+  return (
+    <div className="card" style={{padding:18, marginBottom:18, border:'1px dashed var(--gold-dim)'}}>
+      <h4 className="ko-serif" style={{fontSize:15, margin:'0 0 10px'}}>🔍 커뮤니티 본문 손상 점검 (v00.130 hotfix)</h4>
+      <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:12}}>
+        v00.129 이하에서 작성된 글은 D1 에 본문이 <code>[object Object]</code> 로 저장돼 화면에 경고 텍스트가 표시될 수 있습니다.
+        해당 글을 클릭해 작성자가 다시 저장하면 정상 본문으로 복구됩니다.
+      </p>
+      {corrupted.length === 0 ? (
+        <div className="gold mono" style={{fontSize:12}}>✅ 손상 글 0건 — 모두 정상.</div>
+      ) : (
+        <>
+          <div style={{marginBottom:10, fontSize:13}}>
+            ⚠ 손상 의심 글 <strong style={{color:'var(--danger)'}}>{corrupted.length}</strong>건 발견
+          </div>
+          <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
+            {corrupted.slice(0, 30).map((p) => (
+              <li key={p.id} style={{display:'flex', alignItems:'center', gap:10, padding:'8px 10px', border:'1px solid var(--line)', fontSize:12}}>
+                <span className="pill" style={{fontSize:10}}>{p.category || '?'}</span>
+                <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{p.title || '(제목 없음)'}</span>
+                <span className="dim-2 mono" style={{fontSize:10}}>{p.author || '?'} · {p.date || ''}</span>
+                <button type="button" className="btn btn-small" onClick={() => {
+                  try { sessionStorage.setItem('bgnj_pending_post_id', String(p.id)); } catch {}
+                  go('community');
+                }}>열기</button>
+              </li>
+            ))}
+            {corrupted.length > 30 && (
+              <li className="dim-2 mono" style={{fontSize:11, textAlign:'right'}}>외 {corrupted.length - 30}건</li>
+            )}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+};
+
 const ReportQueuePanel = ({ onRefresh, go }) => {
   const [filter, setFilter] = React.useState("open");
   const [tick, setTick] = React.useState(0);
@@ -599,11 +651,120 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
 };
 
 // === Lecture Admin Panel ==========================================
+// v00.131 — 강연 일괄 등록 컴포넌트. CSV / pipe-separated 파싱.
+// 사용자 요청 '관리자페이지 강연 탭에서 일괄 등록'.
+// 형식 (한 줄 = 한 강연, 헤더 첫 줄):
+//   title,topic,venue,host,startsAt,durationMinutes,capacity,price,note
+//   "공개 강연","경복궁의 사계","경복궁","뱅기노자","2026-06-01T19:00:00+09:00",90,30,15000,"무료 입장"
+const BulkLectureImport = ({ onClose, onDone }) => {
+  const [text, setText] = React.useState('title,topic,venue,host,startsAt,durationMinutes,capacity,price,note\n');
+  const [busy, setBusy] = React.useState(false);
+  const [result, setResult] = React.useState(null); // { ok: N, fail: [{line, err}] }
+
+  const _parseCsvLine = (line) => {
+    // 단순 CSV 파서 — quoted fields 지원.
+    const out = []; let cur = ''; let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQ) {
+        if (c === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+        else if (c === '"') inQ = false;
+        else cur += c;
+      } else {
+        if (c === ',') { out.push(cur); cur = ''; }
+        else if (c === '"' && cur === '') inQ = true;
+        else cur += c;
+      }
+    }
+    out.push(cur);
+    return out.map((s) => s.trim());
+  };
+
+  const submit = async () => {
+    setBusy(true); setResult(null);
+    const lines = String(text || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length < 2) { setResult({ ok: 0, fail: [{ line: 0, err: '헤더 + 최소 1행 필요' }] }); setBusy(false); return; }
+    const header = _parseCsvLine(lines[0]);
+    const expected = ['title','topic','venue','host','startsAt','durationMinutes','capacity','price','note'];
+    if (expected.some((k, i) => header[i] !== k)) {
+      setResult({ ok: 0, fail: [{ line: 1, err: `헤더 형식 불일치. 예상: ${expected.join(',')}` }] });
+      setBusy(false); return;
+    }
+    const fails = []; let ok = 0;
+    for (let i = 1; i < lines.length; i++) {
+      const cols = _parseCsvLine(lines[i]);
+      const row = Object.fromEntries(expected.map((k, j) => [k, cols[j] || '']));
+      try {
+        const id = `bulk-lec-${Date.now()}-${i}`;
+        if (!row.title || !row.startsAt) throw new Error('title 과 startsAt 필수');
+        await window.BGNJ_LECTURES.saveLecture({
+          id,
+          title: row.title,
+          topic: row.topic || '',
+          venue: row.venue || '',
+          host: row.host || '뱅기노자',
+          next: row.startsAt.slice(0, 16).replace('T', ' ').replace(/-/g, '.'),
+          startsAt: row.startsAt,
+          durationMinutes: Number(row.durationMinutes || 90),
+          capacity: Number(row.capacity || 30),
+          price: Number(row.price || 0),
+          note: row.note || '',
+        });
+        ok++;
+      } catch (err) {
+        fails.push({ line: i + 1, err: err?.message || String(err) });
+      }
+    }
+    setBusy(false);
+    setResult({ ok, fail: fails });
+    if (ok > 0) onDone?.();
+  };
+
+  return (
+    <div className="card" style={{padding:18, marginBottom:18, border:'1px dashed var(--gold-dim)'}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
+        <h4 className="ko-serif" style={{fontSize:15, margin:0}}>📑 강연 일괄 등록 (CSV)</h4>
+        <button type="button" className="btn btn-small" onClick={onClose}>닫기</button>
+      </div>
+      <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:10}}>
+        형식: <code>title,topic,venue,host,startsAt,durationMinutes,capacity,price,note</code> (헤더 1행 + 데이터 N행).
+        startsAt 은 ISO 8601 (예: <code>2026-06-01T19:00:00+09:00</code>). 쉼표/큰따옴표 포함 시 <code>"..."</code> 로 감싸세요.
+      </p>
+      <textarea className="field-input" rows={10} value={text}
+        onChange={(e) => setText(e.target.value)}
+        style={{fontFamily:'var(--font-mono)', fontSize:12, lineHeight:1.5}}/>
+      <div style={{display:'flex', gap:8, marginTop:10, justifyContent:'flex-end'}}>
+        <button type="button" className="btn btn-gold btn-small" onClick={submit} disabled={busy}>
+          {busy ? '등록 중…' : '일괄 등록 실행'}
+        </button>
+      </div>
+      {result && (
+        <div style={{marginTop:12, padding:12, border:'1px solid var(--line)', fontSize:12, lineHeight:1.7}}>
+          <div className="gold mono" style={{marginBottom:6}}>결과</div>
+          <div>✅ 성공: <strong>{result.ok}</strong>건</div>
+          {result.fail.length > 0 && (
+            <>
+              <div style={{marginTop:6}}>❌ 실패: <strong style={{color:'var(--danger)'}}>{result.fail.length}</strong>건</div>
+              <ul style={{margin:'6px 0 0', paddingLeft:18}}>
+                {result.fail.map((f, i) => (
+                  <li key={i} style={{color:'var(--danger)'}}>{f.line}행 — {f.err}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const LectureAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const [editingId, setEditingId] = React.useState(null);
   const [draft, setDraft] = React.useState({ title: '', topic: '', venue: '', host: '', startsAt: '', durationMinutes: 90, capacity: 30, price: 0, note: '' });
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
+  // v00.131 — 일괄 등록 토글.
+  const [showBulk, setShowBulk] = React.useState(false);
   // v00.075 — 강연별 진행/참고/커버 inline 편집용 별도 state (TourAdminPanel v00.072 패턴 동일).
   const [contentEditingId, setContentEditingId] = React.useState(null);
   const [contentSchedule, setContentSchedule] = React.useState([]);
@@ -705,27 +866,33 @@ const LectureAdminPanel = ({ go }) => {
     });
   };
 
-  const saveEdit = () => {
+  // v00.131 — async + await + try/catch + broadcast. 같은 fire-and-forget 패턴 fix.
+  const saveEdit = async () => {
     if (editingId == null) return;
     const lecture = window.BGNJ_LECTURES.getLecture(editingId);
     if (!lecture) return;
     const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : lecture.startsAt;
     const next = draft.next || lecture.next;
-    window.BGNJ_LECTURES.saveLecture({
-      id: lecture.id,
-      title: draft.title,
-      topic: draft.topic,
-      venue: draft.venue,
-      host: draft.host,
-      next,
-      startsAt: startsAtIso,
-      durationMinutes: Number(draft.durationMinutes) || 90,
-      capacity: Number(draft.capacity) || lecture.capacity,
-      price: Number(draft.price) || 0,
-      note: draft.note,
-    });
-    setEditingId(null);
-    refresh();
+    try {
+      await window.BGNJ_LECTURES.saveLecture({
+        id: lecture.id,
+        title: draft.title,
+        topic: draft.topic,
+        venue: draft.venue,
+        host: draft.host,
+        next,
+        startsAt: startsAtIso,
+        durationMinutes: Number(draft.durationMinutes) || 90,
+        capacity: Number(draft.capacity) || lecture.capacity,
+        price: Number(draft.price) || 0,
+        note: draft.note,
+      });
+      try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
+      setEditingId(null);
+      refresh();
+    } catch (err) {
+      alert('강연 저장 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
   };
 
   const addNewLecture = async () => {
@@ -751,6 +918,7 @@ const LectureAdminPanel = ({ go }) => {
         note: '강연 안내를 입력하세요.',
       });
       try { await window.BGNJ_AUDIT?.log?.({ action: 'lecture.create', target: `lecture:${id}` }); } catch {}
+      try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
       refresh();
       if (created) startEdit(created);
       else alert('강연 생성 후 객체를 가져오지 못했습니다. 페이지를 새로고침해 주세요.');
@@ -809,9 +977,15 @@ const LectureAdminPanel = ({ go }) => {
               refresh();
             }}>샘플 데이터 추가</button>
           )}
+          <button type="button" className="btn btn-small" onClick={() => setShowBulk((v) => !v)}>📑 일괄 등록</button>
           <button type="button" className="btn btn-gold btn-small" onClick={addNewLecture}>＋ 새 강연 추가</button>
         </div>
       </div>
+
+      {/* v00.131 — 일괄 등록 (CSV / pipe-separated). 사용자 요청 '관리자페이지 강연 탭에서 일괄 등록은 할 수 있게'. */}
+      {showBulk && (
+        <BulkLectureImport onClose={() => setShowBulk(false)} onDone={() => { setShowBulk(false); refresh(); try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {} }}/>
+      )}
 
       {lectures.length === 0 ? (
         <div className="card dim" style={{padding:32, textAlign:'center'}}>관리할 강연이 없습니다.</div>
@@ -1222,6 +1396,7 @@ const TourAdminPanel = ({ go }) => {
       });
       if (!tour) throw new Error('서버 응답 없음');
       window.BGNJ_AUDIT?.log({ action: 'tour.create', target: `tour:${id}` });
+      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch {}
       refresh();
       startEdit(tour);
     } catch (err) {
@@ -1237,6 +1412,7 @@ const TourAdminPanel = ({ go }) => {
     try {
       await window.BGNJ_TOURS.deleteTour(id);
       window.BGNJ_AUDIT?.log({ action: 'tour.remove', target: `tour:${id}` });
+      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch {}
       refresh();
     } catch (err) {
       alert('투어 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
@@ -2709,27 +2885,46 @@ const BooksAdminPanel = () => {
     reader.readAsDataURL(file);
   });
 
-  const [addingBook, setAddingBook] = React.useState(false);
-  const [newBookTitle, setNewBookTitle] = React.useState('');
-  const submitAddBook = async () => {
-    const title = (newBookTitle || '').trim();
-    if (!title) return;
-    const created = await window.BGNJ_BOOKS.create({ title, status: 'draft' });
-    setNewBookTitle(''); setAddingBook(false);
-    refresh();
-    if (created?.id) { setSelectedId(created.id); setEditTab('meta'); }
+  // v00.131 — 투어 폼 패턴 (addNewTour) 과 동일 — 인라인 mini-form 제거.
+  // '+ 새 책' 클릭 → 기본값으로 즉시 생성 → 우측 편집 패널이 자동으로 열림.
+  // 사용자 보고 '책 카탈로그에 책 추가가 안된다 + 투어 비슷한 UI'.
+  const addBook = async () => {
+    try {
+      const created = await window.BGNJ_BOOKS.create({
+        title: '새 책 — 제목 입력',
+        subtitle: '부제',
+        author: '뱅기노자',
+        publisher: '',
+        priceKR: 0,
+        priceEN: 0,
+        description: '',
+        status: 'draft',
+      });
+      if (!created?.id) throw new Error('서버 응답 없음');
+      try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
+      refresh();
+      setSelectedId(created.id);
+      setEditTab('meta');
+    } catch (err) {
+      alert('책 생성 실패: ' + (err?.message || '알 수 없는 오류') + '\n\n콘솔에서 상세 오류를 확인해 주세요.');
+      try { console.error('[BookAdd] create failed:', err); } catch {}
+    }
   };
-  const addBook = () => { setNewBookTitle(''); setAddingBook(true); };
 
   const removeBook = async (id) => {
     const target = window.BGNJ_BOOKS.get(id);
     if (!target) return;
     if (!confirm(`"${target.title}" 책을 삭제할까요? (되돌릴 수 없음)`)) return;
-    await window.BGNJ_BOOKS.remove(id);
-    refresh();
-    if (selectedId === id) {
-      const remaining = window.BGNJ_BOOKS.list();
-      setSelectedId(remaining[0]?.id || null);
+    try {
+      await window.BGNJ_BOOKS.remove(id);
+      try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
+      refresh();
+      if (selectedId === id) {
+        const remaining = window.BGNJ_BOOKS.list();
+        setSelectedId(remaining[0]?.id || null);
+      }
+    } catch (err) {
+      alert('책 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
 
@@ -2827,18 +3022,7 @@ const BooksAdminPanel = () => {
               <button type="button" className="btn btn-small btn-gold" onClick={addBook}>＋ 새 책</button>
             </div>
           </div>
-          {addingBook && (
-            <form onSubmit={(e) => { e.preventDefault(); submitAddBook(); }}
-              style={{padding:'10px 12px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)', display:'flex', gap:6, alignItems:'center'}}>
-              <input className="field-input" autoFocus
-                style={{flex:1, padding:'6px 10px', fontSize:13}}
-                placeholder="새 책 제목"
-                value={newBookTitle}
-                onChange={(e) => setNewBookTitle(e.target.value)}/>
-              <button type="submit" className="btn btn-small btn-gold" disabled={!newBookTitle.trim()}>추가</button>
-              <button type="button" className="btn btn-small" onClick={() => { setAddingBook(false); setNewBookTitle(''); }}>취소</button>
-            </form>
-          )}
+          {/* v00.131 — 인라인 mini-form 제거 (addBook 이 즉시 생성 + 편집 패널 오픈). */}
           {books.length === 0 ? (
             <div className="dim" style={{padding:20, fontSize:13}}>등록된 책이 없습니다.</div>
           ) : (
@@ -4810,10 +4994,11 @@ const AdminPage = ({ go }) => {
           </div>
         )}
 
-        {/* 신고 큐 */}
-        {tab === "신고" && (
+        {/* 신고 큐 + v00.131 손상 본문 점검 도구. */}
+        {tab === "신고" && (<>
+          <CorruptedBodyInspector go={go}/>
           <ReportQueuePanel onRefresh={() => setPostRefreshKey((v) => v + 1)} go={go}/>
-        )}
+        </>)}
 
         {/* 칼럼 — 통합 허브 (목록 + 글쓰기 모달). v00.067 */}
         {tab === "뱅기노자 칼럼" && <ColumnsHubPanel allColumns={allColumns}/>}

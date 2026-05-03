@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.130.000",
+  version: "00.131.000",
   build: "2026.05.03",
   channel: "preview",
 };
@@ -1082,6 +1082,19 @@ window.BGNJ_AUTH = {
     try { await window.BGNJ_API.logout(); } catch {}
     this._writeCache(null);
     return null;
+  },
+
+  // v00.131 — 본인 프로필 수정 (마이페이지). 워커 PATCH /api/me 위임.
+  // payload = { name?, profile?: { phone, birthdate, address, addressDetail, interest, ... } }
+  async updateProfile(payload) {
+    try {
+      const { user } = await window.BGNJ_API.updateProfile(payload);
+      this._writeCache(user || null);
+      try { window.dispatchEvent(new CustomEvent('bgnj-session-refresh')); } catch {}
+      return { ok: true, user };
+    } catch (err) {
+      return this._classifyAuthError(err, '프로필 수정 실패');
+    }
   },
 
   // ── 관리자 운영 (서버 source of truth) ─────────────────────
