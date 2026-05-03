@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.125.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T10:24:46+09:00", // pre-commit stamp.
+    summary: "🗒 Cloudflare Secrets 이관 미진행 결정 — wrangler.toml 평문 유지 (사용자 결정)",
+    details: [
+      "🗒 [결정 기록] SUPER_ADMIN_EMAILS / ADMIN_BOOTSTRAP_EMAIL — 두 이메일 모두 자격 증명이 아니고 비밀번호로 보호. 평문 유지로 결정 (사용자: '마스터 메일이니까 있는건 상관없어보이기는해' / 'admin@admin.admin 은 테스트용 메일').",
+      "📑 wrangler.toml 코멘트 정리 — `★ TODO: Cloudflare Secrets 이관 권장` 두 줄 제거. 결정 사유 명시.",
+      "📑 ROADMAP 큐 4 — Secrets 이관 항목 ✅ 완료(미진행 결정) 표시.",
+      "ℹ 워커 미변경 (코드 변동 없음 — wrangler.toml 코멘트 + ROADMAP 변경만).",
+      "📦 cache-buster — `?v=00.125.000` (21곳).",
+    ],
+    context: "P1.2 Cloudflare Secrets 이관 항목을 사용자가 '평문 유지' 로 결정. 이메일 = 자격 증명 아님 + 비밀번호로 보호 + master 운영 이메일 + bootstrap 은 테스트 placeholder. 결정 기록 + 코멘트 정리로 사이클 마감. 큐 4 남은 항목: HTTPS/SSL 인프라 (Cloudflare 대시보드 작업) 만.",
+  },
+  {
     version: "00.124.000",
     date: "2026-05-03",
     datetime: "2026-05-03T09:07:29+09:00", // pre-commit stamp.
