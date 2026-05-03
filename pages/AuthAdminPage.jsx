@@ -704,21 +704,82 @@ const AdminSaveBar = ({ children, message, messageVariant = 'success' }) => (
 // data source: BGNJ_AUTH.listUsers().created_at + BGNJ_COMMUNITY.listPosts().date + comments.
 
 // 통계 카드 — 큰 숫자 + 라벨 + 하단 보조설명 + 색상 변형.
-const MetricCard = ({ label, value, sub, accent, icon }) => (
-  <article className="metric-card" style={{
-    padding:'18px 20px', background:'var(--bg-2)', border:'1px solid var(--line)',
-    borderRadius:10, position:'relative', overflow:'hidden',
-  }}>
-    <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
-      {icon && <span style={{fontSize:18}} aria-hidden="true">{icon}</span>}
-      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase'}}>{label}</div>
+// v00.157 — 카드 호버/포커스 시 details popover. dashboardStats 카드와 MetricCard 둘 다 사용.
+// details: [{ label, value }, ...] — 비어있거나 미전달 시 popover 자체 미노출.
+const HoverDetailsPopover = ({ details, open, id, anchor = 'right' }) => {
+  if (!open || !Array.isArray(details) || details.length === 0) return null;
+  return (
+    <div role="tooltip" id={id}
+      style={{
+        position:'absolute', top:'100%', marginTop:8,
+        [anchor === 'left' ? 'left' : 'right']: 0,
+        background:'var(--bg)', border:'1px solid var(--gold-dim)',
+        boxShadow:'0 8px 24px rgba(0,0,0,0.18)', padding:'14px 16px',
+        minWidth:240, maxWidth:320, zIndex:50, borderRadius:8,
+      }}>
+      <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:10}}>DETAILS</div>
+      <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
+        {details.map((d, i) => (
+          <li key={i} style={{display:'flex', justifyContent:'space-between', gap:14, fontSize:12, alignItems:'baseline'}}>
+            <span className="dim" style={{flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis'}}>{d.label}</span>
+            <span className="mono" style={{fontWeight:600, color:'var(--gold)', whiteSpace:'nowrap'}}>{d.value}</span>
+          </li>
+        ))}
+      </ul>
     </div>
-    <div className="ko-serif" style={{fontSize:32, fontWeight:600, color: accent || 'var(--gold-2)', lineHeight:1.1}}>
-      {value}
+  );
+};
+
+// dashboardStats 4 카드 — hover/focus 로 popover 노출. details 미전달 시 종전 동작 그대로.
+const StatTile = ({ stat }) => {
+  const [open, setOpen] = React.useState(false);
+  const id = React.useId ? React.useId() : `stat-${stat.l}`;
+  const hasDetails = Array.isArray(stat.details) && stat.details.length > 0;
+  return (
+    <div className="card" style={{position:'relative'}}
+      onMouseEnter={() => hasDetails && setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => hasDetails && setOpen(true)}
+      onBlur={() => setOpen(false)}
+      tabIndex={hasDetails ? 0 : undefined}
+      aria-describedby={open ? id : undefined}>
+      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{stat.l}</div>
+      <div className="ko-serif" style={{fontSize:32, color:'var(--gold-2)'}}>
+        {stat.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{stat.unit||''}</span>
+      </div>
+      <div style={{fontSize:11, color: stat.p ? 'var(--gold)' : 'var(--danger)', marginTop:8}}>{stat.d}</div>
+      <HoverDetailsPopover details={stat.details} open={open} id={id}/>
     </div>
-    {sub && <div className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.5}}>{sub}</div>}
-  </article>
-);
+  );
+};
+
+const MetricCard = ({ label, value, sub, accent, icon, details }) => {
+  const [open, setOpen] = React.useState(false);
+  const id = React.useId ? React.useId() : `metric-${label}`;
+  const hasDetails = Array.isArray(details) && details.length > 0;
+  return (
+    <article className="metric-card" style={{
+      padding:'18px 20px', background:'var(--bg-2)', border:'1px solid var(--line)',
+      borderRadius:10, position:'relative', overflow:'visible',
+    }}
+      onMouseEnter={() => hasDetails && setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => hasDetails && setOpen(true)}
+      onBlur={() => setOpen(false)}
+      tabIndex={hasDetails ? 0 : undefined}
+      aria-describedby={open ? id : undefined}>
+      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+        {icon && <span style={{fontSize:18}} aria-hidden="true">{icon}</span>}
+        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase'}}>{label}</div>
+      </div>
+      <div className="ko-serif" style={{fontSize:32, fontWeight:600, color: accent || 'var(--gold-2)', lineHeight:1.1}}>
+        {value}
+      </div>
+      {sub && <div className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.5}}>{sub}</div>}
+      <HoverDetailsPopover details={details} open={open} id={id}/>
+    </article>
+  );
+};
 
 // 간단한 SVG 막대 차트 — series: number[], labels: string[].
 const MiniBarChart = ({ series, labels, height = 120, color = 'var(--gold)', label }) => {
@@ -852,14 +913,10 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
 
   return (
     <>
-      {/* 1줄: 기존 4종 (전체 회원 / 게시글 / 칼럼 / 책 주문) */}
+      {/* 1줄: 기존 4종 (전체 회원 / 게시글 / 칼럼 / 책 주문) — v00.157 hover popover 활성. */}
       <div className="grid grid-4" style={{marginBottom:18}}>
         {dashboardStats.map((s, i) => (
-          <div key={i} className="card">
-            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{s.l}</div>
-            <div className="ko-serif" style={{fontSize:32, color:'var(--gold-2)'}}>{s.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{s.unit||''}</span></div>
-            <div style={{fontSize:11, color: s.p ? 'var(--gold)' : 'var(--danger)', marginTop:8}}>{s.d}</div>
-          </div>
+          <StatTile key={i} stat={s}/>
         ))}
       </div>
 
@@ -869,14 +926,39 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
       </div>
       <div className="grid grid-4" style={{marginBottom:18}}>
         <MetricCard icon="📅" label="일일 방문" value={dayViews ?? '—'}
-          accent="var(--gold)" sub={dayUnique != null ? `세션 ${dayUnique}건 · 페이지뷰 ${dayViews}` : '서버 데이터 미수신'}/>
+          accent="var(--gold)" sub={dayUnique != null ? `세션 ${dayUnique}건 · 페이지뷰 ${dayViews}` : '서버 데이터 미수신'}
+          details={dayUnique != null ? [
+            { label: '페이지뷰', value: dayViews },
+            { label: '세션 (unique)', value: dayUnique },
+            { label: '페이지/세션', value: dayUnique > 0 ? (dayViews / dayUnique).toFixed(2) : '—' },
+          ] : null}/>
         <MetricCard icon="📊" label="주간 방문" value={weekViews ?? '—'}
-          accent="var(--gold-2)" sub={weekUnique != null ? `세션 ${weekUnique}건 · 페이지뷰 ${weekViews}` : '서버 데이터 미수신'}/>
+          accent="var(--gold-2)" sub={weekUnique != null ? `세션 ${weekUnique}건 · 페이지뷰 ${weekViews}` : '서버 데이터 미수신'}
+          details={weekUnique != null ? [
+            { label: '페이지뷰', value: weekViews },
+            { label: '세션 (unique)', value: weekUnique },
+            { label: '일평균 페이지뷰', value: (weekViews / 7).toFixed(1) },
+            { label: '일평균 세션', value: (weekUnique / 7).toFixed(1) },
+          ] : null}/>
         <MetricCard icon="📈" label="월간 방문" value={monthViews ?? '—'}
-          accent="var(--gold)" sub={monthUnique != null ? `세션 ${monthUnique}건 · 페이지뷰 ${monthViews}` : '서버 데이터 미수신'}/>
+          accent="var(--gold)" sub={monthUnique != null ? `세션 ${monthUnique}건 · 페이지뷰 ${monthViews}` : '서버 데이터 미수신'}
+          details={monthUnique != null ? [
+            { label: '페이지뷰', value: monthViews },
+            { label: '세션 (unique)', value: monthUnique },
+            { label: '일평균 페이지뷰', value: (monthViews / 30).toFixed(1) },
+            { label: '일평균 세션', value: (monthUnique / 30).toFixed(1) },
+          ] : null}/>
         <MetricCard icon="✨" label="오늘 신규 가입" value={dailySignups}
           accent="var(--secondary, #1F7A8C)"
-          sub={`주간 ${weeklySignups}명 · 월간 ${monthlySignups}명`}/>
+          sub={`주간 ${weeklySignups}명 · 월간 ${monthlySignups}명`}
+          details={[
+            { label: '오늘 신규',   value: dailySignups },
+            { label: '최근 7일',    value: weeklySignups },
+            { label: '최근 30일',   value: monthlySignups },
+            { label: '누적 회원',   value: allUsers.length },
+            { label: '7일 일평균',  value: (weeklySignups / 7).toFixed(1) },
+            { label: '30일 일평균', value: (monthlySignups / 30).toFixed(2) },
+          ]}/>
       </div>
 
       {/* 3줄: 추이 차트 */}
@@ -5002,12 +5084,84 @@ const AdminPage = ({ go }) => {
   const allBookOrders = React.useMemo(() => window.BGNJ_BOOK_ORDERS?.listAll?.() || [], [postRefreshKey]);
   const pendingBookOrders = allBookOrders.filter((o) => o.status === 'pending_payment').length;
   const refundRequestedOrders = allBookOrders.filter((o) => o.status === 'refund_requested').length;
-  const dashboardStats = React.useMemo(() => ([
-    { l: "전체 회원", v: String(allUsers.length), d: `관리자 ${allUsers.filter((user) => user.isAdmin).length}명 포함`, p: true },
-    { l: "커뮤니티 게시글", v: String(allCommunityPosts.length), d: `댓글 ${totalComments}개 누적`, p: true },
-    { l: "공개 칼럼", v: String(allColumns.length), d: `관리자 발행 ${(window.BGNJ_STORES.userColumns || []).filter((c) => (c.status || 'published') === 'published').length}건 · 임시/예약 ${(window.BGNJ_STORES.userColumns || []).filter((c) => c.status === 'draft' || c.status === 'scheduled').length}건`, p: true },
-    { l: "왕의길 주문", v: String(allBookOrders.length), d: `입금 대기 ${pendingBookOrders}건${refundRequestedOrders > 0 ? ` · 환불 신청 ${refundRequestedOrders}건` : ''}`, p: pendingBookOrders === 0 && refundRequestedOrders === 0 },
-  ]), [allUsers, allCommunityPosts, totalComments, allColumns, allBookOrders, pendingBookOrders, refundRequestedOrders]);
+  const dashboardStats = React.useMemo(() => {
+    // v00.157 — 호버 popover 용 details 계산. 모든 카드에 분포·세부 숫자.
+    const adminCount = allUsers.filter((u) => u.isAdmin).length;
+    const superAdminCount = allUsers.filter((u) => u.isSuperAdmin).length;
+    const userCount = allUsers.length - adminCount;
+    const userToday = _countSince(allUsers, 'createdAt', 1);
+    const userWeek = _countSince(allUsers, 'createdAt', 7);
+    const userMonth = _countSince(allUsers, 'createdAt', 30);
+
+    const postToday = _countSince(allCommunityPosts, 'createdAt', 1);
+    const postWeek = _countSince(allCommunityPosts, 'createdAt', 7);
+    const postMonth = _countSince(allCommunityPosts, 'createdAt', 30);
+    const postCatCounts = {};
+    allCommunityPosts.forEach((p) => {
+      const k = p.category || p.categoryId || '미분류';
+      postCatCounts[k] = (postCatCounts[k] || 0) + 1;
+    });
+    const topCats = Object.entries(postCatCounts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+    const avgComments = allCommunityPosts.length > 0
+      ? (totalComments / allCommunityPosts.length).toFixed(1)
+      : '0';
+
+    const userColsAll = (window.BGNJ_STORES.userColumns || []);
+    const colsPublished = userColsAll.filter((c) => (c.status || 'published') === 'published').length;
+    const colsDraft = userColsAll.filter((c) => c.status === 'draft').length;
+    const colsScheduled = userColsAll.filter((c) => c.status === 'scheduled').length;
+    const colsArchived = userColsAll.filter((c) => c.status === 'archived').length;
+
+    const orderStatuses = ['pending_payment', 'paid', 'shipped', 'delivered', 'refund_requested', 'cancelled'];
+    const orderStatusLabel = { pending_payment: '입금 대기', paid: '입금 확인', shipped: '배송중', delivered: '배송 완료', refund_requested: '환불 신청', cancelled: '취소' };
+    const orderCounts = orderStatuses.map((s) => ({
+      label: orderStatusLabel[s] || s,
+      value: allBookOrders.filter((o) => o.status === s).length,
+    }));
+
+    return [
+      {
+        l: "전체 회원", v: String(allUsers.length),
+        d: `관리자 ${adminCount}명 포함`, p: true,
+        details: [
+          { label: '일반 회원',    value: userCount },
+          { label: '관리자',       value: adminCount },
+          { label: '슈퍼 관리자',  value: superAdminCount },
+          { label: '오늘 가입',    value: userToday },
+          { label: '최근 7일 가입', value: userWeek },
+          { label: '최근 30일 가입', value: userMonth },
+        ],
+      },
+      {
+        l: "커뮤니티 게시글", v: String(allCommunityPosts.length),
+        d: `댓글 ${totalComments}개 누적`, p: true,
+        details: [
+          { label: '오늘 작성',    value: postToday },
+          { label: '최근 7일',     value: postWeek },
+          { label: '최근 30일',    value: postMonth },
+          { label: '평균 댓글/글', value: avgComments },
+          ...topCats.map(([k, v]) => ({ label: `· ${k}`, value: v })),
+        ],
+      },
+      {
+        l: "공개 칼럼", v: String(allColumns.length),
+        d: `관리자 발행 ${colsPublished}건 · 임시/예약 ${colsDraft + colsScheduled}건`, p: true,
+        details: [
+          { label: '게시 (published)',    value: colsPublished },
+          { label: '임시 (draft)',         value: colsDraft },
+          { label: '예약 (scheduled)',     value: colsScheduled },
+          { label: '보관 (archived)',      value: colsArchived },
+          { label: '관리자 칼럼 총합',      value: userColsAll.length },
+        ],
+      },
+      {
+        l: "도서 주문", v: String(allBookOrders.length),
+        d: `입금 대기 ${pendingBookOrders}건${refundRequestedOrders > 0 ? ` · 환불 신청 ${refundRequestedOrders}건` : ''}`,
+        p: pendingBookOrders === 0 && refundRequestedOrders === 0,
+        details: orderCounts,
+      },
+    ];
+  }, [allUsers, allCommunityPosts, totalComments, allColumns, allBookOrders, pendingBookOrders, refundRequestedOrders]);
   const latestCommunityPost = allCommunityPosts[0] || null;
   const latestColumn = allColumns[0] || null;
   const visibleCommunityPosts = React.useMemo(() => allCommunityPosts.filter((post) => {

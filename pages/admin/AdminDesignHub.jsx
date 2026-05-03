@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.157.000",
+    date: "2026-05-04",
+    datetime: "2026-05-04T00:19:38+09:00",
+    summary: "✨ 관리자 대시보드 카드 호버 시 상세 분포·세부 숫자 popover (회원/게시글/칼럼/주문/방문)",
+    details: [
+      "✨ [HoverDetailsPopover 컴포넌트 신설] role=tooltip / aria-describedby 연동. 카드의 position:relative 안에서 absolute popover (top:100%, anchor right). bg + gold-dim border + soft shadow. min-width 240, max 320. z-index 50. label/value 표 형태 (label dim, value mono gold).",
+      "✨ [StatTile 컴포넌트] dashboardStats 4 카드 (전체 회원/게시글/칼럼/주문) 를 hover/focus-aware 카드로 추출. tabIndex 0 (details 있을 때만) — 키보드 Tab 으로도 popover 접근. onMouseEnter/Leave + onFocus/Blur 이중 트리거.",
+      "✨ [MetricCard details prop] 일/주/월 방문 + 가입 카드 (4 MetricCard) 도 동일 hover/focus popover. overflow:hidden → visible 로 변경 (popover 가 카드 밖으로 나오게).",
+      "✨ [dashboardStats details 계산] useMemo 안에서 카드별 분포 산출 — 회원: 일반/관리자/슈퍼관리자/오늘·7일·30일 가입 / 게시글: 오늘·7일·30일 + 평균 댓글/글 + 카테고리 top 5 / 칼럼: published/draft/scheduled/archived/관리자 칼럼 총합 / 주문: 6 상태 (입금 대기·확인·배송중·배송 완료·환불 신청·취소).",
+      "✨ [MetricCard details] 일/주/월 방문 — 페이지뷰/세션/일평균/페이지/세션 비율. 가입 — 오늘·7일·30일·누적·일평균.",
+      "🪶 [라벨 정정] '왕의길 주문' → '도서 주문' (v00.153~v00.154 도서 다권화 컨텍스트 일관성).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.157.000`.",
+    ],
+    context: "사용자 요청 '관리자페이지 대시보드 데이터들 호버 시 숫자/데이터 표시'. 기존 카드는 큰 숫자 1개 + 부제 1줄로 정보 밀도 낮음. popover 로 분포·세부 숫자를 한 장소에 압축 노출. mobile hover 미지원은 부제로 fallback (1차 desktop hover 정상). React.useId 폴백으로 SSR/CSR 모두 호환. 본 사이클부터 admin 대시보드 정보 밀도 ↑.",
+  },
+  {
     version: "00.156.000",
     date: "2026-05-04",
     datetime: "2026-05-04T00:14:43+09:00",
