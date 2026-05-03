@@ -172,6 +172,21 @@ const ColumnPage = ({ go, user }) => {
             )}
           </article>
 
+          {/* v00.127 — 외부 기고처 + 원문 링크 (옵셔널). 본문 끝, 액션 위. */}
+          {(c.sourceCredit || c.sourceUrl) && (
+            <div style={{marginTop:48, paddingTop:24, borderTop:'1px solid var(--line)', textAlign:'center', fontFamily:'var(--font-mono)', fontSize:12, color:'var(--ink-3)'}}>
+              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>SOURCE · 출처</div>
+              {c.sourceUrl ? (
+                <a href={c.sourceUrl} target="_blank" rel="noopener noreferrer"
+                  style={{color:'var(--gold-2)', textDecoration:'underline'}}>
+                  {c.sourceCredit || c.sourceUrl} <span aria-hidden="true" style={{marginLeft:4}}>↗</span>
+                </a>
+              ) : (
+                <span style={{color:'var(--ink-2)'}}>{c.sourceCredit}</span>
+              )}
+            </div>
+          )}
+
           {/* 액션 — 공감 / 공유 */}
           <div style={{display:'flex', gap:12, justifyContent:'center', margin:'60px 0 32px', paddingTop:32, borderTop:'1px solid var(--line)', flexWrap:'wrap'}}>
             <button type="button" className="btn" aria-pressed={liked} onClick={handleLike}

@@ -1155,7 +1155,7 @@ const TourAdminPanel = ({ go }) => {
     });
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingId == null) return;
     const tour = window.BGNJ_TOURS.getTour(editingId);
     if (!tour) return;
@@ -1167,24 +1167,29 @@ const TourAdminPanel = ({ go }) => {
       const pad = (n) => String(n).padStart(2, '0');
       return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     })();
-    window.BGNJ_TOURS.saveTour({
-      id: tour.id,
-      title: draft.title,
-      subtitle: draft.subtitle, // v00.106
-      level: draft.level,
-      duration: draft.duration,
-      group: draft.group,
-      next: nextLabel,
-      startsAt: startsAtIso,
-      durationMinutes: Number(draft.durationMinutes) || 180,
-      capacity: Number(draft.capacity) || tour.capacity,
-      priceNumber: Number(draft.priceNumber) || 0,
-      price: Number(draft.priceNumber) || 0,
-      desc: draft.desc,
-      refundPolicy: draft.refundPolicy, // v00.106
-    });
-    setEditingId(null);
-    refresh();
+    // v00.127 — async + await + try/catch. 이전엔 fire-and-forget 으로 refresh 가 옛 데이터 사용.
+    try {
+      await window.BGNJ_TOURS.saveTour({
+        id: tour.id,
+        title: draft.title,
+        subtitle: draft.subtitle, // v00.106
+        level: draft.level,
+        duration: draft.duration,
+        group: draft.group,
+        next: nextLabel,
+        startsAt: startsAtIso,
+        durationMinutes: Number(draft.durationMinutes) || 180,
+        capacity: Number(draft.capacity) || tour.capacity,
+        priceNumber: Number(draft.priceNumber) || 0,
+        price: Number(draft.priceNumber) || 0,
+        desc: draft.desc,
+        refundPolicy: draft.refundPolicy, // v00.106
+      });
+      setEditingId(null);
+      refresh();
+    } catch (err) {
+      alert('투어 저장 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
   };
 
   const addNewTour = async () => {
@@ -1219,16 +1224,26 @@ const TourAdminPanel = ({ go }) => {
     }
   };
 
-  const removeTour = (id) => {
+  // v00.127 — async + await + try/catch. 이전엔 deleteTour fire-and-forget 으로 refresh 가
+  // 즉시 OLD 캐시 사용 → 사용자 화면 변화 없음. 사용자 보고 '삭제 버튼이 정상작동 안하네'.
+  const removeTour = async (id) => {
     if (!confirm('이 투어를 삭제하시겠어요? 시드 투어는 자동 숨김 처리(데이터 보존)됩니다. 관리자가 추가한 투어는 완전 삭제됩니다.')) return;
-    window.BGNJ_TOURS.deleteTour(id);
-    window.BGNJ_AUDIT?.log({ action: 'tour.remove', target: `tour:${id}` });
-    refresh();
+    try {
+      await window.BGNJ_TOURS.deleteTour(id);
+      window.BGNJ_AUDIT?.log({ action: 'tour.remove', target: `tour:${id}` });
+      refresh();
+    } catch (err) {
+      alert('투어 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
   };
-  const toggleTourHidden = (t) => {
-    window.BGNJ_TOURS.setHidden(t.id, !t.hidden);
-    window.BGNJ_AUDIT?.log({ action: t.hidden ? 'tour.unhide' : 'tour.hide', target: `tour:${t.id}` });
-    refresh();
+  const toggleTourHidden = async (t) => {
+    try {
+      await window.BGNJ_TOURS.setHidden(t.id, !t.hidden);
+      window.BGNJ_AUDIT?.log({ action: t.hidden ? 'tour.unhide' : 'tour.hide', target: `tour:${t.id}` });
+      refresh();
+    } catch (err) {
+      alert('숨김 상태 변경 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
   };
 
   // v00.105 — 통합: 투어 페이지 콘텐츠 편집(글로벌/템플릿/per-tour) 을 본 패널 상단에 collapsible 로 내장.
@@ -5716,6 +5731,9 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
   const [html, setHtml] = React.useState(initialColumn?.body?.html || "");
   const [text, setText] = React.useState(initialColumn?.body?.text || "");
   const [publishAt, setPublishAt] = React.useState(initialColumn?.publishAt || "");
+  // v00.127 — 외부 기고처 + 원문 링크 (schema-v6).
+  const [sourceCredit, setSourceCredit] = React.useState(initialColumn?.sourceCredit || "");
+  const [sourceUrl, setSourceUrl] = React.useState(initialColumn?.sourceUrl || "");
   // v00.115 — 표시 시간(created_at) 오버라이드. publishAt(예약 발행)과 별도.
   // 'YYYY-MM-DDTHH:MM' datetime-local 포맷. 비우면 워커가 nowIso() 사용.
   const _toLocalInput = (iso) => {
@@ -5754,6 +5772,8 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     setTitle(""); setExcerpt(""); setHtml(""); setText("");
     setPublishAt("");
     setCreatedAt("");
+    setSourceCredit("");
+    setSourceUrl("");
     setEditorKey((k) => k + 1);
   };
 
@@ -5766,6 +5786,8 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     setText(col.body?.text || "");
     setPublishAt(col.publishAt || "");
     setCreatedAt(_toLocalInput(col.createdAt || col.created_at || ""));
+    setSourceCredit(col.sourceCredit || "");
+    setSourceUrl(col.sourceUrl || "");
     setEditorKey((k) => k + 1);
     setMsg("");
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5799,6 +5821,9 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     if (createdAt) {
       base.createdAt = `${createdAt}:00+09:00`;
     }
+    // v00.127 — 외부 기고처 + 원문 링크. 둘 다 옵셔널 (빈 문자열 허용).
+    base.sourceCredit = sourceCredit.trim();
+    base.sourceUrl = sourceUrl.trim();
     return base;
   };
 
@@ -5917,6 +5942,28 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
             style={{maxWidth:280}}/>
           <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>
             KST 기준. 입력 시 칼럼 표시 시각이 이 값으로 고정됨. 예약 발행과 무관 — 표시용 시간.
+          </div>
+        </div>
+        {/* v00.127 — 외부 기고처 + 원문 링크 (옵셔널). 칼럼 본문 끝 또는 헤더에 출처 표기. */}
+        <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)', display:'grid', gap:10}}>
+          <div>
+            <label className="field-label" htmlFor="col-source-credit" style={{display:'block', marginBottom:6}}>
+              기고처 (선택 — 외부 매체 출처)
+            </label>
+            <input id="col-source-credit" type="text" className="field-input"
+              placeholder="예: 한겨레, 중앙일보, 한국일보 칼럼"
+              value={sourceCredit} onChange={(e) => setSourceCredit(e.target.value)}/>
+          </div>
+          <div>
+            <label className="field-label" htmlFor="col-source-url" style={{display:'block', marginBottom:6}}>
+              원문 링크 (선택 — http/https URL)
+            </label>
+            <input id="col-source-url" type="url" className="field-input"
+              placeholder="https://..."
+              value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)}/>
+            <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>
+              둘 다 비어있으면 출처 표기 없이 게재. 기고처만 있으면 텍스트로, 링크까지 있으면 클릭 가능 링크로 표시.
+            </div>
           </div>
         </div>
         {msg && <div role="status" className="mono gold" style={{fontSize:12, padding:10, border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.06)', marginBottom:16}}>{msg}</div>}

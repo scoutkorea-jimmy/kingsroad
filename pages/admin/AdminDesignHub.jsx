@@ -4,6 +4,27 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.127.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T12:25:13+09:00", // pre-commit stamp.
+    summary: "🩹 사용자 보고 4건 일괄 — 투어 삭제 작동 / 칼럼 모달 사라짐 / 타이틀 폰트 깨짐 / 칼럼 기고처+링크 추가",
+    details: [
+      "🩹 [투어 삭제 fix] TourAdminPanel.removeTour / toggleTourHidden / saveEdit 3종 — async + await + try/catch. 이전엔 fire-and-forget 으로 refresh() 가 OLD 캐시 사용 → 삭제 안 보임. 사용자 보고 '투어 프로그램 삭제버튼이 정상작동 안하네'.",
+      "🩹 [칼럼 모달 즉시 닫힘 fix] components/Shell.jsx useModalGuard — handleAttemptClose 를 ref 패턴으로 안정화. 이전엔 자식(AdminColumnEditor) 의 onPayloadChange 가 부모 setPayload 호출 → 부모 re-render → handleAttemptClose 새 ref → useEffect cleanup → history.back() → popstate → 모달 닫힘 무한 루프. useEffect deps 를 [open] 만으로 축소.",
+      "🎨 [타이틀 폰트 깨짐 fix] CSP `style-src` + `font-src` 에 `https://cdn.jsdelivr.net` 화이트리스트 추가. 이전 v00.113 CSP 도입 시 styles.css 의 wanted-sans / Chosunilbo / KBLJump CDN @import 를 누락 → 폰트 로드 차단 → 기본 폰트로 fallback. 사용자 보고 '타이틀폰트 깨진다 왜 니 맘대로 바꿔'. 폰트는 그대로, CSP 가 차단했던 것.",
+      "🆕 [칼럼 기고처+링크 추가] 사용자 요청 '칼럼에는 기고처와 링크를 달수있게해줘'.",
+      "  · workers/schema-v6.sql 신설 — ALTER TABLE user_columns ADD COLUMN source_credit TEXT, source_url TEXT.",
+      "  · 워커 handleColumnCreate / handleColumnPatch / _toColumn — sourceCredit / sourceUrl 전달.",
+      "  · data.js BGNJ_COLUMNS.saveColumn — payload 전달.",
+      "  · AdminColumnEditor — '기고처' + '원문 링크' input 2종 (옵셔널, 옐로우 5% 박스).",
+      "  · ColumnPage 본문 끝 — `SOURCE · 출처` 섹션. 링크 있으면 클릭 가능 + ↗ 아이콘, 없으면 텍스트만, 둘 다 비면 미노출.",
+      "★ 워커 deploy 필요 — handleColumnCreate / handleColumnPatch 변경.",
+      "★ schema-v6.sql 적용 필요 — `wrangler d1 execute banginoja-db --remote --file=schema-v6.sql` (1회).",
+      "📦 cache-buster — `?v=00.127.000` (21곳).",
+    ],
+    context: "사용자가 admin 페이지에서 보고한 4건 일괄 처리. 1번 (투어 삭제) 은 async fire-and-forget 패턴 버그, 2번 (칼럼 모달) 은 useModalGuard 의 useEffect deps stale closure 버그, 3번 (폰트) 은 v00.113 CSP 도입 시 화이트리스트 누락, 4번 (기고처) 은 신규 기능. 모두 사용자 즉시 가시 항목.",
+  },
+  {
     version: "00.126.000",
     date: "2026-05-03",
     datetime: "2026-05-03T12:02:09+09:00", // pre-commit stamp.

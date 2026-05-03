@@ -1694,15 +1694,17 @@ const handleColumnCreate = async (req, env) => {
   const body = await req.json().catch(() => ({}));
   const id = randomId("col");
   const createdAt = resolveCreatedAt(user, body);
+  // v00.127 — source_credit / source_url 칼럼 (schema-v6). NULLABLE — 누락 시 NULL.
   await env.DB.prepare(
-    `INSERT INTO user_columns (id, author_id, author_name, title, excerpt, body, category, cover_url, status, scheduled_at, read_minutes, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO user_columns (id, author_id, author_name, title, excerpt, body, category, cover_url, status, scheduled_at, read_minutes, created_at, source_credit, source_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, user.id, user.name,
     body.title || '', body.excerpt || '', body.body || '',
     body.category || '', body.coverUrl || '',
     body.status || 'published', body.scheduledAt || null,
-    Number(body.readMinutes || 3), createdAt
+    Number(body.readMinutes || 3), createdAt,
+    body.sourceCredit || null, body.sourceUrl || null
   ).run();
   return { id };
 };
@@ -1714,7 +1716,8 @@ const handleColumnPatch = async (req, env, id) => {
   if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403);
   const body = await req.json().catch(() => ({}));
   const sets = []; const args = [];
-  for (const [k, col] of [["title","title"],["excerpt","excerpt"],["body","body"],["category","category"],["status","status"],["scheduledAt","scheduled_at"],["coverUrl","cover_url"],["readMinutes","read_minutes"]]) {
+  // v00.127 — sourceCredit / sourceUrl 컬럼 (schema-v6) 도 patch 가능.
+  for (const [k, col] of [["title","title"],["excerpt","excerpt"],["body","body"],["category","category"],["status","status"],["scheduledAt","scheduled_at"],["coverUrl","cover_url"],["readMinutes","read_minutes"],["sourceCredit","source_credit"],["sourceUrl","source_url"]]) {
     if (k in body) { sets.push(`${col} = ?`); args.push(body[k]); }
   }
   // v00.115 — admin 만 created_at 수정 가능 (표시 시간 조정).

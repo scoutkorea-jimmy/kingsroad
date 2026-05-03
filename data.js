@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.126.000",
+  version: "00.127.000",
   build: "2026.05.03",
   channel: "preview",
 };
@@ -1560,6 +1560,8 @@ window.BGNJ_COLUMNS = {
       views: r.views || 0,
       likes: r.likes_json ? (typeof r.likes_json === 'string' ? JSON.parse(r.likes_json) : r.likes_json) : [],
       createdAt: r.created_at, updatedAt: r.updated_at,
+      // v00.127 — 외부 기고처 + 원문 링크 (schema-v6 ALTER TABLE).
+      sourceCredit: r.source_credit || '', sourceUrl: r.source_url || '',
     };
   },
   estimateReadTime(text) {
@@ -1622,6 +1624,9 @@ window.BGNJ_COLUMNS = {
     };
     // v00.115 — admin 이면 표시 시간(created_at) 오버라이드 가능 (워커가 검증).
     if (payload.createdAt) body.createdAt = payload.createdAt;
+    // v00.127 — 외부 기고처 + 원문 링크.
+    if ('sourceCredit' in payload) body.sourceCredit = payload.sourceCredit || '';
+    if ('sourceUrl' in payload) body.sourceUrl = payload.sourceUrl || '';
     if (exists) {
       await window.BGNJ_API.columns.update(payload.id, body);
     } else {

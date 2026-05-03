@@ -8,24 +8,28 @@
 // onSaveDraft 가 있고 dirty 면 prompt — 저장 / 버리기 / 취소.
 window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label }) {
   const promptName = label || '작성 중인 내용';
+  // v00.127 — handleAttemptClose 를 ref 로 안정화. 이전엔 dirty/onClose/onSaveDraft 가 부모
+  // re-render 마다 새 ref → handleAttemptClose 새 ref → useEffect 의 deps 변경 → cleanup 실행
+  // → history.back() 호출 → popstate 발생 → modal 닫힘. (모달이 떴다 즉시 사라지는 사용자 보고)
+  // ref 패턴으로 useEffect 는 [open] 만 의존, handleAttemptClose 는 항상 최신 상태 사용.
+  const stateRef = React.useRef({ dirty, onClose, onSaveDraft, promptName });
+  stateRef.current = { dirty, onClose, onSaveDraft, promptName };
+
   const handleAttemptClose = React.useCallback(() => {
-    if (!dirty) { onClose?.(); return; }
-    if (onSaveDraft) {
-      // 저장(OK) / 그냥 닫기(Cancel). 더 풍부한 3-way 다이얼로그는 후속 사이클.
-      const yes = window.confirm(`${promptName}이(가) 저장되지 않았습니다.\n임시저장 하시겠어요?\n\n[확인] = 임시저장 후 닫기\n[취소] = 그냥 닫기 (변경 내용 버림)`);
-      if (yes) {
-        try { onSaveDraft(); } catch {}
-      }
-      onClose?.();
+    const s = stateRef.current;
+    if (!s.dirty) { s.onClose?.(); return; }
+    if (s.onSaveDraft) {
+      const yes = window.confirm(`${s.promptName}이(가) 저장되지 않았습니다.\n임시저장 하시겠어요?\n\n[확인] = 임시저장 후 닫기\n[취소] = 그냥 닫기 (변경 내용 버림)`);
+      if (yes) { try { s.onSaveDraft(); } catch {} }
+      s.onClose?.();
     } else {
-      const ok = window.confirm(`${promptName}이(가) 저장되지 않았습니다. 정말 닫으시겠어요?`);
-      if (ok) onClose?.();
+      const ok = window.confirm(`${s.promptName}이(가) 저장되지 않았습니다. 정말 닫으시겠어요?`);
+      if (ok) s.onClose?.();
     }
-  }, [dirty, onClose, onSaveDraft, promptName]);
+  }, []);
 
   React.useEffect(() => {
     if (!open) return;
-    // ESC 키 처리
     const onKey = (e) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
         e.preventDefault();
@@ -33,29 +37,25 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       }
     };
     window.addEventListener('keydown', onKey);
-    // body scroll lock
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    // history 뒤로가기 처리 — pushState + popstate
     let pushed = false;
     try {
       window.history.pushState({ bgnjModal: true }, '');
       pushed = true;
     } catch {}
-    const onPop = (e) => { handleAttemptClose(); };
+    const onPop = () => { handleAttemptClose(); };
     if (pushed) window.addEventListener('popstate', onPop);
     return () => {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
       if (pushed) {
         window.removeEventListener('popstate', onPop);
-        // 모달이 정상 닫혔으면 history pushState 도 되돌림.
         try { if (window.history.state?.bgnjModal) window.history.back(); } catch {}
       }
     };
   }, [open, handleAttemptClose]);
 
-  // backdrop 클릭 핸들러 — content 외부 클릭만 attemptClose.
   const onBackdropClick = React.useCallback((e) => {
     if (e.target === e.currentTarget) handleAttemptClose();
   }, [handleAttemptClose]);
