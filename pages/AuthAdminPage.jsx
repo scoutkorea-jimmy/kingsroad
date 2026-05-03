@@ -5837,23 +5837,35 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     return true;
   };
 
-  const save = (status) => {
+  // v00.128 — async + await + try/catch + onAfterSave 호출. 이전엔 fire-and-forget +
+  // onAfterSave 미호출로 모달 wrapper 가 모달 못 닫음. 사용자 보고 '발행 완료되면 모달이 닫혀야지'.
+  const save = async (status) => {
     setMsg("");
     if (!validate(status)) return;
     const payload = buildPayload(status);
-    window.BGNJ_COLUMNS.saveColumn(payload);
-    setTick((v) => v + 1);
-    const label = status === 'published' ? '발행' : status === 'scheduled' ? '예약 발행' : '임시 저장';
-    setMsg(`"${payload.title}" ${label} 완료.`);
-    if (status === 'published') reset();
-    else setEditingId(payload.id);
+    try {
+      await window.BGNJ_COLUMNS.saveColumn(payload);
+      setTick((v) => v + 1);
+      const label = status === 'published' ? '발행' : status === 'scheduled' ? '예약 발행' : '임시 저장';
+      setMsg(`"${payload.title}" ${label} 완료.`);
+      if (status === 'published') reset();
+      else setEditingId(payload.id);
+      // 모달 wrapper 에 결과 전달 — published / scheduled 면 wrapper 가 닫음.
+      try { onAfterSave?.(status); } catch {}
+    } catch (err) {
+      setMsg('저장 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
   };
 
-  const remove = (id) => {
+  const remove = async (id) => {
     if (!confirm("이 칼럼을 삭제하시겠어요?")) return;
-    window.BGNJ_COLUMNS.deleteColumn(id);
-    setTick((v) => v + 1);
-    if (editingId === id) reset();
+    try {
+      await window.BGNJ_COLUMNS.deleteColumn(id);
+      setTick((v) => v + 1);
+      if (editingId === id) reset();
+    } catch (err) {
+      alert('삭제 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
   };
 
   const unpublish = (id) => {
@@ -6183,7 +6195,10 @@ const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
         </div>
         <AdminColumnEditor initialColumn={initialColumn || undefined}
           onPayloadChange={setPayload}
-          onAfterSave={() => { /* 발행 후에도 모달 유지 — 사용자가 명시적으로 닫음 */ }}/>
+          onAfterSave={(status) => {
+            // v00.128 — 발행/예약 발행 완료 시 모달 자동 닫음. 임시 저장은 계속 작업할 수 있도록 유지.
+            if (status === 'published' || status === 'scheduled') onClose?.();
+          }}/>
       </div>
     </div>
   );

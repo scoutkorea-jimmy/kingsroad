@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.128.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T12:31:48+09:00", // pre-commit stamp.
+    summary: "🩹 칼럼 발행 후 모달 자동 닫힘 + AdminColumnEditor save/remove async fix",
+    details: [
+      "🩹 [칼럼 발행 후 모달 자동 닫힘] AdminColumnEditor.save 가 sync 였고 onAfterSave 도 호출 안 됨 → ColumnEditorModalContent wrapper 가 닫힐 신호 받지 못해 발행 후 모달 유지됐던 버그. 사용자 보고 '칼럼 발행 완료되면 모달이 닫혀야지'.",
+      "  · save() async + await + try/catch + onAfterSave?.(status) 호출.",
+      "  · ColumnEditorModalContent — onAfterSave 가 status 를 받아 published / scheduled 면 onClose() 호출 (draft 는 모달 유지하여 사용자가 계속 작업 가능).",
+      "🩹 [delete async fix] AdminColumnEditor.remove 도 동일 패턴 fix — async + await + try/catch (이전 fire-and-forget 으로 refresh 가 OLD 캐시 사용).",
+      "ℹ 워커 미변경 (deploy 불필요).",
+      "📦 cache-buster — `?v=00.128.000` (21곳).",
+    ],
+    context: "v00.127 직후 사용자가 칼럼 글쓰기 모달 정상 동작 확인 → 발행 버튼 누르고도 모달이 안 닫힘 보고. 원인은 같은 fire-and-forget 패턴 + AdminColumnEditor 의 onAfterSave callback 이 정의만 있고 실제 호출 누락. v00.115 admin createdAt 사이클에서 이미 발견했어야 했던 회귀 — 다음 사이클 audit 에서 'fire-and-forget 패턴 잔재' 전수 검색 권장.",
+  },
+  {
     version: "00.127.000",
     date: "2026-05-03",
     datetime: "2026-05-03T12:25:13+09:00", // pre-commit stamp.
