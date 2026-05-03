@@ -6266,9 +6266,10 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
         {msg && <div role="status" className="mono gold" style={{fontSize:12, padding:10, border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.06)', marginBottom:16}}>{msg}</div>}
         <div style={{display:'flex', gap:12, justifyContent:'flex-end', paddingTop:20, borderTop:'1px solid var(--line)', flexWrap:'wrap'}}>
           <button type="button" className="btn" onClick={reset}>초기화</button>
-          <button type="button" className="btn" onClick={() => save('draft')}>임시 저장</button>
-          <button type="button" className="btn" onClick={() => save('scheduled')} disabled={!publishAt}>예약 발행</button>
-          <button type="submit" className="btn btn-gold">즉시 발행 →</button>
+          {/* v00.135 — 편집 중이면 라벨에 '수정' prefix. 사용자 요청 '수정 발행 형태로'. */}
+          <button type="button" className="btn" onClick={() => save('draft')}>{editingId ? '수정 임시저장' : '임시 저장'}</button>
+          <button type="button" className="btn" onClick={() => save('scheduled')} disabled={!publishAt}>{editingId ? '수정 예약 발행' : '예약 발행'}</button>
+          <button type="submit" className="btn btn-gold">{editingId ? '수정 발행 →' : '즉시 발행 →'}</button>
         </div>
       </form>
 

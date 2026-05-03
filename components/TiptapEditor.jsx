@@ -70,6 +70,25 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
           class: 'tiptap-editor',
           'aria-label': '본문 에디터 — 마크다운 단축키 지원',
         },
+        // v00.135 — plain text 붙여넣기 시 줄바꿈 보존. 사용자 보고 '외부 글을 갈무리해서 올 때 줄바꿈이 적용 안 됨'.
+        // ProseMirror 기본은 plain text 의 단일 \n 을 무시하고 공백으로 처리. 단일 \n → <br/>,
+        // 빈 줄(\n\n) → 새 단락 으로 정상 변환. text/html 페이로드가 있으면 default 처리(예: HTML 보존).
+        handlePaste: (view, event) => {
+          const cd = event.clipboardData;
+          if (!cd) return false;
+          const html = cd.getData('text/html');
+          if (html) return false; // HTML 이 있으면 default 처리.
+          const text = cd.getData('text/plain');
+          if (!text || !/\n/.test(text)) return false; // 줄바꿈 없으면 default.
+          event.preventDefault();
+          const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+          const out = text
+            .split(/\n{2,}/)
+            .map((para) => '<p>' + esc(para).split('\n').join('<br/>') + '</p>')
+            .join('');
+          editor.commands.insertContent(out);
+          return true;
+        },
       },
       onUpdate: ({ editor }) => {
         onUpdate?.(editor.getHTML(), editor.getJSON(), editor.getText());
