@@ -5935,7 +5935,7 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
     setBusy(true);
     try {
       const next = [...(sc.columnCategories || []), v];
-      await window.BGNJ_SITE_CONTENT.update('columnCategories', next);
+      await window.BGNJ_SITE_CONTENT.saveSection('columnCategories', next);
       setNewName('');
       setAdding(false);
       setScTick((x) => x + 1);
@@ -5949,7 +5949,7 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
     setBusy(true);
     try {
       const next = (sc.columnCategories || []).filter((c) => c !== name);
-      await window.BGNJ_SITE_CONTENT.update('columnCategories', next);
+      await window.BGNJ_SITE_CONTENT.saveSection('columnCategories', next);
       setScTick((x) => x + 1);
       if (selected === name && next.length > 0) onSelect?.(next[0]);
     } catch (err) {
@@ -6352,7 +6352,7 @@ const ColumnsHubPanel = ({ allColumns }) => {
     if (!v) { setCatMsg('카테고리 이름을 입력해 주세요.'); return; }
     if (colCats.includes(v)) { setCatMsg('이미 존재하는 카테고리입니다.'); return; }
     try {
-      await window.BGNJ_SITE_CONTENT.update('columnCategories', [...colCats, v]);
+      await window.BGNJ_SITE_CONTENT.saveSection('columnCategories', [...colCats, v]);
       setNewCatName('');
       setScTick((x) => x + 1);
       setCatMsg(`'${v}' 추가됨.`);
@@ -6361,7 +6361,7 @@ const ColumnsHubPanel = ({ allColumns }) => {
   const removeColCategory = async (name) => {
     if (!confirm(`'${name}' 카테고리를 삭제하시겠어요?\n(기존 칼럼의 카테고리 값은 유지되지만 새 칼럼 작성 시 선택지에서 사라집니다.)`)) return;
     try {
-      await window.BGNJ_SITE_CONTENT.update('columnCategories', colCats.filter((c) => c !== name));
+      await window.BGNJ_SITE_CONTENT.saveSection('columnCategories', colCats.filter((c) => c !== name));
       setScTick((x) => x + 1);
       setCatMsg(`'${name}' 삭제됨.`);
     } catch (err) { setCatMsg('삭제 실패: ' + (err?.message || '')); }
@@ -6439,7 +6439,7 @@ const ColumnsHubPanel = ({ allColumns }) => {
           <ul style={{listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:6}}>
             {drafts.map((d) => (
               <li key={d.id} style={{display:'flex', alignItems:'center', gap:8, fontSize:12}}>
-                <span className="mono dim-2" style={{fontSize:10, minWidth:120}}>{(d.savedAt || '').slice(0, 16).replace('T', ' ')}</span>
+                <span className="mono dim-2" style={{fontSize:10, minWidth:120}}>{d.savedAt ? window.BGNJ_FMT.kstShort(d.savedAt) : ''}</span>
                 <span style={{flex:1, color:'var(--ink)'}}>{d.title || '(제목 없음)'}</span>
                 <button type="button" className="btn btn-small" style={{fontSize:10}} onClick={() => openCreateFromDraft(d)}>이어쓰기</button>
                 <button type="button" className="btn btn-small" style={{fontSize:10, borderColor:'var(--danger)', color:'var(--danger)'}}

@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.134.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T16:20:09+09:00",
+    summary: "🚨 [HOTFIX] 칼럼 사라짐 + 카테고리 chip 무반응 + KST 강제 + 칼럼 작성 모달 카테고리 추가/삭제",
+    details: [
+      "🚨 [칼럼 사라짐 fix] ColumnPage 가 bgnj-columns-refresh 이벤트 listener 미보유 → boot.jsx Promise.allSettled 의 비동기 refresh 완료 후에도 화면 안 바뀜 → 'columns 가 있는데 자꾸 사라지네'. ColumnPage useEffect 에 listener + 진입 시 강제 refresh 추가.",
+      "🚨 [chip 카테고리 무반응 fix] ColumnCategoryChips 의 ✕ / + 가 BGNJ_SITE_CONTENT.update() 호출 — 그러나 헬퍼는 saveSection() 만 존재 (메소드명 오타). 11곳 일괄 sed 치환. 사용자 보고 '카테고리 추가 삭제를 이곳(칼럼 작성 페이지)에서 할 수 있게'.",
+      "🕒 [KST 강제] 임시저장 draft 의 savedAt 가 ISO slice 로 표시(UTC 06:57 형태) → BGNJ_FMT.kstShort() 사용으로 변경.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.134.000`.",
+    ],
+    context: "v00.133 직후 사용자 연속 보고 — 칼럼 사라짐(listener 누락), 카테고리 chip 무반응(메소드명 오타), KST 표기. 본 핫픽스로 모두 해결. 책 추가 '서버 응답 없음' 은 v00.132 deploy 이후 정상 (브라우저 캐시 hard reload 권장).",
+  },
+  {
     version: "00.132.000",
     date: "2026-05-03",
     datetime: "2026-05-03T15:58:52+09:00",

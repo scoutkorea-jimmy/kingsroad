@@ -32,6 +32,17 @@ const ColumnPage = ({ go, user }) => {
     }
   }, []);
 
+  // v00.134 — 칼럼 데이터 동기화. boot.jsx Promise.allSettled 가 비동기 완료
+  // 또는 admin 탭에서 BGNJ_BROADCAST 발화 → 자동 새로고침. 사용자 보고
+  // '칼럼도 있는데 자꾸 사라지네' — listener 누락이 원인.
+  React.useEffect(() => {
+    // 진입 시 1회 강제 동기.
+    Promise.resolve(window.BGNJ_COLUMNS?.refresh?.()).finally(() => refresh());
+    const onR = () => refresh();
+    window.addEventListener('bgnj-columns-refresh', onR);
+    return () => window.removeEventListener('bgnj-columns-refresh', onR);
+  }, []);
+
   // 상세 진입 시 조회수 증가 (세션당 1회)
   React.useEffect(() => {
     if (!selectedId) return;
