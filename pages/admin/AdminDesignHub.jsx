@@ -4,6 +4,27 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.126.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T12:02:09+09:00", // pre-commit stamp.
+    summary: "📑 CONTEXT.md v00.115~125 일괄 갱신 + auto-memory (LLM 위키) v00.125 동기화",
+    details: [
+      "📑 [CONTEXT.md] v00.114 → v00.126 (12 사이클 미반영) 일괄 갱신 — 본문 9 섹션 모두 정합:",
+      "  · §0 요약 + §1 토폴로지: D1 28 tables (v00.123 정리 후), schema-v4/v5/seed-kv 신규 추가, 5 도구 자동화 명시.",
+      "  · §2.7 자동화 — 5 도구 통합 (build / stamp-datetime / csp-hashes / check-version / check-syntax) + pre-commit 6단계 순서.",
+      "  · §2.9 BGNJ_STORES — legacy categories/grades/site_content DROP (v00.123) 반영.",
+      "  · §3 파일 구조 — boot.jsx, robots.txt, sitemap.xml, README.md, schema-v5.sql, seed-kv.sql, csp-hashes.mjs, check-version.mjs 추가.",
+      "  · §5 히스토리 표 — v00.115~v00.126 12 행 추가.",
+      "  · §6 사용자 가드 — BGNJ_FMT.won / priceOrFree 명시.",
+      "  · §7 백로그 — 큐 1 비어있음 + 후보 6종 명시. 큐 4 — HTTPS/SSL 만 남음.",
+      "  · §9 라인 참조 — workers/src/index.js 의 추가 헬퍼 + 신규 SQL 파일 + 신규 도구 파일.",
+      "🧠 [auto-memory] ~/.claude/projects/.../memory/ — project_context_snapshot / feedback_release_workflow / project_architecture 3 파일 v00.125 시점으로 갱신 (이전 v00.052 stale, 73 사이클 미반영).",
+      "ℹ 워커 미변경 (deploy 불필요).",
+      "📦 cache-buster — `?v=00.126.000` (21곳).",
+    ],
+    context: "사용자 요청 'LLM 위키 잘 저장되어있지?' → auto-memory 점검 결과 v00.052 stale 발견 → 갱신 → CONTEXT.md 도 v00.114 stale 확인 → 사용자 'CONTEXT 도 이어서 갱신' 지시. 본 사이클로 두 위키(저장소 CONTEXT.md + LLM auto-memory) 모두 v00.125 동기화 완료. 코드/데이터 변경 없음 — 순수 문서.",
+  },
+  {
     version: "00.125.000",
     date: "2026-05-03",
     datetime: "2026-05-03T10:24:46+09:00", // pre-commit stamp.
