@@ -1,4 +1,10 @@
 // 약관 / 개인정보 처리방침 / FAQ 공개 페이지
+// v00.159 — helper 직접 호출 race 가드. window.BGNJ_GUARD 미로드 시 인라인 폴백.
+const G = window.BGNJ_GUARD || {
+  call: (fn, fb) => { try { const v = fn(); return v == null ? fb : v; } catch { return fb; } },
+  arr: (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } },
+};
+
 const LegalPage = ({ go, slug }) => {
   // v00.142 — mount 시 + slug 변경 시 + broadcast 시 항상 서버에서 fresh fetch.
   // 사용자 보고 '개인정보처리방침 업데이트했는데 홈페이지에서 안 보여' — 이전엔 boot.jsx 의 1회 prefetch 만 의존,
@@ -16,9 +22,10 @@ const LegalPage = ({ go, slug }) => {
     window.addEventListener('bgnj-legal-refresh', onRefresh);
     return () => { cancelled = true; window.removeEventListener('bgnj-legal-refresh', onRefresh); };
   }, [slug]);
-  const doc = window.BGNJ_LEGAL.get(slug) || { title: '', body: '' };
+  // v00.159 — helper 미로드 시에도 안전.
+  const doc = G.call(() => window.BGNJ_LEGAL?.get?.(slug), null) || { title: '', body: '' };
   const otherSlug = slug === 'privacy' ? 'terms' : 'privacy';
-  const otherDoc = window.BGNJ_LEGAL.get(otherSlug);
+  const otherDoc = G.call(() => window.BGNJ_LEGAL?.get?.(otherSlug), null);
   return (
     <div className="section">
       <div className="container" style={{maxWidth:760}}>
@@ -49,8 +56,9 @@ const FaqPage = ({ go }) => {
   const [category, setCategory] = React.useState('전체');
   const [openId, setOpenId] = React.useState(null);
 
-  const categories = window.BGNJ_FAQ.listCategories();
-  const filtered = window.BGNJ_FAQ.search(search, category);
+  // v00.159 — helper 미로드 시 빈 배열 폴백 → 페이지 mount 정상.
+  const categories = G.arr(() => window.BGNJ_FAQ?.listCategories?.());
+  const filtered = G.arr(() => window.BGNJ_FAQ?.search?.(search, category));
 
   // 카테고리별 그룹핑
   const grouped = filtered.reduce((acc, f) => {

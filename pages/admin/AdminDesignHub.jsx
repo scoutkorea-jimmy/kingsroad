@@ -4,6 +4,24 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.159.000",
+    date: "2026-05-04",
+    datetime: "2026-05-04T00:39:10+09:00",
+    summary: "🩹 P0 3건 일괄 fix — LecturesPage 빈 버킷 가드 / nav 폴백 라벨 / helper 직접 호출 race",
+    details: [
+      "🩹 [P0-1 LecturesPage 빈 버킷 throw] 사이트 검토 발견. line 53-56 에서 lectures.length===0 일 때 lecture=undefined → lecture.id 접근 시 throw → PageErrorBoundary 가 잡지만 사용자에게 빨간 에러 카드 노출. `if (!lecture) return <안내 카드>` 가드 + 반대 버킷 이동 버튼. 재현: 강연 1개 startsAt 미래 + '지난 강연' 탭 클릭.",
+      "🩹 [P0-2-a Shell.jsx nav 폴백] components/Shell.jsx:363 의 `navL.book || '책'` → `navL.book || '뱅기노자 도서'`. v00.153 다권화 라벨 정합. D1 site_content_kv 가 비어있어도 정상 텍스트.",
+      "🩹 [P0-2-b admin 주석 잔재] AuthAdminPage.jsx:5996 `{/* 왕의길 (책 주문 운영) */}` → `{/* 도서 주문 운영 */}`. 운영 무영향이지만 다권화 컨텍스트 일관성.",
+      "🩹 [P0-3-a LegalFaqPages helper 가드] 모듈 상단 `G = window.BGNJ_GUARD || 인라인 폴백` 도입. window.BGNJ_LEGAL.get / window.BGNJ_FAQ.listCategories/search 4 곳 직접 호출 → G.call/G.arr 래핑. helper 미로드 race 시 페이지 mount 정상 (빈 안내 표시).",
+      "🩹 [P0-3-b BookCheckoutPage.BookReviewSection] useState 초기화 mount-time 호출 (window.BGNJ_BOOK_ORDERS.listReviews()) → G.arr 폴백. helper race 시 리뷰 빈 채로 페이지 정상.",
+      "ℹ MyPage / AuthAdminPage 의 lazy callback 안 직접 호출은 본 사이클 비대상 — risk 낮음 (callback 시점엔 helper 로드 완료). 별 사이클에서 표준 패턴 정합 차원.",
+      "ℹ D1 site_content_kv.nav.book 옛 row 정리는 운영자 직접 작업 (admin → 사이트 콘텐츠 → 메뉴).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.159.000`.",
+    ],
+    context: "v00.156 사이트 심층 검토 보고서의 P0 3건 (실제 throw 1건 / 운영 회귀 1건 / race 잠재 위험 1건) 일괄 fix. P1 a11y / 성능 / PII 는 v00.160+ 별 사이클 후보.",
+  },
+  {
     version: "00.158.000",
     date: "2026-05-04",
     datetime: "2026-05-04T00:35:15+09:00",

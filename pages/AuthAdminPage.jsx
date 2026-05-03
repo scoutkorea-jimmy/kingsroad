@@ -5993,7 +5993,7 @@ const AdminPage = ({ go }) => {
         {/* 회원 */}
         {tab === "회원" && <MemberAdminPanel go={go}/>}
 
-        {/* 왕의길 (책 주문 운영) */}
+        {/* 도서 주문 운영 (v00.153 다권화 이후 일반화) */}
         {tab === "책 주문" && <BookOrderAdminPanel go={go}/>}
         {tab === "책 카탈로그" && <BooksAdminPanel/>}
 

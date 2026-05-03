@@ -52,6 +52,29 @@ const LecturesPage = ({ go, user }) => {
 
   const safeIdx = Math.max(0, Math.min(selectedIdx, Math.max(0, lectures.length - 1)));
   const lecture = lectures[safeIdx];
+  // v00.159 — bucket 의 강연 0건 가드. lectures.length===0 일 때 lecture=undefined → 이전엔 lecture.id throw.
+  // PageErrorBoundary 가 잡았지만 사용자에게 빨간 에러 카드 노출. 정상 안내 카드로 대체.
+  if (!lecture) {
+    return (
+      <div className="section">
+        <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
+          <p className="dim" style={{fontSize:14, lineHeight:1.8}}>
+            {bucket === 'past' ? '지난 강연이 없습니다.' : '진행 예정인 강연이 없습니다.'}
+          </p>
+          {bucket === 'past' && lecturesUpcoming.length > 0 && (
+            <button type="button" className="btn btn-small" style={{marginTop:18}} onClick={() => setBucket('upcoming')}>
+              진행 예정 강연 보기 →
+            </button>
+          )}
+          {bucket === 'upcoming' && lecturesPast.length > 0 && (
+            <button type="button" className="btn btn-small" style={{marginTop:18}} onClick={() => setBucket('past')}>
+              지난 강연 보기 →
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
   const seats = G.call(() => window.BGNJ_LECTURES?.getSeats?.(lecture.id), { capacity: 0, taken: 0, waitlist: 0, remaining: 0 });
   const myReg = user ? G.call(() => window.BGNJ_LECTURES?.hasUserRegistered?.(lecture.id, user.id), null) : null;
 

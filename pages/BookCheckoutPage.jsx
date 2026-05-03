@@ -1,10 +1,17 @@
 // === 독자 리뷰 서브컴포넌트 ============================================
 const STARS = ['★', '★★', '★★★', '★★★★', '★★★★★'];
 
+// v00.159 — helper 직접 호출 race 가드. mount-time 호출(useState 초기화)이 helper 미로드 시 throw → 페이지 전체 다운.
+const _G = window.BGNJ_GUARD || {
+  call: (fn, fb) => { try { const v = fn(); return v == null ? fb : v; } catch { return fb; } },
+  arr: (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } },
+};
+
 const BookReviewSection = ({ user, bookTitle }) => {
   // v00.153 — 책 제목 동적화. props 미전달 시 빈 문자열로 안전 폴백.
   const _t = bookTitle || '책';
-  const [reviews, setReviews] = React.useState(() => window.BGNJ_BOOK_ORDERS.listReviews());
+  // v00.159 — helper 미로드 race 가드.
+  const [reviews, setReviews] = React.useState(() => _G.arr(() => window.BGNJ_BOOK_ORDERS?.listReviews?.()));
   const [rating, setRating] = React.useState(5);
   const [text, setText] = React.useState('');
   const [error, setError] = React.useState('');

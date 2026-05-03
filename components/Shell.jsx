@@ -360,7 +360,7 @@ const Nav = ({ route, go, user, onLogout }) => {
     { key: "tour", label: navL.tour || "투어" },
     { key: "lectures", label: navL.lectures || "강연" },
     { key: "column", label: navL.column || "칼럼" },
-    { key: "book", label: navL.book || "책" },
+    { key: "book", label: navL.book || "뱅기노자 도서" },
     { key: "community", label: navL.community || "커뮤니티", isMega: 'community' },
   ];
   // 커뮤니티 메가메뉴: BGNJ_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
