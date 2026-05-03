@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.124.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T09:07:29+09:00", // pre-commit stamp.
+    summary: "📝 README.md 재작성 + robots.txt + sitemap.xml 신설 (P4 신규 후보 처리)",
+    details: [
+      "📝 [README.md] 외부 협업자용 진입 문서로 재작성. 빠른 시작 / 아키텍처 / 디렉터리 / 워크플로우 / 운영 원칙 / 보안 모델 / 검증 명령. 기존 4-line 'Deploy' 단편을 200+ line 정식 README 로.",
+      "🔍 [robots.txt] 신설 — 검색엔진 전체 허용 + admin/login/mypage/checkout 색인 차단 + Sitemap 명시.",
+      "🔍 [sitemap.xml] 신설 — 정적 라우트 12개 (홈/투어/강연/커뮤니티/칼럼/책/먹/자/사/FAQ/약관/개인정보). 동적 콘텐츠는 카테고리 검색 의존.",
+      "ℹ P3 검증 — curl 가능 항목 (dev banner / server-first / health / categories / grades) 모두 통과. 브라우저 admin 세션 필요 항목 4건은 사용자 라이브 테스트 권장.",
+      "ℹ P5 메이저 보류 — React 18.3.1 LTS 보안 EOL 미도달, Tiptap 3.22.5 안정. 재검토 시점 미도래로 코드 변경 없음.",
+      "★ 워커 미변경 (deploy 불필요).",
+      "📦 cache-buster — `?v=00.124.000` (21곳).",
+    ],
+    context: "사용자 요청 '우선순위 1-5 모두 진행'. P1.1 HTTPS/SSL 은 Cloudflare 대시보드 작업으로 안내만, P1.2 Secrets 는 정확한 값 인가 필요로 보류, P2 는 빈 큐, P3 는 curl 가능 항목 검증 통과, P4 는 README + robots + sitemap 3개 신설, P5 는 시점 미도래 확인. 본 사이클은 P4 결과물 commit.",
+  },
+  {
     version: "00.123.000",
     date: "2026-05-03",
     datetime: "2026-05-03T09:00:10+09:00", // pre-commit stamp.

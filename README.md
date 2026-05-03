@@ -1,9 +1,196 @@
-# kingsroad
+# 뱅기노자 (BANGINOJA)
 
-## Deploy
+> 한국의 역사·문화·자연을 함께 여행하는 커뮤니티 — [bgnj.net](https://bgnj.net)
+>
+> 궁궐 답사 · 지역 답사 · 문화 강연
 
-This repository is configured for GitHub Pages deployment.
+---
 
-1. Push changes to the `main` branch.
-2. In GitHub, enable Pages with `GitHub Actions` as the source.
-3. The workflow at `.github/workflows/deploy-pages.yml` will publish the site automatically.
+## 빠른 시작 (개발자용)
+
+### 사전 요구
+- **Node.js 18+** (esbuild / tools)
+- **Git** (pre-commit 훅 자동화)
+- (선택) **Cloudflare Wrangler CLI** (`npm i -g wrangler`) — 워커/D1 관리용
+
+### 클론 → 훅 설치 → 빌드
+```bash
+git clone https://github.com/scoutkorea-jimmy/kingsroad.git
+cd kingsroad
+bash tools/install-hooks.sh    # pre-commit 자동화 6단계 설치
+node tools/build.mjs            # *.jsx → *.js esbuild 사전 컴파일
+```
+
+### 로컬 미리보기
+```bash
+# 정적 파일 호스트 (Python 3)
+python3 -m http.server 8000
+# → http://localhost:8000
+```
+
+> 주의: 로컬에서도 워커 API (`https://banginoja-api.scoutkorea.workers.dev`) 를 호출.
+> 오프라인에선 `BGNJ_STORES` localStorage 시드만 보임.
+
+---
+
+## 배포
+
+### 프론트엔드 (자동)
+`git push origin main` → GitHub Actions (`.github/workflows/deploy-pages.yml`) 가 GitHub Pages 자동 배포.
+
+### 워커 (수동)
+```bash
+cd workers && npx wrangler deploy
+```
+
+### D1 스키마 마이그
+```bash
+cd workers && npx wrangler d1 execute banginoja-db --remote --file=schema-vN.sql
+```
+
+---
+
+## 아키텍처 한 페이지
+
+**정적 호스팅 (GitHub Pages) + 동적 백엔드 (Cloudflare Worker + D1 + R2) hybrid.**
+
+```
+사용자 → bgnj.net (GitHub Pages: index.html / *.js / styles.css)
+       → fetch /api/* → banginoja-api (Cloudflare Worker)
+                       → D1 banginoja-db (SQLite-in-cloud)
+                       → R2 banginoja-media (object storage)
+```
+
+3 가지 운영 축:
+1. **D1 source-of-truth** — 콘텐츠는 모두 서버 D1. 시드/로컬 폴백 금지.
+2. **표준 가드 + ErrorBoundary 2-tier** — 한 섹션이 죽어도 전역 트리는 살아남음.
+3. **pre-commit 자동화** — datetime stamp / CSP 해시 / version 동기 / 빌드 / 신택스+룰 검증.
+
+상세는 [CONTEXT.md](CONTEXT.md) 참고.
+
+---
+
+## 디렉터리 구조
+
+```
+/                        ← bgnj.net 루트 (정적 호스팅)
+├─ index.html            App + 라우팅 + ErrorBoundary boot.js + CSP meta + JSON-LD
+├─ data.js               BGNJ_VERSION, BGNJ_STORES, BGNJ_GUARD, BGNJ_FMT, BGNJ_SAFE_HTML, 모든 BGNJ_* 헬퍼
+├─ api.js                BGNJ_API (Worker fetch wrapper)
+├─ styles.css            토큰 + 컴포넌트 + 반응형
+├─ boot.jsx → boot.js    PageErrorBoundary + App + go/route + Promise.allSettled init
+├─ 404.html              GitHub Pages SPA fallback
+├─ robots.txt            검색엔진 정책
+├─ sitemap.xml           SEO 사이트맵
+├─ components/           Shell / KoreaMap / TiptapEditor (.jsx 소스 + .js 산출물)
+├─ pages/                HomePage / Community / Column / WangsanamTour / Lectures / BookCheckout /
+│                        MyPage / EatSleepShop / LegalFaq / AuthAdmin (.jsx + .js)
+│  └─ admin/             AdminDesignHub / AdminContentEditors
+├─ workers/              Cloudflare Worker (배포 안 됨, 소스만)
+│  ├─ src/index.js       모든 endpoint
+│  ├─ schema*.sql        D1 schema (v1~v5)
+│  ├─ seed-kv.sql        categories_kv / grades_kv 기본 시드
+│  └─ wrangler.toml      D1 + R2 bindings + 환경 변수
+├─ tools/                local-only (배포 안 됨)
+│  ├─ build.mjs          esbuild *.jsx → *.js
+│  ├─ check-syntax.mjs   babel parser + 룰 4종 + 정보 3종
+│  ├─ check-version.mjs  BGNJ_VERSION ↔ ?v= 동기 검증
+│  ├─ csp-hashes.mjs     인라인 script SHA-256 → CSP meta 자동 동기
+│  ├─ stamp-datetime.mjs ADMIN_VERSION_HISTORY datetime sentinel 치환
+│  └─ install-hooks.sh   pre-commit 훅 설치
+├─ ROADMAP.md            forward-looking 사이클 백로그
+└─ CONTEXT.md            상세 컨텍스트 문서 (운영 원칙 9 + 라우팅 + 라인 참조)
+```
+
+---
+
+## 개발 워크플로우
+
+### 새 사이클 시작
+1. **ROADMAP.md** 큐 1 의 첫 pending 항목 확인.
+2. 코드 변경.
+3. `BGNJ_VERSION` (data.js) 갱신 + `?v=` cache-buster 동기 (index.html 21곳, 일괄 sed).
+4. `pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY` 맨 앞에 신규 entry. datetime 은 `new Date().toISOString()` sentinel.
+5. `git commit` — pre-commit 훅이 자동 실행:
+   - stamp-datetime → datetime 실제 KST 시간 치환
+   - csp-hashes → 인라인 script SHA-256 동기
+   - check-version → 버전 일관성 검증 (불일치 차단)
+   - build → *.jsx → *.js esbuild
+   - check-syntax → 신택스 + 룰 검증
+
+---
+
+## 운영 원칙 (요약)
+
+상세는 [CONTEXT.md §2](CONTEXT.md) 참고.
+
+- **D1 source-of-truth** — `window.BANGINOJA_DATA` 직접 참조 금지 (lint 차단)
+- **BGNJ_GUARD** 패턴 — `G.arr(() => window.BGNJ_X.listFoo())`
+- **dangerouslySetInnerHTML** → 반드시 `BGNJ_SAFE_HTML(html)` 래핑
+- **시간 표시** → `BGNJ_FMT.kstDateTime/kstShort/kstDate/kstFriendly` (KST 강제)
+- **가격 표시** → `BGNJ_FMT.won(n)` / `BGNJ_FMT.priceOrFree(n)`
+- **컬러** — 옐로우 5% (인터랙션 상태에만)
+- **모바일** — ≤900px 1단 강제
+
+### 절대 금지 (lint 룰 차단)
+- `window.BANGINOJA_DATA` 직접 참조
+- `console.log` (`data.js` / `api.js` 외)
+- `var` 키워드
+- `fetch(...)` 직접 호출 (BGNJ_API 우회)
+
+### 우회 마커
+```js
+// bgnj-lint-ignore-next-line <RULE>
+```
+
+---
+
+## 보안 모델
+
+- **CSP**: `script-src` `'unsafe-inline'` 제거 (SHA-256 해시 자동 동기) + 외부 CDN 화이트리스트
+- **DOMPurify** (CDN + SRI) — `BGNJ_SAFE_HTML` 거치는 모든 HTML sanitize. iframe = YouTube/Vimeo 만, data: = image MIME 만, `target=_blank` = noopener 강제
+- **Brute-force rate limit** — `/api/auth/{login,signup}` 15분/5회 실패 시 429 (super admin 예외)
+- **게시판 권한 검증** — `categories_kv.post_min_level` vs `grades_kv.level` 비교
+- **R2 폴더 권한 분기** — `post-*` / `lecture-*` / `tour-*` = requireUser, 그 외 = requireAdmin
+- **X-Frame-Options + frame-ancestors** — 클릭재킹 방어
+
+---
+
+## 검증 명령
+
+```bash
+# 전체 신택스 + 룰
+node tools/check-syntax.mjs
+
+# 빌드 (수동)
+node tools/build.mjs
+
+# 버전 동기 검증
+node tools/check-version.mjs
+
+# CSP 해시 동기
+node tools/csp-hashes.mjs
+
+# pre-commit 훅 재설치
+bash tools/install-hooks.sh
+
+# 워커 health
+curl -s https://banginoja-api.scoutkorea.workers.dev/api/health
+
+# 사용자 브라우저 캐시 청소 (콘솔)
+window.BGNJ_DIAG.run()
+```
+
+---
+
+## 기여 / 문의
+
+- 이슈 / PR: [GitHub Issues](https://github.com/scoutkorea-jimmy/kingsroad/issues)
+- 사용자 문의: hello@bgnj.net
+- 개발 중 사이트 — 발견 오류는 **왕사들 오픈톡방** 에 알려주시면 빠르게 처리하겠습니다.
+
+---
+
+## 라이선스
+
+내부 운영 프로젝트. 외부 사용 / 포크 시 별도 협의.

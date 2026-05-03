@@ -1,0 +1,17 @@
+# 뱅기노자 (BANGINOJA) — robots.txt
+# 정책: 검색엔진 전체 허용. admin / login / mypage / checkout 페이지는 색인 제외.
+
+User-agent: *
+Allow: /
+
+# admin 페이지 — 검색 노출 차단
+Disallow: /admin
+Disallow: /login
+Disallow: /signup
+Disallow: /mypage
+Disallow: /checkout
+
+# 워커 API endpoint — 색인 불필요
+Disallow: /api/
+
+Sitemap: https://bgnj.net/sitemap.xml

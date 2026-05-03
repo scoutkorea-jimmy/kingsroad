@@ -45,7 +45,7 @@
 |---|---|---|
 | **★ HTTPS/SSL 인프라 도입** | bgnj.net SSL 활성화 | CONTEXT.md §7.5 가이드 — Cloudflare 대시보드 + GitHub Pages 설정 |
 | **★ Cloudflare Secrets 이관** | SUPER_ADMIN/ADMIN_BOOTSTRAP 평문 노출 제거 | `wrangler secret put SUPER_ADMIN_EMAILS` + `wrangler secret put ADMIN_BOOTSTRAP_EMAIL` 후 wrangler.toml [vars] 에서 두 항목 제거. |
-| **★ schema-v4.sql 적용** | rate limit 활성화 | `cd workers && wrangler d1 execute banginoja-db --remote --file=schema-v4.sql` (1회). |
+| ✅ ~~schema-v4.sql 적용~~ | (v00.113 완료) login_attempts 테이블 + 인덱스 2 — rate limit 활성. | |
 | ✅ ~~seed-kv.sql 적용~~ | (v00.123 완료) categories_kv 5 / grades_kv 6 row 세팅. server-first 정상화. | |
 | ✅ ~~schema-v5.sql 적용~~ | (v00.123 완료) legacy categories / grades / site_content DROP. 28 tables remaining. | |
 
