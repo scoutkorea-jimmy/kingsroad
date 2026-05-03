@@ -143,8 +143,10 @@ const ColumnPage = ({ go, user }) => {
               COLUMN HERO IMAGE · 1600×900
             </div>
           )}
-          <article style={{fontFamily:'var(--font-serif)', fontSize:18, lineHeight:2, color:'var(--ink)'}}>
-            <p style={{fontSize:22, lineHeight:1.7, color:'var(--gold-ink)', marginBottom:32, fontStyle:'italic'}}>
+          {/* v00.133 — 본문 폰트 가벼움. 사용자 요청 '본문 내용은 좀 얇은 폰트였으면'.
+              fontWeight 300 (Noto Serif KR Light) + 부제목 발췌도 light italic. */}
+          <article style={{fontFamily:'var(--font-serif)', fontSize:18, lineHeight:2, color:'var(--ink)', fontWeight:300}}>
+            <p style={{fontSize:22, lineHeight:1.7, color:'var(--gold-ink)', marginBottom:32, fontStyle:'italic', fontWeight:300}}>
               {c.excerpt}
             </p>
             {c.body?.html ? (

@@ -5913,6 +5913,104 @@ const GradePromotionPanel = () => {
 };
 
 // === Admin: Column Editor (Tiptap column preset — inline draggable images)
+// v00.133 — 칼럼 카테고리 칩 선택 + 인라인 추가/삭제. AdminColumnEditor / ColumnsHubPanel 에서 공유.
+// site_content_kv.columnCategories 가 source-of-truth.
+const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
+  const [scTick, setScTick] = React.useState(0);
+  const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);
+  const cats = React.useMemo(() => {
+    const list = Array.isArray(sc.columnCategories) && sc.columnCategories.length
+      ? sc.columnCategories
+      : ['왕의 미학', '군주의 언어', '공간의 철학', '현대의 독법'];
+    // 선택값이 목록에 없으면 (편집 중인 옛 값) 추가 노출.
+    return selected && !list.includes(selected) ? [...list, selected] : list;
+  }, [sc, scTick, selected]);
+  const [adding, setAdding] = React.useState(false);
+  const [newName, setNewName] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+
+  const addCat = async () => {
+    const v = newName.trim();
+    if (!v || cats.includes(v) || busy) return;
+    setBusy(true);
+    try {
+      const next = [...(sc.columnCategories || []), v];
+      await window.BGNJ_SITE_CONTENT.update('columnCategories', next);
+      setNewName('');
+      setAdding(false);
+      setScTick((x) => x + 1);
+      onSelect?.(v);
+    } catch (err) {
+      alert('카테고리 추가 실패: ' + (err?.message || ''));
+    } finally { setBusy(false); }
+  };
+  const removeCat = async (name) => {
+    if (!confirm(`'${name}' 카테고리를 삭제하시겠어요?\n(기존 칼럼의 값은 보존됨, 새 칼럼 작성 선택지에서만 사라짐.)`)) return;
+    setBusy(true);
+    try {
+      const next = (sc.columnCategories || []).filter((c) => c !== name);
+      await window.BGNJ_SITE_CONTENT.update('columnCategories', next);
+      setScTick((x) => x + 1);
+      if (selected === name && next.length > 0) onSelect?.(next[0]);
+    } catch (err) {
+      alert('카테고리 삭제 실패: ' + (err?.message || ''));
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div>
+      <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
+        {cats.map((c) => {
+          const active = c === selected;
+          return (
+            <span key={c} style={{display:'inline-flex', alignItems:'center', gap:4}}>
+              <button type="button"
+                onClick={() => onSelect?.(c)}
+                aria-pressed={active}
+                style={{
+                  padding:'6px 14px', borderRadius:999, fontSize:12, cursor:'pointer',
+                  border: '1px solid ' + (active ? 'var(--gold)' : 'var(--line)'),
+                  color: active ? 'var(--gold)' : 'var(--ink-2)',
+                  background: active ? 'rgba(245,213,72,0.08)' : 'transparent',
+                }}>
+                {c}
+              </button>
+              {allowManage && (
+                <button type="button" onClick={() => removeCat(c)} aria-label={`${c} 삭제`}
+                  disabled={busy}
+                  style={{background:'none', border:'none', color:'var(--danger)', cursor:'pointer', fontSize:11, padding:'0 2px', lineHeight:1}}>
+                  ✕
+                </button>
+              )}
+            </span>
+          );
+        })}
+        {allowManage && !adding && (
+          <button type="button" onClick={() => setAdding(true)}
+            style={{padding:'6px 14px', borderRadius:999, fontSize:12, cursor:'pointer',
+              border:'1px dashed var(--gold-dim)', color:'var(--gold)', background:'transparent'}}>
+            ＋ 새 카테고리
+          </button>
+        )}
+        {allowManage && adding && (
+          <span style={{display:'inline-flex', gap:4, alignItems:'center'}}>
+            <input type="text" autoFocus className="field-input"
+              value={newName} onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); addCat(); }
+                if (e.key === 'Escape') { setAdding(false); setNewName(''); }
+              }}
+              placeholder="카테고리 이름"
+              style={{padding:'4px 10px', fontSize:12, width:140}}/>
+            <button type="button" className="btn btn-small" onClick={addCat} disabled={!newName.trim() || busy}>추가</button>
+            <button type="button" className="btn btn-small" onClick={() => { setAdding(false); setNewName(''); }}>취소</button>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // v00.067: initialColumn prop + onPayloadChange callback 추가 — 모달 안에서 사용 시 임시저장 추적용.
 const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {}) => {
   const [editingId, setEditingId] = React.useState(initialColumn?.id || null);
@@ -6103,22 +6201,11 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
               onChange={e => setTitle(e.target.value)}
               placeholder="칼럼 제목"/>
           </div>
-          <div className="field" style={{margin:0}}>
-            <label className="field-label" htmlFor="col-cat">카테고리</label>
-            <select id="col-cat" className="field-input" value={category}
-              onChange={e => setCategory(e.target.value)}>
-              {/* v00.129 — 카테고리 동적 (site_content.columnCategories). ColumnsHubPanel 의 카테고리 관리 패널에서 추가/삭제. */}
-              {(() => {
-                const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
-                const cats = Array.isArray(sc.columnCategories) && sc.columnCategories.length
-                  ? sc.columnCategories
-                  : ['왕의 미학', '군주의 언어', '공간의 철학', '현대의 독법'];
-                // 현재 값이 목록에 없으면 (편집 중인 옛 값) 옵션에 추가.
-                const list = cats.includes(category) ? cats : [...cats, category].filter(Boolean);
-                return list.map((c) => <option key={c} value={c}>{c}</option>);
-              })()}
-            </select>
-          </div>
+        </div>
+        {/* v00.133 — 카테고리 칩 선택 + 인라인 추가/삭제. 사용자 요청 '카테고리 손쉽게 수정 + 칩형'. */}
+        <div className="field">
+          <label className="field-label">카테고리</label>
+          <ColumnCategoryChips selected={category} onSelect={setCategory}/>
         </div>
         {/* v00.129 — 부제목 (subtitle). 사용자 요청 '제목 / 부제목 / 본문 형태로'. DB 컬럼은 호환성 위해 excerpt 그대로 사용 (UI 라벨만 변경). */}
         <div className="field">
