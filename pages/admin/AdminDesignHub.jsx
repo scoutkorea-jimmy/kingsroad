@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.143.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "📢 오픈 안내 배너 — 문구 갱신 + 메뉴 위쪽 sitewide 이동",
+    details: [
+      "📢 [위치 이동] 홈 hero 위 (메뉴 아래) → boot.jsx 의 Nav 위 (메뉴 위쪽 sitewide). 모든 페이지 노출. hideNav 가 true 인 페이지(로그인 등)에서는 자동 숨김.",
+      "📢 [문구 갱신] '🚧 개발 중입니다' → '🌱 홈페이지를 오픈한 지 얼마 되지 않았습니다'. 사용자 요청대로 친절한 안내 + PC 버전 최적화 표기.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.143.000`.",
+    ],
+    context: "사용자 요청 '문구가 조금 달라졌으면 + 메뉴 위쪽에'. boot.jsx 가 sitewide 컨테이너이므로 모든 페이지에 동일 노출.",
+  },
+  {
     version: "00.142.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",

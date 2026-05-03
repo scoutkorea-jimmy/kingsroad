@@ -498,6 +498,21 @@ const App = () => {
 
   return (
     <div className="app">
+      {/* v00.143 — 사이트 오픈 안내 배너. 메뉴 위쪽 sitewide. 사용자 요청 '메뉴 위쪽에' + 새 문구. */}
+      {!hideNav && (
+        <div role="status" aria-label="사이트 오픈 안내" style={{
+          background: 'rgba(245, 213, 72, 0.12)',
+          borderBottom: '1px solid var(--gold-dim, #C9A632)',
+          color: 'var(--ink, #0F172A)',
+          padding: '10px 16px',
+          textAlign: 'center',
+          fontSize: 13,
+          lineHeight: 1.55,
+        }}>
+          🌱 <strong>홈페이지를 오픈한 지 얼마 되지 않았습니다.</strong>{' '}
+          <span className="dim-2">이용에 불편하신 점이 있다면 <strong>왕사들 오픈톡방</strong>에 알려주세요 — 계속 업데이트해 나가겠습니다. 현재 <strong>PC 버전 최적화</strong>로 제작되어 있습니다.</span>
+        </div>
+      )}
       <Nav route={route} go={go} user={user} onLogout={logout}/>
       <main id="main" tabIndex="-1" style={{flex:1, outline:'none'}} aria-label={`${route} 페이지 본문`}>{page}</main>
       {!hideNav && <Footer go={go}/>}

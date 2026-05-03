@@ -404,19 +404,7 @@ const HomePage = ({ go }) => {
       {mapOpen && <DestinationMapModal onClose={() => setMapOpen(false)} go={go}/>}
       {recDetail && <RecommendationDetailModal rec={recDetail} onClose={() => setRecDetail(null)} go={go}/>}
 
-      {/* v00.121 — 개발 중 배너. 사용자에게 베타 안내 + 오류 신고 채널 노출. */}
-      <div role="status" aria-label="사이트 개발 중 안내" style={{
-        background: 'rgba(245, 213, 72, 0.12)',
-        borderBottom: '1px solid var(--gold-dim, #C9A632)',
-        color: 'var(--ink, #0F172A)',
-        padding: '10px 16px',
-        textAlign: 'center',
-        fontSize: 13,
-        lineHeight: 1.5,
-      }}>
-        🚧 <strong>개발 중입니다.</strong>{' '}
-        <span className="dim-2">사이트에서 오류를 발견하시면 <strong>왕사들 오픈톡방</strong>에 알려주세요 — 빠르게 처리하겠습니다.</span>
-      </div>
+      {/* v00.143 — 오픈 안내 배너는 boot.jsx 로 이동 (sitewide, 메뉴 위쪽). */}
 
       {/* ── HERO (텍스트 + 우측 지도 미리보기, 모바일 1단) ─────────── */}
       <HomeSectionBoundary label="히어로"><section style={{
