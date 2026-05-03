@@ -1523,11 +1523,15 @@ const handleOrderPatch = async (req, env, orderId) => {
       refund_requested: '환불 신청이 접수되었습니다.',
     };
     if (map[body.status]) {
-      const order = await env.DB.prepare("SELECT order_no FROM book_orders WHERE id = ?").bind(orderId).first();
+      // v00.154 — 책 제목 동적. book_id 가 있으면 books 테이블 join 으로 title 가져옴, 없으면 fallback.
+      const order = await env.DB.prepare(
+        "SELECT bo.order_no, b.title AS book_title FROM book_orders bo LEFT JOIN books b ON b.id = bo.book_id WHERE bo.id = ?"
+      ).bind(orderId).first();
+      const title = order?.book_title || '도서';
       await insertNotification(env, {
         userId: row.user_id, type: 'order_' + body.status,
         message: map[body.status], fromName: '운영자',
-        postTitle: `『왕의길』 주문 ${order?.order_no || orderId}`,
+        postTitle: `『${title}』 주문 ${order?.order_no || orderId}`,
       });
     }
   }

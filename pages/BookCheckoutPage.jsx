@@ -140,7 +140,8 @@ const BookPage = ({ go, cart, setCart, user }) => {
   const price = version === "KR" ? (book.priceKR || 0) : (book.priceEN || 0);
 
   const addToCart = () => {
-    setCart({ version, qty, price });
+    // v00.154 — cart 에 bookId 포함. CheckoutPage 가 책 lookup 하여 다권 cart-flow 지원.
+    setCart({ bookId: book.id, version, qty, price });
     go("checkout");
   };
 
@@ -372,9 +373,13 @@ const BookPage = ({ go, cart, setCart, user }) => {
 };
 
 // 결제 페이지 — 회원 전용 + 무통장 입금 단일 흐름
+// v00.154 — cart.bookId 로 책 lookup, 폴백 primary(). 모든 표기 동적.
 const CheckoutPage = ({ go, cart, user }) => {
   const G = window.BGNJ_GUARD;
-  const book = G.call(() => window.BGNJ_BOOKS?.primary?.(), null);
+  const book = G.call(() => {
+    const id = cart?.bookId;
+    return (id && window.BGNJ_BOOKS?.get?.(id)) || window.BGNJ_BOOKS?.primary?.() || null;
+  }, null);
   const version = cart ? cart.version : "KR";
   const qty = cart ? cart.qty : 1;
   const unit = book ? (version === "EN" ? (book.priceEN || 0) : (book.priceKR || 0)) : 0;
@@ -411,7 +416,7 @@ const CheckoutPage = ({ go, cart, user }) => {
           <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:16}}>CHECKOUT · 결제</div>
           <h1 className="ko-serif" style={{fontSize:32, marginBottom:20}}>회원 전용 주문</h1>
           <p className="dim" style={{fontSize:15, lineHeight:1.8, marginBottom:32}}>
-            『왕의길』 주문은 <strong className="gold">회원가입한 분</strong>만 가능합니다.
+            『{book.title}』 주문은 <strong className="gold">회원가입한 분</strong>만 가능합니다.
             로그인 후 다시 시도해 주세요.
           </p>
           <div style={{display:'flex', gap:10, justifyContent:'center'}}>
@@ -479,7 +484,7 @@ const CheckoutPage = ({ go, cart, user }) => {
           <div className="card" style={{textAlign:'left', marginBottom:32, padding:20}}>
             <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:12}}>ORDER SUMMARY</div>
             <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
-              <span className="dim">『왕의길』 ({submittedOrder.version === "KR" ? "국문판" : "영문판"}) × {submittedOrder.qty}</span>
+              <span className="dim">『{book.title}』 ({submittedOrder.version === "KR" ? "국문판" : "영문판"}) × {submittedOrder.qty}</span>
               <span>{window.BGNJ_FMT.won(submittedOrder.subtotal)}</span>
             </div>
             <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
@@ -516,6 +521,8 @@ const CheckoutPage = ({ go, cart, user }) => {
     try {
       const result = await window.BGNJ_BOOK_ORDERS.createOrder({
         userId: user.id,
+        bookId: book.id,
+        unit,
         version,
         qty,
         recipient: recipient.trim(),
@@ -609,9 +616,15 @@ const CheckoutPage = ({ go, cart, user }) => {
             <div className="card card-gold" style={{position:'sticky', top:100}}>
               <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em', marginBottom:20}}>ORDER SUMMARY</div>
               <div style={{display:'flex', gap:16, marginBottom:24, paddingBottom:24, borderBottom:'1px solid var(--line)'}}>
-                <div className="placeholder" style={{width:72, aspectRatio:'3/4', fontSize:8, flexShrink:0}}>王</div>
+                {book.coverDataUri ? (
+                  <div style={{width:72, aspectRatio:'3/4', flexShrink:0, border:'1px solid var(--line-2)', overflow:'hidden'}}>
+                    <img src={book.coverDataUri} alt={`${book.title} 표지`} style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                  </div>
+                ) : (
+                  <div className="placeholder" style={{width:72, aspectRatio:'3/4', fontSize:8, flexShrink:0}}>{(book.title || '책').slice(0,1)}</div>
+                )}
                 <div>
-                  <div className="ko-serif" style={{fontSize:17, marginBottom:4}}>『왕의길』</div>
+                  <div className="ko-serif" style={{fontSize:17, marginBottom:4}}>『{book.title}』</div>
                   <div className="dim-2 mono" style={{fontSize:11}}>{version === "KR" ? "국문판" : "영문판"} · {qty}권</div>
                   <div className="gold ko-serif" style={{fontSize:16, marginTop:8}}>{window.BGNJ_FMT.won(subtotal)}</div>
                 </div>

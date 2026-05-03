@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.154.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T23:56:18+09:00",
+    summary: "✨ cart/order 다권 지원 (bookId 도입) + 모든 『왕의길』 잔재 제거 + 워커 영수증 동적 (★ deploy)",
+    details: [
+      "✨ [cart-flow 다권화] BookPage addToCart 가 cart 에 bookId 포함 (`{bookId, version, qty, price}`). CheckoutPage 가 cart.bookId 로 책 lookup, 폴백 BGNJ_BOOKS.primary(). 모든 표기/모달/sticky 카드를 book.title + 표지 동적 (王 placeholder 도 표지 thumbnail 또는 첫 글자).",
+      "✨ [BGNJ_BOOK_ORDERS.createOrder] payload.bookId / payload.unit 필수. BANGINOJA_DATA.book 시드 폴백 제거. 가격은 호출자가 결정 (책별 가격 대응). 폴백으로 primary().id 사용 (1권 환경 호환).",
+      "✨ [BGNJ_BOOK_ORDERS.getOrderBookTitle(order)] 신설 — order.bookId → BGNJ_BOOKS.get → title. 구주문(bookId 없음)은 primary().title 폴백, 그것도 없으면 '책'. MyPage / AuthAdminPage / 영수증 텍스트 모두 사용.",
+      "✨ [generateReceipt] 영수증 텍스트 라인 2155 의 『왕의길』 → 동적 책 제목.",
+      "✨ [MyPage / AuthAdminPage] 주문 카드 BOOK 표기 동적 + MyPage 헤더 'BOOK ORDERS · 도서 주문' 일반화 + admin 안내문 일반화.",
+      "✨ [워커 영수증 mail] workers/src/index.js:1530 의 『왕의길』 하드코드 → book_orders LEFT JOIN books 로 title 가져와 동적. ★ wrangler deploy 필요 (배포 전엔 옛 워커가 옛 제목 발송).",
+      "📦 cache-buster — `?v=00.154.000`.",
+    ],
+    context: "v00.153 후속으로 미뤄둔 cart/order 다권 흐름 일괄 마무리. 워커 schema 는 이미 book_id 컬럼 존재 + INSERT 지원되어 있어 schema 변경 불필요. 워커 코드만 수정 → wrangler deploy 한 번. 클라이언트는 즉시 활성. 본 사이클부터 다권 책 주문이 영수증/MyPage/admin 까지 일관 표시.",
+  },
+  {
     version: "00.153.000",
     date: "2026-05-03",
     datetime: "2026-05-03T23:44:22+09:00",

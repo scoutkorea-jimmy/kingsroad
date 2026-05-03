@@ -2601,7 +2601,7 @@ const BookOrderAdminPanel = ({ go }) => {
   return (
     <div>
       <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
-        『왕의길』 주문은 회원 전용·무통장 입금 단일 흐름입니다.
+        뱅기노자 도서 주문은 회원 전용·무통장 입금 단일 흐름입니다.
         주문 → 입금 확인 → 발송 → 배송 완료 순으로 상태를 직접 진행하세요.
         계좌번호는 <strong className="gold">시스템 → 설정</strong> 탭에서 등록·수정합니다.
       </p>
@@ -2650,7 +2650,7 @@ const BookOrderAdminPanel = ({ go }) => {
               <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:12, marginBottom:14}}>
                 <div>
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:4}}>BOOK</div>
-                  <div style={{fontSize:13}}>『왕의길』 · {o.version === 'KR' ? '국문판' : '영문판'} × {o.qty}</div>
+                  <div style={{fontSize:13}}>『{window.BGNJ_BOOK_ORDERS.getOrderBookTitle(o)}』 · {o.version === 'KR' ? '국문판' : '영문판'} × {o.qty}</div>
                 </div>
                 <div>
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:4}}>AMOUNT</div>

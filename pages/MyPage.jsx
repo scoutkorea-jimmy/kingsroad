@@ -311,7 +311,7 @@ const MyPage = ({ go, user, cart }) => {
         {tab === 'orders' && (
         <div>
           <article className="card">
-            <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>『왕의길』 ORDERS</div>
+            <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 }}>BOOK ORDERS · 도서 주문</div>
             <h3 className="ko-serif" style={{ fontSize: 20, marginBottom: 10 }}>
               내 주문 내역 <span className="dim-2 mono" style={{ fontSize: 12 }}>{myOrders.length}건</span>
             </h3>
@@ -339,7 +339,7 @@ const MyPage = ({ go, user, cart }) => {
                         <span className="mono" style={{ fontSize: 10, letterSpacing: '0.16em', color: orderStatusTone(o.status) }}>{orderStatusLabel(o.status)}</span>
                       </div>
                       <div style={{ fontSize: 13, lineHeight: 1.5 }}>
-                        『왕의길』 · {o.version === 'KR' ? '국문판' : '영문판'} × {o.qty} · <span className="gold">{window.BGNJ_FMT.won(o.total)}</span>
+                        『{window.BGNJ_BOOK_ORDERS.getOrderBookTitle(o)}』 · {o.version === 'KR' ? '국문판' : '영문판'} × {o.qty} · <span className="gold">{window.BGNJ_FMT.won(o.total)}</span>
                       </div>
                       {o.tracking && (
                         <div className="dim-2 mono" style={{ fontSize: 10, marginTop: 4 }}>송장 {o.tracking}</div>

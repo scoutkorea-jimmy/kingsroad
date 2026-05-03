@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.153.000",
+  version: "00.154.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -2096,24 +2096,34 @@ window.BGNJ_BOOK_ORDERS = {
     if (!payload.recipient || !payload.phone || !payload.address) {
       return { ok: false, message: "받는 분, 연락처, 주소는 필수입니다." };
     }
-    const book = window.BANGINOJA_DATA?.book;
-    if (!book) return { ok: false, message: "책 정보가 없습니다." };
+    // v00.154 — payload.bookId / payload.unit 필수. 호출자(BookCheckoutPage)가 BGNJ_BOOKS 에서 책 선택 + 가격 결정.
+    // BANGINOJA_DATA.book 시드 폴백 제거 (v00.153 다권 정리에서 마무리).
+    const bookId = payload.bookId || (window.BGNJ_BOOKS?.primary?.()?.id);
+    if (!bookId) return { ok: false, message: "책을 선택해 주세요." };
     const qty = Math.max(1, Number(payload.qty) || 1);
     const version = payload.version === 'EN' ? 'EN' : 'KR';
-    const unit = version === 'EN' ? book.priceEN : book.priceKR;
+    const unit = Number(payload.unit) > 0 ? Number(payload.unit) : 0;
+    if (unit <= 0) return { ok: false, message: "가격 정보가 없습니다." };
     try {
       const { id, orderNo } = await window.BGNJ_API.bookOrders.create({
-        bookId: 'kingsroad', version, qty, price: unit,
+        bookId, version, qty, price: unit,
         recipient: payload.recipient, phone: payload.phone,
         address: payload.address, addressDetail: payload.addressDetail || '',
         zip: payload.zip || '', memo: payload.memo || '',
       });
       await this.refreshMine();
       const order = this._orders.find((o) => o.id === id);
-      return { ok: true, order: order || { id, orderNo, userId: payload.userId, version, qty } };
+      return { ok: true, order: order || { id, orderNo, userId: payload.userId, bookId, version, qty } };
     } catch (err) {
       return { ok: false, message: err?.body?.error || err?.message || '주문 생성 실패' };
     }
+  },
+  // v00.154 — order.bookId 로 책 제목 lookup. 구주문(bookId 없음)은 primary().title 폴백.
+  getOrderBookTitle(order) {
+    if (!order) return '책';
+    const id = order.bookId;
+    const book = id ? window.BGNJ_BOOKS?.get?.(id) : null;
+    return book?.title || window.BGNJ_BOOKS?.primary?.()?.title || '책';
   },
   async _patch(id, body) {
     await window.BGNJ_API.bookOrders.update(id, body);
@@ -2152,7 +2162,7 @@ window.BGNJ_BOOK_ORDERS = {
       order.tracking ? `송장번호      ${order.tracking}` : '',
       '',
       '--- 주문 상품 ----------------------------',
-      `『왕의길』 ${order.version === 'KR' ? '국문판' : '영문판'} × ${order.qty}    ${formatPrice(order.subtotal)}`,
+      `『${this.getOrderBookTitle(order)}』 ${order.version === 'KR' ? '국문판' : '영문판'} × ${order.qty}    ${formatPrice(order.subtotal)}`,
       `배송비                                ${order.shipping === 0 ? '무료' : formatPrice(order.shipping)}`,
       '─────────────────────────────────────────',
       `합계                              ${formatPrice(order.total)}`,
