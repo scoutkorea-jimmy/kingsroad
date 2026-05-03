@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.161.000",
+    date: "2026-05-04",
+    datetime: "2026-05-04T01:00:27+09:00",
+    summary: "⚡ P1-2 성능 — React production build (~3MB↓) + script defer + localStorage PII sanitize",
+    details: [
+      "⚡ [React production build] react.development.js → react.production.min.js, react-dom.development.js → react-dom.production.min.js. SHA-384 SRI 재계산 (sha384-DGyLxAyjq0f9... / sha384-gTGxhz21l...). 다운로드 ~120KB → 6KB / ~1.1MB → 130KB. 'development build 사용 중' 경고 사라짐.",
+      "⚡ [script defer] 모든 internal script (api/data/components/pages/boot 18 개) 에 `defer` 부착. HTML 파싱 차단 안 함, 문서 순서 보장. inline / type=module 은 자동 defer-equivalent.",
+      "🔒 [PII sanitize] BGNJ_AUTH._writeCache 가 localStorage 저장 시점에 profile 의 phone/birthdate/address/addressDetail/zip 제거. _PII_PROFILE_KEYS 상수 + _sanitizeForCache 헬퍼. in-memory state (호출자가 받은 user) 는 그대로. 다음 reload 시 캐시는 PII 빈 상태 → boot.jsx 의 refreshSession 후 server 에서 full user 받아 setUser → 정상.",
+      "ℹ FCP 단축 + JS bundle 크기 차감 + XSS/물리 접근 시 PII 노출 면 축소.",
+      "ℹ trade-off: production build 후 에러 stack 이 minified — 사용자 보고 에러 추적 시 component displayName 만 보임 (수용).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.161.000`.",
+    ],
+    context: "v00.156 검토 보고서 P1-2 마무리. 큐 1 P1 항목 정리.",
+  },
+  {
     version: "00.160.000",
     date: "2026-05-04",
     datetime: "2026-05-04T00:46:11+09:00",

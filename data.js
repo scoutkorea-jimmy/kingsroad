@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.160.000",
+  version: "00.161.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -1043,12 +1043,24 @@ window.BGNJ_DB = {
 window.BGNJ_AUTH = {
   hashPassword, // legacy — 외부 코드 호환용. 신규 비밀번호 검증에는 사용되지 않음.
   _SESSION_KEY: 'bgnj_session_user',
+  // v00.161 — PII sanitize (P1-2). localStorage 캐시에서 phone/birthdate/address 제거.
+  // in-memory state 는 그대로 — 호출자가 받은 user 객체는 unchange.
+  // 다음 페이지 reload 시 캐시는 PII 빈 상태 → boot.jsx 의 refreshSession 이 server 에서 full user 가져와 setUser → 정상.
+  _PII_PROFILE_KEYS: ['phone', 'birthdate', 'address', 'addressDetail', 'zip'],
+  _sanitizeForCache(user) {
+    if (!user) return null;
+    const { profile, ...rest } = user;
+    if (!profile) return rest;
+    const cleanProfile = { ...profile };
+    for (const k of this._PII_PROFILE_KEYS) delete cleanProfile[k];
+    return { ...rest, profile: cleanProfile };
+  },
   _readCache() {
     try { const raw = localStorage.getItem(this._SESSION_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
   },
   _writeCache(user) {
     try {
-      if (user) localStorage.setItem(this._SESSION_KEY, JSON.stringify(user));
+      if (user) localStorage.setItem(this._SESSION_KEY, JSON.stringify(this._sanitizeForCache(user)));
       else localStorage.removeItem(this._SESSION_KEY);
     } catch {}
   },

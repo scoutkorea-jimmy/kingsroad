@@ -69,7 +69,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.160.000">
+<link rel="stylesheet" href="styles.css?v=00.161.000">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -120,8 +120,9 @@
   })();
 </script>
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<!-- v00.161 — production build (~3MB ↓ vs development). SRI 재계산 (sha384). -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
 <!-- v00.109 — DOMPurify (XSS fix). 모든 dangerouslySetInnerHTML 호출이 BGNJ_SAFE_HTML 헬퍼로 sanitize. SRI hash 검증. -->
 <script src="https://unpkg.com/dompurify@3.4.2/dist/purify.min.js" integrity="sha384-AX0sZ/phUL4R6LAFP+mob0mJIWg2c3PX8wPn48ctytOl7XKfRQHbakBt5/QID7uh" crossorigin="anonymous"></script>
 <!-- v00.071 — @babel/standalone 제거. JSX 는 tools/build.mjs (esbuild) 가 사전 컴파일 → *.js. -->
@@ -163,26 +164,26 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script src="api.js?v=00.160.000"></script>
-<script src="data.js?v=00.160.000"></script>
-<script src="components/KoreaMapData.js?v=00.160.000"></script>
-<script src="components/KoreaMap.js?v=00.160.000"></script>
-<script src="components/Shell.js?v=00.160.000"></script>
-<script src="components/TiptapEditor.js?v=00.160.000"></script>
-<script src="pages/HomePage.js?v=00.160.000"></script>
-<script src="pages/CommunityPage.js?v=00.160.000"></script>
-<script src="pages/WangsanamTourPage.js?v=00.160.000"></script>
-<script src="pages/ColumnPage.js?v=00.160.000"></script>
-<script src="pages/BookCheckoutPage.js?v=00.160.000"></script>
-<script src="pages/admin/AdminDesignHub.js?v=00.160.000"></script>
-<script src="pages/admin/AdminContentEditors.js?v=00.160.000"></script>
-<script src="pages/AuthAdminPage.js?v=00.160.000"></script>
-<script src="pages/EatSleepShopPages.js?v=00.160.000"></script>
-<script src="pages/LecturesPage.js?v=00.160.000"></script>
-<script src="pages/LegalFaqPages.js?v=00.160.000"></script>
-<script src="pages/MyPage.js?v=00.160.000"></script>
-<script src="pages/ErrorPages.js?v=00.160.000"></script>
+<script defer src="api.js?v=00.161.000"></script>
+<script defer src="data.js?v=00.161.000"></script>
+<script defer src="components/KoreaMapData.js?v=00.161.000"></script>
+<script defer src="components/KoreaMap.js?v=00.161.000"></script>
+<script defer src="components/Shell.js?v=00.161.000"></script>
+<script defer src="components/TiptapEditor.js?v=00.161.000"></script>
+<script defer src="pages/HomePage.js?v=00.161.000"></script>
+<script defer src="pages/CommunityPage.js?v=00.161.000"></script>
+<script defer src="pages/WangsanamTourPage.js?v=00.161.000"></script>
+<script defer src="pages/ColumnPage.js?v=00.161.000"></script>
+<script defer src="pages/BookCheckoutPage.js?v=00.161.000"></script>
+<script defer src="pages/admin/AdminDesignHub.js?v=00.161.000"></script>
+<script defer src="pages/admin/AdminContentEditors.js?v=00.161.000"></script>
+<script defer src="pages/AuthAdminPage.js?v=00.161.000"></script>
+<script defer src="pages/EatSleepShopPages.js?v=00.161.000"></script>
+<script defer src="pages/LecturesPage.js?v=00.161.000"></script>
+<script defer src="pages/LegalFaqPages.js?v=00.161.000"></script>
+<script defer src="pages/MyPage.js?v=00.161.000"></script>
+<script defer src="pages/ErrorPages.js?v=00.161.000"></script>
 
-<script src="boot.js?v=00.160.000"></script>
+<script defer src="boot.js?v=00.161.000"></script>
 </body>
 </html>
