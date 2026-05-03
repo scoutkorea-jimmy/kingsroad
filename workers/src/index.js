@@ -509,9 +509,22 @@ const handleCommentsCreate = async (req, env, postId) => {
 };
 
 const handleBooksList = async (req, env) => {
-  const { results } = await env.DB.prepare(
-    "SELECT * FROM books WHERE status = 'published' ORDER BY sort_order ASC, created_at DESC"
-  ).all();
+  // v00.132 — admin 호출(쿠키 검증) 시 ?includeAll=1 으로 draft 포함 전체 반환.
+  // 사용자 보고 '책 생성 실패: 서버 응답 없음' — admin 이 draft 새 책 만든 직후
+  // public list endpoint 가 draft 를 빼고 반환 → 클라가 새 책 못 찾아 throw.
+  const url = new URL(req.url);
+  const includeAll = url.searchParams.get('includeAll') === '1';
+  let allowAll = false;
+  if (includeAll) {
+    try {
+      const me = await getCurrentUser(req, env);
+      if (me?.isAdmin) allowAll = true;
+    } catch {}
+  }
+  const sql = allowAll
+    ? "SELECT * FROM books ORDER BY sort_order ASC, created_at DESC"
+    : "SELECT * FROM books WHERE status = 'published' ORDER BY sort_order ASC, created_at DESC";
+  const { results } = await env.DB.prepare(sql).all();
   return { books: results.map((b) => ({ ...b, chapters: b.chapters_json ? JSON.parse(b.chapters_json) : [] })) };
 };
 

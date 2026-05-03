@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.132.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T15:58:52+09:00",
+    summary: "🚨 [HOTFIX] 책 추가 '서버 응답 없음' fix — handleBooksList admin 모드 + create 폴백",
+    details: [
+      "🚨 사용자 보고 '책 생성 실패: 서버 응답 없음'. 원인: handleBooksList 가 WHERE status='published' 만 반환 → admin 이 draft 새 책 생성 직후 list 응답에서 빠짐 → BGNJ_BOOKS.create 의 get(res.id) 가 null → addBook alert.",
+      "🩹 워커 handleBooksList — `?includeAll=1` 쿼리 + 쿠키 admin 검증 시 draft 포함 전체 반환.",
+      "🩹 api.js books.list({ includeAll }) 옵션 추가.",
+      "🩹 BGNJ_BOOKS.refresh({ admin }) — admin 시 includeAll. create/update/remove 모두 admin 모드로 refresh.",
+      "🩹 BGNJ_BOOKS.create — get(id) 가 null 이면 BGNJ_API.books.get(id) 직접 호출 + 그것도 실패하면 payload 로 stub 반환. 절대 null 반환 안 함.",
+      "★ 워커 deploy 필요.",
+    ],
+    context: "v00.131 책 추가 UI 변경 직후 사용자 alert 보고 → 즉시 hotfix.",
+  },
+  {
     version: "00.131.000",
     date: "2026-05-03",
     datetime: "2026-05-03T12:53:59+09:00", // pre-commit stamp.

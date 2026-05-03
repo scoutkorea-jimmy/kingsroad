@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.131.000",
+  version: "00.132.000",
   build: "2026.05.03",
   channel: "preview",
 };
@@ -2763,9 +2763,10 @@ window.BGNJ_BOOKS = {
     if ('order' in out) { out.sortOrder = Number(out.order) || 0; delete out.order; }
     return out;
   },
-  async refresh() {
+  // v00.132 — { admin: true } 옵션 시 draft 포함 전체. 기본은 published 만 (공개 페이지 호환).
+  async refresh({ admin } = {}) {
     try {
-      const { books } = await window.BGNJ_API.books.list();
+      const { books } = await window.BGNJ_API.books.list({ includeAll: !!admin });
       this._books = (books || []).map((b) => this._toBook(b));
       try { window.dispatchEvent(new CustomEvent('bgnj-books-refresh')); } catch {}
     } catch {}
@@ -2786,24 +2787,37 @@ window.BGNJ_BOOKS = {
       || books.find((b) => (b.status || 'published') === 'published')
       || null;
   },
+  // v00.132 — admin: true 로 refresh (draft 포함). 이전엔 published 만 받아서 새 draft 책이
+  // get(res.id) 에서 누락되어 'create returns null' → addBook alert '서버 응답 없음' 버그.
   async create(payload = {}) {
     const res = await window.BGNJ_API.books.create(this._toBookPayload(payload));
-    await this.refresh();
-    return res?.id ? this.get(res.id) : null;
+    await this.refresh({ admin: true });
+    // 만약 admin refresh 도 못 가져오면 get(res.id) 로 직접 fetch.
+    if (res?.id) {
+      const fromCache = this.get(res.id);
+      if (fromCache) return fromCache;
+      try {
+        const direct = await window.BGNJ_API.books.get(res.id);
+        return direct?.book ? this._toBook(direct.book) : { id: res.id, ...payload };
+      } catch {
+        return { id: res.id, ...payload };
+      }
+    }
+    return null;
   },
   async update(id, patch = {}) {
     await window.BGNJ_API.books.update(id, this._toBookPayload(patch));
-    await this.refresh();
+    await this.refresh({ admin: true });
     return this.get(id);
   },
   async remove(id) {
     await window.BGNJ_API.books.remove(id);
-    await this.refresh();
+    await this.refresh({ admin: true });
   },
   async reorder(ids) {
     // v00.074 — 워커는 sortOrder 를 기대. _toBookPayload 가 변환.
     await Promise.all(ids.map((id, i) => window.BGNJ_API.books.update(id, this._toBookPayload({ order: i }))));
-    await this.refresh();
+    await this.refresh({ admin: true });
   },
   // 책별 리뷰는 BGNJ_BOOK_ORDERS 측에서도 관리. 여기선 위임.
   async addReview(id, payload) {

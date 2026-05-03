@@ -119,7 +119,8 @@
 
     // ── 책 ──
     books: {
-      list: () => request("GET", "/books"),
+      // v00.132 — admin 호출 시 ?includeAll=1 로 draft 포함 전체 조회.
+      list: ({ includeAll } = {}) => request("GET", `/books${includeAll ? '?includeAll=1' : ''}`),
       get: (id) => request("GET", `/books/${id}`),
       create: (payload) => request("POST", "/books", payload),
       update: (id, patch) => request("PATCH", `/books/${id}`, patch),
