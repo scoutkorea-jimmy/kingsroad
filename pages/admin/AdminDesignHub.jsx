@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.144.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🏢 푸터 — 사업자등록증 기준 회사 정보 노출 + 전화번호 제거",
+    details: [
+      "🏢 [contact 기본값 갱신] 주식회사 뱅기노자 / 백승기 / 사업자등록번호 551-86-02188 / 법인등록번호 110111-7817690 / 개업 2021-04-01 / 서울특별시 서초구 서초대로73길 40, 7층 13호. 이메일은 contact@bgnj.net.",
+      "🏢 [Footer 사업자 정보 블록] 한국 웹사이트 표준 패턴 — 회사명·대표자·사업자등록번호·법인등록번호·설립일을 mono 11px 로 한 줄(flex wrap) 노출. 연락 컬럼에서는 전화번호 제거.",
+      "🏢 [SiteContentAdminPanel] 푸터 연락 정보 폼 — phone / phoneHref 제거, companyName / ceo / bizRegNo / corpRegNo / founded 추가. admin 에서 직접 편집 가능.",
+      "ℹ 워커 미변경. site_content_kv 에 옛 contact 값(phone 포함)이 있어도 fallback || 으로 신규 default 가 노출됨. admin 에서 한 번 [저장] 하면 신규 필드가 영속화.",
+      "📦 cache-buster — `?v=00.144.000`.",
+    ],
+    context: "사용자 요청 '이용약관 참고해서 연락처 이메일 수정 + 전화번호 삭제 + 사업자등록번호 추가 + 푸터 제대로'. 사업자등록증 이미지의 모든 항목을 contact 객체에 매핑.",
+  },
+  {
     version: "00.143.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",

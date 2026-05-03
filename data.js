@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.143.000",
+  version: "00.144.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -587,11 +587,16 @@ const DEFAULT_SITE_CONTENT = {
     description: "뱅기노자는 단순 여행 정보 사이트가 아닙니다. 함께 떠나고, 함께 걷고, 함께 이야기하는 여행자들의 광장입니다. 매달 새로운 답사와 칼럼이 이어집니다.",
   },
   // 푸터 연락 정보 — 관리자에서 직접 편집. 빈 값이면 해당 줄 미노출.
+  // v00.144 — 사업자등록증 기준 회사 정보 추가. 전화번호 제거.
   contact: {
-    email: "hello@bgnj.net",
-    phone: "02-0000-0000",
-    phoneHref: "tel:+82-2-0000-0000",
-    address: "서울특별시",
+    email: "contact@bgnj.net",
+    address: "서울특별시 서초구 서초대로73길 40, 7층 13호 (서초동, 강남오피스텔)",
+    // 사업자 정보 (이용약관 부합).
+    companyName: "주식회사 뱅기노자",
+    ceo: "백승기",
+    bizRegNo: "551-86-02188",     // 사업자등록번호
+    corpRegNo: "110111-7817690",  // 법인등록번호
+    founded: "2021-04-01",        // 개업일
   },
   // 뱅기노자 추천 여행지 — 관리자가 직접 추가/편집 (KMS 사이트 콘텐츠 패널). 빈 배열이면 홈에 섹션 미노출.
   // 각 항목: { id, region, name, subtitle, desc, tags(string|array), imageDataUri }

@@ -572,10 +572,14 @@ const Footer = ({ go }) => {
   const contact = sc.contact || {};
   const footer = sc.footer || {};
   const fStyle = (window.BGNJ_FOOTER_STYLE?.() || window.BGNJ_FOOTER_STYLE_DEFAULT);
-  const email = contact.email || "hello@bgnj.net";
-  const phone = contact.phone || "02-0000-0000";
-  const phoneHref = contact.phoneHref || ("tel:" + (phone || "").replace(/[^0-9+]/g, ""));
-  const address = contact.address || "서울특별시";
+  // v00.144 — 전화번호 제거 + 사업자 정보 (회사명 / 대표자 / 사업자등록번호 / 법인등록번호 / 개업일) 노출.
+  const email = contact.email || "contact@bgnj.net";
+  const address = contact.address || "서울특별시 서초구 서초대로73길 40, 7층 13호 (서초동, 강남오피스텔)";
+  const companyName = contact.companyName || "주식회사 뱅기노자";
+  const ceo = contact.ceo || "";
+  const bizRegNo = contact.bizRegNo || "";
+  const corpRegNo = contact.corpRegNo || "";
+  const founded = contact.founded || "";
   const headingStyle = {
     fontSize: fStyle.heading.fontSize,
     fontWeight: fStyle.heading.fontWeight,
@@ -622,11 +626,25 @@ const Footer = ({ go }) => {
             <h4 id="ft-contact" style={headingStyle}>{footer.headingContact || "연락"}</h4>
             <ul aria-labelledby="ft-contact">
               {email && <li><a href={`mailto:${email}`}>{email}</a></li>}
-              {phone && <li><a href={phoneHref}>{phone}</a></li>}
               {address && <li><span>{address}</span></li>}
             </ul>
           </address>
         </div>
+        {/* v00.144 — 사업자 정보 블록 (이용약관 + 사업자등록증 부합). 한국 웹사이트 표준 푸터 패턴. */}
+        {(companyName || bizRegNo || ceo) && (
+          <div className="footer-biz" style={{
+            marginTop:24, paddingTop:16, borderTop:'1px solid var(--line-2)',
+            fontSize:11, lineHeight:1.85, color:'var(--ink-3)',
+            fontFamily:'var(--font-mono)', letterSpacing:'0.04em',
+            display:'flex', gap:'2px 18px', flexWrap:'wrap',
+          }}>
+            {companyName && <span><strong style={{color:'var(--ink-2)'}}>{companyName}</strong></span>}
+            {ceo && <span>대표자 {ceo}</span>}
+            {bizRegNo && <span>사업자등록번호 {bizRegNo}</span>}
+            {corpRegNo && <span>법인등록번호 {corpRegNo}</span>}
+            {founded && <span>설립 {founded}</span>}
+          </div>
+        )}
         <div className="footer-bottom" style={{marginTop:24}}>
           <span>{footer.copyright || "© 2026 뱅기노자 BANGINOJA — ALL RIGHTS RESERVED"}</span>
           <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em'}}>

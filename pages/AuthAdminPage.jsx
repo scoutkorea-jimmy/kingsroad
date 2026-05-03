@@ -2672,15 +2672,19 @@ const SiteContentAdminPanel = () => {
 
       <FooterStyleEditor/>
 
-      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>푸터 — 연락 정보</h3>
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>푸터 — 연락 + 사업자 정보</h3>
       <p className="dim-2" style={{fontSize:12, marginBottom:12, lineHeight:1.7}}>
-        푸터의 '연락' 섹션에 노출됩니다. 비우면 해당 줄이 표시되지 않습니다.
+        푸터의 '연락' 섹션 + 사업자 정보 블록에 노출됩니다. 비우면 해당 줄이 표시되지 않습니다.
+        v00.144 부터 전화번호는 푸터에서 제거되고 사업자등록번호 등이 노출됩니다.
       </p>
       <SectionForm key={`contact-${tick}`} section="contact" fields={[
-        { key: 'email',     label: '이메일' },
-        { key: 'phone',     label: '전화번호 (표시용)' },
-        { key: 'phoneHref', label: '전화 링크 (예: tel:+82-2-0000-0000)' },
-        { key: 'address',   label: '주소', full: true },
+        { key: 'email',       label: '이메일' },
+        { key: 'address',     label: '주소', full: true },
+        { key: 'companyName', label: '회사명 (법인명)' },
+        { key: 'ceo',         label: '대표자' },
+        { key: 'bizRegNo',    label: '사업자등록번호 (예: 551-86-02188)' },
+        { key: 'corpRegNo',   label: '법인등록번호 (예: 110111-7817690)' },
+        { key: 'founded',     label: '개업 / 설립일 (예: 2021-04-01)' },
       ]}/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10}}>로고 · 파비콘</h3>
