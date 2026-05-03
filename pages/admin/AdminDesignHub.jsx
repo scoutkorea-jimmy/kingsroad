@@ -4,6 +4,24 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.149.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🚨 오류 페이지 미리보기 정상화 — 100vh 제거 + React state 폴백 + embedded prop + 로드 race fix",
+    details: [
+      "🚨 [원인 1] ErrorCard 가 minHeight: 100vh 로 강제 → admin 미리보기 안에서 한 화면 가득 차서 레이아웃 깨져 보임. 사용자 보고 '오류 페이지 불러오기 정상 작동 안 됨'.",
+      "🩹 ErrorCard 에서 100vh 제거. 새 ErrorScreen wrapper 가 라우트용 full-viewport 만 담당. 6 페이지가 embedded prop 받아서 미리보기 시 ErrorScreen 비활성.",
+      "🚨 [원인 2] 이미지 onError 가 e.currentTarget.style.display = 'none' 같은 DOM mutation. React 가 다음 render 시 undo → 폴백 안 보임 + 깨진 이미지 아이콘 노출.",
+      "🩹 _ErrorIllustration 을 React state(failed) 기반 폴백으로 변경. src 변경 시 useEffect 로 다시 시도. 폴백 시 ✈️ 큰 이모지 + 노란 배경 카드.",
+      "🚨 [원인 3] ErrorPagesPreviewPanel 의 variants 가 window.Error*Page 를 컴포넌트 evaluate 시점에 읽음. ErrorPages.js 가 AuthAdminPage.js 다음에 로드되는데, 첫 마운트 시 undefined → '컴포넌트 불러오지 못함' 안내만 노출.",
+      "🩹 useEffect + 100ms 5회 재시도 + tick state 로 강제 재평가. variants 도 useMemo([tick]) 로 갱신. 안내 메시지에 hard reload 안내 추가.",
+      "🆕 [ErrorScreen export] window.ErrorScreen 도 노출 — 외부 코드에서 wrapper 만 단독 사용 가능.",
+      "ℹ 워커 미변경. 일러스트 PNG 6장은 여전히 사용자가 assets/errors/ 에 직접 저장 필요.",
+      "📦 cache-buster — `?v=00.149.000`.",
+    ],
+    context: "사용자 보고 즉시 hotfix. 3개 root cause 모두 수정 — 100vh / DOM mutation / 로드 race. 미리보기 카드는 이제 admin 패널 안에 fit. v00.148 deferred 분석 인프라는 그대로 유효.",
+  },
+  {
     version: "00.148.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",

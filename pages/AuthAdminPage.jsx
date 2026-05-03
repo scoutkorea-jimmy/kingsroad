@@ -3951,14 +3951,29 @@ const BooksAdminPanel = () => {
 // 6 종 오류 페이지 (404 / 500 / 403 / 401 / Network / Maintenance) 를 chip 으로 선택해 inline 렌더.
 const ErrorPagesPreviewPanel = ({ go }) => {
   const [active, setActive] = React.useState('404');
-  const variants = [
+  // v00.149 — window.Error*Page 는 ErrorPages.js 가 로드된 후에만 존재.
+  // tick 으로 강제 재평가 + 100ms 마다 5회 재시도 (스크립트 로드 race 대비).
+  const [tick, setTick] = React.useState(0);
+  React.useEffect(() => {
+    let count = 0;
+    const id = setInterval(() => {
+      if (window.Error404Page || count >= 5) {
+        setTick((v) => v + 1);
+        clearInterval(id);
+      }
+      count++;
+    }, 100);
+    return () => clearInterval(id);
+  }, []);
+
+  const variants = React.useMemo(() => [
     { k: '404',         l: '404 페이지 없음',  Comp: window.Error404Page },
     { k: '500',         l: '500 서버 오류',    Comp: window.Error500Page },
     { k: '403',         l: '403 권한 부족',    Comp: window.Error403Page },
     { k: '401',         l: '401 로그인 필요',  Comp: window.Error401Page },
     { k: 'network',     l: '네트워크 오류',    Comp: window.ErrorNetworkPage },
     { k: 'maintenance', l: '점검 중',          Comp: window.ErrorMaintenancePage },
-  ];
+  ], [tick]);
   const current = variants.find((v) => v.k === active) || variants[0];
   const Preview = current.Comp;
   // 미리보기 안에서 go 가 호출되면 실제로 라우팅하면 곤란하니 noop 으로 가로채기.
@@ -3977,18 +3992,20 @@ const ErrorPagesPreviewPanel = ({ go }) => {
       </div>
       <div style={{
         border:'1px solid var(--line)', borderRadius:8, overflow:'hidden',
-        background:'var(--bg-2)', padding:16,
+        background:'var(--bg-2)', padding:24, display:'grid', placeItems:'center',
       }}>
-        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:10}}>
+        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:14, alignSelf:'flex-start'}}>
           PREVIEW · {current.l}
         </div>
-        <div style={{background:'var(--bg)', borderRadius:8, overflow:'hidden'}}>
-          {Preview ? (
-            <Preview go={previewGo}/>
-          ) : (
-            <AdminEmpty>오류 페이지 컴포넌트 ({current.k}) 를 불러오지 못했습니다. 새로고침 후 다시 시도하세요.</AdminEmpty>
-          )}
-        </div>
+        {Preview ? (
+          // v00.149 — embedded prop 으로 full-viewport wrapper 비활성 (preview 컨테이너에 fit).
+          <Preview go={previewGo} embedded/>
+        ) : (
+          <AdminEmpty>
+            오류 페이지 컴포넌트 ({current.k}) 가 아직 로드되지 않았습니다.
+            ErrorPages.js 가 캐시에 잡혔는지 확인 후 hard reload (Cmd+Shift+R) 해 주세요.
+          </AdminEmpty>
+        )}
       </div>
       <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7}}>
         ⓘ 미리보기 안의 버튼은 실제 라우팅하지 않습니다 (콘솔에 로그만 출력).
