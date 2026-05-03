@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.156.000",
+    date: "2026-05-04",
+    datetime: "2026-05-04T00:14:43+09:00",
+    summary: "📋 메타 갱신 사이클 — ROADMAP / CONTEXT 본 세션 회고 + plans/README 신설 + 사이트 심층 검토 보고서",
+    details: [
+      "📋 [ROADMAP.md] '마지막 갱신' v00.112 → v00.156. 사이클 완료 회고에 v00.114~v00.150 누적 한 줄 + v00.151/152/153/154/155/156 개별 한 줄 추가. 큐 1 갱신 — v00.118/119/123 ✅ 정리 후 본 세션 발굴 후속 후보 6건 (책별 리뷰 분리, 챕터 깊은 들여쓰기, 에러 라이브 라우트, 403/401 자동 wiring, PG 결제, 검토 보고서 반영). 큐 2 — v00.154 워커 영수증 deploy 잔여 등록.",
+      "📋 [CONTEXT.md] §0 한 페이지 요약에 작업 가이드 룰 2 (plans/<버전>.md 선작성 / 명령 실행 후 오류 우선) 추가 + '현재 v00.156 시점' 표기. §5 누적 사이클 표에 v00.127~v00.150 한 줄 + v00.151/152/153/154/155/156 개별 추가.",
+      "📋 [plans/README.md] 신설 — plans/ 폴더 목적 / 작성 규약 / 다른 문서(ROADMAP/CONTEXT/ADMIN_VERSION_HISTORY/kms.md) 와의 시점·단위 매트릭스 / v00.152~v00.156 인덱스 표.",
+      "🔍 [사이트 심층 검토] 사용자 요청. general-purpose 에이전트가 read-only 광범위 검토 (1권 가정 잔재 / 데이터 폴백 / 라우트 일관성 / ReferenceError 위험 / UX / a11y / 성능 / SEO / 보안 / 코드 품질). 본 사이클은 코드 수정 0 — 보고서를 사용자에게 별 메시지로 전달, 우선순위 결정 후 v00.157+ 분류.",
+      "ℹ 워커 미변경. 본 사이클은 메타-only.",
+      "📦 cache-buster — `?v=00.156.000`. 메타-only 임에도 release-workflow 룰(BGNJ_VERSION + cache-buster + ADMIN_VERSION_HISTORY 한 묶음) 일관성 유지 + 라이브 강제 reload 신호 (admin/사용자에게 가이드 변경 알림).",
+    ],
+    context: "직전 답변에서 '약속하고 안 한 것' 정리 시 ROADMAP/CONTEXT/plans 인덱스 메타 갱신 누락 발견 → 사용자가 '메타 갱신 + 홈페이지 깊이 검토' 두 항목 동시 지시. 메타는 본 사이클에서 마무리, 검토는 코드 수정 없이 보고서로 분리.",
+  },
+  {
     version: "00.155.000",
     date: "2026-05-03",
     datetime: "2026-05-03T23:58:39+09:00",

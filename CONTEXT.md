@@ -7,12 +7,16 @@
 
 ## 0. 한 페이지 요약
 
-뱅기노자는 한국 여행·역사·문화 커뮤니티 사이트(`bgnj.net`). 정적 호스팅(GitHub Pages) + 동적 백엔드(Cloudflare Worker + D1 + R2) hybrid. **React 18.3.1 (UMD) + esbuild 사전 컴파일** — 빌드 단계가 pre-commit 훅에서 자동 실행되어 `*.jsx → *.js` 사전 transpile (v00.071 부터 in-browser Babel 폐기). 페이지/컴포넌트는 `BGNJ_*` 헬퍼를 거쳐 D1 을 source-of-truth 로 사용. v00.123 부터 categories_kv / grades_kv 가 D1 에 시드되어 server-first 정상화.
+뱅기노자는 한국 여행·역사·문화 커뮤니티 사이트(`bgnj.net`). 정적 호스팅(GitHub Pages) + 동적 백엔드(Cloudflare Worker + D1 + R2) hybrid. **React 18.3.1 (UMD) + esbuild 사전 컴파일** — 빌드 단계가 pre-commit 훅에서 자동 실행되어 `*.jsx → *.js` 사전 transpile (v00.071 부터 in-browser Babel 폐기). 페이지/컴포넌트는 `BGNJ_*` 헬퍼를 거쳐 D1 을 source-of-truth 로 사용. v00.123 부터 categories_kv / grades_kv 가 D1 에 시드되어 server-first 정상화. **현재 v00.156 시점**.
 
 세 가지 운영 축:
 1. **D1 source-of-truth** — 사용자가 보는 모든 콘텐츠는 서버 D1 에서 옴. 시드/로컬 폴백 금지.
 2. **표준 가드 + ErrorBoundary 2-tier** — 한 페이지/섹션이 죽어도 전역 트리는 살아남음.
 3. **pre-commit 자동화 (5 도구)** — stamp-datetime + csp-hashes + check-version + esbuild build + check-syntax 커밋 단계 일괄.
+
+작업 가이드 (v00.152 신설):
+4. **`plans/<버전>.md` 선작성** — 새 작업 접수 시 코드/명령보다 먼저 작업계획서 작성. plans/ 폴더가 task-level 단위.
+5. **명령 실행 직후 오류 우선** — 모든 Bash/build/test 실행 직후 출력의 오류·경고 파싱·해결을 다른 어떤 작업보다 먼저.
 
 보안 패턴(v00.109~118 완성):
 - DOMPurify (CDN+SRI) + BGNJ_SAFE_HTML hooks (iframe 화이트리스트 / data: image-only / target=_blank noopener).
@@ -269,6 +273,13 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.124** | README 200+ line 재작성 + robots.txt + sitemap.xml 신설 (P4 SEO 보강) |
 | **v00.125** | Cloudflare Secrets 이관 미진행 결정 (사용자: 마스터 메일은 노출돼도 무관, bootstrap 은 테스트용) — wrangler.toml 코멘트 정리 |
 | **v00.126** | CONTEXT.md v00.115~125 11 사이클 일괄 반영 + auto-memory 갱신 |
+| **v00.127~v00.150** | 누적 사이클 — 상세는 `ADMIN_VERSION_HISTORY`. 핵심: 푸터 정비 + 게시판 권한 4종 체크박스 + 등급/자동승급 통합 + 칼럼 대표이미지 업로드 + Admin UI primitives 통일 + 오픈 안내 배너 + 푸터 회사정보(사업자등록증) + 오류 페이지 6종 + admin 미리보기 패널 + 커뮤니티 게시판 패널 재구성 + 사이드바·대시보드 카드 + page-view 분석 인프라 + 사용자 여정 + 책 데이터 HOTFIX + 책 카탈로그 한글 IME + 명시 저장 + 등급 자동 reset 중단 (BGNJ_AUTO_GRADE_DISABLED) + 오류 페이지 미리보기 정상화. |
+| **v00.151** | 홈 책 CTA + BookPage 표지 BGNJ_BOOKS.primary() 실 데이터 + 영문판 미입력 hide |
+| **v00.152** | 홈 책 CTA **다권 카루셀** (autoplay+무한 wrap) + hero 지도 버튼 제거 + **작업 가이드 룰 2 신설** (plans/<버전>.md 선작성 + 오류 로그 우선) + memory feedback 2건 |
+| **v00.153** | 메뉴 '뱅기노자의 길' → **'뱅기노자 도서'** + BookPage **다권 탭** (책 ≥2권) + 책 메인 제목/소개/저자 의 『왕의길』 하드코드 제거 → BGNJ_BOOKS 데이터 |
+| **v00.154** | **cart 자료구조 bookId 도입** + CheckoutPage / MyPage / AuthAdminPage / 영수증 텍스트 동적 + 워커 영수증 mail subject books JOIN (★ deploy 대기) |
+| **v00.155** | **책 목차 sub-item** — `- ` prefix → 직전 챕터 하위 설명 (들여쓰기 + bullet) + admin textarea hint/placeholder + kms.md 책 영역 입력 규칙 |
+| **v00.156** | 메타 갱신 — ROADMAP / CONTEXT 본 세션 회고 + plans/README 신설 + 사이트 심층 검토 보고서 (코드 수정 없이 후속 큐 분류) |
 
 ---
 

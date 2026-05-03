@@ -2,7 +2,7 @@
 
 > **목적:** 향후 작업 단위(사이클)의 단일 백로그. 사이클 시작 시 이 문서에서 다음 항목을 가져오고, 완료 시 status 갱신.
 > **연관 문서:** 완료된 사이클 회고는 `pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY` 와 `CONTEXT.md §5` 에 기록.
-> **마지막 갱신:** 2026-05-01 (v00.112 — 보안 audit 잔재 분류 + v00.105~111 회고 반영)
+> **마지막 갱신:** 2026-05-04 (v00.156 — v00.114~v00.155 누적 사이클 회고 한 줄 정리 + 큐 1/2 본 세션 후보 반영)
 
 ---
 
@@ -17,15 +17,18 @@
 
 ## 큐 1 — 다음 사이클 (검증 보고 후 명시 갱신)
 
-> v00.113 까지 보안 audit 잔재 대부분 마무리. 남은 작업은 사용자 수동 (Secrets) 과 nonce 기반 CSP 강화.
+> v00.155 까지 책 카탈로그 다권화 사이클 마무리. 본 세션(v00.156) 검토에서 발굴된 후보:
 
-- **v00.118 ✅ (코드)** — CSP `'unsafe-inline'` 제거 (script-src 한정). 정적 호스팅 환경에서는 nonce 가 의미 없으므로 SHA-256 해시 방식 채택. tools/csp-hashes.mjs 가 pre-commit 시 자동 동기. style-src 'unsafe-inline' 은 Tiptap 인라인 스타일 의존도 때문에 유지.
-- **v00.119 ✅ (코드)** — legacy `categories` / `grades` / `site_content` deprecation. schema.sql 에 DEPRECATED 마커 + schema-v5.sql 신설(DROP TABLE).
-- **v00.123 ✅ (사용자 수동 인가)** — production D1 정리 완료. seed-kv 적용 → categories_kv 5 / grades_kv 6 시드 → schema-v5 DROP → legacy 3 테이블 제거 (28 tables remaining). server-first 정상화.
+- **책별 리뷰 분리** — `BGNJ_BOOK_ORDERS.refreshReviews/addReview/canReview/hasReviewed` 가 [data.js:2209](data.js#L2209), [data.js:2227](data.js#L2227) 에서 `'kingsroad'` 책 ID 하드코드. 1권 가정 잔재. 책별 리뷰 흐름이 BGNJ_BOOKS 의 책별 리뷰와 통합 또는 분리 필요. **사용자 의도 확인 필요** (단일 페이지 글로벌 vs 책별 탭).
+- **챕터 깊은 들여쓰기** (`-- ` 2단계+) — v00.155 의 1단계 sub-item 만 처리. 사용자 신호 시 추가.
+- **에러 페이지 라이브 라우트** (`?p=error&code=403` 등) — v00.152 에러 페이지 6종 미리보기 패널은 있으나 라이브 진입로 부재 (404 만 boot.jsx unknown route 폴백). 1 commit.
+- **403/401 자동 wiring** — 권한 보호 라우트 (admin 미인증 진입 등) 시 자동 노출. 인증/권한 경로 정리 사이클.
+- **PG 결제** — 무통장 임시. 별 사이클 (외부 의존 + 비용).
+- **사이트 검토 결과 반영** — v00.156 의 일반-목적 에이전트 보고서 도착 후 우선순위 TOP 5 항목을 본 큐로 분류.
 
 ## 큐 2 — 워커 배포 의존 (★ wrangler deploy 필요)
 
-(현재 비어있음 — v00.113 에서 v00.111 + rate limit 일괄 deploy 처리.)
+- **v00.154 영수증 mail subject 동적화** — [workers/src/index.js:1530](workers/src/index.js#L1530) book_orders LEFT JOIN books 변경. 코드 push 됨, deploy 대기. `cd workers && wrangler deploy` 한 번. 배포 전엔 옛 워커가 옛 텍스트 발송.
 
 ---
 
@@ -102,3 +105,10 @@
 - **v00.111** ✅ datetime auto-stamp (tools/stamp-datetime.mjs) + 게시판 작성 권한 검증(post_min_level) + X-Frame-Options/CSP frame-ancestors (commit `5ddcf25`) — *★ 워커 deploy 보류*
 - **v00.112** ✅ BGNJ_SAFE_HTML hardening — iframe src 화이트리스트(YouTube/Vimeo) + data: URI image-only + a[target=_blank] noopener 강제 + ROADMAP 갱신
 - **v00.113** ✅ 전체 CSP 메타 + brute-force rate limit (D1 login_attempts) + ★ wrangler deploy v00.111 post_min_level + rate limit 일괄
+- **v00.114~v00.150** ✅ 누적 사이클 — 상세는 `ADMIN_VERSION_HISTORY` 참조. 핵심: 보안 마무리(CSP SHA-256 / DOMPurify hardening / X-Frame-Options) + 운영 도구(BGNJ_FMT KST sweep / 푸터·게시판 권한 정비 / admin createdAt 오버라이드) + 콘텐츠 사이트 리프레시(홈 hero / 추천·투어·강연·게시판 카드) + 자동화 도구(stamp-datetime / csp-hashes / check-version / build / check-syntax 5단계 pre-commit) + page-view 분석 인프라 + 사용자 여정 + 등급 자동 reset 중단 (BGNJ_AUTO_GRADE_DISABLED) + 오류 페이지 6종 + admin 미리보기 패널.
+- **v00.151** ✅ 홈 책 CTA + BookPage 표지 BGNJ_BOOKS.primary() 실 데이터 사용 + 영문판 미입력 hide (commit `e5cb0dd`)
+- **v00.152** ✅ 홈 책 CTA 다권 카루셀 (좌우 무한 wrap + autoplay) + hero 지도 버튼 제거 + 작업 가이드 룰 2 신설 (plans/<버전>.md 선작성 / 명령 출력 오류 우선) + memory feedback 2건 (commit `70b9992`)
+- **v00.153** ✅ 메뉴 '뱅기노자 도서' (3 곳) + BookPage 다권 탭 + 책 메인 제목/소개 탭/저자 탭 의 『왕의길』 하드코드 제거 → BGNJ_BOOKS 데이터 사용 (commit `12472dd`)
+- **v00.154** ✅ cart 자료구조 bookId 도입 + CheckoutPage / MyPage / AuthAdminPage / 영수증 텍스트의 모든 『왕의길』 동적 + 워커 영수증 mail subject books JOIN (★ deploy 대기) (commit `5ffc8db`)
+- **v00.155** ✅ 책 목차 sub-item — `- ` prefix → 직전 챕터 하위 설명 (들여쓰기 + bullet) + admin textarea hint/placeholder + kms.md 책 영역 입력 규칙 (commit `0e76713`)
+- **v00.156** ✅ 메타 갱신 사이클 — ROADMAP 본 세션 회고 + CONTEXT.md §0/§5 갱신 + plans/README 신설 + 사이트 심층 검토 보고서 발행 (코드 수정 없이 후속 큐 분류)
