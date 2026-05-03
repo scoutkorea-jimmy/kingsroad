@@ -274,6 +274,11 @@ const App = () => {
             desc: c.description,
             prefixes: c.prefixes || [],
             order: c.display_order ?? 0,
+            // v00.141 — schema-v8 권한 4종. undefined/null (legacy) → true.
+            allowRead: c.allow_read === 0 ? false : true,
+            allowWrite: c.allow_write === 0 ? false : true,
+            allowCommentRead: c.allow_comment_read === 0 ? false : true,
+            allowCommentWrite: c.allow_comment_write === 0 ? false : true,
           }));
         }
       })?.catch?.(() => {}),

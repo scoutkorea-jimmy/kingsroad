@@ -396,7 +396,16 @@ const handlePostsList = async (req, env) => {
   if (q) { where += " AND (title LIKE ? OR author LIKE ?)"; args.push(`%${q}%`, `%${q}%`); }
   const sql = `SELECT id, category_id, category, prefix, title, author_id, author, views, replies, created_at FROM posts WHERE ${where} ORDER BY created_at DESC LIMIT ?`;
   const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
-  return { posts: results };
+  // v00.141 — allow_read 가 명시 0 인 카테고리의 글은 비관리자에 숨김.
+  let isAdmin = false;
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch {}
+  if (isAdmin) return { posts: results };
+  const { results: blocked } = await env.DB.prepare(
+    "SELECT id FROM categories_kv WHERE allow_read IS NOT NULL AND allow_read = 0"
+  ).all().catch(() => ({ results: [] }));
+  if (!blocked || !blocked.length) return { posts: results };
+  const blockedSet = new Set(blocked.map((c) => c.id));
+  return { posts: (results || []).filter((p) => !blockedSet.has(p.category_id)) };
 };
 
 const handlePostsCreate = async (req, env) => {
@@ -406,12 +415,14 @@ const handlePostsCreate = async (req, env) => {
   const title = String(body.title || "").trim();
   const text = String(body.body || "");
   if (!title) throw new HttpError(400, "제목을 입력해 주세요.");
-  // v00.111 — 게시판 작성 권한 검증.
-  // categories_kv.post_min_level vs grades_kv.level 비교. admin / 슈퍼 관리자는 항상 통과.
-  // categories_kv 누락된 카테고리는 기본 통과 (legacy 호환). post_min_level NULL/0 도 통과.
+  // v00.111 — 게시판 작성 권한 (등급 게이트). v00.141 — allow_write 마스터 스위치 추가.
   const cat = await env.DB.prepare(
-    "SELECT label, post_min_level FROM categories_kv WHERE id = ?"
+    "SELECT * FROM categories_kv WHERE id = ?"
   ).bind(categoryId).first();
+  // v00.141 — allow_write 가 명시 0 이면 차단 (NULL/undefined 는 legacy 호환 → 허용).
+  if (!user.isAdmin && cat && cat.allow_write !== undefined && cat.allow_write !== null && Number(cat.allow_write) === 0) {
+    throw new HttpError(403, "이 게시판은 현재 글쓰기가 비활성화되어 있습니다.");
+  }
   const minLevel = Number(cat?.post_min_level || 0);
   if (!user.isAdmin && minLevel > 0) {
     const grade = await env.DB.prepare(
@@ -433,6 +444,15 @@ const handlePostsCreate = async (req, env) => {
 const handlePostGet = async (req, env, id) => {
   const post = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(id).first();
   if (!post) throw new HttpError(404, "게시글을 찾을 수 없습니다.");
+  // v00.141 — allow_read 가 명시 0 이면 비관리자 차단.
+  let isAdmin = false;
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch {}
+  if (!isAdmin && post.category_id) {
+    const cat = await env.DB.prepare("SELECT allow_read FROM categories_kv WHERE id = ?").bind(post.category_id).first();
+    if (cat && cat.allow_read !== undefined && cat.allow_read !== null && Number(cat.allow_read) === 0) {
+      throw new HttpError(403, "이 게시판은 현재 읽기가 비활성화되어 있습니다.");
+    }
+  }
   await env.DB.prepare("UPDATE posts SET views = views + 1 WHERE id = ?").bind(id).run();
   return { post };
 };
@@ -468,6 +488,19 @@ const handlePostDelete = async (req, env, id) => {
 };
 
 const handleCommentsList = async (req, env, postId) => {
+  // v00.141 — 댓글 보기 권한 (allow_comment_read). 게시글의 카테고리 → categories_kv 조회.
+  // 명시 0 이면 비관리자에 빈 배열. NULL/undefined 는 legacy 호환 → 노출.
+  let isAdmin = false;
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch {}
+  if (!isAdmin) {
+    const post = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(postId).first();
+    if (post?.category_id) {
+      const cat = await env.DB.prepare("SELECT allow_comment_read FROM categories_kv WHERE id = ?").bind(post.category_id).first();
+      if (cat && cat.allow_comment_read !== undefined && cat.allow_comment_read !== null && Number(cat.allow_comment_read) === 0) {
+        return { comments: [], blocked: true };
+      }
+    }
+  }
   const { results } = await env.DB.prepare(
     "SELECT id, post_id, parent_id, body, author_id, author, created_at FROM comments WHERE post_id = ? ORDER BY created_at ASC"
   ).bind(postId).all();
@@ -479,6 +512,16 @@ const handleCommentsCreate = async (req, env, postId) => {
   const body = await req.json().catch(() => ({}));
   const text = String(body.body || "").trim();
   if (!text) throw new HttpError(400, "내용을 입력해 주세요.");
+  // v00.141 — 댓글 작성 권한 (allow_comment_write).
+  if (!user.isAdmin) {
+    const post = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(postId).first();
+    if (post?.category_id) {
+      const cat = await env.DB.prepare("SELECT allow_comment_write FROM categories_kv WHERE id = ?").bind(post.category_id).first();
+      if (cat && cat.allow_comment_write !== undefined && cat.allow_comment_write !== null && Number(cat.allow_comment_write) === 0) {
+        throw new HttpError(403, "이 게시판은 현재 댓글 작성이 비활성화되어 있습니다.");
+      }
+    }
+  }
   const r = await env.DB.prepare(
     "INSERT INTO comments (post_id, parent_id, body, author_id, author, created_at) VALUES (?, ?, ?, ?, ?, ?)"
   ).bind(postId, body.parentId || null, text, user.id, user.name, nowIso()).run();
@@ -1580,10 +1623,23 @@ const handleCategoryCreate = async (req, env) => {
   await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
   const id = String(body.id || "").trim() || randomId("cat");
-  await env.DB.prepare(
-    `INSERT INTO categories_kv (id, label, board_type, min_level, post_min_level, description, prefixes_json, display_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, body.label || "", body.boardType || "community", Number(body.minLevel || 0), Number(body.postMinLevel || 10), body.description || "", JSON.stringify(body.prefixes || []), Number(body.order || 0)).run();
+  // v00.141 — schema-v8 (allow_read / allow_write / allow_comment_read / allow_comment_write).
+  // 마이그레이션 미적용 환경에서도 동작하도록 try/catch 후 폴백 (구 INSERT).
+  const allowRead = body.allowRead === undefined ? 1 : (body.allowRead ? 1 : 0);
+  const allowWrite = body.allowWrite === undefined ? 1 : (body.allowWrite ? 1 : 0);
+  const allowCR = body.allowCommentRead === undefined ? 1 : (body.allowCommentRead ? 1 : 0);
+  const allowCW = body.allowCommentWrite === undefined ? 1 : (body.allowCommentWrite ? 1 : 0);
+  try {
+    await env.DB.prepare(
+      `INSERT INTO categories_kv (id, label, board_type, min_level, post_min_level, description, prefixes_json, display_order, allow_read, allow_write, allow_comment_read, allow_comment_write)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, body.label || "", body.boardType || "community", Number(body.minLevel || 0), Number(body.postMinLevel || 10), body.description || "", JSON.stringify(body.prefixes || []), Number(body.order || 0), allowRead, allowWrite, allowCR, allowCW).run();
+  } catch {
+    await env.DB.prepare(
+      `INSERT INTO categories_kv (id, label, board_type, min_level, post_min_level, description, prefixes_json, display_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(id, body.label || "", body.boardType || "community", Number(body.minLevel || 0), Number(body.postMinLevel || 10), body.description || "", JSON.stringify(body.prefixes || []), Number(body.order || 0)).run();
+  }
   return { id };
 };
 
@@ -1598,9 +1654,28 @@ const handleCategoryPatch = async (req, env, id) => {
   if ("description" in body) { sets.push("description = ?"); args.push(body.description); }
   if ("prefixes" in body) { sets.push("prefixes_json = ?"); args.push(JSON.stringify(body.prefixes || [])); }
   if ("order" in body) { sets.push("display_order = ?"); args.push(Number(body.order)); }
+  // v00.141 — schema-v8 권한 4종.
+  if ("allowRead" in body)         { sets.push("allow_read = ?");          args.push(body.allowRead ? 1 : 0); }
+  if ("allowWrite" in body)        { sets.push("allow_write = ?");         args.push(body.allowWrite ? 1 : 0); }
+  if ("allowCommentRead" in body)  { sets.push("allow_comment_read = ?");  args.push(body.allowCommentRead ? 1 : 0); }
+  if ("allowCommentWrite" in body) { sets.push("allow_comment_write = ?"); args.push(body.allowCommentWrite ? 1 : 0); }
   if (!sets.length) return { ok: true };
   args.push(id);
-  await env.DB.prepare(`UPDATE categories_kv SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  // schema-v8 미적용 환경에서 unknown column 에러 → try once, fall back removing allow_* sets.
+  try {
+    await env.DB.prepare(`UPDATE categories_kv SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  } catch (err) {
+    if (String(err?.message || '').toLowerCase().includes('no such column')) {
+      const filtered = []; const filteredArgs = [];
+      sets.forEach((s, i) => {
+        if (!s.startsWith('allow_')) { filtered.push(s); filteredArgs.push(args[i]); }
+      });
+      if (filtered.length) {
+        filteredArgs.push(id);
+        await env.DB.prepare(`UPDATE categories_kv SET ${filtered.join(", ")} WHERE id = ?`).bind(...filteredArgs).run();
+      }
+    } else { throw err; }
+  }
   return { ok: true };
 };
 

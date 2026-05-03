@@ -666,8 +666,13 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       }
       return;
     }
-    // Writable categories for current user
-    const writable = categories.filter(c => userLevel >= (c.postMinLevel ?? c.minLevel ?? 0));
+    // Writable categories for current user.
+    // v00.141 — allow_write 가 명시 false 인 게시판은 비관리자 제외.
+    const isAdmin = !!(user?.isAdmin || user?.gradeId === 'admin');
+    const writable = categories.filter((c) => {
+      if (c.allowWrite === false && !isAdmin) return false;
+      return userLevel >= (c.postMinLevel ?? c.minLevel ?? 0);
+    });
     if (writable.length === 0) {
       alert("현재 등급으로는 글을 작성할 수 있는 게시판이 없습니다.");
       return;

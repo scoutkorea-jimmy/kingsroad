@@ -5320,7 +5320,7 @@ const AdminPage = ({ go }) => {
 // === Admin: Category CRUD ==============================================
 const AdminCategoryPanel = () => {
   const [cats, setCats] = React.useState(() => window.BGNJ_STORES.categories.slice());
-  const [draft, setDraft] = React.useState({ id:"", label:"", boardType:"community", minLevel:0, postMinLevel:0, desc:"" });
+  const [draft, setDraft] = React.useState({ id:"", label:"", boardType:"community", minLevel:0, postMinLevel:0, desc:"", allowRead:true, allowWrite:true, allowCommentRead:true, allowCommentWrite:true });
   const [error, setError] = React.useState("");
   const [prefixDrafts, setPrefixDrafts] = React.useState({});
 
@@ -5329,21 +5329,49 @@ const AdminCategoryPanel = () => {
     window.BGNJ_SAVE.categories();
     setCats(next);
   };
+  // v00.141 — 서버에도 PATCH (서버가 source of truth, localStorage 는 첫 페인트용 캐시).
+  // 실패해도 UI 변경은 유지 (다음 boot 에서 서버 값으로 재동기화 됨).
+  // 필드명 매핑: desc → description (워커 컬럼명).
+  const persistToServer = async (cat, patch) => {
+    const remap = {};
+    for (const [k, v] of Object.entries(patch)) {
+      if (k === 'desc') remap.description = v;
+      else remap[k] = v;
+    }
+    try { await window.BGNJ_API?.categories?.update?.(cat.id, remap); } catch (err) { console.warn('[AdminCategoryPanel] PATCH 실패:', err?.message); }
+  };
   const slugify = (s) => String(s || '').trim().toLowerCase()
     .replace(/[^a-z0-9-_가-힣]+/g, '-').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
-  const add = (e) => {
+  const add = async (e) => {
     e.preventDefault();
     setError("");
     let id = draft.id || slugify(draft.label);
     if (!id || !draft.label) return setError("ID와 이름은 필수입니다.");
     if (cats.find(c => c.id === id)) return setError("이미 존재하는 ID입니다.");
-    save([...cats, { ...draft, id, minLevel: Number(draft.minLevel), postMinLevel: Number(draft.postMinLevel) }]);
-    setDraft({ id:"", label:"", boardType:"community", minLevel:0, postMinLevel:0, desc:"" });
+    const newCat = { ...draft, id, minLevel: Number(draft.minLevel), postMinLevel: Number(draft.postMinLevel) };
+    save([...cats, newCat]);
+    // 서버에도 생성 (실패해도 로컬은 유지).
+    try {
+      await window.BGNJ_API?.categories?.create?.({
+        id, label: newCat.label, boardType: newCat.boardType,
+        minLevel: newCat.minLevel, postMinLevel: newCat.postMinLevel,
+        description: newCat.desc, prefixes: newCat.prefixes || [],
+        allowRead: newCat.allowRead, allowWrite: newCat.allowWrite,
+        allowCommentRead: newCat.allowCommentRead, allowCommentWrite: newCat.allowCommentWrite,
+      });
+    } catch (err) { console.warn('[AdminCategoryPanel] create 실패:', err?.message); }
+    setDraft({ id:"", label:"", boardType:"community", minLevel:0, postMinLevel:0, desc:"", allowRead:true, allowWrite:true, allowCommentRead:true, allowCommentWrite:true });
   };
   const update = (i, key, val) => {
     const next = cats.slice();
-    next[i] = { ...next[i], [key]: key.endsWith("Level") ? Number(val) : val };
+    // v00.141 — boolean (allow_*) / number (level) / string 분기.
+    let coerced = val;
+    if (key.endsWith("Level")) coerced = Number(val);
+    else if (key.startsWith("allow")) coerced = !!val;
+    next[i] = { ...next[i], [key]: coerced };
     save(next);
+    // 서버 patch — boot 시 서버에서 다시 받아오므로 동기화 필수.
+    persistToServer(next[i], { [key]: coerced });
   };
   const move = (i, dir) => {
     const j = i + dir;
@@ -5415,13 +5443,30 @@ const AdminCategoryPanel = () => {
               onChange={(e) => setDraft({ ...draft, desc: e.target.value })}
               placeholder="게시판 안내 (선택)"/>
           </div>
+          {/* v00.141 — 권한 체크박스 4종. 사용자 요청 '게시글 읽기/쓰기/댓글 작성/댓글 보기 권한 체크박스로'. */}
+          <div className="field" style={{margin:0, gridColumn:'1 / -1', display:'flex', gap:14, flexWrap:'wrap', padding:'8px 0'}}>
+            <label style={{display:'inline-flex', alignItems:'center', gap:6, fontSize:12, cursor:'pointer'}}>
+              <input type="checkbox" checked={draft.allowRead} onChange={(e) => setDraft({ ...draft, allowRead: e.target.checked })}/> 게시글 읽기
+            </label>
+            <label style={{display:'inline-flex', alignItems:'center', gap:6, fontSize:12, cursor:'pointer'}}>
+              <input type="checkbox" checked={draft.allowWrite} onChange={(e) => setDraft({ ...draft, allowWrite: e.target.checked })}/> 게시글 쓰기
+            </label>
+            <label style={{display:'inline-flex', alignItems:'center', gap:6, fontSize:12, cursor:'pointer'}}>
+              <input type="checkbox" checked={draft.allowCommentRead} onChange={(e) => setDraft({ ...draft, allowCommentRead: e.target.checked })}/> 댓글 보기
+            </label>
+            <label style={{display:'inline-flex', alignItems:'center', gap:6, fontSize:12, cursor:'pointer'}}>
+              <input type="checkbox" checked={draft.allowCommentWrite} onChange={(e) => setDraft({ ...draft, allowCommentWrite: e.target.checked })}/> 댓글 작성
+            </label>
+            <span className="dim-2 mono" style={{fontSize:10, alignSelf:'center'}}>· 체크 해제 시 비관리자 차단</span>
+          </div>
           <button type="submit" className="btn btn-gold btn-small">＋ 추가</button>
         </form>
         {error && <div role="alert" className="mono" style={{color:'var(--danger)', fontSize:11, marginTop:10}}>{error}</div>}
       </article>
 
-      {/* 게시판 목록 */}
-      <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
+      {/* 게시판 목록 — v00.141 권한 체크박스 4열 추가 (글읽 · 글쓰 · 댓읽 · 댓쓰). */}
+      <div style={{overflowX:'auto'}}>
+      <table style={{width:'100%', borderCollapse:'collapse', fontSize:13, minWidth:1100}}>
         <thead>
           <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)'}}>
             <th scope="col" style={{padding:10, textAlign:'center', width:80}}>순서</th>
@@ -5430,6 +5475,10 @@ const AdminCategoryPanel = () => {
             <th scope="col" style={{padding:10, textAlign:'left'}}>유형</th>
             <th scope="col" style={{padding:10, textAlign:'right'}}>읽기≥</th>
             <th scope="col" style={{padding:10, textAlign:'right'}}>쓰기≥</th>
+            <th scope="col" style={{padding:10, textAlign:'center', width:50}} title="게시글 읽기 허용">글읽</th>
+            <th scope="col" style={{padding:10, textAlign:'center', width:50}} title="게시글 쓰기 허용">글쓰</th>
+            <th scope="col" style={{padding:10, textAlign:'center', width:50}} title="댓글 보기 허용">댓읽</th>
+            <th scope="col" style={{padding:10, textAlign:'center', width:50}} title="댓글 작성 허용">댓쓰</th>
             <th scope="col" style={{padding:10, textAlign:'right'}}>글 수</th>
             <th scope="col" style={{padding:10, textAlign:'left'}}>설명</th>
             <th scope="col" style={{padding:10, textAlign:'right'}}>액션</th>
@@ -5466,6 +5515,23 @@ const AdminCategoryPanel = () => {
                 <input type="number" className="field-input" style={{padding:'4px 8px', width:64, textAlign:'right'}}
                   value={c.postMinLevel ?? 0} onChange={(e) => update(i, 'postMinLevel', e.target.value)}/>
               </td>
+              {/* v00.141 — 권한 체크박스 4열. undefined(레거시) → checked. 명시 false 만 차단. */}
+              <td style={{padding:10, textAlign:'center'}}>
+                <input type="checkbox" aria-label="게시글 읽기 허용"
+                  checked={c.allowRead !== false} onChange={(e) => update(i, 'allowRead', e.target.checked)}/>
+              </td>
+              <td style={{padding:10, textAlign:'center'}}>
+                <input type="checkbox" aria-label="게시글 쓰기 허용"
+                  checked={c.allowWrite !== false} onChange={(e) => update(i, 'allowWrite', e.target.checked)}/>
+              </td>
+              <td style={{padding:10, textAlign:'center'}}>
+                <input type="checkbox" aria-label="댓글 보기 허용"
+                  checked={c.allowCommentRead !== false} onChange={(e) => update(i, 'allowCommentRead', e.target.checked)}/>
+              </td>
+              <td style={{padding:10, textAlign:'center'}}>
+                <input type="checkbox" aria-label="댓글 작성 허용"
+                  checked={c.allowCommentWrite !== false} onChange={(e) => update(i, 'allowCommentWrite', e.target.checked)}/>
+              </td>
               <td className="mono dim-2" style={{padding:10, textAlign:'right', fontSize:11}}>
                 {c.boardType === 'community' ? postCount(c.id) : '-'}
               </td>
@@ -5481,6 +5547,7 @@ const AdminCategoryPanel = () => {
           ))}
         </tbody>
       </table>
+      </div>
 
       <button type="button" className="btn btn-small" style={{marginTop:20}}
         onClick={() => { if (confirm("기본값으로 되돌립니다. 진행할까요?")) { window.BGNJ_SAVE.resetCategories(); setCats(window.BGNJ_STORES.categories.slice()); } }}>
@@ -5609,35 +5676,104 @@ const PromoChip = ({ label, value, prefix = '≥', tone }) => (
 );
 
 const AdminGradePanel = () => {
+  // v00.141 — 통합 패널: 회원 등급 + 자동 승급/강등 기준을 한 곳에서 편집.
+  // 사용자 요청 '자동 승급/강등과 회원등급 관리가 한 기능에서 진행되게 + 저장 버튼 살려주고'.
+  // 변경: 기존 save-on-keystroke 자동 저장 제거 → 편집은 local state, 명시적 [저장] 버튼이 commit.
+  const G = window.BGNJ_GUARD;
+  const _initialRules = () => {
+    try { return JSON.parse(JSON.stringify(window.BGNJ_GRADE_RULES_EFFECTIVE?.() || window.BGNJ_GRADE_RULES || {})); }
+    catch { return {}; }
+  };
   const [grades, setGrades] = React.useState(() => window.BGNJ_STORES.grades.slice());
+  const [rules, setRules] = React.useState(_initialRules);
   const [draft, setDraft] = React.useState({ id:"", label:"", level:20, color:"#D4AF37", desc:"" });
   const [error, setError] = React.useState("");
+  const [dirty, setDirty] = React.useState(false);
+  const [saveMsg, setSaveMsg] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [busyReevaluate, setBusyReevaluate] = React.useState(false);
+  const [reevalResult, setReevalResult] = React.useState(null);
 
-  const save = (next) => {
-    // keep sorted by level for predictable reads
-    const sorted = next.slice().sort((a, b) => a.level - b.level);
-    window.BGNJ_STORES.grades = sorted;
-    window.BGNJ_SAVE.grades();
-    setGrades(sorted);
-  };
+  // 정렬된 grades (level asc).
+  const sortedGrades = React.useMemo(() => grades.slice().sort((a, b) => a.level - b.level), [grades]);
+
+  const markDirty = () => { setDirty(true); setSaveMsg(""); };
+
   const add = (e) => {
     e.preventDefault();
     setError("");
     if (!draft.id || !draft.label) return setError("ID와 이름은 필수입니다.");
     if (grades.find(g => g.id === draft.id)) return setError("이미 존재하는 ID입니다.");
-    save([...grades, { ...draft, level: Number(draft.level) }]);
+    setGrades([...grades, { ...draft, level: Number(draft.level) }]);
     setDraft({ id:"", label:"", level:20, color:"#D4AF37", desc:"" });
+    markDirty();
   };
   const update = (i, key, val) => {
-    const next = grades.slice();
-    next[i] = { ...next[i], [key]: key === "level" ? Number(val) : val };
-    save(next);
+    setGrades((cur) => {
+      const next = cur.slice();
+      next[i] = { ...next[i], [key]: key === "level" ? Number(val) : val };
+      return next;
+    });
+    markDirty();
   };
   const remove = (i) => {
     const g = grades[i];
     if (g.id === "admin" || g.id === "guest") { alert("기본 등급(guest/admin)은 삭제할 수 없습니다."); return; }
     if (!confirm(`"${g.label}" 등급을 삭제하시겠어요?`)) return;
-    save(grades.filter((_, j) => j !== i));
+    setGrades(grades.filter((_, j) => j !== i));
+    markDirty();
+  };
+  const setRuleField = (gid, key, val) => {
+    setRules((r) => ({ ...r, [gid]: { ...(r[gid] || {}), [key]: Number(val) || 0 } }));
+    markDirty();
+  };
+
+  // v00.141 — 통합 저장: 등급(localStorage) + 자동 승급 기준(site_content_kv.gradeRules) 동시 commit.
+  const commitAll = async () => {
+    if (saving) return;
+    setSaving(true);
+    setSaveMsg("");
+    try {
+      // 1) 등급 정렬 + 영속화.
+      const sorted = grades.slice().sort((a, b) => a.level - b.level);
+      window.BGNJ_STORES.grades = sorted;
+      window.BGNJ_SAVE.grades();
+      setGrades(sorted);
+      // 2) 자동 승급 기준 site_content_kv 저장.
+      await window.BGNJ_SITE_CONTENT?.saveSection?.('gradeRules', rules);
+      setDirty(false);
+      setSaveMsg("✓ 등급 + 자동 승급 기준 저장 완료.");
+      setTimeout(() => setSaveMsg(""), 3000);
+    } catch (err) {
+      setSaveMsg("✗ 저장 실패: " + (err?.message || '알 수 없는 오류'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetAll = () => {
+    if (!confirm("등급 + 자동 승급 기준을 모두 기본값으로 되돌립니다. 진행할까요?")) return;
+    window.BGNJ_SAVE.resetGrades();
+    window.BGNJ_SITE_CONTENT?.resetSection?.('gradeRules');
+    setGrades(window.BGNJ_STORES.grades.slice());
+    setRules(_initialRules());
+    setDirty(false);
+    setSaveMsg("기본값 복원 완료.");
+    setTimeout(() => setSaveMsg(""), 3000);
+  };
+
+  const reevaluate = async () => {
+    if (dirty) { alert("저장하지 않은 변경 사항이 있습니다. 먼저 [저장] 후 재산정하세요."); return; }
+    if (!confirm("전체 회원의 활동량을 재평가하여 자격 등급으로 자동 승급/강등 합니다. 진행할까요?")) return;
+    setBusyReevaluate(true);
+    try {
+      await window.BGNJ_AUTH?.refreshUsers?.();
+      try { await window.BGNJ_GRADE_PROMO?.prefetchAllServerMetrics?.(); } catch {}
+      const summary = window.BGNJ_GRADE_PROMO?.reevaluateAll?.() || { promoted: 0, demoted: 0 };
+      setReevalResult(summary);
+    } catch (err) {
+      alert("재산정 중 오류: " + (err?.message || '알 수 없는 오류'));
+    } finally { setBusyReevaluate(false); }
   };
 
   return (
@@ -5691,10 +5827,19 @@ const AdminGradePanel = () => {
           </tr>
         </thead>
         <tbody>
-          {grades.map((g, i) => {
-            const G = window.BGNJ_GUARD;
-            const rules = G?.call?.(() => window.BGNJ_GRADE_RULES_EFFECTIVE?.() || window.BGNJ_GRADE_RULES, {}) || {};
+          {sortedGrades.map((g) => {
+            const i = grades.findIndex((x) => x.id === g.id);
             const rule = rules[g.id];
+            const RULE_KEYS = [
+              { k: 'posts',            l: '게시글' },
+              { k: 'comments',         l: '댓글' },
+              { k: 'visitsLast30Days', l: '30일 방문' },
+              { k: 'daysSinceSignup',  l: '가입경과(일)' },
+              { k: 'likesReceived',    l: '받은 좋아요' },
+              { k: 'activeDays',       l: '활동일' },
+              { k: 'eventsAttended',   l: '행사 참석' },
+              { k: 'maxReports',       l: '신고 한계 <', tone: 'danger' },
+            ];
             return (
               <React.Fragment key={g.id}>
                 <tr style={{borderBottom: rule ? 'none' : '1px solid var(--line)'}}>
@@ -5723,20 +5868,23 @@ const AdminGradePanel = () => {
                       style={{borderColor:'var(--danger)', color:'var(--danger)'}} disabled={g.id === "admin" || g.id === "guest"}>삭제</button>
                   </td>
                 </tr>
+                {/* v00.141 — 자동 승급 기준 inline 편집 (구 GradePromotionPanel 통합). */}
                 {rule && (
                   <tr style={{borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
-                    <td colSpan={7} style={{padding:'8px 12px 12px'}}>
-                      <div className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--ink-3)', marginBottom:6}}>
-                        ↳ 자동 승급 기준 (모두 동시에 충족 시 {g.label}{`'`} 등급 자동 부여)
+                    <td colSpan={7} style={{padding:'8px 12px 14px'}}>
+                      <div className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--ink-3)', marginBottom:8}}>
+                        ↳ 자동 승급 기준 — 모두 동시 충족 시 <strong style={{color: g.color}}>{g.label}</strong> 자동 부여
                       </div>
-                      <div style={{display:'flex', flexWrap:'wrap', gap:6, fontFamily:'var(--font-mono)', fontSize:11}}>
-                        <PromoChip label="게시글" value={rule.posts} prefix="≥"/>
-                        <PromoChip label="댓글" value={rule.comments} prefix="≥"/>
-                        <PromoChip label="30일 방문" value={rule.visitsLast30Days} prefix="≥"/>
-                        <PromoChip label="가입 경과(일)" value={rule.daysSinceSignup} prefix="≥"/>
-                        <PromoChip label="받은 좋아요" value={rule.likesReceived} prefix="≥"/>
-                        <PromoChip label="활동일" value={rule.activeDays} prefix="≥"/>
-                        <PromoChip label="신고" value={rule.maxReports} prefix="<" tone="danger"/>
+                      <div style={{display:'flex', flexWrap:'wrap', gap:8, fontFamily:'var(--font-mono)', fontSize:11}}>
+                        {RULE_KEYS.map(({k, l, tone}) => (
+                          <label key={k} style={{display:'inline-flex', alignItems:'center', gap:4, padding:'4px 8px', border:'1px solid var(--line-2)', background:'var(--bg)'}}>
+                            <span className="dim-2" style={{fontSize:10}}>{l}</span>
+                            <input type="number" min={0}
+                              value={rule[k] ?? 0}
+                              onChange={(e) => setRuleField(g.id, k, e.target.value)}
+                              style={{width:54, padding:'2px 4px', textAlign:'right', border:'1px solid var(--line-2)', background:'var(--bg)', color: tone === 'danger' ? 'var(--danger)' : 'var(--ink)', fontFamily:'var(--font-mono)', fontSize:11}}/>
+                          </label>
+                        ))}
                       </div>
                     </td>
                   </tr>
@@ -5747,176 +5895,36 @@ const AdminGradePanel = () => {
         </tbody>
       </table>
 
-      <button type="button" className="btn btn-small" style={{marginTop:20}}
-        onClick={() => { if (confirm("기본값으로 되돌립니다. 진행할까요?")) { window.BGNJ_SAVE.resetGrades(); setGrades(window.BGNJ_STORES.grades.slice()); } }}>
-        기본값 복원
-      </button>
-
-      <GradePromotionPanel/>
+      {/* v00.141 — 통합 저장 + 보조 액션. dirty 가 있어야 저장 활성. */}
+      <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', marginTop:24, paddingTop:16, borderTop:'2px solid var(--gold-dim)'}}>
+        <button type="button" className="btn btn-gold" onClick={commitAll} disabled={saving || !dirty}>
+          {saving ? '저장 중…' : (dirty ? '💾 저장 (등급 + 자동 승급 기준)' : '저장됨 ✓')}
+        </button>
+        <button type="button" className="btn" onClick={reevaluate} disabled={busyReevaluate || dirty}>
+          {busyReevaluate ? '재산정 중…' : '🔄 전체 회원 재산정'}
+        </button>
+        {reevalResult && (
+          <span className="mono" style={{fontSize:12, fontWeight:600, color:'var(--secondary)'}}>
+            ✓ 승급 {reevalResult.promoted} · 강등 {reevalResult.demoted}
+          </span>
+        )}
+        <button type="button" className="btn btn-small" onClick={resetAll} style={{marginLeft:'auto', borderColor:'var(--line-2)'}}>
+          기본값 복원
+        </button>
+      </div>
+      {saveMsg && (
+        <p role="status" className="mono" style={{fontSize:12, fontWeight:600, marginTop:10, color: saveMsg.startsWith('✗') ? 'var(--danger)' : 'var(--secondary)'}}>{saveMsg}</p>
+      )}
+      <p style={{fontSize:11, color:'var(--ink-3)', marginTop:10, lineHeight:1.6}}>
+        ⓘ 자동 승급 기준은 <code>모든 조건 동시 충족</code> 시에만 자격 부여. 신고 한계 초과 시 자격 무관 강제 강등(member).
+        승급/강등 시 본인에게 알림 자동 발송. 변경 사항은 <strong>저장 버튼</strong> 클릭 시점에만 영속화됩니다.
+      </p>
     </>
   );
 };
 
-// 자동 승급/강등 기준 표시 + GUI 편집 + 일괄 재산정 패널
-// 운영자가 BGNJ_GRADE_RULES_EFFECTIVE() 의 결과를 보고 site_content_kv.gradeRules 로 오버라이드.
-const GradePromotionPanel = () => {
-  const G = window.BGNJ_GUARD;
-  const [busy, setBusy] = React.useState(false);
-  const [result, setResult] = React.useState(null);
-  const [tick, setTick] = React.useState(0);
-  const [editing, setEditing] = React.useState(false);
-  const [draft, setDraft] = React.useState({});
-  const [saveMsg, setSaveMsg] = React.useState('');
-  const rules = G.call(() => window.BGNJ_GRADE_RULES_EFFECTIVE?.() || window.BGNJ_GRADE_RULES, {});
-  const grades = G.arr(() => window.BGNJ_STORES?.grades);
-
-  const ruleEntries = Object.entries(rules || {});
-
-  // 편집 모드 진입 시 현재 effective 룰을 draft 로 복사
-  const startEdit = () => { setDraft(JSON.parse(JSON.stringify(rules))); setEditing(true); setSaveMsg(''); };
-  const cancelEdit = () => { setEditing(false); setDraft({}); setSaveMsg(''); };
-  const setField = (gid, key, val) => {
-    setDraft((d) => ({ ...d, [gid]: { ...(d[gid] || {}), [key]: Number(val) || 0 } }));
-  };
-  const saveRules = async () => {
-    try {
-      await window.BGNJ_SITE_CONTENT?.saveSection?.('gradeRules', draft);
-      setEditing(false);
-      setSaveMsg('저장되었습니다 — 이후 평가부터 새 기준 적용.');
-      setTick((v) => v + 1);
-      setTimeout(() => setSaveMsg(''), 2500);
-    } catch (err) {
-      alert('저장 실패: ' + (err?.message || '알 수 없는 오류'));
-    }
-  };
-  const resetRules = async () => {
-    if (!confirm('GUI 오버라이드를 비우고 코드 default 로 되돌립니다. 진행할까요?')) return;
-    try {
-      await window.BGNJ_SITE_CONTENT?.resetSection?.('gradeRules');
-      setEditing(false);
-      setSaveMsg('default 로 복원됨.');
-      setTick((v) => v + 1);
-      setTimeout(() => setSaveMsg(''), 2500);
-    } catch (err) {
-      alert('복원 실패: ' + (err?.message || '알 수 없는 오류'));
-    }
-  };
-
-  const reevaluate = async () => {
-    if (!confirm('전체 회원의 활동량을 재평가하여 자격 등급으로 자동 승급/강등 합니다. 진행할까요?')) return;
-    setBusy(true);
-    try {
-      // 정확한 평가를 위해 회원 목록을 새로 받음 (활동 카운트는 BGNJ_AUTH.getActivity 가 캐시).
-      await window.BGNJ_AUTH?.refreshUsers?.();
-      // v00.062 — D1 정확 metrics 서버 prefetch (likesReceived/reportCount/posts/comments/daysSinceSignup).
-      // 워커 미배포 환경이면 silently 실패 → 클라이언트 best-effort 로 폴백.
-      try { await window.BGNJ_GRADE_PROMO?.prefetchAllServerMetrics?.(); } catch {}
-      const summary = window.BGNJ_GRADE_PROMO?.reevaluateAll?.() || { promoted: 0, demoted: 0 };
-      setResult(summary);
-    } catch (err) {
-      alert('재산정 중 오류: ' + (err?.message || '알 수 없는 오류'));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <section style={{marginTop:36, paddingTop:24, borderTop:'1px solid var(--line)'}}>
-      <h3 className="ko-serif" style={{fontSize:18, fontWeight:600, marginBottom:6}}>자동 승급·강등</h3>
-      <p style={{fontSize:13, color:'var(--ink-2)', lineHeight:1.7, marginBottom:16}}>
-        회원이 글/댓글을 작성하면 자격이 되는 가장 높은 등급으로 자동 승급됩니다.
-        글/댓글이 삭제돼 자격이 미달이 되면 자동 강등됩니다 (운영진 등급 admin / wangsanam 은 보호 — 자동 변경 안 됨).
-      </p>
-
-      <div className="card" style={{padding:18, marginBottom:14, overflowX:'auto'}}>
-        <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.2em', color:'var(--ink-2)', marginBottom:10}}>승급 기준 (BGNJ_GRADE_RULES)</div>
-        {ruleEntries.length === 0 ? (
-          <p style={{fontSize:13, color:'var(--ink-3)'}}>정의된 기준이 없습니다.</p>
-        ) : (
-          <table style={{width:'100%', minWidth:680, borderCollapse:'collapse', fontSize:12}}>
-            <thead>
-              <tr style={{borderBottom:'1px solid var(--line)', color:'var(--ink-3)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.16em'}}>
-                <th scope="col" style={{padding:'8px 10px', textAlign:'left'}}>등급</th>
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>게시글</th>
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>댓글</th>
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>30일 방문</th>
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>가입경과(일)</th>
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>받은 좋아요</th>
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>활동일</th>
-                {/* v00.137 — 투어 + 강연 실 참석 합산 (OR 의미). */}
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}} title="투어 + 강연 실 참석 횟수 합산 (노쇼 제외)">행사 참석</th>
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>신고 한계</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ruleEntries.map(([gid, rule]) => {
-                const g = grades.find((x) => x.id === gid);
-                const v = editing ? (draft[gid] || rule) : rule;
-                const numCell = (key, prefix = '≥ ') => editing ? (
-                  <input type="number" min={0}
-                    value={v[key] ?? 0}
-                    onChange={(e) => setField(gid, key, e.target.value)}
-                    style={{
-                      width:'100%', maxWidth:80, padding:'4px 6px', textAlign:'right',
-                      fontFamily:'var(--font-mono)', fontSize:12,
-                      border:'1px solid var(--line-2)', background:'var(--bg)',
-                    }}/>
-                ) : `${prefix}${v[key] ?? 0}`;
-                return (
-                  <tr key={gid} style={{borderBottom:'1px solid var(--line)'}}>
-                    <td style={{padding:'10px'}}>
-                      <span className="grade-badge" style={{color: g?.color || 'var(--ink-2)'}}>{g?.label || gid}</span>
-                      <span className="mono dim-2" style={{fontSize:10, marginLeft:8}}>{gid} · L{g?.level ?? '?'}</span>
-                    </td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('posts')}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('comments')}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('visitsLast30Days')}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('daysSinceSignup')}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('likesReceived')}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('activeDays')}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('eventsAttended')}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('maxReports', '< ')}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-        <p style={{fontSize:11, color:'var(--ink-3)', marginTop:12, lineHeight:1.6}}>
-          ⓘ 모든 조건을 동시에 만족해야 자격. 신고가 <strong>5회 이상</strong>이면 자격 무관 강제 강등(member).
-          승급/강등 시 본인에게 알림이 자동 발송됩니다. GUI 편집 후 저장하면 <code>site_content_kv.gradeRules</code> 에 오버라이드되며, 코드 default 위에 머지됩니다.
-        </p>
-        {/* 편집 / 저장 / 복원 */}
-        <div style={{display:'flex', gap:8, marginTop:12, flexWrap:'wrap'}}>
-          {!editing && (
-            <button type="button" className="btn btn-small" onClick={startEdit}>기준 편집</button>
-          )}
-          {editing && (
-            <>
-              <button type="button" className="btn btn-gold btn-small" onClick={saveRules}>저장</button>
-              <button type="button" className="btn btn-small" onClick={cancelEdit}>취소</button>
-            </>
-          )}
-          <button type="button" className="btn btn-small" onClick={resetRules} style={{marginLeft:'auto', borderColor:'var(--line-2)'}}>default 복원</button>
-        </div>
-        {saveMsg && (
-          <p role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:600, marginTop:10}}>{saveMsg}</p>
-        )}
-      </div>
-
-      <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
-        <button type="button" className="btn btn-gold" onClick={reevaluate} disabled={busy || editing}>
-          {busy ? '재산정 중…' : '전체 회원 재산정'}
-        </button>
-        {result && (
-          <span className="mono" style={{fontSize:12, fontWeight:600, color:'var(--secondary)'}}>
-            ✓ 재산정 완료 — 승급 {result.promoted} · 강등 {result.demoted}
-          </span>
-        )}
-      </div>
-    </section>
-  );
-};
+// v00.141 — GradePromotionPanel 은 AdminGradePanel 안으로 통합 흡수됨.
+// 사용자 요청 '자동 승급/강등과 회원등급 관리가 한 기능에서 진행되게'.
 
 // === Admin: Column Editor (Tiptap column preset — inline draggable images)
 // v00.133 — 칼럼 카테고리 칩 선택 + 인라인 추가/삭제. AdminColumnEditor / ColumnsHubPanel 에서 공유.

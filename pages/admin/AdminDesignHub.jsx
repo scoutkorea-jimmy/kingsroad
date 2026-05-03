@@ -4,6 +4,26 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.141.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🆕 게시판별 권한 4종 체크박스 + 등급/자동승급 통합 패널 + 명시 저장 버튼",
+    details: [
+      "🆕 [게시판 권한 4종] schema-v8 — categories_kv 에 allow_read / allow_write / allow_comment_read / allow_comment_write (INTEGER DEFAULT 1) 4개 컬럼 추가. AdminCategoryPanel 행에 체크박스 4개 노출.",
+      "  · 워커 enforcement: handlePostsList(allow_read=0 카테고리 비관리자 필터), handlePostGet(403), handlePostsCreate(allow_write 0 → 403), handleCommentsList(empty), handleCommentsCreate(403). admin / 슈퍼 관리자는 항상 통과. NULL/undefined (legacy) 는 fail-open 으로 호환.",
+      "  · 워커 handleCategoryCreate / handleCategoryPatch: schema-v8 미적용 환경 try/catch fallback (구 INSERT / 'no such column' 시 allow_* sets 제거 후 재시도).",
+      "  · 클라이언트 boot.jsx: c.allow_* 0 → false 매핑. AdminCategoryPanel update 시 BGNJ_API.categories.update(id, patch) PATCH 자동 호출.",
+      "  · CommunityPage handleWrite: allowWrite=false 게시판 비관리자 제외.",
+      "🆕 [등급 + 자동승급 통합 패널] AdminGradePanel + GradePromotionPanel 한 패널로 통합. 사용자 요청 '한 기능에서 진행되게 + 저장 버튼 살려주고'.",
+      "  · 기존 save-on-keystroke 자동 저장 제거 → 편집은 local state, 명시적 [💾 저장] 버튼이 commit (등급 + gradeRules 동시).",
+      "  · 자동 승급 기준이 grade 행 바로 아래 inline 으로 항상 편집 가능 (구 GradePromotionPanel 의 separate edit/save 모드 제거).",
+      "  · dirty 추적 → 저장됨 ✓ / 변경 시 활성화. 재산정 버튼은 dirty 시 비활성 (먼저 저장하라 안내).",
+      "ℹ 워커 코드 변경 — deploy 필요. D1 ALTER TABLE (schema-v8) 도 적용 필요 — 미적용 시 권한 4종은 모두 허용 (fail-open) 으로 동작.",
+      "📦 cache-buster — `?v=00.141.000`.",
+    ],
+    context: "사용자 요청 두 건 동시 처리 — (1) 게시판별 권한 체크박스 (2) 등급/자동승급 통합 + 저장 버튼. 권한 4종 enforcement 는 schema-v8 미배포 시 fail-open (현재 동작 그대로) 으로 안전. wrangler deploy + d1 migration 은 사용자 승인 필요.",
+  },
+  {
     version: "00.140.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",
