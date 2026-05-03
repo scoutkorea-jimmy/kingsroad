@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.149.000",
+  version: "00.150.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -1345,7 +1345,8 @@ window.BGNJ_COMMUNITY = {
     });
     this.savePosts([nextPost, ...this.listPosts().filter((p) => !p._remote)]);
     if (payload.authorId) {
-      try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
+      // v00.150 — auto-trigger 비활성. 등급 변경은 admin 의 [재산정] 버튼만.
+      if (!window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {} }
     }
     return nextPost;
   },
@@ -1411,13 +1412,15 @@ window.BGNJ_COMMUNITY = {
       this.deletePostRemote(postId).catch(() => {});
       this._serverPosts = this._serverPosts.filter((p) => String(p.id) !== String(postId));
       try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
-      if (authorId) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
+      // v00.150 — auto-trigger 비활성.
+      if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
       return;
     }
     const nextPosts = this.listPosts().filter((post) => String(post.id) !== String(postId));
     this.savePosts(nextPosts.filter((p) => !p._remote));
     // v00.079 — comments 는 서버 D1 의 ON DELETE CASCADE 또는 댓글 endpoint 가 처리. 로컬 정리 불필요.
-    if (authorId) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
+    // v00.150 — auto-trigger 비활성.
+    if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
   },
   incrementViews(postId) {
     const post = this.getPost(postId);
@@ -1453,7 +1456,8 @@ window.BGNJ_COMMUNITY = {
     await window.BGNJ_API.posts.comments.create(postId, { body: payload.body, parentId: payload.parentId });
     await this.refreshComments(postId);
     if (payload.authorId) {
-      try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
+      // v00.150 — auto-trigger 비활성. 등급 변경은 admin 의 [재산정] 버튼만.
+      if (!window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {} }
     }
     return this._commentsCache[String(postId)] || [];
   },
@@ -1471,7 +1475,8 @@ window.BGNJ_COMMUNITY = {
     const nextComments = [...this.getComments(postId), payload];
     this.saveComments(postId, nextComments);
     if (payload.authorId) {
-      try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {}
+      // v00.150 — auto-trigger 비활성. 등급 변경은 admin 의 [재산정] 버튼만.
+      if (!window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch {} }
     }
     return nextComments;
   },
@@ -1486,12 +1491,14 @@ window.BGNJ_COMMUNITY = {
       const arr = this._commentsCache[String(postId)] || [];
       this._commentsCache[String(postId)] = arr.filter((c) => String(c.id) !== String(commentId));
       try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}
-      if (authorId) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
+      // v00.150 — auto-trigger 비활성.
+      if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
       return this._commentsCache[String(postId)];
     }
     const nextComments = allComments.filter((comment) => String(comment.id) !== String(commentId));
     this.saveComments(postId, nextComments);
-    if (authorId) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
+    // v00.150 — auto-trigger 비활성.
+    if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
     return nextComments;
   },
   exportCsv() {
@@ -2573,6 +2580,14 @@ window.BGNJ_VISITS = {
     } catch { return 0; }
   },
 };
+
+// v00.150 — 자동 승급/강등 auto-trigger 전역 OFF. 사용자 보고 '서버 업데이트하면 등급 초기화'.
+// 원인: 매 post/comment 생성·삭제 마다 maybePromote/maybeDemote 가 호출되어
+//   admin 이 manual 로 설정한 등급을 metrics 기준으로 재평가 → 자격 미달이면 자동 demote.
+//   결과: admin manual 할당이 다음 사용자 활동에 의해 reset.
+// 정책: 자동 트리거는 비활성. evaluate / reevaluateAll 은 admin 의 [재산정] 버튼이 명시 호출 시에만.
+//   maybePromote / maybeDemote 은 자동 호출자에서는 noop, [재산정] 내부에서만 직접 호출.
+window.BGNJ_AUTO_GRADE_DISABLED = true;
 
 window.BGNJ_GRADE_PROMO = {
   // 서버 metrics 캐시 (v00.062) — prefetchServerMetrics 또는 fetchServerMetrics 호출 후 채워짐.

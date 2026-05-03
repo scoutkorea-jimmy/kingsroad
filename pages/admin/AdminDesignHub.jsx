@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.150.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🚨 등급 자동 reset 중단 — auto-trigger 전역 OFF + production deploy",
+    details: [
+      "🚨 [HOTFIX 등급 reset] 사용자 보고 '서버 업데이트하면 등급 초기화 그만해라'. 원인: BGNJ_GRADE_PROMO.maybePromote/maybeDemote 가 매 post/comment 생성·삭제 (총 7 사이트) 마다 호출 → admin manual 등급 할당이 metrics 자격 미달 시 자동 demote → 다음 사용자 활동에 reset.",
+      "🩹 BGNJ_AUTO_GRADE_DISABLED = true 전역 플래그. 7개 auto-trigger 사이트 모두 if (!disabled) 가드. 등급 변경은 이제 admin 의 [재산정] 버튼 클릭 시에만 실행 (reevaluateAll 내부의 maybePromote/Demote 직접 호출은 변함 없음).",
+      "🚀 [Production deploy] worker + D1 migration v8 (권한 4종) + v9 (page_views) 일괄 배포. 누적 사이클 v00.141 ~ v00.149 의 모든 서버 측 변경 활성화.",
+      "📦 cache-buster — `?v=00.150.000`.",
+    ],
+    context: "사용자 화남 → 즉시 hotfix. 자동 등급 변경 OFF 가 안전한 default. 필요 시 admin 이 [재산정] 버튼으로 일괄 명시 실행.",
+  },
+  {
     version: "00.149.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",
