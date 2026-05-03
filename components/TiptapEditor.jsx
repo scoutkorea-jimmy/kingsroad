@@ -10,6 +10,8 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
   const editorRef = React.useRef(null);
   const [ready, setReady] = React.useState(Boolean(window.BGNJ_TIPTAP));
   const [, forceRender] = React.useReducer(x => x + 1, 0);
+  // v00.138 — 본문 이미지 R2 업로드 상태. early return 이전에 선언 (Rules of Hooks).
+  const [uploadingImage, setUploadingImage] = React.useState(false);
 
   React.useEffect(() => {
     if (ready) return;
@@ -113,17 +115,26 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
   const can = (fn) => ed && fn(ed);
   const isActive = (name, attrs) => ed?.isActive?.(name, attrs) || false;
 
-  // 본문 내 이미지 삽입 (column preset 전용 — 파일 선택 또는 URL)
+  // 본문 내 이미지 삽입 — v00.138 R2 업로드 사용. 이전엔 FileReader → dataURI base64 인라인이었지만
+  // ① D1 row 가 비대해지고 ② sanitize/transport 비용이 크고 ③ 사용자 보고 "이미지는 파일로 업로드" 요구.
+  // 업로드 실패 시 사용자에게 명시적으로 알림 (silent dataURI 폴백 없음 — 데이터 비대 방지).
   const insertInlineImage = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = () => {
+    input.onchange = async () => {
       const f = input.files?.[0];
       if (!f) return;
-      const r = new FileReader();
-      r.onload = () => ed.chain().focus().setImage({ src: r.result, alt: f.name }).run();
-      r.readAsDataURL(f);
+      const folder = preset === 'column' ? 'column-images' : 'post-images';
+      try {
+        setUploadingImage(true);
+        const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
+        ed.chain().focus().setImage({ src: url, alt: f.name }).run();
+      } catch (err) {
+        try { window.alert('이미지 업로드 실패: ' + (err?.message || err)); } catch {}
+      } finally {
+        setUploadingImage(false);
+      }
     };
     input.click();
   };
@@ -254,7 +265,8 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
           <Btn label="📺 YT" shortcut="YouTube" cmd={addYoutube}/>
           <Btn label="⊞ 표" cmd={insertTable}/>
           {(preset === "column" || preset === "rich") && (
-            <Btn label="🖼 본문 이미지"
+            <Btn label={uploadingImage ? "⏳ 업로드 중…" : "🖼 본문 이미지"}
+              disabled={uploadingImage}
               cmd={insertInlineImage}/>
           )}
         </div>

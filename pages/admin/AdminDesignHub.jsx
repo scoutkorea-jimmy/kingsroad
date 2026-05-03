@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.138.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🚨 [HOTFIX] 칼럼 줄바꿈 손실 root-cause + 본문 이미지 R2 파일 업로드 + 참석/노쇼 인프라",
+    details: [
+      "🚨 [칼럼 줄바꿈 root-cause] saveColumn 이 payload.body.text(평문) 만 D1 저장 → 재편집 시 HTML 포맷·줄바꿈·블록 전부 소실. Tiptap getHTML() 결과를 BGNJ_SAFE_HTML sanitize 후 저장하도록 변경. _toColumn 도 D1 string body 를 HTML 로 인식 (평문 백워드 호환).",
+      "🆕 [본문 이미지 R2 업로드] TiptapEditor insertInlineImage 가 FileReader → dataURI base64 인라인 (D1 row 비대 + transport 비용) 대신 BGNJ_MEDIA.uploadFile → R2 URL 사용. preset='column' → 'column-images' 폴더, 'rich' / 그 외 → 'post-images' (사용자 허용 폴더).",
+      "  · uploadingImage state + 버튼 disabled + '⏳ 업로드 중…' 라벨. 실패 시 alert (silent dataURI 폴백 없음).",
+      "🩹 [책 추가 prompt] addBook 이 placeholder 자동값 대신 window.prompt 로 제목 입력 받음. 빈값 cancel.",
+      "🆕 [참석/노쇼 인프라] BGNJ_LECTURES.markAttended + BGNJ_TOURS.markAttended (PATCH attended 1/0/null). refreshRegistrations / refreshReservations mapper 에 attended 필드 추가. 워커 attended 컬럼은 v00.136 schema-v7 에 이미 있음. 자동 승급 metrics 의 eventsAttended 는 attended=1 만 카운트 (v00.137).",
+      "ℹ 워커 미변경 (deploy 불필요). 본문 이미지 업로드는 기존 /api/media/upload 사용.",
+      "📦 cache-buster — `?v=00.138.000`.",
+    ],
+    context: "사용자 보고 '줄바꿈이 자꾸 사라지고 수정 업로드하면 줄바꿈이 다 사라지네 + 이미지는 파일로 업로드'. 줄바꿈은 saveColumn body.text 추출 root cause — html 로 변경하여 영구 fix. 이미지 업로드는 기존 R2 인프라 활용. 참석/노쇼 toggle UI 자체는 다음 사이클(LectureAdminPanel/TourAdminPanel 행 UI) 로 분리.",
+  },
+  {
     version: "00.134.000",
     date: "2026-05-03",
     datetime: "2026-05-03T16:20:09+09:00",

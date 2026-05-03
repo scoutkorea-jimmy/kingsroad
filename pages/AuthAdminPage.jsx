@@ -2885,14 +2885,17 @@ const BooksAdminPanel = () => {
     reader.readAsDataURL(file);
   });
 
-  // v00.131 — 투어 폼 패턴 (addNewTour) 과 동일 — 인라인 mini-form 제거.
-  // '+ 새 책' 클릭 → 기본값으로 즉시 생성 → 우측 편집 패널이 자동으로 열림.
-  // 사용자 보고 '책 카탈로그에 책 추가가 안된다 + 투어 비슷한 UI'.
+  // v00.138 — '+ 새 책' 클릭 시 prompt 로 제목 입력 → 즉시 생성 + 편집 패널 오픈.
+  // 이전엔 placeholder '새 책 — 제목 입력' 으로 자동 생성되어 사용자가 수정 안 하면
+  // 책 카탈로그에 그대로 노출 (사용자 보고 '제목이 이상하게 반영'). prompt 캔슬 시 생성 안 함.
   const addBook = async () => {
+    let title = '';
+    try { title = (window.prompt('새 책의 제목을 입력하세요:') || '').trim(); } catch { title = ''; }
+    if (!title) return; // 캔슬 또는 빈 값 → 생성 안 함.
     try {
       const created = await window.BGNJ_BOOKS.create({
-        title: '새 책 — 제목 입력',
-        subtitle: '부제',
+        title,
+        subtitle: '',
         author: '뱅기노자',
         publisher: '',
         priceKR: 0,

@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.137.000",
-  build: "2026.05.03",
+  version: "00.138.000",
+  build: "2026.05.02",
   channel: "preview",
 };
 
@@ -1625,7 +1625,8 @@ window.BGNJ_COLUMNS = {
     return {
       id: r.id, authorId: r.author_id, author: r.author_name,
       title: r.title, excerpt: r.excerpt,
-      body: r.body ? (typeof r.body === 'string' ? { text: r.body, html: r.body } : r.body) : null,
+      // v00.138 — D1 의 body 는 HTML (이전엔 평문). 평문 폴백도 호환 (HTML 로 취급해도 Tiptap 문제 없음).
+      body: r.body ? (typeof r.body === 'string' ? { html: r.body, text: r.body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() } : r.body) : null,
       category: r.category, coverUrl: r.cover_url,
       status: r.status || 'published',
       scheduledAt: r.scheduled_at, publishAt: r.scheduled_at,
@@ -1690,9 +1691,13 @@ window.BGNJ_COLUMNS = {
   },
   async saveColumn(payload) {
     const exists = payload.id && this._columns.find((c) => String(c.id) === String(payload.id));
+    // v00.138 — HTML 본문 저장. 이전엔 payload.body.text(평문) 만 저장 → 재편집/재발행 시 줄바꿈/포맷 전부 소실.
+    // 사용자 보고 '줄바꿈이 다 사라지네'. Tiptap 의 getHTML() 결과를 BGNJ_SAFE_HTML 로 sanitize 후 D1 저장.
+    const rawHtml = typeof payload.body === 'object' ? (payload.body?.html || payload.body?.text || '') : (payload.body || '');
+    const safeHtml = window.BGNJ_SAFE_HTML ? window.BGNJ_SAFE_HTML(rawHtml) : rawHtml;
     const body = {
       title: payload.title, excerpt: payload.excerpt,
-      body: typeof payload.body === 'object' ? (payload.body?.text || '') : (payload.body || ''),
+      body: safeHtml,
       category: payload.category, coverUrl: payload.coverUrl,
       status: payload.status, scheduledAt: payload.publishAt || payload.scheduledAt,
       readMinutes: Number(payload.readMinutes || 3),
@@ -1810,6 +1815,7 @@ window.BGNJ_LECTURES = {
         status: r.status, paid: r.status === 'confirmed',
         count: 1, price: r.price || 0,
         createdAt: r.created_at, paidAt: r.paid_at, cancelledAt: r.cancelled_at,
+        attended: r.attended === null || r.attended === undefined ? null : (Number(r.attended) === 1),
       }));
       this._registrationsByLecture[String(lectureId)] = mapped;
       return mapped;
@@ -1864,6 +1870,11 @@ window.BGNJ_LECTURES = {
   },
   async rejectRefund(_lectureId, registrationId, _adminNote) {
     await window.BGNJ_API.lectures.patchRegistration(registrationId, { status: 'confirmed' });
+    await this.refreshMine();
+  },
+  // v00.138 — 참석/노쇼 마킹. attended: true → 1, false → 0, null → 미정. 자동 승급 metrics 의 eventsAttended 는 attended=1 만 카운트.
+  async markAttended(_lectureId, registrationId, attended) {
+    await window.BGNJ_API.lectures.patchRegistration(registrationId, { attended: attended === null ? null : !!attended });
     await this.refreshMine();
   },
   listMyRegistrations(_userId) { return this._myRegs.slice(); },
@@ -2253,6 +2264,7 @@ window.BGNJ_TOURS = {
         status: r.status, paid: r.status === 'confirmed',
         count: r.qty || 1, price: r.price || 0,
         createdAt: r.created_at, paidAt: r.paid_at, cancelledAt: r.cancelled_at,
+        attended: r.attended === null || r.attended === undefined ? null : (Number(r.attended) === 1),
       }));
       this._reservationsByTour[String(tourId)] = mapped;
       return mapped;
@@ -2300,6 +2312,11 @@ window.BGNJ_TOURS = {
   },
   async rejectRefund(_tourId, reservationId, _adminNote) {
     await window.BGNJ_API.tours.patchReservation(reservationId, { status: 'confirmed' });
+    await this.refreshMine();
+  },
+  // v00.138 — 참석/노쇼 마킹.
+  async markAttended(_tourId, reservationId, attended) {
+    await window.BGNJ_API.tours.patchReservation(reservationId, { attended: attended === null ? null : !!attended });
     await this.refreshMine();
   },
   listMyReservations(_userId) { return this._myReservations.slice(); },
