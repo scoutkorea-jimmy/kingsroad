@@ -20,7 +20,8 @@
 > v00.113 까지 보안 audit 잔재 대부분 마무리. 남은 작업은 사용자 수동 (Secrets) 과 nonce 기반 CSP 강화.
 
 - **v00.118 ✅ (코드)** — CSP `'unsafe-inline'` 제거 (script-src 한정). 정적 호스팅 환경에서는 nonce 가 의미 없으므로 SHA-256 해시 방식 채택. tools/csp-hashes.mjs 가 pre-commit 시 자동 동기. style-src 'unsafe-inline' 은 Tiptap 인라인 스타일 의존도 때문에 유지.
-- **v00.119 ✅ (코드)** — legacy `categories` / `grades` / `site_content` deprecation. schema.sql 에 DEPRECATED 마커 + schema-v5.sql 신설(DROP TABLE). 워커 코드는 이미 v00.040+ 부터 _kv 만 사용 중이라 코드 변경 0. 사용자 수동 작업: 별도 인가 후 `wrangler d1 execute --file=schema-v5.sql` 1회.
+- **v00.119 ✅ (코드)** — legacy `categories` / `grades` / `site_content` deprecation. schema.sql 에 DEPRECATED 마커 + schema-v5.sql 신설(DROP TABLE).
+- **v00.123 ✅ (사용자 수동 인가)** — production D1 정리 완료. seed-kv 적용 → categories_kv 5 / grades_kv 6 시드 → schema-v5 DROP → legacy 3 테이블 제거 (28 tables remaining). server-first 정상화.
 
 ## 큐 2 — 워커 배포 의존 (★ wrangler deploy 필요)
 
@@ -45,8 +46,8 @@
 | **★ HTTPS/SSL 인프라 도입** | bgnj.net SSL 활성화 | CONTEXT.md §7.5 가이드 — Cloudflare 대시보드 + GitHub Pages 설정 |
 | **★ Cloudflare Secrets 이관** | SUPER_ADMIN/ADMIN_BOOTSTRAP 평문 노출 제거 | `wrangler secret put SUPER_ADMIN_EMAILS` + `wrangler secret put ADMIN_BOOTSTRAP_EMAIL` 후 wrangler.toml [vars] 에서 두 항목 제거. |
 | **★ schema-v4.sql 적용** | rate limit 활성화 | `cd workers && wrangler d1 execute banginoja-db --remote --file=schema-v4.sql` (1회). |
-| **★ seed-kv.sql 적용** | categories_kv / grades_kv 가 production 에서 비어있어 클라이언트 시드 폴백 의존 | `cd workers && wrangler d1 execute banginoja-db --remote --file=seed-kv.sql` (1회). 멱등 (INSERT OR IGNORE). |
-| **★ schema-v5.sql 적용** | legacy 테이블 잔재 정리 (seed-kv 후) | (위 seed-kv 적용 + 검증 후) `cd workers && wrangler d1 execute banginoja-db --remote --file=schema-v5.sql`. |
+| ✅ ~~seed-kv.sql 적용~~ | (v00.123 완료) categories_kv 5 / grades_kv 6 row 세팅. server-first 정상화. | |
+| ✅ ~~schema-v5.sql 적용~~ | (v00.123 완료) legacy categories / grades / site_content DROP. 28 tables remaining. | |
 
 ---
 

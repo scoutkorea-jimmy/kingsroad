@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.123.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T09:00:10+09:00", // pre-commit stamp.
+    summary: "✅ production D1 정리 완료 — seed-kv 적용 + schema-v5 DROP. server-first 정상화 + legacy 3 테이블 제거",
+    details: [
+      "🌱 [seed-kv 적용] categories_kv 5 row + grades_kv 6 row 세팅 (INSERT OR IGNORE 멱등). 12 changes / 22 rows written.",
+      "🧹 [schema-v5 DROP] legacy `categories` / `grades` / `site_content` 3 테이블 제거. 31 tables → 28 tables (size 405504 → 385024 bytes).",
+      "✅ [server-first 정상화] /api/categories / /api/grades 가 이제 _kv 의 실데이터 반환. boot.jsx:258-279 가 응답으로 BGNJ_STORES 정상 덮어씀 → 클라이언트 시드 의존성 해소.",
+      "✅ [동작 검증] 워커 health OK / /api/categories 5 row / /api/grades 6 row / 라이브 사이트 v00.122 정상 응답 / lint 깨끗 / version 동기.",
+      "ℹ 라이브 사이트 동작 변화 없음 — 클라 시드와 _kv 시드가 동일 데이터라 사용자 가시 차이 0. 단 데이터 정합성/source-of-truth 측면에서 큰 정상화.",
+      "📑 ROADMAP 큐 4 — seed-kv / schema-v5 두 항목 완료 표시.",
+      "📦 cache-buster — `?v=00.123.000` (21곳).",
+    ],
+    context: "v00.122 의 seed-kv.sql 작성을 사용자가 인가 → 두 명령 순차 실행 (seed → DROP). v00.121 진단에서 발견된 _kv empty + legacy 잔재 문제 완전 해소. 큐 4 남은 항목: HTTPS/SSL 인프라 + Cloudflare Secrets 이관 (모두 사용자 환경 작업).",
+  },
+  {
     version: "00.122.000",
     date: "2026-05-03",
     datetime: "2026-05-03T01:32:58+09:00", // pre-commit stamp.
