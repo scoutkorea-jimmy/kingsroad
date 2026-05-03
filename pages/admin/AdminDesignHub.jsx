@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.162.000",
+    date: "2026-05-04",
+    datetime: "2026-05-04T01:03:54+09:00",
+    summary: "✨ 책 카루셀 슬라이드 + 한 줄 소개 (subtitle) + BookPage hero (칼럼 패턴)",
+    details: [
+      "✨ [홈 책 카루셀 슬라이드 느낌] 사용자 보고 '도서 카드 돌아가는 거 슬라이드 느낌으로'. 기존 jump cut → 모든 books 를 absolute layered 로 렌더, active 만 opacity 1 + translateX(0), 비활성은 opacity 0 + ±24px shift. crossfade-slide transition .55s ease. 무한 wrap 시 시각적 jump 없음. 첫 책만 relative 로 wrapper 높이 보존.",
+      "✨ [한 줄 소개] 사용자 요청 '한줄소개가 보이는게'. 책 카드 title 아래 book.subtitle 표시 (serif italic 18px var(--ink-2)). subtitle 미입력 시 자연스럽게 hide.",
+      "✨ [BookPage hero] 사용자 요청 '뱅기노자 도서에도 홈페이지 헤더가' (스크린샷 = 칼럼 페이지 hero). /book 다권 탭 위에 칼럼 패턴 hero 추가 — eyebrow `'BOOKS · 뱅기노자 도서'`, accent `'뱅기노자'`, suffix `'가 짓다'`, subtitle `'한국의 역사와 풍경을, 책으로.'`. site_content_kv.bookIntro 에서 admin 편집 가능 (admin 패널 추가는 다음 사이클).",
+      "✨ [DEFAULT_SITE_CONTENT.bookIntro] 신설. 다른 페이지 intro 와 동일 패턴.",
+      "ℹ admin 사이트 콘텐츠 → bookIntro 편집 항목은 별 사이클에서 추가 (default 로도 즉시 노출).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.162.000`.",
+    ],
+    context: "v00.161 직후 사용자가 책 표면 UX 두 건 (카루셀 슬라이드 + BookPage hero) 동시 지시. 한 사이클로 묶음. 카루셀 한 줄 소개 = book.subtitle 활용. BookPage hero = 칼럼 페이지와 동일 패턴 적용으로 사이트 표면 일관성 강화.",
+  },
+  {
     version: "00.161.000",
     date: "2026-05-04",
     datetime: "2026-05-04T01:00:27+09:00",

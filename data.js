@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.161.000",
+  version: "00.162.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -731,6 +731,14 @@ const DEFAULT_SITE_CONTENT = {
     titlePrefix: '주문 / ',
     titleAccent: '결제',
     subtitle: '',
+  },
+  // v00.162 — BookPage hero. 칼럼 페이지 패턴과 동일.
+  bookIntro: {
+    eyebrow: 'BOOKS · 뱅기노자 도서',
+    titlePrefix: '',
+    titleAccent: '뱅기노자',
+    titleSuffix: '가 짓다',
+    subtitle: '한국의 역사와 풍경을, 책으로.',
   },
   faqIntro: {
     eyebrow: 'FAQ · 자주 묻는 질문',

@@ -155,6 +155,24 @@ const BookPage = ({ go, cart, setCart, user }) => {
   return (
     <div className="section">
       <div className="container">
+        {/* v00.162 — 칼럼 패턴 hero. site_content_kv.bookIntro 에서 admin 편집 가능. */}
+        <div style={{textAlign:'center', marginBottom:48}}>
+          {(() => {
+            const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).bookIntro || {};
+            const eb = _i.eyebrow || 'BOOKS · 뱅기노자 도서';
+            const tp = _i.titlePrefix ?? '';
+            const ta = _i.titleAccent ?? '뱅기노자';
+            const ts = _i.titleSuffix ?? '가 짓다';
+            const sb = _i.subtitle || '한국의 역사와 풍경을, 책으로.';
+            return (
+              <>
+                <div className="section-eyebrow" style={{justifyContent:'center'}}>{eb}</div>
+                <h1 className="section-title">{tp}<span className="accent">{ta}</span>{ts}</h1>
+                <p className="section-subtitle" style={{margin:'16px auto 0'}}>{sb}</p>
+              </>
+            );
+          })()}
+        </div>
         {/* v00.153 — 다권 책 선택 탭. ≥2권일 때만 노출. */}
         {books.length > 1 && (
           <div style={{

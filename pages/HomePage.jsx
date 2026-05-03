@@ -355,11 +355,78 @@ const BookCarouselSection = ({ go, dataTick }) => {
   }, [idx, books.length, paused]);
 
   if (books.length === 0) return null;
-  const cur = books[idx] || books[0];
-  const hasPriceKR = Number(cur.priceKR) > 0;
-  const hasPriceEN = Number(cur.priceEN) > 0;
-  const yr = cur.publishedAt ? new Date(cur.publishedAt).getFullYear() : new Date().getFullYear();
   const showChrome = books.length > 1;
+
+  // v00.162 — 단일 책 카드 렌더 (slide layer 안에서 호출).
+  const renderBookCard = (b) => {
+    const hasPriceKR = Number(b.priceKR) > 0;
+    const hasPriceEN = Number(b.priceEN) > 0;
+    const yr = b.publishedAt ? new Date(b.publishedAt).getFullYear() : new Date().getFullYear();
+    return (
+      <div className="card cta-grid" style={{
+        padding:'72px 60px',
+        display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center',
+        background:'var(--bg-2)', border:'1px solid var(--line)',
+      }}>
+        <div>
+          <div className="section-eyebrow">뱅기노자 출판 · {yr}</div>
+          <h2 style={{
+            fontFamily:'var(--font-serif)', fontSize:'clamp(36px, 4vw, 52px)',
+            fontWeight:600, lineHeight:1.1, marginBottom: b.subtitle ? 8 : 16,
+          }}>
+            『{b.title}』
+          </h2>
+          {/* v00.162 — 한 줄 소개 (subtitle). 사용자 요청 '한줄소개가 보이게'. */}
+          {b.subtitle && (
+            <p style={{
+              fontFamily:'var(--font-serif)', fontSize:18, fontStyle:'italic',
+              color:'var(--ink-2)', marginBottom:20, lineHeight:1.5,
+            }}>
+              {b.subtitle}
+            </p>
+          )}
+          {b.desc && (
+            <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:28, whiteSpace:'pre-wrap'}}>
+              {b.desc}
+            </p>
+          )}
+          {(hasPriceKR || hasPriceEN) && (
+            <div style={{display:'flex', gap:20, marginBottom:32, alignItems:'flex-end'}}>
+              {hasPriceKR && (
+                <div>
+                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>국문판</div>
+                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(b.priceKR).toLocaleString()}원</div>
+                </div>
+              )}
+              {hasPriceKR && hasPriceEN && <div style={{width:1, background:'var(--line-2)', alignSelf:'stretch'}}/>}
+              {hasPriceEN && (
+                <div>
+                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>영문판</div>
+                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(b.priceEN).toLocaleString()}원</div>
+                </div>
+              )}
+            </div>
+          )}
+          <button className="btn btn-gold" onClick={() => go('book')}>구매하기 →</button>
+        </div>
+        <div style={{
+          aspectRatio:'3/4', maxWidth:280, margin:'0 auto',
+          background:'var(--bg)', border:'1px solid var(--line-2)',
+          display:'grid', placeItems:'center', overflow:'hidden',
+        }}>
+          {b.coverDataUri ? (
+            <img src={b.coverDataUri} alt={`${b.title} 표지`}
+              style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+          ) : (
+            <div style={{textAlign:'center', padding:'0 24px'}}>
+              <div style={{fontFamily:'var(--font-serif)', fontSize:28, color:'var(--ink)', marginBottom:10, fontWeight:600}}>{b.title}</div>
+              <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.2em'}}>{b.author || '뱅기노자'} 지음</div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <HomeSectionBoundary label="책 CTA"><section className="section">
@@ -368,58 +435,28 @@ const BookCarouselSection = ({ go, dataTick }) => {
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
           style={{position:'relative'}}>
-          <div className="card cta-grid" style={{
-            padding:'72px 60px',
-            display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center',
-            background:'var(--bg-2)', border:'1px solid var(--line)',
-          }}>
-            <div>
-              <div className="section-eyebrow">뱅기노자 출판 · {yr}</div>
-              <h2 style={{
-                fontFamily:'var(--font-serif)', fontSize:'clamp(36px, 4vw, 52px)',
-                fontWeight:600, lineHeight:1.1, marginBottom:16,
-              }}>
-                『{cur.title}』
-              </h2>
-              {cur.desc && (
-                <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:28, whiteSpace:'pre-wrap'}}>
-                  {cur.desc}
-                </p>
-              )}
-              {(hasPriceKR || hasPriceEN) && (
-                <div style={{display:'flex', gap:20, marginBottom:32, alignItems:'flex-end'}}>
-                  {hasPriceKR && (
-                    <div>
-                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>국문판</div>
-                      <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(cur.priceKR).toLocaleString()}원</div>
-                    </div>
-                  )}
-                  {hasPriceKR && hasPriceEN && <div style={{width:1, background:'var(--line-2)', alignSelf:'stretch'}}/>}
-                  {hasPriceEN && (
-                    <div>
-                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>영문판</div>
-                      <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(cur.priceEN).toLocaleString()}원</div>
-                    </div>
-                  )}
+          {/* v00.162 — 슬라이드 레이어. 모든 books 를 layered 로 렌더, active 만 opacity 1 + translateX 0.
+              jump 없는 부드러운 crossfade-slide. 첫 책만 relative 로 wrapper 높이 보존. */}
+          <div style={{position:'relative'}}>
+            {books.map((b, i) => {
+              const active = i === idx;
+              return (
+                <div key={b.id || i}
+                  aria-hidden={active ? undefined : 'true'}
+                  style={{
+                    position: i === 0 ? 'relative' : 'absolute',
+                    top: 0, left: 0, right: 0,
+                    opacity: active ? 1 : 0,
+                    transform: active
+                      ? 'translateX(0)'
+                      : (i < idx ? 'translateX(-24px)' : 'translateX(24px)'),
+                    transition: 'opacity .55s ease, transform .55s ease',
+                    pointerEvents: active ? 'auto' : 'none',
+                  }}>
+                  {renderBookCard(b)}
                 </div>
-              )}
-              <button className="btn btn-gold" onClick={() => go('book')}>구매하기 →</button>
-            </div>
-            <div style={{
-              aspectRatio:'3/4', maxWidth:280, margin:'0 auto',
-              background:'var(--bg)', border:'1px solid var(--line-2)',
-              display:'grid', placeItems:'center', overflow:'hidden',
-            }}>
-              {cur.coverDataUri ? (
-                <img src={cur.coverDataUri} alt={`${cur.title} 표지`}
-                  style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
-              ) : (
-                <div style={{textAlign:'center', padding:'0 24px'}}>
-                  <div style={{fontFamily:'var(--font-serif)', fontSize:28, color:'var(--ink)', marginBottom:10, fontWeight:600}}>{cur.title}</div>
-                  <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.2em'}}>{cur.author || '뱅기노자'} 지음</div>
-                </div>
-              )}
-            </div>
+              );
+            })}
           </div>
 
           {showChrome && (
