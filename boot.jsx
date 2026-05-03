@@ -352,6 +352,12 @@ const App = () => {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
+  // v00.148 — 페이지뷰 익명 트래킹. route 변경 시마다 BGNJ_ANALYTICS.track 호출.
+  // sendBeacon 우선 + silent fail (분석은 사용자 영향 없음).
+  React.useEffect(() => {
+    try { window.BGNJ_ANALYTICS?.track?.(route); } catch {}
+  }, [route]);
+
   // 라우트별 document.title — 북마크 / 공유 / 탭 라벨 의미화.
   // 사이트 콘텐츠(브랜드명/OG)도 변경 시 같이 갱신.
   React.useEffect(() => {

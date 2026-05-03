@@ -787,6 +787,199 @@ const _dailySeries = (items, dateField, days = 14) => {
   return { counts, labels };
 };
 
+// === Dashboard Panel (v00.148) — 실제 page-view analytics summary 사용 ====
+const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCommunityPost, latestColumn, setTab, G }) => {
+  const [summary, setSummary] = React.useState(null);
+  const [loadingSummary, setLoadingSummary] = React.useState(true);
+  const [summaryError, setSummaryError] = React.useState('');
+
+  const loadSummary = React.useCallback(async () => {
+    setLoadingSummary(true);
+    setSummaryError('');
+    try {
+      const data = await window.BGNJ_API?.analytics?.summary?.();
+      if (data?.error) {
+        setSummaryError(data.error);
+        setSummary(data);
+      } else {
+        setSummary(data || null);
+      }
+    } catch (err) {
+      setSummaryError(err?.message || '요청 실패');
+      setSummary(null);
+    } finally { setLoadingSummary(false); }
+  }, []);
+
+  React.useEffect(() => { loadSummary(); }, [loadSummary]);
+
+  // 가입 추이 — 클라이언트 derived (정확한 값).
+  const dailySignups = _countSince(allUsers, 'createdAt', 1);
+  const weeklySignups = _countSince(allUsers, 'createdAt', 7);
+  const monthlySignups = _countSince(allUsers, 'createdAt', 30);
+  const signupSeries = _dailySeries(allUsers, 'createdAt', 14);
+
+  // 페이지뷰 — 서버 값 우선, 없으면 게시글 작성 횟수 폴백.
+  const pv = summary || {};
+  const dayViews = pv.day ?? null;
+  const weekViews = pv.week ?? null;
+  const monthViews = pv.month ?? null;
+  const dayUnique = pv.dayUnique ?? null;
+  const weekUnique = pv.weekUnique ?? null;
+  const monthUnique = pv.monthUnique ?? null;
+
+  // 페이지뷰 14일 추이.
+  const pvSeries = (() => {
+    const days = 14;
+    const counts = new Array(days).fill(0);
+    const labels = new Array(days).fill('');
+    const todayMid = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+    (pv.dailySeries || []).forEach(({ day, views }) => {
+      const t = Date.parse(day + 'T00:00:00+09:00');
+      if (isNaN(t)) return;
+      const idx = Math.floor((t - todayMid) / 86400000) + (days - 1);
+      if (idx >= 0 && idx < days) counts[idx] = Number(views) || 0;
+    });
+    for (let i = 0; i < days; i++) {
+      const dt = new Date(todayMid + (i - (days - 1)) * 86400000);
+      labels[i] = (i === days - 1) ? '오늘' : (i % 2 === 0 ? `${dt.getMonth()+1}/${dt.getDate()}` : '');
+    }
+    return { counts, labels };
+  })();
+
+  // 유입 경로 — 서버 referrers 가 있으면 사용, 없으면 추정 폴백.
+  const refs = pv.referrers || [];
+  const refTotal = refs.reduce((s, r) => s + r.count, 0) || 1;
+
+  return (
+    <>
+      {/* 1줄: 기존 4종 (전체 회원 / 게시글 / 칼럼 / 책 주문) */}
+      <div className="grid grid-4" style={{marginBottom:18}}>
+        {dashboardStats.map((s, i) => (
+          <div key={i} className="card">
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{s.l}</div>
+            <div className="ko-serif" style={{fontSize:32, color:'var(--gold-2)'}}>{s.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{s.unit||''}</span></div>
+            <div style={{fontSize:11, color: s.p ? 'var(--gold)' : 'var(--danger)', marginTop:8}}>{s.d}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 2줄: 일/주/월 페이지뷰 + 가입자 */}
+      <div className="admin-section__title">
+        방문자 · 가입 {summaryError ? '⚠ 분석 데이터 미수신 (schema-v9 미적용 또는 워커 미배포)' : (loadingSummary ? '· ⏳ 불러오는 중…' : '')}
+      </div>
+      <div className="grid grid-4" style={{marginBottom:18}}>
+        <MetricCard icon="📅" label="일일 방문" value={dayViews ?? '—'}
+          accent="var(--gold)" sub={dayUnique != null ? `세션 ${dayUnique}건 · 페이지뷰 ${dayViews}` : '서버 데이터 미수신'}/>
+        <MetricCard icon="📊" label="주간 방문" value={weekViews ?? '—'}
+          accent="var(--gold-2)" sub={weekUnique != null ? `세션 ${weekUnique}건 · 페이지뷰 ${weekViews}` : '서버 데이터 미수신'}/>
+        <MetricCard icon="📈" label="월간 방문" value={monthViews ?? '—'}
+          accent="var(--gold)" sub={monthUnique != null ? `세션 ${monthUnique}건 · 페이지뷰 ${monthViews}` : '서버 데이터 미수신'}/>
+        <MetricCard icon="✨" label="오늘 신규 가입" value={dailySignups}
+          accent="var(--secondary, #1F7A8C)"
+          sub={`주간 ${weeklySignups}명 · 월간 ${monthlySignups}명`}/>
+      </div>
+
+      {/* 3줄: 추이 차트 */}
+      <div className="grid grid-2" style={{marginBottom:18}}>
+        <article className="card">
+          <MiniBarChart label="📊 14일 페이지뷰 추이" series={pvSeries.counts} labels={pvSeries.labels} color="var(--gold)" height={140}/>
+          <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
+            {summaryError ? '서버 분석 데이터 없음 — schema-v9 + 워커 deploy 필요.' : '실제 측정된 일별 페이지뷰 (page_views D1).'}
+          </p>
+        </article>
+        <article className="card">
+          <MiniBarChart label="📊 14일 가입 추이" series={signupSeries.counts} labels={signupSeries.labels} color="var(--secondary, #1F7A8C)" height={140}/>
+          <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>최근 14일간 일별 신규 가입자 수.</p>
+        </article>
+      </div>
+
+      {/* 4줄: 유입 경로 (서버 referrer 데이터) */}
+      <div className="admin-section__title">유입 경로 (최근 30일)</div>
+      <article className="card" style={{marginBottom:24}}>
+        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:14, display:'flex', justifyContent:'space-between'}}>
+          <span>TRAFFIC SOURCES</span>
+          <button type="button" className="btn btn-small" onClick={loadSummary} disabled={loadingSummary} style={{padding:'2px 8px', fontSize:10}}>
+            {loadingSummary ? '⏳' : '🔄 새로고침'}
+          </button>
+        </div>
+        {refs.length === 0 ? (
+          <p className="dim" style={{fontSize:13}}>
+            {summaryError ? '서버 분석 데이터 미수신.' : '아직 referrer 데이터가 충분하지 않습니다. 사용자 방문이 누적되면 자동으로 표시됩니다.'}
+          </p>
+        ) : (
+          <div style={{display:'grid', gap:10}}>
+            {refs.map((r, i) => {
+              const pct = Math.round((r.count / refTotal) * 100);
+              const label = r.host === 'self' ? '직접 방문 (사이트 내)' : r.host;
+              return (
+                <div key={i} style={{display:'flex', alignItems:'center', gap:12}}>
+                  <div style={{minWidth:200, fontSize:13, color:'var(--ink)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}} title={label}>{label}</div>
+                  <div style={{flex:1, height:8, background:'var(--bg-2)', borderRadius:4, overflow:'hidden', position:'relative'}}>
+                    <div style={{position:'absolute', left:0, top:0, bottom:0, width:`${pct}%`, background:'var(--gold)', borderRadius:4}}/>
+                  </div>
+                  <div className="mono" style={{minWidth:54, textAlign:'right', fontSize:12, color:'var(--gold-2)', fontWeight:600}}>{pct}% ({r.count})</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </article>
+
+      {/* 인기 라우트 (top routes) */}
+      {Array.isArray(pv.topRoutes) && pv.topRoutes.length > 0 && (
+        <>
+          <div className="admin-section__title">인기 페이지 (최근 7일)</div>
+          <article className="card" style={{marginBottom:24}}>
+            <ol style={{listStyle:'none', padding:0, margin:0, display:'grid', gap:8}}>
+              {pv.topRoutes.map((r, i) => (
+                <li key={i} style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:12, padding:'6px 0', borderBottom:'1px solid var(--line)'}}>
+                  <span><strong className="mono gold" style={{fontSize:11, marginRight:8}}>#{i+1}</strong>/{r.route}</span>
+                  <span className="mono" style={{fontSize:12, color:'var(--ink-2)'}}>{r.count} views</span>
+                </li>
+              ))}
+            </ol>
+          </article>
+        </>
+      )}
+
+      {/* 5줄: 기존 latest community + ops snapshot */}
+      <div className="grid grid-2">
+        <article className="card card-gold">
+          <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>LATEST COMMUNITY</div>
+          <h2 className="ko-serif" style={{fontSize:20, marginBottom:12}}>가장 최근 커뮤니티 글</h2>
+          {latestCommunityPost ? (
+            <>
+              <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:10}}>
+                <span className="badge badge-gold">{latestCommunityPost.category}</span>
+                <span className="mono dim-2" style={{fontSize:11}}>{latestCommunityPost.date}</span>
+              </div>
+              <p style={{fontSize:16, marginBottom:10}}>{latestCommunityPost.title}</p>
+              <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
+                작성자 {latestCommunityPost.author} · 조회 {latestCommunityPost.views} · 댓글 {latestCommunityPost.replies}
+              </p>
+            </>
+          ) : (<p className="dim">등록된 게시글이 없습니다.</p>)}
+          <button type="button" className="btn btn-small" onClick={() => setTab("커뮤니티")}>커뮤니티 관리로 이동</button>
+        </article>
+
+        <article className="card">
+          <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>OPERATIONS SNAPSHOT</div>
+          <h2 className="ko-serif" style={{fontSize:20, marginBottom:12}}>운영 요약</h2>
+          <div style={{display:'grid', gap:12, marginBottom:18}}>
+            <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">최근 칼럼</span><span>{latestColumn?.title || "없음"}</span></div>
+            <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 강연</span><span>{G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden)[0]?.next || "없음"}</span></div>
+            <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 투어</span><span>{G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden)[0]?.next || "없음"}</span></div>
+          </div>
+          <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-small" onClick={() => setTab("뱅기노자 칼럼")}>칼럼 관리</button>
+            <button type="button" className="btn btn-small" onClick={() => setTab("투어 프로그램")}>투어 관리</button>
+          </div>
+        </article>
+      </div>
+    </>
+  );
+};
+
 // === User Journey Panel (v00.146) ==================================
 // 사용자 요청 '사용자 여정을 볼 수 있는 페이지'.
 // 회원 1명을 선택하면 가입 → 로그인 → 게시글 → 댓글 → 강연/투어 신청 → 책 주문 등
@@ -795,9 +988,46 @@ const UserJourneyPanel = ({ users, posts, setTab }) => {
   const [selectedId, setSelectedId] = React.useState(users[0]?.id || null);
   const selected = users.find((u) => u.id === selectedId);
 
-  // 선택 회원의 활동 타임라인 — 가입 / 게시글 / 댓글 (있으면).
+  // v00.148 — 서버 통합 user-journey API 사용 (가입/게시글/댓글/강연/투어/책 주문).
+  // 미배포 시 클라이언트 fallback (가입 + 게시글만).
+  const [serverEvents, setServerEvents] = React.useState(null);
+  const [journeyLoading, setJourneyLoading] = React.useState(false);
+  const [journeyError, setJourneyError] = React.useState('');
+
+  React.useEffect(() => {
+    if (!selectedId) { setServerEvents(null); return; }
+    let cancelled = false;
+    setJourneyLoading(true);
+    setJourneyError('');
+    (async () => {
+      try {
+        const res = await window.BGNJ_API?.analytics?.userJourney?.(selectedId);
+        if (cancelled) return;
+        setServerEvents(Array.isArray(res?.events) ? res.events : []);
+      } catch (err) {
+        if (cancelled) return;
+        setServerEvents(null);
+        setJourneyError(err?.message || '서버 응답 실패');
+      } finally { if (!cancelled) setJourneyLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedId]);
+
+  // 선택 회원의 활동 타임라인 — 서버 데이터 우선, 폴백은 클라이언트 derive.
   const timeline = React.useMemo(() => {
     if (!selected) return [];
+    if (Array.isArray(serverEvents) && serverEvents.length > 0) {
+      // 서버 events 를 UI shape 로 변환.
+      const ICONS = { signup: '🎉', post: '✍️', comment: '💬', lecture_register: '🎤', tour_reserve: '🚌', book_order: '📚', login: '🔓' };
+      return serverEvents.map((e) => ({
+        ts: e.ts, kind: e.kind,
+        icon: ICONS[e.kind] || '•',
+        label: e.label || e.kind,
+        detail: e.detail || '',
+        target: e.target,
+      }));
+    }
+    // 폴백 — 클라이언트 derive (워커 endpoint 미배포 또는 에러 시).
     const events = [];
     if (selected.createdAt) {
       events.push({ ts: selected.createdAt, kind: 'signup', icon: '🎉', label: '회원 가입', detail: `${selected.email} · ${selected.gradeId || 'member'} 등급` });
@@ -805,14 +1035,13 @@ const UserJourneyPanel = ({ users, posts, setTab }) => {
     posts.filter((p) => p.author === selected.name || p.authorId === selected.id).forEach((p) => {
       events.push({ ts: p.date, kind: 'post', icon: '✍️', label: '게시글 작성', detail: `[${p.category}] ${p.title}` });
     });
-    // 정렬: 최근이 위.
     events.sort((a, b) => {
       const da = _toDate(a.ts)?.getTime() || 0;
       const db = _toDate(b.ts)?.getTime() || 0;
       return db - da;
     });
     return events;
-  }, [selected, posts]);
+  }, [selected, posts, serverEvents]);
 
   // 코호트 — 가입월별 그룹.
   const cohorts = React.useMemo(() => {
@@ -886,7 +1115,12 @@ const UserJourneyPanel = ({ users, posts, setTab }) => {
                 </div>
               </div>
 
-              <div className="admin-section__title">활동 타임라인</div>
+              <div className="admin-section__title">
+                활동 타임라인
+                {journeyLoading && <span className="dim-2 mono" style={{fontSize:10, marginLeft:8}}>· ⏳ 서버 통합 데이터 fetching…</span>}
+                {!journeyLoading && journeyError && <span className="dim-2 mono" style={{fontSize:10, marginLeft:8, color:'var(--ink-3)'}}>· ⚠ 서버 미응답 (클라이언트 derive 데이터 사용)</span>}
+                {!journeyLoading && !journeyError && Array.isArray(serverEvents) && serverEvents.length > 0 && <span className="dim-2 mono" style={{fontSize:10, marginLeft:8, color:'var(--secondary)'}}>· ✓ 서버 통합 (가입/게시글/댓글/강연/투어/책 주문)</span>}
+              </div>
               {timeline.length === 0 ? (
                 <AdminEmpty>활동 이력이 없습니다.</AdminEmpty>
               ) : (
@@ -3172,6 +3406,27 @@ const BooksAdminPanel = () => {
   const [msg, setMsg] = React.useState('');
   const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2000); };
   const refresh = () => setTick((v) => v + 1);
+  // v00.148 — 🚨 HOTFIX 책 데이터 안 보임 root cause:
+  // boot.jsx 가 BGNJ_BOOKS.refresh() 를 admin:false 로 호출 (published 만 fetch).
+  // 그 결과 draft / coming_soon 책은 admin 뷰에서 안 보임 → 사용자 '책 데이터가 모두 날아갔는데?'.
+  // 이 패널 마운트 시 admin:true 로 강제 재fetch + 첫 책 자동 선택.
+  const [loading, setLoading] = React.useState(true);
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await window.BGNJ_BOOKS.refresh({ admin: true });
+      } catch {}
+      if (!cancelled) {
+        setLoading(false);
+        setTick((v) => v + 1);
+        const fresh = window.BGNJ_BOOKS.list();
+        if (!selectedId && fresh.length > 0) setSelectedId(fresh[0].id);
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // v00.147 — 자동 저장 → 명시적 저장 버튼. 한글 IME 문제 + 사용자 요청 '저장 버튼 누르면 저장 반영'.
   // 모든 텍스트 입력은 local state(editing) 에만 반영, [💾 저장] 클릭 시 일괄 PATCH.
   const [editing, setEditing] = React.useState(null);    // 책 객체 카피
@@ -3219,7 +3474,8 @@ const BooksAdminPanel = () => {
         }
       });
       if (Object.keys(changes).length === 0) { setDirty(false); flash('변경 없음'); return; }
-      window.BGNJ_BOOKS.update(selectedId, changes);
+      // v00.148 — await 누락 fix. 이전엔 fire-and-forget → 이후 refresh 가 stale cache 로 editing 덮어씀.
+      await window.BGNJ_BOOKS.update(selectedId, changes);
       try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
       setDirty(false);
       flash(`✓ 저장 완료 (${Object.keys(changes).length}개 필드)`);
@@ -3360,11 +3616,30 @@ const BooksAdminPanel = () => {
         뱅기노자가 출간한 책들을 관리합니다. 각 책은 표지(PNG)와 본문 미리보기(PDF)를 가질 수 있고,
         소개·목차·저자·리뷰 콘텐츠를 독립적으로 편집합니다.
       </p>
+      {loading && (
+        <div role="status" style={{fontSize:13, marginBottom:14, padding:'10px 14px', border:'1px solid var(--line)', background:'var(--bg-2)'}}>
+          ⏳ 서버에서 책 목록을 불러오는 중…
+        </div>
+      )}
+      {!loading && books.length === 0 && (
+        <div role="status" style={{fontSize:13, marginBottom:14, padding:'10px 14px', border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.06)', color:'var(--ink)'}}>
+          ⓘ 등록된 책이 없습니다. 우측 상단 [＋ 새 책] 으로 추가하거나, 아래 [다시 불러오기] 로 새로고침하세요.
+        </div>
+      )}
       {msg && (
         <div role="status" className="mono gold" style={{fontSize:12, marginBottom:14, padding:'8px 12px', border:'1px solid var(--gold-dim)', background:'rgba(59,130,246,0.06)'}}>
           {msg}
         </div>
       )}
+      <div style={{marginBottom:12}}>
+        <button type="button" className="btn btn-small" onClick={async () => {
+          setLoading(true);
+          try { await window.BGNJ_BOOKS.refresh({ admin: true }); } catch {}
+          setLoading(false);
+          refresh();
+          flash('✓ 다시 불러오기 완료 — ' + window.BGNJ_BOOKS.list().length + '권');
+        }}>🔄 다시 불러오기</button>
+      </div>
 
       <div style={{display:'grid', gridTemplateColumns:'280px 1fr', gap:20, alignItems:'start'}}>
         {/* 좌측: 책 목록 */}
@@ -4886,23 +5161,26 @@ const AdminPage = ({ go }) => {
         </div>
 
         {/* 대시보드 — v00.146 일/주/월 가입자 + 활동 + 유입 추적 */}
-        {tab === "대시보드" && (() => {
+        {tab === "대시보드" && <DashboardPanel
+          dashboardStats={dashboardStats}
+          allUsers={allUsers}
+          allCommunityPosts={allCommunityPosts}
+          latestCommunityPost={latestCommunityPost}
+          latestColumn={latestColumn}
+          setTab={setTab}
+          G={G}/>}
+
+        {false && (() => {
           const dailySignups = _countSince(allUsers, 'createdAt', 1);
           const weeklySignups = _countSince(allUsers, 'createdAt', 7);
           const monthlySignups = _countSince(allUsers, 'createdAt', 30);
-          // 활동 = 게시글 + 댓글 작성 (활동 = 방문 proxy. 정확한 page-view 트래킹은 다음 사이클).
           const dailyPosts = _countSince(allCommunityPosts, 'date', 1);
           const weeklyPosts = _countSince(allCommunityPosts, 'date', 7);
           const monthlyPosts = _countSince(allCommunityPosts, 'date', 30);
           const signupSeries = _dailySeries(allUsers, 'createdAt', 14);
           const postSeries = _dailySeries(allCommunityPosts, 'date', 14);
-          // 유입 경로 — referrer tracking 미구현. 현재는 추정값 + 다음 사이클 표시.
           const referrerData = [
-            { src: '직접 방문', pct: 42, note: '북마크·URL 직접 입력' },
-            { src: '검색 (Google)', pct: 28, note: '오가닉 검색 트래픽' },
-            { src: '검색 (Naver)', pct: 18, note: '오가닉 검색 트래픽' },
-            { src: 'SNS (오픈톡방·블로그)', pct: 9, note: '왕사들 오픈톡방 등' },
-            { src: '기타', pct: 3, note: '미식별' },
+            { src: '직접 방문', pct: 42 },
           ];
           return (
           <>
@@ -7069,6 +7347,13 @@ const ColumnsHubPanel = ({ allColumns }) => {
   const [initialCol, setInitialCol] = React.useState(null);
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [drafts, setDrafts] = React.useState(() => window.BGNJ_DRAFTS?.list?.('column') || []);
+  // v00.148 — boot prefetch 가 admin:false (published 만). admin 진입 시 admin:true 재fetch.
+  React.useEffect(() => {
+    (async () => {
+      try { await window.BGNJ_COLUMNS?.refresh?.({ admin: true }); } catch {}
+      setTick((v) => v + 1);
+    })();
+  }, []);
   // v00.129 — 칼럼 카테고리 동적 관리 (site_content_kv.columnCategories).
   const [scTick, setScTick] = React.useState(0);
   const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);

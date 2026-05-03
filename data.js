@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.147.000",
+  version: "00.148.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -341,6 +341,48 @@ window.BGNJ_BROADCAST = (() => {
     };
   };
   return { publish, subscribe };
+})();
+
+// === BGNJ_ANALYTICS — page-view 익명 트래킹 (v00.148) ====================
+// 사용: BGNJ_ANALYTICS.track(route) — boot.jsx 의 route 변경 시 호출.
+// sessionId 는 sessionStorage 에 1회 생성 (탭 단위). userId 는 로그인 시 채움.
+// sendBeacon 우선 — fetch 실패해도 silent (분석은 사용자 영향 없음).
+window.BGNJ_ANALYTICS = (() => {
+  const SESSION_KEY = 'bgnj_session_id';
+  let sessionId = null;
+  try {
+    sessionId = sessionStorage.getItem(SESSION_KEY);
+    if (!sessionId) {
+      sessionId = 'sess-' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+      sessionStorage.setItem(SESSION_KEY, sessionId);
+    }
+  } catch {}
+  let lastTracked = null;
+  const track = (route) => {
+    // route 가 같으면 dedupe (React StrictMode 또는 setRoute 중복 호출 방지).
+    if (route === lastTracked) return;
+    lastTracked = route;
+    const userId = (window.BGNJ_AUTH?.currentUser?.()?.id) || null;
+    const payload = {
+      route: String(route || 'unknown'),
+      sessionId,
+      userId,
+      referrer: (document.referrer || ''),
+    };
+    try {
+      // sendBeacon 우선 — 페이지 unload 시점 안전.
+      const apiBase = window.BGNJ_API_BASE || '';
+      const url = apiBase + '/analytics/page-view';
+      if (navigator.sendBeacon && apiBase) {
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        const ok = navigator.sendBeacon(url, blob);
+        if (ok) return;
+      }
+      // 폴백 — fetch (silent, no await).
+      window.BGNJ_API?.analytics?.track?.(payload)?.catch?.(() => {});
+    } catch {}
+  };
+  return { track, sessionId: () => sessionId };
 })();
 
 // === BGNJ_FMT — KST 기반 날짜·시간 포맷 헬퍼 (v00.107) ====================

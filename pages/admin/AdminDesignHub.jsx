@@ -4,6 +4,27 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.148.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🚨 책 데이터 안 보임 HOTFIX + page-view 분석 인프라 + 사용자 여정 서버 통합",
+    details: [
+      "🚨 [HOTFIX 책 데이터] 사용자 보고 '책 카탈로그 가니까 저장된 책 데이터가 모두 날아갔는데?'. 원인: boot.jsx 의 BGNJ_BOOKS.refresh() 가 admin:false 로 호출 → published 책만 fetch → draft 책은 admin 뷰에서 안 보임. 데이터 손실 아님 (D1 안전).",
+      "🩹 BooksAdminPanel mount 시 BGNJ_BOOKS.refresh({ admin: true }) 강제 호출 + loading state + 빈 목록 시 안내 + [🔄 다시 불러오기] 버튼.",
+      "🩹 ColumnsHubPanel 도 동일 pattern (admin:true 재fetch on mount).",
+      "🩹 BooksAdminPanel commit() — await 누락 fix. 이전엔 fire-and-forget → refresh 가 stale cache 로 editing 덮어씀.",
+      "🆕 [page-view 분석 인프라] schema-v9.page_views (id/route/ts/session_id/user_id/referrer_host/user_agent/ip_hash). 30일 retention GC. 익명 트래킹 — userId 옵션, IP 는 SHA-256 hash 만, referrer host 만 저장.",
+      "🆕 워커 3 endpoints: POST /api/analytics/page-view (anon), GET /api/analytics/summary (admin — day/week/month + 14일 series + referrers + topRoutes), GET /api/admin/user-journey/:id (admin — 가입+게시글+댓글+강연+투어+책주문 통합).",
+      "🆕 BGNJ_ANALYTICS 클라이언트 헬퍼 — sessionStorage UUID + sendBeacon 우선 + silent fail. boot.jsx route 변경 useEffect 마다 track 호출.",
+      "🆕 [DashboardPanel] 실제 summary API 사용 — 일/주/월 페이지뷰 + unique 세션 + 14일 페이지뷰 추이 + 30일 referrer 분포 + 7일 인기 라우트. summary 미응답 시 명시 안내 + 폴백 (가입 추이는 항상 클라이언트 정확값).",
+      "🆕 [UserJourneyPanel 서버 통합] selectedId 변경 시 /api/admin/user-journey/:id fetch → 가입/게시글/댓글/강연/투어/책 주문 통합 타임라인. 서버 미배포 시 기존 클라이언트 derive 폴백 + 상단에 데이터 출처 표시 (서버 통합 ✓ vs 클라이언트 ⚠).",
+      "ℹ ★ 워커 deploy 필수 — 3개 신 endpoint + handlePostsCreate notice 강제 (v00.146 잔여) + 권한 4종 (v00.141 잔여) 누적.",
+      "ℹ ★ D1 schema-v9 ALTER 필수 — page_views 테이블 추가. 미적용 시 page-view 트래킹은 silent fail (사용자 영향 없음, 분석 데이터만 누락).",
+      "📦 cache-buster — `?v=00.148.000`.",
+    ],
+    context: "사용자 '진행 모두 다 승인' → 전 사이클 deferred 인프라 일괄 처리. 동시에 책 카탈로그 데이터 안 보임 보고 즉시 hotfix (다른 admin 패널에도 같은 patten 잠재 — 다음 사이클에 lecture/tour/grade 도 점검).",
+  },
+  {
     version: "00.147.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",

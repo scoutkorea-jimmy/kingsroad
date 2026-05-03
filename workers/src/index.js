@@ -696,6 +696,129 @@ const handleMediaGet = async (req, env, key) => {
   return new Response(obj.body, { headers });
 };
 
+// ──────── Page-view 분석 (v00.148) ────────────────────────────────
+// schema-v9.page_views — 익명 방문 측정 (referrer / route / session).
+// 정책: ① 인증 불요 (익명) ② IP hash 만 저장 ③ 30일 retention ④ referrer host 만.
+
+const PAGE_VIEWS_RETENTION_MS = 30 * 24 * 3600 * 1000;
+
+// SHA-256 으로 IP 익명화 (개인정보 최소화).
+const _hashIp = async (ip) => {
+  if (!ip) return null;
+  try {
+    const buf = new TextEncoder().encode(ip + ':bgnj-salt');
+    const h = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(h)).slice(0, 8).map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch { return null; }
+};
+
+// referrer URL → host (개인정보 + URL 길이 줄임). bgnj.net 자체는 'self' 로.
+const _refHost = (ref, currentOrigin) => {
+  if (!ref) return null;
+  try {
+    const u = new URL(ref);
+    if (currentOrigin && u.origin === currentOrigin) return 'self';
+    return u.host;
+  } catch { return null; }
+};
+
+const handlePageViewTrack = async (req, env) => {
+  const body = await req.json().catch(() => ({}));
+  const route = String(body.route || 'unknown').slice(0, 80);
+  const sessionId = String(body.sessionId || '').slice(0, 64) || null;
+  const userId = String(body.userId || '').slice(0, 64) || null;
+  const ua = (req.headers.get('user-agent') || '').slice(0, 200);
+  const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || '';
+  const ipHash = await _hashIp(ip);
+  const ref = _refHost(body.referrer || req.headers.get('referer') || '', new URL(req.url).origin);
+  try {
+    await env.DB.prepare(
+      `INSERT INTO page_views (route, ts, session_id, user_id, referrer_host, user_agent, ip_hash) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).bind(route, nowIso(), sessionId, userId, ref, ua, ipHash).run();
+  } catch (err) {
+    // schema-v9 미적용 환경 — silent fail (분석 누락이지 사용자 영향 없음).
+    return { ok: false, note: 'schema-v9 not applied' };
+  }
+  // GC: 1/100 확률로 30일 이전 row 삭제.
+  if (Math.random() < 0.01) {
+    try {
+      const cutoff = new Date(Date.now() - PAGE_VIEWS_RETENTION_MS).toISOString();
+      await env.DB.prepare("DELETE FROM page_views WHERE ts < ?").bind(cutoff).run();
+    } catch {}
+  }
+  return { ok: true };
+};
+
+const handleAnalyticsSummary = async (req, env) => {
+  await requireAdmin(req, env);
+  const dayMs = 86400 * 1000;
+  const now = Date.now();
+  const isoCutoff = (days) => new Date(now - days * dayMs).toISOString();
+  // 일/주/월 page-view 수.
+  let summary = { day: 0, week: 0, month: 0, dayUnique: 0, weekUnique: 0, monthUnique: 0, dailySeries: [], referrers: [], topRoutes: [] };
+  try {
+    const day1 = await env.DB.prepare("SELECT COUNT(*) AS c, COUNT(DISTINCT session_id) AS u FROM page_views WHERE ts >= ?").bind(isoCutoff(1)).first();
+    const day7 = await env.DB.prepare("SELECT COUNT(*) AS c, COUNT(DISTINCT session_id) AS u FROM page_views WHERE ts >= ?").bind(isoCutoff(7)).first();
+    const day30 = await env.DB.prepare("SELECT COUNT(*) AS c, COUNT(DISTINCT session_id) AS u FROM page_views WHERE ts >= ?").bind(isoCutoff(30)).first();
+    summary.day = Number(day1?.c || 0); summary.dayUnique = Number(day1?.u || 0);
+    summary.week = Number(day7?.c || 0); summary.weekUnique = Number(day7?.u || 0);
+    summary.month = Number(day30?.c || 0); summary.monthUnique = Number(day30?.u || 0);
+    // 14일 일별 시리즈.
+    const series = await env.DB.prepare(
+      "SELECT substr(ts, 1, 10) AS day, COUNT(*) AS views, COUNT(DISTINCT session_id) AS uniq FROM page_views WHERE ts >= ? GROUP BY day ORDER BY day ASC"
+    ).bind(isoCutoff(14)).all();
+    summary.dailySeries = (series.results || []).map((r) => ({ day: r.day, views: Number(r.views), uniq: Number(r.uniq) }));
+    // referrer 분포 (최근 30일).
+    const refs = await env.DB.prepare(
+      "SELECT COALESCE(referrer_host, '직접 방문') AS host, COUNT(*) AS c FROM page_views WHERE ts >= ? GROUP BY host ORDER BY c DESC LIMIT 10"
+    ).bind(isoCutoff(30)).all();
+    summary.referrers = (refs.results || []).map((r) => ({ host: r.host, count: Number(r.c) }));
+    // top routes (최근 7일).
+    const routes = await env.DB.prepare(
+      "SELECT route, COUNT(*) AS c FROM page_views WHERE ts >= ? GROUP BY route ORDER BY c DESC LIMIT 10"
+    ).bind(isoCutoff(7)).all();
+    summary.topRoutes = (routes.results || []).map((r) => ({ route: r.route, count: Number(r.c) }));
+  } catch (err) {
+    return { ...summary, error: 'schema-v9 not applied or query failed', detail: err?.message || '' };
+  }
+  return summary;
+};
+
+// === 사용자 여정 (v00.148) — 한 회원의 가입/게시글/댓글/신청/주문/로그인 통합 타임라인.
+const handleUserJourney = async (req, env, userId) => {
+  await requireAdmin(req, env);
+  const events = [];
+  const safe = async (sql, args = []) => {
+    try { const r = await env.DB.prepare(sql).bind(...args).all(); return r.results || []; }
+    catch { return []; }
+  };
+  // 가입.
+  const userRow = await env.DB.prepare("SELECT id, email, name, created_at, grade_id, is_admin FROM users WHERE id = ?").bind(userId).first();
+  if (!userRow) throw new HttpError(404, "회원을 찾을 수 없습니다.");
+  events.push({ kind: 'signup', ts: userRow.created_at, label: '회원 가입', detail: `${userRow.email} · ${userRow.grade_id || 'member'} 등급` });
+  // 게시글.
+  const posts = await safe("SELECT id, title, category, created_at FROM posts WHERE author_id = ? ORDER BY created_at DESC LIMIT 100", [userId]);
+  posts.forEach((p) => events.push({ kind: 'post', ts: p.created_at, label: '게시글 작성', detail: `[${p.category}] ${p.title}`, target: `post:${p.id}` }));
+  // 댓글.
+  const comments = await safe("SELECT id, post_id, body, created_at FROM comments WHERE author_id = ? ORDER BY created_at DESC LIMIT 200", [userId]);
+  comments.forEach((c) => events.push({ kind: 'comment', ts: c.created_at, label: '댓글 작성', detail: String(c.body || '').slice(0, 60), target: `post:${c.post_id}` }));
+  // 강연 신청.
+  const lectureRegs = await safe(
+    "SELECT lr.id, lr.lecture_id, lr.status, lr.created_at, l.title FROM lecture_registrations lr LEFT JOIN lectures l ON l.id = lr.lecture_id WHERE lr.user_id = ? ORDER BY lr.created_at DESC LIMIT 100", [userId]);
+  lectureRegs.forEach((r) => events.push({ kind: 'lecture_register', ts: r.created_at, label: '강연 신청', detail: `${r.title || '(제목 없음)'} · ${r.status}`, target: `lecture:${r.lecture_id}` }));
+  // 투어 예약.
+  const tourRes = await safe(
+    "SELECT tr.id, tr.tour_id, tr.status, tr.created_at, t.title FROM tour_reservations tr LEFT JOIN tours t ON t.id = tr.tour_id WHERE tr.user_id = ? ORDER BY tr.created_at DESC LIMIT 100", [userId]);
+  tourRes.forEach((r) => events.push({ kind: 'tour_reserve', ts: r.created_at, label: '투어 예약', detail: `${r.title || '(제목 없음)'} · ${r.status}`, target: `tour:${r.tour_id}` }));
+  // 책 주문.
+  const orders = await safe(
+    "SELECT id, book_id, status, qty, total, created_at FROM book_orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 100", [userId]);
+  orders.forEach((o) => events.push({ kind: 'book_order', ts: o.created_at, label: '책 주문', detail: `수량 ${o.qty} · ${Number(o.total).toLocaleString()}원 · ${o.status}`, target: `order:${o.id}` }));
+  // 정렬: 최근 위.
+  events.sort((a, b) => (Date.parse(b.ts) || 0) - (Date.parse(a.ts) || 0));
+  return { user: userRow, events };
+};
+
 // ──────── 감사 로그 ───────────────────────────────────────
 
 // v00.120 — audit_log GC: 30일 이상 된 row 1/20 확률로 일괄 삭제. unbounded growth 방지.
@@ -1970,6 +2093,14 @@ const route = async (req, env) => {
   if (req.method === "POST" && p === "/api/media/upload") return json(await handleMediaUpload(req, env));
   if ((g = m(/^\/api\/media\/(.+)$/))) {
     if (req.method === "GET") return await handleMediaGet(req, env, g[1]);
+  }
+
+  // v00.148 — page-view 분석.
+  if (req.method === "POST" && p === "/api/analytics/page-view") return json(await handlePageViewTrack(req, env));
+  if (req.method === "GET" && p === "/api/analytics/summary") return json(await handleAnalyticsSummary(req, env));
+  // v00.148 — 사용자 여정 통합 (admin).
+  if ((g = m(/^\/api\/admin\/user-journey\/([\w-]+)$/))) {
+    if (req.method === "GET") return json(await handleUserJourney(req, env, g[1]));
   }
 
   // 관리자: 회원

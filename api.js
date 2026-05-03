@@ -12,6 +12,8 @@
 
 (function () {
   const BASE = "https://banginoja-api.scoutkorea.workers.dev/api";
+  // v00.148 — BGNJ_ANALYTICS sendBeacon 용 base url 노출.
+  try { window.BGNJ_API_BASE = BASE; } catch {}
 
   // 에러는 단일 형태로 분류해 호출 측에서 사용자에게 정확한 원인을 보일 수 있게 한다.
   // err.kind: 'network' | 'cors' | 'http' | 'parse' | 'unknown'
@@ -291,6 +293,12 @@
         return request("GET", `/admin/error-log${s ? "?" + s : ""}`);
       },
       clear: () => request("DELETE", "/admin/error-log"),
+    },
+    // v00.148 — page-view 분석 + 사용자 여정.
+    analytics: {
+      track: (payload) => request("POST", "/analytics/page-view", payload),
+      summary: () => request("GET", "/analytics/summary"),
+      userJourney: (userId) => request("GET", `/admin/user-journey/${userId}`),
     },
   };
 })();
