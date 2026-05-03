@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.136.000",
+  version: "00.137.000",
   build: "2026.05.03",
   channel: "preview",
 };
@@ -2427,32 +2427,34 @@ window.BGNJ_AUDIT = {
 // v00.136 — 모든 등급(member 부터 wangsanam 까지) 자동 승급 기준 default 제공. 사용자 요청
 // '회원등급에서 자동 승급기준을 모든 등급에 설정할 수 있게'. admin 은 운영자 보호 — 자동 승급 X.
 window.BGNJ_GRADE_RULES = {
+  // v00.137 — 투어/강연 참석은 OR 의미 → 단일 eventsAttended (= 투어 + 강연 합산) 으로 통합.
+  // 사용자 의도 '투어 참석 횟수 or 강연 참석 횟수가 몇번인지가 중요'.
   member: {
     posts: 0, comments: 0,
     visitsLast30Days: 0, daysSinceSignup: 0,
     likesReceived: 0, activeDays: 0,
-    toursAttended: 0, lecturesAttended: 0,
+    eventsAttended: 0,
     maxReports: 5,
   },
   reader: {
     posts: 0, comments: 5,
     visitsLast30Days: 3, daysSinceSignup: 7,
     likesReceived: 0, activeDays: 2,
-    toursAttended: 0, lecturesAttended: 0,
+    eventsAttended: 0,
     maxReports: 3,
   },
   scholar: {
     posts: 3, comments: 15,
     visitsLast30Days: 10, daysSinceSignup: 30,
     likesReceived: 10, activeDays: 7,
-    toursAttended: 1, lecturesAttended: 1,
+    eventsAttended: 1,
     maxReports: 1,
   },
   wangsanam: {
     posts: 20, comments: 100,
     visitsLast30Days: 25, daysSinceSignup: 365,
     likesReceived: 100, activeDays: 20,
-    toursAttended: 5, lecturesAttended: 5,
+    eventsAttended: 5,
     maxReports: 1,
   },
 };
@@ -2469,7 +2471,7 @@ window.BGNJ_GRADE_RULES_EFFECTIVE = () => {
   const allGrades = (window.BGNJ_STORES?.grades || []).filter((g) => !PROMOTION_PROTECTED.has(g.id) && g.id !== 'guest');
   const merged = {};
   // BGNJ_STORES.grades 순서대로 (level asc) 추가. 기본값이 없으면 0 으로.
-  const empty = { posts: 0, comments: 0, visitsLast30Days: 0, daysSinceSignup: 0, likesReceived: 0, activeDays: 0, toursAttended: 0, lecturesAttended: 0, maxReports: 999 };
+  const empty = { posts: 0, comments: 0, visitsLast30Days: 0, daysSinceSignup: 0, likesReceived: 0, activeDays: 0, eventsAttended: 0, maxReports: 999 };
   for (const g of allGrades) {
     const def = defaults[g.id] || empty;
     const override = (sc[g.id] && typeof sc[g.id] === 'object' && !Array.isArray(sc[g.id])) ? sc[g.id] : {};
@@ -2565,8 +2567,8 @@ window.BGNJ_GRADE_PROMO = {
       likesReceived:       sv?.likesReceived ?? likesReceived,
       activeDays:          activeDaysSet.size,
       reportCount:         sv?.reportCount  ?? reportCount,
-      toursAttended:       sv?.toursAttended ?? 0,
-      lecturesAttended:    sv?.lecturesAttended ?? 0,
+      // v00.137 — 투어 + 강연 참석 합산 (사용자 의도 OR 통합).
+      eventsAttended:      (sv?.toursAttended ?? 0) + (sv?.lecturesAttended ?? 0),
       _source:             sv ? 'server' : 'client',
     };
   },
@@ -2589,9 +2591,8 @@ window.BGNJ_GRADE_PROMO = {
         && (m.daysSinceSignup >= (rule.daysSinceSignup || 0))
         && (m.likesReceived >= (rule.likesReceived || 0))
         && (m.activeDays >= (rule.activeDays || 0))
-        // v00.136 — 투어/강연 실 참여 (노쇼 제외) 기준.
-        && (m.toursAttended >= (rule.toursAttended || 0))
-        && (m.lecturesAttended >= (rule.lecturesAttended || 0))
+        // v00.137 — 행사 참석 합산 (투어 + 강연, 노쇼 제외). OR 의미.
+        && (m.eventsAttended >= (rule.eventsAttended || 0))
         && (m.reportCount < (rule.maxReports ?? Infinity));
       if (ok) qualified = g.id;
     }

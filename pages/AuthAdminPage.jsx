@@ -5840,9 +5840,8 @@ const GradePromotionPanel = () => {
                 <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>가입경과(일)</th>
                 <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>받은 좋아요</th>
                 <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>활동일</th>
-                {/* v00.136 — 투어/강연 실 참여 (노쇼 제외). */}
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>투어 참석</th>
-                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>강연 참석</th>
+                {/* v00.137 — 투어 + 강연 실 참석 합산 (OR 의미). */}
+                <th scope="col" style={{padding:'8px 8px', textAlign:'right'}} title="투어 + 강연 실 참석 횟수 합산 (노쇼 제외)">행사 참석</th>
                 <th scope="col" style={{padding:'8px 8px', textAlign:'right'}}>신고 한계</th>
               </tr>
             </thead>
@@ -5872,8 +5871,7 @@ const GradePromotionPanel = () => {
                     <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('daysSinceSignup')}</td>
                     <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('likesReceived')}</td>
                     <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('activeDays')}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('toursAttended')}</td>
-                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('lecturesAttended')}</td>
+                    <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('eventsAttended')}</td>
                     <td style={{padding:'10px 8px', textAlign:'right', fontFamily:'var(--font-mono)'}}>{numCell('maxReports', '< ')}</td>
                   </tr>
                 );
