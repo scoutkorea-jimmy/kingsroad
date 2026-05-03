@@ -490,7 +490,8 @@ const App = () => {
         if (!user?.isAdmin) { const D = pick('AdminDenied','관리'); return <D go={go} user={user}/>; }
         const C = pick('AdminPage','관리'); return <C go={go} user={user}/>;
       }
-      default:          { const C = pick('HomePage','홈'); return <C go={go} tweaks={tweaks}/>; }
+      // v00.145 — 404: 알 수 없는 라우트는 home 으로 폴백하지 않고 Error404Page 노출.
+      default:          { const C = pick('Error404Page','오류'); return <C go={go}/>; }
     }
   };
   // 페이지별 에러 바운더리 — 한 페이지가 던진 오류가 전역으로 번지지 않게. key=route 로 라우트 변경 시 자동 reset.

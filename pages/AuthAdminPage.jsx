@@ -3328,6 +3328,58 @@ const BooksAdminPanel = () => {
   );
 };
 
+// === Error Pages Preview Panel ====================================
+// v00.145 — 사용자 요청 '관리자 페이지에서 오류 페이지들 미리보기'.
+// 6 종 오류 페이지 (404 / 500 / 403 / 401 / Network / Maintenance) 를 chip 으로 선택해 inline 렌더.
+const ErrorPagesPreviewPanel = ({ go }) => {
+  const [active, setActive] = React.useState('404');
+  const variants = [
+    { k: '404',         l: '404 페이지 없음',  Comp: window.Error404Page },
+    { k: '500',         l: '500 서버 오류',    Comp: window.Error500Page },
+    { k: '403',         l: '403 권한 부족',    Comp: window.Error403Page },
+    { k: '401',         l: '401 로그인 필요',  Comp: window.Error401Page },
+    { k: 'network',     l: '네트워크 오류',    Comp: window.ErrorNetworkPage },
+    { k: 'maintenance', l: '점검 중',          Comp: window.ErrorMaintenancePage },
+  ];
+  const current = variants.find((v) => v.k === active) || variants[0];
+  const Preview = current.Comp;
+  // 미리보기 안에서 go 가 호출되면 실제로 라우팅하면 곤란하니 noop 으로 가로채기.
+  const previewGo = (route) => { try { console.warn('[preview] go(', route, ') — 미리보기에서는 실제 이동 안 함'); } catch {} };
+  return (
+    <div>
+      <AdminPanelHeader
+        eyebrow="ERROR PAGES · 미리보기"
+        title="오류 페이지 미리보기"
+        description="404 / 500 / 403 / 401 / 네트워크 / 점검 중 6종을 카드로 미리 봅니다. 일러스트는 assets/errors/ 에 위치 — 파일 누락 시 ✈️ 이모지 폴백."/>
+      <div className="admin-toolbar">
+        <AdminFilterChips
+          ariaLabel="오류 페이지 종류"
+          items={variants.map((v) => ({ key: v.k, label: v.l }))}
+          value={active} onChange={setActive}/>
+      </div>
+      <div style={{
+        border:'1px solid var(--line)', borderRadius:8, overflow:'hidden',
+        background:'var(--bg-2)', padding:16,
+      }}>
+        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:10}}>
+          PREVIEW · {current.l}
+        </div>
+        <div style={{background:'var(--bg)', borderRadius:8, overflow:'hidden'}}>
+          {Preview ? (
+            <Preview go={previewGo}/>
+          ) : (
+            <AdminEmpty>오류 페이지 컴포넌트 ({current.k}) 를 불러오지 못했습니다. 새로고침 후 다시 시도하세요.</AdminEmpty>
+          )}
+        </div>
+      </div>
+      <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7}}>
+        ⓘ 미리보기 안의 버튼은 실제 라우팅하지 않습니다 (콘솔에 로그만 출력).
+        라이브 페이지에서는 정상 동작합니다.
+      </p>
+    </div>
+  );
+};
+
 // === Error Log Panel ==============================================
 // 사이트에서 발생한 모든 클라이언트 오류(인증/네트워크/렌더링/미처리 promise) 를 D1.error_log 에서 조회.
 const ErrorLogPanel = () => {
@@ -4337,7 +4389,7 @@ const AdminPage = ({ go }) => {
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
     { group: "운영설정",      items: ["사이트 콘텐츠", "히어로", "카테고리", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보 관리", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "SEO", "설정", "데이터 정리"] },
+    { group: "시스템 관리",   items: ["버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "SEO", "설정", "데이터 정리"] },
   ];
 
   const exportMemberData = (m) => {
@@ -5339,6 +5391,7 @@ const AdminPage = ({ go }) => {
         {tab === "자주 묻는 질문" && <FaqAdminPanel/>}
         {tab === "감사 로그" && <AuditLogPanel/>}
         {tab === "오류 로그" && <ErrorLogPanel/>}
+        {tab === "오류 페이지 미리보기" && <ErrorPagesPreviewPanel go={go}/>}
         {tab === "SEO" && <SEOAdminPanel/>}
         {tab === "데이터 정리" && <LegacyMigrationPanel/>}
 

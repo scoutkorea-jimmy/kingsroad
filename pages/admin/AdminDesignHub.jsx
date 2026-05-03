@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.145.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T00:00:00+09:00",
+    summary: "🛬 오류 페이지 6종 (404/500/403/401/Network/Maintenance) + admin 미리보기 패널",
+    details: [
+      "🛬 [pages/ErrorPages.jsx 신설] 6종 오류 페이지 — 가이드 이미지의 통일 카드 디자인 (브랜드 헤더 + 코드 + 제목 + 부연 + 일러스트 + 버튼). ErrorCard primitive + 6 export.",
+      "🛬 [일러스트 자산] /assets/errors/{404,500,403,401,network,maintenance}.png. 사용자가 가이드 이미지 6장을 해당 파일명으로 저장. 누락 시 ✈️ 이모지 fallback (onError 핸들러).",
+      "🛬 [boot.jsx 라우팅] default fallback (알 수 없는 라우트) 을 HomePage 가 아니라 Error404Page 로 변경.",
+      "🆕 [admin 미리보기 패널] 시스템 관리 → '오류 페이지 미리보기' 탭 신설. ErrorPagesPreviewPanel — 6종 chip 선택 + inline 렌더. 미리보기 안 버튼은 noop go (콘솔 로그만).",
+      "ℹ 워커 미변경. 403/401/500/Maintenance 페이지의 자동 호출 wiring (PageErrorBoundary fallback, navigator.onLine 감지 등) 은 다음 사이클로 분리.",
+      "📦 cache-buster — `?v=00.145.000`. ErrorPages.js 새 script 태그.",
+    ],
+    context: "사용자 가이드 이미지 6장 + 일러스트 6 종 PNG 첨부 → ErrorPages.jsx 통일 카드 디자인. admin 미리보기 패널 추가 요청 즉시 반영.",
+  },
+  {
     version: "00.144.000",
     date: "2026-05-02",
     datetime: "2026-05-02T00:00:00+09:00",
