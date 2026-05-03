@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.128.000",
+  version: "00.129.000",
   build: "2026.05.03",
   channel: "preview",
 };
@@ -312,6 +312,35 @@ window.BGNJ_DIAG = {
       ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data):|\/|#)/i,
     });
   };
+})();
+
+// === BGNJ_BROADCAST — admin 작업 후 다른 탭/창 자동 새로고침 (v00.129) ====
+// 사용자 요청 '삭제 버튼을 누르면 홈페이지를 자동으로 페이지 캐시 퍼지해서 새롭게 보이게'.
+// admin 이 lectures/tours/columns/posts/books 등을 수정하면 publish('domain') 호출 →
+// 같은 origin 의 다른 탭(/홈 / 강연 / 투어 등) 이 자동으로 데이터 refresh.
+// BroadcastChannel 미지원 환경(구 IE) 은 storage event 로 폴백.
+window.BGNJ_BROADCAST = (() => {
+  const CHANNEL = 'bgnj-data-purge';
+  let ch = null;
+  try { if (typeof BroadcastChannel !== 'undefined') ch = new BroadcastChannel(CHANNEL); } catch {}
+  // 'tours' / 'lectures' / 'columns' / 'posts' / 'books' / 'site-content' 등.
+  const publish = (domain) => {
+    const msg = { domain, at: Date.now() };
+    try { ch?.postMessage(msg); } catch {}
+    // storage event fallback — 같은 origin 의 다른 탭에 fire.
+    try { localStorage.setItem('bgnj_purge_signal', JSON.stringify(msg)); } catch {}
+  };
+  const subscribe = (fn) => {
+    const handler = (e) => { try { fn(e?.data || JSON.parse(e?.newValue || '{}')); } catch {} };
+    try { ch?.addEventListener?.('message', handler); } catch {}
+    const onStorage = (e) => { if (e.key === 'bgnj_purge_signal' && e.newValue) handler(e); };
+    try { window.addEventListener('storage', onStorage); } catch {}
+    return () => {
+      try { ch?.removeEventListener?.('message', handler); } catch {}
+      try { window.removeEventListener('storage', onStorage); } catch {}
+    };
+  };
+  return { publish, subscribe };
 })();
 
 // === BGNJ_FMT — KST 기반 날짜·시간 포맷 헬퍼 (v00.107) ====================
@@ -647,6 +676,9 @@ const DEFAULT_SITE_CONTENT = {
     titleSuffix: '가 쓰다',
     subtitle: '커뮤니티장 뱅기노자의 정기 칼럼. 조선의 왕들을 경유해 오늘을 묻는다.',
   },
+  // v00.129 — 칼럼 카테고리 동적 관리. 관리자 페이지의 '뱅기노자 칼럼' 탭에서 추가/삭제 가능.
+  // BGNJ_SITE_CONTENT.get().columnCategories 배열로 저장. 빈 배열이면 'all' 만 표시.
+  columnCategories: ['왕의 미학', '군주의 언어', '공간의 철학', '현대의 독법'],
   bookCheckoutIntro: {
     eyebrow: 'CHECKOUT · 결제',
     titlePrefix: '주문 / ',

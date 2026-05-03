@@ -280,6 +280,26 @@ const App = () => {
     ]).catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  // v00.129 — BGNJ_BROADCAST 구독: admin 탭에서 'lectures'/'tours'/'columns'/'posts'/'books'
+  // 변경이 발생하면 같은 origin 의 모든 탭이 해당 헬퍼 refresh + 페이지 이벤트 dispatch.
+  // 예: 관리자 탭에서 강연 삭제 → 홈 탭에서 자동으로 다음 강연 카드 갱신.
+  React.useEffect(() => {
+    if (!window.BGNJ_BROADCAST?.subscribe) return;
+    const unsub = window.BGNJ_BROADCAST.subscribe(async (msg) => {
+      const d = msg?.domain;
+      try {
+        if (d === 'lectures') await window.BGNJ_LECTURES?.refresh?.({ includeHidden: false });
+        else if (d === 'tours') await window.BGNJ_TOURS?.refresh?.({ includeHidden: false });
+        else if (d === 'columns') await window.BGNJ_COLUMNS?.refresh?.();
+        else if (d === 'posts') await window.BGNJ_COMMUNITY?.refreshPosts?.();
+        else if (d === 'books') await window.BGNJ_BOOKS?.refresh?.();
+        else if (d === 'site-content') await window.BGNJ_SITE_CONTENT?.refresh?.();
+      } catch {}
+    });
+    return unsub;
+  }, []);
+
   const [cart, setCart] = React.useState(() => {
     try {
       const raw = localStorage.getItem('bgnj_cart');

@@ -2,11 +2,25 @@
 const LecturesPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
   const [selectedIdx, setSelectedIdx] = React.useState(0);
+  // v00.129 — 지난/예정 분리 탭. 사용자 요청 '강연탭에서는 지난 강연과 진행 예정 강연 탭으로 나눠줘'.
+  const [bucket, setBucket] = React.useState('upcoming'); // 'upcoming' | 'past'
   const refresh = () => setTick((v) => v + 1);
   const G = window.BGNJ_GUARD;
 
-  const lectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()), [tick]);
+  const allLectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()), [tick]);
   const bank = React.useMemo(() => G.call(() => window.BGNJ_LECTURES?.getBankAccount?.(), {}), [tick]);
+
+  // v00.129 — startsAt 기준 분리. 어제 이후 = upcoming, 그 이전 = past. startsAt 없으면 upcoming.
+  const _now = Date.now();
+  const _yesterday = _now - 86400000;
+  const _isPast = (l) => {
+    if (!l?.startsAt) return false;
+    const t = Date.parse(l.startsAt);
+    return !isNaN(t) && t < _yesterday;
+  };
+  const lecturesUpcoming = React.useMemo(() => allLectures.filter((l) => !_isPast(l)), [allLectures]);
+  const lecturesPast = React.useMemo(() => allLectures.filter(_isPast).sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)), [allLectures]);
+  const lectures = bucket === 'past' ? lecturesPast : lecturesUpcoming;
 
   // 외부 진입 — sessionStorage / 해시
   React.useEffect(() => {
@@ -14,22 +28,29 @@ const LecturesPage = ({ go, user }) => {
     try { pending = sessionStorage.getItem('bgnj_pending_lecture_id'); } catch {}
     if (pending) {
       try { sessionStorage.removeItem('bgnj_pending_lecture_id'); } catch {}
-      const idx = lectures.findIndex((l) => String(l.id) === String(pending));
-      if (idx >= 0) setSelectedIdx(idx);
+      // 양쪽 버킷에서 검색해 적절한 탭으로 이동.
+      const inUpcoming = lecturesUpcoming.findIndex((l) => String(l.id) === String(pending));
+      if (inUpcoming >= 0) { setBucket('upcoming'); setSelectedIdx(inUpcoming); return; }
+      const inPast = lecturesPast.findIndex((l) => String(l.id) === String(pending));
+      if (inPast >= 0) { setBucket('past'); setSelectedIdx(inPast); }
     }
   }, []);
 
-  if (!lectures.length) {
+  // 버킷 전환 시 인덱스 리셋.
+  React.useEffect(() => { setSelectedIdx(0); }, [bucket]);
+
+  // v00.129 — 강연이 하나도 없는 경우(예정+지난 0) 만 빈 화면. 한 쪽이라도 있으면 탭은 보여줌.
+  if (allLectures.length === 0) {
     return (
       <div className="section">
         <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
-          <p className="dim" style={{fontSize:14}}>예정된 강연이 없습니다.</p>
+          <p className="dim" style={{fontSize:14}}>등록된 강연이 없습니다.</p>
         </div>
       </div>
     );
   }
 
-  const safeIdx = Math.max(0, Math.min(selectedIdx, lectures.length - 1));
+  const safeIdx = Math.max(0, Math.min(selectedIdx, Math.max(0, lectures.length - 1)));
   const lecture = lectures[safeIdx];
   const seats = G.call(() => window.BGNJ_LECTURES?.getSeats?.(lecture.id), { capacity: 0, taken: 0, waitlist: 0, remaining: 0 });
   const myReg = user ? G.call(() => window.BGNJ_LECTURES?.hasUserRegistered?.(lecture.id, user.id), null) : null;
@@ -66,7 +87,36 @@ const LecturesPage = ({ go, user }) => {
           <p className="section-subtitle">{_lSubtitle}</p>
         </div>
 
-        {/* Tabs — 투어 페이지와 동일한 스타일 */}
+        {/* v00.129 — 지난/예정 버킷 토글. 사용자 요청 분리. */}
+        <div style={{display:'flex', gap:8, marginBottom:24, flexWrap:'wrap'}}>
+          {[
+            { k: 'upcoming', label: `진행 예정 강연 (${lecturesUpcoming.length})` },
+            { k: 'past', label: `지난 강연 (${lecturesPast.length})` },
+          ].map((b) => (
+            <button key={b.k} type="button"
+              onClick={() => setBucket(b.k)}
+              aria-pressed={bucket === b.k}
+              style={{
+                padding:'8px 18px', borderRadius:999, fontSize:13, cursor:'pointer',
+                border: '1px solid ' + (bucket === b.k ? 'var(--gold)' : 'var(--line)'),
+                color: bucket === b.k ? 'var(--gold)' : 'var(--ink-2)',
+                background: bucket === b.k ? 'rgba(245,213,72,0.08)' : 'transparent',
+              }}>
+              {b.label}
+            </button>
+          ))}
+        </div>
+
+        {lectures.length === 0 && (
+          <div style={{padding:'60px 20px', textAlign:'center'}}>
+            <p className="dim" style={{fontSize:14}}>
+              {bucket === 'upcoming' ? '예정된 강연이 없습니다.' : '지난 강연이 없습니다.'}
+            </p>
+          </div>
+        )}
+
+        {/* Tabs — 투어 페이지와 동일한 스타일. 강연 목록이 있을 때만. */}
+        {lectures.length > 0 && (<>
         <div style={{display:'flex', gap:0, borderBottom:'1px solid var(--line-2)', marginBottom:40, overflowX:'auto'}}>
           {lectures.map((l, i) => (
             <button key={l.id}
@@ -182,6 +232,7 @@ const LecturesPage = ({ go, user }) => {
             />
           </div>
         </div>
+        </>)}
       </div>
     </div>
   );

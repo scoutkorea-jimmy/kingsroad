@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.129.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T12:40:17+09:00", // pre-commit stamp.
+    summary: "🩹 사용자 보고 묶음 일부 — 칼럼 카테고리 동적 + 부제목 + 강연 삭제 + 강연 지난/예정 + 홈 hero past fallback + BroadcastChannel",
+    details: [
+      "🆕 [칼럼 카테고리 동적 관리] 사용자 요청 '카테고리를 뱅기노자 칼럼 탭에서 추가삭제할수있게'. site_content_kv.columnCategories 배열로 저장. ColumnsHubPanel 상단에 추가/삭제 chip UI. AdminColumnEditor select 가 동적으로 읽음.",
+      "🔄 [칼럼 form 재구조] 사용자 요청 '제목 / 부제목 / 본문 형태'. 기존 '발췌' 라벨 → '부제목' (DB 컬럼 excerpt 호환 유지). single-line input 으로 변경.",
+      "🩹 [강연 삭제 fix] LectureAdminPanel 의 lecture 삭제 버튼 — async + await + try/catch. 사용자 보고 '강연삭제도 안된다'. 투어 삭제와 같은 fire-and-forget 패턴 버그.",
+      "🆕 [강연 페이지 지난/예정 탭] 사용자 요청 '강연탭에서는 지난 강연과 진행 예정 강연 탭으로 나눠줘'. LecturesPage 상단에 두 chip — 'progress 예정 (N)' / '지난 강연 (N)'. 어제 기준 분리.",
+      "🆕 [Hero past lectures fallback] 사용자 요청 '홈에서는 진행 예정 강연이 없으면 지난 강연을 노출 (3개 이내)'. HeroProgramCards lectures 가 upcoming 우선, 비면 최근 3개 past 폴백. 라벨도 'NEXT LECTURE' / 'RECENT LECTURE' 로 자동 전환.",
+      "🆕 [BroadcastChannel cache purge] 사용자 요청 '삭제 버튼을 누르면 홈페이지를 자동으로 페이지 캐시 퍼지해서 새롭게 보이게'. window.BGNJ_BROADCAST 신설 — admin 작업 후 publish('domain') 하면 같은 origin 의 다른 탭이 자동 refresh. boot.jsx 에서 subscribe → BGNJ_LECTURES/TOURS/COLUMNS/BOOKS/COMMUNITY refresh. lecture 삭제에 적용 (다른 admin 도 다음 사이클).",
+      "ℹ 워커 미변경 (deploy 불필요).",
+      "📦 cache-buster — `?v=00.129.000` (21곳).",
+    ],
+    context: "사용자 7건 연속 보고 중 본 사이클은 6건 처리. 다음 사이클(v00.130) deferred 항목: ① 책 카탈로그 추가 안되는 원인 추가 조사 + 책 추가 UI 를 투어 폼처럼 풍부화 ② 강연 일괄 등록 (CSV 입력) ③ 모든 admin 추가/삭제 UX 일관 (메타) ④ 마이페이지 재구조 (추천동선/북마크 삭제 + 신청 강연/답사/주문/알림/커뮤니티 활동 탭 + 개인정보 수정). 각각 큰 작업이라 별 사이클로 분리.",
+  },
+  {
     version: "00.128.000",
     date: "2026-05-03",
     datetime: "2026-05-03T12:31:48+09:00", // pre-commit stamp.

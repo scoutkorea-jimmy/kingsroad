@@ -207,11 +207,21 @@ const HeroProgramCards = ({ go, dataTick }) => {
     if (!l || l.hidden || !l.startsAt) return false;
     return !isNaN(Date.parse(l.startsAt));
   };
+  // v00.129 — 사용자 요청 '진행 예정 강연이 없으면 지난 강연을 노출 (3개 이내)'.
+  // 1) 어제 이후 강연 우선. 2) 없으면 가장 최근 지난 강연 3개로 폴백.
   const lectures = React.useMemo(() => {
-    return _arr(() => window.BGNJ_LECTURES?.listAll?.())
-      .filter(_validStarts)
-      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
-      .filter((l) => new Date(l.startsAt).getTime() >= Date.now() - 86400000); // 어제 이후만
+    const all = _arr(() => window.BGNJ_LECTURES?.listAll?.())
+      .filter(_validStarts);
+    const cutoff = Date.now() - 86400000;
+    const upcoming = all
+      .filter((l) => new Date(l.startsAt).getTime() >= cutoff)
+      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+    if (upcoming.length > 0) return upcoming;
+    // fallback — 가장 최근 지난 강연 3개 (newest-first).
+    return all
+      .filter((l) => new Date(l.startsAt).getTime() < cutoff)
+      .sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
+      .slice(0, 3);
   }, [dataTick]);
   const tours = React.useMemo(() => {
     return _arr(() => window.BGNJ_TOURS?.listAll?.())
@@ -222,6 +232,9 @@ const HeroProgramCards = ({ go, dataTick }) => {
 
   const nextLecture = lectures[0];
   const nextTour = tours[0];
+  // v00.129 — 강연이 fallback (지난 강연 노출 모드) 인지 판정. nextLecture.startsAt 가 어제보다 과거면 past mode.
+  const lectureIsPast = nextLecture && nextLecture.startsAt &&
+    (new Date(nextLecture.startsAt).getTime() < Date.now() - 86400000);
 
   // v00.110 — 시간 표시는 사이트 전반 KST 기준. BGNJ_FMT.kstFriendly 사용.
   const fmtDate = (iso) => {
@@ -248,7 +261,7 @@ const HeroProgramCards = ({ go, dataTick }) => {
         tabIndex={nextLecture ? 0 : undefined}
         onKeyDown={(e) => { if (nextLecture && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go('lectures'); } }}>
         <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.24em', color:'var(--ink-2)', marginBottom:10}}>
-          NEXT LECTURE · 다음 강연
+          {lectureIsPast ? 'RECENT LECTURE · 최근 강연' : 'NEXT LECTURE · 다음 강연'}
         </div>
         {nextLecture ? (
           <>

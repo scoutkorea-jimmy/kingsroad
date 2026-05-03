@@ -890,11 +890,17 @@ const LectureAdminPanel = ({ go }) => {
                       {l.hidden ? '👁 표시 복원' : '🙈 숨김 처리'}
                     </button>
                     <button type="button" className="btn btn-small"
-                      onClick={() => {
+                      onClick={async () => {
                         if (!confirm('이 강연을 삭제하시겠어요? 시드 강연은 자동 숨김 처리됩니다 (데이터 보존). 관리자가 추가한 강연은 완전 삭제됩니다.')) return;
-                        window.BGNJ_LECTURES.deleteLecture(l.id);
-                        window.BGNJ_AUDIT?.log({ action: 'lecture.remove', target: `lecture:${l.id}` });
-                        refresh();
+                        // v00.129 — async + await + try/catch + 다른 탭 broadcast (cache purge).
+                        try {
+                          await window.BGNJ_LECTURES.deleteLecture(l.id);
+                          window.BGNJ_AUDIT?.log({ action: 'lecture.remove', target: `lecture:${l.id}` });
+                          try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
+                          refresh();
+                        } catch (err) {
+                          alert('강연 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
+                        }
                       }}
                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
                   </div>
@@ -5916,18 +5922,25 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
             <label className="field-label" htmlFor="col-cat">카테고리</label>
             <select id="col-cat" className="field-input" value={category}
               onChange={e => setCategory(e.target.value)}>
-              <option value="왕의 미학">왕의 미학</option>
-              <option value="군주의 언어">군주의 언어</option>
-              <option value="공간의 철학">공간의 철학</option>
-              <option value="현대의 독법">현대의 독법</option>
+              {/* v00.129 — 카테고리 동적 (site_content.columnCategories). ColumnsHubPanel 의 카테고리 관리 패널에서 추가/삭제. */}
+              {(() => {
+                const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+                const cats = Array.isArray(sc.columnCategories) && sc.columnCategories.length
+                  ? sc.columnCategories
+                  : ['왕의 미학', '군주의 언어', '공간의 철학', '현대의 독법'];
+                // 현재 값이 목록에 없으면 (편집 중인 옛 값) 옵션에 추가.
+                const list = cats.includes(category) ? cats : [...cats, category].filter(Boolean);
+                return list.map((c) => <option key={c} value={c}>{c}</option>);
+              })()}
             </select>
           </div>
         </div>
+        {/* v00.129 — 부제목 (subtitle). 사용자 요청 '제목 / 부제목 / 본문 형태로'. DB 컬럼은 호환성 위해 excerpt 그대로 사용 (UI 라벨만 변경). */}
         <div className="field">
-          <label className="field-label" htmlFor="col-excerpt">발췌 (선택)</label>
-          <textarea id="col-excerpt" className="field-input" rows={2}
+          <label className="field-label" htmlFor="col-subtitle">부제목 (선택)</label>
+          <input id="col-subtitle" type="text" className="field-input"
             value={excerpt} onChange={e => setExcerpt(e.target.value)}
-            placeholder="목록에 표시될 짧은 소개 — 비우면 본문 앞부분에서 자동 추출"/>
+            placeholder="제목 아래 작은 문구 — 목록 카드/상세 상단에 노출 (비우면 본문 앞부분 자동 추출)"/>
         </div>
         <div className="field">
           <label className="field-label">본문 <span className="gold" aria-hidden="true">*</span></label>
@@ -6055,6 +6068,33 @@ const ColumnsHubPanel = ({ allColumns }) => {
   const [initialCol, setInitialCol] = React.useState(null);
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [drafts, setDrafts] = React.useState(() => window.BGNJ_DRAFTS?.list?.('column') || []);
+  // v00.129 — 칼럼 카테고리 동적 관리 (site_content_kv.columnCategories).
+  const [scTick, setScTick] = React.useState(0);
+  const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);
+  const colCats = Array.isArray(sc.columnCategories) ? sc.columnCategories : [];
+  const [newCatName, setNewCatName] = React.useState('');
+  const [catMsg, setCatMsg] = React.useState('');
+  const addColCategory = async () => {
+    setCatMsg('');
+    const v = newCatName.trim();
+    if (!v) { setCatMsg('카테고리 이름을 입력해 주세요.'); return; }
+    if (colCats.includes(v)) { setCatMsg('이미 존재하는 카테고리입니다.'); return; }
+    try {
+      await window.BGNJ_SITE_CONTENT.update('columnCategories', [...colCats, v]);
+      setNewCatName('');
+      setScTick((x) => x + 1);
+      setCatMsg(`'${v}' 추가됨.`);
+    } catch (err) { setCatMsg('추가 실패: ' + (err?.message || '')); }
+  };
+  const removeColCategory = async (name) => {
+    if (!confirm(`'${name}' 카테고리를 삭제하시겠어요?\n(기존 칼럼의 카테고리 값은 유지되지만 새 칼럼 작성 시 선택지에서 사라집니다.)`)) return;
+    try {
+      await window.BGNJ_SITE_CONTENT.update('columnCategories', colCats.filter((c) => c !== name));
+      setScTick((x) => x + 1);
+      setCatMsg(`'${name}' 삭제됨.`);
+    } catch (err) { setCatMsg('삭제 실패: ' + (err?.message || '')); }
+  };
+
   React.useEffect(() => {
     const onChange = () => setDrafts(window.BGNJ_DRAFTS?.list?.('column') || []);
     window.addEventListener('bgnj-drafts-change', onChange);
@@ -6092,6 +6132,33 @@ const ColumnsHubPanel = ({ allColumns }) => {
           모달 외부 클릭 또는 ESC 시 임시저장 프롬프트가 표시됩니다 (최대 7일·10개 보관).
         </p>
         <button type="button" className="btn btn-gold btn-small" onClick={openCreate}>＋ 글쓰기</button>
+      </div>
+
+      {/* v00.129 — 카테고리 관리 (추가/삭제). 사용자 요청 '카테고리를 뱅기노자 칼럼 탭에서 추가삭제할수있게해줘'. */}
+      <div className="card" style={{padding:14, marginBottom:18}}>
+        <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>카테고리 관리</div>
+        <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:10}}>
+          {colCats.length === 0 && (
+            <span className="dim-2" style={{fontSize:12}}>등록된 카테고리가 없습니다. 아래에서 추가하세요.</span>
+          )}
+          {colCats.map((c) => (
+            <span key={c} style={{display:'inline-flex', alignItems:'center', gap:6, padding:'4px 10px', border:'1px solid var(--line)', fontSize:12}}>
+              {c}
+              <button type="button" onClick={() => removeColCategory(c)} aria-label={`${c} 삭제`}
+                style={{background:'none', border:'none', color:'var(--danger)', cursor:'pointer', fontSize:14, padding:0, lineHeight:1}}>
+                ✕
+              </button>
+            </span>
+          ))}
+        </div>
+        <div style={{display:'flex', gap:8, alignItems:'center'}}>
+          <input type="text" className="field-input" placeholder="새 카테고리 이름"
+            value={newCatName} onChange={(e) => setNewCatName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addColCategory(); } }}
+            style={{flex:1, maxWidth:280}}/>
+          <button type="button" className="btn btn-small" onClick={addColCategory}>＋ 추가</button>
+        </div>
+        {catMsg && <div className="mono dim-2" style={{fontSize:11, marginTop:6}}>{catMsg}</div>}
       </div>
 
       {drafts.length > 0 && (
