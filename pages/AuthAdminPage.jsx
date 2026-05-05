@@ -5713,20 +5713,200 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
   );
 };
 
+// === Community Posts Admin Panel (v00.180 추출) =====================
+// 사용자 코드 리뷰 룰 1번 (DRY): 인라인 JSX 였던 게시글 관리 부분을 별도 컴포넌트로.
+// 자체 state(검색/필터/선택/일괄/모달) + 핸들러(export/delete/bulk) 모두 내장.
+// 부모(AdminPage) 는 posts (allCommunityPosts) + onChange (refresh trigger) 만 전달.
+const CommunityPostsAdminPanel = ({ posts, onChange }) => {
+  const [search, setSearch] = React.useState('');
+  const [filter, setFilter] = React.useState('all');
+  const [selectedIds, setSelectedIds] = React.useState(new Set());
+  const [viewingId, setViewingId] = React.useState(null);
+  const [bulkCat, setBulkCat] = React.useState('');
+  const [bulkPrefix, setBulkPrefix] = React.useState('');
+
+  const visible = React.useMemo(() => posts.filter((p) => {
+    const q = search.trim().toLowerCase();
+    const matchSearch = !q || p.title.toLowerCase().includes(q) || String(p.author || '').toLowerCase().includes(q);
+    const matchFilter = filter === 'all' || p.categoryId === filter;
+    return matchSearch && matchFilter;
+  }), [posts, search, filter]);
+
+  const exportCsv = () => {
+    const blob = new Blob([window.BGNJ_COMMUNITY.exportCsv()], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `community-posts-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const removeOne = (post) => {
+    if (!confirm(`"${post.title}" 게시글을 삭제하시겠어요?`)) return;
+    window.BGNJ_COMMUNITY.deletePost(post.id);
+    setSelectedIds((prev) => { const next = new Set(prev); next.delete(post.id); return next; });
+    onChange?.();
+  };
+
+  const bulkRemove = () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`선택한 ${selectedIds.size}개 게시글을 삭제할까요?`)) return;
+    selectedIds.forEach((id) => window.BGNJ_COMMUNITY.deletePost(id));
+    setSelectedIds(new Set());
+    onChange?.();
+  };
+
+  const bulkMove = () => {
+    if (selectedIds.size === 0) return;
+    if (!bulkCat) { alert('이동할 게시판을 선택하세요.'); return; }
+    const cat = window.BGNJ_STORES.categories.find((c) => c.id === bulkCat);
+    if (!cat) return;
+    selectedIds.forEach((id) => window.BGNJ_COMMUNITY.updatePost(id, { categoryId: cat.id, category: cat.label }));
+    setSelectedIds(new Set());
+    setBulkCat('');
+    onChange?.();
+  };
+
+  const bulkApplyPrefix = () => {
+    if (selectedIds.size === 0) return;
+    const next = bulkPrefix.trim();
+    selectedIds.forEach((id) => window.BGNJ_COMMUNITY.updatePost(id, { prefix: next || null }));
+    setSelectedIds(new Set());
+    setBulkPrefix('');
+    onChange?.();
+  };
+
+  return (
+    <div>
+      {/* 게시판 칩 (검색 위) */}
+      <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:12}} role="tablist" aria-label="게시판 필터">
+        {[{ id: 'all', label: '전체', count: posts.length }]
+          .concat(window.BGNJ_STORES.categories
+            .filter((item) => item.boardType === 'community')
+            .map((c) => ({ id: c.id, label: c.label, count: posts.filter((p) => p.categoryId === c.id).length })))
+          .map((chip) => {
+            const active = filter === chip.id;
+            return (
+              <button key={chip.id} type="button" role="tab" aria-selected={active}
+                onClick={() => { setFilter(chip.id); setSelectedIds(new Set()); }}
+                style={{
+                  padding: '6px 14px', fontSize: 12,
+                  fontFamily: 'var(--font-serif)',
+                  background: active ? 'var(--gold)' : 'transparent',
+                  color: active ? 'var(--bg)' : 'var(--ink-2)',
+                  border: `1px solid ${active ? 'var(--gold)' : 'var(--line-2)'}`,
+                  borderRadius: 999,
+                  cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                }}>
+                <span>{chip.label}</span>
+                <span className="mono" style={{ fontSize: 10, letterSpacing: '0.05em', opacity: active ? 0.85 : 0.55 }}>{chip.count}</span>
+              </button>
+            );
+          })}
+      </div>
+      <div style={{display:'flex', gap:12, marginBottom:16}}>
+        <label htmlFor="post-search" className="sr-only">게시글 검색</label>
+        <input id="post-search" className="field-input" placeholder="제목 또는 작성자 검색..." style={{flex:1}}
+          value={search} onChange={(e) => setSearch(e.target.value)}/>
+        <button type="button" className="btn btn-small" onClick={exportCsv}>CSV 다운로드</button>
+      </div>
+
+      {/* 일괄 작업 바 */}
+      {selectedIds.size > 0 && (
+        <div style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'rgba(59,130,246,0.07)', border:'1px solid var(--gold-dim)', marginBottom:12, flexWrap:'wrap'}}>
+          <span className="mono gold" style={{fontSize:11}}>{selectedIds.size}개 선택됨</span>
+          <button type="button" className="btn btn-small" style={{borderColor:'var(--danger)', color:'var(--danger)'}} onClick={bulkRemove}>선택 삭제</button>
+          <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
+          <select className="field-input" style={{maxWidth:160, padding:'4px 8px'}} value={bulkCat} onChange={(e) => setBulkCat(e.target.value)}>
+            <option value="">게시판 선택...</option>
+            {window.BGNJ_STORES.categories.filter((c) => c.boardType === 'community').map((c) => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
+          <button type="button" className="btn btn-small btn-gold" onClick={bulkMove}>이동</button>
+          <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
+          <input type="text" className="field-input" style={{maxWidth:140, padding:'4px 8px'}} placeholder="말머리 (비우면 제거)" value={bulkPrefix} onChange={(e) => setBulkPrefix(e.target.value)} aria-label="일괄 적용할 말머리"/>
+          <button type="button" className="btn btn-small btn-gold" onClick={bulkApplyPrefix}>말머리 적용</button>
+          <button type="button" className="btn btn-small" style={{marginLeft:'auto'}} onClick={() => setSelectedIds(new Set())}>선택 해제</button>
+        </div>
+      )}
+
+      <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+        <thead>
+          <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
+            <th scope="col" style={{padding:'12px 8px', textAlign:'center', width:36}}>
+              <input type="checkbox"
+                checked={visible.length > 0 && visible.every((p) => selectedIds.has(p.id))}
+                onChange={(e) => {
+                  if (e.target.checked) setSelectedIds(new Set(visible.map((p) => p.id)));
+                  else setSelectedIds(new Set());
+                }}
+                aria-label="전체 선택"/>
+            </th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>분류</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>말머리</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>제목</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>작성자</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>날짜</th>
+            <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visible.map((p) => (
+            <tr key={p.id} style={{borderBottom:'1px solid var(--line)', background: selectedIds.has(p.id) ? 'rgba(245,213,72,0.04)' : undefined}}>
+              <td style={{padding:'14px 8px', textAlign:'center'}}>
+                <input type="checkbox" checked={selectedIds.has(p.id)}
+                  onChange={(e) => {
+                    setSelectedIds((prev) => {
+                      const next = new Set(prev);
+                      if (e.target.checked) next.add(p.id); else next.delete(p.id);
+                      return next;
+                    });
+                  }}
+                  aria-label={`"${p.title}" 선택`}/>
+              </td>
+              <td className="mono dim-2" style={{padding:14}}>#{String(p.id).padStart(4,'0')}</td>
+              <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{p.category}</span></td>
+              <td style={{padding:14}}>
+                {p.prefix ? <span className="mono" style={{fontSize:9, padding:'1px 6px', border:'1px solid var(--gold-dim)', color:'var(--gold)'}}>{p.prefix}</span> : <span className="dim-2" style={{fontSize:10}}>—</span>}
+              </td>
+              <td className="ko-serif" style={{padding:14, fontSize:14}}>{p.title}</td>
+              <td className="dim mono" style={{padding:14}}>{p.author}</td>
+              <td className="mono dim-2" style={{padding:14}}>{p.date}</td>
+              <td style={{padding:14, textAlign:'right', display:'flex', justifyContent:'flex-end', gap:8}}>
+                <button type="button" className="btn btn-small" onClick={() => setViewingId(p.id)}>열기</button>
+                <button type="button" className="btn btn-small" onClick={() => removeOne(p)}
+                  style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {visible.length === 0 && (
+        <div className="card" style={{padding:24, marginTop:16, textAlign:'center'}}>
+          조건에 맞는 게시글이 없습니다.
+        </div>
+      )}
+      {viewingId && (
+        <PostViewerModal postId={viewingId} onClose={() => setViewingId(null)}/>
+      )}
+    </div>
+  );
+};
+
 // === Admin Page ===================================================
 // 데이터 원칙: 모든 콘텐츠는 BGNJ_* 헬퍼 경유 (D1 source-of-truth). BANGINOJA_DATA 직접 참조 금지.
 const AdminPage = ({ go }) => {
   const G = window.BGNJ_GUARD;
   const [tab, setTab] = React.useState("대시보드");
   const [kmsTab, setKmsTab] = React.useState("기능정의서");
-  const [postSearch, setPostSearch] = React.useState("");
-  const [postFilter, setPostFilter] = React.useState("all");
+  // v00.180 — postSearch/postFilter/selectedPostIds/viewingPostId/bulkTargetCat/bulkTargetPrefix
+  // 모두 CommunityPostsAdminPanel 내부 state 로 이전.
   const [postRefreshKey, setPostRefreshKey] = React.useState(0);
   const [versionPage, setVersionPage] = React.useState(1);
-  const [selectedPostIds, setSelectedPostIds] = React.useState(new Set());
-  const [viewingPostId, setViewingPostId] = React.useState(null);
-  const [bulkTargetCat, setBulkTargetCat] = React.useState("");
-  const [bulkTargetPrefix, setBulkTargetPrefix] = React.useState("");
 
   const allCommunityPosts = React.useMemo(() => window.BGNJ_COMMUNITY.listPosts(), [postRefreshKey]);
   const allUsers = React.useMemo(() => window.BGNJ_AUTH.listUsers(), [postRefreshKey]);
@@ -5820,14 +6000,7 @@ const AdminPage = ({ go }) => {
   }, [allUsers, allCommunityPosts, totalComments, allColumns, allBookOrders, pendingBookOrders, refundRequestedOrders]);
   const latestCommunityPost = allCommunityPosts[0] || null;
   const latestColumn = allColumns[0] || null;
-  const visibleCommunityPosts = React.useMemo(() => allCommunityPosts.filter((post) => {
-    const search = postSearch.trim().toLowerCase();
-    const matchesSearch = !search
-      || post.title.toLowerCase().includes(search)
-      || String(post.author || "").toLowerCase().includes(search);
-    const matchesFilter = postFilter === "all" || post.categoryId === postFilter;
-    return matchesSearch && matchesFilter;
-  }), [allCommunityPosts, postSearch, postFilter]);
+  // v00.180 — visibleCommunityPosts 도 CommunityPostsAdminPanel 내부로 이전.
 
   // v00.146 — 사이드바 그룹 재구성. 사용자 요청 '관리자 그룹핑을 다시 고려해줘'.
   // 핵심 원칙: 비슷한 일을 하는 메뉴를 인접하게. 데이터 분석 = 요약, 사용자 활동 = 커뮤니티, 콘텐츠 ≠ 프로그램.
@@ -5864,50 +6037,7 @@ const AdminPage = ({ go }) => {
     URL.revokeObjectURL(url);
   };
 
-  const exportCommunityPosts = () => {
-    const blob = new Blob([window.BGNJ_COMMUNITY.exportCsv()], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `community-posts-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const deleteCommunityPost = (post) => {
-    if (!confirm(`"${post.title}" 게시글을 삭제하시겠어요?`)) return;
-    window.BGNJ_COMMUNITY.deletePost(post.id);
-    setSelectedPostIds((prev) => { const next = new Set(prev); next.delete(post.id); return next; });
-    setPostRefreshKey((value) => value + 1);
-  };
-
-  const bulkDeletePosts = () => {
-    if (selectedPostIds.size === 0) return;
-    if (!confirm(`선택한 ${selectedPostIds.size}개 게시글을 삭제할까요?`)) return;
-    selectedPostIds.forEach((id) => window.BGNJ_COMMUNITY.deletePost(id));
-    setSelectedPostIds(new Set());
-    setPostRefreshKey((v) => v + 1);
-  };
-
-  const bulkMovePosts = () => {
-    if (selectedPostIds.size === 0) return;
-    if (!bulkTargetCat) { alert("이동할 게시판을 선택하세요."); return; }
-    const cat = window.BGNJ_STORES.categories.find((c) => c.id === bulkTargetCat);
-    if (!cat) return;
-    selectedPostIds.forEach((id) => window.BGNJ_COMMUNITY.updatePost(id, { categoryId: cat.id, category: cat.label }));
-    setSelectedPostIds(new Set());
-    setBulkTargetCat("");
-    setPostRefreshKey((v) => v + 1);
-  };
-
-  const bulkSetPrefix = () => {
-    if (selectedPostIds.size === 0) return;
-    const next = bulkTargetPrefix.trim();
-    selectedPostIds.forEach((id) => window.BGNJ_COMMUNITY.updatePost(id, { prefix: next || null }));
-    setSelectedPostIds(new Set());
-    setBulkTargetPrefix("");
-    setPostRefreshKey((v) => v + 1);
-  };
+  // v00.180 — 게시글 export/delete/bulk* 핸들러 모두 CommunityPostsAdminPanel 로 이전. AdminPage 는 onChange 콜백으로 새로고침만.
 
   // 모바일 사이드바 drawer 상태 — ≤900px 에서 햄버거 토글로 사이드바 슬라이드.
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -6586,128 +6716,11 @@ const AdminPage = ({ go }) => {
             storageKey="bgnj_admin_subtab_community"
             defaultKey="posts"
             subTabs={[
+              // v00.180 — 인라인 JSX → CommunityPostsAdminPanel 호출 (DRY 추출).
               { key: "posts", label: "게시글", render: () => (
-        // sub-tab posts wrapper start — 기존 인라인 JSX 그대로
-          <div>
-            {/* 게시판 칩 (검색 위) */}
-            <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:12}} role="tablist" aria-label="게시판 필터">
-              {[{ id: 'all', label: '전체', count: allCommunityPosts.length }]
-                .concat(window.BGNJ_STORES.categories
-                  .filter((item) => item.boardType === 'community')
-                  .map((c) => ({ id: c.id, label: c.label, count: allCommunityPosts.filter((p) => p.categoryId === c.id).length })))
-                .map((chip) => {
-                  const active = postFilter === chip.id;
-                  return (
-                    <button key={chip.id} type="button" role="tab" aria-selected={active}
-                      onClick={() => { setPostFilter(chip.id); setSelectedPostIds(new Set()); }}
-                      style={{
-                        padding: '6px 14px', fontSize: 12,
-                        fontFamily: 'var(--font-serif)',
-                        background: active ? 'var(--gold)' : 'transparent',
-                        color: active ? 'var(--bg)' : 'var(--ink-2)',
-                        border: `1px solid ${active ? 'var(--gold)' : 'var(--line-2)'}`,
-                        borderRadius: 999,
-                        cursor: 'pointer',
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                      }}>
-                      <span>{chip.label}</span>
-                      <span className="mono" style={{
-                        fontSize: 10, letterSpacing: '0.05em',
-                        opacity: active ? 0.85 : 0.55,
-                      }}>{chip.count}</span>
-                    </button>
-                  );
-                })}
-            </div>
-            <div style={{display:'flex', gap:12, marginBottom:16}}>
-              <label htmlFor="post-search" className="sr-only">게시글 검색</label>
-              <input id="post-search" className="field-input" placeholder="제목 또는 작성자 검색..." style={{flex:1}}
-                value={postSearch} onChange={(e) => setPostSearch(e.target.value)}/>
-              <button type="button" className="btn btn-small" onClick={exportCommunityPosts}>CSV 다운로드</button>
-            </div>
-
-            {/* 일괄 작업 바 */}
-            {selectedPostIds.size > 0 && (
-              <div style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'rgba(59,130,246,0.07)', border:'1px solid var(--gold-dim)', marginBottom:12, flexWrap:'wrap'}}>
-                <span className="mono gold" style={{fontSize:11}}>{selectedPostIds.size}개 선택됨</span>
-                <button type="button" className="btn btn-small" style={{borderColor:'var(--danger)', color:'var(--danger)'}} onClick={bulkDeletePosts}>선택 삭제</button>
-                <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
-                <select className="field-input" style={{maxWidth:160, padding:'4px 8px'}} value={bulkTargetCat} onChange={(e) => setBulkTargetCat(e.target.value)}>
-                  <option value="">게시판 선택...</option>
-                  {window.BGNJ_STORES.categories.filter((c) => c.boardType === "community").map((c) => (
-                    <option key={c.id} value={c.id}>{c.label}</option>
-                  ))}
-                </select>
-                <button type="button" className="btn btn-small btn-gold" onClick={bulkMovePosts}>이동</button>
-                <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
-                <input type="text" className="field-input" style={{maxWidth:140, padding:'4px 8px'}} placeholder="말머리 (비우면 제거)" value={bulkTargetPrefix} onChange={(e) => setBulkTargetPrefix(e.target.value)} aria-label="일괄 적용할 말머리"/>
-                <button type="button" className="btn btn-small btn-gold" onClick={bulkSetPrefix}>말머리 적용</button>
-                <button type="button" className="btn btn-small" style={{marginLeft:'auto'}} onClick={() => setSelectedPostIds(new Set())}>선택 해제</button>
-              </div>
-            )}
-
-            <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
-              <thead>
-                <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
-                  <th scope="col" style={{padding:'12px 8px', textAlign:'center', width:36}}>
-                    <input type="checkbox"
-                      checked={visibleCommunityPosts.length > 0 && visibleCommunityPosts.every((p) => selectedPostIds.has(p.id))}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedPostIds(new Set(visibleCommunityPosts.map((p) => p.id)));
-                        else setSelectedPostIds(new Set());
-                      }}
-                      aria-label="전체 선택"/>
-                  </th>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>분류</th>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>말머리</th>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>제목</th>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>작성자</th>
-                  <th scope="col" style={{padding:12, textAlign:'left'}}>날짜</th>
-                  <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleCommunityPosts.map(p => (
-                  <tr key={p.id} style={{borderBottom:'1px solid var(--line)', background: selectedPostIds.has(p.id) ? 'rgba(245,213,72,0.04)' : undefined}}>
-                    <td style={{padding:'14px 8px', textAlign:'center'}}>
-                      <input type="checkbox" checked={selectedPostIds.has(p.id)}
-                        onChange={(e) => {
-                          setSelectedPostIds((prev) => {
-                            const next = new Set(prev);
-                            if (e.target.checked) next.add(p.id); else next.delete(p.id);
-                            return next;
-                          });
-                        }}
-                        aria-label={`"${p.title}" 선택`}/>
-                    </td>
-                    <td className="mono dim-2" style={{padding:14}}>#{String(p.id).padStart(4,'0')}</td>
-                    <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{p.category}</span></td>
-                    <td style={{padding:14}}>
-                      {p.prefix ? <span className="mono" style={{fontSize:9, padding:'1px 6px', border:'1px solid var(--gold-dim)', color:'var(--gold)'}}>{p.prefix}</span> : <span className="dim-2" style={{fontSize:10}}>—</span>}
-                    </td>
-                    <td className="ko-serif" style={{padding:14, fontSize:14}}>{p.title}</td>
-                    <td className="dim mono" style={{padding:14}}>{p.author}</td>
-                    <td className="mono dim-2" style={{padding:14}}>{p.date}</td>
-                    <td style={{padding:14, textAlign:'right', display:'flex', justifyContent:'flex-end', gap:8}}>
-                      <button type="button" className="btn btn-small" onClick={() => setViewingPostId(p.id)}>열기</button>
-                      <button type="button" className="btn btn-small" onClick={() => deleteCommunityPost(p)}
-                        style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {visibleCommunityPosts.length === 0 && (
-              <div className="card" style={{padding:24, marginTop:16, textAlign:'center'}}>
-                조건에 맞는 게시글이 없습니다.
-              </div>
-            )}
-            {viewingPostId && (
-              <PostViewerModal postId={viewingPostId} onClose={() => setViewingPostId(null)}/>
-            )}
-          </div>
-        // sub-tab posts wrapper end
+                <CommunityPostsAdminPanel
+                  posts={allCommunityPosts}
+                  onChange={() => setPostRefreshKey((v) => v + 1)}/>
               )},
               { key: "boards", label: "게시판", render: () => <CommunityBoardsPanel/> },
               { key: "reports", label: "신고", render: () => (

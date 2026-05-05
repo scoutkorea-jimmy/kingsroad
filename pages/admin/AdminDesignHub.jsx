@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.180.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:26:42+09:00",
+    summary: "♻ CommunityPostsAdminPanel 추출 (DRY) — AdminPage 정리",
+    details: [
+      "♻ [컴포넌트 추출] '커뮤니티 → 게시글' sub-tab 의 인라인 JSX (130줄+) 를 별도 컴포넌트로 추출. 자체 state(검색/필터/선택/일괄/모달) + 핸들러(export/delete/bulkRemove/bulkMove/bulkApplyPrefix) 모두 내장.",
+      "♻ [AdminPage 정리] 6개 state(postSearch/postFilter/selectedPostIds/viewingPostId/bulkTargetCat/bulkTargetPrefix) + 5개 핸들러(exportCommunityPosts/deleteCommunityPost/bulkDeletePosts/bulkMovePosts/bulkSetPrefix) + 1개 useMemo(visibleCommunityPosts) AdminPage 에서 제거. 'allCommunityPosts' 만 props 로 전달.",
+      "♻ [onChange 콜백] 부모 AdminPage 의 setPostRefreshKey 를 onChange 로만 노출 — 게시글 변경 시 전체 트리(대시보드 통계 등) 갱신.",
+      "♻ [라인 수 감소] 추출 후 인라인 JSX 130줄 → 컴포넌트 호출 4줄 (-126줄 in AdminPage). 단 컴포넌트 자체는 +220줄. 총 라인 늘었으나 관심사 분리 + 향후 컴포넌트 단위 테스트/추가 가능.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.180.000`.",
+    ],
+    context: "코드 리뷰 사전 정리 cycle 3/4 (C항: DRY 추출). 사용자 룰 1번 (동일 기능 재활용) 의 직접 적용. AdminPage 에 갇혀 있던 게시글 관리 도메인 로직을 독립 컴포넌트로 빼서 가독성/재사용성 확보. 다음 cycle 4 (v00.181) localStorage 풀 audit 후 전체 코드 리뷰.",
+  },
+  {
     version: "00.179.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:23:02+09:00",
