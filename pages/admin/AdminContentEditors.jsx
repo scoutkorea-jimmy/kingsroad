@@ -2333,7 +2333,7 @@ const HomeTextPreview = ({ hero, text, mode }) => {
               marginBottom:16,
             }}>
               {hero.title1 || '한국을'}<br/>
-              <span style={{color:'var(--secondary)'}}>{hero.title2 || '직접 걷고'}</span><br/>
+              <span style={{color:'var(--primary)'}}>{hero.title2 || '직접 걷고'}</span><br/>
               {hero.title3 || '천천히 읽다'}
             </h2>
             <p style={{fontSize:14, lineHeight:1.75, color:'var(--ink-2)', maxWidth:540, marginBottom:20}}>

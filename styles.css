@@ -1122,7 +1122,7 @@ main time, main .section-eyebrow {
 .home-hero .section-eyebrow::before,
 .home-page .section-head .section-eyebrow::before {
   width: 18px;
-  background: var(--secondary);
+  background: var(--gold);
 }
 .home-hero .btn {
   text-transform: none;
@@ -1139,7 +1139,7 @@ main time, main .section-eyebrow {
   padding: 22px 24px;
   background: var(--bg);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--secondary);
+  border-left: 3px solid var(--gold);
   transition: border-color .18s, background-color .18s;
 }
 .home-program-card:hover {
@@ -1152,7 +1152,7 @@ main time, main .section-eyebrow {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: var(--secondary);
+  color: var(--gold-ink);
   margin-bottom: 10px;
 }
 .home-page .section-head .section-title {
@@ -1161,7 +1161,7 @@ main time, main .section-eyebrow {
   letter-spacing: 0;
 }
 .home-page .section-title .accent {
-  color: var(--secondary);
+  color: var(--gold);
   font-style: normal;
   font-weight: inherit;
 }

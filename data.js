@@ -850,7 +850,7 @@ window.BGNJ_HOME_TEXT_DEFAULT = { ...(DEFAULT_SITE_CONTENT.homeText || {}) };
 // HomePage Hero 가 BGNJ_HERO_STYLE() 헬퍼로 읽어 인라인 스타일에 적용.
 window.BGNJ_HERO_STYLE_DEFAULT = {
   eyebrow:  { fontSize: 13, fontWeight: 600, letterSpacing: 0.02, color: '--ink-2', textTransform: 'none' },
-  title:    { fontSize: 58, fontWeight: 800, lineHeight: 1.1, letterSpacing: 0, color: '--ink', accentColor: '--secondary', textAlign: 'left' },
+  title:    { fontSize: 58, fontWeight: 800, lineHeight: 1.1, letterSpacing: 0, color: '--ink', accentColor: '--primary', textAlign: 'left' },
   subtitle: { fontSize: 16, fontWeight: 500, lineHeight: 1.85, color: '--ink-2', maxWidth: 560, textAlign: 'left' },
   cta:      { fontWeight: 700, textTransform: 'none' },
   stats:    {
