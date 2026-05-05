@@ -321,6 +321,8 @@ const handleAuthSignup = async (req, env) => {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(id, email, name, hash, salt, isAdmin, gradeId, profile ? JSON.stringify(profile) : null, JSON.stringify(body.consents || {}), nowIso()).run();
   await recordAttempt(env, email, ip, true);
+  // v00.189 — signup audit log. 사용자 보고 '회원가입이든 모든 기록이 로그로 남게'.
+  await auditWrite(env, email, "user.signup", `user:${id}`, { name, isAdmin: !!isAdmin, gradeId });
 
   const token = newSessionToken();
   const ttl = Number(env.SESSION_TTL_SECONDS || 2592000);
@@ -1773,7 +1775,7 @@ const handleCategoriesList = async (req, env) => {
 };
 
 const handleCategoryCreate = async (req, env) => {
-  await requireAdmin(req, env);
+  const admin = await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
   const id = String(body.id || "").trim() || randomId("cat");
   // v00.141 — schema-v8 (allow_read / allow_write / allow_comment_read / allow_comment_write).
@@ -1793,11 +1795,13 @@ const handleCategoryCreate = async (req, env) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(id, body.label || "", body.boardType || "community", Number(body.minLevel || 0), Number(body.postMinLevel || 10), body.description || "", JSON.stringify(body.prefixes || []), Number(body.order || 0)).run();
   }
+  // v00.189 — 카테고리 추가 audit log.
+  await auditWrite(env, admin.email, "category.create", `category:${id}`, { label: body.label, boardType: body.boardType });
   return { id };
 };
 
 const handleCategoryPatch = async (req, env, id) => {
-  await requireAdmin(req, env);
+  const admin = await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
   const sets = []; const args = [];
   if ("label" in body) { sets.push("label = ?"); args.push(body.label); }
@@ -1829,12 +1833,16 @@ const handleCategoryPatch = async (req, env, id) => {
       }
     } else { throw err; }
   }
+  // v00.189 — 카테고리 변경 audit log.
+  await auditWrite(env, admin.email, "category.update", `category:${id}`, body);
   return { ok: true };
 };
 
 const handleCategoryDelete = async (req, env, id) => {
-  await requireAdmin(req, env);
+  const admin = await requireAdmin(req, env);
   await env.DB.prepare("DELETE FROM categories_kv WHERE id = ?").bind(id).run();
+  // v00.189 — 카테고리 삭제 audit log.
+  await auditWrite(env, admin.email, "category.remove", `category:${id}`);
   return { ok: true };
 };
 
@@ -1845,19 +1853,23 @@ const handleGradesList = async (req, env) => {
 };
 
 const handleGradeUpsert = async (req, env, id) => {
-  await requireAdmin(req, env);
+  const admin = await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
   await env.DB.prepare(
     `INSERT INTO grades_kv (id, label, level, color, description, display_order) VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET label = excluded.label, level = excluded.level, color = excluded.color,
        description = excluded.description, display_order = excluded.display_order`
   ).bind(id, body.label || id, Number(body.level || 0), body.color || "", body.description || "", Number(body.order || 0)).run();
+  // v00.189 — 등급 upsert audit log.
+  await auditWrite(env, admin.email, "grade.upsert", `grade:${id}`, { label: body.label, level: body.level });
   return { ok: true };
 };
 
 const handleGradeDelete = async (req, env, id) => {
-  await requireAdmin(req, env);
+  const admin = await requireAdmin(req, env);
   await env.DB.prepare("DELETE FROM grades_kv WHERE id = ?").bind(id).run();
+  // v00.189 — 등급 삭제 audit log.
+  await auditWrite(env, admin.email, "grade.remove", `grade:${id}`);
   return { ok: true };
 };
 
@@ -1952,6 +1964,8 @@ const handleInternalAlarmSend = async (req, env) => {
       sent += 1;
     } catch {}
   }
+  // v00.189 — 내부 알람 발송 audit log.
+  await auditWrite(env, me?.email || '?', "alarm.send", `alarm:${userIds.length}users`, { title, sent, total: userIds.length });
   return { ok: true, sent, total: userIds.length };
 };
 

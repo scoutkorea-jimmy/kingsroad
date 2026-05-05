@@ -4,6 +4,31 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.189.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T08:48:39+09:00",
+    summary: "🐛 등급 이름 초기화 fix + audit 로그 보강 (signup/grade/category/alarm) + 오류로그 점검",
+    details: [
+      "🐛 [등급 이름 초기화 root cause] 사용자 강한 보고 (반복) '등급 이름 자꾸 초기화'. AdminGradePanel mount 시 BGNJ_STORES.grades 가 boot async fetch 완료 전 stale 일 가능성 → 사용자가 default 위에 편집 → 저장 → D1 default 로 덮어써서 '초기화' 인상.",
+      "🐛 [fix 1] AdminGradePanel mount useEffect 에서 BGNJ_API.grades.list() 직접 호출 → BGNJ_STORES + 로컬 state 동기 갱신. dirty 면 사용자 편집 보호 (덮어쓰기 차단).",
+      "🐛 [fix 2] commitAll 의 silent error 가시성 강화. PUT 실패 시 alert 로 즉시 알림 + setDirty(false) 차단 → 사용자가 즉시 재시도 가능. 이전엔 saveMsg ⚠ 만 → 사용자 못 보고 새로고침 → D1 default 로 덮어써서 반복 '초기화'.",
+      "🪵 [audit 로그 보강] 사용자 보고 '관리자 페이지 활동 로그 — 이름 수정이든 회원가입이든 모든 기록이 로그로'. 워커 핸들러 5개 신규 audit:",
+      "  · user.signup (handleAuthSignup) — 회원가입 자동 기록",
+      "  · grade.upsert / grade.remove",
+      "  · category.create / category.update / category.remove",
+      "  · alarm.send (internal-alarm broadcast)",
+      "  기존 lecture/tour create/update/remove + admin.user_update/delete 와 함께 admin → 감사 로그 패널에서 모두 조회 가능.",
+      "🔍 [오류 로그 점검 결과] 정상 동작 확인:",
+      "  · POST /api/error-log (anonymous OK) → 201",
+      "  · GET /api/admin/error-log → 401 (auth 정상)",
+      "  · AppErrorBoundary + GlobalErrorToast → BGNJ_API.errorLog.report 자동 호출",
+      "  · admin → 오류 로그 패널에서 누적 조회 가능",
+      "ℹ ★ 워커 wrangler deploy 필요 (audit 추가 + signup audit).",
+      "📦 cache-buster — `?v=00.189.000`.",
+    ],
+    context: "사용자 분노 — 등급 이름 반복 초기화. v00.170 + v00.181 fix 후에도 재발. 이번엔 mount 시 D1 강제 fetch + 실패 시 alert 로 visibility 확보. 더불어 활동 로그 보강 (signup 등 누락 핸들러) + 오류 로그 인프라 동작 확인.",
+  },
+  {
     version: "00.188.000",
     date: "2026-05-05",
     datetime: "2026-05-05T23:32:58+09:00",

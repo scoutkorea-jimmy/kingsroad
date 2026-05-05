@@ -7267,6 +7267,35 @@ const AdminGradePanel = () => {
   const [busyReevaluate, setBusyReevaluate] = React.useState(false);
   const [reevalResult, setReevalResult] = React.useState(null);
 
+  // v00.189 — 사용자 보고 '등급 이름 자꾸 초기화'. mount 시 D1 에서 강제 재 fetch.
+  // 이전엔 BGNJ_STORES.grades (boot async fetch 결과) 가 mount 시점에 stale 일 수 있어
+  // 사용자가 default 값 위에 편집 → 저장 → D1 default 로 덮어쓰여 '초기화' 인상 발생.
+  // 본 사이클에서 mount 마다 직접 fetch + dirty 시 무시 (사용자 편집 보호).
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await window.BGNJ_API?.grades?.list?.();
+        if (cancelled) return;
+        if (Array.isArray(r?.grades) && r.grades.length) {
+          const fresh = r.grades.map((g) => ({
+            id: g.id, label: g.label, level: g.level,
+            color: g.color, desc: g.description,
+            order: g.display_order ?? 0,
+          }));
+          window.BGNJ_STORES.grades = fresh;
+          setGrades((prev) => {
+            // dirty 면 사용자 편집 보호 — 무시.
+            if (dirty) return prev;
+            return fresh.slice();
+          });
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 정렬된 grades (level asc).
   const sortedGrades = React.useMemo(() => grades.slice().sort((a, b) => a.level - b.level), [grades]);
 
@@ -7312,20 +7341,28 @@ const AdminGradePanel = () => {
       const sorted = grades.slice().sort((a, b) => a.level - b.level);
 
       // 1) D1 grades_kv 에 각 등급 upsert (label/level/color/description/order).
+      // v00.189 — 실패 시 즉시 alert (이전엔 saveMsg 만 → 사용자 못 보고 새로고침해서 D1 default 로 덮어쓰여 '초기화' 인상).
       const failed = [];
       for (const g of sorted) {
         try {
-          await window.BGNJ_API?.grades?.upsert?.(g.id, {
+          if (!window.BGNJ_API?.grades?.upsert) {
+            throw new Error('BGNJ_API.grades.upsert 가 로드되지 않았습니다 (네트워크/스크립트 로딩 문제).');
+          }
+          await window.BGNJ_API.grades.upsert(g.id, {
             label: g.label, level: Number(g.level || 0), color: g.color || '',
             description: g.desc || '', order: Number(g.order || g.level || 0),
           });
         } catch (err) {
-          failed.push({ id: g.id, msg: err?.message || String(err) });
+          failed.push({ id: g.id, label: g.label, msg: err?.message || String(err) });
         }
       }
       if (failed.length) {
-        // 일부 실패도 진행 — 클라이언트 캐시는 갱신해야 사용자가 다시 시도 가능.
-        setSaveMsg(`⚠ ${failed.length}개 등급 서버 저장 실패: ${failed.map(f => f.id).join(', ')}`);
+        const msg = `⚠ 등급 서버 저장 ${failed.length}건 실패\n\n${failed.map(f => `• ${f.id} (${f.label}): ${f.msg}`).join('\n')}\n\n새로고침 시 서버 D1 default 가 다시 덮어쓰므로 — 다시 시도하거나 로그아웃 후 admin 재로그인 후 시도해 주세요.`;
+        alert(msg);
+        setSaveMsg(`⚠ ${failed.length}건 실패 — alert 참조`);
+        // 실패 시 setDirty(false) 하지 않음 — 사용자가 다시 시도 가능.
+        setSaving(false);
+        return;
       }
 
       // 2) 클라이언트 캐시(localStorage 폴백) 갱신.
