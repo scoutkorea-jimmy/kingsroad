@@ -5718,6 +5718,163 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
   );
 };
 
+// === Internal Alarm Panel (v00.183) ================================
+// 사용자 보고 '내부 인원들에게 알람을 보낼 수 있는 기능'.
+// admin → admin/특정 사용자에게 알림 broadcast. D1 notifications 테이블 사용 (server-first).
+const InternalAlarmPanel = () => {
+  const [users, setUsers] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [scope, setScope] = React.useState('all_admins');  // 'all_admins' | 'select'
+  const [selectedIds, setSelectedIds] = React.useState(new Set());
+  const [title, setTitle] = React.useState('');
+  const [message, setMessage] = React.useState('');
+  const [sending, setSending] = React.useState(false);
+  const [resultMsg, setResultMsg] = React.useState('');
+  const [excludeSelf, setExcludeSelf] = React.useState(true);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await window.BGNJ_API?.admin?.users?.list?.();
+        if (cancelled) return;
+        setUsers(Array.isArray(data?.users) ? data.users : []);
+      } catch {} finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const admins = users.filter((u) => u.isAdmin || u.is_admin);
+  const allUsersList = users.slice().sort((a, b) => {
+    const aa = (a.isAdmin || a.is_admin) ? 0 : 1;
+    const bb = (b.isAdmin || b.is_admin) ? 0 : 1;
+    if (aa !== bb) return aa - bb;
+    return String(a.name || '').localeCompare(String(b.name || ''));
+  });
+
+  const send = async () => {
+    if (!message.trim()) { setResultMsg('✗ 메시지를 입력해 주세요.'); return; }
+    if (scope === 'select' && selectedIds.size === 0) { setResultMsg('✗ 수신자를 선택해 주세요.'); return; }
+    if (!confirm(scope === 'all_admins'
+      ? `모든 관리자(${admins.length}명${excludeSelf ? ' - 본인 제외' : ''})에게 알람을 보내시겠어요?`
+      : `선택한 ${selectedIds.size}명에게 알람을 보내시겠어요?`)) return;
+    setSending(true); setResultMsg('');
+    try {
+      const recipients = scope === 'all_admins' ? 'all_admins' : Array.from(selectedIds);
+      const res = await window.BGNJ_API?.internalAlarm?.send?.({
+        recipients, title: title.trim(), message: message.trim(), excludeSelf,
+      });
+      setResultMsg(`✓ ${res?.sent ?? 0}명에게 알람이 발송되었습니다.`);
+      setTitle(''); setMessage(''); setSelectedIds(new Set());
+      setTimeout(() => setResultMsg(''), 4000);
+    } catch (err) {
+      setResultMsg('✗ 발송 실패: ' + (err?.message || '알 수 없는 오류'));
+    } finally { setSending(false); }
+  };
+
+  const toggleId = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  return (
+    <div>
+      <AdminPanelHeader
+        eyebrow="ALARM · 내부 알람"
+        title="내부 인원 알람 보내기"
+        description="다른 관리자 또는 특정 사용자에게 알림을 broadcast 합니다. 수신자의 알림 종(NotificationBell) 에 즉시 표시됩니다. D1 notifications 테이블에 저장 (server-first)."/>
+
+      <article className="admin-form-card" style={{padding:18, marginBottom:18}}>
+        <div className="admin-form-card__eyebrow">📣 알람 작성</div>
+
+        {/* 수신 범위 */}
+        <fieldset style={{border:'1px solid var(--line)', padding:'10px 14px', marginBottom:14}}>
+          <legend className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', padding:'0 6px'}}>수신 범위</legend>
+          <div style={{display:'flex', gap:18, flexWrap:'wrap'}}>
+            <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer'}}>
+              <input type="radio" name="alarm-scope" checked={scope === 'all_admins'}
+                onChange={() => setScope('all_admins')}/>
+              <span>전체 관리자 ({admins.length}명{excludeSelf ? ' · 본인 제외' : ''})</span>
+            </label>
+            <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer'}}>
+              <input type="radio" name="alarm-scope" checked={scope === 'select'}
+                onChange={() => setScope('select')}/>
+              <span>특정 사용자 선택 ({selectedIds.size}명 선택됨)</span>
+            </label>
+            <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer', marginLeft:'auto'}}>
+              <input type="checkbox" checked={excludeSelf} onChange={(e) => setExcludeSelf(e.target.checked)}/>
+              <span style={{fontSize:13}}>본인 제외</span>
+            </label>
+          </div>
+        </fieldset>
+
+        {/* 사용자 다중 선택 (scope === 'select' 일 때) */}
+        {scope === 'select' && (
+          <fieldset style={{border:'1px solid var(--line)', padding:'10px 14px', marginBottom:14, maxHeight:280, overflow:'auto'}}>
+            <legend className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', padding:'0 6px'}}>수신자 선택</legend>
+            {loading ? (
+              <p className="dim" style={{fontSize:12}}>회원 목록 로딩 중…</p>
+            ) : (
+              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:'4px 12px'}}>
+                {allUsersList.map((u) => {
+                  const isAd = !!(u.isAdmin || u.is_admin);
+                  return (
+                    <label key={u.id} style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'4px 6px'}}>
+                      <input type="checkbox" checked={selectedIds.has(u.id)} onChange={() => toggleId(u.id)}/>
+                      <span style={{fontSize:13, color:'var(--ink)'}}>
+                        {u.name || '(이름 없음)'}
+                        {isAd && <span className="mono gold" style={{fontSize:9, marginLeft:6, letterSpacing:'0.1em'}}>ADMIN</span>}
+                      </span>
+                      <span className="mono dim-2" style={{fontSize:10, marginLeft:'auto'}}>{u.email}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </fieldset>
+        )}
+
+        {/* 제목 + 메시지 */}
+        <div className="field" style={{marginBottom:12}}>
+          <label className="field-label" htmlFor="alarm-title">제목 (선택)</label>
+          <input id="alarm-title" className="field-input" value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="예: 환불 처리 요청 / 긴급 점검 안내"/>
+        </div>
+        <div className="field" style={{marginBottom:14}}>
+          <label className="field-label" htmlFor="alarm-message">메시지 <span className="gold">*</span></label>
+          <textarea id="alarm-message" className="field-input" rows={5} value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="알림 내용을 입력하세요."
+            style={{fontFamily:'inherit', resize:'vertical', lineHeight:1.6}}/>
+        </div>
+
+        <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
+          <button type="button" className="btn btn-gold" onClick={send}
+            disabled={sending || !message.trim()}>
+            {sending ? '발송 중…' : '📣 발송'}
+          </button>
+          <button type="button" className="btn btn-small" onClick={() => { setTitle(''); setMessage(''); setSelectedIds(new Set()); setResultMsg(''); }}>
+            초기화
+          </button>
+          {resultMsg && (
+            <span className="mono" style={{fontSize:12, fontWeight:700,
+              color: resultMsg.startsWith('✗') ? 'var(--danger)' : 'var(--secondary)'}}>{resultMsg}</span>
+          )}
+        </div>
+      </article>
+
+      <p className="dim-2" style={{fontSize:11, lineHeight:1.7}}>
+        ⓘ 알람은 D1 <code style={{padding:'1px 5px', background:'var(--bg-2)', border:'1px solid var(--line-2)'}}>notifications</code> 테이블에 type=<code style={{padding:'1px 5px', background:'var(--bg-2)', border:'1px solid var(--line-2)'}}>internal_alarm</code> 으로 저장됩니다.
+        수신자는 헤더의 알림 종(🔔) 에서 즉시 확인할 수 있습니다.
+      </p>
+    </div>
+  );
+};
+
 // === Community Posts Admin Panel (v00.180 추출) =====================
 // 사용자 코드 리뷰 룰 1번 (DRY): 인라인 JSX 였던 게시글 관리 부분을 별도 컴포넌트로.
 // 자체 state(검색/필터/선택/일괄/모달) + 핸들러(export/delete/bulk) 모두 내장.
@@ -6015,7 +6172,8 @@ const AdminPage = ({ go }) => {
     { group: "사이트 설정",   items: ["사이트 설정"] },
     { group: "개인정보·법무", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     // v00.171 — '데이터 정리' (LegacyMigrationPanel) 폐기. 사용자 보고 '필요없으면 모두 다 지워'. 마이그레이션 완료 (v00.123).
-    { group: "시스템",        items: ["버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "설정"] },
+    // v00.183 — 내부 인원 알람 항목 추가.
+    { group: "시스템",        items: ["내부 알람", "버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "설정"] },
   ];
 
   const exportMemberData = (m) => {
@@ -7012,6 +7170,8 @@ const AdminPage = ({ go }) => {
         {/* v00.177 — '커뮤니티 게시판' 별도 라우트 폐기. '커뮤니티' SubTabsView 안으로 이동. */}
         {/* v00.166 — 약관/개인정보, 자주 묻는 질문, SEO 는 "사이트 설정" 머지로 이동. */}
         {tab === "감사 로그" && <AuditLogPanel/>}
+        {/* v00.183 — 내부 인원 알람. */}
+        {tab === "내부 알람" && <InternalAlarmPanel/>}
         {tab === "오류 로그" && <ErrorLogPanel/>}
         {tab === "오류 페이지 미리보기" && <ErrorPagesPreviewPanel go={go}/>}
         {/* v00.171 — '데이터 정리' 탭 폐기. 마이그레이션 완료. LegacyMigrationPanel 컴포넌트는 코드 유지(향후 재사용 여지). */}

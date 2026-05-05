@@ -199,6 +199,13 @@
       markAllRead: () => request("POST", "/notifications/all/read"),
     },
 
+    // v00.183 — 내부 인원(admin) broadcast 알람.
+    // recipients: 'all_admins' (전체 관리자) | userId 배열 (특정 사용자 다건).
+    internalAlarm: {
+      send: ({ recipients, title, message, excludeSelf } = {}) =>
+        request("POST", "/admin/internal-alarm", { recipients, title, message, excludeSelf }),
+    },
+
     // ── 좋아요 / 북마크 ──
     likes: {
       list: (postId) => request("GET", `/posts/${postId}/likes`),

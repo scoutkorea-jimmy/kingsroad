@@ -1918,6 +1918,43 @@ const handleColumnView = async (req, env, id) => {
 // 댓글 작성 / 등록 / 주문 등 행위 시 호출. 익명 안전(throw 안 함).
 // v00.120 — GC: 90일 이상 된 read=1 알림 1/50 확률로 삭제. unread 는 보존.
 const NOTIFICATIONS_RETENTION_MS = 90 * 24 * 3600 * 1000;
+// v00.183 — 내부 인원(admin) 대상 알람 broadcast. admin 전용. body: { recipients: 'all_admins' | userId[], title, message }.
+const handleInternalAlarmSend = async (req, env) => {
+  const me = await requireAdmin(req, env);
+  const body = await req.json().catch(() => ({}));
+  const recipients = body.recipients;
+  const title = String(body.title || '').trim();
+  const message = String(body.message || '').trim();
+  if (!message) throw new HttpError(400, '메시지를 입력해 주세요.');
+  // 수신자 결정.
+  let userIds = [];
+  if (recipients === 'all_admins' || recipients === 'all') {
+    const { results } = await env.DB.prepare("SELECT id FROM users WHERE is_admin = 1").all();
+    userIds = (results || []).map((r) => r.id);
+  } else if (Array.isArray(recipients)) {
+    userIds = recipients.filter(Boolean).map(String);
+  } else {
+    throw new HttpError(400, "recipients 는 'all_admins' 또는 userId 배열이어야 합니다.");
+  }
+  // 본인 제외 (자기에게 보내는 알람 차단 옵션).
+  if (body.excludeSelf !== false && me?.id) userIds = userIds.filter((id) => id !== me.id);
+  if (userIds.length === 0) throw new HttpError(400, '발송할 대상이 없습니다.');
+  // 각 수신자에게 notification insert.
+  let sent = 0;
+  for (const uid of userIds) {
+    try {
+      await insertNotification(env, {
+        userId: uid,
+        type: 'internal_alarm',
+        message: title ? `[${title}] ${message}` : message,
+        fromName: me?.name || '운영자',
+      });
+      sent += 1;
+    } catch {}
+  }
+  return { ok: true, sent, total: userIds.length };
+};
+
 const insertNotification = async (env, { userId, type, message, fromName, postId, postTitle, lectureId, tourId }) => {
   if (!userId) return;
   try {
@@ -2278,6 +2315,8 @@ const route = async (req, env) => {
 
   // 알림
   if (req.method === "GET" && p === "/api/notifications") return json(await handleNotificationsList(req, env));
+  // v00.183 — 내부 인원 알람 (admin → admin/특정 사용자 broadcast).
+  if (req.method === "POST" && p === "/api/admin/internal-alarm") return json(await handleInternalAlarmSend(req, env), { status: 201 });
   if ((g = m(/^\/api\/notifications\/([\w-]+)\/read$/))) {
     if (req.method === "POST") return json(await handleNotificationsMarkRead(req, env, g[1]));
   }

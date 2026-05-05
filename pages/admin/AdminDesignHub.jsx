@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.183.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:41:43+09:00",
+    summary: "📣 내부 인원 알람 기능 — admin → admin/특정 사용자 broadcast",
+    details: [
+      "📣 [InternalAlarmPanel 신규] 사용자 보고 '내부 인원들에게 알람을 보낼 수 있는 기능'. 시스템 그룹에 [내부 알람] 항목 추가. 폼: 수신 범위(전체 관리자 / 특정 사용자 다중 선택) + 본인 제외 토글 + 제목(선택) + 메시지 + 발송.",
+      "📣 [server-first] D1 notifications 테이블에 type='internal_alarm' 으로 저장. 수신자별 row 1개씩 INSERT. 사용자 룰 (모든 데이터 서버 저장) 준수.",
+      "📣 [워커 POST /api/admin/internal-alarm] handleInternalAlarmSend 핸들러 신규. recipients='all_admins' 또는 userId 배열. excludeSelf 옵션. 본인은 기본 제외.",
+      "📣 [API 헬퍼] BGNJ_API.internalAlarm.send({ recipients, title, message, excludeSelf }) 신규.",
+      "📣 [수신 경로] 기존 NotificationBell (헤더 🔔) 이 D1 notifications 를 읽으므로 자동 표시. 별도 클라이언트 코드 변경 없이 바로 동작.",
+      "📣 [admin 사용자 picker] 회원 목록 조회 (BGNJ_API.admin.users.list) → admin 우선 정렬 + 일반 회원 포함. 이름/이메일 표시 + ADMIN 뱃지.",
+      "ℹ ★ 워커 wrangler deploy 필요 (handleInternalAlarmSend 신규 endpoint).",
+      "📦 cache-buster — `?v=00.183.000`.",
+    ],
+    context: "사용자 요청 큐 누적 — 코드 리뷰 사전 정리(v00.178-181) + DRY 추출(v00.182) 완료 후 본 사이클에서 알람 기능 구현. 기존 notifications 인프라 (D1 + NotificationBell) 재활용 — DRY 원칙. 새 컴포넌트 InternalAlarmPanel 1개만 추가.",
+  },
+  {
     version: "00.182.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:37:41+09:00",
