@@ -934,7 +934,17 @@ const HomePage = ({ go }) => {
               marginBottom:28, gap:16, flexWrap:'wrap',
             }}>
               <div className="section-eyebrow" aria-hidden="true" style={{margin:0}}>{homeText.columnEyebrow}</div>
-              <button type="button" className="btn-ghost" onClick={() => go('column')}>{homeText.columnAction}</button>
+              <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
+                {/* v00.169 — admin 전용 글쓰기 진입. /column 으로 이동하며 sessionStorage flag 로 모달 자동 오픈. */}
+                {!!window.BGNJ_AUTH?.currentUser?.()?.isAdmin && (
+                  <button type="button" className="btn btn-gold btn-small"
+                    onClick={() => {
+                      try { sessionStorage.setItem('bgnj_pending_column_write', '1'); } catch {}
+                      go('column');
+                    }}>＋ 글쓰기</button>
+                )}
+                <button type="button" className="btn-ghost" onClick={() => go('column')}>{homeText.columnAction}</button>
+              </div>
             </div>
             <div style={{display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:56}} className="col-grid">
               {/* v00.164 — 피처드 = magazine spread. 카드 라인 제거 (.card 폐기), 사진 fullbleed-ish + 큰 타이틀. */}

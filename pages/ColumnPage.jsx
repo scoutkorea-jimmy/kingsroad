@@ -6,6 +6,9 @@ const ColumnPage = ({ go, user }) => {
   const [category, setCategory] = React.useState("전체");
   const [comment, setComment] = React.useState("");
   const [shareMsg, setShareMsg] = React.useState("");
+  // v00.169 — admin 전용 글쓰기 모달 (사용자 요청 '뱅기노자 칼럼에 글쓰기 버튼 활성화').
+  const [writerOpen, setWriterOpen] = React.useState(false);
+  const isAdmin = !!user?.isAdmin;
 
   const refresh = () => setTick((v) => v + 1);
 
@@ -31,6 +34,16 @@ const ColumnPage = ({ go, user }) => {
       setSelectedId(pending);
     }
   }, []);
+
+  // v00.169 — 홈 '＋ 글쓰기' 진입 → 모달 자동 오픈 (admin 전용 플래그).
+  React.useEffect(() => {
+    let pendingWrite = null;
+    try { pendingWrite = sessionStorage.getItem("bgnj_pending_column_write"); } catch {}
+    if (pendingWrite) {
+      try { sessionStorage.removeItem("bgnj_pending_column_write"); } catch {}
+      if (user?.isAdmin) setWriterOpen(true);
+    }
+  }, [user]);
 
   // v00.134 — 칼럼 데이터 동기화. boot.jsx Promise.allSettled 가 비동기 완료
   // 또는 admin 탭에서 BGNJ_BROADCAST 발화 → 자동 새로고침. 사용자 보고
@@ -322,13 +335,20 @@ const ColumnPage = ({ go, user }) => {
           })()}
         </div>
 
-        {/* 검색 + 카테고리 */}
+        {/* 검색 + 카테고리 + (admin) 글쓰기 */}
         <div style={{display:'flex', justifyContent:'center', alignItems:'center', gap:16, marginBottom:24, flexWrap:'wrap'}}>
           <label htmlFor="col-search" className="sr-only">칼럼 검색</label>
           <input id="col-search" className="field-input"
             placeholder="제목 · 발췌 · 본문 검색..."
             value={search} onChange={(e) => setSearch(e.target.value)}
             style={{width:280, padding:'10px 14px'}}/>
+          {/* v00.169 — admin 전용 글쓰기 진입. 비로그인/일반회원은 노출 X. */}
+          {isAdmin && (
+            <button type="button" className="btn btn-gold btn-small"
+              onClick={() => setWriterOpen(true)}>
+              ＋ 글쓰기
+            </button>
+          )}
         </div>
         <div style={{display:'flex', justifyContent:'center', gap:12, marginBottom:48, flexWrap:'wrap'}}>
           {categories.map((c) => (
@@ -405,6 +425,60 @@ const ColumnPage = ({ go, user }) => {
           <div className="mono dim-2" style={{textAlign:'center', fontSize:10, letterSpacing:'0.2em', marginTop:32}}>
             총 {filtered.length}개 칼럼 · {category} {search && `· "${search}"`}
           </div>
+        )}
+      </div>
+
+      {/* v00.169 — admin 전용 칼럼 작성 모달. 저장 시 bgnj-columns-refresh 이벤트가 위 useEffect 에서 청취되어 자동 새로고침. */}
+      {writerOpen && isAdmin && <ColumnWriterModal onClose={() => setWriterOpen(false)}/>}
+    </div>
+  );
+};
+
+// v00.169 — admin 전용 칼럼 작성 모달 (ColumnPage 진입 경로). admin 콘솔의 ColumnEditorModalContent 와 동일 패턴.
+const ColumnWriterModal = ({ onClose }) => {
+  const [payload, setPayload] = React.useState(null);
+  const dirty = !!(payload && (payload.title?.trim() || payload.text?.trim()));
+  const saveDraft = () => {
+    if (!payload) return;
+    try {
+      window.BGNJ_DRAFTS?.save?.('column', {
+        title: payload.title || '',
+        category: payload.category || '',
+        excerpt: payload.excerpt || '',
+        html: payload.html || '',
+        text: payload.text || '',
+        publishAt: payload.publishAt || '',
+      });
+    } catch {}
+  };
+  const guard = window.useModalGuard?.({
+    open: true, dirty, onClose, onSaveDraft: saveDraft, label: '칼럼',
+  }) || {};
+  const Editor = window.AdminColumnEditor;
+  return (
+    <div role="dialog" aria-modal="true" aria-label="칼럼 작성"
+      onClick={guard.onBackdropClick}
+      style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'grid', placeItems:'start center', padding:24, overflowY:'auto'}}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        width:'min(1100px, 100%)', background:'var(--bg)', boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+        padding:24, marginTop:24, marginBottom:48,
+      }}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>새 칼럼 작성</h2>
+          <button type="button" className="btn btn-small" onClick={() => {
+            const ok = !dirty || window.confirm('작성 중인 내용을 임시저장 후 닫으시겠어요?\n[확인]=임시저장 후 닫기 / [취소]=그냥 닫기');
+            if (ok && dirty) saveDraft();
+            onClose?.();
+          }}>닫기</button>
+        </div>
+        {Editor ? (
+          <Editor
+            onPayloadChange={setPayload}
+            onAfterSave={(status) => {
+              if (status === 'published' || status === 'scheduled') onClose?.();
+            }}/>
+        ) : (
+          <p className="dim" style={{padding:24}}>에디터 로딩 중...</p>
         )}
       </div>
     </div>

@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.169.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T21:22:48+09:00",
+    summary: "✍ /column 페이지 admin 전용 글쓰기 버튼 + 모달",
+    details: [
+      "✍ [admin 글쓰기 진입 추가] 사용자 요청 '뱅기노자 칼럼에 글쓰기 버튼을 활성화'. 공개 /column 아카이브 헤더 (검색·카테고리 줄) 에 admin 전용 '＋ 글쓰기' 버튼 추가. 비로그인/일반회원에게는 노출되지 않음.",
+      "✍ [홈 칼럼 섹션에도 글쓰기] 사용자 추가 보고 '뱅기노자 칼럼이 일반 라이브 홈페이지에 글쓰기 버튼이 보였으면 좋겠어'. HomePage 칼럼 섹션의 '칼럼 전체 보기' 옆 admin 전용 '＋ 글쓰기' 버튼. 클릭 시 sessionStorage flag 후 /column 이동 → ColumnPage useEffect 가 flag 감지하면 ColumnWriterModal 자동 오픈.",
+      "✍ [ColumnWriterModal 신규] window.AdminColumnEditor 를 모달로 래핑. admin 콘솔의 ColumnEditorModalContent 와 동일 패턴 (useModalGuard + 외부클릭/ESC 임시저장 prompt + 발행/예약 시 자동 닫음).",
+      "✍ [자동 새로고침] 저장 시 BGNJ_COLUMNS 가 'bgnj-columns-refresh' 이벤트 발화 → ColumnPage 의 기존 listener 가 청취 → 즉시 목록 갱신.",
+      "✍ [임시저장 호환] window.BGNJ_DRAFTS('column') 에 저장. ColumnsHubPanel 의 임시저장 목록과 동일 store 공유.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.169.000`.",
+    ],
+    context: "사용자가 admin 콘솔 대신 공개 /column 페이지에서 직접 칼럼을 작성할 수 있길 원함. ColumnPage 에 이미 BGNJ_AUTH 의 user 가 prop 으로 전달되므로 isAdmin 체크 즉시 가능. AdminColumnEditor 는 이미 window 노출되어 있어 외부 페이지에서 재사용 가능.",
+  },
+  {
     version: "00.168.000",
     date: "2026-05-05",
     datetime: "2026-05-05T19:53:46+09:00",
