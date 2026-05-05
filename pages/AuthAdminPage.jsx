@@ -5058,6 +5058,50 @@ const MemberAdminPanel = ({ go }) => {
   );
 };
 
+// v00.166 — 사이드바 항목 머지용 sub-tab 래퍼.
+// 동일 카테고리의 여러 패널을 한 사이드바 항목 + 상단 sub-tab UI 로 묶음.
+// 사용처: 사이트 설정 (사이트 콘텐츠/홈 텍스트/히어로/SEO/약관/FAQ/계좌번호 7개를 1개로).
+// storageKey 가 있으면 마지막 sub-tab 상태를 localStorage 에 저장 — 새로고침 후 복원.
+const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
+  const [active, setActive] = React.useState(() => {
+    if (storageKey) {
+      try { const v = localStorage.getItem(storageKey); if (v && subTabs.some((t) => t.key === v)) return v; } catch {}
+    }
+    return defaultKey || (subTabs[0] && subTabs[0].key);
+  });
+  React.useEffect(() => {
+    if (storageKey) try { localStorage.setItem(storageKey, active); } catch {}
+  }, [active, storageKey]);
+  const Active = subTabs.find((t) => t.key === active);
+  return (
+    <>
+      <div role="tablist" style={{
+        borderBottom:'1px solid var(--line)', marginBottom:24,
+        display:'flex', gap:0, flexWrap:'wrap',
+      }}>
+        {subTabs.map((t) => (
+          <button key={t.key} type="button" role="tab"
+            onClick={() => setActive(t.key)}
+            aria-selected={active === t.key}
+            style={{
+              padding:'10px 18px',
+              fontSize:14,
+              fontWeight: active === t.key ? 700 : 500,
+              color: active === t.key ? 'var(--secondary)' : 'var(--ink-2)',
+              background:'transparent',
+              borderTop:'none', borderRight:'none', borderLeft:'none',
+              borderBottom: active === t.key ? '2px solid var(--primary)' : '2px solid transparent',
+              cursor:'pointer',
+              letterSpacing:'0.01em',
+              transition:'color .15s, border-color .15s',
+            }}>{t.label}</button>
+        ))}
+      </div>
+      {Active && Active.render()}
+    </>
+  );
+};
+
 // === Admin Page ===================================================
 // 데이터 원칙: 모든 콘텐츠는 BGNJ_* 헬퍼 경유 (D1 source-of-truth). BANGINOJA_DATA 직접 참조 금지.
 const AdminPage = ({ go }) => {
@@ -5183,7 +5227,8 @@ const AdminPage = ({ go }) => {
     { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "책 카탈로그", "책 주문"] },
     { group: "커뮤니티",      items: ["커뮤니티", "커뮤니티 게시판", "신고", "카테고리"] },
     { group: "회원",          items: ["회원", "회원 등급"] },
-    { group: "사이트 설정",   items: ["사이트 콘텐츠", "홈 텍스트", "히어로", "SEO", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
+    // v00.166 — 사이트 설정 7 항목을 단일 "사이트 설정" 으로 머지. SubTabsView 가 내부에서 7 sub-tab 노출.
+    { group: "사이트 설정",   items: ["사이트 설정"] },
     { group: "개인정보·법무", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템",        items: ["버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "설정", "데이터 정리"] },
   ];
@@ -6318,18 +6363,28 @@ const AdminPage = ({ go }) => {
         {tab === "자고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="sleep"/>}
         {tab === "사고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="shop"/>}
         {/* 카테고리 CRUD */}
-        {tab === "사이트 콘텐츠" && <SiteContentAdminPanel/>}
-        {tab === "홈 텍스트" && <HomeTextEditorPanel/>}
-        {tab === "히어로" && <HeroEditorPanel/>}
+        {/* v00.166 — 사이트 설정 7 항목 단일 머지. */}
+        {tab === "사이트 설정" && (
+          <SubTabsView
+            storageKey="bgnj_admin_subtab_site_settings"
+            defaultKey="content"
+            subTabs={[
+              { key: "content",  label: "사이트 콘텐츠",   render: () => <SiteContentAdminPanel/> },
+              { key: "home",     label: "홈 텍스트",       render: () => <HomeTextEditorPanel/> },
+              { key: "hero",     label: "히어로",          render: () => <HeroEditorPanel/> },
+              { key: "seo",      label: "SEO",             render: () => <SEOAdminPanel/> },
+              { key: "legal",    label: "약관/개인정보",   render: () => <LegalAdminPanel/> },
+              { key: "faq",      label: "자주 묻는 질문",  render: () => <FaqAdminPanel/> },
+              { key: "bank",     label: "계좌번호",        render: () => <BankAccountPanel/> },
+            ]}/>
+        )}
         {/* v00.105 — '투어 페이지' / '강연 페이지' 탭 제거. TourAdminPanel / LectureAdminPanel 상단에 inline 통합. */}
         {tab === "카테고리" && <AdminCategoryPanel/>}
         {tab === "커뮤니티 게시판" && <CommunityBoardsPanel/>}
-        {tab === "약관/개인정보" && <LegalAdminPanel/>}
-        {tab === "자주 묻는 질문" && <FaqAdminPanel/>}
+        {/* v00.166 — 약관/개인정보, 자주 묻는 질문, SEO 는 "사이트 설정" 머지로 이동. */}
         {tab === "감사 로그" && <AuditLogPanel/>}
         {tab === "오류 로그" && <ErrorLogPanel/>}
         {tab === "오류 페이지 미리보기" && <ErrorPagesPreviewPanel go={go}/>}
-        {tab === "SEO" && <SEOAdminPanel/>}
         {tab === "데이터 정리" && <LegacyMigrationPanel/>}
 
         {/* 회원 등급 CRUD */}
@@ -6340,7 +6395,7 @@ const AdminPage = ({ go }) => {
         {tab === "칼럼 작성" && <ColumnsHubPanel allColumns={allColumns}/>}
 
         {/* 계좌번호 설정 */}
-        {tab === "계좌번호 설정" && <BankAccountPanel/>}
+        {/* v00.166 — 계좌번호 설정 → "사이트 설정" sub-tab 으로 이동. */}
 
         {/* 설정 — 입금 계좌는 별도 '계좌번호 설정' 탭에서 관리. */}
         {tab === "설정" && (
