@@ -5929,7 +5929,8 @@ const AdminPage = ({ go }) => {
     { group: "요약",          items: ["대시보드", "사용자 여정"] },
     { group: "콘텐츠",        items: ["뱅기노자 칼럼", "추천 여행지", "먹고 놀자", "자고 놀자", "사고 놀자"] },
     { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "책 카탈로그", "책 주문"] },
-    { group: "커뮤니티",      items: ["커뮤니티", "커뮤니티 게시판", "신고", "카테고리"] },
+    // v00.175 — '카테고리' 별도 탭 폐기. CommunityBoardsPanel 이 테이블/DnD 로 게시판 + 권한 통합 관리.
+    { group: "커뮤니티",      items: ["커뮤니티", "커뮤니티 게시판", "신고"] },
     { group: "회원",          items: ["회원", "회원 등급"] },
     // v00.166 — 사이트 설정 7 항목을 단일 "사이트 설정" 으로 머지. SubTabsView 가 내부에서 7 sub-tab 노출.
     { group: "사이트 설정",   items: ["사이트 설정"] },
@@ -7087,7 +7088,7 @@ const AdminPage = ({ go }) => {
             ]}/>
         )}
         {/* v00.105 — '투어 페이지' / '강연 페이지' 탭 제거. TourAdminPanel / LectureAdminPanel 상단에 inline 통합. */}
-        {tab === "카테고리" && <AdminCategoryPanel/>}
+        {/* v00.175 — '카테고리' 탭 폐기. AdminCategoryPanel 컴포넌트는 코드 보존(향후 칼럼 카테고리 등 재사용 여지). */}
         {tab === "커뮤니티 게시판" && <CommunityBoardsPanel/>}
         {/* v00.166 — 약관/개인정보, 자주 묻는 질문, SEO 는 "사이트 설정" 머지로 이동. */}
         {tab === "감사 로그" && <AuditLogPanel/>}
@@ -7524,7 +7525,18 @@ const CommunityBoardsPanel = () => {
   const valueOf = (b) => ({
     label: edits[b.id]?.label ?? b.label,
     desc: edits[b.id]?.desc ?? (b.desc || ''),
+    minLevel: edits[b.id]?.minLevel ?? (b.minLevel ?? 0),
+    postMinLevel: edits[b.id]?.postMinLevel ?? (b.postMinLevel ?? 0),
+    allowRead: edits[b.id]?.allowRead ?? (b.allowRead !== false),
+    allowWrite: edits[b.id]?.allowWrite ?? (b.allowWrite !== false),
+    allowCommentRead: edits[b.id]?.allowCommentRead ?? (b.allowCommentRead !== false),
+    allowCommentWrite: edits[b.id]?.allowCommentWrite ?? (b.allowCommentWrite !== false),
   });
+
+  // v00.175 — 드래그앤드롭 reorder 상태.
+  const [draggingId, setDraggingId] = React.useState(null);
+  const [dragOverId, setDragOverId] = React.useState(null);
+  const [expanded, setExpanded] = React.useState(null);  // 권한/레벨 expanded row id
 
   const update = (id, key, val) => {
     setEdits((cur) => ({ ...cur, [id]: { ...(cur[id] || {}), [key]: val } }));
@@ -7588,7 +7600,75 @@ const CommunityBoardsPanel = () => {
     } finally { setSaving(false); }
   };
 
-  // v00.172 — 테이블/DnD 통합 패널은 v00.173 에서 별도 진행 (분량 큼). 본 사이클은 책 홈 소개글 fix.
+  // v00.175 — HTML5 드래그앤드롭 reorder. 드롭 시 즉시 서버 PATCH (display_order) 일괄.
+  const onDrop = async (toId) => {
+    if (!draggingId || draggingId === toId) {
+      setDraggingId(null); setDragOverId(null); return;
+    }
+    const fromIdx = boards.findIndex((b) => b.id === draggingId);
+    const toIdx = boards.findIndex((b) => b.id === toId);
+    if (fromIdx < 0 || toIdx < 0) {
+      setDraggingId(null); setDragOverId(null); return;
+    }
+    const next = boards.slice();
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setSaving(true);
+    try {
+      await Promise.all(next.map((b, i) => {
+        if ((b.order ?? 0) === i) return Promise.resolve();
+        return window.BGNJ_API?.categories?.update?.(b.id, { order: i }).catch(() => null);
+      }));
+      const allCats = (window.BGNJ_STORES?.categories || []).slice();
+      next.forEach((b, i) => {
+        const idx = allCats.findIndex((c) => c.id === b.id);
+        if (idx >= 0) allCats[idx] = { ...allCats[idx], order: i };
+      });
+      window.BGNJ_STORES.categories = allCats;
+      window.BGNJ_SAVE.categories();
+      setTick((v) => v + 1);
+      setSaveMsg('✓ 순서 변경됨.');
+      setTimeout(() => setSaveMsg(''), 1800);
+    } catch (err) {
+      setSaveMsg('✗ 순서 변경 실패: ' + (err?.message || ''));
+    } finally {
+      setSaving(false);
+      setDraggingId(null);
+      setDragOverId(null);
+    }
+  };
+
+  // v00.175 — 행 단위 통합 저장 (label/desc/level/4종 권한 한 번에 D1 PATCH).
+  const commitRow = async (id) => {
+    const e = edits[id];
+    if (!e) return;
+    setSaving(true);
+    try {
+      const remap = {};
+      if ('label' in e) remap.label = e.label;
+      if ('desc' in e) remap.description = e.desc;
+      if ('minLevel' in e) remap.minLevel = Number(e.minLevel);
+      if ('postMinLevel' in e) remap.postMinLevel = Number(e.postMinLevel);
+      if ('allowRead' in e) remap.allowRead = e.allowRead;
+      if ('allowWrite' in e) remap.allowWrite = e.allowWrite;
+      if ('allowCommentRead' in e) remap.allowCommentRead = e.allowCommentRead;
+      if ('allowCommentWrite' in e) remap.allowCommentWrite = e.allowCommentWrite;
+      await window.BGNJ_API?.categories?.update?.(id, remap);
+      const allCats = (window.BGNJ_STORES?.categories || []).slice();
+      const idx = allCats.findIndex((c) => c.id === id);
+      if (idx >= 0) {
+        allCats[idx] = { ...allCats[idx], ...e };
+      }
+      window.BGNJ_STORES.categories = allCats;
+      window.BGNJ_SAVE.categories();
+      setEdits((cur) => { const next = { ...cur }; delete next[id]; return next; });
+      setTick((v) => v + 1);
+      setSaveMsg('✓ 저장됨.');
+      setTimeout(() => setSaveMsg(''), 1800);
+    } catch (err) {
+      setSaveMsg('✗ 저장 실패: ' + (err?.message || ''));
+    } finally { setSaving(false); }
+  };
 
   const commitAll = async () => {
     if (saving || !dirty) return;
@@ -7596,21 +7676,28 @@ const CommunityBoardsPanel = () => {
     setSaveMsg('');
     try {
       const changedIds = Object.keys(edits);
-      // 1) 서버 PATCH 병렬.
+      // 1) 서버 PATCH 병렬 — v00.175 새 필드(level/권한 4종) 포함.
       const failed = [];
       await Promise.all(changedIds.map(async (id) => {
         const e = edits[id];
+        const remap = {};
+        if ('label' in e) remap.label = e.label;
+        if ('desc' in e) remap.description = e.desc;
+        if ('minLevel' in e) remap.minLevel = Number(e.minLevel);
+        if ('postMinLevel' in e) remap.postMinLevel = Number(e.postMinLevel);
+        if ('allowRead' in e) remap.allowRead = e.allowRead;
+        if ('allowWrite' in e) remap.allowWrite = e.allowWrite;
+        if ('allowCommentRead' in e) remap.allowCommentRead = e.allowCommentRead;
+        if ('allowCommentWrite' in e) remap.allowCommentWrite = e.allowCommentWrite;
         try {
-          await window.BGNJ_API?.categories?.update?.(id, {
-            label: e.label, description: e.desc,
-          });
+          await window.BGNJ_API?.categories?.update?.(id, remap);
         } catch (err) { failed.push(id); }
       }));
-      // 2) 로컬 store 동기화.
+      // 2) 로컬 store 동기화 — 모든 변경 필드 머지.
       const allCats = (window.BGNJ_STORES?.categories || []).slice();
       changedIds.forEach((id) => {
         const idx = allCats.findIndex((c) => c.id === id);
-        if (idx >= 0) allCats[idx] = { ...allCats[idx], ...edits[id], desc: edits[id].desc ?? allCats[idx].desc };
+        if (idx >= 0) allCats[idx] = { ...allCats[idx], ...edits[id] };
       });
       window.BGNJ_STORES.categories = allCats;
       window.BGNJ_SAVE.categories();
@@ -7631,8 +7718,8 @@ const CommunityBoardsPanel = () => {
     <>
       <AdminPanelHeader
         eyebrow="COMMUNITY · 게시판 관리"
-        title="커뮤니티 게시판 — 추가 · 삭제 · 편집"
-        description="게시판을 한 화면에서 추가/삭제/편집합니다. 변경은 [💾 저장] 클릭 시 서버(D1)에 영속화됩니다. 권한 4종 + 등급 세부 설정은 [카테고리] 탭에서 별도 진행."/>
+        title="커뮤니티 게시판 — 테이블 + 드래그앤드롭"
+        description="게시판을 한 화면에서 추가·삭제·순서변경·편집합니다. 좌측 ≡ 핸들로 드래그앤드롭 / 행 클릭 시 권한·등급 펼쳐 보기. 모든 변경은 D1 서버 즉시 저장."/>
 
       {/* v00.171 — 새 게시판 추가 (즉시 서버 반영). */}
       {!adding ? (
@@ -7682,49 +7769,201 @@ const CommunityBoardsPanel = () => {
       {boards.length === 0 ? (
         <AdminEmpty>등록된 커뮤니티 게시판이 없습니다. 위에서 추가하세요.</AdminEmpty>
       ) : (
-        <div style={{display:'grid', gap:14}}>
-          {boards.map((b) => {
+        <div style={{border:'1px solid var(--line)', overflow:'hidden'}}>
+          {/* 테이블 헤더 */}
+          <div className="mono dim-2" style={{
+            display:'grid',
+            gridTemplateColumns:'40px 130px 1fr 80px 80px 80px',
+            gap:0, alignItems:'center', padding:'10px 14px',
+            background:'var(--bg-2)', borderBottom:'1px solid var(--line)',
+            fontSize:10, letterSpacing:'0.18em', fontWeight:700,
+          }}>
+            <span></span>
+            <span>ID</span>
+            <span>이름 / 설명</span>
+            <span style={{textAlign:'center'}}>글 수</span>
+            <span style={{textAlign:'center'}}>권한</span>
+            <span style={{textAlign:'right'}}>액션</span>
+          </div>
+          {boards.map((b, idx) => {
             const isNotice = b.id === 'notice';
             const v = valueOf(b);
             const isEdited = !!edits[b.id];
+            const isExpanded = expanded === b.id;
+            const isDragging = draggingId === b.id;
+            const isDragOver = dragOverId === b.id && draggingId !== b.id;
+            const postCount = ((window.BGNJ_COMMUNITY?.listPosts?.() || []).filter((p) => p.categoryId === b.id)).length;
             return (
-              <article key={b.id} className="admin-form-card" style={{padding:18, borderColor: isNotice ? 'var(--gold-dim)' : (isEdited ? 'var(--gold)' : 'var(--line)')}}>
-                <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:12, marginBottom:12, flexWrap:'wrap'}}>
-                  <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.2em'}}>
-                    BOARD · {b.id} {isEdited && <span className="gold" style={{marginLeft:6}}>● 변경됨</span>}
-                  </div>
-                  <div style={{display:'flex', gap:8, alignItems:'center'}}>
-                    {isNotice && (
-                      <StatusBadge variant="gold" title="공지 게시판은 강제 관리자 전용 — 권한 체크박스 / 등급 설정과 무관">
-                        🔒 관리자 전용 (강제)
-                      </StatusBadge>
+              <div key={b.id}
+                draggable={!isNotice}
+                onDragStart={(e) => {
+                  if (isNotice) { e.preventDefault(); return; }
+                  setDraggingId(b.id);
+                  try { e.dataTransfer.effectAllowed = 'move'; } catch {}
+                }}
+                onDragOver={(e) => { e.preventDefault(); setDragOverId(b.id); }}
+                onDragLeave={() => setDragOverId((cur) => cur === b.id ? null : cur)}
+                onDrop={(e) => { e.preventDefault(); onDrop(b.id); }}
+                onDragEnd={() => { setDraggingId(null); setDragOverId(null); }}
+                style={{
+                  borderBottom: idx < boards.length - 1 ? '1px solid var(--line)' : 'none',
+                  background: isExpanded ? 'rgba(245,213,72,0.04)' : (isDragOver ? 'rgba(245,213,72,0.10)' : (isEdited ? 'rgba(245,213,72,0.02)' : 'var(--bg)')),
+                  opacity: isDragging ? 0.5 : 1,
+                  borderTop: isDragOver ? '2px solid var(--primary)' : undefined,
+                  transition:'background .12s',
+                }}>
+                {/* 메인 행 */}
+                <div style={{
+                  display:'grid',
+                  gridTemplateColumns:'40px 130px 1fr 80px 80px 80px',
+                  gap:0, alignItems:'center', padding:'12px 14px',
+                }}>
+                  {/* DnD 핸들 */}
+                  <span title={isNotice ? '공지는 순서 고정' : '드래그하여 순서 변경'}
+                    style={{
+                      cursor: isNotice ? 'not-allowed' : 'grab',
+                      color:'var(--ink-3)', fontSize:18, lineHeight:1,
+                      userSelect:'none', textAlign:'center',
+                      opacity: isNotice ? 0.3 : 1,
+                    }}>≡</span>
+                  {/* ID */}
+                  <span className="mono dim-2" style={{fontSize:11, letterSpacing:'0.06em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                    {b.id}
+                    {isEdited && <span className="gold" style={{marginLeft:4}}>●</span>}
+                  </span>
+                  {/* 이름 (편집) — 클릭으로 expand 토글하지 않게 input stopPropagation */}
+                  <div style={{minWidth:0}}>
+                    <input type="text"
+                      value={v.label}
+                      onChange={(e) => update(b.id, 'label', e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        width:'100%', padding:'4px 8px', fontSize:13,
+                        background:'transparent', border:'1px solid transparent',
+                        color:'var(--ink)', fontFamily:'inherit', fontWeight:600,
+                      }}
+                      onFocus={(e) => e.target.style.border = '1px solid var(--line-2)'}
+                      onBlur={(e) => e.target.style.border = '1px solid transparent'}/>
+                    {/* 설명 미리보기 (한 줄, expanded 아닐 때만) */}
+                    {!isExpanded && v.desc && (
+                      <div className="dim-2" style={{
+                        fontSize:11, padding:'0 8px', marginTop:2,
+                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                      }}>{v.desc}</div>
                     )}
-                    {/* v00.171 — 게시판 우측 삭제 버튼 (notice 보호). */}
+                  </div>
+                  {/* 글 수 */}
+                  <span className="mono" style={{textAlign:'center', fontSize:11, color:'var(--ink-2)'}}>
+                    {postCount}
+                  </span>
+                  {/* 권한 요약 */}
+                  <span className="mono" style={{textAlign:'center', fontSize:10, letterSpacing:'0.06em', color:'var(--ink-3)'}}>
+                    {isNotice ? '관리자' : `Lv${v.minLevel}/${v.postMinLevel}`}
+                  </span>
+                  {/* 액션 */}
+                  <div style={{display:'flex', gap:4, justifyContent:'flex-end'}}>
+                    <button type="button"
+                      onClick={() => setExpanded(isExpanded ? null : b.id)}
+                      style={{
+                        padding:'4px 10px', fontSize:11, fontFamily:'var(--font-mono)',
+                        background: isExpanded ? 'rgba(245,213,72,0.14)' : 'var(--bg-2)',
+                        border:'1px solid var(--line-2)', cursor:'pointer',
+                        color: isExpanded ? 'var(--ink)' : 'var(--ink-2)',
+                      }}>{isExpanded ? '닫기' : '편집'}</button>
                     {!isNotice && (
-                      <button type="button" className="btn btn-small"
-                        style={{borderColor:'var(--danger)', color:'var(--danger)', fontSize:11, padding:'4px 10px'}}
-                        onClick={() => removeBoard(b.id)} disabled={saving}>
-                        🗑 삭제
-                      </button>
+                      <button type="button"
+                        onClick={() => removeBoard(b.id)}
+                        disabled={saving}
+                        title="삭제"
+                        style={{
+                          padding:'4px 8px', fontSize:11, fontFamily:'var(--font-mono)',
+                          background:'var(--bg-2)', border:'1px solid var(--line-2)',
+                          color:'var(--danger)', cursor:'pointer',
+                        }}>🗑</button>
                     )}
                   </div>
                 </div>
-                <div className="field" style={{marginBottom:14}}>
-                  <label className="field-label" htmlFor={`bd-title-${b.id}`}>제목</label>
-                  <input id={`bd-title-${b.id}`} className="field-input"
-                    value={v.label}
-                    onChange={(e) => update(b.id, 'label', e.target.value)}
-                    placeholder="예: 자유"/>
-                </div>
-                <div className="field" style={{marginBottom:0}}>
-                  <label className="field-label" htmlFor={`bd-desc-${b.id}`}>설명</label>
-                  <textarea id={`bd-desc-${b.id}`} className="field-input" rows={3}
-                    value={v.desc}
-                    onChange={(e) => update(b.id, 'desc', e.target.value)}
-                    placeholder="게시판 상단에 노출되는 안내 문구. 비워두면 미표시."
-                    style={{fontFamily:'inherit', resize:'vertical', lineHeight:1.6}}/>
-                </div>
-              </article>
+                {/* expanded — 권한·설명·등급 편집 */}
+                {isExpanded && (
+                  <div style={{padding:'14px 18px 18px', background:'var(--bg-2)', borderTop:'1px solid var(--line)'}}>
+                    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14}}>
+                      {/* 설명 */}
+                      <div className="field" style={{margin:0, gridColumn:'1 / -1'}}>
+                        <label className="field-label" style={{fontSize:11}}>설명 (게시판 상단 안내 문구)</label>
+                        <textarea
+                          className="field-input"
+                          rows={2}
+                          value={v.desc}
+                          onChange={(e) => update(b.id, 'desc', e.target.value)}
+                          placeholder="비워두면 미표시"
+                          style={{fontFamily:'inherit', resize:'vertical', fontSize:13}}/>
+                      </div>
+                      {/* 최소 등급 */}
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label" style={{fontSize:11}}>읽기 최소 등급 (level)</label>
+                        <select
+                          className="field-input"
+                          value={v.minLevel}
+                          onChange={(e) => update(b.id, 'minLevel', e.target.value)}>
+                          {grades.map((g) => (
+                            <option key={g.id} value={g.level}>Lv {g.level} · {g.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {/* 작성 최소 등급 */}
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label" style={{fontSize:11}}>작성 최소 등급 (level)</label>
+                        <select
+                          className="field-input"
+                          value={v.postMinLevel}
+                          onChange={(e) => update(b.id, 'postMinLevel', e.target.value)}>
+                          {grades.map((g) => (
+                            <option key={g.id} value={g.level}>Lv {g.level} · {g.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    {/* 권한 4종 체크박스 */}
+                    <fieldset style={{border:'1px solid var(--line)', padding:'10px 14px'}}>
+                      <legend className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', padding:'0 6px'}}>권한 (4종)</legend>
+                      <div style={{display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:'6px 18px', fontSize:13}}>
+                        {[
+                          ['allowRead', '글 읽기 허용'],
+                          ['allowWrite', '글 작성 허용'],
+                          ['allowCommentRead', '댓글 읽기 허용'],
+                          ['allowCommentWrite', '댓글 작성 허용'],
+                        ].map(([key, label]) => (
+                          <label key={key} style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer'}}>
+                            <input type="checkbox"
+                              checked={!!v[key]}
+                              disabled={isNotice}
+                              onChange={(e) => update(b.id, key, e.target.checked)}/>
+                            <span style={{color: isNotice ? 'var(--ink-3)' : 'var(--ink)'}}>{label}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {isNotice && (
+                        <p className="dim-2" style={{fontSize:10, marginTop:8, lineHeight:1.5}}>
+                          공지(notice) 는 강제 관리자 전용 — 권한 체크박스 무시.
+                        </p>
+                      )}
+                    </fieldset>
+                    {/* 행 액션 */}
+                    {isEdited && (
+                      <div style={{display:'flex', gap:8, marginTop:12, justifyContent:'flex-end'}}>
+                        <button type="button" className="btn btn-small btn-gold"
+                          onClick={() => commitRow(b.id)} disabled={saving}>
+                          💾 이 게시판만 저장
+                        </button>
+                        <button type="button" className="btn btn-small"
+                          onClick={() => setEdits((cur) => { const next = { ...cur }; delete next[b.id]; return next; })}>
+                          되돌리기
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

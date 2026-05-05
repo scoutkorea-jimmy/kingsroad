@@ -4,6 +4,24 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.175.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:02:03+09:00",
+    summary: "🗂 커뮤니티 게시판 테이블 + 드래그앤드롭 + 카테고리 머지",
+    details: [
+      "🗂 [테이블 레이아웃] 사용자 보고 '커뮤니티 게시판 목록은 리스트형(테이블형)으로 보여주고 드래그앤드랍으로 순서 쉽게 변경'. 카드 그리드 → 6열 테이블 (≡핸들/ID/이름·설명/글수/권한요약/액션).",
+      "🗂 [HTML5 드래그앤드롭] draggable=true (notice 제외) + onDragStart/Over/Drop. 드롭 시 즉시 BGNJ_API.categories.update 일괄 PATCH (display_order). 드래그 중 행 opacity 0.5, 드롭 위치 행 상단 yellow border. notice 는 fixed (드래그 차단).",
+      "🗂 [카테고리 머지] 사용자 보고 '커뮤니티 게시판하고 카테고리하고 기능이 같은거 같은데 합쳐'. 사이드바 [카테고리] 항목 폐기. AdminCategoryPanel 의 권한·등급·prefix 기능을 CommunityBoardsPanel 행 expand 영역으로 흡수. 컴포넌트 코드는 보존(향후 재사용 여지).",
+      "🗂 [행 expand] '편집' 버튼 클릭 시 행 아래로 펼침: 설명 textarea + 읽기/작성 최소 등급 드롭다운(grades_kv 동적) + 권한 4종 체크박스 (글읽/글쓰/댓읽/댓쓰).",
+      "🗂 [개별 저장] expand 영역에 '💾 이 게시판만 저장' 버튼 — commitRow() 가 label/desc/level/권한 일괄 PATCH. '되돌리기' 로 미저장 변경 취소.",
+      "🗂 [전체 저장] 상단 [저장] 버튼은 다중 행 변경 일괄 PATCH (commitAll). v00.175 부터 모든 필드 매핑 (level/권한 포함).",
+      "🗂 [공지 보호] notice 는 드래그 차단 + 권한 체크박스 비활성화 + 삭제 버튼 숨김 + ID 핸들 dim.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.175.000`.",
+    ],
+    context: "v00.171 카드 형식 + v00.172 부분 시도 후 본 사이클에서 완성. 카테고리 탭과 통합으로 1 화면에서 게시판 라이프사이클(추가/순서/편집/권한/삭제) 완료. HTML5 dnd API 만 사용 (외부 lib 없음). expand 시에만 권한 UI 노출해 테이블 컴팩트 유지.",
+  },
+  {
     version: "00.174.000",
     date: "2026-05-05",
     datetime: "2026-05-05T21:58:40+09:00",
