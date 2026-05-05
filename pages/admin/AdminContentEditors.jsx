@@ -1719,6 +1719,7 @@ const HeroEditorPanel = () => {
                 <span style={{color: `var(${effPreview.title.accentColor})`}}>{contentDraft.title2 || '한국을'}</span><br/>
                 {contentDraft.title3 || '느끼다'}
               </h1>
+              {/* v00.168 — whiteSpace pre-wrap 으로 textarea 줄바꿈 보존 (실제 홈 .bgnj-multiline 과 동일 동작). */}
               <p style={{
                 fontSize: effPreview.subtitle.fontSize,
                 fontWeight: effPreview.subtitle.fontWeight,
@@ -1728,6 +1729,7 @@ const HeroEditorPanel = () => {
                 marginBottom: 22,
                 marginLeft: effPreview.title.textAlign === 'center' ? 'auto' : undefined,
                 marginRight: effPreview.title.textAlign === 'center' ? 'auto' : undefined,
+                whiteSpace: 'pre-wrap',
               }}>
                 {contentDraft.subtitle || '궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다.'}
               </p>
@@ -2336,7 +2338,8 @@ const HomeTextPreview = ({ hero, text, mode }) => {
               <span style={{color:'var(--primary)'}}>{hero.title2 || '직접 걷고'}</span><br/>
               {hero.title3 || '천천히 읽다'}
             </h2>
-            <p style={{fontSize:14, lineHeight:1.75, color:'var(--ink-2)', maxWidth:540, marginBottom:20}}>
+            {/* v00.168 — whiteSpace pre-wrap (textarea 줄바꿈 보존). */}
+            <p style={{fontSize:14, lineHeight:1.75, color:'var(--ink-2)', maxWidth:540, marginBottom:20, whiteSpace:'pre-wrap'}}>
               {hero.subtitle || '궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다.'}
             </p>
             <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>

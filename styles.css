@@ -196,10 +196,9 @@
 :root[data-theme="dark"] :focus-visible { outline-color: var(--primary); }
 /* tweaks panel */
 :root[data-theme="dark"] .tweaks { background: var(--bg-2); color: var(--ink); border-color: var(--line); }
-/* 히어로 편집 패널 — 좁은 화면에서는 미리보기를 아래로 (1단) */
-@media (max-width: 1100px) {
-  .hero-editor-grid { grid-template-columns: 1fr !important; }
-}
+/* v00.168 — 사용자 룰: 관리자 max 2단 (사이드바 + main). main 내부는 1단 강제.
+   히어로/홈 텍스트 편집 패널의 form|preview 2-col 폐기 → 항상 vertical stack. */
+.hero-editor-grid { grid-template-columns: 1fr !important; }
 /* 테마 토글 버튼 */
 .theme-toggle {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1192,14 +1191,14 @@ main time, main .section-eyebrow {
     linear-gradient(180deg, rgba(30,41,59,0.5), rgba(15,23,42,0)) !important;
 }
 .home-text-editor-grid {
+  /* v00.168 — 사용자 룰 max 2단 적용. form|preview 2-col 폐기 → 항상 1열 vertical stack. */
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.9fr);
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: 24px;
   align-items: start;
 }
 .home-text-preview-pane {
-  position: sticky;
-  top: 24px;
+  /* v00.168 — sticky 해제 (form 아래 자연 흐름). */
   min-width: 0;
 }
 

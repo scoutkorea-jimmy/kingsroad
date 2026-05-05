@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.168.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T19:53:46+09:00",
+    summary: "🛠 admin '최대 2단' 룰 + iframe 차단 해제 + 줄바꿈 미반영 fix",
+    details: [
+      "🛠 [admin max 2단 룰] 사용자 룰 '대시보드 외 최대 2단 (사이드바 + main). 3단 절대 안됨'. v00.167 의 form|preview 우측 컬럼 → form 아래 vertical stack 으로 이동. main 내부 항상 1열.",
+      "🛠 [hero-editor-grid 1단 강제] HeroEditorPanel 자체 2-col(form|preview) 도 사이드바 합치면 3단 → 항상 1열 stack. styles.css 에 미디어쿼리 폐기 + 무조건 1fr.",
+      "🛠 [home-text-editor-grid 1단 강제] HomeTextEditorPanel 도 동일. .home-text-preview-pane sticky 해제 — 자연 흐름.",
+      "🛠 [iframe 차단 해제 (CSP)] CSP frame-src 가 youtube/vimeo 만 허용 → 자기 자신 iframe 차단('콘텐츠는 차단되어 있습니다'). frame-src 에 'self' 추가. 사이트 콘텐츠/SEO/약관/FAQ sub-tab iframe 정상.",
+      "🛠 [엔터(줄바꿈) 미반영 fix] 사용자 강한 보고: '본문에서 엔터 친거 왜 라이브 미리보기 이런 탭에서 반영 안되냐? 반영하라고 몇번 말해야 반영해줄래?'. HeroEditorPanel 의 임베드 미리보기 subtitle 과 HomeTextPreview 의 hero subtitle 두 곳 모두 whiteSpace: 'pre-wrap' 누락 → textarea 의 \\n 무시됨. 두 곳 모두 추가. 실제 홈은 이미 .bgnj-multiline 으로 보존 중.",
+      "🛠 [히어로 sub-tab previewUrl 제거] 히어로는 자체 임베드 미리보기 보유 → SubTabsView iframe 비활성. 중복 표시 제거.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.168.000`.",
+    ],
+    context: "v00.167 직후 사용자 강한 보고 3건: ① 3단 구성 룰 위반 ② iframe 차단 메시지 ③ 줄바꿈 미반영 (반복 지적). 한 사이클로 일괄 수정. CSP frame-src self 추가는 iframe 가능하게 함과 동시에 frame-ancestors self 와 짝을 이루어 self 만 self 를 frame 가능. 외부 클릭재킹 위험 변동 없음.",
+  },
+  {
     version: "00.167.000",
     date: "2026-05-05",
     datetime: "2026-05-05T19:46:13+09:00",

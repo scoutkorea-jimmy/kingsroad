@@ -5126,70 +5126,58 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
             }}>{t.label}</button>
         ))}
       </div>
-      {previewUrl ? (
-        <div className="admin-preview-grid" style={{
-          display:'grid', gridTemplateColumns:'minmax(0, 1fr) 520px',
-          gap:24, alignItems:'flex-start',
-        }}>
-          <div style={{minWidth:0}}>
-            {Active && Active.render()}
-          </div>
-          <aside style={{
-            position:'sticky', top:24,
-            padding:14,
-            background:'var(--bg-2)',
-            border:'1px solid var(--line)',
-          }}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, flexWrap:'wrap', gap:8}}>
-              <h3 className="ko-serif" style={{fontSize:14, margin:0, fontWeight:700}}>
-                실시간 미리보기
-                <span className="mono dim-2" style={{fontSize:10, marginLeft:8, fontWeight:500, letterSpacing:'0.1em'}}>{previewUrl}</span>
-              </h3>
-              <div style={{display:'flex', gap:6}}>
-                {[['desktop','PC'],['tablet','태블릿'],['mobile','모바일']].map(([k,l]) => (
-                  <button key={k} type="button" onClick={() => setPreviewMode(k)}
-                    style={{
-                      padding:'4px 10px', fontSize:11, fontFamily:'var(--font-mono)',
-                      fontWeight: previewMode === k ? 800 : 500,
-                      letterSpacing:'0.04em',
-                      border:'1px solid ' + (previewMode === k ? 'var(--primary)' : 'var(--line-2)'),
-                      background: previewMode === k ? 'rgba(245,213,72,0.12)' : 'var(--bg)',
-                      color: previewMode === k ? 'var(--ink)' : 'var(--ink-2)',
-                      cursor:'pointer',
-                    }}>{l}</button>
-                ))}
-                <button type="button" onClick={() => setReloadTick((v) => v + 1)} aria-label="미리보기 새로고침"
-                  title="미리보기 새로고침"
+      {Active && Active.render()}
+      {/* v00.168 — 사용자 룰 'admin max 2단': iframe 을 우측 3번째 컬럼이 아닌 form 아래 vertical stack. */}
+      {previewUrl && (
+        <section style={{marginTop:32, paddingTop:24, borderTop:'1px solid var(--line)'}}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, flexWrap:'wrap', gap:8}}>
+            <h3 className="ko-serif" style={{fontSize:16, margin:0, fontWeight:700}}>
+              실시간 미리보기
+              <span className="mono dim-2" style={{fontSize:11, marginLeft:10, fontWeight:500, letterSpacing:'0.12em'}}>{previewUrl}</span>
+            </h3>
+            <div style={{display:'flex', gap:6}}>
+              {[['desktop','PC'],['tablet','태블릿'],['mobile','모바일']].map(([k,l]) => (
+                <button key={k} type="button" onClick={() => setPreviewMode(k)}
                   style={{
-                    padding:'4px 10px', fontSize:13, fontFamily:'var(--font-mono)',
-                    border:'1px solid var(--line-2)', background:'var(--bg)',
-                    color:'var(--ink-2)', cursor:'pointer',
-                  }}>↻</button>
-              </div>
-            </div>
-            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.1em', marginBottom:8}}>
-              {previewMode.toUpperCase()} · {previewW}px
-            </div>
-            <div style={{
-              overflow:'auto', maxHeight:'70vh',
-              background:'var(--bg)', border:'1px solid var(--line)',
-            }}>
-              <iframe key={reloadTick} src={previewUrl}
-                title={`미리보기 — ${Active.label}`}
+                    padding:'5px 12px', fontSize:12, fontFamily:'var(--font-mono)',
+                    fontWeight: previewMode === k ? 800 : 500,
+                    letterSpacing:'0.04em',
+                    border:'1px solid ' + (previewMode === k ? 'var(--primary)' : 'var(--line-2)'),
+                    background: previewMode === k ? 'rgba(245,213,72,0.12)' : 'var(--bg)',
+                    color: previewMode === k ? 'var(--ink)' : 'var(--ink-2)',
+                    cursor:'pointer',
+                  }}>{l}</button>
+              ))}
+              <button type="button" onClick={() => setReloadTick((v) => v + 1)} aria-label="미리보기 새로고침"
+                title="미리보기 새로고침"
                 style={{
-                  width: previewW + 'px',
-                  height: '720px',
-                  border:'0', display:'block',
-                  background:'var(--bg)',
-                }}/>
+                  padding:'5px 12px', fontSize:14, fontFamily:'var(--font-mono)',
+                  border:'1px solid var(--line-2)', background:'var(--bg)',
+                  color:'var(--ink-2)', cursor:'pointer',
+                }}>↻</button>
             </div>
-            <p className="dim" style={{fontSize:11, marginTop:10, lineHeight:1.6}}>
-              저장 후 자동 새로고침. 즉시 확인하려면 <span className="mono">↻</span> 클릭.
-            </p>
-          </aside>
-        </div>
-      ) : (
-        Active && Active.render()
+          </div>
+          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.12em', marginBottom:10}}>
+            {previewMode.toUpperCase()} · {previewW}px
+          </div>
+          {/* viewport 폭이 컨테이너보다 크면 가로 스크롤. */}
+          <div style={{
+            overflow:'auto', background:'var(--bg)', border:'1px solid var(--line)',
+            maxHeight:'80vh',
+          }}>
+            <iframe key={reloadTick} src={previewUrl}
+              title={`미리보기 — ${Active.label}`}
+              style={{
+                width: previewW + 'px',
+                height: '760px',
+                border:'0', display:'block',
+                background:'var(--bg)',
+              }}/>
+          </div>
+          <p className="dim" style={{fontSize:11, marginTop:10, lineHeight:1.6}}>
+            저장 시 자동 새로고침 됩니다. 즉시 확인은 <span className="mono">↻</span> 클릭.
+          </p>
+        </section>
       )}
     </>
   );
@@ -6465,7 +6453,8 @@ const AdminPage = ({ go }) => {
               { key: "content",  label: "사이트 콘텐츠",   previewUrl: "/",        render: () => <SiteContentAdminPanel/> },
               // 홈 텍스트는 자체 임베드 미리보기 보유 (HomeTextPreview) → previewUrl 없음.
               { key: "home",     label: "홈 텍스트",                                render: () => <HomeTextEditorPanel/> },
-              { key: "hero",     label: "히어로",          previewUrl: "/",        render: () => <HeroEditorPanel/> },
+              // v00.168 — 히어로는 자체 임베드 미리보기 보유 → previewUrl 제거 (iframe 중복 방지).
+              { key: "hero",     label: "히어로",                                  render: () => <HeroEditorPanel/> },
               { key: "seo",      label: "SEO",             previewUrl: "/",        render: () => <SEOAdminPanel/> },
               { key: "legal",    label: "약관/개인정보",   previewUrl: "/terms",   render: () => <LegalAdminPanel/> },
               { key: "faq",      label: "자주 묻는 질문",  previewUrl: "/faq",     render: () => <FaqAdminPanel/> },
