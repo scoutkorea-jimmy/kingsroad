@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.162.000",
+  version: "00.163.000",
   build: "2026.05.02",
   channel: "preview",
 };
@@ -590,13 +590,13 @@ const DEFAULT_SITE_CONTENT = {
   },
   brand: { name: "뱅기노자", sub: "BANGINOJA" },
   hero: {
-    eyebrow: "BANGINOJA · 먹고 자고 놀자 와 인문학 여행",
-    title1: "뱅기타고",
-    title2: "한국을",
-    title3: "느끼다",
-    subtitle: "의식주(衣食住) 생활의 3요소에 행문(行文)이 결합되는 여정. 먹고·자고·놀고·배우는 한국을, 뱅기노자와 함께 걷고 느낍니다.",
-    ctaPrimary: "커뮤니티 참여하기 →",
-    ctaSecondary: "투어 프로그램 보기",
+    eyebrow: "먹고 자고 걷고 읽는 한국",
+    title1: "한국을",
+    title2: "직접 걷고",
+    title3: "천천히 읽다",
+    subtitle: "궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다. 뱅기노자는 여행을 기록하고 함께 떠나는 사람들의 작은 모임입니다.",
+    ctaPrimary: "커뮤니티 보기",
+    ctaSecondary: "답사 일정 보기",
     mapHint: "지도를 클릭해 여행지를 탐색하세요",
     // 히어로 하단 통계 카드 — value 는 동적이지만 label/sub/valueFallback 은 편집 가능.
     stats: [
@@ -704,11 +704,59 @@ const DEFAULT_SITE_CONTENT = {
   lectureTemplates: [],
   // HomePage 추천 여행지 섹션 헤딩 (v00.083) — v00.073 sweep 잔재 처리.
   recommendationsHeading: {
-    eyebrow: 'RECOMMENDATIONS · 뱅기노자 추천',
-    titlePrefix: '뱅기노자가 ',
-    titleAccent: '추천',
-    titleSuffix: '합니다',
-    subtitle: '뱅기노자가 직접 걷고, 맛보고, 느낀 곳. 운영자가 큐레이션한 추천 여행지입니다.',
+    eyebrow: '운영자가 다녀온 곳',
+    titlePrefix: '요즘 ',
+    titleAccent: '눈에 들어온',
+    titleSuffix: ' 장소',
+    subtitle: '직접 걷고 먹어본 뒤 다시 꺼내 보고 싶은 곳만 골랐습니다.',
+  },
+  // v00.163 — HomePage 전용 노출 문구. 관리자 '홈 텍스트' 탭에서 좌측 편집 + 우측 반응형 미리보기.
+  // 동적 데이터(투어 제목/글 제목/책 제목 등)는 각 콘텐츠 관리자에서 관리하고, 여기서는 홈 표면의 고정 라벨/헤딩/빈 상태만 관리.
+  homeText: {
+    recEyebrow: '운영자가 다녀온 곳',
+    recTitlePrefix: '요즘 ',
+    recTitleAccent: '눈에 들어온',
+    recTitleSuffix: ' 장소',
+    recSubtitle: '직접 걷고 먹어본 뒤 다시 꺼내 보고 싶은 곳만 골랐습니다.',
+    recAction: '전체 일정 →',
+    tourEyebrow: '답사 일정',
+    tourTitle: '이번에 함께 걸을 길',
+    tourSubtitle: '큰 버스보다 작은 걸음에 맞춘 답사입니다. 장소의 내력과 오늘의 표정을 같이 봅니다.',
+    tourAction: '전체 일정 →',
+    tourNextLabel: '다음 일정',
+    tourPriceLabel: '참가비',
+    communityEyebrow: '커뮤니티',
+    communityTitle: '다녀온 사람들의 기록',
+    communitySubtitle: '좋았던 식당, 애매했던 동선, 다시 가고 싶은 골목까지 편하게 남겨주세요.',
+    communityAction: '커뮤니티 가기 →',
+    communityReplyLabel: '댓글',
+    communityEmptyTitle: '첫 번째 여행 이야기를 써주세요',
+    communityEmptySubtitle: '커뮤니티에 여행 경험을 나누면 더 많은 여행자들이 모여듭니다.',
+    communityEmptyCta: '글 작성하기 →',
+    columnEyebrow: '읽을거리',
+    columnTitle: '길 위에서 이어지는 생각',
+    columnSubtitle: '답사에서 시작해 책상 위로 돌아온 이야기들입니다.',
+    columnAction: '칼럼 전체 보기 →',
+    columnReadMore: '더 읽기 →',
+    columnEmpty: '다음 칼럼 준비 중입니다.',
+    lecturesEyebrow: '강연',
+    lecturesTitle: '앉아서 먼저 떠나는 시간',
+    lecturesAction: '전체 강연 보기 →',
+    lectureBadge: '강연',
+    heroRecentLectureLabel: '최근 강연',
+    heroNextLectureLabel: '다음 강연',
+    heroNextTourLabel: '다음 답사',
+    heroNoLectureText: '예정된 강연이 아직 없습니다.',
+    heroNoLectureCta: '전체 강연 보기 →',
+    heroNoTourText: '예정된 답사가 아직 없습니다.',
+    heroNoTourCta: '전체 답사 보기 →',
+    venueFallback: '장소 미정',
+    emptyFallback: '—',
+    bookEyebrowPrefix: '뱅기노자 출판',
+    bookBuyCta: '구매하기 →',
+    bookKrLabel: '국문판',
+    bookEnLabel: '영문판',
+    bookAuthorSuffix: '지음',
   },
   communityIntro: {
     eyebrow: 'COMMUNITY · 커뮤니티',
@@ -796,13 +844,15 @@ const DEFAULT_SITE_CONTENT = {
   footerStyle: {},
 };
 
+window.BGNJ_HOME_TEXT_DEFAULT = { ...(DEFAULT_SITE_CONTENT.homeText || {}) };
+
 // 히어로 스타일 default — saveSection('heroStyle', value) 가 비면 이 값을 사용.
 // HomePage Hero 가 BGNJ_HERO_STYLE() 헬퍼로 읽어 인라인 스타일에 적용.
 window.BGNJ_HERO_STYLE_DEFAULT = {
-  eyebrow:  { fontSize: 11, fontWeight: 600, letterSpacing: 0.22, color: '--ink-2', textTransform: 'uppercase' },
-  title:    { fontSize: 56, fontWeight: 900, lineHeight: 1.05, letterSpacing: -0.02, color: '--ink', accentColor: '--primary', textAlign: 'left' },
-  subtitle: { fontSize: 16, fontWeight: 500, lineHeight: 1.85, color: '--ink-2', maxWidth: 520, textAlign: 'left' },
-  cta:      { fontWeight: 600, textTransform: 'uppercase' },
+  eyebrow:  { fontSize: 13, fontWeight: 600, letterSpacing: 0.02, color: '--ink-2', textTransform: 'none' },
+  title:    { fontSize: 58, fontWeight: 800, lineHeight: 1.1, letterSpacing: 0, color: '--ink', accentColor: '--secondary', textAlign: 'left' },
+  subtitle: { fontSize: 16, fontWeight: 500, lineHeight: 1.85, color: '--ink-2', maxWidth: 560, textAlign: 'left' },
+  cta:      { fontWeight: 700, textTransform: 'none' },
   stats:    {
     label: { fontSize: 10, fontWeight: 600, letterSpacing: 0.22, color: '--ink-2', textTransform: 'uppercase' },
     value: { fontSize: 22, fontWeight: 600, color: '--ink' },

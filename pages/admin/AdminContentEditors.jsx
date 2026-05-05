@@ -2178,6 +2178,315 @@ const KindPagePanel = ({ kind = 'eat' }) => {
   );
 };
 
+// === Home Text Editor (v00.163) =========================================
+// 홈 화면의 고정 텍스트를 한 화면에서 편집. 좌측 텍스트 / 우측 반응형 미리보기.
+const HOME_PREVIEW_MODES = [
+  { key: 'desktop', label: 'PC', width: 1180 },
+  { key: 'tablet', label: '태블릿', width: 760 },
+  { key: 'mobile', label: '모바일', width: 360 },
+];
+
+const HOME_TEXT_GROUPS = [
+  {
+    title: '히어로',
+    section: 'hero',
+    fields: [
+      ['eyebrow', '상단 작은 문구', '먹고 자고 걷고 읽는 한국'],
+      ['title1', '제목 1행', '한국을'],
+      ['title2', '제목 2행', '직접 걷고'],
+      ['title3', '제목 3행', '천천히 읽다'],
+      ['subtitle', '본문 설명', '궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다.'],
+      ['ctaPrimary', '기본 버튼', '커뮤니티 보기'],
+      ['ctaSecondary', '보조 버튼', '답사 일정 보기'],
+    ],
+  },
+  {
+    title: '히어로 우측 일정 카드',
+    fields: [
+      ['heroRecentLectureLabel', '최근 강연 라벨'],
+      ['heroNextLectureLabel', '다음 강연 라벨'],
+      ['heroNextTourLabel', '다음 답사 라벨'],
+      ['heroNoLectureText', '강연 없음 문구'],
+      ['heroNoLectureCta', '강연 없음 버튼'],
+      ['heroNoTourText', '답사 없음 문구'],
+      ['heroNoTourCta', '답사 없음 버튼'],
+      ['venueFallback', '장소 미정 문구'],
+      ['emptyFallback', '빈 값 표시'],
+    ],
+  },
+  {
+    title: '추천 여행지',
+    fields: [
+      ['recEyebrow', '상단 작은 문구'],
+      ['recTitlePrefix', '제목 앞'],
+      ['recTitleAccent', '제목 강조'],
+      ['recTitleSuffix', '제목 뒤'],
+      ['recSubtitle', '설명'],
+      ['recAction', '버튼'],
+    ],
+  },
+  {
+    title: '답사 일정',
+    fields: [
+      ['tourEyebrow', '상단 작은 문구'],
+      ['tourTitle', '제목'],
+      ['tourSubtitle', '설명'],
+      ['tourAction', '버튼'],
+      ['tourNextLabel', '카드 일정 라벨'],
+      ['tourPriceLabel', '카드 가격 라벨'],
+    ],
+  },
+  {
+    title: '커뮤니티',
+    fields: [
+      ['communityEyebrow', '상단 작은 문구'],
+      ['communityTitle', '제목'],
+      ['communitySubtitle', '설명'],
+      ['communityAction', '버튼'],
+      ['communityReplyLabel', '댓글 라벨'],
+      ['communityEmptyTitle', '빈 상태 제목'],
+      ['communityEmptySubtitle', '빈 상태 설명'],
+      ['communityEmptyCta', '빈 상태 버튼'],
+    ],
+  },
+  {
+    title: '칼럼',
+    fields: [
+      ['columnEyebrow', '상단 작은 문구'],
+      ['columnTitle', '제목'],
+      ['columnSubtitle', '설명'],
+      ['columnAction', '버튼'],
+      ['columnReadMore', '더 읽기 라벨'],
+      ['columnEmpty', '목록 없음 문구'],
+    ],
+  },
+  {
+    title: '강연',
+    fields: [
+      ['lecturesEyebrow', '상단 작은 문구'],
+      ['lecturesTitle', '제목'],
+      ['lecturesAction', '버튼'],
+      ['lectureBadge', '카드 배지'],
+    ],
+  },
+  {
+    title: '도서 CTA',
+    fields: [
+      ['bookEyebrowPrefix', '출판 라벨'],
+      ['bookBuyCta', '구매 버튼'],
+      ['bookKrLabel', '국문판 라벨'],
+      ['bookEnLabel', '영문판 라벨'],
+      ['bookAuthorSuffix', '저자 뒤 문구'],
+    ],
+  },
+];
+
+const HomeTextInput = ({ label, value, onChange, placeholder, multiline }) => (
+  <label className="field" style={{margin:0}}>
+    <span className="field-label">{label}</span>
+    {multiline ? (
+      <textarea className="field-input" rows={3} value={value || ''} placeholder={placeholder || ''}
+        onChange={(e) => onChange(e.target.value)} style={{fontFamily:'inherit', resize:'vertical'}}/>
+    ) : (
+      <input className="field-input" value={value || ''} placeholder={placeholder || ''}
+        onChange={(e) => onChange(e.target.value)}/>
+    )}
+  </label>
+);
+
+const HomePreviewSection = ({ eyebrow, title, subtitle, action }) => (
+  <section style={{padding:'26px 24px', borderBottom:'1px solid var(--line)', background:'var(--bg)'}}>
+    <div className="section-eyebrow" style={{marginBottom:10}}>{eyebrow}</div>
+    <div style={{display:'flex', justifyContent:'space-between', gap:16, alignItems:'flex-end', flexWrap:'wrap'}}>
+      <div style={{minWidth:0}}>
+        <h3 className="section-title" style={{fontSize:28, marginBottom:8}}>{title}</h3>
+        {subtitle && <p className="section-subtitle" style={{fontSize:13, maxWidth:520}}>{subtitle}</p>}
+      </div>
+      {action && <button type="button" className="btn-ghost" style={{flexShrink:0}}>{action}</button>}
+    </div>
+  </section>
+);
+
+const HomeTextPreview = ({ hero, text, mode }) => {
+  const isMobile = mode.key === 'mobile';
+  const isTablet = mode.key === 'tablet';
+  const heroTitleSize = isMobile ? 34 : (isTablet ? 44 : 54);
+  return (
+    <div style={{
+      width: mode.width,
+      maxWidth: '100%',
+      margin:'0 auto',
+      background:'var(--bg)',
+      border:'1px solid var(--line)',
+      boxShadow:'0 10px 28px rgba(15,23,42,0.08)',
+      overflow:'hidden',
+    }}>
+      <section className="home-hero" style={{padding: isMobile ? '34px 20px' : '46px 32px', borderBottom:'1px solid var(--line)'}}>
+        <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1.15fr 0.85fr', gap: isMobile ? 24 : 34, alignItems:'center'}}>
+          <div>
+            <div className="section-eyebrow" style={{marginBottom:14}}>{hero.eyebrow || '먹고 자고 걷고 읽는 한국'}</div>
+            <h2 style={{
+              fontFamily:'var(--font-display)',
+              fontSize: heroTitleSize,
+              lineHeight:1.1,
+              fontWeight:800,
+              marginBottom:16,
+            }}>
+              {hero.title1 || '한국을'}<br/>
+              <span style={{color:'var(--secondary)'}}>{hero.title2 || '직접 걷고'}</span><br/>
+              {hero.title3 || '천천히 읽다'}
+            </h2>
+            <p style={{fontSize:14, lineHeight:1.75, color:'var(--ink-2)', maxWidth:540, marginBottom:20}}>
+              {hero.subtitle || '궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다.'}
+            </p>
+            <div style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+              <button type="button" className="btn btn-gold btn-small">{hero.ctaPrimary || '커뮤니티 보기'}</button>
+              <button type="button" className="btn btn-small">{hero.ctaSecondary || '답사 일정 보기'}</button>
+            </div>
+          </div>
+          <div className="home-program-stack">
+            <article className="home-program-card">
+              <div className="home-program-label">{text.heroNextLectureLabel}</div>
+              <h3 className="ko-serif" style={{fontSize:18, marginBottom:8}}>왕의 길을 읽는 저녁</h3>
+              <div className="dim-2" style={{fontSize:12}}>{text.venueFallback}</div>
+            </article>
+            <article className="home-program-card">
+              <div className="home-program-label">{text.heroNextTourLabel}</div>
+              <h3 className="ko-serif" style={{fontSize:18, marginBottom:8}}>궁궐 답사 예시</h3>
+              <div className="dim-2" style={{fontSize:12}}>5.12 (화) 10:00</div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <HomePreviewSection
+        eyebrow={text.recEyebrow}
+        title={<>{text.recTitlePrefix}<span className="accent">{text.recTitleAccent}</span>{text.recTitleSuffix}</>}
+        subtitle={text.recSubtitle}
+        action={text.recAction}
+      />
+      <HomePreviewSection eyebrow={text.tourEyebrow} title={text.tourTitle} subtitle={text.tourSubtitle} action={text.tourAction}/>
+      <HomePreviewSection eyebrow={text.communityEyebrow} title={text.communityTitle} subtitle={text.communitySubtitle} action={text.communityAction}/>
+      <section style={{padding:'22px 24px', borderBottom:'1px solid var(--line)', background:'var(--bg-2)'}}>
+        <div style={{fontFamily:'var(--font-serif)', fontSize:18, marginBottom:8}}>{text.communityEmptyTitle}</div>
+        <p className="dim" style={{fontSize:13, marginBottom:14}}>{text.communityEmptySubtitle}</p>
+        <button type="button" className="btn btn-gold btn-small">{text.communityEmptyCta}</button>
+      </section>
+      <HomePreviewSection eyebrow={text.columnEyebrow} title={text.columnTitle} subtitle={text.columnSubtitle} action={text.columnAction}/>
+      <HomePreviewSection eyebrow={text.lecturesEyebrow} title={text.lecturesTitle} action={text.lecturesAction}/>
+      <section style={{padding:'24px', background:'var(--bg-2)'}}>
+        <div className="section-eyebrow">{text.bookEyebrowPrefix} · 2026</div>
+        <h3 style={{fontFamily:'var(--font-serif)', fontSize:26, marginBottom:12}}>『왕의길』</h3>
+        <div style={{display:'flex', gap:16, marginBottom:16, flexWrap:'wrap'}}>
+          <span className="mono dim-2" style={{fontSize:11}}>{text.bookKrLabel}</span>
+          <span className="mono dim-2" style={{fontSize:11}}>{text.bookEnLabel}</span>
+        </div>
+        <button type="button" className="btn btn-gold btn-small">{text.bookBuyCta}</button>
+      </section>
+    </div>
+  );
+};
+
+const HomeTextEditorPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const defaults = window.BGNJ_HOME_TEXT_DEFAULT || {};
+  const [heroDraft, setHeroDraft] = React.useState(() => ({ ...(sc.hero || {}) }));
+  const [textDraft, setTextDraft] = React.useState(() => ({ ...defaults, ...((sc.homeText && typeof sc.homeText === 'object') ? sc.homeText : {}) }));
+  const [previewMode, setPreviewMode] = React.useState('desktop');
+  const [msg, setMsg] = React.useState('');
+  const mode = HOME_PREVIEW_MODES.find((m) => m.key === previewMode) || HOME_PREVIEW_MODES[0];
+
+  const setHero = (key, value) => setHeroDraft((d) => ({ ...d, [key]: value }));
+  const setText = (key, value) => setTextDraft((d) => ({ ...d, [key]: value }));
+
+  const save = async () => {
+    try {
+      await window.BGNJ_SITE_CONTENT.saveSection('hero', heroDraft);
+      await window.BGNJ_SITE_CONTENT.saveSection('homeText', textDraft);
+      await window.BGNJ_SITE_CONTENT.saveSection('recommendationsHeading', {
+        eyebrow: textDraft.recEyebrow,
+        titlePrefix: textDraft.recTitlePrefix,
+        titleAccent: textDraft.recTitleAccent,
+        titleSuffix: textDraft.recTitleSuffix,
+        subtitle: textDraft.recSubtitle,
+      });
+      setTick((v) => v + 1);
+      setMsg('저장되었습니다 — 홈 화면에 즉시 반영됩니다.');
+      setTimeout(() => setMsg(''), 2400);
+    } catch (err) {
+      alert('저장 실패: ' + (err?.message || '알 수 없는 오류'));
+    }
+  };
+
+  const resetText = () => {
+    if (!confirm('홈 텍스트 입력값을 기본 문구로 되돌릴까요? 저장 버튼을 눌러야 실제 반영됩니다.')) return;
+    setTextDraft({ ...defaults });
+  };
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:16, lineHeight:1.8}}>
+        홈페이지에 노출되는 고정 문구를 한 곳에서 수정합니다. 좌측에서 바꾸면 우측 미리보기에 바로 반영되고,
+        PC / 태블릿 / 모바일 버튼으로 폭을 전환할 수 있습니다.
+      </p>
+      <div className="home-text-editor-grid">
+        <div>
+          {HOME_TEXT_GROUPS.map((group) => (
+            <section key={group.title} className="card" style={{padding:16, marginBottom:14}}>
+              <h3 className="ko-serif" style={{fontSize:16, marginBottom:12}}>{group.title}</h3>
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}} className="member-act-grid">
+                {group.fields.map(([key, label, placeholder]) => {
+                  const isHero = group.section === 'hero';
+                  const value = isHero ? heroDraft[key] : textDraft[key];
+                  const onChange = (v) => isHero ? setHero(key, v) : setText(key, v);
+                  const multiline = /subtitle|Text|설명/.test(key) || ['subtitle', 'recSubtitle', 'tourSubtitle', 'communitySubtitle', 'communityEmptySubtitle', 'columnSubtitle'].includes(key);
+                  return (
+                    <div key={key} style={{gridColumn: multiline ? '1 / -1' : undefined}}>
+                      <HomeTextInput label={label} value={value} onChange={onChange}
+                        placeholder={placeholder || defaults[key] || ''} multiline={multiline}/>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+          <div style={{display:'flex', gap:10, flexWrap:'wrap', alignItems:'center'}}>
+            <button type="button" className="btn btn-gold" onClick={save}>전체 저장</button>
+            <button type="button" className="btn btn-small" onClick={resetText}>홈 문구 기본값으로</button>
+            {msg && <span role="status" className="mono" style={{fontSize:12, color:'var(--secondary)', fontWeight:700}}>{msg}</span>}
+          </div>
+        </div>
+
+        <aside className="home-text-preview-pane">
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, marginBottom:10, flexWrap:'wrap'}}>
+            <h3 className="ko-serif" style={{fontSize:16, margin:0}}>미리보기</h3>
+            <div role="tablist" aria-label="홈 미리보기 viewport" style={{display:'flex', gap:6}}>
+              {HOME_PREVIEW_MODES.map((m) => (
+                <button key={m.key} type="button" role="tab" aria-selected={previewMode === m.key}
+                  className="btn btn-small" onClick={() => setPreviewMode(m.key)}
+                  style={{
+                    fontSize:11,
+                    borderColor: previewMode === m.key ? 'var(--primary)' : 'var(--line-2)',
+                    background: previewMode === m.key ? 'rgba(245,213,72,0.12)' : 'var(--bg-2)',
+                    color: previewMode === m.key ? 'var(--ink)' : 'var(--ink-2)',
+                    fontWeight: previewMode === m.key ? 800 : 500,
+                  }}>{m.label}</button>
+              ))}
+            </div>
+          </div>
+          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.12em', marginBottom:8}}>
+            {mode.label} · {mode.width}px
+          </div>
+          <div style={{overflow:'auto', padding:'10px 0 20px'}}>
+            <HomeTextPreview hero={heroDraft} text={textDraft} mode={mode}/>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+};
+
 // === Legacy Migration Panel (v00.086) ===================================
 // 운영자 1회성 도구. 누적된 legacy 데이터를 정식 위치로 일괄 이동.
 //   ① 투어 cover: site_content_kv.tourPages[id].coverDataUri → D1.tours.cover_url
@@ -2393,7 +2702,7 @@ Object.assign(window, {
   FOOTER_COLOR_OPTIONS, FooterStyleEditor,
   HE_Field, HE_Input, HE_TextArea, HE_Select, HE_NumberRange, HE_StyleGroup,
   HERO_COLOR_OPTIONS, HERO_WEIGHTS, HERO_ALIGNS, HERO_TFORMS,
-  HeroEditorPanel,
+  HeroEditorPanel, HomeTextEditorPanel,
   LegacyMigrationPanel, // v00.086
   EatSleepShopAdminPanel, ESS_CategoryEditor, // v00.105
   KindPagePanel, // v00.106

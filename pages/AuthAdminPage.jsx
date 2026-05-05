@@ -491,6 +491,7 @@ const LegacyMigrationPanel = window.LegacyMigrationPanel; // v00.086
 const EatSleepShopAdminPanel = window.EatSleepShopAdminPanel; // v00.105
 const FooterStyleEditor   = window.FooterStyleEditor;
 const HeroEditorPanel     = window.HeroEditorPanel;
+const HomeTextEditorPanel = window.HomeTextEditorPanel;
 
 
 // === Report Queue Panel ===========================================
@@ -5182,7 +5183,7 @@ const AdminPage = ({ go }) => {
     { group: "프로그램",      items: ["강연", "투어 프로그램"] },
     { group: "회원",          items: ["회원", "회원 등급"] },
     { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
-    { group: "사이트 설정",   items: ["사이트 콘텐츠", "히어로", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정", "SEO"] },
+    { group: "사이트 설정",   items: ["사이트 콘텐츠", "홈 텍스트", "히어로", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정", "SEO"] },
     { group: "개인정보·법무", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템",        items: ["버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "설정", "데이터 정리"] },
   ];
@@ -6250,6 +6251,7 @@ const AdminPage = ({ go }) => {
         {tab === "사고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="shop"/>}
         {/* 카테고리 CRUD */}
         {tab === "사이트 콘텐츠" && <SiteContentAdminPanel/>}
+        {tab === "홈 텍스트" && <HomeTextEditorPanel/>}
         {tab === "히어로" && <HeroEditorPanel/>}
         {/* v00.105 — '투어 페이지' / '강연 페이지' 탭 제거. TourAdminPanel / LectureAdminPanel 상단에 inline 통합. */}
         {tab === "카테고리" && <AdminCategoryPanel/>}

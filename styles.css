@@ -1108,6 +1108,79 @@ main time, main .section-eyebrow {
   letter-spacing: 0.08em;
 }
 
+/* ---- Home page tone pass ---- */
+.home-hero {
+  background:
+    linear-gradient(180deg, rgba(248,250,252,0.72), rgba(255,255,255,0)) !important;
+}
+.home-hero .section-eyebrow,
+.home-page .section-head .section-eyebrow {
+  font-family: var(--font-sans);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+.home-hero .section-eyebrow::before,
+.home-page .section-head .section-eyebrow::before {
+  width: 18px;
+  background: var(--secondary);
+}
+.home-hero .btn {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.home-hero .hero-stats {
+  max-width: 560px;
+}
+.home-program-stack {
+  display: grid;
+  gap: 12px;
+}
+.home-program-card {
+  padding: 22px 24px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--secondary);
+  transition: border-color .18s, background-color .18s;
+}
+.home-program-card:hover {
+  background: var(--bg-2);
+  border-color: var(--line-2);
+  border-left-color: var(--primary-active);
+}
+.home-program-label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--secondary);
+  margin-bottom: 10px;
+}
+.home-page .section-head .section-title {
+  font-family: var(--font-title);
+  font-size: 42px;
+  letter-spacing: 0;
+}
+.home-page .section-title .accent {
+  color: var(--secondary);
+  font-style: normal;
+  font-weight: inherit;
+}
+:root[data-theme="dark"] .home-hero {
+  background:
+    linear-gradient(180deg, rgba(30,41,59,0.5), rgba(15,23,42,0)) !important;
+}
+.home-text-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.9fr);
+  gap: 20px;
+  align-items: start;
+}
+.home-text-preview-pane {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+}
+
 /* ---- Badge ---- */
 .badge {
   display: inline-flex;
@@ -1299,6 +1372,7 @@ main time, main .section-eyebrow {
   .footer-grid { grid-template-columns: 1fr; gap: 32px; }
   /* 인라인 스타일로 박힌 페이지별 2-col 레이아웃 — !important 로 오버라이드 */
   .hero-grid,
+  .home-text-editor-grid,
   .col-grid,
   .cta-grid,
   .book-grid,
@@ -1311,6 +1385,7 @@ main time, main .section-eyebrow {
   .cta-grid { padding: 40px 28px !important; }
 
   .section-title { font-size: 32px; }
+  .home-page .section-head .section-title { font-size: 32px; }
   .section { padding: 64px 0; }
   .section-tight { padding: 48px 0; }
 
@@ -1379,6 +1454,7 @@ main time, main .section-eyebrow {
   .admin-shell.sidebar-open .admin-sidebar-backdrop { display: block; }
   /* 메인 영역은 햄버거 공간 확보 + padding 축소 */
   .admin-shell .admin-main { padding: 80px 20px 40px !important; }
+  .home-text-preview-pane { position: static; }
 }
 
 @media (max-width: 600px) {
@@ -1395,6 +1471,7 @@ main time, main .section-eyebrow {
   .section { padding: 48px 0; }
   .section-tight { padding: 32px 0; }
   .section-title { font-size: 26px; line-height: 1.2; }
+  .home-page .section-head .section-title { font-size: 26px; line-height: 1.2; }
   .section-subtitle { font-size: 14px; }
   .section-head { margin-bottom: 28px; }
   .footer { padding: 48px 0 32px; }
@@ -1778,4 +1855,3 @@ main time, main .section-eyebrow {
 :root[data-theme="dark"] .admin-empty { background: var(--bg-2); border-color: var(--line); }
 :root[data-theme="dark"] .admin-savebar { background: var(--bg-2); border-color: var(--line); border-top-color: var(--gold-dim); }
 :root[data-theme="dark"] .admin-filter-chip { background: var(--bg-2); border-color: var(--line); }
-

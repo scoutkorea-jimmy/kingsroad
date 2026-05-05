@@ -193,9 +193,58 @@ const truncatePreview = (text, max = 110) => {
   return cut + '…';
 };
 
+const HOME_TEXT_DEFAULT = {
+  recEyebrow: '운영자가 다녀온 곳',
+  recTitlePrefix: '요즘 ',
+  recTitleAccent: '눈에 들어온',
+  recTitleSuffix: ' 장소',
+  recSubtitle: '직접 걷고 먹어본 뒤 다시 꺼내 보고 싶은 곳만 골랐습니다.',
+  recAction: '전체 일정 →',
+  tourEyebrow: '답사 일정',
+  tourTitle: '이번에 함께 걸을 길',
+  tourSubtitle: '큰 버스보다 작은 걸음에 맞춘 답사입니다. 장소의 내력과 오늘의 표정을 같이 봅니다.',
+  tourAction: '전체 일정 →',
+  tourNextLabel: '다음 일정',
+  tourPriceLabel: '참가비',
+  communityEyebrow: '커뮤니티',
+  communityTitle: '다녀온 사람들의 기록',
+  communitySubtitle: '좋았던 식당, 애매했던 동선, 다시 가고 싶은 골목까지 편하게 남겨주세요.',
+  communityAction: '커뮤니티 가기 →',
+  communityReplyLabel: '댓글',
+  communityEmptyTitle: '첫 번째 여행 이야기를 써주세요',
+  communityEmptySubtitle: '커뮤니티에 여행 경험을 나누면 더 많은 여행자들이 모여듭니다.',
+  communityEmptyCta: '글 작성하기 →',
+  columnEyebrow: '읽을거리',
+  columnTitle: '길 위에서 이어지는 생각',
+  columnSubtitle: '답사에서 시작해 책상 위로 돌아온 이야기들입니다.',
+  columnAction: '칼럼 전체 보기 →',
+  columnReadMore: '더 읽기 →',
+  columnEmpty: '다음 칼럼 준비 중입니다.',
+  lecturesEyebrow: '강연',
+  lecturesTitle: '앉아서 먼저 떠나는 시간',
+  lecturesAction: '전체 강연 보기 →',
+  lectureBadge: '강연',
+  heroRecentLectureLabel: '최근 강연',
+  heroNextLectureLabel: '다음 강연',
+  heroNextTourLabel: '다음 답사',
+  heroNoLectureText: '예정된 강연이 아직 없습니다.',
+  heroNoLectureCta: '전체 강연 보기 →',
+  heroNoTourText: '예정된 답사가 아직 없습니다.',
+  heroNoTourCta: '전체 답사 보기 →',
+  venueFallback: '장소 미정',
+  emptyFallback: '—',
+  bookEyebrowPrefix: '뱅기노자 출판',
+  bookBuyCta: '구매하기 →',
+  bookKrLabel: '국문판',
+  bookEnLabel: '영문판',
+  bookAuthorSuffix: '지음',
+};
+
+const getHomeText = (sc) => ({ ...HOME_TEXT_DEFAULT, ...((sc && typeof sc.homeText === 'object') ? sc.homeText : {}) });
+
 // v00.106 — 홈 히어로의 지도 자리. 다음 강연 + 다음 답사 미니 카드.
 // 사용자 제안 A안: '강연/답사 미니 카드' (운영 가치 ↑, 재방문 가치 ↑).
-const HeroProgramCards = ({ go, dataTick }) => {
+const HeroProgramCards = ({ go, dataTick, text }) => {
   // v00.110 — module-scope 컴포넌트는 HomePage 의 `const G = window.BGNJ_GUARD;` 를 사용 못 함.
   // window.BGNJ_GUARD 를 직접 참조 + 안전한 폴백.
   const _arr = (fn) => {
@@ -248,32 +297,29 @@ const HeroProgramCards = ({ go, dataTick }) => {
   };
 
   return (
-    <div style={{display:'grid', gap:14}}>
+    <div className="home-program-stack">
       {/* 다음 강연 카드 */}
       <article
         onClick={() => { if (nextLecture) go('lectures'); }}
-        style={{
-          padding:'20px 22px', cursor: nextLecture ? 'pointer' : 'default',
-          background:'var(--bg-2)', border:'1px solid var(--line)',
-          transition:'all 0.15s',
-        }}
+        className="home-program-card"
+        style={{cursor: nextLecture ? 'pointer' : 'default'}}
         role={nextLecture ? 'button' : undefined}
         tabIndex={nextLecture ? 0 : undefined}
         onKeyDown={(e) => { if (nextLecture && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go('lectures'); } }}>
-        <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.24em', color:'var(--ink-2)', marginBottom:10}}>
-          {lectureIsPast ? 'RECENT LECTURE · 최근 강연' : 'NEXT LECTURE · 다음 강연'}
+        <div className="home-program-label">
+          {lectureIsPast ? text.heroRecentLectureLabel : text.heroNextLectureLabel}
         </div>
         {nextLecture ? (
           <>
             <h3 className="ko-serif" style={{fontSize:20, marginBottom:8, color:'var(--ink)'}}>{nextLecture.topic || nextLecture.title}</h3>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10}}>
               <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{fmtDate(nextLecture.startsAt)}</span>
-              <span className="dim-2" style={{fontSize:12}}>{nextLecture.venue || '장소 미정'}</span>
+              <span className="dim-2" style={{fontSize:12}}>{nextLecture.venue || text.venueFallback}</span>
             </div>
           </>
         ) : (
           <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
-            예정된 강연이 아직 없습니다. <button type="button" className="btn-ghost gold" onClick={(e) => { e.stopPropagation(); go('lectures'); }}>전체 강연 보기 →</button>
+            {text.heroNoLectureText} <button type="button" className="btn-ghost gold" onClick={(e) => { e.stopPropagation(); go('lectures'); }}>{text.heroNoLectureCta}</button>
           </p>
         )}
       </article>
@@ -281,16 +327,13 @@ const HeroProgramCards = ({ go, dataTick }) => {
       {/* 다음 답사 카드 */}
       <article
         onClick={() => { if (nextTour) go('tour'); }}
-        style={{
-          padding:'20px 22px', cursor: nextTour ? 'pointer' : 'default',
-          background:'var(--bg-2)', border:'1px solid var(--line)',
-          transition:'all 0.15s',
-        }}
+        className="home-program-card"
+        style={{cursor: nextTour ? 'pointer' : 'default'}}
         role={nextTour ? 'button' : undefined}
         tabIndex={nextTour ? 0 : undefined}
         onKeyDown={(e) => { if (nextTour && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go('tour'); } }}>
-        <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.24em', color:'var(--ink-2)', marginBottom:10}}>
-          NEXT TOUR · 다음 답사
+        <div className="home-program-label">
+          {text.heroNextTourLabel}
         </div>
         {nextTour ? (
           <>
@@ -308,7 +351,7 @@ const HeroProgramCards = ({ go, dataTick }) => {
           </>
         ) : (
           <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
-            예정된 답사가 아직 없습니다. <button type="button" className="btn-ghost gold" onClick={(e) => { e.stopPropagation(); go('tour'); }}>전체 답사 보기 →</button>
+            {text.heroNoTourText} <button type="button" className="btn-ghost gold" onClick={(e) => { e.stopPropagation(); go('tour'); }}>{text.heroNoTourCta}</button>
           </p>
         )}
       </article>
@@ -318,7 +361,7 @@ const HeroProgramCards = ({ go, dataTick }) => {
 
 // v00.152 — 홈 책 CTA 다권 카루셀. v00.151 단일-책 IIFE 를 컴포넌트화 + 좌우 무한 wrap + autoplay.
 // 데이터 소스: BGNJ_BOOKS.list({status:'published'}). 정렬: primary 우선 → order. 0권이면 섹션 hide.
-const BookCarouselSection = ({ go, dataTick }) => {
+const BookCarouselSection = ({ go, dataTick, text }) => {
   const _arr = (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } };
   // admin 의 책 변경을 새로고침 없이 즉시 반영. dataTick + bgnj-books-refresh 둘 다 청취.
   const [bookTick, setBookTick] = React.useState(0);
@@ -369,7 +412,7 @@ const BookCarouselSection = ({ go, dataTick }) => {
         background:'var(--bg-2)', border:'1px solid var(--line)',
       }}>
         <div>
-          <div className="section-eyebrow">뱅기노자 출판 · {yr}</div>
+          <div className="section-eyebrow">{text.bookEyebrowPrefix} · {yr}</div>
           <h2 style={{
             fontFamily:'var(--font-serif)', fontSize:'clamp(36px, 4vw, 52px)',
             fontWeight:600, lineHeight:1.1, marginBottom: b.subtitle ? 8 : 16,
@@ -394,20 +437,20 @@ const BookCarouselSection = ({ go, dataTick }) => {
             <div style={{display:'flex', gap:20, marginBottom:32, alignItems:'flex-end'}}>
               {hasPriceKR && (
                 <div>
-                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>국문판</div>
+                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{text.bookKrLabel}</div>
                   <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(b.priceKR).toLocaleString()}원</div>
                 </div>
               )}
               {hasPriceKR && hasPriceEN && <div style={{width:1, background:'var(--line-2)', alignSelf:'stretch'}}/>}
               {hasPriceEN && (
                 <div>
-                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>영문판</div>
+                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{text.bookEnLabel}</div>
                   <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(b.priceEN).toLocaleString()}원</div>
                 </div>
               )}
             </div>
           )}
-          <button className="btn btn-gold" onClick={() => go('book')}>구매하기 →</button>
+          <button className="btn btn-gold" onClick={() => go('book')}>{text.bookBuyCta}</button>
         </div>
         <div style={{
           aspectRatio:'3/4', maxWidth:280, margin:'0 auto',
@@ -420,7 +463,7 @@ const BookCarouselSection = ({ go, dataTick }) => {
           ) : (
             <div style={{textAlign:'center', padding:'0 24px'}}>
               <div style={{fontFamily:'var(--font-serif)', fontSize:28, color:'var(--ink)', marginBottom:10, fontWeight:600}}>{b.title}</div>
-              <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.2em'}}>{b.author || '뱅기노자'} 지음</div>
+              <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.2em'}}>{b.author || '뱅기노자'} {text.bookAuthorSuffix}</div>
             </div>
           )}
         </div>
@@ -521,6 +564,7 @@ const HomePage = ({ go }) => {
 
   const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);
   const hero = sc.hero || {};
+  const homeText = React.useMemo(() => getHomeText(sc), [sc]);
   // 모바일 분기 — matchMedia 변경 시 자동 재렌더 (heroStyle 도 갱신).
   const [isMobile, setIsMobile] = React.useState(() => {
     try { return !!(window.matchMedia && window.matchMedia('(max-width: 600px)').matches); } catch { return false; }
@@ -582,20 +626,20 @@ const HomePage = ({ go }) => {
   });
 
   return (
-    <div>
+    <div className="home-page">
       {mapOpen && <DestinationMapModal onClose={() => setMapOpen(false)} go={go}/>}
       {recDetail && <RecommendationDetailModal rec={recDetail} onClose={() => setRecDetail(null)} go={go}/>}
 
       {/* v00.143 — 오픈 안내 배너는 boot.jsx 로 이동 (sitewide, 메뉴 위쪽). */}
 
       {/* ── HERO (텍스트 + 우측 지도 미리보기, 모바일 1단) ─────────── */}
-      <HomeSectionBoundary label="히어로"><section style={{
+      <HomeSectionBoundary label="히어로"><section className="home-hero" style={{
         position:'relative', overflow:'hidden',
         background:'var(--bg)', borderBottom:'1px solid var(--line)',
         padding:'72px 0 88px',
       }}>
         <div className="container">
-          <div className="hero-grid" style={{
+          <div className="hero-grid home-hero-grid" style={{
             display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:56, alignItems:'center',
           }}>
             {/* 좌측: 텍스트 — heroStyle 트윗(관리자 '히어로' 탭) 인라인 적용 */}
@@ -607,7 +651,7 @@ const HomePage = ({ go }) => {
                 color: `var(${heroStyle.eyebrow.color})`,
                 textTransform: heroStyle.eyebrow.textTransform || 'uppercase',
               }}>
-                <span>{hero.eyebrow || "BANGINOJA · 뱅기타고 노자"}</span>
+                <span>{hero.eyebrow || "먹고 자고 걷고 읽는 한국"}</span>
               </div>
               <h1 style={{
                 fontFamily:'var(--font-display)',
@@ -618,9 +662,9 @@ const HomePage = ({ go }) => {
                 marginBottom:22,
                 color:`var(${heroStyle.title.color})`,
               }}>
-                {hero.title1 || "뱅기타고"}<br/>
-                <span style={{color:`var(${heroStyle.title.accentColor})`}}>{hero.title2 || "한국을"}</span><br/>
-                {hero.title3 || "느끼다"}
+                {hero.title1 || "한국을"}<br/>
+                <span style={{color:`var(${heroStyle.title.accentColor})`}}>{hero.title2 || "직접 걷고"}</span><br/>
+                {hero.title3 || "천천히 읽다"}
               </h1>
               <p className="bgnj-multiline" style={{
                 fontSize: heroStyle.subtitle.fontSize,
@@ -632,7 +676,7 @@ const HomePage = ({ go }) => {
                 marginLeft: heroStyle.title.textAlign === 'center' ? 'auto' : undefined,
                 marginRight: heroStyle.title.textAlign === 'center' ? 'auto' : undefined,
               }}>
-                {hero.subtitle || "궁궐 답사부터 지역 여행 코스까지. 뱅기노자와 함께 한국의 역사·문화·자연을 온몸으로 경험하는 여행 커뮤니티입니다."}
+                {hero.subtitle || "궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다. 뱅기노자는 여행을 기록하고 함께 떠나는 사람들의 작은 모임입니다."}
               </p>
               <div style={{
                 display:'flex', gap:12, flexWrap:'wrap', marginBottom:40,
@@ -642,11 +686,11 @@ const HomePage = ({ go }) => {
                 {/* v00.152 — 사용자 요청 '지도에서 여행지 찾기 버튼 삭제'. */}
                 <button className="btn btn-gold" onClick={() => go('community')}
                   style={{fontWeight: heroStyle.cta.fontWeight}}>
-                  {hero.ctaPrimary || "커뮤니티 참여하기"}
+                  {hero.ctaPrimary || "커뮤니티 보기"}
                 </button>
                 <button className="btn" onClick={() => go('tour')}
                   style={{fontWeight: heroStyle.cta.fontWeight}}>
-                  {hero.ctaSecondary || "투어 프로그램 보기"}
+                  {hero.ctaSecondary || "답사 일정 보기"}
                 </button>
               </div>
               <div className="hero-stats" style={{
@@ -682,7 +726,7 @@ const HomePage = ({ go }) => {
 
             {/* 우측: 지도 미리보기 — 시도 클릭 → 전체 모달 (a11y: 외곽 div 는 단순 컨테이너, 실제 버튼은 region path 와 우상단 텍스트 버튼). 폰(≤600px) 에서는 hero-map-preview CSS 로 숨김 + CTA 버튼만 노출. */}
             {/* v00.106 — 지도 → 다음 강연 / 다음 답사 미니 카드 (A안) */}
-            <HeroProgramCards go={go} dataTick={dataTick}/>
+            <HeroProgramCards go={go} dataTick={dataTick} text={homeText}/>
           </div>
         </div>
       </section>
@@ -696,17 +740,17 @@ const HomePage = ({ go }) => {
             {(() => {
               // v00.083 — site_content_kv.recommendationsHeading 에서 hero 읽음 (v00.073 sweep 미완 잔재).
               const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).recommendationsHeading || {};
-              const eb = _i.eyebrow      || 'RECOMMENDATIONS · 뱅기노자 추천';
-              const tp = _i.titlePrefix  ?? '뱅기노자가 ';
-              const ta = _i.titleAccent  ?? '추천';
-              const ts = _i.titleSuffix  ?? '합니다';
-              const sb = _i.subtitle     || '뱅기노자가 직접 걷고, 맛보고, 느낀 곳. 운영자가 큐레이션한 추천 여행지입니다.';
+              const eb = homeText.recEyebrow || _i.eyebrow || HOME_TEXT_DEFAULT.recEyebrow;
+              const tp = homeText.recTitlePrefix ?? _i.titlePrefix ?? HOME_TEXT_DEFAULT.recTitlePrefix;
+              const ta = homeText.recTitleAccent ?? _i.titleAccent ?? HOME_TEXT_DEFAULT.recTitleAccent;
+              const ts = homeText.recTitleSuffix ?? _i.titleSuffix ?? HOME_TEXT_DEFAULT.recTitleSuffix;
+              const sb = homeText.recSubtitle || _i.subtitle || HOME_TEXT_DEFAULT.recSubtitle;
               return (
                 <SectionHead
                   eyebrow={eb}
                   title={<>{tp}<span className="accent">{ta}</span>{ts}</>}
                   subtitle={sb}
-                  action={<button type="button" className="btn-ghost" onClick={() => go('tour')}>전체 프로그램 →</button>}
+                  action={<button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.recAction}</button>}
                 />
               );
             })()}
@@ -760,10 +804,10 @@ const HomePage = ({ go }) => {
         <HomeSectionBoundary label="투어 프로그램"><section className="section" style={{borderBottom:'1px solid var(--line)'}}>
           <div className="container">
             <SectionHead
-              eyebrow="TOUR PROGRAM · 뱅기노자 투어"
-              title={<>직접 걷는 <span className="accent">답사 여행</span></>}
-              subtitle="뱅기노자가 직접 기획·운영하는 소규모 답사 프로그램. 깊이 있는 해설과 함께하는 여행."
-              action={<button type="button" className="btn-ghost" onClick={() => go('tour')}>전체 프로그램 →</button>}
+              eyebrow={homeText.tourEyebrow}
+              title={<>{homeText.tourTitle}</>}
+              subtitle={homeText.tourSubtitle}
+              action={<button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.tourAction}</button>}
             />
             <div className="grid grid-2">
               {tours.map((t, i) => (
@@ -786,12 +830,12 @@ const HomePage = ({ go }) => {
                     borderTop:'1px solid var(--line)', paddingTop:16,
                   }}>
                     <div>
-                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>다음 일정</div>
-                      <div style={{fontSize:14, marginTop:4, color:'var(--ink)', fontWeight:500}}>{t.next || '—'}</div>
+                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{homeText.tourNextLabel}</div>
+                      <div style={{fontSize:14, marginTop:4, color:'var(--ink)', fontWeight:500}}>{t.next || homeText.emptyFallback}</div>
                     </div>
                     <div style={{textAlign:'right'}}>
-                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>참가비</div>
-                      <div className="ko-serif" style={{fontSize:20, marginTop:4, color:'var(--ink)', fontWeight:600}}>{t.price ? (typeof t.price === 'number' ? window.BGNJ_FMT.won(t.price) : t.price) : '—'}</div>
+                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{homeText.tourPriceLabel}</div>
+                      <div className="ko-serif" style={{fontSize:20, marginTop:4, color:'var(--ink)', fontWeight:600}}>{t.price ? (typeof t.price === 'number' ? window.BGNJ_FMT.won(t.price) : t.price) : homeText.emptyFallback}</div>
                     </div>
                   </div>
                 </article>
@@ -805,10 +849,10 @@ const HomePage = ({ go }) => {
       <HomeSectionBoundary label="커뮤니티"><section className="section" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
         <div className="container">
           <SectionHead
-            eyebrow="COMMUNITY · 여행 이야기"
-            title={<>함께 만들어가는 <span className="accent">여행</span></>}
-            subtitle="여행 경험을 나누고, 코스를 추천하고, 함께 떠날 동행을 찾습니다."
-            action={<button type="button" className="btn-ghost" onClick={() => go('community')}>커뮤니티 가기 →</button>}
+            eyebrow={homeText.communityEyebrow}
+            title={<>{homeText.communityTitle}</>}
+            subtitle={homeText.communitySubtitle}
+            action={<button type="button" className="btn-ghost" onClick={() => go('community')}>{homeText.communityAction}</button>}
           />
           {recentPosts.length > 0 ? (
             <div style={{border:'1px solid var(--line)'}}>
@@ -840,7 +884,7 @@ const HomePage = ({ go }) => {
                     display:'flex', gap:14, color:'var(--ink-3)',
                     fontFamily:'var(--font-mono)', fontSize:11, flexShrink:0, fontWeight:500,
                   }}>
-                    <span>댓글 {post.replies ?? 0}</span>
+                    <span>{homeText.communityReplyLabel} {post.replies ?? 0}</span>
                     <span style={{color:'var(--ink-2)'}}>→</span>
                   </div>
                 </div>
@@ -849,12 +893,12 @@ const HomePage = ({ go }) => {
           ) : (
             <div className="card" style={{textAlign:'center', padding:60}}>
               <div style={{fontFamily:'var(--font-serif)', fontSize:20, color:'var(--ink)', marginBottom:12, fontWeight:600}}>
-                첫 번째 여행 이야기를 써주세요
+                {homeText.communityEmptyTitle}
               </div>
               <p style={{fontSize:13, color:'var(--ink-2)', marginBottom:24, lineHeight:1.7}}>
-                커뮤니티에 여행 경험을 나누면 더 많은 여행자들이 모여듭니다.
+                {homeText.communityEmptySubtitle}
               </p>
-              <button className="btn btn-gold" onClick={() => go('community')}>글 작성하기 →</button>
+              <button className="btn btn-gold" onClick={() => go('community')}>{homeText.communityEmptyCta}</button>
             </div>
           )}
         </div>
@@ -865,10 +909,10 @@ const HomePage = ({ go }) => {
         <HomeSectionBoundary label="칼럼"><section className="section" style={{borderBottom:'1px solid var(--line)'}}>
           <div className="container">
             <SectionHead
-              eyebrow="COLUMN · 뱅기노자의 글"
-              title={<><span className="accent">뱅기노자</span>가 쓰다</>}
-              subtitle="한국의 역사·문화·여행을 깊이 있게 풀어내는 뱅기노자의 정기 칼럼."
-              action={<button type="button" className="btn-ghost" onClick={() => go('column')}>칼럼 전체 보기 →</button>}
+              eyebrow={homeText.columnEyebrow}
+              title={<>{homeText.columnTitle}</>}
+              subtitle={homeText.columnSubtitle}
+              action={<button type="button" className="btn-ghost" onClick={() => go('column')}>{homeText.columnAction}</button>}
             />
             <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:40}} className="col-grid">
               {/* 피처드 칼럼 */}
@@ -901,7 +945,7 @@ const HomePage = ({ go }) => {
                   {featuredColumn.excerpt && (
                     <p style={{fontSize:14, lineHeight:1.75, color:'var(--ink-2)'}}>{featuredColumn.excerpt}</p>
                   )}
-                  <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.2em', marginTop:20, color:'var(--secondary)'}}>더 읽기 →</div>
+                  <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.2em', marginTop:20, color:'var(--secondary)'}}>{homeText.columnReadMore}</div>
                 </div>
               </div>
               {/* 서브 칼럼 목록 */}
@@ -919,7 +963,7 @@ const HomePage = ({ go }) => {
                   </div>
                 ))}
                 {secondaryColumns.length === 0 && (
-                  <p style={{fontSize:13, color:'var(--ink-3)', padding:'18px 0'}}>다음 칼럼 준비 중입니다.</p>
+                  <p style={{fontSize:13, color:'var(--ink-3)', padding:'18px 0'}}>{homeText.columnEmpty}</p>
                 )}
               </div>
             </div>
@@ -932,9 +976,9 @@ const HomePage = ({ go }) => {
         <HomeSectionBoundary label="강연"><section className="section-tight" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
           <div className="container">
             <SectionHead
-              eyebrow="LECTURE · 뱅기노자 강연"
-              title={<>이번 달 <span className="accent">강연 일정</span></>}
-              action={<button type="button" className="btn-ghost" onClick={() => go('lectures')}>전체 강연 보기 →</button>}
+              eyebrow={homeText.lecturesEyebrow}
+              title={<>{homeText.lecturesTitle}</>}
+              action={<button type="button" className="btn-ghost" onClick={() => go('lectures')}>{homeText.lecturesAction}</button>}
             />
             <div className="grid grid-3">
               {lectures.map((lecture) => (
@@ -945,12 +989,12 @@ const HomePage = ({ go }) => {
                     go('lectures');
                   }, `강연: ${lecture.topic || lecture.title}`)}
                   style={{cursor:'pointer'}}>
-                  <span className="badge" style={{marginBottom:16}}>강연</span>
+                  <span className="badge" style={{marginBottom:16}}>{homeText.lectureBadge}</span>
                   <h3 className="ko-serif" style={{fontSize:20, fontWeight:600, marginBottom:8}}>{lecture.topic || lecture.title}</h3>
                   {lecture.note && <p style={{fontSize:13, lineHeight:1.7, color:'var(--ink-2)', marginBottom:16}}>{truncatePreview(lecture.note, 110)}</p>}
                   <div style={{borderTop:'1px solid var(--line)', paddingTop:12, display:'flex', justifyContent:'space-between'}}>
-                    <span style={{fontSize:12, color:'var(--ink-2)'}}>{lecture.venue || '—'}</span>
-                    <span style={{fontSize:12, fontFamily:'var(--font-mono)', fontWeight:600, color:'var(--ink)'}}>{lecture.next || '—'}</span>
+                    <span style={{fontSize:12, color:'var(--ink-2)'}}>{lecture.venue || homeText.emptyFallback}</span>
+                    <span style={{fontSize:12, fontFamily:'var(--font-mono)', fontWeight:600, color:'var(--ink)'}}>{lecture.next || homeText.emptyFallback}</span>
                   </div>
                 </article>
               ))}
@@ -960,7 +1004,7 @@ const HomePage = ({ go }) => {
       )}
 
       {/* ── 책 CTA — v00.152 다권 카루셀 + 좌우 무한 반복 ────────────── */}
-      <BookCarouselSection go={go} dataTick={dataTick}/>
+      <BookCarouselSection go={go} dataTick={dataTick} text={homeText}/>
 
     </div>
   );
