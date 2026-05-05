@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.186.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T23:07:41+09:00",
+    summary: "🧹 legacy local 4 항목 dead store 제거 — BGNJ_STORES/SAVE 정리",
+    details: [
+      "🧹 [legacy 4 dead store 식별] v00.181 audit 에서 ⚠ 표기했던 bookOrders/bookReviews/tourReviews/lectureReviews 4 항목 — 실제로 D1-backed 임을 검증. BGNJ_BOOK_ORDERS._orders / BGNJ_BOOKS._reviews / BGNJ_TOURS._reviews / BGNJ_LECTURES._reviews 가 모두 BGNJ_API 로 D1 fetch.",
+      "🧹 [BGNJ_STORES 정리] 4 dead 슬롯 (`bookOrders`, `bookReviews`, `tourReviews`, `lectureReviews`) 제거 — 코드 어디서도 읽기/쓰기 0건 확인 (grep).",
+      "🧹 [BGNJ_SAVE 정리] 동일 4 항목 BGNJ_SAVE.* writeback 함수 제거. 호출처 0건.",
+      "🧹 [purgeLegacyStorage 영향 X] 옛 키들은 이미 PURGE 리스트에 포함되어 boot 마다 cleanup. 마이그 잔재 정리 완료.",
+      "📋 [audit 결과] CONTEXT.md §2.9 BGNJ_STORES 4-태그 분류: ⚠ legacy 4 → 0 (모두 server-backed 으로 정정).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.186.000`.",
+    ],
+    context: "코드 리뷰 cycle 7 — server-first audit 추가 정리. 이전 v00.181 에서 'legacy local 4 항목 마이그 후보' 로 표기한 것을 자세히 보니 모두 D1 backed. 단지 옛 BGNJ_STORES 슬롯이 dead 코드로 남아 있던 것. 4 항목 dead store 제거로 코드 정합성 회복. 다음: AuthAdminPage 분할 등.",
+  },
+  {
     version: "00.185.000",
     date: "2026-05-05",
     datetime: "2026-05-05T23:04:58+09:00",

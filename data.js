@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.185.000",
+  version: "00.186.000",
   build: "2026.05.05",
   channel: "preview",
 };
@@ -1042,14 +1042,14 @@ window.BGNJ_STORES = {
   columnEngagement: _asRecord(_lsGet('bgnj_column_engagement', {})),
   // v00.049: lectureOverrides / lectureRegistrations / tourOverrides / tourReservations 제거 (dead).
   bankAccount: _asRecord(_lsGet('bgnj_bank_account', { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }), { bankName: "", accountNumber: "", holder: "", memo: "입금자명에 강연 신청자 본명 + 강연번호를 남겨 주세요." }),
-  bookOrders: _asArray(_lsGet('bgnj_book_orders', [])),
-  bookReviews: _asArray(_lsGet('bgnj_book_reviews', [])),
-  tourReviews: _asRecord(_lsGet('bgnj_tour_reviews', {})),
+  // v00.186 — bookOrders/bookReviews/tourReviews/lectureReviews 4 dead store 제거.
+  // 실제 데이터는 BGNJ_BOOK_ORDERS._orders / BGNJ_BOOKS.* / BGNJ_TOURS._reviews / BGNJ_LECTURES._reviews 에서 D1 fetch.
+  // 위 4 STORES 슬롯은 어디서도 읽기/쓰기 안 됨 (purgeLegacyStorage 가 키도 제거).
   legalDocs: _asRecord(_lsGet('bgnj_legal_docs', {
     privacy: { title: "개인정보 처리방침", body: "<p>뱅기노자 사이트는 회원 가입과 운영을 위해 최소한의 개인정보를 수집·이용합니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
     terms:   { title: "이용약관",          body: "<p>뱅기노자 사이트의 이용약관입니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
   })),
-  lectureReviews: _asRecord(_lsGet('bgnj_lecture_reviews', {})),
+  // v00.186 — lectureReviews 도 dead. 위 주석 참고.
   auditLog: _asArray(_lsGet('bgnj_audit_log', [])),
   siteContent: _asRecord(_lsGet('bgnj_site_content', {}), {}),
   books: _asArray(_lsGet('bgnj_books', DEFAULT_BOOKS), DEFAULT_BOOKS.slice()),
@@ -1079,10 +1079,10 @@ window.BGNJ_STORES = {
 //   ✅ auditLog      — D1 audit_log (BGNJ_API.auditLog.*)
 //   💾 userPosts     — local intentional (사용자 임시 글, §2.9)
 //   💾 columnEngagement — local intentional (좋아요·읽음 자동 기록 — D1 column_engagement 마이그 후보)
-//   ⚠ bookOrders    — legacy local (D1 book_orders 마이그 후보)
-//   ⚠ bookReviews   — legacy local (D1 book_reviews 마이그 후보)
-//   ⚠ tourReviews   — legacy local (D1 tour_reviews 마이그 후보)
-//   ⚠ lectureReviews — legacy local (D1 lecture_reviews 마이그 후보)
+//
+// v00.186 — bookOrders/bookReviews/tourReviews/lectureReviews 4 항목은 dead 였음 (D1 backed via
+// BGNJ_BOOK_ORDERS / BGNJ_BOOKS / BGNJ_TOURS / BGNJ_LECTURES 의 _orders/_reviews 캐시).
+// BGNJ_STORES + BGNJ_SAVE 슬롯에서 제거됨. legacy 마커 4개 → 0.
 //
 // resetGrades / resetCategories 는 default 값으로 BGNJ_STORES + localStorage 만 reset.
 // 진짜 reset 은 호출자가 BGNJ_API 로 D1 도 갱신해야 함 (예: AdminGradePanel.resetAll v00.181).
@@ -1101,14 +1101,11 @@ window.BGNJ_SAVE = {
   columnEngagement: () => _lsSet('bgnj_column_engagement', window.BGNJ_STORES.columnEngagement),
   // v00.049: lectureOverrides / lectureRegistrations / tourOverrides / tourReservations save 핸들러 제거.
   bankAccount: () => _lsSet('bgnj_bank_account', window.BGNJ_STORES.bankAccount),
-  bookOrders: () => _lsSet('bgnj_book_orders', window.BGNJ_STORES.bookOrders),
-  bookReviews: () => _lsSet('bgnj_book_reviews', window.BGNJ_STORES.bookReviews),
-  tourReviews: () => _lsSet('bgnj_tour_reviews', window.BGNJ_STORES.tourReviews),
+  // v00.186 — 4 dead BGNJ_SAVE.* 제거 (bookOrders/bookReviews/tourReviews/lectureReviews) — 호출처 0건 검증.
   legalDocs: () => _lsSet('bgnj_legal_docs', window.BGNJ_STORES.legalDocs),
   faqs: () => _lsSet('bgnj_faqs', window.BGNJ_STORES.faqs),
   siteContent: () => _lsSet('bgnj_site_content', window.BGNJ_STORES.siteContent),
   books: () => _lsSet('bgnj_books', window.BGNJ_STORES.books),
-  lectureReviews: () => _lsSet('bgnj_lecture_reviews', window.BGNJ_STORES.lectureReviews),
   auditLog: () => _lsSet('bgnj_audit_log', window.BGNJ_STORES.auditLog),
   resetGrades: () => { window.BGNJ_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('bgnj_grades', window.BGNJ_STORES.grades); },
   resetCategories: () => { window.BGNJ_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('bgnj_categories', window.BGNJ_STORES.categories); },
