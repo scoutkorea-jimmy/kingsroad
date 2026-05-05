@@ -5176,14 +5176,14 @@ const AdminPage = ({ go }) => {
 
   // v00.146 — 사이드바 그룹 재구성. 사용자 요청 '관리자 그룹핑을 다시 고려해줘'.
   // 핵심 원칙: 비슷한 일을 하는 메뉴를 인접하게. 데이터 분석 = 요약, 사용자 활동 = 커뮤니티, 콘텐츠 ≠ 프로그램.
+  // v00.165 — 9 그룹 → 8 그룹 (프로그램 + 쇼핑 머지). collapsible 로 시각 부하 절감.
   const tabGroups = [
-    { group: "요약·분석",     items: ["대시보드", "사용자 여정"] },
-    { group: "커뮤니티",      items: ["커뮤니티", "커뮤니티 게시판", "신고", "카테고리"] },
+    { group: "요약",          items: ["대시보드", "사용자 여정"] },
     { group: "콘텐츠",        items: ["뱅기노자 칼럼", "추천 여행지", "먹고 놀자", "자고 놀자", "사고 놀자"] },
-    { group: "프로그램",      items: ["강연", "투어 프로그램"] },
+    { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "책 카탈로그", "책 주문"] },
+    { group: "커뮤니티",      items: ["커뮤니티", "커뮤니티 게시판", "신고", "카테고리"] },
     { group: "회원",          items: ["회원", "회원 등급"] },
-    { group: "쇼핑",          items: ["책 카탈로그", "책 주문"] },
-    { group: "사이트 설정",   items: ["사이트 콘텐츠", "홈 텍스트", "히어로", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정", "SEO"] },
+    { group: "사이트 설정",   items: ["사이트 콘텐츠", "홈 텍스트", "히어로", "SEO", "약관/개인정보", "자주 묻는 질문", "계좌번호 설정"] },
     { group: "개인정보·법무", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
     { group: "시스템",        items: ["버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "설정", "데이터 정리"] },
   ];
@@ -5255,6 +5255,45 @@ const AdminPage = ({ go }) => {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   // 탭 변경 시 자동 닫힘 + Esc 닫기 + body scroll lock.
   React.useEffect(() => { setSidebarOpen(false); }, [tab, kmsTab]);
+
+  // v00.165 — 사이드바 그룹 collapsible. 33 개 탭 동시 노출 → 시각 부하. 현재 탭의 그룹만 디폴트 펼침.
+  const _findGroup = React.useCallback((tabName) => {
+    const g = tabGroups.find((grp) => grp.items.includes(tabName));
+    return g ? g.group : tabGroups[0].group;
+  }, [tabGroups]);
+  const currentGroup = React.useMemo(() => _findGroup(tab), [_findGroup, tab]);
+  const [openGroups, setOpenGroups] = React.useState(() => new Set([_findGroup(tab)]));
+  // 다른 곳에서 setTab 호출로 탭 바뀌면 그 그룹 자동 펼침 (이미 펼쳐져 있으면 그대로).
+  React.useEffect(() => {
+    setOpenGroups((prev) => {
+      if (prev.has(currentGroup)) return prev;
+      const next = new Set(prev);
+      next.add(currentGroup);
+      return next;
+    });
+  }, [currentGroup]);
+  const toggleGroup = (name) => {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  // v00.165 — 사이드바 항목 클릭 시 admin-main 영역 / 윈도우 스크롤 최상단.
+  // 사용자 요청: '사이드 메뉴를 클릭하면 자동으로 제일 위로 올라갈수있게'.
+  const handleTabClick = React.useCallback((nextTab) => {
+    setTab(nextTab);
+    // 다음 paint 에 스크롤 (탭 컨텐츠 마운트 후).
+    requestAnimationFrame(() => {
+      try {
+        const main = document.querySelector('.admin-main');
+        if (main && typeof main.scrollTo === 'function') main.scrollTo({ top: 0, behavior: 'smooth' });
+        if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {}
+    });
+  }, []);
   React.useEffect(() => {
     if (!sidebarOpen) return;
     const onKey = (e) => { if (e.key === 'Escape') setSidebarOpen(false); };
@@ -5296,33 +5335,62 @@ const AdminPage = ({ go }) => {
           <div className="dim-2 mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em'}}>적용법: GDPR + PIPA</div>
           <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.1em'}}>최근 DPIA: 2026.03.02</div>
         </div>
-        {tabGroups.map(grp => (
-          <div key={grp.group} style={{padding:'14px 0'}}>
-            <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.22em', color:'var(--ink)', padding:'0 24px 10px'}}>
-              {grp.group.toUpperCase()}
+        {/* v00.165 — collapsible 그룹. 디폴트는 현재 탭이 속한 그룹만 펼침. */}
+        {tabGroups.map(grp => {
+          const isOpen = openGroups.has(grp.group);
+          const hasCurrent = grp.items.includes(tab);
+          return (
+            <div key={grp.group} style={{padding:'2px 0'}}>
+              <button
+                type="button"
+                onClick={() => toggleGroup(grp.group)}
+                aria-expanded={isOpen}
+                className="mono"
+                style={{
+                  width:'100%', display:'flex', justifyContent:'space-between', alignItems:'center',
+                  padding:'12px 24px',
+                  fontSize:11, fontWeight:700, letterSpacing:'0.22em',
+                  color: hasCurrent ? 'var(--secondary)' : 'var(--ink)',
+                  background:'transparent', border:'none', cursor:'pointer',
+                  textTransform:'uppercase',
+                }}>
+                <span>
+                  {grp.group}
+                  <span style={{fontSize:10, color:'var(--ink-3)', marginLeft:8, fontWeight:500, letterSpacing:'0.1em'}}>· {grp.items.length}</span>
+                </span>
+                <span aria-hidden="true" style={{
+                  fontSize:11, color:'var(--ink-3)',
+                  transition:'transform .2s', display:'inline-block',
+                  transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+                }}>▾</span>
+              </button>
+              {isOpen && (
+                <ul role="list" style={{listStyle:'none', margin:0, padding:'2px 0 8px'}}>
+                  {grp.items.map(t => (
+                    <li key={t}>
+                      <button
+                        type="button"
+                        onClick={() => handleTabClick(t)}
+                        aria-current={tab === t ? "page" : undefined}
+                        style={{
+                          width:'100%', textAlign:'left',
+                          padding:'9px 24px',
+                          fontSize:14,
+                          fontWeight: tab === t ? 700 : 500,
+                          background: tab === t ? 'rgba(245,213,72,0.10)' : 'transparent',
+                          color: tab === t ? 'var(--secondary)' : 'var(--ink)',
+                          borderTop:'none', borderRight:'none', borderBottom:'none',
+                          borderLeft: tab === t ? '3px solid var(--primary)' : '3px solid transparent',
+                          letterSpacing:'0.01em',
+                          cursor:'pointer',
+                        }}>{t}</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            <ul role="list" style={{listStyle:'none', margin:0, padding:0}}>
-              {grp.items.map(t => (
-                <li key={t}>
-                  <button
-                    type="button"
-                    onClick={() => { setTab(t); }}
-                    aria-current={tab === t ? "page" : undefined}
-                    style={{
-                      width:'100%', textAlign:'left',
-                      padding:'11px 24px',
-                      fontSize:14,
-                      fontWeight: tab === t ? 700 : 500,
-                      background: tab === t ? 'rgba(245,213,72,0.10)' : 'transparent',
-                      color: tab === t ? 'var(--secondary)' : 'var(--ink)',
-                      borderLeft: tab === t ? '3px solid var(--primary)' : '3px solid transparent',
-                      letterSpacing:'0.01em',
-                    }}>{t}</button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+          );
+        })}
       </aside>
 
       {/* Main */}

@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.165.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T19:30:35+09:00",
+    summary: "🧭 관리자 사이드바 collapsible + 그룹 9→8 + 탭 클릭 스크롤 최상단",
+    details: [
+      "🧭 [collapsible 그룹] 사용자 보고 '관리자 사이드메뉴가 관리/기능 측면 안좋고 지나치게 많다'. 33 개 탭 동시 노출 → 시각 부하. 디폴트는 현재 탭이 속한 그룹만 펼침. 다른 그룹은 클릭으로 토글. 그룹 헤더에 항목 카운트 ('· N') 표기.",
+      "🧭 [그룹 9 → 8] 프로그램(2) + 쇼핑(2) → '프로그램·쇼핑'(4) 머지. '요약·분석' → '요약' 명칭 단축.",
+      "🧭 [탭 클릭 스크롤 최상단] 사용자 요청 '사이드 메뉴 클릭하면 자동으로 제일 위로'. handleTabClick 신규 — admin-main + window 둘 다 scrollTo({top:0, behavior:'smooth'}). requestAnimationFrame 으로 다음 paint 보장.",
+      "🧭 [setTab 외부 호출 호환] DashboardPanel 등에서 setTab 직접 호출하는 경로는 currentGroup useMemo 가 자동 펼침. 기존 흐름 깨지지 않음.",
+      "🧭 [그룹 토글 시각] '▾' 인디케이터 90deg 회전 + transition .2s. aria-expanded 속성으로 a11y 준수.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.165.000`.",
+    ],
+    context: "사용자 보고 직후 즉각 처리. 탭 자체는 폐기하지 않음 (각 탭이 실제 기능 컴포넌트와 1:1 매핑되어 제거 시 기능 손실). collapsible 만으로 일상 사용 시 보이는 항목이 33 → 평균 4-8 개로 감소. 그룹 머지(프로그램+쇼핑)는 의미적 인접성이 가장 큰 1 쌍만 적용.",
+  },
+  {
     version: "00.164.001",
     date: "2026-05-05",
     datetime: "2026-05-05T19:27:02+09:00",
