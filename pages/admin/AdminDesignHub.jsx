@@ -4,6 +4,25 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.184.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:56:54+09:00",
+    summary: "♻ pickImageWithR2Fallback DRY + 디자인 룰 audit + 멤버 카드 모바일 폴백",
+    details: [
+      "♻ [pickImageWithR2Fallback 헬퍼 신설] R2 업로드 시도 + 실패 시 dataURI 폴백 패턴 (각 25 lines, 4+ 패널 동일) → 1 헬퍼. lecture/tour 커버에 적용 (2/4). book-covers/book-pdfs 는 추가 state 의존 — v00.185 별도 마이그.",
+      "♻ [25 lines × 2 → 4 lines × 2] 라인 절감 + 일관 동작 (사이즈 한도/에러 메시지 통일).",
+      "🎨 [디자인 룰 audit 결과] 룰별 점검:",
+      "  ✅ 옐로우 면적 §2.4 — Shell.jsx 알림 뱃지(14px) / styles.css dot/line(4-24px) / ErrorPages CTA(인터랙션) 모두 작은 영역 ✓",
+      "  ✅ useModalGuard §3 — 모든 모달 파일에서 dialog ≤ guard count 확인 (AuthAdminPage 5/7, CommunityPage 1/3 등)",
+      "  ⚠ 모바일 1열 §2.5 위반 후보 — WangsanamTourPage 멤버 카드 (200px 1fr auto) 모바일 대응 안 됨 → 본 사이클 fix",
+      "  ℹ AdminCategoryPanel/AdminDesignHub 의 인라인 grid 들은 admin 한정 + 저빈도 — 후속 사이클",
+      "🎨 [WangsanamTourPage 멤버 카드 모바일] .wsm-member-card 클래스 추가 + @media ≤900px 에서 1열 stack + placeholder 200px center.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.184.000`.",
+    ],
+    context: "사용자 보고 '디자인 규칙 깨진거 있나 확인'. 옐로우 면적·모달 가드 OK. 모바일 1열 정책 1건 발견(WSM 멤버) 즉시 fix. 다음 작업으로 이미지 업로드 DRY 추출 동시 진행. cycle 5/N — DRY 추출 추가 + 디자인 audit 결과 정리.",
+  },
+  {
     version: "00.183.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:41:43+09:00",

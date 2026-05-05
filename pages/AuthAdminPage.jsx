@@ -1874,30 +1874,10 @@ const LectureAdminPanel = ({ go }) => {
       refresh();
     } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
+  // v00.184 — DRY: pickImageWithR2Fallback 헬퍼 사용 (이전엔 25-line 인라인 동일 패턴).
   const onPickContentCover = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      // v00.080 — R2 업로드 우선. 5MB 한도. 실패 시 dataURI 폴백.
-      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'lecture-covers', maxBytes: 5 * 1024 * 1024 });
-      setContentCover(url);
-      e.target.value = '';
-      return;
-    } catch (err) {
-      console.warn('[v00.080] R2 강연 커버 업로드 실패 — dataURI 폴백:', err);
-    }
-    if (file.size > 1.5 * 1024 * 1024) {
-      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
-      e.target.value = ''; return;
-    }
-    const dataUri = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    setContentCover(dataUri);
-    e.target.value = '';
+    const result = await pickImageWithR2Fallback(e, { folder: 'lecture-covers' });
+    if (result) setContentCover(result);
   };
 
   // 강연별 신청 목록을 mount 시 일괄 fetch.
@@ -2341,30 +2321,10 @@ const TourAdminPanel = ({ go }) => {
       refresh();
     } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
+  // v00.184 — DRY: pickImageWithR2Fallback 헬퍼 사용.
   const onPickContentCover = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      // v00.080 — R2 업로드 우선. 5MB 한도. 실패 시 dataURI 폴백.
-      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'tour-covers', maxBytes: 5 * 1024 * 1024 });
-      setContentCover(url);
-      e.target.value = '';
-      return;
-    } catch (err) {
-      console.warn('[v00.080] R2 투어 커버 업로드 실패 — dataURI 폴백:', err);
-    }
-    if (file.size > 1.5 * 1024 * 1024) {
-      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
-      e.target.value = ''; return;
-    }
-    const dataUri = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    setContentCover(dataUri);
-    e.target.value = '';
+    const result = await pickImageWithR2Fallback(e, { folder: 'tour-covers' });
+    if (result) setContentCover(result);
   };
 
   // 답사별 예약 목록을 mount 시 일괄 fetch.
@@ -5574,6 +5534,41 @@ const MemberAdminPanel = ({ go }) => {
       )}
     </div>
   );
+};
+
+// v00.184 — DRY: 이미지 업로드 공통 helper.
+// R2 업로드 시도 → 실패 시 FileReader dataURI 폴백. lecture-covers / tour-covers / book-covers / 등 4+ 패널 동일 로직.
+// 사용법: const url = await pickImageWithR2Fallback(e, { folder: 'lecture-covers' });
+// 반환: 성공 → URL/dataURI string, 사용자 취소·실패 → null.
+const pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, fallbackMaxBytes = 1.5 * 1024 * 1024 } = {}) => {
+  const file = e.target.files?.[0];
+  if (!file) return null;
+  try {
+    const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder, maxBytes });
+    e.target.value = '';
+    return url;
+  } catch (err) {
+    try { console.warn(`[upload] R2 ${folder} 업로드 실패 — dataURI 폴백:`, err); } catch {}
+  }
+  if (file.size > fallbackMaxBytes) {
+    alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + ${(fallbackMaxBytes/1024/1024).toFixed(1)}MB 폴백 한도 초과.`);
+    e.target.value = '';
+    return null;
+  }
+  try {
+    const dataUri = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+    return dataUri;
+  } catch (err) {
+    alert('이미지 읽기 실패: ' + (err?.message || ''));
+    e.target.value = '';
+    return null;
+  }
 };
 
 // v00.182 — DRY: 파일 다운로드 공통 helper. CSV / JSON / 임의 텍스트 모두 지원.

@@ -1421,6 +1421,19 @@ main time, main .section-eyebrow {
   .admin-preview-grid > aside { position: static !important; }
 }
 
+/* v00.184 — 디자인 룰 §2.5 모바일 정책: WSM 멤버 카드 ≤900px 1열 폴백. 인라인 grid 가 막혀있어 !important. */
+@media (max-width: 900px) {
+  .wsm-member-card {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+    padding: 20px !important;
+  }
+  .wsm-member-card > .placeholder {
+    max-width: 200px;
+    margin: 0 auto;
+  }
+}
+
 @media (max-width: 900px) {
   /* 모든 다열 그리드 → 1열 강제 */
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }

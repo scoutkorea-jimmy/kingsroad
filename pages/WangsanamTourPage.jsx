@@ -24,7 +24,8 @@ const WangsanamPage = ({ go }) => {
 
         <div style={{display:'grid', gap:32, marginTop:60}}>
           {members.map((m, i) => (
-            <div key={i} className={`card ${i === 0 ? 'card-gold' : ''}`}
+            // v00.184 — wsm-member-card 모바일 1열 폴백 클래스 추가 (디자인 룰 §2.5 모바일 정책).
+            <div key={i} className={`card wsm-member-card ${i === 0 ? 'card-gold' : ''}`}
               style={{display:'grid', gridTemplateColumns:'200px 1fr auto', gap:40, alignItems:'center', padding:32}}>
               <div className="placeholder" style={{aspectRatio:'1', fontSize:9}}>
                 {i === 0 ? '★ LEAD' : `○ 0${i+1}`}
