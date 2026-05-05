@@ -394,7 +394,8 @@ const handlePostsList = async (req, env) => {
   let where = "1=1";
   if (category) { where += " AND category_id = ?"; args.push(category); }
   if (q) { where += " AND (title LIKE ? OR author LIKE ?)"; args.push(`%${q}%`, `%${q}%`); }
-  const sql = `SELECT id, category_id, category, prefix, title, author_id, author, views, replies, created_at FROM posts WHERE ${where} ORDER BY created_at DESC LIMIT ?`;
+  // v00.170 — body 컬럼 포함. 사용자 보고: '글 작성 후 본문 사라짐'. 클라이언트가 list 캐시에서 detail 을 읽어 본문이 빈 상태로 표시되던 버그.
+  const sql = `SELECT id, category_id, category, prefix, title, body, author_id, author, views, replies, created_at FROM posts WHERE ${where} ORDER BY created_at DESC LIMIT ?`;
   const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
   // v00.141 — allow_read 가 명시 0 인 카테고리의 글은 비관리자에 숨김.
   let isAdmin = false;

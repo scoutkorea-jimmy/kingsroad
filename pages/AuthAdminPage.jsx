@@ -7036,21 +7036,45 @@ const AdminGradePanel = () => {
   };
 
   // v00.141 — 통합 저장: 등급(localStorage) + 자동 승급 기준(site_content_kv.gradeRules) 동시 commit.
+  // v00.170 — D1 grades_kv 도 함께 upsert. localStorage 만 저장하던 버그로 새로고침 시 서버 default 가 덮어써서
+  //          이름이 초기화되던 사용자 보고 '회원 등급 이름이 자꾸 초기화' 직접 fix.
   const commitAll = async () => {
     if (saving) return;
     setSaving(true);
     setSaveMsg("");
     try {
-      // 1) 등급 정렬 + 영속화.
       const sorted = grades.slice().sort((a, b) => a.level - b.level);
+
+      // 1) D1 grades_kv 에 각 등급 upsert (label/level/color/description/order).
+      const failed = [];
+      for (const g of sorted) {
+        try {
+          await window.BGNJ_API?.grades?.upsert?.(g.id, {
+            label: g.label, level: Number(g.level || 0), color: g.color || '',
+            description: g.desc || '', order: Number(g.order || g.level || 0),
+          });
+        } catch (err) {
+          failed.push({ id: g.id, msg: err?.message || String(err) });
+        }
+      }
+      if (failed.length) {
+        // 일부 실패도 진행 — 클라이언트 캐시는 갱신해야 사용자가 다시 시도 가능.
+        setSaveMsg(`⚠ ${failed.length}개 등급 서버 저장 실패: ${failed.map(f => f.id).join(', ')}`);
+      }
+
+      // 2) 클라이언트 캐시(localStorage 폴백) 갱신.
       window.BGNJ_STORES.grades = sorted;
       window.BGNJ_SAVE.grades();
       setGrades(sorted);
-      // 2) 자동 승급 기준 site_content_kv 저장.
+
+      // 3) 자동 승급 기준 site_content_kv 저장.
       await window.BGNJ_SITE_CONTENT?.saveSection?.('gradeRules', rules);
+
       setDirty(false);
-      setSaveMsg("✓ 등급 + 자동 승급 기준 저장 완료.");
-      setTimeout(() => setSaveMsg(""), 3000);
+      if (!failed.length) {
+        setSaveMsg("✓ 등급(D1) + 자동 승급 기준 저장 완료.");
+        setTimeout(() => setSaveMsg(""), 3000);
+      }
     } catch (err) {
       setSaveMsg("✗ 저장 실패: " + (err?.message || '알 수 없는 오류'));
     } finally {

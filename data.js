@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.169.000",
+  version: "00.170.000",
   build: "2026.05.05",
   channel: "preview",
 };
@@ -1441,6 +1441,9 @@ window.BGNJ_COMMUNITY = {
     if (payload.createdAt) reqBody.createdAt = payload.createdAt;
     const { id } = await window.BGNJ_API.posts.create(reqBody);
     await this.refreshPosts();
+    // v00.170 — 워커 list endpoint 가 body 컬럼을 SELECT 하지 않는 구버전 배포 환경 보호용.
+    // 단일 post 조회로 body 를 받아 캐시 항목 덮어쓰기 → 작성 직후 detail 점프 시 본문 정상 표시.
+    await this._hydratePostBody(id);
     return this.getPost(id);
   },
   async deletePostRemote(postId) {
@@ -1457,7 +1460,28 @@ window.BGNJ_COMMUNITY = {
     if ('createdAt' in patch && patch.createdAt) apiPatch.createdAt = patch.createdAt;
     await window.BGNJ_API.posts.update(postId, apiPatch);
     await this.refreshPosts();
+    // v00.170 — body 누락 list 응답 보호용 단일 fetch.
+    await this._hydratePostBody(postId);
     return this.getPost(postId);
+  },
+  // v00.170 — list 응답에서 body 가 누락된 경우(구버전 워커) 단일 post 조회로 캐시 보강.
+  async _hydratePostBody(postId) {
+    try {
+      const cached = this._serverPosts.find((p) => String(p.id) === String(postId));
+      // 이미 body 가 있으면 skip — 새 워커는 list 에서 body 옴.
+      if (cached && cached.body && (cached.body.html || cached.body.text)) return;
+      const fullPost = await window.BGNJ_API.posts.get(postId);
+      if (!fullPost) return;
+      const ui = _serverPostToUi(fullPost);
+      this._serverPosts = this._serverPosts.map((p) =>
+        String(p.id) === String(postId) ? ui : p
+      );
+      // 새 post 가 list 에 아직 없을 수 있음 → push.
+      if (!this._serverPosts.some((p) => String(p.id) === String(postId))) {
+        this._serverPosts = [ui, ...this._serverPosts];
+      }
+      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+    } catch {}
   },
   updatePost(postId, patch) {
     // 서버 캐시 항목이면 서버 업데이트로 위임 (fire-and-forget).

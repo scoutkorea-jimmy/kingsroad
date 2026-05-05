@@ -579,6 +579,23 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   }, [allPosts, categories, userLevel, tab, search, sort, activePrefix]);
 
   React.useEffect(() => { setPage(1); }, [tab, search, sort, activePrefix]);
+
+  // v00.170 — 상세 진입 시 body 가 비어있으면 단일 post 조회로 보강.
+  // 워커 list 응답이 body 컬럼을 SELECT 하지 않던 구버전 환경 호환.
+  React.useEffect(() => {
+    if (!postId) return;
+    const post = allPosts.find((p) => String(p.id) === String(postId));
+    if (!post) return;
+    if (post.body && (post.body.html || post.body.text)) return;
+    let alive = true;
+    (async () => {
+      try {
+        await window.BGNJ_COMMUNITY?._hydratePostBody?.(postId);
+        if (alive) setRefreshKey((v) => v + 1);
+      } catch {}
+    })();
+    return () => { alive = false; };
+  }, [postId]);
   // ─────────────────────────────────────────────────────────────────────
 
   // v00.068 — PostCompose 모달 wrapper. 목록 위에 모달로 표시. ESC/외부클릭 시 useModalGuard 가 임시저장 prompt.

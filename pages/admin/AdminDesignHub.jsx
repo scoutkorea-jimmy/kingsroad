@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.170.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T21:32:44+09:00",
+    summary: "🐛 [HOTFIX 3건] 글 본문 사라짐 + 등급 이름 초기화 + 룰: 무조건 서버 저장",
+    details: [
+      "🐛 [글 본문 사라짐 fix] 사용자 보고: '커뮤니티에 글쓰기 후 본문 내용이 사라진다'. 원인: 워커 GET /api/posts list endpoint 의 SELECT 가 body 컬럼 미포함. 클라이언트가 list 응답을 캐시하고 detail 점프 시 캐시에서 읽어 빈 본문이 표시됨. 3중 fix: ① 워커 SELECT 에 body 추가 (★ wrangler deploy 필요), ② 클라이언트 createPostRemote/updatePostRemote 가 단일 post fetch 로 body 보강, ③ CommunityPage detail 진입 시 body 비어있으면 _hydratePostBody 호출.",
+      "🐛 [등급 이름 초기화 fix] 사용자 보고: '회원 등급 이름이 자꾸 초기화'. 원인: AdminGradePanel.commitAll 이 grades 를 localStorage(BGNJ_SAVE.grades) 만 저장하고 D1 grades_kv 미반영. boot 시 BGNJ_API.grades.list() 가 D1 default 로 덮어써서 사용자 편집 사라짐. fix: commitAll 이 sorted grades 각 항목을 BGNJ_API.grades.upsert(id, payload) 로 D1 에 PUT (label/level/color/description/order). 실패 시 실패 ID 표시.",
+      "📜 [룰 신설: 무조건 서버 저장] 사용자 강한 보고: '로컬에 저장은 무조건 서버에 저장이야. 무.조.건.'. memory feedback 영구 등록. 새 admin 저장 로직 작성 시 D1 호출(BGNJ_API.<domain>.upsert/save/update) 필수. localStorage/BGNJ_SAVE.* 는 D1 호출 후 캐시 갱신용으로만. 예외(cart/session/draft 등 §2.9) 는 보존. 위반 발견 시 즉시 D1 호출 추가.",
+      "ℹ ★ 워커 wrangler deploy 필요 — body SELECT 변경. 사용자 직접 실행: cd workers && npx wrangler deploy. 클라이언트 단일 fetch 폴백이 deploy 전에도 새 글은 정상 표시되게 보호.",
+      "📦 cache-buster — `?v=00.170.000`.",
+    ],
+    context: "사용자가 잇따라 강한 보고 3건 (본문 사라짐, 등급 초기화, '회원가입 안된다' 민원). 라이브 signup 엔드포인트는 직접 테스트 결과 200 OK 정상 — 회원가입 자체는 동작. 다만 등급 초기화로 인해 사용자 신뢰 하락 + 본문 사라짐으로 콘텐츠 손실. 본 사이클은 두 데이터 보존 버그 즉각 fix + 룰 신설 (서버 저장 필수) 로 같은 패턴 재발 방지.",
+  },
+  {
     version: "00.169.000",
     date: "2026-05-05",
     datetime: "2026-05-05T21:22:48+09:00",
