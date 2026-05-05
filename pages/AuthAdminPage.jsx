@@ -3110,15 +3110,8 @@ const BookOrderAdminPanel = ({ go }) => {
     cancelled: window.BGNJ_BOOK_ORDERS.listByStatus('cancelled').length,
   }), [tick]);
 
-  const downloadCsv = () => {
-    const csv = window.BGNJ_BOOK_ORDERS.exportCsv();
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `book-orders-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportCsv = () => {
+    downloadCsv(`book-orders-${new Date().toISOString().slice(0, 10)}.csv`, window.BGNJ_BOOK_ORDERS.exportCsv());
   };
 
   const statusLabel = (s) => ({
@@ -3169,7 +3162,7 @@ const BookOrderAdminPanel = ({ go }) => {
             </button>
           ))}
         </div>
-        <button type="button" className="btn btn-small" onClick={downloadCsv}>CSV 다운로드</button>
+        <button type="button" className="btn btn-small" onClick={handleExportCsv}>CSV 다운로드</button>
       </div>
 
       {orders.length === 0 ? (
@@ -4903,11 +4896,7 @@ const AuditLogPanel = () => {
     const header = ['id', 'ts', 'action', 'target', 'by', 'details'];
     const rows = all.map((e) => [e.id, e.ts, e.action, e.target, e.by, e.details ? JSON.stringify(e.details) : '']);
     const csv = [header, ...rows].map((row) => row.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `audit-log-${new Date().toISOString().slice(0,10)}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(`audit-log-${new Date().toISOString().slice(0,10)}.csv`, csv);
   };
 
   const clear = () => {
@@ -5289,11 +5278,7 @@ const MemberAdminPanel = ({ go }) => {
       return [u.id, u.name, u.email, u.gradeId, u.isAdmin ? 'Y' : 'N', u.suspended ? 'Y' : 'N', u.joinedAt || '', a.postCount || 0, a.commentCount || 0, (a.bookOrders||[]).length, (a.lectures||[]).length, (a.tours||[]).length];
     });
     const csv = [header, ...rows].map((row) => row.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `members-${new Date().toISOString().slice(0,10)}.csv`; a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(`members-${new Date().toISOString().slice(0,10)}.csv`, csv);
   };
 
   const changeGrade = async (user, gradeId) => {
@@ -5591,6 +5576,26 @@ const MemberAdminPanel = ({ go }) => {
   );
 };
 
+// v00.182 — DRY: 파일 다운로드 공통 helper. CSV / JSON / 임의 텍스트 모두 지원.
+// 이전엔 admin 패널 6곳에서 같은 8-line 패턴 (Blob → URL → a.click → revoke) 반복.
+const downloadBlob = (filename, content, mime = 'text/plain;charset=utf-8') => {
+  try {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('다운로드 실패: ' + (err?.message || '알 수 없는 오류'));
+  }
+};
+const downloadCsv = (filename, csv) => downloadBlob(filename, csv, 'text/csv;charset=utf-8');
+const downloadJson = (filename, obj) => downloadBlob(filename, JSON.stringify(obj, null, 2), 'application/json');
+
 // v00.166 — 사이드바 항목 머지용 sub-tab 래퍼.
 // v00.167 — 우측 라이브 미리보기 iframe 추가. sub-tab 별 previewUrl 지정 시 2-col 레이아웃.
 // 사용처: 사이트 설정 (사이트 콘텐츠/홈 텍스트/히어로/SEO/약관/FAQ/계좌번호 7개를 1개로).
@@ -5733,13 +5738,7 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
   }), [posts, search, filter]);
 
   const exportCsv = () => {
-    const blob = new Blob([window.BGNJ_COMMUNITY.exportCsv()], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `community-posts-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(`community-posts-${new Date().toISOString().slice(0, 10)}.csv`, window.BGNJ_COMMUNITY.exportCsv());
   };
 
   const removeOne = (post) => {
@@ -6028,13 +6027,7 @@ const AdminPage = ({ go }) => {
       processing_activities: PRIVACY_DATA.ropa,
       retention: PRIVACY_DATA.retentionPolicies,
     };
-    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dsr-access-${m.id}-${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadJson(`dsr-access-${m.id}-${new Date().toISOString().slice(0,10)}.json`, snapshot);
   };
 
   // v00.180 — 게시글 export/delete/bulk* 핸들러 모두 CommunityPostsAdminPanel 로 이전. AdminPage 는 onChange 콜백으로 새로고침만.
@@ -6354,13 +6347,7 @@ const AdminPage = ({ go }) => {
                       ]);
                     }
                     const csv = '﻿' + rows.map((r) => r.map(esc).join(',')).join('\r\n'); // BOM for Excel KR.
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `bgnj-version-history-${new Date().toISOString().slice(0,10)}.csv`;
-                    a.click();
-                    URL.revokeObjectURL(url);
+                    downloadCsv(`bgnj-version-history-${new Date().toISOString().slice(0,10)}.csv`, csv);
                   }}>📥 CSV 다운로드</button>
                   <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.16em'}}>
                     {safePage} / {totalPages} 페이지 · {start + 1}–{Math.min(start + VERSIONS_PER_PAGE, total)}건 표시

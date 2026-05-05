@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.182.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:37:41+09:00",
+    summary: "♻ 코드 리뷰 pass 1 — downloadBlob/Csv/Json 헬퍼 추출 (DRY)",
+    details: [
+      "♻ [downloadBlob/Csv/Json 헬퍼] 6개 admin 패널 (BookOrder/Audit/Member/Community/MemberData/VersionHistory) 에서 동일한 8-line 패턴 (Blob → URL → a.click → revoke) 중복 → 모듈 스코프 helper 3개로 추출.",
+      "♻ [호출처 6 → 1줄 단축] 각 export 함수가 8줄 → 1줄 (downloadCsv/downloadJson 호출).",
+      "♻ [에러 핸들링 통합] 다운로드 실패 시 alert. 이전엔 일부 호출처만 try/catch.",
+      "♻ [컴포넌트 변경 사항] BookOrderAdminPanel.downloadCsv → handleExportCsv 이름 변경 (모듈 헬퍼와 충돌 회피).",
+      "📋 [코드 리뷰 진행] cycle 1/N — DRY 추출. 다음 cycle 후보: AdminPanelHeader 일관성 / 카드형 form CSS DRY / image upload 핸들러 통합 / 페이지네이션 컴포넌트 추출.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.182.000`.",
+    ],
+    context: "사용자 보고 코드 리뷰 두 축 (DRY + server-first) 의 1번 본격 시작. downloadBlob 패턴은 가장 명확한 DRY 위반 — 6 호출처 모두 동일 8 lines. 헬퍼 추출 후 호출 1 줄로. 추가 DRY 후보 식별 (next cycle).",
+  },
+  {
     version: "00.181.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:30:24+09:00",
