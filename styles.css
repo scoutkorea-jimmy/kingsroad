@@ -1416,6 +1416,12 @@ main time, main .section-eyebrow {
 
 /* === Tablet / Mobile (≤ 900px) ==================================
    원칙: 모바일에서는 무조건 1단 구성. 2단 이상 그리드 모두 강제로 stack. */
+@media (max-width: 1240px) {
+  /* v00.167 — 사이트 설정 미리보기 grid: 1240px 이하 (admin-main 좁아질 때) 1열 stack. */
+  .admin-preview-grid { grid-template-columns: 1fr !important; }
+  .admin-preview-grid > aside { position: static !important; }
+}
+
 @media (max-width: 900px) {
   /* 모든 다열 그리드 → 1열 강제 */
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }

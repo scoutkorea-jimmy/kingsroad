@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.167.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T19:46:13+09:00",
+    summary: "👀 사이트 설정 sub-tab 우측 라이브 미리보기 iframe",
+    details: [
+      "👀 [SubTabsView 업그레이드] 사용자 보고 '사이트 설정에 모든 탭 안에 오른쪽에 라이브 미리보기 기능을 넣어 수정하면 바로바로 볼 수 있게'. 각 sub-tab 에 previewUrl 옵션 추가 — 지정 시 좌측 폼 + 우측 sticky iframe 2-col 레이아웃. PC/태블릿/모바일 viewport 토글 + ↻ 수동 리로드.",
+      "👀 [자동 리로드 이벤트 청취] 4 종 BGNJ 새로고침 이벤트 (bgnj-site-content-refresh / bgnj-legal-refresh / bgnj-faqs-refresh / bgnj-bank-accounts-refresh) 청취. 패널에서 저장하면 iframe `key` increment → 자동 reload. 즉시 확인.",
+      "👀 [sub-tab 별 previewUrl 매핑] 사이트 콘텐츠/히어로/SEO → '/' (홈), 약관/개인정보 → '/terms', 자주 묻는 질문 → '/faq'. 홈 텍스트는 자체 임베드 미리보기 보유 → previewUrl 없음. 계좌번호는 노출 페이지 없음 → previewUrl 없음.",
+      "👀 [viewport 모드 영속] 마지막 PC/태블릿/모바일 선택을 localStorage 에 저장 (storageKey + '_pmode'). 새로고침 후 복원.",
+      "👀 [반응형] admin-preview-grid 미디어쿼리 ≤1240px 시 1열 stack + sticky 해제. 좁은 화면에서도 폼 우선 사용 가능.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.167.000`.",
+    ],
+    context: "v00.166 사이트 설정 머지 직후 사용자 보고: '사이트 콘텐츠고 홈 텍스트고 다 사실 기능적으로는 똑같은데 저렇게 나가니까 너무 이상하잖아'. 머지만으로는 부족 — 미리보기까지 있어야 합리적. 패널 자체 구조는 유지(안전), 우측 iframe 으로 즉각 확인 경로 추가. HomeTextEditorPanel 의 임베드 미리보기 패턴을 모든 콘텐츠 패널로 확장한 셈.",
+  },
+  {
     version: "00.166.000",
     date: "2026-05-05",
     datetime: "2026-05-05T19:38:50+09:00",

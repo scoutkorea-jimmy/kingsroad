@@ -5059,9 +5059,9 @@ const MemberAdminPanel = ({ go }) => {
 };
 
 // v00.166 — 사이드바 항목 머지용 sub-tab 래퍼.
-// 동일 카테고리의 여러 패널을 한 사이드바 항목 + 상단 sub-tab UI 로 묶음.
+// v00.167 — 우측 라이브 미리보기 iframe 추가. sub-tab 별 previewUrl 지정 시 2-col 레이아웃.
 // 사용처: 사이트 설정 (사이트 콘텐츠/홈 텍스트/히어로/SEO/약관/FAQ/계좌번호 7개를 1개로).
-// storageKey 가 있으면 마지막 sub-tab 상태를 localStorage 에 저장 — 새로고침 후 복원.
+// storageKey 가 있으면 마지막 sub-tab + 마지막 viewport 모드를 localStorage 에 저장.
 const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
   const [active, setActive] = React.useState(() => {
     if (storageKey) {
@@ -5072,7 +5072,36 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
   React.useEffect(() => {
     if (storageKey) try { localStorage.setItem(storageKey, active); } catch {}
   }, [active, storageKey]);
+
+  // v00.167 — 미리보기 viewport 모드 + 자동 리로드.
+  const [previewMode, setPreviewMode] = React.useState(() => {
+    if (storageKey) {
+      try { const v = localStorage.getItem(storageKey + '_pmode'); if (v && ['desktop','tablet','mobile'].includes(v)) return v; } catch {}
+    }
+    return 'desktop';
+  });
+  React.useEffect(() => {
+    if (storageKey) try { localStorage.setItem(storageKey + '_pmode', previewMode); } catch {}
+  }, [previewMode, storageKey]);
+  const [reloadTick, setReloadTick] = React.useState(0);
+  // 저장/리프레시 이벤트 청취 — 모든 BGNJ_* refresh 이벤트가 트리거.
+  React.useEffect(() => {
+    const events = [
+      'bgnj-site-content-refresh',
+      'bgnj-legal-refresh',
+      'bgnj-faqs-refresh',
+      'bgnj-bank-accounts-refresh',
+    ];
+    const handler = () => setReloadTick((v) => v + 1);
+    events.forEach((e) => window.addEventListener(e, handler));
+    return () => events.forEach((e) => window.removeEventListener(e, handler));
+  }, []);
+
   const Active = subTabs.find((t) => t.key === active);
+  const previewUrl = Active && Active.previewUrl;
+  const VIEWPORTS = { desktop: 1180, tablet: 760, mobile: 380 };
+  const previewW = VIEWPORTS[previewMode] || 1180;
+
   return (
     <>
       <div role="tablist" style={{
@@ -5097,7 +5126,71 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
             }}>{t.label}</button>
         ))}
       </div>
-      {Active && Active.render()}
+      {previewUrl ? (
+        <div className="admin-preview-grid" style={{
+          display:'grid', gridTemplateColumns:'minmax(0, 1fr) 520px',
+          gap:24, alignItems:'flex-start',
+        }}>
+          <div style={{minWidth:0}}>
+            {Active && Active.render()}
+          </div>
+          <aside style={{
+            position:'sticky', top:24,
+            padding:14,
+            background:'var(--bg-2)',
+            border:'1px solid var(--line)',
+          }}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, flexWrap:'wrap', gap:8}}>
+              <h3 className="ko-serif" style={{fontSize:14, margin:0, fontWeight:700}}>
+                실시간 미리보기
+                <span className="mono dim-2" style={{fontSize:10, marginLeft:8, fontWeight:500, letterSpacing:'0.1em'}}>{previewUrl}</span>
+              </h3>
+              <div style={{display:'flex', gap:6}}>
+                {[['desktop','PC'],['tablet','태블릿'],['mobile','모바일']].map(([k,l]) => (
+                  <button key={k} type="button" onClick={() => setPreviewMode(k)}
+                    style={{
+                      padding:'4px 10px', fontSize:11, fontFamily:'var(--font-mono)',
+                      fontWeight: previewMode === k ? 800 : 500,
+                      letterSpacing:'0.04em',
+                      border:'1px solid ' + (previewMode === k ? 'var(--primary)' : 'var(--line-2)'),
+                      background: previewMode === k ? 'rgba(245,213,72,0.12)' : 'var(--bg)',
+                      color: previewMode === k ? 'var(--ink)' : 'var(--ink-2)',
+                      cursor:'pointer',
+                    }}>{l}</button>
+                ))}
+                <button type="button" onClick={() => setReloadTick((v) => v + 1)} aria-label="미리보기 새로고침"
+                  title="미리보기 새로고침"
+                  style={{
+                    padding:'4px 10px', fontSize:13, fontFamily:'var(--font-mono)',
+                    border:'1px solid var(--line-2)', background:'var(--bg)',
+                    color:'var(--ink-2)', cursor:'pointer',
+                  }}>↻</button>
+              </div>
+            </div>
+            <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.1em', marginBottom:8}}>
+              {previewMode.toUpperCase()} · {previewW}px
+            </div>
+            <div style={{
+              overflow:'auto', maxHeight:'70vh',
+              background:'var(--bg)', border:'1px solid var(--line)',
+            }}>
+              <iframe key={reloadTick} src={previewUrl}
+                title={`미리보기 — ${Active.label}`}
+                style={{
+                  width: previewW + 'px',
+                  height: '720px',
+                  border:'0', display:'block',
+                  background:'var(--bg)',
+                }}/>
+            </div>
+            <p className="dim" style={{fontSize:11, marginTop:10, lineHeight:1.6}}>
+              저장 후 자동 새로고침. 즉시 확인하려면 <span className="mono">↻</span> 클릭.
+            </p>
+          </aside>
+        </div>
+      ) : (
+        Active && Active.render()
+      )}
     </>
   );
 };
@@ -6363,19 +6456,21 @@ const AdminPage = ({ go }) => {
         {tab === "자고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="sleep"/>}
         {tab === "사고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="shop"/>}
         {/* 카테고리 CRUD */}
-        {/* v00.166 — 사이트 설정 7 항목 단일 머지. */}
+        {/* v00.166 — 사이트 설정 7 항목 단일 머지. v00.167 — 우측 라이브 미리보기 iframe. */}
         {tab === "사이트 설정" && (
           <SubTabsView
             storageKey="bgnj_admin_subtab_site_settings"
             defaultKey="content"
             subTabs={[
-              { key: "content",  label: "사이트 콘텐츠",   render: () => <SiteContentAdminPanel/> },
-              { key: "home",     label: "홈 텍스트",       render: () => <HomeTextEditorPanel/> },
-              { key: "hero",     label: "히어로",          render: () => <HeroEditorPanel/> },
-              { key: "seo",      label: "SEO",             render: () => <SEOAdminPanel/> },
-              { key: "legal",    label: "약관/개인정보",   render: () => <LegalAdminPanel/> },
-              { key: "faq",      label: "자주 묻는 질문",  render: () => <FaqAdminPanel/> },
-              { key: "bank",     label: "계좌번호",        render: () => <BankAccountPanel/> },
+              { key: "content",  label: "사이트 콘텐츠",   previewUrl: "/",        render: () => <SiteContentAdminPanel/> },
+              // 홈 텍스트는 자체 임베드 미리보기 보유 (HomeTextPreview) → previewUrl 없음.
+              { key: "home",     label: "홈 텍스트",                                render: () => <HomeTextEditorPanel/> },
+              { key: "hero",     label: "히어로",          previewUrl: "/",        render: () => <HeroEditorPanel/> },
+              { key: "seo",      label: "SEO",             previewUrl: "/",        render: () => <SEOAdminPanel/> },
+              { key: "legal",    label: "약관/개인정보",   previewUrl: "/terms",   render: () => <LegalAdminPanel/> },
+              { key: "faq",      label: "자주 묻는 질문",  previewUrl: "/faq",     render: () => <FaqAdminPanel/> },
+              // 계좌번호는 별도 노출 페이지 없음 (체크아웃 시 호출). 미리보기 생략.
+              { key: "bank",     label: "계좌번호",                                  render: () => <BankAccountPanel/> },
             ]}/>
         )}
         {/* v00.105 — '투어 페이지' / '강연 페이지' 탭 제거. TourAdminPanel / LectureAdminPanel 상단에 inline 통합. */}
