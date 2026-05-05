@@ -4,6 +4,24 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.173.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T21:54:29+09:00",
+    summary: "📊 차트 호버 툴팁 + 코호트 선택 (7/14/30/90일)",
+    details: [
+      "📊 [MiniBarChart 호버 툴팁] 사용자 보고 '모든 차트들은 호버하면 차트 내용물을 볼 수 있게'. 각 막대에 mouseenter/leave 로 hoverIdx 추적 → 부동 툴팁 (모노 폰트, 검은 배경) 노출. 호버 막대 외 다른 막대는 opacity 0.4 로 dim. SVG <title> 도 폴백으로 유지.",
+      "📊 [CohortSelector 신규] 사용자 보고 '모든 차트는 차트에서 코호트를 설정할수 있게'. 7일/14일/30일/90일 4단 토글 컴포넌트. role=tab + aria-selected. 차트 헤더 우측에 inline 노출.",
+      "📊 [DashboardPanel] pvDays / signupDays 독립 state. 페이지뷰 차트 + 가입 차트 각각 코호트 변경 가능. label 도 `${days}일 페이지뷰 추이` 동적. 라벨 간격 days 비례 (7→매일, 14→짝수, 30→5일, 90→15일).",
+      "📊 [워커 ?days param 지원] /api/analytics/summary 가 ?days=N (1-90) 받음. dailySeries 와 seriesDays 응답에 포함. ★ 워커 wrangler deploy 필요.",
+      "📊 [API 헬퍼] BGNJ_API.analytics.summary({ days }) 시그니처. 기본 14.",
+      "📊 [unit/formatTooltip prop] MiniBarChart 가 unit('회'/'명') + formatTooltip 함수로 라벨 커스터마이즈 — 예: '5/4 · 페이지뷰 132회'.",
+      "🛠 [사용자 여정 Sankey] 별 사이클 (v00.174). 본 사이클은 차트 공통 기반(호버/코호트) 우선.",
+      "ℹ ★ 워커 deploy 필요 (analytics summary days param).",
+      "📦 cache-buster — `?v=00.173.000`.",
+    ],
+    context: "사용자 강한 보고 2건: ① 모든 차트 호버 표시 ② 모든 차트 코호트 선택. 공통 컴포넌트 (MiniBarChart + CohortSelector) 로 일괄 적용. 사용자 여정 Sankey 차트는 분량 커서 v00.174 별 사이클로 분리 — 같은 호버/코호트 패턴 재사용 예정.",
+  },
+  {
     version: "00.172.000",
     date: "2026-05-05",
     datetime: "2026-05-05T21:49:03+09:00",

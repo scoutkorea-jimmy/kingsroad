@@ -296,8 +296,12 @@
     },
     // v00.148 — page-view 분석 + 사용자 여정.
     analytics: {
+      // v00.173 — days param 지원 (7/14/30/90). 기본 14.
       track: (payload) => request("POST", "/analytics/page-view", payload),
-      summary: () => request("GET", "/analytics/summary"),
+      summary: ({ days } = {}) => {
+        const qs = days ? `?days=${encodeURIComponent(days)}` : '';
+        return request("GET", `/analytics/summary${qs}`);
+      },
       userJourney: (userId) => request("GET", `/admin/user-journey/${userId}`),
     },
   };

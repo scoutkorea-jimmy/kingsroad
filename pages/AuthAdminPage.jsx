@@ -783,25 +783,68 @@ const MetricCard = ({ label, value, sub, accent, icon, details }) => {
 };
 
 // 간단한 SVG 막대 차트 — series: number[], labels: string[].
-const MiniBarChart = ({ series, labels, height = 120, color = 'var(--gold)', label }) => {
+// v00.173 — 사용자 보고 '모든 차트들은 호버하면 차트 내용물을 볼 수 있게'.
+// 각 막대에 mouseenter/leave 로 hoveredIdx 추적 → 부동 툴팁 노출. unit/formatter prop 으로 라벨 커스터마이즈.
+const MiniBarChart = ({ series, labels, height = 120, color = 'var(--gold)', label, unit = '', formatTooltip, headerRight }) => {
+  const [hoverIdx, setHoverIdx] = React.useState(null);
   const max = Math.max(1, ...series);
   const W = 100; // viewBox 단위
   const H = 40;
-  const barW = W / series.length;
+  const barW = W / Math.max(1, series.length);
+  const fmt = formatTooltip || ((v, l) => `${l ? l + ' · ' : ''}${v}${unit}`);
   return (
-    <div style={{padding:'12px 0'}}>
-      {label && <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:8}}>{label}</div>}
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{width:'100%', height, display:'block'}}>
-        {series.map((v, i) => {
-          const h = max > 0 ? (v / max) * (H - 6) : 0;
-          return (
-            <g key={i}>
-              <rect x={i * barW + 0.6} y={H - h} width={Math.max(0.4, barW - 1.2)} height={h} fill={color} rx={0.3}/>
-              <title>{`${labels?.[i] || ''}: ${v}`}</title>
-            </g>
-          );
-        })}
-      </svg>
+    <div style={{padding:'12px 0', position:'relative'}}>
+      {(label || headerRight) && (
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8, flexWrap:'wrap', gap:8}}>
+          {label && <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em'}}>{label}</div>}
+          {headerRight && <div>{headerRight}</div>}
+        </div>
+      )}
+      <div style={{position:'relative'}}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{width:'100%', height, display:'block'}}>
+          {series.map((v, i) => {
+            const h = max > 0 ? (v / max) * (H - 6) : 0;
+            const isHover = hoverIdx === i;
+            const isOther = hoverIdx !== null && hoverIdx !== i;
+            return (
+              <g key={i}
+                onMouseEnter={() => setHoverIdx(i)}
+                onMouseLeave={() => setHoverIdx((c) => c === i ? null : c)}
+                style={{cursor:'pointer'}}>
+                {/* 시각 막대 */}
+                <rect x={i * barW + 0.6} y={H - h}
+                  width={Math.max(0.4, barW - 1.2)} height={h}
+                  fill={color} rx={0.3}
+                  opacity={isOther ? 0.4 : 1}
+                  style={{transition:'opacity .12s'}}/>
+                {/* 호버 영역 (얇은 막대로는 hover 잡기 어려워 전체 컬럼) */}
+                <rect x={i * barW} y={0} width={barW} height={H} fill="transparent"/>
+                <title>{fmt(v, labels?.[i] || '')}</title>
+              </g>
+            );
+          })}
+        </svg>
+        {/* 호버 툴팁 */}
+        {hoverIdx !== null && series[hoverIdx] !== undefined && (
+          <div style={{
+            position:'absolute',
+            top: -28,
+            left: `${((hoverIdx + 0.5) / Math.max(1, series.length)) * 100}%`,
+            transform:'translateX(-50%)',
+            background:'var(--ink)', color:'var(--bg)',
+            padding:'5px 10px', fontSize:11,
+            fontFamily:'var(--font-mono)',
+            letterSpacing:'0.04em',
+            whiteSpace:'nowrap',
+            pointerEvents:'none',
+            borderRadius:3,
+            boxShadow:'0 2px 8px rgba(0,0,0,0.25)',
+            zIndex:5,
+          }}>
+            {fmt(series[hoverIdx], labels?.[hoverIdx] || '')}
+          </div>
+        )}
+      </div>
       {labels && (
         <div style={{display:'grid', gridTemplateColumns:`repeat(${labels.length}, 1fr)`, fontSize:9, color:'var(--ink-3)', marginTop:6, fontFamily:'var(--font-mono)', letterSpacing:'0.04em'}}>
           {labels.map((l, i) => (
@@ -812,6 +855,35 @@ const MiniBarChart = ({ series, labels, height = 120, color = 'var(--gold)', lab
     </div>
   );
 };
+
+// v00.173 — 차트 코호트 (기간) 선택 공통 UI. 사용자 보고 '모든 차트는 차트에서 코호트를 설정할수 있게'.
+// 옵션: 7일 / 14일 / 30일 / 90일. value=days (number).
+const COHORT_OPTIONS = [
+  { value: 7,  label: '7일' },
+  { value: 14, label: '14일' },
+  { value: 30, label: '30일' },
+  { value: 90, label: '90일' },
+];
+const CohortSelector = ({ value, onChange, options = COHORT_OPTIONS }) => (
+  <div role="tablist" aria-label="기간 선택" style={{display:'inline-flex', gap:0, border:'1px solid var(--line-2)', borderRadius:0}}>
+    {options.map((opt, i) => (
+      <button key={opt.value} type="button" role="tab"
+        aria-selected={value === opt.value}
+        onClick={() => onChange(opt.value)}
+        style={{
+          padding:'4px 10px',
+          fontSize:11, fontFamily:'var(--font-mono)',
+          fontWeight: value === opt.value ? 800 : 500,
+          letterSpacing:'0.06em',
+          border:'none',
+          borderLeft: i === 0 ? 'none' : '1px solid var(--line-2)',
+          background: value === opt.value ? 'rgba(245,213,72,0.14)' : 'var(--bg)',
+          color: value === opt.value ? 'var(--ink)' : 'var(--ink-2)',
+          cursor:'pointer',
+        }}>{opt.label}</button>
+    ))}
+  </div>
+);
 
 // 일/주/월 카운트 헬퍼 — items 의 dateField 가 ISO 또는 'YYYY.MM.DD'.
 const _toDate = (v) => {
@@ -855,11 +927,16 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   const [loadingSummary, setLoadingSummary] = React.useState(true);
   const [summaryError, setSummaryError] = React.useState('');
 
+  // v00.173 — 차트별 코호트(기간). 페이지뷰 차트 + 가입 차트 각각 독립.
+  const [pvDays, setPvDays] = React.useState(14);
+  const [signupDays, setSignupDays] = React.useState(14);
+
   const loadSummary = React.useCallback(async () => {
     setLoadingSummary(true);
     setSummaryError('');
     try {
-      const data = await window.BGNJ_API?.analytics?.summary?.();
+      // v00.173 — pvDays 를 워커에 전달 (워커가 ?days param 미지원이면 기본 14 사용).
+      const data = await window.BGNJ_API?.analytics?.summary?.({ days: pvDays });
       if (data?.error) {
         setSummaryError(data.error);
         setSummary(data);
@@ -870,7 +947,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
       setSummaryError(err?.message || '요청 실패');
       setSummary(null);
     } finally { setLoadingSummary(false); }
-  }, []);
+  }, [pvDays]);
 
   React.useEffect(() => { loadSummary(); }, [loadSummary]);
 
@@ -878,7 +955,8 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   const dailySignups = _countSince(allUsers, 'createdAt', 1);
   const weeklySignups = _countSince(allUsers, 'createdAt', 7);
   const monthlySignups = _countSince(allUsers, 'createdAt', 30);
-  const signupSeries = _dailySeries(allUsers, 'createdAt', 14);
+  // v00.173 — signupDays 코호트로 series 길이 동적.
+  const signupSeries = _dailySeries(allUsers, 'createdAt', signupDays);
 
   // 페이지뷰 — 서버 값 우선, 없으면 게시글 작성 횟수 폴백.
   const pv = summary || {};
@@ -889,9 +967,9 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   const weekUnique = pv.weekUnique ?? null;
   const monthUnique = pv.monthUnique ?? null;
 
-  // 페이지뷰 14일 추이.
+  // v00.173 — pvDays 코호트로 series 길이 동적.
   const pvSeries = (() => {
-    const days = 14;
+    const days = pvDays;
     const counts = new Array(days).fill(0);
     const labels = new Array(days).fill('');
     const todayMid = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
@@ -901,9 +979,11 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
       const idx = Math.floor((t - todayMid) / 86400000) + (days - 1);
       if (idx >= 0 && idx < days) counts[idx] = Number(views) || 0;
     });
+    // 라벨 간격: 7일=매일, 14일=짝수일, 30일=5일마다, 90일=15일마다.
+    const labelEvery = days <= 7 ? 1 : days <= 14 ? 2 : days <= 30 ? 5 : 15;
     for (let i = 0; i < days; i++) {
       const dt = new Date(todayMid + (i - (days - 1)) * 86400000);
-      labels[i] = (i === days - 1) ? '오늘' : (i % 2 === 0 ? `${dt.getMonth()+1}/${dt.getDate()}` : '');
+      labels[i] = (i === days - 1) ? '오늘' : (i % labelEvery === 0 ? `${dt.getMonth()+1}/${dt.getDate()}` : '');
     }
     return { counts, labels };
   })();
@@ -962,17 +1042,33 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
           ]}/>
       </div>
 
-      {/* 3줄: 추이 차트 */}
+      {/* 3줄: 추이 차트 — v00.173 코호트 selector + 호버 툴팁. */}
       <div className="grid grid-2" style={{marginBottom:18}}>
         <article className="card">
-          <MiniBarChart label="📊 14일 페이지뷰 추이" series={pvSeries.counts} labels={pvSeries.labels} color="var(--gold)" height={140}/>
+          <MiniBarChart
+            label={`📊 ${pvDays}일 페이지뷰 추이`}
+            series={pvSeries.counts}
+            labels={pvSeries.labels}
+            color="var(--gold)"
+            height={140}
+            unit="회"
+            formatTooltip={(v, l) => `${l || ''} · 페이지뷰 ${v}회`}
+            headerRight={<CohortSelector value={pvDays} onChange={setPvDays}/>}/>
           <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
-            {summaryError ? '서버 분석 데이터 없음 — schema-v9 + 워커 deploy 필요.' : '실제 측정된 일별 페이지뷰 (page_views D1).'}
+            {summaryError ? '서버 분석 데이터 없음 — schema-v9 + 워커 deploy 필요.' : '실제 측정된 일별 페이지뷰 (page_views D1). 막대에 호버하면 정확한 값.'}
           </p>
         </article>
         <article className="card">
-          <MiniBarChart label="📊 14일 가입 추이" series={signupSeries.counts} labels={signupSeries.labels} color="var(--secondary, #1F7A8C)" height={140}/>
-          <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>최근 14일간 일별 신규 가입자 수.</p>
+          <MiniBarChart
+            label={`📊 ${signupDays}일 가입 추이`}
+            series={signupSeries.counts}
+            labels={signupSeries.labels}
+            color="var(--secondary, #1F7A8C)"
+            height={140}
+            unit="명"
+            formatTooltip={(v, l) => `${l || ''} · 신규 가입 ${v}명`}
+            headerRight={<CohortSelector value={signupDays} onChange={setSignupDays}/>}/>
+          <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>최근 {signupDays}일간 일별 신규 가입자 수. 막대에 호버하면 정확한 값.</p>
         </article>
       </div>
 

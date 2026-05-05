@@ -755,8 +755,11 @@ const handleAnalyticsSummary = async (req, env) => {
   const dayMs = 86400 * 1000;
   const now = Date.now();
   const isoCutoff = (days) => new Date(now - days * dayMs).toISOString();
+  // v00.173 — ?days param 으로 dailySeries 기간 가변. 7/14/30/90 모두 허용. 기본 14.
+  const url = new URL(req.url);
+  const seriesDays = Math.max(1, Math.min(90, Number(url.searchParams.get('days') || 14)));
   // 일/주/월 page-view 수.
-  let summary = { day: 0, week: 0, month: 0, dayUnique: 0, weekUnique: 0, monthUnique: 0, dailySeries: [], referrers: [], topRoutes: [] };
+  let summary = { day: 0, week: 0, month: 0, dayUnique: 0, weekUnique: 0, monthUnique: 0, dailySeries: [], seriesDays, referrers: [], topRoutes: [] };
   try {
     const day1 = await env.DB.prepare("SELECT COUNT(*) AS c, COUNT(DISTINCT session_id) AS u FROM page_views WHERE ts >= ?").bind(isoCutoff(1)).first();
     const day7 = await env.DB.prepare("SELECT COUNT(*) AS c, COUNT(DISTINCT session_id) AS u FROM page_views WHERE ts >= ?").bind(isoCutoff(7)).first();
@@ -764,10 +767,10 @@ const handleAnalyticsSummary = async (req, env) => {
     summary.day = Number(day1?.c || 0); summary.dayUnique = Number(day1?.u || 0);
     summary.week = Number(day7?.c || 0); summary.weekUnique = Number(day7?.u || 0);
     summary.month = Number(day30?.c || 0); summary.monthUnique = Number(day30?.u || 0);
-    // 14일 일별 시리즈.
+    // v00.173 — seriesDays 길이의 일별 시리즈.
     const series = await env.DB.prepare(
       "SELECT substr(ts, 1, 10) AS day, COUNT(*) AS views, COUNT(DISTINCT session_id) AS uniq FROM page_views WHERE ts >= ? GROUP BY day ORDER BY day ASC"
-    ).bind(isoCutoff(14)).all();
+    ).bind(isoCutoff(seriesDays)).all();
     summary.dailySeries = (series.results || []).map((r) => ({ day: r.day, views: Number(r.views), uniq: Number(r.uniq) }));
     // referrer 분포 (최근 30일).
     const refs = await env.DB.prepare(
