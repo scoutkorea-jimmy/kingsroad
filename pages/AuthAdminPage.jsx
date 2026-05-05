@@ -3530,30 +3530,14 @@ const SiteContentAdminPanel = () => {
 
   const ImageUploader = ({ section, field, label, hint, previewSize = 56, accept = 'image/*', folder }) => {
     const current = sc[section]?.[field] || '';
+    // v00.185 — pickImageWithR2Fallback 헬퍼로 통합. 25 lines → 6 lines.
     const onPick = async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      try {
-        // v00.080 — R2 업로드 우선. 실패 시 dataURI 폴백 (워커 미배포 / 권한 / 네트워크 등).
-        // 5MB 까지 허용 (R2 는 dataURI 와 달리 base64 부풀림 X).
-        const r2Folder = folder || section;
-        const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: r2Folder, maxBytes: 5 * 1024 * 1024 });
-        window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: url });
+      const r2Folder = folder || section;
+      const result = await pickImageWithR2Fallback(e, { folder: r2Folder });
+      if (result) {
+        window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: result });
         setTick((v) => v + 1);
-        flash(`${label} 업로드 완료 (R2)`);
-        e.target.value = '';
-      } catch (err) {
-        console.warn('[v00.080] R2 업로드 실패 — dataURI 폴백:', err);
-        if (file.size > 1.5 * 1024 * 1024) {
-          alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 업로드 실패 + 1.5MB 폴백 한도 초과. 압축해 주세요.`);
-          e.target.value = '';
-          return;
-        }
-        const dataUri = await fileToDataUri(file);
-        window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: dataUri });
-        setTick((v) => v + 1);
-        flash(`${label} 업로드 완료 (dataURI 폴백)`);
-        e.target.value = '';
+        flash(`${label} 업로드 완료`);
       }
     };
     const clear = () => {
@@ -4039,60 +4023,24 @@ const BooksAdminPanel = () => {
     refresh();
   };
 
-  // v00.084 — R2 우선 업로드 (5MB 표지 / 20MB PDF) + dataURI 폴백 (1.5MB / 3MB).
-  // v00.147 — busy state + 즉시 patch (파일 업로드는 명시 클릭 액션이라 즉시 영속화).
+  // v00.084 — R2 우선 (5MB 표지 / 20MB PDF) + dataURI 폴백 (1.5MB / 3MB). v00.147 busy state + 즉시 patch.
+  // v00.185 — pickImageWithR2Fallback 헬퍼로 통합. 25 lines × 2 → 8 lines × 2.
   const onUploadCover = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
     setUploadingCover(true);
     flash('표지 업로드 중…');
     try {
-      try {
-        const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'book-covers', maxBytes: 5 * 1024 * 1024 });
-        patchImmediate({ coverDataUri: url });
-        flash('✓ 표지 업로드 완료 (R2)');
-        return;
-      } catch (err) {
-        console.warn('[v00.084] R2 책 표지 업로드 실패 — dataURI 폴백:', err);
-      }
-      if (file.size > 1.5 * 1024 * 1024) {
-        alert(`표지 이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
-        return;
-      }
-      const dataUri = await fileToDataUri(file);
-      patchImmediate({ coverDataUri: dataUri });
-      flash('✓ 표지 업로드 완료 (dataURI 폴백)');
-    } finally {
-      setUploadingCover(false);
-      e.target.value = '';
-    }
+      const result = await pickImageWithR2Fallback(e, { folder: 'book-covers' });
+      if (result) { patchImmediate({ coverDataUri: result }); flash('✓ 표지 업로드 완료'); }
+    } finally { setUploadingCover(false); }
   };
 
   const onUploadPdf = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
     setUploadingPdf(true);
     flash('PDF 업로드 중…');
     try {
-      try {
-        const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'book-pdfs', maxBytes: 20 * 1024 * 1024 });
-        patchImmediate({ pdfPreviewDataUri: url });
-        flash('✓ PDF 미리보기 업로드 완료 (R2)');
-        return;
-      } catch (err) {
-        console.warn('[v00.084] R2 책 PDF 업로드 실패 — dataURI 폴백:', err);
-      }
-      if (file.size > 3 * 1024 * 1024) {
-        alert(`PDF가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 3MB 폴백 한도 초과.`);
-        return;
-      }
-      const dataUri = await fileToDataUri(file);
-      patchImmediate({ pdfPreviewDataUri: dataUri });
-      flash('✓ PDF 미리보기 업로드 완료 (dataURI 폴백)');
-    } finally {
-      setUploadingPdf(false);
-      e.target.value = '';
-    }
+      const result = await pickImageWithR2Fallback(e, { folder: 'book-pdfs', maxBytes: 20 * 1024 * 1024, fallbackMaxBytes: 3 * 1024 * 1024 });
+      if (result) { patchImmediate({ pdfPreviewDataUri: result }); flash('✓ PDF 미리보기 업로드 완료'); }
+    } finally { setUploadingPdf(false); }
   };
 
   const tabs = [

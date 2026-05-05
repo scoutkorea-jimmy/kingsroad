@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.185.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T23:04:58+09:00",
+    summary: "♻ 이미지 업로드 DRY 완료 — book-covers/pdf + ImageUploader 모두 헬퍼로",
+    details: [
+      "♻ [book covers/PDFs 마이그] BooksAdminPanel.onUploadCover(25줄) + onUploadPdf(25줄) → pickImageWithR2Fallback 헬퍼 호출 8줄. uploadingCover/Pdf state + flash 메시지 보존.",
+      "♻ [ImageUploader 마이그] SiteContentAdminPanel 의 ImageUploader 컴포넌트 onPick(25줄) → 헬퍼 호출 6줄.",
+      "♻ [라인 절감 누적] v00.184(lecture/tour) + v00.185(book/site) = 100+ 줄 → 30 줄. AuthAdminPage 9109 → 9057 (-52).",
+      "♻ [BGNJ_MEDIA.uploadFile 직접 호출 잔여] 헬퍼 자체(line 5511) + 칼럼 cover(line 8690) 2건. 칼럼 cover 는 동적 input.click() 패턴이라 보존.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.185.000`.",
+    ],
+    context: "코드 리뷰 cycle 6/N (DRY pass 3). 이미지 업로드 패턴 4 케이스 모두 통합 완료. 일관 동작 (사이즈 한도/에러 메시지). 다음: legacy local 4 항목 D1 마이그 또는 AuthAdminPage 분할.",
+  },
+  {
     version: "00.184.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:56:54+09:00",
