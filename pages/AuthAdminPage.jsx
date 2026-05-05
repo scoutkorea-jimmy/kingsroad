@@ -1159,6 +1159,433 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   );
 };
 
+// === Sankey Flow Chart (v00.174) ===================================
+// 사용자 보고: '사용자 여정이라고함은 나는 이런 차트를 만들었으면 하는거야'.
+// 3-layer 흐름도: 유입 채널 → 단계 → 도착 페이지. 곡선 ribbon (cubic bezier).
+// 호버 툴팁 + 코호트 selector (v00.173 패턴 재사용).
+
+// 유입 채널 분류 — referrer host 를 한국어 채널명으로 그룹화.
+const _CHANNEL_FOR_HOST = (host) => {
+  const h = String(host || '').toLowerCase();
+  if (!h || h === '직접 방문') return '직접 방문';
+  if (/facebook|fb\./.test(h)) return '페이스북';
+  if (/instagram/.test(h)) return '인스타그램';
+  if (/google|gstatic|gws/.test(h)) return '구글';
+  if (/naver/.test(h)) return '네이버';
+  if (/youtube|youtu\.be/.test(h)) return '유튜브';
+  if (/twitter|t\.co|x\.com/.test(h)) return '트위터/X';
+  if (/threads/.test(h)) return '스레드';
+  if (/kakao/.test(h)) return '카카오';
+  if (/bgnj\.net|bgnj-/.test(h)) return '내부 이동';
+  return host;  // 미분류 — 원본 host 그대로
+};
+
+// 단계 분류 — route 를 Awareness/Interest/Consideration 으로 매핑.
+const _STAGE_FOR_ROUTE = (route) => {
+  const r = String(route || '').toLowerCase();
+  if (r === '/' || r === '/home' || r === '') return 'Awareness';
+  if (/^\/(column|book|faq|terms|privacy|eat|sleep|shop)/.test(r)) return 'Interest';
+  if (/^\/(tour|lectures|signup|login|checkout|community|mypage|admin)/.test(r)) return 'Consideration';
+  return 'Interest';
+};
+
+// 채널별 색상 (모노 + key gold + 보조 6색 — 색맹/대비 고려).
+const _CHANNEL_COLORS = {
+  '페이스북': '#3b82f6',
+  '인스타그램': '#ec4899',
+  '구글': '#10b981',
+  '네이버': '#22c55e',
+  '유튜브': '#ef4444',
+  '카카오': '#f59e0b',
+  '트위터/X': '#0ea5e9',
+  '스레드': '#a855f7',
+  '내부 이동': '#94a3b8',
+  '직접 방문': '#64748b',
+};
+const _CHANNEL_COLOR = (name) => _CHANNEL_COLORS[name] || 'var(--gold)';
+
+const SankeyFlow = ({ pairs, days, onDaysChange }) => {
+  const [hover, setHover] = React.useState(null);  // { type: 'node'|'link', key }
+
+  // 1) 채널별 합계 + 단계별 합계 + 라우트별 합계 (필터: top 8 routes).
+  const rows = React.useMemo(() => (pairs || []).map((p) => ({
+    ...p,
+    channel: _CHANNEL_FOR_HOST(p.referrer || '직접 방문'),
+    stage: _STAGE_FOR_ROUTE(p.route),
+  })), [pairs]);
+
+  const channelSums = React.useMemo(() => {
+    const m = new Map();
+    rows.forEach((r) => m.set(r.channel, (m.get(r.channel) || 0) + r.count));
+    return Array.from(m.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+  }, [rows]);
+
+  const stageOrder = ['Awareness', 'Interest', 'Consideration'];
+  const stageSums = React.useMemo(() => {
+    const m = new Map();
+    rows.forEach((r) => m.set(r.stage, (m.get(r.stage) || 0) + r.count));
+    return stageOrder.map((s) => ({ name: s, count: m.get(s) || 0 })).filter((s) => s.count > 0);
+  }, [rows]);
+
+  const routeSums = React.useMemo(() => {
+    const m = new Map();
+    rows.forEach((r) => m.set(r.route, (m.get(r.route) || 0) + r.count));
+    return Array.from(m.entries()).map(([route, count]) => ({ name: route, count })).sort((a, b) => b.count - a.count).slice(0, 8);
+  }, [rows]);
+  const routeSet = React.useMemo(() => new Set(routeSums.map((r) => r.name)), [routeSums]);
+
+  // 2) 링크 집계 — channel→stage, stage→route. routeSet 안에 있는 route 만.
+  const linksA = React.useMemo(() => {
+    const m = new Map();
+    rows.forEach((r) => {
+      if (!routeSet.has(r.route)) return;
+      const k = `${r.channel}|${r.stage}`;
+      m.set(k, (m.get(k) || 0) + r.count);
+    });
+    return Array.from(m.entries()).map(([k, count]) => {
+      const [channel, stage] = k.split('|');
+      return { channel, stage, count };
+    });
+  }, [rows, routeSet]);
+
+  const linksB = React.useMemo(() => {
+    const m = new Map();
+    rows.forEach((r) => {
+      if (!routeSet.has(r.route)) return;
+      const k = `${r.stage}|${r.route}`;
+      m.set(k, (m.get(k) || 0) + r.count);
+    });
+    return Array.from(m.entries()).map(([k, count]) => {
+      const [stage, route] = k.split('|');
+      return { stage, route, count };
+    });
+  }, [rows, routeSet]);
+
+  // 3) 레이아웃 — 3 컬럼, 각 노드의 y 시작 좌표 + 높이 누적.
+  // viewBox 기준 단위. 채널 컬럼이 가장 길어질 수 있어 viewBox H 동적.
+  const W = 1000;
+  const NODE_W = 14;
+  const COL_X = [80, 480, 880];   // 채널/단계/라우트 컬럼 x (노드 left edge)
+  const TOP_PAD = 30;
+  const BOT_PAD = 20;
+  const NODE_GAP = 8;
+
+  // 가장 긴 컬럼의 합계로 스케일 결정.
+  const colTotal = (arr) => arr.reduce((s, n) => s + n.count, 0);
+  const totalCh = Math.max(1, colTotal(channelSums));
+  const totalSt = Math.max(1, colTotal(stageSums));
+  const totalRt = Math.max(1, colTotal(routeSums));
+  const maxNodesInCol = Math.max(channelSums.length, stageSums.length, routeSums.length);
+  // 차트 높이: 가장 큰 합계 + 노드 사이 갭 누적. 최소 320, 최대 720.
+  const colSums = [totalCh, totalSt, totalRt];
+  const maxTotal = Math.max(...colSums);
+  // scale = 차트 가능 높이 / 최대 합계.
+  const HEIGHT = Math.min(720, Math.max(320, maxNodesInCol * 36 + maxTotal / 2));
+  const usableH = HEIGHT - TOP_PAD - BOT_PAD - (maxNodesInCol - 1) * NODE_GAP;
+  const scale = usableH / maxTotal;
+
+  // 컬럼별 노드 y 시작 + 높이 (총 합계가 작은 컬럼은 위쪽 정렬).
+  const layout = (arr) => {
+    const result = new Map();
+    let y = TOP_PAD;
+    arr.forEach((n) => {
+      const h = Math.max(2, n.count * scale);
+      result.set(n.name, { y, h, count: n.count });
+      y += h + NODE_GAP;
+    });
+    return result;
+  };
+  const chPos = layout(channelSums);
+  const stPos = layout(stageSums);
+  const rtPos = layout(routeSums);
+
+  // 4) 링크 ribbon 생성 — 각 노드에서 사용된 y offset 추적.
+  // 시각: 각 링크는 source 의 미사용 영역 + target 의 미사용 영역에서 잘라냄. running offset.
+  const chOffset = new Map();
+  const stOffsetIn = new Map();
+  const stOffsetOut = new Map();
+  const rtOffset = new Map();
+
+  // linksA 정렬 — source 채널 순 + count desc 로 (시각적 분산).
+  const sortedA = linksA.slice().sort((a, b) => {
+    const ay = chPos.get(a.channel)?.y ?? 0;
+    const by = chPos.get(b.channel)?.y ?? 0;
+    if (ay !== by) return ay - by;
+    return b.count - a.count;
+  });
+  const ribbonsA = sortedA.map((lk) => {
+    const ch = chPos.get(lk.channel);
+    const st = stPos.get(lk.stage);
+    if (!ch || !st) return null;
+    const t = lk.count * scale;
+    const offCh = chOffset.get(lk.channel) || 0;
+    const offSt = stOffsetIn.get(lk.stage) || 0;
+    const y1 = ch.y + offCh + t / 2;
+    const y2 = st.y + offSt + t / 2;
+    chOffset.set(lk.channel, offCh + t);
+    stOffsetIn.set(lk.stage, offSt + t);
+    return { ...lk, y1, y2, t };
+  }).filter(Boolean);
+
+  const sortedB = linksB.slice().sort((a, b) => {
+    const ay = stPos.get(a.stage)?.y ?? 0;
+    const by = stPos.get(b.stage)?.y ?? 0;
+    if (ay !== by) return ay - by;
+    return b.count - a.count;
+  });
+  const ribbonsB = sortedB.map((lk) => {
+    const st = stPos.get(lk.stage);
+    const rt = rtPos.get(lk.route);
+    if (!st || !rt) return null;
+    const t = lk.count * scale;
+    const offSt = stOffsetOut.get(lk.stage) || 0;
+    const offRt = rtOffset.get(lk.route) || 0;
+    const y1 = st.y + offSt + t / 2;
+    const y2 = rt.y + offRt + t / 2;
+    stOffsetOut.set(lk.stage, offSt + t);
+    rtOffset.set(lk.route, offRt + t);
+    return { ...lk, y1, y2, t };
+  }).filter(Boolean);
+
+  // 5) 빈 데이터 처리.
+  if (channelSums.length === 0) {
+    return (
+      <div className="card" style={{padding:24}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, flexWrap:'wrap', gap:8}}>
+          <div>
+            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:4}}>JOURNEY · 고객 여정 흐름</div>
+            <h2 className="ko-serif" style={{fontSize:18, margin:0}}>유입 채널 → 단계 → 대표 도착 페이지</h2>
+          </div>
+          <CohortSelector value={days} onChange={onDaysChange}/>
+        </div>
+        <p className="dim" style={{fontSize:13, lineHeight:1.7}}>
+          최근 {days}일간 측정된 페이지뷰가 없습니다. 사용자 방문이 누적되거나 코호트를 늘리면 표시됩니다.
+        </p>
+      </div>
+    );
+  }
+
+  const cubicPath = (x1, y1, x2, y2, t) => {
+    // 양 끝 노드의 면(thickness t/2)을 따라 두꺼운 ribbon. 위/아래 두 곡선으로 region.
+    const cx1 = (x1 + x2) / 2;
+    const cx2 = (x1 + x2) / 2;
+    return [
+      `M ${x1} ${y1 - t/2}`,
+      `C ${cx1} ${y1 - t/2}, ${cx2} ${y2 - t/2}, ${x2} ${y2 - t/2}`,
+      `L ${x2} ${y2 + t/2}`,
+      `C ${cx2} ${y2 + t/2}, ${cx1} ${y1 + t/2}, ${x1} ${y1 + t/2}`,
+      'Z',
+    ].join(' ');
+  };
+
+  const isHov = (type, key) => hover && hover.type === type && hover.key === key;
+  const isFaded = hover && !(
+    (hover.type === 'channel' && (
+      // 같은 채널 또는 그 채널과 연결된 stage/route
+      false
+    )) || (hover.type === 'stage' && false) || (hover.type === 'route' && false) || isHov('linkA', null) || isHov('linkB', null)
+  );
+
+  // 호버 시 강조: 같은 channel/stage/route 와 연결된 노드+링크만 강조, 나머지 dim.
+  const channelLinked = (chName) => {
+    const stages = new Set(linksA.filter((l) => l.channel === chName).map((l) => l.stage));
+    const routes = new Set(linksB.filter((l) => stages.has(l.stage)).map((l) => l.route));
+    return { stages, routes };
+  };
+  const routeLinked = (rtName) => {
+    const stages = new Set(linksB.filter((l) => l.route === rtName).map((l) => l.stage));
+    const channels = new Set(linksA.filter((l) => stages.has(l.stage)).map((l) => l.channel));
+    return { stages, channels };
+  };
+  const stageLinked = (stName) => {
+    const channels = new Set(linksA.filter((l) => l.stage === stName).map((l) => l.channel));
+    const routes = new Set(linksB.filter((l) => l.stage === stName).map((l) => l.route));
+    return { channels, routes };
+  };
+
+  const dim = (kind, key) => {
+    if (!hover) return false;
+    if (hover.type === 'channel') {
+      const { stages, routes } = channelLinked(hover.key);
+      if (kind === 'channel') return key !== hover.key;
+      if (kind === 'stage') return !stages.has(key);
+      if (kind === 'route') return !routes.has(key);
+      if (kind === 'linkA') return key.channel !== hover.key;
+      if (kind === 'linkB') return !stages.has(key.stage);
+    } else if (hover.type === 'stage') {
+      const { channels, routes } = stageLinked(hover.key);
+      if (kind === 'channel') return !channels.has(key);
+      if (kind === 'stage') return key !== hover.key;
+      if (kind === 'route') return !routes.has(key);
+      if (kind === 'linkA') return key.stage !== hover.key;
+      if (kind === 'linkB') return key.stage !== hover.key;
+    } else if (hover.type === 'route') {
+      const { stages, channels } = routeLinked(hover.key);
+      if (kind === 'channel') return !channels.has(key);
+      if (kind === 'stage') return !stages.has(key);
+      if (kind === 'route') return key !== hover.key;
+      if (kind === 'linkA') return !stages.has(key.stage);
+      if (kind === 'linkB') return key.route !== hover.key;
+    }
+    return false;
+  };
+
+  const truncate = (s, n) => (String(s || '').length > n ? String(s).slice(0, n - 1) + '…' : String(s || ''));
+
+  return (
+    <div className="card" style={{padding:24, marginBottom:18}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:14, flexWrap:'wrap', gap:8}}>
+        <div>
+          <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:4}}>JOURNEY · 고객 여정 흐름</div>
+          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>유입 채널 → 단계 → 대표 도착 페이지</h2>
+          <p className="dim-2" style={{fontSize:11, marginTop:6, lineHeight:1.6}}>
+            노드 또는 곡선에 호버하면 연결된 흐름이 강조됩니다. 위쪽 [기간] 으로 코호트 변경.
+          </p>
+        </div>
+        <CohortSelector value={days} onChange={onDaysChange}/>
+      </div>
+      <div style={{position:'relative', overflow:'auto'}}>
+        <svg viewBox={`0 0 ${W} ${HEIGHT}`} style={{width:'100%', minWidth:720, height:HEIGHT, display:'block'}}>
+          {/* 컬럼 헤더 라벨 */}
+          <text x={COL_X[0] + NODE_W / 2} y={16} textAnchor="middle" fill="var(--ink-3)"
+            fontSize={11} fontFamily="var(--font-mono)" letterSpacing="0.2em">유입 채널</text>
+          <text x={COL_X[1] + NODE_W / 2} y={16} textAnchor="middle" fill="var(--ink-3)"
+            fontSize={11} fontFamily="var(--font-mono)" letterSpacing="0.2em">단계</text>
+          <text x={COL_X[2] + NODE_W / 2} y={16} textAnchor="middle" fill="var(--ink-3)"
+            fontSize={11} fontFamily="var(--font-mono)" letterSpacing="0.2em">도착 페이지</text>
+
+          {/* 링크 A: 채널 → 단계. 노드 뒤에 그려져야 노드가 가려지지 않음. */}
+          {ribbonsA.map((lk, i) => {
+            const x1 = COL_X[0] + NODE_W;
+            const x2 = COL_X[1];
+            const faded = dim('linkA', lk);
+            return (
+              <path key={`A${i}`}
+                d={cubicPath(x1, lk.y1, x2, lk.y2, lk.t)}
+                fill={_CHANNEL_COLOR(lk.channel)}
+                opacity={faded ? 0.06 : 0.32}
+                style={{cursor:'pointer', transition:'opacity .12s'}}
+                onMouseEnter={() => setHover({ type: 'linkA', key: lk })}
+                onMouseLeave={() => setHover(null)}>
+                <title>{`${lk.channel} → ${lk.stage}: ${lk.count}회`}</title>
+              </path>
+            );
+          })}
+          {/* 링크 B: 단계 → 라우트. */}
+          {ribbonsB.map((lk, i) => {
+            const x1 = COL_X[1] + NODE_W;
+            const x2 = COL_X[2];
+            const faded = dim('linkB', lk);
+            // 색은 stage 의 첫번째 채널 색 (대표) 또는 회색.
+            const stageColor = lk.stage === 'Awareness' ? '#fb923c'
+              : lk.stage === 'Interest' ? '#22c55e'
+              : '#ef4444';
+            return (
+              <path key={`B${i}`}
+                d={cubicPath(x1, lk.y1, x2, lk.y2, lk.t)}
+                fill={stageColor}
+                opacity={faded ? 0.06 : 0.28}
+                style={{cursor:'pointer', transition:'opacity .12s'}}
+                onMouseEnter={() => setHover({ type: 'linkB', key: lk })}
+                onMouseLeave={() => setHover(null)}>
+                <title>{`${lk.stage} → ${lk.route}: ${lk.count}회`}</title>
+              </path>
+            );
+          })}
+
+          {/* 채널 노드 */}
+          {channelSums.map((n) => {
+            const p = chPos.get(n.name);
+            const faded = dim('channel', n.name);
+            return (
+              <g key={`ch-${n.name}`}
+                onMouseEnter={() => setHover({ type: 'channel', key: n.name })}
+                onMouseLeave={() => setHover(null)}
+                style={{cursor:'pointer', opacity: faded ? 0.35 : 1, transition:'opacity .12s'}}>
+                <rect x={COL_X[0]} y={p.y} width={NODE_W} height={p.h} fill={_CHANNEL_COLOR(n.name)} rx={1}/>
+                <text x={COL_X[0] - 8} y={p.y + p.h / 2} textAnchor="end" dominantBaseline="middle"
+                  fontSize={12} fill="var(--ink)" fontFamily="var(--font-sans)">
+                  {truncate(n.name, 14)}
+                </text>
+                <text x={COL_X[0] - 8} y={p.y + p.h / 2 + 14} textAnchor="end" dominantBaseline="middle"
+                  fontSize={10} fill="var(--ink-3)" fontFamily="var(--font-mono)">
+                  {n.count}
+                </text>
+                <title>{`${n.name}: ${n.count}회`}</title>
+              </g>
+            );
+          })}
+
+          {/* 단계 노드 */}
+          {stageSums.map((n) => {
+            const p = stPos.get(n.name);
+            const faded = dim('stage', n.name);
+            const stColor = n.name === 'Awareness' ? '#fb923c' : n.name === 'Interest' ? '#22c55e' : '#ef4444';
+            return (
+              <g key={`st-${n.name}`}
+                onMouseEnter={() => setHover({ type: 'stage', key: n.name })}
+                onMouseLeave={() => setHover(null)}
+                style={{cursor:'pointer', opacity: faded ? 0.35 : 1, transition:'opacity .12s'}}>
+                <rect x={COL_X[1]} y={p.y} width={NODE_W} height={p.h} fill={stColor} rx={1}/>
+                <text x={COL_X[1] + NODE_W + 8} y={p.y + p.h / 2} textAnchor="start" dominantBaseline="middle"
+                  fontSize={12} fill="var(--ink)" fontFamily="var(--font-sans)">
+                  {n.name}
+                </text>
+                <text x={COL_X[1] + NODE_W + 8} y={p.y + p.h / 2 + 14} textAnchor="start" dominantBaseline="middle"
+                  fontSize={10} fill="var(--ink-3)" fontFamily="var(--font-mono)">
+                  {n.count}
+                </text>
+                <title>{`${n.name}: ${n.count}회`}</title>
+              </g>
+            );
+          })}
+
+          {/* 라우트 노드 */}
+          {routeSums.map((n) => {
+            const p = rtPos.get(n.name);
+            const faded = dim('route', n.name);
+            const rtColor = _STAGE_FOR_ROUTE(n.name) === 'Awareness' ? '#fb923c'
+              : _STAGE_FOR_ROUTE(n.name) === 'Interest' ? '#22c55e' : '#ef4444';
+            return (
+              <g key={`rt-${n.name}`}
+                onMouseEnter={() => setHover({ type: 'route', key: n.name })}
+                onMouseLeave={() => setHover(null)}
+                style={{cursor:'pointer', opacity: faded ? 0.35 : 1, transition:'opacity .12s'}}>
+                <rect x={COL_X[2]} y={p.y} width={NODE_W} height={p.h} fill={rtColor} rx={1}/>
+                <text x={COL_X[2] + NODE_W + 8} y={p.y + p.h / 2} textAnchor="start" dominantBaseline="middle"
+                  fontSize={12} fill="var(--ink)" fontFamily="var(--font-sans)">
+                  {truncate(n.name, 28)}
+                </text>
+                <text x={COL_X[2] + NODE_W + 8} y={p.y + p.h / 2 + 14} textAnchor="start" dominantBaseline="middle"
+                  fontSize={10} fill="var(--ink-3)" fontFamily="var(--font-mono)">
+                  {n.count}
+                </text>
+                <title>{`${n.name}: ${n.count}회`}</title>
+              </g>
+            );
+          })}
+        </svg>
+        {/* 호버 툴팁 (오버레이) */}
+        {hover && (
+          <div style={{
+            position:'absolute', top: 8, right: 8,
+            background:'var(--ink)', color:'var(--bg)',
+            padding:'8px 12px', fontSize:12, fontFamily:'var(--font-mono)',
+            letterSpacing:'0.04em', borderRadius:3, zIndex:5,
+            boxShadow:'0 4px 12px rgba(0,0,0,0.3)', pointerEvents:'none',
+          }}>
+            {hover.type === 'channel' && `채널: ${hover.key} · ${chPos.get(hover.key)?.count || 0}회`}
+            {hover.type === 'stage' && `단계: ${hover.key} · ${stPos.get(hover.key)?.count || 0}회`}
+            {hover.type === 'route' && `페이지: ${hover.key} · ${rtPos.get(hover.key)?.count || 0}회`}
+            {hover.type === 'linkA' && `${hover.key.channel} → ${hover.key.stage} · ${hover.key.count}회`}
+            {hover.type === 'linkB' && `${hover.key.stage} → ${hover.key.route} · ${hover.key.count}회`}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // === User Journey Panel (v00.146) ==================================
 // 사용자 요청 '사용자 여정을 볼 수 있는 페이지'.
 // 회원 1명을 선택하면 가입 → 로그인 → 게시글 → 댓글 → 강연/투어 신청 → 책 주문 등
@@ -1166,6 +1593,28 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
 const UserJourneyPanel = ({ users, posts, setTab }) => {
   const [selectedId, setSelectedId] = React.useState(users[0]?.id || null);
   const selected = users.find((u) => u.id === selectedId);
+
+  // v00.174 — 사용자 여정 Sankey 차트 데이터.
+  // analytics summary 의 flowPairs 에서 channel/stage/route 흐름 시각화.
+  const [flowPairs, setFlowPairs] = React.useState([]);
+  const [flowDays, setFlowDays] = React.useState(30);
+  const [flowError, setFlowError] = React.useState('');
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await window.BGNJ_API?.analytics?.summary?.({ days: flowDays });
+        if (cancelled) return;
+        setFlowPairs(Array.isArray(data?.flowPairs) ? data.flowPairs : []);
+        setFlowError(data?.error || '');
+      } catch (err) {
+        if (cancelled) return;
+        setFlowPairs([]);
+        setFlowError(err?.message || '서버 응답 실패');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [flowDays]);
 
   // v00.148 — 서버 통합 user-journey API 사용 (가입/게시글/댓글/강연/투어/책 주문).
   // 미배포 시 클라이언트 fallback (가입 + 게시글만).
@@ -1239,7 +1688,10 @@ const UserJourneyPanel = ({ users, posts, setTab }) => {
       <AdminPanelHeader
         eyebrow="JOURNEY · 사용자 여정"
         title="회원 여정 분석"
-        description="가입 시점부터 게시글·댓글·신청·주문까지 회원 한 명의 활동을 시간 순서대로 추적합니다. 좌측에서 회원을 선택하세요."/>
+        description="① 상단 Sankey 흐름도: 유입 채널 → 단계 → 도착 페이지 (집계). ② 하단: 회원 한 명의 활동 타임라인. 좌측에서 회원 선택."/>
+
+      {/* v00.174 — 사용자 여정 Sankey 차트 (3-단계 흐름도). */}
+      <SankeyFlow pairs={flowPairs} days={flowDays} onDaysChange={setFlowDays}/>
 
       <div style={{display:'grid', gridTemplateColumns:'minmax(240px, 320px) 1fr', gap:18, alignItems:'flex-start'}}>
         {/* 좌측: 회원 목록 */}

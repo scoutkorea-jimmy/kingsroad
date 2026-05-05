@@ -4,6 +4,24 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.174.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T21:58:40+09:00",
+    summary: "🌊 사용자 여정 Sankey 흐름도 — 3-단계 (유입 채널 → 단계 → 도착 페이지)",
+    details: [
+      "🌊 [SankeyFlow 컴포넌트] 사용자 보고 '사용자 여정이라고함은 나는 이런 차트를 만들었으면 하는거야 이런식으로' (Sankey 스크린샷). 3-컬럼 SVG 흐름도 — 채널/단계/라우트 노드 + cubic bezier 곡선 ribbon. 노드 높이 ∝ 합계, ribbon 두께 ∝ 흐름 count.",
+      "🌊 [채널 분류] _CHANNEL_FOR_HOST: 페이스북/인스타그램/구글/네이버/유튜브/카카오/트위터·X/스레드/내부 이동/직접 방문 10종. 미분류는 host 그대로. 채널별 색상 매핑.",
+      "🌊 [단계 분류] _STAGE_FOR_ROUTE: Awareness(/, /home) / Interest(/column, /book, /faq...) / Consideration(/tour, /lectures, /community, /signup, /checkout, /admin...). 색상: 주황/녹색/적색.",
+      "🌊 [호버 강조] 노드 또는 ribbon 호버 시 연결되지 않은 요소 opacity 0.06~0.35 dim, 호버 대상은 강조. 우상단 부동 툴팁 (모노 폰트).",
+      "🌊 [코호트 selector] CohortSelector (v00.173 패턴) 재사용 — 7/14/30/90일. 기본 30일.",
+      "🌊 [워커 flowPairs 응답] /api/analytics/summary 가 referrer×route 쌍 집계 (LIMIT 200) 를 flowPairs 로 반환. ★ wrangler deploy 필요.",
+      "🌊 [UserJourneyPanel 통합] 기존 회원별 타임라인 위에 Sankey 흐름도 추가. 두 뷰 동시 노출.",
+      "ℹ ★ 워커 deploy 필요 (flowPairs 쿼리 추가).",
+      "📦 cache-buster — `?v=00.174.000`.",
+    ],
+    context: "v00.173 차트 인프라(호버/코호트) 직후 사용자 여정 Sankey 본격 구현. 사용자 reference 스크린샷 그대로 — 3-컬럼 흐름도. SVG 만으로 구현 (라이브러리 없음). 노드 위치는 수동 layout (running offset). bezier 양 끝의 thickness 면 따라 ribbon 영역 path. 호버 강조는 channelLinked/stageLinked/routeLinked 로 연결 그래프 도출.",
+  },
+  {
     version: "00.173.000",
     date: "2026-05-05",
     datetime: "2026-05-05T21:54:29+09:00",

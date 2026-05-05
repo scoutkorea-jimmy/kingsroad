@@ -782,6 +782,11 @@ const handleAnalyticsSummary = async (req, env) => {
       "SELECT route, COUNT(*) AS c FROM page_views WHERE ts >= ? GROUP BY route ORDER BY c DESC LIMIT 10"
     ).bind(isoCutoff(7)).all();
     summary.topRoutes = (routes.results || []).map((r) => ({ route: r.route, count: Number(r.c) }));
+    // v00.174 — flowPairs: 사용자 여정 Sankey 차트용 referrer→route 쌍 집계 (seriesDays 기간).
+    const pairs = await env.DB.prepare(
+      "SELECT COALESCE(referrer_host, '직접 방문') AS host, route, COUNT(*) AS c FROM page_views WHERE ts >= ? GROUP BY host, route ORDER BY c DESC LIMIT 200"
+    ).bind(isoCutoff(seriesDays)).all();
+    summary.flowPairs = (pairs.results || []).map((p) => ({ referrer: p.host, route: p.route, count: Number(p.c) }));
   } catch (err) {
     return { ...summary, error: 'schema-v9 not applied or query failed', detail: err?.message || '' };
   }
