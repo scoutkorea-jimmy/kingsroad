@@ -5971,8 +5971,8 @@ const AdminPage = ({ go }) => {
     { group: "요약",          items: ["대시보드", "사용자 여정"] },
     { group: "콘텐츠",        items: ["뱅기노자 칼럼", "추천 여행지", "먹고 놀자", "자고 놀자", "사고 놀자"] },
     { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "책 카탈로그", "책 주문"] },
-    // v00.176 — 통합 sub-tab 은 v00.177 에서 진행. 임시로 3 항목 유지 (게시글/게시판/신고).
-    { group: "커뮤니티",      items: ["커뮤니티", "커뮤니티 게시판", "신고"] },
+    // v00.177 — 사용자 보고 '커뮤니티게시판이랑 커뮤니티랑 겹쳐 매우 불편'. 단일 [커뮤니티] sub-tab 통합 (게시글/게시판/신고).
+    { group: "커뮤니티",      items: ["커뮤니티"] },
     { group: "회원",          items: ["회원", "회원 등급"] },
     // v00.166 — 사이트 설정 7 항목을 단일 "사이트 설정" 으로 머지. SubTabsView 가 내부에서 7 sub-tab 노출.
     { group: "사이트 설정",   items: ["사이트 설정"] },
@@ -6715,7 +6715,14 @@ const AdminPage = ({ go }) => {
         )}
 
         {/* 게시글 */}
+        {/* v00.177 — 커뮤니티 통합. 게시글(현재 인라인 JSX) + 게시판(CommunityBoardsPanel) + 신고. SubTabsView. */}
         {tab === "커뮤니티" && (
+          <SubTabsView
+            storageKey="bgnj_admin_subtab_community"
+            defaultKey="posts"
+            subTabs={[
+              { key: "posts", label: "게시글", render: () => (
+        // sub-tab posts wrapper start — 기존 인라인 JSX 그대로
           <div>
             {/* 게시판 칩 (검색 위) */}
             <div style={{display:'flex', flexWrap:'wrap', gap:6, marginBottom:12}} role="tablist" aria-label="게시판 필터">
@@ -6835,13 +6842,19 @@ const AdminPage = ({ go }) => {
               <PostViewerModal postId={viewingPostId} onClose={() => setViewingPostId(null)}/>
             )}
           </div>
+        // sub-tab posts wrapper end
+              )},
+              { key: "boards", label: "게시판", render: () => <CommunityBoardsPanel/> },
+              { key: "reports", label: "신고", render: () => (
+                <>
+                  <CorruptedBodyInspector go={go}/>
+                  <ReportQueuePanel onRefresh={() => setPostRefreshKey((v) => v + 1)} go={go}/>
+                </>
+              )},
+            ]}/>
         )}
 
-        {/* 신고 큐 + v00.131 손상 본문 점검 도구. */}
-        {tab === "신고" && (<>
-          <CorruptedBodyInspector go={go}/>
-          <ReportQueuePanel onRefresh={() => setPostRefreshKey((v) => v + 1)} go={go}/>
-        </>)}
+        {/* v00.177 — '신고' 별도 라우트 폐기. '커뮤니티' SubTabsView 안으로 이동. */}
 
         {/* 칼럼 — 통합 허브 (목록 + 글쓰기 모달). v00.067 */}
         {tab === "뱅기노자 칼럼" && <ColumnsHubPanel allColumns={allColumns}/>}
@@ -7131,7 +7144,7 @@ const AdminPage = ({ go }) => {
         )}
         {/* v00.105 — '투어 페이지' / '강연 페이지' 탭 제거. TourAdminPanel / LectureAdminPanel 상단에 inline 통합. */}
         {/* v00.175 — '카테고리' 탭 폐기. AdminCategoryPanel 컴포넌트는 코드 보존(향후 칼럼 카테고리 등 재사용 여지). */}
-        {tab === "커뮤니티 게시판" && <CommunityBoardsPanel/>}
+        {/* v00.177 — '커뮤니티 게시판' 별도 라우트 폐기. '커뮤니티' SubTabsView 안으로 이동. */}
         {/* v00.166 — 약관/개인정보, 자주 묻는 질문, SEO 는 "사이트 설정" 머지로 이동. */}
         {tab === "감사 로그" && <AuditLogPanel/>}
         {tab === "오류 로그" && <ErrorLogPanel/>}

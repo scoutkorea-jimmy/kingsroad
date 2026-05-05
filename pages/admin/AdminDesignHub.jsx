@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.177.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:14:08+09:00",
+    summary: "🔗 커뮤니티 통합 — 게시글/게시판/신고 단일 sub-tab",
+    details: [
+      "🔗 [커뮤니티 sub-tab 통합] 사용자 보고 '커뮤니티게시판이랑 커뮤니티랑 기능 겹쳐 매우 불편'. 사이드바 3 항목(커뮤니티/커뮤니티 게시판/신고) → 1 항목(커뮤니티) + SubTabsView 내부 sub-tab 3개(게시글/게시판/신고).",
+      "🔗 [라우팅 정리] tab === '커뮤니티 게시판' / tab === '신고' 별도 라우트 폐기. 모두 '커뮤니티' SubTabsView 의 render 함수 안으로 이동. localStorage(bgnj_admin_subtab_community) 마지막 sub-tab 복원.",
+      "🔗 [기능 100% 보존] CommunityBoardsPanel(테이블+DnD), CorruptedBodyInspector, ReportQueuePanel 모두 그대로. 게시글 인라인 JSX 도 closure 변수(allCommunityPosts, postSearch 등) 모두 정상 작동.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.177.000`.",
+    ],
+    context: "v00.176 까지 사이드바 3 항목 임시 유지하던 것을 본 사이클에 통합. 같은 SubTabsView 패턴(사이트 설정 v00.166, 후 v00.176 preview top 레이아웃) 재사용. 사용자 흐름: 커뮤니티 클릭 → 기본 게시글 노출 → 게시판/신고 sub-tab 으로 이동. 사이드바 항목 수 -2.",
+  },
+  {
     version: "00.176.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:12:04+09:00",
