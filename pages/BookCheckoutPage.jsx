@@ -266,9 +266,10 @@ const BookPage = ({ go, cart, setCart, user }) => {
           {/* RIGHT: purchase panel */}
           <div>
             <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:16}}>NEW RELEASE · 2026</div>
-            <h1 style={{fontFamily:'var(--font-serif)', fontSize:56, fontWeight:500, lineHeight:1.05, marginBottom:12}}>
+            {/* v00.188 a11y — 페이지 h1 은 hero(line 170). 책 제목은 h2 로 위계. */}
+            <h2 style={{fontFamily:'var(--font-serif)', fontSize:56, fontWeight:500, lineHeight:1.05, marginBottom:12}}>
               『<span className="gold">{book.title}</span>』
-            </h1>
+            </h2>
             <div className="ko-serif dim" style={{fontSize:20, marginBottom:24, fontStyle:'italic'}}>
               {book.subtitle}
             </div>

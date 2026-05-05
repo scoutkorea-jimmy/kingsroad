@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.188.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T23:32:58+09:00",
+    summary: "♿ a11y audit — ColumnPage 키보드 nav + BookPage h1 위계 + 타이포 audit",
+    details: [
+      "♿ [a11y audit pass] 4 항목 점검: ① icon-only 버튼 aria-label / ② onClick div 키보드 접근 / ③ 페이지당 1 h1 룰 / ④ 타이포 위계.",
+      "♿ [ColumnPage prev/next 키보드 접근] 이전/다음 칼럼 nav <div onClick> 에 role='button' tabIndex={0} aria-label onKeyDown(Enter/Space) 추가. 키보드만으로도 칼럼 이동 가능.",
+      "♿ [BookPage h1 위계 fix] 같은 페이지에 h1 2개 (hero + 책 제목) → 책 제목을 h2 로. 페이지당 1 h1 룰 준수.",
+      "♿ [audit 결과 — 통과] icon button aria-label: 대부분 OK (텍스트 있거나 명시 aria-label). 모달 useModalGuard: 통과 (v00.184 audit). 옐로우 면적: 통과 (작은 영역만).",
+      "♿ [audit 결과 — 후속 후보] BookCheckoutPage 의 4 추가 h1 (gate / empty / success 페이지) — 모두 다른 render 분기라 OK. 각 분기별 1 h1 ✓. 모달 inner div onClick stopPropagation: 진짜 인터랙션 아님 — 키보드 접근 불필요.",
+      "📋 [타이포 위계 일관성] section-title 클래스가 h1 (BookPage hero, ColumnPage hero) / h2 (모듈) / h3 (서브섹션) 으로 사용. CSS 클래스가 위계 정의해 일관 — 추가 작업 불필요.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.188.000`.",
+    ],
+    context: "코드 리뷰 cycle 9 — a11y + 타이포 audit. 명확한 a11y 위반 2건 fix. icon-only 버튼 aria-label 은 grep 으로 큰 위반 없음 확인 (이모지+텍스트 조합 다수). 타이포 위계는 .section-title CSS 클래스 일관성으로 OK. 다음: 워커 deploy 안내.",
+  },
+  {
     version: "00.187.000",
     date: "2026-05-05",
     datetime: "2026-05-05T23:30:24+09:00",

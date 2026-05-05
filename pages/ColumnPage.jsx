@@ -295,13 +295,21 @@ const ColumnPage = ({ go, user }) => {
           {/* prev / next */}
           <div style={{marginTop:60, paddingTop:40, borderTop:'1px solid var(--line-2)', display:'flex', justifyContent:'space-between', gap:24, flexWrap:'wrap'}}>
             {prevCol && (
-              <div style={{cursor:'pointer', flex:1, minWidth:240}} onClick={() => setSelectedId(prevCol.id)}>
+              <div role="button" tabIndex={0}
+                aria-label={`이전 칼럼: ${prevCol.title}`}
+                style={{cursor:'pointer', flex:1, minWidth:240}}
+                onClick={() => setSelectedId(prevCol.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(prevCol.id); } }}>
                 <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>← 이전 칼럼</div>
                 <div className="ko-serif gold" style={{fontSize:16}}>{prevCol.title}</div>
               </div>
             )}
             {nextCol && (
-              <div style={{cursor:'pointer', textAlign:'right', flex:1, minWidth:240}} onClick={() => setSelectedId(nextCol.id)}>
+              <div role="button" tabIndex={0}
+                aria-label={`다음 칼럼: ${nextCol.title}`}
+                style={{cursor:'pointer', textAlign:'right', flex:1, minWidth:240}}
+                onClick={() => setSelectedId(nextCol.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedId(nextCol.id); } }}>
                 <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>다음 칼럼 →</div>
                 <div className="ko-serif gold" style={{fontSize:16}}>{nextCol.title}</div>
               </div>
