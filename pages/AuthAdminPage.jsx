@@ -858,7 +858,9 @@ const MiniBarChart = ({ series, labels, height = 120, color = 'var(--gold)', lab
 
 // v00.173 — 차트 코호트 (기간) 선택 공통 UI. 사용자 보고 '모든 차트는 차트에서 코호트를 설정할수 있게'.
 // 옵션: 7일 / 14일 / 30일 / 90일. value=days (number).
+// v00.176 — '1일' (24시간 시간단위) 코호트 추가. value=1 일 때 차트가 시간 라벨 + 24개 막대.
 const COHORT_OPTIONS = [
+  { value: 1,  label: '1일' },
   { value: 7,  label: '7일' },
   { value: 14, label: '14일' },
   { value: 30, label: '30일' },
@@ -902,6 +904,25 @@ const _countSince = (items, dateField, days) => {
     return d && d.getTime() >= cutoff;
   }).length;
 };
+// v00.176 — 24시간 시간단위 series (days=1 코호트용). 현재 시각 포함 24시간 (1시간 간격).
+const _hourlySeries = (items, dateField, hours = 24) => {
+  const counts = new Array(hours).fill(0);
+  const labels = new Array(hours).fill('');
+  const now = new Date(); now.setMinutes(0, 0, 0);
+  const baseTs = now.getTime() - (hours - 1) * 3600000;
+  items.forEach((it) => {
+    const d = _toDate(it[dateField]);
+    if (!d) return;
+    const idx = Math.floor((d.getTime() - baseTs) / 3600000);
+    if (idx >= 0 && idx < hours) counts[idx]++;
+  });
+  for (let i = 0; i < hours; i++) {
+    const dt = new Date(baseTs + i * 3600000);
+    labels[i] = (i === hours - 1) ? '지금' : (i % 3 === 0 ? `${dt.getHours()}시` : '');
+  }
+  return { counts, labels };
+};
+
 // 14일치 일별 카운트 series — 오늘 포함 14개.
 const _dailySeries = (items, dateField, days = 14) => {
   const counts = new Array(days).fill(0);
@@ -955,8 +976,10 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   const dailySignups = _countSince(allUsers, 'createdAt', 1);
   const weeklySignups = _countSince(allUsers, 'createdAt', 7);
   const monthlySignups = _countSince(allUsers, 'createdAt', 30);
-  // v00.173 — signupDays 코호트로 series 길이 동적.
-  const signupSeries = _dailySeries(allUsers, 'createdAt', signupDays);
+  // v00.173 — signupDays 코호트로 series 길이 동적. v00.176 — 1일이면 시간 단위.
+  const signupSeries = signupDays === 1
+    ? _hourlySeries(allUsers, 'createdAt', 24)
+    : _dailySeries(allUsers, 'createdAt', signupDays);
 
   // 페이지뷰 — 서버 값 우선, 없으면 게시글 작성 횟수 폴백.
   const pv = summary || {};
@@ -967,8 +990,28 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   const weekUnique = pv.weekUnique ?? null;
   const monthUnique = pv.monthUnique ?? null;
 
-  // v00.173 — pvDays 코호트로 series 길이 동적.
+  // v00.173 — pvDays 코호트로 series 길이 동적. v00.176 — 1일이면 24시간 hourly.
   const pvSeries = (() => {
+    if (pvDays === 1) {
+      // 시간 단위 (워커 hourlySeries 응답).
+      const hours = 24;
+      const counts = new Array(hours).fill(0);
+      const labels = new Array(hours).fill('');
+      const now = new Date(); now.setMinutes(0, 0, 0);
+      const baseTs = now.getTime() - (hours - 1) * 3600000;
+      (pv.hourlySeries || []).forEach(({ hour, views }) => {
+        // hour 형식: 'YYYY-MM-DDTHH' (ISO prefix). 직접 파싱.
+        const t = Date.parse((hour || '') + ':00:00+09:00');
+        if (isNaN(t)) return;
+        const idx = Math.floor((t - baseTs) / 3600000);
+        if (idx >= 0 && idx < hours) counts[idx] = Number(views) || 0;
+      });
+      for (let i = 0; i < hours; i++) {
+        const dt = new Date(baseTs + i * 3600000);
+        labels[i] = (i === hours - 1) ? '지금' : (i % 3 === 0 ? `${dt.getHours()}시` : '');
+      }
+      return { counts, labels };
+    }
     const days = pvDays;
     const counts = new Array(days).fill(0);
     const labels = new Array(days).fill('');
@@ -1046,7 +1089,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
       <div className="grid grid-2" style={{marginBottom:18}}>
         <article className="card">
           <MiniBarChart
-            label={`📊 ${pvDays}일 페이지뷰 추이`}
+            label={`📊 ${pvDays === 1 ? '24시간 (1시간 단위)' : pvDays + '일'} 페이지뷰 추이`}
             series={pvSeries.counts}
             labels={pvSeries.labels}
             color="var(--gold)"
@@ -1055,12 +1098,12 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
             formatTooltip={(v, l) => `${l || ''} · 페이지뷰 ${v}회`}
             headerRight={<CohortSelector value={pvDays} onChange={setPvDays}/>}/>
           <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
-            {summaryError ? '서버 분석 데이터 없음 — schema-v9 + 워커 deploy 필요.' : '실제 측정된 일별 페이지뷰 (page_views D1). 막대에 호버하면 정확한 값.'}
+            {summaryError ? '서버 분석 데이터 없음 — schema-v9 + 워커 deploy 필요.' : (pvDays === 1 ? '최근 24시간 시간별 페이지뷰. 막대 호버 시 정확한 값.' : '실제 측정된 일별 페이지뷰 (page_views D1). 막대에 호버하면 정확한 값.')}
           </p>
         </article>
         <article className="card">
           <MiniBarChart
-            label={`📊 ${signupDays}일 가입 추이`}
+            label={`📊 ${signupDays === 1 ? '24시간 (1시간 단위)' : signupDays + '일'} 가입 추이`}
             series={signupSeries.counts}
             labels={signupSeries.labels}
             color="var(--secondary, #1F7A8C)"
@@ -1068,7 +1111,9 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
             unit="명"
             formatTooltip={(v, l) => `${l || ''} · 신규 가입 ${v}명`}
             headerRight={<CohortSelector value={signupDays} onChange={setSignupDays}/>}/>
-          <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>최근 {signupDays}일간 일별 신규 가입자 수. 막대에 호버하면 정확한 값.</p>
+          <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
+            {signupDays === 1 ? '최근 24시간 시간별 신규 가입자.' : `최근 ${signupDays}일간 일별 신규 가입자 수.`} 막대에 호버하면 정확한 값.
+          </p>
         </article>
       </div>
 
@@ -1687,13 +1732,13 @@ const UserJourneyPanel = ({ users, posts, setTab }) => {
     <>
       <AdminPanelHeader
         eyebrow="JOURNEY · 사용자 여정"
-        title="회원 여정 분석"
-        description="① 상단 Sankey 흐름도: 유입 채널 → 단계 → 도착 페이지 (집계). ② 하단: 회원 한 명의 활동 타임라인. 좌측에서 회원 선택."/>
+        title="고객 여정 흐름"
+        description="유입 채널 → 단계 → 도착 페이지의 집계 Sankey 흐름. 노드/곡선 호버 시 연결 흐름 강조. 우상단 [기간] 으로 코호트 변경."/>
 
-      {/* v00.174 — 사용자 여정 Sankey 차트 (3-단계 흐름도). */}
+      {/* v00.174 — 사용자 여정 Sankey 차트 (3-단계 흐름도). v00.176 — 회원별 타임라인 영역 제거 (사용자 요청 '전체적으로만 보이면 됨'). */}
       <SankeyFlow pairs={flowPairs} days={flowDays} onDaysChange={setFlowDays}/>
 
-      <div style={{display:'grid', gridTemplateColumns:'minmax(240px, 320px) 1fr', gap:18, alignItems:'flex-start'}}>
+      <div style={{display:'none'}}>
         {/* 좌측: 회원 목록 */}
         <aside style={{border:'1px solid var(--line)', borderRadius:8, background:'var(--bg-2)', maxHeight:'70vh', overflow:'auto'}}>
           <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'12px 14px', borderBottom:'1px solid var(--line)'}}>
@@ -5727,32 +5772,9 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
 
   return (
     <>
-      <div role="tablist" style={{
-        borderBottom:'1px solid var(--line)', marginBottom:24,
-        display:'flex', gap:0, flexWrap:'wrap',
-      }}>
-        {subTabs.map((t) => (
-          <button key={t.key} type="button" role="tab"
-            onClick={() => setActive(t.key)}
-            aria-selected={active === t.key}
-            style={{
-              padding:'10px 18px',
-              fontSize:14,
-              fontWeight: active === t.key ? 700 : 500,
-              color: active === t.key ? 'var(--secondary)' : 'var(--ink-2)',
-              background:'transparent',
-              borderTop:'none', borderRight:'none', borderLeft:'none',
-              borderBottom: active === t.key ? '2px solid var(--primary)' : '2px solid transparent',
-              cursor:'pointer',
-              letterSpacing:'0.01em',
-              transition:'color .15s, border-color .15s',
-            }}>{t.label}</button>
-        ))}
-      </div>
-      {Active && Active.render()}
-      {/* v00.168 — 사용자 룰 'admin max 2단': iframe 을 우측 3번째 컬럼이 아닌 form 아래 vertical stack. */}
+      {/* v00.176 — 사용자 보고 '미리보기 위로 올리고 서브탭은 미리보기 밑에서 바뀌게'. previewUrl 있으면 preview TOP, sub-tabs + content BELOW. */}
       {previewUrl && (
-        <section style={{marginTop:32, paddingTop:24, borderTop:'1px solid var(--line)'}}>
+        <section style={{marginBottom:24, paddingBottom:18, borderBottom:'1px solid var(--line)'}}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, flexWrap:'wrap', gap:8}}>
             <h3 className="ko-serif" style={{fontSize:16, margin:0, fontWeight:700}}>
               실시간 미리보기
@@ -5783,25 +5805,45 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
           <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.12em', marginBottom:10}}>
             {previewMode.toUpperCase()} · {previewW}px
           </div>
-          {/* viewport 폭이 컨테이너보다 크면 가로 스크롤. */}
-          <div style={{
-            overflow:'auto', background:'var(--bg)', border:'1px solid var(--line)',
-            maxHeight:'80vh',
-          }}>
+          <div style={{overflow:'auto', background:'var(--bg)', border:'1px solid var(--line)', maxHeight:'60vh'}}>
             <iframe key={reloadTick} src={previewUrl}
               title={`미리보기 — ${Active.label}`}
               style={{
                 width: previewW + 'px',
-                height: '760px',
+                height: '600px',
                 border:'0', display:'block',
                 background:'var(--bg)',
               }}/>
           </div>
-          <p className="dim" style={{fontSize:11, marginTop:10, lineHeight:1.6}}>
-            저장 시 자동 새로고침 됩니다. 즉시 확인은 <span className="mono">↻</span> 클릭.
+          <p className="dim" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
+            아래 서브 탭에서 편집 후 [💾 저장] 클릭 시 자동 새로고침. 즉시 확인은 <span className="mono">↻</span> 클릭.
           </p>
         </section>
       )}
+      {/* sub-tab strip — preview 아래. */}
+      <div role="tablist" style={{
+        borderBottom:'1px solid var(--line)', marginBottom:24,
+        display:'flex', gap:0, flexWrap:'wrap',
+      }}>
+        {subTabs.map((t) => (
+          <button key={t.key} type="button" role="tab"
+            onClick={() => setActive(t.key)}
+            aria-selected={active === t.key}
+            style={{
+              padding:'10px 18px',
+              fontSize:14,
+              fontWeight: active === t.key ? 700 : 500,
+              color: active === t.key ? 'var(--secondary)' : 'var(--ink-2)',
+              background:'transparent',
+              borderTop:'none', borderRight:'none', borderLeft:'none',
+              borderBottom: active === t.key ? '2px solid var(--primary)' : '2px solid transparent',
+              cursor:'pointer',
+              letterSpacing:'0.01em',
+              transition:'color .15s, border-color .15s',
+            }}>{t.label}</button>
+        ))}
+      </div>
+      {Active && Active.render()}
     </>
   );
 };
@@ -5929,7 +5971,7 @@ const AdminPage = ({ go }) => {
     { group: "요약",          items: ["대시보드", "사용자 여정"] },
     { group: "콘텐츠",        items: ["뱅기노자 칼럼", "추천 여행지", "먹고 놀자", "자고 놀자", "사고 놀자"] },
     { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "책 카탈로그", "책 주문"] },
-    // v00.175 — '카테고리' 별도 탭 폐기. CommunityBoardsPanel 이 테이블/DnD 로 게시판 + 권한 통합 관리.
+    // v00.176 — 통합 sub-tab 은 v00.177 에서 진행. 임시로 3 항목 유지 (게시글/게시판/신고).
     { group: "커뮤니티",      items: ["커뮤니티", "커뮤니티 게시판", "신고"] },
     { group: "회원",          items: ["회원", "회원 등급"] },
     // v00.166 — 사이트 설정 7 항목을 단일 "사이트 설정" 으로 머지. SubTabsView 가 내부에서 7 sub-tab 노출.

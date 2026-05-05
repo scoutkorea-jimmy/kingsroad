@@ -755,11 +755,12 @@ const handleAnalyticsSummary = async (req, env) => {
   const dayMs = 86400 * 1000;
   const now = Date.now();
   const isoCutoff = (days) => new Date(now - days * dayMs).toISOString();
-  // v00.173 — ?days param 으로 dailySeries 기간 가변. 7/14/30/90 모두 허용. 기본 14.
+  // v00.173 — ?days param 으로 dailySeries 기간 가변. 1/7/14/30/90 모두 허용. 기본 14.
+  // v00.176 — days=1 이면 hourlySeries (24시간 1시간 단위) 추가 응답.
   const url = new URL(req.url);
   const seriesDays = Math.max(1, Math.min(90, Number(url.searchParams.get('days') || 14)));
   // 일/주/월 page-view 수.
-  let summary = { day: 0, week: 0, month: 0, dayUnique: 0, weekUnique: 0, monthUnique: 0, dailySeries: [], seriesDays, referrers: [], topRoutes: [] };
+  let summary = { day: 0, week: 0, month: 0, dayUnique: 0, weekUnique: 0, monthUnique: 0, dailySeries: [], hourlySeries: [], seriesDays, referrers: [], topRoutes: [] };
   try {
     const day1 = await env.DB.prepare("SELECT COUNT(*) AS c, COUNT(DISTINCT session_id) AS u FROM page_views WHERE ts >= ?").bind(isoCutoff(1)).first();
     const day7 = await env.DB.prepare("SELECT COUNT(*) AS c, COUNT(DISTINCT session_id) AS u FROM page_views WHERE ts >= ?").bind(isoCutoff(7)).first();
@@ -772,6 +773,13 @@ const handleAnalyticsSummary = async (req, env) => {
       "SELECT substr(ts, 1, 10) AS day, COUNT(*) AS views, COUNT(DISTINCT session_id) AS uniq FROM page_views WHERE ts >= ? GROUP BY day ORDER BY day ASC"
     ).bind(isoCutoff(seriesDays)).all();
     summary.dailySeries = (series.results || []).map((r) => ({ day: r.day, views: Number(r.views), uniq: Number(r.uniq) }));
+    // v00.176 — days=1 이면 hourlySeries 도 함께 (최근 24시간 1시간 단위).
+    if (seriesDays === 1) {
+      const hourly = await env.DB.prepare(
+        "SELECT substr(ts, 1, 13) AS hour, COUNT(*) AS views, COUNT(DISTINCT session_id) AS uniq FROM page_views WHERE ts >= ? GROUP BY hour ORDER BY hour ASC"
+      ).bind(new Date(now - 24 * 3600 * 1000).toISOString()).all();
+      summary.hourlySeries = (hourly.results || []).map((r) => ({ hour: r.hour, views: Number(r.views), uniq: Number(r.uniq) }));
+    }
     // referrer 분포 (최근 30일).
     const refs = await env.DB.prepare(
       "SELECT COALESCE(referrer_host, '직접 방문') AS host, COUNT(*) AS c FROM page_views WHERE ts >= ? GROUP BY host ORDER BY c DESC LIMIT 10"

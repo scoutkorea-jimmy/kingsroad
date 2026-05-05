@@ -661,14 +661,20 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
         </div>
       );
     }
-    return <PostDetail
-      post={post}
-      go={go}
-      setPostId={setPostId}
-      user={user}
-      onRefresh={() => setRefreshKey((value) => value + 1)}
-      onEdit={(nextPost) => setWriting(nextPost)}
-    />;
+    // v00.176 — 수정 버튼 미반응 fix. detail 뷰일 때도 PostComposeModal 렌더해야 setWriting(post) → 모달 노출.
+    return (
+      <>
+        <PostDetail
+          post={post}
+          go={go}
+          setPostId={setPostId}
+          user={user}
+          onRefresh={() => setRefreshKey((value) => value + 1)}
+          onEdit={(nextPost) => setWriting(nextPost)}
+        />
+        {writing && <PostComposeModal onClose={() => setWriting(null)}/>}
+      </>
+    );
   }
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE));

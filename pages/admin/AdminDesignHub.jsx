@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.176.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:12:04+09:00",
+    summary: "🐛 게시글 수정 버튼 fix + 1일 코호트 + 사이트 설정 미리보기 위로 + 사용자 여정 단순화",
+    details: [
+      "🐛 [수정 버튼 미반응 fix] 사용자 보고 '수정 버튼을 눌러도 반응을 안하네'. 원인: `if (postId) return <PostDetail/>` early-return 안에 PostComposeModal 이 없어서 setWriting(post) 호출돼도 모달 미렌더. fix: postId 분기에서 fragment 로 <PostDetail/> + {writing && <PostComposeModal/>} 함께 렌더.",
+      "📊 [1일 코호트 + 시간 단위] 사용자 보고 '페이지뷰/방문자 추이 1일 단위도 활성화 + 1일 단위면 시간 단위로 1시간 단위로'. CohortSelector 에 '1일' 옵션 추가 (value=1). days=1 시 차트가 24개 막대 시간 라벨 (0~23시 + 지금). _hourlySeries 헬퍼 신설 (_dailySeries 와 시그니처 동일).",
+      "📊 [워커 hourlySeries] /api/analytics/summary?days=1 → hourlySeries: [{hour, views, uniq}] (24시간 1시간 단위) 응답에 추가. ★ 워커 deploy 필요.",
+      "🌊 [사용자 여정 단순화] 사용자 보고 '사용자 여정에 회원 단위로 보여질 필요 없어. 그냥 전체적으로 보이면 됨'. 회원 목록 + 타임라인 영역 display:none 으로 hide (Sankey 흐름도만 노출). 죽은 JSX 제거는 v00.177.",
+      "🛠 [사이트 설정 SubTabsView 레이아웃] 사용자 보고 '미리보기 위로 올리고 서브 탭은 미리보기 밑에서 바뀌면서 관리'. previewUrl 있을 때 preview iframe 을 화면 상단으로, sub-tab strip + 콘텐츠 를 아래로. preview 높이 600px (이전 760px) 로 컴팩트.",
+      "🔄 [커뮤니티 통합] v00.177 별 사이클 — 게시글/게시판/신고 sub-tab 머지는 분량 커서 분리. 본 사이클 임시로 사이드바 3 항목(커뮤니티/커뮤니티 게시판/신고) 유지.",
+      "ℹ ★ 워커 wrangler deploy 필요 (hourlySeries 응답).",
+      "📦 cache-buster — `?v=00.176.000`.",
+    ],
+    context: "여러 보고 동시 처리: 게시글 수정 버튼 (긴급 — 데이터 손상 글 복구 경로 필요), 1일 코호트, 사이트 설정 레이아웃, 사용자 여정 단순화. 커뮤니티 통합은 다음 사이클.",
+  },
+  {
     version: "00.175.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:02:03+09:00",
