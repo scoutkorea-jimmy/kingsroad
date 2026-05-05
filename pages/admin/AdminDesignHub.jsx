@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.171.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T21:38:24+09:00",
+    summary: "🛠 게시판 추가/삭제 즉시 + 책 순서 변경 + 데이터 정리 폐기 + 카테고리 server delete",
+    details: [
+      "🛠 [커뮤니티 게시판 추가/삭제 인라인] 사용자 강한 보고 '커뮤니티 게시판 편하게 추가 삭제 할 수 있게 하라고 했냐 안했냐'. 기존엔 [커뮤니티 게시판] 탭이 title/desc 만 편집, 추가/삭제는 [카테고리] 탭에서만 가능했음. 같은 화면에서 일괄 처리 가능하게 인라인 ＋추가 폼 + 카드 우측 삭제 버튼. 즉시 BGNJ_API.categories.create / .remove 호출 (서버 영속). 공지(notice) 보호.",
+      "🛠 [AdminCategoryPanel.remove server delete 추가] localStorage 만 지우던 버그 fix. 새로고침 시 boot 가 D1 default 로 다시 로드 → '삭제 안 됨' 인상. 이제 BGNJ_API.categories.remove 호출 후 로컬 동기화.",
+      "🛠 [책 카탈로그 순서 변경] 사용자 요청 '책 카탈로그에서 순서를 바꿀 수 있게'. BooksAdminPanel 좌측 책 목록 각 항목 우측에 ▲▼ 버튼. swap 후 BGNJ_BOOKS.reorder(ids) → 워커 PATCH /api/books/:id sort_order 일괄 갱신. 즉시 refresh.",
+      "🛠 [데이터 정리 폐기] 사용자 보고 '데이터 정리 기능 필요없으면 모두 다 지워'. v00.123 마이그레이션 (legacy categories/grades/site_content DROP) 완료 후 LegacyMigrationPanel 은 빈 도구. 사이드바 [데이터 정리] 항목 + 라우트 제거 (시스템 그룹 6→5). 컴포넌트 코드 자체는 향후 재사용 여지로 유지.",
+      "ℹ 워커 미변경 (v00.170 의 body SELECT 변경 deploy 필요는 동일 — 별도).",
+      "📦 cache-buster — `?v=00.171.000`.",
+    ],
+    context: "v00.170 직후 사용자 연속 보고 4건: ① 등급 이름 초기화 fix 후 같은 패턴 (서버 미저장) 이 categories.remove 에 잔존, ② 커뮤니티 게시판 추가/삭제 UX 미흡, ③ 책 카탈로그 순서 변경 부재, ④ 데이터 정리 무용. 모두 한 사이클로 일괄. localStorage→server 광범위 마이그레이션은 별 사이클 — 본 사이클은 가장 가시적인 사용자 흐름 4건 즉각 응답.",
+  },
+  {
     version: "00.170.000",
     date: "2026-05-05",
     datetime: "2026-05-05T21:32:44+09:00",

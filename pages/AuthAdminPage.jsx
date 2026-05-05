@@ -3749,13 +3749,13 @@ const BooksAdminPanel = () => {
             <div className="dim" style={{padding:20, fontSize:13}}>등록된 책이 없습니다.</div>
           ) : (
             <ul role="list" style={{listStyle:'none', margin:0, padding:0}}>
-              {books.map((b) => (
-                <li key={b.id} style={{borderBottom:'1px solid var(--line)'}}>
+              {books.map((b, i) => (
+                <li key={b.id} style={{borderBottom:'1px solid var(--line)', display:'flex', alignItems:'center'}}>
                   <button type="button"
                     onClick={() => { setSelectedId(b.id); setEditTab('meta'); }}
                     aria-current={selectedId === b.id ? 'true' : undefined}
                     style={{
-                      width:'100%', textAlign:'left', padding:'12px 14px',
+                      flex:1, textAlign:'left', padding:'12px 8px 12px 14px',
                       background: selectedId === b.id ? 'rgba(59,130,246,0.06)' : 'transparent',
                       border:'none', cursor:'pointer', display:'flex', gap:10, alignItems:'center',
                     }}>
@@ -3776,6 +3776,35 @@ const BooksAdminPanel = () => {
                       </span>
                     </span>
                   </button>
+                  {/* v00.171 — 책 순서 변경 (사용자 요청 '책 카탈로그에서 순서를 바꿀 수 있게'). */}
+                  <div style={{display:'flex', flexDirection:'column', padding:'0 6px', gap:2}}>
+                    <button type="button" aria-label={`${b.title} 위로`} title="위로 이동"
+                      disabled={i === 0}
+                      onClick={async () => {
+                        const ids = books.map((x) => x.id);
+                        [ids[i-1], ids[i]] = [ids[i], ids[i-1]];
+                        try { await window.BGNJ_BOOKS.reorder(ids); refresh(); } catch (err) { alert('순서 변경 실패: ' + (err?.message || '')); }
+                      }}
+                      style={{
+                        background:'transparent', border:'1px solid var(--line)',
+                        padding:'2px 6px', fontSize:10, lineHeight:1,
+                        cursor: i === 0 ? 'not-allowed' : 'pointer',
+                        opacity: i === 0 ? 0.4 : 1,
+                      }}>▲</button>
+                    <button type="button" aria-label={`${b.title} 아래로`} title="아래로 이동"
+                      disabled={i === books.length - 1}
+                      onClick={async () => {
+                        const ids = books.map((x) => x.id);
+                        [ids[i], ids[i+1]] = [ids[i+1], ids[i]];
+                        try { await window.BGNJ_BOOKS.reorder(ids); refresh(); } catch (err) { alert('순서 변경 실패: ' + (err?.message || '')); }
+                      }}
+                      style={{
+                        background:'transparent', border:'1px solid var(--line)',
+                        padding:'2px 6px', fontSize:10, lineHeight:1,
+                        cursor: i === books.length - 1 ? 'not-allowed' : 'pointer',
+                        opacity: i === books.length - 1 ? 0.4 : 1,
+                      }}>▼</button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -5311,7 +5340,8 @@ const AdminPage = ({ go }) => {
     // v00.166 — 사이트 설정 7 항목을 단일 "사이트 설정" 으로 머지. SubTabsView 가 내부에서 7 sub-tab 노출.
     { group: "사이트 설정",   items: ["사이트 설정"] },
     { group: "개인정보·법무", items: ["정보주체 권리", "동의 관리", "처리활동(ROPA)", "쿠키·추적", "보안 사고", "보유·파기", "국외 이전", "감사 로그"] },
-    { group: "시스템",        items: ["버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "설정", "데이터 정리"] },
+    // v00.171 — '데이터 정리' (LegacyMigrationPanel) 폐기. 사용자 보고 '필요없으면 모두 다 지워'. 마이그레이션 완료 (v00.123).
+    { group: "시스템",        items: ["버전 기록", "KMS", "오류 로그", "오류 페이지 미리보기", "설정"] },
   ];
 
   const exportMemberData = (m) => {
@@ -6469,7 +6499,7 @@ const AdminPage = ({ go }) => {
         {tab === "감사 로그" && <AuditLogPanel/>}
         {tab === "오류 로그" && <ErrorLogPanel/>}
         {tab === "오류 페이지 미리보기" && <ErrorPagesPreviewPanel go={go}/>}
-        {tab === "데이터 정리" && <LegacyMigrationPanel/>}
+        {/* v00.171 — '데이터 정리' 탭 폐기. 마이그레이션 완료. LegacyMigrationPanel 컴포넌트는 코드 유지(향후 재사용 여지). */}
 
         {/* 회원 등급 CRUD */}
         {tab === "회원 등급" && <AdminGradePanel/>}
@@ -6569,10 +6599,17 @@ const AdminCategoryPanel = () => {
     [next[i], next[j]] = [next[j], next[i]];
     save(next);
   };
-  const remove = (i) => {
-    const used = postCount(cats[i].id);
+  // v00.171 — server delete 호출 추가. 이전엔 localStorage 만 지워서 새로고침 시 boot 가 D1 default 로 다시 로드 → '삭제 안 됨' 인상.
+  const remove = async (i) => {
+    const cat = cats[i];
+    const used = postCount(cat.id);
     const note = used > 0 ? `\n현재 이 게시판에 ${used}개의 글이 있습니다. 삭제 후에도 게시글은 남되 분류가 비게 됩니다.` : '';
-    if (!confirm(`"${cats[i].label}" 게시판을 삭제하시겠어요?${note}`)) return;
+    if (!confirm(`"${cat.label}" 게시판을 삭제하시겠어요?${note}`)) return;
+    try {
+      await window.BGNJ_API?.categories?.remove?.(cat.id);
+    } catch (err) {
+      alert('서버 삭제 실패: ' + (err?.message || '알 수 없는 오류') + '\n로컬에서만 제거합니다.');
+    }
     save(cats.filter((_, j) => j !== i));
   };
 
@@ -6870,20 +6907,90 @@ const PromoChip = ({ label, value, prefix = '≥', tone }) => (
 // 이 패널은 "운영자가 매일 손볼 콘텐츠" — 게시판 제목과 설명을 큼직한 입력으로 편집.
 // 공지(notice) 게시판은 어떠한 경우에도 관리자만 작성 — 강제 규칙 표시.
 const CommunityBoardsPanel = () => {
-  const [boards, setBoards] = React.useState(() =>
+  // v00.171 — 사용자 보고 '커뮤니티 게시판 편하게 추가 삭제 할 수 있게'.
+  // 기존엔 title/desc 만 편집, 추가/삭제는 별도 [카테고리] 탭에서만 가능했음. 같은 화면에서 일괄.
+  const [tick, setTick] = React.useState(0);
+  const boards = React.useMemo(() => (
     (window.BGNJ_STORES?.categories || [])
       .filter((c) => c.boardType === 'community')
       .map((c) => ({ id: c.id, label: c.label || '', desc: c.desc || '' }))
-  );
-  const [originalBoards] = React.useState(boards);
-  const [dirty, setDirty] = React.useState(false);
+  ), [tick]);
+  // edits = { id: { label, desc } } — 변경된 항목만 저장 시 PATCH.
+  const [edits, setEdits] = React.useState({});
   const [saving, setSaving] = React.useState(false);
   const [saveMsg, setSaveMsg] = React.useState('');
+  const [adding, setAdding] = React.useState(false);
+  const [draft, setDraft] = React.useState({ id: '', label: '', desc: '' });
+
+  const dirty = Object.keys(edits).length > 0;
+  const valueOf = (b) => ({ label: edits[b.id]?.label ?? b.label, desc: edits[b.id]?.desc ?? b.desc });
 
   const update = (id, key, val) => {
-    setBoards((cur) => cur.map((b) => b.id === id ? { ...b, [key]: val } : b));
-    setDirty(true);
+    setEdits((cur) => ({ ...cur, [id]: { ...(cur[id] || {}), [key]: val } }));
     setSaveMsg('');
+  };
+
+  const slugify = (s) => String(s || '').trim().toLowerCase()
+    .replace(/[^a-z0-9-_가-힣]+/g, '-').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
+
+  // v00.171 — 새 게시판 즉시 추가 (서버 + 로컬 동기화).
+  const addBoard = async () => {
+    const id = draft.id || slugify(draft.label);
+    if (!id || !draft.label.trim()) {
+      setSaveMsg('✗ 게시판 이름은 필수입니다.');
+      return;
+    }
+    if (boards.find((b) => b.id === id)) {
+      setSaveMsg('✗ 이미 존재하는 ID 입니다.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await window.BGNJ_API?.categories?.create?.({
+        id, label: draft.label.trim(), boardType: 'community',
+        minLevel: 0, postMinLevel: 0,
+        description: draft.desc || '', prefixes: [],
+        allowRead: true, allowWrite: true, allowCommentRead: true, allowCommentWrite: true,
+      });
+      const allCats = (window.BGNJ_STORES?.categories || []).slice();
+      allCats.push({
+        id, label: draft.label.trim(), boardType: 'community',
+        minLevel: 0, postMinLevel: 0, desc: draft.desc || '',
+        prefixes: [], allowRead: true, allowWrite: true, allowCommentRead: true, allowCommentWrite: true,
+      });
+      window.BGNJ_STORES.categories = allCats;
+      window.BGNJ_SAVE.categories();
+      setDraft({ id: '', label: '', desc: '' });
+      setAdding(false);
+      setTick((v) => v + 1);
+      setSaveMsg(`✓ '${draft.label.trim()}' 게시판이 추가되었습니다.`);
+      setTimeout(() => setSaveMsg(''), 2400);
+    } catch (err) {
+      setSaveMsg('✗ 추가 실패: ' + (err?.message || '알 수 없는 오류'));
+    } finally { setSaving(false); }
+  };
+
+  // v00.171 — 게시판 삭제 (서버 + 로컬). notice 는 보호.
+  const removeBoard = async (id) => {
+    if (id === 'notice') { alert('공지 게시판은 삭제할 수 없습니다.'); return; }
+    const target = boards.find((b) => b.id === id);
+    if (!target) return;
+    const postCount = ((window.BGNJ_COMMUNITY?.listPosts?.() || []).filter((p) => p.categoryId === id)).length;
+    const note = postCount > 0 ? `\n현재 이 게시판에 ${postCount}개의 글이 있습니다. 삭제 후에도 게시글은 남되 분류가 비게 됩니다.` : '';
+    if (!confirm(`"${target.label}" 게시판을 삭제하시겠어요?${note}`)) return;
+    setSaving(true);
+    try {
+      await window.BGNJ_API?.categories?.remove?.(id);
+      const allCats = (window.BGNJ_STORES?.categories || []).filter((c) => c.id !== id);
+      window.BGNJ_STORES.categories = allCats;
+      window.BGNJ_SAVE.categories();
+      setEdits((cur) => { const next = { ...cur }; delete next[id]; return next; });
+      setTick((v) => v + 1);
+      setSaveMsg(`✓ '${target.label}' 게시판이 삭제되었습니다.`);
+      setTimeout(() => setSaveMsg(''), 2400);
+    } catch (err) {
+      setSaveMsg('✗ 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
+    } finally { setSaving(false); }
   };
 
   const commitAll = async () => {
@@ -6891,31 +6998,33 @@ const CommunityBoardsPanel = () => {
     setSaving(true);
     setSaveMsg('');
     try {
-      // 변경된 board 만 PATCH.
-      const changed = boards.filter((b) => {
-        const orig = originalBoards.find((o) => o.id === b.id);
-        return !orig || orig.label !== b.label || orig.desc !== b.desc;
-      });
+      const changedIds = Object.keys(edits);
       // 1) 서버 PATCH 병렬.
-      await Promise.all(changed.map(async (b) => {
+      const failed = [];
+      await Promise.all(changedIds.map(async (id) => {
+        const e = edits[id];
         try {
-          await window.BGNJ_API?.categories?.update?.(b.id, {
-            label: b.label,
-            description: b.desc,
+          await window.BGNJ_API?.categories?.update?.(id, {
+            label: e.label, description: e.desc,
           });
-        } catch (err) { console.warn('[CommunityBoardsPanel] PATCH 실패:', b.id, err?.message); }
+        } catch (err) { failed.push(id); }
       }));
       // 2) 로컬 store 동기화.
       const allCats = (window.BGNJ_STORES?.categories || []).slice();
-      boards.forEach((b) => {
-        const idx = allCats.findIndex((c) => c.id === b.id);
-        if (idx >= 0) allCats[idx] = { ...allCats[idx], label: b.label, desc: b.desc };
+      changedIds.forEach((id) => {
+        const idx = allCats.findIndex((c) => c.id === id);
+        if (idx >= 0) allCats[idx] = { ...allCats[idx], ...edits[id], desc: edits[id].desc ?? allCats[idx].desc };
       });
       window.BGNJ_STORES.categories = allCats;
       window.BGNJ_SAVE.categories();
-      setDirty(false);
-      setSaveMsg(`✓ ${changed.length}개 게시판 정보 저장됨.`);
-      setTimeout(() => setSaveMsg(''), 3000);
+      setEdits({});
+      setTick((v) => v + 1);
+      if (failed.length) {
+        setSaveMsg(`⚠ ${changedIds.length - failed.length}개 저장, ${failed.length}개 실패: ${failed.join(', ')}`);
+      } else {
+        setSaveMsg(`✓ ${changedIds.length}개 게시판 정보 저장됨.`);
+        setTimeout(() => setSaveMsg(''), 3000);
+      }
     } catch (err) {
       setSaveMsg('✗ 저장 실패: ' + (err?.message || '알 수 없는 오류'));
     } finally { setSaving(false); }
@@ -6924,39 +7033,96 @@ const CommunityBoardsPanel = () => {
   return (
     <>
       <AdminPanelHeader
-        eyebrow="COMMUNITY · 게시판 콘텐츠"
-        title="커뮤니티 게시판 — 제목 · 설명 편집"
-        description="사용자에게 노출되는 게시판 제목과 안내 설명을 관리합니다. 게시판 추가·삭제·권한은 [카테고리] 패널에서 진행하세요. 변경은 [💾 저장] 버튼 클릭 시점에만 영속화됩니다."/>
+        eyebrow="COMMUNITY · 게시판 관리"
+        title="커뮤니티 게시판 — 추가 · 삭제 · 편집"
+        description="게시판을 한 화면에서 추가/삭제/편집합니다. 변경은 [💾 저장] 클릭 시 서버(D1)에 영속화됩니다. 권한 4종 + 등급 세부 설정은 [카테고리] 탭에서 별도 진행."/>
+
+      {/* v00.171 — 새 게시판 추가 (즉시 서버 반영). */}
+      {!adding ? (
+        <div style={{marginBottom:16}}>
+          <button type="button" className="btn btn-gold btn-small" onClick={() => setAdding(true)}>
+            ＋ 새 게시판 추가
+          </button>
+        </div>
+      ) : (
+        <article className="admin-form-card" style={{padding:18, marginBottom:16, borderColor:'var(--gold-dim)'}}>
+          <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em', marginBottom:12}}>＋ 새 게시판</div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))', gap:10, marginBottom:12}}>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label" htmlFor="new-bd-label">이름 <span className="gold" aria-hidden="true">*</span></label>
+              <input id="new-bd-label" className="field-input"
+                value={draft.label}
+                onChange={(e) => setDraft({...draft, label: e.target.value, id: draft.id || slugify(e.target.value)})}
+                placeholder="예: 자유 / 질문 / 후기"/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label" htmlFor="new-bd-id">ID (slug)</label>
+              <input id="new-bd-id" className="field-input"
+                value={draft.id}
+                onChange={(e) => setDraft({...draft, id: slugify(e.target.value)})}
+                placeholder="자동 생성"/>
+            </div>
+          </div>
+          <div className="field" style={{marginBottom:12}}>
+            <label className="field-label" htmlFor="new-bd-desc">설명</label>
+            <textarea id="new-bd-desc" className="field-input" rows={2}
+              value={draft.desc}
+              onChange={(e) => setDraft({...draft, desc: e.target.value})}
+              placeholder="게시판 상단 안내 문구 (선택)"
+              style={{fontFamily:'inherit', resize:'vertical', lineHeight:1.6}}/>
+          </div>
+          <div style={{display:'flex', gap:8}}>
+            <button type="button" className="btn btn-gold" onClick={addBoard} disabled={saving || !draft.label.trim()}>
+              {saving ? '추가 중…' : '＋ 추가'}
+            </button>
+            <button type="button" className="btn btn-small" onClick={() => { setAdding(false); setDraft({id:'',label:'',desc:''}); }}>
+              취소
+            </button>
+          </div>
+        </article>
+      )}
 
       {boards.length === 0 ? (
-        <AdminEmpty>등록된 커뮤니티 게시판이 없습니다. [카테고리] 에서 먼저 추가하세요.</AdminEmpty>
+        <AdminEmpty>등록된 커뮤니티 게시판이 없습니다. 위에서 추가하세요.</AdminEmpty>
       ) : (
         <div style={{display:'grid', gap:14}}>
           {boards.map((b) => {
             const isNotice = b.id === 'notice';
+            const v = valueOf(b);
+            const isEdited = !!edits[b.id];
             return (
-              <article key={b.id} className="admin-form-card" style={{padding:18, borderColor: isNotice ? 'var(--gold-dim)' : 'var(--line)'}}>
+              <article key={b.id} className="admin-form-card" style={{padding:18, borderColor: isNotice ? 'var(--gold-dim)' : (isEdited ? 'var(--gold)' : 'var(--line)')}}>
                 <div style={{display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:12, marginBottom:12, flexWrap:'wrap'}}>
                   <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.2em'}}>
-                    BOARD · {b.id}
+                    BOARD · {b.id} {isEdited && <span className="gold" style={{marginLeft:6}}>● 변경됨</span>}
                   </div>
-                  {isNotice && (
-                    <StatusBadge variant="gold" title="공지 게시판은 강제 관리자 전용 — 권한 체크박스 / 등급 설정과 무관">
-                      🔒 관리자 전용 (강제)
-                    </StatusBadge>
-                  )}
+                  <div style={{display:'flex', gap:8, alignItems:'center'}}>
+                    {isNotice && (
+                      <StatusBadge variant="gold" title="공지 게시판은 강제 관리자 전용 — 권한 체크박스 / 등급 설정과 무관">
+                        🔒 관리자 전용 (강제)
+                      </StatusBadge>
+                    )}
+                    {/* v00.171 — 게시판 우측 삭제 버튼 (notice 보호). */}
+                    {!isNotice && (
+                      <button type="button" className="btn btn-small"
+                        style={{borderColor:'var(--danger)', color:'var(--danger)', fontSize:11, padding:'4px 10px'}}
+                        onClick={() => removeBoard(b.id)} disabled={saving}>
+                        🗑 삭제
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="field" style={{marginBottom:14}}>
                   <label className="field-label" htmlFor={`bd-title-${b.id}`}>제목</label>
                   <input id={`bd-title-${b.id}`} className="field-input"
-                    value={b.label}
+                    value={v.label}
                     onChange={(e) => update(b.id, 'label', e.target.value)}
                     placeholder="예: 자유"/>
                 </div>
                 <div className="field" style={{marginBottom:0}}>
                   <label className="field-label" htmlFor={`bd-desc-${b.id}`}>설명</label>
                   <textarea id={`bd-desc-${b.id}`} className="field-input" rows={3}
-                    value={b.desc}
+                    value={v.desc}
                     onChange={(e) => update(b.id, 'desc', e.target.value)}
                     placeholder="게시판 상단에 노출되는 안내 문구. 비워두면 미표시."
                     style={{fontFamily:'inherit', resize:'vertical', lineHeight:1.6}}/>
@@ -6969,14 +7135,13 @@ const CommunityBoardsPanel = () => {
 
       <AdminSaveBar
         message={saveMsg || null}
-        messageVariant={saveMsg.startsWith('✗') ? 'danger' : 'success'}>
+        messageVariant={saveMsg.startsWith('✗') ? 'danger' : (saveMsg.startsWith('⚠') ? 'warning' : 'success')}>
         <button type="button" className="btn btn-gold" onClick={commitAll} disabled={saving || !dirty}>
           {saving ? '저장 중…' : (dirty ? '💾 저장' : '저장됨 ✓')}
         </button>
       </AdminSaveBar>
       <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7}}>
-        ⓘ <strong>공지(notice)</strong> 게시판은 admin 전용 강제 규칙 — 권한 체크박스 / 등급 설정에 관계없이 관리자만 작성 가능.
-        제목과 설명은 자유롭게 수정 가능.
+        ⓘ <strong>공지(notice)</strong> 게시판은 admin 전용 강제 규칙 — 삭제 불가. 추가/삭제는 즉시 서버에 반영됩니다. 제목/설명 편집은 [💾 저장] 버튼 클릭 시 commit.
       </p>
     </>
   );
