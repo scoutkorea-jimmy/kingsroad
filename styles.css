@@ -1034,6 +1034,9 @@ main time, main .section-eyebrow {
   position: relative;
 }
 .section-tight { padding: 80px 0; }
+/* v00.164 — 홈 섹션 박자 부수기. 주제(--anchor) / 읽기(--mid) / 지원(.section-tight) 3단 위계. */
+.section--anchor { padding: 140px 0; }
+.section--mid { padding: 100px 0; }
 .section-eyebrow {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -1078,6 +1081,17 @@ main time, main .section-eyebrow {
   gap: 40px;
   flex-wrap: wrap;
 }
+/* v00.164 — 인라인 헤더 (한 줄 박자). 투어/커뮤니티/강연용. eyebrow + title + action 한 줄. */
+.section-head--inline {
+  align-items: baseline;
+  margin-bottom: 36px;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+}
+.section-head--inline .section-eyebrow { margin-bottom: 8px; }
+.section-head--inline .section-title { font-size: 28px; margin-bottom: 0; }
+.section-head--inline .section-subtitle { display: none; }
 
 /* ---- Card ---- */
 .card {
@@ -1311,6 +1325,34 @@ main time, main .section-eyebrow {
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 
+/* v00.164 — 추천 섹션 asymmetric. 첫 카드 2칸 + 큰 사진 자리 + 본문, 나머지는 1칸 컴팩트.
+   editorial spread 톤. 모바일은 1열 폴백 (아래 @media). */
+.grid-feature-2 {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+  gap: 24px;
+}
+.grid-feature-2 > :first-child {
+  grid-row: span 2;
+}
+
+/* v00.164 — 강연 가로 스크롤 strip. film strip 톤. */
+.lecture-strip {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 12px;
+  /* 미세 스크롤바 보존 (커스텀 X — 시스템 디폴트 사용) */
+}
+.lecture-strip > * {
+  flex: 0 0 320px;
+  scroll-snap-align: start;
+}
+.lecture-strip::-webkit-scrollbar { height: 6px; }
+.lecture-strip::-webkit-scrollbar-thumb { background: var(--line-2); }
+.lecture-strip::-webkit-scrollbar-track { background: transparent; }
+
 /* === Hamburger toggle (mobile only) ============================ */
 .nav-toggle {
   display: none;
@@ -1369,6 +1411,15 @@ main time, main .section-eyebrow {
 @media (max-width: 900px) {
   /* 모든 다열 그리드 → 1열 강제 */
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  /* v00.164 — 신규 그리드/섹션 modifier 모바일 폴백 */
+  .grid-feature-2 { grid-template-columns: 1fr; }
+  .grid-feature-2 > :first-child { grid-row: auto; }
+  .section--anchor { padding: 80px 0; }
+  .section--mid { padding: 64px 0; }
+  .section-head--inline { margin-bottom: 24px; padding-bottom: 14px; }
+  .section-head--inline .section-title { font-size: 22px; }
+  /* 강연 strip 은 모바일에서도 가로 스크롤 유지 — 카드 폭만 축소 */
+  .lecture-strip > * { flex-basis: 260px; }
   .footer-grid { grid-template-columns: 1fr; gap: 32px; }
   /* 인라인 스타일로 박힌 페이지별 2-col 레이아웃 — !important 로 오버라이드 */
   .hero-grid,

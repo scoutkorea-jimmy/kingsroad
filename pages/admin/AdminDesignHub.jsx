@@ -4,6 +4,24 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.164.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T19:22:54+09:00",
+    summary: "🎨 홈 섹션 박자 부수기 + 카드 form factor 다양화 + 주제/지원 2그룹 위계",
+    details: [
+      "🎨 [섹션 박자 부수기] 사용자 보고 '홈 디자인이 AI 톤앤매너를 못 벗어나는 느낌'. 6 섹션이 모두 동일한 4단 헤더(eyebrow+title+subtitle+action)였음. 추천만 SectionHead 유지(앵커), 투어/강연 inline 헤더(.section-head--inline 신규), 커뮤니티 subtitle 우측 인라인, 칼럼 외부 SectionHead 폐기 → 헤드라인을 featured 카드로 흡수.",
+      "🎨 [추천 asymmetric grid] 카드 3개 이상이면 첫 카드 2칸 차지(.grid-feature-2 신규 — 1.6fr 1fr 1fr + grid-row span 2). 첫 카드 사진 320px, 헤드라인 30px 로 editorial spread 톤. 미만이면 grid-3 폴백.",
+      "🎨 [강연 가로 스크롤] grid-3 카드 → .lecture-strip 가로 flex + scroll-snap. 카드 폭 320px (모바일 260px). film strip 톤. 3 개 이상일 때 '← 가로로 스크롤 →' 힌트 노출.",
+      "🎨 [칼럼 magazine spread] featured = 카드 라인 제거, 사진 fullbleed-ish 340px + 큰 serif 헤드라인 clamp(28-38px). sidebar = '읽을거리' eyebrow + 텍스트 list 형태(카드 라인 X, 구분선만).",
+      "🎨 [주제/지원 2그룹 위계] 모든 .section 이 120px padding 동일 → 3단 위계. .section--anchor (140px, 추천+책CTA), .section--mid (100px, 커뮤니티+칼럼), .section-tight (80px, 투어+강연). 호흡의 강·약 형성.",
+      "🎨 [책 CTA 강화] anchor 박자 적용. 카드 padding 72→96, gap 60→80. hero 무게감 강화.",
+      "🎨 [사용자 결정] B(모노 letter-spacing) / F(카피) / G(1인칭 카피) / D(이미지) 는 이번 사이클에서 손대지 않음. 컬러 토큰 0개 변경.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.164.000`.",
+    ],
+    context: "사용자 요청: '세션 박자 무너뜨리고, 모노 레터 스페이싱이랑 카피는 그대로 가고 전반적인 디자인만 좀 개선'. 컬러는 손대지 말 것. AI 톤 빠지는 가장 빠른 표지 5가지 중 박자/위계/카드 폼 3개를 한 사이클로 처리. 카피·이미지는 별 사이클.",
+  },
+  {
     version: "00.163.000",
     date: "2026-05-05",
     datetime: "2026-05-05T19:05:55+09:00",

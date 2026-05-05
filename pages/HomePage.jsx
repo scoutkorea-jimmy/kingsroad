@@ -407,8 +407,8 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
     const yr = b.publishedAt ? new Date(b.publishedAt).getFullYear() : new Date().getFullYear();
     return (
       <div className="card cta-grid" style={{
-        padding:'72px 60px',
-        display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center',
+        padding:'96px 80px',
+        display:'grid', gridTemplateColumns:'1fr 1fr', gap:80, alignItems:'center',
         background:'var(--bg-2)', border:'1px solid var(--line)',
       }}>
         <div>
@@ -472,7 +472,7 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
   };
 
   return (
-    <HomeSectionBoundary label="책 CTA"><section className="section">
+    <HomeSectionBoundary label="책 CTA"><section className="section section--anchor">
       <div className="container">
         <div
           onMouseEnter={() => setPaused(true)}
@@ -733,9 +733,9 @@ const HomePage = ({ go }) => {
 
       </HomeSectionBoundary>
 
-      {/* ── 뱅기노자 추천 (관리자 콘텐츠 패널에서 추가) ─────────────── */}
+      {/* ── 뱅기노자 추천 (관리자 콘텐츠 패널에서 추가) — v00.164 anchor 박자 + asymmetric grid ─── */}
       {recommendations.length > 0 && (
-        <HomeSectionBoundary label="뱅기노자 추천"><section className="section" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="뱅기노자 추천"><section className="section section--anchor" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
           <div className="container">
             {(() => {
               // v00.083 — site_content_kv.recommendationsHeading 에서 hero 읽음 (v00.073 sweep 미완 잔재).
@@ -754,16 +754,19 @@ const HomePage = ({ go }) => {
                 />
               );
             })()}
-            <div className="grid grid-3">
-              {recommendations.map((r) => {
+            {/* v00.164 — 추천 카드 3개 이상이면 asymmetric (첫 카드 2x). 그 미만이면 grid-3 폴백. */}
+            <div className={recommendations.length >= 3 ? 'grid grid-feature-2' : 'grid grid-3'}>
+              {recommendations.map((r, ri) => {
                 const tags = Array.isArray(r.tags) ? r.tags : (typeof r.tags === 'string' ? r.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : []);
+                // v00.164 — 첫 카드 (asymmetric 모드) 는 사진/타이틀/desc 모두 큼.
+                const isFeature = recommendations.length >= 3 && ri === 0;
                 return (
                   <article key={r.id || r.name}
                     className="card"
                     {...clickable(() => setRecDetail(r), `${r.name || '추천'} 상세 보기`)}
-                    style={{cursor:'pointer'}}>
+                    style={{cursor:'pointer', display:'flex', flexDirection:'column'}}>
                     <div style={{
-                      height:160, marginBottom:18, position:'relative', overflow:'hidden',
+                      height: isFeature ? 320 : 160, marginBottom:18, position:'relative', overflow:'hidden',
                       background: r.imageDataUri ? `url(${r.imageDataUri}) center/cover` : 'var(--bg-3)',
                       borderBottom: r.imageDataUri ? 'none' : '1px solid var(--line)',
                     }}>
@@ -783,14 +786,14 @@ const HomePage = ({ go }) => {
                         ))}
                       </div>
                     )}
-                    <h3 className="ko-serif" style={{fontSize:22, fontWeight:600, marginBottom:5}}>{r.name || '제목 없음'}</h3>
+                    <h3 className="ko-serif" style={{fontSize: isFeature ? 30 : 22, fontWeight:600, marginBottom:5, lineHeight:1.25}}>{r.name || '제목 없음'}</h3>
                     {r.subtitle && (
                       <div style={{
                         fontFamily:'var(--font-mono)', fontSize:11, fontWeight:600,
                         color:'var(--secondary)', letterSpacing:'0.05em', marginBottom:10,
                       }}>{r.subtitle}</div>
                     )}
-                    {r.desc && <p style={{fontSize:13, lineHeight:1.7, color:'var(--ink-2)'}}>{r.desc}</p>}
+                    {r.desc && <p style={{fontSize: isFeature ? 14 : 13, lineHeight:1.7, color:'var(--ink-2)'}}>{r.desc}</p>}
                   </article>
                 );
               })}
@@ -799,16 +802,24 @@ const HomePage = ({ go }) => {
         </section></HomeSectionBoundary>
       )}
 
-      {/* ── 투어 프로그램 ─────────────────────────────────────────────── */}
+      {/* ── 투어 프로그램 — v00.164 inline 헤더 + section-tight (지원 박자) ──── */}
       {tours.length > 0 && (
-        <HomeSectionBoundary label="투어 프로그램"><section className="section" style={{borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="투어 프로그램"><section className="section-tight" style={{borderBottom:'1px solid var(--line)'}}>
           <div className="container">
-            <SectionHead
-              eyebrow={homeText.tourEyebrow}
-              title={<>{homeText.tourTitle}</>}
-              subtitle={homeText.tourSubtitle}
-              action={<button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.tourAction}</button>}
-            />
+            {/* v00.164 — inline 헤더: eyebrow + title + count + action 한 줄. subtitle 제거 (section-head--inline 가 hide). */}
+            <div className="section-head section-head--inline">
+              <div>
+                <div className="section-eyebrow" aria-hidden="true">{homeText.tourEyebrow}</div>
+                <h2 className="section-title">
+                  {homeText.tourTitle}
+                  <span className="mono" style={{
+                    fontSize:13, fontWeight:600, letterSpacing:'0.18em',
+                    color:'var(--ink-3)', marginLeft:14, verticalAlign:'middle',
+                  }}>· {tours.length}개 일정</span>
+                </h2>
+              </div>
+              <button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.tourAction}</button>
+            </div>
             <div className="grid grid-2">
               {tours.map((t, i) => (
                 <article key={t.id} className="card"
@@ -845,15 +856,27 @@ const HomePage = ({ go }) => {
         </section></HomeSectionBoundary>
       )}
 
-      {/* ── 커뮤니티 ─────────────────────────────────────────────────── */}
-      <HomeSectionBoundary label="커뮤니티"><section className="section" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
+      {/* ── 커뮤니티 — v00.164 mid 박자 + 헤더 박자 변형 ──────────────── */}
+      <HomeSectionBoundary label="커뮤니티"><section className="section--mid" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
         <div className="container">
-          <SectionHead
-            eyebrow={homeText.communityEyebrow}
-            title={<>{homeText.communityTitle}</>}
-            subtitle={homeText.communitySubtitle}
-            action={<button type="button" className="btn-ghost" onClick={() => go('community')}>{homeText.communityAction}</button>}
-          />
+          {/* v00.164 — 컴팩트 헤더 + subtitle 우측 인라인 (기존 SectionHead 의 4단 박자 깸). */}
+          <div style={{
+            display:'flex', justifyContent:'space-between', alignItems:'flex-end',
+            gap:32, flexWrap:'wrap', marginBottom:32, paddingBottom:18,
+            borderBottom:'1px solid var(--line)',
+          }}>
+            <div style={{flex:'1 1 320px', minWidth:0}}>
+              <div className="section-eyebrow" aria-hidden="true">{homeText.communityEyebrow}</div>
+              <h2 className="section-title" style={{fontSize:28, marginBottom:0}}>{homeText.communityTitle}</h2>
+            </div>
+            {homeText.communitySubtitle && (
+              <p style={{
+                flex:'1 1 280px', fontSize:13, color:'var(--ink-3)',
+                lineHeight:1.7, margin:0, maxWidth:380,
+              }}>{homeText.communitySubtitle}</p>
+            )}
+            <button type="button" className="btn-ghost" onClick={() => go('community')}>{homeText.communityAction}</button>
+          </div>
           {recentPosts.length > 0 ? (
             <div style={{border:'1px solid var(--line)'}}>
               {recentPosts.map((post, i) => (
@@ -861,7 +884,7 @@ const HomePage = ({ go }) => {
                   {...clickable(() => go('community'), post.title)}
                   style={{
                     display:'flex', gap:20, alignItems:'center',
-                    padding:'18px 24px',
+                    padding:'16px 22px',
                     background: i % 2 === 0 ? 'var(--bg)' : 'var(--bg-2)',
                     borderBottom: i < recentPosts.length - 1 ? '1px solid var(--line)' : 'none',
                   }}>
@@ -904,101 +927,124 @@ const HomePage = ({ go }) => {
         </div>
       </section></HomeSectionBoundary>
 
-      {/* ── 뱅기노자 칼럼 ─────────────────────────────────────────────── */}
+      {/* ── 뱅기노자 칼럼 — v00.164 magazine spread 톤 (외부 SectionHead 폐기) ─── */}
       {featuredColumn && (
-        <HomeSectionBoundary label="칼럼"><section className="section" style={{borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="칼럼"><section className="section--mid" style={{borderBottom:'1px solid var(--line)'}}>
           <div className="container">
-            <SectionHead
-              eyebrow={homeText.columnEyebrow}
-              title={<>{homeText.columnTitle}</>}
-              subtitle={homeText.columnSubtitle}
-              action={<button type="button" className="btn-ghost" onClick={() => go('column')}>{homeText.columnAction}</button>}
-            />
-            <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:40}} className="col-grid">
-              {/* 피처드 칼럼 */}
-              <div className="card"
-                style={{padding:0, overflow:'hidden', cursor:'pointer'}}
+            {/* v00.164 — eyebrow 만 가벼운 헤더, title 은 featured 카드 안으로 흡수. */}
+            <div style={{
+              display:'flex', justifyContent:'space-between', alignItems:'baseline',
+              marginBottom:28, gap:16, flexWrap:'wrap',
+            }}>
+              <div className="section-eyebrow" aria-hidden="true" style={{margin:0}}>{homeText.columnEyebrow}</div>
+              <button type="button" className="btn-ghost" onClick={() => go('column')}>{homeText.columnAction}</button>
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:56}} className="col-grid">
+              {/* v00.164 — 피처드 = magazine spread. 카드 라인 제거 (.card 폐기), 사진 fullbleed-ish + 큰 타이틀. */}
+              <article
+                style={{cursor:'pointer'}}
                 {...clickable(() => go('column'), `칼럼: ${featuredColumn.title}`)}>
-                {/* v00.140 — coverUrl 사용 (stale field 이름 coverImage 가 아니라). */}
                 {(featuredColumn.coverUrl || featuredColumn.coverImage) ? (
                   <div style={{
-                    height:200, backgroundImage:`url(${featuredColumn.coverUrl || featuredColumn.coverImage})`,
+                    height:340, marginBottom:28,
+                    backgroundImage:`url(${featuredColumn.coverUrl || featuredColumn.coverImage})`,
                     backgroundSize:'cover', backgroundPosition:'center',
                   }}/>
                 ) : (
                   <div style={{
-                    height:140, background:'var(--bg-2)', borderBottom:'1px solid var(--line)',
-                    display:'grid', placeItems:'center',
+                    height:260, background:'var(--bg-2)', marginBottom:28,
+                    display:'grid', placeItems:'center', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)',
                   }}>
                     <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.28em'}}>FEATURED COLUMN</div>
                   </div>
                 )}
-                <div style={{padding:30}}>
-                  <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:14, flexWrap:'wrap'}}>
-                    {featuredColumn.category && <span className="pill">{featuredColumn.category}</span>}
-                    {featuredColumn.date && <span className="mono dim-2" style={{fontSize:11}}>{featuredColumn.date}</span>}
-                    {featuredColumn.readTime && <span className="mono dim-2" style={{fontSize:11}}>· {featuredColumn.readTime}</span>}
-                  </div>
-                  <h3 className="ko-serif" style={{fontSize:26, fontWeight:600, lineHeight:1.3, marginBottom:12}}>
-                    {featuredColumn.title}
-                  </h3>
-                  {featuredColumn.excerpt && (
-                    <p style={{fontSize:14, lineHeight:1.75, color:'var(--ink-2)'}}>{featuredColumn.excerpt}</p>
-                  )}
-                  <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.2em', marginTop:20, color:'var(--secondary)'}}>{homeText.columnReadMore}</div>
+                <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:14, flexWrap:'wrap'}}>
+                  {featuredColumn.category && <span className="pill">{featuredColumn.category}</span>}
+                  {featuredColumn.date && <span className="mono dim-2" style={{fontSize:11}}>{featuredColumn.date}</span>}
+                  {featuredColumn.readTime && <span className="mono dim-2" style={{fontSize:11}}>· {featuredColumn.readTime}</span>}
                 </div>
-              </div>
-              {/* 서브 칼럼 목록 */}
-              <div>
-                {secondaryColumns.map((c) => (
+                {/* magazine 처럼 큰 헤드라인 (column subtitle 자리도 있으면 노출) */}
+                <h2 style={{
+                  fontFamily:'var(--font-serif)', fontSize:'clamp(28px, 3vw, 38px)',
+                  fontWeight:600, lineHeight:1.2, marginBottom:14, color:'var(--ink)',
+                  letterSpacing:'-0.01em',
+                }}>{featuredColumn.title}</h2>
+                {featuredColumn.excerpt && (
+                  <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:18, maxWidth:580}}>{featuredColumn.excerpt}</p>
+                )}
+                <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.2em', color:'var(--secondary)'}}>{homeText.columnReadMore}</div>
+              </article>
+              {/* v00.164 — sidebar = 깨끗한 텍스트 list. 카드 라인 X, 구분선만. */}
+              <aside style={{paddingTop:8}}>
+                <div className="mono" style={{
+                  fontSize:10, fontWeight:600, letterSpacing:'0.22em',
+                  color:'var(--ink-3)', marginBottom:18, textTransform:'uppercase',
+                }}>{homeText.columnTitle}</div>
+                {secondaryColumns.map((c, ci) => (
                   <div key={c.id}
                     {...clickable(() => go('column'), `칼럼: ${c.title}`)}
-                    style={{padding:'18px 0', borderBottom:'1px solid var(--line)', cursor:'pointer'}}>
-                    <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:8, flexWrap:'wrap'}}>
+                    style={{
+                      padding:'16px 0',
+                      borderBottom: ci < secondaryColumns.length - 1 ? '1px solid var(--line)' : 'none',
+                      cursor:'pointer',
+                    }}>
+                    <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:6, flexWrap:'wrap'}}>
                       {c.category && <span className="pill" style={{fontSize:9, padding:'2px 8px'}}>{c.category}</span>}
                       {c.date && <span className="mono dim-2" style={{fontSize:10}}>{c.date}</span>}
                     </div>
-                    <h4 className="ko-serif" style={{fontSize:17, fontWeight:600, lineHeight:1.4, marginBottom:5}}>{c.title}</h4>
-                    {c.excerpt && <p style={{fontSize:12, lineHeight:1.6, color:'var(--ink-3)'}}>{(c.excerpt||'').slice(0,65)}…</p>}
+                    <h4 className="ko-serif" style={{fontSize:16, fontWeight:600, lineHeight:1.4, marginBottom:4}}>{c.title}</h4>
+                    {c.excerpt && <p style={{fontSize:12, lineHeight:1.6, color:'var(--ink-3)', margin:0}}>{(c.excerpt||'').slice(0,65)}…</p>}
                   </div>
                 ))}
                 {secondaryColumns.length === 0 && (
-                  <p style={{fontSize:13, color:'var(--ink-3)', padding:'18px 0'}}>{homeText.columnEmpty}</p>
+                  <p style={{fontSize:13, color:'var(--ink-3)', padding:'16px 0'}}>{homeText.columnEmpty}</p>
                 )}
-              </div>
+              </aside>
             </div>
           </div>
         </section></HomeSectionBoundary>
       )}
 
-      {/* ── 강연 일정 ─────────────────────────────────────────────────── */}
+      {/* ── 강연 일정 — v00.164 가로 스크롤 strip (film strip 톤) ──────── */}
       {lectures.length > 0 && (
         <HomeSectionBoundary label="강연"><section className="section-tight" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
           <div className="container">
-            <SectionHead
-              eyebrow={homeText.lecturesEyebrow}
-              title={<>{homeText.lecturesTitle}</>}
-              action={<button type="button" className="btn-ghost" onClick={() => go('lectures')}>{homeText.lecturesAction}</button>}
-            />
-            <div className="grid grid-3">
+            {/* v00.164 — inline 헤더 (3열 grid 와 무게 다른 박자). */}
+            <div className="section-head section-head--inline">
+              <div>
+                <div className="section-eyebrow" aria-hidden="true">{homeText.lecturesEyebrow}</div>
+                <h2 className="section-title">{homeText.lecturesTitle}</h2>
+              </div>
+              <button type="button" className="btn-ghost" onClick={() => go('lectures')}>{homeText.lecturesAction}</button>
+            </div>
+            {/* v00.164 — film strip 가로 스크롤. 폭 320px 카드 + scroll-snap. */}
+            <div className="lecture-strip" role="list">
               {lectures.map((lecture) => (
                 <article key={lecture.id}
+                  role="listitem"
                   className="card"
                   {...clickable(() => {
                     try { sessionStorage.setItem('bgnj_pending_lecture_id', String(lecture.id)); } catch {}
                     go('lectures');
                   }, `강연: ${lecture.topic || lecture.title}`)}
-                  style={{cursor:'pointer'}}>
-                  <span className="badge" style={{marginBottom:16}}>{homeText.lectureBadge}</span>
-                  <h3 className="ko-serif" style={{fontSize:20, fontWeight:600, marginBottom:8}}>{lecture.topic || lecture.title}</h3>
-                  {lecture.note && <p style={{fontSize:13, lineHeight:1.7, color:'var(--ink-2)', marginBottom:16}}>{truncatePreview(lecture.note, 110)}</p>}
-                  <div style={{borderTop:'1px solid var(--line)', paddingTop:12, display:'flex', justifyContent:'space-between'}}>
+                  style={{cursor:'pointer', display:'flex', flexDirection:'column'}}>
+                  <span className="badge" style={{marginBottom:16, alignSelf:'flex-start'}}>{homeText.lectureBadge}</span>
+                  <h3 className="ko-serif" style={{fontSize:20, fontWeight:600, marginBottom:8, flex:'0 0 auto'}}>{lecture.topic || lecture.title}</h3>
+                  {lecture.note && <p style={{fontSize:13, lineHeight:1.7, color:'var(--ink-2)', marginBottom:16, flex:'1 1 auto'}}>{truncatePreview(lecture.note, 110)}</p>}
+                  <div style={{borderTop:'1px solid var(--line)', paddingTop:12, display:'flex', justifyContent:'space-between', marginTop:'auto'}}>
                     <span style={{fontSize:12, color:'var(--ink-2)'}}>{lecture.venue || homeText.emptyFallback}</span>
                     <span style={{fontSize:12, fontFamily:'var(--font-mono)', fontWeight:600, color:'var(--ink)'}}>{lecture.next || homeText.emptyFallback}</span>
                   </div>
                 </article>
               ))}
             </div>
+            {/* 가로 스크롤 힌트 — 카드 ≥ 3개 일 때만 (보통 3 이상이지만 방어). */}
+            {lectures.length >= 3 && (
+              <div className="mono" style={{
+                marginTop:14, fontSize:10, fontWeight:600, letterSpacing:'0.22em',
+                color:'var(--ink-3)', textAlign:'right',
+              }}>← 가로로 스크롤 →</div>
+            )}
           </div>
         </section></HomeSectionBoundary>
       )}
