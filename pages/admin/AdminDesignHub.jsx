@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.187.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T23:30:24+09:00",
+    summary: "📦 AuthAdminPage 분할 — AdminShared.jsx 신규 (-759줄)",
+    details: [
+      "📦 [AdminShared.jsx 신규] AuthAdminPage.jsx 9057 → 8298 줄 (-759). self-contained UI primitives + helpers 모음 별 파일.",
+      "📦 [이동 항목 8종] downloadBlob/Csv/Json (helpers) / pickImageWithR2Fallback / MiniBarChart / RankedBarList / COHORT_OPTIONS+CohortSelector / Sankey 5종(_CHANNEL_FOR_HOST/_STAGE_FOR_ROUTE/_CHANNEL_COLORS/_CHANNEL_COLOR/SankeyFlow) / SubTabsView. 모두 React/window.* 의존만 — 패널 비즈니스 로직 0.",
+      "📦 [노출 패턴] Object.assign(window, {...}) 으로 expose. AuthAdminPage 가 const X = window.X 로 alias (기존 AdminDesignHub/ContentEditors 패턴 동일).",
+      "📦 [index.html 로드 순서] AdminShared.js 가 AuthAdminPage.js 보다 먼저 로드 (defer + DOM 순서 보장).",
+      "📦 [build.mjs 자동 빌드] esbuild 가 18개 파일 컴파일 (이전 17). 수동 변경 없음.",
+      "📦 [large_file 경고 유지] AuthAdminPage 8298 줄로 8000 임계 초과 — 다음 분할 후보: 패널 단위 (LectureAdminPanel / TourAdminPanel / BooksAdminPanel 등).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.187.000`.",
+    ],
+    context: "코드 리뷰 cycle 8 — 파일 분할 1차. v00.184~186 의 DRY 추출들이 self-contained 컴포넌트라 분할 가능. 1단계: 외부 의존 0인 UI primitives 8종 일괄 이동. 2단계 (별 사이클): 각 admin 패널 (LectureAdminPanel 등) 별 파일 분할 — closure 변수 의존 많아 큰 작업.",
+  },
+  {
     version: "00.186.000",
     date: "2026-05-05",
     datetime: "2026-05-05T23:07:41+09:00",
