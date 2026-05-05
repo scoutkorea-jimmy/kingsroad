@@ -401,10 +401,14 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
   const showChrome = books.length > 1;
 
   // v00.162 — 단일 책 카드 렌더 (slide layer 안에서 호출).
+  // v00.172 — 홈 CTA 본문은 site_content_kv.bookHomeIntros[id] 우선, 없으면 book.desc 폴백.
   const renderBookCard = (b) => {
     const hasPriceKR = Number(b.priceKR) > 0;
     const hasPriceEN = Number(b.priceEN) > 0;
     const yr = b.publishedAt ? new Date(b.publishedAt).getFullYear() : new Date().getFullYear();
+    const homeIntros = (window.BGNJ_SITE_CONTENT?.get?.() || {}).bookHomeIntros || {};
+    const homeIntro = homeIntros[b.id] || homeIntros[String(b.id)] || '';
+    const introText = homeIntro || b.desc || '';
     return (
       <div className="cta-grid" style={{
         display:'grid', gridTemplateColumns:'1fr 1fr', gap:80, alignItems:'center',
@@ -426,9 +430,9 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
               {b.subtitle}
             </p>
           )}
-          {b.desc && (
-            <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:28, whiteSpace:'pre-wrap'}}>
-              {b.desc}
+          {introText && (
+            <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:28, whiteSpace:'pre-wrap', maxWidth:560}}>
+              {introText}
             </p>
           )}
           {(hasPriceKR || hasPriceEN) && (

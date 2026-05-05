@@ -3888,6 +3888,52 @@ const BooksAdminPanel = () => {
                   <div className="field" style={{gridColumn:'1 / -1'}}>
                     <label className="field-label">짧은 설명 (카탈로그 카드용)</label>
                     <textarea className="field-input" rows={3} value={editing.desc || ''} onChange={(e) => setField('desc', e.target.value)}/>
+                    <p className="dim-2" style={{fontSize:11, marginTop:6, lineHeight:1.5}}>
+                      카탈로그/리스트 카드에 노출되는 짧은 한두 줄.
+                    </p>
+                  </div>
+                  {/* v00.172 — 홈 CTA 전용 별도 소개글 필드. 사용자 보고 '메인에 책 소개 너무 비어있는데 별도 입력 필드'.
+                       site_content_kv.bookHomeIntros[bookId] 에 저장 — 책 D1 schema 변경 없이 즉시 사용. */}
+                  <div className="field" style={{gridColumn:'1 / -1'}}>
+                    <label className="field-label">홈 CTA 본문 (메인 화면 노출 — 별도 필드)</label>
+                    <textarea
+                      className="field-input"
+                      rows={6}
+                      value={(() => {
+                        const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+                        const map = sc.bookHomeIntros || {};
+                        return editing._homeIntroDraft != null
+                          ? editing._homeIntroDraft
+                          : (map[editing.id] || map[String(editing.id)] || '');
+                      })()}
+                      onChange={(e) => setField('_homeIntroDraft', e.target.value)}
+                      placeholder={"메인 화면 책 카루셀에 노출되는 본문.\n비워두면 '짧은 설명' 으로 자동 폴백됩니다.\n\n예) 조선 27명 왕의 생애를 '설계도'로 읽어낸 건축가의 시선."}
+                      style={{fontFamily:'var(--font-serif)', fontSize:14, lineHeight:1.8, resize:'vertical'}}/>
+                    <div style={{display:'flex', gap:8, marginTop:8, alignItems:'center', flexWrap:'wrap'}}>
+                      <button type="button" className="btn btn-small btn-gold"
+                        disabled={editing._homeIntroDraft == null}
+                        onClick={async () => {
+                          try {
+                            const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+                            const next = { ...(sc.bookHomeIntros || {}) };
+                            const txt = String(editing._homeIntroDraft || '');
+                            if (txt.trim()) next[editing.id] = txt;
+                            else delete next[editing.id];
+                            await window.BGNJ_SITE_CONTENT.saveSection('bookHomeIntros', next);
+                            setField('_homeIntroDraft', null);
+                            flash('✓ 홈 소개글 저장됨 — 홈 화면 즉시 반영');
+                          } catch (err) {
+                            alert('홈 소개글 저장 실패: ' + (err?.message || ''));
+                          }
+                        }}>💾 홈 소개글만 즉시 저장</button>
+                      {editing._homeIntroDraft != null && (
+                        <span className="mono dim-2" style={{fontSize:11}}>● 미저장</span>
+                      )}
+                    </div>
+                    <p className="dim-2" style={{fontSize:11, marginTop:6, lineHeight:1.5}}>
+                      홈 책 카루셀에만 노출되는 본문. 짧은 설명(위)과 별개로 더 길게 쓸 수 있습니다.
+                      비워두면 짧은 설명을 자동 사용. 줄바꿈 보존됨.
+                    </p>
                   </div>
                 </div>
               )}
@@ -6907,23 +6953,30 @@ const PromoChip = ({ label, value, prefix = '≥', tone }) => (
 // 이 패널은 "운영자가 매일 손볼 콘텐츠" — 게시판 제목과 설명을 큼직한 입력으로 편집.
 // 공지(notice) 게시판은 어떠한 경우에도 관리자만 작성 — 강제 규칙 표시.
 const CommunityBoardsPanel = () => {
-  // v00.171 — 사용자 보고 '커뮤니티 게시판 편하게 추가 삭제 할 수 있게'.
-  // 기존엔 title/desc 만 편집, 추가/삭제는 별도 [카테고리] 탭에서만 가능했음. 같은 화면에서 일괄.
+  // v00.172 — 카테고리 패널과 통합 + 테이블/리스트형 + 드래그앤드롭.
+  // 사용자 보고 '커뮤니티 게시판 목록은 리스트형(테이블형)으로 보여주고 드래그앤드랍으로 순서 변경 + 카테고리와 합쳐'.
   const [tick, setTick] = React.useState(0);
+  const grades = React.useMemo(() =>
+    (window.BGNJ_STORES?.grades || []).slice().sort((a, b) => (a.level || 0) - (b.level || 0)),
+    [tick]
+  );
   const boards = React.useMemo(() => (
     (window.BGNJ_STORES?.categories || [])
       .filter((c) => c.boardType === 'community')
-      .map((c) => ({ id: c.id, label: c.label || '', desc: c.desc || '' }))
+      .slice()
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   ), [tick]);
-  // edits = { id: { label, desc } } — 변경된 항목만 저장 시 PATCH.
-  const [edits, setEdits] = React.useState({});
+  const [edits, setEdits] = React.useState({});  // { id: { label, desc, ... } }
   const [saving, setSaving] = React.useState(false);
   const [saveMsg, setSaveMsg] = React.useState('');
   const [adding, setAdding] = React.useState(false);
   const [draft, setDraft] = React.useState({ id: '', label: '', desc: '' });
 
   const dirty = Object.keys(edits).length > 0;
-  const valueOf = (b) => ({ label: edits[b.id]?.label ?? b.label, desc: edits[b.id]?.desc ?? b.desc });
+  const valueOf = (b) => ({
+    label: edits[b.id]?.label ?? b.label,
+    desc: edits[b.id]?.desc ?? (b.desc || ''),
+  });
 
   const update = (id, key, val) => {
     setEdits((cur) => ({ ...cur, [id]: { ...(cur[id] || {}), [key]: val } }));
@@ -6933,17 +6986,10 @@ const CommunityBoardsPanel = () => {
   const slugify = (s) => String(s || '').trim().toLowerCase()
     .replace(/[^a-z0-9-_가-힣]+/g, '-').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
 
-  // v00.171 — 새 게시판 즉시 추가 (서버 + 로컬 동기화).
   const addBoard = async () => {
     const id = draft.id || slugify(draft.label);
-    if (!id || !draft.label.trim()) {
-      setSaveMsg('✗ 게시판 이름은 필수입니다.');
-      return;
-    }
-    if (boards.find((b) => b.id === id)) {
-      setSaveMsg('✗ 이미 존재하는 ID 입니다.');
-      return;
-    }
+    if (!id || !draft.label.trim()) { setSaveMsg('✗ 게시판 이름은 필수입니다.'); return; }
+    if (boards.find((b) => b.id === id)) { setSaveMsg('✗ 이미 존재하는 ID 입니다.'); return; }
     setSaving(true);
     try {
       await window.BGNJ_API?.categories?.create?.({
@@ -6951,12 +6997,14 @@ const CommunityBoardsPanel = () => {
         minLevel: 0, postMinLevel: 0,
         description: draft.desc || '', prefixes: [],
         allowRead: true, allowWrite: true, allowCommentRead: true, allowCommentWrite: true,
+        order: boards.length,
       });
       const allCats = (window.BGNJ_STORES?.categories || []).slice();
       allCats.push({
         id, label: draft.label.trim(), boardType: 'community',
         minLevel: 0, postMinLevel: 0, desc: draft.desc || '',
         prefixes: [], allowRead: true, allowWrite: true, allowCommentRead: true, allowCommentWrite: true,
+        order: boards.length,
       });
       window.BGNJ_STORES.categories = allCats;
       window.BGNJ_SAVE.categories();
@@ -6970,7 +7018,6 @@ const CommunityBoardsPanel = () => {
     } finally { setSaving(false); }
   };
 
-  // v00.171 — 게시판 삭제 (서버 + 로컬). notice 는 보호.
   const removeBoard = async (id) => {
     if (id === 'notice') { alert('공지 게시판은 삭제할 수 없습니다.'); return; }
     const target = boards.find((b) => b.id === id);
@@ -6992,6 +7039,8 @@ const CommunityBoardsPanel = () => {
       setSaveMsg('✗ 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
     } finally { setSaving(false); }
   };
+
+  // v00.172 — 테이블/DnD 통합 패널은 v00.173 에서 별도 진행 (분량 큼). 본 사이클은 책 홈 소개글 fix.
 
   const commitAll = async () => {
     if (saving || !dirty) return;

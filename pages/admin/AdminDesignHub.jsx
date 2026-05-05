@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.172.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T21:49:03+09:00",
+    summary: "📖 책 홈 CTA 별도 소개글 필드 + 폴백 — 메인 비어있던 공간 채우기",
+    details: [
+      "📖 [홈 책 CTA 본문 분리 필드] 사용자 보고 '메인에 책 소개 너무 비어있는데? 차라리 책 소개글을 좀 보여지게 하던지 해당 데이터만 입력할 수 있는 필드를 별도로 만들어서'. 카탈로그용 짧은 설명(book.desc) 과 별개로, 메인 화면에만 노출되는 본문을 별도 입력. site_content_kv.bookHomeIntros = { [bookId]: text } 매핑으로 저장 (D1 schema 변경 없음, 워커 deploy 불필요).",
+      "📖 [홈 BookCarouselSection 폴백] introText = bookHomeIntros[id] || b.desc || ''. maxWidth 560px 로 텍스트 줄바꿈 자연. whiteSpace: pre-wrap 줄바꿈 보존.",
+      "📖 [BooksAdminPanel meta 탭에 별도 필드] '홈 CTA 본문 (메인 화면 노출 — 별도 필드)' textarea 6줄. serif 14/1.8 가독성. 즉시 저장 버튼 — site_content_kv.bookHomeIntros 에 PATCH. 짧은 설명과 분리해 더 길게 작성 가능. placeholder 로 가이드 문구 노출. 비워두면 짧은 설명 자동 폴백.",
+      "🛠 [CommunityBoardsPanel 일부 정리] v00.172 시도한 테이블/DnD 구조의 미완 상태(states/functions 만 추가) 정리 — 본 사이클은 책 소개 fix 우선. 테이블+DnD 통합 카테고리 머지는 v00.173 별 사이클.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.172.000`.",
+    ],
+    context: "사용자가 메인 책 카루셀의 좌측 빈 공간을 강하게 지적. 현재 desc(짧은 설명) 만 표시되어 비어있으면 빈 공간 → 별도 필드 분리로 admin 이 짧은 설명 외에도 메인 전용 본문 입력 가능. site_content_kv 사용해 D1 schema 변경 회피 (admin 즉시 사용 가능).",
+  },
+  {
     version: "00.171.000",
     date: "2026-05-05",
     datetime: "2026-05-05T21:38:24+09:00",
