@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.178.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:19:50+09:00",
+    summary: "🧹 사용자 여정 죽은 코드 완전 제거 (-175줄)",
+    details: [
+      "🧹 [UserJourneyPanel 단순화] v00.176 에서 회원 목록/타임라인을 display:none 으로 hide → 본 사이클에서 죽은 JSX 약 115줄 + 관련 unused state(selectedId/serverEvents/journeyLoading/journeyError) + useEffect 2개 + useMemo 2개(timeline/cohorts) 모두 삭제. props 도 (users/posts/setTab) → () 로 단순화.",
+      "🧹 [호출 사이트 정리] tab === '사용자 여정' && <UserJourneyPanel/> 로 props 제거. AdminPage 가 더 이상 allUsers/allCommunityPosts 를 이 컴포넌트에 전달 안 함.",
+      "🧹 [AuthAdminPage 라인 수] 9058 → 8883 (-175). large_file 경고 유지(분할 권장 후속 사이클).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.178.000`.",
+    ],
+    context: "코드 리뷰 사전 정리 cycle 1/4 (A항). v00.179: 다른 차트/리스트 hover+cohort 확장 / v00.180: CommunityPostsAdminPanel 추출 (DRY) / v00.181: localStorage→server 풀 audit (server-first). 그 후 전체 코드 리뷰 + 내부 인원 알람 기능.",
+  },
+  {
     version: "00.177.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:14:08+09:00",

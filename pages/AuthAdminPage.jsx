@@ -1631,19 +1631,13 @@ const SankeyFlow = ({ pairs, days, onDaysChange }) => {
   );
 };
 
-// === User Journey Panel (v00.146) ==================================
-// 사용자 요청 '사용자 여정을 볼 수 있는 페이지'.
-// 회원 1명을 선택하면 가입 → 로그인 → 게시글 → 댓글 → 강연/투어 신청 → 책 주문 등
-// 시간 순 활동 타임라인을 노출. 데이터: BGNJ_AUTH.listUsers + BGNJ_COMMUNITY.listPosts + 향후 audit_log.
-const UserJourneyPanel = ({ users, posts, setTab }) => {
-  const [selectedId, setSelectedId] = React.useState(users[0]?.id || null);
-  const selected = users.find((u) => u.id === selectedId);
-
-  // v00.174 — 사용자 여정 Sankey 차트 데이터.
-  // analytics summary 의 flowPairs 에서 channel/stage/route 흐름 시각화.
+// === User Journey Panel (v00.178 단순화) ===========================
+// v00.146 시작 (회원별 타임라인) → v00.174 Sankey 추가 → v00.176 사용자 보고 '회원 단위 X, 전체적으로만'
+// → v00.178 회원 목록/타임라인 + 관련 state/effect/memo 모두 삭제. SankeyFlow 만 노출.
+// 데이터: analytics summary 의 flowPairs (referrer × route 집계).
+const UserJourneyPanel = () => {
   const [flowPairs, setFlowPairs] = React.useState([]);
   const [flowDays, setFlowDays] = React.useState(30);
-  const [flowError, setFlowError] = React.useState('');
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1651,82 +1645,13 @@ const UserJourneyPanel = ({ users, posts, setTab }) => {
         const data = await window.BGNJ_API?.analytics?.summary?.({ days: flowDays });
         if (cancelled) return;
         setFlowPairs(Array.isArray(data?.flowPairs) ? data.flowPairs : []);
-        setFlowError(data?.error || '');
-      } catch (err) {
+      } catch {
         if (cancelled) return;
         setFlowPairs([]);
-        setFlowError(err?.message || '서버 응답 실패');
       }
     })();
     return () => { cancelled = true; };
   }, [flowDays]);
-
-  // v00.148 — 서버 통합 user-journey API 사용 (가입/게시글/댓글/강연/투어/책 주문).
-  // 미배포 시 클라이언트 fallback (가입 + 게시글만).
-  const [serverEvents, setServerEvents] = React.useState(null);
-  const [journeyLoading, setJourneyLoading] = React.useState(false);
-  const [journeyError, setJourneyError] = React.useState('');
-
-  React.useEffect(() => {
-    if (!selectedId) { setServerEvents(null); return; }
-    let cancelled = false;
-    setJourneyLoading(true);
-    setJourneyError('');
-    (async () => {
-      try {
-        const res = await window.BGNJ_API?.analytics?.userJourney?.(selectedId);
-        if (cancelled) return;
-        setServerEvents(Array.isArray(res?.events) ? res.events : []);
-      } catch (err) {
-        if (cancelled) return;
-        setServerEvents(null);
-        setJourneyError(err?.message || '서버 응답 실패');
-      } finally { if (!cancelled) setJourneyLoading(false); }
-    })();
-    return () => { cancelled = true; };
-  }, [selectedId]);
-
-  // 선택 회원의 활동 타임라인 — 서버 데이터 우선, 폴백은 클라이언트 derive.
-  const timeline = React.useMemo(() => {
-    if (!selected) return [];
-    if (Array.isArray(serverEvents) && serverEvents.length > 0) {
-      // 서버 events 를 UI shape 로 변환.
-      const ICONS = { signup: '🎉', post: '✍️', comment: '💬', lecture_register: '🎤', tour_reserve: '🚌', book_order: '📚', login: '🔓' };
-      return serverEvents.map((e) => ({
-        ts: e.ts, kind: e.kind,
-        icon: ICONS[e.kind] || '•',
-        label: e.label || e.kind,
-        detail: e.detail || '',
-        target: e.target,
-      }));
-    }
-    // 폴백 — 클라이언트 derive (워커 endpoint 미배포 또는 에러 시).
-    const events = [];
-    if (selected.createdAt) {
-      events.push({ ts: selected.createdAt, kind: 'signup', icon: '🎉', label: '회원 가입', detail: `${selected.email} · ${selected.gradeId || 'member'} 등급` });
-    }
-    posts.filter((p) => p.author === selected.name || p.authorId === selected.id).forEach((p) => {
-      events.push({ ts: p.date, kind: 'post', icon: '✍️', label: '게시글 작성', detail: `[${p.category}] ${p.title}` });
-    });
-    events.sort((a, b) => {
-      const da = _toDate(a.ts)?.getTime() || 0;
-      const db = _toDate(b.ts)?.getTime() || 0;
-      return db - da;
-    });
-    return events;
-  }, [selected, posts, serverEvents]);
-
-  // 코호트 — 가입월별 그룹.
-  const cohorts = React.useMemo(() => {
-    const groups = {};
-    users.forEach((u) => {
-      const d = _toDate(u.createdAt);
-      if (!d) return;
-      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      groups[k] = (groups[k] || 0) + 1;
-    });
-    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [users]);
 
   return (
     <>
@@ -1734,120 +1659,7 @@ const UserJourneyPanel = ({ users, posts, setTab }) => {
         eyebrow="JOURNEY · 사용자 여정"
         title="고객 여정 흐름"
         description="유입 채널 → 단계 → 도착 페이지의 집계 Sankey 흐름. 노드/곡선 호버 시 연결 흐름 강조. 우상단 [기간] 으로 코호트 변경."/>
-
-      {/* v00.174 — 사용자 여정 Sankey 차트 (3-단계 흐름도). v00.176 — 회원별 타임라인 영역 제거 (사용자 요청 '전체적으로만 보이면 됨'). */}
       <SankeyFlow pairs={flowPairs} days={flowDays} onDaysChange={setFlowDays}/>
-
-      <div style={{display:'none'}}>
-        {/* 좌측: 회원 목록 */}
-        <aside style={{border:'1px solid var(--line)', borderRadius:8, background:'var(--bg-2)', maxHeight:'70vh', overflow:'auto'}}>
-          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', padding:'12px 14px', borderBottom:'1px solid var(--line)'}}>
-            회원 ({users.length})
-          </div>
-          <ul style={{listStyle:'none', margin:0, padding:0}}>
-            {users.map((u) => (
-              <li key={u.id}>
-                <button type="button" onClick={() => setSelectedId(u.id)}
-                  style={{
-                    width:'100%', textAlign:'left', padding:'10px 14px',
-                    background: selectedId === u.id ? 'rgba(245, 213, 72, 0.10)' : 'transparent',
-                    border:'none', borderBottom:'1px solid var(--line)', cursor:'pointer',
-                    color:'var(--ink)',
-                  }}>
-                  <div style={{fontSize:13, fontWeight:600, marginBottom:2}}>{u.name || '(이름 없음)'}</div>
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.04em'}}>
-                    {u.email} · {u.gradeId || 'member'}{u.isAdmin ? ' · ADMIN' : ''}
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </aside>
-
-        {/* 우측: 선택 회원 타임라인 */}
-        <section>
-          {!selected ? (
-            <AdminEmpty>회원을 선택하세요.</AdminEmpty>
-          ) : (
-            <>
-              <div className="card" style={{padding:18, marginBottom:16}}>
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:12}}>
-                  <div>
-                    <h3 className="ko-serif" style={{fontSize:20, margin:'0 0 4px'}}>{selected.name}</h3>
-                    <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.06em'}}>{selected.email}</div>
-                  </div>
-                  <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-                    <StatusBadge variant={selected.isAdmin ? 'gold' : 'neutral'}>
-                      {selected.isAdmin ? 'ADMIN' : (selected.gradeId || 'member')}
-                    </StatusBadge>
-                    {selected.suspended && <StatusBadge variant="danger">SUSPENDED</StatusBadge>}
-                    <button type="button" className="btn btn-small" onClick={() => setTab && setTab('회원')}>회원 패널에서 열기</button>
-                  </div>
-                </div>
-                <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:12, marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
-                  <div><div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>가입일</div><div style={{fontSize:13, marginTop:4}}>{selected.createdAt ? (window.BGNJ_FMT?.kstShort?.(selected.createdAt) || '—') : '—'}</div></div>
-                  <div><div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>총 활동</div><div style={{fontSize:13, marginTop:4}}>{timeline.length}건</div></div>
-                  <div><div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.18em'}}>게시글</div><div style={{fontSize:13, marginTop:4}}>{timeline.filter(e => e.kind === 'post').length}건</div></div>
-                </div>
-              </div>
-
-              <div className="admin-section__title">
-                활동 타임라인
-                {journeyLoading && <span className="dim-2 mono" style={{fontSize:10, marginLeft:8}}>· ⏳ 서버 통합 데이터 fetching…</span>}
-                {!journeyLoading && journeyError && <span className="dim-2 mono" style={{fontSize:10, marginLeft:8, color:'var(--ink-3)'}}>· ⚠ 서버 미응답 (클라이언트 derive 데이터 사용)</span>}
-                {!journeyLoading && !journeyError && Array.isArray(serverEvents) && serverEvents.length > 0 && <span className="dim-2 mono" style={{fontSize:10, marginLeft:8, color:'var(--secondary)'}}>· ✓ 서버 통합 (가입/게시글/댓글/강연/투어/책 주문)</span>}
-              </div>
-              {timeline.length === 0 ? (
-                <AdminEmpty>활동 이력이 없습니다.</AdminEmpty>
-              ) : (
-                <ol style={{listStyle:'none', padding:0, margin:0, display:'grid', gap:8, position:'relative'}}>
-                  {timeline.map((e, i) => (
-                    <li key={i} style={{
-                      display:'flex', gap:14, padding:'14px 16px',
-                      background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:8,
-                    }}>
-                      <div style={{
-                        width:36, height:36, flexShrink:0, borderRadius:'50%',
-                        background:'rgba(245,213,72,0.14)', display:'grid', placeItems:'center',
-                        fontSize:18,
-                      }}>{e.icon}</div>
-                      <div style={{flex:1, minWidth:0}}>
-                        <div style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline'}}>
-                          <strong style={{fontSize:13, color:'var(--ink)'}}>{e.label}</strong>
-                          <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.06em'}}>
-                            {window.BGNJ_FMT?.kstDateTime?.(e.ts) || e.ts}
-                          </span>
-                        </div>
-                        <div className="dim-2" style={{fontSize:12, marginTop:4, lineHeight:1.6, wordBreak:'break-all'}}>{e.detail}</div>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              )}
-
-              {/* 가입 코호트 — 월별 가입자 분포 */}
-              {cohorts.length > 0 && (
-                <>
-                  <div className="admin-section__title" style={{marginTop:24}}>월별 가입 코호트 (전체 회원)</div>
-                  <article className="card">
-                    <MiniBarChart
-                      label={null}
-                      series={cohorts.map(([, v]) => v)}
-                      labels={cohorts.map(([k]) => k.slice(5))}
-                      color="var(--secondary, #1F7A8C)" height={120}/>
-                    <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
-                      월별 가입자 수. 라벨은 MM (월).
-                    </p>
-                  </article>
-                </>
-              )}
-            </>
-          )}
-        </section>
-      </div>
-      <p className="dim-2" style={{fontSize:11, marginTop:14, lineHeight:1.7}}>
-        ⓘ 현재 타임라인은 가입 + 게시글 작성. 댓글 / 강연·투어 신청 / 책 주문 / 로그인 이력은 audit_log 통합 시 v0.147+ 추가 예정.
-      </p>
     </>
   );
 };
@@ -6321,7 +6133,7 @@ const AdminPage = ({ go }) => {
           );
         })()}
 
-        {tab === "사용자 여정" && <UserJourneyPanel users={allUsers} posts={allCommunityPosts} setTab={setTab}/>}
+        {tab === "사용자 여정" && <UserJourneyPanel/>}
 
         {tab === "버전 기록" && (() => {
           const VERSIONS_PER_PAGE = 10;
