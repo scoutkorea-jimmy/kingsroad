@@ -8016,15 +8016,33 @@ const AdminGradePanel = () => {
     }
   };
 
-  const resetAll = () => {
-    if (!confirm("등급 + 자동 승급 기준을 모두 기본값으로 되돌립니다. 진행할까요?")) return;
-    window.BGNJ_SAVE.resetGrades();
-    window.BGNJ_SITE_CONTENT?.resetSection?.('gradeRules');
-    setGrades(window.BGNJ_STORES.grades.slice());
-    setRules(_initialRules());
-    setDirty(false);
-    setSaveMsg("기본값 복원 완료.");
-    setTimeout(() => setSaveMsg(""), 3000);
+  const resetAll = async () => {
+    if (!confirm("등급 + 자동 승급 기준을 모두 기본값으로 되돌립니다. 진행할까요?\n(서버 D1 grades_kv 도 default 값으로 덮어씌워집니다.)")) return;
+    setSaving(true);
+    try {
+      // v00.181 — 이전엔 localStorage 만 reset 후 새로고침 시 D1 default 가 다시 덮어써서 reset 효과 없었음.
+      // resetGrades() 가 BGNJ_STORES.grades 를 default 로 set → 그 값을 D1 에도 PUT.
+      window.BGNJ_SAVE.resetGrades();
+      const defaults = (window.BGNJ_STORES?.grades || []).slice();
+      for (const g of defaults) {
+        try {
+          await window.BGNJ_API?.grades?.upsert?.(g.id, {
+            label: g.label, level: Number(g.level || 0), color: g.color || '',
+            description: g.desc || '', order: Number(g.order || g.level || 0),
+          });
+        } catch {}
+      }
+      await window.BGNJ_SITE_CONTENT?.resetSection?.('gradeRules');
+      setGrades(window.BGNJ_STORES.grades.slice());
+      setRules(_initialRules());
+      setDirty(false);
+      setSaveMsg("기본값 복원 완료 (D1 + localStorage).");
+      setTimeout(() => setSaveMsg(""), 3000);
+    } catch (err) {
+      setSaveMsg("✗ 복원 실패: " + (err?.message || '알 수 없는 오류'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const reevaluate = async () => {

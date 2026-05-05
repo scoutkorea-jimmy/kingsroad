@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.180.000",
+  version: "00.181.000",
   build: "2026.05.05",
   channel: "preview",
 };
@@ -1059,6 +1059,33 @@ window.BGNJ_STORES = {
     { id: 'faq-3', question: "주문 취소 / 환불은 가능한가요?", answer: "마이페이지에서 입금 확인 전 단계의 주문은 직접 취소할 수 있습니다. 환불 처리는 운영자에게 문의해 주세요.", category: '결제', order: 2 },
   ])),
 };
+// v00.181 audit — BGNJ_SAVE.* 는 모두 **localStorage cache writeback** 용도.
+// 사용자 룰 (feedback_server_first_storage.md): admin 편집은 무조건 D1. localStorage 단독 저장 금지.
+// 따라서 모든 BGNJ_SAVE.* 호출은 BGNJ_API.<domain>.* D1 호출 직후에만 사용해야 함.
+//
+// 항목별 server 매핑 상태:
+//   ✅ grades        — D1 grades_kv (BGNJ_API.grades.upsert/remove)
+//   ✅ categories    — D1 categories_kv (BGNJ_API.categories.create/update/remove)
+//   ✅ communityPosts — D1 posts (BGNJ_API.posts.*)
+//   ✅ userColumns   — D1 user_columns (BGNJ_API.columns.*)
+//   ✅ users         — D1 users (BGNJ_API.admin.users.*)
+//   ✅ session       — D1 sessions (BGNJ_API.auth.*) — _SESSION_KEY FCP 캐시 별개
+//   ✅ notifications — D1 notifications (BGNJ_API.notifications.*)
+//   ✅ bankAccount   — D1 bank_accounts (BGNJ_API.admin.bankAccounts.*)
+//   ✅ legalDocs     — D1 legal_docs (BGNJ_API.legal.*)
+//   ✅ faqs          — D1 faqs (BGNJ_API.faqs.*)
+//   ✅ siteContent   — D1 site_content_kv (BGNJ_API.siteContent.*)
+//   ✅ books         — D1 books (BGNJ_API.books.*)
+//   ✅ auditLog      — D1 audit_log (BGNJ_API.auditLog.*)
+//   💾 userPosts     — local intentional (사용자 임시 글, §2.9)
+//   💾 columnEngagement — local intentional (좋아요·읽음 자동 기록 — D1 column_engagement 마이그 후보)
+//   ⚠ bookOrders    — legacy local (D1 book_orders 마이그 후보)
+//   ⚠ bookReviews   — legacy local (D1 book_reviews 마이그 후보)
+//   ⚠ tourReviews   — legacy local (D1 tour_reviews 마이그 후보)
+//   ⚠ lectureReviews — legacy local (D1 lecture_reviews 마이그 후보)
+//
+// resetGrades / resetCategories 는 default 값으로 BGNJ_STORES + localStorage 만 reset.
+// 진짜 reset 은 호출자가 BGNJ_API 로 D1 도 갱신해야 함 (예: AdminGradePanel.resetAll v00.181).
 window.BGNJ_SAVE = {
   grades: () => _lsSet('bgnj_grades', window.BGNJ_STORES.grades),
   categories: () => _lsSet('bgnj_categories', window.BGNJ_STORES.categories),

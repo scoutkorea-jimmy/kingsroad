@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.181.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:30:24+09:00",
+    summary: "🔍 localStorage audit + AdminGradePanel.resetAll D1 반영 fix",
+    details: [
+      "🔍 [BGNJ_SAVE.* 25 호출처 audit] 모두 BGNJ_API.* D1 호출 직후 cache writeback 패턴 확인. 단일 violation: AdminGradePanel.resetAll 이 D1 미반영 → 새로고침 시 D1 default 가 다시 덮어써서 reset 효과 0.",
+      "🐛 [resetAll fix] BGNJ_SAVE.resetGrades() 후 default 각 grade 를 BGNJ_API.grades.upsert 로 D1 PUT. 이제 진짜 reset (D1 + localStorage 모두).",
+      "📋 [data.js BGNJ_SAVE 정의에 audit 코멘트] 19 항목별 server 매핑 상태 명시 — ✅ D1-backed (13) / 💾 의도적 local (2) / ⚠ legacy local (4 — 향후 마이그 후보).",
+      "🎯 [server-first 룰 검증] 사용자 룰 'localStorage 단독 저장 금지' 위반 0 확인 (resetAll fix 후). 현재 모든 admin 편집은 D1 PATCH/PUT/DELETE 후 localStorage 캐시 동기화.",
+      "📌 [legacy 4 항목] bookOrders / bookReviews / tourReviews / lectureReviews — D1 테이블 존재하나 일부 기능이 BGNJ_BOOK_ORDERS / BGNJ_BOOKS 등 다른 helper 경유. 코드 리뷰 시 점검 후보로 명기.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.181.000`.",
+    ],
+    context: "코드 리뷰 사전 정리 cycle 4/4 (B항: server-first audit). 본 사이클 후 전체 코드 리뷰 + 내부 인원 알람 기능. localStorage 직접 호출은 모두 CONTEXT.md §2.9 sanctioned (cart/route/migration markers/purge signal). BGNJ_SAVE 25 callers 모두 D1 동반 확인.",
+  },
+  {
     version: "00.180.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:26:42+09:00",
