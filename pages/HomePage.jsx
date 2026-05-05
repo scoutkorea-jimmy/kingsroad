@@ -406,10 +406,8 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
     const hasPriceEN = Number(b.priceEN) > 0;
     const yr = b.publishedAt ? new Date(b.publishedAt).getFullYear() : new Date().getFullYear();
     return (
-      <div className="card cta-grid" style={{
-        padding:'96px 80px',
+      <div className="cta-grid" style={{
         display:'grid', gridTemplateColumns:'1fr 1fr', gap:80, alignItems:'center',
-        background:'var(--bg-2)', border:'1px solid var(--line)',
       }}>
         <div>
           <div className="section-eyebrow">{text.bookEyebrowPrefix} · {yr}</div>
@@ -762,13 +760,12 @@ const HomePage = ({ go }) => {
                 const isFeature = recommendations.length >= 3 && ri === 0;
                 return (
                   <article key={r.id || r.name}
-                    className="card"
+                    className="card card--bare"
                     {...clickable(() => setRecDetail(r), `${r.name || '추천'} 상세 보기`)}
-                    style={{cursor:'pointer', display:'flex', flexDirection:'column'}}>
+                    style={{cursor:'pointer', display:'flex', flexDirection:'column', padding:0}}>
                     <div style={{
                       height: isFeature ? 320 : 160, marginBottom:18, position:'relative', overflow:'hidden',
                       background: r.imageDataUri ? `url(${r.imageDataUri}) center/cover` : 'var(--bg-3)',
-                      borderBottom: r.imageDataUri ? 'none' : '1px solid var(--line)',
                     }}>
                       {r.region && (
                         <div style={{
@@ -1022,12 +1019,12 @@ const HomePage = ({ go }) => {
               {lectures.map((lecture) => (
                 <article key={lecture.id}
                   role="listitem"
-                  className="card"
+                  className="card card--bare"
                   {...clickable(() => {
                     try { sessionStorage.setItem('bgnj_pending_lecture_id', String(lecture.id)); } catch {}
                     go('lectures');
                   }, `강연: ${lecture.topic || lecture.title}`)}
-                  style={{cursor:'pointer', display:'flex', flexDirection:'column'}}>
+                  style={{cursor:'pointer', display:'flex', flexDirection:'column', padding:'4px 4px 12px'}}>
                   <span className="badge" style={{marginBottom:16, alignSelf:'flex-start'}}>{homeText.lectureBadge}</span>
                   <h3 className="ko-serif" style={{fontSize:20, fontWeight:600, marginBottom:8, flex:'0 0 auto'}}>{lecture.topic || lecture.title}</h3>
                   {lecture.note && <p style={{fontSize:13, lineHeight:1.7, color:'var(--ink-2)', marginBottom:16, flex:'1 1 auto'}}>{truncatePreview(lecture.note, 110)}</p>}

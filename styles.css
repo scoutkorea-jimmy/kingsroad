@@ -1101,6 +1101,14 @@ main time, main .section-eyebrow {
   transition: border-color .3s, transform .3s;
 }
 .card:hover { border-color: var(--gold-dim); }
+/* v00.164.001 — 박스 인상 제거 modifier. background + border 제거, padding 만 유지.
+   사용처: 사진/콘텐츠가 시각 주체인 카드 (추천 사진 카드, 강연 strip, hero 무게의 책 CTA).
+   투어처럼 '선택 가능 항목' 카드는 .card 그대로 유지. */
+.card--bare {
+  background: transparent;
+  border-color: transparent;
+}
+.card--bare:hover { border-color: transparent; }
 .card-gold {
   border-color: var(--gold-dim);
   background: linear-gradient(180deg, rgba(245,213,72,0.04), transparent);

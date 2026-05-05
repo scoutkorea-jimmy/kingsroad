@@ -4,6 +4,22 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.164.001",
+    date: "2026-05-05",
+    datetime: "2026-05-05T19:27:02+09:00",
+    summary: "🎨 카드 박스 인상 제거 (.card--bare modifier)",
+    details: [
+      "🎨 [.card--bare modifier 신규] 사용자 보고 '카드들이 박스가 있게 배치가 되어서'. 모든 카드가 1px line + 배경 콤보로 같은 박스 인상이 6번 반복되던 문제. background + border 만 제거(padding/transition 유지)하는 modifier 추가.",
+      "🎨 [추천 카드] .card--bare 적용 + padding 0 (사진 flush). 사진이 시각 주체이므로 박스 외피 불필요.",
+      "🎨 [강연 strip 카드] .card--bare 적용 + padding 4/4/12. 가로 스크롤 + flex gap 으로 이미 항목 구분. 박스 라인은 시각 노이즈.",
+      "🎨 [책 CTA] .card 클래스 폐기 + padding 0. 인라인 background/border 제거. .section--anchor 의 140px 호흡으로만 sit (hero 무게).",
+      "🎨 [투어 카드 유지] '선택 가능한 일정 항목' 인상이 박스로 강화되는 단 1 섹션. 이번 사이클에서 손대지 않음.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.164.001`.",
+    ],
+    context: "v00.164.000 직후 사용자 추가 보고: '카드들이 박스가 있게 배치가 되어서 그런것같기도해'. 박스 인상 제거가 박자/위계 변별보다 즉각 효과. 사진/콘텐츠 주체 카드만 박스 제거(추천/강연/책), 일정 항목 카드(투어)는 유지하는 선택적 적용.",
+  },
+  {
     version: "00.164.000",
     date: "2026-05-05",
     datetime: "2026-05-05T19:22:54+09:00",
