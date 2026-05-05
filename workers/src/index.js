@@ -780,15 +780,20 @@ const handleAnalyticsSummary = async (req, env) => {
       ).bind(new Date(now - 24 * 3600 * 1000).toISOString()).all();
       summary.hourlySeries = (hourly.results || []).map((r) => ({ hour: r.hour, views: Number(r.views), uniq: Number(r.uniq) }));
     }
-    // referrer 분포 (최근 30일).
+    // v00.179 — refDays / routeDays 별도 코호트. 미지정 시 30/7 기본.
+    const refDays = Math.max(1, Math.min(90, Number(url.searchParams.get('refDays') || 30)));
+    const routeDays = Math.max(1, Math.min(90, Number(url.searchParams.get('routeDays') || 7)));
+    summary.refDays = refDays;
+    summary.routeDays = routeDays;
+    // referrer 분포.
     const refs = await env.DB.prepare(
       "SELECT COALESCE(referrer_host, '직접 방문') AS host, COUNT(*) AS c FROM page_views WHERE ts >= ? GROUP BY host ORDER BY c DESC LIMIT 10"
-    ).bind(isoCutoff(30)).all();
+    ).bind(isoCutoff(refDays)).all();
     summary.referrers = (refs.results || []).map((r) => ({ host: r.host, count: Number(r.c) }));
-    // top routes (최근 7일).
+    // top routes.
     const routes = await env.DB.prepare(
       "SELECT route, COUNT(*) AS c FROM page_views WHERE ts >= ? GROUP BY route ORDER BY c DESC LIMIT 10"
-    ).bind(isoCutoff(7)).all();
+    ).bind(isoCutoff(routeDays)).all();
     summary.topRoutes = (routes.results || []).map((r) => ({ route: r.route, count: Number(r.c) }));
     // v00.174 — flowPairs: 사용자 여정 Sankey 차트용 referrer→route 쌍 집계 (seriesDays 기간).
     const pairs = await env.DB.prepare(

@@ -298,9 +298,14 @@
     analytics: {
       // v00.173 — days param 지원 (7/14/30/90). 기본 14.
       track: (payload) => request("POST", "/analytics/page-view", payload),
-      summary: ({ days } = {}) => {
-        const qs = days ? `?days=${encodeURIComponent(days)}` : '';
-        return request("GET", `/analytics/summary${qs}`);
+      // v00.179 — refDays / routeDays 추가 (각 섹션 독립 코호트).
+      summary: ({ days, refDays, routeDays } = {}) => {
+        const params = new URLSearchParams();
+        if (days != null) params.set('days', String(days));
+        if (refDays != null) params.set('refDays', String(refDays));
+        if (routeDays != null) params.set('routeDays', String(routeDays));
+        const qs = params.toString();
+        return request("GET", `/analytics/summary${qs ? '?' + qs : ''}`);
       },
       userJourney: (userId) => request("GET", `/admin/user-journey/${userId}`),
     },

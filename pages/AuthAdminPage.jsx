@@ -856,6 +856,73 @@ const MiniBarChart = ({ series, labels, height = 120, color = 'var(--gold)', lab
   );
 };
 
+// v00.179 — 랭킹 가로 막대 리스트 공통 컴포넌트 (DRY). 동일 패턴 (ranked label / bar / count) 의 차트들이
+// 다른 곳에서 비슷하게 만들어지던 것 (유입 경로 / 인기 페이지) 을 한 컴포넌트로. 호버 시 다른 항목 dim.
+// items: [{ label, count, sub?, color? }]. unit: 단위 (예: '회', 'views'). headerLeft / headerRight: 헤더 슬롯.
+const RankedBarList = ({ items = [], unit = '', headerLeft, headerRight, emptyText = '데이터 없음', maxItems = 10, valueFormat }) => {
+  const [hoverIdx, setHoverIdx] = React.useState(null);
+  const visible = items.slice(0, maxItems);
+  const total = visible.reduce((s, it) => s + (Number(it.count) || 0), 0) || 1;
+  const fmt = valueFormat || ((c) => `${c}${unit}`);
+  return (
+    <article className="card" style={{marginBottom:24}}>
+      {(headerLeft || headerRight) && (
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, flexWrap:'wrap', gap:8}}>
+          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em'}}>{headerLeft}</div>
+          {headerRight && <div>{headerRight}</div>}
+        </div>
+      )}
+      {visible.length === 0 ? (
+        <p className="dim" style={{fontSize:13}}>{emptyText}</p>
+      ) : (
+        <div style={{display:'grid', gap:8}}>
+          {visible.map((it, i) => {
+            const pct = Math.round(((Number(it.count) || 0) / total) * 100);
+            const isHov = hoverIdx === i;
+            const isOther = hoverIdx !== null && hoverIdx !== i;
+            return (
+              <div key={it.id || it.label || i}
+                onMouseEnter={() => setHoverIdx(i)}
+                onMouseLeave={() => setHoverIdx((c) => c === i ? null : c)}
+                style={{
+                  display:'flex', alignItems:'center', gap:12,
+                  padding:'4px 6px',
+                  background: isHov ? 'rgba(245,213,72,0.06)' : 'transparent',
+                  opacity: isOther ? 0.4 : 1,
+                  transition:'opacity .12s, background .12s',
+                  cursor:'default',
+                }}
+                title={`${it.label || ''} · ${fmt(it.count)} · ${pct}%`}>
+                <span style={{
+                  minWidth: 28, textAlign:'right',
+                  fontFamily:'var(--font-mono)', fontSize:11,
+                  color:'var(--ink-3)', fontWeight:700,
+                }}>#{i+1}</span>
+                <div style={{
+                  minWidth: 180, fontSize: 13, color:'var(--ink)',
+                  overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                  flex:'0 1 240px',
+                }}>{it.label}</div>
+                <div style={{flex:1, height:8, background:'var(--bg-2)', overflow:'hidden', position:'relative'}}>
+                  <div style={{
+                    position:'absolute', left:0, top:0, bottom:0,
+                    width:`${pct}%`, background: it.color || 'var(--gold)',
+                    transition:'width .12s',
+                  }}/>
+                </div>
+                <div className="mono" style={{
+                  minWidth: 90, textAlign:'right', fontSize:12,
+                  color: isHov ? 'var(--ink)' : 'var(--gold-2)', fontWeight:600,
+                }}>{pct}% ({fmt(it.count)})</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </article>
+  );
+};
+
 // v00.173 — 차트 코호트 (기간) 선택 공통 UI. 사용자 보고 '모든 차트는 차트에서 코호트를 설정할수 있게'.
 // 옵션: 7일 / 14일 / 30일 / 90일. value=days (number).
 // v00.176 — '1일' (24시간 시간단위) 코호트 추가. value=1 일 때 차트가 시간 라벨 + 24개 막대.
@@ -949,15 +1016,18 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   const [summaryError, setSummaryError] = React.useState('');
 
   // v00.173 — 차트별 코호트(기간). 페이지뷰 차트 + 가입 차트 각각 독립.
+  // v00.179 — 유입 경로 / 인기 페이지 도 자체 cohort. 모두 단일 summary 호출 days 파라미터에 매핑.
   const [pvDays, setPvDays] = React.useState(14);
   const [signupDays, setSignupDays] = React.useState(14);
+  const [refDays, setRefDays] = React.useState(30);
+  const [routeDays, setRouteDays] = React.useState(7);
 
   const loadSummary = React.useCallback(async () => {
     setLoadingSummary(true);
     setSummaryError('');
     try {
-      // v00.173 — pvDays 를 워커에 전달 (워커가 ?days param 미지원이면 기본 14 사용).
-      const data = await window.BGNJ_API?.analytics?.summary?.({ days: pvDays });
+      // v00.179 — pvDays + refDays + routeDays 를 함께 전달. 한 번의 fetch 로 모든 차트 갱신.
+      const data = await window.BGNJ_API?.analytics?.summary?.({ days: pvDays, refDays, routeDays });
       if (data?.error) {
         setSummaryError(data.error);
         setSummary(data);
@@ -968,7 +1038,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
       setSummaryError(err?.message || '요청 실패');
       setSummary(null);
     } finally { setLoadingSummary(false); }
-  }, [pvDays]);
+  }, [pvDays, refDays, routeDays]);
 
   React.useEffect(() => { loadSummary(); }, [loadSummary]);
 
@@ -1117,54 +1187,37 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
         </article>
       </div>
 
-      {/* 4줄: 유입 경로 (서버 referrer 데이터) */}
-      <div className="admin-section__title">유입 경로 (최근 30일)</div>
-      <article className="card" style={{marginBottom:24}}>
-        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:14, display:'flex', justifyContent:'space-between'}}>
-          <span>TRAFFIC SOURCES</span>
-          <button type="button" className="btn btn-small" onClick={loadSummary} disabled={loadingSummary} style={{padding:'2px 8px', fontSize:10}}>
-            {loadingSummary ? '⏳' : '🔄 새로고침'}
-          </button>
-        </div>
-        {refs.length === 0 ? (
-          <p className="dim" style={{fontSize:13}}>
-            {summaryError ? '서버 분석 데이터 미수신.' : '아직 referrer 데이터가 충분하지 않습니다. 사용자 방문이 누적되면 자동으로 표시됩니다.'}
-          </p>
-        ) : (
-          <div style={{display:'grid', gap:10}}>
-            {refs.map((r, i) => {
-              const pct = Math.round((r.count / refTotal) * 100);
-              const label = r.host === 'self' ? '직접 방문 (사이트 내)' : r.host;
-              return (
-                <div key={i} style={{display:'flex', alignItems:'center', gap:12}}>
-                  <div style={{minWidth:200, fontSize:13, color:'var(--ink)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}} title={label}>{label}</div>
-                  <div style={{flex:1, height:8, background:'var(--bg-2)', borderRadius:4, overflow:'hidden', position:'relative'}}>
-                    <div style={{position:'absolute', left:0, top:0, bottom:0, width:`${pct}%`, background:'var(--gold)', borderRadius:4}}/>
-                  </div>
-                  <div className="mono" style={{minWidth:54, textAlign:'right', fontSize:12, color:'var(--gold-2)', fontWeight:600}}>{pct}% ({r.count})</div>
-                </div>
-              );
-            })}
+      {/* 4줄: 유입 경로 — v00.179 RankedBarList 공통 컴포넌트 + cohort + 호버. */}
+      <div className="admin-section__title">유입 경로 (최근 {refDays}일)</div>
+      <RankedBarList
+        items={refs.map((r) => ({
+          label: r.host === 'self' ? '직접 방문 (사이트 내)' : r.host,
+          count: r.count,
+        }))}
+        unit="회"
+        emptyText={summaryError ? '서버 분석 데이터 미수신.' : '아직 referrer 데이터가 충분하지 않습니다. 사용자 방문이 누적되면 자동 표시.'}
+        headerLeft="TRAFFIC SOURCES"
+        headerRight={
+          <div style={{display:'flex', gap:6, alignItems:'center'}}>
+            <CohortSelector value={refDays} onChange={setRefDays}/>
+            <button type="button" className="btn btn-small" onClick={loadSummary} disabled={loadingSummary} style={{padding:'4px 10px', fontSize:11}}>
+              {loadingSummary ? '⏳' : '🔄'}
+            </button>
           </div>
-        )}
-      </article>
+        }/>
 
-      {/* 인기 라우트 (top routes) */}
-      {Array.isArray(pv.topRoutes) && pv.topRoutes.length > 0 && (
-        <>
-          <div className="admin-section__title">인기 페이지 (최근 7일)</div>
-          <article className="card" style={{marginBottom:24}}>
-            <ol style={{listStyle:'none', padding:0, margin:0, display:'grid', gap:8}}>
-              {pv.topRoutes.map((r, i) => (
-                <li key={i} style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:12, padding:'6px 0', borderBottom:'1px solid var(--line)'}}>
-                  <span><strong className="mono gold" style={{fontSize:11, marginRight:8}}>#{i+1}</strong>/{r.route}</span>
-                  <span className="mono" style={{fontSize:12, color:'var(--ink-2)'}}>{r.count} views</span>
-                </li>
-              ))}
-            </ol>
-          </article>
-        </>
-      )}
+      {/* 인기 라우트 — v00.179 RankedBarList. */}
+      <div className="admin-section__title">인기 페이지 (최근 {routeDays}일)</div>
+      <RankedBarList
+        items={(pv.topRoutes || []).map((r) => ({
+          label: r.route,
+          count: r.count,
+          color: 'var(--secondary, #1F7A8C)',
+        }))}
+        valueFormat={(c) => `${c} views`}
+        emptyText={summaryError ? '서버 분석 데이터 미수신.' : '데이터가 누적되면 자동 표시.'}
+        headerLeft="POPULAR PAGES"
+        headerRight={<CohortSelector value={routeDays} onChange={setRouteDays}/>}/>
 
       {/* 5줄: 기존 latest community + ops snapshot */}
       <div className="grid grid-2">

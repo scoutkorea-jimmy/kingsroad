@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.179.000",
+    date: "2026-05-05",
+    datetime: "2026-05-05T22:23:02+09:00",
+    summary: "📊 RankedBarList 공통 컴포넌트(DRY) + 유입경로/인기페이지 hover+cohort",
+    details: [
+      "📊 [RankedBarList 공통 컴포넌트] 유입 경로 + 인기 페이지가 동일한 ranked horizontal bar 패턴이라 별도 작성된 것을 1 컴포넌트로 통합. items=[{label, count, color?}], unit, valueFormat, headerLeft/Right 슬롯. 호버 시 다른 항목 opacity 0.4 dim + 호버 항목 강조.",
+      "📊 [유입 경로 cohort] 별도 refDays state. 7/14/30/90일 토글 + 🔄 새로고침 버튼.",
+      "📊 [인기 페이지 cohort] 별도 routeDays state. 7/14/30/90일 토글.",
+      "📊 [워커 ?refDays= ?routeDays= 지원] handleAnalyticsSummary 가 두 파라미터 추가. 미지정 시 30/7 기본. ★ 워커 deploy 필요.",
+      "📊 [API 헬퍼 확장] BGNJ_API.analytics.summary({ days, refDays, routeDays }). 한 호출로 3 코호트 모두 갱신.",
+      "🛠 [DRY 사전 정리] 사용자 코드 리뷰 두 축 중 1번 (동일 기능 재활용) 의 조기 적용 — 이 컴포넌트 패턴이 향후 다른 ranked-list 패널 (회원 정렬, 책 매출 순위 등) 에서도 재사용 가능.",
+      "ℹ ★ 워커 wrangler deploy 필요.",
+      "📦 cache-buster — `?v=00.179.000`.",
+    ],
+    context: "코드 리뷰 사전 정리 cycle 2/4 (D항). DRY 원칙 사전 적용 — 같은 visual pattern 을 한 컴포넌트로 묶어 hover+cohort 일관 보장. v00.180 게시글 패널 추출, v00.181 localStorage audit 후 전체 코드 리뷰.",
+  },
+  {
     version: "00.178.000",
     date: "2026-05-05",
     datetime: "2026-05-05T22:19:50+09:00",
