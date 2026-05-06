@@ -529,13 +529,18 @@ const App = () => {
     window.scrollTo(0, 0);
   };
   React.useEffect(() => {
+    const selfOrigin = window.location.origin;
     const onMsg = (e) => {
+      if (e.origin !== selfOrigin) return;
       const d = e.data || {};
       if (d.type === "__activate_edit_mode") setEditMode(true);
       if (d.type === "__deactivate_edit_mode") setEditMode(false);
     };
     window.addEventListener("message", onMsg);
-    window.parent.postMessage({ type: "__edit_mode_available" }, "*");
+    try {
+      window.parent.postMessage({ type: "__edit_mode_available" }, selfOrigin);
+    } catch (e) {
+    }
     return () => window.removeEventListener("message", onMsg);
   }, []);
   React.useEffect(() => {

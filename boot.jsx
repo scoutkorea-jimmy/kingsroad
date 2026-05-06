@@ -498,14 +498,18 @@ const App = () => {
   };
 
   // Edit-mode protocol
+  // v00.203 — postMessage origin 검증. 동일 출처 메시지만 수용해 외부 frame 의 상태 토글 차단.
+  // 송신측도 wildcard 대신 자기 origin 으로 좁힘 (메시지 자체는 비민감하나 best practice).
   React.useEffect(() => {
+    const selfOrigin = window.location.origin;
     const onMsg = (e) => {
+      if (e.origin !== selfOrigin) return;
       const d = e.data || {};
       if (d.type === '__activate_edit_mode') setEditMode(true);
       if (d.type === '__deactivate_edit_mode') setEditMode(false);
     };
     window.addEventListener('message', onMsg);
-    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    try { window.parent.postMessage({ type: '__edit_mode_available' }, selfOrigin); } catch {}
     return () => window.removeEventListener('message', onMsg);
   }, []);
 
