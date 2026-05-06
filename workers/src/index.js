@@ -415,11 +415,21 @@ const handlePostsList = async (req, env) => {
   const url = new URL(req.url);
   const category = url.searchParams.get("category");
   const q = (url.searchParams.get("q") || "").trim();
+  // v00.201 — 본문 검색 옵션 (P1 #4). includeBody=1 이면 body LIKE 도 OR 결합.
+  const includeBody = url.searchParams.get("includeBody") === "1";
   const limit = Math.min(Number(url.searchParams.get("limit") || 50), 200);
   const args = [];
   let where = "1=1";
   if (category) { where += " AND category_id = ?"; args.push(category); }
-  if (q) { where += " AND (title LIKE ? OR author LIKE ?)"; args.push(`%${q}%`, `%${q}%`); }
+  if (q) {
+    if (includeBody) {
+      where += " AND (title LIKE ? OR author LIKE ? OR body LIKE ?)";
+      args.push(`%${q}%`, `%${q}%`, `%${q}%`);
+    } else {
+      where += " AND (title LIKE ? OR author LIKE ?)";
+      args.push(`%${q}%`, `%${q}%`);
+    }
+  }
   // v00.170 — body 컬럼 포함. 사용자 보고: '글 작성 후 본문 사라짐'. 클라이언트가 list 캐시에서 detail 을 읽어 본문이 빈 상태로 표시되던 버그.
   const sql = `SELECT id, category_id, category, prefix, title, body, author_id, author, views, replies, created_at FROM posts WHERE ${where} ORDER BY created_at DESC LIMIT ?`;
   const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
@@ -1317,6 +1327,34 @@ const handleMePatch = async (req, env) => {
   return { user: fresh };
 };
 
+// v00.201 — 본인 비밀번호 변경. 현재 비번 검증 후 새 비번 hash 저장.
+// P1 #3 사용자 요청 '마이페이지 프로필/비번 변경 UI'.
+const handleMePassword = async (req, env) => {
+  const user = await requireUser(req, env);
+  const body = await req.json().catch(() => ({}));
+  const currentPassword = String(body.currentPassword || "");
+  const newPassword = String(body.newPassword || "");
+  if (newPassword.length < 6) {
+    throw new HttpError(400, "새 비밀번호는 6자 이상이어야 합니다.");
+  }
+  if (currentPassword === newPassword) {
+    throw new HttpError(400, "현재 비밀번호와 다른 비밀번호를 입력해 주세요.");
+  }
+  const row = await env.DB.prepare(
+    "SELECT password_hash, password_salt FROM users WHERE id = ?"
+  ).bind(user.id).first();
+  if (!row) throw new HttpError(404, "사용자를 찾을 수 없습니다.");
+  const ok = await verifyPassword(currentPassword, row.password_hash, row.password_salt);
+  if (!ok) throw new HttpError(401, "현재 비밀번호가 일치하지 않습니다.");
+  const { hash, salt } = await hashPassword(newPassword);
+  await env.DB.prepare(
+    "UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?"
+  ).bind(hash, salt, user.id).run();
+  // 감사 로그.
+  await auditWrite(env, user.email || user.id, "auth.password_change", user.id, null, clientIp(req));
+  return { ok: true };
+};
+
 // 댓글 삭제 — 작성자 본인 또는 관리자.
 const handleCommentDelete = async (req, env, postId, commentId) => {
   const user = await requireUser(req, env);
@@ -2053,8 +2091,20 @@ const handleColumnsList = async (req, env) => {
   const url = new URL(req.url);
   const includeAll = url.searchParams.get("includeAll") === "1";
   const status = includeAll ? null : 'published';
-  const where = status ? "status = ?" : "1=1";
+  // v00.201 — q + includeBody 검색 옵션 (P1 #4). 칼럼 본문은 body_text 또는 body_json 안에 .text 필드.
+  const q = (url.searchParams.get("q") || "").trim();
+  const includeBody = url.searchParams.get("includeBody") === "1";
+  let where = status ? "status = ?" : "1=1";
   const args = status ? [status] : [];
+  if (q) {
+    if (includeBody) {
+      where += " AND (title LIKE ? OR excerpt LIKE ? OR body LIKE ?)";
+      args.push(`%${q}%`, `%${q}%`, `%${q}%`);
+    } else {
+      where += " AND (title LIKE ? OR excerpt LIKE ?)";
+      args.push(`%${q}%`, `%${q}%`);
+    }
+  }
   const { results } = await env.DB.prepare(
     `SELECT * FROM user_columns WHERE ${where} ORDER BY created_at DESC LIMIT 200`
   ).bind(...args).all();
@@ -2196,6 +2246,8 @@ const route = async (req, env) => {
   }
   if (req.method === "GET" && p === "/api/auth/me") return json(await handleAuthMe(req, env));
   if (req.method === "PATCH" && p === "/api/me") return json(await handleMePatch(req, env));
+  // v00.201 — 본인 비밀번호 변경 (P1 #3).
+  if (req.method === "PATCH" && p === "/api/me/password") return json(await handleMePassword(req, env));
 
   if (req.method === "GET" && p === "/api/posts") return json(await handlePostsList(req, env));
   if (req.method === "POST" && p === "/api/posts") return json(await handlePostsCreate(req, env), { status: 201 });

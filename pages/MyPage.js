@@ -360,8 +360,8 @@ const MyPage = ({ go, user, cart }) => {
     /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { className: "pill", style: { fontSize: 9 } }, post.category), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, post.date)),
     /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, lineHeight: 1.5, marginBottom: 4 } }, post.title),
     /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uB313\uAE00 ", post.replies, "\uAC1C \xB7 \uC870\uD68C ", post.views, "\uD68C")
-  ))))), tab === "profile" && /* @__PURE__ */ React.createElement(ProfileEditor, { user, onSaved: () => {
-  } })));
+  ))))), tab === "profile" && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 18 } }, /* @__PURE__ */ React.createElement(ProfileEditor, { user, onSaved: () => {
+  } }), /* @__PURE__ */ React.createElement(PasswordChangeForm, null))));
 };
 const ProfileEditor = ({ user, onSaved }) => {
   var _a, _b, _c, _d, _e;
@@ -402,7 +402,7 @@ const ProfileEditor = ({ user, onSaved }) => {
       setSaving(false);
     }
   };
-  return /* @__PURE__ */ React.createElement("article", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 } }, "PROFILE EDIT"), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 22, marginBottom: 16 } }, "\uAC1C\uC778\uC815\uBCF4 \uC218\uC815"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, "\uC774\uB984\uACFC \uD504\uB85C\uD544 \uC815\uBCF4(\uC804\uD654\uBC88\uD638 / \uC0DD\uB144\uC6D4\uC77C / \uC8FC\uC18C / \uAD00\uC2EC \uBD84\uC57C)\uB97C \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uC774\uBA54\uC77C\xB7\uBE44\uBC00\uBC88\uD638 \uBCC0\uACBD\uC740 \uBCC4\uB3C4 \uD750\uB984\uC73C\uB85C \uC81C\uACF5\uB429\uB2C8\uB2E4 (\uB2E4\uC74C \uC0AC\uC774\uD074)."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "profile-name" }, "\uC774\uB984"), /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("article", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 } }, "PROFILE EDIT"), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 22, marginBottom: 16 } }, "\uAC1C\uC778\uC815\uBCF4 \uC218\uC815"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, "\uC774\uB984\uACFC \uD504\uB85C\uD544 \uC815\uBCF4(\uC804\uD654\uBC88\uD638 / \uC0DD\uB144\uC6D4\uC77C / \uC8FC\uC18C / \uAD00\uC2EC \uBD84\uC57C)\uB97C \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uBE44\uBC00\uBC88\uD638 \uBCC0\uACBD\uC740 \uC544\uB798 \uCE74\uB4DC\uC5D0\uC11C \uAC00\uB2A5\uD558\uBA70, \uC774\uBA54\uC77C \uBCC0\uACBD\uC740 \uC6B4\uC601\uC790 \uBB38\uC758 (contact@bgnj.net)."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "profile-name" }, "\uC774\uB984"), /* @__PURE__ */ React.createElement(
     "input",
     {
       id: "profile-name",
@@ -466,6 +466,80 @@ const ProfileEditor = ({ user, onSaved }) => {
     background: msg.kind === "ok" ? "rgba(245,213,72,0.06)" : "rgba(194,74,61,0.08)",
     color: msg.kind === "ok" ? "var(--ink)" : "var(--danger)"
   } }, msg.text), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: saving || !name.trim() }, saving ? "\uC800\uC7A5 \uC911\u2026" : "\uC800\uC7A5"))));
+};
+const PasswordChangeForm = () => {
+  const [currentPassword, setCurrentPassword] = React.useState("");
+  const [newPassword, setNewPassword] = React.useState("");
+  const [confirm2, setConfirm] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [msg, setMsg] = React.useState(null);
+  const valid = currentPassword.length > 0 && newPassword.length >= 6 && newPassword === confirm2 && currentPassword !== newPassword;
+  const submit = async (e) => {
+    var _a, _b;
+    (_a = e == null ? void 0 : e.preventDefault) == null ? void 0 : _a.call(e);
+    if (!valid || saving) return;
+    setMsg(null);
+    setSaving(true);
+    try {
+      const r = await window.BGNJ_API.changePassword({ currentPassword, newPassword });
+      if (r == null ? void 0 : r.ok) {
+        setMsg({ kind: "ok", text: "\uBE44\uBC00\uBC88\uD638\uAC00 \uBCC0\uACBD\uB418\uC5C8\uC2B5\uB2C8\uB2E4." });
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirm("");
+      } else {
+        setMsg({ kind: "err", text: (r == null ? void 0 : r.message) || "\uBCC0\uACBD \uC2E4\uD328" });
+      }
+    } catch (err) {
+      setMsg({ kind: "err", text: ((_b = err == null ? void 0 : err.body) == null ? void 0 : _b.error) || (err == null ? void 0 : err.message) || "\uBCC0\uACBD \uC2E4\uD328" });
+    } finally {
+      setSaving(false);
+    }
+  };
+  return /* @__PURE__ */ React.createElement("article", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 } }, "PASSWORD CHANGE"), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 22, marginBottom: 16 } }, "\uBE44\uBC00\uBC88\uD638 \uBCC0\uACBD"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, "\uD604\uC7AC \uBE44\uBC00\uBC88\uD638 \uD655\uC778 \uD6C4 \uC0C8 \uBE44\uBC00\uBC88\uD638\uB85C \uBCC0\uACBD\uD569\uB2C8\uB2E4. \uC0C8 \uBE44\uBC00\uBC88\uD638\uB294 6\uC790 \uC774\uC0C1 \uAD8C\uC7A5."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 14 }, autoComplete: "off" }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "pw-current" }, "\uD604\uC7AC \uBE44\uBC00\uBC88\uD638"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      id: "pw-current",
+      type: "password",
+      className: "field-input",
+      autoComplete: "current-password",
+      value: currentPassword,
+      onChange: (e) => setCurrentPassword(e.target.value),
+      required: true
+    }
+  )), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "pw-new" }, "\uC0C8 \uBE44\uBC00\uBC88\uD638 (6\uC790 \uC774\uC0C1)"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      id: "pw-new",
+      type: "password",
+      className: "field-input",
+      autoComplete: "new-password",
+      value: newPassword,
+      onChange: (e) => setNewPassword(e.target.value),
+      minLength: 6,
+      required: true
+    }
+  )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "pw-confirm" }, "\uC0C8 \uBE44\uBC00\uBC88\uD638 \uD655\uC778"), /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      id: "pw-confirm",
+      type: "password",
+      className: "field-input",
+      autoComplete: "new-password",
+      value: confirm2,
+      onChange: (e) => setConfirm(e.target.value),
+      minLength: 6,
+      required: true,
+      style: { borderColor: confirm2 && newPassword !== confirm2 ? "var(--danger)" : void 0 }
+    }
+  ), confirm2 && newPassword !== confirm2 && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: "var(--danger)", marginTop: 4 } }, "\uBE44\uBC00\uBC88\uD638\uAC00 \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."))), msg && /* @__PURE__ */ React.createElement("div", { role: "status", style: {
+    padding: "10px 14px",
+    fontSize: 13,
+    lineHeight: 1.6,
+    border: "1px solid " + (msg.kind === "ok" ? "var(--gold-dim)" : "var(--danger)"),
+    background: msg.kind === "ok" ? "rgba(245,213,72,0.06)" : "rgba(194,74,61,0.08)",
+    color: msg.kind === "ok" ? "var(--ink)" : "var(--danger)"
+  } }, msg.text), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: !valid || saving }, saving ? "\uBCC0\uACBD \uC911\u2026" : "\uBE44\uBC00\uBC88\uD638 \uBCC0\uACBD"))));
 };
 Object.assign(window, { MyPage });
 

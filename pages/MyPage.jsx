@@ -509,8 +509,12 @@ const MyPage = ({ go, user, cart }) => {
         )}
 
         {/* v00.131 — 프로필 수정 탭 (사용자 요청 '내 개인정보를 수정할수도 있게'). */}
+        {/* v00.201 — 비밀번호 변경 카드 추가 (P1 #3). */}
         {tab === 'profile' && (
-          <ProfileEditor user={user} onSaved={() => { /* refreshSession 트리거됨, App rerender. */ }}/>
+          <div style={{display:'grid', gap:18}}>
+            <ProfileEditor user={user} onSaved={() => { /* refreshSession 트리거됨, App rerender. */ }}/>
+            <PasswordChangeForm/>
+          </div>
         )}
 
       </div>
@@ -564,7 +568,7 @@ const ProfileEditor = ({ user, onSaved }) => {
       <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 16 }}>개인정보 수정</h3>
       <p className="dim" style={{ fontSize: 12, lineHeight: 1.7, marginBottom: 18 }}>
         이름과 프로필 정보(전화번호 / 생년월일 / 주소 / 관심 분야)를 변경할 수 있습니다.
-        이메일·비밀번호 변경은 별도 흐름으로 제공됩니다 (다음 사이클).
+        비밀번호 변경은 아래 카드에서 가능하며, 이메일 변경은 운영자 문의 (contact@bgnj.net).
       </p>
       <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
         <div className="field" style={{ margin: 0 }}>
@@ -612,6 +616,89 @@ const ProfileEditor = ({ user, onSaved }) => {
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8 }}>
           <button type="submit" className="btn btn-gold" disabled={saving || !name.trim()}>
             {saving ? '저장 중…' : '저장'}
+          </button>
+        </div>
+      </form>
+    </article>
+  );
+};
+
+// v00.201 — 비밀번호 변경 폼. BGNJ_API.changePassword → 워커 PATCH /api/me/password.
+// 사용자 요청 '마이페이지 프로필/비밀번호 변경 UI' (P1 #3).
+const PasswordChangeForm = () => {
+  const [currentPassword, setCurrentPassword] = React.useState('');
+  const [newPassword, setNewPassword] = React.useState('');
+  const [confirm, setConfirm] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const [msg, setMsg] = React.useState(null);
+
+  const valid = currentPassword.length > 0 && newPassword.length >= 6 && newPassword === confirm && currentPassword !== newPassword;
+
+  const submit = async (e) => {
+    e?.preventDefault?.();
+    if (!valid || saving) return;
+    setMsg(null);
+    setSaving(true);
+    try {
+      const r = await window.BGNJ_API.changePassword({ currentPassword, newPassword });
+      if (r?.ok) {
+        setMsg({ kind: 'ok', text: '비밀번호가 변경되었습니다.' });
+        setCurrentPassword(''); setNewPassword(''); setConfirm('');
+      } else {
+        setMsg({ kind: 'err', text: r?.message || '변경 실패' });
+      }
+    } catch (err) {
+      setMsg({ kind: 'err', text: err?.body?.error || err?.message || '변경 실패' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <article className="card">
+      <div className="mono gold" style={{ fontSize: 10, letterSpacing: '0.22em', marginBottom: 10 }}>PASSWORD CHANGE</div>
+      <h3 className="ko-serif" style={{ fontSize: 22, marginBottom: 16 }}>비밀번호 변경</h3>
+      <p className="dim" style={{ fontSize: 12, lineHeight: 1.7, marginBottom: 18 }}>
+        현재 비밀번호 확인 후 새 비밀번호로 변경합니다. 새 비밀번호는 6자 이상 권장.
+      </p>
+      <form onSubmit={submit} style={{ display: 'grid', gap: 14 }} autoComplete="off">
+        <div className="field" style={{ margin: 0 }}>
+          <label className="field-label" htmlFor="pw-current">현재 비밀번호</label>
+          <input id="pw-current" type="password" className="field-input"
+            autoComplete="current-password"
+            value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required/>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field-label" htmlFor="pw-new">새 비밀번호 (6자 이상)</label>
+            <input id="pw-new" type="password" className="field-input"
+              autoComplete="new-password"
+              value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={6} required/>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label className="field-label" htmlFor="pw-confirm">새 비밀번호 확인</label>
+            <input id="pw-confirm" type="password" className="field-input"
+              autoComplete="new-password"
+              value={confirm} onChange={(e) => setConfirm(e.target.value)} minLength={6} required
+              style={{ borderColor: confirm && newPassword !== confirm ? 'var(--danger)' : undefined }}/>
+            {confirm && newPassword !== confirm && (
+              <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>비밀번호가 일치하지 않습니다.</div>
+            )}
+          </div>
+        </div>
+        {msg && (
+          <div role="status" style={{
+            padding: '10px 14px', fontSize: 13, lineHeight: 1.6,
+            border: '1px solid ' + (msg.kind === 'ok' ? 'var(--gold-dim)' : 'var(--danger)'),
+            background: msg.kind === 'ok' ? 'rgba(245,213,72,0.06)' : 'rgba(194,74,61,0.08)',
+            color: msg.kind === 'ok' ? 'var(--ink)' : 'var(--danger)',
+          }}>
+            {msg.text}
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 8 }}>
+          <button type="submit" className="btn btn-gold" disabled={!valid || saving}>
+            {saving ? '변경 중…' : '비밀번호 변경'}
           </button>
         </div>
       </form>

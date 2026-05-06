@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.201.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T17:00:00+09:00",
+    summary: "🔐 P1 묶음 — 비밀번호 변경 + 본문 검색 옵션 (P1 #5 답글 트리는 이미 구현됨 확인)",
+    details: [
+      "🔐 [P1 #3 비밀번호 변경 UI] 사용자 우선순위 그대로 진행. 워커 PATCH /api/me/password 신설 (handleMePassword) — 현재 비번 verify → 새 비번 hash → users 업데이트 → audit_log auth.password_change. 마이페이지 [프로필 수정] 탭에 PasswordChangeForm 카드 추가 (현재/새/확인 + 6자 이상 + 일치 검사). BGNJ_API.changePassword 헬퍼 추가.",
+      "✅ [P1 #5 답글 트리 — 이미 구현됨] 확인 결과 D1.comments.parent_id 컬럼 + 워커 handleCommentsCreate 의 parent_id 입력 + 클라 CommentTree 의 들여쓰기 + 답글 버튼 + 깊이 캡 + 펼치기/접기까지 v00.069 시점에 풀 구현. 기능정의서 missing 항목이 stale — 다음 사이클 갱신 시 수정 예정.",
+      "🔍 [P1 #4 본문 검색] 클라이언트는 이미 BGNJ_COMMUNITY 의 filtered useMemo 가 body.text 포함 검색 (line 585). 워커 측에 includeBody=1 옵션 추가 — handlePostsList / handleColumnsList 모두 q + includeBody 시 body LIKE OR 결합. BGNJ_API.posts.list / columns.list 에 includeBody 파라미터 노출.",
+      "ℹ ★ 워커 wrangler deploy 필요 (PATCH /api/me/password + posts/columns 본문 검색 옵션).",
+      "📦 cache-buster — `?v=00.201.000`.",
+    ],
+    context: "사용자 우선순위 그대로 진행 — P1 #3 (프로필/비번) + P1 #5 (답글 트리, 이미 구현됨) + P1 #4 (본문 검색) 한 사이클에서 정리. P1 #6 작성자 프로필 페이지는 신규 라우트 + 워커 endpoint + 새 컴포넌트로 분량 커서 v00.202 로 분리.",
+  },
+  {
     version: "00.200.000",
     date: "2026-05-06",
     datetime: "2026-05-06T16:30:00+09:00",

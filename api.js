@@ -95,14 +95,19 @@
     logout: () => request("POST", "/auth/logout"),
     me: () => request("GET", "/auth/me"),
     updateProfile: ({ name, profile }) => request("PATCH", "/me", { name, profile }),
+    // v00.201 — 본인 비밀번호 변경 (P1 #3).
+    changePassword: ({ currentPassword, newPassword }) =>
+      request("PATCH", "/me/password", { currentPassword, newPassword }),
 
     // ── 게시글 ──
     posts: {
-      list: ({ category, q, limit } = {}) => {
+      // v00.201 — includeBody 옵션 (P1 #4 본문 검색).
+      list: ({ category, q, limit, includeBody } = {}) => {
         const params = new URLSearchParams();
         if (category) params.set("category", category);
         if (q) params.set("q", q);
         if (limit) params.set("limit", String(limit));
+        if (includeBody) params.set("includeBody", "1");
         const qs = params.toString();
         return request("GET", `/posts${qs ? "?" + qs : ""}`);
       },
@@ -244,7 +249,15 @@
 
     // ── 사이트 콘텐츠 / FAQ / 약관 / 입금 계좌 / 카테고리 / 등급 ──
     columns: {
-      list: ({ includeAll } = {}) => request("GET", `/columns${includeAll ? "?includeAll=1" : ""}`),
+      // v00.201 — q + includeBody 옵션 (P1 #4 본문 검색).
+      list: ({ includeAll, q, includeBody } = {}) => {
+        const params = new URLSearchParams();
+        if (includeAll) params.set("includeAll", "1");
+        if (q) params.set("q", q);
+        if (includeBody) params.set("includeBody", "1");
+        const qs = params.toString();
+        return request("GET", `/columns${qs ? "?" + qs : ""}`);
+      },
       get: (id) => request("GET", `/columns/${id}`),
       create: (payload) => request("POST", "/columns", payload),
       update: (id, patch) => request("PATCH", `/columns/${id}`, patch),
