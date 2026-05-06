@@ -644,7 +644,8 @@ const App = () => {
           return <_AdminLoadingFallback label={route === 'signup' ? '회원가입' : '로그인'} error={adminLoadError}
             onRetry={() => { setAdminLoadError(null); setAdminLoadAttempt((v) => v + 1); }}/>;
         }
-        const C = pick('LoginPage','로그인'); return <C go={go} setUser={setUser}/>;
+        const C = pick('LoginPage','로그인');
+        return <C go={go} setUser={setUser} initialMode={route === 'signup' ? 'signup' : 'login'}/>;
       }
       case "admin":     {
         if (!user?.isAdmin) { const D = pick('AdminDenied','관리'); return <D go={go} user={user}/>; }

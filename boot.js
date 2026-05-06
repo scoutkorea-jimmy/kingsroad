@@ -737,7 +737,7 @@ const App = () => {
           );
         }
         const C = pick("LoginPage", "\uB85C\uADF8\uC778");
-        return /* @__PURE__ */ React.createElement(C, { go, setUser });
+        return /* @__PURE__ */ React.createElement(C, { go, setUser, initialMode: route === "signup" ? "signup" : "login" });
       }
       case "admin": {
         if (!(user == null ? void 0 : user.isAdmin)) {

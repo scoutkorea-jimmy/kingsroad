@@ -91,8 +91,9 @@ const INTEREST_OPTIONS = [
   { value: 'other',        label: '기타 (직접 입력)' },
 ];
 
-const LoginPage = ({ go, setUser }) => {
-  const [mode, setMode] = React.useState("login"); // login | signup
+// v00.213 — initialMode prop 추가. /signup URL 직접 진입 시 회원가입 탭으로 시작.
+const LoginPage = ({ go, setUser, initialMode = "login" }) => {
+  const [mode, setMode] = React.useState(initialMode); // login | signup
   const [form, setForm] = React.useState({
     name: "", email: "", password: "", password2: "",
     birthdate: "", phone: "", zip: "", addr1: "", addr2: "",

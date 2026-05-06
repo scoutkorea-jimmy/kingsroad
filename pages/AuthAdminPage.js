@@ -100,8 +100,8 @@ const INTEREST_OPTIONS = [
   { value: "art", label: "\uBBF8\uC220\uC0AC" },
   { value: "other", label: "\uAE30\uD0C0 (\uC9C1\uC811 \uC785\uB825)" }
 ];
-const LoginPage = ({ go, setUser }) => {
-  const [mode, setMode] = React.useState("login");
+const LoginPage = ({ go, setUser, initialMode = "login" }) => {
+  const [mode, setMode] = React.useState(initialMode);
   const [form, setForm] = React.useState({
     name: "",
     email: "",
