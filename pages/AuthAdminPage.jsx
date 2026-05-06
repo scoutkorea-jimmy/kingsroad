@@ -6267,9 +6267,10 @@ const AdminPage = ({ go }) => {
                           style={{
                             width:'100%', textAlign:'left',
                             // 들여쓰기: 24 → 44 (가이드 라인보다 12px 안쪽)
-                            padding:'10px 24px 10px 44px',
-                            fontSize:14,
-                            fontWeight: active ? 700 : 500,
+                            padding:'9px 24px 9px 44px',
+                            // v00.217 — 한글 14/medium 이 그룹 헤더보다 굵어 위계 역전 → 13/regular 로 낮춤.
+                            fontSize:13,
+                            fontWeight: active ? 700 : 400,
                             background: active ? 'rgba(245,213,72,0.14)' : 'transparent',
                             color: active ? 'var(--secondary)' : 'var(--ink-2)',
                             border:'none',
