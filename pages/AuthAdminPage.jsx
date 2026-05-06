@@ -858,13 +858,15 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   const [signupDays, setSignupDays] = React.useState(14);
   const [refDays, setRefDays] = React.useState(30);
   const [routeDays, setRouteDays] = React.useState(7);
+  const [heatmapDays, setHeatmapDays] = React.useState(30);
 
   const loadSummary = React.useCallback(async () => {
     setLoadingSummary(true);
     setSummaryError('');
     try {
       // v00.179 — pvDays + refDays + routeDays 를 함께 전달. 한 번의 fetch 로 모든 차트 갱신.
-      const data = await window.BGNJ_API?.analytics?.summary?.({ days: pvDays, refDays, routeDays });
+      // v00.194 — heatmapDays 포함.
+      const data = await window.BGNJ_API?.analytics?.summary?.({ days: pvDays, refDays, routeDays, heatmapDays });
       if (data?.error) {
         setSummaryError(data.error);
         setSummary(data);
@@ -875,18 +877,21 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
       setSummaryError(err?.message || '요청 실패');
       setSummary(null);
     } finally { setLoadingSummary(false); }
-  }, [pvDays, refDays, routeDays]);
+  }, [pvDays, refDays, routeDays, heatmapDays]);
 
   React.useEffect(() => { loadSummary(); }, [loadSummary]);
 
   // 가입 추이 — 클라이언트 derived (정확한 값).
-  const dailySignups = _countSince(allUsers, 'createdAt', 1);
-  const weeklySignups = _countSince(allUsers, 'createdAt', 7);
-  const monthlySignups = _countSince(allUsers, 'createdAt', 30);
+  // v00.194 — 사용자 보고 '회원가입추이도 정상작동 안하는듯'.
+  // root cause: BGNJ_AUTH._usersCache 매퍼 (data.js:1248) 가 `joinedAt` 으로 노출하지만
+  // 차트 코드는 `createdAt` 으로 읽어 모든 카운트가 0. 타 호출 측은 모두 joinedAt 사용 → 차트 측 정정.
+  const dailySignups = _countSince(allUsers, 'joinedAt', 1);
+  const weeklySignups = _countSince(allUsers, 'joinedAt', 7);
+  const monthlySignups = _countSince(allUsers, 'joinedAt', 30);
   // v00.173 — signupDays 코호트로 series 길이 동적. v00.176 — 1일이면 시간 단위.
   const signupSeries = signupDays === 1
-    ? _hourlySeries(allUsers, 'createdAt', 24)
-    : _dailySeries(allUsers, 'createdAt', signupDays);
+    ? _hourlySeries(allUsers, 'joinedAt', 24)
+    : _dailySeries(allUsers, 'joinedAt', signupDays);
 
   // 페이지뷰 — 서버 값 우선, 없으면 게시글 작성 횟수 폴백.
   const pv = summary || {};
@@ -1023,6 +1028,18 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
             {signupDays === 1 ? '최근 24시간 시간별 신규 가입자.' : `최근 ${signupDays}일간 일별 신규 가입자 수.`} 막대에 호버하면 정확한 값.
           </p>
         </article>
+      </div>
+
+      {/* v00.194 — 사용자 요청 '대시보드에 접속 시간에 따른 히트맵'. KST 기준 24h × 7요일. */}
+      <div style={{marginBottom:18}}>
+        <window.HeatmapGrid
+          data={pv.heatmap || []}
+          days={pv.heatmapDays || heatmapDays}
+          label={`🗓 접속 시간 히트맵 (최근 ${heatmapDays}일 · KST · 요일×시간)`}
+          headerRight={<CohortSelector value={heatmapDays} onChange={setHeatmapDays}/>}/>
+        <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
+          {summaryError ? '서버 분석 데이터 없음 — schema-v9 + 워커 deploy 필요.' : '셀에 호버하면 정확한 페이지뷰 / 세션 수 확인. 색이 진할수록 트래픽이 몰린 시간대.'}
+        </p>
       </div>
 
       {/* 4줄: 유입 경로 — v00.179 RankedBarList 공통 컴포넌트 + cohort + 호버. */}
@@ -5671,9 +5688,10 @@ const AdminPage = ({ go }) => {
     const adminCount = allUsers.filter((u) => u.isAdmin).length;
     const superAdminCount = allUsers.filter((u) => u.isSuperAdmin).length;
     const userCount = allUsers.length - adminCount;
-    const userToday = _countSince(allUsers, 'createdAt', 1);
-    const userWeek = _countSince(allUsers, 'createdAt', 7);
-    const userMonth = _countSince(allUsers, 'createdAt', 30);
+    // v00.194 — 같은 'createdAt' vs 'joinedAt' 버그 (위 DashboardPanel 와 동일 원인).
+    const userToday = _countSince(allUsers, 'joinedAt', 1);
+    const userWeek = _countSince(allUsers, 'joinedAt', 7);
+    const userMonth = _countSince(allUsers, 'joinedAt', 30);
 
     const postToday = _countSince(allCommunityPosts, 'createdAt', 1);
     const postWeek = _countSince(allCommunityPosts, 'createdAt', 7);

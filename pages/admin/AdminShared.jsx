@@ -743,10 +743,120 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────
+// v00.194 — 사용자 요청 '대시보드에 접속 시간에 따른 히트맵'.
+// 24h × 7요일 그리드. 각 셀은 max 대비 alpha 그라데이션 + hover tooltip.
+// data: [{ dow: 0~6 (0=일), hour: 0~23, views, uniq }]
+const _DOW_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+const HeatmapGrid = ({ data, label, headerRight, days = 30 }) => {
+  const [hover, setHover] = React.useState(null); // {dow, hour, views, uniq, x, y}
+  // 7×24 grid 구축.
+  const grid = React.useMemo(() => {
+    const g = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => ({ views: 0, uniq: 0 })));
+    (Array.isArray(data) ? data : []).forEach((d) => {
+      const dow = Number(d.dow); const h = Number(d.hour);
+      if (dow >= 0 && dow < 7 && h >= 0 && h < 24) {
+        g[dow][h] = { views: Number(d.views) || 0, uniq: Number(d.uniq) || 0 };
+      }
+    });
+    return g;
+  }, [data]);
+  const max = React.useMemo(() => {
+    let m = 0;
+    grid.forEach((row) => row.forEach((c) => { if (c.views > m) m = c.views; }));
+    return m;
+  }, [grid]);
+
+  const cellColor = (v) => {
+    if (max <= 0 || v <= 0) return 'rgba(255,255,255,0.02)';
+    const alpha = Math.max(0.08, Math.min(0.95, v / max));
+    return `rgba(245,213,72,${alpha.toFixed(3)})`;
+  };
+
+  return (
+    <article className="card" style={{ position:'relative' }}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, gap:8, flexWrap:'wrap'}}>
+        <h3 className="ko-serif" style={{fontSize:14, margin:0, fontWeight:700}}>
+          {label || `🗓 접속 시간 히트맵 (최근 ${days}일 · KST)`}
+        </h3>
+        {headerRight}
+      </div>
+      <div style={{overflowX:'auto'}}>
+        <div style={{
+          display:'grid',
+          gridTemplateColumns:'auto repeat(24, minmax(18px, 1fr))',
+          gridAutoRows:'18px',
+          gap:2,
+          minWidth:560,
+        }}>
+          {/* 헤더 행 — 시간 라벨 */}
+          <div/>
+          {Array.from({ length: 24 }, (_, h) => (
+            <div key={`h-${h}`} className="mono dim-2"
+              style={{fontSize:9, textAlign:'center', letterSpacing:'0.04em', lineHeight:'18px'}}>
+              {h % 3 === 0 ? `${h}` : ''}
+            </div>
+          ))}
+          {/* 7행 × 24열 */}
+          {grid.map((row, dow) => (
+            <React.Fragment key={`r-${dow}`}>
+              <div className="mono dim-2" style={{fontSize:10, lineHeight:'18px', paddingRight:6, textAlign:'right'}}>
+                {_DOW_LABELS[dow]}
+              </div>
+              {row.map((cell, hour) => (
+                <div key={`c-${dow}-${hour}`}
+                  onMouseEnter={(e) => {
+                    const r = e.currentTarget.getBoundingClientRect();
+                    setHover({ dow, hour, views: cell.views, uniq: cell.uniq, x: r.left + r.width / 2, y: r.top });
+                  }}
+                  onMouseLeave={() => setHover(null)}
+                  role="img"
+                  aria-label={`${_DOW_LABELS[dow]}요일 ${hour}시: 페이지뷰 ${cell.views}회, 세션 ${cell.uniq}건`}
+                  style={{
+                    background: cellColor(cell.views),
+                    border:'1px solid var(--line)',
+                    cursor: cell.views > 0 ? 'pointer' : 'default',
+                  }}/>
+              ))}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+      {/* 범례 */}
+      <div style={{display:'flex', alignItems:'center', gap:10, marginTop:12, fontSize:10}} className="dim-2 mono">
+        <span>적음</span>
+        {[0.1, 0.25, 0.5, 0.75, 1].map((a) => (
+          <span key={a} style={{
+            display:'inline-block', width:14, height:14,
+            background:`rgba(245,213,72,${a})`, border:'1px solid var(--line)',
+          }}/>
+        ))}
+        <span>많음</span>
+        <span style={{flex:1}}/>
+        <span>최대 {max} views/cell</span>
+      </div>
+      {/* tooltip */}
+      {hover && (
+        <div style={{
+          position:'fixed', left: hover.x, top: hover.y - 8,
+          transform:'translate(-50%, -100%)',
+          background:'var(--bg-2, #1a1a1a)', color:'var(--ink)',
+          border:'1px solid var(--line-2)', padding:'6px 10px',
+          fontSize:11, fontFamily:'var(--font-mono)',
+          pointerEvents:'none', zIndex:1000, whiteSpace:'nowrap',
+        }}>
+          {_DOW_LABELS[hover.dow]} {String(hover.hour).padStart(2,'0')}:00 · {hover.views} views · {hover.uniq} sessions
+        </div>
+      )}
+    </article>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────
 // 노출 — AuthAdminPage 가 const X = window.X 로 참조.
 Object.assign(window, {
   downloadBlob, downloadCsv, downloadJson,
   pickImageWithR2Fallback,
   MiniBarChart, RankedBarList, COHORT_OPTIONS, CohortSelector,
   SankeyFlow, SubTabsView,
+  HeatmapGrid,
 });

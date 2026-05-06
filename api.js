@@ -306,11 +306,13 @@
       // v00.173 — days param 지원 (7/14/30/90). 기본 14.
       track: (payload) => request("POST", "/analytics/page-view", payload),
       // v00.179 — refDays / routeDays 추가 (각 섹션 독립 코호트).
-      summary: ({ days, refDays, routeDays } = {}) => {
+      // v00.194 — heatmapDays 추가 (24h × 7요일 히트맵 코호트).
+      summary: ({ days, refDays, routeDays, heatmapDays } = {}) => {
         const params = new URLSearchParams();
         if (days != null) params.set('days', String(days));
         if (refDays != null) params.set('refDays', String(refDays));
         if (routeDays != null) params.set('routeDays', String(routeDays));
+        if (heatmapDays != null) params.set('heatmapDays', String(heatmapDays));
         const qs = params.toString();
         return request("GET", `/analytics/summary${qs ? '?' + qs : ''}`);
       },

@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.194.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T11:30:00+09:00",
+    summary: "🐛 회원가입 추이 차트 fix + 커뮤니티 게시글 retry/error UI + 시간대별 히트맵 신설",
+    details: [
+      "🐛 [회원가입 추이 차트 fix] 사용자 보고 '회원가입추이도 정상작동 안하는듯'. root cause: BGNJ_AUTH._usersCache 매퍼(data.js:1248) 가 created_at→joinedAt 으로 노출하지만 차트 코드는 'createdAt' 으로 읽어 모든 row 가 _toDate(undefined)→null 로 필터됨. 결과 모든 막대/숫자 0. DashboardPanel 의 dailySignups/weeklySignups/monthlySignups + signupSeries(line 883-889) 와 dashboardStats memo(line 5674-5676) 모두 'joinedAt' 으로 정정. 타 호출 측은 이미 joinedAt 사용 → 차트 측만 정정.",
+      "🔁 [커뮤니티 게시글 retry/error UI] 사용자 보고 '커뮤니티에서 게시글 안 불러진다 + 가끔 홈페이지 기능 작동 안 함'. root cause: BGNJ_COMMUNITY.refreshPosts 의 빈 catch + 재시도 없음 + 워커 cold-start race. (1) data.js: 1회 자동 재시도 (600ms backoff) + 실패 시 _lastError 세트 + 'bgnj-posts-refresh-error' 이벤트. (2) CommunityPage: visibilitychange 시 캐시 비어있으면 재시도 + loadError 배너 + [다시 불러오기] 버튼.",
+      "🗓 [시간대별 히트맵] 사용자 요청 '대시보드에 접속 시간에 따른 히트맵'. 24h × 7요일 그리드. 워커 handleAnalyticsSummary 에 heatmap 쿼리 (KST +9h 시프트 후 strftime '%w' / '%H' 그룹). AdminShared.HeatmapGrid 신설 — 셀 hover tooltip + 범례 + max 대비 alpha 그라데이션. CohortSelector 로 7~90일 코호트.",
+      "ℹ ★ 워커 wrangler deploy 필요 (heatmap 쿼리 + heatmapDays 파라미터).",
+      "📦 cache-buster — `?v=00.194.000`.",
+    ],
+    context: "v00.193 backlog 3건 동시 처리. 사용자 보고 회원가입 차트 0 + 게시글 안 불러짐 둘 다 root cause 식별 후 정정 (필드명 mismatch + silent fail). 히트맵은 신규 시각화 — 워커 1회 deploy 후 schema-v9 page_views 가 충분히 누적되면 자연스럽게 색 분포 나타남.",
+  },
+  {
     version: "00.193.000",
     date: "2026-05-06",
     datetime: "2026-05-06T10:05:00+09:00",

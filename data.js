@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.193.000",
+  version: "00.194.000",
   build: "2026.05.06",
   channel: "preview",
 };
@@ -1411,15 +1411,28 @@ window.BGNJ_COMMUNITY = {
   },
   // 서버에서 게시글 목록을 갱신해 캐시에 저장하고 'bgnj-posts-refresh' 이벤트를 발화한다.
   // CommunityPage가 useEffect로 구독해 재렌더한다.
+  // v00.194 — 사용자 보고 '커뮤니티 게시글 안 불러짐 / 가끔 홈페이지 기능 작동 안 함'.
+  // root cause: 빈 catch 로 인한 silent fail + 재시도 없음 + 워커 cold-start race.
+  // 1회 자동 재시도 (exponential backoff) + 실패 시 _lastError 노출 + 'bgnj-posts-refresh-error' 이벤트.
+  _lastError: null,
   async refreshPosts(opts = {}) {
-    try {
-      const { posts } = await window.BGNJ_API.posts.list(opts);
-      this._serverPosts = (posts || []).map(_serverPostToUi);
-      this._serverLoaded = true;
-      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
-    } catch {
-      // 서버 실패 — 캐시 유지(로컬 폴백)
+    const maxAttempts = 2;
+    let lastErr = null;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        if (attempt > 0) await new Promise((r) => setTimeout(r, 600 * attempt));
+        const { posts } = await window.BGNJ_API.posts.list(opts);
+        this._serverPosts = (posts || []).map(_serverPostToUi);
+        this._serverLoaded = true;
+        this._lastError = null;
+        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+        return this._serverPosts;
+      } catch (err) {
+        lastErr = err;
+      }
     }
+    this._lastError = lastErr?.message || 'refresh failed';
+    try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh-error', { detail: { message: this._lastError } })); } catch {}
     return this._serverPosts;
   },
   savePosts(posts) {

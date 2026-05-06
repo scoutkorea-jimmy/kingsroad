@@ -540,11 +540,25 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   }, []);
 
   // 서버 게시글 동기화 — 페이지 진입 시 1회 + 'bgnj-posts-refresh' 이벤트마다 재렌더
+  // v00.194 — 사용자 보고 '커뮤니티 게시글 안 불러짐'. visibilitychange 재시도 + 실패 시 에러 표시.
+  const [loadError, setLoadError] = React.useState(null);
   React.useEffect(() => {
     window.BGNJ_COMMUNITY.refreshPosts?.();
-    const onRefresh = () => setRefreshKey((v) => v + 1);
+    const onRefresh = () => { setLoadError(null); setRefreshKey((v) => v + 1); };
+    const onError = (e) => setLoadError(e?.detail?.message || '서버에서 게시글을 불러오지 못했습니다.');
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      // 캐시 비어있으면 재시도. 이미 로드된 경우는 stale 회피 위해 그대로.
+      if (!window.BGNJ_COMMUNITY._serverLoaded) window.BGNJ_COMMUNITY.refreshPosts?.();
+    };
     window.addEventListener('bgnj-posts-refresh', onRefresh);
-    return () => window.removeEventListener('bgnj-posts-refresh', onRefresh);
+    window.addEventListener('bgnj-posts-refresh-error', onError);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('bgnj-posts-refresh', onRefresh);
+      window.removeEventListener('bgnj-posts-refresh-error', onError);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, []);
 
   const G = window.BGNJ_GUARD;
@@ -726,6 +740,23 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           })()}
         </header>
 
+        {/* v00.194 — 사용자 보고 '게시글 안 불러짐'. 실패 시 명시적 배너 + 재시도 버튼 (silent fail 폐기). */}
+        {loadError && (
+          <div role="alert" style={{
+            border:'1px solid var(--danger, #b91c1c)',
+            background:'rgba(185,28,28,0.08)',
+            padding:'12px 16px', marginBottom:18,
+            display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap',
+          }}>
+            <span style={{fontSize:13, color:'var(--ink)'}}>
+              ⚠ 게시글을 불러오지 못했습니다. <span className="dim-2 mono" style={{fontSize:11}}>{loadError}</span>
+            </span>
+            <button type="button" className="btn btn-small"
+              onClick={() => { setLoadError(null); window.BGNJ_COMMUNITY.refreshPosts?.(); }}>
+              다시 불러오기
+            </button>
+          </div>
+        )}
 
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, gap:24, flexWrap:'wrap'}}>
           <div role="tablist" aria-label="게시판 분류"

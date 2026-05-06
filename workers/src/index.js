@@ -802,6 +802,18 @@ const handleAnalyticsSummary = async (req, env) => {
       "SELECT COALESCE(referrer_host, '직접 방문') AS host, route, COUNT(*) AS c FROM page_views WHERE ts >= ? GROUP BY host, route ORDER BY c DESC LIMIT 200"
     ).bind(isoCutoff(seriesDays)).all();
     summary.flowPairs = (pairs.results || []).map((p) => ({ referrer: p.host, route: p.route, count: Number(p.c) }));
+    // v00.194 — 사용자 요청 '대시보드에 접속 시간에 따른 히트맵'.
+    // 24h × 7요일 그리드. ts 는 UTC ISO 이지만 KST(+9) 기준으로 보여주기 위해 +9h 시프트 후 strftime.
+    // SQLite: strftime('%w', datetime(ts, '+9 hours')) 으로 KST 요일 (0=일~6=토), '%H' 로 KST 시간(00~23).
+    const heatmapDays = Math.max(7, Math.min(90, Number(url.searchParams.get('heatmapDays') || 30)));
+    const heatmap = await env.DB.prepare(
+      "SELECT CAST(strftime('%w', datetime(ts, '+9 hours')) AS INTEGER) AS dow, CAST(strftime('%H', datetime(ts, '+9 hours')) AS INTEGER) AS hour, COUNT(*) AS views, COUNT(DISTINCT session_id) AS uniq FROM page_views WHERE ts >= ? GROUP BY dow, hour"
+    ).bind(isoCutoff(heatmapDays)).all();
+    summary.heatmap = (heatmap.results || []).map((r) => ({
+      dow: Number(r.dow), hour: Number(r.hour),
+      views: Number(r.views), uniq: Number(r.uniq),
+    }));
+    summary.heatmapDays = heatmapDays;
   } catch (err) {
     return { ...summary, error: 'schema-v9 not applied or query failed', detail: err?.message || '' };
   }
