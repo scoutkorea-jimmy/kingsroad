@@ -8407,26 +8407,37 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
 
   return (
     <div>
-      <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
+      <div style={{display:'flex', gap:8, flexWrap:'wrap', alignItems:'center'}}>
         {cats.map((c) => {
           const active = c === selected;
+          // v00.220 — 비활성 칩이 흰 배경에 묻혀 안 보이던 문제 해결: bg-2 fill + line-2 보더로 윤곽 강화.
+          //          X 버튼은 평상시 회색, hover/focus 시에만 빨강 — 시각 무게가 카테고리명보다 강하지 않게.
           return (
-            <span key={c} style={{display:'inline-flex', alignItems:'center', gap:4}}>
+            <span key={c} style={{
+              display:'inline-flex', alignItems:'center', gap:0,
+              borderRadius:999,
+              border: '1px solid ' + (active ? 'var(--primary)' : 'var(--line-2)'),
+              background: active ? 'rgba(245,213,72,0.10)' : 'var(--bg-2)',
+            }}>
               <button type="button"
                 onClick={() => onSelect?.(c)}
                 aria-pressed={active}
                 style={{
-                  padding:'6px 14px', borderRadius:999, fontSize:12, cursor:'pointer',
-                  border: '1px solid ' + (active ? 'var(--primary)' : 'var(--line)'),
-                  color: active ? 'var(--primary)' : 'var(--ink-2)',
-                  background: active ? 'rgba(245,213,72,0.08)' : 'transparent',
+                  padding:'6px 4px 6px 14px', fontSize:12, cursor:'pointer',
+                  color: active ? 'var(--primary)' : 'var(--ink)',
+                  fontWeight: active ? 600 : 500,
+                  background:'transparent', border:'none',
                 }}>
                 {c}
               </button>
               {allowManage && (
                 <button type="button" onClick={() => removeCat(c)} aria-label={`${c} 삭제`}
                   disabled={busy}
-                  style={{background:'none', border:'none', color:'var(--danger)', cursor:'pointer', fontSize:11, padding:'0 2px', lineHeight:1}}>
+                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--danger)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ink-3)'; }}
+                  onFocus={(e) => { e.currentTarget.style.color = 'var(--danger)'; }}
+                  onBlur={(e) => { e.currentTarget.style.color = 'var(--ink-3)'; }}
+                  style={{background:'none', border:'none', color:'var(--ink-3)', cursor:'pointer', fontSize:11, padding:'0 10px 0 4px', lineHeight:1, transition:'color .15s'}}>
                   ✕
                 </button>
               )}

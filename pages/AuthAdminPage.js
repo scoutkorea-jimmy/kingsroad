@@ -6682,22 +6682,29 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
       setBusy(false);
     }
   };
-  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" } }, cats.map((c) => {
+  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" } }, cats.map((c) => {
     const active = c === selected;
-    return /* @__PURE__ */ React.createElement("span", { key: c, style: { display: "inline-flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("span", { key: c, style: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 0,
+      borderRadius: 999,
+      border: "1px solid " + (active ? "var(--primary)" : "var(--line-2)"),
+      background: active ? "rgba(245,213,72,0.10)" : "var(--bg-2)"
+    } }, /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
         onClick: () => onSelect == null ? void 0 : onSelect(c),
         "aria-pressed": active,
         style: {
-          padding: "6px 14px",
-          borderRadius: 999,
+          padding: "6px 4px 6px 14px",
           fontSize: 12,
           cursor: "pointer",
-          border: "1px solid " + (active ? "var(--primary)" : "var(--line)"),
-          color: active ? "var(--primary)" : "var(--ink-2)",
-          background: active ? "rgba(245,213,72,0.08)" : "transparent"
+          color: active ? "var(--primary)" : "var(--ink)",
+          fontWeight: active ? 600 : 500,
+          background: "transparent",
+          border: "none"
         }
       },
       c
@@ -6708,7 +6715,19 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
         onClick: () => removeCat(c),
         "aria-label": `${c} \uC0AD\uC81C`,
         disabled: busy,
-        style: { background: "none", border: "none", color: "var(--danger)", cursor: "pointer", fontSize: 11, padding: "0 2px", lineHeight: 1 }
+        onMouseEnter: (e) => {
+          e.currentTarget.style.color = "var(--danger)";
+        },
+        onMouseLeave: (e) => {
+          e.currentTarget.style.color = "var(--ink-3)";
+        },
+        onFocus: (e) => {
+          e.currentTarget.style.color = "var(--danger)";
+        },
+        onBlur: (e) => {
+          e.currentTarget.style.color = "var(--ink-3)";
+        },
+        style: { background: "none", border: "none", color: "var(--ink-3)", cursor: "pointer", fontSize: 11, padding: "0 10px 0 4px", lineHeight: 1, transition: "color .15s" }
       },
       "\u2715"
     ));
