@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.200.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T16:30:00+09:00",
+    summary: "📧 사이트 이메일 단일화 (contact@bgnj.net) — hello/banginoja/dpo 변종 제거",
+    details: [
+      "📧 [이메일 주소 단일화] 사용자 요청 '홈페이지 붙어있는 이메일 주소 하나로 통일 — 나중에 별도 안내'. 사이트 곳곳의 4종 이메일 (hello@bgnj.net / contact@bgnj.net / banginoja@bgnj.net / dpo@bgnj.net) 을 모두 `contact@bgnj.net` 으로 통일. 추후 사용자가 새 이메일 안내 시 1) data.js:634 contact.email 기본값 + 2) admin 사이트 설정 → 사이트 콘텐츠 → contact.email 두 곳만 수정.",
+      "🔁 [수정 위치] index.html JSON-LD email + index.html noscript 안내 + data.js 영수증 운영 문의 + AuthAdminPage 회원가입 placeholder + admin 사이드바 DPO 카드 + 개인정보 패널 DPO/책임자 행 = 6 곳.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.200.000`.",
+    ],
+    context: "v00.200 마일스톤 — 직전 v00.199 기능정의서 갱신 후 사용자가 식별한 잡음 (이메일 변종) 정리. 다음 사이클은 P1 묶음 (마이페이지 프로필/비번 변경 UI + 답글 트리 + 작성자 프로필 + 본문 검색).",
+  },
+  {
     version: "00.199.000",
     date: "2026-05-06",
     datetime: "2026-05-06T16:00:00+09:00",

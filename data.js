@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.199.000",
+  version: "00.200.000",
   build: "2026.05.06",
   channel: "preview",
 };
@@ -2312,7 +2312,7 @@ window.BGNJ_BOOK_ORDERS = {
       lines.push(`입금자명      ${order.recipient} 또는 ${order.orderNo}`);
       lines.push('');
     }
-    lines.push('운영 문의 · hello@bgnj.net');
+    lines.push('운영 문의 · contact@bgnj.net');
     lines.push('영수증 발행 · ' + window.BGNJ_FMT.kstDateTime(new Date().toISOString()));
     return lines.filter((l) => l != null).join('\n');
   },

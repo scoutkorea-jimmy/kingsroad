@@ -239,7 +239,7 @@ const LoginPage = ({ go, setUser }) => {
               <input id="auth-email" name="email" type="email" className="field-input"
                 autoComplete="email" required aria-required="true" inputMode="email"
                 value={form.email} onChange={e => set('email', e.target.value)}
-                placeholder="hello@bgnj.net"/>
+                placeholder="contact@bgnj.net"/>
             </div>
             <div className="field">
               <label className="field-label" htmlFor="auth-password">비밀번호 <span aria-hidden="true" className="gold">*</span></label>
@@ -6198,9 +6198,9 @@ const AdminPage = ({ go }) => {
           </div>
           <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em'}}>◆ ADMIN CONSOLE</div>
           <div className="ko-serif" style={{fontSize:20, marginTop:8}}>관리자</div>
-          <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>banginoja@bgnj.net</div>
+          <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>contact@bgnj.net</div>
           <div style={{marginTop:12, padding:'8px 10px', background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--gold)', letterSpacing:'0.15em'}}>
-            DPO · dpo@bgnj.net
+            DPO · contact@bgnj.net
           </div>
           <div className="dim-2 mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em'}}>적용법: GDPR + PIPA</div>
           <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.1em'}}>최근 DPIA: 2026.03.02</div>
@@ -7131,8 +7131,8 @@ const AdminPage = ({ go }) => {
             <div className="card">
               <h2 className="ko-serif" style={{fontSize:20, marginBottom:16}}>사이트 설정</h2>
               <dl style={{display:'grid', gridTemplateColumns:'200px 1fr', gap:'8px 24px', fontSize:13, lineHeight:1.8}}>
-                <dt className="dim-2 mono" style={{fontSize:11}}>DPO</dt><dd>dpo@bgnj.net · 02-0000-0001</dd>
-                <dt className="dim-2 mono" style={{fontSize:11}}>개인정보 책임자</dt><dd>뱅기노자 / banginoja@bgnj.net</dd>
+                <dt className="dim-2 mono" style={{fontSize:11}}>DPO</dt><dd>contact@bgnj.net · 02-0000-0001</dd>
+                <dt className="dim-2 mono" style={{fontSize:11}}>개인정보 책임자</dt><dd>뱅기노자 / contact@bgnj.net</dd>
                 <dt className="dim-2 mono" style={{fontSize:11}}>최근 DPIA</dt><dd>2026-03-02</dd>
                 <dt className="dim-2 mono" style={{fontSize:11}}>적용 법역</dt><dd>대한민국(PIPA) · 유럽연합(GDPR)</dd>
                 <dt className="dim-2 mono" style={{fontSize:11}}>감독기관</dt><dd>개인정보보호위원회 / 관할 EU DPA</dd>
