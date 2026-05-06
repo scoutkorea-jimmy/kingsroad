@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.195.000",
+  version: "00.196.000",
   build: "2026.05.06",
   channel: "preview",
 };
@@ -2976,6 +2976,13 @@ window.BGNJ_SITE_CONTENT = {
       setMeta('meta[property="og:title"]', 'content', sc.og?.title);
       setMeta('meta[property="og:description"]', 'content', sc.og?.description);
       if (sc.og?.imageDataUri) setMeta('meta[property="og:image"]', 'content', sc.og.imageDataUri);
+      // v00.196 — 사용자 요청 '구글/네이버 등 서치 콘솔 입력'. 검증 meta 자동 주입.
+      // sc.searchConsole = { google, naver, bing, yandex, sitemapUrl, lastUpdated }
+      const sCon = sc.searchConsole || {};
+      if (sCon.google) setMeta('meta[name="google-site-verification"]', 'content', sCon.google);
+      if (sCon.naver) setMeta('meta[name="naver-site-verification"]', 'content', sCon.naver);
+      if (sCon.bing) setMeta('meta[name="msvalidate.01"]', 'content', sCon.bing);
+      if (sCon.yandex) setMeta('meta[name="yandex-verification"]', 'content', sCon.yandex);
     } catch {}
   },
 };

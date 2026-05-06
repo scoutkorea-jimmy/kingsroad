@@ -56,13 +56,17 @@ const transform = async (rel) => {
   const src = fs.readFileSync(abs, 'utf8');
   let result;
   try {
+    // v00.196 — sourcemap 'inline' 폐기. 인라인 base64 가 wire 의 62%(~3.56MB raw / ~880KB gz)
+    // 차지해 비-admin 방문자에게도 강제 전송됨. prod-only 게이트 도입 — env BGNJ_SOURCEMAP=1 시에만 인라인.
+    // 사용자 보고 '안정성 우선 + 기능 회귀 없이 반응성 개선'.
+    const includeSourcemap = process.env.BGNJ_SOURCEMAP === '1';
     result = await esbuild.transform(src, {
       loader: 'jsx',
       jsx: 'transform',
       jsxFactory: 'React.createElement',
       jsxFragment: 'React.Fragment',
       target: 'es2018',
-      sourcemap: 'inline',
+      sourcemap: includeSourcemap ? 'inline' : false,
       sourcefile: rel,
     });
   } catch (err) {

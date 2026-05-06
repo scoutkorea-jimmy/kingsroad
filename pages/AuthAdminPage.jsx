@@ -1042,6 +1042,40 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
         </article>
       </div>
 
+      {/* v00.196 — 사용자 요청 '회원 등급별 분포 현황'. allUsers × BGNJ_STORES.grades 매핑 → RankedBarList. */}
+      <div className="admin-section__title">회원 등급별 분포</div>
+      {(() => {
+        const grades = window.BGNJ_STORES?.grades || [];
+        const counts = {};
+        const adminCount = allUsers.filter((u) => u.isAdmin || u.isSuperAdmin).length;
+        const totalNonAdmin = allUsers.length - adminCount;
+        allUsers.forEach((u) => {
+          if (u.isAdmin || u.isSuperAdmin) return;
+          const gid = u.gradeId || 'unranked';
+          counts[gid] = (counts[gid] || 0) + 1;
+        });
+        // 등급 정의 순서 유지 + unranked 마지막. admin 별도 처리.
+        const items = grades
+          .map((g) => ({ id: g.id, label: g.name || g.id, count: counts[g.id] || 0, sub: g.tag || '' }))
+          .filter((it) => it.count > 0 || (grades.find((g) => g.id === it.id)?.id));
+        // 미분류 (gradeId 없는 회원).
+        if (counts.unranked) items.push({ id: 'unranked', label: '미분류', count: counts.unranked, color: 'var(--ink-3)' });
+        if (adminCount > 0) items.push({ id: '__admin', label: '관리자', count: adminCount, color: 'var(--gold)' });
+        items.sort((a, b) => b.count - a.count);
+        return (
+          <RankedBarList
+            items={items}
+            unit="명"
+            emptyText={allUsers.length === 0 ? '회원 데이터 미수신 — refreshUsers 호출 직후 자동 갱신.' : '등급이 부여된 회원이 아직 없습니다.'}
+            headerLeft="GRADE DISTRIBUTION"
+            headerRight={
+              <span className="dim-2 mono" style={{fontSize:11}}>
+                전체 {allUsers.length}명 · 관리자 {adminCount} · 일반 {totalNonAdmin}
+              </span>
+            }/>
+        );
+      })()}
+
       {/* v00.194 — 사용자 요청 '대시보드에 접속 시간에 따른 히트맵'. KST 기준 24h × 7요일. */}
       <div style={{marginBottom:18}}>
         <window.HeatmapGrid
@@ -4307,6 +4341,180 @@ const SEOAdminPanel = () => {
   );
 };
 
+// === Search Console Admin Panel (v00.196) =========================
+// 사용자 요청 '구글/네이버 등 서치 콘솔 + 최신화 가능한 api 입력 페이지'.
+// 검증 meta tag 입력 → site_content_kv.searchConsole 저장 → applyHead 가 <head> 즉시 주입.
+// + sitemap.xml URL 표시 + 각 콘솔 새창 진입 + Google sitemap ping (no-cors fetch).
+const SearchConsoleAdminPanel = () => {
+  const [data, setData] = React.useState({
+    google: '', naver: '', bing: '', yandex: '',
+    sitemapUrl: '', lastUpdated: '',
+  });
+  const [dirty, setDirty] = React.useState(false);
+  const [saving, setSaving] = React.useState(false);
+  const [msg, setMsg] = React.useState('');
+  const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2400); };
+
+  const refresh = React.useCallback(async () => {
+    try { await window.BGNJ_SITE_CONTENT.refresh(); } catch {}
+    const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+    const cur = sc.searchConsole || {};
+    const origin = (typeof location !== 'undefined' ? location.origin : 'https://bgnj.net');
+    setData({
+      google: cur.google || '',
+      naver: cur.naver || '',
+      bing: cur.bing || '',
+      yandex: cur.yandex || '',
+      sitemapUrl: cur.sitemapUrl || `${origin}/sitemap.xml`,
+      lastUpdated: cur.lastUpdated || '',
+    });
+    setDirty(false);
+  }, []);
+  React.useEffect(() => { refresh(); }, [refresh]);
+
+  const setField = (k, v) => { setData((cur) => ({ ...cur, [k]: v })); setDirty(true); };
+
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const next = { ...data, lastUpdated: new Date().toISOString() };
+      await window.BGNJ_SITE_CONTENT.saveSection('searchConsole', next);
+      try { window.BGNJ_SITE_CONTENT.applyHead(); } catch {}
+      setData(next);
+      setDirty(false);
+      flash('✓ 저장됨 — <head> 검증 meta 즉시 갱신');
+    } catch (err) {
+      flash('✗ 저장 실패: ' + (err?.body?.error || err?.message || ''));
+    } finally { setSaving(false); }
+  };
+
+  const pingGoogleSitemap = () => {
+    if (!data.sitemapUrl) { flash('✗ sitemap URL 이 없습니다'); return; }
+    // Google ping endpoint (no-cors fetch — 응답 못 읽지만 요청은 도달). BGNJ_API 우회: 외부 도메인 호출.
+    try {
+      // bgnj-lint-ignore-next-line direct_fetch
+      fetch(`https://www.google.com/ping?sitemap=${encodeURIComponent(data.sitemapUrl)}`, { mode: 'no-cors' })
+        .catch(() => {});
+      flash('✓ Google 에 sitemap ping 요청 (응답은 Search Console 에서 확인)');
+    } catch (err) {
+      flash('✗ ping 실패: ' + (err?.message || ''));
+    }
+  };
+
+  const openConsole = (url) => { try { window.open(url, '_blank', 'noopener'); } catch {} };
+
+  const lastUpdLabel = data.lastUpdated
+    ? new Date(data.lastUpdated).toLocaleString('ko-KR')
+    : '저장 이력 없음';
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:18, lineHeight:1.8}}>
+        검색엔진 사이트 소유 확인용 meta tag 를 입력합니다. 저장 즉시 <code className="mono">&lt;head&gt;</code> 에 주입되며, 각 검색 콘솔 사이트의 "HTML 태그" 검증 방법을 통과합니다.
+      </p>
+
+      {msg && (
+        <div role="status" style={{
+          marginBottom:16, padding:'10px 14px',
+          border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
+          background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(245,213,72,0.06)',
+          color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--gold)', fontSize:13,
+        }}>{msg}</div>
+      )}
+
+      <div className="card" style={{padding:20, marginBottom:18}}>
+        <h3 className="ko-serif" style={{fontSize:16, marginBottom:14}}>검증 코드 (HTML 태그 방식)</h3>
+
+        <div className="field" style={{marginBottom:14}}>
+          <label className="field-label">
+            Google Search Console — <code className="mono">&lt;meta name="google-site-verification" content="..."&gt;</code>
+          </label>
+          <input className="field-input" placeholder="예: 8R9z4...... (content 값만 입력)"
+            value={data.google} onChange={(e) => setField('google', e.target.value.trim())}/>
+          <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-small" onClick={() => openConsole('https://search.google.com/search-console')}>↗ Search Console 열기</button>
+          </div>
+        </div>
+
+        <div className="field" style={{marginBottom:14}}>
+          <label className="field-label">
+            Naver Search Advisor — <code className="mono">&lt;meta name="naver-site-verification" content="..."&gt;</code>
+          </label>
+          <input className="field-input" placeholder="예: a1b2c3d4......"
+            value={data.naver} onChange={(e) => setField('naver', e.target.value.trim())}/>
+          <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-small" onClick={() => openConsole('https://searchadvisor.naver.com/')}>↗ Search Advisor 열기</button>
+          </div>
+        </div>
+
+        <div className="field" style={{marginBottom:14}}>
+          <label className="field-label">
+            Bing Webmaster — <code className="mono">&lt;meta name="msvalidate.01" content="..."&gt;</code>
+          </label>
+          <input className="field-input" placeholder="예: A1B2C3......"
+            value={data.bing} onChange={(e) => setField('bing', e.target.value.trim())}/>
+          <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-small" onClick={() => openConsole('https://www.bing.com/webmasters')}>↗ Bing Webmaster 열기</button>
+          </div>
+        </div>
+
+        <div className="field" style={{marginBottom:14}}>
+          <label className="field-label">
+            Yandex Webmaster — <code className="mono">&lt;meta name="yandex-verification" content="..."&gt;</code>
+          </label>
+          <input className="field-input" placeholder="(선택) 예: 1234abcd......"
+            value={data.yandex} onChange={(e) => setField('yandex', e.target.value.trim())}/>
+          <div style={{display:'flex', gap:8, marginTop:6, flexWrap:'wrap'}}>
+            <button type="button" className="btn btn-small" onClick={() => openConsole('https://webmaster.yandex.com/')}>↗ Yandex 열기</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{padding:20, marginBottom:18}}>
+        <h3 className="ko-serif" style={{fontSize:16, marginBottom:14}}>Sitemap & 인덱싱 최신화</h3>
+        <div className="field" style={{marginBottom:14}}>
+          <label className="field-label">Sitemap URL</label>
+          <input className="field-input" placeholder="https://bgnj.net/sitemap.xml"
+            value={data.sitemapUrl} onChange={(e) => setField('sitemapUrl', e.target.value.trim())}/>
+          <p className="dim-2" style={{fontSize:11, marginTop:6, lineHeight:1.6}}>
+            Google / Naver 콘솔에 동일한 URL 을 등록하세요. 미등록 시 색인 누락 가능.
+          </p>
+        </div>
+        <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
+          <button type="button" className="btn btn-small btn-gold" onClick={pingGoogleSitemap}>
+            🔔 Google 에 sitemap 변경 알림 (ping)
+          </button>
+          <button type="button" className="btn btn-small"
+            onClick={() => openConsole(`https://search.google.com/search-console/sitemaps?resource_id=${encodeURIComponent((typeof location !== 'undefined' ? location.origin : 'https://bgnj.net'))}`)}>
+            ↗ Google Sitemap 페이지 열기
+          </button>
+          <button type="button" className="btn btn-small"
+            onClick={() => openConsole('https://searchadvisor.naver.com/console/board')}>
+            ↗ Naver 사이트맵 콘솔 열기
+          </button>
+        </div>
+        <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.6}}>
+          ※ Naver 는 직접 ping 엔드포인트 미공식 — 콘솔에서 수동 등록 필요. Bing 은 Google 과 색인 공유.
+        </p>
+      </div>
+
+      <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', justifyContent:'flex-end'}}>
+        <span className="dim-2 mono" style={{fontSize:11}}>
+          마지막 저장: {lastUpdLabel}
+        </span>
+        <span style={{flex:1}}/>
+        {dirty && (
+          <button type="button" className="btn btn-small" onClick={refresh}>변경 취소</button>
+        )}
+        <button type="button" className="btn btn-gold" onClick={save} disabled={saving || !dirty}>
+          {saving ? '저장 중…' : (dirty ? '💾 저장' : '저장됨 ✓')}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // === Audit Log Panel ==============================================
 const AuditLogPanel = () => {
   const [tick, setTick] = React.useState(0);
@@ -6806,6 +7014,8 @@ const AdminPage = ({ go }) => {
               { key: "home",     label: "홈 텍스트",        previewUrl: "/",        render: () => <HomeTextEditorPanel/> },
               { key: "hero",     label: "히어로",           previewUrl: "/",        render: () => <HeroEditorPanel/> },
               { key: "seo",      label: "SEO",             previewUrl: "/",        render: () => <SEOAdminPanel/> },
+              // v00.196 — 검색콘솔 (Google/Naver/Bing/Yandex) 검증 + sitemap ping.
+              { key: "search",   label: "검색엔진",         previewUrl: "/",        render: () => <SearchConsoleAdminPanel/> },
               { key: "legal",    label: "약관/개인정보",   previewUrl: "/terms",   render: () => <LegalAdminPanel/> },
               { key: "faq",      label: "자주 묻는 질문",  previewUrl: "/faq",     render: () => <FaqAdminPanel/> },
               { key: "bank",     label: "계좌번호",         previewUrl: "/faq",     render: () => <BankAccountPanel/> },
@@ -8795,4 +9005,4 @@ const AdminDenied = ({ go, user }) => (
   </div>
 );
 
-Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel, AuditLogPanel, ErrorLogPanel, SEOAdminPanel, SiteContentAdminPanel, RecommendationsAdminPanel });
+Object.assign(window, { LoginPage, AdminPage, AdminCategoryPanel, AdminGradePanel, AdminColumnEditor, AdminDenied, LectureAdminPanel, BankAccountPanel, BookOrderAdminPanel, TourAdminPanel, MemberAdminPanel, LegalAdminPanel, FaqAdminPanel, AuditLogPanel, ErrorLogPanel, SEOAdminPanel, SearchConsoleAdminPanel, SiteContentAdminPanel, RecommendationsAdminPanel });

@@ -4,6 +4,23 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.196.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T13:30:00+09:00",
+    summary: "📊 등급별 분포 차트 + 검색콘솔 API 입력 패널 + 안정적 성능 개선 (sourcemap off / 폰트 preload / scroll throttle / memo)",
+    details: [
+      "📊 [회원 등급별 분포 차트] 사용자 요청 '대시보드에 등급별 분포 현황'. allUsers × BGNJ_STORES.grades 매핑 → RankedBarList 재사용 (DRY). 관리자/일반/등급 미부여 분리 카운트 + 헤더에 전체/관리자/일반 요약. 차트 클릭 시 등급 필터 적용은 후속.",
+      "🔍 [검색콘솔 API 입력 패널] 사용자 요청 '구글/네이버 등 서치콘솔 + 최신화 가능한 api 입력 페이지'. 신규 SearchConsoleAdminPanel — Google / Naver / Bing / Yandex 검증 meta content 입력 + 사이트맵 URL + Google sitemap ping (no-cors fetch) + 각 콘솔 새창 진입. 저장 시 site_content_kv.searchConsole + applyHead 즉시 <head> 주입. 사이트 설정 SubTabsView 에 '검색엔진' sub-tab 추가.",
+      "🚀 [perf B — sourcemap 프로덕션 제거] esbuild 옵션 'sourcemap: inline' → 환경변수 BGNJ_SOURCEMAP=1 시에만 활성화. 비-admin 방문자에게 강제 전송되던 ~3.56MB raw / ~880KB gz 인라인 base64 sourcemap 절감. 안정성 영향 0 (런타임 동작 무관).",
+      "🚀 [perf D — 폰트 preload] index.html 에 Google Fonts CSS preload 추가. 발견 단계 1 round-trip 회피.",
+      "🚀 [perf E1 — ScrollToTop rAF throttle] 매 scroll tick 마다 querySelector + setVisible 호출하던 hot path 를 requestAnimationFrame 큐잉으로 1프레임당 1회로 제한. 동일 visible 상태면 setVisible skip → 불필요한 commit-phase scheduling 차단.",
+      "🚀 [perf E2 — Nav/Footer/CookieConsent/ScrollToTop React.memo] Shell.jsx export 시점에 memo 래핑. App 의 route/user/cart/editMode 변경 시 props 동일하면 re-render skip. 코드 호출 측 변경 없음 (window 글로벌 그대로).",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.196.000`.",
+    ],
+    context: "사용자 원칙 '퀵윈보다 안정적인 형태로 + 기능 회귀 없이' 준수. 5개 perf 옵션(A-E) 중 위험도 높은 admin lazy-load(A) 와 워커 캐시(C) 는 보류. 즉시 효과 + 회귀 위험 0 인 B/D/E 만 적용.",
+  },
+  {
     version: "00.195.000",
     date: "2026-05-06",
     datetime: "2026-05-06T12:30:00+09:00",

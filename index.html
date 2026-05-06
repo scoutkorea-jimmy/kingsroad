@@ -68,8 +68,10 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 64 64%22%3E%3Crect width%3D%2264%22 height%3D%2264%22 rx%3D%229%22 fill%3D%22%23F5D548%22%2F%3E%3Cpath d%3D%22M 9 8 L 9 56 L 32 56 C 42 56 47 51 47 44.5 C 47 39.5 44 36 39.5 35 C 43 33.5 45.5 30.5 45.5 26 C 45.5 18.5 40 14 30 14 L 9 14 Z M 18 19 L 28 19 C 33 19 36 21 36 25 C 36 29 33 31 28 31 L 18 31 Z M 18 36 L 30 36 C 36 36 39 38.5 39 43 C 39 47.5 36 50 30 50 L 18 50 Z%22 fill%3D%22%23FFFFFF%22%2F%3E%3Cpath d%3D%22M 26 22.5 C 27 21.5 28 21.5 28.5 22.5 L 31 27 L 38 25 C 38.8 24.8 39.4 25.2 39.5 26 C 39.6 26.6 39.3 27.1 38.8 27.4 L 32.5 30.7 L 33.5 36.5 L 36 37.8 C 36.4 38 36.5 38.4 36.3 38.7 C 36.2 39 35.9 39.1 35.6 39 L 31.5 38 L 28 39.5 C 27.7 39.6 27.3 39.4 27.2 39 C 27.1 38.7 27.3 38.4 27.6 38.2 L 30 37 L 28.7 32 L 24 33.5 C 23.4 33.7 22.9 33.4 22.8 32.8 C 22.7 32.3 23 31.9 23.5 31.7 L 27.5 30.2 L 26.3 26 L 25.5 24.5 C 25.2 24 25.4 23.3 26 23 Z%22 fill%3D%22%23F5D548%22%2F%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=00.195.000">
+<link rel="stylesheet" href="styles.css?v=00.196.000">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -164,27 +166,27 @@
 </script>
 <!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
      단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. -->
-<script defer src="api.js?v=00.195.000"></script>
-<script defer src="data.js?v=00.195.000"></script>
-<script defer src="components/KoreaMapData.js?v=00.195.000"></script>
-<script defer src="components/KoreaMap.js?v=00.195.000"></script>
-<script defer src="components/Shell.js?v=00.195.000"></script>
-<script defer src="components/TiptapEditor.js?v=00.195.000"></script>
-<script defer src="pages/HomePage.js?v=00.195.000"></script>
-<script defer src="pages/CommunityPage.js?v=00.195.000"></script>
-<script defer src="pages/WangsanamTourPage.js?v=00.195.000"></script>
-<script defer src="pages/ColumnPage.js?v=00.195.000"></script>
-<script defer src="pages/BookCheckoutPage.js?v=00.195.000"></script>
-<script defer src="pages/admin/AdminDesignHub.js?v=00.195.000"></script>
-<script defer src="pages/admin/AdminContentEditors.js?v=00.195.000"></script>
-<script defer src="pages/admin/AdminShared.js?v=00.195.000"></script>
-<script defer src="pages/AuthAdminPage.js?v=00.195.000"></script>
-<script defer src="pages/EatSleepShopPages.js?v=00.195.000"></script>
-<script defer src="pages/LecturesPage.js?v=00.195.000"></script>
-<script defer src="pages/LegalFaqPages.js?v=00.195.000"></script>
-<script defer src="pages/MyPage.js?v=00.195.000"></script>
-<script defer src="pages/ErrorPages.js?v=00.195.000"></script>
+<script defer src="api.js?v=00.196.000"></script>
+<script defer src="data.js?v=00.196.000"></script>
+<script defer src="components/KoreaMapData.js?v=00.196.000"></script>
+<script defer src="components/KoreaMap.js?v=00.196.000"></script>
+<script defer src="components/Shell.js?v=00.196.000"></script>
+<script defer src="components/TiptapEditor.js?v=00.196.000"></script>
+<script defer src="pages/HomePage.js?v=00.196.000"></script>
+<script defer src="pages/CommunityPage.js?v=00.196.000"></script>
+<script defer src="pages/WangsanamTourPage.js?v=00.196.000"></script>
+<script defer src="pages/ColumnPage.js?v=00.196.000"></script>
+<script defer src="pages/BookCheckoutPage.js?v=00.196.000"></script>
+<script defer src="pages/admin/AdminDesignHub.js?v=00.196.000"></script>
+<script defer src="pages/admin/AdminContentEditors.js?v=00.196.000"></script>
+<script defer src="pages/admin/AdminShared.js?v=00.196.000"></script>
+<script defer src="pages/AuthAdminPage.js?v=00.196.000"></script>
+<script defer src="pages/EatSleepShopPages.js?v=00.196.000"></script>
+<script defer src="pages/LecturesPage.js?v=00.196.000"></script>
+<script defer src="pages/LegalFaqPages.js?v=00.196.000"></script>
+<script defer src="pages/MyPage.js?v=00.196.000"></script>
+<script defer src="pages/ErrorPages.js?v=00.196.000"></script>
 
-<script defer src="boot.js?v=00.195.000"></script>
+<script defer src="boot.js?v=00.196.000"></script>
 </body>
 </html>

@@ -113,24 +113,32 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
 };
 
 // 페이지 우하단 '맨 위로' 플로팅 버튼 — 일정 거리 이상 스크롤된 후 노출
-const ScrollToTop = () => {
+// v00.196 — 사용자 보고 '홈페이지 반응성 확장 — 안정적인 형태로'.
+// 이전엔 매 scroll tick 마다 querySelector + setVisible 호출 → 스크롤 jank.
+// rAF throttle + adminScroller 캐시 + 동일 visible 상태면 setVisible 호출 skip.
+const ScrollToTop = React.memo(() => {
   const [visible, setVisible] = React.useState(false);
-  const findScroller = () => {
-    // 관리자 페이지는 내부 컨테이너가 따로 스크롤되므로 그쪽도 함께 감시
-    return document.querySelector('main')?.closest('main') || document.documentElement;
-  };
-  const getScrollY = () => {
-    const adminScroller = document.querySelector('div[aria-label="관리자 메뉴"] + div');
-    if (adminScroller) {
-      return Math.max(adminScroller.scrollTop || 0, window.scrollY || 0);
-    }
-    return window.scrollY || 0;
-  };
+  const visibleRef = React.useRef(visible);
+  visibleRef.current = visible;
+
   React.useEffect(() => {
-    const onScroll = () => setVisible(getScrollY() > 320);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
     const adminScroller = document.querySelector('div[aria-label="관리자 메뉴"] + div');
+    let queued = false;
+    const tick = () => {
+      queued = false;
+      const sy = adminScroller
+        ? Math.max(adminScroller.scrollTop || 0, window.scrollY || 0)
+        : (window.scrollY || 0);
+      const next = sy > 320;
+      if (next !== visibleRef.current) setVisible(next);
+    };
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(tick);
+    };
+    tick();
+    window.addEventListener('scroll', onScroll, { passive: true });
     if (adminScroller) adminScroller.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', onScroll);
@@ -167,7 +175,7 @@ const ScrollToTop = () => {
       ↑
     </button>
   );
-};
+});
 
 
 // 작성자 등급 배지 — 게시글/댓글 작성자 옆에 인라인으로 표시
@@ -910,4 +918,19 @@ const CoverPlaceholder = ({ aspectRatio = '16/10', label, iconSize = 88 }) => (
   </div>
 );
 
-Object.assign(window, { Brand, Nav, Footer, Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell, ScrollToTop, BanginojaIcon, CoverPlaceholder, CookieConsent });
+// v00.196 — 사용자 보고 '홈페이지 반응성 확장'. App 의 모든 자식이 매 state 변경마다 re-render 되던 문제.
+// React.memo 로 감싸 props 동일하면 re-render skip. 안전 — 내부 useEffect/state 영향 없음.
+// ScrollToTop 은 이미 declaration 시점에 memo 처리됨.
+const _MemoNav = React.memo(Nav);
+const _MemoFooter = React.memo(Footer);
+const _MemoCookieConsent = React.memo(CookieConsent);
+
+Object.assign(window, {
+  Brand,
+  Nav: _MemoNav,
+  Footer: _MemoFooter,
+  Ornament, SectionHead, Tweaks, AuthorGradeBadge, NotificationBell,
+  ScrollToTop,
+  BanginojaIcon, CoverPlaceholder,
+  CookieConsent: _MemoCookieConsent,
+});
