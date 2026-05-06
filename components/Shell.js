@@ -176,8 +176,8 @@ const ScrollToTop = React.memo(() => {
         width: 48,
         height: 48,
         background: "var(--bg-2)",
-        color: "var(--gold)",
-        border: "1px solid var(--gold-dim)",
+        color: "var(--primary)",
+        border: "1px solid var(--primary-dim)",
         boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
         cursor: "pointer",
         display: "flex",
@@ -207,8 +207,8 @@ const AuthorGradeBadge = ({ authorId, author, authorEmail, size = "sm" }) => {
         padding: small ? "1px 6px" : "2px 8px",
         fontSize: small ? 9 : 10,
         letterSpacing: "0.14em",
-        color: grade.color || "var(--gold)",
-        border: `1px solid ${grade.color || "var(--gold-dim)"}`,
+        color: grade.color || "var(--primary)",
+        border: `1px solid ${grade.color || "var(--primary-dim)"}`,
         borderRadius: 2,
         textTransform: "uppercase",
         verticalAlign: "middle"
@@ -299,7 +299,7 @@ const NotificationBell = ({ user, onPick }) => {
           position: "absolute",
           top: -4,
           right: -4,
-          background: "var(--gold)",
+          background: "var(--primary)",
           color: "var(--bg)",
           borderRadius: 999,
           fontSize: 9,
@@ -713,7 +713,7 @@ const ThemeToggle = () => {
   const label = mode === "dark" ? "DARK" : mode === "light" ? "LIGHT" : "AUTO";
   return /* @__PURE__ */ React.createElement("button", { type: "button", className: "theme-toggle", onClick: () => next(), "aria-label": `\uD14C\uB9C8 \uC804\uD658 \u2014 \uD604\uC7AC ${label}`, title: "\uD14C\uB9C8: \uB77C\uC774\uD2B8 / \uB2E4\uD06C / \uC790\uB3D9" }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true" }, icon), /* @__PURE__ */ React.createElement("span", null, label));
 };
-const Ornament = ({ children }) => /* @__PURE__ */ React.createElement("div", { className: "ornament", style: { margin: "40px 0" } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "var(--font-serif)", fontSize: 14, letterSpacing: "0.3em", color: "var(--gold)" } }, children || "\u4E94"));
+const Ornament = ({ children }) => /* @__PURE__ */ React.createElement("div", { className: "ornament", style: { margin: "40px 0" } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "var(--font-serif)", fontSize: 14, letterSpacing: "0.3em", color: "var(--primary)" } }, children || "\u4E94"));
 const SectionHead = ({ eyebrow, title, subtitle, action, level = 2 }) => {
   const H = `h${level}`;
   return /* @__PURE__ */ React.createElement("div", { className: "section-head" }, /* @__PURE__ */ React.createElement("div", null, eyebrow && /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, eyebrow), /* @__PURE__ */ React.createElement(H, { className: "section-title" }, title), subtitle && /* @__PURE__ */ React.createElement("p", { className: "section-subtitle" }, subtitle)), action);
@@ -800,7 +800,7 @@ const CookieConsent = () => {
         margin: "0 auto",
         zIndex: 80,
         background: "var(--bg-2)",
-        border: "1px solid var(--gold-dim)",
+        border: "1px solid var(--primary-dim)",
         boxShadow: "0 16px 40px rgba(0,0,0,0.45)",
         padding: "20px 22px",
         borderRadius: 4

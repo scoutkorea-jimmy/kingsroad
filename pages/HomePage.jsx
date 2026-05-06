@@ -532,7 +532,7 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
                 style={{
                   width: i === idx ? 24 : 8, height: 8, padding: 0,
                   borderRadius: 4, border: 'none', cursor: 'pointer',
-                  background: i === idx ? 'var(--gold)' : 'var(--line-2)',
+                  background: i === idx ? 'var(--primary)' : 'var(--line-2)',
                   transition: 'all 0.2s',
                 }}/>
             ))}

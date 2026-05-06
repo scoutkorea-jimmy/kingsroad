@@ -71,7 +71,7 @@ const pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, 
 // ─────────────────────────────────────────────────────────────────
 // v00.173 — 사용자 보고 '모든 차트들은 호버하면 차트 내용물을 볼 수 있게'.
 // 각 막대에 mouseenter/leave 로 hoveredIdx 추적 → 부동 툴팁 노출. unit/formatter prop 으로 라벨 커스터마이즈.
-const MiniBarChart = ({ series, labels, height = 120, color = 'var(--gold)', label, unit = '', formatTooltip, headerRight }) => {
+const MiniBarChart = ({ series, labels, height = 120, color = 'var(--primary)', label, unit = '', formatTooltip, headerRight }) => {
   const [hoverIdx, setHoverIdx] = React.useState(null);
   const max = Math.max(1, ...series);
   const W = 100; // viewBox 단위
@@ -208,13 +208,13 @@ const RankedBarList = ({ items = [], unit = '', headerLeft, headerRight, emptyTe
                 <div style={{flex:1, height:8, background:'var(--bg-2)', overflow:'hidden', position:'relative'}}>
                   <div style={{
                     position:'absolute', left:0, top:0, bottom:0,
-                    width:`${pct}%`, background: it.color || 'var(--gold)',
+                    width:`${pct}%`, background: it.color || 'var(--primary)',
                     transition:'width .12s',
                   }}/>
                 </div>
                 <div className="mono" style={{
                   minWidth: 90, textAlign:'right', fontSize:12,
-                  color: isHov ? 'var(--ink)' : 'var(--gold-2)', fontWeight:600,
+                  color: isHov ? 'var(--ink)' : 'var(--primary-hover)', fontWeight:600,
                 }}>{pct}% ({fmt(it.count)})</div>
               </div>
             );
@@ -290,7 +290,7 @@ const _CHANNEL_COLORS = {
   '내부 이동': '#94a3b8',
   '직접 방문': '#64748b',
 };
-const _CHANNEL_COLOR = (name) => _CHANNEL_COLORS[name] || 'var(--gold)';
+const _CHANNEL_COLOR = (name) => _CHANNEL_COLORS[name] || 'var(--primary)';
 
 const SankeyFlow = ({ pairs, days, onDaysChange }) => {
   const [hover, setHover] = React.useState(null);

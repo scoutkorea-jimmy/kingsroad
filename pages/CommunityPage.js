@@ -176,7 +176,7 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
       onClick: () => move(i, -1),
       disabled: i === 0,
       "aria-label": `${i + 1}\uBC88 \uC774\uBBF8\uC9C0 \uC55E\uC73C\uB85C`,
-      style: { background: "rgba(0,0,0,0.6)", border: "none", color: "var(--gold)", fontSize: 10, padding: "1px 5px", cursor: "pointer", minHeight: 0 }
+      style: { background: "rgba(0,0,0,0.6)", border: "none", color: "var(--primary)", fontSize: 10, padding: "1px 5px", cursor: "pointer", minHeight: 0 }
     },
     "\u25C0"
   ), /* @__PURE__ */ React.createElement(
@@ -186,7 +186,7 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
       onClick: () => move(i, 1),
       disabled: i === images.length - 1,
       "aria-label": `${i + 1}\uBC88 \uC774\uBBF8\uC9C0 \uB4A4\uB85C`,
-      style: { background: "rgba(0,0,0,0.6)", border: "none", color: "var(--gold)", fontSize: 10, padding: "1px 5px", cursor: "pointer", minHeight: 0 }
+      style: { background: "rgba(0,0,0,0.6)", border: "none", color: "var(--primary)", fontSize: 10, padding: "1px 5px", cursor: "pointer", minHeight: 0 }
     },
     "\u25B6"
   ))))) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "5/1", fontSize: 10 } }, "\uC774\uBBF8\uC9C0\uB97C \uCCA8\uBD80\uD558\uBA74 \uC0C1\uC138 \uD398\uC774\uC9C0 \uD558\uB2E8\uC5D0 \uC790\uB3D9 \uC2AC\uB77C\uC774\uB4DC\uB85C \uD45C\uC2DC\uB429\uB2C8\uB2E4"));
@@ -334,7 +334,7 @@ const CommentTree = ({ comments, user, onDelete, onReply }) => {
           e.preventDefault();
           submitReply(c.id);
         },
-        style: { marginTop: 10, paddingLeft: 24, borderLeft: "2px solid var(--gold-dim)" }
+        style: { marginTop: 10, paddingLeft: 24, borderLeft: "2px solid var(--primary-dim)" }
       },
       /* @__PURE__ */ React.createElement(
         MentionTextarea,
@@ -497,7 +497,7 @@ const MentionTextarea = ({ value, onChange, authors, rows = 4, placeholder, styl
           fontSize: 13,
           cursor: "pointer",
           background: i === active ? "rgba(245,213,72,0.12)" : "transparent",
-          color: i === active ? "var(--gold)" : "var(--ink)"
+          color: i === active ? "var(--primary)" : "var(--ink)"
         }
       },
       "@",
@@ -766,8 +766,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           padding: "14px 24px",
           fontSize: 13,
           letterSpacing: "0.1em",
-          color: tab === "all" ? "var(--gold)" : "var(--ink-2)",
-          borderBottom: tab === "all" ? "1px solid var(--gold)" : "1px solid transparent",
+          color: tab === "all" ? "var(--primary)" : "var(--ink-2)",
+          borderBottom: tab === "all" ? "1px solid var(--primary)" : "1px solid transparent",
           marginBottom: -1
         }
       },
@@ -785,8 +785,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           padding: "14px 24px",
           fontSize: 13,
           letterSpacing: "0.1em",
-          color: tab === c.id ? "var(--gold)" : "var(--ink-2)",
-          borderBottom: tab === c.id ? "1px solid var(--gold)" : "1px solid transparent",
+          color: tab === c.id ? "var(--primary)" : "var(--ink-2)",
+          borderBottom: tab === c.id ? "1px solid var(--primary)" : "1px solid transparent",
           marginBottom: -1
         }
       },
@@ -819,7 +819,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     padding: "10px 16px",
     marginBottom: 16,
     background: "var(--bg-2)",
-    borderLeft: "3px solid var(--gold)",
+    borderLeft: "3px solid var(--primary)",
     fontSize: 13,
     color: "var(--ink-2)",
     lineHeight: 1.6
@@ -831,8 +831,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       style: {
         padding: "4px 16px",
         border: "1px solid",
-        borderColor: activePrefix === "" ? "var(--gold)" : "var(--line-2)",
-        color: activePrefix === "" ? "var(--gold)" : "var(--ink-2)",
+        borderColor: activePrefix === "" ? "var(--primary)" : "var(--line-2)",
+        color: activePrefix === "" ? "var(--primary)" : "var(--ink-2)",
         background: activePrefix === "" ? "rgba(158,104,24,0.06)" : "none",
         cursor: "pointer",
         fontSize: 13,
@@ -849,8 +849,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       style: {
         padding: "4px 16px",
         border: "1px solid",
-        borderColor: activePrefix === p ? "var(--gold)" : "var(--line-2)",
-        color: activePrefix === p ? "var(--gold)" : "var(--ink-2)",
+        borderColor: activePrefix === p ? "var(--primary)" : "var(--line-2)",
+        color: activePrefix === p ? "var(--primary)" : "var(--ink-2)",
         background: activePrefix === p ? "rgba(158,104,24,0.06)" : "none",
         cursor: "pointer",
         fontSize: 13,
@@ -913,8 +913,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       "aria-current": n === safePage ? "page" : void 0,
       onClick: () => setPage(n),
       style: {
-        borderColor: n === safePage ? "var(--gold)" : "var(--line)",
-        color: n === safePage ? "var(--gold)" : "var(--ink-2)",
+        borderColor: n === safePage ? "var(--primary)" : "var(--line)",
+        color: n === safePage ? "var(--primary)" : "var(--ink-2)",
         background: n === safePage ? "rgba(245,213,72,0.08)" : "transparent",
         minWidth: 36
       }
@@ -1093,7 +1093,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     marginTop: 14,
     padding: "10px 14px",
     background: "rgba(245,213,72,0.06)",
-    border: "1px solid var(--gold-dim)",
+    border: "1px solid var(--primary-dim)",
     fontSize: 12,
     color: "var(--ink-2)",
     display: "flex",
@@ -1147,7 +1147,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     {
       type: "button",
       onClick: () => setPrefix(""),
-      style: { padding: "4px 14px", border: "1px solid", borderColor: prefix === "" ? "var(--gold)" : "var(--line)", color: prefix === "" ? "var(--gold)" : "var(--ink-2)", background: "none", cursor: "pointer", fontSize: 13, letterSpacing: "0.05em" }
+      style: { padding: "4px 14px", border: "1px solid", borderColor: prefix === "" ? "var(--primary)" : "var(--line)", color: prefix === "" ? "var(--primary)" : "var(--ink-2)", background: "none", cursor: "pointer", fontSize: 13, letterSpacing: "0.05em" }
     },
     "\uC5C6\uC74C"
   ), boardPrefixes.map((p) => /* @__PURE__ */ React.createElement(
@@ -1156,7 +1156,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       key: p,
       type: "button",
       onClick: () => setPrefix(p),
-      style: { padding: "4px 14px", border: "1px solid", borderColor: prefix === p ? "var(--gold)" : "var(--line)", color: prefix === p ? "var(--gold)" : "var(--ink-2)", background: prefix === p ? "rgba(245,213,72,0.08)" : "none", cursor: "pointer", fontSize: 13, letterSpacing: "0.05em" }
+      style: { padding: "4px 14px", border: "1px solid", borderColor: prefix === p ? "var(--primary)" : "var(--line)", color: prefix === p ? "var(--primary)" : "var(--ink-2)", background: prefix === p ? "rgba(245,213,72,0.08)" : "none", cursor: "pointer", fontSize: 13, letterSpacing: "0.05em" }
     },
     p
   )))), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uD574\uC2DC\uD0DC\uADF8 / \uBA54\uD0C0\uD0DC\uADF8"), /* @__PURE__ */ React.createElement(HashtagInput, { tags, setTags })), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uBCF8\uBB38 ", /* @__PURE__ */ React.createElement("span", { className: "gold", "aria-hidden": "true" }, "*")), /* @__PURE__ */ React.createElement(
@@ -1171,7 +1171,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       },
       placeholder: "\uBCF8\uBB38\uC744 \uC785\uB825\uD558\uC138\uC694..."
     }
-  )), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement(ImageAttacher, { images, setImages, max: 10 })), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement(FileAttacher, { files: attachments, setFiles: setAttachments })), (user == null ? void 0 : user.isAdmin) && /* @__PURE__ */ React.createElement("div", { className: "field", style: { padding: "12px 14px", background: "rgba(245,213,72,0.04)", border: "1px dashed var(--gold-dim)", marginTop: 12 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "post-created-at", style: { display: "block", marginBottom: 6 } }, "\uC5C5\uB85C\uB4DC \uC2DC\uAC04 (\uAD00\uB9AC\uC790 \uC804\uC6A9 \xB7 \uBE44\uC6CC\uB450\uBA74 \uD604\uC7AC \uC2DC\uAC04)"), /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement(ImageAttacher, { images, setImages, max: 10 })), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement(FileAttacher, { files: attachments, setFiles: setAttachments })), (user == null ? void 0 : user.isAdmin) && /* @__PURE__ */ React.createElement("div", { className: "field", style: { padding: "12px 14px", background: "rgba(245,213,72,0.04)", border: "1px dashed var(--primary-dim)", marginTop: 12 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "post-created-at", style: { display: "block", marginBottom: 6 } }, "\uC5C5\uB85C\uB4DC \uC2DC\uAC04 (\uAD00\uB9AC\uC790 \uC804\uC6A9 \xB7 \uBE44\uC6CC\uB450\uBA74 \uD604\uC7AC \uC2DC\uAC04)"), /* @__PURE__ */ React.createElement(
     "input",
     {
       id: "post-created-at",
@@ -1352,7 +1352,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
       className: "btn",
       "aria-pressed": liked,
       onClick: handleLike,
-      style: { borderColor: liked ? "var(--gold)" : void 0, color: liked ? "var(--gold)" : void 0 }
+      style: { borderColor: liked ? "var(--primary)" : void 0, color: liked ? "var(--primary)" : void 0 }
     },
     /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true" }, "\u2665"),
     " \uACF5\uAC10 ",
@@ -1364,7 +1364,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
       className: "btn",
       "aria-pressed": bookmarked,
       onClick: handleBookmark,
-      style: { borderColor: bookmarked ? "var(--gold)" : void 0, color: bookmarked ? "var(--gold)" : void 0 }
+      style: { borderColor: bookmarked ? "var(--primary)" : void 0, color: bookmarked ? "var(--primary)" : void 0 }
     },
     /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true" }, bookmarked ? "\u2605" : "\u2606"),
     " \uBD81\uB9C8\uD06C"
@@ -1395,7 +1395,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
       style: { maxWidth: 560, margin: "24px auto 0", padding: 20, border: "1px solid var(--line)", background: "rgba(194,74,61,0.04)" }
     },
     /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 } }, "REPORT \xB7 \uC2E0\uACE0 \uC0AC\uC720"),
-    reportSubmitted ? /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, padding: "8px 0", color: "var(--gold)" } }, "\uC2E0\uACE0\uAC00 \uC811\uC218\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC6B4\uC601\uC790\uAC00 \uD655\uC778 \uD6C4 \uCC98\uB9AC\uD569\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+    reportSubmitted ? /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, padding: "8px 0", color: "var(--primary)" } }, "\uC2E0\uACE0\uAC00 \uC811\uC218\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC6B4\uC601\uC790\uAC00 \uD655\uC778 \uD6C4 \uCC98\uB9AC\uD569\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
       "textarea",
       {
         className: "field-input",

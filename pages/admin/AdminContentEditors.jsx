@@ -2452,8 +2452,8 @@ const HomeTextEditorPanel = () => {
                 type="range" min="0.85" max="1.20" step="0.01"
                 value={Number(textDraft.fontScale ?? 1)}
                 onChange={(e) => setText('fontScale', Number(e.target.value))}
-                style={{flex:1, minWidth:200, accentColor:'var(--gold)'}}/>
-              <span className="mono" style={{fontSize:13, fontWeight:700, color:'var(--gold)', minWidth:60, textAlign:'right'}}>
+                style={{flex:1, minWidth:200, accentColor:'var(--primary)'}}/>
+              <span className="mono" style={{fontSize:13, fontWeight:700, color:'var(--primary)', minWidth:60, textAlign:'right'}}>
                 ×{Number(textDraft.fontScale ?? 1).toFixed(2)}
               </span>
               <button type="button" className="btn btn-small"
@@ -2684,7 +2684,7 @@ const LegacyMigrationPanel = () => {
         </div>
       )}
       {tourResult && (
-        <div className="card" style={{padding:14, marginBottom:18, fontSize:12, lineHeight:1.7, borderColor:'var(--gold)'}}>
+        <div className="card" style={{padding:14, marginBottom:18, fontSize:12, lineHeight:1.7, borderColor:'var(--primary)'}}>
           ✅ 마이그 완료 — {tourResult.migrated} 건 이동, {tourResult.failed.length} 건 실패.
           {tourResult.failed.length > 0 && (
             <ul style={{paddingLeft:18, margin:'8px 0 0', color:'var(--danger)'}}>
@@ -2719,7 +2719,7 @@ const LegacyMigrationPanel = () => {
         </div>
       )}
       {lectureResult && (
-        <div className="card" style={{padding:14, marginBottom:18, fontSize:12, lineHeight:1.7, borderColor:'var(--gold)'}}>
+        <div className="card" style={{padding:14, marginBottom:18, fontSize:12, lineHeight:1.7, borderColor:'var(--primary)'}}>
           ✅ 마이그 완료 — {lectureResult.migrated} 건 R2 업로드, {lectureResult.failed.length} 건 실패.
           {lectureResult.failed.length > 0 && (
             <ul style={{paddingLeft:18, margin:'8px 0 0', color:'var(--danger)'}}>

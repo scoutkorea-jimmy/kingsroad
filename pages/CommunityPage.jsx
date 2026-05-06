@@ -180,10 +180,10 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
               <div style={{position:'absolute', bottom:4, right:4, display:'flex', gap:2}}>
                 <button type="button" onClick={() => move(i, -1)} disabled={i === 0}
                   aria-label={`${i+1}번 이미지 앞으로`}
-                  style={{background:'rgba(0,0,0,0.6)', border:'none', color:'var(--gold)', fontSize:10, padding:'1px 5px', cursor:'pointer', minHeight:0}}>◀</button>
+                  style={{background:'rgba(0,0,0,0.6)', border:'none', color:'var(--primary)', fontSize:10, padding:'1px 5px', cursor:'pointer', minHeight:0}}>◀</button>
                 <button type="button" onClick={() => move(i, 1)} disabled={i === images.length - 1}
                   aria-label={`${i+1}번 이미지 뒤로`}
-                  style={{background:'rgba(0,0,0,0.6)', border:'none', color:'var(--gold)', fontSize:10, padding:'1px 5px', cursor:'pointer', minHeight:0}}>▶</button>
+                  style={{background:'rgba(0,0,0,0.6)', border:'none', color:'var(--primary)', fontSize:10, padding:'1px 5px', cursor:'pointer', minHeight:0}}>▶</button>
               </div>
             </div>
           ))}
@@ -364,7 +364,7 @@ const CommentTree = ({ comments, user, onDelete, onReply }) => {
         {/* 답글 입력 폼 */}
         {openReplyTo === c.id && (
           <form onSubmit={(e) => { e.preventDefault(); submitReply(c.id); }}
-            style={{marginTop:10, paddingLeft:24, borderLeft:'2px solid var(--gold-dim)'}}>
+            style={{marginTop:10, paddingLeft:24, borderLeft:'2px solid var(--primary-dim)'}}>
             <MentionTextarea
               value={draft}
               onChange={setDraft}
@@ -497,7 +497,7 @@ const MentionTextarea = ({ value, onChange, authors, rows = 4, placeholder, styl
               style={{
                 padding:'6px 10px', fontSize:13, cursor:'pointer',
                 background: i === active ? 'rgba(245,213,72,0.12)' : 'transparent',
-                color: i === active ? 'var(--gold)' : 'var(--ink)',
+                color: i === active ? 'var(--primary)' : 'var(--ink)',
               }}>
               @{name}
             </li>
@@ -764,15 +764,15 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
             <button type="button" role="tab" aria-selected={tab === "all"}
               onClick={() => setTab("all")}
               style={{padding:'14px 24px', fontSize:13, letterSpacing:'0.1em',
-                color: tab === "all" ? 'var(--gold)' : 'var(--ink-2)',
-                borderBottom: tab === "all" ? '1px solid var(--gold)' : '1px solid transparent',
+                color: tab === "all" ? 'var(--primary)' : 'var(--ink-2)',
+                borderBottom: tab === "all" ? '1px solid var(--primary)' : '1px solid transparent',
                 marginBottom:-1}}>전체</button>
             {visibleCats.map(c => (
               <button key={c.id} type="button" role="tab" aria-selected={tab === c.id}
                 onClick={() => setTab(c.id)}
                 style={{padding:'14px 24px', fontSize:13, letterSpacing:'0.1em',
-                  color: tab === c.id ? 'var(--gold)' : 'var(--ink-2)',
-                  borderBottom: tab === c.id ? '1px solid var(--gold)' : '1px solid transparent',
+                  color: tab === c.id ? 'var(--primary)' : 'var(--ink-2)',
+                  borderBottom: tab === c.id ? '1px solid var(--primary)' : '1px solid transparent',
                   marginBottom:-1}}>{c.label}</button>
             ))}
           </div>
@@ -800,7 +800,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
         {tab !== "all" && currentBoard?.desc && (
           <div style={{
             padding:'10px 16px', marginBottom:16,
-            background:'var(--bg-2)', borderLeft:'3px solid var(--gold)',
+            background:'var(--bg-2)', borderLeft:'3px solid var(--primary)',
             fontSize:13, color:'var(--ink-2)', lineHeight:1.6,
           }}>{currentBoard.desc}</div>
         )}
@@ -812,8 +812,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
               onClick={() => setActivePrefix("")}
               style={{
                 padding:'4px 16px', border:'1px solid',
-                borderColor: activePrefix === "" ? 'var(--gold)' : 'var(--line-2)',
-                color: activePrefix === "" ? 'var(--gold)' : 'var(--ink-2)',
+                borderColor: activePrefix === "" ? 'var(--primary)' : 'var(--line-2)',
+                color: activePrefix === "" ? 'var(--primary)' : 'var(--ink-2)',
                 background: activePrefix === "" ? 'rgba(158,104,24,0.06)' : 'none',
                 cursor:'pointer', fontSize:13, letterSpacing:'0.05em',
               }}>전체</button>
@@ -822,8 +822,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                 onClick={() => setActivePrefix(activePrefix === p ? "" : p)}
                 style={{
                   padding:'4px 16px', border:'1px solid',
-                  borderColor: activePrefix === p ? 'var(--gold)' : 'var(--line-2)',
-                  color: activePrefix === p ? 'var(--gold)' : 'var(--ink-2)',
+                  borderColor: activePrefix === p ? 'var(--primary)' : 'var(--line-2)',
+                  color: activePrefix === p ? 'var(--primary)' : 'var(--ink-2)',
                   background: activePrefix === p ? 'rgba(158,104,24,0.06)' : 'none',
                   cursor:'pointer', fontSize:13, letterSpacing:'0.05em',
                 }}>{p}</button>
@@ -895,8 +895,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                 aria-current={n === safePage ? 'page' : undefined}
                 onClick={() => setPage(n)}
                 style={{
-                  borderColor: n === safePage ? 'var(--gold)' : 'var(--line)',
-                  color: n === safePage ? 'var(--gold)' : 'var(--ink-2)',
+                  borderColor: n === safePage ? 'var(--primary)' : 'var(--line)',
+                  color: n === safePage ? 'var(--primary)' : 'var(--ink-2)',
                   background: n === safePage ? 'rgba(245,213,72,0.08)' : 'transparent',
                   minWidth: 36,
                 }}>{n}</button>
@@ -1087,7 +1087,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
           {!isEditing && draftRestored && (
             <div role="status" style={{
               marginTop:14, padding:'10px 14px', background:'rgba(245,213,72,0.06)',
-              border:'1px solid var(--gold-dim)', fontSize:12, color:'var(--ink-2)',
+              border:'1px solid var(--primary-dim)', fontSize:12, color:'var(--ink-2)',
               display:'flex', justifyContent:'space-between', alignItems:'center', gap:12,
             }}>
               <span>이전에 작성하던 글을 복원했습니다.</span>
@@ -1134,13 +1134,13 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
               <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
                 <button type="button"
                   onClick={() => setPrefix("")}
-                  style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === "" ? 'var(--gold)' : 'var(--line)', color: prefix === "" ? 'var(--gold)' : 'var(--ink-2)', background:'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
+                  style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === "" ? 'var(--primary)' : 'var(--line)', color: prefix === "" ? 'var(--primary)' : 'var(--ink-2)', background:'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
                   없음
                 </button>
                 {boardPrefixes.map((p) => (
                   <button key={p} type="button"
                     onClick={() => setPrefix(p)}
-                    style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === p ? 'var(--gold)' : 'var(--line)', color: prefix === p ? 'var(--gold)' : 'var(--ink-2)', background: prefix === p ? 'rgba(245,213,72,0.08)' : 'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
+                    style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === p ? 'var(--primary)' : 'var(--line)', color: prefix === p ? 'var(--primary)' : 'var(--ink-2)', background: prefix === p ? 'rgba(245,213,72,0.08)' : 'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
                     {p}
                   </button>
                 ))}
@@ -1176,7 +1176,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
 
           {/* v00.115 — admin 만 표시: 업로드 시점 시간(표시용) 오버라이드. 비우면 현재 시간. */}
           {user?.isAdmin && (
-            <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)', marginTop:12}}>
+            <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--primary-dim)', marginTop:12}}>
               <label className="field-label" htmlFor="post-created-at" style={{display:'block', marginBottom:6}}>
                 업로드 시간 (관리자 전용 · 비워두면 현재 시간)
               </label>
@@ -1418,12 +1418,12 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
           <div style={{display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap'}}>
             <button type="button" className="btn" aria-pressed={liked}
               onClick={handleLike}
-              style={{borderColor: liked ? 'var(--gold)' : undefined, color: liked ? 'var(--gold)' : undefined}}>
+              style={{borderColor: liked ? 'var(--primary)' : undefined, color: liked ? 'var(--primary)' : undefined}}>
               <span aria-hidden="true">♥</span> 공감 <span aria-live="polite">{likesCount}</span>
             </button>
             <button type="button" className="btn" aria-pressed={bookmarked}
               onClick={handleBookmark}
-              style={{borderColor: bookmarked ? 'var(--gold)' : undefined, color: bookmarked ? 'var(--gold)' : undefined}}>
+              style={{borderColor: bookmarked ? 'var(--primary)' : undefined, color: bookmarked ? 'var(--primary)' : undefined}}>
               <span aria-hidden="true">{bookmarked ? '★' : '☆'}</span> 북마크
             </button>
             <button type="button" className="btn"
@@ -1447,7 +1447,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
               style={{maxWidth:560, margin:'24px auto 0', padding:20, border:'1px solid var(--line)', background:'rgba(194,74,61,0.04)'}}>
               <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>REPORT · 신고 사유</div>
               {reportSubmitted ? (
-                <div className="dim" style={{fontSize:13, lineHeight:1.7, padding:'8px 0', color:'var(--gold)'}}>
+                <div className="dim" style={{fontSize:13, lineHeight:1.7, padding:'8px 0', color:'var(--primary)'}}>
                   신고가 접수되었습니다. 운영자가 확인 후 처리합니다.
                 </div>
               ) : (

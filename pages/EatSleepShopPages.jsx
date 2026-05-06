@@ -56,7 +56,7 @@ const PlacePage = ({ go, kind, user }) => {
         {meta.categories && meta.categories.length > 0 && (
           <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:32}}>
             {meta.categories.map((c) => (
-              <span key={c} className="badge" style={{borderColor:'var(--gold-dim)', color:'var(--gold)'}}>{c}</span>
+              <span key={c} className="badge" style={{borderColor:'var(--primary-dim)', color:'var(--primary)'}}>{c}</span>
             ))}
           </div>
         )}

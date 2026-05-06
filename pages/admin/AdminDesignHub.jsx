@@ -3521,7 +3521,7 @@ const ADMIN_DESIGN_SECTIONS = [
       "회원 등급 색상: guest #A8A29E → member #FCD34D → reader #F5D548 → scholar #F59E0B → wangsanam #D97706 → admin #92400E (Sunny Gold 그라데이션 — 등급은 시각적 위계라 5% 룰 예외).",
       "CTA 텍스트: 옐로우 배경(#F5D548) 위에는 var(--on-primary) #0F172A 다크 잉크 사용 (WCAG AA 통과 — 흰 글씨 대비 부족).",
       "5% 룰: 한 화면에서 옐로우 면적이 시각적으로 5%를 넘으면 다른 토큰으로 대체. 라벨/eyebrow/배지는 var(--ink-3) 가 기본.",
-      "레거시 호환 alias (`--gold` / `--gold-dim` / `--gold-ink` / `--cta-rest` / `--cta-hover` / `--cta-active`): 신규 코드는 `--primary*` / `--on-primary` 사용. 레거시 토큰은 styles.css 에 alias 로만 남아있고 점진적으로 마이그레이션 (P2 plan).",
+      "v00.209 — 레거시 토큰(`--gold` / `--gold-2` / `--gold-dim` / `--gold-ink` / `--cta-rest` / `--cta-hover` / `--cta-active` / `--cta-ink`) 전면 제거 완료. 모든 코드는 `--primary*` / `--on-primary` / `--secondary` 직접 사용. 신규 코드도 동일.",
     ],
   },
   {

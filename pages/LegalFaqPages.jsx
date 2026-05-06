@@ -100,8 +100,8 @@ const FaqPage = ({ go }) => {
             <button key={c} type="button" onClick={() => setCategory(c)}
               style={{
                 padding:'10px 20px',
-                border: category === c ? '1px solid var(--gold)' : '1px solid var(--line-2)',
-                color: category === c ? 'var(--gold)' : 'var(--ink-2)',
+                border: category === c ? '1px solid var(--primary)' : '1px solid var(--line-2)',
+                color: category === c ? 'var(--primary)' : 'var(--ink-2)',
                 background: 'transparent',
                 fontSize: 12,
                 letterSpacing: '0.1em',

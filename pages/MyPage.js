@@ -72,7 +72,7 @@ const MyPage = ({ go, user, cart }) => {
     cancelled: "\uCDE8\uC18C\uB428"
   })[s] || s;
   const tourStatusTone = (s) => ({
-    confirmed: "var(--gold)",
+    confirmed: "var(--primary)",
     waitlist: "var(--ink-2)",
     cancelled: "var(--danger)",
     pending_payment: "var(--ink-2)",
@@ -95,9 +95,9 @@ const MyPage = ({ go, user, cart }) => {
   })[s] || s;
   const orderStatusTone = (s) => ({
     pending_payment: "var(--ink-2)",
-    paid: "var(--gold)",
-    shipped: "var(--gold)",
-    delivered: "var(--gold)",
+    paid: "var(--primary)",
+    shipped: "var(--primary)",
+    delivered: "var(--primary)",
     refund_requested: "var(--warning)",
     cancelled: "var(--danger)"
   })[s] || "var(--ink-2)";
@@ -123,7 +123,7 @@ const MyPage = ({ go, user, cart }) => {
     cancelled: "\uCDE8\uC18C\uB428"
   })[s] || s;
   const lectureStatusTone = (s) => ({
-    confirmed: "var(--gold)",
+    confirmed: "var(--primary)",
     waitlist: "var(--ink-2)",
     cancelled: "var(--danger)",
     pending_payment: "var(--ink-2)",
@@ -171,10 +171,10 @@ const MyPage = ({ go, user, cart }) => {
         whiteSpace: "nowrap",
         cursor: "pointer",
         fontFamily: "var(--font-serif)",
-        color: tab === t.k ? "var(--gold)" : "var(--ink-2)",
+        color: tab === t.k ? "var(--primary)" : "var(--ink-2)",
         background: "transparent",
         border: "none",
-        borderBottom: tab === t.k ? "2px solid var(--gold)" : "2px solid transparent",
+        borderBottom: tab === t.k ? "2px solid var(--primary)" : "2px solid transparent",
         marginBottom: -1
       }
     },
@@ -238,7 +238,7 @@ const MyPage = ({ go, user, cart }) => {
         type: "button",
         className: "btn-ghost",
         onClick: () => window.BGNJ_BOOK_ORDERS.downloadReceipt(o.id),
-        style: { fontSize: 11, color: "var(--gold)" }
+        style: { fontSize: 11, color: "var(--primary)" }
       },
       "\uC601\uC218\uC99D \u2193"
     ), o.status === "pending_payment" && /* @__PURE__ */ React.createElement(
@@ -336,7 +336,7 @@ const MyPage = ({ go, user, cart }) => {
         cursor: "pointer",
         width: "100%",
         padding: "10px 12px",
-        borderLeft: "2px solid " + (n.read ? "var(--line)" : "var(--gold)"),
+        borderLeft: "2px solid " + (n.read ? "var(--line)" : "var(--primary)"),
         background: n.read ? "transparent" : "rgba(245,213,72,0.04)"
       }
     },
@@ -353,7 +353,7 @@ const MyPage = ({ go, user, cart }) => {
         cursor: "pointer",
         width: "100%",
         padding: "10px 12px",
-        borderLeft: "2px solid var(--gold-dim)",
+        borderLeft: "2px solid var(--primary-dim)",
         background: "rgba(245,213,72,0.04)"
       }
     },
@@ -462,7 +462,7 @@ const ProfileEditor = ({ user, onSaved }) => {
     padding: "10px 14px",
     fontSize: 13,
     lineHeight: 1.6,
-    border: "1px solid " + (msg.kind === "ok" ? "var(--gold-dim)" : "var(--danger)"),
+    border: "1px solid " + (msg.kind === "ok" ? "var(--primary-dim)" : "var(--danger)"),
     background: msg.kind === "ok" ? "rgba(245,213,72,0.06)" : "rgba(194,74,61,0.08)",
     color: msg.kind === "ok" ? "var(--ink)" : "var(--danger)"
   } }, msg.text), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: saving || !name.trim() }, saving ? "\uC800\uC7A5 \uC911\u2026" : "\uC800\uC7A5"))));
@@ -536,7 +536,7 @@ const PasswordChangeForm = () => {
     padding: "10px 14px",
     fontSize: 13,
     lineHeight: 1.6,
-    border: "1px solid " + (msg.kind === "ok" ? "var(--gold-dim)" : "var(--danger)"),
+    border: "1px solid " + (msg.kind === "ok" ? "var(--primary-dim)" : "var(--danger)"),
     background: msg.kind === "ok" ? "rgba(245,213,72,0.06)" : "rgba(194,74,61,0.08)",
     color: msg.kind === "ok" ? "var(--ink)" : "var(--danger)"
   } }, msg.text), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: !valid || saving }, saving ? "\uBCC0\uACBD \uC911\u2026" : "\uBE44\uBC00\uBC88\uD638 \uBCC0\uACBD"))));

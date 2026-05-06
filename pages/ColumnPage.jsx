@@ -183,7 +183,7 @@ const ColumnPage = ({ go, user }) => {
           {/* v00.133 — 본문 폰트 가벼움. 사용자 요청 '본문 내용은 좀 얇은 폰트였으면'.
               fontWeight 300 (Noto Serif KR Light) + 부제목 발췌도 light italic. */}
           <article style={{fontFamily:'var(--font-serif)', fontSize:18, lineHeight:2, color:'var(--ink)', fontWeight:300}}>
-            <p style={{fontSize:22, lineHeight:1.7, color:'var(--gold-ink)', marginBottom:32, fontStyle:'italic', fontWeight:300}}>
+            <p style={{fontSize:22, lineHeight:1.7, color:'var(--secondary)', marginBottom:32, fontStyle:'italic', fontWeight:300}}>
               {c.excerpt}
             </p>
             {c.body?.html ? (
@@ -196,11 +196,11 @@ const ColumnPage = ({ go, user }) => {
                 <p style={{marginBottom:28}}>
                   어좌 뒤 다섯 봉우리 병풍은 단순한 장식이 아니다. 그것은 장치다. 왕으로 하여금 매일 우주를 떠올리게 하는 장치, 자신이 누구를 위해 앉아 있는지를 잊지 못하게 하는 장치였다.
                 </p>
-                <h3 style={{fontSize:24, fontWeight:500, margin:'48px 0 20px', color:'var(--gold-2)'}}>다섯 봉우리의 의미</h3>
+                <h3 style={{fontSize:24, fontWeight:500, margin:'48px 0 20px', color:'var(--primary-hover)'}}>다섯 봉우리의 의미</h3>
                 <p style={{marginBottom:28}}>
                   다섯이라는 숫자에는 이유가 있다. 오행(五行) — 목화토금수. 한 왕조가 우주의 질서와 일치한다는 선언이자, 동시에 그 질서를 흔들면 정통성을 잃는다는 경고이기도 했다.
                 </p>
-                <blockquote style={{borderLeft:'3px solid var(--gold)', paddingLeft:32, margin:'40px 0', fontStyle:'italic', color:'var(--gold-ink)'}}>
+                <blockquote style={{borderLeft:'3px solid var(--primary)', paddingLeft:32, margin:'40px 0', fontStyle:'italic', color:'var(--secondary)'}}>
                   왕이라는 자리는 저절로 서 있는 것이 아니다.<br/>
                   다섯 봉우리가 매일 그를 일으켜 세웠다.
                 </blockquote>
@@ -217,7 +217,7 @@ const ColumnPage = ({ go, user }) => {
               <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>SOURCE · 출처</div>
               {c.sourceUrl ? (
                 <a href={c.sourceUrl} target="_blank" rel="noopener noreferrer"
-                  style={{color:'var(--gold-2)', textDecoration:'underline'}}>
+                  style={{color:'var(--primary-hover)', textDecoration:'underline'}}>
                   {c.sourceCredit || c.sourceUrl} <span aria-hidden="true" style={{marginLeft:4}}>↗</span>
                 </a>
               ) : (
@@ -229,7 +229,7 @@ const ColumnPage = ({ go, user }) => {
           {/* 액션 — 공감 / 공유 */}
           <div style={{display:'flex', gap:12, justifyContent:'center', margin:'60px 0 32px', paddingTop:32, borderTop:'1px solid var(--line)', flexWrap:'wrap'}}>
             <button type="button" className="btn" aria-pressed={liked} onClick={handleLike}
-              style={{borderColor: liked ? 'var(--gold)' : undefined, color: liked ? 'var(--gold)' : undefined}}>
+              style={{borderColor: liked ? 'var(--primary)' : undefined, color: liked ? 'var(--primary)' : undefined}}>
               <span aria-hidden="true">♥</span> 공감 <span aria-live="polite">{likes.length}</span>
             </button>
             <button type="button" className="btn" onClick={handleShare}>공유 (링크 복사)</button>
@@ -365,8 +365,8 @@ const ColumnPage = ({ go, user }) => {
               onClick={() => setCategory(c)}
               style={{
                 padding:'10px 20px',
-                border: category === c ? '1px solid var(--gold)' : '1px solid var(--line-2)',
-                color: category === c ? 'var(--gold)' : 'var(--ink-2)',
+                border: category === c ? '1px solid var(--primary)' : '1px solid var(--line-2)',
+                color: category === c ? 'var(--primary)' : 'var(--ink-2)',
                 background: 'transparent',
                 fontSize:12,
                 letterSpacing:'0.1em',

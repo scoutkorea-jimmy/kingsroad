@@ -4,7 +4,7 @@ const _ErrorBrand = () => /* @__PURE__ */ React.createElement("div", { style: { 
   height: 22,
   display: "inline-grid",
   placeItems: "center",
-  background: "var(--gold)",
+  background: "var(--primary)",
   color: "#0F172A",
   fontWeight: 800,
   fontSize: 11,
@@ -32,7 +32,7 @@ const _ErrorIllustration = ({ src, alt }) => {
     fontSize: 80,
     background: "rgba(245,213,72,0.12)",
     borderRadius: 24,
-    color: "var(--gold)"
+    color: "var(--primary)"
   }, "aria-hidden": "true", title: alt + " (\uC774\uBBF8\uC9C0 \uBBF8\uC5C5\uB85C\uB4DC)" }, "\u2708\uFE0F"));
 };
 const ErrorCard = ({
@@ -56,7 +56,7 @@ const ErrorCard = ({
 } }, /* @__PURE__ */ React.createElement(_ErrorBrand, null), /* @__PURE__ */ React.createElement("div", { style: { padding: "28px 28px 24px", textAlign: "center" } }, code && /* @__PURE__ */ React.createElement("div", { style: {
   fontSize: 54,
   fontWeight: 800,
-  color: "var(--gold)",
+  color: "var(--primary)",
   letterSpacing: "-0.02em",
   lineHeight: 1,
   marginBottom: 14,
@@ -89,9 +89,9 @@ const ErrorCard = ({
       padding: "12px 16px",
       fontSize: 13,
       fontWeight: 600,
-      background: "var(--gold)",
+      background: "var(--primary)",
       color: "#0F172A",
-      border: "1px solid var(--gold)",
+      border: "1px solid var(--primary)",
       borderRadius: 10,
       cursor: "pointer",
       display: "inline-flex",

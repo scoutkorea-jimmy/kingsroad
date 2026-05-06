@@ -3276,7 +3276,7 @@ const ADMIN_DESIGN_SECTIONS = [
       "\uD68C\uC6D0 \uB4F1\uAE09 \uC0C9\uC0C1: guest #A8A29E \u2192 member #FCD34D \u2192 reader #F5D548 \u2192 scholar #F59E0B \u2192 wangsanam #D97706 \u2192 admin #92400E (Sunny Gold \uADF8\uB77C\uB370\uC774\uC158 \u2014 \uB4F1\uAE09\uC740 \uC2DC\uAC01\uC801 \uC704\uACC4\uB77C 5% \uB8F0 \uC608\uC678).",
       "CTA \uD14D\uC2A4\uD2B8: \uC610\uB85C\uC6B0 \uBC30\uACBD(#F5D548) \uC704\uC5D0\uB294 var(--on-primary) #0F172A \uB2E4\uD06C \uC789\uD06C \uC0AC\uC6A9 (WCAG AA \uD1B5\uACFC \u2014 \uD770 \uAE00\uC528 \uB300\uBE44 \uBD80\uC871).",
       "5% \uB8F0: \uD55C \uD654\uBA74\uC5D0\uC11C \uC610\uB85C\uC6B0 \uBA74\uC801\uC774 \uC2DC\uAC01\uC801\uC73C\uB85C 5%\uB97C \uB118\uC73C\uBA74 \uB2E4\uB978 \uD1A0\uD070\uC73C\uB85C \uB300\uCCB4. \uB77C\uBCA8/eyebrow/\uBC30\uC9C0\uB294 var(--ink-3) \uAC00 \uAE30\uBCF8.",
-      "\uB808\uAC70\uC2DC \uD638\uD658 alias (`--gold` / `--gold-dim` / `--gold-ink` / `--cta-rest` / `--cta-hover` / `--cta-active`): \uC2E0\uADDC \uCF54\uB4DC\uB294 `--primary*` / `--on-primary` \uC0AC\uC6A9. \uB808\uAC70\uC2DC \uD1A0\uD070\uC740 styles.css \uC5D0 alias \uB85C\uB9CC \uB0A8\uC544\uC788\uACE0 \uC810\uC9C4\uC801\uC73C\uB85C \uB9C8\uC774\uADF8\uB808\uC774\uC158 (P2 plan)."
+      "v00.209 \u2014 \uB808\uAC70\uC2DC \uD1A0\uD070(`--gold` / `--gold-2` / `--gold-dim` / `--gold-ink` / `--cta-rest` / `--cta-hover` / `--cta-active` / `--cta-ink`) \uC804\uBA74 \uC81C\uAC70 \uC644\uB8CC. \uBAA8\uB4E0 \uCF54\uB4DC\uB294 `--primary*` / `--on-primary` / `--secondary` \uC9C1\uC811 \uC0AC\uC6A9. \uC2E0\uADDC \uCF54\uB4DC\uB3C4 \uB3D9\uC77C."
     ]
   },
   {

@@ -87,7 +87,7 @@ const LecturesPage = ({ go, user }) => {
     cancelled: '취소됨',
   }[s] || s);
   const tone = (s) => ({
-    confirmed: 'var(--gold)',
+    confirmed: 'var(--primary)',
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
@@ -121,8 +121,8 @@ const LecturesPage = ({ go, user }) => {
               aria-pressed={bucket === b.k}
               style={{
                 padding:'8px 18px', borderRadius:999, fontSize:13, cursor:'pointer',
-                border: '1px solid ' + (bucket === b.k ? 'var(--gold)' : 'var(--line)'),
-                color: bucket === b.k ? 'var(--gold)' : 'var(--ink-2)',
+                border: '1px solid ' + (bucket === b.k ? 'var(--primary)' : 'var(--line)'),
+                color: bucket === b.k ? 'var(--primary)' : 'var(--ink-2)',
                 background: bucket === b.k ? 'rgba(245,213,72,0.08)' : 'transparent',
               }}>
               {b.label}
@@ -149,9 +149,9 @@ const LecturesPage = ({ go, user }) => {
                 fontSize:13,
                 whiteSpace:'nowrap',
                 fontFamily:'var(--font-serif)',
-                color: safeIdx === i ? 'var(--gold)' : 'var(--ink-2)',
+                color: safeIdx === i ? 'var(--primary)' : 'var(--ink-2)',
                 background: 'transparent', border: 'none',
-                borderBottom: safeIdx === i ? '2px solid var(--gold)' : '2px solid transparent',
+                borderBottom: safeIdx === i ? '2px solid var(--primary)' : '2px solid transparent',
                 marginBottom:-1, cursor:'pointer',
               }}>
               0{i+1} · {String(l.title || '').split(' — ')[0]}
@@ -185,7 +185,7 @@ const LecturesPage = ({ go, user }) => {
             <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap'}}>
               <span className="badge badge-gold">{lecture.title}</span>
               {lecture.price === 0
-                ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--gold)', border:'1px solid var(--gold-dim)', padding:'1px 6px'}}>FREE</span>
+                ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--primary)', border:'1px solid var(--primary-dim)', padding:'1px 6px'}}>FREE</span>
                 : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>}
               <span className="badge">{lecture.host}</span>
               <span className="badge">{lecture.venue}</span>
@@ -358,7 +358,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       </div>
       <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)'}}>
         <span className="dim">잔여</span>
-        <span style={{ color: isFull ? 'var(--danger)' : 'var(--gold)' }}>
+        <span style={{ color: isFull ? 'var(--danger)' : 'var(--primary)' }}>
           {isFull ? `대기 ${seats.waitlist}명` : `${seats.remaining}석`}
         </span>
       </div>
@@ -368,7 +368,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       </div>
 
       {myReg && (
-        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
+        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--primary-dim)', marginBottom:16}}>
           <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>MY REGISTRATION</div>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8}}>
             <span className="ko-serif" style={{fontSize:16}}>{labelStatus(myReg.status)}</span>
@@ -433,7 +433,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       )}
 
       {!myReg && submitted && (
-        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
+        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--primary-dim)', marginBottom:16}}>
           <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>SUBMITTED</div>
           <div className="ko-serif" style={{fontSize:16, marginBottom:6}}>
             신청 접수 — {labelStatus(submitted.status)}
@@ -606,7 +606,7 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
                     aria-label={`${n}점`}
                     style={{
                       background:'transparent', border:'none', cursor:'pointer',
-                      color: n <= rating ? 'var(--gold)' : 'var(--ink-3)',
+                      color: n <= rating ? 'var(--primary)' : 'var(--ink-3)',
                       fontSize:18, padding:'2px 4px',
                     }}>
                     {n <= rating ? '★' : '☆'}

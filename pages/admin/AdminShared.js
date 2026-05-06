@@ -50,7 +50,7 @@ const pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, 
     return null;
   }
 };
-const MiniBarChart = ({ series, labels, height = 120, color = "var(--gold)", label, unit = "", formatTooltip, headerRight }) => {
+const MiniBarChart = ({ series, labels, height = 120, color = "var(--primary)", label, unit = "", formatTooltip, headerRight }) => {
   const [hoverIdx, setHoverIdx] = React.useState(null);
   const max = Math.max(1, ...series);
   const W = 100;
@@ -173,14 +173,14 @@ const RankedBarList = ({ items = [], unit = "", headerLeft, headerRight, emptyTe
         top: 0,
         bottom: 0,
         width: `${pct}%`,
-        background: it.color || "var(--gold)",
+        background: it.color || "var(--primary)",
         transition: "width .12s"
       } })),
       /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
         minWidth: 90,
         textAlign: "right",
         fontSize: 12,
-        color: isHov ? "var(--ink)" : "var(--gold-2)",
+        color: isHov ? "var(--ink)" : "var(--primary-hover)",
         fontWeight: 600
       } }, pct, "% (", fmt(it.count), ")")
     );
@@ -249,7 +249,7 @@ const _CHANNEL_COLORS = {
   "\uB0B4\uBD80 \uC774\uB3D9": "#94a3b8",
   "\uC9C1\uC811 \uBC29\uBB38": "#64748b"
 };
-const _CHANNEL_COLOR = (name) => _CHANNEL_COLORS[name] || "var(--gold)";
+const _CHANNEL_COLOR = (name) => _CHANNEL_COLORS[name] || "var(--primary)";
 const SankeyFlow = ({ pairs, days, onDaysChange }) => {
   var _a, _b, _c;
   const [hover, setHover] = React.useState(null);

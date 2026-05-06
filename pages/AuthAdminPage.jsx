@@ -211,8 +211,8 @@ const LoginPage = ({ go, setUser }) => {
                   flex:1, padding:'14px',
                   fontFamily:'var(--font-serif)',
                   fontSize:16,
-                  color: mode === t.k ? 'var(--gold)' : 'var(--ink-3)',
-                  borderBottom: mode === t.k ? '2px solid var(--gold)' : '2px solid transparent',
+                  color: mode === t.k ? 'var(--primary)' : 'var(--ink-3)',
+                  borderBottom: mode === t.k ? '2px solid var(--primary)' : '2px solid transparent',
                   marginBottom:-1,
                 }}>{t.l}</button>
             ))}
@@ -266,10 +266,10 @@ const LoginPage = ({ go, setUser }) => {
 
                 {/* 선택 항목 — 접기/펴기 */}
                 <details style={{border:'1px solid var(--line)', padding:'14px 16px', margin:'24px 0'}}>
-                  <summary style={{cursor:'pointer', fontFamily:'var(--font-mono)', fontSize:11, letterSpacing:'0.2em', color:'var(--gold)'}}>
+                  <summary style={{cursor:'pointer', fontFamily:'var(--font-mono)', fontSize:11, letterSpacing:'0.2em', color:'var(--primary)'}}>
                     추가 정보 입력 (선택 · 입력하지 않아도 사이트 이용에 문제 없음)
                   </summary>
-                  <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7, padding:'10px 12px', background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)'}}>
+                  <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7, padding:'10px 12px', background:'rgba(245,213,72,0.06)', border:'1px solid var(--primary-dim)'}}>
                     <strong className="gold">아래 항목은 모두 선택입니다.</strong> 입력하지 않으셔도 회원가입과 모든 사이트 기능을 동일하게 이용하실 수 있습니다. 수집된 정보는 GDPR/PIPA에 따라 관리되며, 언제든 열람·정정·삭제할 수 있습니다.
                   </p>
 
@@ -350,15 +350,15 @@ const LoginPage = ({ go, setUser }) => {
                 <label htmlFor="consent-terms" style={{display:'flex', gap:10, alignItems:'flex-start', margin:'16px 0 20px', fontSize:12, color:'var(--ink-2)', lineHeight:1.6}}>
                   <input id="consent-terms" type="checkbox" required aria-required="true"
                     checked={form.consentTerms} onChange={e => set('consentTerms', e.target.checked)}
-                    style={{accentColor:'var(--gold)', marginTop:3}}/>
+                    style={{accentColor:'var(--primary)', marginTop:3}}/>
                   <span>
                     <button type="button" className="btn-ghost" onClick={() => setLegalModal('terms')}
-                      style={{padding:0, color:'var(--gold)', textDecoration:'underline', fontSize:12}}>
+                      style={{padding:0, color:'var(--primary)', textDecoration:'underline', fontSize:12}}>
                       이용약관
                     </button>
                     {' '}및{' '}
                     <button type="button" className="btn-ghost" onClick={() => setLegalModal('privacy')}
-                      style={{padding:0, color:'var(--gold)', textDecoration:'underline', fontSize:12}}>
+                      style={{padding:0, color:'var(--primary)', textDecoration:'underline', fontSize:12}}>
                       개인정보 처리방침
                     </button>
                     에 동의합니다 <span className="gold">(필수)</span>
@@ -371,9 +371,9 @@ const LoginPage = ({ go, setUser }) => {
             {mode === "login" && (
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, fontSize:12}}>
                 <label htmlFor="keep-login" style={{display:'flex', gap:8, alignItems:'center', color:'var(--ink-2)'}}>
-                  <input id="keep-login" type="checkbox" style={{accentColor:'var(--gold)'}}/>로그인 유지
+                  <input id="keep-login" type="checkbox" style={{accentColor:'var(--primary)'}}/>로그인 유지
                 </label>
-              <button type="button" className="btn-ghost" style={{color:'var(--gold)'}}>비밀번호 찾기</button>
+              <button type="button" className="btn-ghost" style={{color:'var(--primary)'}}>비밀번호 찾기</button>
             </div>
           )}
             <button type="submit" className="btn btn-gold btn-block" disabled={submitting} aria-busy={submitting}>
@@ -512,7 +512,7 @@ const CorruptedBodyInspector = ({ go }) => {
     return /v00\.129 이하/.test(html) || /v00\.129 이하/.test(text) || html === '[object Object]' || text === '[object Object]';
   });
   return (
-    <div className="card" style={{padding:18, marginBottom:18, border:'1px dashed var(--gold-dim)'}}>
+    <div className="card" style={{padding:18, marginBottom:18, border:'1px dashed var(--primary-dim)'}}>
       <h4 className="ko-serif" style={{fontSize:15, margin:'0 0 10px'}}>🔍 커뮤니티 본문 손상 점검 (v00.130 hotfix)</h4>
       <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:12}}>
         v00.129 이하에서 작성된 글은 D1 에 본문이 <code>[object Object]</code> 로 저장돼 화면에 경고 텍스트가 표시될 수 있습니다.
@@ -585,8 +585,8 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
           <button key={f.key} type="button" className="btn btn-small"
             onClick={() => setFilter(f.key)}
             style={{
-              borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
-              color: filter === f.key ? 'var(--gold)' : 'var(--ink-2)',
+              borderColor: filter === f.key ? 'var(--primary)' : 'var(--line)',
+              color: filter === f.key ? 'var(--primary)' : 'var(--ink-2)',
               background: filter === f.key ? 'rgba(245,213,72,0.06)' : 'transparent',
             }}>
             {f.label} <span className="mono dim-2" style={{ fontSize: 10, marginLeft: 4 }}>{counts[f.key] ?? 0}</span>
@@ -604,7 +604,7 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
             const tone = r.status === 'open'
               ? 'var(--danger)'
               : r.status === 'resolved'
-                ? 'var(--gold)'
+                ? 'var(--primary)'
                 : 'var(--ink-3)';
             const statusLabel = r.status === 'open' ? '미처리' : r.status === 'resolved' ? '처리 완료' : '반려';
             return (
@@ -714,7 +714,7 @@ const HoverDetailsPopover = ({ details, open, id, anchor = 'right' }) => {
       style={{
         position:'absolute', top:'100%', marginTop:8,
         [anchor === 'left' ? 'left' : 'right']: 0,
-        background:'var(--bg)', border:'1px solid var(--gold-dim)',
+        background:'var(--bg)', border:'1px solid var(--primary-dim)',
         boxShadow:'0 8px 24px rgba(0,0,0,0.18)', padding:'14px 16px',
         minWidth:240, maxWidth:320, zIndex:50, borderRadius:8,
       }}>
@@ -723,7 +723,7 @@ const HoverDetailsPopover = ({ details, open, id, anchor = 'right' }) => {
         {details.map((d, i) => (
           <li key={i} style={{display:'flex', justifyContent:'space-between', gap:14, fontSize:12, alignItems:'baseline'}}>
             <span className="dim" style={{flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis'}}>{d.label}</span>
-            <span className="mono" style={{fontWeight:600, color:'var(--gold)', whiteSpace:'nowrap'}}>{d.value}</span>
+            <span className="mono" style={{fontWeight:600, color:'var(--primary)', whiteSpace:'nowrap'}}>{d.value}</span>
           </li>
         ))}
       </ul>
@@ -745,10 +745,10 @@ const StatTile = ({ stat }) => {
       tabIndex={hasDetails ? 0 : undefined}
       aria-describedby={open ? id : undefined}>
       <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{stat.l}</div>
-      <div className="ko-serif" style={{fontSize:32, color:'var(--gold-2)'}}>
+      <div className="ko-serif" style={{fontSize:32, color:'var(--primary-hover)'}}>
         {stat.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{stat.unit||''}</span>
       </div>
-      <div style={{fontSize:11, color: stat.p ? 'var(--gold)' : 'var(--danger)', marginTop:8}}>{stat.d}</div>
+      <div style={{fontSize:11, color: stat.p ? 'var(--primary)' : 'var(--danger)', marginTop:8}}>{stat.d}</div>
       <HoverDetailsPopover details={stat.details} open={open} id={id}/>
     </div>
   );
@@ -773,7 +773,7 @@ const MetricCard = ({ label, value, sub, accent, icon, details }) => {
         {icon && <span style={{fontSize:18}} aria-hidden="true">{icon}</span>}
         <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase'}}>{label}</div>
       </div>
-      <div className="ko-serif" style={{fontSize:32, fontWeight:600, color: accent || 'var(--gold-2)', lineHeight:1.1}}>
+      <div className="ko-serif" style={{fontSize:32, fontWeight:600, color: accent || 'var(--primary-hover)', lineHeight:1.1}}>
         {value}
       </div>
       {sub && <div className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.5}}>{sub}</div>}
@@ -975,14 +975,14 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
       </div>
       <div className="grid grid-4" style={{marginBottom:18}}>
         <MetricCard icon="📅" label="일일 방문" value={dayViews ?? '—'}
-          accent="var(--gold)" sub={dayUnique != null ? `세션 ${dayUnique}건 · 페이지뷰 ${dayViews}` : '서버 데이터 미수신'}
+          accent="var(--primary)" sub={dayUnique != null ? `세션 ${dayUnique}건 · 페이지뷰 ${dayViews}` : '서버 데이터 미수신'}
           details={dayUnique != null ? [
             { label: '페이지뷰', value: dayViews },
             { label: '세션 (unique)', value: dayUnique },
             { label: '페이지/세션', value: dayUnique > 0 ? (dayViews / dayUnique).toFixed(2) : '—' },
           ] : null}/>
         <MetricCard icon="📊" label="주간 방문" value={weekViews ?? '—'}
-          accent="var(--gold-2)" sub={weekUnique != null ? `세션 ${weekUnique}건 · 페이지뷰 ${weekViews}` : '서버 데이터 미수신'}
+          accent="var(--primary-hover)" sub={weekUnique != null ? `세션 ${weekUnique}건 · 페이지뷰 ${weekViews}` : '서버 데이터 미수신'}
           details={weekUnique != null ? [
             { label: '페이지뷰', value: weekViews },
             { label: '세션 (unique)', value: weekUnique },
@@ -990,7 +990,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
             { label: '일평균 세션', value: (weekUnique / 7).toFixed(1) },
           ] : null}/>
         <MetricCard icon="📈" label="월간 방문" value={monthViews ?? '—'}
-          accent="var(--gold)" sub={monthUnique != null ? `세션 ${monthUnique}건 · 페이지뷰 ${monthViews}` : '서버 데이터 미수신'}
+          accent="var(--primary)" sub={monthUnique != null ? `세션 ${monthUnique}건 · 페이지뷰 ${monthViews}` : '서버 데이터 미수신'}
           details={monthUnique != null ? [
             { label: '페이지뷰', value: monthViews },
             { label: '세션 (unique)', value: monthUnique },
@@ -1017,7 +1017,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
             label={`📊 ${pvDays === 1 ? '24시간 (1시간 단위)' : pvDays + '일'} 페이지뷰 추이`}
             series={pvSeries.counts}
             labels={pvSeries.labels}
-            color="var(--gold)"
+            color="var(--primary)"
             height={140}
             unit="회"
             formatTooltip={(v, l) => `${l || ''} · 페이지뷰 ${v}회`}
@@ -1060,7 +1060,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
           .filter((it) => it.count > 0 || (grades.find((g) => g.id === it.id)?.id));
         // 미분류 (gradeId 없는 회원).
         if (counts.unranked) items.push({ id: 'unranked', label: '미분류', count: counts.unranked, color: 'var(--ink-3)' });
-        if (adminCount > 0) items.push({ id: '__admin', label: '관리자', count: adminCount, color: 'var(--gold)' });
+        if (adminCount > 0) items.push({ id: '__admin', label: '관리자', count: adminCount, color: 'var(--primary)' });
         items.sort((a, b) => b.count - a.count);
         return (
           <RankedBarList
@@ -1265,7 +1265,7 @@ const BulkLectureImport = ({ onClose, onDone }) => {
   };
 
   return (
-    <div className="card" style={{padding:18, marginBottom:18, border:'1px dashed var(--gold-dim)'}}>
+    <div className="card" style={{padding:18, marginBottom:18, border:'1px dashed var(--primary-dim)'}}>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
         <h4 className="ko-serif" style={{fontSize:15, margin:0}}>📑 강연 일괄 등록 (CSV)</h4>
         <button type="button" className="btn btn-small" onClick={onClose}>닫기</button>
@@ -1534,13 +1534,13 @@ const LectureAdminPanel = ({ go }) => {
                     </div>
                   </div>
                   <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-                    <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: seats.remaining <= 0 ? 'var(--danger)' : 'var(--gold)'}}>
+                    <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: seats.remaining <= 0 ? 'var(--danger)' : 'var(--primary)'}}>
                       잔여 {seats.remaining} / {seats.capacity}
                     </span>
                     {seats.waitlist > 0 && <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)'}}>대기 {seats.waitlist}</span>}
                     {l.price > 0
                       ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>유료 {window.BGNJ_FMT.won(l.price)}</span>
-                      : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--gold)', border:'1px solid var(--gold-dim)', padding:'1px 6px'}}>FREE</span>}
+                      : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--primary)', border:'1px solid var(--primary-dim)', padding:'1px 6px'}}>FREE</span>}
                   </div>
                 </header>
 
@@ -1680,7 +1680,7 @@ const LectureAdminPanel = ({ go }) => {
                             <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.phone || '-'}</td>
                             <td className="mono" style={{padding:10, textAlign:'right'}}>{r.count}</td>
                             <td className="mono" style={{padding:10, fontSize:10, letterSpacing:'0.18em', color:
-                              r.status === 'confirmed' ? 'var(--gold)' :
+                              r.status === 'confirmed' ? 'var(--primary)' :
                               r.status === 'waitlist' ? 'var(--ink-2)' :
                               r.status === 'pending_payment' ? 'var(--ink-2)' : 'var(--danger)'}}>
                               {r.status === 'pending_payment' ? '입금 대기' :
@@ -1717,7 +1717,7 @@ const LectureAdminPanel = ({ go }) => {
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
                                       onClick={async () => { if (!(await window.BGNJ_CONFIRM('환불을 승인하시겠어요?', { danger: true }))) return; window.BGNJ_LECTURES.approveRefund(l.id, r.id); refresh(); }}
-                                      style={{borderColor:'var(--gold)', color:'var(--gold)'}}>승인</button>
+                                      style={{borderColor:'var(--primary)', color:'var(--primary)'}}>승인</button>
                                     <input className="field-input" placeholder="반려 사유"
                                       style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
                                       value={refundRejectNotes[r.id] || ''}
@@ -2017,7 +2017,7 @@ const TourAdminPanel = ({ go }) => {
                     </div>
                   </div>
                   <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-                    <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: seats.remaining <= 0 ? 'var(--danger)' : 'var(--gold)'}}>
+                    <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: seats.remaining <= 0 ? 'var(--danger)' : 'var(--primary)'}}>
                       잔여 {seats.remaining} / {seats.capacity}
                     </span>
                     {seats.waitlist > 0 && <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)'}}>대기 {seats.waitlist}</span>}
@@ -2209,7 +2209,7 @@ const TourAdminPanel = ({ go }) => {
                             <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.phone || '-'}</td>
                             <td className="mono" style={{padding:10, textAlign:'right'}}>{r.count}</td>
                             <td className="mono" style={{padding:10, fontSize:10, letterSpacing:'0.18em', color:
-                              r.status === 'confirmed' ? 'var(--gold)' :
+                              r.status === 'confirmed' ? 'var(--primary)' :
                               r.status === 'waitlist' ? 'var(--ink-2)' :
                               r.status === 'pending_payment' ? 'var(--ink-2)' : 'var(--danger)'}}>
                               {r.status === 'pending_payment' ? '입금 대기' :
@@ -2246,7 +2246,7 @@ const TourAdminPanel = ({ go }) => {
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
                                       onClick={async () => { if (!(await window.BGNJ_CONFIRM('환불을 승인하시겠어요?', { danger: true }))) return; window.BGNJ_TOURS.approveRefund(t.id, r.id); refresh(); }}
-                                      style={{borderColor:'var(--gold)', color:'var(--gold)'}}>승인</button>
+                                      style={{borderColor:'var(--primary)', color:'var(--primary)'}}>승인</button>
                                     <input className="field-input" placeholder="반려 사유"
                                       style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
                                       value={refundRejectNotes[r.id] || ''}
@@ -2400,9 +2400,9 @@ const BankAccountPanel = () => {
       {msg && (
         <div role="status" style={{
           marginTop:14, padding:'10px 14px',
-          border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
+          border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--primary-dim)',
           background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(245,213,72,0.06)',
-          color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--gold)', fontSize:13,
+          color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--primary)', fontSize:13,
         }}>{msg}</div>
       )}
 
@@ -2444,7 +2444,7 @@ const BankAccountPanel = () => {
                 value={draft.memo} onChange={(e) => setDraft({ ...draft, memo: e.target.value })}/>
             </div>
             <label style={{display:'flex', alignItems:'center', gap:8, fontSize:13}}>
-              <input type="checkbox" style={{accentColor:'var(--gold)'}}
+              <input type="checkbox" style={{accentColor:'var(--primary)'}}
                 checked={draft.isDefault}
                 onChange={(e) => setDraft({ ...draft, isDefault: e.target.checked })}/>
               기본 계좌로 사용 (결제 화면에서 자동 선택)
@@ -2496,7 +2496,7 @@ window.BGNJ_BankAccountPicker = ({ value, onChange, accounts, refreshOnMount = t
     if (selected && selected.id !== value && onChange) onChange(selected.id);
   }, [list.length]);
   return (
-    <div style={{padding:'14px 16px', border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.04)'}}>
+    <div style={{padding:'14px 16px', border:'1px solid var(--primary-dim)', background:'rgba(245,213,72,0.04)'}}>
       <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>BANK ACCOUNT · 입금 계좌</div>
       {list.length > 1 && (
         <div style={{marginBottom:12}}>
@@ -2562,9 +2562,9 @@ const BookOrderAdminPanel = ({ go }) => {
 
   const statusTone = (s) => ({
     pending_payment: 'var(--ink-2)',
-    paid: 'var(--gold)',
-    shipped: 'var(--gold)',
-    delivered: 'var(--gold-2)',
+    paid: 'var(--primary)',
+    shipped: 'var(--primary)',
+    delivered: 'var(--primary-hover)',
     refund_requested: 'var(--warning)',
     cancelled: 'var(--danger)',
   }[s] || 'var(--ink-2)');
@@ -2591,8 +2591,8 @@ const BookOrderAdminPanel = ({ go }) => {
             <button key={f.key} type="button" className="btn btn-small"
               onClick={() => setFilter(f.key)}
               style={{
-                borderColor: filter === f.key ? 'var(--gold)' : 'var(--line)',
-                color: filter === f.key ? 'var(--gold)' : 'var(--ink-2)',
+                borderColor: filter === f.key ? 'var(--primary)' : 'var(--line)',
+                color: filter === f.key ? 'var(--primary)' : 'var(--ink-2)',
                 background: filter === f.key ? 'rgba(245,213,72,0.06)' : 'transparent',
               }}>
               {f.label} <span className="mono dim-2" style={{ fontSize: 10, marginLeft: 4 }}>{counts[f.key] ?? 0}</span>
@@ -2706,7 +2706,7 @@ const BookOrderAdminPanel = ({ go }) => {
                             window.BGNJ_BOOK_ORDERS.approveRefund(o.id);
                             refresh();
                           }}
-                          style={{borderColor:'var(--gold)', color:'var(--gold)'}}>
+                          style={{borderColor:'var(--primary)', color:'var(--primary)'}}>
                           환불 승인
                         </button>
                         <input className="field-input"
@@ -2797,8 +2797,8 @@ const LegalAdminPanel = () => {
             onClick={() => setSlug(s)}
             style={{
               padding:'12px 22px', fontSize:14, letterSpacing:'0.05em',
-              color: slug === s ? 'var(--gold)' : 'var(--ink-2)',
-              borderBottom: slug === s ? '2px solid var(--gold)' : '2px solid transparent',
+              color: slug === s ? 'var(--primary)' : 'var(--ink-2)',
+              borderBottom: slug === s ? '2px solid var(--primary)' : '2px solid transparent',
               marginBottom:-1, background:'none',
             }}>
             {SLUG_LABEL[s] || s}
@@ -2806,7 +2806,7 @@ const LegalAdminPanel = () => {
         ))}
       </div>
 
-      <p className="dim-2" style={{fontSize:12, marginBottom:14, lineHeight:1.7, padding:'10px 12px', background:'var(--bg-2)', borderLeft:'3px solid var(--gold-dim)'}}>
+      <p className="dim-2" style={{fontSize:12, marginBottom:14, lineHeight:1.7, padding:'10px 12px', background:'var(--bg-2)', borderLeft:'3px solid var(--primary-dim)'}}>
         ⓘ {SLUG_HINT[slug] || ''}
       </p>
 
@@ -2834,9 +2834,9 @@ const LegalAdminPanel = () => {
         {msg && (
           <div role="status" style={{
             fontSize:13, marginBottom:14, padding:'10px 14px',
-            border: msg.startsWith('✗') || msg.startsWith('⚠') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
+            border: msg.startsWith('✗') || msg.startsWith('⚠') ? '1px solid var(--danger)' : '1px solid var(--primary-dim)',
             background: msg.startsWith('✗') || msg.startsWith('⚠') ? 'rgba(194,74,61,0.06)' : 'rgba(245,213,72,0.06)',
-            color: msg.startsWith('✗') || msg.startsWith('⚠') ? 'var(--danger)' : 'var(--gold)',
+            color: msg.startsWith('✗') || msg.startsWith('⚠') ? 'var(--danger)' : 'var(--primary)',
           }}>{msg}</div>
         )}
         <div style={{display:'flex', gap:8, justifyContent:'flex-end', borderTop:'1px solid var(--line)', paddingTop:14}}>
@@ -3059,7 +3059,7 @@ const SiteContentAdminPanel = () => {
         섹션별로 저장되며 저장 즉시 사이트에 반영됩니다.
       </p>
       {msg && (
-        <div role="status" className="mono gold" style={{fontSize:12, marginBottom:14, padding:'8px 12px', border:'1px solid var(--gold-dim)', background:'rgba(59,130,246,0.06)'}}>
+        <div role="status" className="mono gold" style={{fontSize:12, marginBottom:14, padding:'8px 12px', border:'1px solid var(--primary-dim)', background:'rgba(59,130,246,0.06)'}}>
           {msg}
         </div>
       )}
@@ -3579,12 +3579,12 @@ const BooksAdminPanel = () => {
         </div>
       )}
       {!loading && books.length === 0 && (
-        <div role="status" style={{fontSize:13, marginBottom:14, padding:'10px 14px', border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.06)', color:'var(--ink)'}}>
+        <div role="status" style={{fontSize:13, marginBottom:14, padding:'10px 14px', border:'1px solid var(--primary-dim)', background:'rgba(245,213,72,0.06)', color:'var(--ink)'}}>
           ⓘ 등록된 책이 없습니다. 우측 상단 [＋ 새 책] 으로 추가하거나, 아래 [다시 불러오기] 로 새로고침하세요.
         </div>
       )}
       {msg && (
-        <div role="status" className="mono gold" style={{fontSize:12, marginBottom:14, padding:'8px 12px', border:'1px solid var(--gold-dim)', background:'rgba(59,130,246,0.06)'}}>
+        <div role="status" className="mono gold" style={{fontSize:12, marginBottom:14, padding:'8px 12px', border:'1px solid var(--primary-dim)', background:'rgba(59,130,246,0.06)'}}>
           {msg}
         </div>
       )}
@@ -3636,7 +3636,7 @@ const BooksAdminPanel = () => {
                   borderBottom:'1px solid var(--line)',
                   display:'flex', alignItems:'stretch',
                   background: isDraft ? 'rgba(245,213,72,0.06)' : 'transparent',
-                  borderLeft: isDraft ? '3px solid var(--gold)' : '3px solid transparent',
+                  borderLeft: isDraft ? '3px solid var(--primary)' : '3px solid transparent',
                 }}>
                   <button type="button"
                     onClick={() => { setSelectedId(b.id); setEditTab('meta'); }}
@@ -3659,7 +3659,7 @@ const BooksAdminPanel = () => {
                       <span className="ko-serif" style={{fontSize:13, color:'var(--ink)', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
                         {isDraft ? (b.title?.trim() || '(제목 없음)') : b.title}
                       </span>
-                      <span className="mono dim-2" style={{fontSize:9, letterSpacing:'0.12em', color: isDraft ? 'var(--gold)' : undefined}}>
+                      <span className="mono dim-2" style={{fontSize:9, letterSpacing:'0.12em', color: isDraft ? 'var(--primary)' : undefined}}>
                         {isDraft
                           ? '● 새 책 (미저장)'
                           : (b.status === 'published' ? '출간' : b.status === 'coming_soon' ? '출간 예정' : '초안')}
@@ -3721,8 +3721,8 @@ const BooksAdminPanel = () => {
                     onClick={() => setEditTab(t.id)}
                     style={{
                       padding:'10px 14px', fontSize:13,
-                      color: editTab === t.id ? 'var(--gold)' : 'var(--ink-2)',
-                      borderBottom: editTab === t.id ? '2px solid var(--gold)' : '2px solid transparent',
+                      color: editTab === t.id ? 'var(--primary)' : 'var(--ink-2)',
+                      borderBottom: editTab === t.id ? '2px solid var(--primary)' : '2px solid transparent',
                       marginBottom:-1, background:'none', border:'none', cursor:'pointer',
                       fontFamily:'var(--font-serif)',
                     }}>{t.label}</button>
@@ -3874,7 +3874,7 @@ const BooksAdminPanel = () => {
                                 <label key={key} style={{
                                   display:'flex', alignItems:'center', gap:8,
                                   padding:'8px 12px',
-                                  border:'1px solid ' + (on ? 'var(--gold-dim)' : 'var(--line)'),
+                                  border:'1px solid ' + (on ? 'var(--primary-dim)' : 'var(--line)'),
                                   background: on ? 'rgba(245,213,72,0.06)' : 'var(--bg-2)',
                                   cursor:'pointer', fontSize:13,
                                 }}>
@@ -4083,7 +4083,7 @@ const BooksAdminPanel = () => {
                     </button>
                   )}
                   <span className="admin-savebar__spacer"/>
-                  <span className="dim-2 mono" style={{fontSize:11, color: editing._isNew ? 'var(--gold)' : undefined}}>
+                  <span className="dim-2 mono" style={{fontSize:11, color: editing._isNew ? 'var(--primary)' : undefined}}>
                     {editing._isNew
                       ? '● 새 책 (미저장 — [💾 새 책 저장] 클릭 시 D1 반영)'
                       : (dirty ? '● 미저장 변경 있음' : '○ 모든 변경 저장됨')}
@@ -4327,9 +4327,9 @@ const SEOAdminPanel = () => {
       {msg && (
         <div role="status" style={{
           marginBottom:16, padding:'10px 14px',
-          border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
+          border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--primary-dim)',
           background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(245,213,72,0.06)',
-          color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--gold)', fontSize:13,
+          color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--primary)', fontSize:13,
         }}>{msg}</div>
       )}
 
@@ -4498,9 +4498,9 @@ const SearchConsoleAdminPanel = () => {
       {msg && (
         <div role="status" style={{
           marginBottom:16, padding:'10px 14px',
-          border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
+          border: msg.startsWith('✗') ? '1px solid var(--danger)' : '1px solid var(--primary-dim)',
           background: msg.startsWith('✗') ? 'rgba(194,74,61,0.06)' : 'rgba(245,213,72,0.06)',
-          color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--gold)', fontSize:13,
+          color: msg.startsWith('✗') ? 'var(--danger)' : 'var(--primary)', fontSize:13,
         }}>{msg}</div>
       )}
 
@@ -5048,7 +5048,7 @@ const MemberAdminPanel = ({ go }) => {
               <div className="mono dim-2" style={{fontSize:11}}>#{selected.id} · {selected.email}</div>
             </div>
             <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-              {selected.isAdmin && <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--gold)', border:'1px solid var(--gold-dim)', padding:'2px 8px'}}>ADMIN</span>}
+              {selected.isAdmin && <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--primary)', border:'1px solid var(--primary-dim)', padding:'2px 8px'}}>ADMIN</span>}
               {selected.suspended && <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--danger)', border:'1px solid var(--danger)', padding:'2px 8px'}}>SUSPENDED</span>}
             </div>
           </div>
@@ -5255,14 +5255,14 @@ const MemberAdminPanel = ({ go }) => {
                   <button type="button" onClick={() => setSelectedId(u.id)}
                     style={{all:'unset', cursor:'pointer'}}>
                     <span className="ko-serif" style={{fontSize:14}}>{u.name}</span>
-                    {u.isAdmin && <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color:'var(--gold)', marginLeft:8}}>ADMIN</span>}
+                    {u.isAdmin && <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color:'var(--primary)', marginLeft:8}}>ADMIN</span>}
                     {u.suspended && <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color:'var(--danger)', marginLeft:8}}>정지</span>}
                   </button>
                 </td>
                 <td className="mono dim-2" style={{padding:12, fontSize:11}}>{u.email}</td>
                 <td style={{padding:12}}>
                   {g ? (
-                    <span className="mono" style={{fontSize:10, letterSpacing:'0.14em', color: g.color || 'var(--gold)', border:`1px solid ${g.color || 'var(--gold-dim)'}`, padding:'1px 6px'}}>
+                    <span className="mono" style={{fontSize:10, letterSpacing:'0.14em', color: g.color || 'var(--primary)', border:`1px solid ${g.color || 'var(--primary-dim)'}`, padding:'1px 6px'}}>
                       {g.label}
                     </span>
                   ) : (
@@ -5436,7 +5436,7 @@ const ActivityLogPanel = () => {
   ];
 
   const TYPE_COLOR = {
-    admin: 'var(--gold-2)',
+    admin: 'var(--primary-hover)',
     signup: 'var(--secondary)',
     grade: '#a855f7',
     category: '#0ea5e9',
@@ -5467,9 +5467,9 @@ const ActivityLogPanel = () => {
               style={{
                 padding:'5px 12px', fontSize:12,
                 fontFamily:'var(--font-serif)',
-                background: active ? 'var(--gold)' : 'transparent',
+                background: active ? 'var(--primary)' : 'transparent',
                 color: active ? 'var(--bg)' : 'var(--ink-2)',
-                border:`1px solid ${active ? 'var(--gold)' : 'var(--line-2)'}`,
+                border:`1px solid ${active ? 'var(--primary)' : 'var(--line-2)'}`,
                 borderRadius:999,
                 cursor:'pointer',
                 display:'inline-flex', alignItems:'center', gap:6,
@@ -5701,7 +5701,7 @@ const InternalAlarmPanel = () => {
                 <label key={opt.key} style={{
                   display:'flex', alignItems:'flex-start', gap:10, cursor:'pointer',
                   padding:'10px 12px',
-                  border: `1px solid ${active ? 'var(--gold)' : 'var(--line-2)'}`,
+                  border: `1px solid ${active ? 'var(--primary)' : 'var(--line-2)'}`,
                   background: active ? 'rgba(245,213,72,0.06)' : 'transparent',
                   transition:'border-color .12s, background .12s',
                 }}>
@@ -5858,9 +5858,9 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
                 style={{
                   padding: '6px 14px', fontSize: 12,
                   fontFamily: 'var(--font-serif)',
-                  background: active ? 'var(--gold)' : 'transparent',
+                  background: active ? 'var(--primary)' : 'transparent',
                   color: active ? 'var(--bg)' : 'var(--ink-2)',
-                  border: `1px solid ${active ? 'var(--gold)' : 'var(--line-2)'}`,
+                  border: `1px solid ${active ? 'var(--primary)' : 'var(--line-2)'}`,
                   borderRadius: 999,
                   cursor: 'pointer',
                   display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -5880,7 +5880,7 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
 
       {/* 일괄 작업 바 */}
       {selectedIds.size > 0 && (
-        <div style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'rgba(59,130,246,0.07)', border:'1px solid var(--gold-dim)', marginBottom:12, flexWrap:'wrap'}}>
+        <div style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'rgba(59,130,246,0.07)', border:'1px solid var(--primary-dim)', marginBottom:12, flexWrap:'wrap'}}>
           <span className="mono gold" style={{fontSize:11}}>{selectedIds.size}개 선택됨</span>
           <button type="button" className="btn btn-small" style={{borderColor:'var(--danger)', color:'var(--danger)'}} onClick={bulkRemove}>선택 삭제</button>
           <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
@@ -5936,7 +5936,7 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
               <td className="mono dim-2" style={{padding:14}}>#{String(p.id).padStart(4,'0')}</td>
               <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{p.category}</span></td>
               <td style={{padding:14}}>
-                {p.prefix ? <span className="mono" style={{fontSize:9, padding:'1px 6px', border:'1px solid var(--gold-dim)', color:'var(--gold)'}}>{p.prefix}</span> : <span className="dim-2" style={{fontSize:10}}>—</span>}
+                {p.prefix ? <span className="mono" style={{fontSize:9, padding:'1px 6px', border:'1px solid var(--primary-dim)', color:'var(--primary)'}}>{p.prefix}</span> : <span className="dim-2" style={{fontSize:10}}>—</span>}
               </td>
               <td className="ko-serif" style={{padding:14, fontSize:14}}>{p.title}</td>
               <td className="dim mono" style={{padding:14}}>{p.author}</td>
@@ -6196,16 +6196,16 @@ const AdminPage = ({ go }) => {
           {/* v00.192 — 사용자 보고 '사이드바 제일 위쪽에 현재 홈페이지 버전'. ADMIN CONSOLE 위에 버전 뱃지. */}
           <div style={{
             display:'inline-block', padding:'3px 10px', marginBottom:10,
-            border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.06)',
+            border:'1px solid var(--primary-dim)', background:'rgba(245,213,72,0.06)',
             fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700,
-            letterSpacing:'0.12em', color:'var(--gold)',
+            letterSpacing:'0.12em', color:'var(--primary)',
           }}>
             v{window.BGNJ_VERSION?.version || '?'} · {window.BGNJ_VERSION?.build || '?'}
           </div>
           <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em'}}>◆ ADMIN CONSOLE</div>
           <div className="ko-serif" style={{fontSize:20, marginTop:8}}>관리자</div>
           <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>contact@bgnj.net</div>
-          <div style={{marginTop:12, padding:'8px 10px', background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--gold)', letterSpacing:'0.15em'}}>
+          <div style={{marginTop:12, padding:'8px 10px', background:'rgba(245,213,72,0.06)', border:'1px solid var(--primary-dim)', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--primary)', letterSpacing:'0.15em'}}>
             DPO · contact@bgnj.net
           </div>
           <div className="dim-2 mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em'}}>적용법: GDPR + PIPA</div>
@@ -6310,8 +6310,8 @@ const AdminPage = ({ go }) => {
               {dashboardStats.map((s, i) => (
                 <div key={i} className="card">
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{s.l}</div>
-                  <div className="ko-serif" style={{fontSize:32, color:'var(--gold-2)'}}>{s.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{s.unit||''}</span></div>
-                  <div style={{fontSize:11, color: s.p ? 'var(--gold)' : 'var(--danger)', marginTop:8}}>{s.d}</div>
+                  <div className="ko-serif" style={{fontSize:32, color:'var(--primary-hover)'}}>{s.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{s.unit||''}</span></div>
+                  <div style={{fontSize:11, color: s.p ? 'var(--primary)' : 'var(--danger)', marginTop:8}}>{s.d}</div>
                 </div>
               ))}
             </div>
@@ -6319,11 +6319,11 @@ const AdminPage = ({ go }) => {
             <div className="admin-section__title">활동 · 방문 (활동량 proxy — 정확한 page-view tracking 은 v0.147+)</div>
             <div className="grid grid-4" style={{marginBottom:18}}>
               <MetricCard icon="📅" label="일일 활동자" value={dailyPosts}
-                accent="var(--gold)" sub={`최근 24시간 게시글 ${dailyPosts}건`}/>
+                accent="var(--primary)" sub={`최근 24시간 게시글 ${dailyPosts}건`}/>
               <MetricCard icon="📊" label="주간 활동자" value={weeklyPosts}
-                accent="var(--gold-2)" sub={`최근 7일 게시글 ${weeklyPosts}건`}/>
+                accent="var(--primary-hover)" sub={`최근 7일 게시글 ${weeklyPosts}건`}/>
               <MetricCard icon="📈" label="월간 활동자" value={monthlyPosts}
-                accent="var(--gold-3, var(--gold-2))" sub={`최근 30일 게시글 ${monthlyPosts}건`}/>
+                accent="var(--gold-3, var(--primary-hover))" sub={`최근 30일 게시글 ${monthlyPosts}건`}/>
               <MetricCard icon="✨" label="오늘 신규 가입" value={dailySignups}
                 accent="var(--secondary, #1F7A8C)"
                 sub={`주간 ${weeklySignups}명 · 월간 ${monthlySignups}명`}/>
@@ -6337,7 +6337,7 @@ const AdminPage = ({ go }) => {
                 </p>
               </article>
               <article className="card">
-                <MiniBarChart label="📊 14일 게시글 추이" series={postSeries.counts} labels={postSeries.labels} color="var(--gold)" height={140}/>
+                <MiniBarChart label="📊 14일 게시글 추이" series={postSeries.counts} labels={postSeries.labels} color="var(--primary)" height={140}/>
                 <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
                   최근 14일간 일별 신규 게시글 수. 활동량의 일별 변동 파악용.
                 </p>
@@ -6352,9 +6352,9 @@ const AdminPage = ({ go }) => {
                   <div key={i} style={{display:'flex', alignItems:'center', gap:12}}>
                     <div style={{minWidth:160, fontSize:13, color:'var(--ink)'}}>{r.src}</div>
                     <div style={{flex:1, height:8, background:'var(--bg-2)', borderRadius:4, overflow:'hidden', position:'relative'}}>
-                      <div style={{position:'absolute', left:0, top:0, bottom:0, width:`${r.pct}%`, background:'var(--gold)', borderRadius:4}}/>
+                      <div style={{position:'absolute', left:0, top:0, bottom:0, width:`${r.pct}%`, background:'var(--primary)', borderRadius:4}}/>
                     </div>
-                    <div className="mono" style={{minWidth:40, textAlign:'right', fontSize:12, color:'var(--gold-2)', fontWeight:600}}>{r.pct}%</div>
+                    <div className="mono" style={{minWidth:40, textAlign:'right', fontSize:12, color:'var(--primary-hover)', fontWeight:600}}>{r.pct}%</div>
                   </div>
                 ))}
               </div>
@@ -6497,8 +6497,8 @@ const AdminPage = ({ go }) => {
                       aria-current={n === safePage ? 'page' : undefined}
                       onClick={() => setVersionPage(n)}
                       style={{
-                        borderColor: n === safePage ? 'var(--gold)' : 'var(--line)',
-                        color: n === safePage ? 'var(--gold)' : 'var(--ink-2)',
+                        borderColor: n === safePage ? 'var(--primary)' : 'var(--line)',
+                        color: n === safePage ? 'var(--primary)' : 'var(--ink-2)',
                         background: n === safePage ? 'rgba(245,213,72,0.08)' : 'transparent',
                         minWidth: 36,
                       }}>{n}</button>
@@ -6584,7 +6584,7 @@ const AdminPage = ({ go }) => {
                               <span className="mono dim-2" style={{fontSize:11, letterSpacing:'0.18em'}}>MISSION {m.number}</span>
                               <span className="ko-serif" style={{fontSize:16}}>{m.title}</span>
                             </div>
-                            <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--gold)'}}>{m.state} · {m.coverage}</span>
+                            <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--primary)'}}>{m.state} · {m.coverage}</span>
                           </div>
                           <div className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:6}}>{m.short}</div>
                           <div style={{fontSize:12, lineHeight:1.7, color:'var(--ink-2)'}}>{m.verdict}</div>
@@ -6598,7 +6598,7 @@ const AdminPage = ({ go }) => {
                       ? 'var(--danger)'
                       : domain.status?.includes('부분') || domain.status?.includes('카탈로그') || domain.status?.includes('UI')
                         ? 'var(--ink-2)'
-                        : 'var(--gold)';
+                        : 'var(--primary)';
                     return (
                       <article id={`fdef-${domain.id}`} key={domain.id} className="card" style={{padding:24, scrollMarginTop:24}}>
                         <header style={{borderBottom:'1px solid var(--line)', paddingBottom:16, marginBottom:18}}>
@@ -6624,7 +6624,7 @@ const AdminPage = ({ go }) => {
                               <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>없는 기능 / 완성도를 높이려면 필요한 것</div>
                               <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
                                 {domain.missing.map((item) => (
-                                  <li key={item} style={{padding:'8px 12px', borderLeft:'2px solid var(--gold-dim)', background:'rgba(245,213,72,0.04)', fontSize:13, lineHeight:1.7}}>
+                                  <li key={item} style={{padding:'8px 12px', borderLeft:'2px solid var(--primary-dim)', background:'rgba(245,213,72,0.04)', fontSize:13, lineHeight:1.7}}>
                                     {item}
                                   </li>
                                 ))}
@@ -6637,7 +6637,7 @@ const AdminPage = ({ go }) => {
                             <div style={{display:'grid', gap:12}}>
                               {domain.features.map((feature) => {
                                 const fTone = feature.status === '구현됨'
-                                  ? 'var(--gold)'
+                                  ? 'var(--primary)'
                                   : feature.status === '미구현' || feature.status?.startsWith('UI만')
                                     ? 'var(--danger)'
                                     : 'var(--ink-2)';
@@ -6656,7 +6656,7 @@ const AdminPage = ({ go }) => {
                                         <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:4}}>
                                           {feature.elements.map((el) => (
                                             <li key={el} style={{fontSize:12, lineHeight:1.7, paddingLeft:14, position:'relative'}}>
-                                              <span style={{position:'absolute', left:0, color:'var(--gold-dim)'}}>·</span>
+                                              <span style={{position:'absolute', left:0, color:'var(--primary-dim)'}}>·</span>
                                               {el}
                                             </li>
                                           ))}
@@ -6743,7 +6743,7 @@ const AdminPage = ({ go }) => {
                             width:'100%', textAlign:'left', padding:'8px 10px',
                             background:'transparent', border:'1px solid transparent',
                             color:'var(--ink-2)', fontSize:12, lineHeight:1.5, cursor:'pointer',
-                            borderLeft:'2px solid var(--gold)',
+                            borderLeft:'2px solid var(--primary)',
                           }}>
                           5가지 미션 평가
                         </button>
@@ -6854,7 +6854,7 @@ const AdminPage = ({ go }) => {
               <tbody>
                 {PRIVACY_DATA.dsrRequests.map(r => {
                   const left = r.status === 'done' ? null : formatTimeLeft(r.dueAt);
-                  const toneColor = left?.tone === 'danger' ? 'var(--danger)' : left?.tone === 'warn' ? 'var(--gold-2)' : 'var(--ink-2)';
+                  const toneColor = left?.tone === 'danger' ? 'var(--danger)' : left?.tone === 'warn' ? 'var(--primary-hover)' : 'var(--ink-2)';
                   const label = DSR_LABELS[r.type];
                   return (
                     <tr key={r.id} style={{borderBottom:'1px solid var(--line)'}}>
@@ -6874,8 +6874,8 @@ const AdminPage = ({ go }) => {
                       </td>
                       <td style={{padding:14}}>
                         <span className="badge" style={{
-                          borderColor: r.status==='done' ? 'var(--gold-dim)' : r.status==='in_progress' ? 'var(--gold)' : 'var(--line-2)',
-                          color: r.status==='done' ? 'var(--gold-dim)' : r.status==='in_progress' ? 'var(--gold)' : 'var(--ink-2)',
+                          borderColor: r.status==='done' ? 'var(--primary-dim)' : r.status==='in_progress' ? 'var(--primary)' : 'var(--line-2)',
+                          color: r.status==='done' ? 'var(--primary-dim)' : r.status==='in_progress' ? 'var(--primary)' : 'var(--ink-2)',
                         }}>{r.status==='open'?'접수':r.status==='in_progress'?'처리중':'완료'}</span>
                       </td>
                       <td style={{padding:14, textAlign:'right'}}>
@@ -6910,7 +6910,7 @@ const AdminPage = ({ go }) => {
                   <tr key={c.key} style={{borderBottom:'1px solid var(--line)'}}>
                     <td className="ko-serif" style={{padding:14}}>{c.label}</td>
                     <td style={{padding:14}}>
-                      <span className="badge" style={{borderColor: c.required?'var(--gold)':'var(--line-2)', color: c.required?'var(--gold)':'var(--ink-2)'}}>{c.required ? '필수' : '선택'}</span>
+                      <span className="badge" style={{borderColor: c.required?'var(--primary)':'var(--line-2)', color: c.required?'var(--primary)':'var(--ink-2)'}}>{c.required ? '필수' : '선택'}</span>
                     </td>
                     <td className="mono gold" style={{padding:14}}>{c.version}</td>
                     <td style={{padding:14}}>{c.lawful}</td>
@@ -6979,7 +6979,7 @@ const AdminPage = ({ go }) => {
                 {PRIVACY_DATA.cookies.map(c => (
                   <tr key={c.name} style={{borderBottom:'1px solid var(--line)'}}>
                     <td className="mono gold" style={{padding:14}}>{c.name}</td>
-                    <td style={{padding:14}}><span className="badge" style={{borderColor: c.cat==='필수' ? 'var(--gold)' : 'var(--line-2)', color: c.cat==='필수' ? 'var(--gold)' : 'var(--ink-2)'}}>{c.cat}</span></td>
+                    <td style={{padding:14}}><span className="badge" style={{borderColor: c.cat==='필수' ? 'var(--primary)' : 'var(--line-2)', color: c.cat==='필수' ? 'var(--primary)' : 'var(--ink-2)'}}>{c.cat}</span></td>
                     <td style={{padding:14}}>{c.purpose}</td>
                     <td className="mono dim-2" style={{padding:14}}>{c.ttl}</td>
                     <td className="mono dim-2" style={{padding:14}}>{c.party}</td>
@@ -6997,7 +6997,7 @@ const AdminPage = ({ go }) => {
               GDPR Art.33 — 인지 후 <strong className="gold">72시간 내 감독기관 통지</strong>. PIPA §34 — 인지 후 72시간 내 정보주체 및 개인정보위 통지.
             </p>
             {PRIVACY_DATA.breaches.map(b => {
-              const toneColor = b.severity==='high' ? 'var(--danger)' : b.severity==='medium' ? 'var(--gold-2)' : 'var(--ink-2)';
+              const toneColor = b.severity==='high' ? 'var(--danger)' : b.severity==='medium' ? 'var(--primary-hover)' : 'var(--ink-2)';
               return (
                 <article key={b.id} className="card" style={{marginBottom:16}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12}}>
@@ -7129,7 +7129,7 @@ const AdminPage = ({ go }) => {
         {/* 설정 — 입금 계좌는 별도 '계좌번호 설정' 탭에서 관리. */}
         {tab === "설정" && (
           <div style={{display:'grid', gap:24}}>
-            <div className="card" style={{padding:'14px 18px', background:'var(--bg-2)', borderLeft:'3px solid var(--gold-dim)'}}>
+            <div className="card" style={{padding:'14px 18px', background:'var(--bg-2)', borderLeft:'3px solid var(--primary-dim)'}}>
               <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
                 ⓘ 무통장 입금 계좌는 좌측 메뉴의 <strong className="gold">계좌번호 설정</strong> 탭에서 관리합니다 (멀티 계좌 지원).
               </p>
@@ -7420,7 +7420,7 @@ const AdminCategoryPanel = () => {
                 return (
                   <tr key={g.id} style={{borderTop:'1px solid var(--line)'}}>
                     <td style={{padding:10, position:'sticky', left:0, background:'var(--bg)', zIndex:1}}>
-                      <span className="mono" style={{fontSize:10, letterSpacing:'0.14em', color: g.color || 'var(--gold)', border:`1px solid ${g.color || 'var(--gold-dim)'}`, padding:'1px 6px', marginRight:8}}>{g.label}</span>
+                      <span className="mono" style={{fontSize:10, letterSpacing:'0.14em', color: g.color || 'var(--primary)', border:`1px solid ${g.color || 'var(--primary-dim)'}`, padding:'1px 6px', marginRight:8}}>{g.label}</span>
                       <span className="dim-2 mono" style={{fontSize:10}}>Lv {lv}</span>
                     </td>
                     {communityCats.map((c) => {
@@ -7428,9 +7428,9 @@ const AdminCategoryPanel = () => {
                       const canWrite = lv >= (c.postMinLevel ?? c.minLevel ?? 0);
                       return (
                         <td key={c.id} style={{padding:10, textAlign:'center', fontSize:11}}>
-                          <span className="mono" style={{color: canRead ? 'var(--gold)' : 'var(--ink-3)'}}>읽 {canRead ? '✓' : '·'}</span>
+                          <span className="mono" style={{color: canRead ? 'var(--primary)' : 'var(--ink-3)'}}>읽 {canRead ? '✓' : '·'}</span>
                           {' / '}
-                          <span className="mono" style={{color: canWrite ? 'var(--gold)' : 'var(--ink-3)'}}>쓰 {canWrite ? '✓' : '·'}</span>
+                          <span className="mono" style={{color: canWrite ? 'var(--primary)' : 'var(--ink-3)'}}>쓰 {canWrite ? '✓' : '·'}</span>
                         </td>
                       );
                     })}
@@ -7467,7 +7467,7 @@ const AdminCategoryPanel = () => {
               <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:10, minHeight:28}}>
                 {prefixes.length === 0 && <span className="dim-2 mono" style={{fontSize:11}}>말머리 없음 — 추가하면 커뮤니티 필터로 자동 노출됩니다</span>}
                 {prefixes.map((p) => (
-                  <span key={p} style={{display:'inline-flex', alignItems:'center', gap:4, padding:'2px 10px', border:'1px solid var(--gold-dim)', fontSize:12}}>
+                  <span key={p} style={{display:'inline-flex', alignItems:'center', gap:4, padding:'2px 10px', border:'1px solid var(--primary-dim)', fontSize:12}}>
                     <span className="gold">{p}</span>
                     <button type="button"
                       onClick={() => update(catIdx, 'prefixes', prefixes.filter((x) => x !== p))}
@@ -7749,7 +7749,7 @@ const CommunityBoardsPanel = () => {
           </button>
         </div>
       ) : (
-        <article className="admin-form-card" style={{padding:18, marginBottom:16, borderColor:'var(--gold-dim)'}}>
+        <article className="admin-form-card" style={{padding:18, marginBottom:16, borderColor:'var(--primary-dim)'}}>
           <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em', marginBottom:12}}>＋ 새 게시판</div>
           <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))', gap:10, marginBottom:12}}>
             <div className="field" style={{margin:0}}>
@@ -8392,8 +8392,8 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
                 aria-pressed={active}
                 style={{
                   padding:'6px 14px', borderRadius:999, fontSize:12, cursor:'pointer',
-                  border: '1px solid ' + (active ? 'var(--gold)' : 'var(--line)'),
-                  color: active ? 'var(--gold)' : 'var(--ink-2)',
+                  border: '1px solid ' + (active ? 'var(--primary)' : 'var(--line)'),
+                  color: active ? 'var(--primary)' : 'var(--ink-2)',
                   background: active ? 'rgba(245,213,72,0.08)' : 'transparent',
                 }}>
                 {c}
@@ -8411,7 +8411,7 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
         {allowManage && !adding && (
           <button type="button" onClick={() => setAdding(true)}
             style={{padding:'6px 14px', borderRadius:999, fontSize:12, cursor:'pointer',
-              border:'1px dashed var(--gold-dim)', color:'var(--gold)', background:'transparent'}}>
+              border:'1px dashed var(--primary-dim)', color:'var(--primary)', background:'transparent'}}>
             ＋ 새 카테고리
           </button>
         )}
@@ -8610,7 +8610,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     const map = {
       draft: { label: 'DRAFT', color: 'var(--ink-3)' },
       scheduled: { label: 'SCHEDULED', color: 'var(--ink-2)' },
-      published: { label: 'PUBLISHED', color: 'var(--gold)' },
+      published: { label: 'PUBLISHED', color: 'var(--primary)' },
     };
     const m = map[s || 'published'];
     return (
@@ -8671,7 +8671,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
             value={publishAt} onChange={(e) => setPublishAt(e.target.value)}/>
         </div>
         {/* v00.115 — 칼럼 표시 시간(created_at) 오버라이드. publishAt 과 별도. */}
-        <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)'}}>
+        <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--primary-dim)'}}>
           <label className="field-label" htmlFor="col-createdAt" style={{display:'block', marginBottom:6}}>
             업로드 시간 (선택 — 비우면 발행 시점의 현재 시간)
           </label>
@@ -8683,7 +8683,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
           </div>
         </div>
         {/* v00.127 — 외부 기고처 + 원문 링크 (옵셔널). 칼럼 본문 끝 또는 헤더에 출처 표기. */}
-        <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)', display:'grid', gap:10}}>
+        <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--primary-dim)', display:'grid', gap:10}}>
           <div>
             <label className="field-label" htmlFor="col-source-credit" style={{display:'block', marginBottom:6}}>
               기고처 (선택 — 외부 매체 출처)
@@ -8705,7 +8705,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
           </div>
         </div>
         {/* v00.136 — 대표이미지 + 출처. v00.139 — 파일 업로드 + 본문 첫 이미지 자동 폴백. */}
-        <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)', display:'grid', gap:10}}>
+        <div className="field" style={{padding:'12px 14px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--primary-dim)', display:'grid', gap:10}}>
           <div>
             <label className="field-label" style={{display:'block', marginBottom:6}}>
               대표 이미지 (선택 — 비우면 본문 첫 이미지 자동 사용)
@@ -8754,7 +8754,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
             </div>
           </div>
         </div>
-        {msg && <div role="status" className="mono gold" style={{fontSize:12, padding:10, border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.06)', marginBottom:16}}>{msg}</div>}
+        {msg && <div role="status" className="mono gold" style={{fontSize:12, padding:10, border:'1px solid var(--primary-dim)', background:'rgba(245,213,72,0.06)', marginBottom:16}}>{msg}</div>}
         <div style={{display:'flex', gap:12, justifyContent:'flex-end', paddingTop:20, borderTop:'1px solid var(--line)', flexWrap:'wrap'}}>
           <button type="button" className="btn" onClick={reset}>초기화</button>
           {/* v00.135 — 편집 중이면 라벨에 '수정' prefix. 사용자 요청 '수정 발행 형태로'. */}
@@ -8777,8 +8777,8 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
               <button key={f.key} type="button" className="btn btn-small"
                 onClick={() => setStatusFilter(f.key)}
                 style={{
-                  borderColor: statusFilter === f.key ? 'var(--gold)' : 'var(--line)',
-                  color: statusFilter === f.key ? 'var(--gold)' : 'var(--ink-2)',
+                  borderColor: statusFilter === f.key ? 'var(--primary)' : 'var(--line)',
+                  color: statusFilter === f.key ? 'var(--primary)' : 'var(--ink-2)',
                   background: statusFilter === f.key ? 'rgba(245,213,72,0.06)' : 'transparent',
                 }}>
                 {f.label} <span className="mono dim-2" style={{fontSize:10, marginLeft:4}}>{counts[f.key] ?? 0}</span>
@@ -8998,7 +8998,7 @@ const ColumnsHubPanel = ({ allColumns }) => {
                     const m = ({
                       draft: { label: 'DRAFT', color: 'var(--ink-3)' },
                       scheduled: { label: 'SCHEDULED', color: 'var(--ink-2)' },
-                      published: { label: 'PUBLISHED', color: 'var(--gold)' },
+                      published: { label: 'PUBLISHED', color: 'var(--primary)' },
                     })[c.status || 'published'];
                     return <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color: m.color, border:`1px solid ${m.color}`, padding:'1px 6px'}}>{m.label}</span>;
                   })()}</td>

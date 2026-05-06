@@ -31,7 +31,7 @@ const WangsanamPage = ({ go }) => {
                 {i === 0 ? '★ LEAD' : `○ 0${i+1}`}
               </div>
               <div>
-                <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', color:'var(--gold)', marginBottom:8}}>
+                <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', color:'var(--primary)', marginBottom:8}}>
                   {String(i+1).padStart(2,'0')} / {String(members.length).padStart(2,'0')} · {m.spec}
                 </div>
                 <h3 className="ko-serif" style={{fontSize:28, fontWeight:500, marginBottom:6}}>
@@ -101,7 +101,7 @@ const TourPage = ({ go, user }) => {
     cancelled: '취소됨',
   }[s] || s);
   const tone = (s) => ({
-    confirmed: 'var(--gold)',
+    confirmed: 'var(--primary)',
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
@@ -135,9 +135,9 @@ const TourPage = ({ go, user }) => {
                 fontSize:13,
                 whiteSpace:'nowrap',
                 fontFamily:'var(--font-serif)',
-                color: safeIdx === i ? 'var(--gold)' : 'var(--ink-2)',
+                color: safeIdx === i ? 'var(--primary)' : 'var(--ink-2)',
                 background: 'transparent', border: 'none',
-                borderBottom: safeIdx === i ? '2px solid var(--gold)' : '2px solid transparent',
+                borderBottom: safeIdx === i ? '2px solid var(--primary)' : '2px solid transparent',
                 marginBottom:-1, cursor:'pointer',
               }}>
               0{i+1} · {String(t.title || '').split(' — ')[0]}
@@ -368,7 +368,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       </div>
       <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)'}}>
         <span className="dim">잔여</span>
-        <span style={{ color: isFull ? 'var(--danger)' : 'var(--gold)' }}>
+        <span style={{ color: isFull ? 'var(--danger)' : 'var(--primary)' }}>
           {isFull ? `대기 ${seats.waitlist}명` : `${seats.remaining}석`}
         </span>
       </div>
@@ -379,7 +379,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
 
       {/* 내 신청 상태 카드 */}
       {myReg && (
-        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
+        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--primary-dim)', marginBottom:16}}>
           <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>MY RESERVATION</div>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8}}>
             <span className="ko-serif" style={{fontSize:16}}>{labelStatus(myReg.status)}</span>
@@ -444,7 +444,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       )}
 
       {!myReg && submitted && (
-        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--gold-dim)', marginBottom:16}}>
+        <div style={{padding:14, background:'rgba(245,213,72,0.06)', border:'1px solid var(--primary-dim)', marginBottom:16}}>
           <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:6}}>SUBMITTED</div>
           <div className="ko-serif" style={{fontSize:16, marginBottom:6}}>
             신청 접수 — {labelStatus(submitted.status)}
@@ -626,7 +626,7 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
                     aria-label={`${n}점`}
                     style={{
                       background:'transparent', border:'none', cursor:'pointer',
-                      color: n <= rating ? 'var(--gold)' : 'var(--ink-3)',
+                      color: n <= rating ? 'var(--primary)' : 'var(--ink-3)',
                       fontSize:18, padding:'2px 4px',
                     }}>
                     {n <= rating ? '★' : '☆'}

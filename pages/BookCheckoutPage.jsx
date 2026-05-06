@@ -46,7 +46,7 @@ const BookReviewSection = ({ user, bookTitle }) => {
             <span className="dim" style={{fontSize:13}}>별점</span>
             {[1,2,3,4,5].map(n => (
               <button key={n} type="button" onClick={() => setRating(n)}
-                style={{fontSize:20, color: n <= rating ? 'var(--gold)' : 'var(--line-2)', background:'none', border:'none', cursor:'pointer', padding:'0 2px'}}>
+                style={{fontSize:20, color: n <= rating ? 'var(--primary)' : 'var(--line-2)', background:'none', border:'none', cursor:'pointer', padding:'0 2px'}}>
                 ★
               </button>
             ))}
@@ -186,12 +186,12 @@ const BookPage = ({ go, cart, setCart, user }) => {
                 style={{
                   padding:'14px 28px',
                   fontFamily:'var(--font-serif)', fontSize:16,
-                  color: b.id === book.id ? 'var(--gold)' : 'var(--ink-2)',
-                  borderBottom: b.id === book.id ? '2px solid var(--gold)' : '2px solid transparent',
+                  color: b.id === book.id ? 'var(--primary)' : 'var(--ink-2)',
+                  borderBottom: b.id === book.id ? '2px solid var(--primary)' : '2px solid transparent',
                   marginBottom:-1, whiteSpace:'nowrap',
                   background:'none', border:'none', borderBottomWidth:2,
                   borderBottomStyle:'solid',
-                  borderBottomColor: b.id === book.id ? 'var(--gold)' : 'transparent',
+                  borderBottomColor: b.id === book.id ? 'var(--primary)' : 'transparent',
                   cursor:'pointer',
                 }}>
                 『{b.title}』
@@ -204,7 +204,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
           <div style={{position:'sticky', top:100, alignSelf:'start'}}>
             <div style={{position:'relative', maxWidth:440, margin:'0 auto'}}>
               {book.coverDataUri ? (
-                <div style={{aspectRatio:'3/4', border:'1px solid var(--gold-dim)', overflow:'hidden', background:'var(--bg-2)'}}>
+                <div style={{aspectRatio:'3/4', border:'1px solid var(--primary-dim)', overflow:'hidden', background:'var(--bg-2)'}}>
                   <img src={book.coverDataUri} alt={`${book.title} 표지`}
                     style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
                 </div>
@@ -213,16 +213,16 @@ const BookPage = ({ go, cart, setCart, user }) => {
                   aspectRatio:'3/4',
                   background:`linear-gradient(135deg, var(--bg-3), #000),
                     repeating-linear-gradient(45deg, rgba(245,213,72,0.06) 0 6px, transparent 6px 12px)`,
-                  border:'1px solid var(--gold-dim)',
+                  border:'1px solid var(--primary-dim)',
                   display:'flex', flexDirection:'column', justifyContent:'space-between',
-                  padding:'40px 32px', fontSize:12, color:'var(--gold)',
+                  padding:'40px 32px', fontSize:12, color:'var(--primary)',
                 }}>
                   <div>
                     <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', marginBottom:8}}>BANGINOJA PRESS</div>
                     <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.2em'}}>{version === "KR" ? "KR EDITION" : "EN EDITION"}</div>
                   </div>
                   <div style={{textAlign:'center'}}>
-                    <div style={{fontFamily:'var(--font-serif)', fontSize:36, color:'var(--gold-2)', lineHeight:1.2}}>
+                    <div style={{fontFamily:'var(--font-serif)', fontSize:36, color:'var(--primary-hover)', lineHeight:1.2}}>
                       {book.title}
                     </div>
                     <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', marginTop:20, color:'var(--ink-2)'}}>
@@ -254,7 +254,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
                 )}
                 {book.pdfPreviewDataUri && (
                   <a href={book.pdfPreviewDataUri} target="_blank" rel="noopener noreferrer"
-                    style={{width:60, aspectRatio:'3/4', border:'1px solid var(--gold-dim)', display:'grid', placeItems:'center', textDecoration:'none', color:'var(--gold)', fontSize:9, padding:4, textAlign:'center', lineHeight:1.3}}
+                    style={{width:60, aspectRatio:'3/4', border:'1px solid var(--primary-dim)', display:'grid', placeItems:'center', textDecoration:'none', color:'var(--primary)', fontSize:9, padding:4, textAlign:'center', lineHeight:1.3}}
                     title="본문 미리보기 (PDF)">
                     📄<br/>본문<br/>미리보기
                   </a>
@@ -326,12 +326,12 @@ const BookPage = ({ go, cart, setCart, user }) => {
                         onClick={() => setVersion(v.k)}
                         style={{
                           padding:'20px',
-                          border: version === v.k ? '1px solid var(--gold)' : '1px solid var(--line-2)',
+                          border: version === v.k ? '1px solid var(--primary)' : '1px solid var(--line-2)',
                           background: version === v.k ? 'rgba(245,213,72,0.05)' : 'transparent',
                           textAlign:'left',
                           cursor:'pointer',
                         }}>
-                        <div className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: version === v.k ? 'var(--gold)' : 'var(--ink-3)'}}>{v.sub.toUpperCase()}</div>
+                        <div className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: version === v.k ? 'var(--primary)' : 'var(--ink-3)'}}>{v.sub.toUpperCase()}</div>
                         <div className="ko-serif" style={{fontSize:20, marginTop:4}}>{v.label}</div>
                         <div className="gold-2 ko-serif" style={{fontSize:20, marginTop:8}}>{window.BGNJ_FMT.won(v.price)}</div>
                       </button>
@@ -372,8 +372,8 @@ const BookPage = ({ go, cart, setCart, user }) => {
                       padding:'14px 24px',
                       fontFamily:'var(--font-serif)',
                       fontSize:15,
-                      color: tab === t ? 'var(--gold)' : 'var(--ink-2)',
-                      borderBottom: tab === t ? '2px solid var(--gold)' : '2px solid transparent',
+                      color: tab === t ? 'var(--primary)' : 'var(--ink-2)',
+                      borderBottom: tab === t ? '2px solid var(--primary)' : '2px solid transparent',
                       marginBottom:-1,
                     }}>{t}</button>
                 ))}
@@ -728,7 +728,7 @@ const CheckoutPage = ({ go, cart, user }) => {
                 <span className="gold-2 ko-serif" style={{fontSize:24}}>{window.BGNJ_FMT.won(total)}</span>
               </div>
 
-              <div style={{marginTop:24, padding:'16px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--gold-dim)'}}>
+              <div style={{marginTop:24, padding:'16px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--primary-dim)'}}>
                 <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>◆ 운영 안내</div>
                 <div className="dim" style={{fontSize:12, lineHeight:1.7}}>
                   · 입금 확인 후 평일 1-2일 내 발송<br/>

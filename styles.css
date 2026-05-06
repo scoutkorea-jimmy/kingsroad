@@ -54,7 +54,7 @@
      Neutral    (70%+) : white + slate 배경/텍스트/라인 (대부분 면적)
      System            : success / warning / info / error 상태 컬러
      접근성     : WCAG 2.1 AA — 본문/배경 ≥ 4.5:1 보장
-     레거시 토큰 (--gold/--cta-*) 은 호환 alias 로 유지. */
+     레거시 토큰 (--gold/--cta-*) 은 v00.209 에서 제거 — 모든 코드 --primary* / --on-primary 직접 사용. */
 
   /* ─── Primary (5% — KEY ACCENT) ─── */
   --primary:        #F5D548;      /* 로고 옐로우 */
@@ -90,18 +90,8 @@
 
   --focus:   #C99E1A;             /* focus ring (= primary-active) */
 
-  /* ─── 레거시 호환 alias ─── */
-  --gold:     var(--primary);
-  --gold-2:   var(--primary-hover);
-  --gold-dim: var(--primary-dim);
-  --gold-ink: var(--secondary);
-
-  --cta-rest:   var(--primary);
-  --cta-hover:  var(--primary-hover);
-  --cta-active: var(--primary-active);
-  --cta-ink:    var(--on-primary);
-
-  --gold-strength: 1;
+  /* v00.209 — 레거시 호환 alias(--gold/--cta-*) 전면 제거 완료. 모든 코드는 --primary* / --on-primary 사용. */
+  --gold-strength: 1;  /* 사용처 없음 — 다음 사이클 제거 */
   /* KBL 폰트 계층 */
   --font-display: 'KblJumpExtended', 'KblJump', "Wanted Sans Variable", sans-serif; /* 대제목·히어로 */
   --font-title:   'KblJump', 'KblJumpExtended', "Wanted Sans Variable", sans-serif; /* 소제목·카드 타이틀 */
@@ -231,7 +221,7 @@ a.nav-link:focus-visible,
 html, body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-weight: 500; letter-spacing: -0.01em; }
 body { min-height: 100vh; overflow-x: hidden; }
 a { color: inherit; text-decoration: none; }
-a:hover, a:focus-visible { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 4px; }
+a:hover, a:focus-visible { text-decoration: underline; text-decoration-color: var(--primary); text-underline-offset: 4px; }
 button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 input, textarea, select { font: inherit; color: inherit; }
 img { max-width: 100%; display: block; }
@@ -251,8 +241,8 @@ img { max-width: 100%; display: block; }
   top: 0;
   padding: 12px 20px;
   background: var(--bg);
-  border: 2px solid var(--gold);
-  color: var(--gold);
+  border: 2px solid var(--primary);
+  color: var(--primary);
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.2em;
@@ -345,10 +335,10 @@ main time, main .section-eyebrow {
 }
 .read-toggle button[aria-pressed="true"] {
   background: rgba(245,213,72,0.08);
-  color: var(--gold);
+  color: var(--primary);
 }
 .read-toggle button + button { border-left: 1px solid var(--line-2); }
-.read-toggle button:hover { color: var(--gold); }
+.read-toggle button:hover { color: var(--primary); }
 
 /* === Post reading typography ============================================
    Measure (reading line length): 55–75ch (WCAG 3.0 Readable outcome). */
@@ -383,8 +373,8 @@ main time, main .section-eyebrow {
 :root[data-theme="dark"] .post-body h4 {
   color: var(--ink) !important;
 }
-:root[data-theme="dark"] .post-body a { color: var(--gold) !important; }
-:root[data-theme="dark"] .post-body blockquote { color: var(--gold-ink) !important; }
+:root[data-theme="dark"] .post-body a { color: var(--primary) !important; }
+:root[data-theme="dark"] .post-body blockquote { color: var(--secondary) !important; }
 .app.reading-myungjo .post-body {
   font-size: 19px;
   line-height: 2;
@@ -407,10 +397,10 @@ main time, main .section-eyebrow {
 .post-body h2 { font-size: 1.4em; }
 .post-body h3 { font-size: 1.2em; }
 .post-body blockquote {
-  border-left: 2px solid var(--gold);
+  border-left: 2px solid var(--primary);
   padding: 4px 0 4px 24px;
   margin: 2em 0;
-  color: var(--gold-ink);
+  color: var(--secondary);
   font-style: italic;
 }
 .post-body blockquote cite {
@@ -424,12 +414,12 @@ main time, main .section-eyebrow {
 .post-body ul, .post-body ol { padding-left: 1.5em; }
 .post-body li + li { margin-top: 0.4em; }
 .post-body a {
-  color: var(--gold);
+  color: var(--primary);
   text-decoration: underline;
-  text-decoration-color: var(--gold-dim);
+  text-decoration-color: var(--primary-dim);
   text-underline-offset: 3px;
 }
-.post-body a:hover { text-decoration-color: var(--gold); }
+.post-body a:hover { text-decoration-color: var(--primary); }
 .post-body code {
   font-family: var(--font-mono);
   font-size: 0.9em;
@@ -483,8 +473,8 @@ main time, main .section-eyebrow {
   cursor: pointer;
   transition: all 0.15s;
 }
-.tt-btn:hover:not(:disabled) { color: var(--gold); background: rgba(245,213,72,0.08); }
-.tt-btn.on { color: var(--gold); background: rgba(245,213,72,0.12); border-color: var(--gold-dim); }
+.tt-btn:hover:not(:disabled) { color: var(--primary); background: rgba(245,213,72,0.08); }
+.tt-btn.on { color: var(--primary); background: rgba(245,213,72,0.12); border-color: var(--primary-dim); }
 .tt-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .tt-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 
@@ -503,9 +493,9 @@ main time, main .section-eyebrow {
 .tiptap-editor h2 { font-family: var(--font-display); font-size: 1.4em; line-height: 1.35; margin-top: 1.2em; font-weight: 500; }
 .tiptap-editor h3 { font-family: var(--font-display); font-size: 1.15em; line-height: 1.4; margin-top: 1em; font-weight: 500; }
 .tiptap-editor blockquote {
-  border-left: 2px solid var(--gold);
+  border-left: 2px solid var(--primary);
   padding-left: 16px;
-  color: var(--gold-ink);
+  color: var(--secondary);
   font-style: italic;
 }
 .tiptap-editor ul, .tiptap-editor ol { padding-left: 1.4em; }
@@ -517,9 +507,9 @@ main time, main .section-eyebrow {
   border: 1px solid var(--line);
 }
 .tiptap-editor a {
-  color: var(--gold);
+  color: var(--primary);
   text-decoration: underline;
-  text-decoration-color: var(--gold-dim);
+  text-decoration-color: var(--primary-dim);
   text-underline-offset: 3px;
 }
 .tiptap-editor hr {
@@ -542,7 +532,7 @@ main time, main .section-eyebrow {
   display: block;
   margin: 0.6em auto;
 }
-.ProseMirror-selectednode { outline: 2px solid var(--gold); }
+.ProseMirror-selectednode { outline: 2px solid var(--primary); }
 
 /* === Tiptap v00.068 extensions — visual styles (v00.076) ================== */
 /* v00.068 에서 도구만 풍부화. 결과 렌더 시각 스타일을 v00.076 사이클에 보강. */
@@ -585,7 +575,7 @@ main time, main .section-eyebrow {
   position: absolute;
   right: -2px; top: 0; bottom: 0;
   width: 4px;
-  background: var(--gold-dim);
+  background: var(--primary-dim);
   pointer-events: none;
 }
 
@@ -614,7 +604,7 @@ main time, main .section-eyebrow {
   text-decoration: line-through;
 }
 .tiptap-editor ul[data-type="taskList"] input[type="checkbox"] {
-  accent-color: var(--gold);
+  accent-color: var(--primary);
   cursor: pointer;
   width: 14px; height: 14px;
 }
@@ -702,7 +692,7 @@ main time, main .section-eyebrow {
   border: 1px solid var(--line);
   min-height: 48px;
 }
-.tag-input-wrap:focus-within { border-color: var(--gold); }
+.tag-input-wrap:focus-within { border-color: var(--primary); }
 .tag-chip {
   display: inline-flex;
   align-items: center;
@@ -782,7 +772,7 @@ main time, main .section-eyebrow {
   transition: all 0.2s;
 }
 .img-slider-dots button[aria-current="true"] {
-  background: var(--gold);
+  background: var(--primary);
   width: 24px;
   border-radius: 4px;
 }
@@ -799,7 +789,7 @@ main time, main .section-eyebrow {
 }
 .img-slider-nav.prev { left: 12px; }
 .img-slider-nav.next { right: 12px; }
-.img-slider-nav:hover { background: rgba(0,0,0,0.7); color: var(--gold); }
+.img-slider-nav:hover { background: rgba(0,0,0,0.7); color: var(--primary); }
 .img-slider-caption {
   position: absolute;
   top: 12px;
@@ -844,7 +834,7 @@ main time, main .section-eyebrow {
   bottom: 4px; left: 4px;
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--gold);
+  color: var(--primary);
   background: rgba(0,0,0,0.6);
   padding: 1px 5px;
   letter-spacing: 0.1em;
@@ -875,8 +865,8 @@ main time, main .section-eyebrow {
 /* 작은 메타 텍스트는 가독성 보강 위해 weight 600 — IBM Plex Mono 의 가는 weight 가 한글에서 너무 얇게 보임 */
 .mono.dim-2 { font-weight: 600; }
 
-.gold { color: var(--gold); }
-.gold-2 { color: var(--gold-2); }
+.gold { color: var(--primary); }
+.gold-2 { color: var(--primary-hover); }
 .dim { color: var(--ink-2); }
 .dim-2 { color: var(--ink-3); }
 
@@ -961,7 +951,7 @@ main time, main .section-eyebrow {
   position: absolute;
   left: 50%; bottom: 0;
   width: 4px; height: 4px;
-  background: var(--gold);
+  background: var(--primary);
   transform: translate(-50%, 0) rotate(45deg);
 }
 .nav-actions {
@@ -995,8 +985,8 @@ main time, main .section-eyebrow {
               transform .2s cubic-bezier(.2,.7,.2,1);
 }
 .btn:hover {
-  border-color: var(--gold);
-  color: var(--gold);
+  border-color: var(--primary);
+  color: var(--primary);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
@@ -1006,21 +996,21 @@ main time, main .section-eyebrow {
   transition-duration: .08s;
 }
 .btn-gold {
-  border-color: var(--cta-rest);
-  color: var(--cta-ink);
-  background: var(--cta-rest);
+  border-color: var(--primary);
+  color: var(--on-primary);
+  background: var(--primary);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 .btn-gold:hover  {
-  background: var(--cta-hover);
-  border-color: var(--cta-hover);
-  color: var(--cta-ink);
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  color: var(--on-primary);
   box-shadow: 0 6px 16px rgba(245, 213, 72, 0.28);
 }
 .btn-gold:active {
-  background: var(--cta-active);
-  border-color: var(--cta-active);
-  color: var(--cta-ink);
+  background: var(--primary-active);
+  border-color: var(--primary-active);
+  color: var(--on-primary);
   box-shadow: 0 1px 2px rgba(245, 213, 72, 0.18);
 }
 /* ghost = 텍스트 링크 성격. radius/shadow/lift 미적용. */
@@ -1032,7 +1022,7 @@ main time, main .section-eyebrow {
   box-shadow: none;
 }
 .btn-ghost:hover {
-  color: var(--gold);
+  color: var(--primary);
   border-color: transparent;
   transform: none;
   box-shadow: none;
@@ -1080,7 +1070,7 @@ main time, main .section-eyebrow {
   color: var(--ink);
   margin-bottom: 16px;
 }
-.section-title .accent { color: var(--gold); font-style: italic; font-weight: 400; }
+.section-title .accent { color: var(--primary); font-style: italic; font-weight: 400; }
 .section-subtitle {
   font-size: 15px;
   color: var(--ink-2);
@@ -1118,7 +1108,7 @@ main time, main .section-eyebrow {
   padding: 32px;
   transition: border-color .3s, transform .3s;
 }
-.card:hover { border-color: var(--gold-dim); }
+.card:hover { border-color: var(--primary-dim); }
 /* v00.164.001 — 박스 인상 제거 modifier. background + border 제거, padding 만 유지.
    사용처: 사진/콘텐츠가 시각 주체인 카드 (추천 사진 카드, 강연 strip, hero 무게의 책 CTA).
    투어처럼 '선택 가능 항목' 카드는 .card 그대로 유지. */
@@ -1128,7 +1118,7 @@ main time, main .section-eyebrow {
 }
 .card--bare:hover { border-color: transparent; }
 .card-gold {
-  border-color: var(--gold-dim);
+  border-color: var(--primary-dim);
   background: linear-gradient(180deg, rgba(245,213,72,0.04), transparent);
 }
 .card-title {
@@ -1162,7 +1152,7 @@ main time, main .section-eyebrow {
 .home-hero .section-eyebrow::before,
 .home-page .section-head .section-eyebrow::before {
   width: 18px;
-  background: var(--gold);
+  background: var(--primary);
 }
 .home-hero .btn {
   text-transform: none;
@@ -1179,7 +1169,7 @@ main time, main .section-eyebrow {
   padding: 22px 24px;
   background: var(--bg);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--gold);
+  border-left: 3px solid var(--primary);
   transition: border-color .18s, background-color .18s;
 }
 .home-program-card:hover {
@@ -1192,7 +1182,7 @@ main time, main .section-eyebrow {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: var(--gold-ink);
+  color: var(--secondary);
   margin-bottom: 10px;
 }
 .home-page .section-head .section-title {
@@ -1201,7 +1191,7 @@ main time, main .section-eyebrow {
   letter-spacing: 0;
 }
 .home-page .section-title .accent {
-  color: var(--gold);
+  color: var(--primary);
   font-style: normal;
   font-weight: inherit;
 }
@@ -1234,17 +1224,17 @@ main time, main .section-eyebrow {
   text-transform: uppercase;
 }
 .badge-gold {
-  border-color: var(--gold);
-  color: var(--gold);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 .badge-dot::before {
   content: "";
   display: inline-block;
   width: 6px; height: 6px;
-  background: var(--gold);
+  background: var(--primary);
   margin-right: 8px;
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--gold);
+  box-shadow: 0 0 8px var(--primary);
 }
 
 /* ---- Form ---- */
@@ -1268,7 +1258,7 @@ main time, main .section-eyebrow {
 }
 .field-input:focus {
   outline: none;
-  border-color: var(--gold);
+  border-color: var(--primary);
 }
 .field-hint { font-size: 12px; color: var(--ink-3); }
 
@@ -1279,7 +1269,7 @@ main time, main .section-eyebrow {
   margin: 80px 0;
 }
 .divider-gold {
-  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-dim), transparent);
 }
 
 /* ---- Ornament ---- */
@@ -1288,14 +1278,14 @@ main time, main .section-eyebrow {
   align-items: center;
   justify-content: center;
   gap: 16px;
-  color: var(--gold);
+  color: var(--primary);
 }
 .ornament::before, .ornament::after {
   content: "";
   flex: 1;
   max-width: 120px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-dim), transparent);
 }
 
 /* ---- Footer ---- */
@@ -1330,7 +1320,7 @@ main time, main .section-eyebrow {
   text-align: left;
   cursor: pointer;
 }
-.footer li button:hover, .footer li a:hover, .footer li span:hover { color: var(--gold); }
+.footer li button:hover, .footer li a:hover, .footer li span:hover { color: var(--primary); }
 .footer-bottom {
   border-top: 1px solid var(--line);
   padding-top: 24px;
@@ -1603,7 +1593,7 @@ main time, main .section-eyebrow {
   right: 20px;
   z-index: 100;
   background: var(--bg-2);
-  border: 1px solid var(--gold-dim);
+  border: 1px solid var(--primary-dim);
   padding: 20px;
   width: 280px;
   font-family: var(--font-mono);
@@ -1612,7 +1602,7 @@ main time, main .section-eyebrow {
 .tweaks h3 {
   font-size: 11px;
   letter-spacing: 0.3em;
-  color: var(--gold);
+  color: var(--primary);
   margin-bottom: 16px;
   text-transform: uppercase;
 }
@@ -1629,20 +1619,20 @@ main time, main .section-eyebrow {
   transition: all .2s;
 }
 .tweaks-options button.on {
-  border-color: var(--gold);
-  color: var(--gold);
+  border-color: var(--primary);
+  color: var(--primary);
   background: rgba(245,213,72,0.08);
 }
 .tweaks-slider {
   width: 100%;
-  accent-color: var(--gold);
+  accent-color: var(--primary);
 }
 
 /* ---- Scrollbar ---- */
 ::-webkit-scrollbar { width: 10px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--line-2); }
-::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-dim); }
 
 /* ---- Animations ---- */
 @keyframes fadeUp {
@@ -1719,7 +1709,7 @@ main time, main .section-eyebrow {
 }
 .kms-fdef-toc button:hover {
   background: rgba(245,213,72,0.06) !important;
-  color: var(--gold) !important;
+  color: var(--primary) !important;
 }
 
 /* === Navigation mega menu (커뮤니티 hover) === */
@@ -1856,7 +1846,7 @@ main time, main .section-eyebrow {
   border: 1px solid currentColor;
   white-space: nowrap;
 }
-.status-badge--gold { color: var(--gold); }
+.status-badge--gold { color: var(--primary); }
 .status-badge--neutral { color: var(--ink-2); }
 .status-badge--ink { color: var(--ink-3); }
 .status-badge--danger { color: var(--danger); }
@@ -1874,7 +1864,7 @@ main time, main .section-eyebrow {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.22em;
-  color: var(--gold);
+  color: var(--primary);
   margin-bottom: 12px;
   text-transform: uppercase;
 }
@@ -1911,8 +1901,8 @@ main time, main .section-eyebrow {
 }
 .admin-filter-chip:hover { border-color: var(--ink-3); color: var(--ink); }
 .admin-filter-chip--active {
-  border-color: var(--gold);
-  color: var(--gold);
+  border-color: var(--primary);
+  color: var(--primary);
   background: rgba(245, 213, 72, 0.10);
   font-weight: 700;
 }
@@ -1927,7 +1917,7 @@ main time, main .section-eyebrow {
   margin-top: 24px;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  border-top: 2px solid var(--gold-dim);
+  border-top: 2px solid var(--primary-dim);
 }
 .admin-savebar__msg {
   font-family: var(--font-mono);
@@ -1947,7 +1937,7 @@ main time, main .section-eyebrow {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.22em;
-  color: var(--gold);
+  color: var(--primary);
   margin-bottom: 10px;
   text-transform: uppercase;
 }
@@ -1956,5 +1946,5 @@ main time, main .section-eyebrow {
 :root[data-theme="dark"] .admin-table thead { background: var(--bg-2); }
 :root[data-theme="dark"] .admin-form-card { background: var(--bg-2); border-color: var(--line); }
 :root[data-theme="dark"] .admin-empty { background: var(--bg-2); border-color: var(--line); }
-:root[data-theme="dark"] .admin-savebar { background: var(--bg-2); border-color: var(--line); border-top-color: var(--gold-dim); }
+:root[data-theme="dark"] .admin-savebar { background: var(--bg-2); border-color: var(--line); border-top-color: var(--primary-dim); }
 :root[data-theme="dark"] .admin-filter-chip { background: var(--bg-2); border-color: var(--line); }

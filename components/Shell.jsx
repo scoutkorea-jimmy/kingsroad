@@ -164,8 +164,8 @@ const ScrollToTop = React.memo(() => {
       style={{
         position: 'fixed', right: 24, bottom: 28, zIndex: 60,
         width: 48, height: 48,
-        background: 'var(--bg-2)', color: 'var(--gold)',
-        border: '1px solid var(--gold-dim)',
+        background: 'var(--bg-2)', color: 'var(--primary)',
+        border: '1px solid var(--primary-dim)',
         boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
         cursor: 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -194,8 +194,8 @@ const AuthorGradeBadge = ({ authorId, author, authorEmail, size = "sm" }) => {
         padding: small ? '1px 6px' : '2px 8px',
         fontSize: small ? 9 : 10,
         letterSpacing: '0.14em',
-        color: grade.color || 'var(--gold)',
-        border: `1px solid ${grade.color || 'var(--gold-dim)'}`,
+        color: grade.color || 'var(--primary)',
+        border: `1px solid ${grade.color || 'var(--primary-dim)'}`,
         borderRadius: 2,
         textTransform: 'uppercase',
         verticalAlign: 'middle',
@@ -267,7 +267,7 @@ const NotificationBell = ({ user, onPick }) => {
             aria-hidden="true"
             style={{
               position: 'absolute', top: -4, right: -4,
-              background: 'var(--gold)', color: 'var(--bg)',
+              background: 'var(--primary)', color: 'var(--bg)',
               borderRadius: 999, fontSize: 9, fontWeight: 700,
               padding: '1px 5px', letterSpacing: 0,
               minWidth: 14, textAlign: 'center', lineHeight: 1.4,
@@ -744,7 +744,7 @@ const ThemeToggle = () => {
 
 const Ornament = ({ children }) => (
   <div className="ornament" style={{margin:"40px 0"}}>
-    <span style={{fontFamily:'var(--font-serif)', fontSize:14, letterSpacing:'0.3em', color:'var(--gold)'}}>
+    <span style={{fontFamily:'var(--font-serif)', fontSize:14, letterSpacing:'0.3em', color:'var(--primary)'}}>
       {children || "五"}
     </span>
   </div>
@@ -842,7 +842,7 @@ const CookieConsent = () => {
       style={{
         position: 'fixed', left: 16, right: 16, bottom: 16,
         maxWidth: 720, margin: '0 auto', zIndex: 80,
-        background: 'var(--bg-2)', border: '1px solid var(--gold-dim)',
+        background: 'var(--bg-2)', border: '1px solid var(--primary-dim)',
         boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
         padding: '20px 22px', borderRadius: 4,
       }}>

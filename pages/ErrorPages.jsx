@@ -10,7 +10,7 @@ const _ErrorBrand = () => (
   <div style={{display:'flex', alignItems:'center', gap:8, padding:'18px 22px', borderBottom:'1px solid var(--line)'}}>
     <span aria-hidden="true" style={{
       width:22, height:22, display:'inline-grid', placeItems:'center',
-      background:'var(--gold)', color:'#0F172A', fontWeight:800, fontSize:11,
+      background:'var(--primary)', color:'#0F172A', fontWeight:800, fontSize:11,
       borderRadius:4, fontFamily:'var(--font-mono)',
     }}>B</span>
     <span style={{fontSize:13, fontWeight:600, letterSpacing:'0.04em', color:'var(--ink)'}}>뱅기노자</span>
@@ -32,7 +32,7 @@ const _ErrorIllustration = ({ src, alt }) => {
         <div style={{
           width:'100%', height:'100%',
           display:'grid', placeItems:'center', fontSize:80,
-          background:'rgba(245,213,72,0.12)', borderRadius:24, color:'var(--gold)',
+          background:'rgba(245,213,72,0.12)', borderRadius:24, color:'var(--primary)',
         }} aria-hidden="true" title={alt + ' (이미지 미업로드)'}>✈️</div>
       )}
     </div>
@@ -54,7 +54,7 @@ const ErrorCard = ({
     <div style={{padding:'28px 28px 24px', textAlign:'center'}}>
       {code && (
         <div style={{
-          fontSize:54, fontWeight:800, color:'var(--gold)',
+          fontSize:54, fontWeight:800, color:'var(--primary)',
           letterSpacing:'-0.02em', lineHeight:1, marginBottom:14,
           fontFamily:'var(--font-serif, "ChosunIlboMyungjo", serif)',
         }}>{code}</div>
@@ -78,8 +78,8 @@ const ErrorCard = ({
             <button type="button" onClick={primaryAction.onClick}
               style={{
                 flex:1, padding:'12px 16px', fontSize:13, fontWeight:600,
-                background:'var(--gold)', color:'#0F172A',
-                border:'1px solid var(--gold)', borderRadius:10,
+                background:'var(--primary)', color:'#0F172A',
+                border:'1px solid var(--primary)', borderRadius:10,
                 cursor:'pointer', display:'inline-flex',
                 alignItems:'center', justifyContent:'center', gap:6,
               }}>

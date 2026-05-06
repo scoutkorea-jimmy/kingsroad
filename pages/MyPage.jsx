@@ -55,7 +55,7 @@ const MyPage = ({ go, user, cart }) => {
     cancelled: '취소됨',
   }[s] || s);
   const tourStatusTone = (s) => ({
-    confirmed: 'var(--gold)',
+    confirmed: 'var(--primary)',
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
@@ -75,9 +75,9 @@ const MyPage = ({ go, user, cart }) => {
   }[s] || s);
   const orderStatusTone = (s) => ({
     pending_payment: 'var(--ink-2)',
-    paid: 'var(--gold)',
-    shipped: 'var(--gold)',
-    delivered: 'var(--gold)',
+    paid: 'var(--primary)',
+    shipped: 'var(--primary)',
+    delivered: 'var(--primary)',
     refund_requested: 'var(--warning)',
     cancelled: 'var(--danger)',
   }[s] || 'var(--ink-2)');
@@ -98,7 +98,7 @@ const MyPage = ({ go, user, cart }) => {
     cancelled: '취소됨',
   }[s] || s);
   const lectureStatusTone = (s) => ({
-    confirmed: 'var(--gold)',
+    confirmed: 'var(--primary)',
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
@@ -208,9 +208,9 @@ const MyPage = ({ go, user, cart }) => {
               style={{
                 padding:'14px 22px', fontSize:13, whiteSpace:'nowrap', cursor:'pointer',
                 fontFamily:'var(--font-serif)',
-                color: tab === t.k ? 'var(--gold)' : 'var(--ink-2)',
+                color: tab === t.k ? 'var(--primary)' : 'var(--ink-2)',
                 background:'transparent', border:'none',
-                borderBottom: tab === t.k ? '2px solid var(--gold)' : '2px solid transparent',
+                borderBottom: tab === t.k ? '2px solid var(--primary)' : '2px solid transparent',
                 marginBottom:-1,
               }}>{t.label}</button>
           ))}
@@ -353,7 +353,7 @@ const MyPage = ({ go, user, cart }) => {
                       <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                         <button type="button" className="btn-ghost"
                           onClick={() => window.BGNJ_BOOK_ORDERS.downloadReceipt(o.id)}
-                          style={{ fontSize: 11, color: 'var(--gold)' }}>
+                          style={{ fontSize: 11, color: 'var(--primary)' }}>
                           영수증 ↓
                         </button>
                         {o.status === 'pending_payment' && (
@@ -449,7 +449,7 @@ const MyPage = ({ go, user, cart }) => {
                     style={{
                       all: 'unset', cursor: 'pointer', width: '100%',
                       padding: '10px 12px',
-                      borderLeft: '2px solid ' + (n.read ? 'var(--line)' : 'var(--gold)'),
+                      borderLeft: '2px solid ' + (n.read ? 'var(--line)' : 'var(--primary)'),
                       background: n.read ? 'transparent' : 'rgba(245,213,72,0.04)',
                     }}>
                     <div style={{ fontSize: 13, lineHeight: 1.5, marginBottom: 4 }}>
@@ -491,7 +491,7 @@ const MyPage = ({ go, user, cart }) => {
                   <button type="button" onClick={() => goToPost(post.id)}
                     style={{
                       all: 'unset', cursor: 'pointer', width: '100%',
-                      padding: '10px 12px', borderLeft: '2px solid var(--gold-dim)',
+                      padding: '10px 12px', borderLeft: '2px solid var(--primary-dim)',
                       background: 'rgba(245,213,72,0.04)',
                     }}>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
@@ -606,7 +606,7 @@ const ProfileEditor = ({ user, onSaved }) => {
         {msg && (
           <div role="status" style={{
             padding: '10px 14px', fontSize: 13, lineHeight: 1.6,
-            border: '1px solid ' + (msg.kind === 'ok' ? 'var(--gold-dim)' : 'var(--danger)'),
+            border: '1px solid ' + (msg.kind === 'ok' ? 'var(--primary-dim)' : 'var(--danger)'),
             background: msg.kind === 'ok' ? 'rgba(245,213,72,0.06)' : 'rgba(194,74,61,0.08)',
             color: msg.kind === 'ok' ? 'var(--ink)' : 'var(--danger)',
           }}>
@@ -689,7 +689,7 @@ const PasswordChangeForm = () => {
         {msg && (
           <div role="status" style={{
             padding: '10px 14px', fontSize: 13, lineHeight: 1.6,
-            border: '1px solid ' + (msg.kind === 'ok' ? 'var(--gold-dim)' : 'var(--danger)'),
+            border: '1px solid ' + (msg.kind === 'ok' ? 'var(--primary-dim)' : 'var(--danger)'),
             background: msg.kind === 'ok' ? 'rgba(245,213,72,0.06)' : 'rgba(194,74,61,0.08)',
             color: msg.kind === 'ok' ? 'var(--ink)' : 'var(--danger)',
           }}>
