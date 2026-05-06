@@ -1490,6 +1490,13 @@ main time, main .section-eyebrow {
   .nav-toggle { display: inline-flex; }
   .nav-menu { display: none; }
 
+  /* v00.211 — 모바일 헤더 시각 순서: 햄버거 → 로고 → (auto spacing) → 로그인.
+     DOM 순서(Brand → nav-toggle → nav-menu → nav-actions) 는 데스크탑/SEO 위해 유지. */
+  .nav-toggle { order: 0; margin-right: 12px; }
+  .brand      { order: 1; margin-right: auto; }
+  .nav-menu   { order: 2; } /* hidden 이지만 mobile-open 시 절대 위치라 영향 없음 */
+  .nav-actions{ order: 3; }
+
   /* 모바일 메뉴 열림 — 헤더 바로 아래 풀폭 오버레이 */
   .nav.mobile-open .nav-menu {
     display: flex;
