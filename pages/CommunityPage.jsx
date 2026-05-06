@@ -831,16 +831,16 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           </div>
         )}
 
-        <table style={{width:'100%', borderCollapse:'collapse'}}>
+        <table className="community-table" style={{width:'100%', borderCollapse:'collapse'}}>
           <caption className="sr-only">게시글 목록</caption>
           <thead>
             <tr style={{fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
-              <th scope="col" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:60}}>번호</th>
-              <th scope="col" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:90}}>분류</th>
-              <th scope="col" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)'}}>제목</th>
-              <th scope="col" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:120}}>작성자</th>
-              <th scope="col" style={{padding:'16px 8px', textAlign:'right', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:70}}>조회</th>
-              <th scope="col" style={{padding:'16px 8px', textAlign:'right', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:100}}>날짜</th>
+              <th scope="col" className="col-num" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:60}}>번호</th>
+              <th scope="col" className="col-cat" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:90}}>분류</th>
+              <th scope="col" className="col-title" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)'}}>제목</th>
+              <th scope="col" className="col-author" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:120}}>작성자</th>
+              <th scope="col" className="col-views" style={{padding:'16px 8px', textAlign:'right', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:70}}>조회</th>
+              <th scope="col" className="col-date" style={{padding:'16px 8px', textAlign:'right', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:100}}>날짜</th>
             </tr>
           </thead>
           <tbody>
@@ -852,30 +852,44 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
               const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category) || { label: p.category };
               const likesCount = Array.isArray(p.likes) ? p.likes.length : 0;
               const bookmarked = user && G.call(() => window.BGNJ_COMMUNITY?.isBookmarked?.(user.id, p.id), false);
+              const rowNum = String(filtered.length - (pageStart + i)).padStart(3, '0');
               return (
                 <tr key={p.id} style={{borderBottom:'1px solid var(--line)', transition:'background .2s'}}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,213,72,0.03)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <td className="mono dim-2" style={{padding:'18px 8px', fontSize:12}}>{String(filtered.length - (pageStart + i)).padStart(3, '0')}</td>
-                  <td style={{padding:'18px 8px'}}><span className="badge">{cat.label}</span></td>
-                  <td style={{padding:'18px 8px', fontSize:15}} className="row-title">
+                  <td className="col-num mono dim-2" style={{padding:'18px 8px', fontSize:12}}>{rowNum}</td>
+                  <td className="col-cat" style={{padding:'18px 8px'}}><span className="badge">{cat.label}</span></td>
+                  <td className="col-title row-title" style={{padding:'18px 8px', fontSize:15}}>
                     <button type="button" onClick={() => setPostId(p.id)}
-                      style={{all:'unset', cursor:'pointer', textAlign:'left'}}>
-                      {bookmarked && <span className="gold" style={{marginRight:6, fontSize:11}} aria-label="북마크">★</span>}
-                      {p.title}
-                      {p.images?.length > 0 && <span className="gold mono" style={{marginLeft:8, fontSize:10}} aria-label="이미지 첨부">📷{p.images.length}</span>}
-                      {likesCount > 0 && <span className="gold mono" style={{marginLeft:8, fontSize:10}} aria-label="공감 수">♥{likesCount}</span>}
-                      {p.tags?.length > 0 && <span className="dim-2 mono" style={{marginLeft:8, fontSize:10}}>{p.tags.slice(0,3).map(t => `#${t}`).join(' ')}</span>}
-                      {p.hot && <span className="gold" style={{marginLeft:8, fontSize:10}}>HOT</span>}
-                      {p._new && <span className="gold" style={{marginLeft:8, fontSize:10}}>NEW</span>}
+                      className="row-title-button"
+                      style={{all:'unset', cursor:'pointer', textAlign:'left', display:'block', width:'100%'}}>
+                      <span className="row-title-text">
+                        {bookmarked && <span className="gold" style={{marginRight:6, fontSize:11}} aria-label="북마크">★</span>}
+                        {p.title}
+                        {p.images?.length > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label="이미지 첨부">📷{p.images.length}</span>}
+                        {likesCount > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label="공감 수">♥{likesCount}</span>}
+                        {p.tags?.length > 0 && <span className="dim-2 mono row-title-inline" style={{marginLeft:8, fontSize:10}}>{p.tags.slice(0,3).map(t => `#${t}`).join(' ')}</span>}
+                        {p.hot && <span className="gold" style={{marginLeft:8, fontSize:10}}>HOT</span>}
+                        {p._new && <span className="gold" style={{marginLeft:8, fontSize:10}}>NEW</span>}
+                      </span>
+                      <span className="row-mobile-meta" aria-hidden="true">
+                        <span className="badge">{cat.label}</span>
+                        <span>{p.author}</span>
+                        <span className="dot">·</span>
+                        <time dateTime={p.date.replace(/\./g,'-')}>{p.date}</time>
+                        <span className="dot">·</span>
+                        <span>조회 {p.views ?? 0}</span>
+                        {likesCount > 0 && <span className="gold">♥ {likesCount}</span>}
+                        {p.images?.length > 0 && <span className="gold">📷 {p.images.length}</span>}
+                      </span>
                     </button>
                   </td>
-                  <td className="mono dim" style={{padding:'18px 8px', fontSize:12}}>
+                  <td className="col-author mono dim" style={{padding:'18px 8px', fontSize:12}}>
                     {p.author}
                     <AuthorGradeBadge authorId={p.authorId} author={p.author} authorEmail={p.authorEmail}/>
                   </td>
-                  <td className="mono dim-2" style={{padding:'18px 8px', fontSize:12, textAlign:'right'}}>{p.views ?? 0}</td>
-                  <td className="mono dim-2" style={{padding:'18px 8px', fontSize:11, textAlign:'right'}}>
+                  <td className="col-views mono dim-2" style={{padding:'18px 8px', fontSize:12, textAlign:'right'}}>{p.views ?? 0}</td>
+                  <td className="col-date mono dim-2" style={{padding:'18px 8px', fontSize:11, textAlign:'right'}}>
                     <time dateTime={p.date.replace(/\./g,'-')}>{p.date}</time>
                   </td>
                 </tr>

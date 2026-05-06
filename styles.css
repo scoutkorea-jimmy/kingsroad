@@ -1485,6 +1485,49 @@ main time, main .section-eyebrow {
   .book-cover-col { position: static !important; top: auto !important; }
   .cta-grid { padding: 40px 28px !important; }
 
+  /* v00.222 — 모바일 게시글 목록(community-table): 제목 1줄 + 메타 라인 구조.
+     사용자 민원: 6열 테이블이 좁아져 제목이 강제 줄바꿈/잘림. */
+  .community-table .col-num,
+  .community-table .col-cat,
+  .community-table .col-author,
+  .community-table .col-views,
+  .community-table .col-date { display: none !important; }
+  .community-table thead tr { display: none; }
+  .community-table,
+  .community-table tbody,
+  .community-table tr { display: block; width: 100%; }
+  .community-table tbody tr { padding: 14px 4px; border-bottom: 1px solid var(--line); }
+  .community-table .col-title {
+    display: block !important;
+    padding: 0 !important;
+    border: 0 !important;
+    font-size: 15px !important;
+  }
+  .community-table .row-title-button { display: block; width: 100%; }
+  .community-table .row-title-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  /* 인라인 카운트 배지(이미지/좋아요/태그)는 메타 라인으로 옮겨가므로 제목 줄에서 숨김 */
+  .community-table .row-title-text .row-title-inline { display: none; }
+  .community-table .row-mobile-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: 0.05em;
+  }
+  .community-table .row-mobile-meta .dot { color: var(--ink-3); opacity: 0.6; }
+  .community-table .row-mobile-meta .badge { font-size: 10px; padding: 2px 6px; }
+
   .section-title { font-size: 32px; }
   .home-page .section-head .section-title { font-size: 32px; }
   .section { padding: 64px 0; }
@@ -1691,6 +1734,8 @@ main time, main .section-eyebrow {
 .row:hover { background: rgba(245,213,72,0.03); }
 .row-num { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); letter-spacing: 0.1em; }
 .row-title { font-family: var(--font-serif); font-size: 17px; color: var(--ink); }
+/* v00.222 — 게시글 목록 모바일 메타 라인은 데스크톱에서 숨김 (모바일 ≤900px 에서만 노출) */
+.community-table .row-mobile-meta { display: none; }
 .row-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); letter-spacing: 0.1em; }
 
 /* Placeholder image */
