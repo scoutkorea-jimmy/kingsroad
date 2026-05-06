@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.197.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T14:00:00+09:00",
+    summary: "🌙 다크모드 본문 가독성 + 좌우 정렬 + 작성 시분 표시 (P0 hotfix)",
+    details: [
+      "🌙 [다크모드 본문 가독성 fix] 사용자 스크린샷 보고 '다크모드에서 글이 안보인다'. root cause: Tiptap 이 본문 HTML 에 inline color (예: #1A1A1A 슬레이트 700) 를 박음 → 다크 배경에서 거의 안 보임. 다크모드일 때 .post-body 와 자식 텍스트 요소 (p/div/li/span/strong/em/h*) 의 color 를 var(--ink) 로 !important override. 링크는 var(--gold), blockquote 는 var(--gold-ink) 유지.",
+      "📐 [본문 좌우 정렬 fix] 사용자 보고 '글 좌우 범위 이상'. 이전엔 .post-body 가 margin:0 auto 로 컨테이너 중앙 정렬 → 본문 max-width 68ch 가 제목보다 좁아 좌측이 빈 채로 우측 쏠려 보임. margin:0 으로 좌측 정렬 변경 (제목과 동일 시작점).",
+      "🕐 [작성 시분 표시] 사용자 보고 '글 작성 시분까지 보여줘'. CommunityPage 게시글 헤더의 <time> 이 post.date (YYYY.MM.DD) 만 표시하던 것을 createdAt 있으면 BGNJ_FMT.kstShort 로 'YYYY.MM.DD HH:MM' 풀 표시.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.197.000`.",
+    ],
+    context: "사용자 즉시 보고 3건 P0 hotfix. v00.196 진행 중이던 admin lazy-load (옵션 A) 와 워커 캐시 (옵션 C) 는 이번 사이클 보류 → 다음 사이클에서 재개.",
+  },
+  {
     version: "00.196.000",
     date: "2026-05-06",
     datetime: "2026-05-06T13:30:00+09:00",

@@ -1362,7 +1362,12 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
               {post.author}
               <AuthorGradeBadge authorId={post.authorId} author={post.author} authorEmail={post.authorEmail}/>
             </span>
-            <time dateTime={post.date.replace(/\./g,'-')}>{post.date}</time>
+            {/* v00.197 — 사용자 보고 '글 작성 시분까지 보여줘'. createdAt 있으면 'YYYY.MM.DD HH:MM' 풀 표시. */}
+            <time dateTime={(post.createdAt || post.date || '').toString()}>
+              {post.createdAt
+                ? window.BGNJ_FMT.kstShort(post.createdAt)
+                : post.date}
+            </time>
             <span>조회 {post.views ?? 0}</span>
             <span>댓글 {commentsList.length}</span>
             <span>공감 {likesCount}</span>
