@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.193.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T10:05:00+09:00",
+    summary: "📚 새 책 prompt 제거 → 임시 draft + 저장 분기 / ▲▼ misalign 박스 그룹 / 모든 사이트 설정 메뉴 미리보기",
+    details: [
+      "📚 [BooksAdminPanel — 새 책 추가 흐름 재설계] 사용자 보고 '새 책 추가 버튼 누르면 그냥 새 책 만들어주고 저장 누르면 반영'. window.prompt 제거 + 클라이언트 newDraft state ('__new__' id) 만 만들고 우측 form 즉시 오픈. [💾 새 책 저장] 클릭 시 commit 분기에서 BGNJ_BOOKS.create 호출 → 신규 ID 받아 selectedId 교체. 새 책 미저장 상태에서 [새 책 취소] 버튼으로 폐기 가능.",
+      "🎨 [draft 시각 강조] 좌측 리스트에 newDraft 행은 골드 좌측 보더 + 골드 배경 + '● 새 책 (미저장)' 뱃지. ＋ 새 책 버튼은 draft 진행 중일 때 disabled + 라벨 변경.",
+      "🧮 [▲▼ 정렬 misalign 박스 그룹] 사용자 보고 '메뉴 일부 틀어진거같다'. 정렬 버튼을 1px solid 박스로 묶어 행 소속을 시각적으로 명확화. realBooks 인덱스로 정렬 비활성 판단 (draft 행은 정렬 대상 제외 — visibility:hidden 으로 자리 유지).",
+      "🖥 [사이트 설정 — 모든 메뉴 미리보기] 사용자 보고 '실시간 미리보기 모든 메뉴들에서 있게'. home / hero / bank 에 previewUrl 추가 (각각 '/', '/', '/faq'). 이전 home/hero 는 자체 임베드 미리보기 보유로 previewUrl 미지정이었으나, 사용자 일관성 요청에 맞춰 SubTabsView iframe 통일.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.193.000`.",
+    ],
+    context: "v00.192 backlog 중 책 흐름 + ▲▼ 정렬 + 모든 메뉴 미리보기 처리. 남은 backlog: 커뮤니티 게시글 안 불러짐 / 회원가입 추이 차트 / 히트맵 신설.",
+  },
+  {
     version: "00.192.000",
     date: "2026-05-06",
     datetime: "2026-05-06T09:23:59+09:00",

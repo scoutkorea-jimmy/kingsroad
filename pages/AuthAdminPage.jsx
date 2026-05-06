@@ -3291,9 +3291,19 @@ const OgPreviewBlock = ({ sc }) => {
 // 다양한 책 콘텐츠 관리 — 메타/표지/PDF 미리보기/소개/목차/저자/리뷰.
 const BooksAdminPanel = () => {
   const [tick, setTick] = React.useState(0);
-  const books = React.useMemo(() => window.BGNJ_BOOKS.list(), [tick]);
-  const [selectedId, setSelectedId] = React.useState(books[0]?.id || null);
-  const selected = React.useMemo(() => window.BGNJ_BOOKS.get(selectedId), [selectedId, tick]);
+  // v00.193 — 새 책 추가 prompt 제거. 사용자 보고 '그냥 새 책 만들어주고 저장 누르면 반영'.
+  // newDraft 가 있으면 books 목록 맨 위에 표시 (id='__new__'), 선택 시 editing 으로 ed전. commit 시 BGNJ_BOOKS.create.
+  const [newDraft, setNewDraft] = React.useState(null);
+  const realBooks = React.useMemo(() => window.BGNJ_BOOKS.list(), [tick]);
+  const books = React.useMemo(
+    () => newDraft ? [newDraft, ...realBooks.filter((b) => b.id !== '__new__')] : realBooks,
+    [realBooks, newDraft]
+  );
+  const [selectedId, setSelectedId] = React.useState(realBooks[0]?.id || null);
+  const selected = React.useMemo(() => {
+    if (selectedId === '__new__' && newDraft) return newDraft;
+    return window.BGNJ_BOOKS.get(selectedId);
+  }, [selectedId, tick, newDraft]);
   const [editTab, setEditTab] = React.useState('meta');
   const [msg, setMsg] = React.useState('');
   const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2000); };
@@ -3355,10 +3365,30 @@ const BooksAdminPanel = () => {
     refresh();
   };
   const commit = async () => {
-    if (!editing || !dirty || saving) return;
+    if (!editing || saving) return;
+    // v00.193 — 새 draft 는 dirty 무관 commit 허용 (사용자가 제목만 입력하고 바로 저장 가능).
+    if (!editing._isNew && !dirty) return;
     setSaving(true);
     try {
-      // 변경된 필드만 추려 patch (전체 객체 보내도 OK 지만 noise 줄임).
+      // v00.193 — 새 draft 면 BGNJ_BOOKS.create 호출. 그 외엔 update.
+      if (editing._isNew) {
+        if (!editing.title?.trim()) {
+          flash('✗ 제목은 필수입니다.');
+          setSaving(false);
+          return;
+        }
+        const { _isNew, id: _droppedId, ...payload } = editing;
+        const created = await window.BGNJ_BOOKS.create(payload);
+        if (!created?.id) throw new Error('서버 응답에 id 없음');
+        try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
+        setNewDraft(null);
+        setSelectedId(created.id);
+        setDirty(false);
+        flash('✓ 새 책 저장 완료');
+        refresh();
+        return;
+      }
+      // 기존 책 — 변경된 필드만 추려 patch.
       const changes = {};
       Object.keys(editing).forEach((k) => {
         if (selected && JSON.stringify(editing[k]) !== JSON.stringify(selected[k])) {
@@ -3366,7 +3396,6 @@ const BooksAdminPanel = () => {
         }
       });
       if (Object.keys(changes).length === 0) { setDirty(false); flash('변경 없음'); return; }
-      // v00.148 — await 누락 fix. 이전엔 fire-and-forget → 이후 refresh 가 stale cache 로 editing 덮어씀.
       await window.BGNJ_BOOKS.update(selectedId, changes);
       try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
       setDirty(false);
@@ -3377,6 +3406,15 @@ const BooksAdminPanel = () => {
     } finally { setSaving(false); }
   };
 
+  // v00.193 — 새 책 draft 취소.
+  const cancelDraft = () => {
+    if (dirty && !confirm('작성 중인 새 책을 취소할까요?')) return;
+    setNewDraft(null);
+    setDirty(false);
+    const fallback = realBooks[0]?.id || null;
+    setSelectedId(fallback);
+  };
+
   const fileToDataUri = (file) => new Promise((resolve, reject) => {
     if (!file) { resolve(''); return; }
     const reader = new FileReader();
@@ -3385,33 +3423,28 @@ const BooksAdminPanel = () => {
     reader.readAsDataURL(file);
   });
 
-  // v00.138 — '+ 새 책' 클릭 시 prompt 로 제목 입력 → 즉시 생성 + 편집 패널 오픈.
-  // 이전엔 placeholder '새 책 — 제목 입력' 으로 자동 생성되어 사용자가 수정 안 하면
-  // 책 카탈로그에 그대로 노출 (사용자 보고 '제목이 이상하게 반영'). prompt 캔슬 시 생성 안 함.
-  const addBook = async () => {
-    let title = '';
-    try { title = (window.prompt('새 책의 제목을 입력하세요:') || '').trim(); } catch { title = ''; }
-    if (!title) return; // 캔슬 또는 빈 값 → 생성 안 함.
-    try {
-      const created = await window.BGNJ_BOOKS.create({
-        title,
-        subtitle: '',
-        author: '뱅기노자',
-        publisher: '',
-        priceKR: 0,
-        priceEN: 0,
-        description: '',
-        status: 'draft',
-      });
-      if (!created?.id) throw new Error('서버 응답 없음');
-      try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
-      refresh();
-      setSelectedId(created.id);
+  // v00.193 — 사용자 보고 '새 책 prompt 제거 + 임시 draft 생성 → 저장 시 D1 반영'.
+  // 이전엔 prompt 로 제목 받고 즉시 D1 create. 이제는 클라이언트에 _newDraft 만 만들고 D1 안 함.
+  // 사용자가 우측 form 에서 편집 후 [💾 저장] 누르면 commit() 분기에서 BGNJ_BOOKS.create 호출.
+  const addBook = () => {
+    if (newDraft) {
+      // 이미 진행 중인 임시 draft 가 있으면 selected 만 다시.
+      setSelectedId('__new__');
       setEditTab('meta');
-    } catch (err) {
-      alert('책 생성 실패: ' + (err?.message || '알 수 없는 오류') + '\n\n콘솔에서 상세 오류를 확인해 주세요.');
-      try { console.error('[BookAdd] create failed:', err); } catch {}
+      return;
     }
+    setNewDraft({
+      id: '__new__',
+      title: '', subtitle: '', author: '뱅기노자', publisher: '',
+      pages: 0, isbn: '', priceKR: 0, priceEN: 0,
+      desc: '', intro: '', authorBio: '',
+      status: 'draft', publishedAt: '',
+      coverDataUri: '', pdfPreviewDataUri: '',
+      chapters: [], reviews: [],
+      _isNew: true,
+    });
+    setSelectedId('__new__');
+    setEditTab('meta');
   };
 
   const removeBook = async (id) => {
@@ -3514,7 +3547,11 @@ const BooksAdminPanel = () => {
                   refresh();
                 }}>샘플 데이터 추가</button>
               )}
-              <button type="button" className="btn btn-small btn-gold" onClick={addBook}>＋ 새 책</button>
+              <button type="button" className="btn btn-small btn-gold" onClick={addBook} disabled={!!newDraft}
+                title={newDraft ? '작성 중인 새 책이 있습니다 — 우측에서 저장하거나 취소' : ''}
+                style={newDraft ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}>
+                {newDraft ? '＋ 새 책 (작성 중)' : '＋ 새 책'}
+              </button>
             </div>
           </div>
           {/* v00.131 — 인라인 mini-form 제거 (addBook 이 즉시 생성 + 편집 패널 오픈). */}
@@ -3522,8 +3559,17 @@ const BooksAdminPanel = () => {
             <div className="dim" style={{padding:20, fontSize:13}}>등록된 책이 없습니다.</div>
           ) : (
             <ul role="list" style={{listStyle:'none', margin:0, padding:0}}>
-              {books.map((b, i) => (
-                <li key={b.id} style={{borderBottom:'1px solid var(--line)', display:'flex', alignItems:'center'}}>
+              {books.map((b, i) => {
+                const isDraft = b._isNew || b.id === '__new__';
+                // v00.193 — 새 책 draft 는 ▲▼ 정렬 대상 아님. realBooks 인덱스로 정렬 비활성 판단.
+                const realIdx = isDraft ? -1 : realBooks.findIndex((x) => x.id === b.id);
+                return (
+                <li key={b.id} style={{
+                  borderBottom:'1px solid var(--line)',
+                  display:'flex', alignItems:'stretch',
+                  background: isDraft ? 'rgba(245,213,72,0.06)' : 'transparent',
+                  borderLeft: isDraft ? '3px solid var(--gold)' : '3px solid transparent',
+                }}>
                   <button type="button"
                     onClick={() => { setSelectedId(b.id); setEditTab('meta'); }}
                     aria-current={selectedId === b.id ? 'true' : undefined}
@@ -3542,44 +3588,55 @@ const BooksAdminPanel = () => {
                         : <span className="dim-2 mono" style={{fontSize:8}}>NO COVER</span>}
                     </span>
                     <span style={{flex:1, minWidth:0}}>
-                      <span className="ko-serif" style={{fontSize:13, color:'var(--ink)', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{b.title}</span>
-                      <span className="mono dim-2" style={{fontSize:9, letterSpacing:'0.12em'}}>
-                        {b.status === 'published' ? '출간' : b.status === 'coming_soon' ? '출간 예정' : '초안'}
-                        {b.primary ? ' · 대표' : ''}
+                      <span className="ko-serif" style={{fontSize:13, color:'var(--ink)', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                        {isDraft ? (b.title?.trim() || '(제목 없음)') : b.title}
+                      </span>
+                      <span className="mono dim-2" style={{fontSize:9, letterSpacing:'0.12em', color: isDraft ? 'var(--gold)' : undefined}}>
+                        {isDraft
+                          ? '● 새 책 (미저장)'
+                          : (b.status === 'published' ? '출간' : b.status === 'coming_soon' ? '출간 예정' : '초안')}
+                        {!isDraft && b.primary ? ' · 대표' : ''}
                       </span>
                     </span>
                   </button>
-                  {/* v00.171 — 책 순서 변경 (사용자 요청 '책 카탈로그에서 순서를 바꿀 수 있게'). */}
-                  <div style={{display:'flex', flexDirection:'column', padding:'0 6px', gap:2}}>
+                  {/* v00.171 — 책 순서 변경. v00.193 — bordered 그룹으로 시각적 misalign 해결 + draft 는 정렬 비활성. */}
+                  <div style={{
+                    display:'flex', flexDirection:'column',
+                    margin:'8px 6px', alignSelf:'center',
+                    border:'1px solid var(--line)',
+                    borderRadius:3, overflow:'hidden',
+                    visibility: isDraft ? 'hidden' : 'visible',
+                  }}>
                     <button type="button" aria-label={`${b.title} 위로`} title="위로 이동"
-                      disabled={i === 0}
+                      disabled={isDraft || realIdx <= 0}
                       onClick={async () => {
-                        const ids = books.map((x) => x.id);
-                        [ids[i-1], ids[i]] = [ids[i], ids[i-1]];
+                        const ids = realBooks.map((x) => x.id);
+                        [ids[realIdx-1], ids[realIdx]] = [ids[realIdx], ids[realIdx-1]];
                         try { await window.BGNJ_BOOKS.reorder(ids); refresh(); } catch (err) { alert('순서 변경 실패: ' + (err?.message || '')); }
                       }}
                       style={{
-                        background:'transparent', border:'1px solid var(--line)',
-                        padding:'2px 6px', fontSize:10, lineHeight:1,
-                        cursor: i === 0 ? 'not-allowed' : 'pointer',
-                        opacity: i === 0 ? 0.4 : 1,
+                        background:'transparent', border:'none', borderBottom:'1px solid var(--line)',
+                        padding:'3px 8px', fontSize:10, lineHeight:1,
+                        cursor: realIdx <= 0 ? 'not-allowed' : 'pointer',
+                        opacity: realIdx <= 0 ? 0.3 : 1,
                       }}>▲</button>
                     <button type="button" aria-label={`${b.title} 아래로`} title="아래로 이동"
-                      disabled={i === books.length - 1}
+                      disabled={isDraft || realIdx < 0 || realIdx >= realBooks.length - 1}
                       onClick={async () => {
-                        const ids = books.map((x) => x.id);
-                        [ids[i], ids[i+1]] = [ids[i+1], ids[i]];
+                        const ids = realBooks.map((x) => x.id);
+                        [ids[realIdx], ids[realIdx+1]] = [ids[realIdx+1], ids[realIdx]];
                         try { await window.BGNJ_BOOKS.reorder(ids); refresh(); } catch (err) { alert('순서 변경 실패: ' + (err?.message || '')); }
                       }}
                       style={{
-                        background:'transparent', border:'1px solid var(--line)',
-                        padding:'2px 6px', fontSize:10, lineHeight:1,
-                        cursor: i === books.length - 1 ? 'not-allowed' : 'pointer',
-                        opacity: i === books.length - 1 ? 0.4 : 1,
+                        background:'transparent', border:'none',
+                        padding:'3px 8px', fontSize:10, lineHeight:1,
+                        cursor: (realIdx < 0 || realIdx >= realBooks.length - 1) ? 'not-allowed' : 'pointer',
+                        opacity: (realIdx < 0 || realIdx >= realBooks.length - 1) ? 0.3 : 1,
                       }}>▼</button>
                   </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </aside>
@@ -3859,18 +3916,33 @@ const BooksAdminPanel = () => {
               {/* v00.147 — 명시 저장 버튼. 텍스트 필드는 dirty 시점에만 commit. media 업로드는 즉시 patch. */}
               {editing && editTab !== 'reviews' && (
                 <AdminSaveBar>
-                  <button type="button" className="btn btn-gold" onClick={commit} disabled={saving || !dirty}>
-                    {saving ? '저장 중…' : (dirty ? '💾 저장' : '저장됨 ✓')}
+                  <button type="button" className="btn btn-gold" onClick={commit}
+                    disabled={saving || (!editing._isNew && !dirty)}>
+                    {saving
+                      ? '저장 중…'
+                      : (editing._isNew
+                          ? '💾 새 책 저장'
+                          : (dirty ? '💾 저장' : '저장됨 ✓'))}
                   </button>
-                  {dirty && (
+                  {/* v00.193 — 새 책 draft 취소 (D1 호출 없이 클라이언트 상태만 폐기). */}
+                  {editing._isNew && (
+                    <button type="button" className="btn btn-small"
+                      onClick={cancelDraft}
+                      style={{borderColor:'var(--danger)', color:'var(--danger)'}}>
+                      새 책 취소
+                    </button>
+                  )}
+                  {!editing._isNew && dirty && (
                     <button type="button" className="btn btn-small"
                       onClick={() => { if (confirm('변경 사항을 버리고 마지막 저장 시점으로 되돌릴까요?')) { setEditing({ ...selected }); setDirty(false); } }}>
                       변경 취소
                     </button>
                   )}
                   <span className="admin-savebar__spacer"/>
-                  <span className="dim-2 mono" style={{fontSize:11}}>
-                    {dirty ? '● 미저장 변경 있음' : '○ 모든 변경 저장됨'}
+                  <span className="dim-2 mono" style={{fontSize:11, color: editing._isNew ? 'var(--gold)' : undefined}}>
+                    {editing._isNew
+                      ? '● 새 책 (미저장 — [💾 새 책 저장] 클릭 시 D1 반영)'
+                      : (dirty ? '● 미저장 변경 있음' : '○ 모든 변경 저장됨')}
                   </span>
                 </AdminSaveBar>
               )}
@@ -6680,16 +6752,15 @@ const AdminPage = ({ go }) => {
             storageKey="bgnj_admin_subtab_site_settings"
             defaultKey="content"
             subTabs={[
+              // v00.193 — 사용자 요청 '모든 메뉴에 실시간 미리보기, 메뉴별 매칭 화면'.
+              // 이전에 home/hero/bank 는 previewUrl 미지정 (자체 임베드 또는 노출 페이지 없음) → 모두 '/' 폴백.
               { key: "content",  label: "사이트 콘텐츠",   previewUrl: "/",        render: () => <SiteContentAdminPanel/> },
-              // 홈 텍스트는 자체 임베드 미리보기 보유 (HomeTextPreview) → previewUrl 없음.
-              { key: "home",     label: "홈 텍스트",                                render: () => <HomeTextEditorPanel/> },
-              // v00.168 — 히어로는 자체 임베드 미리보기 보유 → previewUrl 제거 (iframe 중복 방지).
-              { key: "hero",     label: "히어로",                                  render: () => <HeroEditorPanel/> },
+              { key: "home",     label: "홈 텍스트",        previewUrl: "/",        render: () => <HomeTextEditorPanel/> },
+              { key: "hero",     label: "히어로",           previewUrl: "/",        render: () => <HeroEditorPanel/> },
               { key: "seo",      label: "SEO",             previewUrl: "/",        render: () => <SEOAdminPanel/> },
               { key: "legal",    label: "약관/개인정보",   previewUrl: "/terms",   render: () => <LegalAdminPanel/> },
               { key: "faq",      label: "자주 묻는 질문",  previewUrl: "/faq",     render: () => <FaqAdminPanel/> },
-              // 계좌번호는 별도 노출 페이지 없음 (체크아웃 시 호출). 미리보기 생략.
-              { key: "bank",     label: "계좌번호",                                  render: () => <BankAccountPanel/> },
+              { key: "bank",     label: "계좌번호",         previewUrl: "/faq",     render: () => <BankAccountPanel/> },
             ]}/>
         )}
         {/* v00.105 — '투어 페이지' / '강연 페이지' 탭 제거. TourAdminPanel / LectureAdminPanel 상단에 inline 통합. */}
