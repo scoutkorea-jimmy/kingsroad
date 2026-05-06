@@ -698,9 +698,9 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const safePage = Math.min(page, totalPages);
   const pageStart = (safePage - 1) * POSTS_PER_PAGE;
   const pagePosts = filtered.slice(pageStart, pageStart + POSTS_PER_PAGE);
-  const handleWrite = () => {
+  const handleWrite = async () => {
     if (!user) {
-      if (confirm("\uAE00\uC4F0\uAE30\uB294 \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?")) {
+      if (await window.BGNJ_CONFIRM("\uAE00\uC4F0\uAE30\uB294 \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) {
         go("login");
       }
       return;
@@ -1105,8 +1105,8 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     {
       type: "button",
       className: "btn-ghost",
-      onClick: () => {
-        if (confirm("\uC784\uC2DC\uC800\uC7A5\uB41C \uAE00\uC744 \uC0AD\uC81C\uD558\uACE0 \uC0C8\uB85C \uC2DC\uC791\uD558\uC2DC\uACA0\uC5B4\uC694?")) {
+      onClick: async () => {
+        if (await window.BGNJ_CONFIRM("\uC784\uC2DC\uC800\uC7A5\uB41C \uAE00\uC744 \uC0AD\uC81C\uD558\uACE0 \uC0C8\uB85C \uC2DC\uC791\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) {
           setTitle("");
           setPrefix("");
           setTags([]);
@@ -1235,8 +1235,8 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     window.BGNJ_COMMUNITY.incrementViews(post.id);
     onRefresh == null ? void 0 : onRefresh();
   }, [post.id]);
-  const requireLogin = (label) => {
-    if (confirm(`${label}\uC740(\uB294) \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?`)) {
+  const requireLogin = async (label) => {
+    if (await window.BGNJ_CONFIRM(`${label}\uC740(\uB294) \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) {
       go("login");
     }
   };
@@ -1307,8 +1307,8 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     onRefresh == null ? void 0 : onRefresh();
     setComment("");
   };
-  const deletePost = () => {
-    if (!confirm(`"${post.title}" \uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+  const deletePost = async () => {
+    if (!await window.BGNJ_CONFIRM(`"${post.title}" \uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     window.BGNJ_COMMUNITY.deletePost(post.id);
     onRefresh == null ? void 0 : onRefresh();
     setPostId(null);

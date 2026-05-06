@@ -564,9 +564,9 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
     setTick((v) => v + 1);
   };
 
-  const removePostFromReport = (report) => {
+  const removePostFromReport = async (report) => {
     if (!report.postId) return;
-    if (!confirm(`"${report.postTitle}" 게시글을 삭제하고 신고를 처리 완료로 표시하시겠어요?`)) return;
+    if (!(await window.BGNJ_CONFIRM(`"${report.postTitle}" 게시글을 삭제하고 신고를 처리 완료로 표시하시겠어요?`, { danger: true }))) return;
     window.BGNJ_COMMUNITY.deletePost(report.postId);
     window.BGNJ_COMMUNITY.updateReportStatus(report.id, 'resolved');
     setTick((v) => v + 1);
@@ -1485,7 +1485,7 @@ const LectureAdminPanel = ({ go }) => {
         <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
           {lectures.length === 0 && (
             <button type="button" className="btn btn-small" onClick={async () => {
-              if (!confirm('샘플 강연 3개를 추가합니다. 진행할까요?')) return;
+              if (!(await window.BGNJ_CONFIRM('샘플 강연 3개를 추가합니다. 진행할까요?', { danger: true }))) return;
               const samples = [
                 { title: '왕의 길', topic: '조선 왕실의 일상과 의례', venue: '경복궁 수정전', host: '뱅기노자', durationMinutes: 90, capacity: 30, price: 0, note: '경복궁 답사와 함께하는 인문학 강연.' },
                 { title: '문(門)을 읽다', topic: '궁궐 문(門)에 새겨진 인문학', venue: '창덕궁 인정전', host: '뱅기노자', durationMinutes: 90, capacity: 30, price: 30000, note: '궁궐 곳곳의 문에 담긴 의미를 해독합니다.' },
@@ -1589,7 +1589,7 @@ const LectureAdminPanel = ({ go }) => {
                     </button>
                     <button type="button" className="btn btn-small"
                       onClick={async () => {
-                        if (!confirm('이 강연을 삭제하시겠어요? 시드 강연은 자동 숨김 처리됩니다 (데이터 보존). 관리자가 추가한 강연은 완전 삭제됩니다.')) return;
+                        if (!(await window.BGNJ_CONFIRM('이 강연을 삭제하시겠어요? 시드 강연은 자동 숨김 처리됩니다 (데이터 보존). 관리자가 추가한 강연은 완전 삭제됩니다.', { danger: true }))) return;
                         // v00.129 — async + await + try/catch + 다른 탭 broadcast (cache purge).
                         try {
                           await window.BGNJ_LECTURES.deleteLecture(l.id);
@@ -1704,8 +1704,8 @@ const LectureAdminPanel = ({ go }) => {
                                 )}
                                 {r.status !== 'refund_requested' && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => {
-                                      if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
+                                    onClick={async () => {
+                                      if (!(await window.BGNJ_CONFIRM(`${r.name} 님 신청을 취소 처리하시겠어요?`, { danger: true }))) return;
                                       window.BGNJ_LECTURES.cancelRegistration(l.id, r.id);
                                       refresh();
                                     }}
@@ -1716,14 +1716,14 @@ const LectureAdminPanel = ({ go }) => {
                                     <span className="mono" style={{fontSize:9, color:'var(--warning)', letterSpacing:'0.15em'}}>환불신청</span>
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
-                                      onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.BGNJ_LECTURES.approveRefund(l.id, r.id); refresh(); }}
+                                      onClick={async () => { if (!(await window.BGNJ_CONFIRM('환불을 승인하시겠어요?', { danger: true }))) return; window.BGNJ_LECTURES.approveRefund(l.id, r.id); refresh(); }}
                                       style={{borderColor:'var(--gold)', color:'var(--gold)'}}>승인</button>
                                     <input className="field-input" placeholder="반려 사유"
                                       style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
                                       value={refundRejectNotes[r.id] || ''}
                                       onChange={e => setRefundRejectNotes({...refundRejectNotes, [r.id]: e.target.value})}/>
                                     <button type="button" className="btn btn-small"
-                                      onClick={() => { if (!confirm('환불 신청을 반려하시겠어요?')) return; window.BGNJ_LECTURES.rejectRefund(l.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
+                                      onClick={async () => { if (!(await window.BGNJ_CONFIRM('환불 신청을 반려하시겠어요?', { danger: true }))) return; window.BGNJ_LECTURES.rejectRefund(l.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
                                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>반려</button>
                                   </>
                                 )}
@@ -1912,7 +1912,7 @@ const TourAdminPanel = ({ go }) => {
   // v00.127 — async + await + try/catch. 이전엔 deleteTour fire-and-forget 으로 refresh 가
   // 즉시 OLD 캐시 사용 → 사용자 화면 변화 없음. 사용자 보고 '삭제 버튼이 정상작동 안하네'.
   const removeTour = async (id) => {
-    if (!confirm('이 투어를 삭제하시겠어요? 시드 투어는 자동 숨김 처리(데이터 보존)됩니다. 관리자가 추가한 투어는 완전 삭제됩니다.')) return;
+    if (!(await window.BGNJ_CONFIRM('이 투어를 삭제하시겠어요? 시드 투어는 자동 숨김 처리(데이터 보존)됩니다. 관리자가 추가한 투어는 완전 삭제됩니다.', { danger: true }))) return;
     try {
       await window.BGNJ_TOURS.deleteTour(id);
       window.BGNJ_AUDIT?.log({ action: 'tour.remove', target: `tour:${id}` });
@@ -1966,7 +1966,7 @@ const TourAdminPanel = ({ go }) => {
         <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
           {tours.length === 0 && (
             <button type="button" className="btn btn-small" onClick={async () => {
-              if (!confirm('샘플 답사 3개를 추가합니다. 진행할까요?')) return;
+              if (!(await window.BGNJ_CONFIRM('샘플 답사 3개를 추가합니다. 진행할까요?', { danger: true }))) return;
               const samples = [
                 { title: '경복궁 — 왕의 일상', location: '경복궁 일대', host: '뱅기노자', durationMinutes: 180, capacity: 15, price: 30000, desc: '경복궁 외전·내전을 따라 왕의 하루를 좇는 답사.' },
                 { title: '창덕궁 — 후원 산책', location: '창덕궁 후원', host: '뱅기노자', durationMinutes: 150, capacity: 12, price: 35000, desc: '비원의 절경과 함께하는 인문학 산책.' },
@@ -2233,8 +2233,8 @@ const TourAdminPanel = ({ go }) => {
                                 )}
                                 {r.status !== 'refund_requested' && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => {
-                                      if (!confirm(`${r.name} 님 신청을 취소 처리하시겠어요?`)) return;
+                                    onClick={async () => {
+                                      if (!(await window.BGNJ_CONFIRM(`${r.name} 님 신청을 취소 처리하시겠어요?`, { danger: true }))) return;
                                       window.BGNJ_TOURS.cancelReservation(t.id, r.id);
                                       refresh();
                                     }}
@@ -2245,14 +2245,14 @@ const TourAdminPanel = ({ go }) => {
                                     <span className="mono" style={{fontSize:9, color:'var(--warning)', letterSpacing:'0.15em'}}>환불신청</span>
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
-                                      onClick={() => { if (!confirm('환불을 승인하시겠어요?')) return; window.BGNJ_TOURS.approveRefund(t.id, r.id); refresh(); }}
+                                      onClick={async () => { if (!(await window.BGNJ_CONFIRM('환불을 승인하시겠어요?', { danger: true }))) return; window.BGNJ_TOURS.approveRefund(t.id, r.id); refresh(); }}
                                       style={{borderColor:'var(--gold)', color:'var(--gold)'}}>승인</button>
                                     <input className="field-input" placeholder="반려 사유"
                                       style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
                                       value={refundRejectNotes[r.id] || ''}
                                       onChange={e => setRefundRejectNotes({...refundRejectNotes, [r.id]: e.target.value})}/>
                                     <button type="button" className="btn btn-small"
-                                      onClick={() => { if (!confirm('환불 신청을 반려하시겠어요?')) return; window.BGNJ_TOURS.rejectRefund(t.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
+                                      onClick={async () => { if (!(await window.BGNJ_CONFIRM('환불 신청을 반려하시겠어요?', { danger: true }))) return; window.BGNJ_TOURS.rejectRefund(t.id, r.id, refundRejectNotes[r.id] || ''); refresh(); }}
                                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>반려</button>
                                   </>
                                 )}
@@ -2329,7 +2329,7 @@ const BankAccountPanel = () => {
   };
 
   const remove = async (a) => {
-    if (!confirm(`"${a.label}" 계좌를 삭제하시겠습니까?`)) return;
+    if (!(await window.BGNJ_CONFIRM(`"${a.label}" 계좌를 삭제하시겠습니까?`, { danger: true }))) return;
     try {
       await window.BGNJ_LECTURES.deleteBankAccount(a.id);
       await refresh();
@@ -2683,8 +2683,8 @@ const BookOrderAdminPanel = ({ go }) => {
                 )}
                 {(o.status === 'pending_payment' || o.status === 'paid') && (
                   <button type="button" className="btn btn-small"
-                    onClick={() => {
-                      if (!confirm(`주문 ${o.orderNo}을(를) 취소 처리하시겠어요?`)) return;
+                    onClick={async () => {
+                      if (!(await window.BGNJ_CONFIRM(`주문 ${o.orderNo}을(를) 취소 처리하시겠어요?`, { danger: true }))) return;
                       window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
                       refresh();
                     }}
@@ -2701,8 +2701,8 @@ const BookOrderAdminPanel = ({ go }) => {
                       </div>
                       <div style={{display:'flex', gap:6, alignItems:'center', flexWrap:'wrap'}}>
                         <button type="button" className="btn btn-small"
-                          onClick={() => {
-                            if (!confirm(`환불을 승인하시겠어요? 주문 ${o.orderNo}이 취소됩니다.`)) return;
+                          onClick={async () => {
+                            if (!(await window.BGNJ_CONFIRM(`환불을 승인하시겠어요? 주문 ${o.orderNo}이 취소됩니다.`, { danger: true }))) return;
                             window.BGNJ_BOOK_ORDERS.approveRefund(o.id);
                             refresh();
                           }}
@@ -2715,8 +2715,8 @@ const BookOrderAdminPanel = ({ go }) => {
                           value={rejectNotes[o.id] || ''}
                           onChange={(e) => setRejectNotes({ ...rejectNotes, [o.id]: e.target.value })}/>
                         <button type="button" className="btn btn-small"
-                          onClick={() => {
-                            if (!confirm(`환불 신청을 반려하시겠어요?`)) return;
+                          onClick={async () => {
+                            if (!(await window.BGNJ_CONFIRM(`환불 신청을 반려하시겠어요?`, { danger: true }))) return;
                             window.BGNJ_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || '');
                             refresh();
                           }}
@@ -2868,8 +2868,8 @@ const FaqAdminPanel = () => {
 
   const update = (id, patch) => { window.BGNJ_FAQ.update(id, patch); refresh(); };
   const move = (id, dir) => { window.BGNJ_FAQ.reorder(id, dir); refresh(); };
-  const remove = (id) => {
-    if (!confirm('이 FAQ를 삭제하시겠어요?')) return;
+  const remove = async (id) => {
+    if (!(await window.BGNJ_CONFIRM('이 FAQ를 삭제하시겠어요?', { danger: true }))) return;
     window.BGNJ_FAQ.remove(id);
     refresh();
   };
@@ -2975,8 +2975,8 @@ const SiteContentAdminPanel = () => {
       flash('저장되었습니다.');
       if (onAfterSave) onAfterSave();
     };
-    const reset = () => {
-      if (!confirm('이 섹션을 기본값으로 되돌릴까요?')) return;
+    const reset = async () => {
+      if (!(await window.BGNJ_CONFIRM('이 섹션을 기본값으로 되돌릴까요?', { danger: true }))) return;
       window.BGNJ_SITE_CONTENT.resetSection(section);
       setTick((v) => v + 1);
       flash('기본값으로 복원되었습니다.');
@@ -3017,8 +3017,8 @@ const SiteContentAdminPanel = () => {
         flash(`${label} 업로드 완료`);
       }
     };
-    const clear = () => {
-      if (!confirm(`${label}을(를) 비울까요? (기본 마크로 되돌아갑니다)`)) return;
+    const clear = async () => {
+      if (!(await window.BGNJ_CONFIRM(`${label}을(를) 비울까요? (기본 마크로 되돌아갑니다)`, { danger: true }))) return;
       window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: '' });
       setTick((v) => v + 1);
       flash(`${label} 제거됨`);
@@ -3404,12 +3404,17 @@ const BooksAdminPanel = () => {
   React.useEffect(() => {
     if (!selected) { setEditing(null); setDirty(false); return; }
     if (dirty && editing && editing.id !== selected.id) {
-      const ok = window.confirm('저장하지 않은 변경 사항이 있습니다. 그래도 다른 책으로 이동할까요?');
-      if (!ok) {
-        // 사용자 취소 — 이전 selection 으로 되돌리기 (best-effort)
-        if (editing.id) setSelectedId(editing.id);
-        return;
-      }
+      // useEffect 콜백 내 async — IIFE 패턴 사용
+      (async () => {
+        const ok = await window.BGNJ_CONFIRM('저장하지 않은 변경 사항이 있습니다. 그래도 다른 책으로 이동할까요?', { danger: true });
+        if (!ok) {
+          if (editing.id) setSelectedId(editing.id);
+          return;
+        }
+        setEditing({ ...selected });
+        setDirty(false);
+      })();
+      return;
     }
     setEditing({ ...selected });
     setDirty(false);
@@ -3470,8 +3475,8 @@ const BooksAdminPanel = () => {
   };
 
   // v00.193 — 새 책 draft 취소.
-  const cancelDraft = () => {
-    if (dirty && !confirm('작성 중인 새 책을 취소할까요?')) return;
+  const cancelDraft = async () => {
+    if (dirty && !(await window.BGNJ_CONFIRM('작성 중인 새 책을 취소할까요?', { danger: true }))) return;
     setNewDraft(null);
     setDirty(false);
     const fallback = realBooks[0]?.id || null;
@@ -3513,7 +3518,7 @@ const BooksAdminPanel = () => {
   const removeBook = async (id) => {
     const target = window.BGNJ_BOOKS.get(id);
     if (!target) return;
-    if (!confirm(`"${target.title}" 책을 삭제할까요? (되돌릴 수 없음)`)) return;
+    if (!(await window.BGNJ_CONFIRM(`"${target.title}" 책을 삭제할까요? (되돌릴 수 없음)`, { danger: true }))) return;
     try {
       await window.BGNJ_BOOKS.remove(id);
       try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
@@ -3601,7 +3606,7 @@ const BooksAdminPanel = () => {
             <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
               {books.length === 0 && (
                 <button type="button" className="btn btn-small" onClick={async () => {
-                  if (!confirm('샘플 책 2권을 추가합니다. 진행할까요?')) return;
+                  if (!(await window.BGNJ_CONFIRM('샘플 책 2권을 추가합니다. 진행할까요?', { danger: true }))) return;
                   const samples = [
                     { title: '왕의 길 — 조선 왕실의 일상', subtitle: '경복궁의 사계와 의례', author: '뱅기노자', publisher: '뱅기노자 출판부', priceKR: 18000, status: 'published', desc: '조선 왕실의 일상과 의례를 따라 걷는 인문학 산책.' },
                     { title: '문(門)을 읽다', subtitle: '궁궐 문에 새겨진 인문학', author: '뱅기노자', publisher: '뱅기노자 출판부', priceKR: 22000, status: 'published', desc: '광화문에서 신무문까지, 문에 담긴 의미를 해독합니다.' },
@@ -3933,7 +3938,7 @@ const BooksAdminPanel = () => {
                       </label>
                       {editing.coverDataUri && !uploadingCover && (
                         <button type="button" className="btn btn-small"
-                          onClick={() => { if (confirm('표지를 비울까요?')) patchImmediate({ coverDataUri: '' }); }}
+                          onClick={async () => { if ((await window.BGNJ_CONFIRM('표지를 비울까요?', { danger: true }))) patchImmediate({ coverDataUri: '' }); }}
                           style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
                       )}
                     </div>
@@ -3971,7 +3976,7 @@ const BooksAdminPanel = () => {
                       </label>
                       {editing.pdfPreviewDataUri && !uploadingPdf && (
                         <button type="button" className="btn btn-small"
-                          onClick={() => { if (confirm('PDF 미리보기를 비울까요?')) patchImmediate({ pdfPreviewDataUri: '' }); }}
+                          onClick={async () => { if ((await window.BGNJ_CONFIRM('PDF 미리보기를 비울까요?', { danger: true }))) patchImmediate({ pdfPreviewDataUri: '' }); }}
                           style={{borderColor:'var(--danger)', color:'var(--danger)'}}>제거</button>
                       )}
                     </div>
@@ -4038,8 +4043,8 @@ const BooksAdminPanel = () => {
                           <p className="ko-serif" style={{fontSize:13, lineHeight:1.7, margin:0}}>{r.text}</p>
                         </div>
                         <button type="button" className="btn btn-small"
-                          onClick={() => {
-                            if (!confirm('이 리뷰를 삭제할까요?')) return;
+                          onClick={async () => {
+                            if (!(await window.BGNJ_CONFIRM('이 리뷰를 삭제할까요?', { danger: true }))) return;
                             window.BGNJ_BOOKS.removeReview(selected.id, r.id);
                             refresh();
                           }}
@@ -4073,7 +4078,7 @@ const BooksAdminPanel = () => {
                   )}
                   {!editing._isNew && dirty && (
                     <button type="button" className="btn btn-small"
-                      onClick={() => { if (confirm('변경 사항을 버리고 마지막 저장 시점으로 되돌릴까요?')) { setEditing({ ...selected }); setDirty(false); } }}>
+                      onClick={async () => { if ((await window.BGNJ_CONFIRM('변경 사항을 버리고 마지막 저장 시점으로 되돌릴까요?', { danger: true }))) { setEditing({ ...selected }); setDirty(false); } }}>
                       변경 취소
                     </button>
                   )}
@@ -4197,7 +4202,7 @@ const ErrorLogPanel = () => {
   }, [errors, codeFilter, search]);
 
   const clearAll = async () => {
-    if (!confirm('모든 오류 로그를 삭제하시겠습니까? (되돌릴 수 없음)')) return;
+    if (!(await window.BGNJ_CONFIRM('모든 오류 로그를 삭제하시겠습니까? (되돌릴 수 없음)', { danger: true }))) return;
     try { await window.BGNJ_API.errorLog.clear(); await refresh(); }
     catch (err) { window.BGNJ_TOAST.error('삭제 실패: ' + (err?.message || '')); }
   };
@@ -4606,8 +4611,8 @@ const AuditLogPanel = () => {
     downloadCsv(`audit-log-${new Date().toISOString().slice(0,10)}.csv`, csv);
   };
 
-  const clear = () => {
-    if (!confirm('감사 로그 전체를 삭제하시겠어요? 되돌릴 수 없습니다.')) return;
+  const clear = async () => {
+    if (!(await window.BGNJ_CONFIRM('감사 로그 전체를 삭제하시겠어요? 되돌릴 수 없습니다.', { danger: true }))) return;
     window.BGNJ_AUDIT.clear();
     refresh();
   };
@@ -4993,7 +4998,7 @@ const MemberAdminPanel = ({ go }) => {
     catch (err) { window.BGNJ_TOAST.error(`등급 변경 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
   const toggleAdmin = async (user) => {
-    if (!confirm(`${user.name} 님의 관리자 권한을 ${user.isAdmin ? '해제' : '부여'}하시겠어요?`)) return;
+    if (!(await window.BGNJ_CONFIRM(`${user.name} 님의 관리자 권한을 ${user.isAdmin ? '해제' : '부여'}하시겠어요?`, { danger: true }))) return;
     try { await window.BGNJ_AUTH.toggleAdmin(user.id); refresh(); }
     catch (err) { window.BGNJ_TOAST.error(`관리자 권한 변경 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
@@ -5010,13 +5015,13 @@ const MemberAdminPanel = ({ go }) => {
   };
   const suspendUser = (user) => openSuspendDialog(user);
   const unsuspend = async (user) => {
-    if (!confirm(`${user.name} 님의 정지를 해제하시겠어요?`)) return;
+    if (!(await window.BGNJ_CONFIRM(`${user.name} 님의 정지를 해제하시겠어요?`, { danger: true }))) return;
     try { await window.BGNJ_AUTH.unsuspendUser(user.id); refresh(); }
     catch (err) { window.BGNJ_TOAST.error(`정지 해제 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
   const deleteUser = async (user) => {
     if (user.email === 'admin@admin.admin') { window.BGNJ_TOAST.error('기본 관리자 계정은 삭제할 수 없습니다.'); return; }
-    if (!confirm(`${user.name} (${user.email}) 계정을 정말 삭제하시겠어요? 이 작업은 되돌릴 수 없습니다.`)) return;
+    if (!(await window.BGNJ_CONFIRM(`${user.name} (${user.email}) 계정을 정말 삭제하시겠어요? 이 작업은 되돌릴 수 없습니다.`, { danger: true }))) return;
     try { await window.BGNJ_AUTH.removeUser(user.id); setSelectedId(null); refresh(); }
     catch (err) { window.BGNJ_TOAST.error(`삭제 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
@@ -5636,9 +5641,10 @@ const InternalAlarmPanel = () => {
   const send = async () => {
     if (!message.trim()) { setResultMsg('✗ 메시지를 입력해 주세요.'); return; }
     if (scope === 'select' && selectedIds.size === 0) { setResultMsg('✗ 수신자를 선택해 주세요.'); return; }
-    if (!confirm(scope === 'all_admins'
+    const __confirmMsg = scope === 'all_admins'
       ? `모든 관리자(${admins.length}명${excludeSelf ? ' - 본인 제외' : ''})에게 알람을 보내시겠어요?`
-      : `선택한 ${selectedIds.size}명에게 알람을 보내시겠어요?`)) return;
+      : `선택한 ${selectedIds.size}명에게 알람을 보내시겠어요?`;
+    if (!(await window.BGNJ_CONFIRM(__confirmMsg, { danger: true }))) return;
     setSending(true); setResultMsg('');
     try {
       // v00.191 — 그룹 기반 recipients. scope: 'all_admins' / 'all_members' / 'all_non_admins' / 'grade'.
@@ -5801,16 +5807,16 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
     downloadCsv(`community-posts-${new Date().toISOString().slice(0, 10)}.csv`, window.BGNJ_COMMUNITY.exportCsv());
   };
 
-  const removeOne = (post) => {
-    if (!confirm(`"${post.title}" 게시글을 삭제하시겠어요?`)) return;
+  const removeOne = async (post) => {
+    if (!(await window.BGNJ_CONFIRM(`"${post.title}" 게시글을 삭제하시겠어요?`, { danger: true }))) return;
     window.BGNJ_COMMUNITY.deletePost(post.id);
     setSelectedIds((prev) => { const next = new Set(prev); next.delete(post.id); return next; });
     onChange?.();
   };
 
-  const bulkRemove = () => {
+  const bulkRemove = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`선택한 ${selectedIds.size}개 게시글을 삭제할까요?`)) return;
+    if (!(await window.BGNJ_CONFIRM(`선택한 ${selectedIds.size}개 게시글을 삭제할까요?`, { danger: true }))) return;
     selectedIds.forEach((id) => window.BGNJ_COMMUNITY.deletePost(id));
     setSelectedIds(new Set());
     onChange?.();
@@ -7213,7 +7219,7 @@ const AdminCategoryPanel = () => {
     const cat = cats[i];
     const used = postCount(cat.id);
     const note = used > 0 ? `\n현재 이 게시판에 ${used}개의 글이 있습니다. 삭제 후에도 게시글은 남되 분류가 비게 됩니다.` : '';
-    if (!confirm(`"${cat.label}" 게시판을 삭제하시겠어요?${note}`)) return;
+    if (!(await window.BGNJ_CONFIRM(`"${cat.label}" 게시판을 삭제하시겠어요?${note}`, { danger: true }))) return;
     try {
       await window.BGNJ_API?.categories?.remove?.(cat.id);
     } catch (err) {
@@ -7385,7 +7391,7 @@ const AdminCategoryPanel = () => {
       </div>
 
       <button type="button" className="btn btn-small" style={{marginTop:20}}
-        onClick={() => { if (confirm("기본값으로 되돌립니다. 진행할까요?")) { window.BGNJ_SAVE.resetCategories(); setCats(window.BGNJ_STORES.categories.slice()); } }}>
+        onClick={async () => { if ((await window.BGNJ_CONFIRM("기본값으로 되돌립니다. 진행할까요?", { danger: true }))) { window.BGNJ_SAVE.resetCategories(); setCats(window.BGNJ_STORES.categories.slice()); } }}>
         기본값 복원
       </button>
 
@@ -7598,7 +7604,7 @@ const CommunityBoardsPanel = () => {
     if (!target) return;
     const postCount = ((window.BGNJ_COMMUNITY?.listPosts?.() || []).filter((p) => p.categoryId === id)).length;
     const note = postCount > 0 ? `\n현재 이 게시판에 ${postCount}개의 글이 있습니다. 삭제 후에도 게시글은 남되 분류가 비게 됩니다.` : '';
-    if (!confirm(`"${target.label}" 게시판을 삭제하시겠어요?${note}`)) return;
+    if (!(await window.BGNJ_CONFIRM(`"${target.label}" 게시판을 삭제하시겠어요?${note}`, { danger: true }))) return;
     setSaving(true);
     try {
       await window.BGNJ_API?.categories?.remove?.(id);
@@ -8067,10 +8073,10 @@ const AdminGradePanel = () => {
     });
     markDirty();
   };
-  const remove = (i) => {
+  const remove = async (i) => {
     const g = grades[i];
     if (g.id === "admin" || g.id === "guest") { window.BGNJ_TOAST.error("기본 등급(guest/admin)은 삭제할 수 없습니다."); return; }
-    if (!confirm(`"${g.label}" 등급을 삭제하시겠어요?`)) return;
+    if (!(await window.BGNJ_CONFIRM(`"${g.label}" 등급을 삭제하시겠어요?`, { danger: true }))) return;
     setGrades(grades.filter((_, j) => j !== i));
     markDirty();
   };
@@ -8135,7 +8141,7 @@ const AdminGradePanel = () => {
   };
 
   const resetAll = async () => {
-    if (!confirm("등급 + 자동 승급 기준을 모두 기본값으로 되돌립니다. 진행할까요?\n(서버 D1 grades_kv 도 default 값으로 덮어씌워집니다.)")) return;
+    if (!(await window.BGNJ_CONFIRM("등급 + 자동 승급 기준을 모두 기본값으로 되돌립니다. 진행할까요?\n(서버 D1 grades_kv 도 default 값으로 덮어씌워집니다.)", { danger: true }))) return;
     setSaving(true);
     try {
       // v00.181 — 이전엔 localStorage 만 reset 후 새로고침 시 D1 default 가 다시 덮어써서 reset 효과 없었음.
@@ -8165,7 +8171,7 @@ const AdminGradePanel = () => {
 
   const reevaluate = async () => {
     if (dirty) { window.BGNJ_TOAST.error("저장하지 않은 변경 사항이 있습니다. 먼저 [저장] 후 재산정하세요."); return; }
-    if (!confirm("전체 회원의 활동량을 재평가하여 자격 등급으로 자동 승급/강등 합니다. 진행할까요?")) return;
+    if (!(await window.BGNJ_CONFIRM("전체 회원의 활동량을 재평가하여 자격 등급으로 자동 승급/강등 합니다. 진행할까요?", { danger: true }))) return;
     setBusyReevaluate(true);
     try {
       await window.BGNJ_AUTH?.refreshUsers?.();
@@ -8362,7 +8368,7 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
     } finally { setBusy(false); }
   };
   const removeCat = async (name) => {
-    if (!confirm(`'${name}' 카테고리를 삭제하시겠어요?\n(기존 칼럼의 값은 보존됨, 새 칼럼 작성 선택지에서만 사라짐.)`)) return;
+    if (!(await window.BGNJ_CONFIRM(`'${name}' 카테고리를 삭제하시겠어요?\n(기존 칼럼의 값은 보존됨, 새 칼럼 작성 선택지에서만 사라짐.)`, { danger: true }))) return;
     setBusy(true);
     try {
       const next = (sc.columnCategories || []).filter((c) => c !== name);
@@ -8582,7 +8588,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
   };
 
   const remove = async (id) => {
-    if (!confirm("이 칼럼을 삭제하시겠어요?")) return;
+    if (!(await window.BGNJ_CONFIRM("이 칼럼을 삭제하시겠어요?", { danger: true }))) return;
     try {
       await window.BGNJ_COLUMNS.deleteColumn(id);
       setTick((v) => v + 1);
@@ -8592,8 +8598,8 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     }
   };
 
-  const unpublish = (id) => {
-    if (!confirm("이 칼럼을 발행 취소(임시 저장으로 되돌림)하시겠어요?")) return;
+  const unpublish = async (id) => {
+    if (!(await window.BGNJ_CONFIRM("이 칼럼을 발행 취소(임시 저장으로 되돌림)하시겠어요?", { danger: true }))) return;
     const col = window.BGNJ_COLUMNS.getColumn(id);
     if (!col) return;
     window.BGNJ_COLUMNS.saveColumn({ ...col, status: 'draft', publishAt: null, publishedAt: null });
@@ -8852,7 +8858,7 @@ const ColumnsHubPanel = ({ allColumns }) => {
     } catch (err) { setCatMsg('추가 실패: ' + (err?.message || '')); }
   };
   const removeColCategory = async (name) => {
-    if (!confirm(`'${name}' 카테고리를 삭제하시겠어요?\n(기존 칼럼의 카테고리 값은 유지되지만 새 칼럼 작성 시 선택지에서 사라집니다.)`)) return;
+    if (!(await window.BGNJ_CONFIRM(`'${name}' 카테고리를 삭제하시겠어요?\n(기존 칼럼의 카테고리 값은 유지되지만 새 칼럼 작성 시 선택지에서 사라집니다.)`, { danger: true }))) return;
     try {
       await window.BGNJ_SITE_CONTENT.saveSection('columnCategories', colCats.filter((c) => c !== name));
       setScTick((x) => x + 1);
@@ -9045,8 +9051,8 @@ const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
           <h2 className="ko-serif" style={{fontSize:18, margin:0}}>{initialColumn?.id ? '칼럼 편집' : '새 칼럼 작성'}</h2>
-          <button type="button" className="btn btn-small" onClick={() => { /* 명시적 닫기 — 가드 통과 */
-            const ok = !dirty || window.confirm('작성 중인 내용을 임시저장 후 닫으시겠어요?\n[확인]=임시저장 후 닫기 / [취소]=그냥 닫기');
+          <button type="button" className="btn btn-small" onClick={async () => { /* 명시적 닫기 — 가드 통과 */
+            const ok = !dirty || (await window.BGNJ_CONFIRM('작성 중인 내용을 임시저장 후 닫으시겠어요?\n[확인]=임시저장 후 닫기 / [취소]=그냥 닫기', { danger: true }));
             if (ok && dirty) saveDraft();
             onClose?.();
           }}>닫기</button>

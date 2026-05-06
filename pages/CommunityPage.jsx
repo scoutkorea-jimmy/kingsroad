@@ -696,9 +696,9 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const pageStart = (safePage - 1) * POSTS_PER_PAGE;
   const pagePosts = filtered.slice(pageStart, pageStart + POSTS_PER_PAGE);
 
-  const handleWrite = () => {
+  const handleWrite = async () => {
     if (!user) {
-      if (confirm("글쓰기는 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?")) {
+      if ((await window.BGNJ_CONFIRM("글쓰기는 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?", { danger: true }))) {
         go("login");
       }
       return;
@@ -1092,8 +1092,8 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
             }}>
               <span>이전에 작성하던 글을 복원했습니다.</span>
               <button type="button" className="btn-ghost"
-                onClick={() => {
-                  if (confirm('임시저장된 글을 삭제하고 새로 시작하시겠어요?')) {
+                onClick={async () => {
+                  if ((await window.BGNJ_CONFIRM('임시저장된 글을 삭제하고 새로 시작하시겠어요?', { danger: true }))) {
                     setTitle(''); setPrefix(''); setTags([]); setImages([]);
                     setBodyHtml(''); setBodyText('');
                     clearDraft();
@@ -1248,8 +1248,8 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     onRefresh?.();
   }, [post.id]);
 
-  const requireLogin = (label) => {
-    if (confirm(`${label}은(는) 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?`)) {
+  const requireLogin = async (label) => {
+    if ((await window.BGNJ_CONFIRM(`${label}은(는) 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?`, { danger: true }))) {
       go('login');
     }
   };
@@ -1317,8 +1317,8 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     setComment("");
   };
 
-  const deletePost = () => {
-    if (!confirm(`"${post.title}" 글을 삭제하시겠어요?`)) return;
+  const deletePost = async () => {
+    if (!(await window.BGNJ_CONFIRM(`"${post.title}" 글을 삭제하시겠어요?`, { danger: true }))) return;
     window.BGNJ_COMMUNITY.deletePost(post.id);
     onRefresh?.();
     setPostId(null);

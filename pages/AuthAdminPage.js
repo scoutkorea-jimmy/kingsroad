@@ -546,9 +546,9 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
     window.BGNJ_COMMUNITY.updateReportStatus(id, status);
     setTick((v) => v + 1);
   };
-  const removePostFromReport = (report) => {
+  const removePostFromReport = async (report) => {
     if (!report.postId) return;
-    if (!confirm(`"${report.postTitle}" \uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD558\uACE0 \uC2E0\uACE0\uB97C \uCC98\uB9AC \uC644\uB8CC\uB85C \uD45C\uC2DC\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`"${report.postTitle}" \uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD558\uACE0 \uC2E0\uACE0\uB97C \uCC98\uB9AC \uC644\uB8CC\uB85C \uD45C\uC2DC\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     window.BGNJ_COMMUNITY.deletePost(report.postId);
     window.BGNJ_COMMUNITY.updateReportStatus(report.id, "resolved");
     setTick((v) => v + 1);
@@ -1299,7 +1299,7 @@ const LectureAdminPanel = ({ go }) => {
     /* @__PURE__ */ React.createElement("span", null, "\u{1F4CB} \uAC15\uC5F0 \uD398\uC774\uC9C0 \uCF58\uD150\uCE20 \u2014 \uAE00\uB85C\uBC8C \uC9C4\uD589\xB7\uCC38\uACE0 / \uD15C\uD50C\uB9BF / \uAC15\uC5F0\uBCC4 override"),
     /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, showPageEditor ? "\u25B2 \uB2EB\uAE30" : "\u25BC \uD3BC\uCE58\uAE30")
   ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, window.LecturePageEditorPanel ? /* @__PURE__ */ React.createElement(window.LecturePageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uAC15\uC5F0 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4. \uACC4\uC88C\uBC88\uD638\uB294 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC2DC\uC2A4\uD15C \u2192 \uC124\uC815"), " \uD0ED\uC5D0\uC11C \uB4F1\uB85D\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, lectures.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
-    if (!confirm("\uC0D8\uD50C \uAC15\uC5F0 3\uAC1C\uB97C \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uC0D8\uD50C \uAC15\uC5F0 3\uAC1C\uB97C \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
     const samples = [
       { title: "\uC655\uC758 \uAE38", topic: "\uC870\uC120 \uC655\uC2E4\uC758 \uC77C\uC0C1\uACFC \uC758\uB840", venue: "\uACBD\uBCF5\uAD81 \uC218\uC815\uC804", host: "\uBC45\uAE30\uB178\uC790", durationMinutes: 90, capacity: 30, price: 0, note: "\uACBD\uBCF5\uAD81 \uB2F5\uC0AC\uC640 \uD568\uAED8\uD558\uB294 \uC778\uBB38\uD559 \uAC15\uC5F0." },
       { title: "\uBB38(\u9580)\uC744 \uC77D\uB2E4", topic: "\uAD81\uAD90 \uBB38(\u9580)\uC5D0 \uC0C8\uACA8\uC9C4 \uC778\uBB38\uD559", venue: "\uCC3D\uB355\uAD81 \uC778\uC815\uC804", host: "\uBC45\uAE30\uB178\uC790", durationMinutes: 90, capacity: 30, price: 3e4, note: "\uAD81\uAD90 \uACF3\uACF3\uC758 \uBB38\uC5D0 \uB2F4\uAE34 \uC758\uBBF8\uB97C \uD574\uB3C5\uD569\uB2C8\uB2E4." },
@@ -1377,7 +1377,7 @@ const LectureAdminPanel = ({ go }) => {
         className: "btn btn-small",
         onClick: async () => {
           var _a, _b, _c;
-          if (!confirm("\uC774 \uAC15\uC5F0\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694? \uC2DC\uB4DC \uAC15\uC5F0\uC740 \uC790\uB3D9 \uC228\uAE40 \uCC98\uB9AC\uB429\uB2C8\uB2E4 (\uB370\uC774\uD130 \uBCF4\uC874). \uAD00\uB9AC\uC790\uAC00 \uCD94\uAC00\uD55C \uAC15\uC5F0\uC740 \uC644\uC804 \uC0AD\uC81C\uB429\uB2C8\uB2E4.")) return;
+          if (!await window.BGNJ_CONFIRM("\uC774 \uAC15\uC5F0\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694? \uC2DC\uB4DC \uAC15\uC5F0\uC740 \uC790\uB3D9 \uC228\uAE40 \uCC98\uB9AC\uB429\uB2C8\uB2E4 (\uB370\uC774\uD130 \uBCF4\uC874). \uAD00\uB9AC\uC790\uAC00 \uCD94\uAC00\uD55C \uAC15\uC5F0\uC740 \uC644\uC804 \uC0AD\uC81C\uB429\uB2C8\uB2E4.", { danger: true })) return;
           try {
             await window.BGNJ_LECTURES.deleteLecture(l.id);
             (_a = window.BGNJ_AUDIT) == null ? void 0 : _a.log({ action: "lecture.remove", target: `lecture:${l.id}` });
@@ -1451,8 +1451,8 @@ const LectureAdminPanel = ({ go }) => {
       {
         type: "button",
         className: "btn btn-small",
-        onClick: () => {
-          if (!confirm(`${r.name} \uB2D8 \uC2E0\uCCAD\uC744 \uCDE8\uC18C \uCC98\uB9AC\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+        onClick: async () => {
+          if (!await window.BGNJ_CONFIRM(`${r.name} \uB2D8 \uC2E0\uCCAD\uC744 \uCDE8\uC18C \uCC98\uB9AC\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
           window.BGNJ_LECTURES.cancelRegistration(l.id, r.id);
           refresh();
         },
@@ -1464,8 +1464,8 @@ const LectureAdminPanel = ({ go }) => {
       {
         type: "button",
         className: "btn btn-small",
-        onClick: () => {
-          if (!confirm("\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC2DC\uACA0\uC5B4\uC694?")) return;
+        onClick: async () => {
+          if (!await window.BGNJ_CONFIRM("\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
           window.BGNJ_LECTURES.approveRefund(l.id, r.id);
           refresh();
         },
@@ -1486,8 +1486,8 @@ const LectureAdminPanel = ({ go }) => {
       {
         type: "button",
         className: "btn btn-small",
-        onClick: () => {
-          if (!confirm("\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD558\uC2DC\uACA0\uC5B4\uC694?")) return;
+        onClick: async () => {
+          if (!await window.BGNJ_CONFIRM("\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
           window.BGNJ_LECTURES.rejectRefund(l.id, r.id, refundRejectNotes[r.id] || "");
           refresh();
         },
@@ -1666,7 +1666,7 @@ const TourAdminPanel = ({ go }) => {
   };
   const removeTour = async (id) => {
     var _a, _b, _c;
-    if (!confirm("\uC774 \uD22C\uC5B4\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694? \uC2DC\uB4DC \uD22C\uC5B4\uB294 \uC790\uB3D9 \uC228\uAE40 \uCC98\uB9AC(\uB370\uC774\uD130 \uBCF4\uC874)\uB429\uB2C8\uB2E4. \uAD00\uB9AC\uC790\uAC00 \uCD94\uAC00\uD55C \uD22C\uC5B4\uB294 \uC644\uC804 \uC0AD\uC81C\uB429\uB2C8\uB2E4.")) return;
+    if (!await window.BGNJ_CONFIRM("\uC774 \uD22C\uC5B4\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694? \uC2DC\uB4DC \uD22C\uC5B4\uB294 \uC790\uB3D9 \uC228\uAE40 \uCC98\uB9AC(\uB370\uC774\uD130 \uBCF4\uC874)\uB429\uB2C8\uB2E4. \uAD00\uB9AC\uC790\uAC00 \uCD94\uAC00\uD55C \uD22C\uC5B4\uB294 \uC644\uC804 \uC0AD\uC81C\uB429\uB2C8\uB2E4.", { danger: true })) return;
     try {
       await window.BGNJ_TOURS.deleteTour(id);
       (_a = window.BGNJ_AUDIT) == null ? void 0 : _a.log({ action: "tour.remove", target: `tour:${id}` });
@@ -1713,7 +1713,7 @@ const TourAdminPanel = ({ go }) => {
     /* @__PURE__ */ React.createElement("span", null, "\u{1F4CB} \uD22C\uC5B4 \uD398\uC774\uC9C0 \uCF58\uD150\uCE20 \u2014 \uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C / \uD15C\uD50C\uB9BF / \uD22C\uC5B4\uBCC4 override"),
     /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, showPageEditor ? "\u25B2 \uB2EB\uAE30" : "\u25BC \uD3BC\uCE58\uAE30")
   ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, window.TourPageEditorPanel ? /* @__PURE__ */ React.createElement(window.TourPageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uD22C\uC5B4 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4(\uAC15\uC5F0\uACFC \uAC19\uC740 \uACC4\uC88C \uC0AC\uC6A9)."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, tours.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
-    if (!confirm("\uC0D8\uD50C \uB2F5\uC0AC 3\uAC1C\uB97C \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uC0D8\uD50C \uB2F5\uC0AC 3\uAC1C\uB97C \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
     const samples = [
       { title: "\uACBD\uBCF5\uAD81 \u2014 \uC655\uC758 \uC77C\uC0C1", location: "\uACBD\uBCF5\uAD81 \uC77C\uB300", host: "\uBC45\uAE30\uB178\uC790", durationMinutes: 180, capacity: 15, price: 3e4, desc: "\uACBD\uBCF5\uAD81 \uC678\uC804\xB7\uB0B4\uC804\uC744 \uB530\uB77C \uC655\uC758 \uD558\uB8E8\uB97C \uC887\uB294 \uB2F5\uC0AC." },
       { title: "\uCC3D\uB355\uAD81 \u2014 \uD6C4\uC6D0 \uC0B0\uCC45", location: "\uCC3D\uB355\uAD81 \uD6C4\uC6D0", host: "\uBC45\uAE30\uB178\uC790", durationMinutes: 150, capacity: 12, price: 35e3, desc: "\uBE44\uC6D0\uC758 \uC808\uACBD\uACFC \uD568\uAED8\uD558\uB294 \uC778\uBB38\uD559 \uC0B0\uCC45." },
@@ -1924,8 +1924,8 @@ const TourAdminPanel = ({ go }) => {
       {
         type: "button",
         className: "btn btn-small",
-        onClick: () => {
-          if (!confirm(`${r.name} \uB2D8 \uC2E0\uCCAD\uC744 \uCDE8\uC18C \uCC98\uB9AC\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+        onClick: async () => {
+          if (!await window.BGNJ_CONFIRM(`${r.name} \uB2D8 \uC2E0\uCCAD\uC744 \uCDE8\uC18C \uCC98\uB9AC\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
           window.BGNJ_TOURS.cancelReservation(t.id, r.id);
           refresh();
         },
@@ -1937,8 +1937,8 @@ const TourAdminPanel = ({ go }) => {
       {
         type: "button",
         className: "btn btn-small",
-        onClick: () => {
-          if (!confirm("\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC2DC\uACA0\uC5B4\uC694?")) return;
+        onClick: async () => {
+          if (!await window.BGNJ_CONFIRM("\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
           window.BGNJ_TOURS.approveRefund(t.id, r.id);
           refresh();
         },
@@ -1959,8 +1959,8 @@ const TourAdminPanel = ({ go }) => {
       {
         type: "button",
         className: "btn btn-small",
-        onClick: () => {
-          if (!confirm("\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD558\uC2DC\uACA0\uC5B4\uC694?")) return;
+        onClick: async () => {
+          if (!await window.BGNJ_CONFIRM("\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
           window.BGNJ_TOURS.rejectRefund(t.id, r.id, refundRejectNotes[r.id] || "");
           refresh();
         },
@@ -2029,7 +2029,7 @@ const BankAccountPanel = () => {
     }
   };
   const remove = async (a) => {
-    if (!confirm(`"${a.label}" \uACC4\uC88C\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?`)) return;
+    if (!await window.BGNJ_CONFIRM(`"${a.label}" \uACC4\uC88C\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?`, { danger: true })) return;
     try {
       await window.BGNJ_LECTURES.deleteBankAccount(a.id);
       await refresh();
@@ -2295,8 +2295,8 @@ const BookOrderAdminPanel = ({ go }) => {
     {
       type: "button",
       className: "btn btn-small",
-      onClick: () => {
-        if (!confirm(`\uC8FC\uBB38 ${o.orderNo}\uC744(\uB97C) \uCDE8\uC18C \uCC98\uB9AC\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+      onClick: async () => {
+        if (!await window.BGNJ_CONFIRM(`\uC8FC\uBB38 ${o.orderNo}\uC744(\uB97C) \uCDE8\uC18C \uCC98\uB9AC\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
         window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
         refresh();
       },
@@ -2308,8 +2308,8 @@ const BookOrderAdminPanel = ({ go }) => {
     {
       type: "button",
       className: "btn btn-small",
-      onClick: () => {
-        if (!confirm(`\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC2DC\uACA0\uC5B4\uC694? \uC8FC\uBB38 ${o.orderNo}\uC774 \uCDE8\uC18C\uB429\uB2C8\uB2E4.`)) return;
+      onClick: async () => {
+        if (!await window.BGNJ_CONFIRM(`\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC2DC\uACA0\uC5B4\uC694? \uC8FC\uBB38 ${o.orderNo}\uC774 \uCDE8\uC18C\uB429\uB2C8\uB2E4.`, { danger: true })) return;
         window.BGNJ_BOOK_ORDERS.approveRefund(o.id);
         refresh();
       },
@@ -2330,8 +2330,8 @@ const BookOrderAdminPanel = ({ go }) => {
     {
       type: "button",
       className: "btn btn-small",
-      onClick: () => {
-        if (!confirm(`\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+      onClick: async () => {
+        if (!await window.BGNJ_CONFIRM(`\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
         window.BGNJ_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || "");
         refresh();
       },
@@ -2460,8 +2460,8 @@ const FaqAdminPanel = () => {
     window.BGNJ_FAQ.reorder(id, dir);
     refresh();
   };
-  const remove = (id) => {
-    if (!confirm("\uC774 FAQ\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?")) return;
+  const remove = async (id) => {
+    if (!await window.BGNJ_CONFIRM("\uC774 FAQ\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
     window.BGNJ_FAQ.remove(id);
     refresh();
   };
@@ -2574,8 +2574,8 @@ const SiteContentAdminPanel = () => {
       flash("\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
       if (onAfterSave) onAfterSave();
     };
-    const reset = () => {
-      if (!confirm("\uC774 \uC139\uC158\uC744 \uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB9B4\uAE4C\uC694?")) return;
+    const reset = async () => {
+      if (!await window.BGNJ_CONFIRM("\uC774 \uC139\uC158\uC744 \uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB9B4\uAE4C\uC694?", { danger: true })) return;
       window.BGNJ_SITE_CONTENT.resetSection(section);
       setTick((v) => v + 1);
       flash("\uAE30\uBCF8\uAC12\uC73C\uB85C \uBCF5\uC6D0\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
@@ -2614,8 +2614,8 @@ const SiteContentAdminPanel = () => {
         flash(`${label} \uC5C5\uB85C\uB4DC \uC644\uB8CC`);
       }
     };
-    const clear = () => {
-      if (!confirm(`${label}\uC744(\uB97C) \uBE44\uC6B8\uAE4C\uC694? (\uAE30\uBCF8 \uB9C8\uD06C\uB85C \uB418\uB3CC\uC544\uAC11\uB2C8\uB2E4)`)) return;
+    const clear = async () => {
+      if (!await window.BGNJ_CONFIRM(`${label}\uC744(\uB97C) \uBE44\uC6B8\uAE4C\uC694? (\uAE30\uBCF8 \uB9C8\uD06C\uB85C \uB418\uB3CC\uC544\uAC11\uB2C8\uB2E4)`, { danger: true })) return;
       window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: "" });
       setTick((v) => v + 1);
       flash(`${label} \uC81C\uAC70\uB428`);
@@ -2864,11 +2864,16 @@ const BooksAdminPanel = () => {
       return;
     }
     if (dirty && editing && editing.id !== selected.id) {
-      const ok = window.confirm("\uC800\uC7A5\uD558\uC9C0 \uC54A\uC740 \uBCC0\uACBD \uC0AC\uD56D\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uADF8\uB798\uB3C4 \uB2E4\uB978 \uCC45\uC73C\uB85C \uC774\uB3D9\uD560\uAE4C\uC694?");
-      if (!ok) {
-        if (editing.id) setSelectedId(editing.id);
-        return;
-      }
+      (async () => {
+        const ok = await window.BGNJ_CONFIRM("\uC800\uC7A5\uD558\uC9C0 \uC54A\uC740 \uBCC0\uACBD \uC0AC\uD56D\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uADF8\uB798\uB3C4 \uB2E4\uB978 \uCC45\uC73C\uB85C \uC774\uB3D9\uD560\uAE4C\uC694?", { danger: true });
+        if (!ok) {
+          if (editing.id) setSelectedId(editing.id);
+          return;
+        }
+        setEditing({ ...selected });
+        setDirty(false);
+      })();
+      return;
     }
     setEditing({ ...selected });
     setDirty(false);
@@ -2934,9 +2939,9 @@ const BooksAdminPanel = () => {
       setSaving(false);
     }
   };
-  const cancelDraft = () => {
+  const cancelDraft = async () => {
     var _a2;
-    if (dirty && !confirm("\uC791\uC131 \uC911\uC778 \uC0C8 \uCC45\uC744 \uCDE8\uC18C\uD560\uAE4C\uC694?")) return;
+    if (dirty && !await window.BGNJ_CONFIRM("\uC791\uC131 \uC911\uC778 \uC0C8 \uCC45\uC744 \uCDE8\uC18C\uD560\uAE4C\uC694?", { danger: true })) return;
     setNewDraft(null);
     setDirty(false);
     const fallback = ((_a2 = realBooks[0]) == null ? void 0 : _a2.id) || null;
@@ -2986,7 +2991,7 @@ const BooksAdminPanel = () => {
     var _a2, _b2, _c2;
     const target = window.BGNJ_BOOKS.get(id);
     if (!target) return;
-    if (!confirm(`"${target.title}" \uCC45\uC744 \uC0AD\uC81C\uD560\uAE4C\uC694? (\uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC74C)`)) return;
+    if (!await window.BGNJ_CONFIRM(`"${target.title}" \uCC45\uC744 \uC0AD\uC81C\uD560\uAE4C\uC694? (\uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC74C)`, { danger: true })) return;
     try {
       await window.BGNJ_BOOKS.remove(id);
       try {
@@ -3051,7 +3056,7 @@ const BooksAdminPanel = () => {
     refresh();
     flash("\u2713 \uB2E4\uC2DC \uBD88\uB7EC\uC624\uAE30 \uC644\uB8CC \u2014 " + window.BGNJ_BOOKS.list().length + "\uAD8C");
   } }, "\u{1F504} \uB2E4\uC2DC \uBD88\uB7EC\uC624\uAE30")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "280px 1fr", gap: 20, alignItems: "start" } }, /* @__PURE__ */ React.createElement("aside", { "aria-label": "\uCC45 \uBAA9\uB85D", style: { border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { padding: "10px 14px", borderBottom: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.22em" } }, "BOOKS \xB7 ", books.length), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, books.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
-    if (!confirm("\uC0D8\uD50C \uCC45 2\uAD8C\uC744 \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uC0D8\uD50C \uCC45 2\uAD8C\uC744 \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
     const samples = [
       { title: "\uC655\uC758 \uAE38 \u2014 \uC870\uC120 \uC655\uC2E4\uC758 \uC77C\uC0C1", subtitle: "\uACBD\uBCF5\uAD81\uC758 \uC0AC\uACC4\uC640 \uC758\uB840", author: "\uBC45\uAE30\uB178\uC790", publisher: "\uBC45\uAE30\uB178\uC790 \uCD9C\uD310\uBD80", priceKR: 18e3, status: "published", desc: "\uC870\uC120 \uC655\uC2E4\uC758 \uC77C\uC0C1\uACFC \uC758\uB840\uB97C \uB530\uB77C \uAC77\uB294 \uC778\uBB38\uD559 \uC0B0\uCC45." },
       { title: "\uBB38(\u9580)\uC744 \uC77D\uB2E4", subtitle: "\uAD81\uAD90 \uBB38\uC5D0 \uC0C8\uACA8\uC9C4 \uC778\uBB38\uD559", author: "\uBC45\uAE30\uB178\uC790", publisher: "\uBC45\uAE30\uB178\uC790 \uCD9C\uD310\uBD80", priceKR: 22e3, status: "published", desc: "\uAD11\uD654\uBB38\uC5D0\uC11C \uC2E0\uBB34\uBB38\uAE4C\uC9C0, \uBB38\uC5D0 \uB2F4\uAE34 \uC758\uBBF8\uB97C \uD574\uB3C5\uD569\uB2C8\uB2E4." }
@@ -3329,8 +3334,8 @@ const BooksAdminPanel = () => {
     {
       type: "button",
       className: "btn btn-small",
-      onClick: () => {
-        if (confirm("\uD45C\uC9C0\uB97C \uBE44\uC6B8\uAE4C\uC694?")) patchImmediate({ coverDataUri: "" });
+      onClick: async () => {
+        if (await window.BGNJ_CONFIRM("\uD45C\uC9C0\uB97C \uBE44\uC6B8\uAE4C\uC694?", { danger: true })) patchImmediate({ coverDataUri: "" });
       },
       style: { borderColor: "var(--danger)", color: "var(--danger)" }
     },
@@ -3355,8 +3360,8 @@ const BooksAdminPanel = () => {
     {
       type: "button",
       className: "btn btn-small",
-      onClick: () => {
-        if (confirm("PDF \uBBF8\uB9AC\uBCF4\uAE30\uB97C \uBE44\uC6B8\uAE4C\uC694?")) patchImmediate({ pdfPreviewDataUri: "" });
+      onClick: async () => {
+        if (await window.BGNJ_CONFIRM("PDF \uBBF8\uB9AC\uBCF4\uAE30\uB97C \uBE44\uC6B8\uAE4C\uC694?", { danger: true })) patchImmediate({ pdfPreviewDataUri: "" });
       },
       style: { borderColor: "var(--danger)", color: "var(--danger)" }
     },
@@ -3394,8 +3399,8 @@ const BooksAdminPanel = () => {
     {
       type: "button",
       className: "btn btn-small",
-      onClick: () => {
-        if (!confirm("\uC774 \uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD560\uAE4C\uC694?")) return;
+      onClick: async () => {
+        if (!await window.BGNJ_CONFIRM("\uC774 \uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD560\uAE4C\uC694?", { danger: true })) return;
         window.BGNJ_BOOKS.removeReview(selected.id, r.id);
         refresh();
       },
@@ -3425,8 +3430,8 @@ const BooksAdminPanel = () => {
     {
       type: "button",
       className: "btn btn-small",
-      onClick: () => {
-        if (confirm("\uBCC0\uACBD \uC0AC\uD56D\uC744 \uBC84\uB9AC\uACE0 \uB9C8\uC9C0\uB9C9 \uC800\uC7A5 \uC2DC\uC810\uC73C\uB85C \uB418\uB3CC\uB9B4\uAE4C\uC694?")) {
+      onClick: async () => {
+        if (await window.BGNJ_CONFIRM("\uBCC0\uACBD \uC0AC\uD56D\uC744 \uBC84\uB9AC\uACE0 \uB9C8\uC9C0\uB9C9 \uC800\uC7A5 \uC2DC\uC810\uC73C\uB85C \uB418\uB3CC\uB9B4\uAE4C\uC694?", { danger: true })) {
           setEditing({ ...selected });
           setDirty(false);
         }
@@ -3525,7 +3530,7 @@ const ErrorLogPanel = () => {
     return list;
   }, [errors, codeFilter, search]);
   const clearAll = async () => {
-    if (!confirm("\uBAA8\uB4E0 \uC624\uB958 \uB85C\uADF8\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C? (\uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC74C)")) return;
+    if (!await window.BGNJ_CONFIRM("\uBAA8\uB4E0 \uC624\uB958 \uB85C\uADF8\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C? (\uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC74C)", { danger: true })) return;
     try {
       await window.BGNJ_API.errorLog.clear();
       await refresh();
@@ -3860,8 +3865,8 @@ const AuditLogPanel = () => {
     const csv = [header, ...rows].map((row) => row.map((c) => `"${String(c != null ? c : "").replace(/"/g, '""')}"`).join(",")).join("\n");
     downloadCsv(`audit-log-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv`, csv);
   };
-  const clear = () => {
-    if (!confirm("\uAC10\uC0AC \uB85C\uADF8 \uC804\uCCB4\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694? \uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.")) return;
+  const clear = async () => {
+    if (!await window.BGNJ_CONFIRM("\uAC10\uC0AC \uB85C\uADF8 \uC804\uCCB4\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694? \uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.", { danger: true })) return;
     window.BGNJ_AUDIT.clear();
     refresh();
   };
@@ -4190,7 +4195,7 @@ const MemberAdminPanel = ({ go }) => {
     }
   };
   const toggleAdmin = async (user) => {
-    if (!confirm(`${user.name} \uB2D8\uC758 \uAD00\uB9AC\uC790 \uAD8C\uD55C\uC744 ${user.isAdmin ? "\uD574\uC81C" : "\uBD80\uC5EC"}\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`${user.name} \uB2D8\uC758 \uAD00\uB9AC\uC790 \uAD8C\uD55C\uC744 ${user.isAdmin ? "\uD574\uC81C" : "\uBD80\uC5EC"}\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     try {
       await window.BGNJ_AUTH.toggleAdmin(user.id);
       refresh();
@@ -4219,7 +4224,7 @@ const MemberAdminPanel = ({ go }) => {
   };
   const suspendUser = (user) => openSuspendDialog(user);
   const unsuspend = async (user) => {
-    if (!confirm(`${user.name} \uB2D8\uC758 \uC815\uC9C0\uB97C \uD574\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`${user.name} \uB2D8\uC758 \uC815\uC9C0\uB97C \uD574\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     try {
       await window.BGNJ_AUTH.unsuspendUser(user.id);
       refresh();
@@ -4232,7 +4237,7 @@ const MemberAdminPanel = ({ go }) => {
       window.BGNJ_TOAST.error("\uAE30\uBCF8 \uAD00\uB9AC\uC790 \uACC4\uC815\uC740 \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
       return;
     }
-    if (!confirm(`${user.name} (${user.email}) \uACC4\uC815\uC744 \uC815\uB9D0 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694? \uC774 \uC791\uC5C5\uC740 \uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.`)) return;
+    if (!await window.BGNJ_CONFIRM(`${user.name} (${user.email}) \uACC4\uC815\uC744 \uC815\uB9D0 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694? \uC774 \uC791\uC5C5\uC740 \uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.`, { danger: true })) return;
     try {
       await window.BGNJ_AUTH.removeUser(user.id);
       setSelectedId(null);
@@ -4701,7 +4706,8 @@ const InternalAlarmPanel = () => {
       setResultMsg("\u2717 \uC218\uC2E0\uC790\uB97C \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
       return;
     }
-    if (!confirm(scope === "all_admins" ? `\uBAA8\uB4E0 \uAD00\uB9AC\uC790(${admins.length}\uBA85${excludeSelf ? " - \uBCF8\uC778 \uC81C\uC678" : ""})\uC5D0\uAC8C \uC54C\uB78C\uC744 \uBCF4\uB0B4\uC2DC\uACA0\uC5B4\uC694?` : `\uC120\uD0DD\uD55C ${selectedIds.size}\uBA85\uC5D0\uAC8C \uC54C\uB78C\uC744 \uBCF4\uB0B4\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    const __confirmMsg = scope === "all_admins" ? `\uBAA8\uB4E0 \uAD00\uB9AC\uC790(${admins.length}\uBA85${excludeSelf ? " - \uBCF8\uC778 \uC81C\uC678" : ""})\uC5D0\uAC8C \uC54C\uB78C\uC744 \uBCF4\uB0B4\uC2DC\uACA0\uC5B4\uC694?` : `\uC120\uD0DD\uD55C ${selectedIds.size}\uBA85\uC5D0\uAC8C \uC54C\uB78C\uC744 \uBCF4\uB0B4\uC2DC\uACA0\uC5B4\uC694?`;
+    if (!await window.BGNJ_CONFIRM(__confirmMsg, { danger: true })) return;
     setSending(true);
     setResultMsg("");
     try {
@@ -4836,8 +4842,8 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
   const exportCsv = () => {
     downloadCsv(`community-posts-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv`, window.BGNJ_COMMUNITY.exportCsv());
   };
-  const removeOne = (post) => {
-    if (!confirm(`"${post.title}" \uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+  const removeOne = async (post) => {
+    if (!await window.BGNJ_CONFIRM(`"${post.title}" \uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     window.BGNJ_COMMUNITY.deletePost(post.id);
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -4846,9 +4852,9 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
     });
     onChange == null ? void 0 : onChange();
   };
-  const bulkRemove = () => {
+  const bulkRemove = async () => {
     if (selectedIds2.size === 0) return;
-    if (!confirm(`\uC120\uD0DD\uD55C ${selectedIds2.size}\uAC1C \uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD560\uAE4C\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`\uC120\uD0DD\uD55C ${selectedIds2.size}\uAC1C \uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD560\uAE4C\uC694?`, { danger: true })) return;
     selectedIds2.forEach((id) => window.BGNJ_COMMUNITY.deletePost(id));
     setSelectedIds(/* @__PURE__ */ new Set());
     onChange == null ? void 0 : onChange();
@@ -5518,7 +5524,7 @@ const AdminCategoryPanel = () => {
     const used = postCount(cat.id);
     const note = used > 0 ? `
 \uD604\uC7AC \uC774 \uAC8C\uC2DC\uD310\uC5D0 ${used}\uAC1C\uC758 \uAE00\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uC0AD\uC81C \uD6C4\uC5D0\uB3C4 \uAC8C\uC2DC\uAE00\uC740 \uB0A8\uB418 \uBD84\uB958\uAC00 \uBE44\uAC8C \uB429\uB2C8\uB2E4.` : "";
-    if (!confirm(`"${cat.label}" \uAC8C\uC2DC\uD310\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?${note}`)) return;
+    if (!await window.BGNJ_CONFIRM(`"${cat.label}" \uAC8C\uC2DC\uD310\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?${note}`, { danger: true })) return;
     try {
       await ((_c = (_b = (_a2 = window.BGNJ_API) == null ? void 0 : _a2.categories) == null ? void 0 : _b.remove) == null ? void 0 : _c.call(_b, cat.id));
     } catch (err) {
@@ -5712,8 +5718,8 @@ const AdminCategoryPanel = () => {
       type: "button",
       className: "btn btn-small",
       style: { marginTop: 20 },
-      onClick: () => {
-        if (confirm("\uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB9BD\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?")) {
+      onClick: async () => {
+        if (await window.BGNJ_CONFIRM("\uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB9BD\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) {
           window.BGNJ_SAVE.resetCategories();
           setCats(window.BGNJ_STORES.categories.slice());
         }
@@ -5891,7 +5897,7 @@ const CommunityBoardsPanel = () => {
     const postCount = (((_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.listPosts) == null ? void 0 : _b.call(_a)) || []).filter((p) => p.categoryId === id).length;
     const note = postCount > 0 ? `
 \uD604\uC7AC \uC774 \uAC8C\uC2DC\uD310\uC5D0 ${postCount}\uAC1C\uC758 \uAE00\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uC0AD\uC81C \uD6C4\uC5D0\uB3C4 \uAC8C\uC2DC\uAE00\uC740 \uB0A8\uB418 \uBD84\uB958\uAC00 \uBE44\uAC8C \uB429\uB2C8\uB2E4.` : "";
-    if (!confirm(`"${target.label}" \uAC8C\uC2DC\uD310\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?${note}`)) return;
+    if (!await window.BGNJ_CONFIRM(`"${target.label}" \uAC8C\uC2DC\uD310\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?${note}`, { danger: true })) return;
     setSaving(true);
     try {
       await ((_e = (_d = (_c = window.BGNJ_API) == null ? void 0 : _c.categories) == null ? void 0 : _d.remove) == null ? void 0 : _e.call(_d, id));
@@ -6361,13 +6367,13 @@ const AdminGradePanel = () => {
     });
     markDirty();
   };
-  const remove = (i) => {
+  const remove = async (i) => {
     const g = grades[i];
     if (g.id === "admin" || g.id === "guest") {
       window.BGNJ_TOAST.error("\uAE30\uBCF8 \uB4F1\uAE09(guest/admin)\uC740 \uC0AD\uC81C\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
       return;
     }
-    if (!confirm(`"${g.label}" \uB4F1\uAE09\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`"${g.label}" \uB4F1\uAE09\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     setGrades(grades.filter((_, j) => j !== i));
     markDirty();
   };
@@ -6427,7 +6433,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
   };
   const resetAll = async () => {
     var _a, _b, _c, _d, _e, _f;
-    if (!confirm("\uB4F1\uAE09 + \uC790\uB3D9 \uC2B9\uAE09 \uAE30\uC900\uC744 \uBAA8\uB450 \uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB9BD\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?\n(\uC11C\uBC84 D1 grades_kv \uB3C4 default \uAC12\uC73C\uB85C \uB36E\uC5B4\uC50C\uC6CC\uC9D1\uB2C8\uB2E4.)")) return;
+    if (!await window.BGNJ_CONFIRM("\uB4F1\uAE09 + \uC790\uB3D9 \uC2B9\uAE09 \uAE30\uC900\uC744 \uBAA8\uB450 \uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB9BD\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?\n(\uC11C\uBC84 D1 grades_kv \uB3C4 default \uAC12\uC73C\uB85C \uB36E\uC5B4\uC50C\uC6CC\uC9D1\uB2C8\uB2E4.)", { danger: true })) return;
     setSaving(true);
     try {
       window.BGNJ_SAVE.resetGrades();
@@ -6462,7 +6468,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       window.BGNJ_TOAST.error("\uC800\uC7A5\uD558\uC9C0 \uC54A\uC740 \uBCC0\uACBD \uC0AC\uD56D\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uBA3C\uC800 [\uC800\uC7A5] \uD6C4 \uC7AC\uC0B0\uC815\uD558\uC138\uC694.");
       return;
     }
-    if (!confirm("\uC804\uCCB4 \uD68C\uC6D0\uC758 \uD65C\uB3D9\uB7C9\uC744 \uC7AC\uD3C9\uAC00\uD558\uC5EC \uC790\uACA9 \uB4F1\uAE09\uC73C\uB85C \uC790\uB3D9 \uC2B9\uAE09/\uAC15\uB4F1 \uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uC804\uCCB4 \uD68C\uC6D0\uC758 \uD65C\uB3D9\uB7C9\uC744 \uC7AC\uD3C9\uAC00\uD558\uC5EC \uC790\uACA9 \uB4F1\uAE09\uC73C\uB85C \uC790\uB3D9 \uC2B9\uAE09/\uAC15\uB4F1 \uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
     setBusyReevaluate(true);
     try {
       await ((_b = (_a = window.BGNJ_AUTH) == null ? void 0 : _a.refreshUsers) == null ? void 0 : _b.call(_a));
@@ -6635,8 +6641,8 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
     }
   };
   const removeCat = async (name) => {
-    if (!confirm(`'${name}' \uCE74\uD14C\uACE0\uB9AC\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?
-(\uAE30\uC874 \uCE7C\uB7FC\uC758 \uAC12\uC740 \uBCF4\uC874\uB428, \uC0C8 \uCE7C\uB7FC \uC791\uC131 \uC120\uD0DD\uC9C0\uC5D0\uC11C\uB9CC \uC0AC\uB77C\uC9D0.)`)) return;
+    if (!await window.BGNJ_CONFIRM(`'${name}' \uCE74\uD14C\uACE0\uB9AC\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?
+(\uAE30\uC874 \uCE7C\uB7FC\uC758 \uAC12\uC740 \uBCF4\uC874\uB428, \uC0C8 \uCE7C\uB7FC \uC791\uC131 \uC120\uD0DD\uC9C0\uC5D0\uC11C\uB9CC \uC0AC\uB77C\uC9D0.)`, { danger: true })) return;
     setBusy(true);
     try {
       const next = (sc.columnCategories || []).filter((c) => c !== name);
@@ -6876,7 +6882,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     }
   };
   const remove = async (id) => {
-    if (!confirm("\uC774 \uCE7C\uB7FC\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uC774 \uCE7C\uB7FC\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
     try {
       await window.BGNJ_COLUMNS.deleteColumn(id);
       setTick((v) => v + 1);
@@ -6885,8 +6891,8 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
       window.BGNJ_TOAST.error("\uC0AD\uC81C \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
-  const unpublish = (id) => {
-    if (!confirm("\uC774 \uCE7C\uB7FC\uC744 \uBC1C\uD589 \uCDE8\uC18C(\uC784\uC2DC \uC800\uC7A5\uC73C\uB85C \uB418\uB3CC\uB9BC)\uD558\uC2DC\uACA0\uC5B4\uC694?")) return;
+  const unpublish = async (id) => {
+    if (!await window.BGNJ_CONFIRM("\uC774 \uCE7C\uB7FC\uC744 \uBC1C\uD589 \uCDE8\uC18C(\uC784\uC2DC \uC800\uC7A5\uC73C\uB85C \uB418\uB3CC\uB9BC)\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
     const col = window.BGNJ_COLUMNS.getColumn(id);
     if (!col) return;
     window.BGNJ_COLUMNS.saveColumn({ ...col, status: "draft", publishAt: null, publishedAt: null });
@@ -7110,8 +7116,8 @@ const ColumnsHubPanel = ({ allColumns }) => {
     }
   };
   const removeColCategory = async (name) => {
-    if (!confirm(`'${name}' \uCE74\uD14C\uACE0\uB9AC\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?
-(\uAE30\uC874 \uCE7C\uB7FC\uC758 \uCE74\uD14C\uACE0\uB9AC \uAC12\uC740 \uC720\uC9C0\uB418\uC9C0\uB9CC \uC0C8 \uCE7C\uB7FC \uC791\uC131 \uC2DC \uC120\uD0DD\uC9C0\uC5D0\uC11C \uC0AC\uB77C\uC9D1\uB2C8\uB2E4.)`)) return;
+    if (!await window.BGNJ_CONFIRM(`'${name}' \uCE74\uD14C\uACE0\uB9AC\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?
+(\uAE30\uC874 \uCE7C\uB7FC\uC758 \uCE74\uD14C\uACE0\uB9AC \uAC12\uC740 \uC720\uC9C0\uB418\uC9C0\uB9CC \uC0C8 \uCE7C\uB7FC \uC791\uC131 \uC2DC \uC120\uD0DD\uC9C0\uC5D0\uC11C \uC0AC\uB77C\uC9D1\uB2C8\uB2E4.)`, { danger: true })) return;
     try {
       await window.BGNJ_SITE_CONTENT.saveSection("columnCategories", colCats.filter((c) => c !== name));
       setScTick((x) => x + 1);
@@ -7277,8 +7283,8 @@ const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
       padding: 24,
       marginTop: 24,
       marginBottom: 48
-    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, (initialColumn == null ? void 0 : initialColumn.id) ? "\uCE7C\uB7FC \uD3B8\uC9D1" : "\uC0C8 \uCE7C\uB7FC \uC791\uC131"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => {
-      const ok = !dirty || window.confirm("\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9\uC744 \uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?\n[\uD655\uC778]=\uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uAE30 / [\uCDE8\uC18C]=\uADF8\uB0E5 \uB2EB\uAE30");
+    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, (initialColumn == null ? void 0 : initialColumn.id) ? "\uCE7C\uB7FC \uD3B8\uC9D1" : "\uC0C8 \uCE7C\uB7FC \uC791\uC131"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+      const ok = !dirty || await window.BGNJ_CONFIRM("\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9\uC744 \uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?\n[\uD655\uC778]=\uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uAE30 / [\uCDE8\uC18C]=\uADF8\uB0E5 \uB2EB\uAE30", { danger: true });
       if (ok && dirty) saveDraft();
       onClose == null ? void 0 : onClose();
     } }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement(
