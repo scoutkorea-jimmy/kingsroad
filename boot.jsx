@@ -301,9 +301,14 @@ const _loadAdminScripts = (attempt = 0) => {
       return new Promise((r) => setTimeout(r, 600)).then(() => _loadAdminScripts(attempt + 1));
     }
     throw err;
+  }).then(() => {
+    // v00.210 — 로드 완료 알림. /admin route 외 진입(예: ColumnPage 칼럼 작성 모달) 도 동일 이벤트로 리렌더.
+    try { window.dispatchEvent(new Event('bgnj-admin-scripts-loaded')); } catch {}
   });
   return _adminLoadPromise;
 };
+// v00.210 — admin 외 페이지(ColumnPage 등) 에서도 호출 가능하도록 노출.
+if (typeof window !== 'undefined') window.BGNJ_LOAD_ADMIN = _loadAdminScripts;
 
 const _AdminLoadingFallback = ({ error, onRetry }) => (
   <div style={{padding:48, textAlign:'center', minHeight:'60vh', display:'flex', alignItems:'center', justifyContent:'center'}}>

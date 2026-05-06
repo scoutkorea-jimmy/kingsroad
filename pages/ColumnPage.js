@@ -68,8 +68,8 @@ const ColumnPage = ({ go, user }) => {
     } catch (e) {
     }
   }, [selectedId]);
-  const requireLogin = (label) => {
-    if (confirm(`${label}\uC740(\uB294) \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?`)) {
+  const requireLogin = async (label) => {
+    if (await window.BGNJ_CONFIRM(`${label}\uC740(\uB294) \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) {
       go("login");
     }
   };
@@ -322,6 +322,8 @@ const ColumnPage = ({ go, user }) => {
 const ColumnWriterModal = ({ onClose }) => {
   var _a, _b, _c;
   const [payload, setPayload] = React.useState(null);
+  const [adminTick, setAdminTick] = React.useState(0);
+  const [loadError, setLoadError] = React.useState(false);
   const dirty = !!(payload && (((_a = payload.title) == null ? void 0 : _a.trim()) || ((_b = payload.text) == null ? void 0 : _b.trim())));
   const saveDraft = () => {
     var _a2, _b2;
@@ -338,6 +340,17 @@ const ColumnWriterModal = ({ onClose }) => {
     } catch (e) {
     }
   };
+  React.useEffect(() => {
+    if (window.AdminColumnEditor) return;
+    const onLoaded = () => setAdminTick((v) => v + 1);
+    window.addEventListener("bgnj-admin-scripts-loaded", onLoaded);
+    if (typeof window.BGNJ_LOAD_ADMIN === "function") {
+      window.BGNJ_LOAD_ADMIN().catch(() => setLoadError(true));
+    } else {
+      setLoadError(true);
+    }
+    return () => window.removeEventListener("bgnj-admin-scripts-loaded", onLoaded);
+  }, []);
   const guard = ((_c = window.useModalGuard) == null ? void 0 : _c.call(window, {
     open: true,
     dirty,
@@ -362,8 +375,8 @@ const ColumnWriterModal = ({ onClose }) => {
       padding: 24,
       marginTop: 24,
       marginBottom: 48
-    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC0C8 \uCE7C\uB7FC \uC791\uC131"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => {
-      const ok = !dirty || window.confirm("\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9\uC744 \uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?\n[\uD655\uC778]=\uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uAE30 / [\uCDE8\uC18C]=\uADF8\uB0E5 \uB2EB\uAE30");
+    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC0C8 \uCE7C\uB7FC \uC791\uC131"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+      const ok = !dirty || await window.BGNJ_CONFIRM("\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9\uC744 \uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?", { hint: "[\uD655\uC778]=\uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uAE30 / [\uCDE8\uC18C]=\uADF8\uB0E5 \uB2EB\uAE30", confirmLabel: "\uC784\uC2DC\uC800\uC7A5" });
       if (ok && dirty) saveDraft();
       onClose == null ? void 0 : onClose();
     } }, "\uB2EB\uAE30")), Editor ? /* @__PURE__ */ React.createElement(
@@ -374,7 +387,7 @@ const ColumnWriterModal = ({ onClose }) => {
           if (status === "published" || status === "scheduled") onClose == null ? void 0 : onClose();
         }
       }
-    ) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { padding: 24 } }, "\uC5D0\uB514\uD130 \uB85C\uB529 \uC911..."))
+    ) : loadError ? /* @__PURE__ */ React.createElement("div", { style: { padding: 24, fontSize: 13, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 11, color: "var(--danger)", marginBottom: 6 } }, "EDITOR_LOAD_FAILED"), /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uC5D0\uB514\uD130\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC0C8\uB85C\uACE0\uCE68 \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.")) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { padding: 24 } }, "\uC5D0\uB514\uD130 \uB85C\uB529 \uC911... ", /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, marginLeft: 4 } }, "tick ", adminTick)))
   );
 };
 Object.assign(window, { ColumnPage });

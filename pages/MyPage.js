@@ -248,7 +248,7 @@ const MyPage = ({ go, user, cart }) => {
         className: "btn-ghost",
         onClick: async () => {
           var _a2;
-          if (!confirm(`\uC8FC\uBB38 ${o.orderNo}\uC744(\uB97C) \uCDE8\uC18C\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+          if (!await window.BGNJ_CONFIRM(`\uC8FC\uBB38 ${o.orderNo}\uC744(\uB97C) \uCDE8\uC18C\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
           try {
             await window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
             refreshOrders();
@@ -470,10 +470,10 @@ const ProfileEditor = ({ user, onSaved }) => {
 const PasswordChangeForm = () => {
   const [currentPassword, setCurrentPassword] = React.useState("");
   const [newPassword, setNewPassword] = React.useState("");
-  const [confirm2, setConfirm] = React.useState("");
+  const [confirm, setConfirm] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [msg, setMsg] = React.useState(null);
-  const valid = currentPassword.length > 0 && newPassword.length >= 6 && newPassword === confirm2 && currentPassword !== newPassword;
+  const valid = currentPassword.length > 0 && newPassword.length >= 6 && newPassword === confirm && currentPassword !== newPassword;
   const submit = async (e) => {
     var _a, _b;
     (_a = e == null ? void 0 : e.preventDefault) == null ? void 0 : _a.call(e);
@@ -526,13 +526,13 @@ const PasswordChangeForm = () => {
       type: "password",
       className: "field-input",
       autoComplete: "new-password",
-      value: confirm2,
+      value: confirm,
       onChange: (e) => setConfirm(e.target.value),
       minLength: 6,
       required: true,
-      style: { borderColor: confirm2 && newPassword !== confirm2 ? "var(--danger)" : void 0 }
+      style: { borderColor: confirm && newPassword !== confirm ? "var(--danger)" : void 0 }
     }
-  ), confirm2 && newPassword !== confirm2 && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: "var(--danger)", marginTop: 4 } }, "\uBE44\uBC00\uBC88\uD638\uAC00 \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."))), msg && /* @__PURE__ */ React.createElement("div", { role: "status", style: {
+  ), confirm && newPassword !== confirm && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: "var(--danger)", marginTop: 4 } }, "\uBE44\uBC00\uBC88\uD638\uAC00 \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."))), msg && /* @__PURE__ */ React.createElement("div", { role: "status", style: {
     padding: "10px 14px",
     fontSize: 13,
     lineHeight: 1.6,

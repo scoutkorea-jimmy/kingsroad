@@ -3564,7 +3564,7 @@ const ADMIN_DESIGN_SECTIONS = [
       "이전 다크 먹색 테마로 회귀하지 않습니다 (v00.026 이후 라이트 톤이 표준).",
       "과한 그라데이션·유행형 마이크로 인터랙션·귀여운 이모지 아이콘으로 분위기를 흩뜨리지 않습니다.",
       "원칙: 모든 대화 흐름은 모달 컴포넌트로 처리. alert() 는 코드에서 사용 금지 — 인라인 박스(폼 안) 또는 우하단 토스트(`window.BGNJ_TOAST.error/success/info`) 사용. v00.207 에서 기존 73건 일괄 교체 완료.",
-      "단발 확인(정지·삭제 등) 은 `window.BGNJ_CONFIRM(message, { danger: true, confirmLabel: '삭제' })` Promise API 사용. ConfirmDialogHost 가 boot.jsx 에 단일 인스턴스 마운트. `window.confirm()` 사용 금지 — v00.208 에서 47건 일괄 교체 완료.",
+      "단발 확인(정지·삭제 등) 은 `window.BGNJ_CONFIRM(message, { danger: true, confirmLabel: '삭제' })` Promise API 사용. ConfirmDialogHost 가 boot.jsx 에 단일 인스턴스 마운트. `window.confirm()` 사용 금지 — v00.208 (47건) + v00.210 (잔여 25건) 일괄 교체 완료.",
       "관리자 화면에 raw JSON / 영문-only 텍스트를 사용자에게 노출하지 않습니다.",
     ],
   },

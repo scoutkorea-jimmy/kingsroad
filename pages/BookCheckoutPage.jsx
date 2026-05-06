@@ -28,8 +28,8 @@ const BookReviewSection = ({ user, bookTitle }) => {
     setText(''); setSuccess('리뷰가 등록되었습니다. 감사합니다.');
   };
 
-  const remove = (reviewId) => {
-    if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
+  const remove = async (reviewId) => {
+    if (!(await window.BGNJ_CONFIRM('이 리뷰를 삭제하시겠습니까?', { danger: true }))) return;
     window.BGNJ_BOOK_ORDERS.deleteReview(reviewId);
     setReviews(window.BGNJ_BOOK_ORDERS.listReviews());
   };

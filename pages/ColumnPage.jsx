@@ -68,8 +68,8 @@ const ColumnPage = ({ go, user }) => {
     } catch {}
   }, [selectedId]);
 
-  const requireLogin = (label) => {
-    if (confirm(`${label}은(는) 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?`)) {
+  const requireLogin = async (label) => {
+    if ((await window.BGNJ_CONFIRM(`${label}은(는) 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?`, { danger: true }))) {
       go("login");
     }
   };
@@ -443,8 +443,12 @@ const ColumnPage = ({ go, user }) => {
 };
 
 // v00.169 — admin 전용 칼럼 작성 모달 (ColumnPage 진입 경로). admin 콘솔의 ColumnEditorModalContent 와 동일 패턴.
+// v00.210 — admin 번들이 lazy-load 라 ColumnPage 에서 첫 진입 시 AdminColumnEditor 가 undefined.
+//           모달 mount 시 BGNJ_LOAD_ADMIN() 호출 + bgnj-admin-scripts-loaded 이벤트 청취해 리렌더.
 const ColumnWriterModal = ({ onClose }) => {
   const [payload, setPayload] = React.useState(null);
+  const [adminTick, setAdminTick] = React.useState(0); // admin 번들 로드 완료 시 리렌더용
+  const [loadError, setLoadError] = React.useState(false);
   const dirty = !!(payload && (payload.title?.trim() || payload.text?.trim()));
   const saveDraft = () => {
     if (!payload) return;
@@ -459,6 +463,18 @@ const ColumnWriterModal = ({ onClose }) => {
       });
     } catch {}
   };
+  // v00.210 — admin 번들 로드 트리거 + 리렌더
+  React.useEffect(() => {
+    if (window.AdminColumnEditor) return; // 이미 로드됨
+    const onLoaded = () => setAdminTick((v) => v + 1);
+    window.addEventListener('bgnj-admin-scripts-loaded', onLoaded);
+    if (typeof window.BGNJ_LOAD_ADMIN === 'function') {
+      window.BGNJ_LOAD_ADMIN().catch(() => setLoadError(true));
+    } else {
+      setLoadError(true);
+    }
+    return () => window.removeEventListener('bgnj-admin-scripts-loaded', onLoaded);
+  }, []);
   const guard = window.useModalGuard?.({
     open: true, dirty, onClose, onSaveDraft: saveDraft, label: '칼럼',
   }) || {};
@@ -473,8 +489,8 @@ const ColumnWriterModal = ({ onClose }) => {
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
           <h2 className="ko-serif" style={{fontSize:18, margin:0}}>새 칼럼 작성</h2>
-          <button type="button" className="btn btn-small" onClick={() => {
-            const ok = !dirty || window.confirm('작성 중인 내용을 임시저장 후 닫으시겠어요?\n[확인]=임시저장 후 닫기 / [취소]=그냥 닫기');
+          <button type="button" className="btn btn-small" onClick={async () => {
+            const ok = !dirty || (await window.BGNJ_CONFIRM('작성 중인 내용을 임시저장 후 닫으시겠어요?', { hint: '[확인]=임시저장 후 닫기 / [취소]=그냥 닫기', confirmLabel: '임시저장' }));
             if (ok && dirty) saveDraft();
             onClose?.();
           }}>닫기</button>
@@ -485,8 +501,13 @@ const ColumnWriterModal = ({ onClose }) => {
             onAfterSave={(status) => {
               if (status === 'published' || status === 'scheduled') onClose?.();
             }}/>
+        ) : loadError ? (
+          <div style={{padding:24, fontSize:13, lineHeight:1.7}}>
+            <div className="mono" style={{fontSize:11, color:'var(--danger)', marginBottom:6}}>EDITOR_LOAD_FAILED</div>
+            <p className="dim">에디터를 불러오지 못했습니다. 새로고침 후 다시 시도해 주세요.</p>
+          </div>
         ) : (
-          <p className="dim" style={{padding:24}}>에디터 로딩 중...</p>
+          <p className="dim" style={{padding:24}}>에디터 로딩 중... <span className="mono dim-2" style={{fontSize:10, marginLeft:4}}>tick {adminTick}</span></p>
         )}
       </div>
     </div>

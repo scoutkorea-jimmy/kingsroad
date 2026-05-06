@@ -178,8 +178,8 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
     setRefundReason("");
     setRefundError("");
   }, [tour.id, user == null ? void 0 : user.id]);
-  const requireLogin = (label) => {
-    if (confirm(`${label}\uC740(\uB294) \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?`)) {
+  const requireLogin = async (label) => {
+    if (await window.BGNJ_CONFIRM(`${label}\uC740(\uB294) \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) {
       go("login");
     }
   };
@@ -215,7 +215,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const cancelMyReg = async () => {
     var _a;
     if (!myReg) return;
-    if (!confirm("\uC774 \uB2F5\uC0AC \uC2E0\uCCAD\uC744 \uCDE8\uC18C\uD558\uC2DC\uACA0\uC5B4\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uC774 \uB2F5\uC0AC \uC2E0\uCCAD\uC744 \uCDE8\uC18C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
     try {
       await window.BGNJ_TOURS.cancelReservation(tour.id, myReg.id);
       onRefresh();
@@ -349,11 +349,11 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
       empty: g.empty || "\uC544\uC9C1 \uB4F1\uB85D\uB41C \uD6C4\uAE30\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uCCAB \uBC88\uC9F8 \uD6C4\uAE30\uB97C \uB0A8\uACA8 \uC8FC\uC138\uC694."
     };
   })();
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setError("");
     if (!user) {
-      if (confirm("\uD6C4\uAE30 \uC791\uC131\uC740 \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?")) {
+      if (await window.BGNJ_CONFIRM("\uD6C4\uAE30 \uC791\uC131\uC740 \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) {
         go("login");
       }
       return;
@@ -376,8 +376,8 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
     setRating(5);
     onRefresh == null ? void 0 : onRefresh();
   };
-  const remove = (id) => {
-    if (!confirm("\uC774 \uD6C4\uAE30\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?")) return;
+  const remove = async (id) => {
+    if (!await window.BGNJ_CONFIRM("\uC774 \uD6C4\uAE30\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
     window.BGNJ_TOURS.deleteReview(tour.id, id);
     onRefresh == null ? void 0 : onRefresh();
   };

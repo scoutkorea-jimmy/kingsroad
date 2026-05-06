@@ -291,8 +291,8 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
     setRefundMode(false); setRefundReason(""); setRefundError("");
   }, [tour.id, user?.id]);
 
-  const requireLogin = (label) => {
-    if (confirm(`${label}은(는) 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?`)) {
+  const requireLogin = async (label) => {
+    if ((await window.BGNJ_CONFIRM(`${label}은(는) 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?`, { danger: true }))) {
       go("login");
     }
   };
@@ -322,7 +322,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
 
   const cancelMyReg = async () => {
     if (!myReg) return;
-    if (!confirm("이 답사 신청을 취소하시겠어요?")) return;
+    if (!(await window.BGNJ_CONFIRM("이 답사 신청을 취소하시겠어요?", { danger: true }))) return;
     try {
       await window.BGNJ_TOURS.cancelReservation(tour.id, myReg.id);
       onRefresh(); setSubmitted(null);
@@ -563,11 +563,11 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
     };
   })();
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     setError("");
     if (!user) {
-      if (confirm("후기 작성은 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?")) {
+      if ((await window.BGNJ_CONFIRM("후기 작성은 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?", { danger: true }))) {
         go("login");
       }
       return;
@@ -588,8 +588,8 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
     onRefresh?.();
   };
 
-  const remove = (id) => {
-    if (!confirm("이 후기를 삭제하시겠어요?")) return;
+  const remove = async (id) => {
+    if (!(await window.BGNJ_CONFIRM("이 후기를 삭제하시겠어요?", { danger: true }))) return;
     window.BGNJ_TOURS.deleteReview(tour.id, id);
     onRefresh?.();
   };

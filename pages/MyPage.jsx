@@ -359,7 +359,7 @@ const MyPage = ({ go, user, cart }) => {
                         {o.status === 'pending_payment' && (
                           <button type="button" className="btn-ghost"
                             onClick={async () => {
-                              if (!confirm(`주문 ${o.orderNo}을(를) 취소하시겠어요?`)) return;
+                              if (!(await window.BGNJ_CONFIRM(`주문 ${o.orderNo}을(를) 취소하시겠어요?`, { danger: true }))) return;
                               try {
                                 await window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
                                 refreshOrders();

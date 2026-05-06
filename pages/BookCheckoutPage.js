@@ -42,8 +42,8 @@ const BookReviewSection = ({ user, bookTitle }) => {
     setText("");
     setSuccess("\uB9AC\uBDF0\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uAC10\uC0AC\uD569\uB2C8\uB2E4.");
   };
-  const remove = (reviewId) => {
-    if (!confirm("\uC774 \uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?")) return;
+  const remove = async (reviewId) => {
+    if (!await window.BGNJ_CONFIRM("\uC774 \uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?", { danger: true })) return;
     window.BGNJ_BOOK_ORDERS.deleteReview(reviewId);
     setReviews(window.BGNJ_BOOK_ORDERS.listReviews());
   };

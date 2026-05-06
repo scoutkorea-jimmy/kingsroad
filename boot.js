@@ -326,9 +326,15 @@ const _loadAdminScripts = (attempt = 0) => {
       return new Promise((r) => setTimeout(r, 600)).then(() => _loadAdminScripts(attempt + 1));
     }
     throw err;
+  }).then(() => {
+    try {
+      window.dispatchEvent(new Event("bgnj-admin-scripts-loaded"));
+    } catch (e) {
+    }
   });
   return _adminLoadPromise;
 };
+if (typeof window !== "undefined") window.BGNJ_LOAD_ADMIN = _loadAdminScripts;
 const _AdminLoadingFallback = ({ error, onRetry }) => /* @__PURE__ */ React.createElement("div", { style: { padding: 48, textAlign: "center", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, letterSpacing: "0.18em", marginBottom: 10 } }, error ? "ADMIN \xB7 LOAD FAILED" : "ADMIN \xB7 LOADING"), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, marginBottom: 14, color: "var(--ink)" } }, error ? "\uAD00\uB9AC\uC790 \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4" : "\uAD00\uB9AC\uC790 \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\u2026"), error ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginBottom: 14 } }, (error == null ? void 0 : error.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onRetry }, "\uB2E4\uC2DC \uC2DC\uB3C4")) : /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12 } }, "\uCC98\uC74C \uC9C4\uC785 \uC2DC ~1\uCD08 \uC18C\uC694\uB429\uB2C8\uB2E4.")));
 const App = () => {
   const [route, setRoute] = React.useState(() => {

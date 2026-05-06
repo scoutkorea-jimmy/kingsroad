@@ -37,8 +37,8 @@ const RecommendationsAdminPanel = () => {
     region: '', name: '', subtitle: '', desc: '',
     tags: '', imageDataUri: '',
   }]);
-  const removeItem = (idx) => {
-    if (!confirm('이 추천을 삭제할까요?')) return;
+  const removeItem = async (idx) => {
+    if (!(await window.BGNJ_CONFIRM('이 추천을 삭제할까요?', { danger: true }))) return;
     setDraft((arr) => arr.filter((_, i) => i !== idx));
   };
   const moveItem = (idx, dir) => {
@@ -349,7 +349,7 @@ const TourPageEditorPanel = () => {
     } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   const resetGlobal = async () => {
-    if (!confirm('글로벌 답사 일정/준비물을 default 로 복원합니다. 진행할까요?')) return;
+    if (!(await window.BGNJ_CONFIRM('글로벌 답사 일정/준비물을 default 로 복원합니다. 진행할까요?', { danger: true }))) return;
     try {
       await window.BGNJ_SITE_CONTENT.resetSection('tourSchedule');
       await window.BGNJ_SITE_CONTENT.resetSection('tourPrep');
@@ -370,8 +370,8 @@ const TourPageEditorPanel = () => {
     setTemplates((arr) => [...arr, { id, name: '새 템플릿', schedule: [], prep: [] }]);
     setActiveTplIdx(templates.length);
   };
-  const removeTemplate = (i) => {
-    if (!confirm(`"${templates[i]?.name || '템플릿'}" 을 삭제하시겠어요?`)) return;
+  const removeTemplate = async (i) => {
+    if (!(await window.BGNJ_CONFIRM(`"${templates[i]?.name || '템플릿'}" 을 삭제하시겠어요?`, { danger: true }))) return;
     setTemplates((arr) => arr.filter((_, j) => j !== i));
     if (activeTplIdx >= templates.length - 1) setActiveTplIdx(-1);
   };
@@ -453,7 +453,7 @@ const TourPageEditorPanel = () => {
   };
   const clearPerTour = async () => {
     if (!activeTourId) return;
-    if (!confirm(`'${activeTourId}' 투어의 override 를 제거하고 글로벌로 폴백하시겠어요?`)) return;
+    if (!(await window.BGNJ_CONFIRM(`'${activeTourId}' 투어의 override 를 제거하고 글로벌로 폴백하시겠어요?`, { danger: true }))) return;
     try {
       const next = { ...tourPages };
       delete next[activeTourId];
@@ -735,7 +735,7 @@ const LecturePageEditorPanel = () => {
     } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   const resetGlobal = async () => {
-    if (!confirm('글로벌 진행/참고를 default 로 복원합니다. 진행할까요?')) return;
+    if (!(await window.BGNJ_CONFIRM('글로벌 진행/참고를 default 로 복원합니다. 진행할까요?', { danger: true }))) return;
     try {
       await window.BGNJ_SITE_CONTENT.resetSection('lectureSchedule');
       await window.BGNJ_SITE_CONTENT.resetSection('lectureNotes');
@@ -756,8 +756,8 @@ const LecturePageEditorPanel = () => {
     setTemplates((arr) => [...arr, { id, name: '새 템플릿', schedule: [], notes: [] }]);
     setActiveTplIdx(templates.length);
   };
-  const removeTemplate = (i) => {
-    if (!confirm(`"${templates[i]?.name || '템플릿'}" 을 삭제하시겠어요?`)) return;
+  const removeTemplate = async (i) => {
+    if (!(await window.BGNJ_CONFIRM(`"${templates[i]?.name || '템플릿'}" 을 삭제하시겠어요?`, { danger: true }))) return;
     setTemplates((arr) => arr.filter((_, j) => j !== i));
     if (activeTplIdx >= templates.length - 1) setActiveTplIdx(-1);
   };
@@ -847,7 +847,7 @@ const LecturePageEditorPanel = () => {
   };
   const clearPerLecture = async () => {
     if (!activeLectureId) return;
-    if (!confirm(`'${activeLectureId}' 강연의 override 를 제거하고 글로벌로 폴백하시겠어요?`)) return;
+    if (!(await window.BGNJ_CONFIRM(`'${activeLectureId}' 강연의 override 를 제거하고 글로벌로 폴백하시겠어요?`, { danger: true }))) return;
     try {
       const next = { ...lecturePages };
       delete next[activeLectureId];
@@ -1097,7 +1097,7 @@ const FooterStyleEditor = () => {
     } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   const resetAll = async () => {
-    if (!confirm('푸터 스타일을 default 로 복원합니다. 진행할까요?')) return;
+    if (!(await window.BGNJ_CONFIRM('푸터 스타일을 default 로 복원합니다. 진행할까요?', { danger: true }))) return;
     try {
       await window.BGNJ_SITE_CONTENT.resetSection('footerStyle');
       setDraft({});
@@ -1401,7 +1401,7 @@ const HeroEditorPanel = () => {
     } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   const resetAll = async () => {
-    if (!confirm('히어로 콘텐츠와 스타일을 모두 default 로 복원합니다. 진행할까요?')) return;
+    if (!(await window.BGNJ_CONFIRM('히어로 콘텐츠와 스타일을 모두 default 로 복원합니다. 진행할까요?', { danger: true }))) return;
     try {
       await window.BGNJ_SITE_CONTENT.resetSection('hero');
       await window.BGNJ_SITE_CONTENT.resetSection('heroStyle');
@@ -1976,8 +1976,8 @@ const KindPagePanel = ({ kind = 'eat' }) => {
       name: '', region: '', address: '', category: '', desc: '', imageUrl: '', link: '', tags: '',
     }]);
   };
-  const removeItem = (i) => {
-    if (!confirm(`"${items[i]?.name || '항목'}" 을 삭제하시겠어요?`)) return;
+  const removeItem = async (i) => {
+    if (!(await window.BGNJ_CONFIRM(`"${items[i]?.name || '항목'}" 을 삭제하시겠어요?`, { danger: true }))) return;
     setItems((arr) => arr.filter((_, j) => j !== i));
   };
   const moveItem = (i, dir) => {
@@ -2426,8 +2426,8 @@ const HomeTextEditorPanel = () => {
     }
   };
 
-  const resetText = () => {
-    if (!confirm('홈 텍스트 입력값을 기본 문구로 되돌릴까요? 저장 버튼을 눌러야 실제 반영됩니다.')) return;
+  const resetText = async () => {
+    if (!(await window.BGNJ_CONFIRM('홈 텍스트 입력값을 기본 문구로 되돌릴까요? 저장 버튼을 눌러야 실제 반영됩니다.', { danger: true }))) return;
     setTextDraft({ ...defaults });
   };
 
@@ -2570,7 +2570,7 @@ const LegacyMigrationPanel = () => {
 
   const applyTour = async () => {
     if (!tourScan || tourScan.items.length === 0) return;
-    if (!confirm(`투어 ${tourScan.items.length} 개의 legacy cover 를 D1 cover_url 로 이동합니다. 진행할까요? (재실행 안전)`)) return;
+    if (!(await window.BGNJ_CONFIRM(`투어 ${tourScan.items.length} 개의 legacy cover 를 D1 cover_url 로 이동합니다. 진행할까요? (재실행 안전)`, { danger: true }))) return;
     setRunning('tour-apply');
     const result = { migrated: 0, skipped: 0, failed: [] };
     try {
@@ -2625,7 +2625,7 @@ const LegacyMigrationPanel = () => {
   };
   const applyLecture = async () => {
     if (!lectureScan || lectureScan.items.length === 0) return;
-    if (!confirm(`강연 ${lectureScan.items.length} 개의 dataURI cover 를 R2 객체로 변환합니다. 진행할까요?`)) return;
+    if (!(await window.BGNJ_CONFIRM(`강연 ${lectureScan.items.length} 개의 dataURI cover 를 R2 객체로 변환합니다. 진행할까요?`, { danger: true }))) return;
     setRunning('lecture-apply');
     const result = { migrated: 0, skipped: 0, failed: [] };
     try {

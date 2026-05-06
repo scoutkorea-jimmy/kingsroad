@@ -32,8 +32,8 @@ const RecommendationsAdminPanel = () => {
     tags: "",
     imageDataUri: ""
   }]);
-  const removeItem = (idx) => {
-    if (!confirm("\uC774 \uCD94\uCC9C\uC744 \uC0AD\uC81C\uD560\uAE4C\uC694?")) return;
+  const removeItem = async (idx) => {
+    if (!await window.BGNJ_CONFIRM("\uC774 \uCD94\uCC9C\uC744 \uC0AD\uC81C\uD560\uAE4C\uC694?", { danger: true })) return;
     setDraft((arr) => arr.filter((_, i) => i !== idx));
   };
   const moveItem = (idx, dir) => {
@@ -231,7 +231,7 @@ const TourPageEditorPanel = () => {
     }
   };
   const resetGlobal = async () => {
-    if (!confirm("\uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815/\uC900\uBE44\uBB3C\uC744 default \uB85C \uBCF5\uC6D0\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815/\uC900\uBE44\uBB3C\uC744 default \uB85C \uBCF5\uC6D0\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
     try {
       await window.BGNJ_SITE_CONTENT.resetSection("tourSchedule");
       await window.BGNJ_SITE_CONTENT.resetSection("tourPrep");
@@ -252,9 +252,9 @@ const TourPageEditorPanel = () => {
     setTemplates((arr) => [...arr, { id, name: "\uC0C8 \uD15C\uD50C\uB9BF", schedule: [], prep: [] }]);
     setActiveTplIdx(templates.length);
   };
-  const removeTemplate = (i) => {
+  const removeTemplate = async (i) => {
     var _a;
-    if (!confirm(`"${((_a = templates[i]) == null ? void 0 : _a.name) || "\uD15C\uD50C\uB9BF"}" \uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`"${((_a = templates[i]) == null ? void 0 : _a.name) || "\uD15C\uD50C\uB9BF"}" \uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     setTemplates((arr) => arr.filter((_, j) => j !== i));
     if (activeTplIdx >= templates.length - 1) setActiveTplIdx(-1);
   };
@@ -354,7 +354,7 @@ const TourPageEditorPanel = () => {
   };
   const clearPerTour = async () => {
     if (!activeTourId) return;
-    if (!confirm(`'${activeTourId}' \uD22C\uC5B4\uC758 override \uB97C \uC81C\uAC70\uD558\uACE0 \uAE00\uB85C\uBC8C\uB85C \uD3F4\uBC31\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`'${activeTourId}' \uD22C\uC5B4\uC758 override \uB97C \uC81C\uAC70\uD558\uACE0 \uAE00\uB85C\uBC8C\uB85C \uD3F4\uBC31\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     try {
       const next = { ...tourPages };
       delete next[activeTourId];
@@ -580,7 +580,7 @@ const LecturePageEditorPanel = () => {
     }
   };
   const resetGlobal = async () => {
-    if (!confirm("\uAE00\uB85C\uBC8C \uC9C4\uD589/\uCC38\uACE0\uB97C default \uB85C \uBCF5\uC6D0\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uAE00\uB85C\uBC8C \uC9C4\uD589/\uCC38\uACE0\uB97C default \uB85C \uBCF5\uC6D0\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
     try {
       await window.BGNJ_SITE_CONTENT.resetSection("lectureSchedule");
       await window.BGNJ_SITE_CONTENT.resetSection("lectureNotes");
@@ -601,9 +601,9 @@ const LecturePageEditorPanel = () => {
     setTemplates((arr) => [...arr, { id, name: "\uC0C8 \uD15C\uD50C\uB9BF", schedule: [], notes: [] }]);
     setActiveTplIdx(templates.length);
   };
-  const removeTemplate = (i) => {
+  const removeTemplate = async (i) => {
     var _a;
-    if (!confirm(`"${((_a = templates[i]) == null ? void 0 : _a.name) || "\uD15C\uD50C\uB9BF"}" \uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`"${((_a = templates[i]) == null ? void 0 : _a.name) || "\uD15C\uD50C\uB9BF"}" \uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     setTemplates((arr) => arr.filter((_, j) => j !== i));
     if (activeTplIdx >= templates.length - 1) setActiveTplIdx(-1);
   };
@@ -711,7 +711,7 @@ const LecturePageEditorPanel = () => {
   };
   const clearPerLecture = async () => {
     if (!activeLectureId) return;
-    if (!confirm(`'${activeLectureId}' \uAC15\uC5F0\uC758 override \uB97C \uC81C\uAC70\uD558\uACE0 \uAE00\uB85C\uBC8C\uB85C \uD3F4\uBC31\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`'${activeLectureId}' \uAC15\uC5F0\uC758 override \uB97C \uC81C\uAC70\uD558\uACE0 \uAE00\uB85C\uBC8C\uB85C \uD3F4\uBC31\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     try {
       const next = { ...lecturePages };
       delete next[activeLectureId];
@@ -940,7 +940,7 @@ const FooterStyleEditor = () => {
     }
   };
   const resetAll = async () => {
-    if (!confirm("\uD478\uD130 \uC2A4\uD0C0\uC77C\uC744 default \uB85C \uBCF5\uC6D0\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uD478\uD130 \uC2A4\uD0C0\uC77C\uC744 default \uB85C \uBCF5\uC6D0\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
     try {
       await window.BGNJ_SITE_CONTENT.resetSection("footerStyle");
       setDraft({});
@@ -1233,7 +1233,7 @@ const HeroEditorPanel = () => {
     }
   };
   const resetAll = async () => {
-    if (!confirm("\uD788\uC5B4\uB85C \uCF58\uD150\uCE20\uC640 \uC2A4\uD0C0\uC77C\uC744 \uBAA8\uB450 default \uB85C \uBCF5\uC6D0\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?")) return;
+    if (!await window.BGNJ_CONFIRM("\uD788\uC5B4\uB85C \uCF58\uD150\uCE20\uC640 \uC2A4\uD0C0\uC77C\uC744 \uBAA8\uB450 default \uB85C \uBCF5\uC6D0\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
     try {
       await window.BGNJ_SITE_CONTENT.resetSection("hero");
       await window.BGNJ_SITE_CONTENT.resetSection("heroStyle");
@@ -1822,9 +1822,9 @@ const KindPagePanel = ({ kind = "eat" }) => {
       tags: ""
     }]);
   };
-  const removeItem = (i) => {
+  const removeItem = async (i) => {
     var _a;
-    if (!confirm(`"${((_a = items[i]) == null ? void 0 : _a.name) || "\uD56D\uBAA9"}" \uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`"${((_a = items[i]) == null ? void 0 : _a.name) || "\uD56D\uBAA9"}" \uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
     setItems((arr) => arr.filter((_, j) => j !== i));
   };
   const moveItem = (i, dir) => {
@@ -2166,8 +2166,8 @@ const HomeTextEditorPanel = () => {
       window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
-  const resetText = () => {
-    if (!confirm("\uD648 \uD14D\uC2A4\uD2B8 \uC785\uB825\uAC12\uC744 \uAE30\uBCF8 \uBB38\uAD6C\uB85C \uB418\uB3CC\uB9B4\uAE4C\uC694? \uC800\uC7A5 \uBC84\uD2BC\uC744 \uB20C\uB7EC\uC57C \uC2E4\uC81C \uBC18\uC601\uB429\uB2C8\uB2E4.")) return;
+  const resetText = async () => {
+    if (!await window.BGNJ_CONFIRM("\uD648 \uD14D\uC2A4\uD2B8 \uC785\uB825\uAC12\uC744 \uAE30\uBCF8 \uBB38\uAD6C\uB85C \uB418\uB3CC\uB9B4\uAE4C\uC694? \uC800\uC7A5 \uBC84\uD2BC\uC744 \uB20C\uB7EC\uC57C \uC2E4\uC81C \uBC18\uC601\uB429\uB2C8\uB2E4.", { danger: true })) return;
     setTextDraft({ ...defaults });
   };
   return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 16, lineHeight: 1.8 } }, "\uD648\uD398\uC774\uC9C0\uC5D0 \uB178\uCD9C\uB418\uB294 \uACE0\uC815 \uBB38\uAD6C\uB97C \uD55C \uACF3\uC5D0\uC11C \uC218\uC815\uD569\uB2C8\uB2E4. \uC88C\uCE21\uC5D0\uC11C \uBC14\uAFB8\uBA74 \uC6B0\uCE21 \uBBF8\uB9AC\uBCF4\uAE30\uC5D0 \uBC14\uB85C \uBC18\uC601\uB418\uACE0, PC / \uD0DC\uBE14\uB9BF / \uBAA8\uBC14\uC77C \uBC84\uD2BC\uC73C\uB85C \uD3ED\uC744 \uC804\uD658\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { className: "home-text-editor-grid" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 16, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 16, marginBottom: 12 } }, "\uAE00\uC790 \uD06C\uAE30 \uD2B8\uC705"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginBottom: 12, lineHeight: 1.6 } }, "\uD648\uD398\uC774\uC9C0 \uBCF8\uBB38\xB7\uC81C\uBAA9\xB7\uCE74\uB4DC \uAE00\uC790 \uD06C\uAE30\uB97C \uBE44\uB840\uC801\uC73C\uB85C \uC870\uC808\uD569\uB2C8\uB2E4. 1.00 \uAE30\uBCF8 \xB7 0.85 \uC791\uAC8C \xB7 1.20 \uD06C\uAC8C. \uACFC\uD55C \uBCC0\uACBD\uC740 \uB808\uC774\uC544\uC6C3\uC744 \uD754\uB4E4 \uC218 \uC788\uC5B4 \xB120% \uBC94\uC704\uB85C \uD55C\uC815."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
@@ -2279,7 +2279,7 @@ const LegacyMigrationPanel = () => {
   const applyTour = async () => {
     var _a, _b;
     if (!tourScan || tourScan.items.length === 0) return;
-    if (!confirm(`\uD22C\uC5B4 ${tourScan.items.length} \uAC1C\uC758 legacy cover \uB97C D1 cover_url \uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694? (\uC7AC\uC2E4\uD589 \uC548\uC804)`)) return;
+    if (!await window.BGNJ_CONFIRM(`\uD22C\uC5B4 ${tourScan.items.length} \uAC1C\uC758 legacy cover \uB97C D1 cover_url \uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694? (\uC7AC\uC2E4\uD589 \uC548\uC804)`, { danger: true })) return;
     setRunning("tour-apply");
     const result = { migrated: 0, skipped: 0, failed: [] };
     try {
@@ -2338,7 +2338,7 @@ const LegacyMigrationPanel = () => {
   const applyLecture = async () => {
     var _a, _b;
     if (!lectureScan || lectureScan.items.length === 0) return;
-    if (!confirm(`\uAC15\uC5F0 ${lectureScan.items.length} \uAC1C\uC758 dataURI cover \uB97C R2 \uAC1D\uCCB4\uB85C \uBCC0\uD658\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?`)) return;
+    if (!await window.BGNJ_CONFIRM(`\uAC15\uC5F0 ${lectureScan.items.length} \uAC1C\uC758 dataURI cover \uB97C R2 \uAC1D\uCCB4\uB85C \uBCC0\uD658\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?`, { danger: true })) return;
     setRunning("lecture-apply");
     const result = { migrated: 0, skipped: 0, failed: [] };
     try {
