@@ -525,17 +525,31 @@ const HomePage = ({ go }) => {
   var _a, _b, _c;
   const [mapOpen, setMapOpen] = React.useState(false);
   const [scTick, setScTick] = React.useState(0);
-  const [dataTick, setDataTick] = React.useState(0);
+  const [columnsTick, setColumnsTick] = React.useState(0);
+  const [toursTick, setToursTick] = React.useState(0);
+  const [lecturesTick, setLecturesTick] = React.useState(0);
+  const [postsTick, setPostsTick] = React.useState(0);
+  const dataTick = columnsTick + toursTick + lecturesTick + postsTick;
   React.useEffect(() => {
     const onR = () => setScTick((v) => v + 1);
     window.addEventListener("bgnj-site-content-refresh", onR);
     return () => window.removeEventListener("bgnj-site-content-refresh", onR);
   }, []);
   React.useEffect(() => {
-    const tick = () => setDataTick((v) => v + 1);
-    const evts = ["bgnj-columns-refresh", "bgnj-tours-refresh", "bgnj-lectures-refresh", "bgnj-posts-refresh"];
-    evts.forEach((e) => window.addEventListener(e, tick));
-    return () => evts.forEach((e) => window.removeEventListener(e, tick));
+    const onColumns = () => setColumnsTick((v) => v + 1);
+    const onTours = () => setToursTick((v) => v + 1);
+    const onLectures = () => setLecturesTick((v) => v + 1);
+    const onPosts = () => setPostsTick((v) => v + 1);
+    window.addEventListener("bgnj-columns-refresh", onColumns);
+    window.addEventListener("bgnj-tours-refresh", onTours);
+    window.addEventListener("bgnj-lectures-refresh", onLectures);
+    window.addEventListener("bgnj-posts-refresh", onPosts);
+    return () => {
+      window.removeEventListener("bgnj-columns-refresh", onColumns);
+      window.removeEventListener("bgnj-tours-refresh", onTours);
+      window.removeEventListener("bgnj-lectures-refresh", onLectures);
+      window.removeEventListener("bgnj-posts-refresh", onPosts);
+    };
   }, []);
   const sc = React.useMemo(() => {
     var _a2, _b2;
@@ -598,21 +612,21 @@ const HomePage = ({ go }) => {
   const publicColumns = React.useMemo(() => G.arr(() => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listPublic) == null ? void 0 : _b2.call(_a2);
-  }), [dataTick]);
+  }), [columnsTick]);
   const featuredColumn = publicColumns[0];
   const secondaryColumns = publicColumns.slice(1, 5);
   const recentPosts = React.useMemo(() => G.arr(() => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b2.call(_a2);
-  }).slice(0, 4), [dataTick]);
+  }).slice(0, 4), [postsTick]);
   const tours = React.useMemo(() => G.arr(() => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
-  }).filter((t) => t && !t.hidden).slice(0, 4), [dataTick]);
+  }).filter((t) => t && !t.hidden).slice(0, 4), [toursTick]);
   const lectures = React.useMemo(() => G.arr(() => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
-  }).filter((l) => l && !l.hidden).slice(0, 3), [dataTick]);
+  }).filter((l) => l && !l.hidden).slice(0, 3), [lecturesTick]);
   const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
     { label: "\uC5EC\uD589\uC9C0", sub: "\uC8FC\uC694 \uB2F5\uC0AC\uC9C0 \uC6B4\uC601", valueFallback: "\uC804\uAD6D" },
     { label: "\uD22C\uC5B4", sub: "\uC9C1\uC811 \uAE30\uD68D \uD504\uB85C\uADF8\uB7A8", valueFallback: "\uC900\uBE44 \uC911" },

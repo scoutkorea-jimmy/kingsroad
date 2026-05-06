@@ -1,6 +1,20 @@
 (function(){
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.198.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T15:00:00+09:00",
+    summary: "\u{1F680} admin \uBC88\uB4E4 lazy-load + \uC6CC\uCEE4 CDN \uCE90\uC2DC + HomePage dataTick \uBD84\uB9AC (\uBC18\uC751\uC131 \u2191 + \uD68C\uADC0 0)",
+    details: [
+      "\u{1F4E6} [admin \uBC88\uB4E4 lazy-load] \uC0AC\uC6A9\uC790 \uC6B0\uC120\uC21C\uC704 '\uC18D\uB3C4\uAC10 \u2191 + \uAE30\uB2A5 \uD68C\uADC0 0'. index.html \uC758 4\uAC1C admin \uC2A4\uD06C\uB9BD\uD2B8(AdminShared/AdminContentEditors/AdminDesignHub/AuthAdminPage) \uC815\uC801 defer \uC81C\uAC70. boot.jsx _loadAdminScripts() \uAC00 admin route \uC9C4\uC785 \uC2DC \uB3D9\uC801 \uC8FC\uC785. async=false \uB85C \uC21C\uC11C \uBCF4\uC874, idempotent (\uC911\uBCF5 \uC8FC\uC785 \uBC29\uC9C0), 1\uD68C retry, \uB85C\uB529 fallback UI. \uBE44-admin 99% \uD2B8\uB798\uD53D\uC774 ~3.85MB raw / ~360KB gz \uB2E4\uC6B4/\uD30C\uC2A4/\uCEF4\uD30C\uC77C \uD68C\uD53C.",
+      "\u26A1 [\uC6CC\uCEE4 list endpoint CDN \uCE90\uC2DC] handleBooks/Lectures/Tours/SiteContent/Faqs/Legal/Categories/Grades/Columns \uC758 GET \uC751\uB2F5\uC5D0 `Cache-Control: public, s-maxage=N, stale-while-revalidate=2N` \uD5E4\uB354. \uC548\uC804 \uAC00\uB4DC \u2014 _publicCacheable() \uAC00 (1) admin \uBD84\uAE30 query (includeAll/includeHidden) \uB610\uB294 (2) \uC778\uC99D \uCFE0\uD0A4(bgnj_session) \uC788\uC73C\uBA74 \uCE90\uC2DC \uD5E4\uB354 \uBD80\uCC29 \uC548 \uD568 \u2192 admin \uC751\uB2F5\uC774 public \uCE90\uC2DC\uC5D0 \uB204\uCD9C \uBC29\uC9C0. TTL: list 60s, \uC57D\uAD00/\uB4F1\uAE09/\uCE74\uD14C\uACE0\uB9AC 300s.",
+      "\u{1F3AF} [HomePage dataTick \uBD84\uB9AC] \uC774\uC804\uC5D4 \uB2E8\uC77C dataTick \uC73C\uB85C columns/tours/lectures/posts 4 stream \uBCC0\uACBD\uC744 \uD55C state \uC5D0 \uD569\uCCD0 \uC5B4\uB290 \uD55C stream \uB9CC \uAC31\uC2E0\uB3FC\uB3C4 publicColumns/recentPosts/tours/lectures 4\uAC1C useMemo \uBAA8\uB450 \uC7AC\uC2E4\uD589. \uAC01 stream \uBCC4 tick state \uBD84\uB9AC \u2192 \uBB34\uAD00 stream \uAC31\uC2E0 \uC2DC \uC815\uB82C/\uD544\uD130 \uC7AC\uC2E4\uD589 \uCC28\uB2E8. \uD638\uD658\uC6A9 dataTick(=\uD569\uC0B0) \uC720\uC9C0 \u2014 HeroProgramCards/BookCarouselSection \uBC31\uC6CC\uB4DC \uD638\uD658.",
+      "\u2139 \u2605 \uC6CC\uCEE4 wrangler deploy \uD544\uC694 (CDN \uCE90\uC2DC \uD5E4\uB354 \uC801\uC6A9).",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.198.000`."
+    ],
+    context: "\uC774\uC804 \uC0AC\uC774\uD074 \uBCF4\uB958 \uC635\uC158 A(admin lazy-load) + C(\uC6CC\uCEE4 \uCE90\uC2DC) \uBAA8\uB450 \uC9C4\uD589 + Bonus 1(HomePage dataTick split). \uC0AC\uC6A9\uC790 \uBCF4\uACE0 '\uC18D\uB3C4\uAC10 \u2191 + \uD68C\uADC0 0' \uC6B0\uC120\uC21C\uC704 \uCDA9\uC871 \u2014 \uBAA8\uB4E0 \uBCC0\uACBD\uC5D0 admin/auth \uAC00\uB4DC + idempotent + retry. \uBCF4\uB958: handlePostsList N+1 (posts \uB294 admin/draft \uBD84\uAE30\uB85C \uC778\uD574 \uCE90\uC2DC \uC704\uD5D8 \u2014 \uBCC4\uB3C4 \uC0AC\uC774\uD074)."
+  },
+  {
     version: "00.197.000",
     date: "2026-05-06",
     datetime: "2026-05-06T14:00:00+09:00",

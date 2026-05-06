@@ -33,6 +33,30 @@ const json = (body, init = {}, env = null) => {
   return new Response(JSON.stringify(body), { ...init, headers });
 };
 
+// v00.198 — public read endpoint 에 CDN edge cache 헤더 부착.
+// 사용자 우선순위 '속도감 ↑ + 기능 회귀 0'.
+// 안전 가드:
+//   1) URL query 에 admin-only 분기 (includeAll/includeHidden) 가 있으면 cache 안 함.
+//   2) 요청에 bgnj_session 쿠키가 있으면 cache 안 함 (admin 가능성 — public response 가 admin 데이터 노출 방지).
+//   3) write method (POST/PATCH/PUT/DELETE) 는 자연스럽게 호출자가 wrapper 안 거침.
+// 결과: 익명 방문자의 GET 만 CDN edge 캐시 → 비로그인 첫 트래픽이 압도적인 list endpoint 에 효과.
+const _publicCacheable = (req) => {
+  try {
+    const url = new URL(req.url);
+    if (url.searchParams.get('includeAll') === '1') return false;
+    if (url.searchParams.get('includeHidden') === '1') return false;
+    const cookie = req.headers.get('cookie') || '';
+    if (cookie.includes('bgnj_session=')) return false;
+    return true;
+  } catch { return false; }
+};
+const _withPublicCache = (resp, seconds) => {
+  // 200 이외 응답은 캐시하지 않음 (json() 은 init.status 를 따름 → 기본 200).
+  if (resp.status !== 200) return resp;
+  resp.headers.set('Cache-Control', `public, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`);
+  return resp;
+};
+
 const isLocalDevOrigin = (origin) => {
   // 로컬 개발 환경(127.0.0.1 / localhost) 의 임의 포트 자동 허용.
   // VS Code Live Server(5500), Vite(5173), Python http.server(8000) 등 임시 포트 대응.
@@ -2193,7 +2217,10 @@ const route = async (req, env) => {
     if (req.method === "DELETE") return json(await handleCommentDelete(req, env, postId, cid));
   }
 
-  if (req.method === "GET" && p === "/api/books") return json(await handleBooksList(req, env));
+  if (req.method === "GET" && p === "/api/books") {
+    const resp = json(await handleBooksList(req, env));
+    return _publicCacheable(req) ? _withPublicCache(resp, 60) : resp;
+  }
   if (req.method === "POST" && p === "/api/books") return json(await handleBookCreate(req, env), { status: 201 });
   if ((g = m(/^\/api\/books\/([\w-]+)$/))) {
     const id = g[1];
@@ -2228,7 +2255,10 @@ const route = async (req, env) => {
   }
 
   // 강연
-  if (req.method === "GET" && p === "/api/lectures") return json(await handleLecturesList(req, env));
+  if (req.method === "GET" && p === "/api/lectures") {
+    const resp = json(await handleLecturesList(req, env));
+    return _publicCacheable(req) ? _withPublicCache(resp, 60) : resp;
+  }
   if (req.method === "POST" && p === "/api/lectures") return json(await handleLectureCreate(req, env), { status: 201 });
   if ((g = m(/^\/api\/lectures\/([\w-]+)$/))) {
     if (req.method === "GET") return json(await handleLectureGet(req, env, g[1]));
@@ -2252,7 +2282,10 @@ const route = async (req, env) => {
   }
 
   // 투어
-  if (req.method === "GET" && p === "/api/tours") return json(await handleToursList(req, env));
+  if (req.method === "GET" && p === "/api/tours") {
+    const resp = json(await handleToursList(req, env));
+    return _publicCacheable(req) ? _withPublicCache(resp, 60) : resp;
+  }
   if (req.method === "POST" && p === "/api/tours") return json(await handleTourCreate(req, env), { status: 201 });
   if ((g = m(/^\/api\/tours\/([\w-]+)$/))) {
     if (req.method === "GET") return json(await handleTourGet(req, env, g[1]));
@@ -2293,11 +2326,17 @@ const route = async (req, env) => {
   }
 
   // 사이트 콘텐츠 / FAQ / 약관 / 입금 계좌 / 카테고리 / 등급 / 감사 로그
-  if (req.method === "GET" && p === "/api/site-content") return json(await handleSiteContentGet(req, env));
+  if (req.method === "GET" && p === "/api/site-content") {
+    const resp = json(await handleSiteContentGet(req, env));
+    return _publicCacheable(req) ? _withPublicCache(resp, 60) : resp;
+  }
   if ((g = m(/^\/api\/site-content\/([\w-]+)$/))) {
     if (req.method === "PATCH" || req.method === "PUT") return json(await handleSiteContentPatch(req, env, g[1]));
   }
-  if (req.method === "GET" && p === "/api/faqs") return json(await handleFaqList(req, env));
+  if (req.method === "GET" && p === "/api/faqs") {
+    const resp = json(await handleFaqList(req, env));
+    return _publicCacheable(req) ? _withPublicCache(resp, 60) : resp;
+  }
   if (req.method === "GET" && p === "/api/admin/faqs") return json(await handleFaqAdminList(req, env));
   if (req.method === "POST" && p === "/api/faqs") return json(await handleFaqCreate(req, env), { status: 201 });
   if ((g = m(/^\/api\/faqs\/([\w-]+)$/))) {
@@ -2305,7 +2344,10 @@ const route = async (req, env) => {
     if (req.method === "DELETE") return json(await handleFaqDelete(req, env, g[1]));
   }
   if ((g = m(/^\/api\/legal\/([\w-]+)$/))) {
-    if (req.method === "GET") return json(await handleLegalGet(req, env, g[1]));
+    if (req.method === "GET") {
+      const resp = json(await handleLegalGet(req, env, g[1]));
+      return _publicCacheable(req) ? _withPublicCache(resp, 300) : resp;
+    }
     if (req.method === "PUT") return json(await handleLegalPut(req, env, g[1]));
   }
   if (req.method === "GET" && p === "/api/bank-account") return json(await handleBankAccountGet(req, env));
@@ -2317,13 +2359,19 @@ const route = async (req, env) => {
     if (req.method === "PATCH") return json(await handleBankAccountPatch(req, env, g[1]));
     if (req.method === "DELETE") return json(await handleBankAccountDelete(req, env, g[1]));
   }
-  if (req.method === "GET" && p === "/api/categories") return json(await handleCategoriesList(req, env));
+  if (req.method === "GET" && p === "/api/categories") {
+    const resp = json(await handleCategoriesList(req, env));
+    return _publicCacheable(req) ? _withPublicCache(resp, 300) : resp;
+  }
   if (req.method === "POST" && p === "/api/categories") return json(await handleCategoryCreate(req, env), { status: 201 });
   if ((g = m(/^\/api\/categories\/([\w-]+)$/))) {
     if (req.method === "PATCH") return json(await handleCategoryPatch(req, env, g[1]));
     if (req.method === "DELETE") return json(await handleCategoryDelete(req, env, g[1]));
   }
-  if (req.method === "GET" && p === "/api/grades") return json(await handleGradesList(req, env));
+  if (req.method === "GET" && p === "/api/grades") {
+    const resp = json(await handleGradesList(req, env));
+    return _publicCacheable(req) ? _withPublicCache(resp, 300) : resp;
+  }
   if ((g = m(/^\/api\/grades\/([\w-]+)$/))) {
     if (req.method === "PUT") return json(await handleGradeUpsert(req, env, g[1]));
     if (req.method === "DELETE") return json(await handleGradeDelete(req, env, g[1]));
@@ -2336,7 +2384,10 @@ const route = async (req, env) => {
   if (req.method === "DELETE" && p === "/api/admin/error-log") return json(await handleErrorLogClear(req, env));
 
   // 사용자 칼럼
-  if (req.method === "GET" && p === "/api/columns") return json(await handleColumnsList(req, env));
+  if (req.method === "GET" && p === "/api/columns") {
+    const resp = json(await handleColumnsList(req, env));
+    return _publicCacheable(req) ? _withPublicCache(resp, 60) : resp;
+  }
   if (req.method === "POST" && p === "/api/columns") return json(await handleColumnCreate(req, env), { status: 201 });
   if ((g = m(/^\/api\/columns\/([\w-]+)$/))) {
     if (req.method === "GET") return json(await handleColumnGet(req, env, g[1]));

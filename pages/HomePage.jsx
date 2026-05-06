@@ -546,7 +546,15 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
 const HomePage = ({ go }) => {
   const [mapOpen, setMapOpen] = React.useState(false);
   const [scTick, setScTick] = React.useState(0);
-  const [dataTick, setDataTick] = React.useState(0);
+  // v00.198 — 사용자 우선순위 '속도감 ↑ + 회귀 0'.
+  // 이전엔 단일 dataTick 으로 4 종 stream(columns/tours/lectures/posts) 변경을 모두 한 state 에 합쳐
+  // 어느 한 stream 만 갱신돼도 5개 useMemo + 정렬/필터 모두 재실행. 각 stream 별로 분리.
+  const [columnsTick, setColumnsTick] = React.useState(0);
+  const [toursTick, setToursTick] = React.useState(0);
+  const [lecturesTick, setLecturesTick] = React.useState(0);
+  const [postsTick, setPostsTick] = React.useState(0);
+  // 호환용 — 기존 dataTick 참조 코드 유지 (하나라도 변경되면 max 가 증가).
+  const dataTick = columnsTick + toursTick + lecturesTick + postsTick;
 
   // SEO/Hero/Brand refresh — 즉시 재렌더
   React.useEffect(() => {
@@ -558,10 +566,21 @@ const HomePage = ({ go }) => {
   // 서버 데이터 refresh 이벤트 — 실제 발화 이름과 일치 (data.js 참고).
   // bgnj-posts-refresh: 커뮤니티 게시글 / bgnj-columns-refresh: 칼럼 / bgnj-tours-refresh: 답사 / bgnj-lectures-refresh: 강연 / bgnj-site-content-refresh: 추천(이미 위에서 listen)
   React.useEffect(() => {
-    const tick = () => setDataTick((v) => v + 1);
-    const evts = ['bgnj-columns-refresh', 'bgnj-tours-refresh', 'bgnj-lectures-refresh', 'bgnj-posts-refresh'];
-    evts.forEach((e) => window.addEventListener(e, tick));
-    return () => evts.forEach((e) => window.removeEventListener(e, tick));
+    // v00.198 — 각 event 가 자기 stream 의 tick 만 증가. 다른 stream 의 useMemo 는 재실행 안 함.
+    const onColumns = () => setColumnsTick((v) => v + 1);
+    const onTours = () => setToursTick((v) => v + 1);
+    const onLectures = () => setLecturesTick((v) => v + 1);
+    const onPosts = () => setPostsTick((v) => v + 1);
+    window.addEventListener('bgnj-columns-refresh', onColumns);
+    window.addEventListener('bgnj-tours-refresh', onTours);
+    window.addEventListener('bgnj-lectures-refresh', onLectures);
+    window.addEventListener('bgnj-posts-refresh', onPosts);
+    return () => {
+      window.removeEventListener('bgnj-columns-refresh', onColumns);
+      window.removeEventListener('bgnj-tours-refresh', onTours);
+      window.removeEventListener('bgnj-lectures-refresh', onLectures);
+      window.removeEventListener('bgnj-posts-refresh', onPosts);
+    };
   }, []);
 
   const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);
@@ -602,12 +621,13 @@ const HomePage = ({ go }) => {
     const t = Date.parse(iso);
     return !isNaN(t);
   };
-  const publicColumns = React.useMemo(() => G.arr(() => window.BGNJ_COLUMNS?.listPublic?.()), [dataTick]);
+  // v00.198 — 각 memo 는 자기 stream 의 tick 만 의존 → 무관 stream 갱신 시 재실행 차단.
+  const publicColumns = React.useMemo(() => G.arr(() => window.BGNJ_COLUMNS?.listPublic?.()), [columnsTick]);
   const featuredColumn = publicColumns[0];
   const secondaryColumns = publicColumns.slice(1, 5);
-  const recentPosts = React.useMemo(() => G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()).slice(0, 4), [dataTick]);
-  const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden).slice(0, 4), [dataTick]);
-  const lectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden).slice(0, 3), [dataTick]);
+  const recentPosts = React.useMemo(() => G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()).slice(0, 4), [postsTick]);
+  const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden).slice(0, 4), [toursTick]);
+  const lectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden).slice(0, 3), [lecturesTick]);
 
   // hero.stats 가 있으면 콘텐츠(label/sub/valueFallback) 를 거기서. 동적 value(투어/커뮤니티 갯수) 는 코드 측 우선.
   const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [

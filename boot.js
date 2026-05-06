@@ -243,6 +243,68 @@ const pathToRoute = (pathname) => {
   return VALID_ROUTES.includes(seg) ? seg : "home";
 };
 const routeToPath = (r) => r === "home" ? "/" : "/" + r;
+const ADMIN_SCRIPTS = [
+  "pages/admin/AdminShared.js",
+  "pages/admin/AdminContentEditors.js",
+  "pages/admin/AdminDesignHub.js",
+  "pages/AuthAdminPage.js"
+];
+let _adminLoadPromise = null;
+const _loadAdminScripts = (attempt = 0) => {
+  var _a;
+  if (_adminLoadPromise) return _adminLoadPromise;
+  if (typeof window !== "undefined" && window.AdminPage) {
+    _adminLoadPromise = Promise.resolve();
+    return _adminLoadPromise;
+  }
+  const v = (((_a = window.BGNJ_VERSION) == null ? void 0 : _a.version) || "").toString();
+  const qs = v ? `?v=${v}` : "";
+  _adminLoadPromise = new Promise((resolve, reject) => {
+    let remaining = ADMIN_SCRIPTS.length;
+    let failed = false;
+    ADMIN_SCRIPTS.forEach((src) => {
+      const fullSrc = src + qs;
+      const existing = document.querySelector(`script[data-bgnj-admin][src="${fullSrc}"]`);
+      if (existing) {
+        if (existing.dataset.loaded === "1") {
+          if (--remaining === 0 && !failed) resolve();
+        } else {
+          existing.addEventListener("load", () => {
+            existing.dataset.loaded = "1";
+            if (--remaining === 0 && !failed) resolve();
+          });
+          existing.addEventListener("error", () => {
+            failed = true;
+            reject(new Error(`${src} load failed`));
+          });
+        }
+        return;
+      }
+      const s = document.createElement("script");
+      s.src = fullSrc;
+      s.async = false;
+      s.defer = false;
+      s.dataset.bgnjAdmin = "1";
+      s.onload = () => {
+        s.dataset.loaded = "1";
+        if (--remaining === 0 && !failed) resolve();
+      };
+      s.onerror = () => {
+        failed = true;
+        reject(new Error(`${src} load failed`));
+      };
+      document.head.appendChild(s);
+    });
+  }).catch((err) => {
+    _adminLoadPromise = null;
+    if (attempt < 1) {
+      return new Promise((r) => setTimeout(r, 600)).then(() => _loadAdminScripts(attempt + 1));
+    }
+    throw err;
+  });
+  return _adminLoadPromise;
+};
+const _AdminLoadingFallback = ({ error, onRetry }) => /* @__PURE__ */ React.createElement("div", { style: { padding: 48, textAlign: "center", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, letterSpacing: "0.18em", marginBottom: 10 } }, error ? "ADMIN \xB7 LOAD FAILED" : "ADMIN \xB7 LOADING"), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, marginBottom: 14, color: "var(--ink)" } }, error ? "\uAD00\uB9AC\uC790 \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4" : "\uAD00\uB9AC\uC790 \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\u2026"), error ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginBottom: 14 } }, (error == null ? void 0 : error.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onRetry }, "\uB2E4\uC2DC \uC2DC\uB3C4")) : /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12 } }, "\uCC98\uC74C \uC9C4\uC785 \uC2DC ~1\uCD08 \uC18C\uC694\uB429\uB2C8\uB2E4.")));
 const App = () => {
   const [route, setRoute] = React.useState(() => {
     try {
@@ -536,6 +598,23 @@ const App = () => {
     window.parent.postMessage({ type: "__edit_mode_set_keys", edits: next }, "*");
   };
   const hideNav = route === "login" || route === "signup" || route === "admin";
+  const [adminLoaded, setAdminLoaded] = React.useState(() => typeof window !== "undefined" && !!window.AdminPage);
+  const [adminLoadError, setAdminLoadError] = React.useState(null);
+  const [adminLoadAttempt, setAdminLoadAttempt] = React.useState(0);
+  React.useEffect(() => {
+    if (route !== "admin") return;
+    if (adminLoaded) return;
+    let cancelled = false;
+    setAdminLoadError(null);
+    _loadAdminScripts().then(() => {
+      if (!cancelled) setAdminLoaded(true);
+    }).catch((err) => {
+      if (!cancelled) setAdminLoadError(err);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [route, adminLoaded, adminLoadAttempt]);
   const renderPage = () => {
     const W = window;
     const fallback = (label) => () => /* @__PURE__ */ React.createElement("div", { style: { padding: 48, textAlign: "center", color: "#1f2937" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 11, color: "#dc2626", letterSpacing: "0.18em", marginBottom: 8 } }, "PAGE_NOT_LOADED"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "serif", fontSize: 18, marginBottom: 6 } }, label, " \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginBottom: 18 } }, "\uC0C8\uB85C\uACE0\uCE68 \uD6C4\uC5D0\uB3C4 \uAC19\uC740 \uD654\uBA74\uC774 \uBCF4\uC778\uB2E4\uBA74 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."), /* @__PURE__ */ React.createElement("button", { onClick: () => {
@@ -611,6 +690,18 @@ const App = () => {
         if (!(user == null ? void 0 : user.isAdmin)) {
           const D = pick("AdminDenied", "\uAD00\uB9AC");
           return /* @__PURE__ */ React.createElement(D, { go, user });
+        }
+        if (!adminLoaded) {
+          return /* @__PURE__ */ React.createElement(
+            _AdminLoadingFallback,
+            {
+              error: adminLoadError,
+              onRetry: () => {
+                setAdminLoadError(null);
+                setAdminLoadAttempt((v) => v + 1);
+              }
+            }
+          );
         }
         const C = pick("AdminPage", "\uAD00\uB9AC");
         return /* @__PURE__ */ React.createElement(C, { go, user });

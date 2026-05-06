@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.198.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T15:00:00+09:00",
+    summary: "🚀 admin 번들 lazy-load + 워커 CDN 캐시 + HomePage dataTick 분리 (반응성 ↑ + 회귀 0)",
+    details: [
+      "📦 [admin 번들 lazy-load] 사용자 우선순위 '속도감 ↑ + 기능 회귀 0'. index.html 의 4개 admin 스크립트(AdminShared/AdminContentEditors/AdminDesignHub/AuthAdminPage) 정적 defer 제거. boot.jsx _loadAdminScripts() 가 admin route 진입 시 동적 주입. async=false 로 순서 보존, idempotent (중복 주입 방지), 1회 retry, 로딩 fallback UI. 비-admin 99% 트래픽이 ~3.85MB raw / ~360KB gz 다운/파스/컴파일 회피.",
+      "⚡ [워커 list endpoint CDN 캐시] handleBooks/Lectures/Tours/SiteContent/Faqs/Legal/Categories/Grades/Columns 의 GET 응답에 `Cache-Control: public, s-maxage=N, stale-while-revalidate=2N` 헤더. 안전 가드 — _publicCacheable() 가 (1) admin 분기 query (includeAll/includeHidden) 또는 (2) 인증 쿠키(bgnj_session) 있으면 캐시 헤더 부착 안 함 → admin 응답이 public 캐시에 누출 방지. TTL: list 60s, 약관/등급/카테고리 300s.",
+      "🎯 [HomePage dataTick 분리] 이전엔 단일 dataTick 으로 columns/tours/lectures/posts 4 stream 변경을 한 state 에 합쳐 어느 한 stream 만 갱신돼도 publicColumns/recentPosts/tours/lectures 4개 useMemo 모두 재실행. 각 stream 별 tick state 분리 → 무관 stream 갱신 시 정렬/필터 재실행 차단. 호환용 dataTick(=합산) 유지 — HeroProgramCards/BookCarouselSection 백워드 호환.",
+      "ℹ ★ 워커 wrangler deploy 필요 (CDN 캐시 헤더 적용).",
+      "📦 cache-buster — `?v=00.198.000`.",
+    ],
+    context: "이전 사이클 보류 옵션 A(admin lazy-load) + C(워커 캐시) 모두 진행 + Bonus 1(HomePage dataTick split). 사용자 보고 '속도감 ↑ + 회귀 0' 우선순위 충족 — 모든 변경에 admin/auth 가드 + idempotent + retry. 보류: handlePostsList N+1 (posts 는 admin/draft 분기로 인해 캐시 위험 — 별도 사이클).",
+  },
+  {
     version: "00.197.000",
     date: "2026-05-06",
     datetime: "2026-05-06T14:00:00+09:00",

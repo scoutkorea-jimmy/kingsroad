@@ -211,6 +211,93 @@ const pathToRoute = (pathname) => {
 };
 const routeToPath = (r) => r === 'home' ? '/' : '/' + r;
 
+// v00.198 — admin lazy-load.
+// 사용자 우선순위 '홈페이지 반응성 + 기능 회귀 0 + 속도감'.
+// 이전엔 4개 admin 스크립트 (총 ~3.85MB raw / ~360KB gz) 가 모든 방문자에게 강제 defer 로드 →
+// 비-admin 99% 가 admin 코드 다운/파스/컴파일.
+// 해법: index.html 에서 4개 제거 + admin route 진입 시 동적 주입. async=false 로 순서 보존.
+// idempotent — 한 번 로드되면 메모리 캐시 (재진입 시 즉시 렌더). 실패 시 1회 retry.
+const ADMIN_SCRIPTS = [
+  'pages/admin/AdminShared.js',
+  'pages/admin/AdminContentEditors.js',
+  'pages/admin/AdminDesignHub.js',
+  'pages/AuthAdminPage.js',
+];
+let _adminLoadPromise = null;
+const _loadAdminScripts = (attempt = 0) => {
+  if (_adminLoadPromise) return _adminLoadPromise;
+  if (typeof window !== 'undefined' && window.AdminPage) {
+    _adminLoadPromise = Promise.resolve();
+    return _adminLoadPromise;
+  }
+  const v = (window.BGNJ_VERSION?.version || '').toString();
+  const qs = v ? `?v=${v}` : '';
+  _adminLoadPromise = new Promise((resolve, reject) => {
+    let remaining = ADMIN_SCRIPTS.length;
+    let failed = false;
+    ADMIN_SCRIPTS.forEach((src) => {
+      const fullSrc = src + qs;
+      const existing = document.querySelector(`script[data-bgnj-admin][src="${fullSrc}"]`);
+      if (existing) {
+        // 이미 다른 호출이 주입한 경우 — 기존 onload 가 처리.
+        if (existing.dataset.loaded === '1') {
+          if (--remaining === 0 && !failed) resolve();
+        } else {
+          existing.addEventListener('load', () => {
+            existing.dataset.loaded = '1';
+            if (--remaining === 0 && !failed) resolve();
+          });
+          existing.addEventListener('error', () => { failed = true; reject(new Error(`${src} load failed`)); });
+        }
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = fullSrc;
+      s.async = false; // 순서 보존 — AuthAdminPage 가 AdminShared/Editors/DesignHub 의 window globals 참조.
+      s.defer = false;
+      s.dataset.bgnjAdmin = '1';
+      s.onload = () => {
+        s.dataset.loaded = '1';
+        if (--remaining === 0 && !failed) resolve();
+      };
+      s.onerror = () => {
+        failed = true;
+        reject(new Error(`${src} load failed`));
+      };
+      document.head.appendChild(s);
+    });
+  }).catch((err) => {
+    _adminLoadPromise = null; // 실패 시 다음 호출이 retry 가능하게.
+    if (attempt < 1) {
+      // 1회 retry (network blip 회복).
+      return new Promise((r) => setTimeout(r, 600)).then(() => _loadAdminScripts(attempt + 1));
+    }
+    throw err;
+  });
+  return _adminLoadPromise;
+};
+
+const _AdminLoadingFallback = ({ error, onRetry }) => (
+  <div style={{padding:48, textAlign:'center', minHeight:'60vh', display:'flex', alignItems:'center', justifyContent:'center'}}>
+    <div>
+      <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.18em', marginBottom:10}}>
+        {error ? 'ADMIN · LOAD FAILED' : 'ADMIN · LOADING'}
+      </div>
+      <div className="ko-serif" style={{fontSize:18, marginBottom:14, color:'var(--ink)'}}>
+        {error ? '관리자 페이지를 불러오지 못했습니다' : '관리자 페이지를 불러오는 중…'}
+      </div>
+      {error ? (
+        <>
+          <div className="dim-2" style={{fontSize:12, marginBottom:14}}>{error?.message || '알 수 없는 오류'}</div>
+          <button type="button" className="btn btn-small" onClick={onRetry}>다시 시도</button>
+        </>
+      ) : (
+        <div className="dim-2" style={{fontSize:12}}>처음 진입 시 ~1초 소요됩니다.</div>
+      )}
+    </div>
+  </div>
+);
+
 const App = () => {
   const [route, setRoute] = React.useState(() => {
     // URL 우선. 폴백으로 localStorage.
@@ -462,6 +549,21 @@ const App = () => {
 
   const hideNav = route === "login" || route === "signup" || route === "admin";
 
+  // v00.198 — admin lazy-load. route 진입 시 동적 스크립트 주입.
+  const [adminLoaded, setAdminLoaded] = React.useState(() => typeof window !== 'undefined' && !!window.AdminPage);
+  const [adminLoadError, setAdminLoadError] = React.useState(null);
+  const [adminLoadAttempt, setAdminLoadAttempt] = React.useState(0);
+  React.useEffect(() => {
+    if (route !== 'admin') return;
+    if (adminLoaded) return;
+    let cancelled = false;
+    setAdminLoadError(null);
+    _loadAdminScripts()
+      .then(() => { if (!cancelled) setAdminLoaded(true); })
+      .catch((err) => { if (!cancelled) setAdminLoadError(err); });
+    return () => { cancelled = true; };
+  }, [route, adminLoaded, adminLoadAttempt]);
+
   // 페이지 컴포넌트를 window 에서 defensive lookup — babel-standalone 스크립트 로드 순서/실패에
   // 견고하게 동작. 컴포넌트가 없으면 fallback UI 렌더(전체 앱 트리는 죽지 않게).
   const renderPage = () => {
@@ -494,6 +596,11 @@ const App = () => {
       case "signup":    { const C = pick('LoginPage','로그인'); return <C go={go} setUser={setUser}/>; }
       case "admin":     {
         if (!user?.isAdmin) { const D = pick('AdminDenied','관리'); return <D go={go} user={user}/>; }
+        // v00.198 — 스크립트 lazy-load. 미준비 시 로딩 화면, 실패 시 retry UI.
+        if (!adminLoaded) {
+          return <_AdminLoadingFallback error={adminLoadError}
+            onRetry={() => { setAdminLoadError(null); setAdminLoadAttempt((v) => v + 1); }}/>;
+        }
         const C = pick('AdminPage','관리'); return <C go={go} user={user}/>;
       }
       // v00.145 — 404: 알 수 없는 라우트는 home 으로 폴백하지 않고 Error404Page 노출.
