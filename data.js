@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.218.000",
+  version: "00.219.000",
   build: "2026.05.06",
   channel: "preview",
 };
@@ -1867,6 +1867,26 @@ window.BGNJ_COLUMNS = {
   // 실제 작성된 칼럼만 노출. getColumn 단건 조회는 seed 호환을 위해 폴백 유지.
   listPublic() {
     return this._columns.filter((c) => (c.status || 'published') === 'published');
+  },
+  // v00.219 — 칼럼 일련번호 (#001, #002...). 발행일 오름차순 stable.
+  // 공유 URL 단축(#col-N)·카드/상세 헤더 표시 용도. 새 칼럼이 추가돼도 기존 번호는 유지.
+  _numbered() {
+    const arr = this.listPublic().slice().sort((a, b) => {
+      const ka = String(a.createdAt || a.publishedAt || a.scheduledAt || a.date || '');
+      const kb = String(b.createdAt || b.publishedAt || b.scheduledAt || b.date || '');
+      return ka.localeCompare(kb);
+    });
+    return arr.map((c, i) => ({ id: String(c.id), number: i + 1 }));
+  },
+  numberOf(id) {
+    const hit = this._numbered().find((x) => x.id === String(id));
+    return hit ? hit.number : null;
+  },
+  idByNumber(n) {
+    const num = Number(n);
+    if (!Number.isFinite(num) || num <= 0) return null;
+    const hit = this._numbered().find((x) => x.number === num);
+    return hit ? hit.id : null;
   },
   getColumn(id) {
     const fromUser = this._columns.find((c) => String(c.id) === String(id));

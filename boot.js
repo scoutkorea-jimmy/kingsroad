@@ -635,13 +635,17 @@ const App = () => {
   }, []);
   React.useEffect(() => {
     const applyHash = () => {
+      var _a, _b;
       const h = window.location.hash || "";
       const colMatch = h.match(/^#col-(.+)$/);
       const postMatch = h.match(/^#post-(.+)$/);
       const lectureMatch = h.match(/^#lecture-(.+)$/);
       if (colMatch) {
+        const raw = decodeURIComponent(colMatch[1]);
+        const isNumeric = /^\d+$/.test(raw);
+        const resolved = isNumeric ? ((_b = (_a = window.BGNJ_COLUMNS) == null ? void 0 : _a.idByNumber) == null ? void 0 : _b.call(_a, raw)) || raw : raw;
         try {
-          sessionStorage.setItem("bgnj_pending_column_id", decodeURIComponent(colMatch[1]));
+          sessionStorage.setItem("bgnj_pending_column_id", resolved);
         } catch (e) {
         }
         setRoute("column");

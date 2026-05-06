@@ -613,7 +613,11 @@ const App = () => {
       const postMatch = h.match(/^#post-(.+)$/);
       const lectureMatch = h.match(/^#lecture-(.+)$/);
       if (colMatch) {
-        try { sessionStorage.setItem('bgnj_pending_column_id', decodeURIComponent(colMatch[1])); } catch {}
+        // v00.219 — #col-N (숫자) 도 수용. BGNJ_COLUMNS.idByNumber 로 실제 id 변환.
+        const raw = decodeURIComponent(colMatch[1]);
+        const isNumeric = /^\d+$/.test(raw);
+        const resolved = isNumeric ? (window.BGNJ_COLUMNS?.idByNumber?.(raw) || raw) : raw;
+        try { sessionStorage.setItem('bgnj_pending_column_id', resolved); } catch {}
         setRoute('column');
         try { localStorage.setItem('bgnj_route', 'column'); } catch {}
       } else if (postMatch) {

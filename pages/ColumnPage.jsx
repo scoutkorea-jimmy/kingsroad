@@ -81,7 +81,10 @@ const ColumnPage = ({ go, user }) => {
   };
 
   const handleShare = async () => {
-    const url = `${location.origin}${location.pathname}#col-${selectedId}`;
+    // v00.219 — 공유 URL 단축: #col-{id} → #col-{N} (일련번호). 보내기 쉽고 짧음.
+    const num = window.BGNJ_COLUMNS?.numberOf?.(selectedId);
+    const slug = num ? `col-${num}` : `col-${selectedId}`;
+    const url = `${location.origin}${location.pathname}#${slug}`;
     try {
       await navigator.clipboard.writeText(url);
       setShareMsg("공유 링크가 복사되었습니다.");
@@ -149,6 +152,15 @@ const ColumnPage = ({ go, user }) => {
             ← 아카이브로
           </button>
           <div style={{textAlign:'center', marginBottom:40}}>
+            {/* v00.219 — 칼럼 일련번호. 공유 URL #col-N 과 동일 번호. */}
+            {(() => {
+              const num = window.BGNJ_COLUMNS?.numberOf?.(c.id);
+              return num ? (
+                <div className="mono gold" style={{fontSize:11, letterSpacing:'0.3em', marginBottom:14}}>
+                  COLUMN #{String(num).padStart(3, '0')}
+                </div>
+              ) : null;
+            })()}
             <span className="pill">{c.category}</span>
             <h1 style={{fontFamily:'var(--font-serif)', fontSize:48, fontWeight:500, lineHeight:1.2, margin:'20px 0 16px'}}>
               {c.title}
@@ -407,6 +419,11 @@ const ColumnPage = ({ go, user }) => {
                   )}
                   <div style={{padding:28}}>
                     <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:12, flexWrap:'wrap'}}>
+                      {/* v00.219 — 일련번호 #NNN. 공유 URL 의 #col-N 과 동일. */}
+                      {(() => {
+                        const num = window.BGNJ_COLUMNS?.numberOf?.(c.id);
+                        return num ? <span className="mono gold" style={{fontSize:10, letterSpacing:'0.16em'}}>#{String(num).padStart(3, '0')}</span> : null;
+                      })()}
                       <span className="pill">{c.category}</span>
                       <span className="mono dim-2" style={{fontSize:10}}>{readTime}</span>
                       {likes.length > 0 && <span className="gold mono" style={{fontSize:10}}>♥{likes.length}</span>}
