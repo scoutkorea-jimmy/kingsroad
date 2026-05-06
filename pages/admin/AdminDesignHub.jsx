@@ -2922,14 +2922,19 @@ const DesignSystemView = () => {
   // 스페이싱 스케일
   const SPACING = [4, 8, 12, 16, 20, 24, 32, 40, 60, 80];
 
-  // 라운드/엘리베이션 정의
+  // 라운드/엘리베이션 정의 — styles.css 의 실제 값 기준.
+  // 카드/표/모달은 직각, 인터랙션 요소(버튼/필드)만 미세 라운드, 칩/배지만 캡슐.
   const RADIUS = [
-    { name: '0', value: '0px', usage: '기본 — 모든 카드/표/버튼은 90% 직각 (편집 디자인 무드)' },
-    { name: '999', value: '999px', usage: '필터 칩 / 배지 (둥근 캡슐)' },
+    { name: '0', value: '0px', usage: '카드 / 표 / 모달 / 인포 박스 — 기본 (편집 디자인 무드)' },
+    { name: '4', value: '4px', usage: '필드 입력 (`.field-input`) · 토스트 — 미세 라운드' },
+    { name: '6', value: '6px', usage: '소형 버튼 (`.btn-small`)' },
+    { name: '8', value: '8px', usage: '기본 버튼 (`.btn`) · 카드 내부 액션 박스' },
+    { name: '999', value: '999px', usage: '필터 칩 · 태그 칩 (`.tag-chip`) · 배지 캡슐' },
   ];
   const SHADOW = [
     { name: 'none', value: 'none', usage: '기본 — 그림자는 거의 없음 (선과 색으로 위계)' },
-    { name: 'modal', value: '0 16px 40px rgba(0,0,0,0.25)', usage: '모달 (LegalModal/SuspendDialog/PostViewerModal)' },
+    { name: 'modal', value: '0 16px 40px rgba(0,0,0,0.25)', usage: '모달 컨테이너 (LegalModal/SuspendDialog/PostViewerModal)' },
+    { name: 'modal-bg', value: 'rgba(0,0,0,0.55) backdrop', usage: '모달 백드롭 — 본문보다 어둡게, fixed inset 0' },
     { name: 'toast', value: '0 8px 24px rgba(0,0,0,0.14)', usage: '우하단 GlobalErrorToast' },
   ];
 
@@ -3094,9 +3099,9 @@ const DesignSystemView = () => {
         definition="짧은 라벨로 상태나 분류를 표시. 둥근 캡슐(필터 칩) vs 직각 박스(상태 배지) 두 패턴."
         characteristics={[
           '배지(.badge) — 직각, 작은 텍스트, 등급/카테고리.',
-          '골드 배지(.badge-badge-gold) — 카테고리/등급 강조.',
+          '골드 배지(.badge.badge-gold) — 카테고리/등급 강조 (`.badge` 와 함께 사용).',
           '태그 칩(.tag-chip) — 해시태그/말머리.',
-          '필터 칩 — 둥근 캡슐, 활성 시 골드 배경 + 흰 텍스트.',
+          '필터 칩 — 현재 inline style 로만 구현 (전용 클래스 미정). borderRadius:999 + 활성=골드 배경 / 비활성=라인.',
         ]}
         usage={[
           '게시글 카테고리/HOT/관리자 등급 → `.badge`',
@@ -3127,15 +3132,18 @@ const DesignSystemView = () => {
       <DSSection
         eyebrow="06 · FORMS"
         title="입력 필드 · 라벨"
-        definition="모든 폼은 같은 외형. `.field-input` 한 클래스로 input/textarea/select 통일. 라벨은 위에 작은 글씨."
+        definition={'모든 폼은 `<div className="field">` 래퍼 안에 `.field-label` + `.field-input` 두 자식으로 구성. input/textarea/select 모두 동일 외형 — `.field-input` 한 클래스로 통일.'}
         characteristics={[
-          '필드 라벨은 `field-label` — 작은 회색 한글.',
-          '필수 표시는 골드 별표(★) — 라벨 옆에.',
+          '래퍼 `.field` — 세로 8px 간격 자동.',
+          '라벨 `.field-label` — 작은 회색 한글, 입력 위.',
+          '입력 `.field-input` — input/textarea/select 공통 (변수 아닌 클래스).',
+          '필수 표시는 골드 별표(★) — 라벨 옆에 `<span className="gold">★</span>`.',
           '필드 폭은 폼 컨테이너에 따라 자동, 짧은 입력만 maxWidth 명시.',
           '에러 메시지는 폼 안 인라인 박스 (alert 사용 금지).',
         ]}
         usage={[
-          'input/textarea/select 모두 `<input className="field-input"/>` 패턴.',
+          '표준 패턴: `<div className="field"><label className="field-label">…</label><input className="field-input"/></div>`',
+          '체크박스/라디오는 `.field` 래퍼 + 인라인 `<label>` 조합 (별도 클래스 없음).',
           '폼 제출 후 결과는 인라인 박스(성공: 골드 / 실패: 빨강).',
         ]}
       >
@@ -3204,18 +3212,30 @@ const DesignSystemView = () => {
       <DSSection
         eyebrow="08 · TABLES"
         title="데이터 표"
-        definition="여러 행 데이터의 표준 노출 방식. 카드 그리드보다 표가 정렬·비교에 더 적합한 경우 우선."
+        definition="여러 행 데이터의 표준 노출 방식. 표 위 3단 메타(eyebrow / title / action) → 표 본체. 카드 그리드보다 표가 정렬·비교에 더 적합한 경우 우선."
         characteristics={[
-          '헤더: bg-2 배경 + mono dim-2 + letter-spacing 0.2em + uppercase 영문.',
+          '표 위 메타 영역(권장): mono eyebrow 라벨 + ko-serif 제목 + 우측 action(검색/필터/추가). flex space-between 정렬.',
+          '표 헤더(thead): bg-2 배경 + mono dim-2 + letter-spacing 0.2em + uppercase 영문 컬럼명.',
           '행 구분: borderTop 1px solid var(--line) — 줄무늬 없음.',
-          '셀 padding: 10–14px.',
-          '액션 컬럼은 우측 정렬, 작은 버튼만.',
+          '셀 padding: 10–14px. 이름은 ko-serif, 메타/시각은 mono dim-2.',
+          '액션 컬럼은 우측 정렬, `.btn.btn-small` 만 사용.',
         ]}
         usage={[
           'ROPA, 회원 목록, 입금 계좌, 책 주문, 오류 로그.',
           '컬럼 5개 미만이면 카드 그리드도 검토 가능.',
         ]}
       >
+        {/* 표 위 3단 메타 — eyebrow / title / action */}
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:10, gap:14, flexWrap:'wrap'}}>
+          <div>
+            <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:4}}>MEMBERS · 활성 · 124명</div>
+            <h3 className="ko-serif" style={{fontSize:18, margin:0}}>회원 목록</h3>
+          </div>
+          <div style={{display:'flex', gap:8, alignItems:'center'}}>
+            <input className="field-input" placeholder="이름/이메일 검색" style={{maxWidth:200, padding:'6px 10px', fontSize:12}} readOnly/>
+            <button type="button" className="btn btn-small">필터</button>
+          </div>
+        </div>
         <div style={{overflowX:'auto', border:'1px solid var(--line)'}}>
           <table style={{width:'100%', borderCollapse:'collapse', fontSize:13}}>
             <thead>
@@ -3259,21 +3279,28 @@ const DesignSystemView = () => {
           'PostViewerModal — 관리자 게시글 본문/댓글 조회',
         ]}
       >
+        {/* 백드롭(rgba 0,0,0,0.55) 위에 모달 컨테이너가 떠 있는 모습을 시뮬레이션 */}
         <div style={{
-          padding:'24px 28px', background:'var(--bg)',
-          maxWidth:560, border:'1px solid var(--line)',
-          boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+          position:'relative', padding:32, background:'rgba(0,0,0,0.55)',
+          border:'1px dashed var(--line-2)',
         }}>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
-            <h3 className="ko-serif" style={{fontSize:20, margin:0}}>모달 제목</h3>
-            <button type="button" className="btn btn-small">닫기</button>
-          </div>
-          <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:16}}>
-            모달은 결정이 필요한 순간에만 띄웁니다. 본문에 폼이 들어갈 수 있고, 우하단 액션은 우선순위에 따라 정렬합니다.
-          </p>
-          <div style={{display:'flex', justifyContent:'flex-end', gap:8}}>
-            <button type="button" className="btn">취소</button>
-            <button type="button" className="btn btn-gold">확인</button>
+          <div className="mono dim-2" style={{position:'absolute', top:8, left:12, fontSize:9, letterSpacing:'0.18em', color:'rgba(255,255,255,0.7)'}}>BACKDROP · rgba(0,0,0,0.55)</div>
+          <div style={{
+            padding:'24px 28px', background:'var(--bg)',
+            maxWidth:560, margin:'0 auto', border:'1px solid var(--line)',
+            boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+          }}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
+              <h3 className="ko-serif" style={{fontSize:20, margin:0}}>모달 제목</h3>
+              <button type="button" className="btn btn-small">닫기</button>
+            </div>
+            <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:16}}>
+              모달은 결정이 필요한 순간에만 띄웁니다. 본문에 폼이 들어갈 수 있고, 우하단 액션은 우선순위에 따라 정렬합니다.
+            </p>
+            <div style={{display:'flex', justifyContent:'flex-end', gap:8}}>
+              <button type="button" className="btn">취소</button>
+              <button type="button" className="btn btn-gold">확인</button>
+            </div>
           </div>
         </div>
       </DSSection>
@@ -3471,6 +3498,18 @@ const ADMIN_DESIGN_SECTIONS = [
     ],
   },
   {
+    title: "편집 디자인 무드 — 'AI-같지 않은' 톤 원칙",
+    points: [
+      "사이트 전반은 잡지·단행본의 편집 디자인을 모티프로 합니다. AI 생성 사이트 특유의 균질한 그라데이션·과한 곡선·기성 아이콘 라이브러리에 의존한 인상을 회피.",
+      "톤은 절제·신뢰·여행자의 시선. 동양풍 장식체나 캘리그래피 헤더, 한지 텍스처, 단풍/궁궐 클립아트 같은 1차원적 한국 표상을 사용하지 않습니다.",
+      "헤드라인은 KBL Jump (와이드/볼드) 로 신문 헤드 같은 권위, 본문은 Wanted Sans 의 산세리프 단정함, 게시글 본문은 조선일보 명조의 전통 활자 무드 — 세 글꼴이 위계를 만들어 무드를 구성.",
+      "여백은 8/12/16/24/32 4의 배수 리듬으로 행간/단락을 정렬. '왠지 모르게 답답한' 인상은 거의 여백 부족이 원인.",
+      "그라데이션은 카드 배경 한정(card-gold 의 옅은 옐로우만), 그림자는 모달/토스트 외 거의 없음 — 선과 색으로만 위계.",
+      "이모지/아이콘: 본문 강조에는 ⓘ ✓ ★ 등 식자(글리프) 만 사용. 컬러풀한 이모지 도배 / lucide·material·heroicons 같은 외부 아이콘 라이브러리를 새로 끌어오지 않습니다 (의존성 + 시각 통일성 양쪽 비용).",
+      "마이크로 인터랙션은 hover 색 전환 / focus ring 정도로 한정. 풍선 튀어나오기·번쩍 효과·fade-up scroll-reveal 같은 트렌드는 도입하지 않습니다.",
+    ],
+  },
+  {
     title: "컬러 원칙 (실제 토큰)",
     points: [
       "Primary (5% — 키컬러): var(--primary) #F5D548 로고 옐로우. CTA·로고·활성 탭·focus·active toggle 등 인터랙션 상태에만. 호버는 var(--primary-hover) #E5BF2E, 누름은 var(--primary-active) #C99E1A.",
@@ -3482,6 +3521,7 @@ const ADMIN_DESIGN_SECTIONS = [
       "회원 등급 색상: guest #A8A29E → member #FCD34D → reader #F5D548 → scholar #F59E0B → wangsanam #D97706 → admin #92400E (Sunny Gold 그라데이션 — 등급은 시각적 위계라 5% 룰 예외).",
       "CTA 텍스트: 옐로우 배경(#F5D548) 위에는 var(--on-primary) #0F172A 다크 잉크 사용 (WCAG AA 통과 — 흰 글씨 대비 부족).",
       "5% 룰: 한 화면에서 옐로우 면적이 시각적으로 5%를 넘으면 다른 토큰으로 대체. 라벨/eyebrow/배지는 var(--ink-3) 가 기본.",
+      "레거시 호환 alias (`--gold` / `--gold-dim` / `--gold-ink` / `--cta-rest` / `--cta-hover` / `--cta-active`): 신규 코드는 `--primary*` / `--on-primary` 사용. 레거시 토큰은 styles.css 에 alias 로만 남아있고 점진적으로 마이그레이션 (P2 plan).",
     ],
   },
   {
@@ -3503,7 +3543,7 @@ const ADMIN_DESIGN_SECTIONS = [
       "관리자 패널: 좌측 260px 사이드바(7개 그룹) + 본문 스크롤러. 사이드바 그룹: 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리.",
       "데이터 표현: '한 화면 안에 정렬되는 표' 우선 (ROPA, 회원, 오류 로그, 계좌). 카드 그리드는 동일 레벨 4개 이상에서만.",
       "모달: 어두운 반투명 배경(rgba 0,0,0,0.55) + 중앙 정렬 + Esc/바깥 클릭/닫기 버튼 모두 동작 (예: SuspendDialog, LegalModal, PostViewerModal).",
-      "필드/버튼: var(--field-input) / .btn / .btn-gold / .btn-small / .btn-ghost 5종이 표준. 커스텀 인라인 스타일은 메타 정보 또는 일회성 강조에만.",
+      "필드/버튼: `.field-input` (클래스, 변수 아님) / `.btn` / `.btn-gold` / `.btn-small` / `.btn-ghost` 5종이 표준. 폼은 `.field` 래퍼 + `.field-label` + `.field-input` 3단 구조. 커스텀 인라인 스타일은 메타 정보 또는 일회성 강조에만.",
       "오류/성공 피드백: 인라인 박스(폼 안) 또는 우하단 토스트(전역) 둘 중 하나. alert() 는 사용 금지(대화형은 모달).",
       "여백 단위: 8/12/16/24/32 (세로 리듬). 카드 padding 18~24px.",
     ],
@@ -3523,7 +3563,8 @@ const ADMIN_DESIGN_SECTIONS = [
       "보라색 계열을 브랜드 주색처럼 사용하지 않습니다.",
       "이전 다크 먹색 테마로 회귀하지 않습니다 (v00.026 이후 라이트 톤이 표준).",
       "과한 그라데이션·유행형 마이크로 인터랙션·귀여운 이모지 아이콘으로 분위기를 흩뜨리지 않습니다.",
-      "alert() / window.confirm() 외 모든 대화 흐름은 모달 컴포넌트로 처리합니다 (window.confirm 은 정지·삭제 같은 단발 확인에만 한정).",
+      "원칙: 모든 대화 흐름은 모달 컴포넌트로 처리. alert() 는 신규 코드에서 금지 — 인라인 박스(폼 안) 또는 우하단 토스트(BGNJ_TOAST) 사용. 기존 코드의 잔여 alert() (특히 AuthAdminPage) 는 점진 교체 plan 진행 중.",
+      "단발 확인(정지·삭제 등) 은 모달 confirm 컴포넌트(SuspendDialog 패턴) 사용 — `window.confirm()` 은 신규 도입 금지.",
       "관리자 화면에 raw JSON / 영문-only 텍스트를 사용자에게 노출하지 않습니다.",
     ],
   },

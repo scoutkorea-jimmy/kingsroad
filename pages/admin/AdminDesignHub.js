@@ -2914,12 +2914,16 @@ const DesignSystemView = () => {
   ];
   const SPACING = [4, 8, 12, 16, 20, 24, 32, 40, 60, 80];
   const RADIUS = [
-    { name: "0", value: "0px", usage: "\uAE30\uBCF8 \u2014 \uBAA8\uB4E0 \uCE74\uB4DC/\uD45C/\uBC84\uD2BC\uC740 90% \uC9C1\uAC01 (\uD3B8\uC9D1 \uB514\uC790\uC778 \uBB34\uB4DC)" },
-    { name: "999", value: "999px", usage: "\uD544\uD130 \uCE69 / \uBC30\uC9C0 (\uB465\uADFC \uCEA1\uC290)" }
+    { name: "0", value: "0px", usage: "\uCE74\uB4DC / \uD45C / \uBAA8\uB2EC / \uC778\uD3EC \uBC15\uC2A4 \u2014 \uAE30\uBCF8 (\uD3B8\uC9D1 \uB514\uC790\uC778 \uBB34\uB4DC)" },
+    { name: "4", value: "4px", usage: "\uD544\uB4DC \uC785\uB825 (`.field-input`) \xB7 \uD1A0\uC2A4\uD2B8 \u2014 \uBBF8\uC138 \uB77C\uC6B4\uB4DC" },
+    { name: "6", value: "6px", usage: "\uC18C\uD615 \uBC84\uD2BC (`.btn-small`)" },
+    { name: "8", value: "8px", usage: "\uAE30\uBCF8 \uBC84\uD2BC (`.btn`) \xB7 \uCE74\uB4DC \uB0B4\uBD80 \uC561\uC158 \uBC15\uC2A4" },
+    { name: "999", value: "999px", usage: "\uD544\uD130 \uCE69 \xB7 \uD0DC\uADF8 \uCE69 (`.tag-chip`) \xB7 \uBC30\uC9C0 \uCEA1\uC290" }
   ];
   const SHADOW = [
     { name: "none", value: "none", usage: "\uAE30\uBCF8 \u2014 \uADF8\uB9BC\uC790\uB294 \uAC70\uC758 \uC5C6\uC74C (\uC120\uACFC \uC0C9\uC73C\uB85C \uC704\uACC4)" },
-    { name: "modal", value: "0 16px 40px rgba(0,0,0,0.25)", usage: "\uBAA8\uB2EC (LegalModal/SuspendDialog/PostViewerModal)" },
+    { name: "modal", value: "0 16px 40px rgba(0,0,0,0.25)", usage: "\uBAA8\uB2EC \uCEE8\uD14C\uC774\uB108 (LegalModal/SuspendDialog/PostViewerModal)" },
+    { name: "modal-bg", value: "rgba(0,0,0,0.55) backdrop", usage: "\uBAA8\uB2EC \uBC31\uB4DC\uB86D \u2014 \uBCF8\uBB38\uBCF4\uB2E4 \uC5B4\uB461\uAC8C, fixed inset 0" },
     { name: "toast", value: "0 8px 24px rgba(0,0,0,0.14)", usage: "\uC6B0\uD558\uB2E8 GlobalErrorToast" }
   ];
   return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 24 } }, /* @__PURE__ */ React.createElement("div", { className: "card card-gold", style: { padding: 24 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.24em", marginBottom: 8 } }, "DESIGN SYSTEM \xB7 \uB77C\uC774\uBE0C \uB3C4\uD30C"), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 26, marginBottom: 10 } }, "\uBC45\uAE30\uB178\uC790 \uB514\uC790\uC778 \uC2DC\uC2A4\uD15C"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14, lineHeight: 1.8, margin: 0 } }, "\uC0C8 \uD398\uC774\uC9C0\uB97C \uB9CC\uB4E4\uAC70\uB098 \uAE30\uC874 \uD654\uBA74\uC744 \uB2E4\uB4EC\uC744 \uB54C ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC774 \uD0ED\uC758 \uD1A0\uD070\uACFC \uCEF4\uD3EC\uB10C\uD2B8\uB97C \uADF8\uB300\uB85C \uC7AC\uC0AC\uC6A9"), "\uD569\uB2C8\uB2E4. \uD3B8\uC9D1 \uB514\uC790\uC778\uC758 \uBB34\uB4DC(\uC21C\uBC31 \uBCA0\uC774\uC2A4 + Sunny Gold \uC610\uB85C\uC6B0 \uAC15\uC870 + Caramel Ink \uD3EC\uC778\uD2B8) \uC548\uC5D0\uC11C \uC815\uBCF4\uAC00 \uB610\uB837\uD558\uAC8C \uC815\uB82C\uB418\uB3C4\uB85D \uB9CC\uB4ED\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement(
@@ -3027,9 +3031,9 @@ const DesignSystemView = () => {
       definition: "\uC9E7\uC740 \uB77C\uBCA8\uB85C \uC0C1\uD0DC\uB098 \uBD84\uB958\uB97C \uD45C\uC2DC. \uB465\uADFC \uCEA1\uC290(\uD544\uD130 \uCE69) vs \uC9C1\uAC01 \uBC15\uC2A4(\uC0C1\uD0DC \uBC30\uC9C0) \uB450 \uD328\uD134.",
       characteristics: [
         "\uBC30\uC9C0(.badge) \u2014 \uC9C1\uAC01, \uC791\uC740 \uD14D\uC2A4\uD2B8, \uB4F1\uAE09/\uCE74\uD14C\uACE0\uB9AC.",
-        "\uACE8\uB4DC \uBC30\uC9C0(.badge-badge-gold) \u2014 \uCE74\uD14C\uACE0\uB9AC/\uB4F1\uAE09 \uAC15\uC870.",
+        "\uACE8\uB4DC \uBC30\uC9C0(.badge.badge-gold) \u2014 \uCE74\uD14C\uACE0\uB9AC/\uB4F1\uAE09 \uAC15\uC870 (`.badge` \uC640 \uD568\uAED8 \uC0AC\uC6A9).",
         "\uD0DC\uADF8 \uCE69(.tag-chip) \u2014 \uD574\uC2DC\uD0DC\uADF8/\uB9D0\uBA38\uB9AC.",
-        "\uD544\uD130 \uCE69 \u2014 \uB465\uADFC \uCEA1\uC290, \uD65C\uC131 \uC2DC \uACE8\uB4DC \uBC30\uACBD + \uD770 \uD14D\uC2A4\uD2B8."
+        "\uD544\uD130 \uCE69 \u2014 \uD604\uC7AC inline style \uB85C\uB9CC \uAD6C\uD604 (\uC804\uC6A9 \uD074\uB798\uC2A4 \uBBF8\uC815). borderRadius:999 + \uD65C\uC131=\uACE8\uB4DC \uBC30\uACBD / \uBE44\uD65C\uC131=\uB77C\uC778."
       ],
       usage: [
         "\uAC8C\uC2DC\uAE00 \uCE74\uD14C\uACE0\uB9AC/HOT/\uAD00\uB9AC\uC790 \uB4F1\uAE09 \u2192 `.badge`",
@@ -3057,15 +3061,18 @@ const DesignSystemView = () => {
     {
       eyebrow: "06 \xB7 FORMS",
       title: "\uC785\uB825 \uD544\uB4DC \xB7 \uB77C\uBCA8",
-      definition: "\uBAA8\uB4E0 \uD3FC\uC740 \uAC19\uC740 \uC678\uD615. `.field-input` \uD55C \uD074\uB798\uC2A4\uB85C input/textarea/select \uD1B5\uC77C. \uB77C\uBCA8\uC740 \uC704\uC5D0 \uC791\uC740 \uAE00\uC528.",
+      definition: '\uBAA8\uB4E0 \uD3FC\uC740 `<div className="field">` \uB798\uD37C \uC548\uC5D0 `.field-label` + `.field-input` \uB450 \uC790\uC2DD\uC73C\uB85C \uAD6C\uC131. input/textarea/select \uBAA8\uB450 \uB3D9\uC77C \uC678\uD615 \u2014 `.field-input` \uD55C \uD074\uB798\uC2A4\uB85C \uD1B5\uC77C.',
       characteristics: [
-        "\uD544\uB4DC \uB77C\uBCA8\uC740 `field-label` \u2014 \uC791\uC740 \uD68C\uC0C9 \uD55C\uAE00.",
-        "\uD544\uC218 \uD45C\uC2DC\uB294 \uACE8\uB4DC \uBCC4\uD45C(\u2605) \u2014 \uB77C\uBCA8 \uC606\uC5D0.",
+        "\uB798\uD37C `.field` \u2014 \uC138\uB85C 8px \uAC04\uACA9 \uC790\uB3D9.",
+        "\uB77C\uBCA8 `.field-label` \u2014 \uC791\uC740 \uD68C\uC0C9 \uD55C\uAE00, \uC785\uB825 \uC704.",
+        "\uC785\uB825 `.field-input` \u2014 input/textarea/select \uACF5\uD1B5 (\uBCC0\uC218 \uC544\uB2CC \uD074\uB798\uC2A4).",
+        '\uD544\uC218 \uD45C\uC2DC\uB294 \uACE8\uB4DC \uBCC4\uD45C(\u2605) \u2014 \uB77C\uBCA8 \uC606\uC5D0 `<span className="gold">\u2605</span>`.',
         "\uD544\uB4DC \uD3ED\uC740 \uD3FC \uCEE8\uD14C\uC774\uB108\uC5D0 \uB530\uB77C \uC790\uB3D9, \uC9E7\uC740 \uC785\uB825\uB9CC maxWidth \uBA85\uC2DC.",
         "\uC5D0\uB7EC \uBA54\uC2DC\uC9C0\uB294 \uD3FC \uC548 \uC778\uB77C\uC778 \uBC15\uC2A4 (alert \uC0AC\uC6A9 \uAE08\uC9C0)."
       ],
       usage: [
-        'input/textarea/select \uBAA8\uB450 `<input className="field-input"/>` \uD328\uD134.',
+        '\uD45C\uC900 \uD328\uD134: `<div className="field"><label className="field-label">\u2026</label><input className="field-input"/></div>`',
+        "\uCCB4\uD06C\uBC15\uC2A4/\uB77C\uB514\uC624\uB294 `.field` \uB798\uD37C + \uC778\uB77C\uC778 `<label>` \uC870\uD569 (\uBCC4\uB3C4 \uD074\uB798\uC2A4 \uC5C6\uC74C).",
         "\uD3FC \uC81C\uCD9C \uD6C4 \uACB0\uACFC\uB294 \uC778\uB77C\uC778 \uBC15\uC2A4(\uC131\uACF5: \uACE8\uB4DC / \uC2E4\uD328: \uBE68\uAC15)."
       ]
     },
@@ -3099,18 +3106,20 @@ const DesignSystemView = () => {
     {
       eyebrow: "08 \xB7 TABLES",
       title: "\uB370\uC774\uD130 \uD45C",
-      definition: "\uC5EC\uB7EC \uD589 \uB370\uC774\uD130\uC758 \uD45C\uC900 \uB178\uCD9C \uBC29\uC2DD. \uCE74\uB4DC \uADF8\uB9AC\uB4DC\uBCF4\uB2E4 \uD45C\uAC00 \uC815\uB82C\xB7\uBE44\uAD50\uC5D0 \uB354 \uC801\uD569\uD55C \uACBD\uC6B0 \uC6B0\uC120.",
+      definition: "\uC5EC\uB7EC \uD589 \uB370\uC774\uD130\uC758 \uD45C\uC900 \uB178\uCD9C \uBC29\uC2DD. \uD45C \uC704 3\uB2E8 \uBA54\uD0C0(eyebrow / title / action) \u2192 \uD45C \uBCF8\uCCB4. \uCE74\uB4DC \uADF8\uB9AC\uB4DC\uBCF4\uB2E4 \uD45C\uAC00 \uC815\uB82C\xB7\uBE44\uAD50\uC5D0 \uB354 \uC801\uD569\uD55C \uACBD\uC6B0 \uC6B0\uC120.",
       characteristics: [
-        "\uD5E4\uB354: bg-2 \uBC30\uACBD + mono dim-2 + letter-spacing 0.2em + uppercase \uC601\uBB38.",
+        "\uD45C \uC704 \uBA54\uD0C0 \uC601\uC5ED(\uAD8C\uC7A5): mono eyebrow \uB77C\uBCA8 + ko-serif \uC81C\uBAA9 + \uC6B0\uCE21 action(\uAC80\uC0C9/\uD544\uD130/\uCD94\uAC00). flex space-between \uC815\uB82C.",
+        "\uD45C \uD5E4\uB354(thead): bg-2 \uBC30\uACBD + mono dim-2 + letter-spacing 0.2em + uppercase \uC601\uBB38 \uCEEC\uB7FC\uBA85.",
         "\uD589 \uAD6C\uBD84: borderTop 1px solid var(--line) \u2014 \uC904\uBB34\uB2AC \uC5C6\uC74C.",
-        "\uC140 padding: 10\u201314px.",
-        "\uC561\uC158 \uCEEC\uB7FC\uC740 \uC6B0\uCE21 \uC815\uB82C, \uC791\uC740 \uBC84\uD2BC\uB9CC."
+        "\uC140 padding: 10\u201314px. \uC774\uB984\uC740 ko-serif, \uBA54\uD0C0/\uC2DC\uAC01\uC740 mono dim-2.",
+        "\uC561\uC158 \uCEEC\uB7FC\uC740 \uC6B0\uCE21 \uC815\uB82C, `.btn.btn-small` \uB9CC \uC0AC\uC6A9."
       ],
       usage: [
         "ROPA, \uD68C\uC6D0 \uBAA9\uB85D, \uC785\uAE08 \uACC4\uC88C, \uCC45 \uC8FC\uBB38, \uC624\uB958 \uB85C\uADF8.",
         "\uCEEC\uB7FC 5\uAC1C \uBBF8\uB9CC\uC774\uBA74 \uCE74\uB4DC \uADF8\uB9AC\uB4DC\uB3C4 \uAC80\uD1A0 \uAC00\uB2A5."
       ]
     },
+    /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10, gap: 14, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 4 } }, "MEMBERS \xB7 \uD65C\uC131 \xB7 124\uBA85"), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uD68C\uC6D0 \uBAA9\uB85D")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } }, /* @__PURE__ */ React.createElement("input", { className: "field-input", placeholder: "\uC774\uB984/\uC774\uBA54\uC77C \uAC80\uC0C9", style: { maxWidth: 200, padding: "6px 10px", fontSize: 12 }, readOnly: true }), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small" }, "\uD544\uD130"))),
     /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { style: { padding: "10px 14px", textAlign: "left" } }, "\uC774\uB984"), /* @__PURE__ */ React.createElement("th", { style: { padding: "10px 14px", textAlign: "left" } }, "\uB4F1\uAE09"), /* @__PURE__ */ React.createElement("th", { style: { padding: "10px 14px", textAlign: "left" } }, "\uAC00\uC785\uC77C"), /* @__PURE__ */ React.createElement("th", { style: { padding: "10px 14px", textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, [["\uBC15\uC9C0\uBBFC", "\uAD00\uB9AC\uC790", "2026.04.28"], ["\uB3CC\uB2F4\uC544\uB798", "\uB3C5\uC790", "2026.03.18"]].map(([n, g, d]) => /* @__PURE__ */ React.createElement("tr", { key: n, style: { borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: "10px 14px" } }, n), /* @__PURE__ */ React.createElement("td", { style: { padding: "10px 14px" } }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, g)), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 14px" } }, d), /* @__PURE__ */ React.createElement("td", { style: { padding: "10px 14px", textAlign: "right" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small" }, "\uC0C1\uC138")))))))
   ), /* @__PURE__ */ React.createElement(
     DSSection,
@@ -3131,12 +3140,18 @@ const DesignSystemView = () => {
       ]
     },
     /* @__PURE__ */ React.createElement("div", { style: {
+      position: "relative",
+      padding: 32,
+      background: "rgba(0,0,0,0.55)",
+      border: "1px dashed var(--line-2)"
+    } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { position: "absolute", top: 8, left: 12, fontSize: 9, letterSpacing: "0.18em", color: "rgba(255,255,255,0.7)" } }, "BACKDROP \xB7 rgba(0,0,0,0.55)"), /* @__PURE__ */ React.createElement("div", { style: {
       padding: "24px 28px",
       background: "var(--bg)",
       maxWidth: 560,
+      margin: "0 auto",
       border: "1px solid var(--line)",
       boxShadow: "0 16px 40px rgba(0,0,0,0.25)"
-    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, margin: 0 } }, "\uBAA8\uB2EC \uC81C\uBAA9"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small" }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, marginBottom: 16 } }, "\uBAA8\uB2EC\uC740 \uACB0\uC815\uC774 \uD544\uC694\uD55C \uC21C\uAC04\uC5D0\uB9CC \uB744\uC6C1\uB2C8\uB2E4. \uBCF8\uBB38\uC5D0 \uD3FC\uC774 \uB4E4\uC5B4\uAC08 \uC218 \uC788\uACE0, \uC6B0\uD558\uB2E8 \uC561\uC158\uC740 \uC6B0\uC120\uC21C\uC704\uC5D0 \uB530\uB77C \uC815\uB82C\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn" }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold" }, "\uD655\uC778")))
+    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, margin: 0 } }, "\uBAA8\uB2EC \uC81C\uBAA9"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small" }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, marginBottom: 16 } }, "\uBAA8\uB2EC\uC740 \uACB0\uC815\uC774 \uD544\uC694\uD55C \uC21C\uAC04\uC5D0\uB9CC \uB744\uC6C1\uB2C8\uB2E4. \uBCF8\uBB38\uC5D0 \uD3FC\uC774 \uB4E4\uC5B4\uAC08 \uC218 \uC788\uACE0, \uC6B0\uD558\uB2E8 \uC561\uC158\uC740 \uC6B0\uC120\uC21C\uC704\uC5D0 \uB530\uB77C \uC815\uB82C\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn" }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold" }, "\uD655\uC778"))))
   ), /* @__PURE__ */ React.createElement(
     DSSection,
     {
@@ -3238,6 +3253,18 @@ const ADMIN_DESIGN_SECTIONS = [
     ]
   },
   {
+    title: "\uD3B8\uC9D1 \uB514\uC790\uC778 \uBB34\uB4DC \u2014 'AI-\uAC19\uC9C0 \uC54A\uC740' \uD1A4 \uC6D0\uCE59",
+    points: [
+      "\uC0AC\uC774\uD2B8 \uC804\uBC18\uC740 \uC7A1\uC9C0\xB7\uB2E8\uD589\uBCF8\uC758 \uD3B8\uC9D1 \uB514\uC790\uC778\uC744 \uBAA8\uD2F0\uD504\uB85C \uD569\uB2C8\uB2E4. AI \uC0DD\uC131 \uC0AC\uC774\uD2B8 \uD2B9\uC720\uC758 \uADE0\uC9C8\uD55C \uADF8\uB77C\uB370\uC774\uC158\xB7\uACFC\uD55C \uACE1\uC120\xB7\uAE30\uC131 \uC544\uC774\uCF58 \uB77C\uC774\uBE0C\uB7EC\uB9AC\uC5D0 \uC758\uC874\uD55C \uC778\uC0C1\uC744 \uD68C\uD53C.",
+      "\uD1A4\uC740 \uC808\uC81C\xB7\uC2E0\uB8B0\xB7\uC5EC\uD589\uC790\uC758 \uC2DC\uC120. \uB3D9\uC591\uD48D \uC7A5\uC2DD\uCCB4\uB098 \uCE98\uB9AC\uADF8\uB798\uD53C \uD5E4\uB354, \uD55C\uC9C0 \uD14D\uC2A4\uCC98, \uB2E8\uD48D/\uAD81\uAD90 \uD074\uB9BD\uC544\uD2B8 \uAC19\uC740 1\uCC28\uC6D0\uC801 \uD55C\uAD6D \uD45C\uC0C1\uC744 \uC0AC\uC6A9\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.",
+      "\uD5E4\uB4DC\uB77C\uC778\uC740 KBL Jump (\uC640\uC774\uB4DC/\uBCFC\uB4DC) \uB85C \uC2E0\uBB38 \uD5E4\uB4DC \uAC19\uC740 \uAD8C\uC704, \uBCF8\uBB38\uC740 Wanted Sans \uC758 \uC0B0\uC138\uB9AC\uD504 \uB2E8\uC815\uD568, \uAC8C\uC2DC\uAE00 \uBCF8\uBB38\uC740 \uC870\uC120\uC77C\uBCF4 \uBA85\uC870\uC758 \uC804\uD1B5 \uD65C\uC790 \uBB34\uB4DC \u2014 \uC138 \uAE00\uAF34\uC774 \uC704\uACC4\uB97C \uB9CC\uB4E4\uC5B4 \uBB34\uB4DC\uB97C \uAD6C\uC131.",
+      "\uC5EC\uBC31\uC740 8/12/16/24/32 4\uC758 \uBC30\uC218 \uB9AC\uB4EC\uC73C\uB85C \uD589\uAC04/\uB2E8\uB77D\uC744 \uC815\uB82C. '\uC660\uC9C0 \uBAA8\uB974\uAC8C \uB2F5\uB2F5\uD55C' \uC778\uC0C1\uC740 \uAC70\uC758 \uC5EC\uBC31 \uBD80\uC871\uC774 \uC6D0\uC778.",
+      "\uADF8\uB77C\uB370\uC774\uC158\uC740 \uCE74\uB4DC \uBC30\uACBD \uD55C\uC815(card-gold \uC758 \uC605\uC740 \uC610\uB85C\uC6B0\uB9CC), \uADF8\uB9BC\uC790\uB294 \uBAA8\uB2EC/\uD1A0\uC2A4\uD2B8 \uC678 \uAC70\uC758 \uC5C6\uC74C \u2014 \uC120\uACFC \uC0C9\uC73C\uB85C\uB9CC \uC704\uACC4.",
+      "\uC774\uBAA8\uC9C0/\uC544\uC774\uCF58: \uBCF8\uBB38 \uAC15\uC870\uC5D0\uB294 \u24D8 \u2713 \u2605 \uB4F1 \uC2DD\uC790(\uAE00\uB9AC\uD504) \uB9CC \uC0AC\uC6A9. \uCEEC\uB7EC\uD480\uD55C \uC774\uBAA8\uC9C0 \uB3C4\uBC30 / lucide\xB7material\xB7heroicons \uAC19\uC740 \uC678\uBD80 \uC544\uC774\uCF58 \uB77C\uC774\uBE0C\uB7EC\uB9AC\uB97C \uC0C8\uB85C \uB04C\uC5B4\uC624\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4 (\uC758\uC874\uC131 + \uC2DC\uAC01 \uD1B5\uC77C\uC131 \uC591\uCABD \uBE44\uC6A9).",
+      "\uB9C8\uC774\uD06C\uB85C \uC778\uD130\uB799\uC158\uC740 hover \uC0C9 \uC804\uD658 / focus ring \uC815\uB3C4\uB85C \uD55C\uC815. \uD48D\uC120 \uD280\uC5B4\uB098\uC624\uAE30\xB7\uBC88\uCA4D \uD6A8\uACFC\xB7fade-up scroll-reveal \uAC19\uC740 \uD2B8\uB80C\uB4DC\uB294 \uB3C4\uC785\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+    ]
+  },
+  {
     title: "\uCEEC\uB7EC \uC6D0\uCE59 (\uC2E4\uC81C \uD1A0\uD070)",
     points: [
       "Primary (5% \u2014 \uD0A4\uCEEC\uB7EC): var(--primary) #F5D548 \uB85C\uACE0 \uC610\uB85C\uC6B0. CTA\xB7\uB85C\uACE0\xB7\uD65C\uC131 \uD0ED\xB7focus\xB7active toggle \uB4F1 \uC778\uD130\uB799\uC158 \uC0C1\uD0DC\uC5D0\uB9CC. \uD638\uBC84\uB294 var(--primary-hover) #E5BF2E, \uB204\uB984\uC740 var(--primary-active) #C99E1A.",
@@ -3248,7 +3275,8 @@ const ADMIN_DESIGN_SECTIONS = [
       "System Colors: var(--success) #16A34A \xB7 var(--warning) #D97706 \xB7 var(--info) #2563EB \xB7 var(--danger) #DC2626. \uC0C1\uD0DC \uC2E0\uD638 4\uC885 \u2014 primary \uC640 \uBA85\uB3C4/\uC0C9\uC0C1\uC73C\uB85C \uBA85\uD655\uD788 \uAD6C\uBD84.",
       "\uD68C\uC6D0 \uB4F1\uAE09 \uC0C9\uC0C1: guest #A8A29E \u2192 member #FCD34D \u2192 reader #F5D548 \u2192 scholar #F59E0B \u2192 wangsanam #D97706 \u2192 admin #92400E (Sunny Gold \uADF8\uB77C\uB370\uC774\uC158 \u2014 \uB4F1\uAE09\uC740 \uC2DC\uAC01\uC801 \uC704\uACC4\uB77C 5% \uB8F0 \uC608\uC678).",
       "CTA \uD14D\uC2A4\uD2B8: \uC610\uB85C\uC6B0 \uBC30\uACBD(#F5D548) \uC704\uC5D0\uB294 var(--on-primary) #0F172A \uB2E4\uD06C \uC789\uD06C \uC0AC\uC6A9 (WCAG AA \uD1B5\uACFC \u2014 \uD770 \uAE00\uC528 \uB300\uBE44 \uBD80\uC871).",
-      "5% \uB8F0: \uD55C \uD654\uBA74\uC5D0\uC11C \uC610\uB85C\uC6B0 \uBA74\uC801\uC774 \uC2DC\uAC01\uC801\uC73C\uB85C 5%\uB97C \uB118\uC73C\uBA74 \uB2E4\uB978 \uD1A0\uD070\uC73C\uB85C \uB300\uCCB4. \uB77C\uBCA8/eyebrow/\uBC30\uC9C0\uB294 var(--ink-3) \uAC00 \uAE30\uBCF8."
+      "5% \uB8F0: \uD55C \uD654\uBA74\uC5D0\uC11C \uC610\uB85C\uC6B0 \uBA74\uC801\uC774 \uC2DC\uAC01\uC801\uC73C\uB85C 5%\uB97C \uB118\uC73C\uBA74 \uB2E4\uB978 \uD1A0\uD070\uC73C\uB85C \uB300\uCCB4. \uB77C\uBCA8/eyebrow/\uBC30\uC9C0\uB294 var(--ink-3) \uAC00 \uAE30\uBCF8.",
+      "\uB808\uAC70\uC2DC \uD638\uD658 alias (`--gold` / `--gold-dim` / `--gold-ink` / `--cta-rest` / `--cta-hover` / `--cta-active`): \uC2E0\uADDC \uCF54\uB4DC\uB294 `--primary*` / `--on-primary` \uC0AC\uC6A9. \uB808\uAC70\uC2DC \uD1A0\uD070\uC740 styles.css \uC5D0 alias \uB85C\uB9CC \uB0A8\uC544\uC788\uACE0 \uC810\uC9C4\uC801\uC73C\uB85C \uB9C8\uC774\uADF8\uB808\uC774\uC158 (P2 plan)."
     ]
   },
   {
@@ -3270,7 +3298,7 @@ const ADMIN_DESIGN_SECTIONS = [
       "\uAD00\uB9AC\uC790 \uD328\uB110: \uC88C\uCE21 260px \uC0AC\uC774\uB4DC\uBC14(7\uAC1C \uADF8\uB8F9) + \uBCF8\uBB38 \uC2A4\uD06C\uB864\uB7EC. \uC0AC\uC774\uB4DC\uBC14 \uADF8\uB8F9: \uC694\uC57D / \uCF58\uD150\uCE20 / \uD68C\uC6D0\uAD00\uB9AC / \uC1FC\uD551 / \uC6B4\uC601\uC124\uC815 / \uAC1C\uC778\uC815\uBCF4 \uAD00\uB9AC / \uC2DC\uC2A4\uD15C \uAD00\uB9AC.",
       "\uB370\uC774\uD130 \uD45C\uD604: '\uD55C \uD654\uBA74 \uC548\uC5D0 \uC815\uB82C\uB418\uB294 \uD45C' \uC6B0\uC120 (ROPA, \uD68C\uC6D0, \uC624\uB958 \uB85C\uADF8, \uACC4\uC88C). \uCE74\uB4DC \uADF8\uB9AC\uB4DC\uB294 \uB3D9\uC77C \uB808\uBCA8 4\uAC1C \uC774\uC0C1\uC5D0\uC11C\uB9CC.",
       "\uBAA8\uB2EC: \uC5B4\uB450\uC6B4 \uBC18\uD22C\uBA85 \uBC30\uACBD(rgba 0,0,0,0.55) + \uC911\uC559 \uC815\uB82C + Esc/\uBC14\uAE65 \uD074\uB9AD/\uB2EB\uAE30 \uBC84\uD2BC \uBAA8\uB450 \uB3D9\uC791 (\uC608: SuspendDialog, LegalModal, PostViewerModal).",
-      "\uD544\uB4DC/\uBC84\uD2BC: var(--field-input) / .btn / .btn-gold / .btn-small / .btn-ghost 5\uC885\uC774 \uD45C\uC900. \uCEE4\uC2A4\uD140 \uC778\uB77C\uC778 \uC2A4\uD0C0\uC77C\uC740 \uBA54\uD0C0 \uC815\uBCF4 \uB610\uB294 \uC77C\uD68C\uC131 \uAC15\uC870\uC5D0\uB9CC.",
+      "\uD544\uB4DC/\uBC84\uD2BC: `.field-input` (\uD074\uB798\uC2A4, \uBCC0\uC218 \uC544\uB2D8) / `.btn` / `.btn-gold` / `.btn-small` / `.btn-ghost` 5\uC885\uC774 \uD45C\uC900. \uD3FC\uC740 `.field` \uB798\uD37C + `.field-label` + `.field-input` 3\uB2E8 \uAD6C\uC870. \uCEE4\uC2A4\uD140 \uC778\uB77C\uC778 \uC2A4\uD0C0\uC77C\uC740 \uBA54\uD0C0 \uC815\uBCF4 \uB610\uB294 \uC77C\uD68C\uC131 \uAC15\uC870\uC5D0\uB9CC.",
       "\uC624\uB958/\uC131\uACF5 \uD53C\uB4DC\uBC31: \uC778\uB77C\uC778 \uBC15\uC2A4(\uD3FC \uC548) \uB610\uB294 \uC6B0\uD558\uB2E8 \uD1A0\uC2A4\uD2B8(\uC804\uC5ED) \uB458 \uC911 \uD558\uB098. alert() \uB294 \uC0AC\uC6A9 \uAE08\uC9C0(\uB300\uD654\uD615\uC740 \uBAA8\uB2EC).",
       "\uC5EC\uBC31 \uB2E8\uC704: 8/12/16/24/32 (\uC138\uB85C \uB9AC\uB4EC). \uCE74\uB4DC padding 18~24px."
     ]
@@ -3290,7 +3318,8 @@ const ADMIN_DESIGN_SECTIONS = [
       "\uBCF4\uB77C\uC0C9 \uACC4\uC5F4\uC744 \uBE0C\uB79C\uB4DC \uC8FC\uC0C9\uCC98\uB7FC \uC0AC\uC6A9\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.",
       "\uC774\uC804 \uB2E4\uD06C \uBA39\uC0C9 \uD14C\uB9C8\uB85C \uD68C\uADC0\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4 (v00.026 \uC774\uD6C4 \uB77C\uC774\uD2B8 \uD1A4\uC774 \uD45C\uC900).",
       "\uACFC\uD55C \uADF8\uB77C\uB370\uC774\uC158\xB7\uC720\uD589\uD615 \uB9C8\uC774\uD06C\uB85C \uC778\uD130\uB799\uC158\xB7\uADC0\uC5EC\uC6B4 \uC774\uBAA8\uC9C0 \uC544\uC774\uCF58\uC73C\uB85C \uBD84\uC704\uAE30\uB97C \uD769\uB728\uB9AC\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.",
-      "alert() / window.confirm() \uC678 \uBAA8\uB4E0 \uB300\uD654 \uD750\uB984\uC740 \uBAA8\uB2EC \uCEF4\uD3EC\uB10C\uD2B8\uB85C \uCC98\uB9AC\uD569\uB2C8\uB2E4 (window.confirm \uC740 \uC815\uC9C0\xB7\uC0AD\uC81C \uAC19\uC740 \uB2E8\uBC1C \uD655\uC778\uC5D0\uB9CC \uD55C\uC815).",
+      "\uC6D0\uCE59: \uBAA8\uB4E0 \uB300\uD654 \uD750\uB984\uC740 \uBAA8\uB2EC \uCEF4\uD3EC\uB10C\uD2B8\uB85C \uCC98\uB9AC. alert() \uB294 \uC2E0\uADDC \uCF54\uB4DC\uC5D0\uC11C \uAE08\uC9C0 \u2014 \uC778\uB77C\uC778 \uBC15\uC2A4(\uD3FC \uC548) \uB610\uB294 \uC6B0\uD558\uB2E8 \uD1A0\uC2A4\uD2B8(BGNJ_TOAST) \uC0AC\uC6A9. \uAE30\uC874 \uCF54\uB4DC\uC758 \uC794\uC5EC alert() (\uD2B9\uD788 AuthAdminPage) \uB294 \uC810\uC9C4 \uAD50\uCCB4 plan \uC9C4\uD589 \uC911.",
+      "\uB2E8\uBC1C \uD655\uC778(\uC815\uC9C0\xB7\uC0AD\uC81C \uB4F1) \uC740 \uBAA8\uB2EC confirm \uCEF4\uD3EC\uB10C\uD2B8(SuspendDialog \uD328\uD134) \uC0AC\uC6A9 \u2014 `window.confirm()` \uC740 \uC2E0\uADDC \uB3C4\uC785 \uAE08\uC9C0.",
       "\uAD00\uB9AC\uC790 \uD654\uBA74\uC5D0 raw JSON / \uC601\uBB38-only \uD14D\uC2A4\uD2B8\uB97C \uC0AC\uC6A9\uC790\uC5D0\uAC8C \uB178\uCD9C\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
     ]
   }
