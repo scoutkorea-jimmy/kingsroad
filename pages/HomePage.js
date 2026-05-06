@@ -650,7 +650,13 @@ const HomePage = ({ go }) => {
     },
     style: { cursor: "pointer" }
   });
-  return /* @__PURE__ */ React.createElement("div", { className: "home-page" }, mapOpen && /* @__PURE__ */ React.createElement(DestinationMapModal, { onClose: () => setMapOpen(false), go }), recDetail && /* @__PURE__ */ React.createElement(RecommendationDetailModal, { rec: recDetail, onClose: () => setRecDetail(null), go }), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C" }, /* @__PURE__ */ React.createElement("section", { className: "home-hero", style: {
+  const fontScale = (() => {
+    var _a2;
+    const v = Number((_a2 = homeText.fontScale) != null ? _a2 : 1);
+    if (!isFinite(v)) return 1;
+    return Math.max(0.85, Math.min(1.2, v));
+  })();
+  return /* @__PURE__ */ React.createElement("div", { className: "home-page", style: { fontSize: `${fontScale}em` } }, mapOpen && /* @__PURE__ */ React.createElement(DestinationMapModal, { onClose: () => setMapOpen(false), go }), recDetail && /* @__PURE__ */ React.createElement(RecommendationDetailModal, { rec: recDetail, onClose: () => setRecDetail(null), go }), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C" }, /* @__PURE__ */ React.createElement("section", { className: "home-hero", style: {
     position: "relative",
     overflow: "hidden",
     background: "var(--bg)",

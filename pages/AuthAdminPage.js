@@ -3244,7 +3244,69 @@ const BooksAdminPanel = () => {
       }
     },
     "\u{1F4BE} \uD648 \uC18C\uAC1C\uAE00\uB9CC \uC989\uC2DC \uC800\uC7A5"
-  ), editing._homeIntroDraft != null && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\u25CF \uBBF8\uC800\uC7A5")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 6, lineHeight: 1.5 } }, "\uD648 \uCC45 \uCE74\uB8E8\uC140\uC5D0\uB9CC \uB178\uCD9C\uB418\uB294 \uBCF8\uBB38. \uC9E7\uC740 \uC124\uBA85(\uC704)\uACFC \uBCC4\uAC1C\uB85C \uB354 \uAE38\uAC8C \uC4F8 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uBE44\uC6CC\uB450\uBA74 \uC9E7\uC740 \uC124\uBA85\uC744 \uC790\uB3D9 \uC0AC\uC6A9. \uC904\uBC14\uAFC8 \uBCF4\uC874\uB428."))), editTab === "media" && editing && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18 } }, /* @__PURE__ */ React.createElement("h4", { className: "ko-serif", style: { fontSize: 14, marginBottom: 10 } }, "\uD45C\uC9C0 (PNG/JPG)"), /* @__PURE__ */ React.createElement("div", { style: {
+  ), editing._homeIntroDraft != null && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\u25CF \uBBF8\uC800\uC7A5")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 6, lineHeight: 1.5 } }, "\uD648 \uCC45 \uCE74\uB8E8\uC140\uC5D0\uB9CC \uB178\uCD9C\uB418\uB294 \uBCF8\uBB38. \uC9E7\uC740 \uC124\uBA85(\uC704)\uACFC \uBCC4\uAC1C\uB85C \uB354 \uAE38\uAC8C \uC4F8 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uBE44\uC6CC\uB450\uBA74 \uC9E7\uC740 \uC124\uBA85\uC744 \uC790\uB3D9 \uC0AC\uC6A9. \uC904\uBC14\uAFC8 \uBCF4\uC874\uB428.")), /* @__PURE__ */ React.createElement("div", { className: "field", style: { gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCC45 \uC815\uBCF4 \uB178\uCD9C \uC120\uD0DD (\uCC45 \uC0C1\uC138 \uD398\uC774\uC9C0)"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginBottom: 10, lineHeight: 1.5 } }, "\uCCB4\uD06C \uD574\uC81C\uD55C \uD56D\uBAA9\uC740 \uC0AC\uC774\uD2B8 \uCC45 \uC0C1\uC138 \uD398\uC774\uC9C0\uC5D0\uC11C \uB178\uCD9C\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uB370\uC774\uD130\uB294 \uADF8\uB300\uB85C \uBCF4\uC874\uB418\uBA70 \uD45C\uC2DC \uC5EC\uBD80\uB9CC \uC81C\uC5B4\uD569\uB2C8\uB2E4."), (() => {
+    var _a2, _b2;
+    const FIELDS = [
+      ["subtitle", "\uBD80\uC81C"],
+      ["author", "\uC800\uC790"],
+      ["publisher", "\uCD9C\uD310\uC0AC"],
+      ["pages", "\uD398\uC774\uC9C0 \uC218"],
+      ["isbn", "ISBN"],
+      ["priceKR", "\uAD6D\uBB38\uD310 \uAC00\uACA9"],
+      ["priceEN", "\uC601\uBB38\uD310 \uAC00\uACA9"]
+    ];
+    const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
+    const map = sc.bookFieldVisibility || {};
+    const saved = map[editing.id] || map[String(editing.id)] || {};
+    const draft = editing._visibilityDraft;
+    const cur = (key) => {
+      if (draft && key in draft) return draft[key] !== false;
+      if (key in saved) return saved[key] !== false;
+      return true;
+    };
+    const toggle = (key) => {
+      const next = { ...draft || {} };
+      next[key] = !cur(key);
+      setField("_visibilityDraft", next);
+    };
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 } }, FIELDS.map(([key, label]) => {
+      const on = cur(key);
+      return /* @__PURE__ */ React.createElement("label", { key, style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "8px 12px",
+        border: "1px solid " + (on ? "var(--gold-dim)" : "var(--line)"),
+        background: on ? "rgba(245,213,72,0.06)" : "var(--bg-2)",
+        cursor: "pointer",
+        fontSize: 13
+      } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: on, onChange: () => toggle(key) }), /* @__PURE__ */ React.createElement("span", { style: { color: on ? "var(--ink)" : "var(--ink-3)" } }, label));
+    })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn btn-small btn-gold",
+        disabled: !draft,
+        onClick: async () => {
+          var _a3, _b3;
+          try {
+            const _sc = ((_b3 = (_a3 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a3.get) == null ? void 0 : _b3.call(_a3)) || {};
+            const next = { ..._sc.bookFieldVisibility || {} };
+            const merged = { ...saved || {}, ...draft || {} };
+            const allOn = FIELDS.every(([k]) => merged[k] !== false);
+            if (allOn) delete next[editing.id];
+            else next[editing.id] = merged;
+            await window.BGNJ_SITE_CONTENT.saveSection("bookFieldVisibility", next);
+            setField("_visibilityDraft", null);
+            flash("\u2713 \uB178\uCD9C \uC124\uC815 \uC800\uC7A5\uB428 \u2014 \uCC45 \uC0C1\uC138 \uC989\uC2DC \uBC18\uC601");
+          } catch (err) {
+            alert("\uB178\uCD9C \uC124\uC815 \uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || ""));
+          }
+        }
+      },
+      "\u{1F4BE} \uB178\uCD9C \uC124\uC815 \uC989\uC2DC \uC800\uC7A5"
+    ), draft && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\u25CF \uBBF8\uC800\uC7A5")));
+  })())), editTab === "media" && editing && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18 } }, /* @__PURE__ */ React.createElement("h4", { className: "ko-serif", style: { fontSize: 14, marginBottom: 10 } }, "\uD45C\uC9C0 (PNG/JPG)"), /* @__PURE__ */ React.createElement("div", { style: {
     aspectRatio: "3/4",
     maxWidth: 200,
     marginBottom: 12,

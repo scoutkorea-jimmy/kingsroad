@@ -270,14 +270,38 @@ const BookPage = ({ go, cart, setCart, user }) => {
             <h2 style={{fontFamily:'var(--font-serif)', fontSize:56, fontWeight:500, lineHeight:1.05, marginBottom:12}}>
               『<span className="gold">{book.title}</span>』
             </h2>
-            <div className="ko-serif dim" style={{fontSize:20, marginBottom:24, fontStyle:'italic'}}>
-              {book.subtitle}
-            </div>
-            <div style={{display:'flex', gap:24, paddingBottom:24, borderBottom:'1px solid var(--line)', marginBottom:32, fontFamily:'var(--font-mono)', fontSize:12, color:'var(--ink-2)'}}>
-              <div><span className="dim-2">저자</span> <span className="gold">{book.author}</span></div>
-              <div><span className="dim-2">출판</span> {book.publisher}</div>
-              <div><span className="dim-2">쪽수</span> {book.pages}p</div>
-            </div>
+            {/* v00.199 — 사용자 요청 '책 어떤 정보들을 노출할지 선택'. site_content_kv.bookFieldVisibility[id] 가 false 인 항목은 숨김. */}
+            {(() => {
+              const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+              const map = sc.bookFieldVisibility || {};
+              const vis = map[book.id] || map[String(book.id)] || {};
+              const show = (key) => vis[key] !== false; // 기본 true
+              return (
+                <>
+                  {show('subtitle') && book.subtitle && (
+                    <div className="ko-serif dim" style={{fontSize:20, marginBottom:24, fontStyle:'italic'}}>
+                      {book.subtitle}
+                    </div>
+                  )}
+                  {(show('author') || show('publisher') || show('pages')) && (
+                    <div style={{display:'flex', gap:24, paddingBottom:24, borderBottom:'1px solid var(--line)', marginBottom:32, fontFamily:'var(--font-mono)', fontSize:12, color:'var(--ink-2)', flexWrap:'wrap'}}>
+                      {show('author') && book.author && (
+                        <div><span className="dim-2">저자</span> <span className="gold">{book.author}</span></div>
+                      )}
+                      {show('publisher') && book.publisher && (
+                        <div><span className="dim-2">출판</span> {book.publisher}</div>
+                      )}
+                      {show('pages') && book.pages > 0 && (
+                        <div><span className="dim-2">쪽수</span> {book.pages}p</div>
+                      )}
+                      {show('isbn') && book.isbn && (
+                        <div><span className="dim-2">ISBN</span> {book.isbn}</div>
+                      )}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             <p className="dim" style={{fontSize:15, lineHeight:1.9, marginBottom:32}}>{book.desc}</p>
 
@@ -286,11 +310,14 @@ const BookPage = ({ go, cart, setCart, user }) => {
               <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12, textTransform:'uppercase'}}>
                 판본 선택
               </div>
-              {/* v00.151 — 입력된 가격만 노출. priceEN 0/null 이면 영문판 버튼 자체 hide. */}
+              {/* v00.151 — 입력된 가격만 노출. priceEN 0/null 이면 영문판 버튼 자체 hide.
+                  v00.199 — bookFieldVisibility.priceKR/priceEN false 면 해당 판본 버튼 숨김. */}
               {(() => {
+                const _sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+                const _vis = (_sc.bookFieldVisibility || {})[book.id] || (_sc.bookFieldVisibility || {})[String(book.id)] || {};
                 const versions = [];
-                if (Number(book.priceKR) > 0) versions.push({ k: 'KR', label: '국문판', sub: 'Korean', price: book.priceKR });
-                if (Number(book.priceEN) > 0) versions.push({ k: 'EN', label: '영문판', sub: 'English', price: book.priceEN });
+                if (Number(book.priceKR) > 0 && _vis.priceKR !== false) versions.push({ k: 'KR', label: '국문판', sub: 'Korean', price: book.priceKR });
+                if (Number(book.priceEN) > 0 && _vis.priceEN !== false) versions.push({ k: 'EN', label: '영문판', sub: 'English', price: book.priceEN });
                 if (versions.length === 0) return <p className="dim" style={{fontSize:13}}>판매 준비 중입니다.</p>;
                 return (
                   <div style={{display:'grid', gridTemplateColumns: versions.length === 1 ? '1fr' : '1fr 1fr', gap:12}}>

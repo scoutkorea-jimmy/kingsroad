@@ -3828,6 +3828,82 @@ const BooksAdminPanel = () => {
                       비워두면 짧은 설명을 자동 사용. 줄바꿈 보존됨.
                     </p>
                   </div>
+                  {/* v00.199 — 사용자 요청 '책 어떤 정보들을 노출할지 선택'.
+                      site_content_kv.bookFieldVisibility[bookId] = { author, publisher, pages, isbn, priceKR, priceEN, subtitle }.
+                      미설정 시 모두 노출 (기본 true). bookHomeIntros 와 동일 패턴. */}
+                  <div className="field" style={{gridColumn:'1 / -1'}}>
+                    <label className="field-label">책 정보 노출 선택 (책 상세 페이지)</label>
+                    <p className="dim-2" style={{fontSize:11, marginBottom:10, lineHeight:1.5}}>
+                      체크 해제한 항목은 사이트 책 상세 페이지에서 노출되지 않습니다. 데이터는 그대로 보존되며 표시 여부만 제어합니다.
+                    </p>
+                    {(() => {
+                      const FIELDS = [
+                        ['subtitle',  '부제'],
+                        ['author',    '저자'],
+                        ['publisher', '출판사'],
+                        ['pages',     '페이지 수'],
+                        ['isbn',      'ISBN'],
+                        ['priceKR',   '국문판 가격'],
+                        ['priceEN',   '영문판 가격'],
+                      ];
+                      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+                      const map = sc.bookFieldVisibility || {};
+                      const saved = map[editing.id] || map[String(editing.id)] || {};
+                      const draft = editing._visibilityDraft;
+                      const cur = (key) => {
+                        if (draft && key in draft) return draft[key] !== false;
+                        if (key in saved) return saved[key] !== false;
+                        return true; // 기본 노출
+                      };
+                      const toggle = (key) => {
+                        const next = { ...(draft || {}) };
+                        next[key] = !cur(key);
+                        setField('_visibilityDraft', next);
+                      };
+                      return (
+                        <>
+                          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr))', gap:8}}>
+                            {FIELDS.map(([key, label]) => {
+                              const on = cur(key);
+                              return (
+                                <label key={key} style={{
+                                  display:'flex', alignItems:'center', gap:8,
+                                  padding:'8px 12px',
+                                  border:'1px solid ' + (on ? 'var(--gold-dim)' : 'var(--line)'),
+                                  background: on ? 'rgba(245,213,72,0.06)' : 'var(--bg-2)',
+                                  cursor:'pointer', fontSize:13,
+                                }}>
+                                  <input type="checkbox" checked={on} onChange={() => toggle(key)}/>
+                                  <span style={{color: on ? 'var(--ink)' : 'var(--ink-3)'}}>{label}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                          <div style={{display:'flex', gap:8, marginTop:10, alignItems:'center', flexWrap:'wrap'}}>
+                            <button type="button" className="btn btn-small btn-gold"
+                              disabled={!draft}
+                              onClick={async () => {
+                                try {
+                                  const _sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+                                  const next = { ...(_sc.bookFieldVisibility || {}) };
+                                  const merged = { ...(saved || {}), ...(draft || {}) };
+                                  // 모두 true 로 돌아간 경우 키 제거 (기본 폴백 사용 → KV 가벼움).
+                                  const allOn = FIELDS.every(([k]) => merged[k] !== false);
+                                  if (allOn) delete next[editing.id];
+                                  else next[editing.id] = merged;
+                                  await window.BGNJ_SITE_CONTENT.saveSection('bookFieldVisibility', next);
+                                  setField('_visibilityDraft', null);
+                                  flash('✓ 노출 설정 저장됨 — 책 상세 즉시 반영');
+                                } catch (err) {
+                                  alert('노출 설정 저장 실패: ' + (err?.message || ''));
+                                }
+                              }}>💾 노출 설정 즉시 저장</button>
+                            {draft && <span className="mono dim-2" style={{fontSize:11}}>● 미저장</span>}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
               )}
 

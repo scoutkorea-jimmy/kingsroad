@@ -2313,6 +2313,9 @@ const HomeTextPreview = ({ hero, text, mode }) => {
   const isMobile = mode.key === 'mobile';
   const isTablet = mode.key === 'tablet';
   const heroTitleSize = isMobile ? 34 : (isTablet ? 44 : 54);
+  // v00.199 — fontScale 미리보기 적용 (HomePage 와 동일 안전 가드).
+  const _fs = Number(text?.fontScale ?? 1);
+  const fontScale = isFinite(_fs) ? Math.max(0.85, Math.min(1.20, _fs)) : 1;
   return (
     <div style={{
       width: mode.width,
@@ -2322,6 +2325,7 @@ const HomeTextPreview = ({ hero, text, mode }) => {
       border:'1px solid var(--line)',
       boxShadow:'0 10px 28px rgba(15,23,42,0.08)',
       overflow:'hidden',
+      fontSize: `${fontScale}em`,
     }}>
       <section className="home-hero" style={{padding: isMobile ? '34px 20px' : '46px 32px', borderBottom:'1px solid var(--line)'}}>
         <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : '1.15fr 0.85fr', gap: isMobile ? 24 : 34, alignItems:'center'}}>
@@ -2435,6 +2439,44 @@ const HomeTextEditorPanel = () => {
       </p>
       <div className="home-text-editor-grid">
         <div>
+          {/* v00.199 — 사용자 요청 '홈 설정 트윅으로 글자 크기 소폭 수정 가능'.
+              homeText.fontScale 단일 숫자 (0.85~1.20). 본문/제목/카드 모두 비례 확대·축소. */}
+          <section className="card" style={{padding:16, marginBottom:14}}>
+            <h3 className="ko-serif" style={{fontSize:16, marginBottom:12}}>글자 크기 트윅</h3>
+            <p className="dim-2" style={{fontSize:11, marginBottom:12, lineHeight:1.6}}>
+              홈페이지 본문·제목·카드 글자 크기를 비례적으로 조절합니다. 1.00 기본 · 0.85 작게 · 1.20 크게.
+              과한 변경은 레이아웃을 흔들 수 있어 ±20% 범위로 한정.
+            </p>
+            <div style={{display:'flex', gap:12, alignItems:'center', flexWrap:'wrap'}}>
+              <input
+                type="range" min="0.85" max="1.20" step="0.01"
+                value={Number(textDraft.fontScale ?? 1)}
+                onChange={(e) => setText('fontScale', Number(e.target.value))}
+                style={{flex:1, minWidth:200, accentColor:'var(--gold)'}}/>
+              <span className="mono" style={{fontSize:13, fontWeight:700, color:'var(--gold)', minWidth:60, textAlign:'right'}}>
+                ×{Number(textDraft.fontScale ?? 1).toFixed(2)}
+              </span>
+              <button type="button" className="btn btn-small"
+                onClick={() => setText('fontScale', 1)}
+                disabled={Number(textDraft.fontScale ?? 1) === 1}
+                style={{fontSize:11}}>1.00 (기본)</button>
+              <div style={{display:'flex', gap:4}}>
+                {[0.90, 0.95, 1.00, 1.05, 1.10].map((v) => (
+                  <button key={v} type="button" className="btn btn-small"
+                    onClick={() => setText('fontScale', v)}
+                    style={{
+                      fontSize:11, padding:'4px 8px',
+                      borderColor: Number(textDraft.fontScale ?? 1).toFixed(2) === v.toFixed(2) ? 'var(--primary)' : 'var(--line-2)',
+                      background: Number(textDraft.fontScale ?? 1).toFixed(2) === v.toFixed(2) ? 'rgba(245,213,72,0.12)' : 'var(--bg-2)',
+                      fontWeight: Number(textDraft.fontScale ?? 1).toFixed(2) === v.toFixed(2) ? 800 : 500,
+                    }}>
+                    {v.toFixed(2)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
           {HOME_TEXT_GROUPS.map((group) => (
             <section key={group.title} className="card" style={{padding:16, marginBottom:14}}>
               <h3 className="ko-serif" style={{fontSize:16, marginBottom:12}}>{group.title}</h3>

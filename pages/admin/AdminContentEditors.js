@@ -2105,9 +2105,12 @@ const HomeTextInput = ({ label, value, onChange, placeholder, multiline }) => /*
 ));
 const HomePreviewSection = ({ eyebrow, title, subtitle, action }) => /* @__PURE__ */ React.createElement("section", { style: { padding: "26px 24px", borderBottom: "1px solid var(--line)", background: "var(--bg)" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", style: { marginBottom: 10 } }, eyebrow), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-end", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("div", { style: { minWidth: 0 } }, /* @__PURE__ */ React.createElement("h3", { className: "section-title", style: { fontSize: 28, marginBottom: 8 } }, title), subtitle && /* @__PURE__ */ React.createElement("p", { className: "section-subtitle", style: { fontSize: 13, maxWidth: 520 } }, subtitle)), action && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", style: { flexShrink: 0 } }, action)));
 const HomeTextPreview = ({ hero, text, mode }) => {
+  var _a;
   const isMobile = mode.key === "mobile";
   const isTablet = mode.key === "tablet";
   const heroTitleSize = isMobile ? 34 : isTablet ? 44 : 54;
+  const _fs = Number((_a = text == null ? void 0 : text.fontScale) != null ? _a : 1);
+  const fontScale = isFinite(_fs) ? Math.max(0.85, Math.min(1.2, _fs)) : 1;
   return /* @__PURE__ */ React.createElement("div", { style: {
     width: mode.width,
     maxWidth: "100%",
@@ -2115,7 +2118,8 @@ const HomeTextPreview = ({ hero, text, mode }) => {
     background: "var(--bg)",
     border: "1px solid var(--line)",
     boxShadow: "0 10px 28px rgba(15,23,42,0.08)",
-    overflow: "hidden"
+    overflow: "hidden",
+    fontSize: `${fontScale}em`
   } }, /* @__PURE__ */ React.createElement("section", { className: "home-hero", style: { padding: isMobile ? "34px 20px" : "46px 32px", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.15fr 0.85fr", gap: isMobile ? 24 : 34, alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", style: { marginBottom: 14 } }, hero.eyebrow || "\uBA39\uACE0 \uC790\uACE0 \uAC77\uACE0 \uC77D\uB294 \uD55C\uAD6D"), /* @__PURE__ */ React.createElement("h2", { style: {
     fontFamily: "var(--font-display)",
     fontSize: heroTitleSize,
@@ -2133,6 +2137,7 @@ const HomeTextPreview = ({ hero, text, mode }) => {
   ), /* @__PURE__ */ React.createElement(HomePreviewSection, { eyebrow: text.tourEyebrow, title: text.tourTitle, subtitle: text.tourSubtitle, action: text.tourAction }), /* @__PURE__ */ React.createElement(HomePreviewSection, { eyebrow: text.communityEyebrow, title: text.communityTitle, subtitle: text.communitySubtitle, action: text.communityAction }), /* @__PURE__ */ React.createElement("section", { style: { padding: "22px 24px", borderBottom: "1px solid var(--line)", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "var(--font-serif)", fontSize: 18, marginBottom: 8 } }, text.communityEmptyTitle), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 14 } }, text.communityEmptySubtitle), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small" }, text.communityEmptyCta)), /* @__PURE__ */ React.createElement(HomePreviewSection, { eyebrow: text.columnEyebrow, title: text.columnTitle, subtitle: text.columnSubtitle, action: text.columnAction }), /* @__PURE__ */ React.createElement(HomePreviewSection, { eyebrow: text.lecturesEyebrow, title: text.lecturesTitle, action: text.lecturesAction }), /* @__PURE__ */ React.createElement("section", { style: { padding: "24px", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow" }, text.bookEyebrowPrefix, " \xB7 2026"), /* @__PURE__ */ React.createElement("h3", { style: { fontFamily: "var(--font-serif)", fontSize: 26, marginBottom: 12 } }, "\u300E\uC655\uC758\uAE38\u300F"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, text.bookKrLabel), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, text.bookEnLabel)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small" }, text.bookBuyCta)));
 };
 const HomeTextEditorPanel = () => {
+  var _a, _b, _c;
   const [tick, setTick] = React.useState(0);
   const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
   const defaults = window.BGNJ_HOME_TEXT_DEFAULT || {};
@@ -2165,7 +2170,47 @@ const HomeTextEditorPanel = () => {
     if (!confirm("\uD648 \uD14D\uC2A4\uD2B8 \uC785\uB825\uAC12\uC744 \uAE30\uBCF8 \uBB38\uAD6C\uB85C \uB418\uB3CC\uB9B4\uAE4C\uC694? \uC800\uC7A5 \uBC84\uD2BC\uC744 \uB20C\uB7EC\uC57C \uC2E4\uC81C \uBC18\uC601\uB429\uB2C8\uB2E4.")) return;
     setTextDraft({ ...defaults });
   };
-  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 16, lineHeight: 1.8 } }, "\uD648\uD398\uC774\uC9C0\uC5D0 \uB178\uCD9C\uB418\uB294 \uACE0\uC815 \uBB38\uAD6C\uB97C \uD55C \uACF3\uC5D0\uC11C \uC218\uC815\uD569\uB2C8\uB2E4. \uC88C\uCE21\uC5D0\uC11C \uBC14\uAFB8\uBA74 \uC6B0\uCE21 \uBBF8\uB9AC\uBCF4\uAE30\uC5D0 \uBC14\uB85C \uBC18\uC601\uB418\uACE0, PC / \uD0DC\uBE14\uB9BF / \uBAA8\uBC14\uC77C \uBC84\uD2BC\uC73C\uB85C \uD3ED\uC744 \uC804\uD658\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { className: "home-text-editor-grid" }, /* @__PURE__ */ React.createElement("div", null, HOME_TEXT_GROUPS.map((group) => /* @__PURE__ */ React.createElement("section", { key: group.title, className: "card", style: { padding: 16, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 16, marginBottom: 12 } }, group.title), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }, className: "member-act-grid" }, group.fields.map(([key, label, placeholder]) => {
+  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 16, lineHeight: 1.8 } }, "\uD648\uD398\uC774\uC9C0\uC5D0 \uB178\uCD9C\uB418\uB294 \uACE0\uC815 \uBB38\uAD6C\uB97C \uD55C \uACF3\uC5D0\uC11C \uC218\uC815\uD569\uB2C8\uB2E4. \uC88C\uCE21\uC5D0\uC11C \uBC14\uAFB8\uBA74 \uC6B0\uCE21 \uBBF8\uB9AC\uBCF4\uAE30\uC5D0 \uBC14\uB85C \uBC18\uC601\uB418\uACE0, PC / \uD0DC\uBE14\uB9BF / \uBAA8\uBC14\uC77C \uBC84\uD2BC\uC73C\uB85C \uD3ED\uC744 \uC804\uD658\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { className: "home-text-editor-grid" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 16, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 16, marginBottom: 12 } }, "\uAE00\uC790 \uD06C\uAE30 \uD2B8\uC705"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginBottom: 12, lineHeight: 1.6 } }, "\uD648\uD398\uC774\uC9C0 \uBCF8\uBB38\xB7\uC81C\uBAA9\xB7\uCE74\uB4DC \uAE00\uC790 \uD06C\uAE30\uB97C \uBE44\uB840\uC801\uC73C\uB85C \uC870\uC808\uD569\uB2C8\uB2E4. 1.00 \uAE30\uBCF8 \xB7 0.85 \uC791\uAC8C \xB7 1.20 \uD06C\uAC8C. \uACFC\uD55C \uBCC0\uACBD\uC740 \uB808\uC774\uC544\uC6C3\uC744 \uD754\uB4E4 \uC218 \uC788\uC5B4 \xB120% \uBC94\uC704\uB85C \uD55C\uC815."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "range",
+      min: "0.85",
+      max: "1.20",
+      step: "0.01",
+      value: Number((_a = textDraft.fontScale) != null ? _a : 1),
+      onChange: (e) => setText("fontScale", Number(e.target.value)),
+      style: { flex: 1, minWidth: 200, accentColor: "var(--gold)" }
+    }
+  ), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 13, fontWeight: 700, color: "var(--gold)", minWidth: 60, textAlign: "right" } }, "\xD7", Number((_b = textDraft.fontScale) != null ? _b : 1).toFixed(2)), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: () => setText("fontScale", 1),
+      disabled: Number((_c = textDraft.fontScale) != null ? _c : 1) === 1,
+      style: { fontSize: 11 }
+    },
+    "1.00 (\uAE30\uBCF8)"
+  ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4 } }, [0.9, 0.95, 1, 1.05, 1.1].map((v) => {
+    var _a2, _b2, _c2;
+    return /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        key: v,
+        type: "button",
+        className: "btn btn-small",
+        onClick: () => setText("fontScale", v),
+        style: {
+          fontSize: 11,
+          padding: "4px 8px",
+          borderColor: Number((_a2 = textDraft.fontScale) != null ? _a2 : 1).toFixed(2) === v.toFixed(2) ? "var(--primary)" : "var(--line-2)",
+          background: Number((_b2 = textDraft.fontScale) != null ? _b2 : 1).toFixed(2) === v.toFixed(2) ? "rgba(245,213,72,0.12)" : "var(--bg-2)",
+          fontWeight: Number((_c2 = textDraft.fontScale) != null ? _c2 : 1).toFixed(2) === v.toFixed(2) ? 800 : 500
+        }
+      },
+      v.toFixed(2)
+    );
+  })))), HOME_TEXT_GROUPS.map((group) => /* @__PURE__ */ React.createElement("section", { key: group.title, className: "card", style: { padding: 16, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 16, marginBottom: 12 } }, group.title), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }, className: "member-act-grid" }, group.fields.map(([key, label, placeholder]) => {
     const isHero = group.section === "hero";
     const value = isHero ? heroDraft[key] : textDraft[key];
     const onChange = (v) => isHero ? setHero(key, v) : setText(key, v);

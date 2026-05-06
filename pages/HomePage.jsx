@@ -647,8 +647,14 @@ const HomePage = ({ go }) => {
     style:{cursor:'pointer'},
   });
 
+  // v00.199 — 사용자 요청 '홈 설정 트윅으로 글자 크기 소폭 조절'. fontScale 0.85~1.20 범위로 제한 (안전 가드).
+  const fontScale = (() => {
+    const v = Number(homeText.fontScale ?? 1);
+    if (!isFinite(v)) return 1;
+    return Math.max(0.85, Math.min(1.20, v));
+  })();
   return (
-    <div className="home-page">
+    <div className="home-page" style={{ fontSize: `${fontScale}em` }}>
       {mapOpen && <DestinationMapModal onClose={() => setMapOpen(false)} go={go}/>}
       {recDetail && <RecommendationDetailModal rec={recDetail} onClose={() => setRecDetail(null)} go={go}/>}
 
