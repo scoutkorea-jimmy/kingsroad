@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.192.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T09:23:59+09:00",
+    summary: "🐛 시간 라벨 매시 (pvSeries 별도 로직) + 사이드바 버전 뱃지",
+    details: [
+      "🐛 [pvSeries 시간 라벨 fix] 사용자 보고 '시간 라벨도 중간에 생략'. v00.191 에서 _hourlySeries 만 fix 했으나 DashboardPanel pvSeries 안에 별도 inline 라벨 로직이 있었음 (i % 3 === 0 잔존). 같은 매시 라벨로 정리 — 24개 모두 (10시/11시/12시.../지금).",
+      "🪧 [사이드바 버전 뱃지] 사용자 보고 '사이드바 제일 위쪽에 현재 홈페이지 버전'. ADMIN CONSOLE 위에 v{version} · {build} 골드 뱃지. window.BGNJ_VERSION 직접 참조.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.192.000`.",
+    ],
+    context: "사용자 즉시 보고 2건 처리. iframe 가로(v00.191에서 width 100% 적용 됐으나 homepage 컨테이너 max-width 1200px 가 시각 폭 제한 — admin-main 이 1500px 여도 iframe 안 homepage 는 1200px centered). 다음 사이클 backlog: 책 추가 prompt 제거 / ▲▼ 정렬 / 커뮤니티 게시글 / 회원가입 추이 / 히트맵.",
+  },
+  {
     version: "00.191.000",
     date: "2026-05-06",
     datetime: "2026-05-06T09:17:59+09:00",

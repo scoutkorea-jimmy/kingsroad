@@ -913,9 +913,10 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
         const idx = Math.floor((t - baseTs) / 3600000);
         if (idx >= 0 && idx < hours) counts[idx] = Number(views) || 0;
       });
+      // v00.192 — 사용자 보고 '시간 라벨 중간에 생략하지 말고 매시'. 24시간 모두 라벨.
       for (let i = 0; i < hours; i++) {
         const dt = new Date(baseTs + i * 3600000);
-        labels[i] = (i === hours - 1) ? '지금' : (i % 3 === 0 ? `${dt.getHours()}시` : '');
+        labels[i] = (i === hours - 1) ? '지금' : `${dt.getHours()}시`;
       }
       return { counts, labels };
     }
@@ -5782,6 +5783,15 @@ const AdminPage = ({ go }) => {
       {/* Sidebar */}
       <aside id="admin-sidebar" aria-label="관리자 메뉴" className="admin-sidebar" style={{background:'var(--bg-2)', borderRight:'1px solid var(--line)', padding:'32px 0', overflowY:'auto'}}>
         <div style={{padding:'0 24px 24px', borderBottom:'1px solid var(--line)'}}>
+          {/* v00.192 — 사용자 보고 '사이드바 제일 위쪽에 현재 홈페이지 버전'. ADMIN CONSOLE 위에 버전 뱃지. */}
+          <div style={{
+            display:'inline-block', padding:'3px 10px', marginBottom:10,
+            border:'1px solid var(--gold-dim)', background:'rgba(245,213,72,0.06)',
+            fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700,
+            letterSpacing:'0.12em', color:'var(--gold)',
+          }}>
+            v{window.BGNJ_VERSION?.version || '?'} · {window.BGNJ_VERSION?.build || '?'}
+          </div>
           <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em'}}>◆ ADMIN CONSOLE</div>
           <div className="ko-serif" style={{fontSize:20, marginTop:8}}>관리자</div>
           <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>banginoja@bgnj.net</div>
