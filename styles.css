@@ -2008,3 +2008,58 @@ main time, main .section-eyebrow {
 :root[data-theme="dark"] .admin-empty { background: var(--bg-2); border-color: var(--line); }
 :root[data-theme="dark"] .admin-savebar { background: var(--bg-2); border-color: var(--line); border-top-color: var(--primary-dim); }
 :root[data-theme="dark"] .admin-filter-chip { background: var(--bg-2); border-color: var(--line); }
+
+/* === v00.223 — 모바일 가독성 종합 패스 (보고·듣고·읽기 편함) =====================
+   사용자 요청: '모바일의 가독성을 전반적으로 살려줘. 특히 모든 보고 듣고 읽는게 편해야해'
+   진단 결과 6가지 약점 묶음 보강:
+   A. 본문(.post-body) phone 16→17px + 단락 호흡
+   B. 입력 폼(.field-input) phone 14→16px (iOS Safari focus 자동 zoom 차단)
+   C. 영상/iframe 임베드 — 부모 폭 + 16:9 강제 (YouTube/Vimeo + 강연/투어 영상)
+   D. 메타 텍스트(.dim-2 / mono labels) phone 한 단 진하게/+1px
+   E. 카드 / 섹션 / 푸터 phone size 미세 조정
+   ============================================================================= */
+
+/* C — 미디어 임베드 (desktop·mobile 공통) — 항상 부모 폭 + 16:9 비율
+   (post-body 안의 YouTube/Vimeo/강연 영상이 폰에서 폭 고정으로 잘리던 문제) */
+.post-body iframe,
+.post-body video {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 1px solid var(--line);
+  display: block;
+  margin: 1.5em auto;
+}
+
+/* F — 태블릿(≤900px) 섹션 타이틀 한 단 톤다운 */
+@media (max-width: 900px) {
+  .section-title { font-size: 30px; line-height: 1.25; }
+  .home-page .section-head .section-title { font-size: 30px; line-height: 1.25; }
+  .section-eyebrow { letter-spacing: 0.12em; }
+}
+
+/* 폰(≤600px) — 가독성 핵심 패스 */
+@media (max-width: 600px) {
+  /* A — 본문 prose */
+  .post-body { font-size: 17px; line-height: 1.85; }
+  .post-body p + p { margin-top: 1em; }
+  .post-body h1, .post-body h2, .post-body h3 { line-height: 1.3; }
+
+  /* B — 입력 폼 (iOS Safari 16px 미만 focus 시 자동 zoom 방지) */
+  .field-input,
+  textarea.field-input,
+  select.field-input { font-size: 16px; padding: 13px 14px; }
+
+  /* D — 메타 텍스트 가독성 */
+  .dim-2 { color: var(--ink-2); }
+  .section-eyebrow { letter-spacing: 0.1em; font-size: 11px; }
+  .badge, .pill { font-size: 11px; padding: 4px 9px; letter-spacing: 0.1em; }
+
+  /* E — 카드 / 섹션 / 푸터 호흡 */
+  .card { padding: 22px 20px; }
+  .card-title { font-size: 20px; line-height: 1.3; margin-bottom: 10px; }
+  .section-title { font-size: 28px; line-height: 1.2; }
+  .home-page .section-head .section-title { font-size: 28px; line-height: 1.2; }
+  .footer li { font-size: 14px; }
+}
