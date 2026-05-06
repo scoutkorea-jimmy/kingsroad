@@ -839,9 +839,10 @@ const _dailySeries = (items, dateField, days = 14) => {
     const idx = Math.floor((d.getTime() - todayMid) / 86400000) + (days - 1);
     if (idx >= 0 && idx < days) counts[idx]++;
   });
+  // v00.195 — 사용자 보고 '임의로 중간에 값들을 축약하지마'. 모든 일자에 라벨 (이전엔 짝수 인덱스만).
   for (let i = 0; i < days; i++) {
     const dt = new Date(todayMid + (i - (days - 1)) * 86400000);
-    labels[i] = (i === days - 1) ? '오늘' : (i % 2 === 0 ? `${dt.getMonth()+1}/${dt.getDate()}` : '');
+    labels[i] = (i === days - 1) ? '오늘' : `${dt.getMonth()+1}/${dt.getDate()}`;
   }
   return { counts, labels };
 };
@@ -880,6 +881,18 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   }, [pvDays, refDays, routeDays, heatmapDays]);
 
   React.useEffect(() => { loadSummary(); }, [loadSummary]);
+
+  // v00.195 — 사용자 보고 '페이지뷰와 가입 추이 모두 다 현행화'.
+  // 대시보드 마운트 시 BGNJ_AUTH.refreshUsers 강제 호출 (allUsers 가 stale 상태로 들어오는 경우 대비).
+  // 그 후 부모 (AuthAdminPage) 가 'bgnj-users-refresh' 이벤트로 allUsers 재계산 → signup 차트 즉시 갱신.
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try { await window.BGNJ_AUTH?.refreshUsers?.(); } catch {}
+      if (cancelled) return;
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // 가입 추이 — 클라이언트 derived (정확한 값).
   // v00.194 — 사용자 보고 '회원가입추이도 정상작동 안하는듯'.
@@ -935,11 +948,10 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
       const idx = Math.floor((t - todayMid) / 86400000) + (days - 1);
       if (idx >= 0 && idx < days) counts[idx] = Number(views) || 0;
     });
-    // 라벨 간격: 7일=매일, 14일=짝수일, 30일=5일마다, 90일=15일마다.
-    const labelEvery = days <= 7 ? 1 : days <= 14 ? 2 : days <= 30 ? 5 : 15;
+    // v00.195 — 사용자 보고 '임의로 중간에 값들을 축약하지마'. 모든 일자에 라벨 (이전엔 days 길이별 매 N일마다).
     for (let i = 0; i < days; i++) {
       const dt = new Date(todayMid + (i - (days - 1)) * 86400000);
-      labels[i] = (i === days - 1) ? '오늘' : (i % labelEvery === 0 ? `${dt.getMonth()+1}/${dt.getDate()}` : '');
+      labels[i] = (i === days - 1) ? '오늘' : `${dt.getMonth()+1}/${dt.getDate()}`;
     }
     return { counts, labels };
   })();
@@ -5670,6 +5682,24 @@ const AdminPage = ({ go }) => {
   // 모두 CommunityPostsAdminPanel 내부 state 로 이전.
   const [postRefreshKey, setPostRefreshKey] = React.useState(0);
   const [versionPage, setVersionPage] = React.useState(1);
+
+  // v00.195 — 사용자 보고 '가입자 2명인데 추이 차트 0'.
+  // root cause: allUsers memo 가 postRefreshKey 만 의존 → BGNJ_AUTH.refreshUsers 가 발화하는
+  // 'bgnj-users-refresh' 이벤트는 postRefreshKey 증가 안 시킴 → memo 가 빈 _usersCache 로 영구 stuck.
+  // 해결: AdminPage 마운트 시 refreshUsers 직접 호출 + 모든 store 변경 이벤트를 postRefreshKey 로 통합.
+  React.useEffect(() => {
+    window.BGNJ_AUTH?.refreshUsers?.();
+    const bump = () => setPostRefreshKey((v) => v + 1);
+    const events = [
+      'bgnj-users-refresh',
+      'bgnj-posts-refresh',
+      'bgnj-columns-refresh',
+      'bgnj-books-refresh',
+      'bgnj-book-orders-refresh',
+    ];
+    events.forEach((e) => window.addEventListener(e, bump));
+    return () => events.forEach((e) => window.removeEventListener(e, bump));
+  }, []);
 
   const allCommunityPosts = React.useMemo(() => window.BGNJ_COMMUNITY.listPosts(), [postRefreshKey]);
   const allUsers = React.useMemo(() => window.BGNJ_AUTH.listUsers(), [postRefreshKey]);

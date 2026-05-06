@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.195.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T12:30:00+09:00",
+    summary: "🐛 가입자 추이 0인 이슈 root fix + 라벨 모두 표시 (축약 폐기)",
+    details: [
+      "🐛 [가입자 추이 0 이슈 root fix] 사용자 보고 '가입자 2명인데 추이 차트 0'. v00.194 에서 createdAt→joinedAt 정정 후에도 여전히 비어있던 진짜 원인: AdminPage 의 allUsers memo 가 postRefreshKey 만 의존하는데 BGNJ_AUTH.refreshUsers 가 발화하는 'bgnj-users-refresh' 이벤트는 postRefreshKey 를 증가 안 시킴 → memo 가 빈 _usersCache(초기값) 로 영구 stuck. 해결: AdminPage 마운트 시 refreshUsers 직접 호출 + 5종 store 변경 이벤트(users/posts/columns/books/book-orders) 를 postRefreshKey 로 통합 → 모든 memo 자동 재평가.",
+      "📊 [라벨 축약 전면 폐기] 사용자 보고 '임의로 중간에 값들 축약하지마'. (1) _dailySeries: i % 2 === 0 조건 제거 → 모든 일자 라벨. (2) DashboardPanel pvSeries: 7/14/30/90일별 labelEvery 로직 제거 → 모든 일자 라벨. (3) MiniBarChart: labels.length > 14 면 -45° 회전으로 표시 (90일까지 안 겹침).",
+      "🔄 [DashboardPanel mount 시 강제 refreshUsers] allUsers stale 진입 방지. 'bgnj-users-refresh' 이벤트 → AdminPage postRefreshKey bump → DashboardPanel allUsers prop 재계산 → signup 차트 갱신.",
+      "ℹ 워커 미변경.",
+      "📦 cache-buster — `?v=00.195.000`.",
+    ],
+    context: "v00.194 의 createdAt→joinedAt 정정만으론 부족. 진짜 막힘은 React memo dep 누락. v00.194 까지 차트가 0 으로 보이던 모든 이슈가 이번 release 로 해소.",
+  },
+  {
     version: "00.194.000",
     date: "2026-05-06",
     datetime: "2026-05-06T11:30:00+09:00",

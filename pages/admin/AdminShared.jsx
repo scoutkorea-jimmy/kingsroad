@@ -127,13 +127,33 @@ const MiniBarChart = ({ series, labels, height = 120, color = 'var(--gold)', lab
           </div>
         )}
       </div>
-      {labels && (
-        <div style={{display:'grid', gridTemplateColumns:`repeat(${labels.length}, 1fr)`, fontSize:9, color:'var(--ink-3)', marginTop:6, fontFamily:'var(--font-mono)', letterSpacing:'0.04em'}}>
-          {labels.map((l, i) => (
-            <span key={i} style={{textAlign:'center'}}>{l}</span>
-          ))}
-        </div>
-      )}
+      {labels && (() => {
+        // v00.195 — 사용자 보고 '임의로 중간에 값들 축약하지마'. 모든 라벨 표시 의무화.
+        // 14개 이하면 가로 그대로, 그 이상이면 -45° 회전 (라벨 끼리 안 겹치게 + 모두 표시).
+        const rotated = labels.length > 14;
+        return (
+          <div style={{
+            display:'grid', gridTemplateColumns:`repeat(${labels.length}, 1fr)`,
+            fontSize:9, color:'var(--ink-3)',
+            marginTop: rotated ? 10 : 6,
+            fontFamily:'var(--font-mono)', letterSpacing:'0.04em',
+            minHeight: rotated ? 36 : 'auto',
+            overflow: 'visible',
+          }}>
+            {labels.map((l, i) => (
+              <span key={i} style={{
+                textAlign: rotated ? 'right' : 'center',
+                ...(rotated ? {
+                  transform:'rotate(-45deg)',
+                  transformOrigin:'top right',
+                  whiteSpace:'nowrap',
+                  paddingRight: 8,
+                } : {}),
+              }}>{l}</span>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 };
