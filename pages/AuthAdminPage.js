@@ -184,7 +184,7 @@ const LoginPage = ({ go, setUser, initialMode = "login" }) => {
   const authTitle = authContent.title || "\uBC45\uAE30 \uD0C0\uACE0\n\uBC45\uAE30\uB178\uC790\uAC00 \uB418\uB2E4";
   const authDescription = authContent.description || "\uBC45\uAE30\uB178\uC790\uB294 \uB2E8\uC21C \uC5EC\uD589 \uC815\uBCF4 \uC0AC\uC774\uD2B8\uAC00 \uC544\uB2D9\uB2C8\uB2E4. \uD568\uAED8 \uB5A0\uB098\uACE0, \uD568\uAED8 \uAC77\uACE0, \uD568\uAED8 \uC774\uC57C\uAE30\uD558\uB294 \uC5EC\uD589\uC790\uB4E4\uC758 \uAD11\uC7A5\uC785\uB2C8\uB2E4. \uB9E4\uB2EC \uC0C8\uB85C\uC6B4 \uB2F5\uC0AC\uC640 \uCE7C\uB7FC\uC774 \uC774\uC5B4\uC9D1\uB2C8\uB2E4.";
   const authEyebrow = authContent.eyebrow || "BANGINOJA";
-  return /* @__PURE__ */ React.createElement("div", { style: { minHeight: "calc(100vh - 72px)", display: "grid", gridTemplateColumns: "1fr 1fr" }, className: "auth-grid" }, /* @__PURE__ */ React.createElement("div", { style: {
+  return /* @__PURE__ */ React.createElement("div", { style: { minHeight: "calc(100vh - 72px)", display: "grid", gridTemplateColumns: "1fr 1fr" }, className: "auth-grid" }, /* @__PURE__ */ React.createElement("div", { className: "auth-art", style: {
     ...authBg,
     borderRight: "1px solid var(--line)",
     padding: "80px 60px",

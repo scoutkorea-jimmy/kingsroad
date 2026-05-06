@@ -1475,6 +1475,10 @@ main time, main .section-eyebrow {
     grid-template-columns: 1fr !important;
     gap: 40px !important;
   }
+
+  /* v00.215 — 모바일 로그인/회원가입 hero(왼쪽 art 영역) 숨김.
+     사용자 민원: 폼 진입 전에 큰 타이틀이 첫 화면을 점유해 가입 흐름이 불편함. */
+  .auth-art { display: none !important; }
   .cta-grid { padding: 40px 28px !important; }
 
   .section-title { font-size: 32px; }

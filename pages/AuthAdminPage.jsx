@@ -175,8 +175,8 @@ const LoginPage = ({ go, setUser, initialMode = "login" }) => {
 
   return (
     <div style={{minHeight:'calc(100vh - 72px)', display:'grid', gridTemplateColumns:'1fr 1fr'}} className="auth-grid">
-      {/* Left: art (관리자에서 이미지/문구 편집 가능) */}
-      <div style={{
+      {/* Left: art (관리자에서 이미지/문구 편집 가능) — v00.215 모바일에서 숨김 (사용자 민원: 폼이 첫 화면에서 안 보임). */}
+      <div className="auth-art" style={{
         ...authBg,
         borderRight:'1px solid var(--line)',
         padding:'80px 60px',
