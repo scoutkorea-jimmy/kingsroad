@@ -2908,13 +2908,15 @@ const DesignSystemView = () => {
     { token: '--danger',          hex: '#DC2626', usage: '에러 · 삭제 · 거부', notes: '단일 빨강 — primary 와 명확히 구분.' },
   ];
 
-  // 폰트 패밀리 정의
+  // 폰트 패밀리 정의 — styles.css 의 실제 --font-* 토큰과 1:1 매핑.
+  // KBL Jump 4종 + Wanted Sans + ChosunIlboMyungjo + IBM Plex Mono. 명조(나눔/조선일보) 는 토글에서만.
   const FONT_TOKENS = [
-    { token: 'var(--font-serif) / var(--font-display)', family: 'Noto Serif KR', sample: '뱅기 타고 한국을 느끼다', size: 26, weight: 500, usage: '페이지 제목 · 카드 헤더 · 모달 타이틀', char: '제목용 · 한글 세리프의 권위' },
-    { token: 'var(--font-reading)', family: 'Noto Sans KR', sample: '어제 창덕궁 후원 야간 답사를 다녀왔습니다.', size: 15, weight: 400, usage: '게시글/댓글 본문 · 긴 글', char: '본문 가독성 — line-height 1.85' },
-    { token: 'var(--font-sans)', family: 'Noto Sans KR', sample: '카드 안내 · 폼 라벨', size: 13, weight: 400, usage: 'UI 본문 · 카드 설명 · 폼 텍스트', char: '단문 · line-height 1.7' },
-    { token: 'Nanum Myeongjo', family: 'Nanum Myeongjo', sample: '명조 토글 활성 시 본문 전체 적용', size: 15, weight: 400, usage: '폰트 토글 ON 시 본문 전역', char: '전통 활자 무드 — 옵션' },
-    { token: 'var(--font-mono)', family: 'IBM Plex Mono', sample: 'BANGINOJA · 2026.04.29 · v00.035', size: 11, weight: 400, usage: '메타 정보 · ID · 시각 · 코드 · 라벨', char: 'letter-spacing 0.18em — 구조 신호' },
+    { token: 'var(--font-display)', family: 'KBL Jump Extended', sample: '뱅기노자', size: 30, weight: 900, usage: 'h1 · 히어로 헤드라인 · 브랜드 워드마크', char: 'KBL 점프 ExtraBold Extended — 와이드 · 시그니처 제목' },
+    { token: 'var(--font-title)', family: 'KBL Jump', sample: '뱅기 타고 한국을 느끼다', size: 22, weight: 700, usage: 'h2~h4 · 카드 타이틀 · 모달 헤더 · `.ko-serif`', char: 'KBL 점프 Bold — 일반 제목 · 안정 가독성' },
+    { token: 'var(--font-sans) / var(--font-reading)', family: 'Wanted Sans Variable', sample: '어제 창덕궁 후원 야간 답사를 다녀왔습니다.', size: 15, weight: 500, usage: 'UI 본문 · 카드 설명 · 댓글 · 폼 · 일반 본문 (기본)', char: 'Wanted Sans — 본 사이트 기본 본문 글꼴' },
+    { token: '.post-content (게시글 본문)', family: 'ChosunIlboMyungjo', sample: '한국의 역사·문화·자연을 함께 여행하는 커뮤니티.', size: 15, weight: 400, usage: '커뮤니티/칼럼 본문 — 긴 글 가독성 + 무드', char: '조선일보 명조체 — 긴 본문 전용 세리프' },
+    { token: '.app.reading-myungjo (토글)', family: 'ChosunIlboMyungjo', sample: '명조 토글 ON 시 본문 영역 전환', size: 15, weight: 400, usage: '헤더 명조 토글 켰을 때 main 영역 전체', char: '사용자 옵션 · 기본 비활성' },
+    { token: 'var(--font-mono)', family: 'IBM Plex Mono', sample: 'BANGINOJA · 2026.05.06 · v00.203', size: 11, weight: 400, usage: '메타 · ID · 시각 · 코드 · eyebrow 라벨', char: 'letter-spacing 0.18em — 구조 신호' },
   ];
 
   // 스페이싱 스케일
@@ -2966,16 +2968,20 @@ const DesignSystemView = () => {
       <DSSection
         eyebrow="02 · TYPOGRAPHY"
         title="타이포그래피 시스템"
-        definition="페이지에서 사용하는 5종 폰트와 각각의 역할. 제목/본문/UI/명조/모노 5계층."
+        definition="실제 styles.css 가 로드하는 폰트는 KBL Jump 4종 + Wanted Sans + ChosunIlboMyungjo + IBM Plex Mono. 제목은 KBL, 본문은 Wanted, 게시글 본문은 조선일보 명조."
         characteristics={[
-          '제목은 항상 `ko-serif` (Noto Serif KR) — 무드 신호.',
-          '본문은 길이에 따라 font-reading(긴 글) 또는 font-sans(단문 UI) 사용.',
-          '메타 정보는 항상 `mono` + letter-spacing 으로 구조 신호 부여.',
-          '명조 모드(Nanum Myeongjo) 는 사용자 폰트 토글로만 활성.',
+          '대제목(h1·히어로) — `var(--font-display)` = KBL Jump Extended.',
+          '소제목(h2~h4·카드·`.ko-serif`) — `var(--font-title)` = KBL Jump.',
+          '본문(UI·댓글·폼·일반) — `var(--font-sans)` / `var(--font-reading)` = Wanted Sans Variable.',
+          '게시글/칼럼 본문 — `.post-content` 안에서 ChosunIlboMyungjo (긴 글 무드).',
+          '메타·ID·시각·코드 — `var(--font-mono)` = IBM Plex Mono · letter-spacing 0.18em.',
+          '명조 토글(`.app.reading-myungjo`) 은 사용자 옵션 — main 영역만 ChosunIlboMyungjo 로 전환, nav/footer 미영향.',
+          '주의: `.ko-serif` 클래스명은 레거시 alias — 실제 패밀리는 KBL Jump (세리프 아님).',
         ]}
         usage={[
-          '클래스: `.ko-serif` (제목), `.mono` (메타/코드/라벨), `.dim` `.dim-2` (본문 위계)',
-          '인라인 style: 폰트 사이즈는 11/12/13/14/15/18/22/24/26 단위',
+          '클래스: `.ko-serif` (h2~h4 KBL Jump), `.mono` (IBM Plex Mono), `.dim` `.dim-2` (위계)',
+          '인라인 style 사이즈 단위: 11/12/13/14/15/18/22/24/26/30',
+          '제목 weight: display 900 / title 700. 본문 weight: 500 (Wanted Sans).',
         ]}
       >
         <div style={{display:'grid', gap:10}}>
@@ -3481,12 +3487,14 @@ const ADMIN_DESIGN_SECTIONS = [
   {
     title: "타이포그래피 (실제 사용)",
     points: [
-      "제목 (ko-serif / font-display): Noto Serif KR — 본문/카드 헤더에 한글 세리프의 권위.",
-      "본문 (font-reading / font-sans): Noto Sans KR — 댓글·게시글 본문은 line-height 1.8 기본.",
-      "강조 명조: Nanum Myeongjo — '폰트 토글' 기능에서 명조 모드 시 전체 본문에 적용.",
-      "메타/라벨/코드 (font-mono): IBM Plex Mono — 시간/ID/배지/감사 로그/오류 코드 등 구조 정보.",
-      "기본 본문 사이즈: 13–15px / 행간 1.7–1.85 / 자간 약간 좁힘 (-0.01em).",
-      "댓글 본문 fontWeight 는 400 평문 유지. @멘션만 500 + 골드 색.",
+      "대제목 (var(--font-display)): KBL Jump Extended (ExtraBold 900) — h1·히어로·브랜드 워드마크.",
+      "소제목 (var(--font-title) · `.ko-serif`): KBL Jump Bold (700) — h2~h4·카드 타이틀·모달 헤더.",
+      "본문 (var(--font-sans) / var(--font-reading)): Wanted Sans Variable (500) — UI·댓글·폼·일반 본문 기본 글꼴.",
+      "게시글 본문 (.post-content): ChosunIlboMyungjo — 커뮤니티/칼럼의 긴 본문에만 적용 (무드+가독성).",
+      "메타·ID·코드 (var(--font-mono)): IBM Plex Mono — 시간/ID/배지/감사 로그/eyebrow 라벨. letter-spacing 0.18em.",
+      "명조 토글 (.app.reading-myungjo): 사용자가 헤더 토글 ON 하면 main 영역 본문이 ChosunIlboMyungjo 로 전환. nav/footer 미영향.",
+      "기본 본문 사이즈: 13–15px / 행간 1.7–1.85 / 자간 -0.01em. 댓글 weight 500 평문, @멘션만 700 + 골드.",
+      "주의: `--font-serif` 토큰명은 레거시 — 실제 1순위는 KBL Jump (세리프 아님). `.ko-serif` 클래스도 동일.",
     ],
   },
   {

@@ -2905,11 +2905,12 @@ const DesignSystemView = () => {
     { token: "--danger", hex: "#DC2626", usage: "\uC5D0\uB7EC \xB7 \uC0AD\uC81C \xB7 \uAC70\uBD80", notes: "\uB2E8\uC77C \uBE68\uAC15 \u2014 primary \uC640 \uBA85\uD655\uD788 \uAD6C\uBD84." }
   ];
   const FONT_TOKENS = [
-    { token: "var(--font-serif) / var(--font-display)", family: "Noto Serif KR", sample: "\uBC45\uAE30 \uD0C0\uACE0 \uD55C\uAD6D\uC744 \uB290\uB07C\uB2E4", size: 26, weight: 500, usage: "\uD398\uC774\uC9C0 \uC81C\uBAA9 \xB7 \uCE74\uB4DC \uD5E4\uB354 \xB7 \uBAA8\uB2EC \uD0C0\uC774\uD2C0", char: "\uC81C\uBAA9\uC6A9 \xB7 \uD55C\uAE00 \uC138\uB9AC\uD504\uC758 \uAD8C\uC704" },
-    { token: "var(--font-reading)", family: "Noto Sans KR", sample: "\uC5B4\uC81C \uCC3D\uB355\uAD81 \uD6C4\uC6D0 \uC57C\uAC04 \uB2F5\uC0AC\uB97C \uB2E4\uB140\uC654\uC2B5\uB2C8\uB2E4.", size: 15, weight: 400, usage: "\uAC8C\uC2DC\uAE00/\uB313\uAE00 \uBCF8\uBB38 \xB7 \uAE34 \uAE00", char: "\uBCF8\uBB38 \uAC00\uB3C5\uC131 \u2014 line-height 1.85" },
-    { token: "var(--font-sans)", family: "Noto Sans KR", sample: "\uCE74\uB4DC \uC548\uB0B4 \xB7 \uD3FC \uB77C\uBCA8", size: 13, weight: 400, usage: "UI \uBCF8\uBB38 \xB7 \uCE74\uB4DC \uC124\uBA85 \xB7 \uD3FC \uD14D\uC2A4\uD2B8", char: "\uB2E8\uBB38 \xB7 line-height 1.7" },
-    { token: "Nanum Myeongjo", family: "Nanum Myeongjo", sample: "\uBA85\uC870 \uD1A0\uAE00 \uD65C\uC131 \uC2DC \uBCF8\uBB38 \uC804\uCCB4 \uC801\uC6A9", size: 15, weight: 400, usage: "\uD3F0\uD2B8 \uD1A0\uAE00 ON \uC2DC \uBCF8\uBB38 \uC804\uC5ED", char: "\uC804\uD1B5 \uD65C\uC790 \uBB34\uB4DC \u2014 \uC635\uC158" },
-    { token: "var(--font-mono)", family: "IBM Plex Mono", sample: "BANGINOJA \xB7 2026.04.29 \xB7 v00.035", size: 11, weight: 400, usage: "\uBA54\uD0C0 \uC815\uBCF4 \xB7 ID \xB7 \uC2DC\uAC01 \xB7 \uCF54\uB4DC \xB7 \uB77C\uBCA8", char: "letter-spacing 0.18em \u2014 \uAD6C\uC870 \uC2E0\uD638" }
+    { token: "var(--font-display)", family: "KBL Jump Extended", sample: "\uBC45\uAE30\uB178\uC790", size: 30, weight: 900, usage: "h1 \xB7 \uD788\uC5B4\uB85C \uD5E4\uB4DC\uB77C\uC778 \xB7 \uBE0C\uB79C\uB4DC \uC6CC\uB4DC\uB9C8\uD06C", char: "KBL \uC810\uD504 ExtraBold Extended \u2014 \uC640\uC774\uB4DC \xB7 \uC2DC\uADF8\uB2C8\uCC98 \uC81C\uBAA9" },
+    { token: "var(--font-title)", family: "KBL Jump", sample: "\uBC45\uAE30 \uD0C0\uACE0 \uD55C\uAD6D\uC744 \uB290\uB07C\uB2E4", size: 22, weight: 700, usage: "h2~h4 \xB7 \uCE74\uB4DC \uD0C0\uC774\uD2C0 \xB7 \uBAA8\uB2EC \uD5E4\uB354 \xB7 `.ko-serif`", char: "KBL \uC810\uD504 Bold \u2014 \uC77C\uBC18 \uC81C\uBAA9 \xB7 \uC548\uC815 \uAC00\uB3C5\uC131" },
+    { token: "var(--font-sans) / var(--font-reading)", family: "Wanted Sans Variable", sample: "\uC5B4\uC81C \uCC3D\uB355\uAD81 \uD6C4\uC6D0 \uC57C\uAC04 \uB2F5\uC0AC\uB97C \uB2E4\uB140\uC654\uC2B5\uB2C8\uB2E4.", size: 15, weight: 500, usage: "UI \uBCF8\uBB38 \xB7 \uCE74\uB4DC \uC124\uBA85 \xB7 \uB313\uAE00 \xB7 \uD3FC \xB7 \uC77C\uBC18 \uBCF8\uBB38 (\uAE30\uBCF8)", char: "Wanted Sans \u2014 \uBCF8 \uC0AC\uC774\uD2B8 \uAE30\uBCF8 \uBCF8\uBB38 \uAE00\uAF34" },
+    { token: ".post-content (\uAC8C\uC2DC\uAE00 \uBCF8\uBB38)", family: "ChosunIlboMyungjo", sample: "\uD55C\uAD6D\uC758 \uC5ED\uC0AC\xB7\uBB38\uD654\xB7\uC790\uC5F0\uC744 \uD568\uAED8 \uC5EC\uD589\uD558\uB294 \uCEE4\uBBA4\uB2C8\uD2F0.", size: 15, weight: 400, usage: "\uCEE4\uBBA4\uB2C8\uD2F0/\uCE7C\uB7FC \uBCF8\uBB38 \u2014 \uAE34 \uAE00 \uAC00\uB3C5\uC131 + \uBB34\uB4DC", char: "\uC870\uC120\uC77C\uBCF4 \uBA85\uC870\uCCB4 \u2014 \uAE34 \uBCF8\uBB38 \uC804\uC6A9 \uC138\uB9AC\uD504" },
+    { token: ".app.reading-myungjo (\uD1A0\uAE00)", family: "ChosunIlboMyungjo", sample: "\uBA85\uC870 \uD1A0\uAE00 ON \uC2DC \uBCF8\uBB38 \uC601\uC5ED \uC804\uD658", size: 15, weight: 400, usage: "\uD5E4\uB354 \uBA85\uC870 \uD1A0\uAE00 \uCF30\uC744 \uB54C main \uC601\uC5ED \uC804\uCCB4", char: "\uC0AC\uC6A9\uC790 \uC635\uC158 \xB7 \uAE30\uBCF8 \uBE44\uD65C\uC131" },
+    { token: "var(--font-mono)", family: "IBM Plex Mono", sample: "BANGINOJA \xB7 2026.05.06 \xB7 v00.203", size: 11, weight: 400, usage: "\uBA54\uD0C0 \xB7 ID \xB7 \uC2DC\uAC01 \xB7 \uCF54\uB4DC \xB7 eyebrow \uB77C\uBCA8", char: "letter-spacing 0.18em \u2014 \uAD6C\uC870 \uC2E0\uD638" }
   ];
   const SPACING = [4, 8, 12, 16, 20, 24, 32, 40, 60, 80];
   const RADIUS = [
@@ -2944,16 +2945,20 @@ const DesignSystemView = () => {
     {
       eyebrow: "02 \xB7 TYPOGRAPHY",
       title: "\uD0C0\uC774\uD3EC\uADF8\uB798\uD53C \uC2DC\uC2A4\uD15C",
-      definition: "\uD398\uC774\uC9C0\uC5D0\uC11C \uC0AC\uC6A9\uD558\uB294 5\uC885 \uD3F0\uD2B8\uC640 \uAC01\uAC01\uC758 \uC5ED\uD560. \uC81C\uBAA9/\uBCF8\uBB38/UI/\uBA85\uC870/\uBAA8\uB178 5\uACC4\uCE35.",
+      definition: "\uC2E4\uC81C styles.css \uAC00 \uB85C\uB4DC\uD558\uB294 \uD3F0\uD2B8\uB294 KBL Jump 4\uC885 + Wanted Sans + ChosunIlboMyungjo + IBM Plex Mono. \uC81C\uBAA9\uC740 KBL, \uBCF8\uBB38\uC740 Wanted, \uAC8C\uC2DC\uAE00 \uBCF8\uBB38\uC740 \uC870\uC120\uC77C\uBCF4 \uBA85\uC870.",
       characteristics: [
-        "\uC81C\uBAA9\uC740 \uD56D\uC0C1 `ko-serif` (Noto Serif KR) \u2014 \uBB34\uB4DC \uC2E0\uD638.",
-        "\uBCF8\uBB38\uC740 \uAE38\uC774\uC5D0 \uB530\uB77C font-reading(\uAE34 \uAE00) \uB610\uB294 font-sans(\uB2E8\uBB38 UI) \uC0AC\uC6A9.",
-        "\uBA54\uD0C0 \uC815\uBCF4\uB294 \uD56D\uC0C1 `mono` + letter-spacing \uC73C\uB85C \uAD6C\uC870 \uC2E0\uD638 \uBD80\uC5EC.",
-        "\uBA85\uC870 \uBAA8\uB4DC(Nanum Myeongjo) \uB294 \uC0AC\uC6A9\uC790 \uD3F0\uD2B8 \uD1A0\uAE00\uB85C\uB9CC \uD65C\uC131."
+        "\uB300\uC81C\uBAA9(h1\xB7\uD788\uC5B4\uB85C) \u2014 `var(--font-display)` = KBL Jump Extended.",
+        "\uC18C\uC81C\uBAA9(h2~h4\xB7\uCE74\uB4DC\xB7`.ko-serif`) \u2014 `var(--font-title)` = KBL Jump.",
+        "\uBCF8\uBB38(UI\xB7\uB313\uAE00\xB7\uD3FC\xB7\uC77C\uBC18) \u2014 `var(--font-sans)` / `var(--font-reading)` = Wanted Sans Variable.",
+        "\uAC8C\uC2DC\uAE00/\uCE7C\uB7FC \uBCF8\uBB38 \u2014 `.post-content` \uC548\uC5D0\uC11C ChosunIlboMyungjo (\uAE34 \uAE00 \uBB34\uB4DC).",
+        "\uBA54\uD0C0\xB7ID\xB7\uC2DC\uAC01\xB7\uCF54\uB4DC \u2014 `var(--font-mono)` = IBM Plex Mono \xB7 letter-spacing 0.18em.",
+        "\uBA85\uC870 \uD1A0\uAE00(`.app.reading-myungjo`) \uC740 \uC0AC\uC6A9\uC790 \uC635\uC158 \u2014 main \uC601\uC5ED\uB9CC ChosunIlboMyungjo \uB85C \uC804\uD658, nav/footer \uBBF8\uC601\uD5A5.",
+        "\uC8FC\uC758: `.ko-serif` \uD074\uB798\uC2A4\uBA85\uC740 \uB808\uAC70\uC2DC alias \u2014 \uC2E4\uC81C \uD328\uBC00\uB9AC\uB294 KBL Jump (\uC138\uB9AC\uD504 \uC544\uB2D8)."
       ],
       usage: [
-        "\uD074\uB798\uC2A4: `.ko-serif` (\uC81C\uBAA9), `.mono` (\uBA54\uD0C0/\uCF54\uB4DC/\uB77C\uBCA8), `.dim` `.dim-2` (\uBCF8\uBB38 \uC704\uACC4)",
-        "\uC778\uB77C\uC778 style: \uD3F0\uD2B8 \uC0AC\uC774\uC988\uB294 11/12/13/14/15/18/22/24/26 \uB2E8\uC704"
+        "\uD074\uB798\uC2A4: `.ko-serif` (h2~h4 KBL Jump), `.mono` (IBM Plex Mono), `.dim` `.dim-2` (\uC704\uACC4)",
+        "\uC778\uB77C\uC778 style \uC0AC\uC774\uC988 \uB2E8\uC704: 11/12/13/14/15/18/22/24/26/30",
+        "\uC81C\uBAA9 weight: display 900 / title 700. \uBCF8\uBB38 weight: 500 (Wanted Sans)."
       ]
     },
     /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 10 } }, FONT_TOKENS.map((f) => /* @__PURE__ */ React.createElement("div", { key: f.token, style: { display: "grid", gridTemplateColumns: "200px 1fr 200px", gap: 14, padding: "12px 14px", border: "1px solid var(--line)", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.14em", marginBottom: 4 } }, f.token), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, f.family), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, f.size, "px \xB7 w", f.weight)), /* @__PURE__ */ React.createElement("div", { style: {
@@ -3249,12 +3254,14 @@ const ADMIN_DESIGN_SECTIONS = [
   {
     title: "\uD0C0\uC774\uD3EC\uADF8\uB798\uD53C (\uC2E4\uC81C \uC0AC\uC6A9)",
     points: [
-      "\uC81C\uBAA9 (ko-serif / font-display): Noto Serif KR \u2014 \uBCF8\uBB38/\uCE74\uB4DC \uD5E4\uB354\uC5D0 \uD55C\uAE00 \uC138\uB9AC\uD504\uC758 \uAD8C\uC704.",
-      "\uBCF8\uBB38 (font-reading / font-sans): Noto Sans KR \u2014 \uB313\uAE00\xB7\uAC8C\uC2DC\uAE00 \uBCF8\uBB38\uC740 line-height 1.8 \uAE30\uBCF8.",
-      "\uAC15\uC870 \uBA85\uC870: Nanum Myeongjo \u2014 '\uD3F0\uD2B8 \uD1A0\uAE00' \uAE30\uB2A5\uC5D0\uC11C \uBA85\uC870 \uBAA8\uB4DC \uC2DC \uC804\uCCB4 \uBCF8\uBB38\uC5D0 \uC801\uC6A9.",
-      "\uBA54\uD0C0/\uB77C\uBCA8/\uCF54\uB4DC (font-mono): IBM Plex Mono \u2014 \uC2DC\uAC04/ID/\uBC30\uC9C0/\uAC10\uC0AC \uB85C\uADF8/\uC624\uB958 \uCF54\uB4DC \uB4F1 \uAD6C\uC870 \uC815\uBCF4.",
-      "\uAE30\uBCF8 \uBCF8\uBB38 \uC0AC\uC774\uC988: 13\u201315px / \uD589\uAC04 1.7\u20131.85 / \uC790\uAC04 \uC57D\uAC04 \uC881\uD798 (-0.01em).",
-      "\uB313\uAE00 \uBCF8\uBB38 fontWeight \uB294 400 \uD3C9\uBB38 \uC720\uC9C0. @\uBA58\uC158\uB9CC 500 + \uACE8\uB4DC \uC0C9."
+      "\uB300\uC81C\uBAA9 (var(--font-display)): KBL Jump Extended (ExtraBold 900) \u2014 h1\xB7\uD788\uC5B4\uB85C\xB7\uBE0C\uB79C\uB4DC \uC6CC\uB4DC\uB9C8\uD06C.",
+      "\uC18C\uC81C\uBAA9 (var(--font-title) \xB7 `.ko-serif`): KBL Jump Bold (700) \u2014 h2~h4\xB7\uCE74\uB4DC \uD0C0\uC774\uD2C0\xB7\uBAA8\uB2EC \uD5E4\uB354.",
+      "\uBCF8\uBB38 (var(--font-sans) / var(--font-reading)): Wanted Sans Variable (500) \u2014 UI\xB7\uB313\uAE00\xB7\uD3FC\xB7\uC77C\uBC18 \uBCF8\uBB38 \uAE30\uBCF8 \uAE00\uAF34.",
+      "\uAC8C\uC2DC\uAE00 \uBCF8\uBB38 (.post-content): ChosunIlboMyungjo \u2014 \uCEE4\uBBA4\uB2C8\uD2F0/\uCE7C\uB7FC\uC758 \uAE34 \uBCF8\uBB38\uC5D0\uB9CC \uC801\uC6A9 (\uBB34\uB4DC+\uAC00\uB3C5\uC131).",
+      "\uBA54\uD0C0\xB7ID\xB7\uCF54\uB4DC (var(--font-mono)): IBM Plex Mono \u2014 \uC2DC\uAC04/ID/\uBC30\uC9C0/\uAC10\uC0AC \uB85C\uADF8/eyebrow \uB77C\uBCA8. letter-spacing 0.18em.",
+      "\uBA85\uC870 \uD1A0\uAE00 (.app.reading-myungjo): \uC0AC\uC6A9\uC790\uAC00 \uD5E4\uB354 \uD1A0\uAE00 ON \uD558\uBA74 main \uC601\uC5ED \uBCF8\uBB38\uC774 ChosunIlboMyungjo \uB85C \uC804\uD658. nav/footer \uBBF8\uC601\uD5A5.",
+      "\uAE30\uBCF8 \uBCF8\uBB38 \uC0AC\uC774\uC988: 13\u201315px / \uD589\uAC04 1.7\u20131.85 / \uC790\uAC04 -0.01em. \uB313\uAE00 weight 500 \uD3C9\uBB38, @\uBA58\uC158\uB9CC 700 + \uACE8\uB4DC.",
+      "\uC8FC\uC758: `--font-serif` \uD1A0\uD070\uBA85\uC740 \uB808\uAC70\uC2DC \u2014 \uC2E4\uC81C 1\uC21C\uC704\uB294 KBL Jump (\uC138\uB9AC\uD504 \uC544\uB2D8). `.ko-serif` \uD074\uB798\uC2A4\uB3C4 \uB3D9\uC77C."
     ]
   },
   {
