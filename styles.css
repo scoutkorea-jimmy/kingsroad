@@ -1479,6 +1479,10 @@ main time, main .section-eyebrow {
   /* v00.215 — 모바일 로그인/회원가입 hero(왼쪽 art 영역) 숨김.
      사용자 민원: 폼 진입 전에 큰 타이틀이 첫 화면을 점유해 가입 흐름이 불편함. */
   .auth-art { display: none !important; }
+
+  /* v00.221 — 모바일 도서 상세의 표지 sticky 해제.
+     사용자 민원: 책 이미지가 상단에 고정돼 본문/판본 선택이 안 보임. */
+  .book-cover-col { position: static !important; top: auto !important; }
   .cta-grid { padding: 40px 28px !important; }
 
   .section-title { font-size: 32px; }

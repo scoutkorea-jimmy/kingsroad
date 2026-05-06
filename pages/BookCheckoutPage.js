@@ -162,7 +162,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
     "\u300E",
     b.title,
     "\u300F"
-  ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1.1fr", gap: 80 }, className: "book-grid" }, /* @__PURE__ */ React.createElement("div", { style: { position: "sticky", top: 100, alignSelf: "start" } }, /* @__PURE__ */ React.createElement("div", { style: { position: "relative", maxWidth: 440, margin: "0 auto" } }, book.coverDataUri ? /* @__PURE__ */ React.createElement("div", { style: { aspectRatio: "3/4", border: "1px solid var(--primary-dim)", overflow: "hidden", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement(
+  ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1.1fr", gap: 80 }, className: "book-grid" }, /* @__PURE__ */ React.createElement("div", { className: "book-cover-col", style: { position: "sticky", top: 100, alignSelf: "start" } }, /* @__PURE__ */ React.createElement("div", { style: { position: "relative", maxWidth: 440, margin: "0 auto" } }, book.coverDataUri ? /* @__PURE__ */ React.createElement("div", { style: { aspectRatio: "3/4", border: "1px solid var(--primary-dim)", overflow: "hidden", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement(
     "img",
     {
       src: book.coverDataUri,

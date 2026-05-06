@@ -200,8 +200,9 @@ const BookPage = ({ go, cart, setCart, user }) => {
           </div>
         )}
         <div style={{display:'grid', gridTemplateColumns:'1fr 1.1fr', gap:80}} className="book-grid">
-          {/* LEFT: cover — v00.151 실제 book.coverDataUri 우선, 없으면 generic placeholder. */}
-          <div style={{position:'sticky', top:100, alignSelf:'start'}}>
+          {/* LEFT: cover — v00.151 실제 book.coverDataUri 우선, 없으면 generic placeholder.
+              v00.221 — 모바일에서 sticky 해제 (.book-cover-col CSS 가 max-width:900px 에서 position:static 강제). */}
+          <div className="book-cover-col" style={{position:'sticky', top:100, alignSelf:'start'}}>
             <div style={{position:'relative', maxWidth:440, margin:'0 auto'}}>
               {book.coverDataUri ? (
                 <div style={{aspectRatio:'3/4', border:'1px solid var(--primary-dim)', overflow:'hidden', background:'var(--bg-2)'}}>
