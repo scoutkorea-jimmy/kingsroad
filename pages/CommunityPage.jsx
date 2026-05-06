@@ -133,7 +133,7 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
       }
       // 폴백: 5MB 이하만 dataURI 인라인 (D1 부담 감안). 초과 시 거부.
       if (f.size > 5 * 1024 * 1024) {
-        alert(`'${f.name}' R2 실패 + dataURI 폴백 한도 5MB 초과 — 건너뜀.`);
+        window.BGNJ_TOAST.error(`'${f.name}' R2 실패 + dataURI 폴백 한도 5MB 초과 — 건너뜀.`);
         return null;
       }
       const dataUrl = await new Promise((resolve) => {
@@ -713,7 +713,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       return userLevel >= (c.postMinLevel ?? c.minLevel ?? 0);
     });
     if (writable.length === 0) {
-      alert("현재 등급으로는 글을 작성할 수 있는 게시판이 없습니다.");
+      window.BGNJ_TOAST.error("현재 등급으로는 글을 작성할 수 있는 게시판이 없습니다.");
       return;
     }
     setWriting(true);
@@ -1257,13 +1257,13 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
   const handleLike = async () => {
     if (!user) return requireLogin('공감');
     try { await window.BGNJ_COMMUNITY.toggleLike(post.id, user.id); onRefresh?.(); }
-    catch (err) { alert(`공감 처리 실패: ${err?.message || '알 수 없는 오류'}`); }
+    catch (err) { window.BGNJ_TOAST.error(`공감 처리 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
 
   const handleBookmark = async () => {
     if (!user) return requireLogin('북마크');
     try { await window.BGNJ_COMMUNITY.toggleBookmark(user.id, post.id); onRefresh?.(); }
-    catch (err) { alert(`북마크 처리 실패: ${err?.message || '알 수 없는 오류'}`); }
+    catch (err) { window.BGNJ_TOAST.error(`북마크 처리 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
 
   const handleReportSubmit = async (e) => {
@@ -1280,7 +1280,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
       setReportReason("");
       setTimeout(() => { setReportOpen(false); setReportSubmitted(false); }, 1800);
     } catch (err) {
-      alert(`신고 접수 실패: ${err?.message || '알 수 없는 오류'}`);
+      window.BGNJ_TOAST.error(`신고 접수 실패: ${err?.message || '알 수 없는 오류'}`);
     }
   };
 

@@ -136,7 +136,7 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
         ed.chain().focus().setImage({ src: url, alt: f.name }).run();
       } catch (err) {
         try {
-          window.alert("\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
+          window.BGNJ_TOAST.error("\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
         } catch (e) {
         }
       } finally {

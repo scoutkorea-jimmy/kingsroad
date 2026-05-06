@@ -1349,7 +1349,7 @@ const LectureAdminPanel = ({ go }) => {
       setContentMsg('저장됨 — 강연 페이지에 즉시 반영.');
       setTimeout(() => setContentMsg(''), 2500);
       refresh();
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   // v00.184 — DRY: pickImageWithR2Fallback 헬퍼 사용 (이전엔 25-line 인라인 동일 패턴).
   const onPickContentCover = async (e) => {
@@ -1415,7 +1415,7 @@ const LectureAdminPanel = ({ go }) => {
       setEditingId(null);
       refresh();
     } catch (err) {
-      alert('강연 저장 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('강연 저장 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
 
@@ -1445,9 +1445,9 @@ const LectureAdminPanel = ({ go }) => {
       try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
       refresh();
       if (created) startEdit(created);
-      else alert('강연 생성 후 객체를 가져오지 못했습니다. 페이지를 새로고침해 주세요.');
+      else window.BGNJ_TOAST.error('강연 생성 후 객체를 가져오지 못했습니다. 페이지를 새로고침해 주세요.');
     } catch (err) {
-      alert('강연 생성 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('강연 생성 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
 
@@ -1597,7 +1597,7 @@ const LectureAdminPanel = ({ go }) => {
                           try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
                           refresh();
                         } catch (err) {
-                          alert('강연 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
+                          window.BGNJ_TOAST.error('강연 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
                         }
                       }}
                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
@@ -1796,7 +1796,7 @@ const TourAdminPanel = ({ go }) => {
       setContentMsg('저장됨 — 투어 페이지에 즉시 반영.');
       setTimeout(() => setContentMsg(''), 2500);
       refresh();
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   // v00.184 — DRY: pickImageWithR2Fallback 헬퍼 사용.
   const onPickContentCover = async (e) => {
@@ -1872,7 +1872,7 @@ const TourAdminPanel = ({ go }) => {
       setEditingId(null);
       refresh();
     } catch (err) {
-      alert('투어 저장 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('투어 저장 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
 
@@ -1904,7 +1904,7 @@ const TourAdminPanel = ({ go }) => {
       refresh();
       startEdit(tour);
     } catch (err) {
-      alert('투어 생성 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('투어 생성 실패: ' + (err?.message || '알 수 없는 오류'));
       refresh();
     }
   };
@@ -1919,7 +1919,7 @@ const TourAdminPanel = ({ go }) => {
       try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch {}
       refresh();
     } catch (err) {
-      alert('투어 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('투어 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
   const toggleTourHidden = async (t) => {
@@ -1928,7 +1928,7 @@ const TourAdminPanel = ({ go }) => {
       window.BGNJ_AUDIT?.log({ action: t.hidden ? 'tour.unhide' : 'tour.hide', target: `tour:${t.id}` });
       refresh();
     } catch (err) {
-      alert('숨김 상태 변경 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('숨김 상태 변경 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
 
@@ -3523,7 +3523,7 @@ const BooksAdminPanel = () => {
         setSelectedId(remaining[0]?.id || null);
       }
     } catch (err) {
-      alert('책 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('책 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
 
@@ -3675,7 +3675,7 @@ const BooksAdminPanel = () => {
                       onClick={async () => {
                         const ids = realBooks.map((x) => x.id);
                         [ids[realIdx-1], ids[realIdx]] = [ids[realIdx], ids[realIdx-1]];
-                        try { await window.BGNJ_BOOKS.reorder(ids); refresh(); } catch (err) { alert('순서 변경 실패: ' + (err?.message || '')); }
+                        try { await window.BGNJ_BOOKS.reorder(ids); refresh(); } catch (err) { window.BGNJ_TOAST.error('순서 변경 실패: ' + (err?.message || '')); }
                       }}
                       style={{
                         background:'transparent', border:'none', borderBottom:'1px solid var(--line)',
@@ -3688,7 +3688,7 @@ const BooksAdminPanel = () => {
                       onClick={async () => {
                         const ids = realBooks.map((x) => x.id);
                         [ids[realIdx], ids[realIdx+1]] = [ids[realIdx+1], ids[realIdx]];
-                        try { await window.BGNJ_BOOKS.reorder(ids); refresh(); } catch (err) { alert('순서 변경 실패: ' + (err?.message || '')); }
+                        try { await window.BGNJ_BOOKS.reorder(ids); refresh(); } catch (err) { window.BGNJ_TOAST.error('순서 변경 실패: ' + (err?.message || '')); }
                       }}
                       style={{
                         background:'transparent', border:'none',
@@ -3816,7 +3816,7 @@ const BooksAdminPanel = () => {
                             setField('_homeIntroDraft', null);
                             flash('✓ 홈 소개글 저장됨 — 홈 화면 즉시 반영');
                           } catch (err) {
-                            alert('홈 소개글 저장 실패: ' + (err?.message || ''));
+                            window.BGNJ_TOAST.error('홈 소개글 저장 실패: ' + (err?.message || ''));
                           }
                         }}>💾 홈 소개글만 즉시 저장</button>
                       {editing._homeIntroDraft != null && (
@@ -3895,7 +3895,7 @@ const BooksAdminPanel = () => {
                                   setField('_visibilityDraft', null);
                                   flash('✓ 노출 설정 저장됨 — 책 상세 즉시 반영');
                                 } catch (err) {
-                                  alert('노출 설정 저장 실패: ' + (err?.message || ''));
+                                  window.BGNJ_TOAST.error('노출 설정 저장 실패: ' + (err?.message || ''));
                                 }
                               }}>💾 노출 설정 즉시 저장</button>
                             {draft && <span className="mono dim-2" style={{fontSize:11}}>● 미저장</span>}
@@ -4199,7 +4199,7 @@ const ErrorLogPanel = () => {
   const clearAll = async () => {
     if (!confirm('모든 오류 로그를 삭제하시겠습니까? (되돌릴 수 없음)')) return;
     try { await window.BGNJ_API.errorLog.clear(); await refresh(); }
-    catch (err) { alert('삭제 실패: ' + (err?.message || '')); }
+    catch (err) { window.BGNJ_TOAST.error('삭제 실패: ' + (err?.message || '')); }
   };
 
   return (
@@ -4990,12 +4990,12 @@ const MemberAdminPanel = ({ go }) => {
 
   const changeGrade = async (user, gradeId) => {
     try { await window.BGNJ_AUTH.setGrade(user.id, gradeId); refresh(); }
-    catch (err) { alert(`등급 변경 실패: ${err?.message || '알 수 없는 오류'}`); }
+    catch (err) { window.BGNJ_TOAST.error(`등급 변경 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
   const toggleAdmin = async (user) => {
     if (!confirm(`${user.name} 님의 관리자 권한을 ${user.isAdmin ? '해제' : '부여'}하시겠어요?`)) return;
     try { await window.BGNJ_AUTH.toggleAdmin(user.id); refresh(); }
-    catch (err) { alert(`관리자 권한 변경 실패: ${err?.message || '알 수 없는 오류'}`); }
+    catch (err) { window.BGNJ_TOAST.error(`관리자 권한 변경 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
   const [suspendTarget, setSuspendTarget] = React.useState(null);
   const [suspendReason, setSuspendReason] = React.useState('');
@@ -5006,19 +5006,19 @@ const MemberAdminPanel = ({ go }) => {
     const reason = suspendReason.trim();
     setSuspendTarget(null); setSuspendReason('');
     try { await window.BGNJ_AUTH.suspendUser(target.id, reason); refresh(); }
-    catch (err) { alert(`정지 실패: ${err?.message || '알 수 없는 오류'}`); }
+    catch (err) { window.BGNJ_TOAST.error(`정지 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
   const suspendUser = (user) => openSuspendDialog(user);
   const unsuspend = async (user) => {
     if (!confirm(`${user.name} 님의 정지를 해제하시겠어요?`)) return;
     try { await window.BGNJ_AUTH.unsuspendUser(user.id); refresh(); }
-    catch (err) { alert(`정지 해제 실패: ${err?.message || '알 수 없는 오류'}`); }
+    catch (err) { window.BGNJ_TOAST.error(`정지 해제 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
   const deleteUser = async (user) => {
-    if (user.email === 'admin@admin.admin') { alert('기본 관리자 계정은 삭제할 수 없습니다.'); return; }
+    if (user.email === 'admin@admin.admin') { window.BGNJ_TOAST.error('기본 관리자 계정은 삭제할 수 없습니다.'); return; }
     if (!confirm(`${user.name} (${user.email}) 계정을 정말 삭제하시겠어요? 이 작업은 되돌릴 수 없습니다.`)) return;
     try { await window.BGNJ_AUTH.removeUser(user.id); setSelectedId(null); refresh(); }
-    catch (err) { alert(`삭제 실패: ${err?.message || '알 수 없는 오류'}`); }
+    catch (err) { window.BGNJ_TOAST.error(`삭제 실패: ${err?.message || '알 수 없는 오류'}`); }
   };
 
   const gradeOf = (id) => grades.find((g) => g.id === id);
@@ -5818,7 +5818,7 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
 
   const bulkMove = () => {
     if (selectedIds.size === 0) return;
-    if (!bulkCat) { alert('이동할 게시판을 선택하세요.'); return; }
+    if (!bulkCat) { window.BGNJ_TOAST.error('이동할 게시판을 선택하세요.'); return; }
     const cat = window.BGNJ_STORES.categories.find((c) => c.id === bulkCat);
     if (!cat) return;
     selectedIds.forEach((id) => window.BGNJ_COMMUNITY.updatePost(id, { categoryId: cat.id, category: cat.label }));
@@ -7217,7 +7217,7 @@ const AdminCategoryPanel = () => {
     try {
       await window.BGNJ_API?.categories?.remove?.(cat.id);
     } catch (err) {
-      alert('서버 삭제 실패: ' + (err?.message || '알 수 없는 오류') + '\n로컬에서만 제거합니다.');
+      window.BGNJ_TOAST.error('서버 삭제 실패: ' + (err?.message || '알 수 없는 오류') + '\n로컬에서만 제거합니다.');
     }
     save(cats.filter((_, j) => j !== i));
   };
@@ -7593,7 +7593,7 @@ const CommunityBoardsPanel = () => {
   };
 
   const removeBoard = async (id) => {
-    if (id === 'notice') { alert('공지 게시판은 삭제할 수 없습니다.'); return; }
+    if (id === 'notice') { window.BGNJ_TOAST.error('공지 게시판은 삭제할 수 없습니다.'); return; }
     const target = boards.find((b) => b.id === id);
     if (!target) return;
     const postCount = ((window.BGNJ_COMMUNITY?.listPosts?.() || []).filter((p) => p.categoryId === id)).length;
@@ -8069,7 +8069,7 @@ const AdminGradePanel = () => {
   };
   const remove = (i) => {
     const g = grades[i];
-    if (g.id === "admin" || g.id === "guest") { alert("기본 등급(guest/admin)은 삭제할 수 없습니다."); return; }
+    if (g.id === "admin" || g.id === "guest") { window.BGNJ_TOAST.error("기본 등급(guest/admin)은 삭제할 수 없습니다."); return; }
     if (!confirm(`"${g.label}" 등급을 삭제하시겠어요?`)) return;
     setGrades(grades.filter((_, j) => j !== i));
     markDirty();
@@ -8107,7 +8107,7 @@ const AdminGradePanel = () => {
       }
       if (failed.length) {
         const msg = `⚠ 등급 서버 저장 ${failed.length}건 실패\n\n${failed.map(f => `• ${f.id} (${f.label}): ${f.msg}`).join('\n')}\n\n새로고침 시 서버 D1 default 가 다시 덮어쓰므로 — 다시 시도하거나 로그아웃 후 admin 재로그인 후 시도해 주세요.`;
-        alert(msg);
+        window.BGNJ_TOAST.error(msg);
         setSaveMsg(`⚠ ${failed.length}건 실패 — alert 참조`);
         // 실패 시 setDirty(false) 하지 않음 — 사용자가 다시 시도 가능.
         setSaving(false);
@@ -8164,7 +8164,7 @@ const AdminGradePanel = () => {
   };
 
   const reevaluate = async () => {
-    if (dirty) { alert("저장하지 않은 변경 사항이 있습니다. 먼저 [저장] 후 재산정하세요."); return; }
+    if (dirty) { window.BGNJ_TOAST.error("저장하지 않은 변경 사항이 있습니다. 먼저 [저장] 후 재산정하세요."); return; }
     if (!confirm("전체 회원의 활동량을 재평가하여 자격 등급으로 자동 승급/강등 합니다. 진행할까요?")) return;
     setBusyReevaluate(true);
     try {
@@ -8173,7 +8173,7 @@ const AdminGradePanel = () => {
       const summary = window.BGNJ_GRADE_PROMO?.reevaluateAll?.() || { promoted: 0, demoted: 0 };
       setReevalResult(summary);
     } catch (err) {
-      alert("재산정 중 오류: " + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error("재산정 중 오류: " + (err?.message || '알 수 없는 오류'));
     } finally { setBusyReevaluate(false); }
   };
 
@@ -8358,7 +8358,7 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
       setScTick((x) => x + 1);
       onSelect?.(v);
     } catch (err) {
-      alert('카테고리 추가 실패: ' + (err?.message || ''));
+      window.BGNJ_TOAST.error('카테고리 추가 실패: ' + (err?.message || ''));
     } finally { setBusy(false); }
   };
   const removeCat = async (name) => {
@@ -8370,7 +8370,7 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
       setScTick((x) => x + 1);
       if (selected === name && next.length > 0) onSelect?.(next[0]);
     } catch (err) {
-      alert('카테고리 삭제 실패: ' + (err?.message || ''));
+      window.BGNJ_TOAST.error('카테고리 삭제 실패: ' + (err?.message || ''));
     } finally { setBusy(false); }
   };
 
@@ -8588,7 +8588,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
       setTick((v) => v + 1);
       if (editingId === id) reset();
     } catch (err) {
-      alert('삭제 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('삭제 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
 
@@ -8718,7 +8718,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
                       const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'column-covers', maxBytes: 10 * 1024 * 1024 });
                       setCoverUrl(url);
                     } catch (err) {
-                      try { window.alert('대표 이미지 업로드 실패: ' + (err?.message || err)); } catch {}
+                      try { window.BGNJ_TOAST.error('대표 이미지 업로드 실패: ' + (err?.message || err)); } catch {}
                     } finally { setUploadingCover(false); }
                   };
                   input.click();

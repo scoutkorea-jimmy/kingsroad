@@ -28,7 +28,7 @@ const downloadBlob = (filename, content, mime = 'text/plain;charset=utf-8') => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (err) {
-    alert('다운로드 실패: ' + (err?.message || '알 수 없는 오류'));
+    window.BGNJ_TOAST.error('다운로드 실패: ' + (err?.message || '알 수 없는 오류'));
   }
 };
 const downloadCsv = (filename, csv) => downloadBlob(filename, csv, 'text/csv;charset=utf-8');
@@ -48,7 +48,7 @@ const pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, 
     try { console.warn(`[upload] R2 ${folder} 업로드 실패 — dataURI 폴백:`, err); } catch {}
   }
   if (file.size > fallbackMaxBytes) {
-    alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + ${(fallbackMaxBytes/1024/1024).toFixed(1)}MB 폴백 한도 초과.`);
+    window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + ${(fallbackMaxBytes/1024/1024).toFixed(1)}MB 폴백 한도 초과.`);
     e.target.value = '';
     return null;
   }
@@ -62,7 +62,7 @@ const pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, 
     e.target.value = '';
     return dataUri;
   } catch (err) {
-    alert('이미지 읽기 실패: ' + (err?.message || ''));
+    window.BGNJ_TOAST.error('이미지 읽기 실패: ' + (err?.message || ''));
     e.target.value = '';
     return null;
   }

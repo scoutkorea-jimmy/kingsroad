@@ -115,7 +115,7 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
         console.warn("[v00.085] R2 \uAC8C\uC2DC\uAE00 \uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 dataURI \uD3F4\uBC31:", err);
       }
       if (f.size > 5 * 1024 * 1024) {
-        alert(`'${f.name}' R2 \uC2E4\uD328 + dataURI \uD3F4\uBC31 \uD55C\uB3C4 5MB \uCD08\uACFC \u2014 \uAC74\uB108\uB700.`);
+        window.BGNJ_TOAST.error(`'${f.name}' R2 \uC2E4\uD328 + dataURI \uD3F4\uBC31 \uD55C\uB3C4 5MB \uCD08\uACFC \u2014 \uAC74\uB108\uB700.`);
         return null;
       }
       const dataUrl = await new Promise((resolve) => {
@@ -713,7 +713,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       return userLevel >= ((_b = (_a = c.postMinLevel) != null ? _a : c.minLevel) != null ? _b : 0);
     });
     if (writable.length === 0) {
-      alert("\uD604\uC7AC \uB4F1\uAE09\uC73C\uB85C\uB294 \uAE00\uC744 \uC791\uC131\uD560 \uC218 \uC788\uB294 \uAC8C\uC2DC\uD310\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.");
+      window.BGNJ_TOAST.error("\uD604\uC7AC \uB4F1\uAE09\uC73C\uB85C\uB294 \uAE00\uC744 \uC791\uC131\uD560 \uC218 \uC788\uB294 \uAC8C\uC2DC\uD310\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.");
       return;
     }
     setWriting(true);
@@ -1246,7 +1246,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
       await window.BGNJ_COMMUNITY.toggleLike(post.id, user.id);
       onRefresh == null ? void 0 : onRefresh();
     } catch (err) {
-      alert(`\uACF5\uAC10 \uCC98\uB9AC \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+      window.BGNJ_TOAST.error(`\uACF5\uAC10 \uCC98\uB9AC \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
     }
   };
   const handleBookmark = async () => {
@@ -1255,7 +1255,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
       await window.BGNJ_COMMUNITY.toggleBookmark(user.id, post.id);
       onRefresh == null ? void 0 : onRefresh();
     } catch (err) {
-      alert(`\uBD81\uB9C8\uD06C \uCC98\uB9AC \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+      window.BGNJ_TOAST.error(`\uBD81\uB9C8\uD06C \uCC98\uB9AC \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
     }
   };
   const handleReportSubmit = async (e) => {
@@ -1275,7 +1275,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
         setReportSubmitted(false);
       }, 1800);
     } catch (err) {
-      alert(`\uC2E0\uACE0 \uC811\uC218 \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+      window.BGNJ_TOAST.error(`\uC2E0\uACE0 \uC811\uC218 \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
     }
   };
   const submitComment = (e) => {

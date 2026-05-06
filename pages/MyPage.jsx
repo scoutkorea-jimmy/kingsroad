@@ -364,7 +364,7 @@ const MyPage = ({ go, user, cart }) => {
                                 await window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
                                 refreshOrders();
                               } catch (err) {
-                                alert('취소 실패: ' + (err?.body?.error || err?.message || ''));
+                                window.BGNJ_TOAST.error('취소 실패: ' + (err?.body?.error || err?.message || ''));
                               }
                             }}
                             style={{ fontSize: 11, color: 'var(--danger)' }}>

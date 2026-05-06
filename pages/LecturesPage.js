@@ -238,7 +238,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       onRefresh();
       setSubmitted(null);
     } catch (err) {
-      alert("\uCDE8\uC18C \uC2E4\uD328: " + (((_a = err == null ? void 0 : err.body) == null ? void 0 : _a.error) || (err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uCDE8\uC18C \uC2E4\uD328: " + (((_a = err == null ? void 0 : err.body) == null ? void 0 : _a.error) || (err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const submitRefund = async () => {

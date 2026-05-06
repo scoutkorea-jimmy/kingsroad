@@ -253,7 +253,7 @@ const MyPage = ({ go, user, cart }) => {
             await window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
             refreshOrders();
           } catch (err) {
-            alert("\uCDE8\uC18C \uC2E4\uD328: " + (((_a2 = err == null ? void 0 : err.body) == null ? void 0 : _a2.error) || (err == null ? void 0 : err.message) || ""));
+            window.BGNJ_TOAST.error("\uCDE8\uC18C \uC2E4\uD328: " + (((_a2 = err == null ? void 0 : err.body) == null ? void 0 : _a2.error) || (err == null ? void 0 : err.message) || ""));
           }
         },
         style: { fontSize: 11, color: "var(--danger)" }

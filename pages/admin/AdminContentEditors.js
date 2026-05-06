@@ -58,7 +58,7 @@ const RecommendationsAdminPanel = () => {
       console.warn("[v00.084] R2 \uCD94\uCC9C \uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 dataURI \uD3F4\uBC31:", err);
     }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + 1.5MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
+      window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + 1.5MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
       return;
     }
     const dataUri = await fileToDataUri(file);
@@ -79,7 +79,7 @@ const RecommendationsAdminPanel = () => {
       setTick((v) => v + 1);
       flash(`${cleaned.length}\uAC1C \uCD94\uCC9C\uC774 \uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4.`);
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 18 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "14px 18px", background: "var(--bg-2)", borderLeft: "3px solid var(--primary-dim)" } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, lineHeight: 1.75, margin: 0, color: "var(--ink-2)" } }, "\u24D8 \uD648\uD398\uC774\uC9C0 ", /* @__PURE__ */ React.createElement("strong", null, "\uBC45\uAE30\uB178\uC790 \uCD94\uCC9C"), " \uC139\uC158\uC5D0 \uB178\uCD9C\uB420 \uC5EC\uD589\uC9C0\uB97C \uAD00\uB9AC\uD569\uB2C8\uB2E4. \uBE48 \uBC30\uC5F4\uC774\uBA74 \uC139\uC158\uC774 \uB178\uCD9C\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uC774\uBBF8\uC9C0\uB294 1.5MB \uC774\uD558 \uAD8C\uC7A5(\uAC00\uB85C\uD615 \uC0AC\uC9C4\uC774 \uCE74\uB4DC\uC5D0 \uC798 \uC5B4\uC6B8\uB9BD\uB2C8\uB2E4). \uD0DC\uADF8\uB294 \uC27C\uD45C(,) \uB610\uB294 \uAC00\uC6B4\uB383\uC810(\xB7)\uC73C\uB85C \uAD6C\uBD84.")), msg && /* @__PURE__ */ React.createElement("div", { role: "status", className: "card", style: { padding: "10px 14px", background: "rgba(245,213,72,0.10)", border: "1px solid var(--primary-dim)", color: "var(--secondary)", fontSize: 13 } }, msg), draft.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 32, textAlign: "center", color: "var(--ink-2)" } }, "\uB4F1\uB85D\uB41C \uCD94\uCC9C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uC544\uB798 \uBC84\uD2BC\uC73C\uB85C \uCCAB \uCD94\uCC9C\uC744 \uCD94\uAC00\uD574 \uC8FC\uC138\uC694.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, draft.map((it, idx) => /* @__PURE__ */ React.createElement("article", { key: it.id || idx, className: "card", style: { padding: 16, display: "grid", gridTemplateColumns: "120px 1fr auto", gap: 16, alignItems: "flex-start" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6 } }, /* @__PURE__ */ React.createElement("div", { style: {
@@ -227,7 +227,7 @@ const TourPageEditorPanel = () => {
       setTick((v) => v + 1);
       flash("\uAE00\uB85C\uBC8C \uC800\uC7A5\uB428 \u2014 \uD22C\uC5B4 \uD398\uC774\uC9C0\uC5D0 \uC989\uC2DC \uBC18\uC601.");
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const resetGlobal = async () => {
@@ -241,7 +241,7 @@ const TourPageEditorPanel = () => {
       setTick((v) => v + 1);
       flash("\uAE00\uB85C\uBC8C default \uBCF5\uC6D0\uB428.");
     } catch (err) {
-      alert("\uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const [templates, setTemplates] = React.useState(() => Array.isArray(sc.tourTemplates) ? sc.tourTemplates.slice() : []);
@@ -274,7 +274,7 @@ const TourPageEditorPanel = () => {
       setTick((v) => v + 1);
       flash("\uD15C\uD50C\uB9BF \uC800\uC7A5\uB428.");
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const tours = React.useMemo(() => {
@@ -315,7 +315,7 @@ const TourPageEditorPanel = () => {
   };
   const savePerTour = async () => {
     if (!activeTourId) {
-      alert("\uD22C\uC5B4\uB97C \uBA3C\uC800 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
+      window.BGNJ_TOAST.error("\uD22C\uC5B4\uB97C \uBA3C\uC800 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
       return;
     }
     try {
@@ -331,7 +331,7 @@ const TourPageEditorPanel = () => {
       setTick((v) => v + 1);
       flash(`'${activeTourId}' \uD22C\uC5B4 override \uC800\uC7A5\uB428.`);
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const onPickCover = async (e) => {
@@ -339,7 +339,7 @@ const TourPageEditorPanel = () => {
     const file = (_a = e.target.files) == null ? void 0 : _a[0];
     if (!file) return;
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). 1.5MB \uC774\uD558\uB85C \uC555\uCD95\uD574 \uC8FC\uC138\uC694.`);
+      window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). 1.5MB \uC774\uD558\uB85C \uC555\uCD95\uD574 \uC8FC\uC138\uC694.`);
       e.target.value = "";
       return;
     }
@@ -366,7 +366,7 @@ const TourPageEditorPanel = () => {
       setTick((v) => v + 1);
       flash("override \uC81C\uAC70\uB428 \u2014 \uAE00\uB85C\uBC8C fallback \uC801\uC6A9.");
     } catch (err) {
-      alert("\uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const previewSchedule = mode === "global" ? gSchedule : mode === "templates" ? (activeTpl == null ? void 0 : activeTpl.schedule) || [] : pSchedule;
@@ -576,7 +576,7 @@ const LecturePageEditorPanel = () => {
       setTick((v) => v + 1);
       flash("\uAE00\uB85C\uBC8C \uC800\uC7A5\uB428 \u2014 \uAC15\uC5F0 \uD398\uC774\uC9C0\uC5D0 \uC989\uC2DC \uBC18\uC601.");
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const resetGlobal = async () => {
@@ -590,7 +590,7 @@ const LecturePageEditorPanel = () => {
       setTick((v) => v + 1);
       flash("\uAE00\uB85C\uBC8C default \uBCF5\uC6D0\uB428.");
     } catch (err) {
-      alert("\uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const [templates, setTemplates] = React.useState(() => Array.isArray(sc.lectureTemplates) ? sc.lectureTemplates.slice() : []);
@@ -623,7 +623,7 @@ const LecturePageEditorPanel = () => {
       setTick((v) => v + 1);
       flash("\uD15C\uD50C\uB9BF \uC800\uC7A5\uB428.");
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const lectures = React.useMemo(() => {
@@ -664,7 +664,7 @@ const LecturePageEditorPanel = () => {
   };
   const savePerLecture = async () => {
     if (!activeLectureId) {
-      alert("\uAC15\uC5F0\uC744 \uBA3C\uC800 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
+      window.BGNJ_TOAST.error("\uAC15\uC5F0\uC744 \uBA3C\uC800 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
       return;
     }
     try {
@@ -680,7 +680,7 @@ const LecturePageEditorPanel = () => {
       setTick((v) => v + 1);
       flash(`'${activeLectureId}' \uAC15\uC5F0 override \uC800\uC7A5\uB428.`);
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const onPickCover = async (e) => {
@@ -696,7 +696,7 @@ const LecturePageEditorPanel = () => {
       console.warn("[v00.083] R2 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 dataURI \uD3F4\uBC31:", err);
     }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + 1.5MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
+      window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + 1.5MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
       e.target.value = "";
       return;
     }
@@ -723,7 +723,7 @@ const LecturePageEditorPanel = () => {
       setTick((v) => v + 1);
       flash("override \uC81C\uAC70\uB428 \u2014 \uAE00\uB85C\uBC8C fallback \uC801\uC6A9.");
     } catch (err) {
-      alert("\uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const previewSchedule = mode === "global" ? gSchedule : mode === "templates" ? (activeTpl == null ? void 0 : activeTpl.schedule) || [] : pSchedule;
@@ -936,7 +936,7 @@ const FooterStyleEditor = () => {
       setMsg("\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4 \u2014 \uD478\uD130\uC5D0 \uC989\uC2DC \uBC18\uC601.");
       setTimeout(() => setMsg(""), 2500);
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const resetAll = async () => {
@@ -948,7 +948,7 @@ const FooterStyleEditor = () => {
       setMsg("default \uB85C \uBCF5\uC6D0\uB428.");
       setTimeout(() => setMsg(""), 2500);
     } catch (err) {
-      alert("\uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const Field = HE_Field;
@@ -1229,7 +1229,7 @@ const HeroEditorPanel = () => {
       setMsg("\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4 \u2014 \uD648\uC5D0 \uC989\uC2DC \uBC18\uC601\uB429\uB2C8\uB2E4.");
       setTimeout(() => setMsg(""), 2500);
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const resetAll = async () => {
@@ -1244,7 +1244,7 @@ const HeroEditorPanel = () => {
       setMsg("default \uB85C \uBCF5\uC6D0\uB428.");
       setTimeout(() => setMsg(""), 2500);
     } catch (err) {
-      alert("\uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const Field = HE_Field;
@@ -1701,7 +1701,7 @@ const EatSleepShopAdminPanel = () => {
       setTick((v) => v + 1);
       flash(`'${kind}' \uC800\uC7A5\uB428.`);
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 18, lineHeight: 1.8 } }, "\uB180\uC790 \uC2DC\uB9AC\uC988 \u2014 ", /* @__PURE__ */ React.createElement("code", null, "/eat"), " / ", /* @__PURE__ */ React.createElement("code", null, "/sleep"), " / ", /* @__PURE__ */ React.createElement("code", null, "/shop"), " \uD398\uC774\uC9C0\uC758 \uC778\uD2B8\uB85C (eyebrow / title / sub / desc / accent) + \uCE74\uD14C\uACE0\uB9AC \uBAA9\uB85D \uD3B8\uC9D1. \uCE74\uD14C\uACE0\uB9AC\uB294 \uC6B0\uCE21 \uC0AC\uC774\uB4DC \uADF8\uB9AC\uB4DC\uC758 \uCE69 \uB77C\uBCA8\uB85C \uB178\uCD9C\uB428. \uBE44\uC6B0\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C \uCE74\uD14C\uACE0\uB9AC \uC139\uC158 \uBBF8\uB178\uCD9C."), KINDS.map((k) => {
@@ -1800,7 +1800,7 @@ const KindPagePanel = ({ kind = "eat" }) => {
       setTick((v) => v + 1);
       flash("\uC778\uD2B8\uB85C \uC800\uC7A5\uB428.");
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const initItems = () => Array.isArray(sc[itemsKey]) ? sc[itemsKey].slice() : [];
@@ -1849,7 +1849,7 @@ const KindPagePanel = ({ kind = "eat" }) => {
       console.warn("[v00.106] R2 \uB180\uC790 \uC544\uC774\uD15C \uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 dataURI \uD3F4\uBC31:", err);
     }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + 1.5MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
+      window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + 1.5MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
       return;
     }
     const dataUri = await new Promise((resolve) => {
@@ -1876,7 +1876,7 @@ const KindPagePanel = ({ kind = "eat" }) => {
       setTick((v) => v + 1);
       flash(`${meta.label} \uCF58\uD150\uCE20 ${clean.length}\uAC1C \uC800\uC7A5\uB428.`);
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 18, lineHeight: 1.8 } }, /* @__PURE__ */ React.createElement("strong", { className: "gold" }, meta.label), " \u2014 ", meta.hint), /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 18, marginBottom: 18 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 16, margin: 0 } }, "\u2460 \uC778\uD2B8\uB85C (\uD398\uC774\uC9C0 \uC0C1\uB2E8)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveIntro }, "\uC778\uD2B8\uB85C \uC800\uC7A5")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("label", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("span", { className: "field-label" }, "\uC544\uC774\uBE0C\uB85C\uC6B0"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: intro.eyebrow, onChange: (e) => setIntro({ ...intro, eyebrow: e.target.value }) })), /* @__PURE__ */ React.createElement("label", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("span", { className: "field-label" }, "\uD070 \uC81C\uBAA9"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: intro.title, onChange: (e) => setIntro({ ...intro, title: e.target.value }) })), /* @__PURE__ */ React.createElement("label", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("span", { className: "field-label" }, "\uC81C\uBAA9 \uC6B0\uCE21 \uC791\uC740 \uBD80\uC81C"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: intro.sub, onChange: (e) => setIntro({ ...intro, sub: e.target.value }) })), /* @__PURE__ */ React.createElement("label", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("span", { className: "field-label" }, "\uBCF8\uBB38 \uC124\uBA85"), /* @__PURE__ */ React.createElement("textarea", { className: "field-input", rows: 3, value: intro.desc, onChange: (e) => setIntro({ ...intro, desc: e.target.value }) })), /* @__PURE__ */ React.createElement("label", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("span", { className: "field-label" }, "\uBD80\uC81C \uAC15\uC870 \uC0C9\uC0C1 (HEX)"), /* @__PURE__ */ React.createElement(
@@ -2163,7 +2163,7 @@ const HomeTextEditorPanel = () => {
       setMsg("\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4 \u2014 \uD648 \uD654\uBA74\uC5D0 \uC989\uC2DC \uBC18\uC601\uB429\uB2C8\uB2E4.");
       setTimeout(() => setMsg(""), 2400);
     } catch (err) {
-      alert("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+      window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
   const resetText = () => {

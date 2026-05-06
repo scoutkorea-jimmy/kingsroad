@@ -317,7 +317,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       await window.BGNJ_LECTURES.cancelRegistration(lecture.id, myReg.id);
       onRefresh(); setSubmitted(null);
     } catch (err) {
-      alert('취소 실패: ' + (err?.body?.error || err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('취소 실패: ' + (err?.body?.error || err?.message || '알 수 없는 오류'));
     }
   };
 

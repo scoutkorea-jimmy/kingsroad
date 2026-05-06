@@ -11,7 +11,7 @@ const downloadBlob = (filename, content, mime = "text/plain;charset=utf-8") => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (err) {
-    alert("\uB2E4\uC6B4\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+    window.BGNJ_TOAST.error("\uB2E4\uC6B4\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
   }
 };
 const downloadCsv = (filename, csv) => downloadBlob(filename, csv, "text/csv;charset=utf-8");
@@ -31,7 +31,7 @@ const pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, 
     }
   }
   if (file.size > fallbackMaxBytes) {
-    alert(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + ${(fallbackMaxBytes / 1024 / 1024).toFixed(1)}MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
+    window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + ${(fallbackMaxBytes / 1024 / 1024).toFixed(1)}MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
     e.target.value = "";
     return null;
   }
@@ -45,7 +45,7 @@ const pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, 
     e.target.value = "";
     return dataUri;
   } catch (err) {
-    alert("\uC774\uBBF8\uC9C0 \uC77D\uAE30 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || ""));
+    window.BGNJ_TOAST.error("\uC774\uBBF8\uC9C0 \uC77D\uAE30 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || ""));
     e.target.value = "";
     return null;
   }

@@ -63,7 +63,7 @@ const RecommendationsAdminPanel = () => {
       console.warn('[v00.084] R2 추천 이미지 업로드 실패 — dataURI 폴백:', err);
     }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
+      window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
       return;
     }
     const dataUri = await fileToDataUri(file);
@@ -88,7 +88,7 @@ const RecommendationsAdminPanel = () => {
       setTick((v) => v + 1);
       flash(`${cleaned.length}개 추천이 저장되었습니다.`);
     } catch (err) {
-      alert('저장 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
 
@@ -346,7 +346,7 @@ const TourPageEditorPanel = () => {
       await window.BGNJ_SITE_CONTENT.saveSection('tourPrep', cleanP);
       setTick((v) => v + 1);
       flash('글로벌 저장됨 — 투어 페이지에 즉시 반영.');
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   const resetGlobal = async () => {
     if (!confirm('글로벌 답사 일정/준비물을 default 로 복원합니다. 진행할까요?')) return;
@@ -358,7 +358,7 @@ const TourPageEditorPanel = () => {
       setGPrep(Array.isArray(next.tourPrep) ? next.tourPrep.slice() : []);
       setTick((v) => v + 1);
       flash('글로벌 default 복원됨.');
-    } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   // ── 템플릿 ─────────────────────────────────────
@@ -390,7 +390,7 @@ const TourPageEditorPanel = () => {
       await window.BGNJ_SITE_CONTENT.saveSection('tourTemplates', clean);
       setTick((v) => v + 1);
       flash('템플릿 저장됨.');
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   // ── 투어별 ─────────────────────────────────────
@@ -420,7 +420,7 @@ const TourPageEditorPanel = () => {
     setPTemplateId(tplId);
   };
   const savePerTour = async () => {
-    if (!activeTourId) { alert('투어를 먼저 선택해 주세요.'); return; }
+    if (!activeTourId) { window.BGNJ_TOAST.error('투어를 먼저 선택해 주세요.'); return; }
     try {
       const cleanS = pSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
       const cleanP = pPrep.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
@@ -432,14 +432,14 @@ const TourPageEditorPanel = () => {
       await window.BGNJ_SITE_CONTENT.saveSection('tourPages', next);
       setTick((v) => v + 1);
       flash(`'${activeTourId}' 투어 override 저장됨.`);
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   // v00.070 — 커버 이미지 업로드 헬퍼. 1.5MB 이하 dataURI.
   const onPickCover = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
+      window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
       e.target.value = ''; return;
     }
     const dataUri = await new Promise((resolve, reject) => {
@@ -461,7 +461,7 @@ const TourPageEditorPanel = () => {
       setPSchedule([]); setPPrep([]); setPTemplateId(''); setPCover('');
       setTick((v) => v + 1);
       flash('override 제거됨 — 글로벌 fallback 적용.');
-    } catch (err) { alert('실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   // 미리보기 입력 (모드별).
@@ -732,7 +732,7 @@ const LecturePageEditorPanel = () => {
       await window.BGNJ_SITE_CONTENT.saveSection('lectureNotes', cleanN);
       setTick((v) => v + 1);
       flash('글로벌 저장됨 — 강연 페이지에 즉시 반영.');
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   const resetGlobal = async () => {
     if (!confirm('글로벌 진행/참고를 default 로 복원합니다. 진행할까요?')) return;
@@ -744,7 +744,7 @@ const LecturePageEditorPanel = () => {
       setGNotes(Array.isArray(next.lectureNotes) ? next.lectureNotes.slice() : []);
       setTick((v) => v + 1);
       flash('글로벌 default 복원됨.');
-    } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   // ── 템플릿 ─────────────────────────────────────
@@ -776,7 +776,7 @@ const LecturePageEditorPanel = () => {
       await window.BGNJ_SITE_CONTENT.saveSection('lectureTemplates', clean);
       setTick((v) => v + 1);
       flash('템플릿 저장됨.');
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   // ── 강연별 ─────────────────────────────────────
@@ -806,7 +806,7 @@ const LecturePageEditorPanel = () => {
     setPTemplateId(tplId);
   };
   const savePerLecture = async () => {
-    if (!activeLectureId) { alert('강연을 먼저 선택해 주세요.'); return; }
+    if (!activeLectureId) { window.BGNJ_TOAST.error('강연을 먼저 선택해 주세요.'); return; }
     try {
       const cleanS = pSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
       const cleanN = pNotes.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
@@ -818,7 +818,7 @@ const LecturePageEditorPanel = () => {
       await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', next);
       setTick((v) => v + 1);
       flash(`'${activeLectureId}' 강연 override 저장됨.`);
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   // v00.083 — 커버 이미지 업로드. R2 우선 (5MB) + dataURI 폴백 (1.5MB).
   const onPickCover = async (e) => {
@@ -833,7 +833,7 @@ const LecturePageEditorPanel = () => {
       console.warn('[v00.083] R2 업로드 실패 — dataURI 폴백:', err);
     }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
+      window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
       e.target.value = ''; return;
     }
     const dataUri = await new Promise((resolve, reject) => {
@@ -855,7 +855,7 @@ const LecturePageEditorPanel = () => {
       setPSchedule([]); setPNotes([]); setPTemplateId(''); setPCover('');
       setTick((v) => v + 1);
       flash('override 제거됨 — 글로벌 fallback 적용.');
-    } catch (err) { alert('실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   // 미리보기 입력 (모드별).
@@ -1094,7 +1094,7 @@ const FooterStyleEditor = () => {
       setTick((v) => v + 1);
       setMsg('저장되었습니다 — 푸터에 즉시 반영.');
       setTimeout(() => setMsg(''), 2500);
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   const resetAll = async () => {
     if (!confirm('푸터 스타일을 default 로 복원합니다. 진행할까요?')) return;
@@ -1104,7 +1104,7 @@ const FooterStyleEditor = () => {
       setTick((v) => v + 1);
       setMsg('default 로 복원됨.');
       setTimeout(() => setMsg(''), 2500);
-    } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   // 모듈 최상위 HE_* 재사용 — IME 입력 안전 (v00.058 핫픽스).
@@ -1398,7 +1398,7 @@ const HeroEditorPanel = () => {
       setTick((v) => v + 1);
       setMsg('저장되었습니다 — 홈에 즉시 반영됩니다.');
       setTimeout(() => setMsg(''), 2500);
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
   const resetAll = async () => {
     if (!confirm('히어로 콘텐츠와 스타일을 모두 default 로 복원합니다. 진행할까요?')) return;
@@ -1411,7 +1411,7 @@ const HeroEditorPanel = () => {
       setTick((v) => v + 1);
       setMsg('default 로 복원됨.');
       setTimeout(() => setMsg(''), 2500);
-    } catch (err) { alert('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('복원 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   // 작은 컴포넌트들은 모듈 최상위(HE_*)에 정의되어 있음 — IME/한글 입력 핫픽스(v00.058).
@@ -1843,7 +1843,7 @@ const EatSleepShopAdminPanel = () => {
       await window.BGNJ_SITE_CONTENT.saveSection(kind, clean);
       setTick((v) => v + 1);
       flash(`'${kind}' 저장됨.`);
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   return (
@@ -1962,7 +1962,7 @@ const KindPagePanel = ({ kind = 'eat' }) => {
       await window.BGNJ_SITE_CONTENT.saveSection(introKey, clean);
       setTick((v) => v + 1);
       flash('인트로 저장됨.');
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   // ── items draft ─────────────────────────────────
@@ -2001,7 +2001,7 @@ const KindPagePanel = ({ kind = 'eat' }) => {
       console.warn('[v00.106] R2 놀자 아이템 이미지 업로드 실패 — dataURI 폴백:', err);
     }
     if (file.size > 1.5 * 1024 * 1024) {
-      alert(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
+      window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
       return;
     }
     const dataUri = await new Promise((resolve) => {
@@ -2027,7 +2027,7 @@ const KindPagePanel = ({ kind = 'eat' }) => {
       await window.BGNJ_SITE_CONTENT.saveSection(itemsKey, clean);
       setTick((v) => v + 1);
       flash(`${meta.label} 콘텐츠 ${clean.length}개 저장됨.`);
-    } catch (err) { alert('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
 
   return (
@@ -2422,7 +2422,7 @@ const HomeTextEditorPanel = () => {
       setMsg('저장되었습니다 — 홈 화면에 즉시 반영됩니다.');
       setTimeout(() => setMsg(''), 2400);
     } catch (err) {
-      alert('저장 실패: ' + (err?.message || '알 수 없는 오류'));
+      window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류'));
     }
   };
 

@@ -157,7 +157,7 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
         const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
         ed.chain().focus().setImage({ src: url, alt: f.name }).run();
       } catch (err) {
-        try { window.alert('이미지 업로드 실패: ' + (err?.message || err)); } catch {}
+        try { window.BGNJ_TOAST.error('이미지 업로드 실패: ' + (err?.message || err)); } catch {}
       } finally {
         setUploadingImage(false);
       }

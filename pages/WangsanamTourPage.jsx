@@ -327,7 +327,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       await window.BGNJ_TOURS.cancelReservation(tour.id, myReg.id);
       onRefresh(); setSubmitted(null);
     } catch (err) {
-      alert('취소 실패: ' + (err?.body?.error || err?.message || ''));
+      window.BGNJ_TOAST.error('취소 실패: ' + (err?.body?.error || err?.message || ''));
     }
   };
 
