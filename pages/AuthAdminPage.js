@@ -5199,7 +5199,8 @@ const AdminPage = ({ go }) => {
           fontWeight: 700,
           letterSpacing: "0.22em",
           color: hasCurrent ? "var(--secondary)" : "var(--ink)",
-          background: "transparent",
+          // 펼친 그룹은 헤더에 미세 배경 → 헤더+서브 한 묶음으로 시각적 그룹화
+          background: isOpen ? "rgba(15,23,42,0.03)" : "transparent",
           border: "none",
           cursor: "pointer",
           textTransform: "uppercase"
@@ -5213,30 +5214,55 @@ const AdminPage = ({ go }) => {
         display: "inline-block",
         transform: isOpen ? "rotate(0deg)" : "rotate(-90deg)"
       } }, "\u25BE")
-    ), isOpen && /* @__PURE__ */ React.createElement("ul", { role: "list", style: { listStyle: "none", margin: 0, padding: "2px 0 8px" } }, grp.items.map((t) => /* @__PURE__ */ React.createElement("li", { key: t }, /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        onClick: () => handleTabClick(t),
-        "aria-current": tab === t ? "page" : void 0,
-        style: {
-          width: "100%",
-          textAlign: "left",
-          padding: "9px 24px",
-          fontSize: 14,
-          fontWeight: tab === t ? 700 : 500,
-          background: tab === t ? "rgba(245,213,72,0.10)" : "transparent",
-          color: tab === t ? "var(--secondary)" : "var(--ink)",
-          borderTop: "none",
-          borderRight: "none",
-          borderBottom: "none",
-          borderLeft: tab === t ? "3px solid var(--primary)" : "3px solid transparent",
-          letterSpacing: "0.01em",
-          cursor: "pointer"
-        }
-      },
-      t
-    )))));
+    ), isOpen && /* @__PURE__ */ React.createElement("ul", { role: "list", style: {
+      listStyle: "none",
+      margin: 0,
+      padding: "4px 0 10px",
+      // 그룹 펼친 영역 좌측 세로 가이드 라인 — 트리 위계 시각화
+      position: "relative",
+      background: "rgba(15,23,42,0.015)",
+      borderBottom: "1px solid var(--line)"
+    } }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: {
+      position: "absolute",
+      left: 32,
+      top: 6,
+      bottom: 10,
+      width: 1,
+      background: "var(--line-2)"
+    } }), grp.items.map((t) => {
+      const active = tab === t;
+      return /* @__PURE__ */ React.createElement("li", { key: t }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: () => handleTabClick(t),
+          "aria-current": active ? "page" : void 0,
+          style: {
+            width: "100%",
+            textAlign: "left",
+            // 들여쓰기: 24 → 44 (가이드 라인보다 12px 안쪽)
+            padding: "10px 24px 10px 44px",
+            fontSize: 14,
+            fontWeight: active ? 700 : 500,
+            background: active ? "rgba(245,213,72,0.14)" : "transparent",
+            color: active ? "var(--secondary)" : "var(--ink-2)",
+            border: "none",
+            // 활성 시 4px 좌측 보더, 비활성은 동일 두께의 투명 보더로 정렬 유지
+            borderLeft: active ? "4px solid var(--primary)" : "4px solid transparent",
+            letterSpacing: "0.01em",
+            cursor: "pointer",
+            position: "relative"
+          },
+          onMouseEnter: (e) => {
+            if (!active) e.currentTarget.style.background = "rgba(15,23,42,0.04)";
+          },
+          onMouseLeave: (e) => {
+            if (!active) e.currentTarget.style.background = "transparent";
+          }
+        },
+        t
+      ));
+    })));
   })), /* @__PURE__ */ React.createElement("div", { className: "admin-main", style: { padding: 40, overflow: "auto" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.25em" } }, "ADMIN / ", tab.toUpperCase()), /* @__PURE__ */ React.createElement("h1", { className: "ko-serif", style: { fontSize: 32, fontWeight: 500, marginTop: 6 } }, tab)), /* @__PURE__ */ React.createElement("time", { className: "mono dim-2", style: { fontSize: 11 }, dateTime: (/* @__PURE__ */ new Date()).toISOString() }, window.BGNJ_FMT.kstDateTime())), tab === "\uB300\uC2DC\uBCF4\uB4DC" && /* @__PURE__ */ React.createElement(
     DashboardPanel,
     {

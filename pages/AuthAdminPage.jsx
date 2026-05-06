@@ -6212,7 +6212,7 @@ const AdminPage = ({ go }) => {
           <div className="dim-2 mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em'}}>적용법: GDPR + PIPA</div>
           <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.1em'}}>최근 DPIA: 2026.03.02</div>
         </div>
-        {/* v00.165 — collapsible 그룹. 디폴트는 현재 탭이 속한 그룹만 펼침. */}
+        {/* v00.165 collapsible 그룹 · v00.216 시각 위계 강화: 그룹 헤더-서브 들여쓰기·가이드 라인·활성 표시 명료화 */}
         {tabGroups.map(grp => {
           const isOpen = openGroups.has(grp.group);
           const hasCurrent = grp.items.includes(tab);
@@ -6228,7 +6228,9 @@ const AdminPage = ({ go }) => {
                   padding:'12px 24px',
                   fontSize:11, fontWeight:700, letterSpacing:'0.22em',
                   color: hasCurrent ? 'var(--secondary)' : 'var(--ink)',
-                  background:'transparent', border:'none', cursor:'pointer',
+                  // 펼친 그룹은 헤더에 미세 배경 → 헤더+서브 한 묶음으로 시각적 그룹화
+                  background: isOpen ? 'rgba(15,23,42,0.03)' : 'transparent',
+                  border:'none', cursor:'pointer',
                   textTransform:'uppercase',
                 }}>
                 <span>
@@ -6242,27 +6244,48 @@ const AdminPage = ({ go }) => {
                 }}>▾</span>
               </button>
               {isOpen && (
-                <ul role="list" style={{listStyle:'none', margin:0, padding:'2px 0 8px'}}>
-                  {grp.items.map(t => (
-                    <li key={t}>
-                      <button
-                        type="button"
-                        onClick={() => handleTabClick(t)}
-                        aria-current={tab === t ? "page" : undefined}
-                        style={{
-                          width:'100%', textAlign:'left',
-                          padding:'9px 24px',
-                          fontSize:14,
-                          fontWeight: tab === t ? 700 : 500,
-                          background: tab === t ? 'rgba(245,213,72,0.10)' : 'transparent',
-                          color: tab === t ? 'var(--secondary)' : 'var(--ink)',
-                          borderTop:'none', borderRight:'none', borderBottom:'none',
-                          borderLeft: tab === t ? '3px solid var(--primary)' : '3px solid transparent',
-                          letterSpacing:'0.01em',
-                          cursor:'pointer',
-                        }}>{t}</button>
-                    </li>
-                  ))}
+                <ul role="list" style={{
+                  listStyle:'none', margin:0, padding:'4px 0 10px',
+                  // 그룹 펼친 영역 좌측 세로 가이드 라인 — 트리 위계 시각화
+                  position:'relative',
+                  background:'rgba(15,23,42,0.015)',
+                  borderBottom:'1px solid var(--line)',
+                }}>
+                  {/* 세로 가이드 라인 (서브 영역 좌측) */}
+                  <span aria-hidden="true" style={{
+                    position:'absolute', left:32, top:6, bottom:10,
+                    width:1, background:'var(--line-2)',
+                  }}/>
+                  {grp.items.map(t => {
+                    const active = tab === t;
+                    return (
+                      <li key={t}>
+                        <button
+                          type="button"
+                          onClick={() => handleTabClick(t)}
+                          aria-current={active ? "page" : undefined}
+                          style={{
+                            width:'100%', textAlign:'left',
+                            // 들여쓰기: 24 → 44 (가이드 라인보다 12px 안쪽)
+                            padding:'10px 24px 10px 44px',
+                            fontSize:14,
+                            fontWeight: active ? 700 : 500,
+                            background: active ? 'rgba(245,213,72,0.14)' : 'transparent',
+                            color: active ? 'var(--secondary)' : 'var(--ink-2)',
+                            border:'none',
+                            // 활성 시 4px 좌측 보더, 비활성은 동일 두께의 투명 보더로 정렬 유지
+                            borderLeft: active ? '4px solid var(--primary)' : '4px solid transparent',
+                            letterSpacing:'0.01em',
+                            cursor:'pointer',
+                            position:'relative',
+                          }}
+                          onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'rgba(15,23,42,0.04)'; }}
+                          onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
+                          {t}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
