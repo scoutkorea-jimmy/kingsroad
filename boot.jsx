@@ -221,6 +221,61 @@ const GlobalErrorToast = () => {
   );
 };
 
+// v00.214 — 새 빌드 감지 배너. 매 커밋 마다 /version.json 이 갱신됨 (pre-commit hook).
+// 동작: 5분마다 + 탭 visibility=visible 전환 시 fetch. 다른 버전이면 우상단 배너 노출.
+// '지금 새로고침' 클릭 시 cache-bust reload (location.href + ?_=now).
+// 자동 reload 는 의도적으로 안 함 — 사용자 form 입력 등 중간 상태 보존.
+const VERSION_POLL_MS = 5 * 60 * 1000; // 5분
+const VersionUpdateBanner = () => {
+  const [latest, setLatest] = React.useState(null);
+  const current = (window.BGNJ_VERSION?.version || '').toString();
+  React.useEffect(() => {
+    if (!current) return;
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const url = `/version.json?_=${Date.now()}`;
+        // bgnj-lint-ignore-next-line direct_fetch
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) return;
+        const j = await r.json();
+        const v = String(j?.version || '');
+        if (!cancelled && v && v !== current) setLatest(j);
+      } catch {}
+    };
+    check(); // 진입 즉시 1회
+    const t = setInterval(check, VERSION_POLL_MS);
+    const onVisible = () => { if (document.visibilityState === 'visible') check(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { cancelled = true; clearInterval(t); document.removeEventListener('visibilitychange', onVisible); };
+  }, [current]);
+  const reload = () => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('_v', latest?.version || Date.now().toString());
+      window.location.replace(url.toString());
+    } catch {
+      window.location.reload();
+    }
+  };
+  if (!latest) return null;
+  return (
+    <div role="status" aria-live="polite" style={{
+      position:'fixed', top:12, right:12, zIndex:2100, maxWidth:360,
+      background:'#fff', border:'1px solid var(--primary-active)', boxShadow:'0 8px 24px rgba(0,0,0,0.14)',
+      padding:'12px 14px', fontSize:13, lineHeight:1.6, color:'var(--ink)',
+    }}>
+      <div className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--primary-active)', marginBottom:4}}>NEW BUILD AVAILABLE</div>
+      <div style={{fontWeight:600, marginBottom:6}}>새 버전 v{latest.version} 사용 가능</div>
+      <div className="dim-2" style={{fontSize:11, marginBottom:10}}>현재 v{current} · 빌드 {latest.build || '—'}</div>
+      <div style={{display:'flex', gap:6, justifyContent:'flex-end'}}>
+        <button type="button" className="btn btn-small" onClick={() => setLatest(null)}>나중에</button>
+        <button type="button" className="btn btn-small btn-gold" onClick={reload}>지금 새로고침</button>
+      </div>
+    </div>
+  );
+};
+
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "lineStyle": "outline",
   "intensity": 1,
@@ -687,6 +742,7 @@ const App = () => {
       <ScrollToTop/>
       <CookieConsent/>
       <GlobalErrorToast/>
+      <VersionUpdateBanner/>
       {window.ConfirmDialogHost ? <window.ConfirmDialogHost/> : null}
     </div>
   );

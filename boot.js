@@ -251,6 +251,62 @@ const GlobalErrorToast = () => {
     )), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: e.hint ? 4 : 0 } }, e.message), e.hint && /* @__PURE__ */ React.createElement("div", { style: { color: "#475569", fontSize: 12 } }, e.hint), e.url && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 10, color: "#94a3b8", marginTop: 6, wordBreak: "break-all" } }, e.url));
   }));
 };
+const VERSION_POLL_MS = 5 * 60 * 1e3;
+const VersionUpdateBanner = () => {
+  var _a;
+  const [latest, setLatest] = React.useState(null);
+  const current = (((_a = window.BGNJ_VERSION) == null ? void 0 : _a.version) || "").toString();
+  React.useEffect(() => {
+    if (!current) return;
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const url = `/version.json?_=${Date.now()}`;
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) return;
+        const j = await r.json();
+        const v = String((j == null ? void 0 : j.version) || "");
+        if (!cancelled && v && v !== current) setLatest(j);
+      } catch (e) {
+      }
+    };
+    check();
+    const t = setInterval(check, VERSION_POLL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [current]);
+  const reload = () => {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("_v", (latest == null ? void 0 : latest.version) || Date.now().toString());
+      window.location.replace(url.toString());
+    } catch (e) {
+      window.location.reload();
+    }
+  };
+  if (!latest) return null;
+  return /* @__PURE__ */ React.createElement("div", { role: "status", "aria-live": "polite", style: {
+    position: "fixed",
+    top: 12,
+    right: 12,
+    zIndex: 2100,
+    maxWidth: 360,
+    background: "#fff",
+    border: "1px solid var(--primary-active)",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
+    padding: "12px 14px",
+    fontSize: 13,
+    lineHeight: 1.6,
+    color: "var(--ink)"
+  } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", color: "var(--primary-active)", marginBottom: 4 } }, "NEW BUILD AVAILABLE"), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: 6 } }, "\uC0C8 \uBC84\uC804 v", latest.version, " \uC0AC\uC6A9 \uAC00\uB2A5"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginBottom: 10 } }, "\uD604\uC7AC v", current, " \xB7 \uBE4C\uB4DC ", latest.build || "\u2014"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setLatest(null) }, "\uB098\uC911\uC5D0"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: reload }, "\uC9C0\uAE08 \uC0C8\uB85C\uACE0\uCE68")));
+};
 const TWEAK_DEFAULTS = (
   /*EDITMODE-BEGIN*/
   {
@@ -775,7 +831,7 @@ const App = () => {
     textAlign: "center",
     fontSize: 13,
     lineHeight: 1.55
-  } }, "\u{1F331} ", /* @__PURE__ */ React.createElement("strong", null, "\uD648\uD398\uC774\uC9C0\uB97C \uC624\uD508\uD55C \uC9C0 \uC5BC\uB9C8 \uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."), " ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC774\uC6A9\uC5D0 \uBD88\uD3B8\uD558\uC2E0 \uC810\uC774 \uC788\uB2E4\uBA74 ", /* @__PURE__ */ React.createElement("strong", null, "\uC655\uC0AC\uB4E4 \uC624\uD508\uD1A1\uBC29"), "\uC5D0 \uC54C\uB824\uC8FC\uC138\uC694 \u2014 \uACC4\uC18D \uC5C5\uB370\uC774\uD2B8\uD574 \uB098\uAC00\uACA0\uC2B5\uB2C8\uB2E4. \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", null, "PC \uBC84\uC804 \uCD5C\uC801\uD654"), "\uB85C \uC81C\uC791\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement(Nav, { route, go, user, onLogout: logout }), /* @__PURE__ */ React.createElement("main", { id: "main", tabIndex: "-1", style: { flex: 1, outline: "none" }, "aria-label": `${route} \uD398\uC774\uC9C0 \uBCF8\uBB38` }, page), !hideNav && /* @__PURE__ */ React.createElement(Footer, { go }), /* @__PURE__ */ React.createElement(Tweaks, { tweaks, setTweaks: updateTweaks, visible: editMode }), /* @__PURE__ */ React.createElement(ScrollToTop, null), /* @__PURE__ */ React.createElement(CookieConsent, null), /* @__PURE__ */ React.createElement(GlobalErrorToast, null), window.ConfirmDialogHost ? /* @__PURE__ */ React.createElement(window.ConfirmDialogHost, null) : null);
+  } }, "\u{1F331} ", /* @__PURE__ */ React.createElement("strong", null, "\uD648\uD398\uC774\uC9C0\uB97C \uC624\uD508\uD55C \uC9C0 \uC5BC\uB9C8 \uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."), " ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC774\uC6A9\uC5D0 \uBD88\uD3B8\uD558\uC2E0 \uC810\uC774 \uC788\uB2E4\uBA74 ", /* @__PURE__ */ React.createElement("strong", null, "\uC655\uC0AC\uB4E4 \uC624\uD508\uD1A1\uBC29"), "\uC5D0 \uC54C\uB824\uC8FC\uC138\uC694 \u2014 \uACC4\uC18D \uC5C5\uB370\uC774\uD2B8\uD574 \uB098\uAC00\uACA0\uC2B5\uB2C8\uB2E4. \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", null, "PC \uBC84\uC804 \uCD5C\uC801\uD654"), "\uB85C \uC81C\uC791\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement(Nav, { route, go, user, onLogout: logout }), /* @__PURE__ */ React.createElement("main", { id: "main", tabIndex: "-1", style: { flex: 1, outline: "none" }, "aria-label": `${route} \uD398\uC774\uC9C0 \uBCF8\uBB38` }, page), !hideNav && /* @__PURE__ */ React.createElement(Footer, { go }), /* @__PURE__ */ React.createElement(Tweaks, { tweaks, setTweaks: updateTweaks, visible: editMode }), /* @__PURE__ */ React.createElement(ScrollToTop, null), /* @__PURE__ */ React.createElement(CookieConsent, null), /* @__PURE__ */ React.createElement(GlobalErrorToast, null), /* @__PURE__ */ React.createElement(VersionUpdateBanner, null), window.ConfirmDialogHost ? /* @__PURE__ */ React.createElement(window.ConfirmDialogHost, null) : null);
 };
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/* @__PURE__ */ React.createElement(AppErrorBoundary, null, /* @__PURE__ */ React.createElement(App, null)));

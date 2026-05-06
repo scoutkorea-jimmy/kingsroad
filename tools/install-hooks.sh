@@ -31,6 +31,9 @@ node "$ROOT/tools/stamp-datetime.mjs"
 node "$ROOT/tools/csp-hashes.mjs"
 # 3) 버전 일관성 검증 — BGNJ_VERSION 과 cache-buster 불일치 시 차단.
 node "$ROOT/tools/check-version.mjs"
+# 3.5) /version.json 갱신 — 클라이언트 새 빌드 감지용 매니페스트.
+node "$ROOT/tools/write-version-json.mjs"
+git -C "$ROOT" add 'version.json' 2>/dev/null || true
 # 4) stamp / csp-hashes 변경분과 stage 된 .jsx 자동 stage.
 git -C "$ROOT" add -u 'pages/admin/AdminDesignHub.jsx' 'index.html' 2>/dev/null || true
 # 5) 빌드.
