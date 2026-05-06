@@ -1930,7 +1930,14 @@ const handleColumnView = async (req, env, id) => {
 // 댓글 작성 / 등록 / 주문 등 행위 시 호출. 익명 안전(throw 안 함).
 // v00.120 — GC: 90일 이상 된 read=1 알림 1/50 확률로 삭제. unread 는 보존.
 const NOTIFICATIONS_RETENTION_MS = 90 * 24 * 3600 * 1000;
-// v00.183 — 내부 인원(admin) 대상 알람 broadcast. admin 전용. body: { recipients: 'all_admins' | userId[], title, message }.
+// v00.183 — 내부 인원(admin) 대상 알람 broadcast. admin 전용.
+// v00.191 — 그룹 선택 확장. 사용자 보고 '특정 사용자 개인보다 그룹이 합리적'.
+// recipients 옵션:
+//   'all_admins'         — 관리자 전체 (is_admin = 1)
+//   'all_members'        — 전체 회원 (admin 포함)
+//   'all_non_admins'     — 일반 회원만 (admin 제외)
+//   { grade: 'gradeId' } — 특정 등급
+//   userId[]             — (legacy) 개별 ID 배열 — admin 호환용 유지
 const handleInternalAlarmSend = async (req, env) => {
   const me = await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
@@ -1940,13 +1947,29 @@ const handleInternalAlarmSend = async (req, env) => {
   if (!message) throw new HttpError(400, '메시지를 입력해 주세요.');
   // 수신자 결정.
   let userIds = [];
+  let groupLabel = '';
   if (recipients === 'all_admins' || recipients === 'all') {
     const { results } = await env.DB.prepare("SELECT id FROM users WHERE is_admin = 1").all();
     userIds = (results || []).map((r) => r.id);
+    groupLabel = '전체 관리자';
+  } else if (recipients === 'all_members') {
+    const { results } = await env.DB.prepare("SELECT id FROM users").all();
+    userIds = (results || []).map((r) => r.id);
+    groupLabel = '전체 회원';
+  } else if (recipients === 'all_non_admins') {
+    const { results } = await env.DB.prepare("SELECT id FROM users WHERE is_admin = 0 OR is_admin IS NULL").all();
+    userIds = (results || []).map((r) => r.id);
+    groupLabel = '일반 회원';
+  } else if (typeof recipients === 'object' && recipients !== null && !Array.isArray(recipients) && recipients.grade) {
+    const gradeId = String(recipients.grade);
+    const { results } = await env.DB.prepare("SELECT id FROM users WHERE grade_id = ?").bind(gradeId).all();
+    userIds = (results || []).map((r) => r.id);
+    groupLabel = `등급:${gradeId}`;
   } else if (Array.isArray(recipients)) {
     userIds = recipients.filter(Boolean).map(String);
+    groupLabel = `개별 ${userIds.length}명`;
   } else {
-    throw new HttpError(400, "recipients 는 'all_admins' 또는 userId 배열이어야 합니다.");
+    throw new HttpError(400, "recipients 는 'all_admins' / 'all_members' / 'all_non_admins' / {grade:'id'} / userId[] 중 하나여야 합니다.");
   }
   // 본인 제외 (자기에게 보내는 알람 차단 옵션).
   if (body.excludeSelf !== false && me?.id) userIds = userIds.filter((id) => id !== me.id);
@@ -1964,9 +1987,9 @@ const handleInternalAlarmSend = async (req, env) => {
       sent += 1;
     } catch {}
   }
-  // v00.189 — 내부 알람 발송 audit log.
-  await auditWrite(env, me?.email || '?', "alarm.send", `alarm:${userIds.length}users`, { title, sent, total: userIds.length });
-  return { ok: true, sent, total: userIds.length };
+  // v00.189 — 내부 알람 발송 audit log. v00.191 — group label 도 기록.
+  await auditWrite(env, me?.email || '?', "alarm.send", `alarm:${groupLabel}`, { title, sent, total: userIds.length, group: groupLabel });
+  return { ok: true, sent, total: userIds.length, group: groupLabel };
 };
 
 const insertNotification = async (env, { userId, type, message, fromName, postId, postTitle, lectureId, tourId }) => {

@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.191.000",
+    date: "2026-05-06",
+    datetime: "2026-05-06T09:17:59+09:00",
+    summary: "📣 알람 그룹 선택 + PC 미리보기 가로 확장 + 시간 라벨 매시 표시",
+    details: [
+      "📣 [알람 — 그룹 단위 재설계] 사용자 보고 '특정 사용자 개인보다 그룹이 합리적'. 4 그룹 라디오 (전체 관리자 / 전체 회원 / 일반 회원만 / 특정 등급) + 등급 선택 시 등급 dropdown. 발송 버튼에 '(N명 예정)' 카운트 표시.",
+      "📣 [워커 recipients 확장] handleInternalAlarmSend 가 'all_admins' / 'all_members' / 'all_non_admins' / {grade:'id'} / userId[] 모두 지원. 응답에 group label 포함 → audit log 도 그룹 라벨 기록.",
+      "🖥 [사이트 설정 PC 미리보기 가로 확장] 사용자 보고 '좌우 최대 비율로'. desktop 모드 시 iframe width: 100% + height: 70vh. 모바일/태블릿은 viewport 폭 고정 유지. maxHeight 60vh → 70vh.",
+      "⏰ [시간 라벨 매시 표시] 사용자 보고 '임시로 라벨 빼고 요약하지 말고 모든 시간에 라벨'. _hourlySeries 의 i % 3 === 0 조건 제거 → 24시간 모두 라벨 (0시 1시 2시 ... 23시 / 지금).",
+      "ℹ ★ 워커 wrangler deploy 필요 (recipients 그룹 확장).",
+      "📦 cache-buster — `?v=00.191.000`.",
+    ],
+    context: "사용자 다발 보고 동시 처리. 이번 사이클 핵심: 알람 그룹 + iframe 가로 + 시간 라벨. 다른 in-flight 보고 (커뮤니티 게시글 안 불러짐 / 새 책 prompt 제거 / 책 ▲▼ 정렬 / 회원가입 추이 / 히트맵) 은 후속 사이클.",
+  },
+  {
     version: "00.190.000",
     date: "2026-05-06",
     datetime: "2026-05-06T08:59:28+09:00",

@@ -808,6 +808,7 @@ const _countSince = (items, dateField, days) => {
   }).length;
 };
 // v00.176 — 24시간 시간단위 series (days=1 코호트용). 현재 시각 포함 24시간 (1시간 간격).
+// v00.191 — 사용자 보고 '시간 단위로 볼 때 모든 시간에 라벨 달아줘'. 이전 매 3시간만 라벨 → 매 시간 표시.
 const _hourlySeries = (items, dateField, hours = 24) => {
   const counts = new Array(hours).fill(0);
   const labels = new Array(hours).fill('');
@@ -821,7 +822,7 @@ const _hourlySeries = (items, dateField, hours = 24) => {
   });
   for (let i = 0; i < hours; i++) {
     const dt = new Date(baseTs + i * 3600000);
-    labels[i] = (i === hours - 1) ? '지금' : (i % 3 === 0 ? `${dt.getHours()}시` : '');
+    labels[i] = (i === hours - 1) ? '지금' : `${dt.getHours()}시`;
   }
   return { counts, labels };
 };
@@ -5207,12 +5208,13 @@ const ActivityLogPanel = () => {
 
 // === Internal Alarm Panel (v00.183) ================================
 // 사용자 보고 '내부 인원들에게 알람을 보낼 수 있는 기능'.
-// admin → admin/특정 사용자에게 알림 broadcast. D1 notifications 테이블 사용 (server-first).
+// v00.191 — 그룹 선택 재설계 (사용자 보고 '특정 사용자 개인보다 그룹이 합리적').
+// scope: 'all_admins' | 'all_members' | 'all_non_admins' | 'grade'.
 const InternalAlarmPanel = () => {
   const [users, setUsers] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [scope, setScope] = React.useState('all_admins');  // 'all_admins' | 'select'
-  const [selectedIds, setSelectedIds] = React.useState(new Set());
+  const [scope, setScope] = React.useState('all_admins');
+  const [selectedGrade, setSelectedGrade] = React.useState('');
   const [title, setTitle] = React.useState('');
   const [message, setMessage] = React.useState('');
   const [sending, setSending] = React.useState(false);
@@ -5232,12 +5234,18 @@ const InternalAlarmPanel = () => {
   }, []);
 
   const admins = users.filter((u) => u.isAdmin || u.is_admin);
-  const allUsersList = users.slice().sort((a, b) => {
-    const aa = (a.isAdmin || a.is_admin) ? 0 : 1;
-    const bb = (b.isAdmin || b.is_admin) ? 0 : 1;
-    if (aa !== bb) return aa - bb;
-    return String(a.name || '').localeCompare(String(b.name || ''));
-  });
+  // v00.191 — 등급별 회원 카운트 (그룹 선택 시 미리보기).
+  const grades = (window.BGNJ_STORES?.grades || []).slice().sort((a, b) => (a.level || 0) - (b.level || 0));
+  const gradeCounts = React.useMemo(() => {
+    const counts = {};
+    users.forEach((u) => {
+      const gid = u.gradeId || u.grade_id || 'member';
+      counts[gid] = (counts[gid] || 0) + 1;
+    });
+    return counts;
+  }, [users]);
+  const totalMembers = users.length;
+  const totalNonAdmins = users.filter((u) => !(u.isAdmin || u.is_admin)).length;
 
   const send = async () => {
     if (!message.trim()) { setResultMsg('✗ 메시지를 입력해 주세요.'); return; }
@@ -5247,82 +5255,104 @@ const InternalAlarmPanel = () => {
       : `선택한 ${selectedIds.size}명에게 알람을 보내시겠어요?`)) return;
     setSending(true); setResultMsg('');
     try {
-      const recipients = scope === 'all_admins' ? 'all_admins' : Array.from(selectedIds);
+      // v00.191 — 그룹 기반 recipients. scope: 'all_admins' / 'all_members' / 'all_non_admins' / 'grade'.
+      let recipients;
+      if (scope === 'grade' && selectedGrade) {
+        recipients = { grade: selectedGrade };
+      } else if (scope === 'all_admins' || scope === 'all_members' || scope === 'all_non_admins') {
+        recipients = scope;
+      } else {
+        recipients = 'all_admins'; // 기본
+      }
       const res = await window.BGNJ_API?.internalAlarm?.send?.({
         recipients, title: title.trim(), message: message.trim(), excludeSelf,
       });
-      setResultMsg(`✓ ${res?.sent ?? 0}명에게 알람이 발송되었습니다.`);
-      setTitle(''); setMessage(''); setSelectedIds(new Set());
+      setResultMsg(`✓ ${res?.group ? res.group + ' — ' : ''}${res?.sent ?? 0}명에게 알람이 발송되었습니다.`);
+      setTitle(''); setMessage('');
       setTimeout(() => setResultMsg(''), 4000);
     } catch (err) {
       setResultMsg('✗ 발송 실패: ' + (err?.message || '알 수 없는 오류'));
     } finally { setSending(false); }
   };
 
-  const toggleId = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
+  // v00.191 — scope 별 미리보기 카운트 (전송 전 명확히).
+  const scopeCount = (() => {
+    if (scope === 'all_admins') return admins.length - (excludeSelf ? 1 : 0);
+    if (scope === 'all_members') return totalMembers - (excludeSelf ? 1 : 0);
+    if (scope === 'all_non_admins') return totalNonAdmins;
+    if (scope === 'grade' && selectedGrade) return gradeCounts[selectedGrade] || 0;
+    return 0;
+  })();
 
   return (
     <div>
       <AdminPanelHeader
         eyebrow="ALARM · 내부 알람"
         title="내부 인원 알람 보내기"
-        description="다른 관리자 또는 특정 사용자에게 알림을 broadcast 합니다. 수신자의 알림 종(NotificationBell) 에 즉시 표시됩니다. D1 notifications 테이블에 저장 (server-first)."/>
+        description="그룹 단위로 알람을 broadcast — 전체 관리자 / 전체 회원 / 일반 회원 / 특정 등급 중 선택. 수신자의 🔔 에 즉시 표시. D1 notifications 저장 (server-first)."/>
 
       <article className="admin-form-card" style={{padding:18, marginBottom:18}}>
         <div className="admin-form-card__eyebrow">📣 알람 작성</div>
 
-        {/* 수신 범위 */}
-        <fieldset style={{border:'1px solid var(--line)', padding:'10px 14px', marginBottom:14}}>
-          <legend className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', padding:'0 6px'}}>수신 범위</legend>
-          <div style={{display:'flex', gap:18, flexWrap:'wrap'}}>
-            <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer'}}>
-              <input type="radio" name="alarm-scope" checked={scope === 'all_admins'}
-                onChange={() => setScope('all_admins')}/>
-              <span>전체 관리자 ({admins.length}명{excludeSelf ? ' · 본인 제외' : ''})</span>
-            </label>
-            <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer'}}>
-              <input type="radio" name="alarm-scope" checked={scope === 'select'}
-                onChange={() => setScope('select')}/>
-              <span>특정 사용자 선택 ({selectedIds.size}명 선택됨)</span>
-            </label>
-            <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer', marginLeft:'auto'}}>
-              <input type="checkbox" checked={excludeSelf} onChange={(e) => setExcludeSelf(e.target.checked)}/>
-              <span style={{fontSize:13}}>본인 제외</span>
-            </label>
+        {/* v00.191 — 수신 그룹 (4가지 그룹 + 본인 제외) */}
+        <fieldset style={{border:'1px solid var(--line)', padding:'12px 14px', marginBottom:14}}>
+          <legend className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', padding:'0 6px'}}>수신 그룹</legend>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:8}}>
+            {[
+              { key: 'all_admins',     label: '전체 관리자',  count: admins.length,        desc: 'is_admin=1 모든 회원' },
+              { key: 'all_members',    label: '전체 회원',    count: totalMembers,         desc: 'admin 포함 모든 회원' },
+              { key: 'all_non_admins', label: '일반 회원만',  count: totalNonAdmins,       desc: 'admin 제외 일반 회원' },
+              { key: 'grade',          label: '특정 등급',    count: scope === 'grade' && selectedGrade ? (gradeCounts[selectedGrade] || 0) : '—', desc: '아래 등급 select' },
+            ].map((opt) => {
+              const active = scope === opt.key;
+              return (
+                <label key={opt.key} style={{
+                  display:'flex', alignItems:'flex-start', gap:10, cursor:'pointer',
+                  padding:'10px 12px',
+                  border: `1px solid ${active ? 'var(--gold)' : 'var(--line-2)'}`,
+                  background: active ? 'rgba(245,213,72,0.06)' : 'transparent',
+                  transition:'border-color .12s, background .12s',
+                }}>
+                  <input type="radio" name="alarm-scope" checked={active}
+                    onChange={() => setScope(opt.key)}
+                    style={{marginTop:2}}/>
+                  <div style={{flex:1, minWidth:0}}>
+                    <div style={{fontSize:13, fontWeight:600, color:'var(--ink)', display:'flex', justifyContent:'space-between', gap:8}}>
+                      <span>{opt.label}</span>
+                      <span className="mono gold" style={{fontSize:11, fontWeight:700}}>{opt.count}{typeof opt.count === 'number' ? '명' : ''}</span>
+                    </div>
+                    <div className="dim-2" style={{fontSize:11, marginTop:2, lineHeight:1.4}}>{opt.desc}</div>
+                  </div>
+                </label>
+              );
+            })}
           </div>
+          {scope === 'grade' && (
+            <div style={{marginTop:12, display:'flex', alignItems:'center', gap:10, flexWrap:'wrap'}}>
+              <label htmlFor="alarm-grade" className="mono dim-2" style={{fontSize:11, letterSpacing:'0.1em'}}>등급 선택</label>
+              <select id="alarm-grade" className="field-input"
+                value={selectedGrade}
+                onChange={(e) => setSelectedGrade(e.target.value)}
+                style={{maxWidth:280, padding:'6px 10px'}}>
+                <option value="">— 등급 선택 —</option>
+                {grades.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    Lv {g.level} · {g.label} ({gradeCounts[g.id] || 0}명)
+                  </option>
+                ))}
+              </select>
+              {selectedGrade && (
+                <span className="mono" style={{fontSize:11, color:'var(--secondary)', fontWeight:700}}>
+                  → {gradeCounts[selectedGrade] || 0}명 발송 예정
+                </span>
+              )}
+            </div>
+          )}
+          <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer', marginTop:14, fontSize:12}}>
+            <input type="checkbox" checked={excludeSelf} onChange={(e) => setExcludeSelf(e.target.checked)}/>
+            <span>본인은 수신자에서 제외</span>
+          </label>
         </fieldset>
-
-        {/* 사용자 다중 선택 (scope === 'select' 일 때) */}
-        {scope === 'select' && (
-          <fieldset style={{border:'1px solid var(--line)', padding:'10px 14px', marginBottom:14, maxHeight:280, overflow:'auto'}}>
-            <legend className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', padding:'0 6px'}}>수신자 선택</legend>
-            {loading ? (
-              <p className="dim" style={{fontSize:12}}>회원 목록 로딩 중…</p>
-            ) : (
-              <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:'4px 12px'}}>
-                {allUsersList.map((u) => {
-                  const isAd = !!(u.isAdmin || u.is_admin);
-                  return (
-                    <label key={u.id} style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'4px 6px'}}>
-                      <input type="checkbox" checked={selectedIds.has(u.id)} onChange={() => toggleId(u.id)}/>
-                      <span style={{fontSize:13, color:'var(--ink)'}}>
-                        {u.name || '(이름 없음)'}
-                        {isAd && <span className="mono gold" style={{fontSize:9, marginLeft:6, letterSpacing:'0.1em'}}>ADMIN</span>}
-                      </span>
-                      <span className="mono dim-2" style={{fontSize:10, marginLeft:'auto'}}>{u.email}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </fieldset>
-        )}
 
         {/* 제목 + 메시지 */}
         <div className="field" style={{marginBottom:12}}>
@@ -5341,10 +5371,10 @@ const InternalAlarmPanel = () => {
 
         <div style={{display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
           <button type="button" className="btn btn-gold" onClick={send}
-            disabled={sending || !message.trim()}>
-            {sending ? '발송 중…' : '📣 발송'}
+            disabled={sending || !message.trim() || (scope === 'grade' && !selectedGrade) || scopeCount === 0}>
+            {sending ? '발송 중…' : `📣 발송 (${scopeCount}명 예정)`}
           </button>
-          <button type="button" className="btn btn-small" onClick={() => { setTitle(''); setMessage(''); setSelectedIds(new Set()); setResultMsg(''); }}>
+          <button type="button" className="btn btn-small" onClick={() => { setTitle(''); setMessage(''); setSelectedGrade(''); setResultMsg(''); }}>
             초기화
           </button>
           {resultMsg && (

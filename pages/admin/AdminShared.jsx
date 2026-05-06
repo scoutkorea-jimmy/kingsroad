@@ -698,12 +698,14 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
           <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.12em', marginBottom:10}}>
             {previewMode.toUpperCase()} · {previewW}px
           </div>
-          <div style={{overflow:'auto', background:'var(--bg)', border:'1px solid var(--line)', maxHeight:'60vh'}}>
+          {/* v00.191 — 사용자 보고 'PC 미리보기 가로 최대 비율로'. desktop 모드는 컨테이너 100% 폭 (모바일/태블릿은 viewport 폭 고정). */}
+          <div style={{overflow:'auto', background:'var(--bg)', border:'1px solid var(--line)', maxHeight:'70vh'}}>
             <iframe key={reloadTick} src={previewUrl}
               title={`미리보기 — ${Active.label}`}
               style={{
-                width: previewW + 'px',
-                height: '600px',
+                width: previewMode === 'desktop' ? '100%' : (previewW + 'px'),
+                minWidth: previewMode === 'desktop' ? '100%' : (previewW + 'px'),
+                height: previewMode === 'desktop' ? '70vh' : '600px',
                 border:'0', display:'block',
                 background:'var(--bg)',
               }}/>
