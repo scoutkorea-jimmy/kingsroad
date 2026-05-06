@@ -132,63 +132,91 @@ const reportErrorToServer = (entry) => {
     __reportingError = false;
   }
 };
+// v00.206 — 토스트 프로그램 호출 API. alert() 교체용.
+// `window.BGNJ_TOAST.error|success|info(message, opts?)` — 어떤 코드에서든 호출 가능.
+// kind=error 만 server reportError 동반. success/info 는 UI 만.
+// GlobalErrorToast 가 'bgnj-toast' CustomEvent 를 listen 해서 push.
 const GlobalErrorToast = () => {
-  const [errors, setErrors] = React.useState([]);
+  const [toasts, setToasts] = React.useState([]);
   React.useEffect(() => {
     const push = (entry) => {
       const id = Date.now() + Math.random();
-      setErrors((prev) => [...prev, { id, ...entry }].slice(-3));
-      reportErrorToServer(entry);
-      // 10초 후 자동 소거.
+      const kind = entry.kind || (entry.code ? 'error' : 'error');
+      setToasts((prev) => [...prev, { id, ...entry, kind }].slice(-3));
+      if (kind === 'error') reportErrorToServer(entry);
+      const ttl = entry.ttl || TOAST_DISMISS_MS;
       setTimeout(() => {
-        setErrors((prev) => prev.filter((e) => e.id !== id));
-      }, TOAST_DISMISS_MS);
+        setToasts((prev) => prev.filter((e) => e.id !== id));
+      }, ttl);
     };
     const onRejection = (ev) => {
       const r = ev?.reason;
       if (!r) return;
       const code = r.code || (r.status ? `HTTP_${r.status}` : (r.name || 'PROMISE_REJECTION'));
       const message = r.message || String(r);
-      push({ code, status: r.status || null, message, hint: r.hint || '', url: r.url || '', kind: r.kind || 'unknown' });
+      push({ kind:'error', code, status: r.status || null, message, hint: r.hint || '', url: r.url || '' });
       try { console.error('[GlobalErrorToast]', r); } catch {}
     };
     const onError = (ev) => {
       const message = ev?.message || ev?.error?.message || 'Script error';
-      push({ code: 'WINDOW_ERROR', status: null, message, hint: '', url: ev?.filename || '', kind: 'unknown' });
+      push({ kind:'error', code: 'WINDOW_ERROR', status: null, message, hint: '', url: ev?.filename || '' });
       try { console.error('[GlobalErrorToast]', ev?.error || ev); } catch {}
+    };
+    const onProgrammatic = (ev) => {
+      const d = ev?.detail || {};
+      if (!d.message) return;
+      push({
+        kind: d.kind || 'info',
+        code: d.code || (d.kind === 'success' ? 'OK' : (d.kind === 'error' ? 'ERROR' : 'INFO')),
+        message: d.message, hint: d.hint || '', url: d.url || '', ttl: d.ttl,
+      });
     };
     window.addEventListener('unhandledrejection', onRejection);
     window.addEventListener('error', onError);
+    window.addEventListener('bgnj-toast', onProgrammatic);
+    // window.BGNJ_TOAST API 노출
+    window.BGNJ_TOAST = {
+      error:   (message, opts={}) => window.dispatchEvent(new CustomEvent('bgnj-toast', { detail: { kind:'error',   message, ...opts } })),
+      success: (message, opts={}) => window.dispatchEvent(new CustomEvent('bgnj-toast', { detail: { kind:'success', message, ...opts } })),
+      info:    (message, opts={}) => window.dispatchEvent(new CustomEvent('bgnj-toast', { detail: { kind:'info',    message, ...opts } })),
+    };
     return () => {
       window.removeEventListener('unhandledrejection', onRejection);
       window.removeEventListener('error', onError);
+      window.removeEventListener('bgnj-toast', onProgrammatic);
     };
   }, []);
-  const dismiss = (id) => setErrors((prev) => prev.filter((e) => e.id !== id));
-  if (!errors.length) return null;
+  const dismiss = (id) => setToasts((prev) => prev.filter((e) => e.id !== id));
+  if (!toasts.length) return null;
+  // kind 별 색상 토큰 분기 — error: danger, success: primary, info: tertiary
+  const colorOf = (k) => k === 'success' ? '#C99E1A' : (k === 'info' ? '#475569' : '#c24a3d');
   return (
     <div aria-live="polite" style={{
       position:'fixed', right:16, bottom:16, zIndex:2000,
       display:'flex', flexDirection:'column', gap:8, maxWidth:420,
     }}>
-      {errors.map((e) => (
-        <div key={e.id} role="alert" style={{
-          background:'#fff', border:'1px solid #c24a3d', boxShadow:'0 8px 24px rgba(0,0,0,0.14)',
-          padding:'12px 14px', fontSize:13, lineHeight:1.7, color:'#1e293b',
-        }}>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, marginBottom:4}}>
-            <span style={{fontFamily:'monospace', fontSize:10, letterSpacing:'0.14em', color:'#c24a3d'}}>
-              {e.code}
-            </span>
-            <button type="button" onClick={() => dismiss(e.id)}
-              style={{background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:14}}
-              aria-label="닫기">×</button>
+      {toasts.map((e) => {
+        const accent = colorOf(e.kind);
+        return (
+          <div key={e.id} role={e.kind === 'success' ? 'status' : 'alert'} style={{
+            background: e.kind === 'success' ? 'rgba(245,213,72,0.08)' : '#fff',
+            border:`1px solid ${accent}`, boxShadow:'0 8px 24px rgba(0,0,0,0.14)',
+            padding:'12px 14px', fontSize:13, lineHeight:1.7, color:'#1e293b',
+          }}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, marginBottom:4}}>
+              <span style={{fontFamily:'monospace', fontSize:10, letterSpacing:'0.14em', color:accent}}>
+                {e.code}
+              </span>
+              <button type="button" onClick={() => dismiss(e.id)}
+                style={{background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:14}}
+                aria-label="닫기">×</button>
+            </div>
+            <div style={{fontWeight:600, marginBottom:e.hint ? 4 : 0}}>{e.message}</div>
+            {e.hint && <div style={{color:'#475569', fontSize:12}}>{e.hint}</div>}
+            {e.url && <div style={{fontFamily:'monospace', fontSize:10, color:'#94a3b8', marginTop:6, wordBreak:'break-all'}}>{e.url}</div>}
           </div>
-          <div style={{fontWeight:600, marginBottom:e.hint ? 4 : 0}}>{e.message}</div>
-          {e.hint && <div style={{color:'#475569', fontSize:12}}>{e.hint}</div>}
-          {e.url && <div style={{fontFamily:'monospace', fontSize:10, color:'#94a3b8', marginTop:6, wordBreak:'break-all'}}>{e.url}</div>}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -638,6 +666,7 @@ const App = () => {
       <ScrollToTop/>
       <CookieConsent/>
       <GlobalErrorToast/>
+      {window.ConfirmDialogHost ? <window.ConfirmDialogHost/> : null}
     </div>
   );
 };

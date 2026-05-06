@@ -159,22 +159,24 @@ const reportErrorToServer = (entry) => {
   }
 };
 const GlobalErrorToast = () => {
-  const [errors, setErrors] = React.useState([]);
+  const [toasts, setToasts] = React.useState([]);
   React.useEffect(() => {
     const push = (entry) => {
       const id = Date.now() + Math.random();
-      setErrors((prev) => [...prev, { id, ...entry }].slice(-3));
-      reportErrorToServer(entry);
+      const kind = entry.kind || (entry.code ? "error" : "error");
+      setToasts((prev) => [...prev, { id, ...entry, kind }].slice(-3));
+      if (kind === "error") reportErrorToServer(entry);
+      const ttl = entry.ttl || TOAST_DISMISS_MS;
       setTimeout(() => {
-        setErrors((prev) => prev.filter((e) => e.id !== id));
-      }, TOAST_DISMISS_MS);
+        setToasts((prev) => prev.filter((e) => e.id !== id));
+      }, ttl);
     };
     const onRejection = (ev) => {
       const r = ev == null ? void 0 : ev.reason;
       if (!r) return;
       const code = r.code || (r.status ? `HTTP_${r.status}` : r.name || "PROMISE_REJECTION");
       const message = r.message || String(r);
-      push({ code, status: r.status || null, message, hint: r.hint || "", url: r.url || "", kind: r.kind || "unknown" });
+      push({ kind: "error", code, status: r.status || null, message, hint: r.hint || "", url: r.url || "" });
       try {
         console.error("[GlobalErrorToast]", r);
       } catch (e) {
@@ -183,21 +185,41 @@ const GlobalErrorToast = () => {
     const onError = (ev) => {
       var _a;
       const message = (ev == null ? void 0 : ev.message) || ((_a = ev == null ? void 0 : ev.error) == null ? void 0 : _a.message) || "Script error";
-      push({ code: "WINDOW_ERROR", status: null, message, hint: "", url: (ev == null ? void 0 : ev.filename) || "", kind: "unknown" });
+      push({ kind: "error", code: "WINDOW_ERROR", status: null, message, hint: "", url: (ev == null ? void 0 : ev.filename) || "" });
       try {
         console.error("[GlobalErrorToast]", (ev == null ? void 0 : ev.error) || ev);
       } catch (e) {
       }
     };
+    const onProgrammatic = (ev) => {
+      const d = (ev == null ? void 0 : ev.detail) || {};
+      if (!d.message) return;
+      push({
+        kind: d.kind || "info",
+        code: d.code || (d.kind === "success" ? "OK" : d.kind === "error" ? "ERROR" : "INFO"),
+        message: d.message,
+        hint: d.hint || "",
+        url: d.url || "",
+        ttl: d.ttl
+      });
+    };
     window.addEventListener("unhandledrejection", onRejection);
     window.addEventListener("error", onError);
+    window.addEventListener("bgnj-toast", onProgrammatic);
+    window.BGNJ_TOAST = {
+      error: (message, opts = {}) => window.dispatchEvent(new CustomEvent("bgnj-toast", { detail: { kind: "error", message, ...opts } })),
+      success: (message, opts = {}) => window.dispatchEvent(new CustomEvent("bgnj-toast", { detail: { kind: "success", message, ...opts } })),
+      info: (message, opts = {}) => window.dispatchEvent(new CustomEvent("bgnj-toast", { detail: { kind: "info", message, ...opts } }))
+    };
     return () => {
       window.removeEventListener("unhandledrejection", onRejection);
       window.removeEventListener("error", onError);
+      window.removeEventListener("bgnj-toast", onProgrammatic);
     };
   }, []);
-  const dismiss = (id) => setErrors((prev) => prev.filter((e) => e.id !== id));
-  if (!errors.length) return null;
+  const dismiss = (id) => setToasts((prev) => prev.filter((e) => e.id !== id));
+  if (!toasts.length) return null;
+  const colorOf = (k) => k === "success" ? "#C99E1A" : k === "info" ? "#475569" : "#c24a3d";
   return /* @__PURE__ */ React.createElement("div", { "aria-live": "polite", style: {
     position: "fixed",
     right: 16,
@@ -207,24 +229,27 @@ const GlobalErrorToast = () => {
     flexDirection: "column",
     gap: 8,
     maxWidth: 420
-  } }, errors.map((e) => /* @__PURE__ */ React.createElement("div", { key: e.id, role: "alert", style: {
-    background: "#fff",
-    border: "1px solid #c24a3d",
-    boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
-    padding: "12px 14px",
-    fontSize: 13,
-    lineHeight: 1.7,
-    color: "#1e293b"
-  } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "monospace", fontSize: 10, letterSpacing: "0.14em", color: "#c24a3d" } }, e.code), /* @__PURE__ */ React.createElement(
-    "button",
-    {
-      type: "button",
-      onClick: () => dismiss(e.id),
-      style: { background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 14 },
-      "aria-label": "\uB2EB\uAE30"
-    },
-    "\xD7"
-  )), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: e.hint ? 4 : 0 } }, e.message), e.hint && /* @__PURE__ */ React.createElement("div", { style: { color: "#475569", fontSize: 12 } }, e.hint), e.url && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 10, color: "#94a3b8", marginTop: 6, wordBreak: "break-all" } }, e.url))));
+  } }, toasts.map((e) => {
+    const accent = colorOf(e.kind);
+    return /* @__PURE__ */ React.createElement("div", { key: e.id, role: e.kind === "success" ? "status" : "alert", style: {
+      background: e.kind === "success" ? "rgba(245,213,72,0.08)" : "#fff",
+      border: `1px solid ${accent}`,
+      boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
+      padding: "12px 14px",
+      fontSize: 13,
+      lineHeight: 1.7,
+      color: "#1e293b"
+    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "monospace", fontSize: 10, letterSpacing: "0.14em", color: accent } }, e.code), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        onClick: () => dismiss(e.id),
+        style: { background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 14 },
+        "aria-label": "\uB2EB\uAE30"
+      },
+      "\xD7"
+    )), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: e.hint ? 4 : 0 } }, e.message), e.hint && /* @__PURE__ */ React.createElement("div", { style: { color: "#475569", fontSize: 12 } }, e.hint), e.url && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 10, color: "#94a3b8", marginTop: 6, wordBreak: "break-all" } }, e.url));
+  }));
 };
 const TWEAK_DEFAULTS = (
   /*EDITMODE-BEGIN*/
@@ -727,7 +752,7 @@ const App = () => {
     textAlign: "center",
     fontSize: 13,
     lineHeight: 1.55
-  } }, "\u{1F331} ", /* @__PURE__ */ React.createElement("strong", null, "\uD648\uD398\uC774\uC9C0\uB97C \uC624\uD508\uD55C \uC9C0 \uC5BC\uB9C8 \uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."), " ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC774\uC6A9\uC5D0 \uBD88\uD3B8\uD558\uC2E0 \uC810\uC774 \uC788\uB2E4\uBA74 ", /* @__PURE__ */ React.createElement("strong", null, "\uC655\uC0AC\uB4E4 \uC624\uD508\uD1A1\uBC29"), "\uC5D0 \uC54C\uB824\uC8FC\uC138\uC694 \u2014 \uACC4\uC18D \uC5C5\uB370\uC774\uD2B8\uD574 \uB098\uAC00\uACA0\uC2B5\uB2C8\uB2E4. \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", null, "PC \uBC84\uC804 \uCD5C\uC801\uD654"), "\uB85C \uC81C\uC791\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement(Nav, { route, go, user, onLogout: logout }), /* @__PURE__ */ React.createElement("main", { id: "main", tabIndex: "-1", style: { flex: 1, outline: "none" }, "aria-label": `${route} \uD398\uC774\uC9C0 \uBCF8\uBB38` }, page), !hideNav && /* @__PURE__ */ React.createElement(Footer, { go }), /* @__PURE__ */ React.createElement(Tweaks, { tweaks, setTweaks: updateTweaks, visible: editMode }), /* @__PURE__ */ React.createElement(ScrollToTop, null), /* @__PURE__ */ React.createElement(CookieConsent, null), /* @__PURE__ */ React.createElement(GlobalErrorToast, null));
+  } }, "\u{1F331} ", /* @__PURE__ */ React.createElement("strong", null, "\uD648\uD398\uC774\uC9C0\uB97C \uC624\uD508\uD55C \uC9C0 \uC5BC\uB9C8 \uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."), " ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC774\uC6A9\uC5D0 \uBD88\uD3B8\uD558\uC2E0 \uC810\uC774 \uC788\uB2E4\uBA74 ", /* @__PURE__ */ React.createElement("strong", null, "\uC655\uC0AC\uB4E4 \uC624\uD508\uD1A1\uBC29"), "\uC5D0 \uC54C\uB824\uC8FC\uC138\uC694 \u2014 \uACC4\uC18D \uC5C5\uB370\uC774\uD2B8\uD574 \uB098\uAC00\uACA0\uC2B5\uB2C8\uB2E4. \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", null, "PC \uBC84\uC804 \uCD5C\uC801\uD654"), "\uB85C \uC81C\uC791\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement(Nav, { route, go, user, onLogout: logout }), /* @__PURE__ */ React.createElement("main", { id: "main", tabIndex: "-1", style: { flex: 1, outline: "none" }, "aria-label": `${route} \uD398\uC774\uC9C0 \uBCF8\uBB38` }, page), !hideNav && /* @__PURE__ */ React.createElement(Footer, { go }), /* @__PURE__ */ React.createElement(Tweaks, { tweaks, setTweaks: updateTweaks, visible: editMode }), /* @__PURE__ */ React.createElement(ScrollToTop, null), /* @__PURE__ */ React.createElement(CookieConsent, null), /* @__PURE__ */ React.createElement(GlobalErrorToast, null), window.ConfirmDialogHost ? /* @__PURE__ */ React.createElement(window.ConfirmDialogHost, null) : null);
 };
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/* @__PURE__ */ React.createElement(AppErrorBoundary, null, /* @__PURE__ */ React.createElement(App, null)));
