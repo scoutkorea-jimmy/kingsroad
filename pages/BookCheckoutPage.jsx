@@ -480,6 +480,7 @@ const CheckoutPage = ({ go, cart, user }) => {
   const [address, setAddress] = React.useState("");
   const [addressDetail, setAddressDetail] = React.useState("");
   const [memo, setMemo] = React.useState("");
+  const [cashReceipt, setCashReceipt] = React.useState(() => window.BGNJ_CashReceipt?.empty?.() || { requested: false, type: 'personal', identifier: '' });
   const [error, setError] = React.useState("");
   const [submittedOrder, setSubmittedOrder] = React.useState(null);
 
@@ -605,6 +606,9 @@ const CheckoutPage = ({ go, cart, user }) => {
     if (!phone.trim()) return setError("연락처를 입력해 주세요.");
     if (!address.trim()) return setError("기본 주소를 입력해 주세요.");
     try {
+      // v00.218 — 현금영수증 신청 정보를 memo prefix 로 인코딩 (백엔드 스키마 마이그레이션 전).
+      const crPrefix = window.BGNJ_CashReceipt?.encode?.(cashReceipt) || '';
+      const memoCombined = (crPrefix + (memo.trim() || '')).trim();
       const result = await window.BGNJ_BOOK_ORDERS.createOrder({
         userId: user.id,
         bookId: book.id,
@@ -615,7 +619,7 @@ const CheckoutPage = ({ go, cart, user }) => {
         phone: phone.trim(),
         address: address.trim(),
         addressDetail: addressDetail.trim(),
-        memo: memo.trim(),
+        memo: memoCombined,
       });
       if (!result?.ok) return setError(result?.message || "주문 처리에 실패했습니다.");
       setSubmittedOrder(result.order);
@@ -672,6 +676,11 @@ const CheckoutPage = ({ go, cart, user }) => {
               <textarea id="ck-memo" className="field-input" value={memo} onChange={(e) => setMemo(e.target.value)}
                 placeholder="부재 시 경비실에 맡겨주세요" style={{minHeight:80, resize:'vertical'}}/>
             </div>
+
+            {/* v00.218 — 현금영수증 신청 */}
+            {window.BGNJ_CashReceiptField && (
+              <window.BGNJ_CashReceiptField value={cashReceipt} onChange={setCashReceipt}/>
+            )}
 
             <h3 className="ko-serif" style={{fontSize:22, marginTop:24, marginBottom:14}}>결제 수단 — 무통장 입금</h3>
             {window.BGNJ_BankAccountPicker

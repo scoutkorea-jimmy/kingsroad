@@ -278,6 +278,8 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const [phone, setPhone] = React.useState("");
   const [count, setCount] = React.useState(1);
   const [note, setNote] = React.useState("");
+  // v00.218 — 현금영수증 신청
+  const [cashReceipt, setCashReceipt] = React.useState(() => window.BGNJ_CashReceipt?.empty?.() || { requested: false, type: 'personal', identifier: '' });
   const [error, setError] = React.useState("");
   const [submitted, setSubmitted] = React.useState(null);
   const [refundMode, setRefundMode] = React.useState(false);
@@ -303,13 +305,16 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
     if (!user) return requireLogin('답사 신청');
     if (!name.trim() || !email.trim()) { setError("이름과 이메일은 필수입니다."); return; }
     try {
+      // v00.218 — 현금영수증 신청 정보 note prefix 인코딩
+      const crPrefix = window.BGNJ_CashReceipt?.encode?.(cashReceipt) || '';
+      const noteCombined = (crPrefix + (note.trim() || '')).trim();
       const result = await window.BGNJ_TOURS.reserve(tour.id, {
         userId: user.id,
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
         count: Math.max(1, Number(count) || 1),
-        note: note.trim(),
+        note: noteCombined,
       });
       if (!result?.ok) { setError(result?.message || "신청 처리에 실패했습니다."); return; }
       setSubmitted(result.reservation);
@@ -514,6 +519,10 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
                   <label className="field-label">메모</label>
                   <textarea className="field-input" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="동행자 / 특이사항"/>
                 </div>
+                {/* v00.218 — 현금영수증 신청 (유료 답사만) */}
+                {(tour.priceNumber || 0) > 0 && window.BGNJ_CashReceiptField && (
+                  <window.BGNJ_CashReceiptField value={cashReceipt} onChange={setCashReceipt}/>
+                )}
               </div>
               {error && (
                 <div role="alert" style={{padding:'8px 10px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:12, marginBottom:10}}>

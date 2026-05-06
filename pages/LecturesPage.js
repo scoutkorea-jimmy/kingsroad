@@ -178,6 +178,10 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
   const [phone, setPhone] = React.useState("");
   const [count, setCount] = React.useState(1);
   const [note, setNote] = React.useState("");
+  const [cashReceipt, setCashReceipt] = React.useState(() => {
+    var _a, _b;
+    return ((_b = (_a = window.BGNJ_CashReceipt) == null ? void 0 : _a.empty) == null ? void 0 : _b.call(_a)) || { requested: false, type: "personal", identifier: "" };
+  });
   const [error, setError] = React.useState("");
   const [submitted, setSubmitted] = React.useState(null);
   const [refundMode, setRefundMode] = React.useState(false);
@@ -201,7 +205,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
     }
   };
   const submit = async (e) => {
-    var _a;
+    var _a, _b, _c;
     e.preventDefault();
     setError("");
     if (!user) return requireLogin("\uAC15\uC5F0 \uC2E0\uCCAD");
@@ -210,13 +214,15 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       return;
     }
     try {
+      const crPrefix = ((_b = (_a = window.BGNJ_CashReceipt) == null ? void 0 : _a.encode) == null ? void 0 : _b.call(_a, cashReceipt)) || "";
+      const noteCombined = (crPrefix + (note.trim() || "")).trim();
       const result = await window.BGNJ_LECTURES.register(lecture.id, {
         userId: user.id,
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
         count: Math.max(1, Number(count) || 1),
-        note: note.trim()
+        note: noteCombined
       });
       if (!(result == null ? void 0 : result.ok)) {
         setError((result == null ? void 0 : result.message) || "\uC2E0\uCCAD \uCC98\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
@@ -226,7 +232,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       onRefresh();
       setOpen(false);
     } catch (err) {
-      setError(((_a = err == null ? void 0 : err.body) == null ? void 0 : _a.error) || (err == null ? void 0 : err.message) || "\uC2E0\uCCAD \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
+      setError(((_c = err == null ? void 0 : err.body) == null ? void 0 : _c.error) || (err == null ? void 0 : err.message) || "\uC2E0\uCCAD \uCC98\uB9AC \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4.");
     }
   };
   const cancelMyReg = async () => {
@@ -348,7 +354,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       value: count,
       onChange: (e) => setCount(e.target.value)
     }
-  ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBA54\uBAA8"), /* @__PURE__ */ React.createElement("textarea", { className: "field-input", rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: "\uB3D9\uD589\uC790 / \uD2B9\uC774\uC0AC\uD56D" }))), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12, marginBottom: 10 } }, error), /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, lineHeight: 1.7, marginBottom: 10, letterSpacing: "0.05em" } }, (lecture.price || 0) === 0 ? "\uBB34\uB8CC \uAC15\uC5F0\uC774\uB77C \uC2E0\uCCAD \uC989\uC2DC \uCC38\uAC00 \uD655\uC815\uB429\uB2C8\uB2E4." : `\uD569\uACC4 ${formatPrice((lecture.price || 0) * (Number(count) || 1))} \xB7 \uC2E0\uCCAD \u2192 \uC785\uAE08 \u2192 \uC6B4\uC601\uC790 \uD655\uC778 \u2192 \uCC38\uAC00 \uD655\uC815`, isFull && " \xB7 \uC815\uC6D0\uC774 \uCC28\uC11C \uC790\uB3D9 \uB300\uAE30\uC790 \uB4F1\uB85D\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setOpen(false) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small" }, "\uC2E0\uCCAD \uC811\uC218")))), !user && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7, marginTop: 14, textAlign: "center" } }, "\uAC15\uC5F0 \uC2E0\uCCAD\uC740 \uD68C\uC6D0\uAC00\uC785\uD55C \uBD84\uB9CC \uAC00\uB2A5\uD569\uB2C8\uB2E4."));
+  ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBA54\uBAA8"), /* @__PURE__ */ React.createElement("textarea", { className: "field-input", rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: "\uB3D9\uD589\uC790 / \uD2B9\uC774\uC0AC\uD56D" })), (lecture.price || 0) > 0 && window.BGNJ_CashReceiptField && /* @__PURE__ */ React.createElement(window.BGNJ_CashReceiptField, { value: cashReceipt, onChange: setCashReceipt })), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12, marginBottom: 10 } }, error), /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, lineHeight: 1.7, marginBottom: 10, letterSpacing: "0.05em" } }, (lecture.price || 0) === 0 ? "\uBB34\uB8CC \uAC15\uC5F0\uC774\uB77C \uC2E0\uCCAD \uC989\uC2DC \uCC38\uAC00 \uD655\uC815\uB429\uB2C8\uB2E4." : `\uD569\uACC4 ${formatPrice((lecture.price || 0) * (Number(count) || 1))} \xB7 \uC2E0\uCCAD \u2192 \uC785\uAE08 \u2192 \uC6B4\uC601\uC790 \uD655\uC778 \u2192 \uCC38\uAC00 \uD655\uC815`, isFull && " \xB7 \uC815\uC6D0\uC774 \uCC28\uC11C \uC790\uB3D9 \uB300\uAE30\uC790 \uB4F1\uB85D\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setOpen(false) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small" }, "\uC2E0\uCCAD \uC811\uC218")))), !user && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7, marginTop: 14, textAlign: "center" } }, "\uAC15\uC5F0 \uC2E0\uCCAD\uC740 \uD68C\uC6D0\uAC00\uC785\uD55C \uBD84\uB9CC \uAC00\uB2A5\uD569\uB2C8\uB2E4."));
 };
 const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
   const reviews = window.BGNJ_LECTURES.listReviews(lecture.id);
