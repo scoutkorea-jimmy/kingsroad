@@ -335,7 +335,10 @@ const _loadAdminScripts = (attempt = 0) => {
   return _adminLoadPromise;
 };
 if (typeof window !== "undefined") window.BGNJ_LOAD_ADMIN = _loadAdminScripts;
-const _AdminLoadingFallback = ({ error, onRetry }) => /* @__PURE__ */ React.createElement("div", { style: { padding: 48, textAlign: "center", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, letterSpacing: "0.18em", marginBottom: 10 } }, error ? "ADMIN \xB7 LOAD FAILED" : "ADMIN \xB7 LOADING"), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, marginBottom: 14, color: "var(--ink)" } }, error ? "\uAD00\uB9AC\uC790 \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4" : "\uAD00\uB9AC\uC790 \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\u2026"), error ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginBottom: 14 } }, (error == null ? void 0 : error.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onRetry }, "\uB2E4\uC2DC \uC2DC\uB3C4")) : /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12 } }, "\uCC98\uC74C \uC9C4\uC785 \uC2DC ~1\uCD08 \uC18C\uC694\uB429\uB2C8\uB2E4.")));
+const _AdminLoadingFallback = ({ error, onRetry, label = "\uAD00\uB9AC\uC790" }) => {
+  const code = label === "\uB85C\uADF8\uC778" ? "LOGIN" : label === "\uD68C\uC6D0\uAC00\uC785" ? "SIGNUP" : "ADMIN";
+  return /* @__PURE__ */ React.createElement("div", { style: { padding: 48, textAlign: "center", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, letterSpacing: "0.18em", marginBottom: 10 } }, error ? `${code} \xB7 LOAD FAILED` : `${code} \xB7 LOADING`), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, marginBottom: 14, color: "var(--ink)" } }, error ? `${label} \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4` : `${label} \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\u2026`), error ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginBottom: 14 } }, (error == null ? void 0 : error.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onRetry }, "\uB2E4\uC2DC \uC2DC\uB3C4")) : /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12 } }, "\uCC98\uC74C \uC9C4\uC785 \uC2DC ~1\uCD08 \uC18C\uC694\uB429\uB2C8\uB2E4.")));
+};
 const App = () => {
   const [route, setRoute] = React.useState(() => {
     try {
@@ -634,11 +637,12 @@ const App = () => {
     window.parent.postMessage({ type: "__edit_mode_set_keys", edits: next }, "*");
   };
   const hideNav = route === "login" || route === "signup" || route === "admin";
+  const ADMIN_BUNDLE_ROUTES = ["admin", "login", "signup"];
   const [adminLoaded, setAdminLoaded] = React.useState(() => typeof window !== "undefined" && !!window.AdminPage);
   const [adminLoadError, setAdminLoadError] = React.useState(null);
   const [adminLoadAttempt, setAdminLoadAttempt] = React.useState(0);
   React.useEffect(() => {
-    if (route !== "admin") return;
+    if (!ADMIN_BUNDLE_ROUTES.includes(route)) return;
     if (adminLoaded) return;
     let cancelled = false;
     setAdminLoadError(null);
@@ -719,6 +723,19 @@ const App = () => {
       }
       case "login":
       case "signup": {
+        if (!adminLoaded) {
+          return /* @__PURE__ */ React.createElement(
+            _AdminLoadingFallback,
+            {
+              label: route === "signup" ? "\uD68C\uC6D0\uAC00\uC785" : "\uB85C\uADF8\uC778",
+              error: adminLoadError,
+              onRetry: () => {
+                setAdminLoadError(null);
+                setAdminLoadAttempt((v) => v + 1);
+              }
+            }
+          );
+        }
         const C = pick("LoginPage", "\uB85C\uADF8\uC778");
         return /* @__PURE__ */ React.createElement(C, { go, setUser });
       }

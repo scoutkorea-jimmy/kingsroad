@@ -310,26 +310,30 @@ const _loadAdminScripts = (attempt = 0) => {
 // v00.210 — admin 외 페이지(ColumnPage 등) 에서도 호출 가능하도록 노출.
 if (typeof window !== 'undefined') window.BGNJ_LOAD_ADMIN = _loadAdminScripts;
 
-const _AdminLoadingFallback = ({ error, onRetry }) => (
-  <div style={{padding:48, textAlign:'center', minHeight:'60vh', display:'flex', alignItems:'center', justifyContent:'center'}}>
-    <div>
-      <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.18em', marginBottom:10}}>
-        {error ? 'ADMIN · LOAD FAILED' : 'ADMIN · LOADING'}
+// v00.212 — admin 번들 로딩 폴백. label prop 으로 어떤 페이지를 기다리는지 표기 (admin / 로그인 / 회원가입 등).
+const _AdminLoadingFallback = ({ error, onRetry, label = '관리자' }) => {
+  const code = label === '로그인' ? 'LOGIN' : (label === '회원가입' ? 'SIGNUP' : 'ADMIN');
+  return (
+    <div style={{padding:48, textAlign:'center', minHeight:'60vh', display:'flex', alignItems:'center', justifyContent:'center'}}>
+      <div>
+        <div className="mono dim-2" style={{fontSize:11, letterSpacing:'0.18em', marginBottom:10}}>
+          {error ? `${code} · LOAD FAILED` : `${code} · LOADING`}
+        </div>
+        <div className="ko-serif" style={{fontSize:18, marginBottom:14, color:'var(--ink)'}}>
+          {error ? `${label} 페이지를 불러오지 못했습니다` : `${label} 페이지를 불러오는 중…`}
+        </div>
+        {error ? (
+          <>
+            <div className="dim-2" style={{fontSize:12, marginBottom:14}}>{error?.message || '알 수 없는 오류'}</div>
+            <button type="button" className="btn btn-small" onClick={onRetry}>다시 시도</button>
+          </>
+        ) : (
+          <div className="dim-2" style={{fontSize:12}}>처음 진입 시 ~1초 소요됩니다.</div>
+        )}
       </div>
-      <div className="ko-serif" style={{fontSize:18, marginBottom:14, color:'var(--ink)'}}>
-        {error ? '관리자 페이지를 불러오지 못했습니다' : '관리자 페이지를 불러오는 중…'}
-      </div>
-      {error ? (
-        <>
-          <div className="dim-2" style={{fontSize:12, marginBottom:14}}>{error?.message || '알 수 없는 오류'}</div>
-          <button type="button" className="btn btn-small" onClick={onRetry}>다시 시도</button>
-        </>
-      ) : (
-        <div className="dim-2" style={{fontSize:12}}>처음 진입 시 ~1초 소요됩니다.</div>
-      )}
     </div>
-  </div>
-);
+  );
+};
 
 const App = () => {
   const [route, setRoute] = React.useState(() => {
@@ -587,11 +591,14 @@ const App = () => {
   const hideNav = route === "login" || route === "signup" || route === "admin";
 
   // v00.198 — admin lazy-load. route 진입 시 동적 스크립트 주입.
+  // v00.212 — login/signup 도 같은 번들에 LoginPage/SignupPage 가 정의되어 있어 동일 트리거 필요.
+  //           직접 /login·/signup URL 진입 시 PAGE_NOT_LOADED 회피.
+  const ADMIN_BUNDLE_ROUTES = ['admin', 'login', 'signup'];
   const [adminLoaded, setAdminLoaded] = React.useState(() => typeof window !== 'undefined' && !!window.AdminPage);
   const [adminLoadError, setAdminLoadError] = React.useState(null);
   const [adminLoadAttempt, setAdminLoadAttempt] = React.useState(0);
   React.useEffect(() => {
-    if (route !== 'admin') return;
+    if (!ADMIN_BUNDLE_ROUTES.includes(route)) return;
     if (adminLoaded) return;
     let cancelled = false;
     setAdminLoadError(null);
@@ -630,7 +637,15 @@ const App = () => {
       case "checkout":  { const C = pick('CheckoutPage','결제'); return <C go={go} cart={cart} user={user}/>; }
       case "mypage":    { const C = pick('MyPage','마이페이지'); return <C go={go} user={user} cart={cart}/>; }
       case "login":
-      case "signup":    { const C = pick('LoginPage','로그인'); return <C go={go} setUser={setUser}/>; }
+      case "signup":    {
+        // v00.212 — LoginPage/SignupPage 가 admin 번들에 들어있어 lazy-load 대기 처리.
+        // 미준비 시 PAGE_NOT_LOADED 대신 로딩 화면, 실패 시 retry UI.
+        if (!adminLoaded) {
+          return <_AdminLoadingFallback label={route === 'signup' ? '회원가입' : '로그인'} error={adminLoadError}
+            onRetry={() => { setAdminLoadError(null); setAdminLoadAttempt((v) => v + 1); }}/>;
+        }
+        const C = pick('LoginPage','로그인'); return <C go={go} setUser={setUser}/>;
+      }
       case "admin":     {
         if (!user?.isAdmin) { const D = pick('AdminDenied','관리'); return <D go={go} user={user}/>; }
         // v00.198 — 스크립트 lazy-load. 미준비 시 로딩 화면, 실패 시 retry UI.
