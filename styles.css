@@ -1483,6 +1483,10 @@ main time, main .section-eyebrow {
   /* v00.221 — 모바일 도서 상세의 표지 sticky 해제.
      사용자 민원: 책 이미지가 상단에 고정돼 본문/판본 선택이 안 보임. */
   .book-cover-col { position: static !important; top: auto !important; }
+  /* v00.224 — sticky 카드 일괄 해제 (강연/투어/결제 NEXT/ORDER SUMMARY 카드).
+     데스크톱 2열 가정의 position:sticky, top:100 이 모바일 1열 스택에서
+     첫 행 카드를 nav 아래 고정 → 두 번째 행(폼/상세) 진입 차단. */
+  .mobile-release-sticky { position: static !important; top: auto !important; }
   .cta-grid { padding: 40px 28px !important; }
 
   /* v00.222 — 모바일 게시글 목록(community-table): 제목 1줄 + 메타 라인 구조.

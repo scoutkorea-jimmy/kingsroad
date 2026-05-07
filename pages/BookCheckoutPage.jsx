@@ -709,7 +709,7 @@ const CheckoutPage = ({ go, cart, user }) => {
 
           {/* Summary */}
           <div>
-            <div className="card card-gold" style={{position:'sticky', top:100}}>
+            <div className="card card-gold mobile-release-sticky" style={{position:'sticky', top:100}}>
               <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em', marginBottom:20}}>ORDER SUMMARY</div>
               <div style={{display:'flex', gap:16, marginBottom:24, paddingBottom:24, borderBottom:'1px solid var(--line)'}}>
                 {book.coverDataUri ? (

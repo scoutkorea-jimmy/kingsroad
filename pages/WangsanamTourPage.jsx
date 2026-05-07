@@ -355,7 +355,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const isPaidConfirmed = myReg?.status === 'confirmed' && (tour.priceNumber || 0) > 0;
 
   return (
-    <div className="card card-gold" style={{position:'sticky', top:100}}>
+    <div className="card card-gold mobile-release-sticky" style={{position:'sticky', top:100}}>
       <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.3em'}}>NEXT SCHEDULE</div>
       <div className="gold-2 ko-serif" style={{fontSize:24, margin:'8px 0 20px'}}>{tour.next}</div>
 
