@@ -481,67 +481,80 @@ KMS의 제1 기능은 `기능정의서`다.
 이 섹션은 관리자 페이지 KMS의 `디자인` 탭과 같은 내용을 다룬다.
 새 화면을 만들거나 기존 화면을 바꿀 때, 아래 원칙을 먼저 확인하고 그 위에서 작업한다.
 
-## 1. 브랜드 무드 (현행 — 뱅기노자, 2026.04.27 갱신)
+## 1. 브랜드 무드 (현행 — 뱅기노자, 2026.05.07 갱신)
 
 - "뱅기 타고 한국을 느끼다" — 한국의 역사·문화·자연을 함께 여행하는 커뮤니티가 코어 컨셉.
 - 톤은 절제·신뢰·여행자의 시선. 과한 동양풍 장식 대신, 깔끔한 편집 디자인을 우선한다.
 - 화면은 화려함보다 가독성과 신뢰감을 우선한다. 운영자 화면은 작업 효율, 사용자 화면은 감성 전달과 안심감을 동시에 준다.
 
-## 2. 컬러 원칙 (블루 팔레트 v2)
+## 2. 컬러 원칙 (Primary/Secondary/Tertiary v2 — 5:25:70 황금 배색)
+
+> v00.209 갱신 — 레거시 `--gold-*` / `--cta-*` 토큰 전면 제거. 모든 코드는 `--primary*` / `--on-primary` 직접 사용.
 
 - 기본 배경: 밝은 화이트/오프화이트(`--bg`, `--bg-2`) 위주. 본문 가독성 최우선.
-- 강조색은 **블루 팔레트**로 통일.
-  - `--gold` = `#3B82F6` (Mid Sky · 액션 블루) — 주요 CTA, 활성 상태, 강조 라인.
-  - `--gold-2` = `#2563EB` (Primary Blue · hover, 가격, 핵심 숫자).
-  - `--gold-dim` = `#93C5FD` (Low Sky · 장식 보더, 보조 강조).
-  - `--gold-ink` = `#1E3A8A` (Deep Blue · 본문 강조 텍스트, 인용 좌측 라인).
-- 회원등급 색상도 같은 블루 그라디언트(`#64748B → #94A3B8 → #93C5FD → #3B82F6 → #2563EB → #1E3A8A`)를 따른다.
-- 위험/삭제는 `var(--danger)`로 명확히 구분. 절대 블루로 표시하지 않는다.
-- (변수명은 과거 `gold-*`를 그대로 두지만, 값은 모두 블루로 재정의됨. 외부 PR에서 노란색 hex 값을 다시 도입하지 않는다.)
+- 강조색은 **로고 옐로우 + 보조 Caramel 팔레트**로 통일 (5:25:70 황금 배색):
+  - `--primary` = `#F5D548` (로고 옐로우) — **5% 면적**: CTA 버튼, focus ring, 활성 dot, 인터랙션 상태에만.
+  - `--primary-hover` = `#E5BF2E` (Honey Amber) — hover 한 단 깊음.
+  - `--primary-active` = `#C99E1A` (Deep Amber) — active/focus ring (= `--focus`).
+  - `--primary-dim` = `#FDE68A` (옅은 옐로우) — 미세 강조 / border tint.
+  - `--on-primary` = `#0F172A` (다크 잉크) — primary 위 텍스트 (대비 보장).
+  - `--secondary` = `#92400E` (Caramel Ink) — 링크·서브 강조 (15-25% 면적).
+  - `--secondary-hover` = `#7C2D12`.
+  - `--tertiary` = `#475569` (Slate 600) — 부가 위계.
+- Neutral (70%+ 면적): `--bg/--bg-2/--bg-3` 베이스 + `--ink/--ink-2/--ink-3` 텍스트 위계.
+- System: `--success #16A34A` / `--warning #D97706` / `--info #2563EB` / `--danger #DC2626`. 위험/삭제는 반드시 `var(--danger)`.
+- 다크 모드: `:root[data-theme="dark"]` 가 Neutral/Text/System 만 슬레이트 팔레트로 교체. **Primary 옐로우는 유지** (브랜드 시그니처).
 
 ## 3. 타이포그래피 원칙
 
-- 제목은 세리프(`--font-serif` / `--font-display`)로 품격 유지.
-- 본문은 한글 가독 폰트 (Noto Sans/Serif KR).
-- 운영 라벨·메타·코드 ID는 모노(`--font-mono`)로 구조감을 강조.
-- 한 화면 안에서도 제목, 본문, 메타의 역할이 시각적으로 분명해야 한다.
+- 디스플레이/제목: **KBL Jump 패밀리** (`--font-display: KblJumpExtended`, `--font-title: KblJump`) — 히어로/대제목/카드 타이틀.
+- 본문 prose: **Wanted Sans Variable** (`--font-sans` 기본 + `--font-reading`) — 한글 가독성 + variable weight.
+- 명조 토글: **ChosunIlboMyungjo** — 사용자가 reading mode myungjo 선택 시 `.app.reading-myungjo` 가 본문 폰트를 명조로 교체.
+- 운영 라벨·메타·코드 ID: **IBM Plex Mono** (`--font-mono`) + 자간 0.1-0.2em 으로 구조감 강조.
+- 한 화면 안에서도 제목/본문/메타가 시각적으로 분명해야 한다.
+- 모바일 본문 (`.post-body`, ≤600px) 17px / line-height 1.85 / `word-break: keep-all` (한글 어절) — v00.223 갱신.
 
 ## 4. 레이아웃 원칙
 
 - 여백은 넉넉하게. 카드/섹션은 편집 디자인 격자감으로 정렬한다.
 - 모바일에서도 구조가 무너지지 않도록 한 줄 정보량을 통제한다.
-- 관리자 콘솔은 좌측 사이드바(7개 대카테고리: 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 개인정보 관리 / 시스템 관리) + 우측 작업 영역의 1:N 레이아웃을 표준으로 한다.
+- **모바일 정책 (≤900px): 무조건 1단 강제** — 모든 다열 그리드는 `grid-template-columns: 1fr` 폴백 (인라인 grid 도 `!important` 로 덮음). v00.168 부터 `max 2단` 룰 적용.
+- 관리자 콘솔은 좌측 사이드바(8개 대카테고리: 요약 / 콘텐츠 / 회원관리 / 쇼핑 / 운영설정 / 시스템 관리 / 개인정보 / KMS) + 우측 작업 영역의 1:N 레이아웃. 모바일에선 사이드바가 drawer 모드 (햄버거 토글).
+- Sticky 카드는 데스크톱 전용 — 모바일에선 `.book-cover-col` / `.mobile-release-sticky` 클래스로 `position:static` 강제 (v00.221 / v00.224 — 사용자 민원 누적 결과).
 
 ## 5. 컴포넌트 원칙
 
-- 주요 행동: `btn btn-gold` (블루 강조).
+- 주요 행동: `btn btn-gold` (옐로우 primary 강조 — 클래스명은 legacy `gold` 잔류, 색상은 `--primary` 토큰).
 - 일반 행동: `btn` 또는 `btn btn-small`.
 - 위험 행동: `borderColor: var(--danger), color: var(--danger)`.
-- 칩(필터 탭): pill 형태(`borderRadius:999`), 활성 시 배경 블루, 항목별 카운트 동행 표시(예: `자유 12`).
+- 칩(필터 탭): pill 형태(`borderRadius:999`), 활성 시 옐로우 border + `rgba(245,213,72,0.06)` 배경, 항목별 카운트 동행 (예: `자유 12`).
 - 배지·라벨은 짧고 명확하게(예: `숨김`, `대기`, `확정`, `초안`).
-- 아이콘은 라인아트 SVG를 기본으로 한다(예: 알림 종모양은 stroke-only outline). 이모지 아이콘은 보조용.
+- 아이콘은 라인아트 SVG (예: 알림 종 stroke-only). 이모지 아이콘은 보조용.
+- alert/confirm 금지 — `window.BGNJ_TOAST.error()` (v00.207 일괄 73건 교체) + `window.BGNJ_CONFIRM()` Promise (v00.208 일괄 47건 교체) 사용.
 
 ## 6. 인터랙션 원칙
 
-- 애니메이션은 과하지 않게.
-- hover/focus/active는 명확하되 시끄럽지 않게.
+- 애니메이션은 과하지 않게. `prefers-reduced-motion` 지원 (v00.067).
+- hover/focus/active는 명확하되 시끄럽지 않게. 버튼 hover 시 `translateY(-1px)` + subtle shadow lift (v00.158).
 - 관리자 화면은 정보 탐색성·작업 효율 우선. 사용자 화면은 감성 전달·신뢰감 우선.
 - 첫 방문 시 쿠키 동의 배너가 우선 표시되며, 결정 전까지 화면 하단에 비차단형(non-modal)으로 떠 있는다.
 
 ## 7. 접근성 원칙
 
-- 모든 인터랙티브 요소는 키보드 포커스 가능 + `aria-label` 또는 텍스트 라벨 보유.
+- 모든 인터랙티브 요소는 키보드 포커스 가능 + `aria-label` 또는 텍스트 라벨 보유. focus-visible 2px solid `--focus` ring (v00.067).
 - 탭/필터 칩은 `role="tab"` + `aria-selected`로 상태 노출.
-- 다이얼로그/모달은 `role="dialog"` + `aria-modal` + `aria-labelledby`.
+- 다이얼로그/모달은 `role="dialog"` + `aria-modal` + `aria-labelledby` + `useModalGuard` (ESC/외부클릭/포커스 트랩 — v00.077 / v00.160).
 - 색상만으로 상태를 구분하지 않는다(아이콘·텍스트 라벨 동행).
-- 콘트라스트는 WCAG AA(텍스트 4.5:1) 이상을 기본 기준으로 한다.
+- 콘트라스트는 WCAG AA(텍스트 4.5:1) 이상. WCAG 3.0 forced-colors 모드도 기본 지원.
 
 ## 8. 디자인 금지 원칙
 
-- 노란/금색 hex(예: `#D4AF37`, `#E8C547`)는 더 이상 도입하지 않는다 — 모두 블루 팔레트로 변환된 상태.
+- **옐로우 면적 5% 룰 — Primary 는 인터랙션 상태(CTA/focus/active dot)에만**. 옐로우 배경/eyebrow/라벨로 면적 깔지 않기 (memory `feedback_color_system.md`).
 - 보라색 계열을 브랜드 주색처럼 쓰지 않는다.
 - 과한 그라데이션·유행성 마이크로 인터랙션을 남발하지 않는다.
 - 일월오봉도/조선 왕실 도상 직접 차용 표현은 더 이상 사용하지 않는다(브랜드 분리 완료).
+- 인라인 `style={{position:'sticky', top:N}}` 카드는 데스크톱 전용 — 반드시 모바일 release 클래스(`mobile-release-sticky` 등) 함께 부여.
+- 다열 그리드 인라인 `gridTemplateColumns` 는 `.grid-feature-2` / `.book-grid` / `.cta-grid` 등 클래스 함께 부여 (모바일 1열 폴백 적용 위해).
 
 # 부록 · 운영 기준
 
@@ -750,6 +763,32 @@ KMS를 수정할 때는 가능하면 아래 구조를 따른다.
 - 2026-04-25: 대시보드 실데이터 연결, 왕사남 소개 제거, KMS 내부 기능정의서/디자인 탭 구조 반영
 - 2026-04-25: KMS 화면을 `기능정의서` + `디자인` 두 탭 구조로 정리하고 진입 기본 탭을 `기능정의서`로 고정. 운영 원칙은 부록과 버전 기록으로 이동.
 - 2026-04-25: 기능정의서를 사이트의 5가지 미션(커뮤니티 / 강연 / 칼럼 / 투어 / 책) + 공통 기반(BASE) 영역 단위로 재정렬. 각 영역마다 평가, 없는 기능 정리, 기능별 요소·기술 스펙·유의할 점·개발 이슈, 영역 차원 기술 스펙·유의할 점·개발 이슈를 표준 9블록 구조로 작성.
+
+---
+
+## 변경 기록 압축 요약 — v00.157 → v00.225 (2026-05-04 → 2026-05-07)
+
+> 사이클별 상세는 git log + `plans/<버전>.md` 참조. 본 섹션은 영역별 누계 정리.
+
+**관리자 대시보드 / 분석 / 가시화 (v00.157~v00.196)**
+- v00.157 카드 hover popover · v00.158 버튼 radius 8 + subtle shadow · v00.165 사이드바 collapsible + 그룹 9→8 · v00.166-167 사이트 설정 7개→1개 단일 머지 + 우측 라이브 미리보기 iframe · v00.173-174 호버 툴팁/코호트 + 사용자 여정 Sankey · v00.179 RankedBarList 공통 컴포넌트 · v00.180 CommunityPostsAdminPanel 추출 · v00.182 download 헬퍼 DRY · v00.183 내부 알람 broadcast · v00.187 AdminShared.jsx 분리 (-759줄) · v00.190 통합 활동 로그 · v00.191-196 가입 추이/등급 차트/검색콘솔/안정성 보강.
+
+**리팩토링 / 정리 (v00.181~v00.209)**
+- v00.181 localStorage server-first audit · v00.184 pickImage DRY · v00.185 이미지 업로드 잔여 통합 · v00.186 legacy 4 dead store 제거 · v00.198 admin 번들 lazy-load + 워커 CDN 캐시 · v00.206-208 BGNJ_TOAST/CONFIRM Promise API + alert 73건/confirm 47건 일괄 교체 · **v00.209 레거시 컬러 토큰 (`--gold/--cta-*`) 전면 제거 → `--primary*`** (디자인 §2 갱신).
+
+**보안 / SEO / 메타 (v00.197~v00.214)**
+- v00.197 다크모드 본문 가독성 fix · v00.199 책 노출 필드 선택 · v00.200 사이트 이메일 단일화 contact@bgnj.net · v00.201 비밀번호 변경 + 본문 검색 옵션 (워커 PATCH /api/me/password) · v00.202 SEO sitemap lastmod + 네이버 검색콘솔 · v00.203 postMessage origin 검증 · v00.204-205 디자인 가이드 9건 코드 동기화 · v00.214 새 빌드 자동 감지 + 새로고침 배너.
+
+**모바일 / UX (v00.210~v00.225)** — 누적 사용자 민원 대응
+- v00.210 칼럼 작성 무한 로딩 hotfix · v00.211 모바일 햄버거←로고 좌측 정렬 · v00.212 /login·/signup PAGE_NOT_LOADED hotfix (admin lazy-load 트리거) · v00.213 /signup 직접 진입 시 회원가입 탭 자동 활성 · v00.215 모바일 auth hero art 숨김 · v00.216-217 admin 사이드바 서브메뉴 위계 · v00.218 현금영수증 신청 (책/강연/투어) · v00.219 칼럼 일련번호 + 단축 공유 URL `#col-N` · v00.220 admin 칼럼 카테고리 칩 시인성.
+- **v00.221** 도서 상세 표지 모바일 sticky 해제 (`book-cover-col`).
+- **v00.222** 게시글 목록 모바일 — 제목 1줄 ellipsis + `.row-mobile-meta` 메타 라인 (분류·작성자·날짜·조회).
+- **v00.223** 모바일 가독성 종합 패스 — `.post-body` 폰 17px / `.field-input` 16px (iOS zoom 차단) / iframe·video aspect-ratio 16:9 / `.dim-2` ink-2 / 카드 호흡.
+- **v00.224** sticky 카드 일괄 해제 — 강연·투어·결제 NEXT/ORDER SUMMARY 카드 (`.mobile-release-sticky`).
+- **v00.225** scroll-to-top FAB 폰 36×36 축소 (footprint −56%) + 종합 충돌 검토.
+
+**운영 패턴 변화 (v00.202~)**
+- v00.201 까지는 `ADMIN_VERSION_HISTORY` (AdminDesignHub.jsx) 매 사이클 상세 기록. v00.202 이후로는 commit message + `plans/<버전>.md` 만 유지하는 패턴으로 전환됨 (release_workflow memory 룰 완화 v00.226).
 - 2026-04-25: Cycle 1(뱅기노자 커뮤니티 마무리) 출시. 좋아요·북마크·신고 운영 큐·댓글 알림·작성자 등급 배지·페이지네이션을 한 PR에 묶어 도입.
 - 2026-04-25: Cycle 2(뱅기노자 칼럼 운영 강화) 출시. 임시 저장·예약 발행·발행 취소 + 좋아요·공유 링크·댓글·검색·카테고리 아카이브·추정 읽기 시간 자동 계산 도입. `BGNJ_COLUMNS` helper 신설.
 - 2026-04-25: Cycle 3(뱅기노자 강연 운영) 출시. 회원 전용 강연 신청, 무통장 입금 결제, 관리자 입금 확인 → 참가 확정, 정원·대기열 자동 처리, .ics 캘린더 다운로드, 마이페이지 내 신청 내역, 관리자 강연 탭과 계좌번호 설정 탭 도입. `BGNJ_LECTURES` helper 신설.

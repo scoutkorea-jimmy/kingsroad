@@ -1,8 +1,8 @@
 # 뱅기노자 사이클 로드맵
 
 > **목적:** 향후 작업 단위(사이클)의 단일 백로그. 사이클 시작 시 이 문서에서 다음 항목을 가져오고, 완료 시 status 갱신.
-> **연관 문서:** 완료된 사이클 회고는 `pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY` 와 `CONTEXT.md §5` 에 기록.
-> **마지막 갱신:** 2026-05-04 (v00.156 — v00.114~v00.155 누적 사이클 회고 한 줄 정리 + 큐 1/2 본 세션 후보 반영)
+> **연관 문서:** 완료된 사이클 회고는 `CONTEXT.md §5` + commit message + `plans/<버전>.md`. (v00.202 부터 `ADMIN_VERSION_HISTORY` 미수정 패턴.)
+> **마지막 갱신:** 2026-05-07 (v00.226 — v00.157~v00.225 69 사이클 회고 한 줄 정리 + 본 세션 모바일 UX 4-사이클 + 메타 현행화)
 
 ---
 
@@ -17,14 +17,20 @@
 
 ## 큐 1 — 다음 사이클 (검증 보고 후 명시 갱신)
 
-> v00.155 까지 책 카탈로그 다권화 사이클 마무리. 본 세션(v00.156) 검토에서 발굴된 후보:
+> v00.225 까지 모바일 UX 4-사이클 마무리. v00.226 메타 현행화 후 후속 큐:
 
-- **책별 리뷰 분리** — `BGNJ_BOOK_ORDERS.refreshReviews/addReview/canReview/hasReviewed` 가 [data.js:2209](data.js#L2209), [data.js:2227](data.js#L2227) 에서 `'kingsroad'` 책 ID 하드코드. 1권 가정 잔재. 책별 리뷰 흐름이 BGNJ_BOOKS 의 책별 리뷰와 통합 또는 분리 필요. **사용자 의도 확인 필요** (단일 페이지 글로벌 vs 책별 탭).
+**미해소 이월 (v00.156 부터 carry-over)**
+- **책별 리뷰 분리** — `BGNJ_BOOK_ORDERS.refreshReviews/addReview/canReview/hasReviewed` 가 [data.js:2209](data.js#L2209), [data.js:2227](data.js#L2227) 에서 `'kingsroad'` 책 ID 하드코드. 1권 가정 잔재. **사용자 의도 확인 필요** (단일 페이지 글로벌 vs 책별 탭).
 - **챕터 깊은 들여쓰기** (`-- ` 2단계+) — v00.155 의 1단계 sub-item 만 처리. 사용자 신호 시 추가.
-- **에러 페이지 라이브 라우트** (`?p=error&code=403` 등) — v00.152 에러 페이지 6종 미리보기 패널은 있으나 라이브 진입로 부재 (404 만 boot.jsx unknown route 폴백). 1 commit.
-- **403/401 자동 wiring** — 권한 보호 라우트 (admin 미인증 진입 등) 시 자동 노출. 인증/권한 경로 정리 사이클.
+- **에러 페이지 라이브 라우트** (`?p=error&code=403` 등) — 미리보기 패널만 있고 라이브 진입로 부재. 1 commit.
+- **403/401 자동 wiring** — 권한 보호 라우트 시 자동 노출.
 - **PG 결제** — 무통장 임시. 별 사이클 (외부 의존 + 비용).
-- **사이트 검토 결과 반영** — v00.156 의 일반-목적 에이전트 보고서 도착 후 우선순위 TOP 5 항목을 본 큐로 분류.
+
+**v00.157~225 후속 후보**
+- **AuthAdminPage.jsx 9127줄 분할** — `large_file` INFO 누적 알림. v00.187 AdminShared 분리 (-759줄) 이후에도 유지. 다음 분할 후보: AdminMemberPanel / AdminCommunityPanel / AdminBookOrdersPanel.
+- **scroll-to-top FAB UX 추가 개선** — v00.225 폰 36×36 축소 후에도 댓글 폼 우측 가림 가능성 잔존. 폼 영역 진입 시 자동 hide 검토 (별도 사용자 민원 시).
+- **anchor scroll-margin-top** — sticky nav (64px 모바일 / 72px 데스크톱) 아래로 #col-N 등 anchor 점프 시 도착점이 가려질 수 있음. 현재 ColumnPage 는 selectedId state 로 우회하나, 칼럼 댓글 `#col-comments` 등 native anchor 가 있는 곳은 scroll-margin-top 권장.
+- **다크모드 sweep 잔재** — v00.197 본문 가독성 fix 후에도 인라인 hex (`#1e293b` 등 boot.jsx 토스트, ConfirmDialog 등) 잔존. 토큰화 필요.
 
 ## 큐 2 — 워커 배포 의존 (★ wrangler deploy 필요)
 
@@ -112,3 +118,13 @@
 - **v00.154** ✅ cart 자료구조 bookId 도입 + CheckoutPage / MyPage / AuthAdminPage / 영수증 텍스트의 모든 『왕의길』 동적 + 워커 영수증 mail subject books JOIN (★ deploy 대기) (commit `5ffc8db`)
 - **v00.155** ✅ 책 목차 sub-item — `- ` prefix → 직전 챕터 하위 설명 (들여쓰기 + bullet) + admin textarea hint/placeholder + kms.md 책 영역 입력 규칙 (commit `0e76713`)
 - **v00.156** ✅ 메타 갱신 사이클 — ROADMAP 본 세션 회고 + CONTEXT.md §0/§5 갱신 + plans/README 신설 + 사이트 심층 검토 보고서 발행 (코드 수정 없이 후속 큐 분류)
+- **v00.157~166** ✅ admin 카드 hover popover · 버튼 radius 8 + subtle shadow lift · P0 3건 일괄 · useModalGuard focus trap + 워커 영수증 deploy · React production build + script defer + localStorage PII sanitize · 책 카루셀 슬라이드 · 디자인 max 2단 룰 · 사이드바 collapsible · 사이트 설정 7→1 단일 머지
+- **v00.167~177** ✅ 사이트 설정 우측 라이브 미리보기 iframe · max 2단 룰 + iframe 차단 해제 · 칼럼 admin 글쓰기 버튼 · 글 본문 사라짐 hotfix + 룰 무조건 서버저장 · 게시판 추가/삭제 인라인 + 책 순서 + 카테고리 server delete · 홈 책 CTA 별도 소개글 · 차트 호버 + 코호트 (7/14/30/90일) · 사용자 여정 Sankey · admin 게시판 테이블 + DnD · 수정 버튼 미반응 hotfix · admin 커뮤니티 통합 단일 sub-tab
+- **v00.178~190** ✅ 사용자 여정 죽은 코드 제거 (-175) · RankedBarList DRY · CommunityPostsAdminPanel 추출 · localStorage server-first audit · download 헬퍼 추출 (6 패널) · 내부 인원 알람 broadcast · pickImageWithR2Fallback DRY · 이미지 업로드 잔여 · legacy 4 dead store 제거 · AdminShared.jsx 분할 (-759) · 키보드 nav + h1 위계 · 등급 이름 초기화 fix · 통합 활동 로그 패널
+- **v00.191~196** ✅ 알람 그룹 + PC 미리보기 가로 확장 · pvSeries 시간 라벨 hotfix · 새 책 추가 prompt 제거 + 메뉴 미리보기 · 회원가입 추이 + 시간대별 히트맵 · 가입자 추이 0 root fix · 등급별 분포 차트 + 검색콘솔 패널
+- **v00.197~205** ✅ 다크모드 본문 가독성 + 좌우 정렬 + 시분 표시 · admin 번들 lazy-load + 워커 CDN 캐시 · 기능정의서 최신화 + 홈 fontScale + 책 노출 필드 · 사이트 이메일 단일화 contact@bgnj.net · P1 묶음 — 비밀번호 변경 + 본문 검색 옵션 · SEO sitemap lastmod + 네이버 검색콘솔 · postMessage origin 검증 · 디자인 가이드 9건 코드 동기화
+- **v00.206~209** ✅ BGNJ_TOAST 프로그램 호출 API + ConfirmDialog · alert() 73건 → BGNJ_TOAST.error 일괄 · window.confirm() 47건 → BGNJ_CONFIRM Promise 일괄 · **레거시 컬러 토큰 (`--gold/--cta-*`) 전면 제거 → `--primary*`**
+- **v00.210~217** ✅ 칼럼 작성 무한 로딩 hotfix · 모바일 햄버거←로고 · /login·/signup PAGE_NOT_LOADED hotfix · /signup 직접 진입 회원가입 탭 자동 활성 · 새 빌드 자동 감지 + 새로고침 배너 · 모바일 auth hero art 숨김 · admin 사이드바 서브메뉴 위계
+- **v00.218~220** ✅ 현금영수증 신청 (책/강연/투어) · 칼럼 일련번호 + 단축 공유 URL `#col-N` · admin 칼럼 카테고리 칩 시인성
+- **v00.221~225** ✅ **모바일 UX 4-사이클** — ① 도서 표지 모바일 sticky 해제 · ② 게시글 목록 제목 1줄 + 메타 라인 · ③ 모바일 가독성 종합 패스 (post-body 17px / field-input 16px iOS zoom 차단 / iframe 16:9 / dim-2 ink-2 / 카드 호흡) · ④ 강연/투어/결제 sticky 카드 일괄 해제 · ⑤ scroll-top FAB 폰 36×36 (footprint −56%) + 종합 충돌 검토
+- **v00.226** ✅ 메타 현행화 사이클 — kms.md 디자인 §1-8 전면 재작성 (블루→옐로우 환원 반영, `--primary*` 토큰 명시) + v00.157~225 변경기록 압축 요약 + CONTEXT.md §0/§5/§6 갱신 + ROADMAP.md 사이클 회고 + memory release_workflow 룰 완화

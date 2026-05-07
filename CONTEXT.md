@@ -1,13 +1,13 @@
 # 뱅기노자 (BANGINOJA) 프로젝트 컨텍스트 종합
 
-> **마지막 업데이트:** v00.126.000 · 2026-05-03 (v00.115~125 11 사이클 일괄 반영 — D1 정리 + Secrets 결정 + JSON-LD/robots/sitemap + README + 5 도구 자동화 + admin createdAt + GC 등)
+> **마지막 업데이트:** v00.226.000 · 2026-05-07 (v00.157~v00.225 69 사이클 일괄 반영 — admin 가시화/대시보드/리팩토링/모바일 UX 4개 트랙 + 컬러 토큰 정리 + 운영 패턴 변화 정합)
 > **이 문서의 목적:** 작업이 누적되며 형성된 운영 원칙·아키텍처·자동화 도구·진행 상태를 한 곳에서 인수인계할 수 있도록 정리한 단일 컨텍스트 문서.
 
 ---
 
 ## 0. 한 페이지 요약
 
-뱅기노자는 한국 여행·역사·문화 커뮤니티 사이트(`bgnj.net`). 정적 호스팅(GitHub Pages) + 동적 백엔드(Cloudflare Worker + D1 + R2) hybrid. **React 18.3.1 (UMD) + esbuild 사전 컴파일** — 빌드 단계가 pre-commit 훅에서 자동 실행되어 `*.jsx → *.js` 사전 transpile (v00.071 부터 in-browser Babel 폐기). 페이지/컴포넌트는 `BGNJ_*` 헬퍼를 거쳐 D1 을 source-of-truth 로 사용. v00.123 부터 categories_kv / grades_kv 가 D1 에 시드되어 server-first 정상화. **현재 v00.156 시점**.
+뱅기노자는 한국 여행·역사·문화 커뮤니티 사이트(`bgnj.net`). 정적 호스팅(GitHub Pages) + 동적 백엔드(Cloudflare Worker + D1 + R2) hybrid. **React 18.3.1 (UMD) + esbuild 사전 컴파일** — 빌드 단계가 pre-commit 훅에서 자동 실행되어 `*.jsx → *.js` 사전 transpile (v00.071 부터 in-browser Babel 폐기). 페이지/컴포넌트는 `BGNJ_*` 헬퍼를 거쳐 D1 을 source-of-truth 로 사용. v00.123 부터 categories_kv / grades_kv 가 D1 에 시드되어 server-first 정상화. **현재 v00.226 시점** — v00.157~225 사이클에서 admin 대시보드 가시화 + 모바일 UX 4-사이클 (v00.221~225) + 레거시 컬러 토큰 정리 (v00.209) + alert/confirm Promise 화 (v00.207-208) 등 누적.
 
 세 가지 운영 축:
 1. **D1 source-of-truth** — 사용자가 보는 모든 콘텐츠는 서버 D1 에서 옴. 시드/로컬 폴백 금지.
@@ -233,7 +233,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ---
 
-## 5. 누적 사이클 히스토리 (v00.039 → v00.125)
+## 5. 누적 사이클 히스토리 (v00.039 → v00.225)
 
 상세는 `pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY`. 본 표는 한 줄 요약.
 
@@ -280,6 +280,16 @@ URL 매핑 (`VALID_ROUTES`):
 | **v00.154** | **cart 자료구조 bookId 도입** + CheckoutPage / MyPage / AuthAdminPage / 영수증 텍스트 동적 + 워커 영수증 mail subject books JOIN (★ deploy 대기) |
 | **v00.155** | **책 목차 sub-item** — `- ` prefix → 직전 챕터 하위 설명 (들여쓰기 + bullet) + admin textarea hint/placeholder + kms.md 책 영역 입력 규칙 |
 | **v00.156** | 메타 갱신 — ROADMAP / CONTEXT 본 세션 회고 + plans/README 신설 + 사이트 심층 검토 보고서 (코드 수정 없이 후속 큐 분류) |
+| **v00.157~166** | admin 카드 hover popover · 버튼 radius 8 + subtle shadow lift · P0 3건 일괄(LecturesPage 빈 버킷 가드 + nav 폴백 + helper race) · useModalGuard focus trap + 워커 영수증 deploy 준비 · React production build + script defer + localStorage PII sanitize · 책 카루셀 슬라이드 + BookPage hero · 디자인 max 2단 룰 · 사이드바 collapsible + 그룹 8 · **사이트 설정 7개→1개 단일 머지** (sub-tab 7) |
+| **v00.167~177** | 사이트 설정 우측 라이브 미리보기 iframe · max 2단 룰 + iframe 차단 해제 + 줄바꿈 미반영 fix · 칼럼 admin 전용 글쓰기 버튼 · ★ 글 본문 사라짐 hotfix + 등급 이름 초기화 + **룰 무조건 서버저장** (memory feedback) · 게시판 추가/삭제 인라인 + 책 순서 + 카테고리 server delete · 홈 책 CTA 별도 소개글 + 폴백 · 차트 호버 툴팁 + 코호트 (7/14/30/90일) · 사용자 여정 Sankey 3-단계 · admin 게시판 테이블 + DnD + 카테고리 머지 · 수정 버튼 미반응 hotfix + 미리보기 위로 · admin 커뮤니티 통합 단일 sub-tab |
+| **v00.178~190** | 사용자 여정 죽은 코드 제거 (-175) · RankedBarList 공통 컴포넌트(DRY) + 유입/인기 hover · CommunityPostsAdminPanel 추출 · localStorage server-first audit + resetAll D1 fix · downloadBlob/Csv/Json 헬퍼 추출 (6 패널) · 내부 인원 알람 broadcast (admin → admin/특정 사용자) · pickImageWithR2Fallback DRY + WSM 멤버 모바일 · 이미지 업로드 잔여 (book/PDF + SiteContent ImageUploader) · **legacy 4 dead store 제거** (bookOrders/Reviews/Tour/Lecture) · AuthAdminPage 분할 — AdminShared.jsx (-759) · ColumnPage 키보드 nav + BookPage h1 · 등급 이름 초기화 fix + audit 보강 · 통합 활동 로그 패널 — 검색/필터/정렬 |
+| **v00.191~196** | 알람 그룹 + PC 미리보기 가로 확장 · pvSeries 시간 라벨 매시 + 사이드바 버전 뱃지 hotfix · 새 책 추가 prompt 제거 + ▲▼ 박스 그룹 + 모든 사이트 설정 메뉴 미리보기 · 회원가입 추이 + 커뮤니티 게시글 로딩 / 시간대별 히트맵 · 가입자 추이 0 root fix (memo dep 누락) · 등급별 분포 차트 + 검색콘솔 패널 + 안정적 성능 개선 |
+| **v00.197~205** | **다크모드 본문 가독성** + 좌우 정렬 + 작성 시분 표시 · admin 번들 lazy-load + 워커 CDN 캐시 + HomePage tick 분리 · 기능정의서 최신화 + 홈 fontScale + 책 노출 필드 선택 · **사이트 이메일 단일화** contact@bgnj.net · **P1 묶음** — 비밀번호 변경 (PATCH /api/me/password) + 본문 검색 옵션 · SEO sitemap lastmod + 네이버 검색콘솔 verification · postMessage origin 검증 (edit-mode) · 디자인 가이드 폰트 표 KBL/Wanted/ChosunIlbo 동기화 · 디자인 가이드 9건 코드 동기화 |
+| **v00.206~209** | **BGNJ_TOAST 프로그램 호출 API + ConfirmDialog 컴포넌트** · alert() 73건 → BGNJ_TOAST.error 일괄 교체 · window.confirm() 47건 → BGNJ_CONFIRM Promise 일괄 교체 · **레거시 컬러 토큰 (`--gold/--cta-*`) 전면 제거 → `--primary*`** (KMS 디자인 §2 갱신 v00.226) |
+| **v00.210~217** | 칼럼 작성 모달 무한 로딩 + confirm() 잔여 hotfix · **모바일 햄버거←로고 좌측 정렬** · /login·/signup PAGE_NOT_LOADED hotfix (admin lazy-load 트리거) · /signup 직접 진입 시 회원가입 탭 자동 활성 · **새 빌드 자동 감지 + 새로고침 배너** · 모바일 auth hero art 숨김 · admin 사이드바 서브메뉴 시각 위계 강화 · 서브메뉴 위계 역전 수정 |
+| **v00.218~220** | **현금영수증 신청** (책/강연/투어 결제) · 칼럼 일련번호 + **단축 공유 URL `#col-N`** · admin 칼럼 카테고리 칩 시인성 + X 버튼 톤다운 |
+| **v00.221~225** | **모바일 UX 4-사이클 (사용자 민원 누적 대응)** — ① 도서 상세 표지 모바일 sticky 해제(`book-cover-col`) · ② 게시글 목록 제목 1줄 ellipsis + `.row-mobile-meta` 메타 라인 · ③ **모바일 가독성 종합 패스** (`.post-body` 17px / `.field-input` 16px iOS zoom 차단 / iframe·video 16:9 / `.dim-2` ink-2 / 카드 호흡) · ④ 강연/투어/결제 sticky 카드 일괄 해제 (`.mobile-release-sticky`) · ⑤ scroll-to-top FAB 폰 36×36 (footprint −56%) + 종합 충돌 검토 |
+| **v00.226** | **메타 현행화 사이클** — kms.md 디자인 §1-8 전면 재작성 (블루→옐로우 환원 반영, `--primary*` 토큰 명시) + v00.157~225 변경기록 압축 요약 + CONTEXT.md §0/§5 갱신 + ROADMAP.md 사이클 회고 + memory release_workflow 룰 완화 (ADMIN_VERSION_HISTORY 미수정 패턴 정합) |
 
 ---
 
@@ -287,7 +297,7 @@ URL 매핑 (`VALID_ROUTES`):
 
 ### 항상 적용
 - 작업 끝나면 별도 지시 없이도 commit + push (auto deploy 정책).
-- 모든 변경에 `BGNJ_VERSION` + `?v=` cache-buster 21곳 + `ADMIN_VERSION_HISTORY` 동기.
+- 모든 변경에 `BGNJ_VERSION` + `?v=` cache-buster (현재 20곳) 동기. `ADMIN_VERSION_HISTORY` 갱신은 v00.202 이후 상시 미수정 패턴 (commit message + `plans/<버전>.md` 로 대체).
 - 새 컴포넌트/페이지: `BGNJ_GUARD.{arr,call}` 패턴으로 헬퍼 호출 보호.
 - 새 데이터 표시: D1 → BGNJ_API → BGNJ_* 헬퍼 → 페이지. 시드 폴백 만들지 말 것.
 - 새 dangerouslySetInnerHTML: 반드시 `BGNJ_SAFE_HTML(html)` 래핑.
@@ -295,6 +305,8 @@ URL 매핑 (`VALID_ROUTES`):
 - 가격 표시: `BGNJ_FMT.won(n)` / `BGNJ_FMT.priceOrFree(n)` (locale 강제 ko-KR). 직접 `n.toLocaleString()` 금지.
 - 색상: 옐로우는 인터랙션 상태에만 (5% 면적). 배경/라벨로 깔지 말 것.
 - 모바일: 다열 그리드 1단으로. 인라인 `gridTemplateColumns: '1fr 1fr'` 사용 시 클래스 부여.
+- Sticky 카드 (`position:'sticky', top:N`) 인라인 시 모바일 release 클래스 함께 (`book-cover-col` / `mobile-release-sticky` 등 v00.221/v00.224).
+- 사용자 알림: `alert()` / `window.confirm()` 금지 → `window.BGNJ_TOAST.error()` (v00.207) / `window.BGNJ_CONFIRM()` Promise (v00.208).
 
 ### 절대 금지
 - `window.BANGINOJA_DATA` 직접 참조 (페이지/컴포넌트에서). pre-commit 훅이 차단.
@@ -302,6 +314,7 @@ URL 매핑 (`VALID_ROUTES`):
 - `var` 키워드. let/const 만.
 - `fetch(...)` 직접 호출. `BGNJ_API` 헬퍼 사용.
 - 옐로우 면적으로 깔기 (`background: var(--primary)` 같은 큰 영역).
+- 레거시 컬러 토큰 (`--gold` / `--gold-2` / `--gold-dim` / `--gold-ink` / `--cta-*`) 신규 사용. v00.209 에서 전면 제거됨 — `--primary*` / `--on-primary` / `--secondary*` / `--tertiary` 사용.
 
 ### 우회 마커
 - 한 줄 단위: `// bgnj-lint-ignore-next-line <RULE>` (직전 줄 또는 같은 줄).
