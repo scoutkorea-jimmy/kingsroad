@@ -2013,6 +2013,34 @@ main time, main .section-eyebrow {
 :root[data-theme="dark"] .admin-savebar { background: var(--bg-2); border-color: var(--line); border-top-color: var(--primary-dim); }
 :root[data-theme="dark"] .admin-filter-chip { background: var(--bg-2); border-color: var(--line); }
 
+/* === v00.225 — Scroll-to-top FAB =================================================
+   스크롤 일정량 이후 우하단 노출. 데스크톱 48×48 / 폰 36×36 으로 footprint 축소
+   (사용자 보고: 댓글 폼 우측 가림 우려). z-index 60 — toast(2000)/배너(2100)
+   아래, 일반 콘텐츠 위. */
+.scroll-top-fab {
+  position: fixed;
+  right: 24px; bottom: 28px;
+  z-index: 60;
+  width: 48px; height: 48px;
+  background: var(--bg-2);
+  color: var(--primary);
+  border: 1px solid var(--primary-dim);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 22px;
+}
+.scroll-top-fab:hover { border-color: var(--primary); }
+@media (max-width: 600px) {
+  .scroll-top-fab {
+    width: 36px; height: 36px;
+    right: 12px; bottom: 12px;
+    font-size: 18px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+  }
+}
+
 /* === v00.223 — 모바일 가독성 종합 패스 (보고·듣고·읽기 편함) =====================
    사용자 요청: '모바일의 가독성을 전반적으로 살려줘. 특히 모든 보고 듣고 읽는게 편해야해'
    진단 결과 6가지 약점 묶음 보강:

@@ -165,27 +165,10 @@ const ScrollToTop = React.memo(() => {
     "button",
     {
       type: "button",
+      className: "scroll-top-fab",
       onClick: goTop,
       "aria-label": "\uB9E8 \uC704\uB85C",
-      title: "\uB9E8 \uC704\uB85C",
-      style: {
-        position: "fixed",
-        right: 24,
-        bottom: 28,
-        zIndex: 60,
-        width: 48,
-        height: 48,
-        background: "var(--bg-2)",
-        color: "var(--primary)",
-        border: "1px solid var(--primary-dim)",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "var(--font-serif)",
-        fontSize: 22
-      }
+      title: "\uB9E8 \uC704\uB85C"
     },
     "\u2191"
   );

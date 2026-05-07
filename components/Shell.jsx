@@ -158,20 +158,10 @@ const ScrollToTop = React.memo(() => {
   return (
     <button
       type="button"
+      className="scroll-top-fab"
       onClick={goTop}
       aria-label="맨 위로"
-      title="맨 위로"
-      style={{
-        position: 'fixed', right: 24, bottom: 28, zIndex: 60,
-        width: 48, height: 48,
-        background: 'var(--bg-2)', color: 'var(--primary)',
-        border: '1px solid var(--primary-dim)',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-        cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'var(--font-serif)',
-        fontSize: 22,
-      }}>
+      title="맨 위로">
       ↑
     </button>
   );
