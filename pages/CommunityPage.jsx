@@ -1495,7 +1495,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
               <MentionTextarea
                 value={comment}
                 onChange={setComment}
-                authors={(commentsList || []).map((c) => c.author).concat(post.author).filter(Boolean)}
+                authors={(Array.isArray(commentsList) ? commentsList : []).map((c) => c.author).concat(post.author).filter(Boolean)}
                 rows={4}
                 placeholder="생각을 나누어 주세요... (@를 입력하면 멘션 자동완성)"
                 style={{minHeight:100, resize:'vertical', marginBottom:12}}/>

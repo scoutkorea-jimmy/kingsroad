@@ -1415,7 +1415,7 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     {
       value: comment,
       onChange: setComment,
-      authors: (commentsList || []).map((c) => c.author).concat(post.author).filter(Boolean),
+      authors: (Array.isArray(commentsList) ? commentsList : []).map((c) => c.author).concat(post.author).filter(Boolean),
       rows: 4,
       placeholder: "\uC0DD\uAC01\uC744 \uB098\uB204\uC5B4 \uC8FC\uC138\uC694... (@\uB97C \uC785\uB825\uD558\uBA74 \uBA58\uC158 \uC790\uB3D9\uC644\uC131)",
       style: { minHeight: 100, resize: "vertical", marginBottom: 12 }

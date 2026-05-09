@@ -307,6 +307,7 @@ URL 매핑 (`VALID_ROUTES`):
 - 모바일: 다열 그리드 1단으로. 인라인 `gridTemplateColumns: '1fr 1fr'` 사용 시 클래스 부여.
 - Sticky 카드 (`position:'sticky', top:N`) 인라인 시 모바일 release 클래스 함께 (`book-cover-col` / `mobile-release-sticky` 등 v00.221/v00.224).
 - 사용자 알림: `alert()` / `window.confirm()` 금지 → `window.BGNJ_TOAST.error()` (v00.207) / `window.BGNJ_CONFIRM()` Promise (v00.208).
+- **데이터 캐시 덮어쓰기 (v00.231 사고 → v00.233 lint 룰)**: API 응답 → `BGNJ_*` 메모리 캐시 갱신 시 반드시 `Array.isArray(data)` 검증 후 `data.map(...)`. `(data || []).map(...)` 패턴 절대 금지 — 비-배열 응답(null/undefined/object)이 캐시를 빈 배열로 덮어써 사용자에게 "데이터 사라짐" 으로 보임. catch 블록에는 `console.warn('[BGNJ_X.method] non-array — cache preserved')` 진단 로그 추가. lint 룰 `cache_overwrite` 가 pre-commit 자동 차단.
 
 ### 절대 금지
 - `window.BANGINOJA_DATA` 직접 참조 (페이지/컴포넌트에서). pre-commit 훅이 차단.

@@ -17,7 +17,16 @@
 
 ## 큐 1 — 다음 사이클 (검증 보고 후 명시 갱신)
 
-> v00.225 까지 모바일 UX 4-사이클 마무리. v00.226 메타 현행화 후 후속 큐:
+> v00.225 까지 모바일 UX 4-사이클 마무리. v00.226 메타 현행화 후 후속 큐.
+> v00.227~233 (2026-05-09 7-사이클): anchor scroll-padding / 관리자 프론트 강연·투어 quick-add /
+> /error 라이브 라우트 + /mypage·/admin 401 wiring / .gold·.gold-2 가독성 hotfix /
+> **데이터 사라짐 23곳 가드 + lint 룰 cache_overwrite 항구 차단** / 강연·투어 신청 동의 필수 /
+> 데이터 사라짐 케이스 스터디 + 영구 기록.
+
+**사용자 큐 잔존 (v00.234+)**
+- 관리자 프론트 페이지 강연/칼럼/투어 **수정 모달** (v00.228 add 패턴 확장)
+- 강연/투어 **사진 갤러리** (최대 10장 + 출처 + 대표사진) — site_content_kv 활용 / 워커 deploy 회피 가능
+- (별도 audit) fire-and-forget admin save 일괄 await + try/catch + toast 정합 sweep
 
 **미해소 이월 (v00.156 부터 carry-over)**
 - **책별 리뷰 분리** — `BGNJ_BOOK_ORDERS.refreshReviews/addReview/canReview/hasReviewed` 가 [data.js:2209](data.js#L2209), [data.js:2227](data.js#L2227) 에서 `'kingsroad'` 책 ID 하드코드. 1권 가정 잔재. **사용자 의도 확인 필요** (단일 페이지 글로벌 vs 책별 탭).

@@ -295,7 +295,7 @@ const _CHANNEL_COLOR = (name) => _CHANNEL_COLORS[name] || 'var(--primary)';
 const SankeyFlow = ({ pairs, days, onDaysChange }) => {
   const [hover, setHover] = React.useState(null);
 
-  const rows = React.useMemo(() => (pairs || []).map((p) => ({
+  const rows = React.useMemo(() => (Array.isArray(pairs) ? pairs : []).map((p) => ({
     ...p,
     channel: _CHANNEL_FOR_HOST(p.referrer || '직접 방문'),
     stage: _STAGE_FOR_ROUTE(p.route),

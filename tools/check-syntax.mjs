@@ -115,6 +115,16 @@ const RULES = [
     pattern: /(^|[^.\w])fetch\s*\(/,
     msg: "fetch 직접 호출 금지 — BGNJ_API 헬퍼 사용",
   },
+  {
+    // v00.233 — `(data || []).map(...)` 패턴은 비-배열 API 응답(null/undefined/object)이
+    // 캐시를 빈 배열로 덮어써 사용자에게 "데이터 사라짐" 으로 보이게 한 v00.231 사고의 원인.
+    // 23곳 일괄 가드(Array.isArray 검증) 했으나 재발 방지 위해 lint 룰로 항구 차단.
+    // 우회: `if (Array.isArray(data)) cache = data.map(...)` 또는 마커.
+    name: "cache_overwrite",
+    allow: new Set([]),
+    pattern: /\(\s*\w+\s*\|\|\s*\[\]\s*\)\.map\b/,
+    msg: "(data || []).map() 금지 — 비-배열 응답이 캐시를 빈 배열로 덮어쓰는 데이터-사라짐 안티패턴 (v00.231 사고). Array.isArray(data) 가드 후 data.map(...) 사용",
+  },
 ];
 
 // 추가 정보성 검사 — 위반이 있어도 차단은 안 하고 카운트만 보고.
