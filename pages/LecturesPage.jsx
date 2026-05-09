@@ -12,8 +12,21 @@ const LecturesPage = ({ go, user }) => {
   const refresh = () => setTick((v) => v + 1);
   const G = window.BGNJ_GUARD;
 
-  const allLectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()), [tick]);
+  // v00.236 — 사용자 보고 '강연 등록해놓은게 있는데 왜 노출이 안되냐'.
+  // admin 으로 로그인한 사용자는 hidden 강연도 함께 노출 (시각 라벨로 구분). 일반 회원/비로그인은 hidden 제외.
+  const allLectures = React.useMemo(
+    () => G.arr(() => window.BGNJ_LECTURES?.listAll?.({ includeHidden: isAdmin })),
+    [tick, isAdmin]
+  );
   const bank = React.useMemo(() => G.call(() => window.BGNJ_LECTURES?.getBankAccount?.(), {}), [tick]);
+  // v00.236 — 강연 데이터 동기화 listener (ColumnPage v00.134 패턴 동일).
+  // 진입 시 1회 강제 refresh + bgnj-lectures-refresh 청취. 데이터 로드 누락 차단.
+  React.useEffect(() => {
+    Promise.resolve(window.BGNJ_LECTURES?.refresh?.({ includeHidden: true })).finally(() => refresh());
+    const onR = () => refresh();
+    window.addEventListener('bgnj-lectures-refresh', onR);
+    return () => window.removeEventListener('bgnj-lectures-refresh', onR);
+  }, []);
 
   // v00.129 — startsAt 기준 분리. 어제 이후 = upcoming, 그 이전 = past. startsAt 없으면 upcoming.
   const _now = Date.now();
@@ -220,6 +233,12 @@ const LecturesPage = ({ go, user }) => {
                 : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>}
               <span className="badge">{lecture.host}</span>
               <span className="badge">{lecture.venue}</span>
+              {/* v00.236 — hidden 강연은 admin 만 보이고 시각 라벨로 구분. */}
+              {lecture.hidden && (
+                <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--warning)', border:'1px solid var(--warning)', padding:'1px 6px'}}>
+                  ◆ 숨김 (관리자에게만 보임)
+                </span>
+              )}
               {/* v00.234 — admin 전용 프론트 수정 진입로. */}
               {isAdmin && (
                 <button type="button" className="btn btn-small"
@@ -342,6 +361,7 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
   const [price, setPrice] = React.useState(initialLecture?.price || 0);
   const [note, setNote] = React.useState(initialLecture?.note || '');
   // v00.235 — 사진 갤러리 (최대 10장 + 출처 + 대표). edit 모드면 site_content_kv 에서 prefill.
+  // v00.236 — 사용자 요청 '강연은 대부분 포스터가 있으니까 포스터 꼭 등록할 수 있게해줘야해' → 최소 1장 필수.
   const [images, setImages] = React.useState(() => {
     if (!initialLecture?.id) return [];
     try {
@@ -350,6 +370,8 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
       return Array.isArray(arr) ? arr : [];
     } catch { return []; }
   });
+  // v00.236 — 숨김 토글 (편집/추가 둘 다). admin 이 임시저장 후 작업할 때 사용.
+  const [hidden, setHidden] = React.useState(!!initialLecture?.hidden);
   const [error, setError] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const dirty = !!(title.trim() || topic.trim() || venue.trim() || note.trim() || images.length > 0);
@@ -360,6 +382,11 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
     setError('');
     if (!title.trim()) { setError('강연 제목은 필수입니다.'); return; }
     if (!startsAt) { setError('일시를 입력해 주세요.'); return; }
+    // v00.236 — 사용자 요청: 포스터(대표 사진) 필수.
+    if (!images || images.length === 0) {
+      setError('강연 포스터(대표 사진)는 최소 1장 등록해야 합니다. 아래 "사진 갤러리" 에서 추가해 주세요.');
+      return;
+    }
     setSaving(true);
     try {
       const dt = new Date(startsAt);
@@ -380,6 +407,7 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         capacity: Math.max(1, Number(capacity) || 30),
         price: Math.max(0, Number(price) || 0),
         note: note.trim(),
+        hidden: !!hidden, // v00.236 — 숨김 토글 반영.
       });
       // v00.235 — 갤러리 저장 (site_content_kv.lecturePages[id]). 기존 schedule/notes/coverDataUri 보존을 위해 머지.
       if (images.length > 0 || isEdit) {
@@ -472,10 +500,21 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
               value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="강연 안내·당부 사항 (이후 관리자 패널에서 보강 가능)"/>
           </div>
-          {/* v00.235 — 사진 갤러리 편집기 (최대 10장 + 출처 + 대표). */}
+          {/* v00.235 — 사진 갤러리 편집기 (최대 10장 + 출처 + 대표). v00.236 — 포스터 필수. */}
           {window.MediaGalleryEditor && (
-            <window.MediaGalleryEditor value={images} onChange={setImages} folder="lecture-gallery"/>
+            <div>
+              <window.MediaGalleryEditor value={images} onChange={setImages} folder="lecture-gallery"/>
+              <p className="dim mono" style={{fontSize:10, marginTop:6, lineHeight:1.5, letterSpacing:'0.05em'}}>
+                * 강연 포스터(대표 사진) 최소 1장 등록 필수. 첫 사진이 자동으로 대표가 됩니다.
+              </p>
+            </div>
           )}
+          {/* v00.236 — 숨김 토글. 임시저장하고 admin 만 보이게 할 때. */}
+          <label style={{display:'flex', gap:8, alignItems:'center', padding:'8px 12px', background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:6, fontSize:12, color:'var(--ink-2)', cursor:'pointer'}}>
+            <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)}
+              style={{accentColor:'var(--primary)'}}/>
+            <span>임시 숨김 — 일반 회원에게 노출 안 함 (관리자에게는 "숨김" 라벨로 표시)</span>
+          </label>
           {error && (
             <div role="alert" style={{padding:'8px 10px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:12}}>
               {error}

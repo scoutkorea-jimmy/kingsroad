@@ -60,16 +60,27 @@ const WangsanamPage = ({ go }) => {
 const TourPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
   const G = window.BGNJ_GUARD;
-  const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.()), [tick]);
-  const bank = React.useMemo(() => G.call(() => window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES?.bankAccount, {}), [tick]);
   const refresh = () => setTick((v) => v + 1);
+  const isAdmin = !!user?.isAdmin;
+  // v00.236 — admin 은 hidden 투어도 함께 노출 (시각 라벨로 구분). 일반 회원은 hidden 제외.
+  const tours = React.useMemo(
+    () => G.arr(() => window.BGNJ_TOURS?.listAll?.({ includeHidden: isAdmin })),
+    [tick, isAdmin]
+  );
+  const bank = React.useMemo(() => G.call(() => window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES?.bankAccount, {}), [tick]);
+  // v00.236 — 투어 데이터 동기화 listener (LecturesPage 동일 패턴).
+  React.useEffect(() => {
+    Promise.resolve(window.BGNJ_TOURS?.refresh?.({ includeHidden: true })).finally(() => refresh());
+    const onR = () => refresh();
+    window.addEventListener('bgnj-tours-refresh', onR);
+    return () => window.removeEventListener('bgnj-tours-refresh', onR);
+  }, []);
 
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   // v00.228 — admin 전용 프론트 quick-add (사용자 요청: 관리자는 프론트에서도 투어 추가 가능).
   const [addOpen, setAddOpen] = React.useState(false);
   // v00.234 — admin 전용 프론트 edit.
   const [editTarget, setEditTarget] = React.useState(null);
-  const isAdmin = !!user?.isAdmin;
 
   // 외부 진입(해시 / 마이페이지 알림 등)으로 들어온 투어 ID 처리
   React.useEffect(() => {
@@ -205,6 +216,12 @@ const TourPage = ({ go, user }) => {
               <span className="badge">{tour.duration}</span>
               <span className="badge">{tour.group}</span>
               <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>
+              {/* v00.236 — hidden 투어는 admin 만 보이고 시각 라벨로 구분. */}
+              {tour.hidden && (
+                <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--warning)', border:'1px solid var(--warning)', padding:'1px 6px'}}>
+                  ◆ 숨김 (관리자에게만 보임)
+                </span>
+              )}
               {/* v00.234 — admin 전용 프론트 수정 진입로. */}
               {isAdmin && (
                 <button type="button" className="btn btn-small"
@@ -359,6 +376,8 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
       return Array.isArray(arr) ? arr : [];
     } catch { return []; }
   });
+  // v00.236 — hidden 토글.
+  const [hidden, setHidden] = React.useState(!!initialTour?.hidden);
   const [error, setError] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const dirty = !!(title.trim() || subtitle.trim() || desc.trim() || images.length > 0);
@@ -391,6 +410,7 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
         priceNumber: Math.max(0, Number(price) || 0),
         price: Math.max(0, Number(price) || 0),
         desc: desc.trim(),
+        hidden: !!hidden, // v00.236
       });
       // v00.235 — 갤러리 저장 (site_content_kv.tourPages[id]). 기존 schedule/prep/coverDataUri 보존.
       if (images.length > 0 || isEdit) {
@@ -493,6 +513,12 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
           {window.MediaGalleryEditor && (
             <window.MediaGalleryEditor value={images} onChange={setImages} folder="tour-gallery"/>
           )}
+          {/* v00.236 — hidden 토글. */}
+          <label style={{display:'flex', gap:8, alignItems:'center', padding:'8px 12px', background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:6, fontSize:12, color:'var(--ink-2)', cursor:'pointer'}}>
+            <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)}
+              style={{accentColor:'var(--primary)'}}/>
+            <span>임시 숨김 — 일반 회원에게 노출 안 함 (관리자에게는 "숨김" 라벨로 표시)</span>
+          </label>
           {error && (
             <div role="alert" style={{padding:'8px 10px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:12}}>
               {error}

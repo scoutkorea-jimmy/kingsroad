@@ -941,7 +941,19 @@ main time, main .section-eyebrow {
   display: flex;
   gap: 36px;
   align-items: center;
+  /* v00.236 — 타블렛 폭(721~1100px) 에서 한글 메뉴가 글자별로 wrap 되어 세로 짜부되던 문제.
+     사용자 요청: 비율 부족하면 슬라이드(가로 스크롤) 형태로 전환. nowrap 으로 글자 wrap 차단 +
+     overflow-x:auto 로 폭 부족 시 자동 가로 스크롤. 720px 이하는 햄버거 모드라 영향 없음. */
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
+.nav-menu::-webkit-scrollbar { height: 3px; }
+.nav-menu::-webkit-scrollbar-track { background: transparent; }
+.nav-menu::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
 .nav-link {
   font-size: 14px;
   font-weight: 500;
@@ -954,6 +966,9 @@ main time, main .section-eyebrow {
   background: none;
   border: none;
   font-family: inherit;
+  /* v00.236 — 한글 메뉴 라벨이 좁은 폭에서 글자별 wrap 되지 않도록. */
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .nav-link:hover { color: var(--secondary); }
 .nav-link.active, .nav-link[aria-current="page"] { color: var(--ink); font-weight: 700; }

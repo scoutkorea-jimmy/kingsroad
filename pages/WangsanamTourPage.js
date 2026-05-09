@@ -26,19 +26,29 @@ const TourPage = ({ go, user }) => {
   var _a, _b, _c, _d;
   const [tick, setTick] = React.useState(0);
   const G = window.BGNJ_GUARD;
-  const tours = React.useMemo(() => G.arr(() => {
-    var _a2, _b2;
-    return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
-  }), [tick]);
+  const refresh = () => setTick((v) => v + 1);
+  const isAdmin = !!(user == null ? void 0 : user.isAdmin);
+  const tours = React.useMemo(
+    () => G.arr(() => {
+      var _a2, _b2;
+      return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2, { includeHidden: isAdmin });
+    }),
+    [tick, isAdmin]
+  );
   const bank = React.useMemo(() => G.call(() => {
     var _a2, _b2, _c2;
     return ((_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.getBankAccount) == null ? void 0 : _b2.call(_a2)) || ((_c2 = window.BGNJ_STORES) == null ? void 0 : _c2.bankAccount);
   }, {}), [tick]);
-  const refresh = () => setTick((v) => v + 1);
+  React.useEffect(() => {
+    var _a2, _b2;
+    Promise.resolve((_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.refresh) == null ? void 0 : _b2.call(_a2, { includeHidden: true })).finally(() => refresh());
+    const onR = () => refresh();
+    window.addEventListener("bgnj-tours-refresh", onR);
+    return () => window.removeEventListener("bgnj-tours-refresh", onR);
+  }, []);
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   const [addOpen, setAddOpen] = React.useState(false);
   const [editTarget, setEditTarget] = React.useState(null);
-  const isAdmin = !!(user == null ? void 0 : user.isAdmin);
   React.useEffect(() => {
     let pending = null;
     try {
@@ -129,7 +139,7 @@ const TourPage = ({ go, user }) => {
       )), (galleryPrimary == null ? void 0 : galleryPrimary.credit) && /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, letterSpacing: "0.05em", marginTop: 6, lineHeight: 1.5 } }, galleryPrimary.credit));
     }
     return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, window.CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "16/10", label: String(tour.title || "").toUpperCase() }) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "16/10", fontSize: 11 } }, String(tour.title || "").toUpperCase()));
-  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, tour.level), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.duration), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.group), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), isAdmin && /* @__PURE__ */ React.createElement(
+  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, tour.level), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.duration), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.group), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), tour.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--warning)", border: "1px solid var(--warning)", padding: "1px 6px" } }, "\u25C6 \uC228\uAE40 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB9CC \uBCF4\uC784)"), isAdmin && /* @__PURE__ */ React.createElement(
     "button",
     {
       type: "button",
@@ -214,6 +224,7 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
       return [];
     }
   });
+  const [hidden, setHidden] = React.useState(!!(initialTour == null ? void 0 : initialTour.hidden));
   const [error, setError] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const dirty = !!(title.trim() || subtitle.trim() || desc.trim() || images.length > 0);
@@ -250,7 +261,9 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
         capacity: Math.max(1, Number(capacity) || 12),
         priceNumber: Math.max(0, Number(price) || 0),
         price: Math.max(0, Number(price) || 0),
-        desc: desc.trim()
+        desc: desc.trim(),
+        hidden: !!hidden
+        // v00.236
       });
       if (images.length > 0 || isEdit) {
         try {
@@ -388,7 +401,15 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
         onChange: (e) => setDesc(e.target.value),
         placeholder: "\uB2F5\uC0AC \uC548\uB0B4 (\uC774\uD6C4 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uBCF4\uAC15 \uAC00\uB2A5)"
       }
-    )), window.MediaGalleryEditor && /* @__PURE__ */ React.createElement(window.MediaGalleryEditor, { value: images, onChange: setImages, folder: "tour-gallery" }), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uD22C\uC5B4 \uC800\uC7A5" : "\uD22C\uC5B4 \uB4F1\uB85D"))))
+    )), window.MediaGalleryEditor && /* @__PURE__ */ React.createElement(window.MediaGalleryEditor, { value: images, onChange: setImages, folder: "tour-gallery" }), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "center", padding: "8px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6, fontSize: 12, color: "var(--ink-2)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "checkbox",
+        checked: hidden,
+        onChange: (e) => setHidden(e.target.checked),
+        style: { accentColor: "var(--primary)" }
+      }
+    ), /* @__PURE__ */ React.createElement("span", null, '\uC784\uC2DC \uC228\uAE40 \u2014 \uC77C\uBC18 \uD68C\uC6D0\uC5D0\uAC8C \uB178\uCD9C \uC548 \uD568 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB294 "\uC228\uAE40" \uB77C\uBCA8\uB85C \uD45C\uC2DC)')), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uD22C\uC5B4 \uC800\uC7A5" : "\uD22C\uC5B4 \uB4F1\uB85D"))))
   );
 };
 const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, formatPrice, onRefresh, go }) => {

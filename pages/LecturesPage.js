@@ -9,14 +9,24 @@ const LecturesPage = ({ go, user }) => {
   const isAdmin = !!(user == null ? void 0 : user.isAdmin);
   const refresh = () => setTick((v) => v + 1);
   const G = window.BGNJ_GUARD;
-  const allLectures = React.useMemo(() => G.arr(() => {
-    var _a2, _b2;
-    return (_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
-  }), [tick]);
+  const allLectures = React.useMemo(
+    () => G.arr(() => {
+      var _a2, _b2;
+      return (_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2, { includeHidden: isAdmin });
+    }),
+    [tick, isAdmin]
+  );
   const bank = React.useMemo(() => G.call(() => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.getBankAccount) == null ? void 0 : _b2.call(_a2);
   }, {}), [tick]);
+  React.useEffect(() => {
+    var _a2, _b2;
+    Promise.resolve((_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.refresh) == null ? void 0 : _b2.call(_a2, { includeHidden: true })).finally(() => refresh());
+    const onR = () => refresh();
+    window.addEventListener("bgnj-lectures-refresh", onR);
+    return () => window.removeEventListener("bgnj-lectures-refresh", onR);
+  }, []);
   const _now = Date.now();
   const _yesterday = _now - 864e5;
   const _isPast = (l) => {
@@ -162,7 +172,7 @@ const LecturesPage = ({ go, user }) => {
       )), (galleryPrimary == null ? void 0 : galleryPrimary.credit) && /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, letterSpacing: "0.05em", marginTop: 6, lineHeight: 1.5 } }, galleryPrimary.credit));
     }
     return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, window.CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "16/10", label: String(lecture.title || "").toUpperCase() }) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "16/10", fontSize: 11 } }, String(lecture.title || "").toUpperCase()));
-  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, lecture.title), lecture.price === 0 ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--secondary)", border: "1px solid var(--primary-dim)", padding: "1px 6px" } }, "FREE") : /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), /* @__PURE__ */ React.createElement("span", { className: "badge" }, lecture.host), /* @__PURE__ */ React.createElement("span", { className: "badge" }, lecture.venue), isAdmin && /* @__PURE__ */ React.createElement(
+  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, lecture.title), lecture.price === 0 ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--secondary)", border: "1px solid var(--primary-dim)", padding: "1px 6px" } }, "FREE") : /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), /* @__PURE__ */ React.createElement("span", { className: "badge" }, lecture.host), /* @__PURE__ */ React.createElement("span", { className: "badge" }, lecture.venue), lecture.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--warning)", border: "1px solid var(--warning)", padding: "1px 6px" } }, "\u25C6 \uC228\uAE40 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB9CC \uBCF4\uC784)"), isAdmin && /* @__PURE__ */ React.createElement(
     "button",
     {
       type: "button",
@@ -240,6 +250,7 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
       return [];
     }
   });
+  const [hidden, setHidden] = React.useState(!!(initialLecture == null ? void 0 : initialLecture.hidden));
   const [error, setError] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const dirty = !!(title.trim() || topic.trim() || venue.trim() || note.trim() || images.length > 0);
@@ -254,6 +265,10 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
     }
     if (!startsAt) {
       setError("\uC77C\uC2DC\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
+      return;
+    }
+    if (!images || images.length === 0) {
+      setError('\uAC15\uC5F0 \uD3EC\uC2A4\uD130(\uB300\uD45C \uC0AC\uC9C4)\uB294 \uCD5C\uC18C 1\uC7A5 \uB4F1\uB85D\uD574\uC57C \uD569\uB2C8\uB2E4. \uC544\uB798 "\uC0AC\uC9C4 \uAC24\uB7EC\uB9AC" \uC5D0\uC11C \uCD94\uAC00\uD574 \uC8FC\uC138\uC694.');
       return;
     }
     setSaving(true);
@@ -274,7 +289,9 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         durationMinutes: Math.max(1, Number(durationMinutes) || 90),
         capacity: Math.max(1, Number(capacity) || 30),
         price: Math.max(0, Number(price) || 0),
-        note: note.trim()
+        note: note.trim(),
+        hidden: !!hidden
+        // v00.236 — 숨김 토글 반영.
       });
       if (images.length > 0 || isEdit) {
         try {
@@ -396,7 +413,15 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         onChange: (e) => setNote(e.target.value),
         placeholder: "\uAC15\uC5F0 \uC548\uB0B4\xB7\uB2F9\uBD80 \uC0AC\uD56D (\uC774\uD6C4 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uBCF4\uAC15 \uAC00\uB2A5)"
       }
-    )), window.MediaGalleryEditor && /* @__PURE__ */ React.createElement(window.MediaGalleryEditor, { value: images, onChange: setImages, folder: "lecture-gallery" }), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uAC15\uC5F0 \uC800\uC7A5" : "\uAC15\uC5F0 \uB4F1\uB85D"))))
+    )), window.MediaGalleryEditor && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(window.MediaGalleryEditor, { value: images, onChange: setImages, folder: "lecture-gallery" }), /* @__PURE__ */ React.createElement("p", { className: "dim mono", style: { fontSize: 10, marginTop: 6, lineHeight: 1.5, letterSpacing: "0.05em" } }, "* \uAC15\uC5F0 \uD3EC\uC2A4\uD130(\uB300\uD45C \uC0AC\uC9C4) \uCD5C\uC18C 1\uC7A5 \uB4F1\uB85D \uD544\uC218. \uCCAB \uC0AC\uC9C4\uC774 \uC790\uB3D9\uC73C\uB85C \uB300\uD45C\uAC00 \uB429\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "center", padding: "8px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6, fontSize: 12, color: "var(--ink-2)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "checkbox",
+        checked: hidden,
+        onChange: (e) => setHidden(e.target.checked),
+        style: { accentColor: "var(--primary)" }
+      }
+    ), /* @__PURE__ */ React.createElement("span", null, '\uC784\uC2DC \uC228\uAE40 \u2014 \uC77C\uBC18 \uD68C\uC6D0\uC5D0\uAC8C \uB178\uCD9C \uC548 \uD568 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB294 "\uC228\uAE40" \uB77C\uBCA8\uB85C \uD45C\uC2DC)')), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uAC15\uC5F0 \uC800\uC7A5" : "\uAC15\uC5F0 \uB4F1\uB85D"))))
   );
 };
 const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, tone, formatPrice, onRefresh, go }) => {
