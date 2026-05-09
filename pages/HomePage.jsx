@@ -623,8 +623,30 @@ const HomePage = ({ go }) => {
   };
   // v00.198 — 각 memo 는 자기 stream 의 tick 만 의존 → 무관 stream 갱신 시 재실행 차단.
   const publicColumns = React.useMemo(() => G.arr(() => window.BGNJ_COLUMNS?.listPublic?.()), [columnsTick]);
-  const featuredColumn = publicColumns[0];
-  const secondaryColumns = publicColumns.slice(1, 5);
+  // v00.240 — 사용자 요청: 좌측 큰 메인 칼럼은 최근 5개 칼럼 사이 자동 순환.
+  // recentFive = publicColumns 0~4. featuredIdx 가 5초마다 (idx+1)%length.
+  // pause 가능 (hover / focus). 인디케이터(점 5개) 클릭으로 수동 이동.
+  const recentFiveColumns = React.useMemo(() => publicColumns.slice(0, 5), [publicColumns]);
+  const [featuredIdx, setFeaturedIdx] = React.useState(0);
+  const [columnPaused, setColumnPaused] = React.useState(false);
+  // 칼럼 수 변동 시 idx 안전 가드.
+  React.useEffect(() => {
+    if (featuredIdx >= recentFiveColumns.length) setFeaturedIdx(0);
+  }, [recentFiveColumns.length, featuredIdx]);
+  // auto-rotate (5초). pause / 칼럼 1개 이하면 정지.
+  React.useEffect(() => {
+    if (columnPaused || recentFiveColumns.length <= 1) return;
+    const id = setInterval(() => {
+      setFeaturedIdx((i) => (i + 1) % recentFiveColumns.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [columnPaused, recentFiveColumns.length]);
+  const featuredColumn = recentFiveColumns[featuredIdx] || recentFiveColumns[0];
+  // 사이드 4개 = 메인 제외 나머지. 순서 유지.
+  const secondaryColumns = React.useMemo(
+    () => recentFiveColumns.filter((_, i) => i !== featuredIdx),
+    [recentFiveColumns, featuredIdx]
+  );
   const recentPosts = React.useMemo(() => G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()).slice(0, 4), [postsTick]);
   const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden).slice(0, 4), [toursTick]);
   const lectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden).slice(0, 3), [lecturesTick]);
@@ -976,10 +998,12 @@ const HomePage = ({ go }) => {
                 <button type="button" className="btn-ghost" onClick={() => go('column')}>{homeText.columnAction}</button>
               </div>
             </div>
-            <div style={{display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:56}} className="col-grid">
-              {/* v00.164 — 피처드 = magazine spread. 카드 라인 제거 (.card 폐기), 사진 fullbleed-ish + 큰 타이틀. */}
+            <div style={{display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:56}} className="col-grid"
+              onMouseEnter={() => setColumnPaused(true)} onMouseLeave={() => setColumnPaused(false)}
+              onFocusCapture={() => setColumnPaused(true)} onBlurCapture={() => setColumnPaused(false)}>
+              {/* v00.164 — 피처드 = magazine spread. v00.240 — 자동 순환 (5초). */}
               <article
-                style={{cursor:'pointer'}}
+                style={{cursor:'pointer', position:'relative'}}
                 {...clickable(() => go('column'), `칼럼: ${featuredColumn.title}`)}>
                 {(featuredColumn.coverUrl || featuredColumn.coverImage) ? (
                   <div style={{
@@ -1010,6 +1034,27 @@ const HomePage = ({ go }) => {
                   <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:18, maxWidth:580}}>{featuredColumn.excerpt}</p>
                 )}
                 <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.2em', color:'var(--secondary)'}}>{homeText.columnReadMore}</div>
+                {/* v00.240 — 자동 순환 인디케이터 (점 N 개). 클릭 시 수동 이동. */}
+                {recentFiveColumns.length > 1 && (
+                  <div style={{display:'flex', gap:6, marginTop:18, alignItems:'center'}}
+                    onClick={(e) => e.stopPropagation()}>
+                    {recentFiveColumns.map((_, i) => (
+                      <button key={i} type="button"
+                        aria-label={`${i + 1}번째 칼럼 보기`}
+                        aria-current={i === featuredIdx ? 'true' : undefined}
+                        onClick={() => setFeaturedIdx(i)}
+                        style={{
+                          width: i === featuredIdx ? 22 : 8, height: 8,
+                          borderRadius: 999, border: 'none', cursor: 'pointer',
+                          background: i === featuredIdx ? 'var(--primary)' : 'var(--line-2)',
+                          transition: 'width .25s, background .2s', padding: 0,
+                        }}/>
+                    ))}
+                    <span className="mono dim-2" style={{fontSize:9, marginLeft:8, letterSpacing:'0.15em'}}>
+                      {columnPaused ? '⏸ HOVER' : '▶ AUTO'}
+                    </span>
+                  </div>
+                )}
               </article>
               {/* v00.164 — sidebar = 깨끗한 텍스트 list. 카드 라인 X, 구분선만. */}
               <aside style={{paddingTop:8}}>

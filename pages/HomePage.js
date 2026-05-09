@@ -613,8 +613,24 @@ const HomePage = ({ go }) => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listPublic) == null ? void 0 : _b2.call(_a2);
   }), [columnsTick]);
-  const featuredColumn = publicColumns[0];
-  const secondaryColumns = publicColumns.slice(1, 5);
+  const recentFiveColumns = React.useMemo(() => publicColumns.slice(0, 5), [publicColumns]);
+  const [featuredIdx, setFeaturedIdx] = React.useState(0);
+  const [columnPaused, setColumnPaused] = React.useState(false);
+  React.useEffect(() => {
+    if (featuredIdx >= recentFiveColumns.length) setFeaturedIdx(0);
+  }, [recentFiveColumns.length, featuredIdx]);
+  React.useEffect(() => {
+    if (columnPaused || recentFiveColumns.length <= 1) return;
+    const id = setInterval(() => {
+      setFeaturedIdx((i) => (i + 1) % recentFiveColumns.length);
+    }, 5e3);
+    return () => clearInterval(id);
+  }, [columnPaused, recentFiveColumns.length]);
+  const featuredColumn = recentFiveColumns[featuredIdx] || recentFiveColumns[0];
+  const secondaryColumns = React.useMemo(
+    () => recentFiveColumns.filter((_, i) => i !== featuredIdx),
+    [recentFiveColumns, featuredIdx]
+  );
   const recentPosts = React.useMemo(() => G.arr(() => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b2.call(_a2);
@@ -897,61 +913,101 @@ const HomePage = ({ go }) => {
       }
     },
     "\uFF0B \uAE00\uC4F0\uAE30"
-  ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("column") }, homeText.columnAction))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 56 }, className: "col-grid" }, /* @__PURE__ */ React.createElement(
-    "article",
-    {
-      style: { cursor: "pointer" },
-      ...clickable(() => go("column"), `\uCE7C\uB7FC: ${featuredColumn.title}`)
-    },
-    featuredColumn.coverUrl || featuredColumn.coverImage ? /* @__PURE__ */ React.createElement("div", { style: {
-      height: 340,
-      marginBottom: 28,
-      backgroundImage: `url(${featuredColumn.coverUrl || featuredColumn.coverImage})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center"
-    } }) : /* @__PURE__ */ React.createElement("div", { style: {
-      height: 260,
-      background: "var(--bg-2)",
-      marginBottom: 28,
-      display: "grid",
-      placeItems: "center",
-      borderTop: "1px solid var(--line)",
-      borderBottom: "1px solid var(--line)"
-    } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, color: "var(--ink-3)", letterSpacing: "0.28em" } }, "FEATURED COLUMN")),
-    /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center", marginBottom: 14, flexWrap: "wrap" } }, featuredColumn.category && /* @__PURE__ */ React.createElement("span", { className: "pill" }, featuredColumn.category), featuredColumn.date && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, featuredColumn.date), featuredColumn.readTime && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\xB7 ", featuredColumn.readTime)),
-    /* @__PURE__ */ React.createElement("h2", { style: {
-      fontFamily: "var(--font-serif)",
-      fontSize: "clamp(28px, 3vw, 38px)",
-      fontWeight: 600,
-      lineHeight: 1.2,
-      marginBottom: 14,
-      color: "var(--ink)",
-      letterSpacing: "-0.01em"
-    } }, featuredColumn.title),
-    featuredColumn.excerpt && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 15, lineHeight: 1.85, color: "var(--ink-2)", marginBottom: 18, maxWidth: 580 } }, featuredColumn.excerpt),
-    /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: "var(--secondary)" } }, homeText.columnReadMore)
-  ), /* @__PURE__ */ React.createElement("aside", { style: { paddingTop: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
-    fontSize: 10,
-    fontWeight: 600,
-    letterSpacing: "0.22em",
-    color: "var(--ink-3)",
-    marginBottom: 18,
-    textTransform: "uppercase"
-  } }, homeText.columnTitle), secondaryColumns.map((c, ci) => /* @__PURE__ */ React.createElement(
+  ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("column") }, homeText.columnAction))), /* @__PURE__ */ React.createElement(
     "div",
     {
-      key: c.id,
-      ...clickable(() => go("column"), `\uCE7C\uB7FC: ${c.title}`),
-      style: {
-        padding: "16px 0",
-        borderBottom: ci < secondaryColumns.length - 1 ? "1px solid var(--line)" : "none",
-        cursor: "pointer"
-      }
+      style: { display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 56 },
+      className: "col-grid",
+      onMouseEnter: () => setColumnPaused(true),
+      onMouseLeave: () => setColumnPaused(false),
+      onFocusCapture: () => setColumnPaused(true),
+      onBlurCapture: () => setColumnPaused(false)
     },
-    /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 6, flexWrap: "wrap" } }, c.category && /* @__PURE__ */ React.createElement("span", { className: "pill", style: { fontSize: 9, padding: "2px 8px" } }, c.category), c.date && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, c.date)),
-    /* @__PURE__ */ React.createElement("h4", { className: "ko-serif", style: { fontSize: 16, fontWeight: 600, lineHeight: 1.4, marginBottom: 4 } }, c.title),
-    c.excerpt && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, lineHeight: 1.6, color: "var(--ink-3)", margin: 0 } }, (c.excerpt || "").slice(0, 65), "\u2026")
-  )), secondaryColumns.length === 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-3)", padding: "16px 0" } }, homeText.columnEmpty)))))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: "lecture-strip", role: "list" }, lectures.map((lecture) => /* @__PURE__ */ React.createElement(
+    /* @__PURE__ */ React.createElement(
+      "article",
+      {
+        style: { cursor: "pointer", position: "relative" },
+        ...clickable(() => go("column"), `\uCE7C\uB7FC: ${featuredColumn.title}`)
+      },
+      featuredColumn.coverUrl || featuredColumn.coverImage ? /* @__PURE__ */ React.createElement("div", { style: {
+        height: 340,
+        marginBottom: 28,
+        backgroundImage: `url(${featuredColumn.coverUrl || featuredColumn.coverImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+      } }) : /* @__PURE__ */ React.createElement("div", { style: {
+        height: 260,
+        background: "var(--bg-2)",
+        marginBottom: 28,
+        display: "grid",
+        placeItems: "center",
+        borderTop: "1px solid var(--line)",
+        borderBottom: "1px solid var(--line)"
+      } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, color: "var(--ink-3)", letterSpacing: "0.28em" } }, "FEATURED COLUMN")),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center", marginBottom: 14, flexWrap: "wrap" } }, featuredColumn.category && /* @__PURE__ */ React.createElement("span", { className: "pill" }, featuredColumn.category), featuredColumn.date && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, featuredColumn.date), featuredColumn.readTime && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\xB7 ", featuredColumn.readTime)),
+      /* @__PURE__ */ React.createElement("h2", { style: {
+        fontFamily: "var(--font-serif)",
+        fontSize: "clamp(28px, 3vw, 38px)",
+        fontWeight: 600,
+        lineHeight: 1.2,
+        marginBottom: 14,
+        color: "var(--ink)",
+        letterSpacing: "-0.01em"
+      } }, featuredColumn.title),
+      featuredColumn.excerpt && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 15, lineHeight: 1.85, color: "var(--ink-2)", marginBottom: 18, maxWidth: 580 } }, featuredColumn.excerpt),
+      /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: "var(--secondary)" } }, homeText.columnReadMore),
+      recentFiveColumns.length > 1 && /* @__PURE__ */ React.createElement(
+        "div",
+        {
+          style: { display: "flex", gap: 6, marginTop: 18, alignItems: "center" },
+          onClick: (e) => e.stopPropagation()
+        },
+        recentFiveColumns.map((_, i) => /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            key: i,
+            type: "button",
+            "aria-label": `${i + 1}\uBC88\uC9F8 \uCE7C\uB7FC \uBCF4\uAE30`,
+            "aria-current": i === featuredIdx ? "true" : void 0,
+            onClick: () => setFeaturedIdx(i),
+            style: {
+              width: i === featuredIdx ? 22 : 8,
+              height: 8,
+              borderRadius: 999,
+              border: "none",
+              cursor: "pointer",
+              background: i === featuredIdx ? "var(--primary)" : "var(--line-2)",
+              transition: "width .25s, background .2s",
+              padding: 0
+            }
+          }
+        )),
+        /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 9, marginLeft: 8, letterSpacing: "0.15em" } }, columnPaused ? "\u23F8 HOVER" : "\u25B6 AUTO")
+      )
+    ),
+    /* @__PURE__ */ React.createElement("aside", { style: { paddingTop: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
+      fontSize: 10,
+      fontWeight: 600,
+      letterSpacing: "0.22em",
+      color: "var(--ink-3)",
+      marginBottom: 18,
+      textTransform: "uppercase"
+    } }, homeText.columnTitle), secondaryColumns.map((c, ci) => /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        key: c.id,
+        ...clickable(() => go("column"), `\uCE7C\uB7FC: ${c.title}`),
+        style: {
+          padding: "16px 0",
+          borderBottom: ci < secondaryColumns.length - 1 ? "1px solid var(--line)" : "none",
+          cursor: "pointer"
+        }
+      },
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 6, flexWrap: "wrap" } }, c.category && /* @__PURE__ */ React.createElement("span", { className: "pill", style: { fontSize: 9, padding: "2px 8px" } }, c.category), c.date && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, c.date)),
+      /* @__PURE__ */ React.createElement("h4", { className: "ko-serif", style: { fontSize: 16, fontWeight: 600, lineHeight: 1.4, marginBottom: 4 } }, c.title),
+      c.excerpt && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, lineHeight: 1.6, color: "var(--ink-3)", margin: 0 } }, (c.excerpt || "").slice(0, 65), "\u2026")
+    )), secondaryColumns.length === 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-3)", padding: "16px 0" } }, homeText.columnEmpty))
+  )))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: "lecture-strip", role: "list" }, lectures.map((lecture) => /* @__PURE__ */ React.createElement(
     "article",
     {
       key: lecture.id,
