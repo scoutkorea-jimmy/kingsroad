@@ -2077,7 +2077,9 @@ main time, main .section-eyebrow {
 }
 /* v00.249 — 모바일에서만 텍스트 영역 그라디언트 오버레이 (배경이 있을 때만).
    배경 이미지 하단(한옥/타워 등 핵심 모티프) 은 살리고, 상단~중단(텍스트 영역) 만 흰 fade.
-   z-index: 0 (배경 div 위, container 의 z-index:1 아래) */
+   z-index: 0 (배경 div 위, container 의 z-index:1 아래)
+   v00.250 — 다크모드 분기 제거. 배경 이미지가 라이트 톤 한국풍 일러스트라
+   다크모드에서도 흰 그라디언트가 자연스러움 (텍스트 색은 아래 토큰 매핑으로 검정). */
 @media (max-width: 600px) {
   .home-hero.has-bg::before {
     content: '';
@@ -2090,15 +2092,28 @@ main time, main .section-eyebrow {
       rgba(255,255,255,0) 90%);
     pointer-events: none;
   }
-  :root[data-theme="dark"] .home-hero.has-bg::before {
-    background: linear-gradient(180deg,
-      rgba(15,23,42,0.88) 0%,
-      rgba(15,23,42,0.65) 35%,
-      rgba(15,23,42,0.25) 65%,
-      rgba(15,23,42,0) 90%);
-  }
   /* 모바일 hero padding 미세 조정 — 텍스트 영역과 배경 핵심 모티프 사이 호흡. */
   .home-hero { padding: 56px 0 72px !important; }
+}
+
+/* v00.250 — 히어로 다크모드 라이트 텍스트 강제 (사용자 요청).
+   배경 이미지(한국풍 라이트 톤 일러스트) 위에 다크모드 흰 텍스트가 깔리면 안 보임.
+   has-bg 일 때만 hero 안에서 ink 토큰을 라이트 톤으로 override → inline
+   color:var(--ink) 들이 cascade 따라 자동 검정 톤으로. accent(--primary 옐로우)
+   는 다크모드도 동일 옐로우 유지 (브랜드 시그너처). PC/모바일 모두 적용. */
+:root[data-theme="dark"] .home-hero.has-bg {
+  --ink:   #0F172A;   /* 라이트모드 --ink (Slate 950) */
+  --ink-2: #334155;   /* 라이트모드 --ink-2 (Slate 700) */
+  --ink-3: #64748B;   /* 라이트모드 --ink-3 (Slate 500) */
+}
+/* 다크모드에서도 배경 미설정(.has-bg 없음) 시는 다크모드 토큰 유지 — 변화 없음. */
+
+/* v00.250 — HeroProgramCards 모바일 위계 톤다운 (사용자 보고 '강연/답사 카드가
+   hero title 보다 커서 위계 헷갈림'). PC 는 그대로, 모바일에서만 h3 17px·padding
+   축소로 hero title(h1) 시각 위계 1순위 회복. */
+@media (max-width: 600px) {
+  .home-program-card { padding: 18px 20px !important; }
+  .home-program-card h3 { font-size: 17px !important; }
 }
 .hero-bg-desktop { display: block; }
 .hero-bg-mobile  { display: none; }
