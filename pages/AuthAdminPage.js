@@ -5188,14 +5188,14 @@ const AdminPage = ({ go }) => {
     display: "inline-block",
     padding: "3px 10px",
     marginBottom: 10,
-    border: "1px solid var(--primary-dim)",
-    background: "rgba(245,213,72,0.06)",
+    border: "1px solid var(--line-2)",
+    background: "var(--bg-3)",
     fontFamily: "var(--font-mono)",
     fontSize: 10,
     fontWeight: 700,
     letterSpacing: "0.12em",
-    color: "var(--primary)"
-  } }, "v", ((_a = window.BGNJ_VERSION) == null ? void 0 : _a.version) || "?", " \xB7 ", ((_b = window.BGNJ_VERSION) == null ? void 0 : _b.build) || "?"), /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.3em" } }, "\u25C6 ADMIN CONSOLE"), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 20, marginTop: 8 } }, "\uAD00\uB9AC\uC790"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11, marginTop: 4 } }, "contact@bgnj.net"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12, padding: "8px 10px", background: "rgba(245,213,72,0.06)", border: "1px solid var(--primary-dim)", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--primary)", letterSpacing: "0.15em" } }, "DPO \xB7 contact@bgnj.net"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 10, marginTop: 6, letterSpacing: "0.1em" } }, "\uC801\uC6A9\uBC95: GDPR + PIPA"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 10, letterSpacing: "0.1em" } }, "\uCD5C\uADFC DPIA: 2026.03.02")), tabGroups.map((grp) => {
+    color: "var(--ink-2)"
+  } }, "v", ((_a = window.BGNJ_VERSION) == null ? void 0 : _a.version) || "?", " \xB7 ", ((_b = window.BGNJ_VERSION) == null ? void 0 : _b.build) || "?"), /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, letterSpacing: "0.3em", color: "var(--ink-3)" } }, "\u25C6 ADMIN CONSOLE"), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 20, marginTop: 8, color: "var(--ink)" } }, "\uAD00\uB9AC\uC790"), /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 11, marginTop: 4, color: "var(--ink-3)" } }, "contact@bgnj.net"), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12, padding: "8px 10px", background: "var(--bg-3)", border: "1px solid var(--line-2)", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-2)", letterSpacing: "0.15em" } }, "DPO \xB7 contact@bgnj.net"), /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, marginTop: 6, letterSpacing: "0.1em", color: "var(--ink-3)" } }, "\uC801\uC6A9\uBC95: GDPR + PIPA"), /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, letterSpacing: "0.1em", color: "var(--ink-3)" } }, "\uCD5C\uADFC DPIA: 2026.03.02")), tabGroups.map((grp) => {
     const isOpen = openGroups.has(grp.group);
     const hasCurrent = grp.items.includes(tab);
     return /* @__PURE__ */ React.createElement("div", { key: grp.group, style: { padding: "2px 0" } }, /* @__PURE__ */ React.createElement(

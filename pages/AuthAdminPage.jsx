@@ -6217,23 +6217,25 @@ const AdminPage = ({ go }) => {
       {/* Sidebar */}
       <aside id="admin-sidebar" aria-label="관리자 메뉴" className="admin-sidebar" style={{background:'var(--bg-2)', borderRight:'1px solid var(--line)', padding:'32px 0', overflowY:'auto'}}>
         <div style={{padding:'0 24px 24px', borderBottom:'1px solid var(--line)'}}>
-          {/* v00.192 — 사용자 보고 '사이드바 제일 위쪽에 현재 홈페이지 버전'. ADMIN CONSOLE 위에 버전 뱃지. */}
+          {/* v00.192 — 사이드바 제일 위쪽에 현재 홈페이지 버전.
+              v00.238 — 사용자 민원 '좌측 메뉴 가독성 안 좋다'. 노란 primary 텍스트가 흰 배경에서
+              대비 미달 → ink-2 슬레이트 + bg-3 배경으로 교체. KMS §2 옐로우 5% 룰 정합. */}
           <div style={{
             display:'inline-block', padding:'3px 10px', marginBottom:10,
-            border:'1px solid var(--primary-dim)', background:'rgba(245,213,72,0.06)',
+            border:'1px solid var(--line-2)', background:'var(--bg-3)',
             fontFamily:'var(--font-mono)', fontSize:10, fontWeight:700,
-            letterSpacing:'0.12em', color:'var(--primary)',
+            letterSpacing:'0.12em', color:'var(--ink-2)',
           }}>
             v{window.BGNJ_VERSION?.version || '?'} · {window.BGNJ_VERSION?.build || '?'}
           </div>
-          <div className="mono gold" style={{fontSize:10, letterSpacing:'0.3em'}}>◆ ADMIN CONSOLE</div>
-          <div className="ko-serif" style={{fontSize:20, marginTop:8}}>관리자</div>
-          <div className="dim-2 mono" style={{fontSize:11, marginTop:4}}>contact@bgnj.net</div>
-          <div style={{marginTop:12, padding:'8px 10px', background:'rgba(245,213,72,0.06)', border:'1px solid var(--primary-dim)', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--primary)', letterSpacing:'0.15em'}}>
+          <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', color:'var(--ink-3)'}}>◆ ADMIN CONSOLE</div>
+          <div className="ko-serif" style={{fontSize:20, marginTop:8, color:'var(--ink)'}}>관리자</div>
+          <div className="mono" style={{fontSize:11, marginTop:4, color:'var(--ink-3)'}}>contact@bgnj.net</div>
+          <div style={{marginTop:12, padding:'8px 10px', background:'var(--bg-3)', border:'1px solid var(--line-2)', fontFamily:'var(--font-mono)', fontSize:10, color:'var(--ink-2)', letterSpacing:'0.15em'}}>
             DPO · contact@bgnj.net
           </div>
-          <div className="dim-2 mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em'}}>적용법: GDPR + PIPA</div>
-          <div className="dim-2 mono" style={{fontSize:10, letterSpacing:'0.1em'}}>최근 DPIA: 2026.03.02</div>
+          <div className="mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em', color:'var(--ink-3)'}}>적용법: GDPR + PIPA</div>
+          <div className="mono" style={{fontSize:10, letterSpacing:'0.1em', color:'var(--ink-3)'}}>최근 DPIA: 2026.03.02</div>
         </div>
         {/* v00.165 collapsible 그룹 · v00.216 시각 위계 강화: 그룹 헤더-서브 들여쓰기·가이드 라인·활성 표시 명료화 */}
         {tabGroups.map(grp => {

@@ -76,29 +76,9 @@ const LecturesPage = ({ go, user }) => {
 
   const safeIdx = Math.max(0, Math.min(selectedIdx, Math.max(0, lectures.length - 1)));
   const lecture = lectures[safeIdx];
-  // v00.159 — bucket 의 강연 0건 가드. lectures.length===0 일 때 lecture=undefined → 이전엔 lecture.id throw.
-  // PageErrorBoundary 가 잡았지만 사용자에게 빨간 에러 카드 노출. 정상 안내 카드로 대체.
-  if (!lecture) {
-    return (
-      <div className="section">
-        <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
-          <p className="dim" style={{fontSize:14, lineHeight:1.8}}>
-            {bucket === 'past' ? '지난 강연이 없습니다.' : '진행 예정인 강연이 없습니다.'}
-          </p>
-          {bucket === 'past' && lecturesUpcoming.length > 0 && (
-            <button type="button" className="btn btn-small" style={{marginTop:18}} onClick={() => setBucket('upcoming')}>
-              진행 예정 강연 보기 →
-            </button>
-          )}
-          {bucket === 'upcoming' && lecturesPast.length > 0 && (
-            <button type="button" className="btn btn-small" style={{marginTop:18}} onClick={() => setBucket('past')}>
-              지난 강연 보기 →
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // v00.159/v00.238 — bucket 의 강연 0건 가드. 이전엔 빈 분기에서 early return 해서 버킷 토글까지
+  // 사라져 사용자가 다른 버킷으로 못 갔음 (사용자 보고: '지난강연은 위가 유지되고 넘어가야 왔다갔다하지').
+  // 이제는 main return 흐름 유지하되 본문만 빈 카드로 대체.
   const seats = G.call(() => window.BGNJ_LECTURES?.getSeats?.(lecture.id), { capacity: 0, taken: 0, waitlist: 0, remaining: 0 });
   const myReg = user ? G.call(() => window.BGNJ_LECTURES?.hasUserRegistered?.(lecture.id, user.id), null) : null;
 
@@ -205,9 +185,11 @@ const LecturesPage = ({ go, user }) => {
               if (coverUri) {
                 return (
                   <div style={{marginBottom:32}}>
-                    <div style={{aspectRatio:'16/10', overflow:'hidden', borderRadius:2, background:'var(--bg-2)'}}>
-                      <img src={coverUri} alt={lecture.title || '강연 커버'}
-                        style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                    {/* v00.238 — 사용자 보고 '포스터는 다 보이게'. 16:10 aspect crop 대신 자연 비율 + contain 으로
+                        포스터 전체 노출. max-height 로 너무 긴 세로형 제한. */}
+                    <div style={{borderRadius:2, background:'var(--bg-2)', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', maxHeight:'70vh'}}>
+                      <img src={coverUri} alt={lecture.title || '강연 포스터'}
+                        style={{maxWidth:'100%', maxHeight:'70vh', objectFit:'contain', display:'block'}}/>
                     </div>
                     {galleryPrimary?.credit && (
                       <div className="dim mono" style={{fontSize:10, letterSpacing:'0.05em', marginTop:6, lineHeight:1.5}}>
@@ -226,13 +208,22 @@ const LecturesPage = ({ go, user }) => {
                 </div>
               );
             })()}
+            {/* v00.238 — 사용자 요청 '칩 크기로 구분 말고 컬러로'. 정보 카테고리별 색 토큰:
+                · 강연 제목 = primary(옐로우) · 결제 = tertiary(slate)
+                · 주최/진행 = secondary(caramel) · 장소 = info(blue) */}
             <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap', alignItems:'center'}}>
-              <span className="badge badge-gold">{lecture.title}</span>
+              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--secondary)', background:'rgba(245,213,72,0.12)', border:'1px solid var(--primary-dim)'}}>
+                ◆ {lecture.title}
+              </span>
               {lecture.price === 0
-                ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--secondary)', border:'1px solid var(--primary-dim)', padding:'1px 6px'}}>FREE</span>
-                : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>}
-              <span className="badge">{lecture.host}</span>
-              <span className="badge">{lecture.venue}</span>
+                ? <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--secondary)', background:'rgba(245,213,72,0.12)', border:'1px solid var(--primary)'}}>FREE</span>
+                : <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--tertiary)', background:'rgba(71,85,105,0.06)', border:'1px solid var(--tertiary)'}}>₩ 무통장 입금</span>}
+              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--secondary)', background:'rgba(146,64,14,0.06)', border:'1px solid var(--secondary)'}}>
+                ⚐ {lecture.host}
+              </span>
+              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--info)', background:'rgba(37,99,235,0.06)', border:'1px solid var(--info)'}}>
+                ⌖ {lecture.venue}
+              </span>
               {/* v00.236 — hidden 강연은 admin 만 보이고 시각 라벨로 구분. */}
               {lecture.hidden && (
                 <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--warning)', border:'1px solid var(--warning)', padding:'1px 6px'}}>

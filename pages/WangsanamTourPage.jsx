@@ -190,9 +190,10 @@ const TourPage = ({ go, user }) => {
               if (coverUri) {
                 return (
                   <div style={{marginBottom:32}}>
-                    <div style={{aspectRatio:'16/10', overflow:'hidden', borderRadius:2, background:'var(--bg-2)'}}>
-                      <img src={coverUri} alt={tour.title || '투어 커버'}
-                        style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                    {/* v00.238 — 포스터 자연 비율 + contain 으로 전체 노출. */}
+                    <div style={{borderRadius:2, background:'var(--bg-2)', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', maxHeight:'70vh'}}>
+                      <img src={coverUri} alt={tour.title || '투어 포스터'}
+                        style={{maxWidth:'100%', maxHeight:'70vh', objectFit:'contain', display:'block'}}/>
                     </div>
                     {galleryPrimary?.credit && (
                       <div className="dim mono" style={{fontSize:10, letterSpacing:'0.05em', marginTop:6, lineHeight:1.5}}>
@@ -211,11 +212,18 @@ const TourPage = ({ go, user }) => {
                 </div>
               );
             })()}
+            {/* v00.238 — 카테고리별 컬러 칩 (난이도/소요/규모/결제). */}
             <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap', alignItems:'center'}}>
-              <span className="badge badge-gold">{tour.level}</span>
-              <span className="badge">{tour.duration}</span>
-              <span className="badge">{tour.group}</span>
-              <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>
+              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--secondary)', background:'rgba(245,213,72,0.12)', border:'1px solid var(--primary-dim)'}}>
+                ◆ {tour.level}
+              </span>
+              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--secondary)', background:'rgba(146,64,14,0.06)', border:'1px solid var(--secondary)'}}>
+                ⏱ {tour.duration}
+              </span>
+              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--info)', background:'rgba(37,99,235,0.06)', border:'1px solid var(--info)'}}>
+                ◧ {tour.group}
+              </span>
+              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--tertiary)', background:'rgba(71,85,105,0.06)', border:'1px solid var(--tertiary)'}}>₩ 무통장 입금</span>
               {/* v00.236 — hidden 투어는 admin 만 보이고 시각 라벨로 구분. */}
               {tour.hidden && (
                 <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--warning)', border:'1px solid var(--warning)', padding:'1px 6px'}}>
