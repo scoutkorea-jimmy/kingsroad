@@ -688,7 +688,16 @@ const HomePage = ({ go }) => {
         background:'var(--bg)', borderBottom:'1px solid var(--line)',
         padding:'72px 0 88px',
       }}>
-        <div className="container">
+        {/* v00.247 — 사용자 설정 배경 이미지 (PC/모바일 별도). 미설정 시 렌더 X — 기존 빈 배경 유지. */}
+        {hero.bgDesktopUrl && (
+          <div className="hero-bg-image hero-bg-desktop" aria-hidden="true"
+            style={{backgroundImage:`url(${hero.bgDesktopUrl})`}}/>
+        )}
+        {hero.bgMobileUrl && (
+          <div className="hero-bg-image hero-bg-mobile" aria-hidden="true"
+            style={{backgroundImage:`url(${hero.bgMobileUrl})`}}/>
+        )}
+        <div className="container" style={{position:'relative', zIndex:1}}>
           <div className="hero-grid home-hero-grid" style={{
             display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:56, alignItems:'center',
           }}>

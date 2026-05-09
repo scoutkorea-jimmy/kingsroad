@@ -1125,6 +1125,25 @@ const HE_NumberRange = ({ value, min, max, step, onChange }) => /* @__PURE__ */ 
     style: { width: 80, padding: "4px 6px", fontSize: 12, fontFamily: "var(--font-mono)" }
   }
 ));
+const HeroBgSlot = ({ label, url, aspect, preview, onPick, onClear }) => /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center", marginBottom: 14, padding: 10, background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6 } }, /* @__PURE__ */ React.createElement("div", { style: {
+  width: preview.width,
+  height: preview.height,
+  background: url ? `url(${url}) center/cover` : "var(--bg-3)",
+  border: "1px solid var(--line-2)",
+  borderRadius: 4,
+  display: "grid",
+  placeItems: "center",
+  flexShrink: 0
+} }, !url && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.15em", marginBottom: 6 } }, label), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, url ? "\uAD50\uCCB4" : "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", style: { display: "none" }, onChange: onPick })), url && /* @__PURE__ */ React.createElement(
+  "button",
+  {
+    type: "button",
+    className: "btn btn-small",
+    onClick: onClear,
+    style: { borderColor: "var(--danger)", color: "var(--danger)" }
+  },
+  "\uC0AD\uC81C"
+))));
 const HE_StyleGroup = ({ title, children, onResetGroup }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 16, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, title), onResetGroup && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onResetGroup, style: { fontSize: 10 } }, "\uC774 \uADF8\uB8F9 default")), children);
 const HERO_COLOR_OPTIONS = [
   { value: "--ink", label: "\uBA54\uC778 \uC789\uD06C (--ink)" },
@@ -1273,7 +1292,51 @@ const HeroEditorPanel = () => {
       onChange: (e) => updateContent("mapHint", e.target.value),
       placeholder: "\uC9C0\uB3C4\uC5D0\uC11C \uC5EC\uD589\uC9C0 \uCC3E\uAE30 \u2192"
     }
-  )), /* @__PURE__ */ React.createElement(Field, { label: "CTA PRIMARY (\uCEE4\uBBA4\uB2C8\uD2F0 \uBC84\uD2BC)" }, /* @__PURE__ */ React.createElement(Input, { value: (_h = contentDraft.ctaPrimary) != null ? _h : "", onChange: (e) => updateContent("ctaPrimary", e.target.value), placeholder: "\uCEE4\uBBA4\uB2C8\uD2F0 \uCC38\uC5EC\uD558\uAE30" })), /* @__PURE__ */ React.createElement(Field, { label: "CTA SECONDARY (\uD22C\uC5B4 \uBC84\uD2BC)", hint: "\uBE44\uC6CC\uB450\uBA74 default \uC0AC\uC6A9. \uBAA8\uB4E0 \uD2B8\uC717\uC740 \uC989\uC2DC \uBBF8\uB9AC\uBCF4\uAE30\uC5D0 \uBC18\uC601." }, /* @__PURE__ */ React.createElement(Input, { value: (_i = contentDraft.ctaSecondary) != null ? _i : "", onChange: (e) => updateContent("ctaSecondary", e.target.value), placeholder: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8 \uBCF4\uAE30" }))), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 16, marginBottom: 10 } }, "\uC2A4\uD0C0\uC77C \uD2B8\uC717"), /* @__PURE__ */ React.createElement(HE_StyleGroup, { title: "EYEBROW \uC2A4\uD0C0\uC77C", onResetGroup: () => resetGroup("eyebrow") }, /* @__PURE__ */ React.createElement(Field, { label: `\uD3F0\uD2B8 \uD06C\uAE30 \xB7 ${eff.eyebrow.fontSize}px` }, /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement(Field, { label: "CTA PRIMARY (\uCEE4\uBBA4\uB2C8\uD2F0 \uBC84\uD2BC)" }, /* @__PURE__ */ React.createElement(Input, { value: (_h = contentDraft.ctaPrimary) != null ? _h : "", onChange: (e) => updateContent("ctaPrimary", e.target.value), placeholder: "\uCEE4\uBBA4\uB2C8\uD2F0 \uCC38\uC5EC\uD558\uAE30" })), /* @__PURE__ */ React.createElement(Field, { label: "CTA SECONDARY (\uD22C\uC5B4 \uBC84\uD2BC)", hint: "\uBE44\uC6CC\uB450\uBA74 default \uC0AC\uC6A9. \uBAA8\uB4E0 \uD2B8\uC717\uC740 \uC989\uC2DC \uBBF8\uB9AC\uBCF4\uAE30\uC5D0 \uBC18\uC601." }, /* @__PURE__ */ React.createElement(Input, { value: (_i = contentDraft.ctaSecondary) != null ? _i : "", onChange: (e) => updateContent("ctaSecondary", e.target.value), placeholder: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8 \uBCF4\uAE30" })), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em", marginBottom: 10 } }, "\uBC30\uACBD \uC774\uBBF8\uC9C0 (\uC120\uD0DD)"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginBottom: 14, lineHeight: 1.6 } }, "PC\uC640 \uBAA8\uBC14\uC77C\uC5D0 \uAC01\uAC01 \uB2E4\uB978 \uBC30\uACBD \uC774\uBBF8\uC9C0\uB97C \uC62C\uB9B4 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uBE44\uC6CC\uB450\uBA74 \uAE30\uC874 \uBE48 \uBC30\uACBD(\uCEEC\uB7EC)\uC774 \uC720\uC9C0\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement(
+    HeroBgSlot,
+    {
+      label: "PC \uBC30\uACBD (1920\xD71080 \uAD8C\uC7A5)",
+      url: contentDraft.bgDesktopUrl || "",
+      aspect: "16/9",
+      preview: { width: 160, height: 90 },
+      onPick: async (e) => {
+        var _a2, _b2, _c2;
+        const file = (_a2 = e.target.files) == null ? void 0 : _a2[0];
+        e.target.value = "";
+        if (!file) return;
+        try {
+          const fakeEvent = { target: { files: [file], value: "" } };
+          const url = await window.pickImageWithR2Fallback(fakeEvent, { folder: "hero-bg" });
+          if (url) updateContent("bgDesktopUrl", url);
+        } catch (err) {
+          (_c2 = (_b2 = window.BGNJ_TOAST) == null ? void 0 : _b2.error) == null ? void 0 : _c2.call(_b2, "\uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || ""));
+        }
+      },
+      onClear: () => updateContent("bgDesktopUrl", "")
+    }
+  ), /* @__PURE__ */ React.createElement(
+    HeroBgSlot,
+    {
+      label: "\uBAA8\uBC14\uC77C \uBC30\uACBD (1080\xD71920 \uAD8C\uC7A5)",
+      url: contentDraft.bgMobileUrl || "",
+      aspect: "9/16",
+      preview: { width: 60, height: 106 },
+      onPick: async (e) => {
+        var _a2, _b2, _c2;
+        const file = (_a2 = e.target.files) == null ? void 0 : _a2[0];
+        e.target.value = "";
+        if (!file) return;
+        try {
+          const fakeEvent = { target: { files: [file], value: "" } };
+          const url = await window.pickImageWithR2Fallback(fakeEvent, { folder: "hero-bg" });
+          if (url) updateContent("bgMobileUrl", url);
+        } catch (err) {
+          (_c2 = (_b2 = window.BGNJ_TOAST) == null ? void 0 : _b2.error) == null ? void 0 : _c2.call(_b2, "\uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || ""));
+        }
+      },
+      onClear: () => updateContent("bgMobileUrl", "")
+    }
+  ))), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 16, marginBottom: 10 } }, "\uC2A4\uD0C0\uC77C \uD2B8\uC717"), /* @__PURE__ */ React.createElement(HE_StyleGroup, { title: "EYEBROW \uC2A4\uD0C0\uC77C", onResetGroup: () => resetGroup("eyebrow") }, /* @__PURE__ */ React.createElement(Field, { label: `\uD3F0\uD2B8 \uD06C\uAE30 \xB7 ${eff.eyebrow.fontSize}px` }, /* @__PURE__ */ React.createElement(
     NumberRange,
     {
       value: eff.eyebrow.fontSize,

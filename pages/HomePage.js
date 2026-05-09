@@ -678,7 +678,21 @@ const HomePage = ({ go }) => {
     background: "var(--bg)",
     borderBottom: "1px solid var(--line)",
     padding: "72px 0 88px"
-  } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "hero-grid home-hero-grid", style: {
+  } }, hero.bgDesktopUrl && /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      className: "hero-bg-image hero-bg-desktop",
+      "aria-hidden": "true",
+      style: { backgroundImage: `url(${hero.bgDesktopUrl})` }
+    }
+  ), hero.bgMobileUrl && /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      className: "hero-bg-image hero-bg-mobile",
+      "aria-hidden": "true",
+      style: { backgroundImage: `url(${hero.bgMobileUrl})` }
+    }
+  ), /* @__PURE__ */ React.createElement("div", { className: "container", style: { position: "relative", zIndex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "hero-grid home-hero-grid", style: {
     display: "grid",
     gridTemplateColumns: "1.2fr 1fr",
     gap: 56,

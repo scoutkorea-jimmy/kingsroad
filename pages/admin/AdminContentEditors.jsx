@@ -1281,6 +1281,35 @@ const HE_NumberRange = ({ value, min, max, step, onChange }) => (
       className="field-input" style={{width:80, padding:'4px 6px', fontSize:12, fontFamily:'var(--font-mono)'}}/>
   </div>
 );
+// v00.247 — 히어로 배경 슬롯 (PC/모바일 공통). 업로드 + 미리보기 + 삭제.
+const HeroBgSlot = ({ label, url, aspect, preview, onPick, onClear }) => (
+  <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:14, padding:10, background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:6}}>
+    <div style={{
+      width: preview.width, height: preview.height,
+      background: url ? `url(${url}) center/cover` : 'var(--bg-3)',
+      border: '1px solid var(--line-2)', borderRadius: 4,
+      display:'grid', placeItems:'center', flexShrink:0,
+    }}>
+      {!url && <span className="mono" style={{fontSize:9, color:'var(--ink-3)', letterSpacing:'0.18em'}}>NONE</span>}
+    </div>
+    <div style={{flex:1, minWidth:0}}>
+      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.15em', marginBottom:6}}>{label}</div>
+      <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+        <label className="btn btn-small" style={{cursor:'pointer'}}>
+          {url ? '교체' : '업로드'}
+          <input type="file" accept="image/*" style={{display:'none'}} onChange={onPick}/>
+        </label>
+        {url && (
+          <button type="button" className="btn btn-small" onClick={onClear}
+            style={{borderColor:'var(--danger)', color:'var(--danger)'}}>
+            삭제
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
 const HE_StyleGroup = ({ title, children, onResetGroup }) => (
   <div className="card" style={{padding:16, marginBottom:14}}>
     <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
@@ -1461,6 +1490,42 @@ const HeroEditorPanel = () => {
             <Field label="CTA SECONDARY (투어 버튼)" hint="비워두면 default 사용. 모든 트윗은 즉시 미리보기에 반영.">
               <Input value={contentDraft.ctaSecondary ?? ''} onChange={(e) => updateContent('ctaSecondary', e.target.value)} placeholder="투어 프로그램 보기"/>
             </Field>
+
+            {/* v00.247 — 히어로 배경 이미지 (PC/모바일 별도). 미업로드 시 빈 배경 유지. */}
+            <div style={{marginTop:18, paddingTop:14, borderTop:'1px solid var(--line)'}}>
+              <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em', marginBottom:10}}>배경 이미지 (선택)</div>
+              <p className="dim-2" style={{fontSize:11, marginBottom:14, lineHeight:1.6}}>
+                PC와 모바일에 각각 다른 배경 이미지를 올릴 수 있습니다. 비워두면 기존 빈 배경(컬러)이 유지됩니다.
+              </p>
+              <HeroBgSlot
+                label="PC 배경 (1920×1080 권장)" url={contentDraft.bgDesktopUrl || ''}
+                aspect="16/9" preview={{width:160, height:90}}
+                onPick={async (e) => {
+                  const file = e.target.files?.[0]; e.target.value = '';
+                  if (!file) return;
+                  try {
+                    const fakeEvent = { target: { files: [file], value: '' } };
+                    const url = await window.pickImageWithR2Fallback(fakeEvent, { folder: 'hero-bg' });
+                    if (url) updateContent('bgDesktopUrl', url);
+                  } catch (err) { window.BGNJ_TOAST?.error?.('업로드 실패: ' + (err?.message || '')); }
+                }}
+                onClear={() => updateContent('bgDesktopUrl', '')}
+              />
+              <HeroBgSlot
+                label="모바일 배경 (1080×1920 권장)" url={contentDraft.bgMobileUrl || ''}
+                aspect="9/16" preview={{width:60, height:106}}
+                onPick={async (e) => {
+                  const file = e.target.files?.[0]; e.target.value = '';
+                  if (!file) return;
+                  try {
+                    const fakeEvent = { target: { files: [file], value: '' } };
+                    const url = await window.pickImageWithR2Fallback(fakeEvent, { folder: 'hero-bg' });
+                    if (url) updateContent('bgMobileUrl', url);
+                  } catch (err) { window.BGNJ_TOAST?.error?.('업로드 실패: ' + (err?.message || '')); }
+                }}
+                onClear={() => updateContent('bgMobileUrl', '')}
+              />
+            </div>
           </div>
 
           <h3 className="ko-serif" style={{fontSize:16, marginBottom:10}}>스타일 트윗</h3>

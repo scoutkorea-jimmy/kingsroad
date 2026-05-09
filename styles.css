@@ -2060,6 +2060,25 @@ main time, main .section-eyebrow {
 :root[data-theme="dark"] .admin-savebar { background: var(--bg-2); border-color: var(--line); border-top-color: var(--primary-dim); }
 :root[data-theme="dark"] .admin-filter-chip { background: var(--bg-2); border-color: var(--line); }
 
+/* === v00.247 — 히어로 배경 이미지 (PC/모바일 별도 업로드) ===========================
+   home-hero <section> 안의 absolute 레이어. cover/center 로 영역 채움.
+   미설정 시 렌더 X (HomePage 가 url 비면 div 자체 안 출력 → 기존 빈 배경 유지).
+   PC/모바일 viewport 에 따라 적절한 한 장만 보임. */
+.hero-bg-image {
+  position: absolute; inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero-bg-desktop { display: block; }
+.hero-bg-mobile  { display: none; }
+@media (max-width: 600px) {
+  .hero-bg-desktop { display: none; }
+  .hero-bg-mobile  { display: block; }
+}
+
 /* === v00.246 — 홈 칼럼 카루셀 슬라이드 애니메이션 ==================================
    v00.240 자동 순환은 즉시 swap → 사용자 보고 '슬라이드 느낌이 나게'.
    featured article 에 key={featuredIdx} + className 으로 매 idx 변경 시
