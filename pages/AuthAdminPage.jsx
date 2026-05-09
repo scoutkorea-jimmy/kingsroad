@@ -4510,7 +4510,7 @@ const SearchConsoleAdminPanel = () => {
   const openConsole = (url) => { try { window.open(url, '_blank', 'noopener'); } catch {} };
 
   const lastUpdLabel = data.lastUpdated
-    ? new Date(data.lastUpdated).toLocaleString('ko-KR')
+    ? window.BGNJ_FMT.kstDateTime(data.lastUpdated)
     : '저장 이력 없음';
 
   return (
@@ -6251,11 +6251,15 @@ const AdminPage = ({ go }) => {
                 style={{
                   width:'100%', display:'flex', justifyContent:'space-between', alignItems:'center',
                   padding:'12px 24px',
-                  fontSize:11, fontWeight:700, letterSpacing:'0.22em',
-                  color: hasCurrent ? 'var(--secondary)' : 'var(--ink)',
-                  // 펼친 그룹은 헤더에 미세 배경 → 헤더+서브 한 묶음으로 시각적 그룹화
-                  background: isOpen ? 'rgba(15,23,42,0.03)' : 'transparent',
-                  border:'none', cursor:'pointer',
+                  // v00.242 — 사용자 민원 '좌측 메뉴 가독성'. mono 11px → 12px + ink 강도 ↑.
+                  // 활성 그룹은 secondary 보다 ink + 좌측 4px primary border 로 시각 위계 명료화.
+                  fontSize:12, fontWeight:700, letterSpacing:'0.18em',
+                  color: hasCurrent ? 'var(--ink)' : 'var(--ink-2)',
+                  background: isOpen ? 'rgba(15,23,42,0.04)' : 'transparent',
+                  borderLeft: hasCurrent ? '4px solid var(--primary)' : '4px solid transparent',
+                  border:'none', borderLeftWidth: 4, borderLeftStyle:'solid',
+                  borderLeftColor: hasCurrent ? 'var(--primary)' : 'transparent',
+                  cursor:'pointer',
                   textTransform:'uppercase',
                 }}>
                 <span>
@@ -6291,15 +6295,13 @@ const AdminPage = ({ go }) => {
                           aria-current={active ? "page" : undefined}
                           style={{
                             width:'100%', textAlign:'left',
-                            // 들여쓰기: 24 → 44 (가이드 라인보다 12px 안쪽)
-                            padding:'9px 24px 9px 44px',
-                            // v00.217 — 한글 14/medium 이 그룹 헤더보다 굵어 위계 역전 → 13/regular 로 낮춤.
-                            fontSize:13,
-                            fontWeight: active ? 700 : 400,
-                            background: active ? 'rgba(245,213,72,0.14)' : 'transparent',
-                            color: active ? 'var(--secondary)' : 'var(--ink-2)',
+                            padding:'10px 24px 10px 44px',
+                            // v00.242 — sub-tab 가독성 ↑. 14/medium + ink (비활성) / ink + bold + primary 배경 (활성).
+                            fontSize:14,
+                            fontWeight: active ? 700 : 500,
+                            background: active ? 'rgba(245,213,72,0.18)' : 'transparent',
+                            color: active ? 'var(--ink)' : 'var(--ink)',
                             border:'none',
-                            // 활성 시 4px 좌측 보더, 비활성은 동일 두께의 투명 보더로 정렬 유지
                             borderLeft: active ? '4px solid var(--primary)' : '4px solid transparent',
                             letterSpacing:'0.01em',
                             cursor:'pointer',

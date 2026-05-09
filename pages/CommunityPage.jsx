@@ -1059,6 +1059,21 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       try { localStorage.removeItem(draftKey); } catch {}
     }
     // v00.115 — admin 만 createdAt 오버라이드 가능. 다른 사용자 값 전송은 워커가 무시.
+    // v00.242 — 사용자 보고 '커뮤니티 이미지 안 보임'. root cause: 워커 handlePostsCreate 가
+    // body.images 무시 + D1 posts 테이블에 images 컬럼 부재. 워커 deploy 회피하면서 표시 보장 →
+    // body HTML 끝에 첨부 이미지 <img> 태그로 직접 인코딩 (DOMPurify ALLOWED_TAGS 'img' 통과 확인).
+    const _attachedImagesHtml = (() => {
+      if (!Array.isArray(images) || images.length === 0) return '';
+      // 이미 본문에 같은 이미지가 들어있을 수도 있어 중복 차단을 위해 marker 로 감싼다 — 본문 재편집 시 추출/제거 가능.
+      const figs = images.map((img) => {
+        const url = (img && (img.dataUrl || img.src || img.url)) || '';
+        if (!url) return '';
+        const alt = (img.alt || img.name || '첨부 이미지').replace(/"/g, '&quot;');
+        return `<p data-bgnj-attach="1" style="margin:16px 0;text-align:center"><img src="${url}" alt="${alt}" style="max-width:100%;height:auto;display:inline-block;border-radius:4px"/></p>`;
+      }).filter(Boolean).join('');
+      return figs ? `<div data-bgnj-attached-block="1">${figs}</div>` : '';
+    })();
+    const _bodyHtmlWithImages = bodyHtml + _attachedImagesHtml;
     const payload = {
       categoryId: cat.id,
       category: cat.label,
@@ -1071,11 +1086,11 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       views: initialPost?.views ?? 0,
       date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`,
       tags,
-      images,
+      images,       // 클라 측에서 imageSlider 카로셀용 (워커 무시 — 다음 사이클 schema 추가)
       attachments,
       _new: true,
       _userCreated: true,
-      body: { html: bodyHtml, text: bodyText },
+      body: { html: _bodyHtmlWithImages, text: bodyText },
     };
     if (user?.isAdmin && createdAt) {
       // 'YYYY-MM-DDTHH:MM' (KST 가정) → ISO 8601 with +09:00.

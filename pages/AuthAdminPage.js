@@ -3800,7 +3800,7 @@ const SearchConsoleAdminPanel = () => {
     } catch (e) {
     }
   };
-  const lastUpdLabel = data.lastUpdated ? new Date(data.lastUpdated).toLocaleString("ko-KR") : "\uC800\uC7A5 \uC774\uB825 \uC5C6\uC74C";
+  const lastUpdLabel = data.lastUpdated ? window.BGNJ_FMT.kstDateTime(data.lastUpdated) : "\uC800\uC7A5 \uC774\uB825 \uC5C6\uC74C";
   return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 18, lineHeight: 1.8 } }, "\uAC80\uC0C9\uC5D4\uC9C4 \uC0AC\uC774\uD2B8 \uC18C\uC720 \uD655\uC778\uC6A9 meta tag \uB97C \uC785\uB825\uD569\uB2C8\uB2E4. \uC800\uC7A5 \uC989\uC2DC ", /* @__PURE__ */ React.createElement("code", { className: "mono" }, "<head>"), ' \uC5D0 \uC8FC\uC785\uB418\uBA70, \uAC01 \uAC80\uC0C9 \uCF58\uC194 \uC0AC\uC774\uD2B8\uC758 "HTML \uD0DC\uADF8" \uAC80\uC99D \uBC29\uBC95\uC744 \uD1B5\uACFC\uD569\uB2C8\uB2E4.'), msg && /* @__PURE__ */ React.createElement("div", { role: "status", style: {
     marginBottom: 16,
     padding: "10px 14px",
@@ -5211,13 +5211,18 @@ const AdminPage = ({ go }) => {
           justifyContent: "space-between",
           alignItems: "center",
           padding: "12px 24px",
-          fontSize: 11,
+          // v00.242 — 사용자 민원 '좌측 메뉴 가독성'. mono 11px → 12px + ink 강도 ↑.
+          // 활성 그룹은 secondary 보다 ink + 좌측 4px primary border 로 시각 위계 명료화.
+          fontSize: 12,
           fontWeight: 700,
-          letterSpacing: "0.22em",
-          color: hasCurrent ? "var(--secondary)" : "var(--ink)",
-          // 펼친 그룹은 헤더에 미세 배경 → 헤더+서브 한 묶음으로 시각적 그룹화
-          background: isOpen ? "rgba(15,23,42,0.03)" : "transparent",
+          letterSpacing: "0.18em",
+          color: hasCurrent ? "var(--ink)" : "var(--ink-2)",
+          background: isOpen ? "rgba(15,23,42,0.04)" : "transparent",
+          borderLeft: hasCurrent ? "4px solid var(--primary)" : "4px solid transparent",
           border: "none",
+          borderLeftWidth: 4,
+          borderLeftStyle: "solid",
+          borderLeftColor: hasCurrent ? "var(--primary)" : "transparent",
           cursor: "pointer",
           textTransform: "uppercase"
         }
@@ -5256,15 +5261,13 @@ const AdminPage = ({ go }) => {
           style: {
             width: "100%",
             textAlign: "left",
-            // 들여쓰기: 24 → 44 (가이드 라인보다 12px 안쪽)
-            padding: "9px 24px 9px 44px",
-            // v00.217 — 한글 14/medium 이 그룹 헤더보다 굵어 위계 역전 → 13/regular 로 낮춤.
-            fontSize: 13,
-            fontWeight: active ? 700 : 400,
-            background: active ? "rgba(245,213,72,0.14)" : "transparent",
-            color: active ? "var(--secondary)" : "var(--ink-2)",
+            padding: "10px 24px 10px 44px",
+            // v00.242 — sub-tab 가독성 ↑. 14/medium + ink (비활성) / ink + bold + primary 배경 (활성).
+            fontSize: 14,
+            fontWeight: active ? 700 : 500,
+            background: active ? "rgba(245,213,72,0.18)" : "transparent",
+            color: active ? "var(--ink)" : "var(--ink)",
             border: "none",
-            // 활성 시 4px 좌측 보더, 비활성은 동일 두께의 투명 보더로 정렬 유지
             borderLeft: active ? "4px solid var(--primary)" : "4px solid transparent",
             letterSpacing: "0.01em",
             cursor: "pointer",

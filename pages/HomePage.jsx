@@ -440,14 +440,14 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
               {hasPriceKR && (
                 <div>
                   <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{text.bookKrLabel}</div>
-                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(b.priceKR).toLocaleString()}원</div>
+                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{window.BGNJ_FMT.won(b.priceKR)}</div>
                 </div>
               )}
               {hasPriceKR && hasPriceEN && <div style={{width:1, background:'var(--line-2)', alignSelf:'stretch'}}/>}
               {hasPriceEN && (
                 <div>
                   <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{text.bookEnLabel}</div>
-                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{Number(b.priceEN).toLocaleString()}원</div>
+                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{window.BGNJ_FMT.won(b.priceEN)}</div>
                 </div>
               )}
             </div>

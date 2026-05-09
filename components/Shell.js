@@ -3,19 +3,22 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
   const promptName = label || "\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9";
   const stateRef = React.useRef({ dirty, onClose, onSaveDraft, promptName });
   stateRef.current = { dirty, onClose, onSaveDraft, promptName };
-  const handleAttemptClose = React.useCallback(() => {
+  const handleAttemptClose = React.useCallback(async () => {
     var _a, _b, _c;
     const s = stateRef.current;
     if (!s.dirty) {
       (_a = s.onClose) == null ? void 0 : _a.call(s);
       return;
     }
+    const fallbackConfirm = (msg) => {
+      try {
+        return window.BGNJ_CONFIRM ? window.BGNJ_CONFIRM(msg, { danger: true, confirmLabel: "\uD655\uC778" }) : Promise.resolve(true);
+      } catch (e) {
+        return Promise.resolve(true);
+      }
+    };
     if (s.onSaveDraft) {
-      const yes = window.confirm(`${s.promptName}\uC774(\uAC00) \uC800\uC7A5\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4.
-\uC784\uC2DC\uC800\uC7A5 \uD558\uC2DC\uACA0\uC5B4\uC694?
-
-[\uD655\uC778] = \uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uAE30
-[\uCDE8\uC18C] = \uADF8\uB0E5 \uB2EB\uAE30 (\uBCC0\uACBD \uB0B4\uC6A9 \uBC84\uB9BC)`);
+      const yes = await fallbackConfirm(`${s.promptName}\uC774(\uAC00) \uC800\uC7A5\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uC784\uC2DC\uC800\uC7A5 \uD558\uC2DC\uACA0\uC5B4\uC694? [\uD655\uC778] = \uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uAE30 / [\uCDE8\uC18C] = \uADF8\uB0E5 \uB2EB\uAE30 (\uBCC0\uACBD \uB0B4\uC6A9 \uBC84\uB9BC)`);
       if (yes) {
         try {
           s.onSaveDraft();
@@ -24,7 +27,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       }
       (_b = s.onClose) == null ? void 0 : _b.call(s);
     } else {
-      const ok = window.confirm(`${s.promptName}\uC774(\uAC00) \uC800\uC7A5\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uC815\uB9D0 \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?`);
+      const ok = await fallbackConfirm(`${s.promptName}\uC774(\uAC00) \uC800\uC7A5\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uC815\uB9D0 \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?`);
       if (ok) (_c = s.onClose) == null ? void 0 : _c.call(s);
     }
   }, []);

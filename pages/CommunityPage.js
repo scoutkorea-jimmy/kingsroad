@@ -1063,6 +1063,17 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       } catch (e) {
       }
     }
+    const _attachedImagesHtml = (() => {
+      if (!Array.isArray(images) || images.length === 0) return "";
+      const figs = images.map((img) => {
+        const url = img && (img.dataUrl || img.src || img.url) || "";
+        if (!url) return "";
+        const alt = (img.alt || img.name || "\uCCA8\uBD80 \uC774\uBBF8\uC9C0").replace(/"/g, "&quot;");
+        return `<p data-bgnj-attach="1" style="margin:16px 0;text-align:center"><img src="${url}" alt="${alt}" style="max-width:100%;height:auto;display:inline-block;border-radius:4px"/></p>`;
+      }).filter(Boolean).join("");
+      return figs ? `<div data-bgnj-attached-block="1">${figs}</div>` : "";
+    })();
+    const _bodyHtmlWithImages = bodyHtml + _attachedImagesHtml;
     const payload = {
       categoryId: cat.id,
       category: cat.label,
@@ -1076,10 +1087,11 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       date: `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}`,
       tags,
       images,
+      // 클라 측에서 imageSlider 카로셀용 (워커 무시 — 다음 사이클 schema 추가)
       attachments,
       _new: true,
       _userCreated: true,
-      body: { html: bodyHtml, text: bodyText }
+      body: { html: _bodyHtmlWithImages, text: bodyText }
     };
     if ((user == null ? void 0 : user.isAdmin) && createdAt) {
       payload.createdAt = `${createdAt}:00+09:00`;

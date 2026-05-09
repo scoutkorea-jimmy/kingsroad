@@ -15,15 +15,21 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
   const stateRef = React.useRef({ dirty, onClose, onSaveDraft, promptName });
   stateRef.current = { dirty, onClose, onSaveDraft, promptName };
 
-  const handleAttemptClose = React.useCallback(() => {
+  const handleAttemptClose = React.useCallback(async () => {
     const s = stateRef.current;
     if (!s.dirty) { s.onClose?.(); return; }
+    // v00.242 — useModalGuard 의 popstate/ESC 동기 핸들러에서 호출되지만 BGNJ_CONFIRM Promise 로 정합.
+    // window.confirm() 은 v00.208 에서 사이트 전반 폐기 → 본 잔재도 통일.
+    const fallbackConfirm = (msg) => {
+      try { return window.BGNJ_CONFIRM ? window.BGNJ_CONFIRM(msg, { danger: true, confirmLabel: '확인' }) : Promise.resolve(true); }
+      catch { return Promise.resolve(true); }
+    };
     if (s.onSaveDraft) {
-      const yes = window.confirm(`${s.promptName}이(가) 저장되지 않았습니다.\n임시저장 하시겠어요?\n\n[확인] = 임시저장 후 닫기\n[취소] = 그냥 닫기 (변경 내용 버림)`);
+      const yes = await fallbackConfirm(`${s.promptName}이(가) 저장되지 않았습니다. 임시저장 하시겠어요? [확인] = 임시저장 후 닫기 / [취소] = 그냥 닫기 (변경 내용 버림)`);
       if (yes) { try { s.onSaveDraft(); } catch {} }
       s.onClose?.();
     } else {
-      const ok = window.confirm(`${s.promptName}이(가) 저장되지 않았습니다. 정말 닫으시겠어요?`);
+      const ok = await fallbackConfirm(`${s.promptName}이(가) 저장되지 않았습니다. 정말 닫으시겠어요?`);
       if (ok) s.onClose?.();
     }
   }, []);
