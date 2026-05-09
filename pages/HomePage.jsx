@@ -683,11 +683,13 @@ const HomePage = ({ go }) => {
       {/* v00.143 — 오픈 안내 배너는 boot.jsx 로 이동 (sitewide, 메뉴 위쪽). */}
 
       {/* ── HERO (텍스트 + 우측 지도 미리보기, 모바일 1단) ─────────── */}
-      <HomeSectionBoundary label="히어로"><section className="home-hero" style={{
-        position:'relative', overflow:'hidden',
-        background:'var(--bg)', borderBottom:'1px solid var(--line)',
-        padding:'72px 0 88px',
-      }}>
+      <HomeSectionBoundary label="히어로"><section
+        className={`home-hero${(hero.bgDesktopUrl || hero.bgMobileUrl) ? ' has-bg' : ''}`}
+        style={{
+          position:'relative', overflow:'hidden',
+          background:'var(--bg)', borderBottom:'1px solid var(--line)',
+          padding:'72px 0 88px',
+        }}>
         {/* v00.247 — 사용자 설정 배경 이미지 (PC/모바일 별도). 미설정 시 렌더 X — 기존 빈 배경 유지.
             v00.248 — 모바일 슬롯 비면 PC 이미지를 fallback (사용자 보고 '한 번 올린 거로 양쪽 살아나면 좋겠다').
             반대로 PC 슬롯 비고 모바일만 있어도 모바일 div 만 렌더 — 모바일 viewport 만 노출, PC 는 빈 배경. */}

@@ -672,101 +672,110 @@ const HomePage = ({ go }) => {
     if (!isFinite(v)) return 1;
     return Math.max(0.85, Math.min(1.2, v));
   })();
-  return /* @__PURE__ */ React.createElement("div", { className: "home-page", style: { fontSize: `${fontScale}em` } }, mapOpen && /* @__PURE__ */ React.createElement(DestinationMapModal, { onClose: () => setMapOpen(false), go }), recDetail && /* @__PURE__ */ React.createElement(RecommendationDetailModal, { rec: recDetail, onClose: () => setRecDetail(null), go }), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C" }, /* @__PURE__ */ React.createElement("section", { className: "home-hero", style: {
-    position: "relative",
-    overflow: "hidden",
-    background: "var(--bg)",
-    borderBottom: "1px solid var(--line)",
-    padding: "72px 0 88px"
-  } }, hero.bgDesktopUrl && /* @__PURE__ */ React.createElement(
-    "div",
+  return /* @__PURE__ */ React.createElement("div", { className: "home-page", style: { fontSize: `${fontScale}em` } }, mapOpen && /* @__PURE__ */ React.createElement(DestinationMapModal, { onClose: () => setMapOpen(false), go }), recDetail && /* @__PURE__ */ React.createElement(RecommendationDetailModal, { rec: recDetail, onClose: () => setRecDetail(null), go }), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C" }, /* @__PURE__ */ React.createElement(
+    "section",
     {
-      className: "hero-bg-image hero-bg-desktop",
-      "aria-hidden": "true",
-      style: { backgroundImage: `url(${hero.bgDesktopUrl})` }
-    }
-  ), (hero.bgMobileUrl || hero.bgDesktopUrl) && /* @__PURE__ */ React.createElement(
-    "div",
-    {
-      className: "hero-bg-image hero-bg-mobile",
-      "aria-hidden": "true",
-      style: { backgroundImage: `url(${hero.bgMobileUrl || hero.bgDesktopUrl})` }
-    }
-  ), /* @__PURE__ */ React.createElement("div", { className: "container", style: { position: "relative", zIndex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "hero-grid home-hero-grid", style: {
-    display: "grid",
-    gridTemplateColumns: "1.2fr 1fr",
-    gap: 56,
-    alignItems: "center"
-  } }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: heroStyle.title.textAlign || "left" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", style: {
-    fontSize: heroStyle.eyebrow.fontSize,
-    fontWeight: heroStyle.eyebrow.fontWeight,
-    letterSpacing: `${heroStyle.eyebrow.letterSpacing}em`,
-    color: `var(${heroStyle.eyebrow.color})`,
-    textTransform: heroStyle.eyebrow.textTransform || "uppercase"
-  } }, /* @__PURE__ */ React.createElement("span", null, hero.eyebrow || "\uBA39\uACE0 \uC790\uACE0 \uAC77\uACE0 \uC77D\uB294 \uD55C\uAD6D")), /* @__PURE__ */ React.createElement("h1", { style: {
-    fontFamily: "var(--font-display)",
-    fontSize: `clamp(36px, 5vw, ${heroStyle.title.fontSize}px)`,
-    fontWeight: heroStyle.title.fontWeight,
-    lineHeight: heroStyle.title.lineHeight,
-    letterSpacing: `${heroStyle.title.letterSpacing}em`,
-    marginBottom: 22,
-    color: `var(${heroStyle.title.color})`
-  } }, hero.title1 || "\uD55C\uAD6D\uC744", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { style: { color: `var(${heroStyle.title.accentColor})` } }, hero.title2 || "\uC9C1\uC811 \uAC77\uACE0"), /* @__PURE__ */ React.createElement("br", null), hero.title3 || "\uCC9C\uCC9C\uD788 \uC77D\uB2E4"), /* @__PURE__ */ React.createElement("p", { className: "bgnj-multiline", style: {
-    fontSize: heroStyle.subtitle.fontSize,
-    lineHeight: heroStyle.subtitle.lineHeight,
-    color: `var(${heroStyle.subtitle.color})`,
-    maxWidth: heroStyle.subtitle.maxWidth,
-    marginBottom: 32,
-    fontWeight: heroStyle.subtitle.fontWeight,
-    marginLeft: heroStyle.title.textAlign === "center" ? "auto" : void 0,
-    marginRight: heroStyle.title.textAlign === "center" ? "auto" : void 0
-  } }, hero.subtitle || "\uAD81\uAD90\uACFC \uACE8\uBAA9, \uC2DC\uC7A5\uACFC \uC219\uC18C, \uCC45\uACFC \uAC15\uC5F0\uC744 \uC624\uAC00\uBA70 \uD55C\uAD6D\uC744 \uC870\uAE08 \uB354 \uAC00\uAE4C\uC774 \uBD05\uB2C8\uB2E4. \uBC45\uAE30\uB178\uC790\uB294 \uC5EC\uD589\uC744 \uAE30\uB85D\uD558\uACE0 \uD568\uAED8 \uB5A0\uB098\uB294 \uC0AC\uB78C\uB4E4\uC758 \uC791\uC740 \uBAA8\uC784\uC785\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: {
-    display: "flex",
-    gap: 12,
-    flexWrap: "wrap",
-    marginBottom: 40,
-    justifyContent: heroStyle.title.textAlign === "center" ? "center" : heroStyle.title.textAlign === "right" ? "flex-end" : "flex-start",
-    fontWeight: heroStyle.cta.fontWeight
-  } }, /* @__PURE__ */ React.createElement(
-    "button",
-    {
-      className: "btn btn-gold",
-      onClick: () => go("community"),
-      style: { fontWeight: heroStyle.cta.fontWeight }
+      className: `home-hero${hero.bgDesktopUrl || hero.bgMobileUrl ? " has-bg" : ""}`,
+      style: {
+        position: "relative",
+        overflow: "hidden",
+        background: "var(--bg)",
+        borderBottom: "1px solid var(--line)",
+        padding: "72px 0 88px"
+      }
     },
-    hero.ctaPrimary || "\uCEE4\uBBA4\uB2C8\uD2F0 \uBCF4\uAE30"
-  ), /* @__PURE__ */ React.createElement(
-    "button",
-    {
-      className: "btn",
-      onClick: () => go("tour"),
-      style: { fontWeight: heroStyle.cta.fontWeight }
-    },
-    hero.ctaSecondary || "\uB2F5\uC0AC \uC77C\uC815 \uBCF4\uAE30"
-  )), /* @__PURE__ */ React.createElement("div", { className: "hero-stats", style: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3,1fr)",
-    gap: 20,
-    paddingTop: 24,
-    borderTop: "1px solid var(--line)"
-  } }, stats.map((stat) => /* @__PURE__ */ React.createElement("div", { key: stat.l }, /* @__PURE__ */ React.createElement("div", { style: {
-    fontFamily: "var(--font-serif)",
-    fontSize: heroStyle.stats.value.fontSize,
-    fontWeight: heroStyle.stats.value.fontWeight,
-    color: `var(${heroStyle.stats.value.color})`,
-    marginBottom: 4
-  } }, stat.v), /* @__PURE__ */ React.createElement("div", { style: {
-    fontFamily: "var(--font-mono)",
-    fontSize: heroStyle.stats.label.fontSize,
-    fontWeight: heroStyle.stats.label.fontWeight,
-    letterSpacing: `${heroStyle.stats.label.letterSpacing}em`,
-    color: `var(${heroStyle.stats.label.color})`,
-    textTransform: heroStyle.stats.label.textTransform || "uppercase",
-    marginBottom: 3
-  } }, stat.l), /* @__PURE__ */ React.createElement("div", { style: {
-    fontSize: heroStyle.stats.sub.fontSize,
-    color: `var(${heroStyle.stats.sub.color})`
-  } }, stat.s))))), /* @__PURE__ */ React.createElement(HeroProgramCards, { go, dataTick, text: homeText }))))), recommendations.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uBC45\uAE30\uB178\uC790 \uCD94\uCC9C" }, /* @__PURE__ */ React.createElement("section", { className: "section section--anchor", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, (() => {
+    hero.bgDesktopUrl && /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: "hero-bg-image hero-bg-desktop",
+        "aria-hidden": "true",
+        style: { backgroundImage: `url(${hero.bgDesktopUrl})` }
+      }
+    ),
+    (hero.bgMobileUrl || hero.bgDesktopUrl) && /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: "hero-bg-image hero-bg-mobile",
+        "aria-hidden": "true",
+        style: { backgroundImage: `url(${hero.bgMobileUrl || hero.bgDesktopUrl})` }
+      }
+    ),
+    /* @__PURE__ */ React.createElement("div", { className: "container", style: { position: "relative", zIndex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "hero-grid home-hero-grid", style: {
+      display: "grid",
+      gridTemplateColumns: "1.2fr 1fr",
+      gap: 56,
+      alignItems: "center"
+    } }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: heroStyle.title.textAlign || "left" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", style: {
+      fontSize: heroStyle.eyebrow.fontSize,
+      fontWeight: heroStyle.eyebrow.fontWeight,
+      letterSpacing: `${heroStyle.eyebrow.letterSpacing}em`,
+      color: `var(${heroStyle.eyebrow.color})`,
+      textTransform: heroStyle.eyebrow.textTransform || "uppercase"
+    } }, /* @__PURE__ */ React.createElement("span", null, hero.eyebrow || "\uBA39\uACE0 \uC790\uACE0 \uAC77\uACE0 \uC77D\uB294 \uD55C\uAD6D")), /* @__PURE__ */ React.createElement("h1", { style: {
+      fontFamily: "var(--font-display)",
+      fontSize: `clamp(36px, 5vw, ${heroStyle.title.fontSize}px)`,
+      fontWeight: heroStyle.title.fontWeight,
+      lineHeight: heroStyle.title.lineHeight,
+      letterSpacing: `${heroStyle.title.letterSpacing}em`,
+      marginBottom: 22,
+      color: `var(${heroStyle.title.color})`
+    } }, hero.title1 || "\uD55C\uAD6D\uC744", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { style: { color: `var(${heroStyle.title.accentColor})` } }, hero.title2 || "\uC9C1\uC811 \uAC77\uACE0"), /* @__PURE__ */ React.createElement("br", null), hero.title3 || "\uCC9C\uCC9C\uD788 \uC77D\uB2E4"), /* @__PURE__ */ React.createElement("p", { className: "bgnj-multiline", style: {
+      fontSize: heroStyle.subtitle.fontSize,
+      lineHeight: heroStyle.subtitle.lineHeight,
+      color: `var(${heroStyle.subtitle.color})`,
+      maxWidth: heroStyle.subtitle.maxWidth,
+      marginBottom: 32,
+      fontWeight: heroStyle.subtitle.fontWeight,
+      marginLeft: heroStyle.title.textAlign === "center" ? "auto" : void 0,
+      marginRight: heroStyle.title.textAlign === "center" ? "auto" : void 0
+    } }, hero.subtitle || "\uAD81\uAD90\uACFC \uACE8\uBAA9, \uC2DC\uC7A5\uACFC \uC219\uC18C, \uCC45\uACFC \uAC15\uC5F0\uC744 \uC624\uAC00\uBA70 \uD55C\uAD6D\uC744 \uC870\uAE08 \uB354 \uAC00\uAE4C\uC774 \uBD05\uB2C8\uB2E4. \uBC45\uAE30\uB178\uC790\uB294 \uC5EC\uD589\uC744 \uAE30\uB85D\uD558\uACE0 \uD568\uAED8 \uB5A0\uB098\uB294 \uC0AC\uB78C\uB4E4\uC758 \uC791\uC740 \uBAA8\uC784\uC785\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: {
+      display: "flex",
+      gap: 12,
+      flexWrap: "wrap",
+      marginBottom: 40,
+      justifyContent: heroStyle.title.textAlign === "center" ? "center" : heroStyle.title.textAlign === "right" ? "flex-end" : "flex-start",
+      fontWeight: heroStyle.cta.fontWeight
+    } }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        className: "btn btn-gold",
+        onClick: () => go("community"),
+        style: { fontWeight: heroStyle.cta.fontWeight }
+      },
+      hero.ctaPrimary || "\uCEE4\uBBA4\uB2C8\uD2F0 \uBCF4\uAE30"
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        className: "btn",
+        onClick: () => go("tour"),
+        style: { fontWeight: heroStyle.cta.fontWeight }
+      },
+      hero.ctaSecondary || "\uB2F5\uC0AC \uC77C\uC815 \uBCF4\uAE30"
+    )), /* @__PURE__ */ React.createElement("div", { className: "hero-stats", style: {
+      display: "grid",
+      gridTemplateColumns: "repeat(3,1fr)",
+      gap: 20,
+      paddingTop: 24,
+      borderTop: "1px solid var(--line)"
+    } }, stats.map((stat) => /* @__PURE__ */ React.createElement("div", { key: stat.l }, /* @__PURE__ */ React.createElement("div", { style: {
+      fontFamily: "var(--font-serif)",
+      fontSize: heroStyle.stats.value.fontSize,
+      fontWeight: heroStyle.stats.value.fontWeight,
+      color: `var(${heroStyle.stats.value.color})`,
+      marginBottom: 4
+    } }, stat.v), /* @__PURE__ */ React.createElement("div", { style: {
+      fontFamily: "var(--font-mono)",
+      fontSize: heroStyle.stats.label.fontSize,
+      fontWeight: heroStyle.stats.label.fontWeight,
+      letterSpacing: `${heroStyle.stats.label.letterSpacing}em`,
+      color: `var(${heroStyle.stats.label.color})`,
+      textTransform: heroStyle.stats.label.textTransform || "uppercase",
+      marginBottom: 3
+    } }, stat.l), /* @__PURE__ */ React.createElement("div", { style: {
+      fontSize: heroStyle.stats.sub.fontSize,
+      color: `var(${heroStyle.stats.sub.color})`
+    } }, stat.s))))), /* @__PURE__ */ React.createElement(HeroProgramCards, { go, dataTick, text: homeText })))
+  )), recommendations.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uBC45\uAE30\uB178\uC790 \uCD94\uCC9C" }, /* @__PURE__ */ React.createElement("section", { className: "section section--anchor", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, (() => {
     var _a2, _b2, _c2, _d, _e, _f, _g, _h;
     const _i = (((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {}).recommendationsHeading || {};
     const eb = homeText.recEyebrow || _i.eyebrow || HOME_TEXT_DEFAULT.recEyebrow;

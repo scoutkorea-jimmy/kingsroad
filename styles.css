@@ -1681,7 +1681,9 @@ main time, main .section-eyebrow {
 
   /* 카드 / 그리드 단순화 — 모든 다열 1열 */
   .grid-3, .grid-4, .grid-2 { grid-template-columns: 1fr; }
-  .hero-stats { grid-template-columns: 1fr !important; gap: 14px !important; }
+  /* v00.249 — 사용자 보고 '메인에 비해 빈약·조악'. 1열 stack 시 통계가 세로로 길게
+     늘어져 시각 밀도 떨어짐 → 3열 가로 유지(라벨 짧음 — 폭 좁아도 무방). */
+  .hero-stats { grid-template-columns: repeat(3, 1fr) !important; gap: 12px !important; }
   .card { padding: 20px; }
 
   /* 터치 타겟 — WCAG 3.0 권장 ≥ 44×44 */
@@ -2063,7 +2065,8 @@ main time, main .section-eyebrow {
 /* === v00.247 — 히어로 배경 이미지 (PC/모바일 별도 업로드) ===========================
    home-hero <section> 안의 absolute 레이어. cover/center 로 영역 채움.
    미설정 시 렌더 X (HomePage 가 url 비면 div 자체 안 출력 → 기존 빈 배경 유지).
-   PC/모바일 viewport 에 따라 적절한 한 장만 보임. */
+   PC/모바일 viewport 에 따라 적절한 한 장만 보임.
+   v00.249 — 모바일에서 .has-bg::before 그라디언트 오버레이로 텍스트 가독성 회복. */
 .hero-bg-image {
   position: absolute; inset: 0;
   background-size: cover;
@@ -2071,6 +2074,31 @@ main time, main .section-eyebrow {
   background-repeat: no-repeat;
   z-index: 0;
   pointer-events: none;
+}
+/* v00.249 — 모바일에서만 텍스트 영역 그라디언트 오버레이 (배경이 있을 때만).
+   배경 이미지 하단(한옥/타워 등 핵심 모티프) 은 살리고, 상단~중단(텍스트 영역) 만 흰 fade.
+   z-index: 0 (배경 div 위, container 의 z-index:1 아래) */
+@media (max-width: 600px) {
+  .home-hero.has-bg::before {
+    content: '';
+    position: absolute; inset: 0;
+    z-index: 0;
+    background: linear-gradient(180deg,
+      rgba(255,255,255,0.88) 0%,
+      rgba(255,255,255,0.65) 35%,
+      rgba(255,255,255,0.25) 65%,
+      rgba(255,255,255,0) 90%);
+    pointer-events: none;
+  }
+  :root[data-theme="dark"] .home-hero.has-bg::before {
+    background: linear-gradient(180deg,
+      rgba(15,23,42,0.88) 0%,
+      rgba(15,23,42,0.65) 35%,
+      rgba(15,23,42,0.25) 65%,
+      rgba(15,23,42,0) 90%);
+  }
+  /* 모바일 hero padding 미세 조정 — 텍스트 영역과 배경 핵심 모티프 사이 호흡. */
+  .home-hero { padding: 56px 0 72px !important; }
 }
 .hero-bg-desktop { display: block; }
 .hero-bg-mobile  { display: none; }
