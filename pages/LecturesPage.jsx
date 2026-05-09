@@ -4,6 +4,9 @@ const LecturesPage = ({ go, user }) => {
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   // v00.129 — 지난/예정 분리 탭. 사용자 요청 '강연탭에서는 지난 강연과 진행 예정 강연 탭으로 나눠줘'.
   const [bucket, setBucket] = React.useState('upcoming'); // 'upcoming' | 'past'
+  // v00.228 — admin 전용 프론트 quick-add (사용자 요청: 관리자는 프론트에서도 강연 추가 가능).
+  const [addOpen, setAddOpen] = React.useState(false);
+  const isAdmin = !!user?.isAdmin;
   const refresh = () => setTick((v) => v + 1);
   const G = window.BGNJ_GUARD;
 
@@ -44,8 +47,14 @@ const LecturesPage = ({ go, user }) => {
     return (
       <div className="section">
         <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
-          <p className="dim" style={{fontSize:14}}>등록된 강연이 없습니다.</p>
+          <p className="dim" style={{fontSize:14, marginBottom: isAdmin ? 18 : 0}}>등록된 강연이 없습니다.</p>
+          {isAdmin && (
+            <button type="button" className="btn btn-gold btn-small" onClick={() => setAddOpen(true)}>
+              ＋ 강연 추가
+            </button>
+          )}
         </div>
+        {addOpen && isAdmin && <LectureQuickAddModal onClose={() => setAddOpen(false)} onSaved={refresh}/>}
       </div>
     );
   }
@@ -110,8 +119,9 @@ const LecturesPage = ({ go, user }) => {
           <p className="section-subtitle">{_lSubtitle}</p>
         </div>
 
-        {/* v00.129 — 지난/예정 버킷 토글. 사용자 요청 분리. */}
-        <div style={{display:'flex', gap:8, marginBottom:24, flexWrap:'wrap'}}>
+        {/* v00.129 — 지난/예정 버킷 토글. 사용자 요청 분리.
+            v00.228 — admin 인 경우 + 강연 추가 버튼 우측 정렬로 노출. */}
+        <div style={{display:'flex', gap:8, marginBottom:24, flexWrap:'wrap', alignItems:'center'}}>
           {[
             { k: 'upcoming', label: `진행 예정 강연 (${lecturesUpcoming.length})` },
             { k: 'past', label: `지난 강연 (${lecturesPast.length})` },
@@ -128,6 +138,13 @@ const LecturesPage = ({ go, user }) => {
               {b.label}
             </button>
           ))}
+          {isAdmin && (
+            <button type="button" className="btn btn-gold btn-small"
+              style={{marginLeft:'auto'}}
+              onClick={() => setAddOpen(true)}>
+              ＋ 강연 추가
+            </button>
+          )}
         </div>
 
         {lectures.length === 0 && (
@@ -256,6 +273,152 @@ const LecturesPage = ({ go, user }) => {
           </div>
         </div>
         </>)}
+      </div>
+      {/* v00.228 — admin 전용 강연 quick-add 모달. 저장 시 refresh() 로 페이지 재렌더. */}
+      {addOpen && isAdmin && <LectureQuickAddModal onClose={() => setAddOpen(false)} onSaved={refresh}/>}
+    </div>
+  );
+};
+
+// v00.228 — admin 전용 프론트 강연 quick-add. 사용자 요청: 관리자가 프론트 페이지에서도
+// 강연 프로그램을 추가할 수 있어야 함. AuthAdminPage 의 addNewLecture 에 들어가는 같은 필드
+// 세트 + saveLecture 호출 (worker handleLectureCreate). 상세 편집은 admin 패널에서 후속.
+const LectureQuickAddModal = ({ onClose, onSaved }) => {
+  // 기본값: +1주 19:00 (admin 패널의 addNewLecture 와 동일).
+  const _defaultStartLocal = (() => {
+    const d = new Date(Date.now() + 7 * 86400000);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T19:00`;
+  })();
+  const [title, setTitle] = React.useState('');
+  const [topic, setTopic] = React.useState('');
+  const [venue, setVenue] = React.useState('');
+  const [host, setHost] = React.useState('뱅기노자');
+  const [startsAt, setStartsAt] = React.useState(_defaultStartLocal);
+  const [durationMinutes, setDurationMinutes] = React.useState(90);
+  const [capacity, setCapacity] = React.useState(30);
+  const [price, setPrice] = React.useState(0);
+  const [note, setNote] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const dirty = !!(title.trim() || topic.trim() || venue.trim() || note.trim());
+  const guard = window.useModalGuard?.({ open: true, dirty, onClose, onSaveDraft: null, label: '강연 추가' }) || {};
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!title.trim()) { setError('강연 제목은 필수입니다.'); return; }
+    if (!startsAt) { setError('일시를 입력해 주세요.'); return; }
+    setSaving(true);
+    try {
+      const dt = new Date(startsAt);
+      if (isNaN(dt.getTime())) throw new Error('일시 형식이 올바르지 않습니다.');
+      const pad = (n) => String(n).padStart(2, '0');
+      const next = `${dt.getFullYear()}.${pad(dt.getMonth()+1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+      const id = `lecture-${Date.now()}`;
+      await window.BGNJ_LECTURES.saveLecture({
+        id,
+        title: title.trim(),
+        topic: topic.trim() || title.trim(),
+        venue: venue.trim(),
+        host: host.trim() || '뱅기노자',
+        next,
+        startsAt: dt.toISOString(),
+        durationMinutes: Math.max(1, Number(durationMinutes) || 90),
+        capacity: Math.max(1, Number(capacity) || 30),
+        price: Math.max(0, Number(price) || 0),
+        note: note.trim(),
+      });
+      try { await window.BGNJ_AUDIT?.log?.({ action: 'lecture.create', target: `lecture:${id}` }); } catch {}
+      try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
+      window.BGNJ_TOAST?.success?.('강연이 등록되었습니다.');
+      onSaved?.();
+      onClose?.();
+    } catch (err) {
+      setError(err?.body?.error || err?.message || '강연 생성 실패');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="강연 추가"
+      onClick={guard.onBackdropClick}
+      style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'grid', placeItems:'start center', padding:24, overflowY:'auto'}}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        width:'min(560px, 100%)', background:'var(--bg)', boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+        padding:24, marginTop:24, marginBottom:48,
+      }}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>새 강연 추가</h2>
+          <button type="button" className="btn btn-small" onClick={onClose}>닫기</button>
+        </div>
+        <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:18}}>
+          기본 정보만 입력해 빠르게 등록합니다. 진행 일정·참고·커버 이미지 등 상세 편집은
+          관리자 패널에서 이어서 진행하세요.
+        </p>
+        <form onSubmit={submit} style={{display:'grid', gap:12}}>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">강연 제목 *</label>
+            <input className="field-input" value={title} onChange={(e) => setTitle(e.target.value)}
+              placeholder="예: 2026 여름 특강 — 영조와 사도세자" autoFocus/>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">주제 (선택 — 비우면 제목 사용)</label>
+            <input className="field-input" value={topic} onChange={(e) => setTopic(e.target.value)}
+              placeholder="강연 본문 페이지의 큰 제목"/>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">장소</label>
+              <input className="field-input" value={venue} onChange={(e) => setVenue(e.target.value)}
+                placeholder="예: 종로구 안국동 …"/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">진행</label>
+              <input className="field-input" value={host} onChange={(e) => setHost(e.target.value)}/>
+            </div>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">일시 *</label>
+            <input type="datetime-local" className="field-input"
+              value={startsAt} onChange={(e) => setStartsAt(e.target.value)}/>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12}}>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">소요 (분)</label>
+              <input type="number" min={1} className="field-input"
+                value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)}/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">정원</label>
+              <input type="number" min={1} className="field-input"
+                value={capacity} onChange={(e) => setCapacity(e.target.value)}/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">참가비 (원)</label>
+              <input type="number" min={0} step={1000} className="field-input"
+                value={price} onChange={(e) => setPrice(e.target.value)}/>
+            </div>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">안내 (선택)</label>
+            <textarea className="field-input" rows={3}
+              value={note} onChange={(e) => setNote(e.target.value)}
+              placeholder="강연 안내·당부 사항 (이후 관리자 패널에서 보강 가능)"/>
+          </div>
+          {error && (
+            <div role="alert" style={{padding:'8px 10px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:12}}>
+              {error}
+            </div>
+          )}
+          <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:6}}>
+            <button type="button" className="btn btn-small" onClick={onClose} disabled={saving}>취소</button>
+            <button type="submit" className="btn btn-gold btn-small" disabled={saving || !title.trim()}>
+              {saving ? '저장 중...' : '강연 등록'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -683,4 +846,4 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
   );
 };
 
-Object.assign(window, { LecturesPage, LectureBookingPanel, LectureReviewsSection });
+Object.assign(window, { LecturesPage, LectureBookingPanel, LectureReviewsSection, LectureQuickAddModal });

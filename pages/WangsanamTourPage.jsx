@@ -65,6 +65,9 @@ const TourPage = ({ go, user }) => {
   const refresh = () => setTick((v) => v + 1);
 
   const [selectedIdx, setSelectedIdx] = React.useState(0);
+  // v00.228 — admin 전용 프론트 quick-add (사용자 요청: 관리자는 프론트에서도 투어 추가 가능).
+  const [addOpen, setAddOpen] = React.useState(false);
+  const isAdmin = !!user?.isAdmin;
 
   // 외부 진입(해시 / 마이페이지 알림 등)으로 들어온 투어 ID 처리
   React.useEffect(() => {
@@ -81,8 +84,14 @@ const TourPage = ({ go, user }) => {
     return (
       <div className="section">
         <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
-          <p className="dim">예정된 답사 프로그램이 없습니다.</p>
+          <p className="dim" style={{marginBottom: isAdmin ? 18 : 0}}>예정된 답사 프로그램이 없습니다.</p>
+          {isAdmin && (
+            <button type="button" className="btn btn-gold btn-small" onClick={() => setAddOpen(true)}>
+              ＋ 투어 추가
+            </button>
+          )}
         </div>
+        {addOpen && isAdmin && <TourQuickAddModal onClose={() => setAddOpen(false)} onSaved={refresh}/>}
       </div>
     );
   }
@@ -124,6 +133,15 @@ const TourPage = ({ go, user }) => {
           <h1 className="section-title">{introPrefix}<span className="accent">{introAccent}</span></h1>
           <p className="section-subtitle">{introSubtitle}</p>
         </div>
+
+        {/* v00.228 — admin 전용 + 투어 추가 버튼 (탭 위 우측 정렬). */}
+        {isAdmin && (
+          <div style={{display:'flex', justifyContent:'flex-end', marginBottom:12}}>
+            <button type="button" className="btn btn-gold btn-small" onClick={() => setAddOpen(true)}>
+              ＋ 투어 추가
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div style={{display:'flex', gap:0, borderBottom:'1px solid var(--line-2)', marginBottom:40, overflowX:'auto'}}>
@@ -265,6 +283,160 @@ const TourPage = ({ go, user }) => {
             />
           </div>
         </div>
+      </div>
+      {/* v00.228 — admin 전용 투어 quick-add 모달. */}
+      {addOpen && isAdmin && <TourQuickAddModal onClose={() => setAddOpen(false)} onSaved={refresh}/>}
+    </div>
+  );
+};
+
+// v00.228 — admin 전용 프론트 투어 quick-add. AuthAdminPage 의 addNewTour 와 같은 saveTour 호출.
+// 상세(부제·설명·환불정책·커버)는 admin 패널에서 후속 편집.
+const TourQuickAddModal = ({ onClose, onSaved }) => {
+  // 기본값: +2주 10:00 (admin 패널의 addNewTour 와 동일).
+  const _defaultStartLocal = (() => {
+    const d = new Date(Date.now() + 14 * 86400000);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T10:00`;
+  })();
+  const [title, setTitle] = React.useState('');
+  const [subtitle, setSubtitle] = React.useState('');
+  const [level, setLevel] = React.useState('입문');
+  const [duration, setDuration] = React.useState('3시간');
+  const [group, setGroup] = React.useState('12인 이하');
+  const [startsAt, setStartsAt] = React.useState(_defaultStartLocal);
+  const [durationMinutes, setDurationMinutes] = React.useState(180);
+  const [capacity, setCapacity] = React.useState(12);
+  const [price, setPrice] = React.useState(80000);
+  const [desc, setDesc] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const dirty = !!(title.trim() || subtitle.trim() || desc.trim());
+  const guard = window.useModalGuard?.({ open: true, dirty, onClose, onSaveDraft: null, label: '투어 추가' }) || {};
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!title.trim()) { setError('투어 제목은 필수입니다.'); return; }
+    if (!startsAt) { setError('일시를 입력해 주세요.'); return; }
+    setSaving(true);
+    try {
+      const dt = new Date(startsAt);
+      if (isNaN(dt.getTime())) throw new Error('일시 형식이 올바르지 않습니다.');
+      const pad = (n) => String(n).padStart(2, '0');
+      const next = `${dt.getFullYear()}.${pad(dt.getMonth()+1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+      const id = `tour-${Date.now()}`;
+      await window.BGNJ_TOURS.saveTour({
+        id,
+        title: title.trim(),
+        subtitle: subtitle.trim(),
+        level: level.trim() || '입문',
+        duration: duration.trim(),
+        group: group.trim(),
+        next,
+        startsAt: dt.toISOString(),
+        durationMinutes: Math.max(1, Number(durationMinutes) || 180),
+        capacity: Math.max(1, Number(capacity) || 12),
+        priceNumber: Math.max(0, Number(price) || 0),
+        price: Math.max(0, Number(price) || 0),
+        desc: desc.trim(),
+      });
+      try { await window.BGNJ_AUDIT?.log?.({ action: 'tour.create', target: `tour:${id}` }); } catch {}
+      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch {}
+      window.BGNJ_TOAST?.success?.('투어가 등록되었습니다.');
+      onSaved?.();
+      onClose?.();
+    } catch (err) {
+      setError(err?.body?.error || err?.message || '투어 생성 실패');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="투어 추가"
+      onClick={guard.onBackdropClick}
+      style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'grid', placeItems:'start center', padding:24, overflowY:'auto'}}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        width:'min(560px, 100%)', background:'var(--bg)', boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+        padding:24, marginTop:24, marginBottom:48,
+      }}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>새 투어 추가</h2>
+          <button type="button" className="btn btn-small" onClick={onClose}>닫기</button>
+        </div>
+        <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:18}}>
+          기본 정보만 입력해 빠르게 등록합니다. 일정·준비물·커버·환불정책 등 상세 편집은
+          관리자 패널에서 이어서 진행하세요.
+        </p>
+        <form onSubmit={submit} style={{display:'grid', gap:12}}>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">투어 제목 *</label>
+            <input className="field-input" value={title} onChange={(e) => setTitle(e.target.value)}
+              placeholder="예: 창덕궁 후원 답사" autoFocus/>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">부제 (선택)</label>
+            <input className="field-input" value={subtitle} onChange={(e) => setSubtitle(e.target.value)}
+              placeholder="예: 정조의 효심을 따라"/>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12}}>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">난이도</label>
+              <input className="field-input" value={level} onChange={(e) => setLevel(e.target.value)}
+                placeholder="입문/심화"/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">소요 (표시)</label>
+              <input className="field-input" value={duration} onChange={(e) => setDuration(e.target.value)}
+                placeholder="3시간"/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">규모 (표시)</label>
+              <input className="field-input" value={group} onChange={(e) => setGroup(e.target.value)}
+                placeholder="12인 이하"/>
+            </div>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">출발 일시 *</label>
+            <input type="datetime-local" className="field-input"
+              value={startsAt} onChange={(e) => setStartsAt(e.target.value)}/>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12}}>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">소요 (분)</label>
+              <input type="number" min={1} className="field-input"
+                value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)}/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">정원</label>
+              <input type="number" min={1} className="field-input"
+                value={capacity} onChange={(e) => setCapacity(e.target.value)}/>
+            </div>
+            <div className="field" style={{margin:0}}>
+              <label className="field-label">참가비 (원)</label>
+              <input type="number" min={0} step={1000} className="field-input"
+                value={price} onChange={(e) => setPrice(e.target.value)}/>
+            </div>
+          </div>
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">소개 (선택)</label>
+            <textarea className="field-input" rows={3}
+              value={desc} onChange={(e) => setDesc(e.target.value)}
+              placeholder="답사 안내 (이후 관리자 패널에서 보강 가능)"/>
+          </div>
+          {error && (
+            <div role="alert" style={{padding:'8px 10px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:12}}>
+              {error}
+            </div>
+          )}
+          <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:6}}>
+            <button type="button" className="btn btn-small" onClick={onClose} disabled={saving}>취소</button>
+            <button type="submit" className="btn btn-gold btn-small" disabled={saving || !title.trim()}>
+              {saving ? '저장 중...' : '투어 등록'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -703,4 +875,4 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
   );
 };
 
-Object.assign(window, { WangsanamPage, TourPage, TourBookingPanel, TourReviewsSection });
+Object.assign(window, { WangsanamPage, TourPage, TourBookingPanel, TourReviewsSection, TourQuickAddModal });

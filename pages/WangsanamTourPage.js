@@ -36,6 +36,8 @@ const TourPage = ({ go, user }) => {
   }, {}), [tick]);
   const refresh = () => setTick((v) => v + 1);
   const [selectedIdx, setSelectedIdx] = React.useState(0);
+  const [addOpen, setAddOpen] = React.useState(false);
+  const isAdmin = !!(user == null ? void 0 : user.isAdmin);
   React.useEffect(() => {
     let pending = null;
     try {
@@ -52,7 +54,7 @@ const TourPage = ({ go, user }) => {
     }
   }, []);
   if (!tours.length) {
-    return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 560, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uC608\uC815\uB41C \uB2F5\uC0AC \uD504\uB85C\uADF8\uB7A8\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.")));
+    return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 560, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { marginBottom: isAdmin ? 18 : 0 } }, "\uC608\uC815\uB41C \uB2F5\uC0AC \uD504\uB85C\uADF8\uB7A8\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), isAdmin && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: () => setAddOpen(true) }, "\uFF0B \uD22C\uC5B4 \uCD94\uAC00")), addOpen && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }));
   }
   const safeIdx = Math.max(0, Math.min(selectedIdx, tours.length - 1));
   const tour = tours[safeIdx];
@@ -85,7 +87,7 @@ const TourPage = ({ go, user }) => {
   const introPrefix = (_c = intro.titlePrefix) != null ? _c : "\uBC1C\uB85C \uC77D\uB294 ";
   const introAccent = (_d = intro.titleAccent) != null ? _d : "\uC870\uC120";
   const introSubtitle = intro.subtitle || "\uBC45\uAE30\uB178\uC790\uC640 \uC655\uC0AC\uB0A8\uC774 \uC9C1\uC811 \uC6B4\uC601\uD558\uB294 \uD504\uB85C\uADF8\uB7A8. \uD68C\uC6D0 \uC804\uC6A9 \uC2E0\uCCAD \xB7 \uBB34\uD1B5\uC7A5 \uC785\uAE08 \uACB0\uC81C.";
-  return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow" }, introEyebrow), /* @__PURE__ */ React.createElement("h1", { className: "section-title" }, introPrefix, /* @__PURE__ */ React.createElement("span", { className: "accent" }, introAccent)), /* @__PURE__ */ React.createElement("p", { className: "section-subtitle" }, introSubtitle)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 0, borderBottom: "1px solid var(--line-2)", marginBottom: 40, overflowX: "auto" } }, tours.map((t, i) => /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow" }, introEyebrow), /* @__PURE__ */ React.createElement("h1", { className: "section-title" }, introPrefix, /* @__PURE__ */ React.createElement("span", { className: "accent" }, introAccent)), /* @__PURE__ */ React.createElement("p", { className: "section-subtitle" }, introSubtitle)), isAdmin && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 12 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: () => setAddOpen(true) }, "\uFF0B \uD22C\uC5B4 \uCD94\uAC00")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 0, borderBottom: "1px solid var(--line-2)", marginBottom: 40, overflowX: "auto" } }, tours.map((t, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: t.id,
@@ -151,7 +153,184 @@ const TourPage = ({ go, user }) => {
       onRefresh: refresh,
       go
     }
-  )))));
+  )))), addOpen && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }));
+};
+const TourQuickAddModal = ({ onClose, onSaved }) => {
+  var _a;
+  const _defaultStartLocal = (() => {
+    const d = new Date(Date.now() + 14 * 864e5);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T10:00`;
+  })();
+  const [title, setTitle] = React.useState("");
+  const [subtitle, setSubtitle] = React.useState("");
+  const [level, setLevel] = React.useState("\uC785\uBB38");
+  const [duration, setDuration] = React.useState("3\uC2DC\uAC04");
+  const [group, setGroup] = React.useState("12\uC778 \uC774\uD558");
+  const [startsAt, setStartsAt] = React.useState(_defaultStartLocal);
+  const [durationMinutes, setDurationMinutes] = React.useState(180);
+  const [capacity, setCapacity] = React.useState(12);
+  const [price, setPrice] = React.useState(8e4);
+  const [desc, setDesc] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const dirty = !!(title.trim() || subtitle.trim() || desc.trim());
+  const guard = ((_a = window.useModalGuard) == null ? void 0 : _a.call(window, { open: true, dirty, onClose, onSaveDraft: null, label: "\uD22C\uC5B4 \uCD94\uAC00" })) || {};
+  const submit = async (e) => {
+    var _a2, _b, _c, _d, _e, _f, _g;
+    e.preventDefault();
+    setError("");
+    if (!title.trim()) {
+      setError("\uD22C\uC5B4 \uC81C\uBAA9\uC740 \uD544\uC218\uC785\uB2C8\uB2E4.");
+      return;
+    }
+    if (!startsAt) {
+      setError("\uC77C\uC2DC\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const dt = new Date(startsAt);
+      if (isNaN(dt.getTime())) throw new Error("\uC77C\uC2DC \uD615\uC2DD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
+      const pad = (n) => String(n).padStart(2, "0");
+      const next = `${dt.getFullYear()}.${pad(dt.getMonth() + 1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+      const id = `tour-${Date.now()}`;
+      await window.BGNJ_TOURS.saveTour({
+        id,
+        title: title.trim(),
+        subtitle: subtitle.trim(),
+        level: level.trim() || "\uC785\uBB38",
+        duration: duration.trim(),
+        group: group.trim(),
+        next,
+        startsAt: dt.toISOString(),
+        durationMinutes: Math.max(1, Number(durationMinutes) || 180),
+        capacity: Math.max(1, Number(capacity) || 12),
+        priceNumber: Math.max(0, Number(price) || 0),
+        price: Math.max(0, Number(price) || 0),
+        desc: desc.trim()
+      });
+      try {
+        await ((_b = (_a2 = window.BGNJ_AUDIT) == null ? void 0 : _a2.log) == null ? void 0 : _b.call(_a2, { action: "tour.create", target: `tour:${id}` }));
+      } catch (e2) {
+      }
+      try {
+        (_d = (_c = window.BGNJ_BROADCAST) == null ? void 0 : _c.publish) == null ? void 0 : _d.call(_c, "tours");
+      } catch (e2) {
+      }
+      (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.success) == null ? void 0 : _f.call(_e, "\uD22C\uC5B4\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+      onSaved == null ? void 0 : onSaved();
+      onClose == null ? void 0 : onClose();
+    } catch (err) {
+      setError(((_g = err == null ? void 0 : err.body) == null ? void 0 : _g.error) || (err == null ? void 0 : err.message) || "\uD22C\uC5B4 \uC0DD\uC131 \uC2E4\uD328");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-label": "\uD22C\uC5B4 \uCD94\uAC00",
+      onClick: guard.onBackdropClick,
+      style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1e3, display: "grid", placeItems: "start center", padding: 24, overflowY: "auto" }
+    },
+    /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: {
+      width: "min(560px, 100%)",
+      background: "var(--bg)",
+      boxShadow: "0 16px 40px rgba(0,0,0,0.25)",
+      padding: 24,
+      marginTop: 24,
+      marginBottom: 48
+    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC0C8 \uD22C\uC5B4 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, "\uAE30\uBCF8 \uC815\uBCF4\uB9CC \uC785\uB825\uD574 \uBE60\uB974\uAC8C \uB4F1\uB85D\uD569\uB2C8\uB2E4. \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84\xB7\uD658\uBD88\uC815\uCC45 \uB4F1 \uC0C1\uC138 \uD3B8\uC9D1\uC740 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uC774\uC5B4\uC11C \uC9C4\uD589\uD558\uC138\uC694."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD22C\uC5B4 \uC81C\uBAA9 *"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "field-input",
+        value: title,
+        onChange: (e) => setTitle(e.target.value),
+        placeholder: "\uC608: \uCC3D\uB355\uAD81 \uD6C4\uC6D0 \uB2F5\uC0AC",
+        autoFocus: true
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBD80\uC81C (\uC120\uD0DD)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "field-input",
+        value: subtitle,
+        onChange: (e) => setSubtitle(e.target.value),
+        placeholder: "\uC608: \uC815\uC870\uC758 \uD6A8\uC2EC\uC744 \uB530\uB77C"
+      }
+    )), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uB09C\uC774\uB3C4"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "field-input",
+        value: level,
+        onChange: (e) => setLevel(e.target.value),
+        placeholder: "\uC785\uBB38/\uC2EC\uD654"
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "field-input",
+        value: duration,
+        onChange: (e) => setDuration(e.target.value),
+        placeholder: "3\uC2DC\uAC04"
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uADDC\uBAA8 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "field-input",
+        value: group,
+        onChange: (e) => setGroup(e.target.value),
+        placeholder: "12\uC778 \uC774\uD558"
+      }
+    ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCD9C\uBC1C \uC77C\uC2DC *"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "datetime-local",
+        className: "field-input",
+        value: startsAt,
+        onChange: (e) => setStartsAt(e.target.value)
+      }
+    )), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 (\uBD84)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        min: 1,
+        className: "field-input",
+        value: durationMinutes,
+        onChange: (e) => setDurationMinutes(e.target.value)
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC815\uC6D0"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        min: 1,
+        className: "field-input",
+        value: capacity,
+        onChange: (e) => setCapacity(e.target.value)
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCC38\uAC00\uBE44 (\uC6D0)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "number",
+        min: 0,
+        step: 1e3,
+        className: "field-input",
+        value: price,
+        onChange: (e) => setPrice(e.target.value)
+      }
+    ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uAC1C (\uC120\uD0DD)"), /* @__PURE__ */ React.createElement(
+      "textarea",
+      {
+        className: "field-input",
+        rows: 3,
+        value: desc,
+        onChange: (e) => setDesc(e.target.value),
+        placeholder: "\uB2F5\uC0AC \uC548\uB0B4 (\uC774\uD6C4 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uBCF4\uAC15 \uAC00\uB2A5)"
+      }
+    )), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : "\uD22C\uC5B4 \uB4F1\uB85D"))))
+  );
 };
 const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, formatPrice, onRefresh, go }) => {
   const [selectedBankId, setSelectedBankId] = React.useState(null);
@@ -427,6 +606,6 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
     "\uC0AD\uC81C"
   )), /* @__PURE__ */ React.createElement("p", { style: { fontFamily: "var(--font-reading)", fontSize: 14, lineHeight: 1.8, color: "var(--ink)", whiteSpace: "pre-wrap" } }, r.text)))));
 };
-Object.assign(window, { WangsanamPage, TourPage, TourBookingPanel, TourReviewsSection });
+Object.assign(window, { WangsanamPage, TourPage, TourBookingPanel, TourReviewsSection, TourQuickAddModal });
 
 })();
