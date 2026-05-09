@@ -2803,6 +2803,139 @@ const LegacyMigrationPanel = () => {
   );
 };
 
+// v00.257 — 사이트 공지 배너 admin 패널. site_content_kv.banner 직접 편집.
+// 활성화 토글 + tone 4종 + emoji + title + body + dismissible.
+const BannerEditorPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const initial = (sc.banner && typeof sc.banner === 'object') ? sc.banner : {};
+  const [draft, setDraft] = React.useState(() => ({
+    enabled: initial.enabled !== false,
+    tone: initial.tone || 'info',
+    emoji: initial.emoji || '',
+    title: initial.title || '',
+    body: initial.body || '',
+    dismissible: !!initial.dismissible,
+  }));
+  const [msg, setMsg] = React.useState('');
+  const update = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
+  const save = async () => {
+    try {
+      await window.BGNJ_SITE_CONTENT.saveSection('banner', draft);
+      setTick((v) => v + 1);
+      setMsg('저장되었습니다 — 사이트 상단에 즉시 반영됩니다.');
+      setTimeout(() => setMsg(''), 2500);
+    } catch (err) { window.BGNJ_TOAST?.error?.('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+  };
+  const resetToDefault = async () => {
+    if (!(await window.BGNJ_CONFIRM('배너를 default 로 복원합니다. 진행할까요?', { danger: true }))) return;
+    try {
+      await window.BGNJ_SITE_CONTENT.resetSection('banner');
+      const def = window.BGNJ_SITE_CONTENT.get().banner || {};
+      setDraft({
+        enabled: def.enabled !== false,
+        tone: def.tone || 'info',
+        emoji: def.emoji || '',
+        title: def.title || '',
+        body: def.body || '',
+        dismissible: !!def.dismissible,
+      });
+      setTick((v) => v + 1);
+      setMsg('default 로 복원됨.');
+      setTimeout(() => setMsg(''), 2500);
+    } catch (err) { window.BGNJ_TOAST?.error?.('복원 실패: ' + (err?.message || '')); }
+  };
+
+  // 미리보기 색상 — boot.jsx SiteBanner 와 동일.
+  const palette = {
+    info:    { bg: 'rgba(245,213,72,0.12)',  border: 'var(--primary-active)' },
+    success: { bg: 'rgba(22,163,74,0.10)',   border: 'var(--success)' },
+    warning: { bg: 'rgba(217,119,6,0.10)',   border: 'var(--warning)' },
+    danger:  { bg: 'rgba(220,38,38,0.10)',   border: 'var(--danger)' },
+  }[draft.tone] || { bg: 'rgba(245,213,72,0.12)', border: 'var(--primary-active)' };
+
+  const Field = window.HE_Field || HE_Field;
+  const Input = window.HE_Input || HE_Input;
+  const TextArea = window.HE_TextArea || HE_TextArea;
+  const Select = window.HE_Select || HE_Select;
+
+  return (
+    <div>
+      <p className="dim" style={{fontSize:13, marginBottom:16, lineHeight:1.8}}>
+        사이트 상단(메뉴 위쪽) 에 노출되는 <strong className="gold">공지 배너</strong> 를 편집합니다.
+        활성화 토글 OFF 면 배너 자체가 숨겨집니다. 저장 시 즉시 반영.
+      </p>
+
+      {msg && <div role="status" className="card" style={{padding:'10px 14px', background:'rgba(245,213,72,0.10)', border:'1px solid var(--primary-dim)', color:'var(--secondary)', fontSize:13, marginBottom:14}}>{msg}</div>}
+
+      <div className="card" style={{padding:18, marginBottom:18}}>
+        {/* 활성화 토글 */}
+        <label style={{display:'flex', gap:10, alignItems:'center', marginBottom:18, padding:'10px 12px', background: draft.enabled ? 'rgba(22,163,74,0.08)' : 'var(--bg-2)', border:`1px solid ${draft.enabled ? 'var(--success)' : 'var(--line)'}`, cursor:'pointer'}}>
+          <input type="checkbox" checked={draft.enabled} onChange={(e) => update('enabled', e.target.checked)}
+            style={{accentColor: 'var(--primary)'}}/>
+          <strong style={{fontSize:13}}>{draft.enabled ? '활성 — 사이트 상단에 노출 중' : '비활성 — 배너 숨김'}</strong>
+        </label>
+
+        <Field label="TONE (색상)">
+          <Select value={draft.tone} onChange={(v) => update('tone', v)}
+            options={[
+              { value: 'info', label: 'INFO (옐로우 — 일반 안내)' },
+              { value: 'success', label: 'SUCCESS (초록 — 출시/완료)' },
+              { value: 'warning', label: 'WARNING (앰버 — 주의)' },
+              { value: 'danger', label: 'DANGER (빨강 — 긴급)' },
+            ]}/>
+        </Field>
+        <Field label="EMOJI (선택)" hint="제목 앞에 노출됩니다. 비워두면 미노출. 예: 🌱 / 🎉 / ⚠️">
+          <Input value={draft.emoji} onChange={(e) => update('emoji', e.target.value)} placeholder="🌱" maxLength={4}/>
+        </Field>
+        <Field label="TITLE (강조 텍스트)" hint="문장의 강조 부분. bold 처리.">
+          <Input value={draft.title} onChange={(e) => update('title', e.target.value)} placeholder="홈페이지를 오픈한 지 얼마 되지 않았습니다."/>
+        </Field>
+        <Field label="BODY (본문)" hint="제목 뒤에 dim 톤으로 노출. 한 줄 권장.">
+          <TextArea value={draft.body} onChange={(e) => update('body', e.target.value)} placeholder="이용에 불편하신 점이 있다면 ..." style={{minHeight:60}}/>
+        </Field>
+        <label style={{display:'flex', gap:8, alignItems:'center', marginTop:8, fontSize:13, cursor:'pointer'}}>
+          <input type="checkbox" checked={draft.dismissible} onChange={(e) => update('dismissible', e.target.checked)}
+            style={{accentColor: 'var(--primary)'}}/>
+          <span>사용자가 닫을 수 있게 (X 버튼). 닫은 사용자는 세션 동안 미노출.</span>
+        </label>
+      </div>
+
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18}}>
+        <button type="button" className="btn btn-small" onClick={resetToDefault}
+          style={{borderColor:'var(--danger)', color:'var(--danger)'}}>default 로 복원</button>
+        <button type="button" className="btn btn-gold" onClick={save}>저장 → 사이트 즉시 반영</button>
+      </div>
+
+      {/* 라이브 미리보기 */}
+      <h3 className="ko-serif" style={{fontSize:14, marginBottom:8}}>라이브 미리보기</h3>
+      <div style={{
+        background: palette.bg,
+        borderTop: `1px solid ${palette.border}`,
+        borderBottom: `1px solid ${palette.border}`,
+        color: 'var(--ink)',
+        padding: '10px 16px',
+        textAlign: 'center',
+        fontSize: 13,
+        lineHeight: 1.55,
+        position: 'relative',
+      }}>
+        {!draft.enabled
+          ? <span className="dim-2">— 비활성 상태 (사이트에서 미노출) —</span>
+          : (
+            <>
+              {draft.emoji ? `${draft.emoji} ` : ''}
+              {draft.title && <strong>{draft.title}</strong>}
+              {draft.body && <span className="dim-2">{draft.title ? ' ' : ''}{draft.body}</span>}
+              {draft.dismissible && <span style={{position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', color:'var(--ink-3)', fontSize:16}}>×</span>}
+            </>
+          )
+        }
+      </div>
+    </div>
+  );
+};
+
 // v00.078 — 외부 스크립트(AuthAdminPage)에서 사용할 수 있도록 window 에 노출.
 Object.assign(window, {
   RecommendationsAdminPanel,
@@ -2819,4 +2952,5 @@ Object.assign(window, {
   EatSleepShopAdminPanel, ESS_CategoryEditor, // v00.105
   KindPagePanel, // v00.106
   TPE_TimeInput, // v00.106 (헬퍼 — 외부 호출자 없음, 노출만)
+  BannerEditorPanel, // v00.257
 });

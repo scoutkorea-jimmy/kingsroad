@@ -391,6 +391,63 @@ const _AdminLoadingFallback = ({ error, onRetry, label = '관리자' }) => {
   );
 };
 
+// v00.257 — 사이트 공지 배너 (admin 관리). site_content_kv.banner 에서 읽어옴.
+// enabled false / 데이터 없음 / dismissed 면 미노출. tone 4종 색상 분기.
+const SITE_BANNER_DISMISSED_KEY = 'bgnj_banner_dismissed';
+const SiteBanner = () => {
+  const [tick, setTick] = React.useState(0);
+  const [dismissed, setDismissed] = React.useState(() => {
+    try { return !!sessionStorage.getItem(SITE_BANNER_DISMISSED_KEY); } catch { return false; }
+  });
+  // site_content refresh 이벤트 listen — admin 에서 저장 시 즉시 반영.
+  React.useEffect(() => {
+    const onR = () => setTick((v) => v + 1);
+    window.addEventListener('bgnj-site-content-refresh', onR);
+    return () => window.removeEventListener('bgnj-site-content-refresh', onR);
+  }, []);
+  const banner = (() => {
+    try { return (window.BGNJ_SITE_CONTENT?.get?.() || {}).banner || {}; } catch { return {}; }
+  })();
+  if (!banner.enabled || dismissed) return null;
+  if (!banner.title && !banner.body) return null;
+  const tone = banner.tone || 'info';
+  // tone 별 색상 — info(옐로우 dim)/success(초록)/warning(앰버)/danger(빨강).
+  const palette = {
+    info:    { bg: 'rgba(245,213,72,0.12)',  border: 'var(--primary-active)', text: 'var(--ink)' },
+    success: { bg: 'rgba(22,163,74,0.10)',   border: 'var(--success)',         text: 'var(--ink)' },
+    warning: { bg: 'rgba(217,119,6,0.10)',   border: 'var(--warning)',         text: 'var(--ink)' },
+    danger:  { bg: 'rgba(220,38,38,0.10)',   border: 'var(--danger)',          text: 'var(--ink)' },
+  }[tone] || { bg: 'rgba(245,213,72,0.12)', border: 'var(--primary-active)', text: 'var(--ink)' };
+  const onDismiss = () => {
+    try { sessionStorage.setItem(SITE_BANNER_DISMISSED_KEY, '1'); } catch {}
+    setDismissed(true);
+  };
+  return (
+    <div role="status" aria-label="사이트 공지" style={{
+      background: palette.bg,
+      borderBottom: `1px solid ${palette.border}`,
+      color: palette.text,
+      padding: '10px 16px',
+      textAlign: 'center',
+      fontSize: 13,
+      lineHeight: 1.55,
+      position: 'relative',
+    }}>
+      {banner.emoji ? `${banner.emoji} ` : ''}
+      {banner.title && <strong>{banner.title}</strong>}
+      {banner.body && <span className="dim-2">{banner.title ? ' ' : ''}{banner.body}</span>}
+      {banner.dismissible && (
+        <button type="button" onClick={onDismiss} aria-label="배너 닫기"
+          style={{
+            position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'var(--ink-3)', fontSize: 16, padding: '4px 8px',
+          }}>×</button>
+      )}
+    </div>
+  );
+};
+
 const App = () => {
   const [route, setRoute] = React.useState(() => {
     // URL 우선. 폴백으로 localStorage.
@@ -751,21 +808,9 @@ const App = () => {
 
   return (
     <div className="app">
-      {/* v00.143 — 사이트 오픈 안내 배너. 메뉴 위쪽 sitewide. 사용자 요청 '메뉴 위쪽에' + 새 문구. */}
-      {!hideNav && (
-        <div role="status" aria-label="사이트 오픈 안내" style={{
-          background: 'rgba(245, 213, 72, 0.12)',
-          borderBottom: '1px solid var(--gold-dim, #C9A632)',
-          color: 'var(--ink, #0F172A)',
-          padding: '10px 16px',
-          textAlign: 'center',
-          fontSize: 13,
-          lineHeight: 1.55,
-        }}>
-          🌱 <strong>홈페이지를 오픈한 지 얼마 되지 않았습니다.</strong>{' '}
-          <span className="dim-2">이용에 불편하신 점이 있다면 <strong>왕사들 오픈톡방</strong>에 알려주세요 — 계속 업데이트해 나가겠습니다. 현재 <strong>PC 버전 최적화</strong>로 제작되어 있습니다.</span>
-        </div>
-      )}
+      {/* v00.257 — 사이트 공지 배너 동적화. site_content_kv.banner 에서 읽어옴.
+          enabled false 또는 미설정 시 미노출. dismissible 시 사용자 X 클릭으로 닫기 + sessionStorage 기록. */}
+      {!hideNav && <SiteBanner/>}
       <Nav route={route} go={go} user={user} onLogout={logout}/>
       <main id="main" tabIndex="-1" style={{flex:1, outline:'none'}} aria-label={`${route} 페이지 본문`}>{page}</main>
       {!hideNav && <Footer go={go}/>}

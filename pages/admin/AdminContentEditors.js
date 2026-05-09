@@ -2453,6 +2453,111 @@ const LegacyMigrationPanel = () => {
     "\uAC1C)"
   )), lectureScan && /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 14, marginBottom: 18, fontSize: 12, lineHeight: 1.7 } }, lectureScan.items.length === 0 ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\u25B8 \uB9C8\uC774\uADF8\uD560 \uD56D\uBAA9 \uC5C6\uC74C (\uBAA8\uB450 URL \uD615\uD0DC\uC774\uAC70\uB098 \uBE44\uC5B4\uC788\uC74C).") : /* @__PURE__ */ React.createElement("ul", { style: { paddingLeft: 18, margin: 0 } }, lectureScan.items.map((it) => /* @__PURE__ */ React.createElement("li", { key: it.id }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2" }, it.id), " \xB7 ", it.title, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { marginLeft: 8, fontSize: 10 } }, "~", (it.sizeBytes / 1024 / 1.33).toFixed(0), " KB"))))), lectureResult && /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 14, marginBottom: 18, fontSize: 12, lineHeight: 1.7, borderColor: "var(--primary)" } }, "\u2705 \uB9C8\uC774\uADF8 \uC644\uB8CC \u2014 ", lectureResult.migrated, " \uAC74 R2 \uC5C5\uB85C\uB4DC, ", lectureResult.failed.length, " \uAC74 \uC2E4\uD328.", lectureResult.failed.length > 0 && /* @__PURE__ */ React.createElement("ul", { style: { paddingLeft: 18, margin: "8px 0 0", color: "var(--danger)" } }, lectureResult.failed.map((f, i) => /* @__PURE__ */ React.createElement("li", { key: i }, f.id, ": ", f.msg)))), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 24, lineHeight: 1.7 } }, "\u24D8 \uCD94\uAC00 \uB9C8\uC774\uADF8\uAC00 \uD544\uC694\uD55C \uD56D\uBAA9 (\uCC45 \uD45C\uC9C0/PDF dataURI, \uCD94\uCC9C \uC774\uBBF8\uC9C0, \uAC8C\uC2DC\uAE00 \uCCA8\uBD80) \uC740 \uD5A5\uD6C4 \uBCC4\uB3C4 \uB3C4\uAD6C. \uD604\uC7AC\uB294 v00.081/v00.083 \uC2E0\uADDC \uCEEC\uB7FC\xB7R2 \uD328\uC2A4 \uC801\uC6A9 \uC9C1\uD6C4\uC758 \uC794\uC7AC\uB9CC \uCC98\uB9AC."));
 };
+const BannerEditorPanel = () => {
+  const [tick, setTick] = React.useState(0);
+  const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
+  const initial = sc.banner && typeof sc.banner === "object" ? sc.banner : {};
+  const [draft, setDraft] = React.useState(() => ({
+    enabled: initial.enabled !== false,
+    tone: initial.tone || "info",
+    emoji: initial.emoji || "",
+    title: initial.title || "",
+    body: initial.body || "",
+    dismissible: !!initial.dismissible
+  }));
+  const [msg, setMsg] = React.useState("");
+  const update = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
+  const save = async () => {
+    var _a, _b;
+    try {
+      await window.BGNJ_SITE_CONTENT.saveSection("banner", draft);
+      setTick((v) => v + 1);
+      setMsg("\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4 \u2014 \uC0AC\uC774\uD2B8 \uC0C1\uB2E8\uC5D0 \uC989\uC2DC \uBC18\uC601\uB429\uB2C8\uB2E4.");
+      setTimeout(() => setMsg(""), 2500);
+    } catch (err) {
+      (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, "\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+    }
+  };
+  const resetToDefault = async () => {
+    var _a, _b;
+    if (!await window.BGNJ_CONFIRM("\uBC30\uB108\uB97C default \uB85C \uBCF5\uC6D0\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
+    try {
+      await window.BGNJ_SITE_CONTENT.resetSection("banner");
+      const def = window.BGNJ_SITE_CONTENT.get().banner || {};
+      setDraft({
+        enabled: def.enabled !== false,
+        tone: def.tone || "info",
+        emoji: def.emoji || "",
+        title: def.title || "",
+        body: def.body || "",
+        dismissible: !!def.dismissible
+      });
+      setTick((v) => v + 1);
+      setMsg("default \uB85C \uBCF5\uC6D0\uB428.");
+      setTimeout(() => setMsg(""), 2500);
+    } catch (err) {
+      (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, "\uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || ""));
+    }
+  };
+  const palette = {
+    info: { bg: "rgba(245,213,72,0.12)", border: "var(--primary-active)" },
+    success: { bg: "rgba(22,163,74,0.10)", border: "var(--success)" },
+    warning: { bg: "rgba(217,119,6,0.10)", border: "var(--warning)" },
+    danger: { bg: "rgba(220,38,38,0.10)", border: "var(--danger)" }
+  }[draft.tone] || { bg: "rgba(245,213,72,0.12)", border: "var(--primary-active)" };
+  const Field = window.HE_Field || HE_Field;
+  const Input = window.HE_Input || HE_Input;
+  const TextArea = window.HE_TextArea || HE_TextArea;
+  const Select = window.HE_Select || HE_Select;
+  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 16, lineHeight: 1.8 } }, "\uC0AC\uC774\uD2B8 \uC0C1\uB2E8(\uBA54\uB274 \uC704\uCABD) \uC5D0 \uB178\uCD9C\uB418\uB294 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uACF5\uC9C0 \uBC30\uB108"), " \uB97C \uD3B8\uC9D1\uD569\uB2C8\uB2E4. \uD65C\uC131\uD654 \uD1A0\uAE00 OFF \uBA74 \uBC30\uB108 \uC790\uCCB4\uAC00 \uC228\uACA8\uC9D1\uB2C8\uB2E4. \uC800\uC7A5 \uC2DC \uC989\uC2DC \uBC18\uC601."), msg && /* @__PURE__ */ React.createElement("div", { role: "status", className: "card", style: { padding: "10px 14px", background: "rgba(245,213,72,0.10)", border: "1px solid var(--primary-dim)", color: "var(--secondary)", fontSize: 13, marginBottom: 14 } }, msg), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 18 } }, /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 18, padding: "10px 12px", background: draft.enabled ? "rgba(22,163,74,0.08)" : "var(--bg-2)", border: `1px solid ${draft.enabled ? "var(--success)" : "var(--line)"}`, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "checkbox",
+      checked: draft.enabled,
+      onChange: (e) => update("enabled", e.target.checked),
+      style: { accentColor: "var(--primary)" }
+    }
+  ), /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 13 } }, draft.enabled ? "\uD65C\uC131 \u2014 \uC0AC\uC774\uD2B8 \uC0C1\uB2E8\uC5D0 \uB178\uCD9C \uC911" : "\uBE44\uD65C\uC131 \u2014 \uBC30\uB108 \uC228\uAE40")), /* @__PURE__ */ React.createElement(Field, { label: "TONE (\uC0C9\uC0C1)" }, /* @__PURE__ */ React.createElement(
+    Select,
+    {
+      value: draft.tone,
+      onChange: (v) => update("tone", v),
+      options: [
+        { value: "info", label: "INFO (\uC610\uB85C\uC6B0 \u2014 \uC77C\uBC18 \uC548\uB0B4)" },
+        { value: "success", label: "SUCCESS (\uCD08\uB85D \u2014 \uCD9C\uC2DC/\uC644\uB8CC)" },
+        { value: "warning", label: "WARNING (\uC570\uBC84 \u2014 \uC8FC\uC758)" },
+        { value: "danger", label: "DANGER (\uBE68\uAC15 \u2014 \uAE34\uAE09)" }
+      ]
+    }
+  )), /* @__PURE__ */ React.createElement(Field, { label: "EMOJI (\uC120\uD0DD)", hint: "\uC81C\uBAA9 \uC55E\uC5D0 \uB178\uCD9C\uB429\uB2C8\uB2E4. \uBE44\uC6CC\uB450\uBA74 \uBBF8\uB178\uCD9C. \uC608: \u{1F331} / \u{1F389} / \u26A0\uFE0F" }, /* @__PURE__ */ React.createElement(Input, { value: draft.emoji, onChange: (e) => update("emoji", e.target.value), placeholder: "\u{1F331}", maxLength: 4 })), /* @__PURE__ */ React.createElement(Field, { label: "TITLE (\uAC15\uC870 \uD14D\uC2A4\uD2B8)", hint: "\uBB38\uC7A5\uC758 \uAC15\uC870 \uBD80\uBD84. bold \uCC98\uB9AC." }, /* @__PURE__ */ React.createElement(Input, { value: draft.title, onChange: (e) => update("title", e.target.value), placeholder: "\uD648\uD398\uC774\uC9C0\uB97C \uC624\uD508\uD55C \uC9C0 \uC5BC\uB9C8 \uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4." })), /* @__PURE__ */ React.createElement(Field, { label: "BODY (\uBCF8\uBB38)", hint: "\uC81C\uBAA9 \uB4A4\uC5D0 dim \uD1A4\uC73C\uB85C \uB178\uCD9C. \uD55C \uC904 \uAD8C\uC7A5." }, /* @__PURE__ */ React.createElement(TextArea, { value: draft.body, onChange: (e) => update("body", e.target.value), placeholder: "\uC774\uC6A9\uC5D0 \uBD88\uD3B8\uD558\uC2E0 \uC810\uC774 \uC788\uB2E4\uBA74 ...", style: { minHeight: 60 } })), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "center", marginTop: 8, fontSize: 13, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "checkbox",
+      checked: draft.dismissible,
+      onChange: (e) => update("dismissible", e.target.checked),
+      style: { accentColor: "var(--primary)" }
+    }
+  ), /* @__PURE__ */ React.createElement("span", null, "\uC0AC\uC6A9\uC790\uAC00 \uB2EB\uC744 \uC218 \uC788\uAC8C (X \uBC84\uD2BC). \uB2EB\uC740 \uC0AC\uC6A9\uC790\uB294 \uC138\uC158 \uB3D9\uC548 \uBBF8\uB178\uCD9C."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 } }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: resetToDefault,
+      style: { borderColor: "var(--danger)", color: "var(--danger)" }
+    },
+    "default \uB85C \uBCF5\uC6D0"
+  ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: save }, "\uC800\uC7A5 \u2192 \uC0AC\uC774\uD2B8 \uC989\uC2DC \uBC18\uC601")), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 14, marginBottom: 8 } }, "\uB77C\uC774\uBE0C \uBBF8\uB9AC\uBCF4\uAE30"), /* @__PURE__ */ React.createElement("div", { style: {
+    background: palette.bg,
+    borderTop: `1px solid ${palette.border}`,
+    borderBottom: `1px solid ${palette.border}`,
+    color: "var(--ink)",
+    padding: "10px 16px",
+    textAlign: "center",
+    fontSize: 13,
+    lineHeight: 1.55,
+    position: "relative"
+  } }, !draft.enabled ? /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\u2014 \uBE44\uD65C\uC131 \uC0C1\uD0DC (\uC0AC\uC774\uD2B8\uC5D0\uC11C \uBBF8\uB178\uCD9C) \u2014") : /* @__PURE__ */ React.createElement(React.Fragment, null, draft.emoji ? `${draft.emoji} ` : "", draft.title && /* @__PURE__ */ React.createElement("strong", null, draft.title), draft.body && /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, draft.title ? " " : "", draft.body), draft.dismissible && /* @__PURE__ */ React.createElement("span", { style: { position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "var(--ink-3)", fontSize: 16 } }, "\xD7"))));
+};
 Object.assign(window, {
   RecommendationsAdminPanel,
   TPE_RowActions,
@@ -2489,8 +2594,10 @@ Object.assign(window, {
   // v00.105
   KindPagePanel,
   // v00.106
-  TPE_TimeInput
+  TPE_TimeInput,
   // v00.106 (헬퍼 — 외부 호출자 없음, 노출만)
+  BannerEditorPanel
+  // v00.257
 });
 
 })();

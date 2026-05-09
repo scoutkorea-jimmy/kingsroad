@@ -506,6 +506,7 @@ const EatSleepShopAdminPanel = window.EatSleepShopAdminPanel;
 const FooterStyleEditor = window.FooterStyleEditor;
 const HeroEditorPanel = window.HeroEditorPanel;
 const HomeTextEditorPanel = window.HomeTextEditorPanel;
+const BannerEditorPanel = window.BannerEditorPanel;
 const CorruptedBodyInspector = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const G = window.BGNJ_GUARD;
@@ -5483,6 +5484,7 @@ const AdminPage = ({ go }) => {
         // v00.193 — 사용자 요청 '모든 메뉴에 실시간 미리보기, 메뉴별 매칭 화면'.
         // 이전에 home/hero/bank 는 previewUrl 미지정 (자체 임베드 또는 노출 페이지 없음) → 모두 '/' 폴백.
         { key: "content", label: "\uC0AC\uC774\uD2B8 \uCF58\uD150\uCE20", previewUrl: "/", render: () => /* @__PURE__ */ React.createElement(SiteContentAdminPanel, null) },
+        { key: "banner", label: "\uACF5\uC9C0\xB7\uBC30\uB108", previewUrl: "/", render: () => /* @__PURE__ */ React.createElement(BannerEditorPanel, null) },
         { key: "home", label: "\uD648 \uD14D\uC2A4\uD2B8", previewUrl: "/", render: () => /* @__PURE__ */ React.createElement(HomeTextEditorPanel, null) },
         { key: "hero", label: "\uD788\uC5B4\uB85C", previewUrl: "/", render: () => /* @__PURE__ */ React.createElement(HeroEditorPanel, null) },
         { key: "seo", label: "SEO", previewUrl: "/", render: () => /* @__PURE__ */ React.createElement(SEOAdminPanel, null) },

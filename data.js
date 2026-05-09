@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.256.000",
+  version: "00.257.000",
   build: "2026.05.09",
   channel: "preview",
 };
@@ -643,6 +643,16 @@ const DEFAULT_SITE_CONTENT = {
   // 뱅기노자 추천 여행지 — 관리자가 직접 추가/편집 (KMS 사이트 콘텐츠 패널). 빈 배열이면 홈에 섹션 미노출.
   // 각 항목: { id, region, name, subtitle, desc, tags(string|array), imageDataUri }
   recommendations: [],
+  // v00.257 — 사이트 상단 공지/배너 (admin 관리). 메뉴 위쪽 sitewide.
+  // enabled: false 면 미노출 (boot.jsx 가 가드). tone: 'info' | 'warning' | 'success' | 'danger'.
+  banner: {
+    enabled: true,
+    tone: 'info',
+    emoji: '🌱',
+    title: '홈페이지를 오픈한 지 얼마 되지 않았습니다.',
+    body: '이용에 불편하신 점이 있다면 왕사들 오픈톡방에 알려주세요 — 계속 업데이트해 나가겠습니다. 현재 PC 버전 최적화로 제작되어 있습니다.',
+    dismissible: false,
+  },
   // 회원등급 자동승급 룰 오버라이드 — 관리자가 GradePromotionPanel 에서 편집. 빈 객체면 코드 default(BGNJ_GRADE_RULES) 사용.
   // 형태: { reader: { posts, comments, ... }, scholar: {...} }. 일부 필드만 오버라이드 가능 (default 위에 머지).
   gradeRules: {},

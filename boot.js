@@ -395,6 +395,76 @@ const _AdminLoadingFallback = ({ error, onRetry, label = "\uAD00\uB9AC\uC790" })
   const code = label === "\uB85C\uADF8\uC778" ? "LOGIN" : label === "\uD68C\uC6D0\uAC00\uC785" ? "SIGNUP" : "ADMIN";
   return /* @__PURE__ */ React.createElement("div", { style: { padding: 48, textAlign: "center", minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, letterSpacing: "0.18em", marginBottom: 10 } }, error ? `${code} \xB7 LOAD FAILED` : `${code} \xB7 LOADING`), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, marginBottom: 14, color: "var(--ink)" } }, error ? `${label} \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4` : `${label} \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\u2026`), error ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginBottom: 14 } }, (error == null ? void 0 : error.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onRetry }, "\uB2E4\uC2DC \uC2DC\uB3C4")) : /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12 } }, "\uCC98\uC74C \uC9C4\uC785 \uC2DC ~1\uCD08 \uC18C\uC694\uB429\uB2C8\uB2E4.")));
 };
+const SITE_BANNER_DISMISSED_KEY = "bgnj_banner_dismissed";
+const SiteBanner = () => {
+  const [tick, setTick] = React.useState(0);
+  const [dismissed, setDismissed] = React.useState(() => {
+    try {
+      return !!sessionStorage.getItem(SITE_BANNER_DISMISSED_KEY);
+    } catch (e) {
+      return false;
+    }
+  });
+  React.useEffect(() => {
+    const onR = () => setTick((v) => v + 1);
+    window.addEventListener("bgnj-site-content-refresh", onR);
+    return () => window.removeEventListener("bgnj-site-content-refresh", onR);
+  }, []);
+  const banner = (() => {
+    var _a, _b;
+    try {
+      return (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).banner || {};
+    } catch (e) {
+      return {};
+    }
+  })();
+  if (!banner.enabled || dismissed) return null;
+  if (!banner.title && !banner.body) return null;
+  const tone = banner.tone || "info";
+  const palette = {
+    info: { bg: "rgba(245,213,72,0.12)", border: "var(--primary-active)", text: "var(--ink)" },
+    success: { bg: "rgba(22,163,74,0.10)", border: "var(--success)", text: "var(--ink)" },
+    warning: { bg: "rgba(217,119,6,0.10)", border: "var(--warning)", text: "var(--ink)" },
+    danger: { bg: "rgba(220,38,38,0.10)", border: "var(--danger)", text: "var(--ink)" }
+  }[tone] || { bg: "rgba(245,213,72,0.12)", border: "var(--primary-active)", text: "var(--ink)" };
+  const onDismiss = () => {
+    try {
+      sessionStorage.setItem(SITE_BANNER_DISMISSED_KEY, "1");
+    } catch (e) {
+    }
+    setDismissed(true);
+  };
+  return /* @__PURE__ */ React.createElement("div", { role: "status", "aria-label": "\uC0AC\uC774\uD2B8 \uACF5\uC9C0", style: {
+    background: palette.bg,
+    borderBottom: `1px solid ${palette.border}`,
+    color: palette.text,
+    padding: "10px 16px",
+    textAlign: "center",
+    fontSize: 13,
+    lineHeight: 1.55,
+    position: "relative"
+  } }, banner.emoji ? `${banner.emoji} ` : "", banner.title && /* @__PURE__ */ React.createElement("strong", null, banner.title), banner.body && /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, banner.title ? " " : "", banner.body), banner.dismissible && /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: onDismiss,
+      "aria-label": "\uBC30\uB108 \uB2EB\uAE30",
+      style: {
+        position: "absolute",
+        right: 8,
+        top: "50%",
+        transform: "translateY(-50%)",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        color: "var(--ink-3)",
+        fontSize: 16,
+        padding: "4px 8px"
+      }
+    },
+    "\xD7"
+  ));
+};
 const App = () => {
   const [route, setRoute] = React.useState(() => {
     try {
@@ -856,15 +926,7 @@ const App = () => {
     }
   };
   const page = /* @__PURE__ */ React.createElement(PageErrorBoundary, { key: route, route, go }, renderPage());
-  return /* @__PURE__ */ React.createElement("div", { className: "app" }, !hideNav && /* @__PURE__ */ React.createElement("div", { role: "status", "aria-label": "\uC0AC\uC774\uD2B8 \uC624\uD508 \uC548\uB0B4", style: {
-    background: "rgba(245, 213, 72, 0.12)",
-    borderBottom: "1px solid var(--gold-dim, #C9A632)",
-    color: "var(--ink, #0F172A)",
-    padding: "10px 16px",
-    textAlign: "center",
-    fontSize: 13,
-    lineHeight: 1.55
-  } }, "\u{1F331} ", /* @__PURE__ */ React.createElement("strong", null, "\uD648\uD398\uC774\uC9C0\uB97C \uC624\uD508\uD55C \uC9C0 \uC5BC\uB9C8 \uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."), " ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC774\uC6A9\uC5D0 \uBD88\uD3B8\uD558\uC2E0 \uC810\uC774 \uC788\uB2E4\uBA74 ", /* @__PURE__ */ React.createElement("strong", null, "\uC655\uC0AC\uB4E4 \uC624\uD508\uD1A1\uBC29"), "\uC5D0 \uC54C\uB824\uC8FC\uC138\uC694 \u2014 \uACC4\uC18D \uC5C5\uB370\uC774\uD2B8\uD574 \uB098\uAC00\uACA0\uC2B5\uB2C8\uB2E4. \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", null, "PC \uBC84\uC804 \uCD5C\uC801\uD654"), "\uB85C \uC81C\uC791\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement(Nav, { route, go, user, onLogout: logout }), /* @__PURE__ */ React.createElement("main", { id: "main", tabIndex: "-1", style: { flex: 1, outline: "none" }, "aria-label": `${route} \uD398\uC774\uC9C0 \uBCF8\uBB38` }, page), !hideNav && /* @__PURE__ */ React.createElement(Footer, { go }), /* @__PURE__ */ React.createElement(Tweaks, { tweaks, setTweaks: updateTweaks, visible: editMode }), /* @__PURE__ */ React.createElement(ScrollToTop, null), /* @__PURE__ */ React.createElement(CookieConsent, null), /* @__PURE__ */ React.createElement(GlobalErrorToast, null), /* @__PURE__ */ React.createElement(VersionUpdateBanner, null), window.ConfirmDialogHost ? /* @__PURE__ */ React.createElement(window.ConfirmDialogHost, null) : null);
+  return /* @__PURE__ */ React.createElement("div", { className: "app" }, !hideNav && /* @__PURE__ */ React.createElement(SiteBanner, null), /* @__PURE__ */ React.createElement(Nav, { route, go, user, onLogout: logout }), /* @__PURE__ */ React.createElement("main", { id: "main", tabIndex: "-1", style: { flex: 1, outline: "none" }, "aria-label": `${route} \uD398\uC774\uC9C0 \uBCF8\uBB38` }, page), !hideNav && /* @__PURE__ */ React.createElement(Footer, { go }), /* @__PURE__ */ React.createElement(Tweaks, { tweaks, setTweaks: updateTweaks, visible: editMode }), /* @__PURE__ */ React.createElement(ScrollToTop, null), /* @__PURE__ */ React.createElement(CookieConsent, null), /* @__PURE__ */ React.createElement(GlobalErrorToast, null), /* @__PURE__ */ React.createElement(VersionUpdateBanner, null), window.ConfirmDialogHost ? /* @__PURE__ */ React.createElement(window.ConfirmDialogHost, null) : null);
 };
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(/* @__PURE__ */ React.createElement(AppErrorBoundary, null, /* @__PURE__ */ React.createElement(App, null)));

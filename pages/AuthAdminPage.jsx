@@ -493,6 +493,7 @@ const EatSleepShopAdminPanel = window.EatSleepShopAdminPanel; // v00.105
 const FooterStyleEditor   = window.FooterStyleEditor;
 const HeroEditorPanel     = window.HeroEditorPanel;
 const HomeTextEditorPanel = window.HomeTextEditorPanel;
+const BannerEditorPanel   = window.BannerEditorPanel; // v00.257
 
 
 // === Report Queue Panel ===========================================
@@ -7145,6 +7146,7 @@ const AdminPage = ({ go }) => {
               // v00.193 — 사용자 요청 '모든 메뉴에 실시간 미리보기, 메뉴별 매칭 화면'.
               // 이전에 home/hero/bank 는 previewUrl 미지정 (자체 임베드 또는 노출 페이지 없음) → 모두 '/' 폴백.
               { key: "content",  label: "사이트 콘텐츠",   previewUrl: "/",        render: () => <SiteContentAdminPanel/> },
+              { key: "banner",   label: "공지·배너",        previewUrl: "/",        render: () => <BannerEditorPanel/> },
               { key: "home",     label: "홈 텍스트",        previewUrl: "/",        render: () => <HomeTextEditorPanel/> },
               { key: "hero",     label: "히어로",           previewUrl: "/",        render: () => <HeroEditorPanel/> },
               { key: "seo",      label: "SEO",             previewUrl: "/",        render: () => <SEOAdminPanel/> },
