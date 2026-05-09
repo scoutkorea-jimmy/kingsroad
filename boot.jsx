@@ -285,7 +285,8 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 // URL 경로 ↔ 라우트 키 매핑.
 // 알려진 라우트만 화이트리스트로 받아 안전하게 폴백한다(home).
-const VALID_ROUTES = ['home','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy','eat','sleep','shop'];
+// v00.229 — 'error' 라우트 추가. /error?code=403|404|500|401|network|maintenance
+const VALID_ROUTES = ['home','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy','eat','sleep','shop','error'];
 const pathToRoute = (pathname) => {
   const p = (pathname || '/').replace(/\/+$/, '') || '/';
   if (p === '/') return 'home';
@@ -694,7 +695,11 @@ const App = () => {
       case "column":    { const C = pick('ColumnPage','칼럼'); return <C go={go} user={user}/>; }
       case "book":      { const C = pick('BookPage','책'); return <C go={go} cart={cart} setCart={setCart} user={user}/>; }
       case "checkout":  { const C = pick('CheckoutPage','결제'); return <C go={go} cart={cart} user={user}/>; }
-      case "mypage":    { const C = pick('MyPage','마이페이지'); return <C go={go} user={user} cart={cart}/>; }
+      case "mypage":    {
+        // v00.229 — /mypage 는 회원 전용. 비로그인 진입 시 401 페이지로 자동 wiring.
+        if (!user) { const C = pick('Error401Page','로그인 필요'); return <C go={go}/>; }
+        const C = pick('MyPage','마이페이지'); return <C go={go} user={user} cart={cart}/>;
+      }
       case "login":
       case "signup":    {
         // v00.212 — LoginPage/SignupPage 가 admin 번들에 들어있어 lazy-load 대기 처리.
@@ -707,13 +712,35 @@ const App = () => {
         return <C go={go} setUser={setUser} initialMode={route === 'signup' ? 'signup' : 'login'}/>;
       }
       case "admin":     {
-        if (!user?.isAdmin) { const D = pick('AdminDenied','관리'); return <D go={go} user={user}/>; }
+        // v00.229 — /admin 권한 분기 세분화. 비로그인 → 401, 로그인했지만 비-admin → 403 (AdminDenied 유지: email 표시 UX).
+        if (!user) { const C = pick('Error401Page','로그인 필요'); return <C go={go}/>; }
+        if (!user.isAdmin) { const D = pick('AdminDenied','관리'); return <D go={go} user={user}/>; }
         // v00.198 — 스크립트 lazy-load. 미준비 시 로딩 화면, 실패 시 retry UI.
         if (!adminLoaded) {
           return <_AdminLoadingFallback error={adminLoadError}
             onRetry={() => { setAdminLoadError(null); setAdminLoadAttempt((v) => v + 1); }}/>;
         }
         const C = pick('AdminPage','관리'); return <C go={go} user={user}/>;
+      }
+      // v00.229 — 라이브 에러 라우트. /error?code=403|404|401|500|network|maintenance.
+      // 미리보기 패널만 있던 ErrorPages 가 사용자에게도 진입 가능. 어드민이 회원에게 링크 공유 시 활용.
+      case "error":     {
+        let code = '404';
+        try {
+          const sp = new URLSearchParams(window.location.search);
+          const c = (sp.get('code') || '').toLowerCase();
+          if (c) code = c;
+        } catch {}
+        const map = {
+          '401':         'Error401Page',
+          '403':         'Error403Page',
+          '404':         'Error404Page',
+          '500':         'Error500Page',
+          'network':     'ErrorNetworkPage',
+          'maintenance': 'ErrorMaintenancePage',
+        };
+        const C = pick(map[code] || 'Error404Page', '오류');
+        return <C go={go}/>;
       }
       // v00.145 — 404: 알 수 없는 라우트는 home 으로 폴백하지 않고 Error404Page 노출.
       default:          { const C = pick('Error404Page','오류'); return <C go={go}/>; }

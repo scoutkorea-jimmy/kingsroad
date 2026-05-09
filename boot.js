@@ -316,7 +316,7 @@ const TWEAK_DEFAULTS = (
     "interactive": true
   }
 );
-const VALID_ROUTES = ["home", "community", "lectures", "tour", "column", "book", "checkout", "mypage", "admin", "login", "signup", "faq", "terms", "privacy", "eat", "sleep", "shop"];
+const VALID_ROUTES = ["home", "community", "lectures", "tour", "column", "book", "checkout", "mypage", "admin", "login", "signup", "faq", "terms", "privacy", "eat", "sleep", "shop", "error"];
 const pathToRoute = (pathname) => {
   const p = (pathname || "/").replace(/\/+$/, "") || "/";
   if (p === "/") return "home";
@@ -778,6 +778,10 @@ const App = () => {
         return /* @__PURE__ */ React.createElement(C, { go, cart, user });
       }
       case "mypage": {
+        if (!user) {
+          const C2 = pick("Error401Page", "\uB85C\uADF8\uC778 \uD544\uC694");
+          return /* @__PURE__ */ React.createElement(C2, { go });
+        }
         const C = pick("MyPage", "\uB9C8\uC774\uD398\uC774\uC9C0");
         return /* @__PURE__ */ React.createElement(C, { go, user, cart });
       }
@@ -800,7 +804,11 @@ const App = () => {
         return /* @__PURE__ */ React.createElement(C, { go, setUser, initialMode: route === "signup" ? "signup" : "login" });
       }
       case "admin": {
-        if (!(user == null ? void 0 : user.isAdmin)) {
+        if (!user) {
+          const C2 = pick("Error401Page", "\uB85C\uADF8\uC778 \uD544\uC694");
+          return /* @__PURE__ */ React.createElement(C2, { go });
+        }
+        if (!user.isAdmin) {
           const D = pick("AdminDenied", "\uAD00\uB9AC");
           return /* @__PURE__ */ React.createElement(D, { go, user });
         }
@@ -818,6 +826,27 @@ const App = () => {
         }
         const C = pick("AdminPage", "\uAD00\uB9AC");
         return /* @__PURE__ */ React.createElement(C, { go, user });
+      }
+      // v00.229 — 라이브 에러 라우트. /error?code=403|404|401|500|network|maintenance.
+      // 미리보기 패널만 있던 ErrorPages 가 사용자에게도 진입 가능. 어드민이 회원에게 링크 공유 시 활용.
+      case "error": {
+        let code = "404";
+        try {
+          const sp = new URLSearchParams(window.location.search);
+          const c = (sp.get("code") || "").toLowerCase();
+          if (c) code = c;
+        } catch (e) {
+        }
+        const map = {
+          "401": "Error401Page",
+          "403": "Error403Page",
+          "404": "Error404Page",
+          "500": "Error500Page",
+          "network": "ErrorNetworkPage",
+          "maintenance": "ErrorMaintenancePage"
+        };
+        const C = pick(map[code] || "Error404Page", "\uC624\uB958");
+        return /* @__PURE__ */ React.createElement(C, { go });
       }
       // v00.145 — 404: 알 수 없는 라우트는 home 으로 폴백하지 않고 Error404Page 노출.
       default: {
