@@ -1412,6 +1412,23 @@ main time, main .section-eyebrow {
   flex: 0 0 320px;
   scroll-snap-align: start;
 }
+/* v00.254 — 카드 1-2개일 때 좌측 320px 만 채우고 우측 빈 공간 → 사용자 보고 '불편'.
+   강연 strip 을 grid 로 분기. ≤2 카드: minmax(320,560) auto-fit 으로 자연스럽게 폭 확장.
+   ≥3 카드: 기존 strip 가로 스크롤 그대로. JSX 의 lectures.length<=2 분기로 클래스 추가. */
+.lecture-strip--grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 560px));
+  gap: 24px;
+  overflow: visible !important;
+  padding-bottom: 0 !important;
+  scroll-snap-type: none !important;
+  justify-content: start;
+}
+.lecture-strip--grid > * {
+  flex: initial !important;
+  width: auto !important;
+  scroll-snap-align: none !important;
+}
 .lecture-strip::-webkit-scrollbar { height: 6px; }
 .lecture-strip::-webkit-scrollbar-thumb { background: var(--line-2); }
 .lecture-strip::-webkit-scrollbar-track { background: transparent; }

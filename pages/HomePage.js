@@ -1054,26 +1054,34 @@ const HomePage = ({ go }) => {
         textOverflow: "ellipsis"
       } }, truncatePreview(c.excerpt, 38))
     )), secondaryColumns.length === 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-3)", padding: "16px 0" } }, homeText.columnEmpty))
-  )))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: "lecture-strip", role: "list" }, lectures.map((lecture) => /* @__PURE__ */ React.createElement(
-    "article",
-    {
-      key: lecture.id,
-      role: "listitem",
-      className: "card",
-      ...clickable(() => {
-        try {
-          sessionStorage.setItem("bgnj_pending_lecture_id", String(lecture.id));
-        } catch (e) {
+  )))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: `lecture-strip${lectures.length <= 2 ? " lecture-strip--grid" : ""}`, role: "list" }, lectures.map((lecture) => {
+    const heroMode = lectures.length === 1;
+    return /* @__PURE__ */ React.createElement(
+      "article",
+      {
+        key: lecture.id,
+        role: "listitem",
+        className: "card",
+        ...clickable(() => {
+          try {
+            sessionStorage.setItem("bgnj_pending_lecture_id", String(lecture.id));
+          } catch (e) {
+          }
+          go("lectures");
+        }, `\uAC15\uC5F0: ${lecture.topic || lecture.title}`),
+        style: {
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          padding: heroMode ? "32px 32px 28px" : "20px 20px 18px"
         }
-        go("lectures");
-      }, `\uAC15\uC5F0: ${lecture.topic || lecture.title}`),
-      style: { cursor: "pointer", display: "flex", flexDirection: "column", padding: "20px 20px 18px" }
-    },
-    /* @__PURE__ */ React.createElement("span", { className: "badge", style: { marginBottom: 14, alignSelf: "flex-start" } }, homeText.lectureBadge),
-    /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 19, fontWeight: 600, lineHeight: 1.35, marginBottom: 10, flex: "0 0 auto", color: "var(--ink)" } }, lecture.topic || lecture.title),
-    lecture.note && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 14, lineHeight: 1.7, color: "var(--ink-2)", marginBottom: 16, flex: "1 1 auto" } }, truncatePreview(lecture.note, 110)),
-    /* @__PURE__ */ React.createElement("div", { style: { borderTop: "1px solid var(--line)", paddingTop: 12, display: "flex", justifyContent: "space-between", marginTop: "auto" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: "var(--ink-2)" } }, lecture.venue || homeText.emptyFallback), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 600, color: "var(--ink)" } }, lecture.next || homeText.emptyFallback))
-  ))), lectures.length >= 3 && /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
+      },
+      /* @__PURE__ */ React.createElement("span", { className: "badge", style: { marginBottom: 14, alignSelf: "flex-start" } }, homeText.lectureBadge),
+      /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: heroMode ? 24 : 19, fontWeight: 600, lineHeight: 1.35, marginBottom: 10, flex: "0 0 auto", color: "var(--ink)" } }, lecture.topic || lecture.title),
+      lecture.note && /* @__PURE__ */ React.createElement("p", { style: { fontSize: heroMode ? 15 : 14, lineHeight: 1.75, color: "var(--ink-2)", marginBottom: 16, flex: "1 1 auto" } }, truncatePreview(lecture.note, heroMode ? 180 : 110)),
+      /* @__PURE__ */ React.createElement("div", { style: { borderTop: "1px solid var(--line)", paddingTop: 12, display: "flex", justifyContent: "space-between", marginTop: "auto" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: "var(--ink-2)" } }, lecture.venue || homeText.emptyFallback), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 600, color: "var(--ink)" } }, lecture.next || homeText.emptyFallback))
+    );
+  })), lectures.length >= 3 && /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
     marginTop: 14,
     fontSize: 10,
     fontWeight: 600,

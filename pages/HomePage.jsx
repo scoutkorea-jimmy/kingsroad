@@ -1125,9 +1125,13 @@ const HomePage = ({ go }) => {
               </div>
               <button type="button" className="btn-ghost" onClick={() => go('lectures')}>{homeText.lecturesAction}</button>
             </div>
-            {/* v00.164 — film strip 가로 스크롤. 폭 320px 카드 + scroll-snap. */}
-            <div className="lecture-strip" role="list">
-              {lectures.map((lecture) => (
+            {/* v00.164 — film strip 가로 스크롤. 폭 320px 카드 + scroll-snap.
+                v00.254 — 사용자 보고 '카드 1-2개일 때 좌측만 채우고 우측 빈 공간 → 가독성 ↓'.
+                lectures.length 별 분기: ≤2 grid (풀폭 분할) / ≥3 strip (가로 스크롤). */}
+            <div className={`lecture-strip${lectures.length <= 2 ? ' lecture-strip--grid' : ''}`} role="list">
+              {lectures.map((lecture) => {
+                const heroMode = lectures.length === 1;
+                return (
                 <article key={lecture.id}
                   role="listitem"
                   className="card"
@@ -1135,16 +1139,18 @@ const HomePage = ({ go }) => {
                     try { sessionStorage.setItem('bgnj_pending_lecture_id', String(lecture.id)); } catch {}
                     go('lectures');
                   }, `강연: ${lecture.topic || lecture.title}`)}
-                  style={{cursor:'pointer', display:'flex', flexDirection:'column', padding:'20px 20px 18px'}}>
+                  style={{cursor:'pointer', display:'flex', flexDirection:'column',
+                    padding: heroMode ? '32px 32px 28px' : '20px 20px 18px'}}>
                   <span className="badge" style={{marginBottom:14, alignSelf:'flex-start'}}>{homeText.lectureBadge}</span>
-                  <h3 className="ko-serif" style={{fontSize:19, fontWeight:600, lineHeight:1.35, marginBottom:10, flex:'0 0 auto', color:'var(--ink)'}}>{lecture.topic || lecture.title}</h3>
-                  {lecture.note && <p style={{fontSize:14, lineHeight:1.7, color:'var(--ink-2)', marginBottom:16, flex:'1 1 auto'}}>{truncatePreview(lecture.note, 110)}</p>}
+                  <h3 className="ko-serif" style={{fontSize: heroMode ? 24 : 19, fontWeight:600, lineHeight:1.35, marginBottom:10, flex:'0 0 auto', color:'var(--ink)'}}>{lecture.topic || lecture.title}</h3>
+                  {lecture.note && <p style={{fontSize: heroMode ? 15 : 14, lineHeight:1.75, color:'var(--ink-2)', marginBottom:16, flex:'1 1 auto'}}>{truncatePreview(lecture.note, heroMode ? 180 : 110)}</p>}
                   <div style={{borderTop:'1px solid var(--line)', paddingTop:12, display:'flex', justifyContent:'space-between', marginTop:'auto'}}>
                     <span style={{fontSize:12, color:'var(--ink-2)'}}>{lecture.venue || homeText.emptyFallback}</span>
                     <span style={{fontSize:12, fontFamily:'var(--font-mono)', fontWeight:600, color:'var(--ink)'}}>{lecture.next || homeText.emptyFallback}</span>
                   </div>
                 </article>
-              ))}
+                );
+              })}
             </div>
             {/* 가로 스크롤 힌트 — 카드 ≥ 3개 일 때만 (보통 3 이상이지만 방어). */}
             {lectures.length >= 3 && (
