@@ -1055,7 +1055,11 @@ const HomePage = ({ go }) => {
       } }, truncatePreview(c.excerpt, 38))
     )), secondaryColumns.length === 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-3)", padding: "16px 0" } }, homeText.columnEmpty))
   )))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: `lecture-strip${lectures.length <= 2 ? " lecture-strip--grid" : ""}`, role: "list" }, lectures.map((lecture) => {
+    var _a2, _b2;
     const heroMode = lectures.length === 1;
+    const price = (_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.priceOrFree) == null ? void 0 : _b2.call(_a2, lecture.price);
+    const hours = lecture.durationMinutes ? `${Math.round(lecture.durationMinutes / 60 * 10) / 10}\uC2DC\uAC04` : null;
+    const metaCell = (label, value) => /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 3 } }, label), /* @__PURE__ */ React.createElement("div", { style: { fontSize: heroMode ? 14 : 13, fontWeight: 600, color: "var(--ink)", lineHeight: 1.4 } }, value || "-"));
     return /* @__PURE__ */ React.createElement(
       "article",
       {
@@ -1078,8 +1082,23 @@ const HomePage = ({ go }) => {
       },
       /* @__PURE__ */ React.createElement("span", { className: "badge", style: { marginBottom: 14, alignSelf: "flex-start" } }, homeText.lectureBadge),
       /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: heroMode ? 24 : 19, fontWeight: 600, lineHeight: 1.35, marginBottom: 10, flex: "0 0 auto", color: "var(--ink)" } }, lecture.topic || lecture.title),
-      lecture.note && /* @__PURE__ */ React.createElement("p", { style: { fontSize: heroMode ? 15 : 14, lineHeight: 1.75, color: "var(--ink-2)", marginBottom: 16, flex: "1 1 auto" } }, truncatePreview(lecture.note, heroMode ? 180 : 110)),
-      /* @__PURE__ */ React.createElement("div", { style: { borderTop: "1px solid var(--line)", paddingTop: 12, display: "flex", justifyContent: "space-between", marginTop: "auto" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: "var(--ink-2)" } }, lecture.venue || homeText.emptyFallback), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 600, color: "var(--ink)" } }, lecture.next || homeText.emptyFallback))
+      lecture.note && /* @__PURE__ */ React.createElement("p", { style: { fontSize: heroMode ? 15 : 14, lineHeight: 1.75, color: "var(--ink-2)", marginBottom: 18, flex: "1 1 auto" } }, truncatePreview(lecture.note, heroMode ? 180 : 110)),
+      /* @__PURE__ */ React.createElement("div", { style: {
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: heroMode ? "12px 24px" : "10px 14px",
+        paddingTop: 14,
+        paddingBottom: heroMode ? 14 : 10,
+        borderTop: "1px solid var(--line)",
+        marginTop: "auto"
+      } }, metaCell("\uC77C\uC815", lecture.next), metaCell("\uCC38\uAC00\uBE44", price), metaCell("\uC815\uC6D0", lecture.capacity ? `${lecture.capacity}\uBA85` : null), metaCell("\uC18C\uC694\uC2DC\uAC04", hours)),
+      lecture.venue && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: {
+        fontSize: 11,
+        marginTop: heroMode ? 12 : 8,
+        paddingTop: heroMode ? 12 : 8,
+        borderTop: heroMode ? "1px dashed var(--line)" : "none",
+        letterSpacing: "0.02em"
+      } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", marginRight: 6, color: "var(--ink-3)" } }, "\uC7A5\uC18C"), lecture.venue)
     );
   })), lectures.length >= 3 && /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
     marginTop: 14,

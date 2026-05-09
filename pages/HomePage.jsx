@@ -1131,6 +1131,17 @@ const HomePage = ({ go }) => {
             <div className={`lecture-strip${lectures.length <= 2 ? ' lecture-strip--grid' : ''}`} role="list">
               {lectures.map((lecture) => {
                 const heroMode = lectures.length === 1;
+                // v00.255 — 사용자 명시 강연 카드 핵심 정보 5종.
+                const price = window.BGNJ_FMT?.priceOrFree?.(lecture.price);
+                const hours = lecture.durationMinutes
+                  ? `${Math.round(lecture.durationMinutes / 60 * 10) / 10}시간`
+                  : null;
+                const metaCell = (label, value) => (
+                  <div>
+                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.18em', textTransform:'uppercase', marginBottom:3}}>{label}</div>
+                    <div style={{fontSize: heroMode ? 14 : 13, fontWeight:600, color:'var(--ink)', lineHeight:1.4}}>{value || '-'}</div>
+                  </div>
+                );
                 return (
                 <article key={lecture.id}
                   role="listitem"
@@ -1143,11 +1154,33 @@ const HomePage = ({ go }) => {
                     padding: heroMode ? '32px 32px 28px' : '20px 20px 18px'}}>
                   <span className="badge" style={{marginBottom:14, alignSelf:'flex-start'}}>{homeText.lectureBadge}</span>
                   <h3 className="ko-serif" style={{fontSize: heroMode ? 24 : 19, fontWeight:600, lineHeight:1.35, marginBottom:10, flex:'0 0 auto', color:'var(--ink)'}}>{lecture.topic || lecture.title}</h3>
-                  {lecture.note && <p style={{fontSize: heroMode ? 15 : 14, lineHeight:1.75, color:'var(--ink-2)', marginBottom:16, flex:'1 1 auto'}}>{truncatePreview(lecture.note, heroMode ? 180 : 110)}</p>}
-                  <div style={{borderTop:'1px solid var(--line)', paddingTop:12, display:'flex', justifyContent:'space-between', marginTop:'auto'}}>
-                    <span style={{fontSize:12, color:'var(--ink-2)'}}>{lecture.venue || homeText.emptyFallback}</span>
-                    <span style={{fontSize:12, fontFamily:'var(--font-mono)', fontWeight:600, color:'var(--ink)'}}>{lecture.next || homeText.emptyFallback}</span>
+                  {/* 5) 행사 간단 소개 */}
+                  {lecture.note && <p style={{fontSize: heroMode ? 15 : 14, lineHeight:1.75, color:'var(--ink-2)', marginBottom:18, flex:'1 1 auto'}}>{truncatePreview(lecture.note, heroMode ? 180 : 110)}</p>}
+                  {/* 1) 일정 · 2) 참가비 · 3) 정원 · 4) 소요시간 — 2x2 grid */}
+                  <div style={{
+                    display:'grid', gridTemplateColumns:'1fr 1fr',
+                    gap: heroMode ? '12px 24px' : '10px 14px',
+                    paddingTop:14, paddingBottom: heroMode ? 14 : 10,
+                    borderTop:'1px solid var(--line)',
+                    marginTop:'auto',
+                  }}>
+                    {metaCell('일정', lecture.next)}
+                    {metaCell('참가비', price)}
+                    {metaCell('정원', lecture.capacity ? `${lecture.capacity}명` : null)}
+                    {metaCell('소요시간', hours)}
                   </div>
+                  {/* 장소 — 메타 행 아래 (운영 정보 보조) */}
+                  {lecture.venue && (
+                    <div className="dim-2" style={{
+                      fontSize:11, marginTop: heroMode ? 12 : 8,
+                      paddingTop: heroMode ? 12 : 8,
+                      borderTop: heroMode ? '1px dashed var(--line)' : 'none',
+                      letterSpacing:'0.02em',
+                    }}>
+                      <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', textTransform:'uppercase', marginRight:6, color:'var(--ink-3)'}}>장소</span>
+                      {lecture.venue}
+                    </div>
+                  )}
                 </article>
                 );
               })}
