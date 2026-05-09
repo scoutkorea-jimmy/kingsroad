@@ -1001,19 +1001,23 @@ const HomePage = ({ go }) => {
             <div style={{display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:56}} className="col-grid"
               onMouseEnter={() => setColumnPaused(true)} onMouseLeave={() => setColumnPaused(false)}
               onFocusCapture={() => setColumnPaused(true)} onBlurCapture={() => setColumnPaused(false)}>
-              {/* v00.164 — 피처드 = magazine spread. v00.240 — 자동 순환 (5초). */}
+              {/* v00.164 — 피처드 = magazine spread. v00.240 — 자동 순환 (5초).
+                  v00.246 — slide-in 애니메이션 + 높이 안정화 + 제목 20자 통일.
+                  key={featuredIdx} 로 매 순환마다 unmount/mount → CSS keyframe 재생. */}
               <article
-                style={{cursor:'pointer', position:'relative'}}
+                key={featuredIdx}
+                className="column-featured-slide"
+                style={{cursor:'pointer', position:'relative', minHeight:600, display:'flex', flexDirection:'column'}}
                 {...clickable(() => go('column'), `칼럼: ${featuredColumn.title}`)}>
                 {(featuredColumn.coverUrl || featuredColumn.coverImage) ? (
                   <div style={{
-                    height:340, marginBottom:28,
+                    height:320, marginBottom:24, flex:'0 0 auto',
                     backgroundImage:`url(${featuredColumn.coverUrl || featuredColumn.coverImage})`,
                     backgroundSize:'cover', backgroundPosition:'center',
                   }}/>
                 ) : (
                   <div style={{
-                    height:260, background:'var(--bg-2)', marginBottom:28,
+                    height:320, background:'var(--bg-2)', marginBottom:24, flex:'0 0 auto',
                     display:'grid', placeItems:'center', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)',
                   }}>
                     <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.28em'}}>FEATURED COLUMN</div>
@@ -1024,14 +1028,17 @@ const HomePage = ({ go }) => {
                   {featuredColumn.date && <span className="mono dim-2" style={{fontSize:11}}>{featuredColumn.date}</span>}
                   {featuredColumn.readTime && <span className="mono dim-2" style={{fontSize:11}}>· {featuredColumn.readTime}</span>}
                 </div>
-                {/* magazine 처럼 큰 헤드라인 (column subtitle 자리도 있으면 노출) */}
+                {/* v00.246 — 제목 20자 통일 (사용자 요청 — 이전엔 자르지 않아 들쭉날쭉). lineHeight 1.25 + 1줄 강제. */}
                 <h2 style={{
-                  fontFamily:'var(--font-serif)', fontSize:'clamp(28px, 3vw, 38px)',
-                  fontWeight:600, lineHeight:1.2, marginBottom:14, color:'var(--ink)',
+                  fontFamily:'var(--font-serif)', fontSize:'clamp(24px, 2.6vw, 32px)',
+                  fontWeight:600, lineHeight:1.25, marginBottom:14, color:'var(--ink)',
                   letterSpacing:'-0.01em',
-                }}>{featuredColumn.title}</h2>
+                  whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                }}>{truncatePreview(featuredColumn.title, 20)}</h2>
                 {featuredColumn.excerpt && (
-                  <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:18, maxWidth:580}}>{featuredColumn.excerpt}</p>
+                  <p style={{fontSize:15, lineHeight:1.75, color:'var(--ink-2)', marginBottom:18, maxWidth:580, minHeight:80}}>
+                    {truncatePreview(featuredColumn.excerpt, 90)}
+                  </p>
                 )}
                 <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.2em', color:'var(--secondary)'}}>{homeText.columnReadMore}</div>
                 {/* v00.240 — 자동 순환 인디케이터 (점 N 개). 클릭 시 수동 이동. */}
@@ -1066,7 +1073,7 @@ const HomePage = ({ go }) => {
                   <div key={c.id}
                     {...clickable(() => go('column'), `칼럼: ${c.title}`)}
                     style={{
-                      padding:'16px 0',
+                      padding:'14px 0', minHeight:88,
                       borderBottom: ci < secondaryColumns.length - 1 ? '1px solid var(--line)' : 'none',
                       cursor:'pointer',
                     }}>
@@ -1074,8 +1081,14 @@ const HomePage = ({ go }) => {
                       {c.category && <span className="pill" style={{fontSize:9, padding:'2px 8px'}}>{c.category}</span>}
                       {c.date && <span className="mono dim-2" style={{fontSize:10}}>{c.date}</span>}
                     </div>
-                    <h4 className="ko-serif" style={{fontSize:16, fontWeight:600, lineHeight:1.4, marginBottom:4}}>{c.title}</h4>
-                    {c.excerpt && <p style={{fontSize:12, lineHeight:1.6, color:'var(--ink-3)', margin:0}}>{(c.excerpt||'').slice(0,65)}…</p>}
+                    {/* v00.246 — 제목 20자 통일 + 1줄 ellipsis (높이 안정화). */}
+                    <h4 className="ko-serif" style={{
+                      fontSize:16, fontWeight:600, lineHeight:1.4, marginBottom:4,
+                      whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                    }}>{truncatePreview(c.title, 20)}</h4>
+                    {c.excerpt && <p style={{fontSize:12, lineHeight:1.6, color:'var(--ink-3)', margin:0,
+                      whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+                    }}>{truncatePreview(c.excerpt, 38)}</p>}
                   </div>
                 ))}
                 {secondaryColumns.length === 0 && (

@@ -2060,6 +2060,16 @@ main time, main .section-eyebrow {
 :root[data-theme="dark"] .admin-savebar { background: var(--bg-2); border-color: var(--line); border-top-color: var(--primary-dim); }
 :root[data-theme="dark"] .admin-filter-chip { background: var(--bg-2); border-color: var(--line); }
 
+/* === v00.246 — 홈 칼럼 카루셀 슬라이드 애니메이션 ==================================
+   v00.240 자동 순환은 즉시 swap → 사용자 보고 '슬라이드 느낌이 나게'.
+   featured article 에 key={featuredIdx} + className 으로 매 idx 변경 시
+   unmount/mount 트리거. 0.5s 짧고 자연스럽게. prefers-reduced-motion 시 비활성. */
+@keyframes bgnj-column-slide-in {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.column-featured-slide { animation: bgnj-column-slide-in 0.5s ease-out; }
+
 /* === v00.225 — Scroll-to-top FAB =================================================
    스크롤 일정량 이후 우하단 노출. 데스크톱 48×48 / 폰 36×36 으로 footprint 축소
    (사용자 보고: 댓글 폼 우측 가림 우려). z-index 60 — toast(2000)/배너(2100)

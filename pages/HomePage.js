@@ -926,19 +926,23 @@ const HomePage = ({ go }) => {
     /* @__PURE__ */ React.createElement(
       "article",
       {
-        style: { cursor: "pointer", position: "relative" },
+        key: featuredIdx,
+        className: "column-featured-slide",
+        style: { cursor: "pointer", position: "relative", minHeight: 600, display: "flex", flexDirection: "column" },
         ...clickable(() => go("column"), `\uCE7C\uB7FC: ${featuredColumn.title}`)
       },
       featuredColumn.coverUrl || featuredColumn.coverImage ? /* @__PURE__ */ React.createElement("div", { style: {
-        height: 340,
-        marginBottom: 28,
+        height: 320,
+        marginBottom: 24,
+        flex: "0 0 auto",
         backgroundImage: `url(${featuredColumn.coverUrl || featuredColumn.coverImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center"
       } }) : /* @__PURE__ */ React.createElement("div", { style: {
-        height: 260,
+        height: 320,
         background: "var(--bg-2)",
-        marginBottom: 28,
+        marginBottom: 24,
+        flex: "0 0 auto",
         display: "grid",
         placeItems: "center",
         borderTop: "1px solid var(--line)",
@@ -947,14 +951,17 @@ const HomePage = ({ go }) => {
       /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, alignItems: "center", marginBottom: 14, flexWrap: "wrap" } }, featuredColumn.category && /* @__PURE__ */ React.createElement("span", { className: "pill" }, featuredColumn.category), featuredColumn.date && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, featuredColumn.date), featuredColumn.readTime && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\xB7 ", featuredColumn.readTime)),
       /* @__PURE__ */ React.createElement("h2", { style: {
         fontFamily: "var(--font-serif)",
-        fontSize: "clamp(28px, 3vw, 38px)",
+        fontSize: "clamp(24px, 2.6vw, 32px)",
         fontWeight: 600,
-        lineHeight: 1.2,
+        lineHeight: 1.25,
         marginBottom: 14,
         color: "var(--ink)",
-        letterSpacing: "-0.01em"
-      } }, featuredColumn.title),
-      featuredColumn.excerpt && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 15, lineHeight: 1.85, color: "var(--ink-2)", marginBottom: 18, maxWidth: 580 } }, featuredColumn.excerpt),
+        letterSpacing: "-0.01em",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      } }, truncatePreview(featuredColumn.title, 20)),
+      featuredColumn.excerpt && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 15, lineHeight: 1.75, color: "var(--ink-2)", marginBottom: 18, maxWidth: 580, minHeight: 80 } }, truncatePreview(featuredColumn.excerpt, 90)),
       /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 11, fontWeight: 700, letterSpacing: "0.2em", color: "var(--secondary)" } }, homeText.columnReadMore),
       recentFiveColumns.length > 1 && /* @__PURE__ */ React.createElement(
         "div",
@@ -998,14 +1005,31 @@ const HomePage = ({ go }) => {
         key: c.id,
         ...clickable(() => go("column"), `\uCE7C\uB7FC: ${c.title}`),
         style: {
-          padding: "16px 0",
+          padding: "14px 0",
+          minHeight: 88,
           borderBottom: ci < secondaryColumns.length - 1 ? "1px solid var(--line)" : "none",
           cursor: "pointer"
         }
       },
       /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 6, flexWrap: "wrap" } }, c.category && /* @__PURE__ */ React.createElement("span", { className: "pill", style: { fontSize: 9, padding: "2px 8px" } }, c.category), c.date && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, c.date)),
-      /* @__PURE__ */ React.createElement("h4", { className: "ko-serif", style: { fontSize: 16, fontWeight: 600, lineHeight: 1.4, marginBottom: 4 } }, c.title),
-      c.excerpt && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, lineHeight: 1.6, color: "var(--ink-3)", margin: 0 } }, (c.excerpt || "").slice(0, 65), "\u2026")
+      /* @__PURE__ */ React.createElement("h4", { className: "ko-serif", style: {
+        fontSize: 16,
+        fontWeight: 600,
+        lineHeight: 1.4,
+        marginBottom: 4,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      } }, truncatePreview(c.title, 20)),
+      c.excerpt && /* @__PURE__ */ React.createElement("p", { style: {
+        fontSize: 12,
+        lineHeight: 1.6,
+        color: "var(--ink-3)",
+        margin: 0,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      } }, truncatePreview(c.excerpt, 38))
     )), secondaryColumns.length === 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-3)", padding: "16px 0" } }, homeText.columnEmpty))
   )))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: "lecture-strip", role: "list" }, lectures.map((lecture) => /* @__PURE__ */ React.createElement(
     "article",
