@@ -37,6 +37,7 @@ const TourPage = ({ go, user }) => {
   const refresh = () => setTick((v) => v + 1);
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   const [addOpen, setAddOpen] = React.useState(false);
+  const [editTarget, setEditTarget] = React.useState(null);
   const isAdmin = !!(user == null ? void 0 : user.isAdmin);
   React.useEffect(() => {
     let pending = null;
@@ -126,7 +127,16 @@ const TourPage = ({ go, user }) => {
       ));
     }
     return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, window.CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "16/10", label: String(tour.title || "").toUpperCase() }) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "16/10", fontSize: 11 } }, String(tour.title || "").toUpperCase()));
-  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, tour.level), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.duration), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.group), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08")), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: tour.subtitle ? 6 : 24 } }, tour.title), tour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "ko-serif gold-2", style: { fontSize: 18, lineHeight: 1.4, marginBottom: 24, fontStyle: "italic" } }, tour.subtitle), /* @__PURE__ */ React.createElement("p", { className: "dim bgnj-multiline", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32 } }, tour.desc), (() => {
+  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, tour.level), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.duration), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.group), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), isAdmin && /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      style: { marginLeft: "auto", fontSize: 11, padding: "4px 10px" },
+      onClick: () => setEditTarget(tour)
+    },
+    "\u270E \uD22C\uC5B4 \uC218\uC815"
+  )), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: tour.subtitle ? 6 : 24 } }, tour.title), tour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "ko-serif gold-2", style: { fontSize: 18, lineHeight: 1.4, marginBottom: 24, fontStyle: "italic" } }, tour.subtitle), /* @__PURE__ */ React.createElement("p", { className: "dim bgnj-multiline", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32 } }, tour.desc), (() => {
     var _a2, _b2;
     const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
     const perTour = sc.tourPages && typeof sc.tourPages === "object" && (tour == null ? void 0 : tour.id) ? sc.tourPages[tour.id] || null : null;
@@ -155,31 +165,43 @@ const TourPage = ({ go, user }) => {
       onRefresh: refresh,
       go
     }
-  )))), addOpen && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }));
+  )))), addOpen && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }), editTarget && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setEditTarget(null), onSaved: refresh, initialTour: editTarget }));
 };
-const TourQuickAddModal = ({ onClose, onSaved }) => {
-  var _a;
+const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
+  var _a, _b, _c;
+  const isEdit = !!(initialTour == null ? void 0 : initialTour.id);
   const _defaultStartLocal = (() => {
     const d = new Date(Date.now() + 14 * 864e5);
     const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T10:00`;
   })();
-  const [title, setTitle] = React.useState("");
-  const [subtitle, setSubtitle] = React.useState("");
-  const [level, setLevel] = React.useState("\uC785\uBB38");
-  const [duration, setDuration] = React.useState("3\uC2DC\uAC04");
-  const [group, setGroup] = React.useState("12\uC778 \uC774\uD558");
-  const [startsAt, setStartsAt] = React.useState(_defaultStartLocal);
-  const [durationMinutes, setDurationMinutes] = React.useState(180);
-  const [capacity, setCapacity] = React.useState(12);
-  const [price, setPrice] = React.useState(8e4);
-  const [desc, setDesc] = React.useState("");
+  const _toLocalInput = (iso) => {
+    if (!iso) return _defaultStartLocal;
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return _defaultStartLocal;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch (e) {
+      return _defaultStartLocal;
+    }
+  };
+  const [title, setTitle] = React.useState((initialTour == null ? void 0 : initialTour.title) || "");
+  const [subtitle, setSubtitle] = React.useState((initialTour == null ? void 0 : initialTour.subtitle) || "");
+  const [level, setLevel] = React.useState((initialTour == null ? void 0 : initialTour.level) || "\uC785\uBB38");
+  const [duration, setDuration] = React.useState((initialTour == null ? void 0 : initialTour.duration) || "3\uC2DC\uAC04");
+  const [group, setGroup] = React.useState((initialTour == null ? void 0 : initialTour.group) || "12\uC778 \uC774\uD558");
+  const [startsAt, setStartsAt] = React.useState(_toLocalInput(initialTour == null ? void 0 : initialTour.startsAt));
+  const [durationMinutes, setDurationMinutes] = React.useState((initialTour == null ? void 0 : initialTour.durationMinutes) || 180);
+  const [capacity, setCapacity] = React.useState((initialTour == null ? void 0 : initialTour.capacity) || 12);
+  const [price, setPrice] = React.useState((_b = (_a = initialTour == null ? void 0 : initialTour.priceNumber) != null ? _a : initialTour == null ? void 0 : initialTour.price) != null ? _b : 8e4);
+  const [desc, setDesc] = React.useState((initialTour == null ? void 0 : initialTour.desc) || "");
   const [error, setError] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const dirty = !!(title.trim() || subtitle.trim() || desc.trim());
-  const guard = ((_a = window.useModalGuard) == null ? void 0 : _a.call(window, { open: true, dirty, onClose, onSaveDraft: null, label: "\uD22C\uC5B4 \uCD94\uAC00" })) || {};
+  const guard = ((_c = window.useModalGuard) == null ? void 0 : _c.call(window, { open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? "\uD22C\uC5B4 \uC218\uC815" : "\uD22C\uC5B4 \uCD94\uAC00" })) || {};
   const submit = async (e) => {
-    var _a2, _b, _c, _d, _e, _f, _g;
+    var _a2, _b2, _c2, _d, _e, _f, _g;
     e.preventDefault();
     setError("");
     if (!title.trim()) {
@@ -196,7 +218,7 @@ const TourQuickAddModal = ({ onClose, onSaved }) => {
       if (isNaN(dt.getTime())) throw new Error("\uC77C\uC2DC \uD615\uC2DD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
       const pad = (n) => String(n).padStart(2, "0");
       const next = `${dt.getFullYear()}.${pad(dt.getMonth() + 1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-      const id = `tour-${Date.now()}`;
+      const id = isEdit ? initialTour.id : `tour-${Date.now()}`;
       await window.BGNJ_TOURS.saveTour({
         id,
         title: title.trim(),
@@ -213,18 +235,18 @@ const TourQuickAddModal = ({ onClose, onSaved }) => {
         desc: desc.trim()
       });
       try {
-        await ((_b = (_a2 = window.BGNJ_AUDIT) == null ? void 0 : _a2.log) == null ? void 0 : _b.call(_a2, { action: "tour.create", target: `tour:${id}` }));
+        await ((_b2 = (_a2 = window.BGNJ_AUDIT) == null ? void 0 : _a2.log) == null ? void 0 : _b2.call(_a2, { action: isEdit ? "tour.update" : "tour.create", target: `tour:${id}` }));
       } catch (e2) {
       }
       try {
-        (_d = (_c = window.BGNJ_BROADCAST) == null ? void 0 : _c.publish) == null ? void 0 : _d.call(_c, "tours");
+        (_d = (_c2 = window.BGNJ_BROADCAST) == null ? void 0 : _c2.publish) == null ? void 0 : _d.call(_c2, "tours");
       } catch (e2) {
       }
-      (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.success) == null ? void 0 : _f.call(_e, "\uD22C\uC5B4\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+      (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.success) == null ? void 0 : _f.call(_e, isEdit ? "\uD22C\uC5B4\uAC00 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4." : "\uD22C\uC5B4\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
       onSaved == null ? void 0 : onSaved();
       onClose == null ? void 0 : onClose();
     } catch (err) {
-      setError(((_g = err == null ? void 0 : err.body) == null ? void 0 : _g.error) || (err == null ? void 0 : err.message) || "\uD22C\uC5B4 \uC0DD\uC131 \uC2E4\uD328");
+      setError(((_g = err == null ? void 0 : err.body) == null ? void 0 : _g.error) || (err == null ? void 0 : err.message) || (isEdit ? "\uD22C\uC5B4 \uC218\uC815 \uC2E4\uD328" : "\uD22C\uC5B4 \uC0DD\uC131 \uC2E4\uD328"));
     } finally {
       setSaving(false);
     }
@@ -234,7 +256,7 @@ const TourQuickAddModal = ({ onClose, onSaved }) => {
     {
       role: "dialog",
       "aria-modal": "true",
-      "aria-label": "\uD22C\uC5B4 \uCD94\uAC00",
+      "aria-label": isEdit ? "\uD22C\uC5B4 \uC218\uC815" : "\uD22C\uC5B4 \uCD94\uAC00",
       onClick: guard.onBackdropClick,
       style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1e3, display: "grid", placeItems: "start center", padding: 24, overflowY: "auto" }
     },
@@ -245,7 +267,7 @@ const TourQuickAddModal = ({ onClose, onSaved }) => {
       padding: 24,
       marginTop: 24,
       marginBottom: 48
-    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC0C8 \uD22C\uC5B4 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, "\uAE30\uBCF8 \uC815\uBCF4\uB9CC \uC785\uB825\uD574 \uBE60\uB974\uAC8C \uB4F1\uB85D\uD569\uB2C8\uB2E4. \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84\xB7\uD658\uBD88\uC815\uCC45 \uB4F1 \uC0C1\uC138 \uD3B8\uC9D1\uC740 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uC774\uC5B4\uC11C \uC9C4\uD589\uD558\uC138\uC694."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD22C\uC5B4 \uC81C\uBAA9 *"), /* @__PURE__ */ React.createElement(
+    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, isEdit ? "\uD22C\uC5B4 \uC218\uC815" : "\uC0C8 \uD22C\uC5B4 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, isEdit ? "\uAE30\uBCF8 \uC815\uBCF4\uB97C \uC218\uC815\uD569\uB2C8\uB2E4. \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84\xB7\uD658\uBD88\uC815\uCC45 \uB4F1 \uC0C1\uC138\uB294 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uD3B8\uC9D1\uD558\uC138\uC694." : "\uAE30\uBCF8 \uC815\uBCF4\uB9CC \uC785\uB825\uD574 \uBE60\uB974\uAC8C \uB4F1\uB85D\uD569\uB2C8\uB2E4. \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84\xB7\uD658\uBD88\uC815\uCC45 \uB4F1 \uC0C1\uC138 \uD3B8\uC9D1\uC740 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uC774\uC5B4\uC11C \uC9C4\uD589\uD558\uC138\uC694."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD22C\uC5B4 \uC81C\uBAA9 *"), /* @__PURE__ */ React.createElement(
       "input",
       {
         className: "field-input",
@@ -331,7 +353,7 @@ const TourQuickAddModal = ({ onClose, onSaved }) => {
         onChange: (e) => setDesc(e.target.value),
         placeholder: "\uB2F5\uC0AC \uC548\uB0B4 (\uC774\uD6C4 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uBCF4\uAC15 \uAC00\uB2A5)"
       }
-    )), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : "\uD22C\uC5B4 \uB4F1\uB85D"))))
+    )), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uD22C\uC5B4 \uC800\uC7A5" : "\uD22C\uC5B4 \uB4F1\uB85D"))))
   );
 };
 const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, formatPrice, onRefresh, go }) => {

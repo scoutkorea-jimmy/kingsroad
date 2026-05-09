@@ -8,6 +8,7 @@ const ColumnPage = ({ go, user }) => {
   const [comment, setComment] = React.useState("");
   const [shareMsg, setShareMsg] = React.useState("");
   const [writerOpen, setWriterOpen] = React.useState(false);
+  const [editColumn, setEditColumn] = React.useState(null);
   const isAdmin = !!(user == null ? void 0 : user.isAdmin);
   const refresh = () => setTick((v) => v + 1);
   const publicColumns = React.useMemo(
@@ -136,15 +137,24 @@ const ColumnPage = ({ go, user }) => {
       return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listComments) == null ? void 0 : _b2.call(_a2, c.id);
     });
     const readTime = ((_a = c.body) == null ? void 0 : _a.text) ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text) : c.readTime;
-    return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760 } }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement(
       "button",
       {
         className: "btn-ghost",
         onClick: () => setSelectedId(null),
-        style: { marginBottom: 32, cursor: "pointer", color: "var(--ink-2)", fontSize: 12, letterSpacing: "0.1em" }
+        style: { cursor: "pointer", color: "var(--ink-2)", fontSize: 12, letterSpacing: "0.1em" }
       },
       "\u2190 \uC544\uCE74\uC774\uBE0C\uB85C"
-    ), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginBottom: 40 } }, (() => {
+    ), isAdmin && /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn btn-small",
+        style: { fontSize: 11, padding: "4px 10px" },
+        onClick: () => setEditColumn(c)
+      },
+      "\u270E \uCE7C\uB7FC \uC218\uC815"
+    )), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginBottom: 40 } }, (() => {
       var _a2, _b2;
       const num = (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.numberOf) == null ? void 0 : _b2.call(_a2, c.id);
       return num ? /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.3em", marginBottom: 14 } }, "COLUMN #", String(num).padStart(3, "0")) : null;
@@ -244,7 +254,7 @@ const ColumnPage = ({ go, user }) => {
       },
       /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 8 } }, "\uB2E4\uC74C \uCE7C\uB7FC \u2192"),
       /* @__PURE__ */ React.createElement("div", { className: "ko-serif gold", style: { fontSize: 16 } }, nextCol.title)
-    ))));
+    ))), editColumn && isAdmin && /* @__PURE__ */ React.createElement(ColumnWriterModal, { onClose: () => setEditColumn(null), initialColumn: editColumn }));
   }
   return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginBottom: 48 } }, (() => {
     var _a2, _b2, _c2, _d, _e;
@@ -330,8 +340,9 @@ const ColumnPage = ({ go, user }) => {
     );
   })), filtered.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { textAlign: "center", fontSize: 10, letterSpacing: "0.2em", marginTop: 32 } }, "\uCD1D ", filtered.length, "\uAC1C \uCE7C\uB7FC \xB7 ", category, " ", search && `\xB7 "${search}"`)), writerOpen && isAdmin && /* @__PURE__ */ React.createElement(ColumnWriterModal, { onClose: () => setWriterOpen(false) }));
 };
-const ColumnWriterModal = ({ onClose }) => {
+const ColumnWriterModal = ({ onClose, initialColumn = null }) => {
   var _a, _b, _c;
+  const isEdit = !!(initialColumn == null ? void 0 : initialColumn.id);
   const [payload, setPayload] = React.useState(null);
   const [adminTick, setAdminTick] = React.useState(0);
   const [loadError, setLoadError] = React.useState(false);
@@ -386,13 +397,14 @@ const ColumnWriterModal = ({ onClose }) => {
       padding: 24,
       marginTop: 24,
       marginBottom: 48
-    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC0C8 \uCE7C\uB7FC \uC791\uC131"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, isEdit ? "\uCE7C\uB7FC \uC218\uC815" : "\uC0C8 \uCE7C\uB7FC \uC791\uC131"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
       const ok = !dirty || await window.BGNJ_CONFIRM("\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9\uC744 \uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?", { hint: "[\uD655\uC778]=\uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uAE30 / [\uCDE8\uC18C]=\uADF8\uB0E5 \uB2EB\uAE30", confirmLabel: "\uC784\uC2DC\uC800\uC7A5" });
       if (ok && dirty) saveDraft();
       onClose == null ? void 0 : onClose();
     } }, "\uB2EB\uAE30")), Editor ? /* @__PURE__ */ React.createElement(
       Editor,
       {
+        initialColumn: initialColumn || void 0,
         onPayloadChange: setPayload,
         onAfterSave: (status) => {
           if (status === "published" || status === "scheduled") onClose == null ? void 0 : onClose();

@@ -67,6 +67,8 @@ const TourPage = ({ go, user }) => {
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   // v00.228 — admin 전용 프론트 quick-add (사용자 요청: 관리자는 프론트에서도 투어 추가 가능).
   const [addOpen, setAddOpen] = React.useState(false);
+  // v00.234 — admin 전용 프론트 edit.
+  const [editTarget, setEditTarget] = React.useState(null);
   const isAdmin = !!user?.isAdmin;
 
   // 외부 진입(해시 / 마이페이지 알림 등)으로 들어온 투어 ID 처리
@@ -188,11 +190,19 @@ const TourPage = ({ go, user }) => {
                 </div>
               );
             })()}
-            <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap'}}>
+            <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap', alignItems:'center'}}>
               <span className="badge badge-gold">{tour.level}</span>
               <span className="badge">{tour.duration}</span>
               <span className="badge">{tour.group}</span>
               <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>
+              {/* v00.234 — admin 전용 프론트 수정 진입로. */}
+              {isAdmin && (
+                <button type="button" className="btn btn-small"
+                  style={{marginLeft:'auto', fontSize:11, padding:'4px 10px'}}
+                  onClick={() => setEditTarget(tour)}>
+                  ✎ 투어 수정
+                </button>
+              )}
             </div>
             {/* v00.106 — 제목 + 부제 + 설명 */}
             <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom: tour.subtitle ? 6 : 24}}>{tour.title}</h2>
@@ -288,33 +298,46 @@ const TourPage = ({ go, user }) => {
       </div>
       {/* v00.228 — admin 전용 투어 quick-add 모달. */}
       {addOpen && isAdmin && <TourQuickAddModal onClose={() => setAddOpen(false)} onSaved={refresh}/>}
+      {/* v00.234 — admin 전용 투어 수정 모달 (initialTour prop). */}
+      {editTarget && isAdmin && <TourQuickAddModal onClose={() => setEditTarget(null)} onSaved={refresh} initialTour={editTarget}/>}
     </div>
   );
 };
 
 // v00.228 — admin 전용 프론트 투어 quick-add. AuthAdminPage 의 addNewTour 와 같은 saveTour 호출.
 // 상세(부제·설명·환불정책·커버)는 admin 패널에서 후속 편집.
-const TourQuickAddModal = ({ onClose, onSaved }) => {
+// v00.234 — initialTour prop 으로 edit 모드 확장.
+const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
+  const isEdit = !!initialTour?.id;
   // 기본값: +2주 10:00 (admin 패널의 addNewTour 와 동일).
   const _defaultStartLocal = (() => {
     const d = new Date(Date.now() + 14 * 86400000);
     const pad = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T10:00`;
   })();
-  const [title, setTitle] = React.useState('');
-  const [subtitle, setSubtitle] = React.useState('');
-  const [level, setLevel] = React.useState('입문');
-  const [duration, setDuration] = React.useState('3시간');
-  const [group, setGroup] = React.useState('12인 이하');
-  const [startsAt, setStartsAt] = React.useState(_defaultStartLocal);
-  const [durationMinutes, setDurationMinutes] = React.useState(180);
-  const [capacity, setCapacity] = React.useState(12);
-  const [price, setPrice] = React.useState(80000);
-  const [desc, setDesc] = React.useState('');
+  const _toLocalInput = (iso) => {
+    if (!iso) return _defaultStartLocal;
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return _defaultStartLocal;
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch { return _defaultStartLocal; }
+  };
+  const [title, setTitle] = React.useState(initialTour?.title || '');
+  const [subtitle, setSubtitle] = React.useState(initialTour?.subtitle || '');
+  const [level, setLevel] = React.useState(initialTour?.level || '입문');
+  const [duration, setDuration] = React.useState(initialTour?.duration || '3시간');
+  const [group, setGroup] = React.useState(initialTour?.group || '12인 이하');
+  const [startsAt, setStartsAt] = React.useState(_toLocalInput(initialTour?.startsAt));
+  const [durationMinutes, setDurationMinutes] = React.useState(initialTour?.durationMinutes || 180);
+  const [capacity, setCapacity] = React.useState(initialTour?.capacity || 12);
+  const [price, setPrice] = React.useState(initialTour?.priceNumber ?? initialTour?.price ?? 80000);
+  const [desc, setDesc] = React.useState(initialTour?.desc || '');
   const [error, setError] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const dirty = !!(title.trim() || subtitle.trim() || desc.trim());
-  const guard = window.useModalGuard?.({ open: true, dirty, onClose, onSaveDraft: null, label: '투어 추가' }) || {};
+  const guard = window.useModalGuard?.({ open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? '투어 수정' : '투어 추가' }) || {};
 
   const submit = async (e) => {
     e.preventDefault();
@@ -327,7 +350,8 @@ const TourQuickAddModal = ({ onClose, onSaved }) => {
       if (isNaN(dt.getTime())) throw new Error('일시 형식이 올바르지 않습니다.');
       const pad = (n) => String(n).padStart(2, '0');
       const next = `${dt.getFullYear()}.${pad(dt.getMonth()+1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-      const id = `tour-${Date.now()}`;
+      // edit: 기존 id 유지 / add: 새 id 생성. saveTour 가 update/create 분기.
+      const id = isEdit ? initialTour.id : `tour-${Date.now()}`;
       await window.BGNJ_TOURS.saveTour({
         id,
         title: title.trim(),
@@ -343,20 +367,20 @@ const TourQuickAddModal = ({ onClose, onSaved }) => {
         price: Math.max(0, Number(price) || 0),
         desc: desc.trim(),
       });
-      try { await window.BGNJ_AUDIT?.log?.({ action: 'tour.create', target: `tour:${id}` }); } catch {}
+      try { await window.BGNJ_AUDIT?.log?.({ action: isEdit ? 'tour.update' : 'tour.create', target: `tour:${id}` }); } catch {}
       try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch {}
-      window.BGNJ_TOAST?.success?.('투어가 등록되었습니다.');
+      window.BGNJ_TOAST?.success?.(isEdit ? '투어가 수정되었습니다.' : '투어가 등록되었습니다.');
       onSaved?.();
       onClose?.();
     } catch (err) {
-      setError(err?.body?.error || err?.message || '투어 생성 실패');
+      setError(err?.body?.error || err?.message || (isEdit ? '투어 수정 실패' : '투어 생성 실패'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="투어 추가"
+    <div role="dialog" aria-modal="true" aria-label={isEdit ? '투어 수정' : '투어 추가'}
       onClick={guard.onBackdropClick}
       style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'grid', placeItems:'start center', padding:24, overflowY:'auto'}}>
       <div onClick={(e) => e.stopPropagation()} style={{
@@ -364,12 +388,13 @@ const TourQuickAddModal = ({ onClose, onSaved }) => {
         padding:24, marginTop:24, marginBottom:48,
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
-          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>새 투어 추가</h2>
+          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>{isEdit ? '투어 수정' : '새 투어 추가'}</h2>
           <button type="button" className="btn btn-small" onClick={onClose}>닫기</button>
         </div>
         <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:18}}>
-          기본 정보만 입력해 빠르게 등록합니다. 일정·준비물·커버·환불정책 등 상세 편집은
-          관리자 패널에서 이어서 진행하세요.
+          {isEdit
+            ? '기본 정보를 수정합니다. 일정·준비물·커버·환불정책 등 상세는 관리자 패널에서 편집하세요.'
+            : '기본 정보만 입력해 빠르게 등록합니다. 일정·준비물·커버·환불정책 등 상세 편집은 관리자 패널에서 이어서 진행하세요.'}
         </p>
         <form onSubmit={submit} style={{display:'grid', gap:12}}>
           <div className="field" style={{margin:0}}>
@@ -435,7 +460,7 @@ const TourQuickAddModal = ({ onClose, onSaved }) => {
           <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:6}}>
             <button type="button" className="btn btn-small" onClick={onClose} disabled={saving}>취소</button>
             <button type="submit" className="btn btn-gold btn-small" disabled={saving || !title.trim()}>
-              {saving ? '저장 중...' : '투어 등록'}
+              {saving ? '저장 중...' : (isEdit ? '투어 저장' : '투어 등록')}
             </button>
           </div>
         </form>

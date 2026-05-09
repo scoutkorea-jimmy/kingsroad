@@ -5,6 +5,7 @@ const LecturesPage = ({ go, user }) => {
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   const [bucket, setBucket] = React.useState("upcoming");
   const [addOpen, setAddOpen] = React.useState(false);
+  const [editTarget, setEditTarget] = React.useState(null);
   const isAdmin = !!(user == null ? void 0 : user.isAdmin);
   const refresh = () => setTick((v) => v + 1);
   const G = window.BGNJ_GUARD;
@@ -159,7 +160,16 @@ const LecturesPage = ({ go, user }) => {
       ));
     }
     return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, window.CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "16/10", label: String(lecture.title || "").toUpperCase() }) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "16/10", fontSize: 11 } }, String(lecture.title || "").toUpperCase()));
-  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, lecture.title), lecture.price === 0 ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--secondary)", border: "1px solid var(--primary-dim)", padding: "1px 6px" } }, "FREE") : /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), /* @__PURE__ */ React.createElement("span", { className: "badge" }, lecture.host), /* @__PURE__ */ React.createElement("span", { className: "badge" }, lecture.venue)), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: 24 } }, lecture.topic), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32 } }, lecture.note), (() => {
+  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, lecture.title), lecture.price === 0 ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--secondary)", border: "1px solid var(--primary-dim)", padding: "1px 6px" } }, "FREE") : /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), /* @__PURE__ */ React.createElement("span", { className: "badge" }, lecture.host), /* @__PURE__ */ React.createElement("span", { className: "badge" }, lecture.venue), isAdmin && /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      style: { marginLeft: "auto", fontSize: 11, padding: "4px 10px" },
+      onClick: () => setEditTarget(lecture)
+    },
+    "\u270E \uAC15\uC5F0 \uC218\uC815"
+  )), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: 24 } }, lecture.topic), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32 } }, lecture.note), (() => {
     var _a2, _b2;
     const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
     const perLec = sc.lecturePages && typeof sc.lecturePages === "object" && (lecture == null ? void 0 : lecture.id) ? sc.lecturePages[lecture.id] || null : null;
@@ -182,28 +192,40 @@ const LecturesPage = ({ go, user }) => {
       onRefresh: refresh,
       go
     }
-  ))))), addOpen && isAdmin && /* @__PURE__ */ React.createElement(LectureQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }));
+  ))))), addOpen && isAdmin && /* @__PURE__ */ React.createElement(LectureQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }), editTarget && isAdmin && /* @__PURE__ */ React.createElement(LectureQuickAddModal, { onClose: () => setEditTarget(null), onSaved: refresh, initialLecture: editTarget }));
 };
-const LectureQuickAddModal = ({ onClose, onSaved }) => {
+const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
   var _a;
+  const isEdit = !!(initialLecture == null ? void 0 : initialLecture.id);
   const _defaultStartLocal = (() => {
     const d = new Date(Date.now() + 7 * 864e5);
     const pad = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T19:00`;
   })();
-  const [title, setTitle] = React.useState("");
-  const [topic, setTopic] = React.useState("");
-  const [venue, setVenue] = React.useState("");
-  const [host, setHost] = React.useState("\uBC45\uAE30\uB178\uC790");
-  const [startsAt, setStartsAt] = React.useState(_defaultStartLocal);
-  const [durationMinutes, setDurationMinutes] = React.useState(90);
-  const [capacity, setCapacity] = React.useState(30);
-  const [price, setPrice] = React.useState(0);
-  const [note, setNote] = React.useState("");
+  const _toLocalInput = (iso) => {
+    if (!iso) return _defaultStartLocal;
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return _defaultStartLocal;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch (e) {
+      return _defaultStartLocal;
+    }
+  };
+  const [title, setTitle] = React.useState((initialLecture == null ? void 0 : initialLecture.title) || "");
+  const [topic, setTopic] = React.useState((initialLecture == null ? void 0 : initialLecture.topic) || "");
+  const [venue, setVenue] = React.useState((initialLecture == null ? void 0 : initialLecture.venue) || "");
+  const [host, setHost] = React.useState((initialLecture == null ? void 0 : initialLecture.host) || "\uBC45\uAE30\uB178\uC790");
+  const [startsAt, setStartsAt] = React.useState(_toLocalInput(initialLecture == null ? void 0 : initialLecture.startsAt));
+  const [durationMinutes, setDurationMinutes] = React.useState((initialLecture == null ? void 0 : initialLecture.durationMinutes) || 90);
+  const [capacity, setCapacity] = React.useState((initialLecture == null ? void 0 : initialLecture.capacity) || 30);
+  const [price, setPrice] = React.useState((initialLecture == null ? void 0 : initialLecture.price) || 0);
+  const [note, setNote] = React.useState((initialLecture == null ? void 0 : initialLecture.note) || "");
   const [error, setError] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const dirty = !!(title.trim() || topic.trim() || venue.trim() || note.trim());
-  const guard = ((_a = window.useModalGuard) == null ? void 0 : _a.call(window, { open: true, dirty, onClose, onSaveDraft: null, label: "\uAC15\uC5F0 \uCD94\uAC00" })) || {};
+  const guard = ((_a = window.useModalGuard) == null ? void 0 : _a.call(window, { open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? "\uAC15\uC5F0 \uC218\uC815" : "\uAC15\uC5F0 \uCD94\uAC00" })) || {};
   const submit = async (e) => {
     var _a2, _b, _c, _d, _e, _f, _g;
     e.preventDefault();
@@ -222,7 +244,7 @@ const LectureQuickAddModal = ({ onClose, onSaved }) => {
       if (isNaN(dt.getTime())) throw new Error("\uC77C\uC2DC \uD615\uC2DD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
       const pad = (n) => String(n).padStart(2, "0");
       const next = `${dt.getFullYear()}.${pad(dt.getMonth() + 1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-      const id = `lecture-${Date.now()}`;
+      const id = isEdit ? initialLecture.id : `lecture-${Date.now()}`;
       await window.BGNJ_LECTURES.saveLecture({
         id,
         title: title.trim(),
@@ -237,18 +259,18 @@ const LectureQuickAddModal = ({ onClose, onSaved }) => {
         note: note.trim()
       });
       try {
-        await ((_b = (_a2 = window.BGNJ_AUDIT) == null ? void 0 : _a2.log) == null ? void 0 : _b.call(_a2, { action: "lecture.create", target: `lecture:${id}` }));
+        await ((_b = (_a2 = window.BGNJ_AUDIT) == null ? void 0 : _a2.log) == null ? void 0 : _b.call(_a2, { action: isEdit ? "lecture.update" : "lecture.create", target: `lecture:${id}` }));
       } catch (e2) {
       }
       try {
         (_d = (_c = window.BGNJ_BROADCAST) == null ? void 0 : _c.publish) == null ? void 0 : _d.call(_c, "lectures");
       } catch (e2) {
       }
-      (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.success) == null ? void 0 : _f.call(_e, "\uAC15\uC5F0\uC774 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+      (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.success) == null ? void 0 : _f.call(_e, isEdit ? "\uAC15\uC5F0\uC774 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4." : "\uAC15\uC5F0\uC774 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
       onSaved == null ? void 0 : onSaved();
       onClose == null ? void 0 : onClose();
     } catch (err) {
-      setError(((_g = err == null ? void 0 : err.body) == null ? void 0 : _g.error) || (err == null ? void 0 : err.message) || "\uAC15\uC5F0 \uC0DD\uC131 \uC2E4\uD328");
+      setError(((_g = err == null ? void 0 : err.body) == null ? void 0 : _g.error) || (err == null ? void 0 : err.message) || (isEdit ? "\uAC15\uC5F0 \uC218\uC815 \uC2E4\uD328" : "\uAC15\uC5F0 \uC0DD\uC131 \uC2E4\uD328"));
     } finally {
       setSaving(false);
     }
@@ -258,7 +280,7 @@ const LectureQuickAddModal = ({ onClose, onSaved }) => {
     {
       role: "dialog",
       "aria-modal": "true",
-      "aria-label": "\uAC15\uC5F0 \uCD94\uAC00",
+      "aria-label": isEdit ? "\uAC15\uC5F0 \uC218\uC815" : "\uAC15\uC5F0 \uCD94\uAC00",
       onClick: guard.onBackdropClick,
       style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1e3, display: "grid", placeItems: "start center", padding: 24, overflowY: "auto" }
     },
@@ -269,7 +291,7 @@ const LectureQuickAddModal = ({ onClose, onSaved }) => {
       padding: 24,
       marginTop: 24,
       marginBottom: 48
-    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC0C8 \uAC15\uC5F0 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, "\uAE30\uBCF8 \uC815\uBCF4\uB9CC \uC785\uB825\uD574 \uBE60\uB974\uAC8C \uB4F1\uB85D\uD569\uB2C8\uB2E4. \uC9C4\uD589 \uC77C\uC815\xB7\uCC38\uACE0\xB7\uCEE4\uBC84 \uC774\uBBF8\uC9C0 \uB4F1 \uC0C1\uC138 \uD3B8\uC9D1\uC740 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uC774\uC5B4\uC11C \uC9C4\uD589\uD558\uC138\uC694."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uAC15\uC5F0 \uC81C\uBAA9 *"), /* @__PURE__ */ React.createElement(
+    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, isEdit ? "\uAC15\uC5F0 \uC218\uC815" : "\uC0C8 \uAC15\uC5F0 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, isEdit ? "\uAE30\uBCF8 \uC815\uBCF4\uB97C \uC218\uC815\uD569\uB2C8\uB2E4. \uC9C4\uD589 \uC77C\uC815\xB7\uCC38\uACE0\xB7\uCEE4\uBC84 \uC774\uBBF8\uC9C0 \uB4F1 \uC0C1\uC138\uB294 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uD3B8\uC9D1\uD558\uC138\uC694." : "\uAE30\uBCF8 \uC815\uBCF4\uB9CC \uC785\uB825\uD574 \uBE60\uB974\uAC8C \uB4F1\uB85D\uD569\uB2C8\uB2E4. \uC9C4\uD589 \uC77C\uC815\xB7\uCC38\uACE0\xB7\uCEE4\uBC84 \uC774\uBBF8\uC9C0 \uB4F1 \uC0C1\uC138 \uD3B8\uC9D1\uC740 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uC774\uC5B4\uC11C \uC9C4\uD589\uD558\uC138\uC694."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uAC15\uC5F0 \uC81C\uBAA9 *"), /* @__PURE__ */ React.createElement(
       "input",
       {
         className: "field-input",
@@ -339,7 +361,7 @@ const LectureQuickAddModal = ({ onClose, onSaved }) => {
         onChange: (e) => setNote(e.target.value),
         placeholder: "\uAC15\uC5F0 \uC548\uB0B4\xB7\uB2F9\uBD80 \uC0AC\uD56D (\uC774\uD6C4 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uBCF4\uAC15 \uAC00\uB2A5)"
       }
-    )), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : "\uAC15\uC5F0 \uB4F1\uB85D"))))
+    )), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uAC15\uC5F0 \uC800\uC7A5" : "\uAC15\uC5F0 \uB4F1\uB85D"))))
   );
 };
 const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, tone, formatPrice, onRefresh, go }) => {

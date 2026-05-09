@@ -6,6 +6,8 @@ const LecturesPage = ({ go, user }) => {
   const [bucket, setBucket] = React.useState('upcoming'); // 'upcoming' | 'past'
   // v00.228 — admin 전용 프론트 quick-add (사용자 요청: 관리자는 프론트에서도 강연 추가 가능).
   const [addOpen, setAddOpen] = React.useState(false);
+  // v00.234 — admin 전용 프론트 edit (선택된 강연 객체가 들어가면 모달 노출).
+  const [editTarget, setEditTarget] = React.useState(null);
   const isAdmin = !!user?.isAdmin;
   const refresh = () => setTick((v) => v + 1);
   const G = window.BGNJ_GUARD;
@@ -202,13 +204,21 @@ const LecturesPage = ({ go, user }) => {
                 </div>
               );
             })()}
-            <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap'}}>
+            <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap', alignItems:'center'}}>
               <span className="badge badge-gold">{lecture.title}</span>
               {lecture.price === 0
                 ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--secondary)', border:'1px solid var(--primary-dim)', padding:'1px 6px'}}>FREE</span>
                 : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>}
               <span className="badge">{lecture.host}</span>
               <span className="badge">{lecture.venue}</span>
+              {/* v00.234 — admin 전용 프론트 수정 진입로. */}
+              {isAdmin && (
+                <button type="button" className="btn btn-small"
+                  style={{marginLeft:'auto', fontSize:11, padding:'4px 10px'}}
+                  onClick={() => setEditTarget(lecture)}>
+                  ✎ 강연 수정
+                </button>
+              )}
             </div>
             <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24}}>{lecture.topic}</h2>
             <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{lecture.note}</p>
@@ -279,6 +289,8 @@ const LecturesPage = ({ go, user }) => {
       </div>
       {/* v00.228 — admin 전용 강연 quick-add 모달. 저장 시 refresh() 로 페이지 재렌더. */}
       {addOpen && isAdmin && <LectureQuickAddModal onClose={() => setAddOpen(false)} onSaved={refresh}/>}
+      {/* v00.234 — admin 전용 강연 수정 모달 (같은 컴포넌트 / initialLecture prop). */}
+      {editTarget && isAdmin && <LectureQuickAddModal onClose={() => setEditTarget(null)} onSaved={refresh} initialLecture={editTarget}/>}
     </div>
   );
 };
@@ -286,26 +298,38 @@ const LecturesPage = ({ go, user }) => {
 // v00.228 — admin 전용 프론트 강연 quick-add. 사용자 요청: 관리자가 프론트 페이지에서도
 // 강연 프로그램을 추가할 수 있어야 함. AuthAdminPage 의 addNewLecture 에 들어가는 같은 필드
 // 세트 + saveLecture 호출 (worker handleLectureCreate). 상세 편집은 admin 패널에서 후속.
-const LectureQuickAddModal = ({ onClose, onSaved }) => {
+// v00.234 — initialLecture prop 으로 edit 모드 확장. id 있으면 update, 없으면 create.
+const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
+  const isEdit = !!initialLecture?.id;
   // 기본값: +1주 19:00 (admin 패널의 addNewLecture 와 동일).
   const _defaultStartLocal = (() => {
     const d = new Date(Date.now() + 7 * 86400000);
     const pad = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T19:00`;
   })();
-  const [title, setTitle] = React.useState('');
-  const [topic, setTopic] = React.useState('');
-  const [venue, setVenue] = React.useState('');
-  const [host, setHost] = React.useState('뱅기노자');
-  const [startsAt, setStartsAt] = React.useState(_defaultStartLocal);
-  const [durationMinutes, setDurationMinutes] = React.useState(90);
-  const [capacity, setCapacity] = React.useState(30);
-  const [price, setPrice] = React.useState(0);
-  const [note, setNote] = React.useState('');
+  // edit 모드: ISO startsAt → datetime-local "YYYY-MM-DDTHH:mm".
+  const _toLocalInput = (iso) => {
+    if (!iso) return _defaultStartLocal;
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return _defaultStartLocal;
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch { return _defaultStartLocal; }
+  };
+  const [title, setTitle] = React.useState(initialLecture?.title || '');
+  const [topic, setTopic] = React.useState(initialLecture?.topic || '');
+  const [venue, setVenue] = React.useState(initialLecture?.venue || '');
+  const [host, setHost] = React.useState(initialLecture?.host || '뱅기노자');
+  const [startsAt, setStartsAt] = React.useState(_toLocalInput(initialLecture?.startsAt));
+  const [durationMinutes, setDurationMinutes] = React.useState(initialLecture?.durationMinutes || 90);
+  const [capacity, setCapacity] = React.useState(initialLecture?.capacity || 30);
+  const [price, setPrice] = React.useState(initialLecture?.price || 0);
+  const [note, setNote] = React.useState(initialLecture?.note || '');
   const [error, setError] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const dirty = !!(title.trim() || topic.trim() || venue.trim() || note.trim());
-  const guard = window.useModalGuard?.({ open: true, dirty, onClose, onSaveDraft: null, label: '강연 추가' }) || {};
+  const guard = window.useModalGuard?.({ open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? '강연 수정' : '강연 추가' }) || {};
 
   const submit = async (e) => {
     e.preventDefault();
@@ -318,7 +342,8 @@ const LectureQuickAddModal = ({ onClose, onSaved }) => {
       if (isNaN(dt.getTime())) throw new Error('일시 형식이 올바르지 않습니다.');
       const pad = (n) => String(n).padStart(2, '0');
       const next = `${dt.getFullYear()}.${pad(dt.getMonth()+1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-      const id = `lecture-${Date.now()}`;
+      // edit: 기존 id 유지 / add: 새 id 생성. saveLecture 가 id 존재 + getLecture 매치 시 update path 분기.
+      const id = isEdit ? initialLecture.id : `lecture-${Date.now()}`;
       await window.BGNJ_LECTURES.saveLecture({
         id,
         title: title.trim(),
@@ -332,20 +357,20 @@ const LectureQuickAddModal = ({ onClose, onSaved }) => {
         price: Math.max(0, Number(price) || 0),
         note: note.trim(),
       });
-      try { await window.BGNJ_AUDIT?.log?.({ action: 'lecture.create', target: `lecture:${id}` }); } catch {}
+      try { await window.BGNJ_AUDIT?.log?.({ action: isEdit ? 'lecture.update' : 'lecture.create', target: `lecture:${id}` }); } catch {}
       try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
-      window.BGNJ_TOAST?.success?.('강연이 등록되었습니다.');
+      window.BGNJ_TOAST?.success?.(isEdit ? '강연이 수정되었습니다.' : '강연이 등록되었습니다.');
       onSaved?.();
       onClose?.();
     } catch (err) {
-      setError(err?.body?.error || err?.message || '강연 생성 실패');
+      setError(err?.body?.error || err?.message || (isEdit ? '강연 수정 실패' : '강연 생성 실패'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <div role="dialog" aria-modal="true" aria-label="강연 추가"
+    <div role="dialog" aria-modal="true" aria-label={isEdit ? '강연 수정' : '강연 추가'}
       onClick={guard.onBackdropClick}
       style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'grid', placeItems:'start center', padding:24, overflowY:'auto'}}>
       <div onClick={(e) => e.stopPropagation()} style={{
@@ -353,12 +378,13 @@ const LectureQuickAddModal = ({ onClose, onSaved }) => {
         padding:24, marginTop:24, marginBottom:48,
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
-          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>새 강연 추가</h2>
+          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>{isEdit ? '강연 수정' : '새 강연 추가'}</h2>
           <button type="button" className="btn btn-small" onClick={onClose}>닫기</button>
         </div>
         <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:18}}>
-          기본 정보만 입력해 빠르게 등록합니다. 진행 일정·참고·커버 이미지 등 상세 편집은
-          관리자 패널에서 이어서 진행하세요.
+          {isEdit
+            ? '기본 정보를 수정합니다. 진행 일정·참고·커버 이미지 등 상세는 관리자 패널에서 편집하세요.'
+            : '기본 정보만 입력해 빠르게 등록합니다. 진행 일정·참고·커버 이미지 등 상세 편집은 관리자 패널에서 이어서 진행하세요.'}
         </p>
         <form onSubmit={submit} style={{display:'grid', gap:12}}>
           <div className="field" style={{margin:0}}>
@@ -418,7 +444,7 @@ const LectureQuickAddModal = ({ onClose, onSaved }) => {
           <div style={{display:'flex', gap:8, justifyContent:'flex-end', marginTop:6}}>
             <button type="button" className="btn btn-small" onClick={onClose} disabled={saving}>취소</button>
             <button type="submit" className="btn btn-gold btn-small" disabled={saving || !title.trim()}>
-              {saving ? '저장 중...' : '강연 등록'}
+              {saving ? '저장 중...' : (isEdit ? '강연 저장' : '강연 등록')}
             </button>
           </div>
         </form>

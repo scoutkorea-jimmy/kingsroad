@@ -8,6 +8,8 @@ const ColumnPage = ({ go, user }) => {
   const [shareMsg, setShareMsg] = React.useState("");
   // v00.169 — admin 전용 글쓰기 모달 (사용자 요청 '뱅기노자 칼럼에 글쓰기 버튼 활성화').
   const [writerOpen, setWriterOpen] = React.useState(false);
+  // v00.234 — admin 전용 칼럼 수정 (선택된 칼럼 객체 → 모달).
+  const [editColumn, setEditColumn] = React.useState(null);
   const isAdmin = !!user?.isAdmin;
 
   const refresh = () => setTick((v) => v + 1);
@@ -147,10 +149,20 @@ const ColumnPage = ({ go, user }) => {
     return (
       <div className="section">
         <div className="container" style={{maxWidth:760}}>
-          <button className="btn-ghost" onClick={() => setSelectedId(null)}
-            style={{marginBottom:32, cursor:'pointer', color:'var(--ink-2)', fontSize:12, letterSpacing:'0.1em'}}>
-            ← 아카이브로
-          </button>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:32, flexWrap:'wrap', gap:8}}>
+            <button className="btn-ghost" onClick={() => setSelectedId(null)}
+              style={{cursor:'pointer', color:'var(--ink-2)', fontSize:12, letterSpacing:'0.1em'}}>
+              ← 아카이브로
+            </button>
+            {/* v00.234 — admin 전용 프론트 칼럼 수정 진입로. 모달은 admin 번들의 AdminColumnEditor 사용. */}
+            {isAdmin && (
+              <button type="button" className="btn btn-small"
+                style={{fontSize:11, padding:'4px 10px'}}
+                onClick={() => setEditColumn(c)}>
+                ✎ 칼럼 수정
+              </button>
+            )}
+          </div>
           <div style={{textAlign:'center', marginBottom:40}}>
             {/* v00.219 — 칼럼 일련번호. 공유 URL #col-N 과 동일 번호. */}
             {(() => {
@@ -328,6 +340,8 @@ const ColumnPage = ({ go, user }) => {
             )}
           </div>
         </div>
+        {/* v00.234 — admin 전용 칼럼 수정 모달. detail view 안에서도 진입 가능. */}
+        {editColumn && isAdmin && <ColumnWriterModal onClose={() => setEditColumn(null)} initialColumn={editColumn}/>}
       </div>
     );
   }
@@ -462,7 +476,9 @@ const ColumnPage = ({ go, user }) => {
 // v00.169 — admin 전용 칼럼 작성 모달 (ColumnPage 진입 경로). admin 콘솔의 ColumnEditorModalContent 와 동일 패턴.
 // v00.210 — admin 번들이 lazy-load 라 ColumnPage 에서 첫 진입 시 AdminColumnEditor 가 undefined.
 //           모달 mount 시 BGNJ_LOAD_ADMIN() 호출 + bgnj-admin-scripts-loaded 이벤트 청취해 리렌더.
-const ColumnWriterModal = ({ onClose }) => {
+// v00.234 — initialColumn prop 으로 edit 모드 확장. AdminColumnEditor 가 이미 prop 지원.
+const ColumnWriterModal = ({ onClose, initialColumn = null }) => {
+  const isEdit = !!initialColumn?.id;
   const [payload, setPayload] = React.useState(null);
   const [adminTick, setAdminTick] = React.useState(0); // admin 번들 로드 완료 시 리렌더용
   const [loadError, setLoadError] = React.useState(false);
@@ -505,7 +521,7 @@ const ColumnWriterModal = ({ onClose }) => {
         padding:24, marginTop:24, marginBottom:48,
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
-          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>새 칼럼 작성</h2>
+          <h2 className="ko-serif" style={{fontSize:18, margin:0}}>{isEdit ? '칼럼 수정' : '새 칼럼 작성'}</h2>
           <button type="button" className="btn btn-small" onClick={async () => {
             const ok = !dirty || (await window.BGNJ_CONFIRM('작성 중인 내용을 임시저장 후 닫으시겠어요?', { hint: '[확인]=임시저장 후 닫기 / [취소]=그냥 닫기', confirmLabel: '임시저장' }));
             if (ok && dirty) saveDraft();
@@ -514,6 +530,7 @@ const ColumnWriterModal = ({ onClose }) => {
         </div>
         {Editor ? (
           <Editor
+            initialColumn={initialColumn || undefined}
             onPayloadChange={setPayload}
             onAfterSave={(status) => {
               if (status === 'published' || status === 'scheduled') onClose?.();
