@@ -750,6 +750,8 @@ KMS를 수정할 때는 가능하면 아래 구조를 따른다.
 
 # 변경 기록
 
+- 2026-05-09 (v00.241): **ADMIN_VERSION_HISTORY 재개**. 사용자 보고 — admin 콘솔 버전 기록이 v00.201 이후 멈춤. v00.226 의 'ADMIN_VERSION_HISTORY 미수정 패턴' 운영 룰 폐기. v00.202~240 39 사이클을 14 묶음 entry 로 압축 추가. 향후 사이클마다 다시 entry 추가 (메모리 `feedback_release_workflow.md` 갱신 필요).
+- 2026-05-09 (v00.227~240): **14 사이클 누적** — anchor scroll-padding-top / admin 프론트 add·edit 모달 / `/error` 라이브 라우트 / 노란글씨 가독성 / 데이터 사라짐 23곳 가드 + lint 룰 / 동의 필수 / 케이스 스터디 영구 기록 / 사진 갤러리 (10장 + 출처 + 대표) + 다중·drag&drop / 종료 강연 현장 사진 / admin 패널 갤러리 진입로 / 사이드바 가독성 / nav 슬라이드 + 좌우 nowrap / 포스터 가득 + 칩 KMS 정합 / 주관·줄바꿈 / 홈 칼럼 자동 순환.
 - 2026-05-09 (v00.231/v00.233): **데이터 사라짐 사고 + lint 룰 항구 차단**. `(data || []).map(...)` 패턴이 null/undefined/object 응답을 빈 배열로 평가해 메모리 캐시를 덮어쓰던 안티패턴 23곳을 `Array.isArray` 가드로 일괄 교체. `tools/check-syntax.mjs` 에 `cache_overwrite` lint 룰 추가 → pre-commit 자동 차단. 케이스 스터디는 `plans/v00.233.000.md`. 운영 가드는 `CONTEXT.md §6` "데이터 캐시 덮어쓰기" 항목.
 - 2026-04-25: KMS 문서 최초 생성
 - 2026-04-25: AI 선독 원칙, 비개발자 설명 원칙, 계획 문서 원칙, 버전 체계, 관리자 버전 기록 원칙 반영

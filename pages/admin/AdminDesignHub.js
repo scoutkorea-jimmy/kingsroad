@@ -1,6 +1,202 @@
 (function(){
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.240.000",
+    date: "2026-05-09",
+    datetime: "2026-05-09T13:30:00+09:00",
+    summary: "\u{1F3A0} \uD648 \uCE7C\uB7FC \uC790\uB3D9 \uC21C\uD658 (\uCD5C\uADFC 5\uAC1C) + nav \uC2AC\uB77C\uC774\uB4DC/\uC88C\uC6B0 nowrap + \uC5C5\uB85C\uB4DC spinner + \uD3EC\uC2A4\uD130/\uCE69 \uC77C\uAD04 \uC815\uD569 (v00.238~240)",
+    details: [
+      "\u{1F3A0} [\uD648 \uCE7C\uB7FC \uC790\uB3D9 \uC21C\uD658] \uC0AC\uC6A9\uC790 \uC694\uCCAD '\uC88C\uCE21 \uBA54\uC778\uC740 \uCD5C\uADFC 5\uAC1C \uC911\uC2EC \uC790\uB3D9 \uC21C\uD658'. publicColumns.slice(0,5) \u2192 featuredIdx state + setInterval 5\uCD08. hover/focus pause (\uC811\uADFC\uC131). \uC778\uB514\uCF00\uC774\uD130 \uC810 N\uAC1C (\uD65C\uC131 22\xD78 \uC610\uB85C\uC6B0 \uC54C\uC57D, \uBE44\uD65C\uC131 8\xD78 line-2). aria-current/aria-label. 'AUTO/HOVER' mono \uB77C\uBCA8\uB85C \uC0C1\uD0DC \uC2DC\uAC01\uD654.",
+      "\u{1F5BC} [\uD3EC\uC2A4\uD130 \uAC00\uB4DD \uB178\uCD9C] \uC0AC\uC6A9\uC790 \uBCF4\uACE0 '\uD3EC\uC2A4\uD130\uB294 \uBE44\uC728 \uAD6C\uC560\uC5C6\uC774 \uC88C\uC6B0 \uC5EC\uBC31\uC5C6\uC774'. 16:10 aspect crop+contain \uBC15\uC2A4 \uC81C\uAC70. width:100%+height:auto \uB85C \uCEEC\uB7FC \uAC00\uB4DD + \uC790\uC5F0 \uBE44\uC728. \uAC15\uC5F0/\uD22C\uC5B4 \uC591\uCABD.",
+      "\u{1F3A8} [\uCE69 KMS \xA72 \uC815\uD569] \uC0AC\uC6A9\uC790 \uBCF4\uACE0 '\uB514\uC790\uC778 \uADDC\uCE59\uACFC \uB2E4\uB984'. info(blue) \uC2DC\uC2A4\uD15C \uC0C9 \uC81C\uAC70. primary(\uBE0C\uB79C\uB4DC)/secondary(\uC8FC\uCD5C)/secondary-hover(\uC8FC\uAD00)/tertiary(\uC7A5\uC18C)/neutral(\uACB0\uC81C) 4\uB2E8\uACC4 \uD1A4\uB9CC. \uC8FC\uCD5C/\uC8FC\uAD00 caramel \uBD84\uB9AC.",
+      "\u270F\uFE0F [\uAC15\uC5F0 \uC81C\uBAA9/\uC8FC\uC81C \uC904\uBC14\uAFC8] detail h2/note whiteSpace:'pre-wrap'. \uBAA8\uB2EC input \u2192 textarea (Enter \uC904\uBC14\uAFC8).",
+      "\u{1F3DB} [\uC8FC\uAD00(organizer) \uC2E0\uADDC] site_content_kv.lecturePages[id].organizer (\uC6CC\uCEE4 D1 schema \uBCC0\uACBD \uD68C\uD53C). \uBAA8\uB2EC input + detail \uCE69 (secondary-hover \uD1A4).",
+      "\u2194\uFE0F [nav \uC2AC\uB77C\uC774\uB4DC + \uC88C\uC6B0 nowrap] \uC0AC\uC6A9\uC790 \uBA85\uC2DC '\uAC00\uC6B4\uB370 \uAF49\uCC28\uBA74 \uC2AC\uB77C\uC774\uB4DC \u2014 \uC9C0\uAE08\uCC98\uB7FC'. .nav-menu flex:1+overflow-x:auto \uD56D\uC0C1 \uC2AC\uB77C\uC774\uB4DC (PC \uD3EC\uD568). .brand/.nav-actions \uC790\uC2DD nowrap+flex-shrink:0 \u2014 \uC88C\uCE21 \uB85C\uACE0/\uC6B0\uCE21 \uC774\uB984 1\uC904 \uC77C\uAD00\uC131.",
+      "\u23F3 [\uC5C5\uB85C\uB4DC \uB3D9\uC801 \uD53C\uB4DC\uBC31] drop zone \uC548 CSS \uC2A4\uD53C\uB108 (\uC610\uB85C\uC6B0 ring) + '\uC0AC\uC9C4 \uC5C5\uB85C\uB4DC \uC911 N/M' + \uC9C4\uD589\uB960 \uBC14 + 'R2 \uC5C5\uB85C\uB4DC \u2014 \uC7A0\uC2DC\uB9CC \uAE30\uB2E4\uB824 \uC8FC\uC138\uC694'. @keyframes bgnj-spin \uCD94\uAC00.",
+      "\u{1FA79} [admin \uC0AC\uC774\uB4DC\uBC14 \uAC00\uB3C5\uC131 hotfix] \uC0AC\uC6A9\uC790 \uBBFC\uC6D0 '\uC88C\uCE21 \uBA54\uB274 \uAC00\uB3C5\uC131 \uC548 \uC88B\uB2E4'. \uC778\uB77C\uC778 \uB178\uB780 hex 6\uACF3 (\uBC84\uC804 \uBC43\uC9C0/ADMIN CONSOLE/contact/DPO/\uC801\uC6A9\uBC95/DPIA) \u2192 ink-2 \uC2AC\uB808\uC774\uD2B8 + bg-3 \uBC30\uACBD. KMS \xA72 \uC610\uB85C\uC6B0 5% \uB8F0 \uC815\uD569.",
+      "\u{1FA79} [PC nav \uAE68\uC9D0 fix] v00.236 .nav-menu overflow \uAE00\uB85C\uBC8C \uB8F0\uC774 PC flex \uC790\uC2DD \uACC4\uC0B0\uC5D0 \uC601\uD5A5 \uC758\uC2EC \u2192 @media (721~1100px) \uC548\uC73C\uB85C \uACA9\uB9AC \uD6C4 v00.240 \uB2E4\uC2DC \uAE00\uB85C\uBC8C (\uC0AC\uC6A9\uC790 \uBA85\uC2DC '\uD56D\uC0C1 \uC2AC\uB77C\uC774\uB4DC').",
+      "\u{1FA79} [\uBE48 \uAC15\uC5F0 \uBCF8\uBB38 \uD1A0\uAE00 \uC720\uC9C0] early return \uC81C\uAC70. main return \uD750\uB984 \uC720\uC9C0\uD558\uC5EC \uD5E4\uB354+\uBC84\uD0B7\uD1A0\uAE00+\uCD94\uAC00 \uBC84\uD2BC \uD56D\uC0C1 \uB178\uCD9C.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.240.000`."
+    ],
+    context: "\uC0AC\uC6A9\uC790 \uBCF4\uACE0 \uB204\uC801 \uCC98\uB9AC. \uBA54\uD0C0 \uAC31\uC2E0 \uB204\uB77D \uBCF4\uACE0 \uBC1B\uAE30 \uC804 \uB9C8\uC9C0\uB9C9 commit."
+  },
+  {
+    version: "00.237.000",
+    date: "2026-05-09",
+    datetime: "2026-05-09T11:30:00+09:00",
+    summary: "\u{1F5BC} \uAC24\uB7EC\uB9AC \uB2E4\uC911\uC5C5\uB85C\uB4DC + drag&drop + \uC885\uB8CC \uAC15\uC5F0 \uD604\uC7A5 \uC0AC\uC9C4 + admin \uD328\uB110 \uC9C4\uC785\uB85C (v00.234~237)",
+    details: [
+      "\u{1F4F8} [MediaGallery.jsx \uC2E0\uADDC] \uC0AC\uC6A9\uC790 \uC694\uCCAD '\uAC15\uC5F0/\uD22C\uC5B4 \uC0AC\uC9C4 \uCD5C\uB300 10\uC7A5 + \uCD9C\uCC98 + \uB300\uD45C\uC0AC\uC9C4'. Editor + View + \uD5EC\uD37C. \uC800\uC7A5 \uC704\uCE58 site_content_kv.lecturePages[id].images / tourPages[id].images (\uC6CC\uCEE4 deploy \uD68C\uD53C). _normalizeImages \uAC00 11\uC7A5 \uC774\uC0C1/\uD615\uC2DD \uACB0\uC190/\uB300\uD45C 0\xB72+ \uC790\uB3D9 \uC815\uC815.",
+      "\u{1F4C1} [\uB2E4\uC911 \uC5C5\uB85C\uB4DC + drag&drop] \uC0AC\uC6A9\uC790 \uD654 '\uD55C \uC7A5\uC529 \uC5C5\uB85C\uB4DC \uBD88\uD3B8'. <input multiple> + drop zone (dragOver \uC2DC primary \uD1A4 \uD558\uC774\uB77C\uC774\uD2B8). \uC9C4\uD589\uB960 \uD45C\uC2DC. \uD55C \uC7A5 \uC2E4\uD328\uD574\uB3C4 \uB2E4\uC74C \uC7A5 \uC9C4\uD589 (resilient).",
+      "\u{1F4C5} [\uC885\uB8CC \uAC15\uC5F0 \uD604\uC7A5 \uC0AC\uC9C4] \uC0AC\uC6A9\uC790 \uC694\uCCAD '\uC885\uB8CC\uB41C \uAC15\uC5F0\uC5D0 \uD604\uC7A5 \uC0AC\uC9C4 \uCD94\uAC00'. images(\uD3EC\uC2A4\uD130) + photos(\uD604\uC7A5\uC0AC\uC9C4) \uBD84\uB9AC. _isPast(lecture) \uBD84\uAE30 + withCover=false (\uC804 \uC0AC\uC9C4 \uADF8\uB9AC\uB4DC \uB178\uCD9C). LectureQuickAddModal \uB450 \uC139\uC158.",
+      "\u{1F39B} [admin \uD328\uB110 \uC9C4\uC785\uB85C] \uC0AC\uC6A9\uC790 \uD654\uC758 \uD575\uC2EC. LectureAdminPanel/TourAdminPanel \uCE74\uB4DC\uC5D0 '\u{1F5BC} \uD3EC\uC2A4\uD130\xB7\uD604\uC7A5\uC0AC\uC9C4' / '\u{1F5BC} \uC0AC\uC9C4 \uAC24\uB7EC\uB9AC' \uBC84\uD2BC \u2192 window.LectureQuickAddModal/TourQuickAddModal \uC7AC\uC0AC\uC6A9. admin \uD55C \uD074\uB9AD \uC9C4\uC785.",
+      "\u270E [\uD504\uB860\uD2B8 \uAC15\uC5F0\xB7\uCE7C\uB7FC\xB7\uD22C\uC5B4 \uC218\uC815 \uBAA8\uB2EC] \uC0AC\uC6A9\uC790 \uC694\uCCAD '\uAD00\uB9AC\uC790\uB294 \uD504\uB860\uD2B8 \uD398\uC774\uC9C0\uC5D0\uC11C\uB3C4 \uC218\uC815'. add \uBAA8\uB2EC\uC744 initialLecture/initialTour/initialColumn prop \uC73C\uB85C add/edit \uC591 \uBAA8\uB4DC \uD655\uC7A5. detail badge row \uC6B0\uCE21 \u270E \uC218\uC815 \uC9C4\uC785\uB85C.",
+      "\u{1F6E1} [\uAD00\uB9AC\uC790\uAC00 hidden \uAC15\uC5F0\uB3C4 \uB178\uCD9C + \uD3EC\uC2A4\uD130 \uD544\uC218 \uAC00\uB4DC] admin listAll({includeHidden:isAdmin}) + '\u25C6 \uC228\uAE40' warning \uB77C\uBCA8 + \uBAA8\uB2EC hidden \uD1A0\uAE00. \uC2E0\uADDC add \uC2DC \uD3EC\uC2A4\uD130 1\uC7A5 \uD544\uC218 (\uAE30\uC874 \uB370\uC774\uD130 \uD3B8\uC9D1 \uC2DC \uBBF8\uAC15\uC81C).",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.237.000`."
+    ],
+    context: "\uC0AC\uC6A9\uC790\uAC00 v00.235 \uAC24\uB7EC\uB9AC \uCD94\uAC00 \uD6C4\uC5D0\uB3C4 admin \uD328\uB110\uC5D0\uC11C \uC0AC\uC9C4 \uAD00\uB9AC \uBABB \uD55C\uB2E4\uACE0 \uD654\uB0A8. \uADF8 \uD575\uC2EC \uC9C4\uC785\uB85C + UX (\uB2E4\uC911/drag&drop) + \uC885\uB8CC \uAC15\uC5F0 \uBD84\uB9AC \uC77C\uAD04."
+  },
+  {
+    version: "00.233.000",
+    date: "2026-05-09",
+    datetime: "2026-05-09T11:00:00+09:00",
+    summary: "\u{1F6A8} \uB370\uC774\uD130 \uC0AC\uB77C\uC9D0 \uCF00\uC774\uC2A4 \uC2A4\uD130\uB514 + lint \uB8F0 cache_overwrite \uD56D\uAD6C \uCC28\uB2E8 (v00.231~233)",
+    details: [
+      // bgnj-lint-ignore-next-line cache_overwrite
+      "\u{1F6A8} [\uB370\uC774\uD130 \uC0AC\uB77C\uC9D0 23\uACF3 \uAC00\uB4DC v00.231] \uC0AC\uC6A9\uC790 \uBCF4\uACE0 '\uB370\uC774\uD130\uB4E4\uC774 \uC790\uAFB8 \uAC04\uD639 \uC0AC\uB77C\uC9C4\uB2E4 \u2014 \uC81C\uC77C \uC911\uC694'. data.js \uC758 \uBAA8\uB4E0 BGNJ_*.refresh*() \uD5EC\uD37C\uAC00 (data || []).map(...) \uD328\uD134\uC774\uB77C \uC6CC\uCEE4\uAC00 {field:null}/{} \uAC19\uC740 \uBE44-\uBC30\uC5F4 \uC751\uB2F5 \uC2DC \uCE90\uC2DC\uB97C \uBE48 \uBC30\uC5F4\uB85C \uB36E\uC5B4\uC500. 23\uACF3 (LECTURES/TOURS/COLUMNS/BOOKS/COMMUNITY/FAQ/AUDIT/SITE_CONTENT/AUTH refresh/refreshMine/Registrations/Reservations/Reviews/Bookmarks/Notifications/Reports) Array.isArray \uAC00\uB4DC + console.warn \uC9C4\uB2E8 \uB85C\uADF8.",
+      "\u{1F6E1} [lint \uB8F0 cache_overwrite v00.233] tools/check-syntax.mjs \uC2E0\uADDC \uB8F0. /\\(\\s*\\w+\\s*\\|\\|\\s*\\[\\]\\s*\\)\\.map\\b/. pre-commit \uC790\uB3D9 \uCC28\uB2E8. \uC6B0\uD68C \uC2DC '// bgnj-lint-ignore-next-line cache_overwrite' \uB9C8\uCEE4. \uB8F0 \uCD94\uAC00 \uC2DC \uBD80\uC218 \uBC1C\uACAC \u2014 CommunityPage:1498 \uBA58\uC158 + AdminShared:298 Sankey rows 2\uACF3 \uAC19\uC774 \uC815\uC815.",
+      "\u{1F4DA} [\uCF00\uC774\uC2A4 \uC2A4\uD130\uB514 + \uC601\uAD6C \uAE30\uB85D] plans/v00.233.000.md (\uC0AC\uACE0 \uC694\uC57D / \uADFC\uBCF8 \uC6D0\uC778 / \uBC1C\uD654 \uC870\uAC74 / \uBBF8\uBC1C\uACAC \uC774\uC720 / \uD559\uC2B5 4\uAC74). CONTEXT.md \xA76 \uAC00\uB4DC 1\uC904 \uCD94\uAC00. kms.md \uBCC0\uACBD \uAE30\uB85D 1\uD589. ~/.claude/.../memory/feedback_data_loss_lesson.md \uC2E0\uADDC + MEMORY.md \uC778\uB371\uC2A4. \uBBF8\uB798 Claude \uC138\uC158 \uC790\uB3D9 \uCC28\uB2E8.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.233.000`."
+    ],
+    context: "\uC0AC\uC6A9\uC790\uAC00 'critical \uC6B0\uC120\uC21C\uC704'\uB85C \uBCF4\uACE0. 23\uACF3 \uC778\uC2A4\uD134\uC2A4 \uAC00\uB4DC (v00.231) \u2192 lint \uB8F0 \uD56D\uAD6C \uCC28\uB2E8 + \uC601\uAD6C \uBB38\uC11C\uD654 (v00.233) 5\uC911 \uC548\uC804\uC7A5\uCE58."
+  },
+  {
+    version: "00.232.000",
+    date: "2026-05-09",
+    datetime: "2026-05-09T10:30:00+09:00",
+    summary: "\u{1F510} \uAC15\uC5F0\xB7\uD22C\uC5B4 \uC2E0\uCCAD \uC2DC \uAC1C\uC778\uC815\uBCF4+\uC81C3\uC790 \uB3D9\uC758 \uD544\uC218 (\uC774\uC911 \uBC29\uC5B4, v00.232)",
+    details: [
+      "\u{1F510} [\uAC1C\uC778\uC815\uBCF4 \uB3D9\uC758 \uD544\uC218] \uC0AC\uC6A9\uC790 \uC694\uCCAD. LectureBookingPanel/TourBookingPanel \uC2E0\uCCAD \uD3FC \uC548 \uD569\uACC4 \uC548\uB0B4 \uC9C1\uD6C4 \uB3D9\uC758 \uCCB4\uD06C\uBC15\uC2A4. [\uD544\uC218] \uAC15\uC5F0 \uC2E0\uCCAD \uCC98\uB9AC + \uC6B4\uC601 \uC81C\uD734\uC0AC\uB85C\uC758 \uC81C3\uC790 \uC81C\uACF5 \uB3D9\uC758. '\uC790\uC138\uD788 \uBCF4\uAE30' \u2192 /privacy \uB77C\uC6B0\uD2B8.",
+      "\u{1F6E1} [\uC774\uC911 \uBC29\uC5B4] 1) \uC2E0\uCCAD \uC811\uC218 \uBC84\uD2BC disabled={!agreed} \uD074\uB9AD \uCC28\uB2E8. 2) submit() \uC9C4\uC785 \uAC00\uB4DC setError \uD6C4 return. agreed state \uB294 lecture/tour/user \uBCC0\uACBD \uC2DC reset.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.232.000`."
+    ],
+    context: "\uC0AC\uC6A9\uC790\uAC00 GDPR/PIPA \uC815\uD569\uC744 \uC704\uD574 \uB3D9\uC758 \uC808\uCC28 \uBA85\uC2DC \uC694\uAD6C."
+  },
+  {
+    version: "00.230.000",
+    date: "2026-05-09",
+    datetime: "2026-05-09T10:00:00+09:00",
+    summary: "\u{1F7E1} \uB178\uB780\uAE00\uC528 \uAC00\uB3C5\uC131 hotfix \u2014 .gold/.gold-2/.accent/.badge-gold \u2192 secondary (v00.230)",
+    details: [
+      "\u{1F7E1} [\uAC00\uB3C5\uC131 hotfix] \uC0AC\uC6A9\uC790 \uBCF4\uACE0 '\uB178\uB780\uAE00\uC528\uB294 \uC798 \uC548\uBCF4\uC5EC' (\uC2A4\uD06C\uB9B0\uC0F7). primary \uC610\uB85C\uC6B0 #F5D548 \uAC00 \uD770 \uBC30\uACBD\uC5D0\uC11C \uB300\uBE44\uBE44 ~1.7:1 (WCAG AA 4.5:1 \uD55C\uCC38 \uBBF8\uB2EC). KMS \xA72 'Primary 5% \u2014 CTA\uB9CC' \uB8F0 \uC704\uBC30. styles.css .gold/.gold-2/.section-title .accent/.badge-gold \uD14D\uC2A4\uD2B8 \uC0C9\uC744 secondary (Caramel Ink #92400E, AAA \uB300\uBE44) \uB85C \uC77C\uAD04 \uAD50\uCCB4.",
+      "\u{1F319} [\uB2E4\uD06C\uBAA8\uB4DC \uBCF4\uC874] :root[data-theme='dark'] .gold override \uC720\uC9C0 \u2014 \uC5B4\uB450\uC6B4 \uBC30\uACBD\uC5D0\uC11C\uB294 \uC610\uB85C\uC6B0 \uAC00\uB3C5\uC131 \uC591\uD638.",
+      "\u{1FA79} [LecturesPage/WangsanamTourPage \uC778\uB77C\uC778] 'var(--primary)' \uD14D\uC2A4\uD2B8 (\uD0ED/\uBC84\uD0B7/\uC794\uC5EC\uC11D/FREE pill) \uB3C4 secondary \uB85C. tone() confirmed \uB3C4 secondary.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.230.000`."
+    ],
+    context: "v00.209 \uB808\uAC70\uC2DC \uCEEC\uB7EC \uD1A0\uD070 \uC81C\uAC70 \uD6C4\uC5D0\uB3C4 .gold/.gold-2 \uAC00 \uBCF8\uBB38 \uAC15\uC870 \uD14D\uC2A4\uD2B8\uB85C \uAD11\uBC94\uC704 \uC0AC\uC6A9 \uC911\uC774\uB77C \uD770 \uBC30\uACBD \uAC00\uB3C5\uC131 \uACB0\uD568. \uC0AC\uC774\uD2B8 \uC804\uBC18 \uD55C \uBC88\uC5D0 \uD68C\uBCF5."
+  },
+  {
+    version: "00.229.000",
+    date: "2026-05-09",
+    datetime: "2026-05-09T09:30:00+09:00",
+    summary: "\u{1F6AA} /error?code= \uB77C\uC774\uBE0C \uB77C\uC6B0\uD2B8 + /mypage\xB7/admin 401 wiring (v00.229)",
+    details: [
+      "\u{1F6AA} [\uB77C\uC774\uBE0C \uC5D0\uB7EC \uB77C\uC6B0\uD2B8] VALID_ROUTES \uC5D0 'error' \uCD94\uAC00. case 'error' \uAC00 ?code=401|403|404|500|network|maintenance \uB9E4\uD551. \uC5B4\uB4DC\uBBFC\u2192\uD68C\uC6D0 \uC548\uB0B4 \uB9C1\uD06C \uACF5\uC720 \uAC00\uB2A5.",
+      "\u{1F6E1} [/mypage 401 wiring] \uBE44\uB85C\uADF8\uC778 \uC9C4\uC785 \u2192 Error401Page (\uC774\uC804\uC5D4 user?.id \uC635\uC154\uB110 \uCCB4\uC778\uC73C\uB85C \uBC18\uCBE4 \uBE48 \uC0C1\uD0DC \uB178\uCD9C).",
+      "\u{1F6E1} [/admin \uAD8C\uD55C \uBD84\uAE30 \uC138\uBD84\uD654] \uBE44\uB85C\uADF8\uC778 \u2192 Error401Page, \uBE44-admin \uD68C\uC6D0 \u2192 AdminDenied \uC720\uC9C0 (\uC774\uBA54\uC77C \uD45C\uC2DC UX \uBCF4\uC874).",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.229.000`."
+    ],
+    context: "ROADMAP \xA7\uD0501 '\uC5D0\uB7EC \uD398\uC774\uC9C0 \uB77C\uC774\uBE0C \uB77C\uC6B0\uD2B8' + '403/401 \uC790\uB3D9 wiring' \uB450 \uD56D\uBAA9 \uC77C\uAD04."
+  },
+  {
+    version: "00.228.000",
+    date: "2026-05-09",
+    datetime: "2026-05-09T09:00:00+09:00",
+    summary: "\u2795 \uAD00\uB9AC\uC790 \uD504\uB860\uD2B8 \uAC15\uC5F0\xB7\uD22C\uC5B4 quick-add \uBAA8\uB2EC (v00.228)",
+    details: [
+      "\u2795 [LectureQuickAddModal/TourQuickAddModal] \uC0AC\uC6A9\uC790 \uC694\uCCAD '\uAD00\uB9AC\uC790\uAC00 \uD504\uB860\uD2B8\uC5D0\uC11C\uB3C4 \uAC15\uC5F0\xB7\uD22C\uC5B4 \uCD94\uAC00'. AuthAdminPage.addNewLecture/Tour \uC640 \uAC19\uC740 saveLecture/saveTour \uD638\uCD9C + \uAC19\uC740 default. \uBE48 \uC0C1\uD0DC + \uBC84\uD0B7 \uD1A0\uAE00 \uC6B0\uCE21\uC5D0 '\uFF0B \uAC15\uC5F0 \uCD94\uAC00'/'\uFF0B \uD22C\uC5B4 \uCD94\uAC00' \uBC84\uD2BC.",
+      "\u{1F6E1} \uAD8C\uD55C \u2014 \uBC84\uD2BC isAdmin \uAC8C\uC774\uD305 + \uBAA8\uB2EC \uB354\uBE14\uCCB4\uD06C + \uC6CC\uCEE4 requireAdmin \uAC15\uC81C.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.228.000`."
+    ],
+    context: "\uC0AC\uC6A9\uC790\uAC00 admin \uCF58\uC194 \uAC70\uCE58\uC9C0 \uC54A\uACE0\uB3C4 \uC989\uC2DC \uAC15\uC5F0\xB7\uD22C\uC5B4 \uCD94\uAC00 \uAC00\uB2A5\uD558\uB3C4\uB85D."
+  },
+  {
+    version: "00.227.000",
+    date: "2026-05-09",
+    datetime: "2026-05-09T08:30:00+09:00",
+    summary: "\u{1F4D0} sticky nav \uAC00\uB9BC \uBC29\uC9C0 \u2014 html scroll-padding-top 88/80 (v00.227)",
+    details: [
+      "\u{1F4D0} [scroll-padding-top] ColumnPage #col-comments \uAC19\uC740 native anchor \uAC00 sticky .nav (72/64px) \uC544\uB798\uB85C \uAC00\uB824\uC9C0\uB358 \uBB38\uC81C. styles.css \uAE00\uB85C\uBC8C \uB8F0 \uD55C \uACF3\uC5D0\uC11C \uD574\uACB0. hash \uC9C4\uC785\xB7element.scrollIntoView()\xB7\uBE0C\uB77C\uC6B0\uC800 \uC704\uCE58 \uBCF5\uC6D0 \uBAA8\uB450 \uC801\uC6A9.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.227.000`."
+    ],
+    context: "ROADMAP \xA7\uD0501 'anchor scroll-margin-top' \uD56D\uBAA9 \u2014 \uAC00\uC7A5 \uC791\uACE0 well-defined \uD55C \uD6C4\uC18D."
+  },
+  {
+    version: "00.226.000",
+    date: "2026-05-07",
+    datetime: "2026-05-07T03:08:42+09:00",
+    summary: "\u{1F4C4} \uBA54\uD0C0 \uD604\uD589\uD654 \uC0AC\uC774\uD074 \u2014 kms.md \uB514\uC790\uC778 \xA71-8 \uC804\uBA74 \uC7AC\uC791\uC131 + v00.157~225 \uC555\uCD95 + CONTEXT/ROADMAP \uAC31\uC2E0 (v00.226)",
+    details: [
+      "\u{1F4C4} [kms.md \uB514\uC790\uC778 \xA71-8] \uCEEC\uB7EC \uC2DC\uC2A4\uD15C\uC774 '\uBE14\uB8E8 \uD314\uB808\uD2B8' \uBA85\uC2DC\uB418\uC5B4 \uC788\uB358 stale \uC815\uC815 \u2192 '5:25:70 \uD669\uAE08 \uBC30\uC0C9' (Primary \uC610\uB85C\uC6B0 5% / Secondary Caramel / Tertiary Slate / Neutral). \uB2E4\uD06C\uBAA8\uB4DC \uC610\uB85C\uC6B0 \uC720\uC9C0 \uBA85\uC2DC.",
+      "\u{1F4DA} [v00.157~225 \uC555\uCD95 \uC694\uC57D] 5\uAC1C \uC601\uC5ED\uBCC4 \uB204\uACC4 (admin \uAC00\uC2DC\uD654 / \uB9AC\uD329\uD1A0\uB9C1 / \uBCF4\uC548\xB7SEO\xB7\uBA54\uD0C0 / \uBAA8\uBC14\uC77C\xB7UX / \uC6B4\uC601 \uD328\uD134 \uBCC0\uD654).",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.226.000`."
+    ],
+    context: "v00.221~225 \uBAA8\uBC14\uC77C UX 4-\uC0AC\uC774\uD074 \uB9C8\uBB34\uB9AC \uD6C4 \uBA54\uD0C0 \uC77C\uAD04 \uD604\uD589\uD654."
+  },
+  {
+    version: "00.225.000",
+    date: "2026-05-04",
+    datetime: "2026-05-04T18:00:00+09:00",
+    summary: "\u{1F4F1} \uBAA8\uBC14\uC77C UX 4-\uC0AC\uC774\uD074 (v00.221~225) \u2014 \uCC45 cover sticky \uD574\uC81C / \uAC8C\uC2DC\uAE00 1\uC904 ellipsis / \uBCF8\uBB38 \uAC00\uB3C5\uC131 \uC885\uD569 / sticky \uCE74\uB4DC \uC77C\uAD04 release / FAB \uD3F0 36\xD736",
+    details: [
+      "\u{1F4F1} [v00.221] \uCC45 \uC0C1\uC138 \uD45C\uC9C0 \uBAA8\uBC14\uC77C sticky \uD574\uC81C \u2014 book-cover-col \uD074\uB798\uC2A4. \uBAA8\uBC14\uC77C 1\uB2E8\uC5D0\uC11C \uD45C\uC9C0\uAC00 100vh \uCC28\uC9C0\uD558\uB358 \uBB38\uC81C.",
+      "\u{1F4F1} [v00.222] \uAC8C\uC2DC\uAE00 \uBAA9\uB85D \uC81C\uBAA9 1\uC904 ellipsis + .row-mobile-meta \uBA54\uD0C0 \uB77C\uC778 (\uC791\uC131\uC790\xB7\uB0A0\uC9DC\xB7\uCE74\uD14C\uACE0\uB9AC). \uC9E4\uB9B0 \uC81C\uBAA9 hover tooltip.",
+      "\u{1F4F1} [v00.223] \uBAA8\uBC14\uC77C \uAC00\uB3C5\uC131 \uC885\uD569 \u2014 .post-body 17px (\uC774\uC804 14) / .field-input 16px (iOS zoom \uCC28\uB2E8) / iframe\xB7video 16:9 \uAC15\uC81C / .dim-2 ink-2 / \uCE74\uB4DC \uD638\uD761 (padding \uD655\uC7A5).",
+      "\u{1F4F1} [v00.224] \uAC15\uC5F0/\uD22C\uC5B4/\uACB0\uC81C sticky \uCE74\uB4DC \uC77C\uAD04 release \u2014 .mobile-release-sticky \uD074\uB798\uC2A4. \uB370\uC2A4\uD06C\uD0D1 sticky top:100 \u2192 \uBAA8\uBC14\uC77C static.",
+      "\u{1F4F1} [v00.225] scroll-to-top FAB \uD3F0 36\xD736 (\uC774\uC804 56\xD756, footprint \u221256%) + \uC885\uD569 \uCDA9\uB3CC \uAC80\uD1A0.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.225.000`."
+    ],
+    context: "\uC0AC\uC6A9\uC790 \uBAA8\uBC14\uC77C \uBBFC\uC6D0 \uB204\uC801 \uC77C\uAD04 \uB300\uC751. 4\uC0AC\uC774\uD074\uC774 \uBAA8\uB450 \uC0AC\uC6A9\uC790 \uBCF4\uACE0 \uBC1C \u2192 \uC989\uC2DC \uC751\uB2F5."
+  },
+  {
+    version: "00.220.000",
+    date: "2026-05-04",
+    datetime: "2026-05-04T16:00:00+09:00",
+    summary: "\u{1F4B0} \uD604\uAE08\uC601\uC218\uC99D \uC2E0\uCCAD + \uCE7C\uB7FC \uC77C\uB828\uBC88\uD638\xB7#col-N \uB2E8\uCD95 URL + admin \uCE7C\uB7FC \uCE74\uD14C\uACE0\uB9AC \uCE69 \uC2DC\uC778\uC131 (v00.218~220)",
+    details: [
+      "\u{1F4B0} [v00.218 \uD604\uAE08\uC601\uC218\uC99D \uC2E0\uCCAD] \uCC45/\uAC15\uC5F0/\uD22C\uC5B4 \uACB0\uC81C \uBAA8\uB450. BGNJ_CashReceipt \uD5EC\uD37C + BGNJ_CashReceiptField \uCEF4\uD3EC\uB10C\uD2B8. note prefix \uC778\uCF54\uB529\uC73C\uB85C \uC6CC\uCEE4 schema \uBCC0\uACBD \uD68C\uD53C.",
+      "\u{1F522} [v00.219 \uCE7C\uB7FC \uC77C\uB828\uBC88\uD638 + #col-N \uB2E8\uCD95 URL] \uCE7C\uB7FC \uAC8C\uC2DC \uC21C\uC11C\uBCC4 #col-1, #col-2... \uC790\uB3D9 \uBD80\uC5EC. \uACF5\uC720 \uB9C1\uD06C\uAC00 \uC9E7\uACE0 \uC548\uC815\uC801.",
+      "\u{1FA79} [v00.220 admin \uCE7C\uB7FC \uCE74\uD14C\uACE0\uB9AC \uCE69 \uC2DC\uC778\uC131] \uCE74\uD14C\uACE0\uB9AC \uCE69 \uCEEC\uB7EC \uBCF4\uAC15 + X \uBC84\uD2BC \uD1A4\uB2E4\uC6B4.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.220.000`."
+    ],
+    context: "\uACB0\uC81C \uC601\uC5ED \uC815\uBE44 + \uCE7C\uB7FC \uACF5\uC720\uC131 \uAC1C\uC120."
+  },
+  {
+    version: "00.217.000",
+    date: "2026-05-03",
+    datetime: "2026-05-03T18:00:00+09:00",
+    summary: "\u{1FA79} \uBAA8\uB2EC/auth/sidebar \uC7A1\uC74C \uC77C\uAD04 (v00.210~217)",
+    details: [
+      "\u{1FA79} [v00.210] \uCE7C\uB7FC \uC791\uC131 \uBAA8\uB2EC \uBB34\uD55C \uB85C\uB529 + confirm() \uC794\uC5EC hotfix.",
+      "\u{1F4F1} [v00.211] \uBAA8\uBC14\uC77C \uD584\uBC84\uAC70\u2190\uB85C\uACE0 \uC88C\uCE21 \uC815\uB82C (\uC2DC\uAC01 \uC21C\uC11C).",
+      "\u{1F6AA} [v00.212] /login\xB7/signup \uC9C1\uC811 \uC9C4\uC785 \uC2DC PAGE_NOT_LOADED hotfix \u2014 admin lazy-load \uD2B8\uB9AC\uAC70.",
+      "\u{1F6AA} [v00.213] /signup \uC9C1\uC811 \uC9C4\uC785 \uC2DC \uD68C\uC6D0\uAC00\uC785 \uD0ED \uC790\uB3D9 \uD65C\uC131.",
+      "\u{1F514} [v00.214] \uC0C8 \uBE4C\uB4DC \uC790\uB3D9 \uAC10\uC9C0 + \uC0C8\uB85C\uACE0\uCE68 \uBC30\uB108 \u2014 version.json \uD3F4\uB9C1.",
+      "\u{1F4F1} [v00.215] \uBAA8\uBC14\uC77C auth hero art \uC228\uAE40 (\uC0AC\uC6A9\uC790 \uBBFC\uC6D0 \u2014 \uD3FC\uC774 \uC548 \uBCF4\uC784).",
+      "\u{1FA79} [v00.216~217] admin \uC0AC\uC774\uB4DC\uBC14 \uC11C\uBE0C\uBA54\uB274 \uC2DC\uAC01 \uC704\uACC4 \uAC15\uD654 + \uC704\uACC4 \uC5ED\uC804 \uC218\uC815.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.217.000`."
+    ],
+    context: "v00.210~217 \uC7A1\uC74C \uC77C\uAD04."
+  },
+  {
+    version: "00.209.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T17:00:00+09:00",
+    summary: "\u{1F3A8} BGNJ_TOAST/CONFIRM API + alert/confirm 120\uAC74 \uAD50\uCCB4 + \uB808\uAC70\uC2DC \uCEEC\uB7EC \uD1A0\uD070 \uC804\uBA74 \uC81C\uAC70 (v00.206~209)",
+    details: [
+      "\u{1F3A8} [v00.206 BGNJ_TOAST] \uD504\uB85C\uADF8\uB7A8 \uD638\uCD9C \uAC00\uB2A5 \uD1A0\uC2A4\uD2B8 API. window.BGNJ_TOAST.{success,error,info}. \uB2E4\uD06C\uBAA8\uB4DC \uC815\uD569.",
+      "\u{1F3A8} [v00.207 alert() \u2192 BGNJ_TOAST.error] 73\uAC74 \uC77C\uAD04 \uAD50\uCCB4. \uC0AC\uC6A9\uC790 \uC2DC\uC2A4\uD15C alert \uBAA8\uB4DC \uCC28\uB2E8.",
+      "\u{1F3A8} [v00.208 confirm() \u2192 BGNJ_CONFIRM Promise] 47\uAC74 \uC77C\uAD04 \uAD50\uCCB4. ConfirmDialog \uCEF4\uD3EC\uB10C\uD2B8 + danger/confirmLabel \uC635\uC158.",
+      "\u{1F308} [v00.209 \uB808\uAC70\uC2DC \uCEEC\uB7EC \uD1A0\uD070 \uC804\uBA74 \uC81C\uAC70] --gold/--gold-dim/--gold-ink/--cta-* \uBAA8\uB4E0 \uCF54\uB4DC\uC5D0\uC11C \uC81C\uAC70 \u2192 --primary*/--on-primary/--secondary*/--tertiary \uC0AC\uC6A9. KMS \uB514\uC790\uC778 \xA72 \uAC31\uC2E0\uC740 v00.226.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.209.000`."
+    ],
+    context: "\uC0AC\uC6A9\uC790 \uC54C\uB9BC UX + \uCEEC\uB7EC \uD1A0\uD070 \uC2DC\uC2A4\uD15C \uC815\uBE44."
+  },
+  {
+    version: "00.205.000",
+    date: "2026-05-02",
+    datetime: "2026-05-02T15:00:00+09:00",
+    summary: "\u{1F4DA} P1 \uBB36\uC74C + SEO + postMessage \uAC80\uC99D + \uB514\uC790\uC778 \uAC00\uC774\uB4DC 9\uAC74 \uB3D9\uAE30\uD654 (v00.202~205)",
+    details: [
+      "\u{1F464} [v00.202 \uC791\uC131\uC790 \uD504\uB85C\uD544 \uD398\uC774\uC9C0] \uC6CC\uCEE4 GET /api/users/:id/public + \uC2E0\uADDC \uB77C\uC6B0\uD2B8 /user/:id. \uD504\uB85C\uD544 + \uC791\uC131 \uAE00 \uBAA9\uB85D.",
+      "\u{1F50D} [v00.203 \uBCF8\uBB38 \uAC80\uC0C9 \uC635\uC158 deploy] \uC6CC\uCEE4 wrangler deploy.",
+      "\u{1F310} [v00.204 SEO sitemap lastmod] sitemap.xml \uB3D9\uC801 \uC0DD\uC131 + lastmod \uC790\uB3D9. \uB124\uC774\uBC84 \uAC80\uC0C9\uCF58\uC194 verification meta.",
+      "\u{1F3A8} [v00.205 \uB514\uC790\uC778 \uAC00\uC774\uB4DC 9\uAC74 \uCF54\uB4DC \uB3D9\uAE30\uD654] AdminDesignHub.jsx \uAC31\uC2E0 \u2014 \uD3F0\uD2B8 (KBL/Wanted/ChosunIlbo) / Primary \uC610\uB85C\uC6B0 \uD658\uC6D0 / sticky release \uB8F0 \uB4F1.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.205.000`."
+    ],
+    context: "P1 \uB9C8\uBB34\uB9AC + SEO + \uB514\uC790\uC778 \uAC00\uC774\uB4DC."
+  },
+  {
     version: "00.201.000",
     date: "2026-05-06",
     datetime: "2026-05-06T17:00:00+09:00",
