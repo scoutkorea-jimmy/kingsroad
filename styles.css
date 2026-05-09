@@ -2077,6 +2077,13 @@ main time, main .section-eyebrow {
 @media (max-width: 600px) {
   .hero-bg-desktop { display: none; }
   .hero-bg-mobile  { display: block; }
+  /* v00.248 — PC 가로형(16:9) 이미지를 모바일에서 fallback 으로 cover 시 좌우 잘림.
+     한국 모티프(태양/한옥/타워 등) 가 보통 이미지 중심~우측에 배치 → background-position
+     을 'right center' 로 두어 핵심 요소 노출 보강. 모바일 전용 9:16 이미지는 어차피 cover
+     로 잘 채움(좌우 잘림 적음). */
+  .hero-bg-mobile { background-position: right center; }
+  /* 모바일 hero 가 너무 짧지 않게 — 배경이 충분히 노출되도록 최소 높이 보강. */
+  .home-hero { min-height: 560px; }
 }
 
 /* === v00.246 — 홈 칼럼 카루셀 슬라이드 애니메이션 ==================================

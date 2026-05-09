@@ -1495,10 +1495,12 @@ const HeroEditorPanel = () => {
             <div style={{marginTop:18, paddingTop:14, borderTop:'1px solid var(--line)'}}>
               <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em', marginBottom:10}}>배경 이미지 (선택)</div>
               <p className="dim-2" style={{fontSize:11, marginBottom:14, lineHeight:1.6}}>
-                PC와 모바일에 각각 다른 배경 이미지를 올릴 수 있습니다. 비워두면 기존 빈 배경(컬러)이 유지됩니다.
+                PC와 모바일에 각각 다른 배경 이미지를 올릴 수 있습니다. 둘 다 비우면 빈 배경(컬러)이 유지됩니다.
+                <br/><strong className="gold">모바일 슬롯이 비어 있으면 PC 이미지가 모바일에서도 사용됩니다</strong> —
+                같은 이미지로 양 화면을 커버하려면 PC 만 올리면 됩니다.
               </p>
               <HeroBgSlot
-                label="PC 배경 (1920×1080 권장)" url={contentDraft.bgDesktopUrl || ''}
+                label="PC 배경 (1920×1080 권장 · 모바일에서도 fallback 으로 사용됨)" url={contentDraft.bgDesktopUrl || ''}
                 aspect="16/9" preview={{width:160, height:90}}
                 onPick={async (e) => {
                   const file = e.target.files?.[0]; e.target.value = '';
@@ -1512,7 +1514,7 @@ const HeroEditorPanel = () => {
                 onClear={() => updateContent('bgDesktopUrl', '')}
               />
               <HeroBgSlot
-                label="모바일 배경 (1080×1920 권장)" url={contentDraft.bgMobileUrl || ''}
+                label="모바일 배경 (1080×1920 권장 · 비우면 PC 이미지 사용)" url={contentDraft.bgMobileUrl || ''}
                 aspect="9/16" preview={{width:60, height:106}}
                 onPick={async (e) => {
                   const file = e.target.files?.[0]; e.target.value = '';

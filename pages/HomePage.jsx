@@ -688,14 +688,16 @@ const HomePage = ({ go }) => {
         background:'var(--bg)', borderBottom:'1px solid var(--line)',
         padding:'72px 0 88px',
       }}>
-        {/* v00.247 — 사용자 설정 배경 이미지 (PC/모바일 별도). 미설정 시 렌더 X — 기존 빈 배경 유지. */}
+        {/* v00.247 — 사용자 설정 배경 이미지 (PC/모바일 별도). 미설정 시 렌더 X — 기존 빈 배경 유지.
+            v00.248 — 모바일 슬롯 비면 PC 이미지를 fallback (사용자 보고 '한 번 올린 거로 양쪽 살아나면 좋겠다').
+            반대로 PC 슬롯 비고 모바일만 있어도 모바일 div 만 렌더 — 모바일 viewport 만 노출, PC 는 빈 배경. */}
         {hero.bgDesktopUrl && (
           <div className="hero-bg-image hero-bg-desktop" aria-hidden="true"
             style={{backgroundImage:`url(${hero.bgDesktopUrl})`}}/>
         )}
-        {hero.bgMobileUrl && (
+        {(hero.bgMobileUrl || hero.bgDesktopUrl) && (
           <div className="hero-bg-image hero-bg-mobile" aria-hidden="true"
-            style={{backgroundImage:`url(${hero.bgMobileUrl})`}}/>
+            style={{backgroundImage:`url(${hero.bgMobileUrl || hero.bgDesktopUrl})`}}/>
         )}
         <div className="container" style={{position:'relative', zIndex:1}}>
           <div className="hero-grid home-hero-grid" style={{

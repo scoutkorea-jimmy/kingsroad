@@ -685,12 +685,12 @@ const HomePage = ({ go }) => {
       "aria-hidden": "true",
       style: { backgroundImage: `url(${hero.bgDesktopUrl})` }
     }
-  ), hero.bgMobileUrl && /* @__PURE__ */ React.createElement(
+  ), (hero.bgMobileUrl || hero.bgDesktopUrl) && /* @__PURE__ */ React.createElement(
     "div",
     {
       className: "hero-bg-image hero-bg-mobile",
       "aria-hidden": "true",
-      style: { backgroundImage: `url(${hero.bgMobileUrl})` }
+      style: { backgroundImage: `url(${hero.bgMobileUrl || hero.bgDesktopUrl})` }
     }
   ), /* @__PURE__ */ React.createElement("div", { className: "container", style: { position: "relative", zIndex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "hero-grid home-hero-grid", style: {
     display: "grid",
