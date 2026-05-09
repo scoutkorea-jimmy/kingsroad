@@ -1403,25 +1403,48 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
           </div>
         </header>
 
-        {/* v00.130 — body 가 항상 {html, text} 로 정규화되므로 fallback placeholder 제거.
-            손상된 옛 row 는 _normalizePostBody 가 경고 텍스트로 대체. */}
-        {post.body?.html ? (
-          <div className="post-body" dangerouslySetInnerHTML={{__html: window.BGNJ_SAFE_HTML(post.body.html)}}/>
-        ) : post.body?.text ? (
-          <div className="post-body" style={{whiteSpace:'pre-wrap'}}>{post.body.text}</div>
-        ) : (
-          <div className="post-body dim-2" style={{fontStyle:'italic'}}>
-            본문이 비어있습니다.
-          </div>
-        )}
-
-        {/* Image slider at bottom of post */}
-        {post.images?.length > 0 && (
-          <section aria-label="첨부 이미지" style={{margin:'48px 0'}}>
-            <div className="section-eyebrow" aria-hidden="true" style={{marginBottom:16}}>ATTACHMENTS · 첨부 이미지 ({post.images.length}장)</div>
-            <ImageSlider images={post.images}/>
-          </section>
-        )}
+        {/* v00.243 — 사용자 요청 레이아웃: 제목 → 메타 → 이미지 슬라이드 → 본문 → 댓글.
+            v00.242 응급 fix 로 body 안에 인코딩된 <div data-bgnj-attached-block><img/></div> 를
+            추출해서 본문과 분리. 추출된 이미지는 ImageSlider 로, 본문은 cleanHtml 로. */}
+        {(() => {
+          const html = post.body?.html || '';
+          // 추출 — data-bgnj-attached-block 컨테이너 제거 + 안의 img src 수집.
+          let cleanHtml = html;
+          const extractedImages = [];
+          try {
+            const blockRe = /<div[^>]*data-bgnj-attached-block="1"[^>]*>([\s\S]*?)<\/div>/gi;
+            cleanHtml = html.replace(blockRe, (_, inner) => {
+              const imgRe = /<img[^>]*src="([^"]+)"[^>]*(?:alt="([^"]*)")?[^>]*\/?>/gi;
+              let m;
+              while ((m = imgRe.exec(inner)) !== null) {
+                extractedImages.push({ src: m[1], alt: m[2] || '' });
+              }
+              return ''; // 본문에서 제거.
+            });
+          } catch {}
+          // post.images (v00.243+ schema 추가 후 정통 source) 우선 + 추출된 fallback.
+          const slideImages = (Array.isArray(post.images) && post.images.length > 0)
+            ? post.images
+            : extractedImages;
+          return (
+            <>
+              {/* 1) 이미지 슬라이드 — 본문 위. 사용자 요청 순서. */}
+              {slideImages.length > 0 && (
+                <section aria-label="첨부 이미지" style={{margin:'24px 0 32px'}}>
+                  <ImageSlider images={slideImages}/>
+                </section>
+              )}
+              {/* 2) 본문 (clean html — 추출된 이미지 block 제거됨). */}
+              {cleanHtml ? (
+                <div className="post-body" dangerouslySetInnerHTML={{__html: window.BGNJ_SAFE_HTML(cleanHtml)}}/>
+              ) : post.body?.text ? (
+                <div className="post-body" style={{whiteSpace:'pre-wrap'}}>{post.body.text}</div>
+              ) : (
+                <div className="post-body dim-2" style={{fontStyle:'italic'}}>본문이 비어있습니다.</div>
+              )}
+            </>
+          );
+        })()}
 
         {/* File attachments (v00.069) */}
         {post.attachments?.length > 0 && (

@@ -2339,7 +2339,7 @@ const HomeTextPreview = ({ hero, text, mode }) => {
               marginBottom:16,
             }}>
               {hero.title1 || '한국을'}<br/>
-              <span style={{color:'var(--primary)'}}>{hero.title2 || '직접 걷고'}</span><br/>
+              <span style={{color:'var(--secondary)'}}>{hero.title2 || '직접 걷고'}</span><br/>
               {hero.title3 || '천천히 읽다'}
             </h2>
             {/* v00.168 — whiteSpace pre-wrap (textarea 줄바꿈 보존). */}
@@ -2453,7 +2453,7 @@ const HomeTextEditorPanel = () => {
                 value={Number(textDraft.fontScale ?? 1)}
                 onChange={(e) => setText('fontScale', Number(e.target.value))}
                 style={{flex:1, minWidth:200, accentColor:'var(--primary)'}}/>
-              <span className="mono" style={{fontSize:13, fontWeight:700, color:'var(--primary)', minWidth:60, textAlign:'right'}}>
+              <span className="mono" style={{fontSize:13, fontWeight:700, color:'var(--secondary)', minWidth:60, textAlign:'right'}}>
                 ×{Number(textDraft.fontScale ?? 1).toFixed(2)}
               </span>
               <button type="button" className="btn btn-small"

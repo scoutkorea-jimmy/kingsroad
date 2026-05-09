@@ -357,12 +357,12 @@ main time, main .section-eyebrow {
   font-size: 18px;
   line-height: 1.95;
   color: var(--ink);
-  max-width: 68ch;
-  /* v00.197 — 사용자 보고 '글 좌우 범위 이상'. 이전엔 margin:0 auto 로 컨테이너 중앙 정렬 →
-     본문이 제목보다 좁아 좌측이 빈 채로 우측 쏠려 보임. margin:0 으로 좌측 정렬 (제목과 일치). */
+  /* v00.243 — 사용자 보고 'PC 본문 좌우 다 사용해달라'. 이전 max-width:68ch 제거.
+     컨테이너 폭 (max-width: 1280px - 64px padding) 모두 활용. */
+  max-width: none;
   margin: 0;
   hyphens: auto;
-  word-break: keep-all;         /* 한글 어절 단위 줄바꿈 */
+  word-break: keep-all;
   text-wrap: pretty;
 }
 /* v00.197 — 사용자 보고 '다크모드에서 글이 안보인다'. Tiptap 이 본문 HTML 에 inline color (예: #1A1A1A)
@@ -872,12 +872,13 @@ main time, main .section-eyebrow {
 /* 작은 메타 텍스트는 가독성 보강 위해 weight 600 — IBM Plex Mono 의 가는 weight 가 한글에서 너무 얇게 보임 */
 .mono.dim-2 { font-weight: 600; }
 
-/* v00.230 — 흰 배경 본문에서 노란 primary 가 대비비 ≪ 4.5:1 → AA 위반 + 가독성 보고.
-   .gold / .gold-2 는 본문 강조용 텍스트 클래스이므로 secondary (Caramel Ink, AAA 대비)로 교체.
-   다크 모드에서는 라인 165-166 override 가 .gold → primary 유지 (어두운 배경에서 노랑이 읽힘).
-   브랜드 옐로우는 CTA·focus·badge-border·dot 등 5% 면적에만. KMS §2 컬러원칙 강제. */
+/* v00.230/v00.243 — 흰 배경에서 노란 primary 가 안 보인다는 사용자 민원 누적.
+   .gold (메타·작은 강조) → secondary (Caramel #92400E, AAA 대비).
+   .gold-2 (큰 숫자·가격 등 본문 핵심 데이터) → 검정 ink (가장 강한 가독성).
+   v00.243 에서 .gold-2 를 secondary-hover(caramel) → ink 로 강화 (사용자: '흰배경 노란글씨 안보인다').
+   다크 모드 :root[data-theme=dark] override (line 165-166) 가 .gold → primary 유지. */
 .gold { color: var(--secondary); }
-.gold-2 { color: var(--secondary-hover); }
+.gold-2 { color: var(--ink); font-weight: 700; }
 .dim { color: var(--ink-2); }
 .dim-2 { color: var(--ink-3); }
 
@@ -908,6 +909,9 @@ main time, main .section-eyebrow {
   align-items: center;
   justify-content: space-between;
   height: 72px;
+  /* v00.243 — 사용자 보고 '홈페이지 명칭이랑 홈 메뉴 너무 붙어있어'.
+     brand / nav-menu / nav-actions 사이 최소 28px 호흡 강제. */
+  gap: 28px;
 }
 .brand {
   display: flex;

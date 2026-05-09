@@ -267,7 +267,7 @@ const LoginPage = ({ go, setUser, initialMode = "login" }) => {
 
                 {/* 선택 항목 — 접기/펴기 */}
                 <details style={{border:'1px solid var(--line)', padding:'14px 16px', margin:'24px 0'}}>
-                  <summary style={{cursor:'pointer', fontFamily:'var(--font-mono)', fontSize:11, letterSpacing:'0.2em', color:'var(--primary)'}}>
+                  <summary style={{cursor:'pointer', fontFamily:'var(--font-mono)', fontSize:11, letterSpacing:'0.2em', color:'var(--secondary)'}}>
                     추가 정보 입력 (선택 · 입력하지 않아도 사이트 이용에 문제 없음)
                   </summary>
                   <p className="dim-2" style={{fontSize:11, marginTop:10, lineHeight:1.7, padding:'10px 12px', background:'rgba(245,213,72,0.06)', border:'1px solid var(--primary-dim)'}}>
@@ -354,12 +354,12 @@ const LoginPage = ({ go, setUser, initialMode = "login" }) => {
                     style={{accentColor:'var(--primary)', marginTop:3}}/>
                   <span>
                     <button type="button" className="btn-ghost" onClick={() => setLegalModal('terms')}
-                      style={{padding:0, color:'var(--primary)', textDecoration:'underline', fontSize:12}}>
+                      style={{padding:0, color:'var(--secondary)', textDecoration:'underline', fontSize:12}}>
                       이용약관
                     </button>
                     {' '}및{' '}
                     <button type="button" className="btn-ghost" onClick={() => setLegalModal('privacy')}
-                      style={{padding:0, color:'var(--primary)', textDecoration:'underline', fontSize:12}}>
+                      style={{padding:0, color:'var(--secondary)', textDecoration:'underline', fontSize:12}}>
                       개인정보 처리방침
                     </button>
                     에 동의합니다 <span className="gold">(필수)</span>
@@ -374,7 +374,7 @@ const LoginPage = ({ go, setUser, initialMode = "login" }) => {
                 <label htmlFor="keep-login" style={{display:'flex', gap:8, alignItems:'center', color:'var(--ink-2)'}}>
                   <input id="keep-login" type="checkbox" style={{accentColor:'var(--primary)'}}/>로그인 유지
                 </label>
-              <button type="button" className="btn-ghost" style={{color:'var(--primary)'}}>비밀번호 찾기</button>
+              <button type="button" className="btn-ghost" style={{color:'var(--secondary)'}}>비밀번호 찾기</button>
             </div>
           )}
             <button type="submit" className="btn btn-gold btn-block" disabled={submitting} aria-busy={submitting}>
@@ -724,7 +724,7 @@ const HoverDetailsPopover = ({ details, open, id, anchor = 'right' }) => {
         {details.map((d, i) => (
           <li key={i} style={{display:'flex', justifyContent:'space-between', gap:14, fontSize:12, alignItems:'baseline'}}>
             <span className="dim" style={{flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis'}}>{d.label}</span>
-            <span className="mono" style={{fontWeight:600, color:'var(--primary)', whiteSpace:'nowrap'}}>{d.value}</span>
+            <span className="mono" style={{fontWeight:600, color:'var(--secondary)', whiteSpace:'nowrap'}}>{d.value}</span>
           </li>
         ))}
       </ul>
@@ -746,7 +746,7 @@ const StatTile = ({ stat }) => {
       tabIndex={hasDetails ? 0 : undefined}
       aria-describedby={open ? id : undefined}>
       <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{stat.l}</div>
-      <div className="ko-serif" style={{fontSize:32, color:'var(--primary-hover)'}}>
+      <div className="ko-serif" style={{fontSize:32, color:'var(--ink)'}}>
         {stat.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{stat.unit||''}</span>
       </div>
       <div style={{fontSize:11, color: stat.p ? 'var(--primary)' : 'var(--danger)', marginTop:8}}>{stat.d}</div>
@@ -1061,7 +1061,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
           .filter((it) => it.count > 0 || (grades.find((g) => g.id === it.id)?.id));
         // 미분류 (gradeId 없는 회원).
         if (counts.unranked) items.push({ id: 'unranked', label: '미분류', count: counts.unranked, color: 'var(--ink-3)' });
-        if (adminCount > 0) items.push({ id: '__admin', label: '관리자', count: adminCount, color: 'var(--primary)' });
+        if (adminCount > 0) items.push({ id: '__admin', label: '관리자', count: adminCount, color: 'var(--secondary)' });
         items.sort((a, b) => b.count - a.count);
         return (
           <RankedBarList
@@ -1544,7 +1544,7 @@ const LectureAdminPanel = ({ go }) => {
                     {seats.waitlist > 0 && <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)'}}>대기 {seats.waitlist}</span>}
                     {l.price > 0
                       ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>유료 {window.BGNJ_FMT.won(l.price)}</span>
-                      : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--primary)', border:'1px solid var(--primary-dim)', padding:'1px 6px'}}>FREE</span>}
+                      : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--secondary)', border:'1px solid var(--primary-dim)', padding:'1px 6px'}}>FREE</span>}
                   </div>
                 </header>
 
@@ -1723,7 +1723,7 @@ const LectureAdminPanel = ({ go }) => {
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
                                       onClick={async () => { if (!(await window.BGNJ_CONFIRM('환불을 승인하시겠어요?', { danger: true }))) return; window.BGNJ_LECTURES.approveRefund(l.id, r.id); refresh(); }}
-                                      style={{borderColor:'var(--primary)', color:'var(--primary)'}}>승인</button>
+                                      style={{borderColor:'var(--primary)', color:'var(--secondary)'}}>승인</button>
                                     <input className="field-input" placeholder="반려 사유"
                                       style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
                                       value={refundRejectNotes[r.id] || ''}
@@ -2263,7 +2263,7 @@ const TourAdminPanel = ({ go }) => {
                                     {r.refundReason && <span className="dim-2" style={{fontSize:10}}>· {r.refundReason}</span>}
                                     <button type="button" className="btn btn-small"
                                       onClick={async () => { if (!(await window.BGNJ_CONFIRM('환불을 승인하시겠어요?', { danger: true }))) return; window.BGNJ_TOURS.approveRefund(t.id, r.id); refresh(); }}
-                                      style={{borderColor:'var(--primary)', color:'var(--primary)'}}>승인</button>
+                                      style={{borderColor:'var(--primary)', color:'var(--secondary)'}}>승인</button>
                                     <input className="field-input" placeholder="반려 사유"
                                       style={{padding:'4px 8px', fontSize:11, maxWidth:140}}
                                       value={refundRejectNotes[r.id] || ''}
@@ -2730,7 +2730,7 @@ const BookOrderAdminPanel = ({ go }) => {
                             window.BGNJ_BOOK_ORDERS.approveRefund(o.id);
                             refresh();
                           }}
-                          style={{borderColor:'var(--primary)', color:'var(--primary)'}}>
+                          style={{borderColor:'var(--primary)', color:'var(--secondary)'}}>
                           환불 승인
                         </button>
                         <input className="field-input"
@@ -5072,7 +5072,7 @@ const MemberAdminPanel = ({ go }) => {
               <div className="mono dim-2" style={{fontSize:11}}>#{selected.id} · {selected.email}</div>
             </div>
             <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
-              {selected.isAdmin && <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--primary)', border:'1px solid var(--primary-dim)', padding:'2px 8px'}}>ADMIN</span>}
+              {selected.isAdmin && <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--secondary)', border:'1px solid var(--primary-dim)', padding:'2px 8px'}}>ADMIN</span>}
               {selected.suspended && <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--danger)', border:'1px solid var(--danger)', padding:'2px 8px'}}>SUSPENDED</span>}
             </div>
           </div>
@@ -5279,7 +5279,7 @@ const MemberAdminPanel = ({ go }) => {
                   <button type="button" onClick={() => setSelectedId(u.id)}
                     style={{all:'unset', cursor:'pointer'}}>
                     <span className="ko-serif" style={{fontSize:14}}>{u.name}</span>
-                    {u.isAdmin && <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color:'var(--primary)', marginLeft:8}}>ADMIN</span>}
+                    {u.isAdmin && <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color:'var(--secondary)', marginLeft:8}}>ADMIN</span>}
                     {u.suspended && <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color:'var(--danger)', marginLeft:8}}>정지</span>}
                   </button>
                 </td>
@@ -5960,7 +5960,7 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
               <td className="mono dim-2" style={{padding:14}}>#{String(p.id).padStart(4,'0')}</td>
               <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{p.category}</span></td>
               <td style={{padding:14}}>
-                {p.prefix ? <span className="mono" style={{fontSize:9, padding:'1px 6px', border:'1px solid var(--primary-dim)', color:'var(--primary)'}}>{p.prefix}</span> : <span className="dim-2" style={{fontSize:10}}>—</span>}
+                {p.prefix ? <span className="mono" style={{fontSize:9, padding:'1px 6px', border:'1px solid var(--primary-dim)', color:'var(--secondary)'}}>{p.prefix}</span> : <span className="dim-2" style={{fontSize:10}}>—</span>}
               </td>
               <td className="ko-serif" style={{padding:14, fontSize:14}}>{p.title}</td>
               <td className="dim mono" style={{padding:14}}>{p.author}</td>
@@ -6362,7 +6362,7 @@ const AdminPage = ({ go }) => {
               {dashboardStats.map((s, i) => (
                 <div key={i} className="card">
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{s.l}</div>
-                  <div className="ko-serif" style={{fontSize:32, color:'var(--primary-hover)'}}>{s.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{s.unit||''}</span></div>
+                  <div className="ko-serif" style={{fontSize:32, color:'var(--ink)'}}>{s.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{s.unit||''}</span></div>
                   <div style={{fontSize:11, color: s.p ? 'var(--primary)' : 'var(--danger)', marginTop:8}}>{s.d}</div>
                 </div>
               ))}
@@ -6406,7 +6406,7 @@ const AdminPage = ({ go }) => {
                     <div style={{flex:1, height:8, background:'var(--bg-2)', borderRadius:4, overflow:'hidden', position:'relative'}}>
                       <div style={{position:'absolute', left:0, top:0, bottom:0, width:`${r.pct}%`, background:'var(--primary)', borderRadius:4}}/>
                     </div>
-                    <div className="mono" style={{minWidth:40, textAlign:'right', fontSize:12, color:'var(--primary-hover)', fontWeight:600}}>{r.pct}%</div>
+                    <div className="mono" style={{minWidth:40, textAlign:'right', fontSize:12, color:'var(--ink)', fontWeight:600}}>{r.pct}%</div>
                   </div>
                 ))}
               </div>
@@ -6636,7 +6636,7 @@ const AdminPage = ({ go }) => {
                               <span className="mono dim-2" style={{fontSize:11, letterSpacing:'0.18em'}}>MISSION {m.number}</span>
                               <span className="ko-serif" style={{fontSize:16}}>{m.title}</span>
                             </div>
-                            <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--primary)'}}>{m.state} · {m.coverage}</span>
+                            <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--secondary)'}}>{m.state} · {m.coverage}</span>
                           </div>
                           <div className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:6}}>{m.short}</div>
                           <div style={{fontSize:12, lineHeight:1.7, color:'var(--ink-2)'}}>{m.verdict}</div>
@@ -8474,7 +8474,7 @@ const ColumnCategoryChips = ({ selected, onSelect, allowManage = true }) => {
         {allowManage && !adding && (
           <button type="button" onClick={() => setAdding(true)}
             style={{padding:'6px 14px', borderRadius:999, fontSize:12, cursor:'pointer',
-              border:'1px dashed var(--primary-dim)', color:'var(--primary)', background:'transparent'}}>
+              border:'1px dashed var(--primary-dim)', color:'var(--secondary)', background:'transparent'}}>
             ＋ 새 카테고리
           </button>
         )}
@@ -8673,7 +8673,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     const map = {
       draft: { label: 'DRAFT', color: 'var(--ink-3)' },
       scheduled: { label: 'SCHEDULED', color: 'var(--ink-2)' },
-      published: { label: 'PUBLISHED', color: 'var(--primary)' },
+      published: { label: 'PUBLISHED', color: 'var(--secondary)' },
     };
     const m = map[s || 'published'];
     return (
@@ -9061,7 +9061,7 @@ const ColumnsHubPanel = ({ allColumns }) => {
                     const m = ({
                       draft: { label: 'DRAFT', color: 'var(--ink-3)' },
                       scheduled: { label: 'SCHEDULED', color: 'var(--ink-2)' },
-                      published: { label: 'PUBLISHED', color: 'var(--primary)' },
+                      published: { label: 'PUBLISHED', color: 'var(--secondary)' },
                     })[c.status || 'published'];
                     return <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', color: m.color, border:`1px solid ${m.color}`, padding:'1px 6px'}}>{m.label}</span>;
                   })()}</td>
