@@ -378,6 +378,213 @@ const Brand = ({ onClick }) => {
   );
 };
 
+// v00.258 — 사이트 통합 검색. 클라 메모리 캐시(BGNJ_*) 만으로 5도메인 검색 (서버 호출 없음).
+// 토글 버튼은 nav-actions 가장 앞에. 클릭 시 SiteSearchOverlay 모달.
+const SiteSearchToggle = ({ go }) => {
+  const [open, setOpen] = React.useState(false);
+  // Cmd/Ctrl + K 단축키.
+  React.useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} aria-label="사이트 검색"
+        className="btn-ghost"
+        title="사이트 검색 (⌘K)"
+        style={{
+          width: 36, height: 36, padding: 0, display: 'inline-flex',
+          alignItems: 'center', justifyContent: 'center',
+          border: '1px solid var(--line-2)', borderRadius: 4,
+          background: 'transparent', cursor: 'pointer',
+        }}>
+        <span aria-hidden="true" style={{fontSize: 14, color: 'var(--ink-2)'}}>🔍</span>
+      </button>
+      {open && <SiteSearchOverlay go={go} onClose={() => setOpen(false)}/>}
+    </>
+  );
+};
+
+const SiteSearchOverlay = ({ go, onClose }) => {
+  const [q, setQ] = React.useState('');
+  const inputRef = React.useRef(null);
+  React.useEffect(() => { inputRef.current?.focus?.(); }, []);
+  // ESC 닫기.
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
+  }, [onClose]);
+
+  // 디바운스 — 200ms.
+  const [debouncedQ, setDebouncedQ] = React.useState('');
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebouncedQ(q.trim()), 200);
+    return () => clearTimeout(id);
+  }, [q]);
+
+  // 5도메인 검색 — 클라 메모리 캐시.
+  const results = React.useMemo(() => {
+    const lower = debouncedQ.toLowerCase();
+    if (!lower) return null;
+    const tryArr = (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } };
+    const matchPost = (p) => {
+      const title = (p.title || '').toLowerCase();
+      const body = ((p.body && (p.body.text || p.body.html)) || '').toLowerCase();
+      return title.includes(lower) || body.includes(lower);
+    };
+    const matchColumn = (c) => {
+      const title = (c.title || '').toLowerCase();
+      const excerpt = (c.excerpt || '').toLowerCase();
+      const body = ((c.body && (c.body.text || c.body.html)) || '').toLowerCase();
+      return title.includes(lower) || excerpt.includes(lower) || body.includes(lower);
+    };
+    const matchLecture = (l) => {
+      return [(l.topic||l.title||''), l.note, l.venue].some((s) => String(s||'').toLowerCase().includes(lower));
+    };
+    const matchTour = (t) => {
+      return [t.title, t.subtitle, t.desc, t.venue].some((s) => String(s||'').toLowerCase().includes(lower));
+    };
+    const matchBook = (b) => {
+      return [b.title, b.subtitle, b.desc, b.author].some((s) => String(s||'').toLowerCase().includes(lower));
+    };
+    return {
+      posts:    tryArr(() => window.BGNJ_COMMUNITY?.listPosts?.()).filter(matchPost).slice(0, 8),
+      columns:  tryArr(() => window.BGNJ_COLUMNS?.listPublic?.()).filter(matchColumn).slice(0, 8),
+      lectures: tryArr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden).filter(matchLecture).slice(0, 8),
+      tours:    tryArr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden).filter(matchTour).slice(0, 8),
+      books:    tryArr(() => window.BGNJ_BOOKS?.list?.({ status: 'published' })).filter(matchBook).slice(0, 8),
+    };
+  }, [debouncedQ]);
+
+  const total = results
+    ? results.posts.length + results.columns.length + results.lectures.length + results.tours.length + results.books.length
+    : 0;
+
+  const goAndClose = (route, pendingKey, pendingId) => {
+    if (pendingKey && pendingId != null) {
+      try { sessionStorage.setItem(pendingKey, String(pendingId)); } catch {}
+    }
+    onClose();
+    go(route);
+  };
+
+  const Section = ({ label, items, route, pendingKey, fields }) => {
+    if (!items || items.length === 0) return null;
+    return (
+      <div style={{marginBottom: 18}}>
+        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', textTransform:'uppercase', marginBottom:8}}>
+          {label} <span className="gold" style={{marginLeft:6}}>{items.length}</span>
+        </div>
+        <ul role="list" style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
+          {items.map((it) => (
+            <li key={it.id}>
+              <button type="button"
+                onClick={() => goAndClose(route, pendingKey, it.id)}
+                style={{
+                  width:'100%', textAlign:'left', padding:'10px 12px',
+                  background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:4,
+                  cursor:'pointer', display:'block',
+                }}>
+                <div style={{fontSize:14, fontWeight:600, color:'var(--ink)', marginBottom:2,
+                  whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                  {fields.title(it)}
+                </div>
+                {fields.sub(it) && (
+                  <div className="dim-2" style={{fontSize:11, lineHeight:1.5,
+                    whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                    {fields.sub(it)}
+                  </div>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label="사이트 검색"
+      onClick={onClose}
+      style={{
+        position:'fixed', inset:0, background:'rgba(15,23,42,0.55)', zIndex:1000,
+        display:'grid', placeItems:'start center', padding:'80px 16px 16px',
+        overflowY:'auto',
+      }}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        width:'min(640px, 100%)', background:'var(--bg)', boxShadow:'0 16px 40px rgba(0,0,0,0.25)',
+        borderRadius:6,
+      }}>
+        <div style={{padding:'18px 20px', borderBottom:'1px solid var(--line)', display:'flex', alignItems:'center', gap:10}}>
+          <span aria-hidden="true" style={{fontSize:18, color:'var(--ink-3)'}}>🔍</span>
+          <input ref={inputRef} type="search" value={q} onChange={(e) => setQ(e.target.value)}
+            placeholder="게시글·칼럼·강연·답사·책 통합 검색"
+            aria-label="검색어 입력"
+            style={{
+              flex:1, border:'none', outline:'none', background:'transparent',
+              fontSize:16, color:'var(--ink)', padding:'4px 0',
+            }}/>
+          <button type="button" onClick={onClose} aria-label="검색 닫기"
+            style={{background:'transparent', border:'none', cursor:'pointer', color:'var(--ink-3)', fontSize:14, padding:'4px 8px'}}>
+            ESC
+          </button>
+        </div>
+        <div style={{padding:'18px 20px', maxHeight:'70vh', overflowY:'auto'}}>
+          {!debouncedQ && (
+            <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0, padding:'24px 0', textAlign:'center'}}>
+              검색어를 입력해 주세요.<br/>
+              <span className="dim-2" style={{fontSize:11}}>⌘K / Ctrl+K 로 빠른 진입 가능</span>
+            </p>
+          )}
+          {debouncedQ && total === 0 && (
+            <p className="dim" style={{fontSize:13, padding:'24px 0', textAlign:'center'}}>
+              "<strong className="gold">{debouncedQ}</strong>" 와 일치하는 결과가 없습니다.
+            </p>
+          )}
+          {results && total > 0 && (
+            <>
+              <Section label="게시글" items={results.posts} route="community" pendingKey="bgnj_pending_post_id"
+                fields={{
+                  title: (p) => p.title,
+                  sub: (p) => p.category || (p.body && p.body.text ? String(p.body.text).slice(0, 60) : ''),
+                }}/>
+              <Section label="칼럼" items={results.columns} route="column" pendingKey={null}
+                fields={{
+                  title: (c) => c.title,
+                  sub: (c) => c.excerpt || c.category || '',
+                }}/>
+              <Section label="강연" items={results.lectures} route="lectures" pendingKey="bgnj_pending_lecture_id"
+                fields={{
+                  title: (l) => l.topic || l.title,
+                  sub: (l) => [l.next, l.venue].filter(Boolean).join(' · '),
+                }}/>
+              <Section label="답사" items={results.tours} route="tour" pendingKey="bgnj_pending_tour_id"
+                fields={{
+                  title: (t) => t.title,
+                  sub: (t) => [t.next, t.venue].filter(Boolean).join(' · '),
+                }}/>
+              <Section label="책" items={results.books} route="book" pendingKey={null}
+                fields={{
+                  title: (b) => b.title,
+                  sub: (b) => b.subtitle || b.author || '',
+                }}/>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Nav = ({ route, go, user, onLogout }) => {
   const navL = (window.BGNJ_SITE_CONTENT?.get?.() || {}).nav || {};
   const [mobileOpen, setMobileOpen] = React.useState(false);
@@ -574,6 +781,8 @@ const Nav = ({ route, go, user, onLogout }) => {
           )}
         </ul>
         <div className="nav-actions">
+          {/* v00.258 — 사이트 통합 검색. user 무관 노출. */}
+          <SiteSearchToggle go={go}/>
           {user ? (
             <>
               <span className="mono" aria-label={`로그인: ${user.name}`}

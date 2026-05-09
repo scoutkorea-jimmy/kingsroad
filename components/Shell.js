@@ -378,6 +378,281 @@ const Brand = ({ onClick }) => {
     /* @__PURE__ */ React.createElement("span", { className: "brand-name" }, brand.name, /* @__PURE__ */ React.createElement("span", { className: "sub", lang: "en" }, brand.sub))
   );
 };
+const SiteSearchToggle = ({ go }) => {
+  const [open, setOpen] = React.useState(false);
+  React.useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        setOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => setOpen(true),
+      "aria-label": "\uC0AC\uC774\uD2B8 \uAC80\uC0C9",
+      className: "btn-ghost",
+      title: "\uC0AC\uC774\uD2B8 \uAC80\uC0C9 (\u2318K)",
+      style: {
+        width: 36,
+        height: 36,
+        padding: 0,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        border: "1px solid var(--line-2)",
+        borderRadius: 4,
+        background: "transparent",
+        cursor: "pointer"
+      }
+    },
+    /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 14, color: "var(--ink-2)" } }, "\u{1F50D}")
+  ), open && /* @__PURE__ */ React.createElement(SiteSearchOverlay, { go, onClose: () => setOpen(false) }));
+};
+const SiteSearchOverlay = ({ go, onClose }) => {
+  const [q, setQ] = React.useState("");
+  const inputRef = React.useRef(null);
+  React.useEffect(() => {
+    var _a, _b;
+    (_b = (_a = inputRef.current) == null ? void 0 : _a.focus) == null ? void 0 : _b.call(_a);
+  }, []);
+  React.useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+  const [debouncedQ, setDebouncedQ] = React.useState("");
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebouncedQ(q.trim()), 200);
+    return () => clearTimeout(id);
+  }, [q]);
+  const results = React.useMemo(() => {
+    const lower = debouncedQ.toLowerCase();
+    if (!lower) return null;
+    const tryArr = (fn) => {
+      try {
+        const v = fn();
+        return Array.isArray(v) ? v : [];
+      } catch (e) {
+        return [];
+      }
+    };
+    const matchPost = (p) => {
+      const title = (p.title || "").toLowerCase();
+      const body = (p.body && (p.body.text || p.body.html) || "").toLowerCase();
+      return title.includes(lower) || body.includes(lower);
+    };
+    const matchColumn = (c) => {
+      const title = (c.title || "").toLowerCase();
+      const excerpt = (c.excerpt || "").toLowerCase();
+      const body = (c.body && (c.body.text || c.body.html) || "").toLowerCase();
+      return title.includes(lower) || excerpt.includes(lower) || body.includes(lower);
+    };
+    const matchLecture = (l) => {
+      return [l.topic || l.title || "", l.note, l.venue].some((s) => String(s || "").toLowerCase().includes(lower));
+    };
+    const matchTour = (t) => {
+      return [t.title, t.subtitle, t.desc, t.venue].some((s) => String(s || "").toLowerCase().includes(lower));
+    };
+    const matchBook = (b) => {
+      return [b.title, b.subtitle, b.desc, b.author].some((s) => String(s || "").toLowerCase().includes(lower));
+    };
+    return {
+      posts: tryArr(() => {
+        var _a, _b;
+        return (_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.listPosts) == null ? void 0 : _b.call(_a);
+      }).filter(matchPost).slice(0, 8),
+      columns: tryArr(() => {
+        var _a, _b;
+        return (_b = (_a = window.BGNJ_COLUMNS) == null ? void 0 : _a.listPublic) == null ? void 0 : _b.call(_a);
+      }).filter(matchColumn).slice(0, 8),
+      lectures: tryArr(() => {
+        var _a, _b;
+        return (_b = (_a = window.BGNJ_LECTURES) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
+      }).filter((l) => l && !l.hidden).filter(matchLecture).slice(0, 8),
+      tours: tryArr(() => {
+        var _a, _b;
+        return (_b = (_a = window.BGNJ_TOURS) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
+      }).filter((t) => t && !t.hidden).filter(matchTour).slice(0, 8),
+      books: tryArr(() => {
+        var _a, _b;
+        return (_b = (_a = window.BGNJ_BOOKS) == null ? void 0 : _a.list) == null ? void 0 : _b.call(_a, { status: "published" });
+      }).filter(matchBook).slice(0, 8)
+    };
+  }, [debouncedQ]);
+  const total = results ? results.posts.length + results.columns.length + results.lectures.length + results.tours.length + results.books.length : 0;
+  const goAndClose = (route, pendingKey, pendingId) => {
+    if (pendingKey && pendingId != null) {
+      try {
+        sessionStorage.setItem(pendingKey, String(pendingId));
+      } catch (e) {
+      }
+    }
+    onClose();
+    go(route);
+  };
+  const Section = ({ label, items, route, pendingKey, fields }) => {
+    if (!items || items.length === 0) return null;
+    return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 18 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 8 } }, label, " ", /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 6 } }, items.length)), /* @__PURE__ */ React.createElement("ul", { role: "list", style: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 } }, items.map((it) => /* @__PURE__ */ React.createElement("li", { key: it.id }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        onClick: () => goAndClose(route, pendingKey, it.id),
+        style: {
+          width: "100%",
+          textAlign: "left",
+          padding: "10px 12px",
+          background: "var(--bg-2)",
+          border: "1px solid var(--line)",
+          borderRadius: 4,
+          cursor: "pointer",
+          display: "block"
+        }
+      },
+      /* @__PURE__ */ React.createElement("div", { style: {
+        fontSize: 14,
+        fontWeight: 600,
+        color: "var(--ink)",
+        marginBottom: 2,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      } }, fields.title(it)),
+      fields.sub(it) && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: {
+        fontSize: 11,
+        lineHeight: 1.5,
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis"
+      } }, fields.sub(it))
+    )))));
+  };
+  return /* @__PURE__ */ React.createElement(
+    "div",
+    {
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-label": "\uC0AC\uC774\uD2B8 \uAC80\uC0C9",
+      onClick: onClose,
+      style: {
+        position: "fixed",
+        inset: 0,
+        background: "rgba(15,23,42,0.55)",
+        zIndex: 1e3,
+        display: "grid",
+        placeItems: "start center",
+        padding: "80px 16px 16px",
+        overflowY: "auto"
+      }
+    },
+    /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: {
+      width: "min(640px, 100%)",
+      background: "var(--bg)",
+      boxShadow: "0 16px 40px rgba(0,0,0,0.25)",
+      borderRadius: 6
+    } }, /* @__PURE__ */ React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 18, color: "var(--ink-3)" } }, "\u{1F50D}"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        ref: inputRef,
+        type: "search",
+        value: q,
+        onChange: (e) => setQ(e.target.value),
+        placeholder: "\uAC8C\uC2DC\uAE00\xB7\uCE7C\uB7FC\xB7\uAC15\uC5F0\xB7\uB2F5\uC0AC\xB7\uCC45 \uD1B5\uD569 \uAC80\uC0C9",
+        "aria-label": "\uAC80\uC0C9\uC5B4 \uC785\uB825",
+        style: {
+          flex: 1,
+          border: "none",
+          outline: "none",
+          background: "transparent",
+          fontSize: 16,
+          color: "var(--ink)",
+          padding: "4px 0"
+        }
+      }
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        onClick: onClose,
+        "aria-label": "\uAC80\uC0C9 \uB2EB\uAE30",
+        style: { background: "transparent", border: "none", cursor: "pointer", color: "var(--ink-3)", fontSize: 14, padding: "4px 8px" }
+      },
+      "ESC"
+    )), /* @__PURE__ */ React.createElement("div", { style: { padding: "18px 20px", maxHeight: "70vh", overflowY: "auto" } }, !debouncedQ && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0, padding: "24px 0", textAlign: "center" } }, "\uAC80\uC0C9\uC5B4\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 11 } }, "\u2318K / Ctrl+K \uB85C \uBE60\uB978 \uC9C4\uC785 \uAC00\uB2A5")), debouncedQ && total === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, padding: "24px 0", textAlign: "center" } }, '"', /* @__PURE__ */ React.createElement("strong", { className: "gold" }, debouncedQ), '" \uC640 \uC77C\uCE58\uD558\uB294 \uACB0\uACFC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.'), results && total > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+      Section,
+      {
+        label: "\uAC8C\uC2DC\uAE00",
+        items: results.posts,
+        route: "community",
+        pendingKey: "bgnj_pending_post_id",
+        fields: {
+          title: (p) => p.title,
+          sub: (p) => p.category || (p.body && p.body.text ? String(p.body.text).slice(0, 60) : "")
+        }
+      }
+    ), /* @__PURE__ */ React.createElement(
+      Section,
+      {
+        label: "\uCE7C\uB7FC",
+        items: results.columns,
+        route: "column",
+        pendingKey: null,
+        fields: {
+          title: (c) => c.title,
+          sub: (c) => c.excerpt || c.category || ""
+        }
+      }
+    ), /* @__PURE__ */ React.createElement(
+      Section,
+      {
+        label: "\uAC15\uC5F0",
+        items: results.lectures,
+        route: "lectures",
+        pendingKey: "bgnj_pending_lecture_id",
+        fields: {
+          title: (l) => l.topic || l.title,
+          sub: (l) => [l.next, l.venue].filter(Boolean).join(" \xB7 ")
+        }
+      }
+    ), /* @__PURE__ */ React.createElement(
+      Section,
+      {
+        label: "\uB2F5\uC0AC",
+        items: results.tours,
+        route: "tour",
+        pendingKey: "bgnj_pending_tour_id",
+        fields: {
+          title: (t) => t.title,
+          sub: (t) => [t.next, t.venue].filter(Boolean).join(" \xB7 ")
+        }
+      }
+    ), /* @__PURE__ */ React.createElement(
+      Section,
+      {
+        label: "\uCC45",
+        items: results.books,
+        route: "book",
+        pendingKey: null,
+        fields: {
+          title: (b) => b.title,
+          sub: (b) => b.subtitle || b.author || ""
+        }
+      }
+    ))))
+  );
+};
 const Nav = ({ route, go, user, onLogout }) => {
   var _a, _b, _c;
   const navL = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).nav || {};
@@ -588,7 +863,7 @@ const Nav = ({ route, go, user, onLogout }) => {
         "\uC804\uCCB4 \uBCF4\uAE30 \u2192"
       )))
     ));
-  }), /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only nav-mobile-divider", "aria-hidden": "true" }), user ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("mypage") }, "\uB9C8\uC774\uD398\uC774\uC9C0")), user.isAdmin && /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("admin") }, "\uAD00\uB9AC")), /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: onLogout }, "\uB85C\uADF8\uC544\uC6C3"))) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("login") }, "\uB85C\uADF8\uC778")), /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("signup") }, "\uD68C\uC6D0\uAC00\uC785")))), /* @__PURE__ */ React.createElement("div", { className: "nav-actions" }, user ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+  }), /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only nav-mobile-divider", "aria-hidden": "true" }), user ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("mypage") }, "\uB9C8\uC774\uD398\uC774\uC9C0")), user.isAdmin && /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("admin") }, "\uAD00\uB9AC")), /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: onLogout }, "\uB85C\uADF8\uC544\uC6C3"))) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("login") }, "\uB85C\uADF8\uC778")), /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("signup") }, "\uD68C\uC6D0\uAC00\uC785")))), /* @__PURE__ */ React.createElement("div", { className: "nav-actions" }, /* @__PURE__ */ React.createElement(SiteSearchToggle, { go }), user ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
     "span",
     {
       className: "mono",
