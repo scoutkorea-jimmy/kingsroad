@@ -648,10 +648,26 @@ const HomePage = ({ go }) => {
     { label: "\uD22C\uC5B4", sub: "\uC9C1\uC811 \uAE30\uD68D \uD504\uB85C\uADF8\uB7A8", valueFallback: "\uC900\uBE44 \uC911" },
     { label: "\uCEE4\uBBA4\uB2C8\uD2F0", sub: "\uD568\uAED8 \uB9CC\uB4DC\uB294 \uC5EC\uD589", valueFallback: "\uC6B4\uC601 \uC911" }
   ];
+  const allPostsCount = G.arr(() => {
+    var _a2, _b2;
+    return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b2.call(_a2);
+  }).length;
   const stats = [
-    { l: heroStats[0].label, v: heroStats[0].valueFallback || "\uC804\uAD6D", s: heroStats[0].sub },
-    { l: heroStats[1].label, v: tours.length > 0 ? `${tours.length}\uAC1C` : heroStats[1].valueFallback || "\uC900\uBE44 \uC911", s: heroStats[1].sub },
-    { l: heroStats[2].label, v: recentPosts.length > 0 ? `${recentPosts.length}+` : heroStats[2].valueFallback || "\uC6B4\uC601 \uC911", s: heroStats[2].sub }
+    {
+      l: heroStats[0].label,
+      v: recommendations.length > 0 ? `${recommendations.length}\uACF3` : heroStats[0].valueFallback || "\uC804\uAD6D",
+      s: heroStats[0].sub
+    },
+    {
+      l: heroStats[1].label,
+      v: tours.length > 0 ? `${tours.length}\uAC1C` : heroStats[1].valueFallback || "\uC900\uBE44 \uC911",
+      s: heroStats[1].sub
+    },
+    {
+      l: heroStats[2].label,
+      v: allPostsCount > 0 ? `${allPostsCount}+` : heroStats[2].valueFallback || "\uC6B4\uC601 \uC911",
+      s: heroStats[2].sub
+    }
   ];
   const clickable = (onClick, label) => ({
     role: "button",
@@ -1059,6 +1075,13 @@ const HomePage = ({ go }) => {
     const heroMode = lectures.length === 1;
     const price = (_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.priceOrFree) == null ? void 0 : _b2.call(_a2, lecture.price);
     const hours = lecture.durationMinutes ? `${Math.round(lecture.durationMinutes / 60 * 10) / 10}\uC2DC\uAC04` : null;
+    const _now = Date.now();
+    const _startsTs = lecture.startsAt ? Date.parse(lecture.startsAt) : NaN;
+    const _createdTs = lecture.createdAt ? Date.parse(lecture.createdAt) : NaN;
+    const _daysToStart = !isNaN(_startsTs) ? Math.ceil((_startsTs - _now) / 864e5) : null;
+    const _daysSinceCreated = !isNaN(_createdTs) ? Math.floor((_now - _createdTs) / 864e5) : null;
+    const isImminent = _daysToStart != null && _daysToStart > 0 && _daysToStart <= 7;
+    const isNew = _daysSinceCreated != null && _daysSinceCreated <= 3;
     const metaCell = (label, value) => /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 3 } }, label), /* @__PURE__ */ React.createElement("div", { style: { fontSize: heroMode ? 14 : 13, fontWeight: 600, color: "var(--ink)", lineHeight: 1.4 } }, value || "-"));
     return /* @__PURE__ */ React.createElement(
       "article",
@@ -1080,7 +1103,7 @@ const HomePage = ({ go }) => {
           padding: heroMode ? "32px 32px 28px" : "20px 20px 18px"
         }
       },
-      /* @__PURE__ */ React.createElement("span", { className: "badge", style: { marginBottom: 14, alignSelf: "flex-start" } }, homeText.lectureBadge),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, homeText.lectureBadge), isImminent && /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--danger)", color: "var(--danger)" } }, _daysToStart === 1 ? "\uB0B4\uC77C \uB9C8\uAC10" : `D-${_daysToStart}`), isNew && /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--primary)", color: "var(--primary-active)" } }, "NEW")),
       /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: heroMode ? 24 : 19, fontWeight: 600, lineHeight: 1.35, marginBottom: 10, flex: "0 0 auto", color: "var(--ink)" } }, lecture.topic || lecture.title),
       lecture.note && /* @__PURE__ */ React.createElement("p", { style: { fontSize: heroMode ? 15 : 14, lineHeight: 1.75, color: "var(--ink-2)", marginBottom: 18, flex: "1 1 auto" } }, truncatePreview(lecture.note, heroMode ? 180 : 110)),
       /* @__PURE__ */ React.createElement("div", { style: {

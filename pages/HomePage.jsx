@@ -657,10 +657,18 @@ const HomePage = ({ go }) => {
     { label: '투어',     sub: '직접 기획 프로그램', valueFallback: '준비 중' },
     { label: '커뮤니티', sub: '함께 만드는 여행',   valueFallback: '운영 중' },
   ];
+  // v00.256 — hero 통계 실데이터 동적화. valueFallback 은 데이터 없을 때만.
+  const allPostsCount = G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()).length;
   const stats = [
-    { l: heroStats[0].label, v: heroStats[0].valueFallback || '전국',                                            s: heroStats[0].sub },
-    { l: heroStats[1].label, v: tours.length > 0 ? `${tours.length}개` : (heroStats[1].valueFallback || '준비 중'),     s: heroStats[1].sub },
-    { l: heroStats[2].label, v: recentPosts.length > 0 ? `${recentPosts.length}+` : (heroStats[2].valueFallback || '운영 중'), s: heroStats[2].sub },
+    { l: heroStats[0].label,
+      v: recommendations.length > 0 ? `${recommendations.length}곳` : (heroStats[0].valueFallback || '전국'),
+      s: heroStats[0].sub },
+    { l: heroStats[1].label,
+      v: tours.length > 0 ? `${tours.length}개` : (heroStats[1].valueFallback || '준비 중'),
+      s: heroStats[1].sub },
+    { l: heroStats[2].label,
+      v: allPostsCount > 0 ? `${allPostsCount}+` : (heroStats[2].valueFallback || '운영 중'),
+      s: heroStats[2].sub },
   ];
 
   const clickable = (onClick, label) => ({
@@ -1136,6 +1144,14 @@ const HomePage = ({ go }) => {
                 const hours = lecture.durationMinutes
                   ? `${Math.round(lecture.durationMinutes / 60 * 10) / 10}시간`
                   : null;
+                // v00.256 — 마감 임박 / 신규 라벨. startsAt 7일 이내 임박, createdAt 3일 이내 신규.
+                const _now = Date.now();
+                const _startsTs = lecture.startsAt ? Date.parse(lecture.startsAt) : NaN;
+                const _createdTs = lecture.createdAt ? Date.parse(lecture.createdAt) : NaN;
+                const _daysToStart = !isNaN(_startsTs) ? Math.ceil((_startsTs - _now) / 86400000) : null;
+                const _daysSinceCreated = !isNaN(_createdTs) ? Math.floor((_now - _createdTs) / 86400000) : null;
+                const isImminent = _daysToStart != null && _daysToStart > 0 && _daysToStart <= 7;
+                const isNew = _daysSinceCreated != null && _daysSinceCreated <= 3;
                 const metaCell = (label, value) => (
                   <div>
                     <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.18em', textTransform:'uppercase', marginBottom:3}}>{label}</div>
@@ -1152,7 +1168,15 @@ const HomePage = ({ go }) => {
                   }, `강연: ${lecture.topic || lecture.title}`)}
                   style={{cursor:'pointer', display:'flex', flexDirection:'column',
                     padding: heroMode ? '32px 32px 28px' : '20px 20px 18px'}}>
-                  <span className="badge" style={{marginBottom:14, alignSelf:'flex-start'}}>{homeText.lectureBadge}</span>
+                  <div style={{display:'flex', gap:6, marginBottom:14, flexWrap:'wrap', alignItems:'center'}}>
+                    <span className="badge">{homeText.lectureBadge}</span>
+                    {isImminent && (
+                      <span className="badge" style={{borderColor:'var(--danger)', color:'var(--danger)'}}>
+                        {_daysToStart === 1 ? '내일 마감' : `D-${_daysToStart}`}
+                      </span>
+                    )}
+                    {isNew && <span className="badge" style={{borderColor:'var(--primary)', color:'var(--primary-active)'}}>NEW</span>}
+                  </div>
                   <h3 className="ko-serif" style={{fontSize: heroMode ? 24 : 19, fontWeight:600, lineHeight:1.35, marginBottom:10, flex:'0 0 auto', color:'var(--ink)'}}>{lecture.topic || lecture.title}</h3>
                   {/* 5) 행사 간단 소개 */}
                   {lecture.note && <p style={{fontSize: heroMode ? 15 : 14, lineHeight:1.75, color:'var(--ink-2)', marginBottom:18, flex:'1 1 auto'}}>{truncatePreview(lecture.note, heroMode ? 180 : 110)}</p>}
