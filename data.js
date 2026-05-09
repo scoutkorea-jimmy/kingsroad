@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.230.000",
+  version: "00.231.000",
   build: "2026.05.09",
   channel: "preview",
 };
@@ -1245,7 +1245,9 @@ window.BGNJ_AUTH = {
   async refreshUsers({ q } = {}) {
     try {
       const { users } = await window.BGNJ_API.admin.users.list({ q });
-      this._usersCache = (users || []).map((u) => ({
+      // v00.231 — 비-배열 응답(null/undefined/object) 으로 캐시가 빈 배열 덮어쓰던 데이터-사라짐 버그 방어.
+      if (!Array.isArray(users)) { try { console.warn('[BGNJ_AUTH.refreshUsers] non-array response — cache preserved'); } catch {} return this._usersCache.slice(); }
+      this._usersCache = users.map((u) => ({
         id: u.id, email: u.email, name: u.name,
         isAdmin: !!u.is_admin, gradeId: u.grade_id,
         suspended: !!u.suspended,
@@ -1422,7 +1424,9 @@ window.BGNJ_COMMUNITY = {
       try {
         if (attempt > 0) await new Promise((r) => setTimeout(r, 600 * attempt));
         const { posts } = await window.BGNJ_API.posts.list(opts);
-        this._serverPosts = (posts || []).map(_serverPostToUi);
+        // v00.231 — 비-배열 응답으로 캐시가 빈 배열 덮어쓰던 데이터-사라짐 버그 방어.
+        if (!Array.isArray(posts)) { try { console.warn('[BGNJ_COMMUNITY.refreshPosts] non-array — cache preserved'); } catch {} return this._serverPosts; }
+        this._serverPosts = posts.map(_serverPostToUi);
         this._serverLoaded = true;
         this._lastError = null;
         try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
@@ -1563,7 +1567,9 @@ window.BGNJ_COMMUNITY = {
   async refreshComments(postId) {
     try {
       const { comments } = await window.BGNJ_API.posts.comments.list(postId);
-      this._commentsCache[String(postId)] = (comments || []).map((c) => ({
+      // v00.231 — 데이터-사라짐 방어 (per-postId 키 캐시).
+      if (!Array.isArray(comments)) { try { console.warn('[BGNJ_COMMUNITY.refreshComments] non-array — cache preserved for post', postId); } catch {} return this._commentsCache[String(postId)] || []; }
+      this._commentsCache[String(postId)] = comments.map((c) => ({
         id: c.id,
         postId: c.post_id,
         parentId: c.parent_id,
@@ -1695,7 +1701,9 @@ window.BGNJ_COMMUNITY = {
     if (!userId) return [];
     try {
       const { bookmarks } = await window.BGNJ_API.bookmarks.mine();
-      this._bookmarks[userId] = (bookmarks || []).map((b) => b.post_id);
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(bookmarks)) { try { console.warn('[BGNJ_COMMUNITY.refreshBookmarks] non-array — cache preserved'); } catch {} return this._bookmarks[userId] || []; }
+      this._bookmarks[userId] = bookmarks.map((b) => b.post_id);
     } catch {}
     return this._bookmarks[userId] || [];
   },
@@ -1720,7 +1728,9 @@ window.BGNJ_COMMUNITY = {
   async refreshReports({ status } = {}) {
     try {
       const { reports } = await window.BGNJ_API.admin.reports.list({ status });
-      this._reports = reports || [];
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(reports)) { try { console.warn('[BGNJ_COMMUNITY.refreshReports] non-array — cache preserved'); } catch {} return this._reports.slice(); }
+      this._reports = reports;
     } catch {}
     return this._reports.slice();
   },
@@ -1752,7 +1762,9 @@ window.BGNJ_COMMUNITY = {
     if (!userId) return [];
     try {
       const { notifications } = await window.BGNJ_API.notifications.list();
-      this._notifications[userId] = (notifications || []).map((n) => ({
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(notifications)) { try { console.warn('[BGNJ_COMMUNITY.refreshNotifications] non-array — cache preserved'); } catch {} return this._notifications[userId] || []; }
+      this._notifications[userId] = notifications.map((n) => ({
         id: n.id, type: n.type, message: n.message,
         fromName: n.from_name, postId: n.post_id, postTitle: n.post_title,
         lectureId: n.lecture_id, tourId: n.tour_id,
@@ -1833,7 +1845,9 @@ window.BGNJ_COLUMNS = {
   async refresh({ admin } = {}) {
     try {
       const { columns } = await window.BGNJ_API.columns.list({ includeAll: !!admin });
-      this._columns = (columns || []).map((c) => this._toColumn(c));
+      // v00.231 — 데이터-사라짐 방어 (Array.isArray 가드).
+      if (!Array.isArray(columns)) { try { console.warn('[BGNJ_COLUMNS.refresh] non-array — cache preserved'); } catch {} return this._columns.slice(); }
+      this._columns = columns.map((c) => this._toColumn(c));
       try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}
     } catch {}
     return this._columns.slice();
@@ -1968,7 +1982,9 @@ window.BGNJ_LECTURES = {
   async refresh({ admin, includeHidden } = {}) {
     try {
       const { lectures } = await window.BGNJ_API.lectures.list({ includeHidden: !!includeHidden });
-      this._lectures = (lectures || []).map((l) => this._toLecture(l));
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(lectures)) { try { console.warn('[BGNJ_LECTURES.refresh] non-array — cache preserved'); } catch {} return this._lectures.slice(); }
+      this._lectures = lectures.map((l) => this._toLecture(l));
       try { window.dispatchEvent(new CustomEvent('bgnj-lectures-refresh')); } catch {}
     } catch {}
     return this._lectures.slice();
@@ -1976,7 +1992,9 @@ window.BGNJ_LECTURES = {
   async refreshMine() {
     try {
       const { registrations } = await window.BGNJ_API.lectures.mineRegistrations();
-      this._myRegs = (registrations || []).map((r) => ({
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(registrations)) { try { console.warn('[BGNJ_LECTURES.refreshMine] non-array — cache preserved'); } catch {} return this._myRegs.slice(); }
+      this._myRegs = registrations.map((r) => ({
         id: r.id, lectureId: r.lecture_id, userId: r.user_id, name: r.user_name,
         email: r.user_email, phone: r.user_phone, status: r.status,
         paid: r.status === 'confirmed', count: 1, price: r.price || 0,
@@ -2014,7 +2032,9 @@ window.BGNJ_LECTURES = {
     if (!lectureId) return [];
     try {
       const { registrations } = await window.BGNJ_API.lectures.adminRegistrations(lectureId);
-      const mapped = (registrations || []).map((r) => ({
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(registrations)) { try { console.warn('[BGNJ_LECTURES.refreshRegistrations] non-array — cache preserved for', lectureId); } catch {} return this._registrationsByLecture[String(lectureId)] || []; }
+      const mapped = registrations.map((r) => ({
         id: r.id, lectureId: r.lecture_id, userId: r.user_id,
         name: r.user_name, email: r.user_email, phone: r.user_phone,
         status: r.status, paid: r.status === 'confirmed',
@@ -2118,7 +2138,9 @@ window.BGNJ_LECTURES = {
   async refreshReviews(lectureId) {
     try {
       const { reviews } = await window.BGNJ_API.lectures.reviews.list(lectureId);
-      this._reviewsByLecture[String(lectureId)] = reviews || [];
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(reviews)) { try { console.warn('[BGNJ_LECTURES.refreshReviews] non-array — cache preserved for', lectureId); } catch {} return this._reviewsByLecture[String(lectureId)] || []; }
+      this._reviewsByLecture[String(lectureId)] = reviews;
     } catch {}
     return this._reviewsByLecture[String(lectureId)] || [];
   },
@@ -2147,7 +2169,9 @@ window.BGNJ_LECTURES = {
   async refreshBankAccount() {
     try {
       const { accounts } = await window.BGNJ_API.bankAccounts.list();
-      this._bankAccounts = (accounts || []).map((a) => ({
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(accounts)) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshBankAccount] non-array — cache preserved'); } catch {} return; }
+      this._bankAccounts = accounts.map((a) => ({
         id: a.id, label: a.label || '계좌',
         bankName: a.bank_name || '', accountNumber: a.account_number || '',
         holder: a.holder || '', memo: a.memo || '',
@@ -2218,7 +2242,9 @@ window.BGNJ_BOOK_ORDERS = {
   async refreshMine() {
     try {
       const { orders } = await window.BGNJ_API.bookOrders.mine();
-      this._orders = (orders || []).map((o) => this._toOrder(o));
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(orders)) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshMine] non-array — cache preserved'); } catch {} return this._orders.slice(); }
+      this._orders = orders.map((o) => this._toOrder(o));
       try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}
     } catch {}
     return this._orders.slice();
@@ -2226,7 +2252,9 @@ window.BGNJ_BOOK_ORDERS = {
   async refreshAll({ status } = {}) {
     try {
       const { orders } = await window.BGNJ_API.bookOrders.adminList({ status });
-      this._orders = (orders || []).map((o) => this._toOrder(o));
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(orders)) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshAll] non-array — cache preserved'); } catch {} return this._orders.slice(); }
+      this._orders = orders.map((o) => this._toOrder(o));
       try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}
     } catch {}
     return this._orders.slice();
@@ -2360,7 +2388,9 @@ window.BGNJ_BOOK_ORDERS = {
   async refreshReviews(bookId = 'kingsroad') {
     try {
       const { reviews } = await window.BGNJ_API.books.reviews.list(bookId);
-      this._reviews = reviews || [];
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(reviews)) { try { console.warn('[BGNJ_BOOKS.refreshReviews] non-array — cache preserved'); } catch {} return this._reviews.slice(); }
+      this._reviews = reviews;
     } catch {}
     return this._reviews.slice();
   },
@@ -2426,7 +2456,9 @@ window.BGNJ_TOURS = {
   async refresh({ includeHidden } = {}) {
     try {
       const { tours } = await window.BGNJ_API.tours.list({ includeHidden: !!includeHidden });
-      this._tours = (tours || []).map((t) => this._toTour(t));
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(tours)) { try { console.warn('[BGNJ_TOURS.refresh] non-array — cache preserved'); } catch {} return this._tours.slice(); }
+      this._tours = tours.map((t) => this._toTour(t));
       try { window.dispatchEvent(new CustomEvent('bgnj-tours-refresh')); } catch {}
     } catch {}
     return this._tours.slice();
@@ -2434,7 +2466,9 @@ window.BGNJ_TOURS = {
   async refreshMine() {
     try {
       const { reservations } = await window.BGNJ_API.tours.mineReservations();
-      this._myReservations = (reservations || []).map((r) => ({
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(reservations)) { try { console.warn('[BGNJ_TOURS.refreshMine] non-array — cache preserved'); } catch {} return this._myReservations.slice(); }
+      this._myReservations = reservations.map((r) => ({
         id: r.id, tourId: r.tour_id, userId: r.user_id, name: r.user_name,
         email: r.user_email, phone: r.user_phone, status: r.status,
         paid: r.status === 'confirmed', count: r.qty || 1, price: r.price || 0,
@@ -2473,7 +2507,9 @@ window.BGNJ_TOURS = {
     if (!tourId) return [];
     try {
       const { reservations } = await window.BGNJ_API.tours.adminReservations(tourId);
-      const mapped = (reservations || []).map((r) => ({
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(reservations)) { try { console.warn('[BGNJ_TOURS.refreshReservations] non-array — cache preserved for', tourId); } catch {} return this._reservationsByTour[String(tourId)] || []; }
+      const mapped = reservations.map((r) => ({
         id: r.id, tourId: r.tour_id, userId: r.user_id,
         name: r.user_name, email: r.user_email, phone: r.user_phone,
         status: r.status, paid: r.status === 'confirmed',
@@ -2570,7 +2606,9 @@ window.BGNJ_TOURS = {
   async refreshReviews(tourId) {
     try {
       const { reviews } = await window.BGNJ_API.tours.reviews.list(tourId);
-      this._reviewsByTour[String(tourId)] = reviews || [];
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(reviews)) { try { console.warn('[BGNJ_TOURS.refreshReviews] non-array — cache preserved for', tourId); } catch {} return this._reviewsByTour[String(tourId)] || []; }
+      this._reviewsByTour[String(tourId)] = reviews;
     } catch {}
     return this._reviewsByTour[String(tourId)] || [];
   },
@@ -2621,7 +2659,9 @@ window.BGNJ_AUDIT = {
   async refresh({ limit = 200, search = '' } = {}) {
     try {
       const { log } = await window.BGNJ_API.admin.audit.list({ limit });
-      this._cache = (log || []).map((e) => ({
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(log)) { try { console.warn('[BGNJ_AUDIT.refresh] non-array — cache preserved'); } catch {} return this.list({ search, limit }); }
+      this._cache = log.map((e) => ({
         id: e.id, action: e.action, target: e.target,
         details: e.details ?? (e.details_json ? JSON.parse(e.details_json) : null),
         by: e.actor || 'system', ts: e.ts || e.created_at,
@@ -2915,7 +2955,9 @@ window.BGNJ_SITE_CONTENT = {
   async refresh() {
     try {
       const { siteContent } = await window.BGNJ_API.siteContent.get();
-      this._cache = siteContent || {};
+      // v00.231 — 데이터-사라짐 방어: 비-객체 응답이면 캐시 보존 (히어로 텍스트·footer·lecturePages 커버 등 사이트 전반 콘텐츠).
+      if (!siteContent || typeof siteContent !== 'object') { try { console.warn('[BGNJ_SITE_CONTENT.refresh] non-object — cache preserved'); } catch {} return this.get(); }
+      this._cache = siteContent;
       this.applyHead();
       try { window.dispatchEvent(new CustomEvent('bgnj-site-content-refresh')); } catch {}
     } catch {}
@@ -3050,7 +3092,9 @@ window.BGNJ_BOOKS = {
   async refresh({ admin } = {}) {
     try {
       const { books } = await window.BGNJ_API.books.list({ includeAll: !!admin });
-      this._books = (books || []).map((b) => this._toBook(b));
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(books)) { try { console.warn('[BGNJ_BOOKS.refresh] non-array — cache preserved'); } catch {} return this._books.slice(); }
+      this._books = books.map((b) => this._toBook(b));
       try { window.dispatchEvent(new CustomEvent('bgnj-books-refresh')); } catch {}
     } catch {}
     return this._books.slice();
@@ -3172,7 +3216,9 @@ window.BGNJ_FAQ = {
       const { faqs } = admin
         ? await window.BGNJ_API.faqs.adminList()
         : await window.BGNJ_API.faqs.list();
-      this._cache = (faqs || []).map((f) => ({
+      // v00.231 — 데이터-사라짐 방어.
+      if (!Array.isArray(faqs)) { try { console.warn('[BGNJ_FAQ.refresh] non-array — cache preserved'); } catch {} return this._cache.slice(); }
+      this._cache = faqs.map((f) => ({
         id: f.id, question: f.question, answer: f.answer,
         category: f.category || '일반',
         order: f.display_order ?? 0,
