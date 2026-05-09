@@ -171,13 +171,23 @@ const TourPage = ({ go, user }) => {
           <div>
             {(() => {
               // v00.081 — 우선순위: D1.cover_url (tour.coverUrl) > site_content_kv.tourPages[id].coverDataUri (v00.070 legacy) > placeholder.
+              // v00.235 — 갤러리 대표사진을 가장 우선.
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
-              const coverUri = tour.coverUrl || sc.tourPages?.[tour.id]?.coverDataUri || '';
+              const tp = sc.tourPages?.[tour.id] || {};
+              const galleryPrimary = window.pickPrimaryImage?.(tp.images);
+              const coverUri = galleryPrimary?.url || tour.coverUrl || tp.coverDataUri || '';
               if (coverUri) {
                 return (
-                  <div style={{aspectRatio:'16/10', marginBottom:32, overflow:'hidden', borderRadius:2, background:'var(--bg-2)'}}>
-                    <img src={coverUri} alt={tour.title || '투어 커버'}
-                      style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                  <div style={{marginBottom:32}}>
+                    <div style={{aspectRatio:'16/10', overflow:'hidden', borderRadius:2, background:'var(--bg-2)'}}>
+                      <img src={coverUri} alt={tour.title || '투어 커버'}
+                        style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                    </div>
+                    {galleryPrimary?.credit && (
+                      <div className="dim mono" style={{fontSize:10, letterSpacing:'0.05em', marginTop:6, lineHeight:1.5}}>
+                        {galleryPrimary.credit}
+                      </div>
+                    )}
                   </div>
                 );
               }
@@ -212,6 +222,12 @@ const TourPage = ({ go, user }) => {
               </p>
             )}
             <p className="dim bgnj-multiline" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{tour.desc}</p>
+            {/* v00.235 — 사진 갤러리 (대표 외 추가 사진 그리드). */}
+            {window.MediaGalleryView && (() => {
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const imgs = sc.tourPages?.[tour.id]?.images;
+              return <window.MediaGalleryView images={imgs} title={tour.title}/>;
+            })()}
 
             {(() => {
               // v00.066 — per-tour override(tourPages[tourId]) 우선, 없으면 글로벌(tourSchedule/tourPrep) fallback.
@@ -334,9 +350,18 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
   const [capacity, setCapacity] = React.useState(initialTour?.capacity || 12);
   const [price, setPrice] = React.useState(initialTour?.priceNumber ?? initialTour?.price ?? 80000);
   const [desc, setDesc] = React.useState(initialTour?.desc || '');
+  // v00.235 — 사진 갤러리 (최대 10장 + 출처 + 대표).
+  const [images, setImages] = React.useState(() => {
+    if (!initialTour?.id) return [];
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const arr = sc.tourPages?.[initialTour.id]?.images;
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
   const [error, setError] = React.useState('');
   const [saving, setSaving] = React.useState(false);
-  const dirty = !!(title.trim() || subtitle.trim() || desc.trim());
+  const dirty = !!(title.trim() || subtitle.trim() || desc.trim() || images.length > 0);
   const guard = window.useModalGuard?.({ open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? '투어 수정' : '투어 추가' }) || {};
 
   const submit = async (e) => {
@@ -367,6 +392,18 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
         price: Math.max(0, Number(price) || 0),
         desc: desc.trim(),
       });
+      // v00.235 — 갤러리 저장 (site_content_kv.tourPages[id]). 기존 schedule/prep/coverDataUri 보존.
+      if (images.length > 0 || isEdit) {
+        try {
+          const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+          const existing = (sc.tourPages && typeof sc.tourPages === 'object' && sc.tourPages[id]) || {};
+          await window.BGNJ_SITE_CONTENT.saveSection('tourPages', { [id]: { ...existing, images } });
+          try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch {}
+        } catch (galleryErr) {
+          try { console.warn('[TourQuickAddModal] 갤러리 저장 실패:', galleryErr); } catch {}
+          window.BGNJ_TOAST?.error?.('투어 정보는 저장됐지만 갤러리 저장에 실패했습니다.');
+        }
+      }
       try { await window.BGNJ_AUDIT?.log?.({ action: isEdit ? 'tour.update' : 'tour.create', target: `tour:${id}` }); } catch {}
       try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch {}
       window.BGNJ_TOAST?.success?.(isEdit ? '투어가 수정되었습니다.' : '투어가 등록되었습니다.');
@@ -452,6 +489,10 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
               value={desc} onChange={(e) => setDesc(e.target.value)}
               placeholder="답사 안내 (이후 관리자 패널에서 보강 가능)"/>
           </div>
+          {/* v00.235 — 사진 갤러리 편집기. */}
+          {window.MediaGalleryEditor && (
+            <window.MediaGalleryEditor value={images} onChange={setImages} folder="tour-gallery"/>
+          )}
           {error && (
             <div role="alert" style={{padding:'8px 10px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:12}}>
               {error}

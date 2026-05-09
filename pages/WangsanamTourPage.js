@@ -115,16 +115,18 @@ const TourPage = ({ go, user }) => {
   ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 60 }, className: "tour-grid" }, /* @__PURE__ */ React.createElement("div", null, (() => {
     var _a2, _b2, _c2, _d2;
     const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
-    const coverUri = tour.coverUrl || ((_d2 = (_c2 = sc.tourPages) == null ? void 0 : _c2[tour.id]) == null ? void 0 : _d2.coverDataUri) || "";
+    const tp = ((_c2 = sc.tourPages) == null ? void 0 : _c2[tour.id]) || {};
+    const galleryPrimary = (_d2 = window.pickPrimaryImage) == null ? void 0 : _d2.call(window, tp.images);
+    const coverUri = (galleryPrimary == null ? void 0 : galleryPrimary.url) || tour.coverUrl || tp.coverDataUri || "";
     if (coverUri) {
-      return /* @__PURE__ */ React.createElement("div", { style: { aspectRatio: "16/10", marginBottom: 32, overflow: "hidden", borderRadius: 2, background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement(
+      return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("div", { style: { aspectRatio: "16/10", overflow: "hidden", borderRadius: 2, background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement(
         "img",
         {
           src: coverUri,
           alt: tour.title || "\uD22C\uC5B4 \uCEE4\uBC84",
           style: { width: "100%", height: "100%", objectFit: "cover", display: "block" }
         }
-      ));
+      )), (galleryPrimary == null ? void 0 : galleryPrimary.credit) && /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, letterSpacing: "0.05em", marginTop: 6, lineHeight: 1.5 } }, galleryPrimary.credit));
     }
     return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, window.CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "16/10", label: String(tour.title || "").toUpperCase() }) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "16/10", fontSize: 11 } }, String(tour.title || "").toUpperCase()));
   })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, tour.level), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.duration), /* @__PURE__ */ React.createElement("span", { className: "badge" }, tour.group), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), isAdmin && /* @__PURE__ */ React.createElement(
@@ -136,7 +138,12 @@ const TourPage = ({ go, user }) => {
       onClick: () => setEditTarget(tour)
     },
     "\u270E \uD22C\uC5B4 \uC218\uC815"
-  )), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: tour.subtitle ? 6 : 24 } }, tour.title), tour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "ko-serif gold-2", style: { fontSize: 18, lineHeight: 1.4, marginBottom: 24, fontStyle: "italic" } }, tour.subtitle), /* @__PURE__ */ React.createElement("p", { className: "dim bgnj-multiline", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32 } }, tour.desc), (() => {
+  )), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: tour.subtitle ? 6 : 24 } }, tour.title), tour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "ko-serif gold-2", style: { fontSize: 18, lineHeight: 1.4, marginBottom: 24, fontStyle: "italic" } }, tour.subtitle), /* @__PURE__ */ React.createElement("p", { className: "dim bgnj-multiline", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32 } }, tour.desc), window.MediaGalleryView && (() => {
+    var _a2, _b2, _c2, _d2;
+    const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
+    const imgs = (_d2 = (_c2 = sc.tourPages) == null ? void 0 : _c2[tour.id]) == null ? void 0 : _d2.images;
+    return /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images: imgs, title: tour.title });
+  })(), (() => {
     var _a2, _b2;
     const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
     const perTour = sc.tourPages && typeof sc.tourPages === "object" && (tour == null ? void 0 : tour.id) ? sc.tourPages[tour.id] || null : null;
@@ -196,12 +203,23 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
   const [capacity, setCapacity] = React.useState((initialTour == null ? void 0 : initialTour.capacity) || 12);
   const [price, setPrice] = React.useState((_b = (_a = initialTour == null ? void 0 : initialTour.priceNumber) != null ? _a : initialTour == null ? void 0 : initialTour.price) != null ? _b : 8e4);
   const [desc, setDesc] = React.useState((initialTour == null ? void 0 : initialTour.desc) || "");
+  const [images, setImages] = React.useState(() => {
+    var _a2, _b2, _c2, _d;
+    if (!(initialTour == null ? void 0 : initialTour.id)) return [];
+    try {
+      const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
+      const arr = (_d = (_c2 = sc.tourPages) == null ? void 0 : _c2[initialTour.id]) == null ? void 0 : _d.images;
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [error, setError] = React.useState("");
   const [saving, setSaving] = React.useState(false);
-  const dirty = !!(title.trim() || subtitle.trim() || desc.trim());
+  const dirty = !!(title.trim() || subtitle.trim() || desc.trim() || images.length > 0);
   const guard = ((_c = window.useModalGuard) == null ? void 0 : _c.call(window, { open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? "\uD22C\uC5B4 \uC218\uC815" : "\uD22C\uC5B4 \uCD94\uAC00" })) || {};
   const submit = async (e) => {
-    var _a2, _b2, _c2, _d, _e, _f, _g;
+    var _a2, _b2, _c2, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
     e.preventDefault();
     setError("");
     if (!title.trim()) {
@@ -234,19 +252,36 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
         price: Math.max(0, Number(price) || 0),
         desc: desc.trim()
       });
+      if (images.length > 0 || isEdit) {
+        try {
+          const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
+          const existing = sc.tourPages && typeof sc.tourPages === "object" && sc.tourPages[id] || {};
+          await window.BGNJ_SITE_CONTENT.saveSection("tourPages", { [id]: { ...existing, images } });
+          try {
+            (_d = (_c2 = window.BGNJ_BROADCAST) == null ? void 0 : _c2.publish) == null ? void 0 : _d.call(_c2, "site-content");
+          } catch (e2) {
+          }
+        } catch (galleryErr) {
+          try {
+            console.warn("[TourQuickAddModal] \uAC24\uB7EC\uB9AC \uC800\uC7A5 \uC2E4\uD328:", galleryErr);
+          } catch (e2) {
+          }
+          (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, "\uD22C\uC5B4 \uC815\uBCF4\uB294 \uC800\uC7A5\uB410\uC9C0\uB9CC \uAC24\uB7EC\uB9AC \uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+        }
+      }
       try {
-        await ((_b2 = (_a2 = window.BGNJ_AUDIT) == null ? void 0 : _a2.log) == null ? void 0 : _b2.call(_a2, { action: isEdit ? "tour.update" : "tour.create", target: `tour:${id}` }));
+        await ((_h = (_g = window.BGNJ_AUDIT) == null ? void 0 : _g.log) == null ? void 0 : _h.call(_g, { action: isEdit ? "tour.update" : "tour.create", target: `tour:${id}` }));
       } catch (e2) {
       }
       try {
-        (_d = (_c2 = window.BGNJ_BROADCAST) == null ? void 0 : _c2.publish) == null ? void 0 : _d.call(_c2, "tours");
+        (_j = (_i = window.BGNJ_BROADCAST) == null ? void 0 : _i.publish) == null ? void 0 : _j.call(_i, "tours");
       } catch (e2) {
       }
-      (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.success) == null ? void 0 : _f.call(_e, isEdit ? "\uD22C\uC5B4\uAC00 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4." : "\uD22C\uC5B4\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+      (_l = (_k = window.BGNJ_TOAST) == null ? void 0 : _k.success) == null ? void 0 : _l.call(_k, isEdit ? "\uD22C\uC5B4\uAC00 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4." : "\uD22C\uC5B4\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
       onSaved == null ? void 0 : onSaved();
       onClose == null ? void 0 : onClose();
     } catch (err) {
-      setError(((_g = err == null ? void 0 : err.body) == null ? void 0 : _g.error) || (err == null ? void 0 : err.message) || (isEdit ? "\uD22C\uC5B4 \uC218\uC815 \uC2E4\uD328" : "\uD22C\uC5B4 \uC0DD\uC131 \uC2E4\uD328"));
+      setError(((_m = err == null ? void 0 : err.body) == null ? void 0 : _m.error) || (err == null ? void 0 : err.message) || (isEdit ? "\uD22C\uC5B4 \uC218\uC815 \uC2E4\uD328" : "\uD22C\uC5B4 \uC0DD\uC131 \uC2E4\uD328"));
     } finally {
       setSaving(false);
     }
@@ -353,7 +388,7 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
         onChange: (e) => setDesc(e.target.value),
         placeholder: "\uB2F5\uC0AC \uC548\uB0B4 (\uC774\uD6C4 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uBCF4\uAC15 \uAC00\uB2A5)"
       }
-    )), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uD22C\uC5B4 \uC800\uC7A5" : "\uD22C\uC5B4 \uB4F1\uB85D"))))
+    )), window.MediaGalleryEditor && /* @__PURE__ */ React.createElement(window.MediaGalleryEditor, { value: images, onChange: setImages, folder: "tour-gallery" }), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uD22C\uC5B4 \uC800\uC7A5" : "\uD22C\uC5B4 \uB4F1\uB85D"))))
   );
 };
 const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, formatPrice, onRefresh, go }) => {

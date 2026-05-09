@@ -184,14 +184,23 @@ const LecturesPage = ({ go, user }) => {
         <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:60}} className="tour-grid">
           <div>
             {(() => {
-              // v00.075 — site_content_kv.lecturePages[id].coverDataUri 가 있으면 cover, 없으면 placeholder.
+              // v00.235 — 우선순위: 갤러리 대표사진 > legacy coverDataUri > placeholder.
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
-              const coverUri = sc.lecturePages?.[lecture.id]?.coverDataUri || '';
+              const lp = sc.lecturePages?.[lecture.id] || {};
+              const galleryPrimary = window.pickPrimaryImage?.(lp.images);
+              const coverUri = galleryPrimary?.url || lp.coverDataUri || '';
               if (coverUri) {
                 return (
-                  <div style={{aspectRatio:'16/10', marginBottom:32, overflow:'hidden', borderRadius:2, background:'var(--bg-2)'}}>
-                    <img src={coverUri} alt={lecture.title || '강연 커버'}
-                      style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                  <div style={{marginBottom:32}}>
+                    <div style={{aspectRatio:'16/10', overflow:'hidden', borderRadius:2, background:'var(--bg-2)'}}>
+                      <img src={coverUri} alt={lecture.title || '강연 커버'}
+                        style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                    </div>
+                    {galleryPrimary?.credit && (
+                      <div className="dim mono" style={{fontSize:10, letterSpacing:'0.05em', marginTop:6, lineHeight:1.5}}>
+                        {galleryPrimary.credit}
+                      </div>
+                    )}
                   </div>
                 );
               }
@@ -222,6 +231,12 @@ const LecturesPage = ({ go, user }) => {
             </div>
             <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24}}>{lecture.topic}</h2>
             <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{lecture.note}</p>
+            {/* v00.235 — 사진 갤러리 (대표 외 추가 사진 그리드). 1장이면 미노출(cover 와 중복). */}
+            {window.MediaGalleryView && (() => {
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const imgs = sc.lecturePages?.[lecture.id]?.images;
+              return <window.MediaGalleryView images={imgs} title={lecture.title}/>;
+            })()}
 
             {(() => {
               // v00.075 — per-lecture override(lecturePages[id]) 우선, 없으면 글로벌(lectureSchedule/lectureNotes) fallback.
@@ -326,9 +341,18 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
   const [capacity, setCapacity] = React.useState(initialLecture?.capacity || 30);
   const [price, setPrice] = React.useState(initialLecture?.price || 0);
   const [note, setNote] = React.useState(initialLecture?.note || '');
+  // v00.235 — 사진 갤러리 (최대 10장 + 출처 + 대표). edit 모드면 site_content_kv 에서 prefill.
+  const [images, setImages] = React.useState(() => {
+    if (!initialLecture?.id) return [];
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const arr = sc.lecturePages?.[initialLecture.id]?.images;
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
   const [error, setError] = React.useState('');
   const [saving, setSaving] = React.useState(false);
-  const dirty = !!(title.trim() || topic.trim() || venue.trim() || note.trim());
+  const dirty = !!(title.trim() || topic.trim() || venue.trim() || note.trim() || images.length > 0);
   const guard = window.useModalGuard?.({ open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? '강연 수정' : '강연 추가' }) || {};
 
   const submit = async (e) => {
@@ -357,6 +381,18 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         price: Math.max(0, Number(price) || 0),
         note: note.trim(),
       });
+      // v00.235 — 갤러리 저장 (site_content_kv.lecturePages[id]). 기존 schedule/notes/coverDataUri 보존을 위해 머지.
+      if (images.length > 0 || isEdit) {
+        try {
+          const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+          const existing = (sc.lecturePages && typeof sc.lecturePages === 'object' && sc.lecturePages[id]) || {};
+          await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', { [id]: { ...existing, images } });
+          try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch {}
+        } catch (galleryErr) {
+          try { console.warn('[LectureQuickAddModal] 갤러리 저장 실패:', galleryErr); } catch {}
+          window.BGNJ_TOAST?.error?.('강연 정보는 저장됐지만 갤러리 저장에 실패했습니다.');
+        }
+      }
       try { await window.BGNJ_AUDIT?.log?.({ action: isEdit ? 'lecture.update' : 'lecture.create', target: `lecture:${id}` }); } catch {}
       try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
       window.BGNJ_TOAST?.success?.(isEdit ? '강연이 수정되었습니다.' : '강연이 등록되었습니다.');
@@ -436,6 +472,10 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
               value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="강연 안내·당부 사항 (이후 관리자 패널에서 보강 가능)"/>
           </div>
+          {/* v00.235 — 사진 갤러리 편집기 (최대 10장 + 출처 + 대표). */}
+          {window.MediaGalleryEditor && (
+            <window.MediaGalleryEditor value={images} onChange={setImages} folder="lecture-gallery"/>
+          )}
           {error && (
             <div role="alert" style={{padding:'8px 10px', background:'rgba(194,74,61,0.1)', border:'1px solid var(--danger)', color:'var(--danger)', fontSize:12}}>
               {error}
