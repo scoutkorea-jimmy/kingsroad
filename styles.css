@@ -872,8 +872,12 @@ main time, main .section-eyebrow {
 /* 작은 메타 텍스트는 가독성 보강 위해 weight 600 — IBM Plex Mono 의 가는 weight 가 한글에서 너무 얇게 보임 */
 .mono.dim-2 { font-weight: 600; }
 
-.gold { color: var(--primary); }
-.gold-2 { color: var(--primary-hover); }
+/* v00.230 — 흰 배경 본문에서 노란 primary 가 대비비 ≪ 4.5:1 → AA 위반 + 가독성 보고.
+   .gold / .gold-2 는 본문 강조용 텍스트 클래스이므로 secondary (Caramel Ink, AAA 대비)로 교체.
+   다크 모드에서는 라인 165-166 override 가 .gold → primary 유지 (어두운 배경에서 노랑이 읽힘).
+   브랜드 옐로우는 CTA·focus·badge-border·dot 등 5% 면적에만. KMS §2 컬러원칙 강제. */
+.gold { color: var(--secondary); }
+.gold-2 { color: var(--secondary-hover); }
 .dim { color: var(--ink-2); }
 .dim-2 { color: var(--ink-3); }
 
@@ -1077,7 +1081,8 @@ main time, main .section-eyebrow {
   color: var(--ink);
   margin-bottom: 16px;
 }
-.section-title .accent { color: var(--primary); font-style: italic; font-weight: 400; }
+/* v00.230 — section-title accent (이탤릭 강조) 도 본문 텍스트라 secondary 로. */
+.section-title .accent { color: var(--secondary); font-style: italic; font-weight: 400; }
 .section-subtitle {
   font-size: 15px;
   color: var(--ink-2);
@@ -1231,8 +1236,9 @@ main time, main .section-eyebrow {
   text-transform: uppercase;
 }
 .badge-gold {
+  /* v00.230 — 테두리는 옐로우 유지(브랜드 시그너처) / 텍스트는 가독성 위해 secondary. */
   border-color: var(--primary);
-  color: var(--primary);
+  color: var(--secondary);
 }
 .badge-dot::before {
   content: "";

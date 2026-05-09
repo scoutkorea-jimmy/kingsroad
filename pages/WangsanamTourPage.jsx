@@ -31,7 +31,7 @@ const WangsanamPage = ({ go }) => {
                 {i === 0 ? '★ LEAD' : `○ 0${i+1}`}
               </div>
               <div>
-                <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', color:'var(--primary)', marginBottom:8}}>
+                <div className="mono" style={{fontSize:10, letterSpacing:'0.3em', color:'var(--secondary)', marginBottom:8}}>
                   {String(i+1).padStart(2,'0')} / {String(members.length).padStart(2,'0')} · {m.spec}
                 </div>
                 <h3 className="ko-serif" style={{fontSize:28, fontWeight:500, marginBottom:6}}>
@@ -110,7 +110,8 @@ const TourPage = ({ go, user }) => {
     cancelled: '취소됨',
   }[s] || s);
   const tone = (s) => ({
-    confirmed: 'var(--primary)',
+    // v00.230 — confirmed = secondary (가독성).
+    confirmed: 'var(--secondary)',
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
@@ -153,7 +154,8 @@ const TourPage = ({ go, user }) => {
                 fontSize:13,
                 whiteSpace:'nowrap',
                 fontFamily:'var(--font-serif)',
-                color: safeIdx === i ? 'var(--primary)' : 'var(--ink-2)',
+                // v00.230 — 탭 활성 라벨은 secondary. indicator 는 옐로우 유지.
+                color: safeIdx === i ? 'var(--secondary)' : 'var(--ink-2)',
                 background: 'transparent', border: 'none',
                 borderBottom: safeIdx === i ? '2px solid var(--primary)' : '2px solid transparent',
                 marginBottom:-1, cursor:'pointer',
@@ -545,7 +547,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       </div>
       <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)'}}>
         <span className="dim">잔여</span>
-        <span style={{ color: isFull ? 'var(--danger)' : 'var(--primary)' }}>
+        <span style={{ color: isFull ? 'var(--danger)' : 'var(--secondary)' }}>
           {isFull ? `대기 ${seats.waitlist}명` : `${seats.remaining}석`}
         </span>
       </div>

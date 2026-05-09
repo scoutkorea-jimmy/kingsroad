@@ -96,7 +96,8 @@ const LecturesPage = ({ go, user }) => {
     cancelled: '취소됨',
   }[s] || s);
   const tone = (s) => ({
-    confirmed: 'var(--primary)',
+    // v00.230 — confirmed = secondary (Caramel) 로 흰 배경 가독성 확보.
+    confirmed: 'var(--secondary)',
     waitlist: 'var(--ink-2)',
     cancelled: 'var(--danger)',
     pending_payment: 'var(--ink-2)',
@@ -132,7 +133,8 @@ const LecturesPage = ({ go, user }) => {
               style={{
                 padding:'8px 18px', borderRadius:999, fontSize:13, cursor:'pointer',
                 border: '1px solid ' + (bucket === b.k ? 'var(--primary)' : 'var(--line)'),
-                color: bucket === b.k ? 'var(--primary)' : 'var(--ink-2)',
+                // v00.230 — 본문 텍스트는 secondary 로 (옐로우 on 옅은옐로우 = 대비 부족).
+                color: bucket === b.k ? 'var(--secondary)' : 'var(--ink-2)',
                 background: bucket === b.k ? 'rgba(245,213,72,0.08)' : 'transparent',
               }}>
               {b.label}
@@ -166,7 +168,8 @@ const LecturesPage = ({ go, user }) => {
                 fontSize:13,
                 whiteSpace:'nowrap',
                 fontFamily:'var(--font-serif)',
-                color: safeIdx === i ? 'var(--primary)' : 'var(--ink-2)',
+                // v00.230 — 탭 활성 라벨은 본문 텍스트라 secondary. 하단 indicator 는 옐로우 유지(브랜드).
+                color: safeIdx === i ? 'var(--secondary)' : 'var(--ink-2)',
                 background: 'transparent', border: 'none',
                 borderBottom: safeIdx === i ? '2px solid var(--primary)' : '2px solid transparent',
                 marginBottom:-1, cursor:'pointer',
@@ -202,7 +205,7 @@ const LecturesPage = ({ go, user }) => {
             <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap'}}>
               <span className="badge badge-gold">{lecture.title}</span>
               {lecture.price === 0
-                ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--primary)', border:'1px solid var(--primary-dim)', padding:'1px 6px'}}>FREE</span>
+                ? <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--secondary)', border:'1px solid var(--primary-dim)', padding:'1px 6px'}}>FREE</span>
                 : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--ink-2)', border:'1px solid var(--line-2)', padding:'1px 6px'}}>무통장 입금</span>}
               <span className="badge">{lecture.host}</span>
               <span className="badge">{lecture.venue}</span>
@@ -526,7 +529,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       </div>
       <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)'}}>
         <span className="dim">잔여</span>
-        <span style={{ color: isFull ? 'var(--danger)' : 'var(--primary)' }}>
+        <span style={{ color: isFull ? 'var(--danger)' : 'var(--secondary)' }}>
           {isFull ? `대기 ${seats.waitlist}명` : `${seats.remaining}석`}
         </span>
       </div>
