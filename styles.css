@@ -161,9 +161,9 @@
 :root[data-theme="dark"] aside.admin-sidebar button { color: var(--ink-2); }
 :root[data-theme="dark"] [aria-label="관리자 메뉴"] button:hover,
 :root[data-theme="dark"] aside.admin-sidebar button:hover { color: var(--primary); }
-/* gold/secondary 시그너처가 인라인 hex 로 박힌 영역 — 다크에서 톤 보강 */
-:root[data-theme="dark"] .gold,
-:root[data-theme="dark"] .ko-serif { color: var(--primary); }
+/* v00.244 — 다크모드에서 .ko-serif 옐로우 강제 해제. 사이트 전체 180+곳 사용으로
+   KMS §2 5% 룰 정면 위반 (옐로우 면적 과다). .gold 클래스는 opt-in 옐로우로 유지. */
+:root[data-theme="dark"] .gold { color: var(--primary); }
 /* 상단 backdrop blur 가 다크에서 어색해 보일 수 있어 살짝 줄임 */
 :root[data-theme="dark"] .nav { backdrop-filter: blur(10px); }
 /* table 행 hover */

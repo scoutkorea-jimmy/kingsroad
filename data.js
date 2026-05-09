@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.243.000",
+  version: "00.244.000",
   build: "2026.05.09",
   channel: "preview",
 };
@@ -1557,10 +1557,35 @@ window.BGNJ_COMMUNITY = {
     // v00.150 — auto-trigger 비활성.
     if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
   },
-  incrementViews(postId) {
-    const post = this.getPost(postId);
-    if (!post) return null;
-    return this.updatePost(postId, { views: (post.views || 0) + 1 });
+  // v00.244 — root cause fix. 이전엔 updatePost({views}) → updatePostRemote 의
+  // apiPatch 화이트리스트가 views 누락 → 서버 도달 X. 워커 측에도 dedicated endpoint
+  // 부재로 영구 0 고정. 본 사이클: BGNJ_API.posts.view(id) (POST /api/posts/:id/view)
+  // + 폴백 (워커 미배포 시 404 → 로컬 optimistic). 칼럼(BGNJ_COLUMNS.incrementViews) 동일 패턴.
+  async incrementViews(postId) {
+    try {
+      const { views } = await window.BGNJ_API.posts.view(postId);
+      const idx = this._serverPosts.findIndex((p) => String(p.id) === String(postId));
+      if (idx >= 0 && typeof views === 'number') {
+        this._serverPosts[idx] = { ...this._serverPosts[idx], views };
+        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+      }
+      return views || 0;
+    } catch (err) {
+      // 폴백 — 워커 미배포(404) 또는 네트워크 실패. 로컬 캐시만 optimistic ++.
+      const idx = this._serverPosts.findIndex((p) => String(p.id) === String(postId));
+      if (idx >= 0) {
+        const cur = Number(this._serverPosts[idx].views || 0);
+        this._serverPosts[idx] = { ...this._serverPosts[idx], views: cur + 1 };
+        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+        return cur + 1;
+      }
+      // 로컬 글(_remote=false)일 때만 updatePost 폴백.
+      const post = this.getPost(postId);
+      if (post && !post._remote) {
+        return this.updatePost(postId, { views: (post.views || 0) + 1 });
+      }
+      return 0;
+    }
   },
   // 서버 댓글 캐시 (postId → 배열). refreshComments가 채운다.
   _commentsCache: {},

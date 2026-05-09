@@ -116,6 +116,8 @@
         request("POST", "/posts", { categoryId, title, body, prefix }),
       update: (id, patch) => request("PATCH", `/posts/${id}`, patch),
       remove: (id) => request("DELETE", `/posts/${id}`),
+      // v00.244 — 조회수 server persistence (칼럼 패턴 미러). 비로그인도 카운트, sessionStorage 가드는 클라이언트.
+      view: (id) => request("POST", `/posts/${id}/view`),
       comments: {
         list: (postId) => request("GET", `/posts/${postId}/comments`),
         create: (postId, { body, parentId }) =>

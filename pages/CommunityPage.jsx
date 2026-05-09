@@ -1375,8 +1375,10 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
           </div>
           <h1 className="post-title" style={{
             fontFamily:'var(--font-display)',
-            fontSize:'clamp(28px, 3.5vw, 44px)',
-            fontWeight:500, lineHeight:1.25, letterSpacing:'-0.01em',
+            // v00.244 — PC 44 → 26 (~60% 사용자 요청). 모바일 도 28→22 동반 축소.
+            // 게시글 본문(17px) 와 위계 균형: 제목 26 ÷ 본문 17 ≈ 1.5x.
+            fontSize:'clamp(22px, 2vw, 26px)',
+            fontWeight:500, lineHeight:1.3, letterSpacing:'-0.01em',
             marginBottom:24, textWrap:'balance'
           }}>{post.title}</h1>
 

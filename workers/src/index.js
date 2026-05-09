@@ -2000,6 +2000,17 @@ const handleColumnView = async (req, env, id) => {
   return { views: row?.views || 0 };
 };
 
+// v00.244 — 게시글 조회수 dedicated endpoint. 칼럼 패턴 미러.
+// 기존엔 handlePostGet 내부에서 views += 1 부수효과로 처리 — 단일 fetch 트리거 시에만 동작.
+// CommunityPage detail mount 의 `incrementViews` 가 별 endpoint 호출 못 해 사실상 0 고정 버그.
+const handlePostView = async (req, env, id) => {
+  const numId = Number(id);
+  if (!numId) throw new HttpError(404, "게시글을 찾을 수 없습니다.");
+  await env.DB.prepare("UPDATE posts SET views = COALESCE(views, 0) + 1 WHERE id = ?").bind(numId).run();
+  const row = await env.DB.prepare("SELECT views FROM posts WHERE id = ?").bind(numId).first();
+  return { views: row?.views || 0 };
+};
+
 // ── 알림 자동 발급 헬퍼 (서버 부수효과 패턴) ──
 // 댓글 작성 / 등록 / 주문 등 행위 시 호출. 익명 안전(throw 안 함).
 // v00.120 — GC: 90일 이상 된 read=1 알림 1/50 확률로 삭제. unread 는 보존.
@@ -2257,6 +2268,9 @@ const route = async (req, env) => {
     if (req.method === "GET") return json(await handlePostGet(req, env, id));
     if (req.method === "PATCH") return json(await handlePostPatch(req, env, id));
     if (req.method === "DELETE") return json(await handlePostDelete(req, env, id));
+  }
+  if ((g = m(/^\/api\/posts\/(\d+)\/view$/))) {
+    if (req.method === "POST") return json(await handlePostView(req, env, g[1]));
   }
   if ((g = m(/^\/api\/posts\/(\d+)\/comments$/))) {
     const id = Number(g[1]);

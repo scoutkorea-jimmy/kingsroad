@@ -1338,9 +1338,11 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     "\u2190 \uBAA9\uB85D\uC73C\uB85C"
   ), /* @__PURE__ */ React.createElement("header", { style: { borderBottom: "1px solid var(--line-2)", paddingBottom: 32, marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, post.category), post.hot && /* @__PURE__ */ React.createElement("span", { className: "badge" }, "HOT"), post._userCreated && /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, "\uC0C8 \uAE00")), /* @__PURE__ */ React.createElement("h1", { className: "post-title", style: {
     fontFamily: "var(--font-display)",
-    fontSize: "clamp(28px, 3.5vw, 44px)",
+    // v00.244 — PC 44 → 26 (~60% 사용자 요청). 모바일 도 28→22 동반 축소.
+    // 게시글 본문(17px) 와 위계 균형: 제목 26 ÷ 본문 17 ≈ 1.5x.
+    fontSize: "clamp(22px, 2vw, 26px)",
     fontWeight: 500,
-    lineHeight: 1.25,
+    lineHeight: 1.3,
     letterSpacing: "-0.01em",
     marginBottom: 24,
     textWrap: "balance"

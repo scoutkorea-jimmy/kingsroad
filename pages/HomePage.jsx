@@ -1104,15 +1104,15 @@ const HomePage = ({ go }) => {
               {lectures.map((lecture) => (
                 <article key={lecture.id}
                   role="listitem"
-                  className="card card--bare"
+                  className="card"
                   {...clickable(() => {
                     try { sessionStorage.setItem('bgnj_pending_lecture_id', String(lecture.id)); } catch {}
                     go('lectures');
                   }, `강연: ${lecture.topic || lecture.title}`)}
-                  style={{cursor:'pointer', display:'flex', flexDirection:'column', padding:'4px 4px 12px'}}>
-                  <span className="badge" style={{marginBottom:16, alignSelf:'flex-start'}}>{homeText.lectureBadge}</span>
-                  <h3 className="ko-serif" style={{fontSize:20, fontWeight:600, marginBottom:8, flex:'0 0 auto'}}>{lecture.topic || lecture.title}</h3>
-                  {lecture.note && <p style={{fontSize:13, lineHeight:1.7, color:'var(--ink-2)', marginBottom:16, flex:'1 1 auto'}}>{truncatePreview(lecture.note, 110)}</p>}
+                  style={{cursor:'pointer', display:'flex', flexDirection:'column', padding:'20px 20px 18px'}}>
+                  <span className="badge" style={{marginBottom:14, alignSelf:'flex-start'}}>{homeText.lectureBadge}</span>
+                  <h3 className="ko-serif" style={{fontSize:19, fontWeight:600, lineHeight:1.35, marginBottom:10, flex:'0 0 auto', color:'var(--ink)'}}>{lecture.topic || lecture.title}</h3>
+                  {lecture.note && <p style={{fontSize:14, lineHeight:1.7, color:'var(--ink-2)', marginBottom:16, flex:'1 1 auto'}}>{truncatePreview(lecture.note, 110)}</p>}
                   <div style={{borderTop:'1px solid var(--line)', paddingTop:12, display:'flex', justifyContent:'space-between', marginTop:'auto'}}>
                     <span style={{fontSize:12, color:'var(--ink-2)'}}>{lecture.venue || homeText.emptyFallback}</span>
                     <span style={{fontSize:12, fontFamily:'var(--font-mono)', fontWeight:600, color:'var(--ink)'}}>{lecture.next || homeText.emptyFallback}</span>

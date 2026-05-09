@@ -1012,7 +1012,7 @@ const HomePage = ({ go }) => {
     {
       key: lecture.id,
       role: "listitem",
-      className: "card card--bare",
+      className: "card",
       ...clickable(() => {
         try {
           sessionStorage.setItem("bgnj_pending_lecture_id", String(lecture.id));
@@ -1020,11 +1020,11 @@ const HomePage = ({ go }) => {
         }
         go("lectures");
       }, `\uAC15\uC5F0: ${lecture.topic || lecture.title}`),
-      style: { cursor: "pointer", display: "flex", flexDirection: "column", padding: "4px 4px 12px" }
+      style: { cursor: "pointer", display: "flex", flexDirection: "column", padding: "20px 20px 18px" }
     },
-    /* @__PURE__ */ React.createElement("span", { className: "badge", style: { marginBottom: 16, alignSelf: "flex-start" } }, homeText.lectureBadge),
-    /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, fontWeight: 600, marginBottom: 8, flex: "0 0 auto" } }, lecture.topic || lecture.title),
-    lecture.note && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, lineHeight: 1.7, color: "var(--ink-2)", marginBottom: 16, flex: "1 1 auto" } }, truncatePreview(lecture.note, 110)),
+    /* @__PURE__ */ React.createElement("span", { className: "badge", style: { marginBottom: 14, alignSelf: "flex-start" } }, homeText.lectureBadge),
+    /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 19, fontWeight: 600, lineHeight: 1.35, marginBottom: 10, flex: "0 0 auto", color: "var(--ink)" } }, lecture.topic || lecture.title),
+    lecture.note && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 14, lineHeight: 1.7, color: "var(--ink-2)", marginBottom: 16, flex: "1 1 auto" } }, truncatePreview(lecture.note, 110)),
     /* @__PURE__ */ React.createElement("div", { style: { borderTop: "1px solid var(--line)", paddingTop: 12, display: "flex", justifyContent: "space-between", marginTop: "auto" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, color: "var(--ink-2)" } }, lecture.venue || homeText.emptyFallback), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 600, color: "var(--ink)" } }, lecture.next || homeText.emptyFallback))
   ))), lectures.length >= 3 && /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
     marginTop: 14,
