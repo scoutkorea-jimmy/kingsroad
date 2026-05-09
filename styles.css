@@ -220,6 +220,13 @@ a.nav-link:focus-visible,
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-weight: 500; letter-spacing: -0.01em; }
 body { min-height: 100vh; overflow-x: hidden; }
+
+/* v00.227 — sticky nav 아래로 native anchor (#col-comments 등) 점프 시
+   도착점이 가려지지 않도록. 데스크톱 nav 72px + 16px 호흡 = 88px,
+   모바일 nav 64px + 16px = 80px. scroll-padding-top 은 hash 진입 ·
+   브라우저 "이전 위치 복원" · element.scrollIntoView() 모두에 적용. */
+html { scroll-padding-top: 88px; }
+@media (max-width: 720px) { html { scroll-padding-top: 80px; } }
 a { color: inherit; text-decoration: none; }
 a:hover, a:focus-visible { text-decoration: underline; text-decoration-color: var(--primary); text-underline-offset: 4px; }
 button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
