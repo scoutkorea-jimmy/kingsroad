@@ -193,19 +193,22 @@ const MediaGalleryEditor = ({
   };
 
   const isFull = images.length >= limit;
+  // v00.245 — 다크모드에서 dropzone bg(--bg)가 모달 bg(--bg) 와 동일 #0F172A 라
+  // 평면화돼 깨진 인상. --bg-3 으로 한 단 밝게(라이트도 동일 분리). dragOver 시 옐로우 tint
+  // 강화(0.08→0.12) + border solid 로 또렷.
   const dropZoneStyle = {
-    border: `2px dashed ${dragOver ? 'var(--primary)' : 'var(--line-2)'}`,
+    border: `2px ${dragOver ? 'solid' : 'dashed'} ${dragOver ? 'var(--primary)' : 'var(--line-2)'}`,
     borderRadius: 6,
-    padding: '18px 14px',
+    padding: '20px 16px',
     textAlign: 'center',
-    background: dragOver ? 'rgba(245,213,72,0.08)' : 'var(--bg)',
+    background: dragOver ? 'rgba(245,213,72,0.12)' : 'var(--bg-3)',
     transition: 'background .15s, border-color .15s',
     cursor: isFull || busy ? 'not-allowed' : 'pointer',
     marginBottom: 12,
   };
 
   return (
-    <div style={{ border: '1px solid var(--line)', borderRadius: 6, padding: 14, background: 'var(--bg-2)' }}>
+    <div style={{ border: '1px solid var(--line-2)', borderRadius: 6, padding: 14, background: 'var(--bg-2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
         <div>
           <strong style={{ fontSize: 13 }}>{label}</strong>

@@ -172,16 +172,16 @@ const MediaGalleryEditor = ({
   };
   const isFull = images.length >= limit;
   const dropZoneStyle = {
-    border: `2px dashed ${dragOver ? "var(--primary)" : "var(--line-2)"}`,
+    border: `2px ${dragOver ? "solid" : "dashed"} ${dragOver ? "var(--primary)" : "var(--line-2)"}`,
     borderRadius: 6,
-    padding: "18px 14px",
+    padding: "20px 16px",
     textAlign: "center",
-    background: dragOver ? "rgba(245,213,72,0.08)" : "var(--bg)",
+    background: dragOver ? "rgba(245,213,72,0.12)" : "var(--bg-3)",
     transition: "background .15s, border-color .15s",
     cursor: isFull || busy ? "not-allowed" : "pointer",
     marginBottom: 12
   };
-  return /* @__PURE__ */ React.createElement("div", { style: { border: "1px solid var(--line)", borderRadius: 6, padding: 14, background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 13 } }, label), /* @__PURE__ */ React.createElement("span", { className: "dim mono", style: { fontSize: 10, marginLeft: 8, letterSpacing: "0.1em" } }, images.length, " / ", limit)), busy && progress.total > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, color: "var(--secondary)", letterSpacing: "0.1em" } }, "\uC5C5\uB85C\uB4DC \uC911 ", progress.done, " / ", progress.total)), helpText && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 11, lineHeight: 1.6, marginBottom: 10 } }, helpText), /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { style: { border: "1px solid var(--line-2)", borderRadius: 6, padding: 14, background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 13 } }, label), /* @__PURE__ */ React.createElement("span", { className: "dim mono", style: { fontSize: 10, marginLeft: 8, letterSpacing: "0.1em" } }, images.length, " / ", limit)), busy && progress.total > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, color: "var(--secondary)", letterSpacing: "0.1em" } }, "\uC5C5\uB85C\uB4DC \uC911 ", progress.done, " / ", progress.total)), helpText && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 11, lineHeight: 1.6, marginBottom: 10 } }, helpText), /* @__PURE__ */ React.createElement(
     "label",
     {
       onDrop,
