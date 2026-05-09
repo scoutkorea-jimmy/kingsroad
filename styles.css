@@ -1669,7 +1669,9 @@ main time, main .section-eyebrow {
   /* 히어로 지도 미리보기는 폰에서 너무 큰 면적 차지 — CTA 버튼만 두고 숨김. 사용자는 '지도에서 여행지 찾기' 버튼으로 모달 진입 */
   .hero-map-preview { display: none; }
 
-  .container { padding: 0 16px; }
+  /* v00.253 — 사용자 보고 '모바일 좌우 여백 더 있어야 편함, 지금 답답'.
+     16 → 20. 섹션/카드 모두 자동 정합 (.container 위계). */
+  .container { padding: 0 20px; }
   .section { padding: 48px 0; }
   .section-tight { padding: 32px 0; }
   .section-title { font-size: 26px; line-height: 1.2; }
