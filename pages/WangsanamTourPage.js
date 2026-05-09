@@ -351,6 +351,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const [refundMode, setRefundMode] = React.useState(false);
   const [refundReason, setRefundReason] = React.useState("");
   const [refundError, setRefundError] = React.useState("");
+  const [agreed, setAgreed] = React.useState(false);
   React.useEffect(() => {
     setOpen(false);
     setSubmitted(null);
@@ -362,6 +363,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
     setRefundMode(false);
     setRefundReason("");
     setRefundError("");
+    setAgreed(false);
   }, [tour.id, user == null ? void 0 : user.id]);
   const requireLogin = async (label) => {
     if (await window.BGNJ_CONFIRM(`${label}\uC740(\uB294) \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) {
@@ -375,6 +377,10 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
     if (!user) return requireLogin("\uB2F5\uC0AC \uC2E0\uCCAD");
     if (!name.trim() || !email.trim()) {
       setError("\uC774\uB984\uACFC \uC774\uBA54\uC77C\uC740 \uD544\uC218\uC785\uB2C8\uB2E4.");
+      return;
+    }
+    if (!agreed) {
+      setError("\uAC1C\uC778\uC815\uBCF4 \uD65C\uC6A9 \uBC0F \uC81C3\uC790 \uC81C\uACF5 \uB3D9\uC758\uB294 \uD544\uC218\uC785\uB2C8\uB2E4.");
       return;
     }
     try {
@@ -518,7 +524,23 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       value: count,
       onChange: (e) => setCount(e.target.value)
     }
-  ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBA54\uBAA8"), /* @__PURE__ */ React.createElement("textarea", { className: "field-input", rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: "\uB3D9\uD589\uC790 / \uD2B9\uC774\uC0AC\uD56D" })), (tour.priceNumber || 0) > 0 && window.BGNJ_CashReceiptField && /* @__PURE__ */ React.createElement(window.BGNJ_CashReceiptField, { value: cashReceipt, onChange: setCashReceipt })), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12, marginBottom: 10 } }, error), /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, lineHeight: 1.7, marginBottom: 10, letterSpacing: "0.05em" } }, (tour.priceNumber || 0) === 0 ? "\uBB34\uB8CC \uB2F5\uC0AC\uB77C \uC2E0\uCCAD \uC989\uC2DC \uCC38\uAC00 \uD655\uC815\uB429\uB2C8\uB2E4." : `\uD569\uACC4 ${formatPrice((tour.priceNumber || 0) * (Number(count) || 1))} \xB7 \uC2E0\uCCAD \u2192 \uC785\uAE08 \u2192 \uC6B4\uC601\uC790 \uD655\uC778 \u2192 \uCC38\uAC00 \uD655\uC815`, isFull && " \xB7 \uC815\uC6D0\uC774 \uCC28\uC11C \uC790\uB3D9 \uB300\uAE30\uC790 \uB4F1\uB85D\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setOpen(false) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small" }, "\uC2E0\uCCAD \uC811\uC218")))), !user && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7, marginTop: 14, textAlign: "center" } }, "\uB2F5\uC0AC \uC2E0\uCCAD\uC740 \uD68C\uC6D0\uAC00\uC785\uD55C \uBD84\uB9CC \uAC00\uB2A5\uD569\uB2C8\uB2E4."));
+  ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBA54\uBAA8"), /* @__PURE__ */ React.createElement("textarea", { className: "field-input", rows: 2, value: note, onChange: (e) => setNote(e.target.value), placeholder: "\uB3D9\uD589\uC790 / \uD2B9\uC774\uC0AC\uD56D" })), (tour.priceNumber || 0) > 0 && window.BGNJ_CashReceiptField && /* @__PURE__ */ React.createElement(window.BGNJ_CashReceiptField, { value: cashReceipt, onChange: setCashReceipt })), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12, marginBottom: 10 } }, error), /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, lineHeight: 1.7, marginBottom: 10, letterSpacing: "0.05em" } }, (tour.priceNumber || 0) === 0 ? "\uBB34\uB8CC \uB2F5\uC0AC\uB77C \uC2E0\uCCAD \uC989\uC2DC \uCC38\uAC00 \uD655\uC815\uB429\uB2C8\uB2E4." : `\uD569\uACC4 ${formatPrice((tour.priceNumber || 0) * (Number(count) || 1))} \xB7 \uC2E0\uCCAD \u2192 \uC785\uAE08 \u2192 \uC6B4\uC601\uC790 \uD655\uC778 \u2192 \uCC38\uAC00 \uD655\uC815`, isFull && " \xB7 \uC815\uC6D0\uC774 \uCC28\uC11C \uC790\uB3D9 \uB300\uAE30\uC790 \uB4F1\uB85D\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6, marginBottom: 10, cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "checkbox",
+      checked: agreed,
+      onChange: (e) => setAgreed(e.target.checked),
+      style: { marginTop: 3, accentColor: "var(--primary)" }
+    }
+  ), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, lineHeight: 1.6, color: "var(--ink-2)" } }, /* @__PURE__ */ React.createElement("strong", { style: { color: "var(--secondary)" } }, "[\uD544\uC218]"), " \uB2F5\uC0AC \uC2E0\uCCAD \uCC98\uB9AC(\uC774\uB984\xB7\uC774\uBA54\uC77C\xB7\uC5F0\uB77D\uCC98) \uC640 \uC6B4\uC601\uC790 \uC548\uB0B4 \uBC1C\uC1A1\uC744 \uC704\uD574 \uAC1C\uC778\uC815\uBCF4 \uD65C\uC6A9 \uBC0F \uC6B4\uC601 \uC81C\uD734\uC0AC\uB85C\uC758 \uC81C3\uC790 \uC81C\uACF5\uC5D0 \uB3D9\uC758\uD569\uB2C8\uB2E4. ", " ", /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => go("privacy"),
+      style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", textDecoration: "underline", cursor: "pointer", fontSize: "inherit" }
+    },
+    "\uC790\uC138\uD788 \uBCF4\uAE30"
+  ))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setOpen(false) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: !agreed }, "\uC2E0\uCCAD \uC811\uC218")))), !user && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7, marginTop: 14, textAlign: "center" } }, "\uB2F5\uC0AC \uC2E0\uCCAD\uC740 \uD68C\uC6D0\uAC00\uC785\uD55C \uBD84\uB9CC \uAC00\uB2A5\uD569\uB2C8\uB2E4."));
 };
 const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
   const reviews = window.BGNJ_TOURS.listReviews(tour.id);

@@ -459,12 +459,15 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const [refundMode, setRefundMode] = React.useState(false);
   const [refundReason, setRefundReason] = React.useState("");
   const [refundError, setRefundError] = React.useState("");
+  // v00.232 — 사용자 요청: 투어 신청 시 개인정보 활용 + 제3자 제공 동의 필수.
+  const [agreed, setAgreed] = React.useState(false);
 
   // 투어가 바뀌면 폼 초기화
   React.useEffect(() => {
     setOpen(false); setSubmitted(null); setError(""); setCount(1); setNote("");
     setName(user?.name || ""); setEmail(user?.email || "");
     setRefundMode(false); setRefundReason(""); setRefundError("");
+    setAgreed(false);
   }, [tour.id, user?.id]);
 
   const requireLogin = async (label) => {
@@ -478,6 +481,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
     setError("");
     if (!user) return requireLogin('답사 신청');
     if (!name.trim() || !email.trim()) { setError("이름과 이메일은 필수입니다."); return; }
+    if (!agreed) { setError("개인정보 활용 및 제3자 제공 동의는 필수입니다."); return; }
     try {
       // v00.218 — 현금영수증 신청 정보 note prefix 인코딩
       const crPrefix = window.BGNJ_CashReceipt?.encode?.(cashReceipt) || '';
@@ -709,9 +713,21 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
                   : `합계 ${formatPrice((tour.priceNumber || 0) * (Number(count) || 1))} · 신청 → 입금 → 운영자 확인 → 참가 확정`}
                 {isFull && ' · 정원이 차서 자동 대기자 등록됩니다.'}
               </div>
+              {/* v00.232 — 개인정보 활용 + 제3자 제공 동의 (필수). */}
+              <label style={{display:'flex', gap:8, alignItems:'flex-start', padding:'10px 12px', background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:6, marginBottom:10, cursor:'pointer'}}>
+                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)}
+                  style={{marginTop:3, accentColor:'var(--primary)'}}/>
+                <span style={{fontSize:12, lineHeight:1.6, color:'var(--ink-2)'}}>
+                  <strong style={{color:'var(--secondary)'}}>[필수]</strong> 답사 신청 처리(이름·이메일·연락처) 와 운영자 안내 발송을 위해 개인정보 활용 및 운영 제휴사로의 제3자 제공에 동의합니다. {' '}
+                  <button type="button" onClick={() => go('privacy')}
+                    style={{background:'none', border:'none', padding:0, color:'var(--secondary)', textDecoration:'underline', cursor:'pointer', fontSize:'inherit'}}>
+                    자세히 보기
+                  </button>
+                </span>
+              </label>
               <div style={{display:'flex', gap:6, justifyContent:'flex-end'}}>
                 <button type="button" className="btn btn-small" onClick={() => setOpen(false)}>취소</button>
-                <button type="submit" className="btn btn-gold btn-small">신청 접수</button>
+                <button type="submit" className="btn btn-gold btn-small" disabled={!agreed}>신청 접수</button>
               </div>
             </form>
           )}
