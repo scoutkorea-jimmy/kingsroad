@@ -222,21 +222,51 @@ const MediaGalleryEditor = ({
       {helpText && (
         <p className="dim" style={{ fontSize: 11, lineHeight: 1.6, marginBottom: 10 }}>{helpText}</p>
       )}
-      {/* v00.237 — drop zone (drag&drop) + 클릭 시 파일 선택. multiple 지원. */}
+      {/* v00.237 — drop zone (drag&drop) + 클릭 시 파일 선택. multiple 지원.
+          v00.239 — 업로드 중 동적 피드백 강화 (사용자 요청). spinner + 진행률 바 + 퍼센트. */}
       <label
         onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave} onDragEnd={onDragLeave}
         style={dropZoneStyle}>
         <input type="file" accept="image/*" multiple onChange={onPick}
           disabled={busy || isFull}
           style={{ display: 'none' }}/>
-        <div className="ko-serif" style={{ fontSize: 14, marginBottom: 4, color: 'var(--ink)' }}>
-          {busy ? '업로드 중…' : isFull ? `최대 ${limit}장 도달` : (dragOver ? '여기에 놓으세요' : '＋ 사진 추가 (클릭 또는 드래그)')}
-        </div>
-        <div className="dim mono" style={{ fontSize: 10, letterSpacing: '0.05em' }}>
-          {isFull
-            ? '한 장 삭제 후 추가 가능'
-            : `여러 장 한 번에 가능 · 한 장당 R2 5MB / 폴백 1.5MB · 남은 슬롯 ${limit - images.length}장`}
-        </div>
+        {busy ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+            {/* CSS-only spinner — primary 옐로우 ring */}
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%',
+              border: '3px solid var(--line)',
+              borderTopColor: 'var(--primary)',
+              animation: 'bgnj-spin 0.7s linear infinite',
+            }} aria-hidden="true"/>
+            <div className="ko-serif" style={{ fontSize: 14, color: 'var(--secondary)', fontWeight: 600 }}>
+              사진 업로드 중… {progress.total > 0 && `${progress.done} / ${progress.total}`}
+            </div>
+            {progress.total > 0 && (
+              <div style={{ width: '70%', maxWidth: 260, height: 6, background: 'var(--bg-3)', borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{
+                  width: `${Math.round((progress.done / progress.total) * 100)}%`,
+                  height: '100%', background: 'var(--primary)',
+                  transition: 'width .25s ease',
+                }}/>
+              </div>
+            )}
+            <div className="dim mono" style={{ fontSize: 10, letterSpacing: '0.1em' }}>
+              R2 업로드 — 잠시만 기다려 주세요
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="ko-serif" style={{ fontSize: 14, marginBottom: 4, color: 'var(--ink)' }}>
+              {isFull ? `최대 ${limit}장 도달` : (dragOver ? '여기에 놓으세요' : '＋ 사진 추가 (클릭 또는 드래그)')}
+            </div>
+            <div className="dim mono" style={{ fontSize: 10, letterSpacing: '0.05em' }}>
+              {isFull
+                ? '한 장 삭제 후 추가 가능'
+                : `여러 장 한 번에 가능 · 한 장당 R2 5MB / 폴백 1.5MB · 남은 슬롯 ${limit - images.length}장`}
+            </div>
+          </>
+        )}
       </label>
       {images.length === 0 ? (
         <p className="dim" style={{ fontSize: 12, lineHeight: 1.6, padding: '4px 4px 0' }}>

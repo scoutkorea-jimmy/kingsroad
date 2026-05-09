@@ -941,9 +941,19 @@ main time, main .section-eyebrow {
   display: flex;
   gap: 36px;
   align-items: center;
-  /* v00.236/v00.238 — nowrap 만 PC 에도 안전. overflow/스크롤바 룰은 타블렛 폭 media query 안에서만. */
+  /* v00.236/v00.239 — 가운데 메뉴는 폭 부족 시 항상 가로 스크롤(슬라이드).
+     사용자 명시: '가운데 영역은 꽉차면 슬라이드로 돌릴수있게 — 지금처럼'. */
   flex-wrap: nowrap;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
+.nav-menu::-webkit-scrollbar { height: 3px; }
+.nav-menu::-webkit-scrollbar-track { background: transparent; }
+.nav-menu::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
 .nav-link {
   font-size: 14px;
   font-weight: 500;
@@ -960,18 +970,20 @@ main time, main .section-eyebrow {
   white-space: nowrap;
   flex-shrink: 0;
 }
-/* v00.238 — 타블렛 폭(721~1100px) 에서만 가로 스크롤 활성. PC(>1100px) 영향 차단. */
-@media (max-width: 1100px) and (min-width: 721px) {
-  .nav-menu {
-    min-width: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--line) transparent;
-  }
-  .nav-menu::-webkit-scrollbar { height: 3px; }
-  .nav-menu::-webkit-scrollbar-track { background: transparent; }
-  .nav-menu::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+/* v00.239 — 좌측 brand 영역 자식 (로고/한글/영문) 1줄 강제 + 영역 자체 shrink 차단.
+   사용자 보고 '좌측 홈페이지로고와 텍스트 영역은 1줄로 일관성'. */
+.brand { flex-shrink: 0; white-space: nowrap; }
+.brand > * { white-space: nowrap; }
+.brand-name, .brand-tagline { white-space: nowrap; }
+/* v00.239 — 우측 actions 영역 (사용자 이름·알림·마이페이지·관리·로그아웃) 도 1줄.
+   사용자 보고 '우측의 이름도 마찬가지'. */
+.nav-actions { flex-shrink: 0; white-space: nowrap; }
+.nav-actions > *, .nav-actions button { white-space: nowrap; flex-shrink: 0; }
+
+/* v00.239 — MediaGalleryEditor 업로드 중 spinner 애니메이션. */
+@keyframes bgnj-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 .nav-link:hover { color: var(--secondary); }
 .nav-link.active, .nav-link[aria-current="page"] { color: var(--ink); font-weight: 700; }

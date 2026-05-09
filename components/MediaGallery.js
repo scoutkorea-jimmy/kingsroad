@@ -201,8 +201,19 @@ const MediaGalleryEditor = ({
         style: { display: "none" }
       }
     ),
-    /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 14, marginBottom: 4, color: "var(--ink)" } }, busy ? "\uC5C5\uB85C\uB4DC \uC911\u2026" : isFull ? `\uCD5C\uB300 ${limit}\uC7A5 \uB3C4\uB2EC` : dragOver ? "\uC5EC\uAE30\uC5D0 \uB193\uC73C\uC138\uC694" : "\uFF0B \uC0AC\uC9C4 \uCD94\uAC00 (\uD074\uB9AD \uB610\uB294 \uB4DC\uB798\uADF8)"),
-    /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, letterSpacing: "0.05em" } }, isFull ? "\uD55C \uC7A5 \uC0AD\uC81C \uD6C4 \uCD94\uAC00 \uAC00\uB2A5" : `\uC5EC\uB7EC \uC7A5 \uD55C \uBC88\uC5D0 \uAC00\uB2A5 \xB7 \uD55C \uC7A5\uB2F9 R2 5MB / \uD3F4\uBC31 1.5MB \xB7 \uB0A8\uC740 \uC2AC\uB86F ${limit - images.length}\uC7A5`)
+    busy ? /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { style: {
+      width: 32,
+      height: 32,
+      borderRadius: "50%",
+      border: "3px solid var(--line)",
+      borderTopColor: "var(--primary)",
+      animation: "bgnj-spin 0.7s linear infinite"
+    }, "aria-hidden": "true" }), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 14, color: "var(--secondary)", fontWeight: 600 } }, "\uC0AC\uC9C4 \uC5C5\uB85C\uB4DC \uC911\u2026 ", progress.total > 0 && `${progress.done} / ${progress.total}`), progress.total > 0 && /* @__PURE__ */ React.createElement("div", { style: { width: "70%", maxWidth: 260, height: 6, background: "var(--bg-3)", borderRadius: 999, overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: {
+      width: `${Math.round(progress.done / progress.total * 100)}%`,
+      height: "100%",
+      background: "var(--primary)",
+      transition: "width .25s ease"
+    } })), /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, letterSpacing: "0.1em" } }, "R2 \uC5C5\uB85C\uB4DC \u2014 \uC7A0\uC2DC\uB9CC \uAE30\uB2E4\uB824 \uC8FC\uC138\uC694")) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 14, marginBottom: 4, color: "var(--ink)" } }, isFull ? `\uCD5C\uB300 ${limit}\uC7A5 \uB3C4\uB2EC` : dragOver ? "\uC5EC\uAE30\uC5D0 \uB193\uC73C\uC138\uC694" : "\uFF0B \uC0AC\uC9C4 \uCD94\uAC00 (\uD074\uB9AD \uB610\uB294 \uB4DC\uB798\uADF8)"), /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, letterSpacing: "0.05em" } }, isFull ? "\uD55C \uC7A5 \uC0AD\uC81C \uD6C4 \uCD94\uAC00 \uAC00\uB2A5" : `\uC5EC\uB7EC \uC7A5 \uD55C \uBC88\uC5D0 \uAC00\uB2A5 \xB7 \uD55C \uC7A5\uB2F9 R2 5MB / \uD3F4\uBC31 1.5MB \xB7 \uB0A8\uC740 \uC2AC\uB86F ${limit - images.length}\uC7A5`))
   ), images.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.6, padding: "4px 4px 0" } }, "\uC544\uC9C1 \uB4F1\uB85D\uB41C \uC0AC\uC9C4\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.", showPrimary && " \uCCAB \uC0AC\uC9C4\uC774 \uC790\uB3D9\uC73C\uB85C \uB300\uD45C\uC0AC\uC9C4\uC774 \uB418\uBA70, \uB77C\uB514\uC624\uB85C \uBCC0\uACBD \uAC00\uB2A5\uD569\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 } }, images.map((img, i) => /* @__PURE__ */ React.createElement("li", { key: img.url + i, style: {
     display: "grid",
     gridTemplateColumns: "88px 1fr auto",

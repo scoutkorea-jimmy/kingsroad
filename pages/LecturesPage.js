@@ -159,26 +159,33 @@ const LecturesPage = ({ go, user }) => {
     const galleryPrimary = (_d2 = window.pickPrimaryImage) == null ? void 0 : _d2.call(window, lp.images);
     const coverUri = (galleryPrimary == null ? void 0 : galleryPrimary.url) || lp.coverDataUri || "";
     if (coverUri) {
-      return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("div", { style: { borderRadius: 2, background: "var(--bg-2)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", maxHeight: "70vh" } }, /* @__PURE__ */ React.createElement(
+      return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement(
         "img",
         {
           src: coverUri,
           alt: lecture.title || "\uAC15\uC5F0 \uD3EC\uC2A4\uD130",
-          style: { maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", display: "block" }
+          style: { width: "100%", height: "auto", display: "block", borderRadius: 2, background: "var(--bg-2)" }
         }
-      )), (galleryPrimary == null ? void 0 : galleryPrimary.credit) && /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, letterSpacing: "0.05em", marginTop: 6, lineHeight: 1.5 } }, galleryPrimary.credit));
+      ), (galleryPrimary == null ? void 0 : galleryPrimary.credit) && /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, letterSpacing: "0.05em", marginTop: 6, lineHeight: 1.5 } }, galleryPrimary.credit));
     }
     return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, window.CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "16/10", label: String(lecture.title || "").toUpperCase() }) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "16/10", fontSize: 11 } }, String(lecture.title || "").toUpperCase()));
-  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--secondary)", background: "rgba(245,213,72,0.12)", border: "1px solid var(--primary-dim)" } }, "\u25C6 ", lecture.title), lecture.price === 0 ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--secondary)", background: "rgba(245,213,72,0.12)", border: "1px solid var(--primary)" } }, "FREE") : /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--tertiary)", background: "rgba(71,85,105,0.06)", border: "1px solid var(--tertiary)" } }, "\u20A9 \uBB34\uD1B5\uC7A5 \uC785\uAE08"), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--secondary)", background: "rgba(146,64,14,0.06)", border: "1px solid var(--secondary)" } }, "\u2690 ", lecture.host), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--info)", background: "rgba(37,99,235,0.06)", border: "1px solid var(--info)" } }, "\u2316 ", lecture.venue), lecture.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--warning)", border: "1px solid var(--warning)", padding: "1px 6px" } }, "\u25C6 \uC228\uAE40 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB9CC \uBCF4\uC784)"), isAdmin && /* @__PURE__ */ React.createElement(
-    "button",
-    {
-      type: "button",
-      className: "btn btn-small",
-      style: { marginLeft: "auto", fontSize: 11, padding: "4px 10px" },
-      onClick: () => setEditTarget(lecture)
-    },
-    "\u270E \uAC15\uC5F0 \uC218\uC815"
-  )), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: 24 } }, lecture.topic), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32 } }, lecture.note), window.MediaGalleryView && (() => {
+  })(), (() => {
+    var _a2, _b2, _c2;
+    const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
+    const lp = ((_c2 = sc.lecturePages) == null ? void 0 : _c2[lecture.id]) || {};
+    const organizer = lp.organizer || "";
+    const chipBase = { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3 };
+    return /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { ...chipBase, color: "var(--secondary)", background: "rgba(245,213,72,0.12)", border: "1px solid var(--primary-dim)" } }, "\u25C6 ", lecture.title), lecture.price === 0 ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { ...chipBase, color: "var(--secondary)", background: "rgba(245,213,72,0.12)", border: "1px solid var(--primary)" } }, "FREE") : /* @__PURE__ */ React.createElement("span", { className: "mono", style: { ...chipBase, color: "var(--ink-2)", background: "var(--bg-2)", border: "1px solid var(--line-2)" } }, "\u20A9 \uBB34\uD1B5\uC7A5 \uC785\uAE08"), lecture.host && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { ...chipBase, color: "var(--secondary)", background: "rgba(146,64,14,0.06)", border: "1px solid var(--secondary)" } }, "\uC8FC\uCD5C \xB7 ", lecture.host), organizer && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { ...chipBase, color: "var(--secondary-hover)", background: "rgba(124,45,18,0.06)", border: "1px solid var(--secondary-hover)" } }, "\uC8FC\uAD00 \xB7 ", organizer), lecture.venue && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { ...chipBase, color: "var(--tertiary)", background: "rgba(71,85,105,0.06)", border: "1px solid var(--tertiary)" } }, "\uC7A5\uC18C \xB7 ", lecture.venue), lecture.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--warning)", border: "1px solid var(--warning)", padding: "1px 6px" } }, "\u25C6 \uC228\uAE40 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB9CC \uBCF4\uC784)"), isAdmin && /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn btn-small",
+        style: { marginLeft: "auto", fontSize: 11, padding: "4px 10px" },
+        onClick: () => setEditTarget(lecture)
+      },
+      "\u270E \uAC15\uC5F0 \uC218\uC815"
+    ));
+  })(), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: 24, whiteSpace: "pre-wrap" } }, lecture.topic), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32, whiteSpace: "pre-wrap" } }, lecture.note), window.MediaGalleryView && (() => {
     var _a2, _b2, _c2, _d2;
     const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
     const imgs = (_d2 = (_c2 = sc.lecturePages) == null ? void 0 : _c2[lecture.id]) == null ? void 0 : _d2.images;
@@ -236,6 +243,16 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
   const [topic, setTopic] = React.useState((initialLecture == null ? void 0 : initialLecture.topic) || "");
   const [venue, setVenue] = React.useState((initialLecture == null ? void 0 : initialLecture.venue) || "");
   const [host, setHost] = React.useState((initialLecture == null ? void 0 : initialLecture.host) || "\uBC45\uAE30\uB178\uC790");
+  const [organizer, setOrganizer] = React.useState(() => {
+    var _a2, _b, _c, _d;
+    if (!(initialLecture == null ? void 0 : initialLecture.id)) return "";
+    try {
+      const sc = ((_b = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b.call(_a2)) || {};
+      return ((_d = (_c = sc.lecturePages) == null ? void 0 : _c[initialLecture.id]) == null ? void 0 : _d.organizer) || "";
+    } catch (e) {
+      return "";
+    }
+  });
   const [startsAt, setStartsAt] = React.useState(_toLocalInput(initialLecture == null ? void 0 : initialLecture.startsAt));
   const [durationMinutes, setDurationMinutes] = React.useState((initialLecture == null ? void 0 : initialLecture.durationMinutes) || 90);
   const [capacity, setCapacity] = React.useState((initialLecture == null ? void 0 : initialLecture.capacity) || 30);
@@ -306,21 +323,23 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         hidden: !!hidden
         // v00.236 — 숨김 토글 반영.
       });
-      if (images.length > 0 || photos.length > 0 || isEdit) {
+      if (images.length > 0 || photos.length > 0 || organizer || isEdit) {
         try {
           const sc = ((_b = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b.call(_a2)) || {};
           const existing = sc.lecturePages && typeof sc.lecturePages === "object" && sc.lecturePages[id] || {};
-          await window.BGNJ_SITE_CONTENT.saveSection("lecturePages", { [id]: { ...existing, images, photos } });
+          await window.BGNJ_SITE_CONTENT.saveSection("lecturePages", {
+            [id]: { ...existing, images, photos, organizer: organizer.trim() }
+          });
           try {
             (_d = (_c = window.BGNJ_BROADCAST) == null ? void 0 : _c.publish) == null ? void 0 : _d.call(_c, "site-content");
           } catch (e2) {
           }
         } catch (galleryErr) {
           try {
-            console.warn("[LectureQuickAddModal] \uAC24\uB7EC\uB9AC \uC800\uC7A5 \uC2E4\uD328:", galleryErr);
+            console.warn("[LectureQuickAddModal] \uAC24\uB7EC\uB9AC/\uC8FC\uAD00 \uC800\uC7A5 \uC2E4\uD328:", galleryErr);
           } catch (e2) {
           }
-          (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, "\uAC15\uC5F0 \uC815\uBCF4\uB294 \uC800\uC7A5\uB410\uC9C0\uB9CC \uAC24\uB7EC\uB9AC \uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+          (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, "\uAC15\uC5F0 \uC815\uBCF4\uB294 \uC800\uC7A5\uB410\uC9C0\uB9CC \uAC24\uB7EC\uB9AC\xB7\uC8FC\uAD00 \uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
         }
       }
       try {
@@ -356,19 +375,21 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
       padding: 24,
       marginTop: 24,
       marginBottom: 48
-    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, isEdit ? "\uAC15\uC5F0 \uC218\uC815" : "\uC0C8 \uAC15\uC5F0 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, isEdit ? "\uAE30\uBCF8 \uC815\uBCF4\uB97C \uC218\uC815\uD569\uB2C8\uB2E4. \uC9C4\uD589 \uC77C\uC815\xB7\uCC38\uACE0\xB7\uCEE4\uBC84 \uC774\uBBF8\uC9C0 \uB4F1 \uC0C1\uC138\uB294 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uD3B8\uC9D1\uD558\uC138\uC694." : "\uAE30\uBCF8 \uC815\uBCF4\uB9CC \uC785\uB825\uD574 \uBE60\uB974\uAC8C \uB4F1\uB85D\uD569\uB2C8\uB2E4. \uC9C4\uD589 \uC77C\uC815\xB7\uCC38\uACE0\xB7\uCEE4\uBC84 \uC774\uBBF8\uC9C0 \uB4F1 \uC0C1\uC138 \uD3B8\uC9D1\uC740 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uC774\uC5B4\uC11C \uC9C4\uD589\uD558\uC138\uC694."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uAC15\uC5F0 \uC81C\uBAA9 *"), /* @__PURE__ */ React.createElement(
-      "input",
+    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, isEdit ? "\uAC15\uC5F0 \uC218\uC815" : "\uC0C8 \uAC15\uC5F0 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, isEdit ? "\uAE30\uBCF8 \uC815\uBCF4\uB97C \uC218\uC815\uD569\uB2C8\uB2E4. \uC9C4\uD589 \uC77C\uC815\xB7\uCC38\uACE0\xB7\uCEE4\uBC84 \uC774\uBBF8\uC9C0 \uB4F1 \uC0C1\uC138\uB294 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uD3B8\uC9D1\uD558\uC138\uC694." : "\uAE30\uBCF8 \uC815\uBCF4\uB9CC \uC785\uB825\uD574 \uBE60\uB974\uAC8C \uB4F1\uB85D\uD569\uB2C8\uB2E4. \uC9C4\uD589 \uC77C\uC815\xB7\uCC38\uACE0\xB7\uCEE4\uBC84 \uC774\uBBF8\uC9C0 \uB4F1 \uC0C1\uC138 \uD3B8\uC9D1\uC740 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uC774\uC5B4\uC11C \uC9C4\uD589\uD558\uC138\uC694."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uAC15\uC5F0 \uC81C\uBAA9 * (\uC904\uBC14\uAFC8 \uAC00\uB2A5)"), /* @__PURE__ */ React.createElement(
+      "textarea",
       {
         className: "field-input",
+        rows: 2,
         value: title,
         onChange: (e) => setTitle(e.target.value),
-        placeholder: "\uC608: 2026 \uC5EC\uB984 \uD2B9\uAC15 \u2014 \uC601\uC870\uC640 \uC0AC\uB3C4\uC138\uC790",
+        placeholder: "\uC608: 2026 \uC5EC\uB984 \uD2B9\uAC15 \u2014 \uC601\uC870\uC640 \uC0AC\uB3C4\uC138\uC790\n(Enter \uB85C \uC904\uBC14\uAFC8)",
         autoFocus: true
       }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC8FC\uC81C (\uC120\uD0DD \u2014 \uBE44\uC6B0\uBA74 \uC81C\uBAA9 \uC0AC\uC6A9)"), /* @__PURE__ */ React.createElement(
-      "input",
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC8FC\uC81C (\uC120\uD0DD \u2014 \uBE44\uC6B0\uBA74 \uC81C\uBAA9 \uC0AC\uC6A9 / \uC904\uBC14\uAFC8 \uAC00\uB2A5)"), /* @__PURE__ */ React.createElement(
+      "textarea",
       {
         className: "field-input",
+        rows: 2,
         value: topic,
         onChange: (e) => setTopic(e.target.value),
         placeholder: "\uAC15\uC5F0 \uBCF8\uBB38 \uD398\uC774\uC9C0\uC758 \uD070 \uC81C\uBAA9"
@@ -381,7 +402,23 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         onChange: (e) => setVenue(e.target.value),
         placeholder: "\uC608: \uC885\uB85C\uAD6C \uC548\uAD6D\uB3D9 \u2026"
       }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC9C4\uD589"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: host, onChange: (e) => setHost(e.target.value) }))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC77C\uC2DC *"), /* @__PURE__ */ React.createElement(
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC8FC\uCD5C (\uC9C4\uD589)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "field-input",
+        value: host,
+        onChange: (e) => setHost(e.target.value),
+        placeholder: "\uC608: \uBC45\uAE30\uB178\uC790 / (\uC0AC)\uD55C\uAD6D\uC5EC\uC131\uAC74\uCD95\uAC00\uD611\uD68C \u2026"
+      }
+    ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC8FC\uAD00 (\uC120\uD0DD)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "field-input",
+        value: organizer,
+        onChange: (e) => setOrganizer(e.target.value),
+        placeholder: "\uC608: \u321C\uC2B9\uBCF4\uC774\uC5D4\uC528\uAC74\uCD95\uC0AC\uC0AC\uBB34\uC18C (\uC6B4\uC601 \uC2E4\uBB34 \uB2F4\uB2F9 \uAE30\uAD00)"
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC77C\uC2DC *"), /* @__PURE__ */ React.createElement(
       "input",
       {
         type: "datetime-local",

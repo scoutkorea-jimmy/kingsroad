@@ -190,11 +190,9 @@ const TourPage = ({ go, user }) => {
               if (coverUri) {
                 return (
                   <div style={{marginBottom:32}}>
-                    {/* v00.238 — 포스터 자연 비율 + contain 으로 전체 노출. */}
-                    <div style={{borderRadius:2, background:'var(--bg-2)', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', maxHeight:'70vh'}}>
-                      <img src={coverUri} alt={tour.title || '투어 포스터'}
-                        style={{maxWidth:'100%', maxHeight:'70vh', objectFit:'contain', display:'block'}}/>
-                    </div>
+                    {/* v00.239 — 좌우 여백 없이 자연 비율. */}
+                    <img src={coverUri} alt={tour.title || '투어 포스터'}
+                      style={{width:'100%', height:'auto', display:'block', borderRadius:2, background:'var(--bg-2)'}}/>
                     {galleryPrimary?.credit && (
                       <div className="dim mono" style={{fontSize:10, letterSpacing:'0.05em', marginTop:6, lineHeight:1.5}}>
                         {galleryPrimary.credit}

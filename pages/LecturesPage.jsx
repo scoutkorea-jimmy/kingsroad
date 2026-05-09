@@ -185,12 +185,10 @@ const LecturesPage = ({ go, user }) => {
               if (coverUri) {
                 return (
                   <div style={{marginBottom:32}}>
-                    {/* v00.238 — 사용자 보고 '포스터는 다 보이게'. 16:10 aspect crop 대신 자연 비율 + contain 으로
-                        포스터 전체 노출. max-height 로 너무 긴 세로형 제한. */}
-                    <div style={{borderRadius:2, background:'var(--bg-2)', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', maxHeight:'70vh'}}>
-                      <img src={coverUri} alt={lecture.title || '강연 포스터'}
-                        style={{maxWidth:'100%', maxHeight:'70vh', objectFit:'contain', display:'block'}}/>
-                    </div>
+                    {/* v00.239 — 사용자: '포스터는 비율에 구애받지않고 횡축 좌우 여백없이 상하공간 적절히 확대'.
+                        width:100% + height:auto 로 컬럼 폭 가득 채우고 자연 비율 유지. flex/contain/maxHeight 제거. */}
+                    <img src={coverUri} alt={lecture.title || '강연 포스터'}
+                      style={{width:'100%', height:'auto', display:'block', borderRadius:2, background:'var(--bg-2)'}}/>
                     {galleryPrimary?.credit && (
                       <div className="dim mono" style={{fontSize:10, letterSpacing:'0.05em', marginTop:6, lineHeight:1.5}}>
                         {galleryPrimary.credit}
@@ -208,22 +206,39 @@ const LecturesPage = ({ go, user }) => {
                 </div>
               );
             })()}
-            {/* v00.238 — 사용자 요청 '칩 크기로 구분 말고 컬러로'. 정보 카테고리별 색 토큰:
-                · 강연 제목 = primary(옐로우) · 결제 = tertiary(slate)
-                · 주최/진행 = secondary(caramel) · 장소 = info(blue) */}
-            <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap', alignItems:'center'}}>
-              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--secondary)', background:'rgba(245,213,72,0.12)', border:'1px solid var(--primary-dim)'}}>
-                ◆ {lecture.title}
-              </span>
-              {lecture.price === 0
-                ? <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--secondary)', background:'rgba(245,213,72,0.12)', border:'1px solid var(--primary)'}}>FREE</span>
-                : <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--tertiary)', background:'rgba(71,85,105,0.06)', border:'1px solid var(--tertiary)'}}>₩ 무통장 입금</span>}
-              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--secondary)', background:'rgba(146,64,14,0.06)', border:'1px solid var(--secondary)'}}>
-                ⚐ {lecture.host}
-              </span>
-              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--info)', background:'rgba(37,99,235,0.06)', border:'1px solid var(--info)'}}>
-                ⌖ {lecture.venue}
-              </span>
+            {/* v00.239 — KMS §2 정합 재정리. 시스템 색(info/danger)은 상태 표시 전용이라
+                카테고리 chip 에서 제거. Primary/Secondary/Tertiary/Neutral 4단계 톤만 사용.
+                · 강연 제목 = primary 옐로우 (브랜드 시그너처) · 결제 = neutral
+                · 주최/주관 = secondary caramel · 장소 = tertiary slate
+                v00.239 — 주관(organizer) 필드 추가. site_content_kv.lecturePages[id].organizer. */}
+            {(() => {
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const lp = sc.lecturePages?.[lecture.id] || {};
+              const organizer = lp.organizer || '';
+              const chipBase = { fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3 };
+              return (
+                <div style={{display:'flex', gap:8, marginBottom:20, flexWrap:'wrap', alignItems:'center'}}>
+                  <span className="mono" style={{...chipBase, color:'var(--secondary)', background:'rgba(245,213,72,0.12)', border:'1px solid var(--primary-dim)'}}>
+                    ◆ {lecture.title}
+                  </span>
+                  {lecture.price === 0
+                    ? <span className="mono" style={{...chipBase, color:'var(--secondary)', background:'rgba(245,213,72,0.12)', border:'1px solid var(--primary)'}}>FREE</span>
+                    : <span className="mono" style={{...chipBase, color:'var(--ink-2)', background:'var(--bg-2)', border:'1px solid var(--line-2)'}}>₩ 무통장 입금</span>}
+                  {lecture.host && (
+                    <span className="mono" style={{...chipBase, color:'var(--secondary)', background:'rgba(146,64,14,0.06)', border:'1px solid var(--secondary)'}}>
+                      주최 · {lecture.host}
+                    </span>
+                  )}
+                  {organizer && (
+                    <span className="mono" style={{...chipBase, color:'var(--secondary-hover)', background:'rgba(124,45,18,0.06)', border:'1px solid var(--secondary-hover)'}}>
+                      주관 · {organizer}
+                    </span>
+                  )}
+                  {lecture.venue && (
+                    <span className="mono" style={{...chipBase, color:'var(--tertiary)', background:'rgba(71,85,105,0.06)', border:'1px solid var(--tertiary)'}}>
+                      장소 · {lecture.venue}
+                    </span>
+                  )}
               {/* v00.236 — hidden 강연은 admin 만 보이고 시각 라벨로 구분. */}
               {lecture.hidden && (
                 <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--warning)', border:'1px solid var(--warning)', padding:'1px 6px'}}>
@@ -238,9 +253,12 @@ const LecturesPage = ({ go, user }) => {
                   ✎ 강연 수정
                 </button>
               )}
-            </div>
-            <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24}}>{lecture.topic}</h2>
-            <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{lecture.note}</p>
+                </div>
+              );
+            })()}
+            {/* v00.239 — 사용자 요청: 강연 제목·주제 줄바꿈 허용. white-space:pre-wrap 으로 \n 보존. */}
+            <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24, whiteSpace:'pre-wrap'}}>{lecture.topic}</h2>
+            <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32, whiteSpace:'pre-wrap'}}>{lecture.note}</p>
             {/* v00.235/v00.237 — 포스터 추가 그리드 (대표 외 나머지). 1장이면 cover 와 중복이라 미노출. */}
             {window.MediaGalleryView && (() => {
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
@@ -352,6 +370,14 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
   const [topic, setTopic] = React.useState(initialLecture?.topic || '');
   const [venue, setVenue] = React.useState(initialLecture?.venue || '');
   const [host, setHost] = React.useState(initialLecture?.host || '뱅기노자');
+  // v00.239 — 주관(organizer) 신규. site_content_kv.lecturePages[id].organizer (워커 deploy 회피).
+  const [organizer, setOrganizer] = React.useState(() => {
+    if (!initialLecture?.id) return '';
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      return sc.lecturePages?.[initialLecture.id]?.organizer || '';
+    } catch { return ''; }
+  });
   const [startsAt, setStartsAt] = React.useState(_toLocalInput(initialLecture?.startsAt));
   const [durationMinutes, setDurationMinutes] = React.useState(initialLecture?.durationMinutes || 90);
   const [capacity, setCapacity] = React.useState(initialLecture?.capacity || 30);
@@ -417,17 +443,19 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         note: note.trim(),
         hidden: !!hidden, // v00.236 — 숨김 토글 반영.
       });
-      // v00.235/v00.237 — 갤러리 저장 (site_content_kv.lecturePages[id]).
-      // images=포스터 / photos=현장 사진. 기존 schedule/notes/coverDataUri 보존을 위해 머지.
-      if (images.length > 0 || photos.length > 0 || isEdit) {
+      // v00.235/v00.237/v00.239 — 갤러리 + 주관 저장 (site_content_kv.lecturePages[id]).
+      // images=포스터 / photos=현장 사진 / organizer=주관. 기존 schedule/notes/coverDataUri 보존을 위해 머지.
+      if (images.length > 0 || photos.length > 0 || organizer || isEdit) {
         try {
           const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
           const existing = (sc.lecturePages && typeof sc.lecturePages === 'object' && sc.lecturePages[id]) || {};
-          await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', { [id]: { ...existing, images, photos } });
+          await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', {
+            [id]: { ...existing, images, photos, organizer: organizer.trim() },
+          });
           try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch {}
         } catch (galleryErr) {
-          try { console.warn('[LectureQuickAddModal] 갤러리 저장 실패:', galleryErr); } catch {}
-          window.BGNJ_TOAST?.error?.('강연 정보는 저장됐지만 갤러리 저장에 실패했습니다.');
+          try { console.warn('[LectureQuickAddModal] 갤러리/주관 저장 실패:', galleryErr); } catch {}
+          window.BGNJ_TOAST?.error?.('강연 정보는 저장됐지만 갤러리·주관 저장에 실패했습니다.');
         }
       }
       try { await window.BGNJ_AUDIT?.log?.({ action: isEdit ? 'lecture.update' : 'lecture.create', target: `lecture:${id}` }); } catch {}
@@ -460,14 +488,15 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
             : '기본 정보만 입력해 빠르게 등록합니다. 진행 일정·참고·커버 이미지 등 상세 편집은 관리자 패널에서 이어서 진행하세요.'}
         </p>
         <form onSubmit={submit} style={{display:'grid', gap:12}}>
+          {/* v00.239 — 제목/주제 textarea 로 변경 (줄바꿈 허용). 사용자 요청. */}
           <div className="field" style={{margin:0}}>
-            <label className="field-label">강연 제목 *</label>
-            <input className="field-input" value={title} onChange={(e) => setTitle(e.target.value)}
-              placeholder="예: 2026 여름 특강 — 영조와 사도세자" autoFocus/>
+            <label className="field-label">강연 제목 * (줄바꿈 가능)</label>
+            <textarea className="field-input" rows={2} value={title} onChange={(e) => setTitle(e.target.value)}
+              placeholder="예: 2026 여름 특강 — 영조와 사도세자&#10;(Enter 로 줄바꿈)" autoFocus/>
           </div>
           <div className="field" style={{margin:0}}>
-            <label className="field-label">주제 (선택 — 비우면 제목 사용)</label>
-            <input className="field-input" value={topic} onChange={(e) => setTopic(e.target.value)}
+            <label className="field-label">주제 (선택 — 비우면 제목 사용 / 줄바꿈 가능)</label>
+            <textarea className="field-input" rows={2} value={topic} onChange={(e) => setTopic(e.target.value)}
               placeholder="강연 본문 페이지의 큰 제목"/>
           </div>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
@@ -477,9 +506,16 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
                 placeholder="예: 종로구 안국동 …"/>
             </div>
             <div className="field" style={{margin:0}}>
-              <label className="field-label">진행</label>
-              <input className="field-input" value={host} onChange={(e) => setHost(e.target.value)}/>
+              <label className="field-label">주최 (진행)</label>
+              <input className="field-input" value={host} onChange={(e) => setHost(e.target.value)}
+                placeholder="예: 뱅기노자 / (사)한국여성건축가협회 …"/>
             </div>
+          </div>
+          {/* v00.239 — 주관 신규. */}
+          <div className="field" style={{margin:0}}>
+            <label className="field-label">주관 (선택)</label>
+            <input className="field-input" value={organizer} onChange={(e) => setOrganizer(e.target.value)}
+              placeholder="예: ㈜승보이엔씨건축사사무소 (운영 실무 담당 기관)"/>
           </div>
           <div className="field" style={{margin:0}}>
             <label className="field-label">일시 *</label>
