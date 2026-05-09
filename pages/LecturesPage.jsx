@@ -250,11 +250,17 @@ const LecturesPage = ({ go, user }) => {
             </div>
             <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24}}>{lecture.topic}</h2>
             <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{lecture.note}</p>
-            {/* v00.235 — 사진 갤러리 (대표 외 추가 사진 그리드). 1장이면 미노출(cover 와 중복). */}
+            {/* v00.235/v00.237 — 포스터 추가 그리드 (대표 외 나머지). 1장이면 cover 와 중복이라 미노출. */}
             {window.MediaGalleryView && (() => {
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
               const imgs = sc.lecturePages?.[lecture.id]?.images;
-              return <window.MediaGalleryView images={imgs} title={lecture.title}/>;
+              return <window.MediaGalleryView images={imgs} title={lecture.title} sectionLabel="포스터"/>;
+            })()}
+            {/* v00.237 — 종료된 강연(past)에만 현장 사진 그리드 노출. 사용자 요청. */}
+            {window.MediaGalleryView && _isPast(lecture) && (() => {
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const photos = sc.lecturePages?.[lecture.id]?.photos;
+              return <window.MediaGalleryView images={photos} title={lecture.title} sectionLabel="현장 사진" withCover={false}/>;
             })()}
 
             {(() => {
@@ -370,6 +376,16 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
       return Array.isArray(arr) ? arr : [];
     } catch { return []; }
   });
+  // v00.237 — 종료된 강연용 현장 사진 별도 갤러리 (사용자 요청). 항상 입력 가능하지만
+  // 표시 페이지에선 past 강연일 때만 노출. site_content_kv.lecturePages[id].photos.
+  const [photos, setPhotos] = React.useState(() => {
+    if (!initialLecture?.id) return [];
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const arr = sc.lecturePages?.[initialLecture.id]?.photos;
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
   // v00.236 — 숨김 토글 (편집/추가 둘 다). admin 이 임시저장 후 작업할 때 사용.
   const [hidden, setHidden] = React.useState(!!initialLecture?.hidden);
   const [error, setError] = React.useState('');
@@ -382,9 +398,10 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
     setError('');
     if (!title.trim()) { setError('강연 제목은 필수입니다.'); return; }
     if (!startsAt) { setError('일시를 입력해 주세요.'); return; }
-    // v00.236 — 사용자 요청: 포스터(대표 사진) 필수.
-    if (!images || images.length === 0) {
-      setError('강연 포스터(대표 사진)는 최소 1장 등록해야 합니다. 아래 "사진 갤러리" 에서 추가해 주세요.');
+    // v00.236/v00.237 — 사용자 요청: 포스터(대표 사진) 필수. 신규 add 만 강제 (기존 강연 편집 시
+    // 포스터 미등록 데이터도 다른 항목 수정 가능해야 함). edit 모드는 갤러리 안내문으로 권장만.
+    if (!isEdit && (!images || images.length === 0)) {
+      setError('새 강연 등록 시 포스터(대표 사진)는 최소 1장 필수입니다. 아래 "강연 포스터" 에서 추가해 주세요.');
       return;
     }
     setSaving(true);
@@ -409,12 +426,13 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         note: note.trim(),
         hidden: !!hidden, // v00.236 — 숨김 토글 반영.
       });
-      // v00.235 — 갤러리 저장 (site_content_kv.lecturePages[id]). 기존 schedule/notes/coverDataUri 보존을 위해 머지.
-      if (images.length > 0 || isEdit) {
+      // v00.235/v00.237 — 갤러리 저장 (site_content_kv.lecturePages[id]).
+      // images=포스터 / photos=현장 사진. 기존 schedule/notes/coverDataUri 보존을 위해 머지.
+      if (images.length > 0 || photos.length > 0 || isEdit) {
         try {
           const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
           const existing = (sc.lecturePages && typeof sc.lecturePages === 'object' && sc.lecturePages[id]) || {};
-          await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', { [id]: { ...existing, images } });
+          await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', { [id]: { ...existing, images, photos } });
           try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch {}
         } catch (galleryErr) {
           try { console.warn('[LectureQuickAddModal] 갤러리 저장 실패:', galleryErr); } catch {}
@@ -500,14 +518,24 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
               value={note} onChange={(e) => setNote(e.target.value)}
               placeholder="강연 안내·당부 사항 (이후 관리자 패널에서 보강 가능)"/>
           </div>
-          {/* v00.235 — 사진 갤러리 편집기 (최대 10장 + 출처 + 대표). v00.236 — 포스터 필수. */}
+          {/* v00.235 — 포스터 갤러리 (최대 10장). v00.236 — 최소 1장 필수.
+              v00.237 — 다중 업로드 + drag&drop + label 커스터마이즈. */}
           {window.MediaGalleryEditor && (
-            <div>
-              <window.MediaGalleryEditor value={images} onChange={setImages} folder="lecture-gallery"/>
-              <p className="dim mono" style={{fontSize:10, marginTop:6, lineHeight:1.5, letterSpacing:'0.05em'}}>
-                * 강연 포스터(대표 사진) 최소 1장 등록 필수. 첫 사진이 자동으로 대표가 됩니다.
-              </p>
-            </div>
+            <window.MediaGalleryEditor
+              value={images} onChange={setImages}
+              folder="lecture-poster"
+              label="강연 포스터 (필수, 최대 10장)"
+              helpText="대표 포스터는 강연 카드와 상단 cover 로 사용됩니다. 최소 1장 등록 필수. 클릭하거나 사진을 끌어 놓으면 한 번에 여러 장 업로드 가능합니다."/>
+          )}
+          {/* v00.237 — 현장 사진 갤러리 (사용자 요청: 종료된 강연에는 현장 사진을 추가). 등록 시점부터
+              입력 가능하지만 표시 페이지에선 past(종료) 강연에만 노출. */}
+          {window.MediaGalleryEditor && (
+            <window.MediaGalleryEditor
+              value={photos} onChange={setPhotos}
+              folder="lecture-photos"
+              label="현장 사진 (선택, 종료된 강연에 노출)"
+              showPrimary={false}
+              helpText="강연이 끝난 뒤 등록하는 현장 스케치. 강연 일시가 지난 시점부터 강연 페이지 하단에 그리드로 노출됩니다."/>
           )}
           {/* v00.236 — 숨김 토글. 임시저장하고 admin 만 보이게 할 때. */}
           <label style={{display:'flex', gap:8, alignItems:'center', padding:'8px 12px', background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:6, fontSize:12, color:'var(--ink-2)', cursor:'pointer'}}>

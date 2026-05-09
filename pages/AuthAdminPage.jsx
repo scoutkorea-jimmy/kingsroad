@@ -1306,6 +1306,9 @@ const BulkLectureImport = ({ onClose, onDone }) => {
 const LectureAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const [editingId, setEditingId] = React.useState(null);
+  // v00.237 — admin 패널에서도 사진 갤러리 (포스터 + 현장 사진) 한 번에 관리.
+  // window.LectureQuickAddModal 재사용 — 같은 모달이 정보/갤러리/현장사진 통합 편집.
+  const [galleryEditTarget, setGalleryEditTarget] = React.useState(null);
   const [draft, setDraft] = React.useState({ title: '', topic: '', venue: '', host: '', startsAt: '', durationMinutes: 90, capacity: 30, price: 0, note: '' });
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
   // v00.131 — 일괄 등록 토글.
@@ -1579,6 +1582,8 @@ const LectureAdminPanel = ({ go }) => {
                   <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10, flexWrap:'wrap'}}>
                     <button type="button" className="btn btn-small btn-gold" onClick={() => startEdit(l)}>✎ 강연 정보 (제목·정원·시간·가격)</button>
                     <button type="button" className="btn btn-small" onClick={() => startContentEdit(l)}>📋 강연 진행·참고·커버</button>
+                    {/* v00.237 — 사진 갤러리 (포스터 + 현장 사진) 통합 편집 진입로. 사용자 요청: 'admin 에서도 손쉽게'. */}
+                    <button type="button" className="btn btn-small" onClick={() => setGalleryEditTarget(l)}>🖼 포스터·현장사진</button>
                     <button type="button" className="btn btn-small"
                       onClick={() => {
                         window.BGNJ_LECTURES.setHidden(l.id, !l.hidden);
@@ -1741,6 +1746,13 @@ const LectureAdminPanel = ({ go }) => {
           })}
         </div>
       )}
+      {/* v00.237 — 사진 갤러리 모달. LectureQuickAddModal 재사용 (정보 + 포스터 + 현장사진 통합). */}
+      {galleryEditTarget && window.LectureQuickAddModal && (
+        <window.LectureQuickAddModal
+          onClose={() => setGalleryEditTarget(null)}
+          onSaved={refresh}
+          initialLecture={galleryEditTarget}/>
+      )}
     </div>
   );
 };
@@ -1750,6 +1762,8 @@ const TourAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const [editingId, setEditingId] = React.useState(null);
   const [draft, setDraft] = React.useState({});
+  // v00.237 — admin 패널에서도 사진 갤러리 통합 편집.
+  const [galleryEditTarget, setGalleryEditTarget] = React.useState(null);
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
   // v00.072 — 투어별 답사 일정/준비물/커버 inline 편집용 별도 state.
   // contentEditingId 가 set 되면 해당 투어 카드 하단에 TPE_ScheduleEditor/TPE_PrepEditor + 커버 업로드 노출.
@@ -2125,6 +2139,8 @@ const TourAdminPanel = ({ go }) => {
                   <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10, flexWrap:'wrap'}}>
                     <button type="button" className="btn btn-small btn-gold" onClick={() => startEdit(t)}>✎ 투어 정보 (제목·정원·난이도·소요시간·가격)</button>
                     <button type="button" className="btn btn-small" onClick={() => startContentEdit(t)}>📋 답사 일정·준비물·커버</button>
+                    {/* v00.237 — 사진 갤러리 (포스터) 통합 편집. window.TourQuickAddModal 재사용. */}
+                    <button type="button" className="btn btn-small" onClick={() => setGalleryEditTarget(t)}>🖼 사진 갤러리</button>
                     <button type="button" className="btn btn-small"
                       onClick={() => toggleTourHidden(t)}
                       style={{marginLeft:'auto'}}>
@@ -2269,6 +2285,13 @@ const TourAdminPanel = ({ go }) => {
             );
           })}
         </div>
+      )}
+      {/* v00.237 — 사진 갤러리 모달. TourQuickAddModal 재사용. */}
+      {galleryEditTarget && window.TourQuickAddModal && (
+        <window.TourQuickAddModal
+          onClose={() => setGalleryEditTarget(null)}
+          onSaved={refresh}
+          initialTour={galleryEditTarget}/>
       )}
     </div>
   );

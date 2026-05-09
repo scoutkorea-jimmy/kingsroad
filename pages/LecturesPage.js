@@ -185,7 +185,12 @@ const LecturesPage = ({ go, user }) => {
     var _a2, _b2, _c2, _d2;
     const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
     const imgs = (_d2 = (_c2 = sc.lecturePages) == null ? void 0 : _c2[lecture.id]) == null ? void 0 : _d2.images;
-    return /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images: imgs, title: lecture.title });
+    return /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images: imgs, title: lecture.title, sectionLabel: "\uD3EC\uC2A4\uD130" });
+  })(), window.MediaGalleryView && _isPast(lecture) && (() => {
+    var _a2, _b2, _c2, _d2;
+    const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
+    const photos = (_d2 = (_c2 = sc.lecturePages) == null ? void 0 : _c2[lecture.id]) == null ? void 0 : _d2.photos;
+    return /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images: photos, title: lecture.title, sectionLabel: "\uD604\uC7A5 \uC0AC\uC9C4", withCover: false });
   })(), (() => {
     var _a2, _b2;
     const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
@@ -250,6 +255,17 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
       return [];
     }
   });
+  const [photos, setPhotos] = React.useState(() => {
+    var _a2, _b, _c, _d;
+    if (!(initialLecture == null ? void 0 : initialLecture.id)) return [];
+    try {
+      const sc = ((_b = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b.call(_a2)) || {};
+      const arr = (_d = (_c = sc.lecturePages) == null ? void 0 : _c[initialLecture.id]) == null ? void 0 : _d.photos;
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [hidden, setHidden] = React.useState(!!(initialLecture == null ? void 0 : initialLecture.hidden));
   const [error, setError] = React.useState("");
   const [saving, setSaving] = React.useState(false);
@@ -267,8 +283,8 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
       setError("\uC77C\uC2DC\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
       return;
     }
-    if (!images || images.length === 0) {
-      setError('\uAC15\uC5F0 \uD3EC\uC2A4\uD130(\uB300\uD45C \uC0AC\uC9C4)\uB294 \uCD5C\uC18C 1\uC7A5 \uB4F1\uB85D\uD574\uC57C \uD569\uB2C8\uB2E4. \uC544\uB798 "\uC0AC\uC9C4 \uAC24\uB7EC\uB9AC" \uC5D0\uC11C \uCD94\uAC00\uD574 \uC8FC\uC138\uC694.');
+    if (!isEdit && (!images || images.length === 0)) {
+      setError('\uC0C8 \uAC15\uC5F0 \uB4F1\uB85D \uC2DC \uD3EC\uC2A4\uD130(\uB300\uD45C \uC0AC\uC9C4)\uB294 \uCD5C\uC18C 1\uC7A5 \uD544\uC218\uC785\uB2C8\uB2E4. \uC544\uB798 "\uAC15\uC5F0 \uD3EC\uC2A4\uD130" \uC5D0\uC11C \uCD94\uAC00\uD574 \uC8FC\uC138\uC694.');
       return;
     }
     setSaving(true);
@@ -293,11 +309,11 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         hidden: !!hidden
         // v00.236 — 숨김 토글 반영.
       });
-      if (images.length > 0 || isEdit) {
+      if (images.length > 0 || photos.length > 0 || isEdit) {
         try {
           const sc = ((_b = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b.call(_a2)) || {};
           const existing = sc.lecturePages && typeof sc.lecturePages === "object" && sc.lecturePages[id] || {};
-          await window.BGNJ_SITE_CONTENT.saveSection("lecturePages", { [id]: { ...existing, images } });
+          await window.BGNJ_SITE_CONTENT.saveSection("lecturePages", { [id]: { ...existing, images, photos } });
           try {
             (_d = (_c = window.BGNJ_BROADCAST) == null ? void 0 : _c.publish) == null ? void 0 : _d.call(_c, "site-content");
           } catch (e2) {
@@ -413,7 +429,26 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
         onChange: (e) => setNote(e.target.value),
         placeholder: "\uAC15\uC5F0 \uC548\uB0B4\xB7\uB2F9\uBD80 \uC0AC\uD56D (\uC774\uD6C4 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uBCF4\uAC15 \uAC00\uB2A5)"
       }
-    )), window.MediaGalleryEditor && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(window.MediaGalleryEditor, { value: images, onChange: setImages, folder: "lecture-gallery" }), /* @__PURE__ */ React.createElement("p", { className: "dim mono", style: { fontSize: 10, marginTop: 6, lineHeight: 1.5, letterSpacing: "0.05em" } }, "* \uAC15\uC5F0 \uD3EC\uC2A4\uD130(\uB300\uD45C \uC0AC\uC9C4) \uCD5C\uC18C 1\uC7A5 \uB4F1\uB85D \uD544\uC218. \uCCAB \uC0AC\uC9C4\uC774 \uC790\uB3D9\uC73C\uB85C \uB300\uD45C\uAC00 \uB429\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "center", padding: "8px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6, fontSize: 12, color: "var(--ink-2)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
+    )), window.MediaGalleryEditor && /* @__PURE__ */ React.createElement(
+      window.MediaGalleryEditor,
+      {
+        value: images,
+        onChange: setImages,
+        folder: "lecture-poster",
+        label: "\uAC15\uC5F0 \uD3EC\uC2A4\uD130 (\uD544\uC218, \uCD5C\uB300 10\uC7A5)",
+        helpText: "\uB300\uD45C \uD3EC\uC2A4\uD130\uB294 \uAC15\uC5F0 \uCE74\uB4DC\uC640 \uC0C1\uB2E8 cover \uB85C \uC0AC\uC6A9\uB429\uB2C8\uB2E4. \uCD5C\uC18C 1\uC7A5 \uB4F1\uB85D \uD544\uC218. \uD074\uB9AD\uD558\uAC70\uB098 \uC0AC\uC9C4\uC744 \uB04C\uC5B4 \uB193\uC73C\uBA74 \uD55C \uBC88\uC5D0 \uC5EC\uB7EC \uC7A5 \uC5C5\uB85C\uB4DC \uAC00\uB2A5\uD569\uB2C8\uB2E4."
+      }
+    ), window.MediaGalleryEditor && /* @__PURE__ */ React.createElement(
+      window.MediaGalleryEditor,
+      {
+        value: photos,
+        onChange: setPhotos,
+        folder: "lecture-photos",
+        label: "\uD604\uC7A5 \uC0AC\uC9C4 (\uC120\uD0DD, \uC885\uB8CC\uB41C \uAC15\uC5F0\uC5D0 \uB178\uCD9C)",
+        showPrimary: false,
+        helpText: "\uAC15\uC5F0\uC774 \uB05D\uB09C \uB4A4 \uB4F1\uB85D\uD558\uB294 \uD604\uC7A5 \uC2A4\uCF00\uCE58. \uAC15\uC5F0 \uC77C\uC2DC\uAC00 \uC9C0\uB09C \uC2DC\uC810\uBD80\uD130 \uAC15\uC5F0 \uD398\uC774\uC9C0 \uD558\uB2E8\uC5D0 \uADF8\uB9AC\uB4DC\uB85C \uB178\uCD9C\uB429\uB2C8\uB2E4."
+      }
+    ), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "center", padding: "8px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6, fontSize: 12, color: "var(--ink-2)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
       "input",
       {
         type: "checkbox",

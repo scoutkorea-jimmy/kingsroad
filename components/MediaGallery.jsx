@@ -1,21 +1,21 @@
-// 뱅기노자 미디어 갤러리 — v00.235
-// 사용자 요청: 강연/투어에 사진 최대 10장 + 사진마다 출처 + 대표사진 1장 설정.
+// 뱅기노자 미디어 갤러리 — v00.235 (v00.237 전면 개선)
+// 사용자 요청 변천:
+//   v00.235 — 강연/투어 사진 최대 10장 + 출처 + 대표사진.
+//   v00.237 — 다중 파일 업로드 + drag & drop + 라벨 커스터마이즈 (포스터 / 현장 사진 분리).
 //
 // 두 컴포넌트:
 //   1) MediaGalleryEditor — admin 모달 안에서 사진 추가/삭제/출처 입력/대표 지정.
 //   2) MediaGalleryView   — 공개 페이지에서 대표사진 cover + 추가 사진 그리드 표시.
 //
-// 저장 위치: site_content_kv.lecturePages[id].images / tourPages[id].images.
+// 저장 위치: site_content_kv.lecturePages[id].images (포스터) / .photos (현장사진)
+//          / tourPages[id].images.
 //   각 image: { url: string, credit?: string, isPrimary?: boolean }
 // 대표사진은 1장만 — UI 가 라디오로 강제. 저장 시 isPrimary 가 여러 개여도 첫 번째만 인정.
-//
-// 업로드: 기존 pickImageWithR2Fallback (admin 번들의 AdminShared) 사용.
-//   admin 번들이 lazy-load 라 첫 진입 시 미존재 → BGNJ_LOAD_ADMIN() 트리거.
 
 const MAX_IMAGES = 10;
 
-// 대표사진 단일화 헬퍼 — isPrimary 가 둘 이상이거나 0개면 첫 번째를 대표로 강제.
-const _normalizeImages = (raw) => {
+// 대표사진 단일화 헬퍼 — isPrimary 가 둘 이상이거나 0개면 첫 번째를 대표로 강제 (showPrimary=true 일 때).
+const _normalizeImages = (raw, { showPrimary = true } = {}) => {
   if (!Array.isArray(raw)) return [];
   const cleaned = raw
     .filter((it) => it && typeof it === 'object' && typeof it.url === 'string' && it.url)
@@ -26,6 +26,11 @@ const _normalizeImages = (raw) => {
       isPrimary: !!it.isPrimary,
     }));
   if (cleaned.length === 0) return [];
+  if (!showPrimary) {
+    // 현장 사진처럼 대표 개념이 없는 갤러리 — isPrimary 모두 false.
+    cleaned.forEach((it) => { it.isPrimary = false; });
+    return cleaned;
+  }
   const primaryCount = cleaned.filter((it) => it.isPrimary).length;
   if (primaryCount === 0) cleaned[0].isPrimary = true;
   else if (primaryCount > 1) {
@@ -46,11 +51,49 @@ const _withPrimaryFirst = (images) => {
   return [norm[idx], ...norm.slice(0, idx), ...norm.slice(idx + 1)];
 };
 
-const MediaGalleryEditor = ({ value, onChange, folder = 'gallery' }) => {
-  const images = _normalizeImages(value);
+// 안정 unique id (라디오 name 충돌 방지) — 한 모달에 갤러리 둘 이상.
+let _galleryUid = 0;
+const _nextUid = () => `bgnj-gallery-${++_galleryUid}`;
+
+// v00.237 — 다중 파일 순차 업로드. R2 우선, 실패 시 dataURI 폴백 (admin shared helper).
+// 진행률 누적 (0/N → N/N) 으로 사용자 피드백.
+const _uploadFiles = async (files, folder, onProgress) => {
+  if (typeof window.pickImageWithR2Fallback !== 'function') {
+    throw new Error('업로드 헬퍼가 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.');
+  }
+  // pickImageWithR2Fallback 가 e.target.files[0] 만 처리하므로 fake event 로 한 장씩 호출.
+  const urls = [];
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file || !file.type?.startsWith?.('image/')) continue;
+    const fakeEvent = { target: { files: [file], value: '' } };
+    try {
+      const url = await window.pickImageWithR2Fallback(fakeEvent, { folder });
+      if (url) urls.push(url);
+    } catch (err) {
+      try { console.warn('[MediaGalleryEditor] 한 장 업로드 실패 (다음 장 진행):', err); } catch {}
+    }
+    onProgress?.(i + 1, files.length);
+  }
+  return urls;
+};
+
+const MediaGalleryEditor = ({
+  value,
+  onChange,
+  folder = 'gallery',
+  label = '사진 갤러리',
+  helpText = '',
+  showPrimary = true,
+  max = MAX_IMAGES,
+}) => {
+  const images = _normalizeImages(value, { showPrimary });
   const [busy, setBusy] = React.useState(false);
+  const [progress, setProgress] = React.useState({ done: 0, total: 0 });
+  const [dragOver, setDragOver] = React.useState(false);
   const [adminTick, setAdminTick] = React.useState(0);
-  const fileInputRef = React.useRef(null);
+  const radioName = React.useMemo(_nextUid, []);
+  const limit = Math.min(MAX_IMAGES, Math.max(1, max));
 
   // admin 번들 lazy-load 트리거 (pickImageWithR2Fallback 미존재 시).
   React.useEffect(() => {
@@ -63,34 +106,66 @@ const MediaGalleryEditor = ({ value, onChange, folder = 'gallery' }) => {
     return () => window.removeEventListener('bgnj-admin-scripts-loaded', onLoaded);
   }, []);
 
-  const handlePick = async (e) => {
-    if (images.length >= MAX_IMAGES) {
-      window.BGNJ_TOAST?.error?.(`사진은 최대 ${MAX_IMAGES}장까지 추가할 수 있습니다.`);
-      e.target.value = '';
+  // v00.237 — 다중 파일 + drag & drop 모두 처리하는 공통 핸들러.
+  const handleFiles = async (fileList) => {
+    if (!fileList || fileList.length === 0) return;
+    const remaining = limit - images.length;
+    if (remaining <= 0) {
+      window.BGNJ_TOAST?.error?.(`사진은 최대 ${limit}장까지 추가할 수 있습니다.`);
       return;
     }
-    if (typeof window.pickImageWithR2Fallback !== 'function') {
-      window.BGNJ_TOAST?.error?.('업로드 헬퍼가 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.');
-      e.target.value = '';
-      return;
+    const accepted = Array.from(fileList).filter((f) => f && f.type?.startsWith?.('image/')).slice(0, remaining);
+    if (accepted.length === 0) return;
+    if (fileList.length > accepted.length) {
+      window.BGNJ_TOAST?.error?.(`최대 ${limit}장 — ${accepted.length}장만 추가됩니다.`);
     }
     setBusy(true);
+    setProgress({ done: 0, total: accepted.length });
     try {
-      const url = await window.pickImageWithR2Fallback(e, { folder });
-      if (!url) return;
+      const urls = await _uploadFiles(accepted, folder, (done, total) => setProgress({ done, total }));
+      if (urls.length === 0) {
+        window.BGNJ_TOAST?.error?.('업로드 실패 — 이미지를 다시 확인해 주세요.');
+        return;
+      }
       const next = images.slice();
-      // 첫 사진이면 자동으로 대표.
-      next.push({ url, credit: '', isPrimary: next.length === 0 });
-      onChange?.(_normalizeImages(next));
+      urls.forEach((url) => {
+        // showPrimary 갤러리에서 첫 사진이면 자동 대표.
+        next.push({ url, credit: '', isPrimary: showPrimary && next.length === 0 });
+      });
+      onChange?.(_normalizeImages(next, { showPrimary }));
+      window.BGNJ_TOAST?.success?.(`${urls.length}장 추가됐습니다.`);
+    } catch (err) {
+      window.BGNJ_TOAST?.error?.(err?.message || '업로드 중 오류가 발생했습니다.');
     } finally {
       setBusy(false);
+      setProgress({ done: 0, total: 0 });
     }
+  };
+
+  const onPick = (e) => { handleFiles(e.target.files); e.target.value = ''; };
+
+  const onDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    if (busy) return;
+    handleFiles(e.dataTransfer?.files);
+  };
+  const onDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!busy) setDragOver(true);
+  };
+  const onDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
   };
 
   const updateAt = (idx, patch) => {
     const next = images.slice();
     next[idx] = { ...next[idx], ...patch };
-    onChange?.(_normalizeImages(next));
+    onChange?.(_normalizeImages(next, { showPrimary }));
   };
 
   const setPrimary = (idx) => {
@@ -101,36 +176,72 @@ const MediaGalleryEditor = ({ value, onChange, folder = 'gallery' }) => {
   const removeAt = (idx) => {
     const next = images.slice();
     next.splice(idx, 1);
-    onChange?.(_normalizeImages(next));
+    onChange?.(_normalizeImages(next, { showPrimary }));
   };
 
   const moveUp = (idx) => {
     if (idx <= 0) return;
     const next = images.slice();
     [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-    onChange?.(_normalizeImages(next));
+    onChange?.(_normalizeImages(next, { showPrimary }));
+  };
+  const moveDown = (idx) => {
+    if (idx >= images.length - 1) return;
+    const next = images.slice();
+    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+    onChange?.(_normalizeImages(next, { showPrimary }));
+  };
+
+  const isFull = images.length >= limit;
+  const dropZoneStyle = {
+    border: `2px dashed ${dragOver ? 'var(--primary)' : 'var(--line-2)'}`,
+    borderRadius: 6,
+    padding: '18px 14px',
+    textAlign: 'center',
+    background: dragOver ? 'rgba(245,213,72,0.08)' : 'var(--bg)',
+    transition: 'background .15s, border-color .15s',
+    cursor: isFull || busy ? 'not-allowed' : 'pointer',
+    marginBottom: 12,
   };
 
   return (
     <div style={{ border: '1px solid var(--line)', borderRadius: 6, padding: 14, background: 'var(--bg-2)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
         <div>
-          <strong style={{ fontSize: 13 }}>사진 갤러리</strong>
+          <strong style={{ fontSize: 13 }}>{label}</strong>
           <span className="dim mono" style={{ fontSize: 10, marginLeft: 8, letterSpacing: '0.1em' }}>
-            {images.length} / {MAX_IMAGES}
+            {images.length} / {limit}
           </span>
         </div>
-        <label className="btn btn-small" style={{ cursor: images.length >= MAX_IMAGES ? 'not-allowed' : 'pointer', opacity: busy || images.length >= MAX_IMAGES ? 0.55 : 1 }}>
-          {busy ? '업로드 중...' : '＋ 사진 추가'}
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePick}
-            disabled={busy || images.length >= MAX_IMAGES}
-            style={{ display: 'none' }}/>
-        </label>
+        {busy && progress.total > 0 && (
+          <span className="mono" style={{ fontSize: 10, color: 'var(--secondary)', letterSpacing: '0.1em' }}>
+            업로드 중 {progress.done} / {progress.total}
+          </span>
+        )}
       </div>
+      {helpText && (
+        <p className="dim" style={{ fontSize: 11, lineHeight: 1.6, marginBottom: 10 }}>{helpText}</p>
+      )}
+      {/* v00.237 — drop zone (drag&drop) + 클릭 시 파일 선택. multiple 지원. */}
+      <label
+        onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave} onDragEnd={onDragLeave}
+        style={dropZoneStyle}>
+        <input type="file" accept="image/*" multiple onChange={onPick}
+          disabled={busy || isFull}
+          style={{ display: 'none' }}/>
+        <div className="ko-serif" style={{ fontSize: 14, marginBottom: 4, color: 'var(--ink)' }}>
+          {busy ? '업로드 중…' : isFull ? `최대 ${limit}장 도달` : (dragOver ? '여기에 놓으세요' : '＋ 사진 추가 (클릭 또는 드래그)')}
+        </div>
+        <div className="dim mono" style={{ fontSize: 10, letterSpacing: '0.05em' }}>
+          {isFull
+            ? '한 장 삭제 후 추가 가능'
+            : `여러 장 한 번에 가능 · 한 장당 R2 5MB / 폴백 1.5MB · 남은 슬롯 ${limit - images.length}장`}
+        </div>
+      </label>
       {images.length === 0 ? (
-        <p className="dim" style={{ fontSize: 12, lineHeight: 1.6, padding: '12px 4px' }}>
-          아직 등록된 사진이 없습니다. 위 버튼으로 최대 {MAX_IMAGES}장까지 추가할 수 있어요.
-          첫 사진이 자동으로 대표사진이 되며, 라디오로 변경 가능합니다.
+        <p className="dim" style={{ fontSize: 12, lineHeight: 1.6, padding: '4px 4px 0' }}>
+          아직 등록된 사진이 없습니다.
+          {showPrimary && ' 첫 사진이 자동으로 대표사진이 되며, 라디오로 변경 가능합니다.'}
         </p>
       ) : (
         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 10 }}>
@@ -140,7 +251,7 @@ const MediaGalleryEditor = ({ value, onChange, folder = 'gallery' }) => {
               padding: 8, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 4, alignItems: 'center',
             }}>
               <div style={{ width: 88, height: 64, overflow: 'hidden', borderRadius: 3, background: 'var(--bg-3)' }}>
-                <img src={img.url} alt={`사진 ${i + 1}`}
+                <img src={img.url} alt={`${label} ${i + 1}`}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
               </div>
               <div style={{ display: 'grid', gap: 6, minWidth: 0 }}>
@@ -149,22 +260,29 @@ const MediaGalleryEditor = ({ value, onChange, folder = 'gallery' }) => {
                   value={img.credit}
                   onChange={(e) => updateAt(i, { credit: e.target.value })}
                   style={{ padding: '6px 10px', fontSize: 12 }}/>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
-                  <input type="radio" name="gallery-primary"
-                    checked={!!img.isPrimary}
-                    onChange={() => setPrimary(i)}
-                    style={{ accentColor: 'var(--primary)' }}/>
-                  <span>대표사진</span>
-                  {img.isPrimary && (
-                    <span className="mono" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--secondary)', marginLeft: 4 }}>★ COVER</span>
-                  )}
-                </label>
+                {showPrimary && (
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
+                    <input type="radio" name={radioName}
+                      checked={!!img.isPrimary}
+                      onChange={() => setPrimary(i)}
+                      style={{ accentColor: 'var(--primary)' }}/>
+                    <span>대표사진</span>
+                    {img.isPrimary && (
+                      <span className="mono" style={{ fontSize: 10, letterSpacing: '0.18em', color: 'var(--secondary)', marginLeft: 4 }}>★ COVER</span>
+                    )}
+                  </label>
+                )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <button type="button" className="btn btn-small"
                   onClick={() => moveUp(i)} disabled={i === 0}
                   style={{ padding: '2px 8px', fontSize: 11, opacity: i === 0 ? 0.4 : 1 }}>
                   ↑
+                </button>
+                <button type="button" className="btn btn-small"
+                  onClick={() => moveDown(i)} disabled={i === images.length - 1}
+                  style={{ padding: '2px 8px', fontSize: 11, opacity: i === images.length - 1 ? 0.4 : 1 }}>
+                  ↓
                 </button>
                 <button type="button" className="btn btn-small"
                   onClick={() => removeAt(i)}
@@ -183,21 +301,22 @@ const MediaGalleryEditor = ({ value, onChange, folder = 'gallery' }) => {
 // 공개 페이지용 표시 컴포넌트.
 // 표시 우선순위: 대표사진을 cover slot 에 배치 (caller 가 별도로 cover 표시 — 본 컴포넌트는 갤러리 그리드만).
 // 갤러리는 1장이면 미노출 (cover 와 중복), 2장 이상일 때 그리드 표시.
-const MediaGalleryView = ({ images, title }) => {
-  const norm = _withPrimaryFirst(images);
-  if (!Array.isArray(norm) || norm.length < 2) return null;
-  // 대표 제외한 나머지 (cover 에 이미 사용됨).
-  const rest = norm.slice(1);
+// v00.237 — withCover=false 면 0번 사진도 그리드에 포함 (현장 사진 등 cover 와 분리된 갤러리).
+const MediaGalleryView = ({ images, title, sectionLabel = '사진', withCover = true }) => {
+  const norm = withCover ? _withPrimaryFirst(images) : _normalizeImages(images, { showPrimary: false });
+  if (!Array.isArray(norm) || norm.length === 0) return null;
+  const grid = withCover ? norm.slice(1) : norm; // withCover=true → 0번은 cover 에 사용됨.
+  if (grid.length === 0) return null;
   return (
-    <section aria-label={`${title || ''} 추가 사진`} style={{ marginTop: 24, marginBottom: 32 }}>
+    <section aria-label={`${title || ''} ${sectionLabel}`} style={{ marginTop: 24, marginBottom: 32 }}>
       <h3 className="ko-serif" style={{ fontSize: 18, marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid var(--line)' }}>
-        사진 <span className="dim-2 mono" style={{ fontSize: 11, marginLeft: 6 }}>{rest.length}장</span>
+        {sectionLabel} <span className="dim-2 mono" style={{ fontSize: 11, marginLeft: 6 }}>{grid.length}장</span>
       </h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
-        {rest.map((img, i) => (
+        {grid.map((img, i) => (
           <figure key={img.url + i} style={{ margin: 0, display: 'flex', flexDirection: 'column' }}>
             <div style={{ aspectRatio: '4/3', background: 'var(--bg-2)', overflow: 'hidden', borderRadius: 3 }}>
-              <img src={img.url} alt={img.credit || `${title || '사진'} ${i + 2}`}
+              <img src={img.url} alt={img.credit || `${title || sectionLabel} ${i + 1}`}
                 loading="lazy"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}/>
             </div>

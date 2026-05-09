@@ -1123,6 +1123,7 @@ const BulkLectureImport = ({ onClose, onDone }) => {
 const LectureAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const [editingId, setEditingId] = React.useState(null);
+  const [galleryEditTarget, setGalleryEditTarget] = React.useState(null);
   const [draft, setDraft] = React.useState({ title: "", topic: "", venue: "", host: "", startsAt: "", durationMinutes: 90, capacity: 30, price: 0, note: "" });
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
   const [showBulk, setShowBulk] = React.useState(false);
@@ -1356,7 +1357,7 @@ const LectureAdminPanel = ({ go }) => {
         value: draft.note,
         onChange: (e) => setDraft({ ...draft, note: e.target.value })
       }
-    )), /* @__PURE__ */ React.createElement("div", { style: { gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setEditingId(null) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5"))) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(l) }, "\u270E \uAC15\uC5F0 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uC2DC\uAC04\xB7\uAC00\uACA9)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(l) }, "\u{1F4CB} \uAC15\uC5F0 \uC9C4\uD589\xB7\uCC38\uACE0\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement(
+    )), /* @__PURE__ */ React.createElement("div", { style: { gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setEditingId(null) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5"))) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(l) }, "\u270E \uAC15\uC5F0 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uC2DC\uAC04\xB7\uAC00\uACA9)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(l) }, "\u{1F4CB} \uAC15\uC5F0 \uC9C4\uD589\xB7\uCC38\uACE0\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(l) }, "\u{1F5BC} \uD3EC\uC2A4\uD130\xB7\uD604\uC7A5\uC0AC\uC9C4"), /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -1495,12 +1496,20 @@ const LectureAdminPanel = ({ go }) => {
       },
       "\uBC18\uB824"
     ))))))))));
-  })));
+  })), galleryEditTarget && window.LectureQuickAddModal && /* @__PURE__ */ React.createElement(
+    window.LectureQuickAddModal,
+    {
+      onClose: () => setGalleryEditTarget(null),
+      onSaved: refresh,
+      initialLecture: galleryEditTarget
+    }
+  ));
 };
 const TourAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const [editingId, setEditingId] = React.useState(null);
   const [draft, setDraft] = React.useState({});
+  const [galleryEditTarget, setGalleryEditTarget] = React.useState(null);
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
   const [contentEditingId, setContentEditingId] = React.useState(null);
   const [contentSchedule, setContentSchedule] = React.useState([]);
@@ -1848,7 +1857,7 @@ const TourAdminPanel = ({ go }) => {
           onChange: (e) => setDraft({ ...draft, refundPolicy: e.target.value })
         }
       ), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.5 } }, "\u24D8 \uBE44\uC6B0\uBA74 \uC6B4\uC601\uC124\uC815\uC758 \uAE00\uB85C\uBC8C \uD658\uBD88\uC815\uCC45 \uC0AC\uC6A9 (\uB2E4\uC74C \uC0AC\uC774\uD074 \uB3C4\uC785 \uC608\uC815).")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setEditingId(null) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8, lineHeight: 1.6 } }, "\u203B \uC138\uBD80 \uC77C\uC815 / \uC900\uBE44\uBB3C \uC740 \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), " \uBC84\uD2BC\uC5D0\uC11C \uD3B8\uC9D1 (\uC9C4\uD589 \uD750\uB984 + \uC900\uBE44\uBB3C list + \uCEE4\uBC84 \uC774\uBBF8\uC9C0)."))
-    ) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(t) }, "\u270E \uD22C\uC5B4 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uB09C\uC774\uB3C4\xB7\uC18C\uC694\uC2DC\uAC04\xB7\uAC00\uACA9)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(t) }, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement(
+    ) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(t) }, "\u270E \uD22C\uC5B4 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uB09C\uC774\uB3C4\xB7\uC18C\uC694\uC2DC\uAC04\xB7\uAC00\uACA9)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(t) }, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(t) }, "\u{1F5BC} \uC0AC\uC9C4 \uAC24\uB7EC\uB9AC"), /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -1968,7 +1977,14 @@ const TourAdminPanel = ({ go }) => {
       },
       "\uBC18\uB824"
     ))))))))));
-  })));
+  })), galleryEditTarget && window.TourQuickAddModal && /* @__PURE__ */ React.createElement(
+    window.TourQuickAddModal,
+    {
+      onClose: () => setGalleryEditTarget(null),
+      onSaved: refresh,
+      initialTour: galleryEditTarget
+    }
+  ));
 };
 const BankAccountPanel = () => {
   const [tick, setTick] = React.useState(0);
