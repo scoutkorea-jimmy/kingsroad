@@ -297,6 +297,9 @@ const checkRateLimit = async (env, email, ip) => {
   } catch (e) {
     if (e instanceof HttpError) throw e;
     // 테이블 없음 / 일시 오류 → 통과 (보안 < 가용성).
+    // v00.262.003 — J2 silent 였던 path. brute-force 보호가 silent 비활성화되는 사고
+    // 감지 위해 WARN. 운영자가 logs 에서 빈번하면 D1 상태 확인 가능.
+    try { console.warn('[checkRateLimit] degraded — brute-force guard skipped:', e?.message || e); } catch {}
   }
 };
 
@@ -465,7 +468,8 @@ const handlePostsList = async (req, env) => {
   const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
   // v00.141 — allow_read 가 명시 0 인 카테고리의 글은 비관리자에 숨김.
   let isAdmin = false;
-  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch {}
+  // v00.262.003 — C2 transient D1 에러로 admin 권한 silent 강등 사고 방지. 가시화.
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch {} }
   if (isAdmin) return { posts: results };
   const { results: blocked } = await env.DB.prepare(
     "SELECT id FROM categories_kv WHERE allow_read IS NOT NULL AND allow_read = 0"
@@ -517,7 +521,8 @@ const handlePostGet = async (req, env, id) => {
   if (!post) throw new HttpError(404, "게시글을 찾을 수 없습니다.");
   // v00.141 — allow_read 가 명시 0 이면 비관리자 차단.
   let isAdmin = false;
-  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch {}
+  // v00.262.003 — C2 transient D1 에러로 admin 권한 silent 강등 사고 방지. 가시화.
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch {} }
   if (!isAdmin && post.category_id) {
     const cat = await env.DB.prepare("SELECT allow_read FROM categories_kv WHERE id = ?").bind(post.category_id).first();
     if (cat && cat.allow_read !== undefined && cat.allow_read !== null && Number(cat.allow_read) === 0) {
@@ -562,7 +567,8 @@ const handleCommentsList = async (req, env, postId) => {
   // v00.141 — 댓글 보기 권한 (allow_comment_read). 게시글의 카테고리 → categories_kv 조회.
   // 명시 0 이면 비관리자에 빈 배열. NULL/undefined 는 legacy 호환 → 노출.
   let isAdmin = false;
-  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch {}
+  // v00.262.003 — C2 transient D1 에러로 admin 권한 silent 강등 사고 방지. 가시화.
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch {} }
   if (!isAdmin) {
     const post = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(postId).first();
     if (post?.category_id) {

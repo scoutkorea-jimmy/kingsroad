@@ -219,7 +219,9 @@ a.nav-link:focus-visible,
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-weight: 500; letter-spacing: -0.01em; }
-body { min-height: 100vh; overflow-x: hidden; }
+/* v00.262.003 — G1 iOS Safari URL bar collapse 시 viewport jump 방지. dvh(dynamic)
+   는 visible viewport 에 맞춤. 미지원 브라우저는 100vh fallback. */
+body { min-height: 100vh; min-height: 100dvh; overflow-x: hidden; }
 
 /* v00.227 — sticky nav 아래로 native anchor (#col-comments 등) 점프 시
    도착점이 가려지지 않도록. 데스크톱 nav 72px + 16px 호흡 = 88px,
@@ -900,6 +902,7 @@ main time, main .section-eyebrow {
 /* ---- Layout ---- */
 .app {
   min-height: 100vh;
+  min-height: 100dvh; /* v00.262.003 — G1 iOS dvh */
   display: flex;
   flex-direction: column;
 }
@@ -1653,6 +1656,7 @@ main time, main .section-eyebrow {
     padding: 8px 0;
     gap: 0;
     max-height: calc(100vh - 64px);
+    max-height: calc(100dvh - 64px); /* v00.262.003 — G1 iOS dvh */
     overflow-y: auto;
   }
   .nav.mobile-open .nav-menu li { width: 100%; position: relative; }
@@ -1688,6 +1692,7 @@ main time, main .section-eyebrow {
     position: fixed !important;
     top: 72px; left: 0;
     width: 280px; height: calc(100vh - 72px);
+    height: calc(100dvh - 72px); /* v00.262.003 — G1 iOS dvh */
     transform: translateX(-100%);
     transition: transform 0.25s ease;
     z-index: 80;

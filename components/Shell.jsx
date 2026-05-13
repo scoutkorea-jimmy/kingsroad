@@ -240,12 +240,20 @@ const NotificationBell = ({ user, onPick }) => {
   const ref = React.useRef(null);
 
   // 다른 탭/세션에서 알림이 추가되면 storage 이벤트로 갱신
+  // v00.262.003 — A2 동일 탭 알림 갱신 누락 수정. storage 는 같은 탭에서 발화 안 함.
+  // BGNJ_COMMUNITY 가 refreshNotifications 후 dispatch 하는 'bgnj-notifications-refresh'
+  // 도 listen → 배지/목록이 same-tab 에서도 즉시 갱신.
   React.useEffect(() => {
     const onStorage = (e) => {
       if (e.key === 'bgnj_notifications') setTick((t) => t + 1);
     };
+    const onRefresh = () => setTick((t) => t + 1);
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener('bgnj-notifications-refresh', onRefresh);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('bgnj-notifications-refresh', onRefresh);
+    };
   }, []);
 
   // 외부 클릭으로 닫기

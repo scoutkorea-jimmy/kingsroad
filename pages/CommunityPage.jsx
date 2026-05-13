@@ -1287,16 +1287,26 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
     }
   };
 
+  // v00.262.003 — A3 더블탭 race 가드. 느린 네트워크에서 좋아요/북마크 빠르게 두 번
+  // 누르면 optimistic toggle 결과가 race → 카운트/색상 inconsistent.
+  const [likeBusy, setLikeBusy] = React.useState(false);
+  const [bmkBusy, setBmkBusy] = React.useState(false);
   const handleLike = async () => {
     if (!user) return requireLogin('공감');
+    if (likeBusy) return;
+    setLikeBusy(true);
     try { await window.BGNJ_COMMUNITY.toggleLike(post.id, user.id); onRefresh?.(); }
     catch (err) { window.BGNJ_TOAST.error(`공감 처리 실패: ${err?.message || '알 수 없는 오류'}`); }
+    finally { setLikeBusy(false); }
   };
 
   const handleBookmark = async () => {
     if (!user) return requireLogin('북마크');
+    if (bmkBusy) return;
+    setBmkBusy(true);
     try { await window.BGNJ_COMMUNITY.toggleBookmark(user.id, post.id); onRefresh?.(); }
     catch (err) { window.BGNJ_TOAST.error(`북마크 처리 실패: ${err?.message || '알 수 없는 오류'}`); }
+    finally { setBmkBusy(false); }
   };
 
   const handleReportSubmit = async (e) => {

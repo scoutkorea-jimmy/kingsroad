@@ -1249,22 +1249,32 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
       go("login");
     }
   };
+  const [likeBusy, setLikeBusy] = React.useState(false);
+  const [bmkBusy, setBmkBusy] = React.useState(false);
   const handleLike = async () => {
     if (!user) return requireLogin("\uACF5\uAC10");
+    if (likeBusy) return;
+    setLikeBusy(true);
     try {
       await window.BGNJ_COMMUNITY.toggleLike(post.id, user.id);
       onRefresh == null ? void 0 : onRefresh();
     } catch (err) {
       window.BGNJ_TOAST.error(`\uACF5\uAC10 \uCC98\uB9AC \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+    } finally {
+      setLikeBusy(false);
     }
   };
   const handleBookmark = async () => {
     if (!user) return requireLogin("\uBD81\uB9C8\uD06C");
+    if (bmkBusy) return;
+    setBmkBusy(true);
     try {
       await window.BGNJ_COMMUNITY.toggleBookmark(user.id, post.id);
       onRefresh == null ? void 0 : onRefresh();
     } catch (err) {
       window.BGNJ_TOAST.error(`\uBD81\uB9C8\uD06C \uCC98\uB9AC \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+    } finally {
+      setBmkBusy(false);
     }
   };
   const handleReportSubmit = async (e) => {

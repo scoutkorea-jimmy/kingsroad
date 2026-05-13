@@ -36,15 +36,25 @@
     return err;
   };
 
+  // v00.262.003 — E2 stall hang 차단. 모든 fetch 에 15s timeout 적용.
+  // 업로드(FormData) 는 더 큰 cap(60s) 필요할 수 있으니 별도 처리.
+  const REQUEST_TIMEOUT_MS = 15_000;
+  const UPLOAD_TIMEOUT_MS  = 60_000;
+
   const request = async (method, path, body) => {
     const url = path.startsWith("http") ? path : `${BASE}${path}`;
+    const isUpload = body instanceof FormData;
+    const ctrl = new AbortController();
+    const timeoutMs = isUpload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS;
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     const init = {
       method,
       credentials: "include",
       headers: { Accept: "application/json" },
+      signal: ctrl.signal,
     };
     if (body !== undefined) {
-      if (body instanceof FormData) {
+      if (isUpload) {
         init.body = body;
       } else {
         init.headers["Content-Type"] = "application/json";
@@ -55,9 +65,20 @@
     try {
       resp = await fetch(url, init);
     } catch (rawErr) {
+      clearTimeout(timer);
+      // v00.262.003 — AbortError → timeout 으로 분류. UX: '응답이 늦어 중단' 명시.
+      if (rawErr?.name === 'AbortError') {
+        const err = new Error(`요청 시간 초과 (${Math.round(timeoutMs/1000)}s)`);
+        err.kind = 'timeout';
+        err.code = 'TIMEOUT';
+        err.url = url;
+        err.cause = rawErr;
+        throw err;
+      }
       // 네트워크 단절, DNS 실패, CORS 거부 등 fetch 자체가 throw 한 경우.
       throw classifyFetchError(rawErr, url);
     }
+    clearTimeout(timer);
     const text = await resp.text();
     let data = null;
     let parseFailed = false;

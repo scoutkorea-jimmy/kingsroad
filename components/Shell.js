@@ -235,8 +235,13 @@ const NotificationBell = ({ user, onPick }) => {
     const onStorage = (e) => {
       if (e.key === "bgnj_notifications") setTick((t) => t + 1);
     };
+    const onRefresh = () => setTick((t) => t + 1);
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener("bgnj-notifications-refresh", onRefresh);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("bgnj-notifications-refresh", onRefresh);
+    };
   }, []);
   React.useEffect(() => {
     if (!open) return;
