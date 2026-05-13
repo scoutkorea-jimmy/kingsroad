@@ -167,11 +167,24 @@ const ensureSuperAdmin = async (env, userId, email) => {
 const getCurrentUser = async (req, env) => {
   const token = readSessionToken(req);
   if (!token) return null;
-  const row = await env.DB.prepare(
-    `SELECT u.id, u.email, u.name, u.is_admin, u.grade_id, u.profile_json, u.consents_json, u.created_at, u.last_login_at, s.expires_at
-     FROM sessions s JOIN users u ON u.id = s.user_id
-     WHERE s.token = ?`
-  ).bind(token).first();
+  // v00.262 핫픽스 — last_login_at 은 schema-v10 신규 컬럼. 마이그레이션 전 D1 에서
+  // 이 컬럼을 참조하면 SELECT 자체가 실패해 모든 인증 요청이 500 → 전체 outage.
+  // try/catch 폴백으로 last_login_at 미존재 환경도 안전하게 동작.
+  let row;
+  try {
+    row = await env.DB.prepare(
+      `SELECT u.id, u.email, u.name, u.is_admin, u.grade_id, u.profile_json, u.consents_json, u.created_at, u.last_login_at, s.expires_at
+       FROM sessions s JOIN users u ON u.id = s.user_id
+       WHERE s.token = ?`
+    ).bind(token).first();
+  } catch (e) {
+    try { console.warn('[getCurrentUser] last_login_at fallback', e?.message || e); } catch {}
+    row = await env.DB.prepare(
+      `SELECT u.id, u.email, u.name, u.is_admin, u.grade_id, u.profile_json, u.consents_json, u.created_at, s.expires_at
+       FROM sessions s JOIN users u ON u.id = s.user_id
+       WHERE s.token = ?`
+    ).bind(token).first();
+  }
   if (!row) return null;
   if (Number(row.expires_at) < Date.now()) {
     await env.DB.prepare("DELETE FROM sessions WHERE token = ?").bind(token).run();
