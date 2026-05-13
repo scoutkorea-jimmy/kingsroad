@@ -147,6 +147,8 @@
       mine: () => request("GET", "/me/orders"),
       adminList: ({ status } = {}) => request("GET", `/admin/book-orders${status ? `?status=${status}` : ""}`),
       update: (id, patch) => request("PATCH", `/book-orders/${id}`, patch),
+      // v00.261 — admin hard delete (테스트 청소). audit_log 자동 기록.
+      adminDelete: (id) => request("DELETE", `/book-orders/${id}`),
     },
 
     // ── 미디어 ──

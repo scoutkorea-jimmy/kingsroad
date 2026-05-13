@@ -2667,6 +2667,27 @@ const BookOrderAdminPanel = ({ go }) => {
               <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', borderTop:'1px solid var(--line)', paddingTop:12}}>
                 <button type="button" className="btn btn-small"
                   onClick={() => window.BGNJ_BOOK_ORDERS.downloadReceipt(o.id)}>영수증 ↓</button>
+                {/* v00.261 — admin 영구 삭제. 테스트/오발주 청소 용도. audit_log 자동 기록.
+                    한국 전자상거래법 거래기록 5년 보존은 '실거래' 한정 — 테스트 주문 적용 외. */}
+                <button type="button" className="btn btn-small"
+                  title="이 주문 기록을 영구 삭제합니다 (감사 로그 남음)"
+                  onClick={async () => {
+                    const ok = await window.BGNJ_CONFIRM(
+                      `주문 ${o.orderNo} 기록을 영구 삭제하시겠어요?\n\n실제 결제·배송이 진행된 거래라면 삭제 대신 '취소' 처리를 권장합니다.\n삭제는 되돌릴 수 없으며 감사 로그에 흔적이 남습니다.`,
+                      { danger: true, confirmLabel: '영구 삭제' }
+                    );
+                    if (!ok) return;
+                    const res = await window.BGNJ_BOOK_ORDERS.adminDeleteOrder(o.id);
+                    if (!res?.ok) {
+                      try { window.BGNJ_TOAST?.error?.(res?.message || '주문 삭제 실패'); } catch {}
+                      return;
+                    }
+                    try { window.BGNJ_TOAST?.success?.(`주문 ${o.orderNo} 삭제 완료`); } catch {}
+                    refresh();
+                  }}
+                  style={{borderColor:'var(--danger)', color:'var(--danger)'}}>
+                  삭제
+                </button>
                 {o.status === 'pending_payment' && (
                   <button type="button" className="btn btn-small"
                     onClick={() => { window.BGNJ_BOOK_ORDERS.confirmPayment(o.id); refresh(); }}>

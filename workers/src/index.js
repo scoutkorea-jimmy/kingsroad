@@ -1658,6 +1658,23 @@ const handleOrderPatch = async (req, env, orderId) => {
   return { ok: true };
 };
 
+// v00.261 — 관리자 전용 도서 주문 삭제. 테스트 데이터 청소 / 운영 cleanup.
+// 한국 전자상거래법 거래기록 5년 보존은 '실거래'에 한정 — 테스트 주문은 적용 외.
+// 누가 무엇을 지웠는지 audit_log 에 흔적 남김 (추적·책임성).
+const handleOrderDelete = async (req, env, orderId) => {
+  const admin = await requireAdmin(req, env);
+  const row = await env.DB.prepare(
+    "SELECT id, order_no, user_id, book_id, status, total FROM book_orders WHERE id = ?"
+  ).bind(orderId).first();
+  if (!row) throw new HttpError(404, "주문을 찾을 수 없습니다.");
+  await env.DB.prepare("DELETE FROM book_orders WHERE id = ?").bind(orderId).run();
+  await auditWrite(env, admin.id, "book_order_delete", `book_order:${orderId}`, {
+    orderNo: row.order_no, userId: row.user_id, bookId: row.book_id,
+    status: row.status, total: row.total,
+  }, clientIp(req));
+  return { ok: true };
+};
+
 // ── 책 후기 ──
 const handleBookReviews = async (req, env, bookId) => {
   const { results } = await env.DB.prepare(
@@ -2402,6 +2419,8 @@ const route = async (req, env) => {
   if (req.method === "GET" && p === "/api/admin/book-orders") return json(await handleAdminOrdersList(req, env));
   if ((g = m(/^\/api\/book-orders\/([\w-]+)$/))) {
     if (req.method === "PATCH") return json(await handleOrderPatch(req, env, g[1]));
+    // v00.261 — admin 전용 hard delete (테스트/오발주 청소). audit_log 기록 필수.
+    if (req.method === "DELETE") return json(await handleOrderDelete(req, env, g[1]));
   }
 
   // 책 후기

@@ -2254,6 +2254,39 @@ const BookOrderAdminPanel = ({ go }) => {
       onClick: () => window.BGNJ_BOOK_ORDERS.downloadReceipt(o.id)
     },
     "\uC601\uC218\uC99D \u2193"
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      title: "\uC774 \uC8FC\uBB38 \uAE30\uB85D\uC744 \uC601\uAD6C \uC0AD\uC81C\uD569\uB2C8\uB2E4 (\uAC10\uC0AC \uB85C\uADF8 \uB0A8\uC74C)",
+      onClick: async () => {
+        var _a, _b, _c, _d;
+        const ok = await window.BGNJ_CONFIRM(
+          `\uC8FC\uBB38 ${o.orderNo} \uAE30\uB85D\uC744 \uC601\uAD6C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?
+
+\uC2E4\uC81C \uACB0\uC81C\xB7\uBC30\uC1A1\uC774 \uC9C4\uD589\uB41C \uAC70\uB798\uB77C\uBA74 \uC0AD\uC81C \uB300\uC2E0 '\uCDE8\uC18C' \uCC98\uB9AC\uB97C \uAD8C\uC7A5\uD569\uB2C8\uB2E4.
+\uC0AD\uC81C\uB294 \uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC73C\uBA70 \uAC10\uC0AC \uB85C\uADF8\uC5D0 \uD754\uC801\uC774 \uB0A8\uC2B5\uB2C8\uB2E4.`,
+          { danger: true, confirmLabel: "\uC601\uAD6C \uC0AD\uC81C" }
+        );
+        if (!ok) return;
+        const res = await window.BGNJ_BOOK_ORDERS.adminDeleteOrder(o.id);
+        if (!(res == null ? void 0 : res.ok)) {
+          try {
+            (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, (res == null ? void 0 : res.message) || "\uC8FC\uBB38 \uC0AD\uC81C \uC2E4\uD328");
+          } catch (e) {
+          }
+          return;
+        }
+        try {
+          (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, `\uC8FC\uBB38 ${o.orderNo} \uC0AD\uC81C \uC644\uB8CC`);
+        } catch (e) {
+        }
+        refresh();
+      },
+      style: { borderColor: "var(--danger)", color: "var(--danger)" }
+    },
+    "\uC0AD\uC81C"
   ), o.status === "pending_payment" && /* @__PURE__ */ React.createElement(
     "button",
     {

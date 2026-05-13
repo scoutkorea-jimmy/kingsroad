@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.261.000",
+  version: "00.262.000",
   build: "2026.05.13",
   channel: "preview",
 };
@@ -2389,6 +2389,20 @@ window.BGNJ_BOOK_ORDERS = {
   },
   async approveRefund(id) { return this._patch(id, { status: 'cancelled' }); },
   async rejectRefund(id, adminNote) { return this._patch(id, { status: 'paid', refundAdminNote: String(adminNote || '').trim() }); },
+  // v00.261 — admin 전용 영구 삭제 (테스트 주문 청소). 서버 audit_log 자동 기록.
+  // 호출 측은 BGNJ_CONFIRM 으로 destructive confirm 후에만 호출할 것.
+  async adminDeleteOrder(id) {
+    try {
+      await window.BGNJ_API.bookOrders.adminDelete(id);
+      // 캐시에서 즉시 제거 후 refreshAll 로 정합.
+      this._orders = this._orders.filter((o) => o.id !== id);
+      try { window.dispatchEvent(new CustomEvent('bgnj-book-orders-refresh')); } catch {}
+      await this.refreshAll();
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, message: err?.body?.error || err?.message || '주문 삭제 실패' };
+    }
+  },
 
   generateReceipt(id) {
     const order = this.getOrder(id);
