@@ -484,6 +484,9 @@ const CheckoutPage = ({ go, cart, user }) => {
   const [cashReceipt, setCashReceipt] = React.useState(() => window.BGNJ_CashReceipt?.empty?.() || { requested: false, type: 'personal', identifier: '' });
   const [error, setError] = React.useState("");
   const [submittedOrder, setSubmittedOrder] = React.useState(null);
+  // v00.262.002 — 이중 제출 가드(A1). 더블클릭/엔터 중복으로 같은 주문 2건 INSERT 되는 사고 방지.
+  // worker 측 idempotency-key 가 없으므로 클라이언트 single-submit guard 가 1차 방어선.
+  const [submitting, setSubmitting] = React.useState(false);
 
   // 책 정보 미로드 — 서버에서 도착 전이거나 D1.books 가 비어 있음.
   if (!book) {
@@ -602,10 +605,12 @@ const CheckoutPage = ({ go, cart, user }) => {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (submitting) return; // v00.262.002 — 이중 제출 차단
     setError("");
     if (!recipient.trim()) return setError("받는 분 이름을 입력해 주세요.");
     if (!phone.trim()) return setError("연락처를 입력해 주세요.");
     if (!address.trim()) return setError("기본 주소를 입력해 주세요.");
+    setSubmitting(true);
     try {
       // v00.218 — 현금영수증 신청 정보를 memo prefix 로 인코딩 (백엔드 스키마 마이그레이션 전).
       const crPrefix = window.BGNJ_CashReceipt?.encode?.(cashReceipt) || '';
@@ -622,10 +627,12 @@ const CheckoutPage = ({ go, cart, user }) => {
         addressDetail: addressDetail.trim(),
         memo: memoCombined,
       });
-      if (!result?.ok) return setError(result?.message || "주문 처리에 실패했습니다.");
+      if (!result?.ok) { setSubmitting(false); return setError(result?.message || "주문 처리에 실패했습니다."); }
       setSubmittedOrder(result.order);
+      // 성공 시 페이지가 submittedOrder 화면으로 전환되므로 submitting=false 불필요.
     } catch (err) {
       setError(err?.body?.error || err?.message || '주문 처리 중 오류');
+      setSubmitting(false); // v00.262.002 — 실패 시 재시도 가능하도록 해제
     }
   };
 
@@ -703,7 +710,10 @@ const CheckoutPage = ({ go, cart, user }) => {
 
             <div style={{display:'flex', gap:12, marginTop:24}}>
               <button type="button" className="btn btn-block" onClick={() => go("book")}>← 책 정보</button>
-              <button type="submit" className="btn btn-gold btn-block">주문 접수 · {window.BGNJ_FMT.won(total)}</button>
+              <button type="submit" className="btn btn-gold btn-block" disabled={submitting}
+                style={submitting ? {opacity: 0.6, cursor: 'wait'} : undefined}>
+                {submitting ? '주문 처리 중…' : `주문 접수 · ${window.BGNJ_FMT.won(total)}`}
+              </button>
             </div>
           </div>
 

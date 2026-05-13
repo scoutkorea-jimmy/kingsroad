@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.262.001",
+  version: "00.262.002",
   build: "2026.05.13",
   channel: "preview",
 };
@@ -2273,7 +2273,11 @@ window.BGNJ_LECTURES = {
 // === 책 주문(BGNJ_BOOK_ORDERS) helper — 서버(D1.book_orders) source of truth ===
 window.BGNJ_BOOK_ORDERS = {
   ORDER_STATUSES: ['pending_payment', 'paid', 'shipped', 'delivered', 'refund_requested', 'cancelled'],
-  _orders: [],
+  // v00.262.002 — scope 충돌 분리(B1). 이전 `_orders` 단일 캐시는 refreshMine/refreshAll
+  // 양쪽이 덮어써, admin 이 본인 MyPage 들렀다 admin 패널 가면 캐시가 본인 주문만으로
+  // 축소되어 빈 목록 표시. 캐시 키를 scope 별로 분리.
+  _ordersAll: [],   // admin scope (전체)
+  _ordersMine: [],  // user scope (본인)
   _reviews: [], // 책별 리뷰는 서버에서 책 ID 기준 fetch (BGNJ_BOOKS.refreshReviews)
   _toOrder(r) {
     return {
@@ -2308,33 +2312,45 @@ window.BGNJ_BOOK_ORDERS = {
     try {
       const { orders } = await window.BGNJ_API.bookOrders.mine();
       // v00.231 — 데이터-사라짐 방어.
-      if (!Array.isArray(orders)) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshMine] non-array — cache preserved'); } catch {} return this._orders.slice(); }
-      this._orders = orders.map((o) => this._toOrder(o));
+      if (!Array.isArray(orders)) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshMine] non-array — cache preserved'); } catch {} return this._ordersMine.slice(); }
+      this._ordersMine = orders.map((o) => this._toOrder(o));
       try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}
-    } catch {}
-    return this._orders.slice();
+    } catch (e) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshMine]', e); } catch {} }
+    return this._ordersMine.slice();
   },
   async refreshAll({ status } = {}) {
     try {
       const { orders } = await window.BGNJ_API.bookOrders.adminList({ status });
       // v00.231 — 데이터-사라짐 방어.
-      if (!Array.isArray(orders)) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshAll] non-array — cache preserved'); } catch {} return this._orders.slice(); }
-      this._orders = orders.map((o) => this._toOrder(o));
+      if (!Array.isArray(orders)) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshAll] non-array — cache preserved'); } catch {} return this._ordersAll.slice(); }
+      this._ordersAll = orders.map((o) => this._toOrder(o));
       try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}
-    } catch {}
-    return this._orders.slice();
+    } catch (e) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshAll]', e); } catch {} }
+    return this._ordersAll.slice();
   },
-  listAll() { return this._orders.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); },
+  // v00.262.002 — admin 패널은 _ordersAll, MyPage 는 _ordersMine 사용. listAll/listMine 으로 명확화.
+  listAll() { return this._ordersAll.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); },
   listByStatus(status) {
     if (!status || status === 'all') return this.listAll();
     return this.listAll().filter((o) => o.status === status);
   },
+  // v00.262.002 — listMine 은 본인 캐시(_ordersMine) 우선, 비어있으면 _ordersAll 에서 필터링.
+  // admin 도 본인 주문 조회 시 refreshMine() 으로 _ordersMine 채워둠.
   listMine(userId) {
     if (!userId) return [];
-    return this.listAll().filter((o) => o.userId === userId);
+    if (this._ordersMine.length > 0) {
+      return this._ordersMine.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    }
+    return this._ordersAll.filter((o) => o.userId === userId)
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   },
-  getOrder(id) { return this.listAll().find((o) => o.id === id) || null; },
-  countOpenOrders() { return this._orders.filter((o) => o.status === 'pending_payment').length; },
+  // v00.262.002 — getOrder 는 양 캐시 모두에서 검색 (admin 이 본인 주문 lookup 등).
+  getOrder(id) {
+    return this._ordersAll.find((o) => o.id === id)
+        || this._ordersMine.find((o) => o.id === id)
+        || null;
+  },
+  countOpenOrders() { return this._ordersAll.filter((o) => o.status === 'pending_payment').length; },
   async createOrder(payload) {
     if (!payload.userId) return { ok: false, message: "회원 가입 후 로그인해 주세요." };
     if (!payload.recipient || !payload.phone || !payload.address) {
@@ -2356,7 +2372,7 @@ window.BGNJ_BOOK_ORDERS = {
         zip: payload.zip || '', memo: payload.memo || '',
       });
       await this.refreshMine();
-      const order = this._orders.find((o) => o.id === id);
+      const order = this._ordersMine.find((o) => o.id === id);
       return { ok: true, order: order || { id, orderNo, userId: payload.userId, bookId, version, qty } };
     } catch (err) {
       return { ok: false, message: err?.body?.error || err?.message || '주문 생성 실패' };
@@ -2394,8 +2410,9 @@ window.BGNJ_BOOK_ORDERS = {
   async adminDeleteOrder(id) {
     try {
       await window.BGNJ_API.bookOrders.adminDelete(id);
-      // 캐시에서 즉시 제거 후 refreshAll 로 정합.
-      this._orders = this._orders.filter((o) => o.id !== id);
+      // 캐시 양쪽에서 즉시 제거 후 refreshAll 로 정합.
+      this._ordersAll = this._ordersAll.filter((o) => o.id !== id);
+      this._ordersMine = this._ordersMine.filter((o) => o.id !== id);
       try { window.dispatchEvent(new CustomEvent('bgnj-book-orders-refresh')); } catch {}
       await this.refreshAll();
       return { ok: true };
@@ -2884,13 +2901,20 @@ window.BGNJ_GRADE_PROMO = {
     } catch {}
     return null;
   },
-  // 전체 회원 metrics 페치 (관리자 reevaluateAll 직전 호출용). 직렬 — 서버 부하 절감.
-  async prefetchAllServerMetrics() {
-    const users = window.BGNJ_AUTH?._usersCache || [];
-    for (const u of users) {
-      if (!u?.id) continue;
-      await this.fetchServerMetrics(u.id);
-    }
+  // v00.262.002 — H1 직렬 N+1 해소. 500명 회원 × ~100ms = 50s+ wall freeze 문제.
+  // concurrency-limited 병렬화 (동시 8건). 서버 D1 read 부하도 OK 수준.
+  async prefetchAllServerMetrics({ concurrency = 8 } = {}) {
+    const users = (window.BGNJ_AUTH?._usersCache || []).filter((u) => u?.id);
+    if (users.length === 0) return;
+    let cursor = 0;
+    const worker = async () => {
+      while (cursor < users.length) {
+        const u = users[cursor++];
+        try { await this.fetchServerMetrics(u.id); }
+        catch (e) { try { console.warn('[prefetchAllServerMetrics]', u.id, e); } catch {} }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, users.length) }, () => worker()));
   },
   // 사용자 측정치 — 서버 캐시 prefer, 없으면 클라이언트 best-effort.
   metrics(userId) {
