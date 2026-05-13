@@ -2560,6 +2560,18 @@ const BookOrderAdminPanel = ({ go }) => {
   const [trackingDraft, setTrackingDraft] = React.useState({});
   const refresh = () => setTick((v) => v + 1);
 
+  // v00.262.006 — B1 split 회귀 패치. admin 패널은 _ordersAll 캐시를 읽는데, 마운트
+  // 시점에 refreshAll() 트리거하는 곳이 boot 어디에도 없어 빈 목록 표시.
+  // 이전엔 같은 _orders 캐시를 refreshMine 이 부분적으로 채워줬으나 분리되며 끊김.
+  // 'bgnj-orders-refresh' 이벤트 listen + 진입 시 refreshAll 1회.
+  React.useEffect(() => {
+    let cancelled = false;
+    window.BGNJ_BOOK_ORDERS?.refreshAll?.().finally(() => { if (!cancelled) refresh(); });
+    const onR = () => { if (!cancelled) refresh(); };
+    window.addEventListener('bgnj-orders-refresh', onR);
+    return () => { cancelled = true; window.removeEventListener('bgnj-orders-refresh', onR); };
+  }, []);
+
   const orders = React.useMemo(() => window.BGNJ_BOOK_ORDERS.listByStatus(filter), [filter, tick]);
   const [rejectNotes, setRejectNotes] = React.useState({});
   const counts = React.useMemo(() => ({

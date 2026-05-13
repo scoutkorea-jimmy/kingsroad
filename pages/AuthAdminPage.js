@@ -2189,6 +2189,21 @@ const BookOrderAdminPanel = ({ go }) => {
   const [filter, setFilter] = React.useState("pending_payment");
   const [trackingDraft, setTrackingDraft] = React.useState({});
   const refresh = () => setTick((v) => v + 1);
+  React.useEffect(() => {
+    var _a, _b;
+    let cancelled = false;
+    (_b = (_a = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _a.refreshAll) == null ? void 0 : _b.call(_a).finally(() => {
+      if (!cancelled) refresh();
+    });
+    const onR = () => {
+      if (!cancelled) refresh();
+    };
+    window.addEventListener("bgnj-orders-refresh", onR);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("bgnj-orders-refresh", onR);
+    };
+  }, []);
   const orders = React.useMemo(() => window.BGNJ_BOOK_ORDERS.listByStatus(filter), [filter, tick]);
   const [rejectNotes, setRejectNotes] = React.useState({});
   const counts = React.useMemo(() => ({

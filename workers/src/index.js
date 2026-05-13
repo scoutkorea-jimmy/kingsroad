@@ -164,26 +164,30 @@ const ensureSuperAdmin = async (env, userId, email) => {
   return true;
 };
 
+// v00.262.006 — 모듈 스코프 플래그. schema-v10 미적용 D1 에서 매 요청 catch 진입 +
+// console.warn 폭주 + UPDATE 시도 실패 누적 방지. 1번 실패 후엔 폴백 SELECT 만 사용.
+let __lastLoginColMissing = false;
 const getCurrentUser = async (req, env) => {
   const token = readSessionToken(req);
   if (!token) return null;
   // v00.262 핫픽스 — last_login_at 은 schema-v10 신규 컬럼. 마이그레이션 전 D1 에서
   // 이 컬럼을 참조하면 SELECT 자체가 실패해 모든 인증 요청이 500 → 전체 outage.
-  // try/catch 폴백으로 last_login_at 미존재 환경도 안전하게 동작.
+  // try/catch 폴백 + 모듈 스코프 캐시로 1회 실패 후 fast-path 사용.
   let row;
-  try {
-    row = await env.DB.prepare(
-      `SELECT u.id, u.email, u.name, u.is_admin, u.grade_id, u.profile_json, u.consents_json, u.created_at, u.last_login_at, s.expires_at
-       FROM sessions s JOIN users u ON u.id = s.user_id
-       WHERE s.token = ?`
-    ).bind(token).first();
-  } catch (e) {
-    try { console.warn('[getCurrentUser] last_login_at fallback', e?.message || e); } catch {}
-    row = await env.DB.prepare(
-      `SELECT u.id, u.email, u.name, u.is_admin, u.grade_id, u.profile_json, u.consents_json, u.created_at, s.expires_at
-       FROM sessions s JOIN users u ON u.id = s.user_id
-       WHERE s.token = ?`
-    ).bind(token).first();
+  const SQL_WITH    = `SELECT u.id, u.email, u.name, u.is_admin, u.grade_id, u.profile_json, u.consents_json, u.created_at, u.last_login_at, s.expires_at
+     FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?`;
+  const SQL_WITHOUT = `SELECT u.id, u.email, u.name, u.is_admin, u.grade_id, u.profile_json, u.consents_json, u.created_at, s.expires_at
+     FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?`;
+  if (__lastLoginColMissing) {
+    row = await env.DB.prepare(SQL_WITHOUT).bind(token).first();
+  } else {
+    try {
+      row = await env.DB.prepare(SQL_WITH).bind(token).first();
+    } catch (e) {
+      __lastLoginColMissing = true;
+      try { console.warn('[getCurrentUser] last_login_at column missing — falling back permanently this worker', e?.message || e); } catch {}
+      row = await env.DB.prepare(SQL_WITHOUT).bind(token).first();
+    }
   }
   if (!row) return null;
   if (Number(row.expires_at) < Date.now()) {
@@ -200,16 +204,23 @@ const getCurrentUser = async (req, env) => {
       gradeId = 'admin';
     }
   }
-  // v00.261 — last_login_at 24h throttle 갱신. 30일 세션 동안 로그아웃 없이 사용
-  // 하는 사용자도 '마지막 접속'이 stale 하지 않도록. 24h 이내면 skip(D1 write 절약).
-  try {
-    const cutoffMs = 24 * 60 * 60 * 1000;
-    const lastMs = row.last_login_at ? Date.parse(row.last_login_at) : 0;
-    if (!lastMs || (Date.now() - lastMs) > cutoffMs) {
-      await env.DB.prepare(`UPDATE users SET last_login_at = ? WHERE id = ?`)
-        .bind(nowIso(), row.id).run();
-    }
-  } catch {}
+  // v00.262.006 — 성능 회귀 패치. 이전 throttle 로직은 row.last_login_at === null 인
+  // 기존 사용자에게 매 요청마다 UPDATE 발화 (페이지 로드 시 동시 5~10 API → UPDATE 폭주
+  // → hot path 2x latency). last_login_at 은 handleAuthLogin 에서 갱신되므로 getCurrentUser
+  // 의 추가 UPDATE 는 30일 세션 사용자의 stale 방지용일 뿐. fire-and-forget 으로 전환해
+  // 메인 응답 latency 에 영향 0. 컬럼 부재 환경은 skip.
+  if (!__lastLoginColMissing) {
+    try {
+      const cutoffMs = 24 * 60 * 60 * 1000;
+      const lastMs = row.last_login_at ? Date.parse(row.last_login_at) : 0;
+      if (!lastMs || (Date.now() - lastMs) > cutoffMs) {
+        // await 없음 — 응답 차단 안 함. 실패해도 다음 요청에서 재시도.
+        env.DB.prepare(`UPDATE users SET last_login_at = ? WHERE id = ?`)
+          .bind(nowIso(), row.id).run()
+          .catch((e) => { try { console.warn('[last_login_at update]', e?.message || e); } catch {} });
+      }
+    } catch {}
+  }
   return {
     id: row.id,
     email: row.email,
@@ -434,10 +445,17 @@ const handleAuthLogin = async (req, env) => {
   ).bind(token, row.id, Date.now() + ttl * 1000, nowIso()).run();
   // v00.261 — 로그인 성공 시 last_login_at 갱신. 관리자 회원 탭 노출용.
   // 처방침에 '접속 기록(마지막 접속일시)' 수집 명시 (data.js 기본 텍스트).
-  try {
-    await env.DB.prepare(`UPDATE users SET last_login_at = ? WHERE id = ?`)
-      .bind(nowIso(), row.id).run();
-  } catch {}
+  // v00.262.006 — schema-v10 미적용 환경에서 매 로그인마다 UPDATE 실패 + catch 빈도 ↑.
+  // 모듈 캐시(__lastLoginColMissing) 로 skip.
+  if (!__lastLoginColMissing) {
+    try {
+      await env.DB.prepare(`UPDATE users SET last_login_at = ? WHERE id = ?`)
+        .bind(nowIso(), row.id).run();
+    } catch (e) {
+      __lastLoginColMissing = true;
+      try { console.warn('[handleAuthLogin] last_login_at column missing — disabling UPDATEs', e?.message || e); } catch {}
+    }
+  }
 
   return { token, ttl, user: { id: row.id, email: row.email, name: row.name, isAdmin, gradeId } };
 };
