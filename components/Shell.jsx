@@ -1,5 +1,31 @@
 // 공통 컴포넌트: Nav, Footer, Tweaks, Brand, AuthorGradeBadge, NotificationBell, ScrollToTop
 
+// === Body scroll-lock 카운터 (v00.259) ===========================
+// v00.258 까지: useModalGuard / SiteSearchOverlay / 모바일 메뉴 각자 `prev`
+// 스냅샷 후 cleanup 에서 복원. 두 lock 이 동시에 살아 있으면 두 번째가
+// prev='hidden' 을 잡고, 첫 번째 cleanup 이 prev='' 로 풀더라도 두 번째 cleanup
+// 이 다시 'hidden' 으로 덮어써 본문 스크롤이 영구 잠김 (사용자 보고: 책 상세
+// 페이지에서 입력 후 마우스 스크롤이 안 됨).
+// 카운터+초기 prev 1회만 캡처. 마지막 unlock 시점에 복원.
+window.__bgnjScrollLock = window.__bgnjScrollLock || { count: 0, prev: '' };
+const lockBodyScroll = () => {
+  const s = window.__bgnjScrollLock;
+  if (s.count === 0) {
+    s.prev = document.body.style.overflow || '';
+    document.body.style.overflow = 'hidden';
+  }
+  s.count += 1;
+};
+const unlockBodyScroll = () => {
+  const s = window.__bgnjScrollLock;
+  if (s.count <= 0) { s.count = 0; return; }
+  s.count -= 1;
+  if (s.count === 0) {
+    document.body.style.overflow = s.prev;
+    s.prev = '';
+  }
+};
+
 // === 모달 가드 훅 (v00.067) ====================================
 // ESC 키 + 외부 클릭(backdrop) + 브라우저 뒤로가기 시 모달을 닫기 전에 dirty 상태면 사용자에게 confirm.
 // 사용법:
@@ -43,8 +69,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       }
     };
     window.addEventListener('keydown', onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
     let pushed = false;
     try {
       window.history.pushState({ bgnjModal: true }, '');
@@ -54,7 +79,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
     if (pushed) window.addEventListener('popstate', onPop);
     return () => {
       window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
+      unlockBodyScroll();
       if (pushed) {
         window.removeEventListener('popstate', onPop);
         try { if (window.history.state?.bgnjModal) window.history.back(); } catch {}
@@ -419,9 +444,8 @@ const SiteSearchOverlay = ({ go, onClose }) => {
   React.useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
+    lockBodyScroll();
+    return () => { window.removeEventListener('keydown', onKey); unlockBodyScroll(); };
   }, [onClose]);
 
   // 디바운스 — 200ms.
@@ -597,12 +621,11 @@ const Nav = ({ route, go, user, onLogout }) => {
     const onResize = () => { if (window.innerWidth > 900) setMobileOpen(false); };
     window.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResize);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
-      document.body.style.overflow = prev;
+      unlockBodyScroll();
     };
   }, [mobileOpen]);
   // 놀자 메가메뉴 자식 (의식주: 먹고/자고/사고). "놀자" 자체 클릭 시 첫 항목으로 진입.
@@ -651,6 +674,9 @@ const Nav = ({ route, go, user, onLogout }) => {
           aria-controls="primary-nav-menu"
           onClick={() => setMobileOpen((v) => !v)}>
           <span className="nav-toggle-bars" aria-hidden="true"/>
+          {/* v00.259 — 사용자 보고 '상부 메뉴바 안 보이구요'. 모바일 햄버거가 너무 작아
+              메뉴 자체를 인지 못함. 라벨 텍스트 동반 노출. */}
+          <span className="nav-toggle-label" aria-hidden="true">{mobileOpen ? '닫기' : '메뉴'}</span>
         </button>
         <ul id="primary-nav-menu" className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>
           {items.map(it => {

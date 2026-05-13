@@ -1437,13 +1437,26 @@ main time, main .section-eyebrow {
 .nav-toggle {
   display: none;
   align-items: center; justify-content: center;
-  width: 44px; height: 44px;
-  background: transparent;
-  border: 1px solid var(--line);
+  gap: 8px;
+  /* v00.259 — 폭은 라벨 길이에 맞춰 가변(고정 44 → auto). 사용자가 메뉴를 인지하도록
+     primary-dim 보더 + 약한 황색 배경으로 강조. */
+  min-width: 44px; height: 44px;
+  padding: 0 12px;
+  background: rgba(245,213,72,0.06);
+  border: 1px solid var(--primary-dim);
+  border-radius: 4px;
   cursor: pointer;
   position: relative;
 }
-.nav-toggle:hover { border-color: var(--line-2); }
+.nav-toggle:hover { border-color: var(--primary); background: rgba(245,213,72,0.12); }
+.nav-toggle-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  line-height: 1;
+}
 .nav-toggle-bars,
 .nav-toggle-bars::before,
 .nav-toggle-bars::after {

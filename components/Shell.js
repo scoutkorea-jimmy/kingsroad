@@ -1,4 +1,25 @@
 (function(){
+window.__bgnjScrollLock = window.__bgnjScrollLock || { count: 0, prev: "" };
+const lockBodyScroll = () => {
+  const s = window.__bgnjScrollLock;
+  if (s.count === 0) {
+    s.prev = document.body.style.overflow || "";
+    document.body.style.overflow = "hidden";
+  }
+  s.count += 1;
+};
+const unlockBodyScroll = () => {
+  const s = window.__bgnjScrollLock;
+  if (s.count <= 0) {
+    s.count = 0;
+    return;
+  }
+  s.count -= 1;
+  if (s.count === 0) {
+    document.body.style.overflow = s.prev;
+    s.prev = "";
+  }
+};
 window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label, contentRef }) {
   const promptName = label || "\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9";
   const stateRef = React.useRef({ dirty, onClose, onSaveDraft, promptName });
@@ -40,8 +61,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       }
     };
     window.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
     let pushed = false;
     try {
       window.history.pushState({ bgnjModal: true }, "");
@@ -55,7 +75,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
     return () => {
       var _a;
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
+      unlockBodyScroll();
       if (pushed) {
         window.removeEventListener("popstate", onPop);
         try {
@@ -426,11 +446,10 @@ const SiteSearchOverlay = ({ go, onClose }) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      unlockBodyScroll();
     };
   }, [onClose]);
   const [debouncedQ, setDebouncedQ] = React.useState("");
@@ -670,12 +689,11 @@ const Nav = ({ route, go, user, onLogout }) => {
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("resize", onResize);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
     return () => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("resize", onResize);
-      document.body.style.overflow = prev;
+      unlockBodyScroll();
     };
   }, [mobileOpen]);
   const playChildren = [
@@ -719,7 +737,8 @@ const Nav = ({ route, go, user, onLogout }) => {
       "aria-controls": "primary-nav-menu",
       onClick: () => setMobileOpen((v) => !v)
     },
-    /* @__PURE__ */ React.createElement("span", { className: "nav-toggle-bars", "aria-hidden": "true" })
+    /* @__PURE__ */ React.createElement("span", { className: "nav-toggle-bars", "aria-hidden": "true" }),
+    /* @__PURE__ */ React.createElement("span", { className: "nav-toggle-label", "aria-hidden": "true" }, mobileOpen ? "\uB2EB\uAE30" : "\uBA54\uB274")
   ), /* @__PURE__ */ React.createElement("ul", { id: "primary-nav-menu", className: "nav-menu", role: "list", style: { listStyle: "none", margin: 0, padding: 0 } }, items.map((it) => {
     const hasMega = it.isMega === "play" || it.isMega === "community" && communityBoards.length > 0;
     const onClick = () => go(it.defaultRoute || it.key);
