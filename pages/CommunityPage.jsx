@@ -76,10 +76,14 @@ const ImageSlider = ({ images, autoplayMs = 4000 }) => {
     <figure aria-roledescription="carousel" aria-label="첨부 이미지 슬라이드"
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+      {/* v00.260 — 사용자 보고 '이미지 비율을 임의로 잘라버리면 어떻게'. 기존 16:9
+          고정 박스 → 원본 비율 유지 + 영역 초과 방지. translateX 카로셀에서 stacking
+          (active 만 in-flow) + opacity 페이드 전환으로 변경 — 활성 슬라이드의 자연
+          비율이 컨테이너 높이를 결정. */}
       <div className="img-slider">
-        <div className="img-slider-track" style={{transform: `translateX(-${idx * 100}%)`}}>
+        <div className="img-slider-track">
           {images.map((img, i) => (
-            <div key={i} className="img-slider-slide"
+            <div key={i} className={`img-slider-slide${i === idx ? ' is-active' : ''}`}
               role="group" aria-roledescription="slide" aria-label={`${i+1} / ${images.length}`}
               aria-hidden={i !== idx}>
               <img src={img.dataUrl || img.src} alt={img.alt || img.name || `이미지 ${i+1}`}/>

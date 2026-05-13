@@ -6192,12 +6192,13 @@ const AdminPage = ({ go }) => {
     const onResize = () => { if (window.innerWidth > 900) setSidebarOpen(false); };
     window.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResize);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    // v00.260 — Shell.jsx 의 글로벌 BGNJ_SCROLL_LOCK 카운터 사용.
+    // 이전 prev 스냅샷 패턴은 다른 모달과 겹치면 'hidden' 영구 잠김 회귀 발생.
+    window.BGNJ_SCROLL_LOCK?.lock?.();
     return () => {
       window.removeEventListener('keydown', onKey);
       window.removeEventListener('resize', onResize);
-      document.body.style.overflow = prev;
+      window.BGNJ_SCROLL_LOCK?.unlock?.();
     };
   }, [sidebarOpen]);
 

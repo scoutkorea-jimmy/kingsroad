@@ -7,24 +7,31 @@
 // 이 다시 'hidden' 으로 덮어써 본문 스크롤이 영구 잠김 (사용자 보고: 책 상세
 // 페이지에서 입력 후 마우스 스크롤이 안 됨).
 // 카운터+초기 prev 1회만 캡처. 마지막 unlock 시점에 복원.
+// v00.260 — 글로벌(window) 헬퍼로 승격. AuthAdminPage 등 외부 파일도 동일 카운터
+// 사용하도록 통일. 새 모달/오버레이는 항상 BGNJ_SCROLL_LOCK.lock/unlock 만 호출 — 직접
+// document.body.style.overflow 조작 금지(carry-over 'hidden' 회귀 차단).
 window.__bgnjScrollLock = window.__bgnjScrollLock || { count: 0, prev: '' };
-const lockBodyScroll = () => {
-  const s = window.__bgnjScrollLock;
-  if (s.count === 0) {
-    s.prev = document.body.style.overflow || '';
-    document.body.style.overflow = 'hidden';
-  }
-  s.count += 1;
+window.BGNJ_SCROLL_LOCK = window.BGNJ_SCROLL_LOCK || {
+  lock: () => {
+    const s = window.__bgnjScrollLock;
+    if (s.count === 0) {
+      s.prev = document.body.style.overflow || '';
+      document.body.style.overflow = 'hidden';
+    }
+    s.count += 1;
+  },
+  unlock: () => {
+    const s = window.__bgnjScrollLock;
+    if (s.count <= 0) { s.count = 0; return; }
+    s.count -= 1;
+    if (s.count === 0) {
+      document.body.style.overflow = s.prev;
+      s.prev = '';
+    }
+  },
 };
-const unlockBodyScroll = () => {
-  const s = window.__bgnjScrollLock;
-  if (s.count <= 0) { s.count = 0; return; }
-  s.count -= 1;
-  if (s.count === 0) {
-    document.body.style.overflow = s.prev;
-    s.prev = '';
-  }
-};
+const lockBodyScroll   = () => window.BGNJ_SCROLL_LOCK.lock();
+const unlockBodyScroll = () => window.BGNJ_SCROLL_LOCK.unlock();
 
 // === 모달 가드 훅 (v00.067) ====================================
 // ESC 키 + 외부 클릭(backdrop) + 브라우저 뒤로가기 시 모달을 닫기 전에 dirty 상태면 사용자에게 confirm.
@@ -421,15 +428,16 @@ const SiteSearchToggle = ({ go }) => {
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} aria-label="사이트 검색"
-        className="btn-ghost"
+        className="btn btn-small nav-action-icon"
         title="사이트 검색 (⌘K)"
-        style={{
-          width: 36, height: 36, padding: 0, display: 'inline-flex',
-          alignItems: 'center', justifyContent: 'center',
-          border: '1px solid var(--line-2)', borderRadius: 4,
-          background: 'transparent', cursor: 'pointer',
-        }}>
-        <span aria-hidden="true" style={{fontSize: 14, color: 'var(--ink-2)'}}>🔍</span>
+        style={{padding: '6px 10px', minWidth: 36}}>
+        {/* v00.260 — 알림벨과 동일한 1.6 stroke 라인 아이콘. ⌘K 단축키는 title 로만 안내. */}
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+          style={{display: 'block', verticalAlign: 'middle'}}>
+          <circle cx="11" cy="11" r="7"/>
+          <path d="m20 20-3.5-3.5"/>
+        </svg>
       </button>
       {open && <SiteSearchOverlay go={go} onClose={() => setOpen(false)}/>}
     </>
@@ -549,7 +557,12 @@ const SiteSearchOverlay = ({ go, onClose }) => {
         borderRadius:6,
       }}>
         <div style={{padding:'18px 20px', borderBottom:'1px solid var(--line)', display:'flex', alignItems:'center', gap:10}}>
-          <span aria-hidden="true" style={{fontSize:18, color:'var(--ink-3)'}}>🔍</span>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+            style={{display:'block', color:'var(--ink-3)', flexShrink:0}}>
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m20 20-3.5-3.5"/>
+          </svg>
           <input ref={inputRef} type="search" value={q} onChange={(e) => setQ(e.target.value)}
             placeholder="게시글·칼럼·강연·답사·책 통합 검색"
             aria-label="검색어 입력"
@@ -673,9 +686,21 @@ const Nav = ({ route, go, user, onLogout }) => {
           aria-expanded={mobileOpen}
           aria-controls="primary-nav-menu"
           onClick={() => setMobileOpen((v) => !v)}>
-          <span className="nav-toggle-bars" aria-hidden="true"/>
-          {/* v00.259 — 사용자 보고 '상부 메뉴바 안 보이구요'. 모바일 햄버거가 너무 작아
-              메뉴 자체를 인지 못함. 라벨 텍스트 동반 노출. */}
+          {/* v00.260 — 알림벨/검색과 동일한 1.6 stroke 라인 아이콘으로 통일.
+              열림 상태에서는 X 아이콘 노출. 라벨은 v00.259 사용자 인지 보강 유지. */}
+          {mobileOpen ? (
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+              style={{display:'block'}}>
+              <path d="M6 6l12 12M18 6l-12 12"/>
+            </svg>
+          ) : (
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
+              style={{display:'block'}}>
+              <path d="M4 7h16M4 12h16M4 17h16"/>
+            </svg>
+          )}
           <span className="nav-toggle-label" aria-hidden="true">{mobileOpen ? '닫기' : '메뉴'}</span>
         </button>
         <ul id="primary-nav-menu" className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>

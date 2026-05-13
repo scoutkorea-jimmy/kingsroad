@@ -5157,6 +5157,7 @@ const AdminPage = ({ go }) => {
     });
   }, []);
   React.useEffect(() => {
+    var _a2, _b2;
     if (!sidebarOpen) return;
     const onKey = (e) => {
       if (e.key === "Escape") setSidebarOpen(false);
@@ -5166,12 +5167,12 @@ const AdminPage = ({ go }) => {
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("resize", onResize);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    (_b2 = (_a2 = window.BGNJ_SCROLL_LOCK) == null ? void 0 : _a2.lock) == null ? void 0 : _b2.call(_a2);
     return () => {
+      var _a3, _b3;
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("resize", onResize);
-      document.body.style.overflow = prev;
+      (_b3 = (_a3 = window.BGNJ_SCROLL_LOCK) == null ? void 0 : _a3.unlock) == null ? void 0 : _b3.call(_a3);
     };
   }, [sidebarOpen]);
   return /* @__PURE__ */ React.createElement("div", { className: `admin-shell ${sidebarOpen ? "sidebar-open" : ""}`, style: { display: "grid", gridTemplateColumns: "260px 1fr", minHeight: "calc(100vh - 72px)", position: "relative" } }, /* @__PURE__ */ React.createElement(

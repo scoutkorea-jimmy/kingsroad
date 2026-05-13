@@ -74,11 +74,11 @@ const ImageSlider = ({ images, autoplayMs = 4e3 }) => {
       onFocus: () => setPaused(true),
       onBlur: () => setPaused(false)
     },
-    /* @__PURE__ */ React.createElement("div", { className: "img-slider" }, /* @__PURE__ */ React.createElement("div", { className: "img-slider-track", style: { transform: `translateX(-${idx * 100}%)` } }, images.map((img, i) => /* @__PURE__ */ React.createElement(
+    /* @__PURE__ */ React.createElement("div", { className: "img-slider" }, /* @__PURE__ */ React.createElement("div", { className: "img-slider-track" }, images.map((img, i) => /* @__PURE__ */ React.createElement(
       "div",
       {
         key: i,
-        className: "img-slider-slide",
+        className: `img-slider-slide${i === idx ? " is-active" : ""}`,
         role: "group",
         "aria-roledescription": "slide",
         "aria-label": `${i + 1} / ${images.length}`,

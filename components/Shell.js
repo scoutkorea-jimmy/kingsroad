@@ -1,25 +1,29 @@
 (function(){
 window.__bgnjScrollLock = window.__bgnjScrollLock || { count: 0, prev: "" };
-const lockBodyScroll = () => {
-  const s = window.__bgnjScrollLock;
-  if (s.count === 0) {
-    s.prev = document.body.style.overflow || "";
-    document.body.style.overflow = "hidden";
+window.BGNJ_SCROLL_LOCK = window.BGNJ_SCROLL_LOCK || {
+  lock: () => {
+    const s = window.__bgnjScrollLock;
+    if (s.count === 0) {
+      s.prev = document.body.style.overflow || "";
+      document.body.style.overflow = "hidden";
+    }
+    s.count += 1;
+  },
+  unlock: () => {
+    const s = window.__bgnjScrollLock;
+    if (s.count <= 0) {
+      s.count = 0;
+      return;
+    }
+    s.count -= 1;
+    if (s.count === 0) {
+      document.body.style.overflow = s.prev;
+      s.prev = "";
+    }
   }
-  s.count += 1;
 };
-const unlockBodyScroll = () => {
-  const s = window.__bgnjScrollLock;
-  if (s.count <= 0) {
-    s.count = 0;
-    return;
-  }
-  s.count -= 1;
-  if (s.count === 0) {
-    document.body.style.overflow = s.prev;
-    s.prev = "";
-  }
-};
+const lockBodyScroll = () => window.BGNJ_SCROLL_LOCK.lock();
+const unlockBodyScroll = () => window.BGNJ_SCROLL_LOCK.unlock();
 window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label, contentRef }) {
   const promptName = label || "\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9";
   const stateRef = React.useRef({ dirty, onClose, onSaveDraft, promptName });
@@ -416,22 +420,27 @@ const SiteSearchToggle = ({ go }) => {
       type: "button",
       onClick: () => setOpen(true),
       "aria-label": "\uC0AC\uC774\uD2B8 \uAC80\uC0C9",
-      className: "btn-ghost",
+      className: "btn btn-small nav-action-icon",
       title: "\uC0AC\uC774\uD2B8 \uAC80\uC0C9 (\u2318K)",
-      style: {
-        width: 36,
-        height: 36,
-        padding: 0,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        border: "1px solid var(--line-2)",
-        borderRadius: 4,
-        background: "transparent",
-        cursor: "pointer"
-      }
+      style: { padding: "6px 10px", minWidth: 36 }
     },
-    /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 14, color: "var(--ink-2)" } }, "\u{1F50D}")
+    /* @__PURE__ */ React.createElement(
+      "svg",
+      {
+        "aria-hidden": "true",
+        width: "16",
+        height: "16",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "1.6",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        style: { display: "block", verticalAlign: "middle" }
+      },
+      /* @__PURE__ */ React.createElement("circle", { cx: "11", cy: "11", r: "7" }),
+      /* @__PURE__ */ React.createElement("path", { d: "m20 20-3.5-3.5" })
+    )
   ), open && /* @__PURE__ */ React.createElement(SiteSearchOverlay, { go, onClose: () => setOpen(false) }));
 };
 const SiteSearchOverlay = ({ go, onClose }) => {
@@ -581,7 +590,23 @@ const SiteSearchOverlay = ({ go, onClose }) => {
       background: "var(--bg)",
       boxShadow: "0 16px 40px rgba(0,0,0,0.25)",
       borderRadius: 6
-    } }, /* @__PURE__ */ React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 18, color: "var(--ink-3)" } }, "\u{1F50D}"), /* @__PURE__ */ React.createElement(
+    } }, /* @__PURE__ */ React.createElement("div", { style: { padding: "18px 20px", borderBottom: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement(
+      "svg",
+      {
+        "aria-hidden": "true",
+        width: "18",
+        height: "18",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "1.6",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        style: { display: "block", color: "var(--ink-3)", flexShrink: 0 }
+      },
+      /* @__PURE__ */ React.createElement("circle", { cx: "11", cy: "11", r: "7" }),
+      /* @__PURE__ */ React.createElement("path", { d: "m20 20-3.5-3.5" })
+    ), /* @__PURE__ */ React.createElement(
       "input",
       {
         ref: inputRef,
@@ -737,7 +762,37 @@ const Nav = ({ route, go, user, onLogout }) => {
       "aria-controls": "primary-nav-menu",
       onClick: () => setMobileOpen((v) => !v)
     },
-    /* @__PURE__ */ React.createElement("span", { className: "nav-toggle-bars", "aria-hidden": "true" }),
+    mobileOpen ? /* @__PURE__ */ React.createElement(
+      "svg",
+      {
+        "aria-hidden": "true",
+        width: "18",
+        height: "18",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "1.6",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        style: { display: "block" }
+      },
+      /* @__PURE__ */ React.createElement("path", { d: "M6 6l12 12M18 6l-12 12" })
+    ) : /* @__PURE__ */ React.createElement(
+      "svg",
+      {
+        "aria-hidden": "true",
+        width: "18",
+        height: "18",
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: "1.6",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        style: { display: "block" }
+      },
+      /* @__PURE__ */ React.createElement("path", { d: "M4 7h16M4 12h16M4 17h16" })
+    ),
     /* @__PURE__ */ React.createElement("span", { className: "nav-toggle-label", "aria-hidden": "true" }, mobileOpen ? "\uB2EB\uAE30" : "\uBA54\uB274")
   ), /* @__PURE__ */ React.createElement("ul", { id: "primary-nav-menu", className: "nav-menu", role: "list", style: { listStyle: "none", margin: 0, padding: 0 } }, items.map((it) => {
     const hasMega = it.isMega === "play" || it.isMega === "community" && communityBoards.length > 0;

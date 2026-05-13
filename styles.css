@@ -733,32 +733,47 @@ main time, main .section-eyebrow {
   padding: 4px 0;
 }
 
-/* === Image slider (community post attachments) ========================== */
+/* === Image slider (community post attachments) ==========================
+   v00.260 — 사용자 보고 '이미지 비율을 임의로 잘라버리면 어떻게'. 16:9 고정 박스를
+   버리고 활성 슬라이드의 자연 비율을 컨테이너 높이로 사용. 모든 슬라이드를 같은
+   위치에 절대 배치하되, 활성만 in-flow 로 두어 컨테이너 height 를 결정. 비활성
+   슬라이드는 opacity 0 으로 페이드.
+   max-height: 80vh 로 세로형 거대 이미지 영역 초과만 방지(원본 비율은 유지).
+*/
 .img-slider {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  max-height: 480px;
+  max-height: 80vh;
   background: var(--bg-3);
   border: 1px solid var(--line-2);
   overflow: hidden;
 }
 .img-slider-track {
-  display: flex;
-  height: 100%;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  width: 100%;
 }
 .img-slider-slide {
-  flex: 0 0 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
+  width: 100%;
   background: var(--bg-3);
+  transition: opacity 0.4s ease;
+}
+.img-slider-slide:not(.is-active) {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.img-slider-slide.is-active {
+  position: relative;
+  opacity: 1;
 }
 .img-slider-slide img {
-  max-width: 100%;
-  max-height: 100%;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
   object-fit: contain;
+  margin: 0 auto;
 }
 .img-slider-dots {
   position: absolute;
@@ -1434,21 +1449,30 @@ main time, main .section-eyebrow {
 .lecture-strip::-webkit-scrollbar-track { background: transparent; }
 
 /* === Hamburger toggle (mobile only) ============================ */
+/* v00.260 — nav-toggle / nav-action-icon 통합 스타일.
+   알림벨(.btn.btn-small) 과 동일한 시각 무게로 라인 아이콘 통일. 햄버거는 라벨 동반
+   (v00.259 사용자 보고 '메뉴바 안 보임' 인지 보강). 검색 아이콘은 라벨 없이 컴팩트. */
 .nav-toggle {
   display: none;
   align-items: center; justify-content: center;
   gap: 8px;
-  /* v00.259 — 폭은 라벨 길이에 맞춰 가변(고정 44 → auto). 사용자가 메뉴를 인지하도록
-     primary-dim 보더 + 약한 황색 배경으로 강조. */
-  min-width: 44px; height: 44px;
+  height: 36px;
   padding: 0 12px;
-  background: rgba(245,213,72,0.06);
-  border: 1px solid var(--primary-dim);
+  background: transparent;
+  border: 1px solid var(--line-2);
   border-radius: 4px;
   cursor: pointer;
-  position: relative;
+  color: var(--ink);
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
-.nav-toggle:hover { border-color: var(--primary); background: rgba(245,213,72,0.12); }
+.nav-toggle:hover {
+  border-color: var(--primary-dim);
+  background: rgba(245,213,72,0.06);
+}
+.nav.mobile-open .nav-toggle {
+  border-color: var(--primary);
+  background: rgba(245,213,72,0.10);
+}
 .nav-toggle-label {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -1457,21 +1481,8 @@ main time, main .section-eyebrow {
   text-transform: uppercase;
   line-height: 1;
 }
-.nav-toggle-bars,
-.nav-toggle-bars::before,
-.nav-toggle-bars::after {
-  display: block;
-  width: 20px; height: 2px;
-  background: var(--ink);
-  transition: transform 0.2s ease, opacity 0.15s ease, background 0.15s ease;
-  border-radius: 1px;
-}
-.nav-toggle-bars { position: relative; }
-.nav-toggle-bars::before { content: ''; position: absolute; top: -7px; left: 0; }
-.nav-toggle-bars::after  { content: ''; position: absolute; top:  7px; left: 0; }
-.nav.mobile-open .nav-toggle-bars { background: transparent; }
-.nav.mobile-open .nav-toggle-bars::before { transform: rotate(45deg);  top: 0; }
-.nav.mobile-open .nav-toggle-bars::after  { transform: rotate(-45deg); top: 0; }
+.nav-action-icon { color: var(--ink-2); }
+.nav-action-icon:hover { color: var(--ink); border-color: var(--primary-dim); }
 
 /* mobile-only nav items hidden on desktop */
 .nav-mobile-only,
@@ -1726,7 +1737,9 @@ main time, main .section-eyebrow {
   .post-body { font-size: 16px; line-height: 1.85; }
 
   /* 모달/슬라이더 */
-  .img-slider { aspect-ratio: 4 / 3; }
+  /* v00.260 — 모바일도 자연 비율 유지. 거대 세로형은 70vh 까지만. */
+  .img-slider { max-height: 70vh; }
+  .img-slider-slide img { max-height: 70vh; }
 }
 
 /* ---- Tweaks panel ---- */
