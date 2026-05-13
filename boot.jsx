@@ -721,7 +721,11 @@ const App = () => {
     setAdminLoadError(null);
     _loadAdminScripts()
       .then(() => { if (!cancelled) setAdminLoaded(true); })
-      .catch((err) => { if (!cancelled) setAdminLoadError(err); });
+      .catch((err) => {
+        // v00.262.004 — A4 silent 였던 catch. PAGE_NOT_LOADED 가 떠도 콘솔에 단서 없었음.
+        try { console.error('[adminBundle] load failed', err); } catch {}
+        if (!cancelled) setAdminLoadError(err);
+      });
     return () => { cancelled = true; };
   }, [route, adminLoaded, adminLoadAttempt]);
 

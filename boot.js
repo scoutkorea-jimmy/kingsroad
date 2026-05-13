@@ -779,6 +779,10 @@ const App = () => {
     _loadAdminScripts().then(() => {
       if (!cancelled) setAdminLoaded(true);
     }).catch((err) => {
+      try {
+        console.error("[adminBundle] load failed", err);
+      } catch (e) {
+      }
       if (!cancelled) setAdminLoadError(err);
     });
     return () => {

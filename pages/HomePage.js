@@ -416,7 +416,7 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
       {
         src: b.coverDataUri,
         alt: `${b.title} \uD45C\uC9C0`,
-        style: { width: "100%", height: "100%", objectFit: "cover", display: "block" }
+        style: { width: "100%", height: "100%", objectFit: "contain", display: "block" }
       }
     ) : /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "0 24px" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "var(--font-serif)", fontSize: 28, color: "var(--ink)", marginBottom: 10, fontWeight: 600 } }, b.title), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, color: "var(--ink-3)", letterSpacing: "0.2em" } }, b.author || "\uBC45\uAE30\uB178\uC790", " ", text.bookAuthorSuffix))));
   };

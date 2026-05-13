@@ -207,7 +207,7 @@ const BookPage = ({ go, cart, setCart, user }) => {
               {book.coverDataUri ? (
                 <div style={{aspectRatio:'3/4', border:'1px solid var(--primary-dim)', overflow:'hidden', background:'var(--bg-2)'}}>
                   <img src={book.coverDataUri} alt={`${book.title} 표지`}
-                    style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                    style={{width:'100%', height:'100%', objectFit:'contain', display:'block'}}/>
                 </div>
               ) : (
                 <div className="placeholder" style={{
@@ -245,12 +245,12 @@ const BookPage = ({ go, cart, setCart, user }) => {
               <div style={{display:'flex', gap:12, justifyContent:'center', marginTop:32}}>
                 {book.coverDataUri && (
                   <div style={{width:60, aspectRatio:'3/4', border:'1px solid var(--line)', overflow:'hidden'}}>
-                    <img src={book.coverDataUri} alt="앞표지" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                    <img src={book.coverDataUri} alt="앞표지" style={{width:'100%', height:'100%', objectFit:'contain'}}/>
                   </div>
                 )}
                 {book.backCoverDataUri && (
                   <div style={{width:60, aspectRatio:'3/4', border:'1px solid var(--line)', overflow:'hidden'}}>
-                    <img src={book.backCoverDataUri} alt="뒷표지" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
+                    <img src={book.backCoverDataUri} alt="뒷표지" style={{width:'100%', height:'100%', objectFit:'contain'}}/>
                   </div>
                 )}
                 {book.pdfPreviewDataUri && (
@@ -724,7 +724,7 @@ const CheckoutPage = ({ go, cart, user }) => {
               <div style={{display:'flex', gap:16, marginBottom:24, paddingBottom:24, borderBottom:'1px solid var(--line)'}}>
                 {book.coverDataUri ? (
                   <div style={{width:72, aspectRatio:'3/4', flexShrink:0, border:'1px solid var(--line-2)', overflow:'hidden'}}>
-                    <img src={book.coverDataUri} alt={`${book.title} 표지`} style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+                    <img src={book.coverDataUri} alt={`${book.title} 표지`} style={{width:'100%', height:'100%', objectFit:'contain', display:'block'}}/>
                   </div>
                 ) : (
                   <div className="placeholder" style={{width:72, aspectRatio:'3/4', fontSize:8, flexShrink:0}}>{(book.title || '책').slice(0,1)}</div>

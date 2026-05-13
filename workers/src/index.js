@@ -391,9 +391,18 @@ const handleAuthLogin = async (req, env) => {
   const ip = clientIp(req);
   // v00.113 — brute-force 방어. throttle 시 즉시 429.
   await checkRateLimit(env, email, ip);
-  const row = await env.DB.prepare(
-    "SELECT id, email, name, password_hash, password_salt, is_admin, grade_id, suspended, suspended_reason FROM users WHERE email = ?"
-  ).bind(email).first();
+  // v00.262.004 — F2 suspended 컬럼 없는 v1 스키마 환경에서도 로그인 가능하도록 폴백.
+  let row;
+  try {
+    row = await env.DB.prepare(
+      "SELECT id, email, name, password_hash, password_salt, is_admin, grade_id, suspended, suspended_reason FROM users WHERE email = ?"
+    ).bind(email).first();
+  } catch (e) {
+    try { console.warn('[handleAuthLogin] suspended-cols fallback', e?.message || e); } catch {}
+    row = await env.DB.prepare(
+      "SELECT id, email, name, password_hash, password_salt, is_admin, grade_id FROM users WHERE email = ?"
+    ).bind(email).first();
+  }
   if (!row) {
     await recordAttempt(env, email, ip, false);
     throw new HttpError(401, "이메일 또는 비밀번호가 올바르지 않습니다.");

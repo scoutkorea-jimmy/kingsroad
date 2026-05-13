@@ -461,7 +461,8 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
         }}>
           {b.coverDataUri ? (
             <img src={b.coverDataUri} alt={`${b.title} 표지`}
-              style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
+              /* v00.262.004 — G2 cover→contain. 정사각/와이드 표지가 3:4 box 에서 잘리던 사고. */
+              style={{width:'100%', height:'100%', objectFit:'contain', display:'block'}}/>
           ) : (
             <div style={{textAlign:'center', padding:'0 24px'}}>
               <div style={{fontFamily:'var(--font-serif)', fontSize:28, color:'var(--ink)', marginBottom:10, fontWeight:600}}>{b.title}</div>
