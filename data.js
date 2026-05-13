@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.260.000",
+  version: "00.261.000",
   build: "2026.05.13",
   channel: "preview",
 };
@@ -426,6 +426,19 @@ window.BGNJ_FMT = {
     const m = this._kstParts(iso, { year: 'numeric', month: '2-digit', day: '2-digit' });
     if (!m) return '';
     return `${m.year}-${m.month}-${m.day}`;
+  },
+  // v00.261 — '방금 전 / N분 전 / N시간 전 / N일 전 / YYYY-MM-DD' 상대 시간.
+  // 관리자 회원 탭 '마지막 접속' 등. 30일 초과 시 절대 날짜로 폴백 — 휴면 식별 가독성.
+  kstRelative(iso) {
+    if (!iso) return '';
+    const t = Date.parse(iso);
+    if (!isFinite(t)) return '';
+    const diff = Date.now() - t;
+    if (diff < 60_000)             return '방금 전';
+    if (diff < 3_600_000)          return `${Math.floor(diff/60_000)}분 전`;
+    if (diff < 86_400_000)         return `${Math.floor(diff/3_600_000)}시간 전`;
+    if (diff < 30 * 86_400_000)    return `${Math.floor(diff/86_400_000)}일 전`;
+    return this.kstDate(iso);
   },
   // 'M.DD (요일) HH:MM' — 사용자 facing 짧은 형식
   kstFriendly(iso) {
@@ -1056,7 +1069,22 @@ window.BGNJ_STORES = {
   // 실제 데이터는 BGNJ_BOOK_ORDERS._orders / BGNJ_BOOKS.* / BGNJ_TOURS._reviews / BGNJ_LECTURES._reviews 에서 D1 fetch.
   // 위 4 STORES 슬롯은 어디서도 읽기/쓰기 안 됨 (purgeLegacyStorage 가 키도 제거).
   legalDocs: _asRecord(_lsGet('bgnj_legal_docs', {
-    privacy: { title: "개인정보 처리방침", body: "<p>뱅기노자 사이트는 회원 가입과 운영을 위해 최소한의 개인정보를 수집·이용합니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
+    // v00.261 — '접속 기록' 항목 추가 (GDPR Art 13 / 한국 PIPA 투명성 의무).
+    // last_login_at 컬럼을 신설하면서 수집 사실을 처방침에 명시. 본 default 는 fallback —
+    // 실제 D1 legal_docs.privacy 가 우선. 관리자 페이지에서 동일 내용으로 갱신 필요.
+    privacy: {
+      title: "개인정보 처리방침",
+      body:
+        "<p>뱅기노자 사이트는 회원 가입과 운영을 위해 최소한의 개인정보를 수집·이용합니다.</p>"
+        + "<h4>수집 항목</h4>"
+        + "<ul>"
+        + "<li>필수: 이메일, 이름, 비밀번호(단방향 해시 저장)</li>"
+        + "<li>자동 수집(접속 기록): <strong>마지막 접속 일시</strong> — 휴면 계정 식별, 보안 모니터링, 서비스 운영 목적</li>"
+        + "</ul>"
+        + "<p>접속 기록은 IP/단말 정보를 저장하지 않으며, 단일 timestamp 만 덮어쓰기 방식으로 보관합니다. 계정 탈퇴 시 모든 개인정보와 함께 즉시 파기됩니다.</p>"
+        + "<p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>",
+      updatedAt: null,
+    },
     terms:   { title: "이용약관",          body: "<p>뱅기노자 사이트의 이용약관입니다.</p><p>이 문서는 관리자 페이지에서 직접 수정할 수 있습니다.</p>", updatedAt: null },
   })),
   // v00.186 — lectureReviews 도 dead. 위 주석 참고.
@@ -1263,6 +1291,8 @@ window.BGNJ_AUTH = {
         suspended: !!u.suspended,
         suspendedReason: u.suspended_reason || '',
         joinedAt: u.created_at,
+        // v00.261 — 마지막 접속일 (관리자 회원 탭). schema-v10 미적용 시 null.
+        lastLoginAt: u.last_login_at || null,
         profile: u.profile_json ? (typeof u.profile_json === 'string' ? JSON.parse(u.profile_json) : u.profile_json) : null,
         consents: u.consents_json ? (typeof u.consents_json === 'string' ? JSON.parse(u.consents_json) : u.consents_json) : null,
       }));

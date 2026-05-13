@@ -168,7 +168,7 @@ const getCurrentUser = async (req, env) => {
   const token = readSessionToken(req);
   if (!token) return null;
   const row = await env.DB.prepare(
-    `SELECT u.id, u.email, u.name, u.is_admin, u.grade_id, u.profile_json, u.consents_json, u.created_at, s.expires_at
+    `SELECT u.id, u.email, u.name, u.is_admin, u.grade_id, u.profile_json, u.consents_json, u.created_at, u.last_login_at, s.expires_at
      FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.token = ?`
   ).bind(token).first();
@@ -187,6 +187,16 @@ const getCurrentUser = async (req, env) => {
       gradeId = 'admin';
     }
   }
+  // v00.261 — last_login_at 24h throttle 갱신. 30일 세션 동안 로그아웃 없이 사용
+  // 하는 사용자도 '마지막 접속'이 stale 하지 않도록. 24h 이내면 skip(D1 write 절약).
+  try {
+    const cutoffMs = 24 * 60 * 60 * 1000;
+    const lastMs = row.last_login_at ? Date.parse(row.last_login_at) : 0;
+    if (!lastMs || (Date.now() - lastMs) > cutoffMs) {
+      await env.DB.prepare(`UPDATE users SET last_login_at = ? WHERE id = ?`)
+        .bind(nowIso(), row.id).run();
+    }
+  } catch {}
   return {
     id: row.id,
     email: row.email,
@@ -196,6 +206,7 @@ const getCurrentUser = async (req, env) => {
     profile: row.profile_json ? JSON.parse(row.profile_json) : null,
     consents: row.consents_json ? JSON.parse(row.consents_json) : null,
     createdAt: row.created_at,
+    lastLoginAt: row.last_login_at,
   };
 };
 
@@ -396,6 +407,12 @@ const handleAuthLogin = async (req, env) => {
   await env.DB.prepare(
     `INSERT INTO sessions (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)`
   ).bind(token, row.id, Date.now() + ttl * 1000, nowIso()).run();
+  // v00.261 — 로그인 성공 시 last_login_at 갱신. 관리자 회원 탭 노출용.
+  // 처방침에 '접속 기록(마지막 접속일시)' 수집 명시 (data.js 기본 텍스트).
+  try {
+    await env.DB.prepare(`UPDATE users SET last_login_at = ? WHERE id = ?`)
+      .bind(nowIso(), row.id).run();
+  } catch {}
 
   return { token, ttl, user: { id: row.id, email: row.email, name: row.name, isAdmin, gradeId } };
 };
@@ -917,14 +934,19 @@ const handleAdminUsersList = async (req, env) => {
   const args = [];
   let where = "1=1";
   if (q) { where += " AND (email LIKE ? OR name LIKE ?)"; args.push(`%${q}%`, `%${q}%`); }
+  // v00.261 — last_login_at 포함. schema-v10 미적용 환경에선 catch 로 폴백 (admin
+   // 회원 탭에서 컬럼이 비어 보일 뿐 에러 X).
   const { results } = await env.DB.prepare(
-    `SELECT id, email, name, is_admin, grade_id, suspended, suspended_reason, profile_json, consents_json, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT 500`
+    `SELECT id, email, name, is_admin, grade_id, suspended, suspended_reason, profile_json, consents_json, created_at, last_login_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT 500`
   ).bind(...args).all().catch(async () => {
-    // suspended 컬럼이 없을 수도(v1 스키마) — 조용히 폴백
-    const r = await env.DB.prepare(
-      `SELECT id, email, name, is_admin, grade_id, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT 500`
-    ).bind(...args).all();
-    return r;
+    return await env.DB.prepare(
+      `SELECT id, email, name, is_admin, grade_id, suspended, suspended_reason, profile_json, consents_json, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT 500`
+    ).bind(...args).all().catch(async () => {
+      // suspended 컬럼이 없을 수도(v1 스키마) — 조용히 폴백
+      return await env.DB.prepare(
+        `SELECT id, email, name, is_admin, grade_id, created_at FROM users WHERE ${where} ORDER BY created_at DESC LIMIT 500`
+      ).bind(...args).all();
+    });
   });
   return { users: results };
 };

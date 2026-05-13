@@ -5265,6 +5265,8 @@ const MemberAdminPanel = ({ go }) => {
             <th scope="col" style={{padding:12, textAlign:'left'}}>이메일</th>
             <th scope="col" style={{padding:12, textAlign:'left'}}>등급</th>
             <th scope="col" style={{padding:12, textAlign:'left'}}>가입일</th>
+            {/* v00.261 — 마지막 접속(로그인 + 세션 갱신 24h throttle). 처방침 고지 완료. */}
+            <th scope="col" style={{padding:12, textAlign:'left'}}>마지막 접속</th>
             <th scope="col" style={{padding:12, textAlign:'right'}}>활동</th>
             <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
           </tr>
@@ -5295,6 +5297,12 @@ const MemberAdminPanel = ({ go }) => {
                   )}
                 </td>
                 <td className="mono dim-2" style={{padding:12, fontSize:11}}>{u.joinedAt ? window.BGNJ_FMT.kstDate(u.joinedAt) : '-'}</td>
+                {/* v00.261 — 마지막 접속: 30일 이내 상대시간 ('3일 전'), 그 외 절대 날짜.
+                    null(스키마 미적용 또는 v00.261 이전 가입자 미접속) 시 '—'. */}
+                <td className="mono dim-2" style={{padding:12, fontSize:11}}
+                  title={u.lastLoginAt ? window.BGNJ_FMT.kstDateTime(u.lastLoginAt) : '기록 없음'}>
+                  {u.lastLoginAt ? window.BGNJ_FMT.kstRelative(u.lastLoginAt) : <span className="dim-2">—</span>}
+                </td>
                 <td className="mono dim-2" style={{padding:12, fontSize:10, textAlign:'right'}}>{activitySummary}</td>
                 <td style={{padding:12, textAlign:'right'}}>
                   <button type="button" className="btn btn-small" onClick={() => setSelectedId(u.id)}>상세</button>

@@ -12,9 +12,13 @@ CREATE TABLE IF NOT EXISTS users (
   grade_id TEXT NOT NULL DEFAULT 'member',
   profile_json TEXT,
   consents_json TEXT,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- v00.261 — 마지막 접속 timestamp (관리자 회원 탭 노출 + 휴면 계정 식별).
+  -- 갱신 시점: 로그인 성공 + /api/auth/me (24h throttle). IP/UA 미저장.
+  last_login_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login_at);
 
 CREATE TABLE IF NOT EXISTS sessions (
   token TEXT PRIMARY KEY,
