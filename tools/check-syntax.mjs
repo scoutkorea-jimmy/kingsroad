@@ -125,6 +125,25 @@ const RULES = [
     pattern: /\(\s*\w+\s*\|\|\s*\[\]\s*\)\.map\b/,
     msg: "(data || []).map() 금지 — 비-배열 응답이 캐시를 빈 배열로 덮어쓰는 데이터-사라짐 안티패턴 (v00.231 사고). Array.isArray(data) 가드 후 data.map(...) 사용",
   },
+  {
+    // v00.262 audit — 100vh 단독 사용 금지. iOS Safari URL bar 접힘 시 viewport jump.
+    // 100dvh fallback 페어와 같이 사용해야 함. styles.css 의 4개 위치는 100vh + 100dvh
+    // pair 로 갱신됨 (v00.262.003).
+    name: "viewport_100vh",
+    // AdminDesignHub.jsx 는 디자인 가이드 로그 문자열 — false positive.
+    allow: new Set(["pages/admin/AdminDesignHub.jsx"]),
+    pattern: /:\s*100vh\b/,
+    msg: "100vh 단독 사용 금지 — 다음 줄에 100dvh fallback pair 필수 (iOS Safari URL bar viewport jump). 같은 declaration 의 위/아래에 100dvh 가 있으면 false positive — 그땐 마커로 우회",
+  },
+  {
+    // v00.262 audit — scoll lock 직접 조작 금지. window.BGNJ_SCROLL_LOCK 헬퍼 강제.
+    // v00.258 SiteSearchOverlay 가 prev-snapshot 패턴으로 회귀 일으킨 사고의 영구 차단.
+    name: "scroll_lock_raw",
+    // Shell.jsx 는 BGNJ_SCROLL_LOCK 헬퍼의 정의 위치 — 헬퍼 자체 구현은 raw 조작 필요.
+    allow: new Set(["components/Shell.jsx"]),
+    pattern: /document\.body\.style\.overflow\s*=/,
+    msg: "document.body.style.overflow 직접 조작 금지 — window.BGNJ_SCROLL_LOCK.lock()/unlock() 사용 (v00.258→260 회귀)",
+  },
 ];
 
 // 추가 정보성 검사 — 위반이 있어도 차단은 안 하고 카운트만 보고.
@@ -144,6 +163,20 @@ const INFO_RULES = [
     // `== null` / `!= null` 은 idiom — lookahead 로 제외.
     pattern: /[^=!<>]==(?!\s*null\b)[^=]|[^=!]!=(?!\s*null\b)[^=]/,
     msg: "느슨한 비교(==/!=) — === / !== 권장",
+  },
+  {
+    // v00.262 audit — silent catch 218건 추적. 정책: 최소 console.warn 으로 가시화.
+    // catch (e?) {} 빈 블록만 매치. catch(e){console.warn(...)} 등은 제외.
+    name: "silent_catch",
+    pattern: /\}\s*catch\s*(?:\([^)]*\))?\s*\{\s*\}/,
+    msg: "silent catch {} — 최소 console.warn 으로 가시화 (운영 진단). 의도 silent 면 // bgnj-allow-silent 같은 줄 동반",
+  },
+  {
+    // v00.262 audit — aspectRatio + objectFit:'cover' 조합은 이미지 강제 자름 (v00.260 사고).
+    // 표지/배너 등은 contain 권장.
+    name: "aspect_cover_clip",
+    pattern: /aspectRatio[\s\S]{0,80}objectFit\s*:\s*['"]cover['"]/,
+    msg: "aspectRatio + objectFit:cover 조합은 이미지 자름 — contain 검토 (v00.260 ImageSlider 사고)",
   },
 ];
 
@@ -175,7 +208,15 @@ for (const f of targets) {
       }
     }
     // 정보성 — 차단 안 함, 카운트만.
+    // v00.262.005 — 같은 줄 inline 마커도 지원. silent_catch 의 경우 `// bgnj-allow-silent`,
+    // 일반은 `// bgnj-lint-ignore-next-line <rule>`. 의도 silent (try{sessionStorage..}catch{})
+    // 같은 hot path 는 마커로 무시.
     for (const rule of INFO_RULES) {
+      // ignore marker — same line or previous line.
+      const inlineIgnore = /\/\/.*\bbgnj-allow-silent\b/.test(line)
+        || new RegExp(`bgnj-lint-ignore-next-line\\s+${rule.name.replace(/\./g, '\\.')}`).test(line)
+        || (i > 0 && new RegExp(`bgnj-lint-ignore-next-line\\s+${rule.name.replace(/\./g, '\\.')}`).test(lines[i - 1]));
+      if (inlineIgnore) continue;
       if (rule.pattern.test(stripped)) {
         infos.push({ file: rel, line: i + 1, rule: rule.name, msg: rule.msg });
       }
