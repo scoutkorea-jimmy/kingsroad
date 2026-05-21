@@ -4,6 +4,8 @@ const LecturesPage = ({ go, user }) => {
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   // v00.129 — 지난/예정 분리 탭. 사용자 요청 '강연탭에서는 지난 강연과 진행 예정 강연 탭으로 나눠줘'.
   const [bucket, setBucket] = React.useState('upcoming'); // 'upcoming' | 'past'
+  // v00.263.000 — 지난 강연은 게시판 행 목록 모드. 행 클릭 시 pastDetailId set → 상세 모드.
+  const [pastDetailId, setPastDetailId] = React.useState(null);
   // v00.228 — admin 전용 프론트 quick-add (사용자 요청: 관리자는 프론트에서도 강연 추가 가능).
   const [addOpen, setAddOpen] = React.useState(false);
   // v00.234 — admin 전용 프론트 edit (선택된 강연 객체가 들어가면 모달 노출).
@@ -41,6 +43,7 @@ const LecturesPage = ({ go, user }) => {
   const lectures = bucket === 'past' ? lecturesPast : lecturesUpcoming;
 
   // 외부 진입 — sessionStorage / 해시
+  // v00.263.000 — past 로 진입하면 게시판 상세 모드로 즉시 표시.
   React.useEffect(() => {
     let pending = null;
     try { pending = sessionStorage.getItem('bgnj_pending_lecture_id'); } catch {}
@@ -50,12 +53,12 @@ const LecturesPage = ({ go, user }) => {
       const inUpcoming = lecturesUpcoming.findIndex((l) => String(l.id) === String(pending));
       if (inUpcoming >= 0) { setBucket('upcoming'); setSelectedIdx(inUpcoming); return; }
       const inPast = lecturesPast.findIndex((l) => String(l.id) === String(pending));
-      if (inPast >= 0) { setBucket('past'); setSelectedIdx(inPast); }
+      if (inPast >= 0) { setBucket('past'); setSelectedIdx(inPast); setPastDetailId(String(pending)); }
     }
   }, []);
 
-  // 버킷 전환 시 인덱스 리셋.
-  React.useEffect(() => { setSelectedIdx(0); }, [bucket]);
+  // 버킷 전환 시 인덱스 리셋 + past 상세 해제.
+  React.useEffect(() => { setSelectedIdx(0); setPastDetailId(null); }, [bucket]);
 
   // v00.129 — 강연이 하나도 없는 경우(예정+지난 0) 만 빈 화면. 한 쪽이라도 있으면 탭은 보여줌.
   if (allLectures.length === 0) {
@@ -152,8 +155,28 @@ const LecturesPage = ({ go, user }) => {
           </div>
         )}
 
-        {/* Tabs — 투어 페이지와 동일한 스타일. 강연 목록이 있을 때만. */}
-        {lectures.length > 0 && (<>
+        {/* v00.263.000 — past 버킷 + 상세 미선택 = 게시판 행 목록 모드. */}
+        {lectures.length > 0 && bucket === 'past' && !pastDetailId && window.PastBoardList && (
+          <window.PastBoardList items={lectures} type="lecture"
+            onSelect={(id) => {
+              const idx = lectures.findIndex((l) => String(l.id) === String(id));
+              if (idx >= 0) setSelectedIdx(idx);
+              setPastDetailId(String(id));
+              try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+            }}/>
+        )}
+
+        {/* Tabs — 투어 페이지와 동일한 스타일. 강연 목록이 있을 때만.
+            v00.263.000 — past 버킷은 상세 모드일 때만 노출 (목록 모드는 위 PastBoardList 가 처리). */}
+        {lectures.length > 0 && (bucket !== 'past' || pastDetailId) && (<>
+        {bucket === 'past' && pastDetailId && (
+          <div style={{marginBottom:16}}>
+            <button type="button" className="btn btn-small"
+              onClick={() => setPastDetailId(null)}>
+              ← 지난 강연 목록으로
+            </button>
+          </div>
+        )}
         <div style={{display:'flex', gap:0, borderBottom:'1px solid var(--line-2)', marginBottom:40, overflowX:'auto'}}>
           {lectures.map((l, i) => (
             <button key={l.id}

@@ -80,6 +80,9 @@ const TourPage = ({ go, user }) => {
   // v00.262.009 — 사용자 보고 "투어 클릭하면 과거가 먼저 보임". LecturesPage v00.129 와 동일 패턴 이식:
   // upcoming / past 버킷 분리 + 기본 'upcoming' + upcoming startsAt ASC, past startsAt DESC.
   const [bucket, setBucket] = React.useState('upcoming');
+  // v00.263.000 — 지난 답사는 게시판 행 목록 모드 기본. 행 클릭 시 pastDetailId 가 set 되어 상세 모드.
+  // null = 목록 / id = 상세. 버킷이 past 가 아닐 때는 무시.
+  const [pastDetailId, setPastDetailId] = React.useState(null);
   // v00.228 — admin 전용 프론트 quick-add (사용자 요청: 관리자는 프론트에서도 투어 추가 가능).
   const [addOpen, setAddOpen] = React.useState(false);
   // v00.234 — admin 전용 프론트 edit.
@@ -106,6 +109,7 @@ const TourPage = ({ go, user }) => {
   const tours = bucket === 'past' ? toursPast : toursUpcoming;
 
   // 외부 진입(해시 / 마이페이지 알림 등)으로 들어온 투어 ID 처리 — 두 버킷 모두 검색해 적절한 탭으로 이동.
+  // v00.263.000 — past 로 진입하면 게시판 상세 모드로 즉시 표시.
   React.useEffect(() => {
     let pending = null;
     try { pending = sessionStorage.getItem('bgnj_pending_tour_id'); } catch {}
@@ -114,12 +118,12 @@ const TourPage = ({ go, user }) => {
       const inUpcoming = toursUpcoming.findIndex((t) => String(t.id) === String(pending));
       if (inUpcoming >= 0) { setBucket('upcoming'); setSelectedIdx(inUpcoming); return; }
       const inPast = toursPast.findIndex((t) => String(t.id) === String(pending));
-      if (inPast >= 0) { setBucket('past'); setSelectedIdx(inPast); }
+      if (inPast >= 0) { setBucket('past'); setSelectedIdx(inPast); setPastDetailId(String(pending)); }
     }
   }, []);
 
-  // 버킷 전환 시 인덱스 리셋.
-  React.useEffect(() => { setSelectedIdx(0); }, [bucket]);
+  // 버킷 전환 시 인덱스 리셋 + past 상세 모드 해제.
+  React.useEffect(() => { setSelectedIdx(0); setPastDetailId(null); }, [bucket]);
 
   if (!allTours.length) {
     return (
@@ -212,8 +216,28 @@ const TourPage = ({ go, user }) => {
           </div>
         )}
 
-        {/* Tabs — 본문 grid 와 함께 tours 가 있을 때만 렌더 (tour undefined 가드). */}
-        {tours.length > 0 && (<>
+        {/* v00.263.000 — past 버킷 + 상세 미선택 = 게시판 행 목록 모드. */}
+        {tours.length > 0 && bucket === 'past' && !pastDetailId && window.PastBoardList && (
+          <window.PastBoardList items={tours} type="tour"
+            onSelect={(id) => {
+              const idx = tours.findIndex((t) => String(t.id) === String(id));
+              if (idx >= 0) setSelectedIdx(idx);
+              setPastDetailId(String(id));
+              try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+            }}/>
+        )}
+
+        {/* Tabs + Grid — upcoming 항상, past 는 상세 모드일 때만. */}
+        {tours.length > 0 && (bucket !== 'past' || pastDetailId) && (<>
+        {/* v00.263.000 — past 상세 모드일 때 "← 목록으로" 진입로. */}
+        {bucket === 'past' && pastDetailId && (
+          <div style={{marginBottom:16}}>
+            <button type="button" className="btn btn-small"
+              onClick={() => setPastDetailId(null)}>
+              ← 지난 답사 목록으로
+            </button>
+          </div>
+        )}
         <div style={{display:'flex', gap:0, borderBottom:'1px solid var(--line-2)', marginBottom:40, overflowX:'auto'}}>
           {tours.map((t, i) => (
             <button key={t.id}

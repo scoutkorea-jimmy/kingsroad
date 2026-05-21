@@ -48,6 +48,7 @@ const TourPage = ({ go, user }) => {
   }, []);
   const [selectedIdx, setSelectedIdx] = React.useState(0);
   const [bucket, setBucket] = React.useState("upcoming");
+  const [pastDetailId, setPastDetailId] = React.useState(null);
   const [addOpen, setAddOpen] = React.useState(false);
   const [editTarget, setEditTarget] = React.useState(null);
   const _now = Date.now();
@@ -87,11 +88,13 @@ const TourPage = ({ go, user }) => {
       if (inPast >= 0) {
         setBucket("past");
         setSelectedIdx(inPast);
+        setPastDetailId(String(pending));
       }
     }
   }, []);
   React.useEffect(() => {
     setSelectedIdx(0);
+    setPastDetailId(null);
   }, [bucket]);
   if (!allTours.length) {
     return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 560, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { marginBottom: isAdmin ? 18 : 0 } }, "\uC608\uC815\uB41C \uB2F5\uC0AC \uD504\uB85C\uADF8\uB7A8\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), isAdmin && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: () => setAddOpen(true) }, "\uFF0B \uD22C\uC5B4 \uCD94\uAC00")), addOpen && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }));
@@ -158,7 +161,30 @@ const TourPage = ({ go, user }) => {
       onClick: () => setAddOpen(true)
     },
     "\uFF0B \uD22C\uC5B4 \uCD94\uAC00"
-  )), tours.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 20px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14 } }, bucket === "upcoming" ? "\uC608\uC815\uB41C \uB2F5\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC9C0\uB09C \uB2F5\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.")), tours.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 0, borderBottom: "1px solid var(--line-2)", marginBottom: 40, overflowX: "auto" } }, tours.map((t, i) => /* @__PURE__ */ React.createElement(
+  )), tours.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 20px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14 } }, bucket === "upcoming" ? "\uC608\uC815\uB41C \uB2F5\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC9C0\uB09C \uB2F5\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.")), tours.length > 0 && bucket === "past" && !pastDetailId && window.PastBoardList && /* @__PURE__ */ React.createElement(
+    window.PastBoardList,
+    {
+      items: tours,
+      type: "tour",
+      onSelect: (id) => {
+        const idx = tours.findIndex((t) => String(t.id) === String(id));
+        if (idx >= 0) setSelectedIdx(idx);
+        setPastDetailId(String(id));
+        try {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (e) {
+        }
+      }
+    }
+  ), tours.length > 0 && (bucket !== "past" || pastDetailId) && /* @__PURE__ */ React.createElement(React.Fragment, null, bucket === "past" && pastDetailId && /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 16 } }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: () => setPastDetailId(null)
+    },
+    "\u2190 \uC9C0\uB09C \uB2F5\uC0AC \uBAA9\uB85D\uC73C\uB85C"
+  )), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 0, borderBottom: "1px solid var(--line-2)", marginBottom: 40, overflowX: "auto" } }, tours.map((t, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: t.id,
