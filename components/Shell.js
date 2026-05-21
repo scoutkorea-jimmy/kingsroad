@@ -1205,6 +1205,64 @@ const CoverPlaceholder = ({ aspectRatio = "16/10", label, iconSize = 88 }) => /*
 const _MemoNav = React.memo(Nav);
 const _MemoFooter = React.memo(Footer);
 const _MemoCookieConsent = React.memo(CookieConsent);
+const PastBoardList = ({ items = [], type = "tour", onSelect }) => {
+  const F = window.BGNJ_FMT;
+  const formatDate = (iso) => {
+    if (!iso) return "-";
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "-";
+      return (F == null ? void 0 : F.kstDate) ? F.kstDate(d) : `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+    } catch (e) {
+      return "-";
+    }
+  };
+  const formatScale = (item) => {
+    const capNum = Number(item == null ? void 0 : item.capacity);
+    if (Number.isFinite(capNum) && capNum > 0) return `${capNum}\uC778 \uC774\uD558`;
+    return (item == null ? void 0 : item.group) || (item == null ? void 0 : item.format) || "-";
+  };
+  const reviewsOf = (id) => {
+    var _a;
+    try {
+      const store = type === "tour" ? window.BGNJ_TOURS : window.BGNJ_LECTURES;
+      const arr = (_a = store == null ? void 0 : store.listReviews) == null ? void 0 : _a.call(store, id);
+      return Array.isArray(arr) ? arr.length : 0;
+    } catch (e) {
+      return 0;
+    }
+  };
+  if (!items.length) {
+    return /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 20px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14 } }, "\uC9C0\uB09C ", type === "tour" ? "\uB2F5\uC0AC" : "\uAC15\uC5F0", "\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
+  }
+  const handleKey = (e, id) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onSelect == null ? void 0 : onSelect(id);
+    }
+  };
+  return /* @__PURE__ */ React.createElement("div", { className: "bgnj-past-board", role: "list", "aria-label": `\uC9C0\uB09C ${type === "tour" ? "\uB2F5\uC0AC" : "\uAC15\uC5F0"} \uBAA9\uB85D` }, /* @__PURE__ */ React.createElement("div", { className: "bgnj-past-row bgnj-past-head", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-date" }, "\uC77C\uC2DC"), /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-title" }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-scale" }, "\uADDC\uBAA8"), /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-reviews" }, "\uD6C4\uAE30"), /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-arrow" })), items.map((item) => {
+    const id = item == null ? void 0 : item.id;
+    const reviews = reviewsOf(id);
+    return /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        key: id,
+        className: "bgnj-past-row bgnj-past-item",
+        role: "button",
+        tabIndex: 0,
+        onClick: () => onSelect == null ? void 0 : onSelect(id),
+        onKeyDown: (e) => handleKey(e, id),
+        "aria-label": `${(item == null ? void 0 : item.title) || "\uC81C\uBAA9 \uC5C6\uC74C"} \u2014 \uC790\uC138\uD788 \uBCF4\uAE30`
+      },
+      /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-date mono" }, formatDate(item == null ? void 0 : item.startsAt)),
+      /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-title" }, /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-title-main" }, (item == null ? void 0 : item.title) || "\uC81C\uBAA9 \uC5C6\uC74C"), (item == null ? void 0 : item.subtitle) && /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-title-sub dim-2" }, " \u2014 ", item.subtitle)),
+      /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-scale mono dim" }, formatScale(item)),
+      /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-reviews mono dim" }, reviews > 0 ? `\uD6C4\uAE30 ${reviews}\uAC74` : "-"),
+      /* @__PURE__ */ React.createElement("span", { className: "bgnj-past-col-arrow gold-2", "aria-hidden": "true" }, "\u2192")
+    );
+  }));
+};
 Object.assign(window, {
   Brand,
   Nav: _MemoNav,
@@ -1217,7 +1275,8 @@ Object.assign(window, {
   ScrollToTop,
   BanginojaIcon,
   CoverPlaceholder,
-  CookieConsent: _MemoCookieConsent
+  CookieConsent: _MemoCookieConsent,
+  PastBoardList
 });
 
 })();
