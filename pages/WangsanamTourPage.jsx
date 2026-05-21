@@ -208,23 +208,30 @@ const TourPage = ({ go, user }) => {
           )}
         </div>
 
-        {tours.length === 0 && (
+        {/* v00.263.001 — past 모드 빈 카드는 PastBoardList 가 처리. 외부 빈 카드는 upcoming 만. */}
+        {bucket === 'upcoming' && tours.length === 0 && (
           <div style={{padding:'60px 20px', textAlign:'center'}}>
-            <p className="dim" style={{fontSize:14}}>
-              {bucket === 'upcoming' ? '예정된 답사가 없습니다.' : '지난 답사가 없습니다.'}
-            </p>
+            <p className="dim" style={{fontSize:14}}>예정된 답사가 없습니다.</p>
           </div>
         )}
 
-        {/* v00.263.000 — past 버킷 + 상세 미선택 = 게시판 행 목록 모드. */}
-        {tours.length > 0 && bucket === 'past' && !pastDetailId && window.PastBoardList && (
-          <window.PastBoardList items={tours} type="tour"
-            onSelect={(id) => {
-              const idx = tours.findIndex((t) => String(t.id) === String(id));
-              if (idx >= 0) setSelectedIdx(idx);
-              setPastDetailId(String(id));
-              try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
-            }}/>
+        {/* v00.263.000/001 — past 버킷 + 상세 미선택 = 게시판 행 목록 모드.
+            v00.263.001: tours.length 조건 제거 — 0건이라도 PastBoardList 가 빈 안내 표시.
+            PastBoardList 미정의 시 fallback. */}
+        {bucket === 'past' && !pastDetailId && (
+          window.PastBoardList ? (
+            <window.PastBoardList items={tours} type="tour"
+              onSelect={(id) => {
+                const idx = tours.findIndex((t) => String(t.id) === String(id));
+                if (idx >= 0) setSelectedIdx(idx);
+                setPastDetailId(String(id));
+                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+              }}/>
+          ) : (
+            <div style={{padding:'60px 20px', textAlign:'center'}}>
+              <p className="dim" style={{fontSize:14}}>지난 답사 목록을 불러오는 중…</p>
+            </div>
+          )
         )}
 
         {/* Tabs + Grid — upcoming 항상, past 는 상세 모드일 때만. */}

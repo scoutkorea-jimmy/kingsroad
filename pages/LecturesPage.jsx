@@ -147,23 +147,30 @@ const LecturesPage = ({ go, user }) => {
           )}
         </div>
 
-        {lectures.length === 0 && (
+        {/* v00.263.001 — past 모드의 빈 카드는 PastBoardList 가 처리. 외부 빈 카드는 upcoming 만. */}
+        {bucket === 'upcoming' && lectures.length === 0 && (
           <div style={{padding:'60px 20px', textAlign:'center'}}>
-            <p className="dim" style={{fontSize:14}}>
-              {bucket === 'upcoming' ? '예정된 강연이 없습니다.' : '지난 강연이 없습니다.'}
-            </p>
+            <p className="dim" style={{fontSize:14}}>예정된 강연이 없습니다.</p>
           </div>
         )}
 
-        {/* v00.263.000 — past 버킷 + 상세 미선택 = 게시판 행 목록 모드. */}
-        {lectures.length > 0 && bucket === 'past' && !pastDetailId && window.PastBoardList && (
-          <window.PastBoardList items={lectures} type="lecture"
-            onSelect={(id) => {
-              const idx = lectures.findIndex((l) => String(l.id) === String(id));
-              if (idx >= 0) setSelectedIdx(idx);
-              setPastDetailId(String(id));
-              try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
-            }}/>
+        {/* v00.263.000/001 — past 버킷 + 상세 미선택 = 게시판 행 목록 모드.
+            v00.263.001: lectures.length 조건 제거 — 0건이라도 PastBoardList 가 빈 안내를 표시.
+            PastBoardList 미정의 시 fallback: 안내 카드 표시. */}
+        {bucket === 'past' && !pastDetailId && (
+          window.PastBoardList ? (
+            <window.PastBoardList items={lectures} type="lecture"
+              onSelect={(id) => {
+                const idx = lectures.findIndex((l) => String(l.id) === String(id));
+                if (idx >= 0) setSelectedIdx(idx);
+                setPastDetailId(String(id));
+                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+              }}/>
+          ) : (
+            <div style={{padding:'60px 20px', textAlign:'center'}}>
+              <p className="dim" style={{fontSize:14}}>지난 강연 목록을 불러오는 중…</p>
+            </div>
+          )
         )}
 
         {/* Tabs — 투어 페이지와 동일한 스타일. 강연 목록이 있을 때만.

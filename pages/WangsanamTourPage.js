@@ -161,7 +161,7 @@ const TourPage = ({ go, user }) => {
       onClick: () => setAddOpen(true)
     },
     "\uFF0B \uD22C\uC5B4 \uCD94\uAC00"
-  )), tours.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 20px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14 } }, bucket === "upcoming" ? "\uC608\uC815\uB41C \uB2F5\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC9C0\uB09C \uB2F5\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.")), tours.length > 0 && bucket === "past" && !pastDetailId && window.PastBoardList && /* @__PURE__ */ React.createElement(
+  )), bucket === "upcoming" && tours.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 20px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14 } }, "\uC608\uC815\uB41C \uB2F5\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.")), bucket === "past" && !pastDetailId && (window.PastBoardList ? /* @__PURE__ */ React.createElement(
     window.PastBoardList,
     {
       items: tours,
@@ -176,7 +176,7 @@ const TourPage = ({ go, user }) => {
         }
       }
     }
-  ), tours.length > 0 && (bucket !== "past" || pastDetailId) && /* @__PURE__ */ React.createElement(React.Fragment, null, bucket === "past" && pastDetailId && /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 16 } }, /* @__PURE__ */ React.createElement(
+  ) : /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 20px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14 } }, "\uC9C0\uB09C \uB2F5\uC0AC \uBAA9\uB85D\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\u2026"))), tours.length > 0 && (bucket !== "past" || pastDetailId) && /* @__PURE__ */ React.createElement(React.Fragment, null, bucket === "past" && pastDetailId && /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 16 } }, /* @__PURE__ */ React.createElement(
     "button",
     {
       type: "button",
