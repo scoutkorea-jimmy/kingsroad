@@ -1172,7 +1172,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     TiptapEditor,
     {
       key: (initialPost == null ? void 0 : initialPost.id) || "new",
-      preset: "simple",
+      preset: "rich",
       content: bodyHtml,
       onUpdate: (html, _json, text) => {
         setBodyHtml(html);

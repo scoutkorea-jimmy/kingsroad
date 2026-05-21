@@ -379,7 +379,7 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
       disabled: !(ed == null ? void 0 : ed.can().redo()),
       cmd: () => can((e) => e.chain().focus().redo().run())
     }
-  ))), /* @__PURE__ */ React.createElement("div", { ref: host, className: "tiptap-host" }), preset === "column" && /* @__PURE__ */ React.createElement("p", { className: "dim-2 mono", style: { fontSize: 10, marginTop: 6, letterSpacing: "0.1em" } }, "\uBCF8\uBB38 \uC774\uBBF8\uC9C0\uB294 \uB4DC\uB798\uADF8\uB85C \uC790\uC720\uB86D\uAC8C \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uC774\uBBF8\uC9C0\uB97C \uB04C\uC5B4 \uC6D0\uD558\uB294 \uC704\uCE58\uB85C \uB193\uC73C\uC138\uC694."));
+  ))), /* @__PURE__ */ React.createElement("div", { ref: host, className: "tiptap-host" }), (preset === "column" || preset === "rich") && /* @__PURE__ */ React.createElement("p", { className: "dim-2 mono", style: { fontSize: 10, marginTop: 6, letterSpacing: "0.1em" } }, "\uBCF8\uBB38 \uC774\uBBF8\uC9C0\uB294 \uB4DC\uB798\uADF8\uB85C \uC790\uC720\uB86D\uAC8C \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uC774\uBBF8\uC9C0\uB97C \uB04C\uC5B4 \uC6D0\uD558\uB294 \uC704\uCE58\uB85C \uB193\uC73C\uC138\uC694."));
 };
 Object.assign(window, { TiptapEditor });
 

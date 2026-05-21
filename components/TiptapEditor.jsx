@@ -307,7 +307,7 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
         </div>
       </div>
       <div ref={host} className="tiptap-host"/>
-      {preset === "column" && (
+      {(preset === "column" || preset === "rich") && (
         <p className="dim-2 mono" style={{fontSize:10, marginTop:6, letterSpacing:'0.1em'}}>
           본문 이미지는 드래그로 자유롭게 이동할 수 있습니다. 이미지를 끌어 원하는 위치로 놓으세요.
         </p>

@@ -1190,8 +1190,10 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
           {/* Tiptap editor */}
             <div className="field">
               <div className="field-label">본문 <span className="gold" aria-hidden="true">*</span></div>
+              {/* v00.262.008 — preset 'simple' → 'rich' 로 변경. 본문 inline 이미지(R2 업로드) +
+                  ProseMirror 기본 드래그앤드롭으로 이미지 위치 자유 이동. */}
               <TiptapEditor key={initialPost?.id || "new"}
-                preset="simple"
+                preset="rich"
                 content={bodyHtml}
                 onUpdate={(html, _json, text) => { setBodyHtml(html); setBodyText(text); }}
                 placeholder="본문을 입력하세요..."/>
