@@ -617,9 +617,39 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   // ─────────────────────────────────────────────────────────────────────
 
   // v00.068 — PostCompose 모달 wrapper. 목록 위에 모달로 표시. ESC/외부클릭 시 useModalGuard 가 임시저장 prompt.
-  // PostCompose 의 onCancel 이 closeModal 으로 연결됨 (취소 버튼 = 즉시 닫기).
+  // v00.263.003 — 사용자 보고: 임시저장된 글이 어디 있는지 안 보임 + 취소 동선 불명확. onSaveDraft 연결 →
+  // 외부클릭/ESC 시 [임시저장]/[취소] prompt (이전엔 [닫기]/[취소] 변경 폐기 prompt). 임시저장은 BGNJ_DRAFTS('post')
+  // 에 누적 (최대 5개). PostCompose 헤더에 목록 UI 노출 + 클릭 시 불러오기.
   const PostComposeModal = ({ onClose }) => {
-    const guard = window.useModalGuard?.({ open: true, dirty: true, onClose, onSaveDraft: null, label: '게시글' }) || {};
+    const [draftPayload, setDraftPayload] = React.useState(null);
+    const draftIdRef = React.useRef(null);
+    const guard = window.useModalGuard?.({
+      open: true,
+      dirty: true,
+      onClose,
+      onSaveDraft: () => {
+        if (!draftPayload) return;
+        try {
+          const saved = window.BGNJ_DRAFTS?.save?.({
+            id: draftIdRef.current || undefined,
+            kind: 'post',
+            title: draftPayload.title || '',
+            prefix: draftPayload.prefix || '',
+            tags: draftPayload.tags || [],
+            images: draftPayload.images || [],
+            attachments: draftPayload.attachments || [],
+            bodyHtml: draftPayload.bodyHtml || '',
+            bodyText: draftPayload.bodyText || '',
+            categoryId: draftPayload.categoryId || '',
+          });
+          if (saved?.id) draftIdRef.current = saved.id;
+          window.BGNJ_TOAST?.success?.('임시저장됐습니다. (글쓰기 모달 상단에서 확인)');
+        } catch (err) {
+          try { window.BGNJ_TOAST?.error?.('임시저장 실패: ' + (err?.message || err)); } catch {}
+        }
+      },
+      label: '게시글',
+    }) || {};
     return (
       <div role="dialog" aria-modal="true" aria-label={writing === true ? '새 글 작성' : '게시글 수정'}
         onClick={guard.onBackdropClick}
@@ -633,7 +663,10 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
             user={user}
             initialPost={writing === true ? null : writing}
             onCancel={onClose}
+            onPayloadChange={setDraftPayload}
             onPublish={async (payload) => {
+              // 발행 성공 시 임시저장 목록에서 제거.
+              try { if (draftIdRef.current) window.BGNJ_DRAFTS?.remove?.(draftIdRef.current); } catch {}
               let savedPost;
               try {
                 savedPost = writing === true
@@ -959,7 +992,9 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
 // 새 글 임시저장 키 — 사용자별로 분리(여러 계정이 같은 브라우저를 쓸 때 섞이지 않도록).
 const draftKeyFor = (userId) => `bgnj_post_draft_${userId || 'guest'}`;
 
-const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userLevel }) => {
+// v00.263.003 — onPayloadChange 추가. 모달 wrapper(PostComposeModal)가 dirty payload 를 받아
+// BGNJ_DRAFTS 에 임시저장. 사용자 보고: 임시저장 글 어디서 보는지 모름 + 최대 5개 제한.
+const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userLevel, onPayloadChange }) => {
   const writable = categories.filter(c => userLevel >= (c.postMinLevel ?? c.minLevel ?? 0));
   const defaultCategoryId = initialPost?.categoryId || writable[0]?.id || categories[0]?.id || "";
   const isEditing = !!initialPost;
@@ -1025,6 +1060,40 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     setSavedAt(null);
     setDraftRestored(false);
   };
+
+  // v00.263.003 — 모달 wrapper 에 현재 payload streaming (임시저장 prompt 시 사용).
+  React.useEffect(() => {
+    onPayloadChange?.({ categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText });
+  }, [categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText]);
+
+  // v00.263.003 — BGNJ_DRAFTS('post') 목록 구독 + load/remove 헬퍼.
+  const [postDrafts, setPostDrafts] = React.useState(() => {
+    try { return window.BGNJ_DRAFTS?.list?.('post') || []; } catch { return []; }
+  });
+  React.useEffect(() => {
+    const onChange = () => {
+      try { setPostDrafts(window.BGNJ_DRAFTS?.list?.('post') || []); } catch {}
+    };
+    window.addEventListener('bgnj-drafts-change', onChange);
+    return () => window.removeEventListener('bgnj-drafts-change', onChange);
+  }, []);
+  const loadPostDraft = (d) => {
+    if (!d) return;
+    setCategoryId(d.categoryId || defaultCategoryId);
+    setTitle(d.title || '');
+    setPrefix(d.prefix || '');
+    setTags(Array.isArray(d.tags) ? d.tags : []);
+    setImages(Array.isArray(d.images) ? d.images : []);
+    setAttachments(Array.isArray(d.attachments) ? d.attachments : []);
+    setBodyHtml(d.bodyHtml || '');
+    setBodyText(d.bodyText || '');
+    setDraftRestored(true);
+  };
+  const removePostDraft = async (id) => {
+    if (!(await window.BGNJ_CONFIRM('이 임시저장 글을 삭제하시겠어요?', { danger: true, confirmLabel: '삭제' }))) return;
+    try { window.BGNJ_DRAFTS?.remove?.(id); } catch {}
+  };
+  const MAX_POST_DRAFTS = window.BGNJ_DRAFTS?.MAX_COUNT || 5;
 
   React.useEffect(() => {
     setCategoryId(initialPost?.categoryId || defaultCategoryId);
@@ -1135,6 +1204,42 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
                 style={{fontSize:11, color:'var(--danger)', textDecoration:'underline'}}>
                 새로 시작
               </button>
+            </div>
+          )}
+
+          {/* v00.263.003 — 임시저장 목록 (BGNJ_DRAFTS('post')). 외부클릭/ESC 시 [임시저장] 선택분 누적.
+              최대 5개. 클릭 시 본문에 불러오기. */}
+          {!isEditing && postDrafts.length > 0 && (
+            <div style={{marginTop:14, padding:'12px 14px', border:'1px solid var(--line)', background:'var(--bg-2)'}}>
+              <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:10}}>
+                임시저장 ({postDrafts.length}/{MAX_POST_DRAFTS})
+              </div>
+              <ul style={{listStyle:'none', padding:0, margin:0, display:'grid', gap:6}}>
+                {postDrafts.map((d) => (
+                  <li key={d.id} style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:10, padding:'8px 10px', background:'var(--bg)', border:'1px solid var(--line)'}}>
+                    <button type="button"
+                      onClick={() => loadPostDraft(d)}
+                      style={{flex:1, textAlign:'left', background:'none', border:'none', cursor:'pointer', padding:0, color:'var(--ink)'}}
+                      title="이 임시저장 글 불러오기">
+                      <div style={{fontSize:13, lineHeight:1.4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                        {d.title || <span className="dim-2">(제목 없음)</span>}
+                      </div>
+                      <div className="dim-2 mono" style={{fontSize:10, marginTop:2}}>
+                        {d.savedAt ? new Date(d.savedAt).toLocaleString('ko-KR', { dateStyle:'short', timeStyle:'short' }) : ''}
+                      </div>
+                    </button>
+                    <button type="button"
+                      onClick={() => removePostDraft(d.id)}
+                      className="btn-ghost"
+                      style={{fontSize:11, color:'var(--danger)', flexShrink:0}}>
+                      삭제
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="dim-2" style={{fontSize:11, lineHeight:1.6, marginTop:10, marginBottom:0}}>
+                최대 {MAX_POST_DRAFTS}개 · 7일 보관. 외부 클릭/ESC 시 [임시저장]을 누르면 여기에 누적됩니다.
+              </p>
             </div>
           )}
         </header>

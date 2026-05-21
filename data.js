@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.263.002",
+  version: "00.263.003",
   build: "2026.05.21",
   channel: "preview",
 };
@@ -49,7 +49,8 @@ window.BGNJ_GUARD = {
 // 정책: 최대 10 개 + 7 일 보관. 초과/만료 자동 제거.
 window.BGNJ_DRAFTS = {
   KEY: 'bgnj_drafts',
-  MAX_COUNT: 10,
+  // v00.263.003 — 사용자 요청: 임시저장 글은 최대 5개. (이전 10)
+  MAX_COUNT: 5,
   MAX_AGE_DAYS: 7,
   _read() {
     try { return JSON.parse(localStorage.getItem(this.KEY) || '[]') || []; } catch { return []; }

@@ -633,7 +633,39 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   }, [postId]);
   const PostComposeModal = ({ onClose }) => {
     var _a;
-    const guard = ((_a = window.useModalGuard) == null ? void 0 : _a.call(window, { open: true, dirty: true, onClose, onSaveDraft: null, label: "\uAC8C\uC2DC\uAE00" })) || {};
+    const [draftPayload, setDraftPayload] = React.useState(null);
+    const draftIdRef = React.useRef(null);
+    const guard = ((_a = window.useModalGuard) == null ? void 0 : _a.call(window, {
+      open: true,
+      dirty: true,
+      onClose,
+      onSaveDraft: () => {
+        var _a2, _b, _c, _d, _e, _f;
+        if (!draftPayload) return;
+        try {
+          const saved = (_b = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.save) == null ? void 0 : _b.call(_a2, {
+            id: draftIdRef.current || void 0,
+            kind: "post",
+            title: draftPayload.title || "",
+            prefix: draftPayload.prefix || "",
+            tags: draftPayload.tags || [],
+            images: draftPayload.images || [],
+            attachments: draftPayload.attachments || [],
+            bodyHtml: draftPayload.bodyHtml || "",
+            bodyText: draftPayload.bodyText || "",
+            categoryId: draftPayload.categoryId || ""
+          });
+          if (saved == null ? void 0 : saved.id) draftIdRef.current = saved.id;
+          (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, "\uC784\uC2DC\uC800\uC7A5\uB410\uC2B5\uB2C8\uB2E4. (\uAE00\uC4F0\uAE30 \uBAA8\uB2EC \uC0C1\uB2E8\uC5D0\uC11C \uD655\uC778)");
+        } catch (err) {
+          try {
+            (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, "\uC784\uC2DC\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
+          } catch (e) {
+          }
+        }
+      },
+      label: "\uAC8C\uC2DC\uAE00"
+    })) || {};
     return /* @__PURE__ */ React.createElement(
       "div",
       {
@@ -657,7 +689,13 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           user,
           initialPost: writing === true ? null : writing,
           onCancel: onClose,
+          onPayloadChange: setDraftPayload,
           onPublish: async (payload) => {
+            var _a2, _b;
+            try {
+              if (draftIdRef.current) (_b = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.remove) == null ? void 0 : _b.call(_a2, draftIdRef.current);
+            } catch (e) {
+            }
             let savedPost;
             try {
               savedPost = writing === true ? await window.BGNJ_COMMUNITY.createPostRemote(payload) : await window.BGNJ_COMMUNITY.updatePostRemote(writing.id, payload);
@@ -957,8 +995,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   ))), writing && /* @__PURE__ */ React.createElement(PostComposeModal, { onClose: () => setWriting(null) }));
 };
 const draftKeyFor = (userId) => `bgnj_post_draft_${userId || "guest"}`;
-const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userLevel }) => {
-  var _a, _b, _c, _d;
+const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userLevel, onPayloadChange }) => {
+  var _a, _b, _c, _d, _e;
   const writable = categories.filter((c) => {
     var _a2, _b2;
     return userLevel >= ((_b2 = (_a2 = c.postMinLevel) != null ? _a2 : c.minLevel) != null ? _b2 : 0);
@@ -1027,6 +1065,49 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     setSavedAt(null);
     setDraftRestored(false);
   };
+  React.useEffect(() => {
+    onPayloadChange == null ? void 0 : onPayloadChange({ categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText });
+  }, [categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText]);
+  const [postDrafts, setPostDrafts] = React.useState(() => {
+    var _a2, _b2;
+    try {
+      return ((_b2 = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.list) == null ? void 0 : _b2.call(_a2, "post")) || [];
+    } catch (e) {
+      return [];
+    }
+  });
+  React.useEffect(() => {
+    const onChange = () => {
+      var _a2, _b2;
+      try {
+        setPostDrafts(((_b2 = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.list) == null ? void 0 : _b2.call(_a2, "post")) || []);
+      } catch (e) {
+      }
+    };
+    window.addEventListener("bgnj-drafts-change", onChange);
+    return () => window.removeEventListener("bgnj-drafts-change", onChange);
+  }, []);
+  const loadPostDraft = (d) => {
+    if (!d) return;
+    setCategoryId(d.categoryId || defaultCategoryId);
+    setTitle(d.title || "");
+    setPrefix(d.prefix || "");
+    setTags(Array.isArray(d.tags) ? d.tags : []);
+    setImages(Array.isArray(d.images) ? d.images : []);
+    setAttachments(Array.isArray(d.attachments) ? d.attachments : []);
+    setBodyHtml(d.bodyHtml || "");
+    setBodyText(d.bodyText || "");
+    setDraftRestored(true);
+  };
+  const removePostDraft = async (id) => {
+    var _a2, _b2;
+    if (!await window.BGNJ_CONFIRM("\uC774 \uC784\uC2DC\uC800\uC7A5 \uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true, confirmLabel: "\uC0AD\uC81C" })) return;
+    try {
+      (_b2 = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.remove) == null ? void 0 : _b2.call(_a2, id);
+    } catch (e) {
+    }
+  };
+  const MAX_POST_DRAFTS = ((_e = window.BGNJ_DRAFTS) == null ? void 0 : _e.MAX_COUNT) || 5;
   React.useEffect(() => {
     var _a2, _b2;
     setCategoryId((initialPost == null ? void 0 : initialPost.categoryId) || defaultCategoryId);
@@ -1128,7 +1209,26 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       style: { fontSize: 11, color: "var(--danger)", textDecoration: "underline" }
     },
     "\uC0C8\uB85C \uC2DC\uC791"
-  ))), /* @__PURE__ */ React.createElement("form", { onSubmit: (e) => {
+  )), !isEditing && postDrafts.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 14, padding: "12px 14px", border: "1px solid var(--line)", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 10 } }, "\uC784\uC2DC\uC800\uC7A5 (", postDrafts.length, "/", MAX_POST_DRAFTS, ")"), /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 6 } }, postDrafts.map((d) => /* @__PURE__ */ React.createElement("li", { key: d.id, style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 10px", background: "var(--bg)", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => loadPostDraft(d),
+      style: { flex: 1, textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--ink)" },
+      title: "\uC774 \uC784\uC2DC\uC800\uC7A5 \uAE00 \uBD88\uB7EC\uC624\uAE30"
+    },
+    /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, d.title || /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "(\uC81C\uBAA9 \uC5C6\uC74C)")),
+    /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 10, marginTop: 2 } }, d.savedAt ? new Date(d.savedAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" }) : "")
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      onClick: () => removePostDraft(d.id),
+      className: "btn-ghost",
+      style: { fontSize: 11, color: "var(--danger)", flexShrink: 0 }
+    },
+    "\uC0AD\uC81C"
+  )))), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.6, marginTop: 10, marginBottom: 0 } }, "\uCD5C\uB300 ", MAX_POST_DRAFTS, "\uAC1C \xB7 7\uC77C \uBCF4\uAD00. \uC678\uBD80 \uD074\uB9AD/ESC \uC2DC [\uC784\uC2DC\uC800\uC7A5]\uC744 \uB204\uB974\uBA74 \uC5EC\uAE30\uC5D0 \uB204\uC801\uB429\uB2C8\uB2E4."))), /* @__PURE__ */ React.createElement("form", { onSubmit: (e) => {
     e.preventDefault();
     submit();
   }, noValidate: true }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "160px 1fr", gap: 16, marginBottom: boardPrefixes.length > 0 ? 12 : 20 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "post-cat" }, "\uAC8C\uC2DC\uD310"), /* @__PURE__ */ React.createElement(
