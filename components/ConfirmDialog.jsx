@@ -5,12 +5,14 @@
 // 또는 React 컴포넌트로 직접:
 //   <ConfirmDialog open={...} title="..." message="..." onConfirm={...} onCancel={...}/>
 
-const ConfirmDialog = ({ open, title, message, hint, confirmLabel='확인', cancelLabel='취소', danger=false, onConfirm, onCancel }) => {
+const ConfirmDialog = ({ open, title, message, hint, confirmLabel='확인', cancelLabel='취소', danger=false, dismissOnBackdrop=true, onConfirm, onCancel }) => {
   window.useModalGuard?.({ open, dirty: false, onClose: onCancel, onSaveDraft: null, label: title || '확인' });
   if (!open) return null;
+  // v00.262.007 — 작성 모달의 임시저장 prompt 처럼 실수 클릭으로 데이터 잃는 일을 막아야 하는 경우
+  // dismissOnBackdrop=false 로 호출. 일반 confirm 은 기존 동작 (백드롭=취소) 유지.
   return (
     <div role="dialog" aria-modal="true" aria-label={title || '확인'}
-      onClick={onCancel}
+      onClick={dismissOnBackdrop ? onCancel : undefined}
       style={{position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1100, display:'grid', placeItems:'center', padding:24}}>
       <div onClick={(e) => e.stopPropagation()}
         style={{background:'var(--bg)', maxWidth:460, width:'100%', padding:24, border:'1px solid var(--line)', boxShadow:'0 16px 40px rgba(0,0,0,0.25)'}}>
@@ -42,6 +44,8 @@ window.BGNJ_CONFIRM = (message, opts={}) => new Promise((resolve) => {
     confirmLabel: opts.confirmLabel || '확인',
     cancelLabel: opts.cancelLabel || '취소',
     danger: !!opts.danger,
+    // v00.262.007 — 명시적으로 false 가 전달된 경우만 백드롭 dismiss 비활성. 기본은 기존 동작 유지.
+    dismissOnBackdrop: opts.dismissOnBackdrop !== false,
     resolve,
   };
   if (!__confirmListeners.length) {
@@ -70,6 +74,7 @@ const ConfirmDialogHost = () => {
       confirmLabel={pending.confirmLabel}
       cancelLabel={pending.cancelLabel}
       danger={pending.danger}
+      dismissOnBackdrop={pending.dismissOnBackdrop}
       onConfirm={() => close(true)}
       onCancel={() => close(false)}
     />

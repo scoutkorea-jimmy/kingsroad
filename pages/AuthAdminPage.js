@@ -7408,8 +7408,18 @@ const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
       marginTop: 24,
       marginBottom: 48
     } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, (initialColumn == null ? void 0 : initialColumn.id) ? "\uCE7C\uB7FC \uD3B8\uC9D1" : "\uC0C8 \uCE7C\uB7FC \uC791\uC131"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
-      const ok = !dirty || await window.BGNJ_CONFIRM("\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9\uC744 \uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?\n[\uD655\uC778]=\uC784\uC2DC\uC800\uC7A5 \uD6C4 \uB2EB\uAE30 / [\uCDE8\uC18C]=\uADF8\uB0E5 \uB2EB\uAE30", { danger: true });
-      if (ok && dirty) saveDraft();
+      if (!dirty) {
+        onClose == null ? void 0 : onClose();
+        return;
+      }
+      const ok = await window.BGNJ_CONFIRM("\uC791\uC131 \uC911\uC778 \uCE7C\uB7FC\uC774 \uC800\uC7A5\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uC784\uC2DC\uC800\uC7A5 \uD558\uC2DC\uACA0\uC5B4\uC694?", {
+        confirmLabel: "\uC784\uC2DC\uC800\uC7A5",
+        cancelLabel: "\uCDE8\uC18C",
+        danger: false,
+        dismissOnBackdrop: false
+      });
+      if (!ok) return;
+      saveDraft();
       onClose == null ? void 0 : onClose();
     } }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement(
       AdminColumnEditor,

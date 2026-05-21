@@ -9158,9 +9158,13 @@ const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
           <h2 className="ko-serif" style={{fontSize:18, margin:0}}>{initialColumn?.id ? '칼럼 편집' : '새 칼럼 작성'}</h2>
-          <button type="button" className="btn btn-small" onClick={async () => { /* 명시적 닫기 — 가드 통과 */
-            const ok = !dirty || (await window.BGNJ_CONFIRM('작성 중인 내용을 임시저장 후 닫으시겠어요?\n[확인]=임시저장 후 닫기 / [취소]=그냥 닫기', { danger: true }));
-            if (ok && dirty) saveDraft();
+          <button type="button" className="btn btn-small" onClick={async () => { /* 명시적 닫기 — useModalGuard 와 동일 prompt 패턴 (v00.262.007) */
+            if (!dirty) { onClose?.(); return; }
+            const ok = await window.BGNJ_CONFIRM('작성 중인 칼럼이 저장되지 않았습니다. 임시저장 하시겠어요?', {
+              confirmLabel: '임시저장', cancelLabel: '취소', danger: false, dismissOnBackdrop: false,
+            });
+            if (!ok) return; // 취소 → 모달 유지 (이전엔 '그냥 닫기' 였음)
+            saveDraft();
             onClose?.();
           }}>닫기</button>
         </div>

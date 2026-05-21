@@ -53,17 +53,35 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
     if (!s.dirty) { s.onClose?.(); return; }
     // v00.242 — useModalGuard 의 popstate/ESC 동기 핸들러에서 호출되지만 BGNJ_CONFIRM Promise 로 정합.
     // window.confirm() 은 v00.208 에서 사이트 전반 폐기 → 본 잔재도 통일.
-    const fallbackConfirm = (msg) => {
-      try { return window.BGNJ_CONFIRM ? window.BGNJ_CONFIRM(msg, { danger: true, confirmLabel: '확인' }) : Promise.resolve(true); }
-      catch { return Promise.resolve(true); }
+    // v00.262.007 — [취소] 직관 정렬: 이전엔 [취소]=변경 폐기+닫기 였으나 사용자는 '취소 = 닫기 행위 자체 취소(모달 유지)' 로 기대.
+    //               데이터 손실로 이어져 [확인]/[취소] 의미를 반전. confirm=임시저장(또는 닫기) / cancel=모달 유지.
+    //               백드롭 클릭으로 prompt 가 또 닫히면 데이터 잃을 위험 → dismissOnBackdrop:false 로 가드.
+    const ask = (opts) => {
+      try {
+        return window.BGNJ_CONFIRM
+          ? window.BGNJ_CONFIRM(opts.message, { ...opts, dismissOnBackdrop: false })
+          : Promise.resolve(true);
+      } catch { return Promise.resolve(true); }
     };
     if (s.onSaveDraft) {
-      const yes = await fallbackConfirm(`${s.promptName}이(가) 저장되지 않았습니다. 임시저장 하시겠어요? [확인] = 임시저장 후 닫기 / [취소] = 그냥 닫기 (변경 내용 버림)`);
-      if (yes) { try { s.onSaveDraft(); } catch {} }
+      const ok = await ask({
+        message: `${s.promptName}이(가) 저장되지 않았습니다. 임시저장 하시겠어요?`,
+        confirmLabel: '임시저장',
+        cancelLabel: '취소',
+        danger: false,
+      });
+      if (!ok) return; // 취소 → 모달 유지
+      try { s.onSaveDraft(); } catch {}
       s.onClose?.();
     } else {
-      const ok = await fallbackConfirm(`${s.promptName}이(가) 저장되지 않았습니다. 정말 닫으시겠어요?`);
-      if (ok) s.onClose?.();
+      const ok = await ask({
+        message: `${s.promptName}이(가) 저장되지 않았습니다. 닫으시겠어요?\n(변경 내용은 사라집니다)`,
+        confirmLabel: '닫기',
+        cancelLabel: '취소',
+        danger: true,
+      });
+      if (!ok) return; // 취소 → 모달 유지
+      s.onClose?.();
     }
   }, []);
 
@@ -82,7 +100,18 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       window.history.pushState({ bgnjModal: true }, '');
       pushed = true;
     } catch {}
-    const onPop = () => { handleAttemptClose(); };
+    // v00.262.007 — 뒤로가기로 popstate 가 sentinel entry 를 소비한 뒤 사용자가 prompt 에서 [취소] 누르면
+    // 모달은 유지되지만 sentinel 이 사라져 다음 뒤로가기는 진짜 페이지 이탈로 이어짐. 모달이 여전히 열려 있으면
+    // sentinel 을 재 push 해 뒤로가기 가드를 복원.
+    const onPop = () => {
+      handleAttemptClose();
+      try {
+        if (stateRef.current.dirty) {
+          // dirty=true 라면 handleAttemptClose 가 prompt 띄움. 사용자가 [취소] 선택해 모달 유지될 가능성 → sentinel 즉시 재 push.
+          window.history.pushState({ bgnjModal: true }, '');
+        }
+      } catch {}
+    };
     if (pushed) window.addEventListener('popstate', onPop);
     return () => {
       window.removeEventListener('keydown', onKey);

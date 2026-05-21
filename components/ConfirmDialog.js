@@ -1,5 +1,5 @@
 (function(){
-const ConfirmDialog = ({ open, title, message, hint, confirmLabel = "\uD655\uC778", cancelLabel = "\uCDE8\uC18C", danger = false, onConfirm, onCancel }) => {
+const ConfirmDialog = ({ open, title, message, hint, confirmLabel = "\uD655\uC778", cancelLabel = "\uCDE8\uC18C", danger = false, dismissOnBackdrop = true, onConfirm, onCancel }) => {
   var _a;
   (_a = window.useModalGuard) == null ? void 0 : _a.call(window, { open, dirty: false, onClose: onCancel, onSaveDraft: null, label: title || "\uD655\uC778" });
   if (!open) return null;
@@ -9,7 +9,7 @@ const ConfirmDialog = ({ open, title, message, hint, confirmLabel = "\uD655\uC77
       role: "dialog",
       "aria-modal": "true",
       "aria-label": title || "\uD655\uC778",
-      onClick: onCancel,
+      onClick: dismissOnBackdrop ? onCancel : void 0,
       style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 1100, display: "grid", placeItems: "center", padding: 24 }
     },
     /* @__PURE__ */ React.createElement(
@@ -50,6 +50,8 @@ window.BGNJ_CONFIRM = (message, opts = {}) => new Promise((resolve) => {
     confirmLabel: opts.confirmLabel || "\uD655\uC778",
     cancelLabel: opts.cancelLabel || "\uCDE8\uC18C",
     danger: !!opts.danger,
+    // v00.262.007 — 명시적으로 false 가 전달된 경우만 백드롭 dismiss 비활성. 기본은 기존 동작 유지.
+    dismissOnBackdrop: opts.dismissOnBackdrop !== false,
     resolve
   };
   if (!__confirmListeners.length) {
@@ -80,6 +82,7 @@ const ConfirmDialogHost = () => {
       confirmLabel: pending.confirmLabel,
       cancelLabel: pending.cancelLabel,
       danger: pending.danger,
+      dismissOnBackdrop: pending.dismissOnBackdrop,
       onConfirm: () => close(true),
       onCancel: () => close(false)
     }
