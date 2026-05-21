@@ -63,7 +63,7 @@ const TourPage = ({ go, user }) => {
   const refresh = () => setTick((v) => v + 1);
   const isAdmin = !!user?.isAdmin;
   // v00.236 — admin 은 hidden 투어도 함께 노출 (시각 라벨로 구분). 일반 회원은 hidden 제외.
-  const tours = React.useMemo(
+  const allTours = React.useMemo(
     () => G.arr(() => window.BGNJ_TOURS?.listAll?.({ includeHidden: isAdmin })),
     [tick, isAdmin]
   );
@@ -77,23 +77,51 @@ const TourPage = ({ go, user }) => {
   }, []);
 
   const [selectedIdx, setSelectedIdx] = React.useState(0);
+  // v00.262.009 — 사용자 보고 "투어 클릭하면 과거가 먼저 보임". LecturesPage v00.129 와 동일 패턴 이식:
+  // upcoming / past 버킷 분리 + 기본 'upcoming' + upcoming startsAt ASC, past startsAt DESC.
+  const [bucket, setBucket] = React.useState('upcoming');
   // v00.228 — admin 전용 프론트 quick-add (사용자 요청: 관리자는 프론트에서도 투어 추가 가능).
   const [addOpen, setAddOpen] = React.useState(false);
   // v00.234 — admin 전용 프론트 edit.
   const [editTarget, setEditTarget] = React.useState(null);
 
-  // 외부 진입(해시 / 마이페이지 알림 등)으로 들어온 투어 ID 처리
+  // v00.262.009 — startsAt 기준 분리. 어제 이후 = upcoming, 그 이전 = past. startsAt 없으면 upcoming (LecturesPage 동일 룰).
+  const _now = Date.now();
+  const _yesterday = _now - 86400000;
+  const _isPast = (t) => {
+    if (!t?.startsAt) return false;
+    const ts = Date.parse(t.startsAt);
+    return !isNaN(ts) && ts < _yesterday;
+  };
+  const toursUpcoming = React.useMemo(
+    () => allTours.filter((t) => !_isPast(t))
+      .sort((a, b) => (Date.parse(a.startsAt || 0) || 0) - (Date.parse(b.startsAt || 0) || 0)),
+    [allTours]
+  );
+  const toursPast = React.useMemo(
+    () => allTours.filter(_isPast)
+      .sort((a, b) => (Date.parse(b.startsAt || 0) || 0) - (Date.parse(a.startsAt || 0) || 0)),
+    [allTours]
+  );
+  const tours = bucket === 'past' ? toursPast : toursUpcoming;
+
+  // 외부 진입(해시 / 마이페이지 알림 등)으로 들어온 투어 ID 처리 — 두 버킷 모두 검색해 적절한 탭으로 이동.
   React.useEffect(() => {
     let pending = null;
     try { pending = sessionStorage.getItem('bgnj_pending_tour_id'); } catch {}
     if (pending) {
       try { sessionStorage.removeItem('bgnj_pending_tour_id'); } catch {}
-      const idx = tours.findIndex((t) => String(t.id) === String(pending));
-      if (idx >= 0) setSelectedIdx(idx);
+      const inUpcoming = toursUpcoming.findIndex((t) => String(t.id) === String(pending));
+      if (inUpcoming >= 0) { setBucket('upcoming'); setSelectedIdx(inUpcoming); return; }
+      const inPast = toursPast.findIndex((t) => String(t.id) === String(pending));
+      if (inPast >= 0) { setBucket('past'); setSelectedIdx(inPast); }
     }
   }, []);
 
-  if (!tours.length) {
+  // 버킷 전환 시 인덱스 리셋.
+  React.useEffect(() => { setSelectedIdx(0); }, [bucket]);
+
+  if (!allTours.length) {
     return (
       <div className="section">
         <div className="container" style={{maxWidth:560, textAlign:'center', padding:'80px 20px'}}>
@@ -109,7 +137,7 @@ const TourPage = ({ go, user }) => {
     );
   }
 
-  const safeIdx = Math.max(0, Math.min(selectedIdx, tours.length - 1));
+  const safeIdx = Math.max(0, Math.min(selectedIdx, Math.max(0, tours.length - 1)));
   const tour = tours[safeIdx];
   const seats = G.call(() => window.BGNJ_TOURS?.getSeats?.(tour.id), { capacity: 0, taken: 0, waitlist: 0, remaining: 0 });
   const myReg = user ? G.call(() => window.BGNJ_TOURS?.hasUserReserved?.(tour.id, user.id), null) : null;
@@ -148,16 +176,44 @@ const TourPage = ({ go, user }) => {
           <p className="section-subtitle">{introSubtitle}</p>
         </div>
 
-        {/* v00.228 — admin 전용 + 투어 추가 버튼 (탭 위 우측 정렬). */}
-        {isAdmin && (
-          <div style={{display:'flex', justifyContent:'flex-end', marginBottom:12}}>
-            <button type="button" className="btn btn-gold btn-small" onClick={() => setAddOpen(true)}>
+        {/* v00.262.009 — 지난/예정 버킷 토글 (LecturesPage v00.129 동일 패턴).
+            v00.228 admin 전용 + 투어 추가 버튼은 우측 끝으로 이동. */}
+        <div style={{display:'flex', gap:8, marginBottom:24, flexWrap:'wrap', alignItems:'center'}}>
+          {[
+            { k: 'upcoming', label: `진행 예정 답사 (${toursUpcoming.length})` },
+            { k: 'past', label: `지난 답사 (${toursPast.length})` },
+          ].map((b) => (
+            <button key={b.k} type="button"
+              onClick={() => setBucket(b.k)}
+              aria-pressed={bucket === b.k}
+              style={{
+                padding:'8px 18px', borderRadius:999, fontSize:13, cursor:'pointer',
+                border: '1px solid ' + (bucket === b.k ? 'var(--primary)' : 'var(--line)'),
+                color: bucket === b.k ? 'var(--secondary)' : 'var(--ink-2)',
+                background: bucket === b.k ? 'rgba(245,213,72,0.08)' : 'transparent',
+              }}>
+              {b.label}
+            </button>
+          ))}
+          {isAdmin && (
+            <button type="button" className="btn btn-gold btn-small"
+              style={{marginLeft:'auto'}}
+              onClick={() => setAddOpen(true)}>
               ＋ 투어 추가
             </button>
+          )}
+        </div>
+
+        {tours.length === 0 && (
+          <div style={{padding:'60px 20px', textAlign:'center'}}>
+            <p className="dim" style={{fontSize:14}}>
+              {bucket === 'upcoming' ? '예정된 답사가 없습니다.' : '지난 답사가 없습니다.'}
+            </p>
           </div>
         )}
 
-        {/* Tabs */}
+        {/* Tabs — 본문 grid 와 함께 tours 가 있을 때만 렌더 (tour undefined 가드). */}
+        {tours.length > 0 && (<>
         <div style={{display:'flex', gap:0, borderBottom:'1px solid var(--line-2)', marginBottom:40, overflowX:'auto'}}>
           {tours.map((t, i) => (
             <button key={t.id}
@@ -218,9 +274,20 @@ const TourPage = ({ go, user }) => {
               <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--secondary)', background:'rgba(146,64,14,0.06)', border:'1px solid var(--secondary)'}}>
                 ⏱ {tour.duration}
               </span>
-              <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--info)', background:'rgba(37,99,235,0.06)', border:'1px solid var(--info)'}}>
-                ◧ {tour.group}
-              </span>
+              {/* v00.262.009 — 정원 라벨 정합. 이전엔 tour.group(자유 텍스트 "5인 이하" 등) 만 표시 →
+                  admin 이 capacity 만 12 로 바꿔도 라벨이 "5인 이하" 그대로 남는 모순 보고됨.
+                  capacity 가 유효하면 항상 capacity 따라 표시, 없을 때만 group 사용. */}
+              {(() => {
+                const capNum = Number(tour.capacity);
+                const groupLabel = Number.isFinite(capNum) && capNum > 0
+                  ? `${capNum}인 이하`
+                  : (tour.group || '소규모');
+                return (
+                  <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--info)', background:'rgba(37,99,235,0.06)', border:'1px solid var(--info)'}}>
+                    ◧ {groupLabel}
+                  </span>
+                );
+              })()}
               <span className="mono" style={{fontSize:10, letterSpacing:'0.18em', padding:'2px 8px', borderRadius:3, color:'var(--tertiary)', background:'rgba(71,85,105,0.06)', border:'1px solid var(--tertiary)'}}>₩ 무통장 입금</span>
               {/* v00.236 — hidden 투어는 admin 만 보이고 시각 라벨로 구분. */}
               {tour.hidden && (
@@ -334,6 +401,7 @@ const TourPage = ({ go, user }) => {
             />
           </div>
         </div>
+        </>)}
       </div>
       {/* v00.228 — admin 전용 투어 quick-add 모달. */}
       {addOpen && isAdmin && <TourQuickAddModal onClose={() => setAddOpen(false)} onSaved={refresh}/>}

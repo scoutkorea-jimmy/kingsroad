@@ -28,7 +28,7 @@ const TourPage = ({ go, user }) => {
   const G = window.BGNJ_GUARD;
   const refresh = () => setTick((v) => v + 1);
   const isAdmin = !!(user == null ? void 0 : user.isAdmin);
-  const tours = React.useMemo(
+  const allTours = React.useMemo(
     () => G.arr(() => {
       var _a2, _b2;
       return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2, { includeHidden: isAdmin });
@@ -47,8 +47,25 @@ const TourPage = ({ go, user }) => {
     return () => window.removeEventListener("bgnj-tours-refresh", onR);
   }, []);
   const [selectedIdx, setSelectedIdx] = React.useState(0);
+  const [bucket, setBucket] = React.useState("upcoming");
   const [addOpen, setAddOpen] = React.useState(false);
   const [editTarget, setEditTarget] = React.useState(null);
+  const _now = Date.now();
+  const _yesterday = _now - 864e5;
+  const _isPast = (t) => {
+    if (!(t == null ? void 0 : t.startsAt)) return false;
+    const ts = Date.parse(t.startsAt);
+    return !isNaN(ts) && ts < _yesterday;
+  };
+  const toursUpcoming = React.useMemo(
+    () => allTours.filter((t) => !_isPast(t)).sort((a, b) => (Date.parse(a.startsAt || 0) || 0) - (Date.parse(b.startsAt || 0) || 0)),
+    [allTours]
+  );
+  const toursPast = React.useMemo(
+    () => allTours.filter(_isPast).sort((a, b) => (Date.parse(b.startsAt || 0) || 0) - (Date.parse(a.startsAt || 0) || 0)),
+    [allTours]
+  );
+  const tours = bucket === "past" ? toursPast : toursUpcoming;
   React.useEffect(() => {
     let pending = null;
     try {
@@ -60,14 +77,26 @@ const TourPage = ({ go, user }) => {
         sessionStorage.removeItem("bgnj_pending_tour_id");
       } catch (e) {
       }
-      const idx = tours.findIndex((t) => String(t.id) === String(pending));
-      if (idx >= 0) setSelectedIdx(idx);
+      const inUpcoming = toursUpcoming.findIndex((t) => String(t.id) === String(pending));
+      if (inUpcoming >= 0) {
+        setBucket("upcoming");
+        setSelectedIdx(inUpcoming);
+        return;
+      }
+      const inPast = toursPast.findIndex((t) => String(t.id) === String(pending));
+      if (inPast >= 0) {
+        setBucket("past");
+        setSelectedIdx(inPast);
+      }
     }
   }, []);
-  if (!tours.length) {
+  React.useEffect(() => {
+    setSelectedIdx(0);
+  }, [bucket]);
+  if (!allTours.length) {
     return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 560, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { marginBottom: isAdmin ? 18 : 0 } }, "\uC608\uC815\uB41C \uB2F5\uC0AC \uD504\uB85C\uADF8\uB7A8\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), isAdmin && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: () => setAddOpen(true) }, "\uFF0B \uD22C\uC5B4 \uCD94\uAC00")), addOpen && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }));
   }
-  const safeIdx = Math.max(0, Math.min(selectedIdx, tours.length - 1));
+  const safeIdx = Math.max(0, Math.min(selectedIdx, Math.max(0, tours.length - 1)));
   const tour = tours[safeIdx];
   const seats = G.call(() => {
     var _a2, _b2;
@@ -99,7 +128,37 @@ const TourPage = ({ go, user }) => {
   const introPrefix = (_c = intro.titlePrefix) != null ? _c : "\uBC1C\uB85C \uC77D\uB294 ";
   const introAccent = (_d = intro.titleAccent) != null ? _d : "\uC870\uC120";
   const introSubtitle = intro.subtitle || "\uBC45\uAE30\uB178\uC790\uC640 \uC655\uC0AC\uB0A8\uC774 \uC9C1\uC811 \uC6B4\uC601\uD558\uB294 \uD504\uB85C\uADF8\uB7A8. \uD68C\uC6D0 \uC804\uC6A9 \uC2E0\uCCAD \xB7 \uBB34\uD1B5\uC7A5 \uC785\uAE08 \uACB0\uC81C.";
-  return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow" }, introEyebrow), /* @__PURE__ */ React.createElement("h1", { className: "section-title" }, introPrefix, /* @__PURE__ */ React.createElement("span", { className: "accent" }, introAccent)), /* @__PURE__ */ React.createElement("p", { className: "section-subtitle" }, introSubtitle)), isAdmin && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 12 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: () => setAddOpen(true) }, "\uFF0B \uD22C\uC5B4 \uCD94\uAC00")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 0, borderBottom: "1px solid var(--line-2)", marginBottom: 40, overflowX: "auto" } }, tours.map((t, i) => /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow" }, introEyebrow), /* @__PURE__ */ React.createElement("h1", { className: "section-title" }, introPrefix, /* @__PURE__ */ React.createElement("span", { className: "accent" }, introAccent)), /* @__PURE__ */ React.createElement("p", { className: "section-subtitle" }, introSubtitle)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap", alignItems: "center" } }, [
+    { k: "upcoming", label: `\uC9C4\uD589 \uC608\uC815 \uB2F5\uC0AC (${toursUpcoming.length})` },
+    { k: "past", label: `\uC9C0\uB09C \uB2F5\uC0AC (${toursPast.length})` }
+  ].map((b) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: b.k,
+      type: "button",
+      onClick: () => setBucket(b.k),
+      "aria-pressed": bucket === b.k,
+      style: {
+        padding: "8px 18px",
+        borderRadius: 999,
+        fontSize: 13,
+        cursor: "pointer",
+        border: "1px solid " + (bucket === b.k ? "var(--primary)" : "var(--line)"),
+        color: bucket === b.k ? "var(--secondary)" : "var(--ink-2)",
+        background: bucket === b.k ? "rgba(245,213,72,0.08)" : "transparent"
+      }
+    },
+    b.label
+  )), isAdmin && /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-gold btn-small",
+      style: { marginLeft: "auto" },
+      onClick: () => setAddOpen(true)
+    },
+    "\uFF0B \uD22C\uC5B4 \uCD94\uAC00"
+  )), tours.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { padding: "60px 20px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14 } }, bucket === "upcoming" ? "\uC608\uC815\uB41C \uB2F5\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC9C0\uB09C \uB2F5\uC0AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.")), tours.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 0, borderBottom: "1px solid var(--line-2)", marginBottom: 40, overflowX: "auto" } }, tours.map((t, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: t.id,
@@ -139,7 +198,11 @@ const TourPage = ({ go, user }) => {
       ), (galleryPrimary == null ? void 0 : galleryPrimary.credit) && /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, letterSpacing: "0.05em", marginTop: 6, lineHeight: 1.5 } }, galleryPrimary.credit));
     }
     return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, window.CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "16/10", label: String(tour.title || "").toUpperCase() }) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "16/10", fontSize: 11 } }, String(tour.title || "").toUpperCase()));
-  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--secondary)", background: "rgba(245,213,72,0.12)", border: "1px solid var(--primary-dim)" } }, "\u25C6 ", tour.level), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--secondary)", background: "rgba(146,64,14,0.06)", border: "1px solid var(--secondary)" } }, "\u23F1 ", tour.duration), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--info)", background: "rgba(37,99,235,0.06)", border: "1px solid var(--info)" } }, "\u25E7 ", tour.group), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--tertiary)", background: "rgba(71,85,105,0.06)", border: "1px solid var(--tertiary)" } }, "\u20A9 \uBB34\uD1B5\uC7A5 \uC785\uAE08"), tour.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--warning)", border: "1px solid var(--warning)", padding: "1px 6px" } }, "\u25C6 \uC228\uAE40 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB9CC \uBCF4\uC784)"), isAdmin && /* @__PURE__ */ React.createElement(
+  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--secondary)", background: "rgba(245,213,72,0.12)", border: "1px solid var(--primary-dim)" } }, "\u25C6 ", tour.level), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--secondary)", background: "rgba(146,64,14,0.06)", border: "1px solid var(--secondary)" } }, "\u23F1 ", tour.duration), (() => {
+    const capNum = Number(tour.capacity);
+    const groupLabel = Number.isFinite(capNum) && capNum > 0 ? `${capNum}\uC778 \uC774\uD558` : tour.group || "\uC18C\uADDC\uBAA8";
+    return /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--info)", background: "rgba(37,99,235,0.06)", border: "1px solid var(--info)" } }, "\u25E7 ", groupLabel);
+  })(), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", padding: "2px 8px", borderRadius: 3, color: "var(--tertiary)", background: "rgba(71,85,105,0.06)", border: "1px solid var(--tertiary)" } }, "\u20A9 \uBB34\uD1B5\uC7A5 \uC785\uAE08"), tour.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--warning)", border: "1px solid var(--warning)", padding: "1px 6px" } }, "\u25C6 \uC228\uAE40 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB9CC \uBCF4\uC784)"), isAdmin && /* @__PURE__ */ React.createElement(
     "button",
     {
       type: "button",
@@ -182,7 +245,7 @@ const TourPage = ({ go, user }) => {
       onRefresh: refresh,
       go
     }
-  )))), addOpen && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }), editTarget && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setEditTarget(null), onSaved: refresh, initialTour: editTarget }));
+  ))))), addOpen && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setAddOpen(false), onSaved: refresh }), editTarget && isAdmin && /* @__PURE__ */ React.createElement(TourQuickAddModal, { onClose: () => setEditTarget(null), onSaved: refresh, initialTour: editTarget }));
 };
 const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
   var _a, _b, _c;
