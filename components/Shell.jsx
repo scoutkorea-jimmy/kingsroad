@@ -51,11 +51,22 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
   const handleAttemptClose = React.useCallback(async () => {
     const s = stateRef.current;
     if (!s.dirty) { s.onClose?.(); return; }
-    // v00.242 — useModalGuard 의 popstate/ESC 동기 핸들러에서 호출되지만 BGNJ_CONFIRM Promise 로 정합.
-    // window.confirm() 은 v00.208 에서 사이트 전반 폐기 → 본 잔재도 통일.
-    // v00.262.007 — [취소] 직관 정렬: 이전엔 [취소]=변경 폐기+닫기 였으나 사용자는 '취소 = 닫기 행위 자체 취소(모달 유지)' 로 기대.
-    //               데이터 손실로 이어져 [확인]/[취소] 의미를 반전. confirm=임시저장(또는 닫기) / cancel=모달 유지.
-    //               백드롭 클릭으로 prompt 가 또 닫히면 데이터 잃을 위험 → dismissOnBackdrop:false 로 가드.
+    // v00.263.004 — 사용자 요청: 외부 클릭 시 3-way 선택. [임시저장]/[취소]/[저장 안 하고 닫기].
+    //   임시저장 → 저장 + 닫기
+    //   취소     → 모달 유지 (잘못 누른 케이스)
+    //   저장 안 하고 닫기 → 변경 폐기 + 닫기
+    // BGNJ_DRAFT_PROMPT 가 3-way 헬퍼. onSaveDraft 미전달이면 2-way fallback (저장 옵션 없음).
+    if (s.onSaveDraft && window.BGNJ_DRAFT_PROMPT) {
+      const choice = await window.BGNJ_DRAFT_PROMPT(s.promptName, {});
+      if (choice === 'cancel') return;        // 모달 유지
+      if (choice === 'save') {
+        try { s.onSaveDraft(); } catch {}
+      }
+      // 'save' 또는 'discard' 모두 onClose.
+      s.onClose?.();
+      return;
+    }
+    // Fallback — onSaveDraft 가 없는 모달은 2-way.
     const ask = (opts) => {
       try {
         return window.BGNJ_CONFIRM
@@ -63,26 +74,14 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
           : Promise.resolve(true);
       } catch { return Promise.resolve(true); }
     };
-    if (s.onSaveDraft) {
-      const ok = await ask({
-        message: `${s.promptName}이(가) 저장되지 않았습니다. 임시저장 하시겠어요?`,
-        confirmLabel: '임시저장',
-        cancelLabel: '취소',
-        danger: false,
-      });
-      if (!ok) return; // 취소 → 모달 유지
-      try { s.onSaveDraft(); } catch {}
-      s.onClose?.();
-    } else {
-      const ok = await ask({
-        message: `${s.promptName}이(가) 저장되지 않았습니다. 닫으시겠어요?\n(변경 내용은 사라집니다)`,
-        confirmLabel: '닫기',
-        cancelLabel: '취소',
-        danger: true,
-      });
-      if (!ok) return; // 취소 → 모달 유지
-      s.onClose?.();
-    }
+    const ok = await ask({
+      message: `${s.promptName}이(가) 저장되지 않았습니다. 닫으시겠어요?\n(변경 내용은 사라집니다)`,
+      confirmLabel: '닫기',
+      cancelLabel: '취소',
+      danger: true,
+    });
+    if (!ok) return; // 취소 → 모달 유지
+    s.onClose?.();
   }, []);
 
   React.useEffect(() => {

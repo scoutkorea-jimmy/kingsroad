@@ -35,6 +35,18 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       (_a = s.onClose) == null ? void 0 : _a.call(s);
       return;
     }
+    if (s.onSaveDraft && window.BGNJ_DRAFT_PROMPT) {
+      const choice = await window.BGNJ_DRAFT_PROMPT(s.promptName, {});
+      if (choice === "cancel") return;
+      if (choice === "save") {
+        try {
+          s.onSaveDraft();
+        } catch (e) {
+        }
+      }
+      (_b = s.onClose) == null ? void 0 : _b.call(s);
+      return;
+    }
     const ask = (opts) => {
       try {
         return window.BGNJ_CONFIRM ? window.BGNJ_CONFIRM(opts.message, { ...opts, dismissOnBackdrop: false }) : Promise.resolve(true);
@@ -42,30 +54,15 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
         return Promise.resolve(true);
       }
     };
-    if (s.onSaveDraft) {
-      const ok = await ask({
-        message: `${s.promptName}\uC774(\uAC00) \uC800\uC7A5\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uC784\uC2DC\uC800\uC7A5 \uD558\uC2DC\uACA0\uC5B4\uC694?`,
-        confirmLabel: "\uC784\uC2DC\uC800\uC7A5",
-        cancelLabel: "\uCDE8\uC18C",
-        danger: false
-      });
-      if (!ok) return;
-      try {
-        s.onSaveDraft();
-      } catch (e) {
-      }
-      (_b = s.onClose) == null ? void 0 : _b.call(s);
-    } else {
-      const ok = await ask({
-        message: `${s.promptName}\uC774(\uAC00) \uC800\uC7A5\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?
+    const ok = await ask({
+      message: `${s.promptName}\uC774(\uAC00) \uC800\uC7A5\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uB2EB\uC73C\uC2DC\uACA0\uC5B4\uC694?
 (\uBCC0\uACBD \uB0B4\uC6A9\uC740 \uC0AC\uB77C\uC9D1\uB2C8\uB2E4)`,
-        confirmLabel: "\uB2EB\uAE30",
-        cancelLabel: "\uCDE8\uC18C",
-        danger: true
-      });
-      if (!ok) return;
-      (_c = s.onClose) == null ? void 0 : _c.call(s);
-    }
+      confirmLabel: "\uB2EB\uAE30",
+      cancelLabel: "\uCDE8\uC18C",
+      danger: true
+    });
+    if (!ok) return;
+    (_c = s.onClose) == null ? void 0 : _c.call(s);
   }, []);
   React.useEffect(() => {
     if (!open) return;

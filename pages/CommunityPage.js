@@ -1290,7 +1290,39 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       onChange: (e) => setCreatedAt(e.target.value),
       style: { maxWidth: 280 }
     }
-  ), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11, marginTop: 4 } }, "KST \uAE30\uC900. \uC785\uB825 \uC2DC \uAC8C\uC2DC\uAE00 \uD45C\uC2DC \uC2DC\uAC01\uC774 \uC774 \uAC12\uC73C\uB85C \uACE0\uC815\uB428.")), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "12px 16px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 13, marginBottom: 16 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, justifyContent: "flex-end", paddingTop: 20, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: onCancel }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold" }, isEditing ? "\uC218\uC815 \uC800\uC7A5 \u2192" : "\uAC8C\uC2DC\uD558\uAE30 \u2192")))));
+  ), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11, marginTop: 4 } }, "KST \uAE30\uC900. \uC785\uB825 \uC2DC \uAC8C\uC2DC\uAE00 \uD45C\uC2DC \uC2DC\uAC01\uC774 \uC774 \uAC12\uC73C\uB85C \uACE0\uC815\uB428.")), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "12px 16px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 13, marginBottom: 16 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, justifyContent: "flex-end", paddingTop: 20, borderTop: "1px solid var(--line)", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: onCancel }, "\uCDE8\uC18C"), !isEditing && /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn",
+      onClick: () => {
+        var _a2, _b2, _c2, _d2, _e2, _f, _g, _h, _i;
+        try {
+          const hasContent = !!(title.trim() || bodyText.trim() || tags && tags.length || images && images.length || attachments && attachments.length);
+          if (!hasContent) {
+            (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.info) == null ? void 0 : _b2.call(_a2, "\uB0B4\uC6A9\uC744 \uC785\uB825\uD55C \uB4A4 \uC784\uC2DC\uC800\uC7A5\uD558\uC138\uC694.");
+            return;
+          }
+          const saved = (_d2 = (_c2 = window.BGNJ_DRAFTS) == null ? void 0 : _c2.save) == null ? void 0 : _d2.call(_c2, {
+            kind: "post",
+            title,
+            prefix,
+            tags,
+            images,
+            attachments,
+            bodyHtml,
+            bodyText,
+            categoryId
+          });
+          const max = ((_e2 = window.BGNJ_DRAFTS) == null ? void 0 : _e2.MAX_COUNT) || 5;
+          (_g = (_f = window.BGNJ_TOAST) == null ? void 0 : _f.success) == null ? void 0 : _g.call(_f, `\uC784\uC2DC\uC800\uC7A5\uB410\uC2B5\uB2C8\uB2E4. (\uCD5C\uB300 ${max}\uAC1C \uBCF4\uAD00)`);
+        } catch (err) {
+          (_i = (_h = window.BGNJ_TOAST) == null ? void 0 : _h.error) == null ? void 0 : _i.call(_h, "\uC784\uC2DC\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
+        }
+      }
+    },
+    "\u{1F4BE} \uC784\uC2DC\uC800\uC7A5"
+  ), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold" }, isEditing ? "\uC218\uC815 \uC800\uC7A5 \u2192" : "\uAC8C\uC2DC\uD558\uAE30 \u2192")))));
 };
 const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
   var _a, _b, _c;

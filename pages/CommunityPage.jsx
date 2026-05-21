@@ -1335,8 +1335,31 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
             </div>
           )}
 
-          <div style={{display:'flex', gap:12, justifyContent:'flex-end', paddingTop:20, borderTop:'1px solid var(--line)'}}>
+          <div style={{display:'flex', gap:12, justifyContent:'flex-end', paddingTop:20, borderTop:'1px solid var(--line)', flexWrap:'wrap'}}>
             <button type="button" className="btn" onClick={onCancel}>취소</button>
+            {/* v00.263.004 — 명시적 [임시저장] 버튼. 새 글 작성 시에만 노출 (수정 모드는 원본이 source). */}
+            {!isEditing && (
+              <button type="button" className="btn"
+                onClick={() => {
+                  try {
+                    const hasContent = !!(title.trim() || bodyText.trim() || (tags && tags.length) || (images && images.length) || (attachments && attachments.length));
+                    if (!hasContent) {
+                      window.BGNJ_TOAST?.info?.('내용을 입력한 뒤 임시저장하세요.');
+                      return;
+                    }
+                    const saved = window.BGNJ_DRAFTS?.save?.({
+                      kind: 'post',
+                      title, prefix, tags, images, attachments, bodyHtml, bodyText, categoryId,
+                    });
+                    const max = window.BGNJ_DRAFTS?.MAX_COUNT || 5;
+                    window.BGNJ_TOAST?.success?.(`임시저장됐습니다. (최대 ${max}개 보관)`);
+                  } catch (err) {
+                    window.BGNJ_TOAST?.error?.('임시저장 실패: ' + (err?.message || err));
+                  }
+                }}>
+                💾 임시저장
+              </button>
+            )}
             <button type="submit" className="btn btn-gold">{isEditing ? "수정 저장 →" : "게시하기 →"}</button>
           </div>
         </form>
