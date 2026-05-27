@@ -5854,6 +5854,11 @@ const InternalAlarmPanel = () => {
 // 사용자 코드 리뷰 룰 1번 (DRY): 인라인 JSX 였던 게시글 관리 부분을 별도 컴포넌트로.
 // 자체 state(검색/필터/선택/일괄/모달) + 핸들러(export/delete/bulk) 모두 내장.
 // 부모(AdminPage) 는 posts (allCommunityPosts) + onChange (refresh trigger) 만 전달.
+// v00.264.003 — admin 게시글 패널 페이지당 갯수 선택. 홈과 동일 옵션. localStorage 보존.
+const ADMIN_POSTS_PER_PAGE_OPTIONS = [10, 30, 50, 100];
+const ADMIN_POSTS_PER_PAGE_LS_KEY = 'bgnj_admin_posts_per_page';
+const ADMIN_POSTS_PER_PAGE_DEFAULT = 30;
+
 const CommunityPostsAdminPanel = ({ posts, onChange }) => {
   const [search, setSearch] = React.useState('');
   const [filter, setFilter] = React.useState('all');
@@ -5861,6 +5866,18 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
   const [viewingId, setViewingId] = React.useState(null);
   const [bulkCat, setBulkCat] = React.useState('');
   const [bulkPrefix, setBulkPrefix] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSizeState] = React.useState(() => {
+    try {
+      const v = Number(localStorage.getItem(ADMIN_POSTS_PER_PAGE_LS_KEY));
+      return ADMIN_POSTS_PER_PAGE_OPTIONS.includes(v) ? v : ADMIN_POSTS_PER_PAGE_DEFAULT;
+    } catch { return ADMIN_POSTS_PER_PAGE_DEFAULT; }
+  });
+  const setPageSize = (n) => {
+    setPageSizeState(n);
+    try { localStorage.setItem(ADMIN_POSTS_PER_PAGE_LS_KEY, String(n)); } catch {}
+    setPage(1);
+  };
 
   const visible = React.useMemo(() => posts.filter((p) => {
     const q = search.trim().toLowerCase();
@@ -5868,6 +5885,14 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
     const matchFilter = filter === 'all' || p.categoryId === filter;
     return matchSearch && matchFilter;
   }), [posts, search, filter]);
+
+  // 검색/필터 변경 시 page 리셋.
+  React.useEffect(() => { setPage(1); }, [search, filter]);
+
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * pageSize;
+  const pagePosts = visible.slice(pageStart, pageStart + pageSize);
 
   const exportCsv = () => {
     downloadCsv(`community-posts-${new Date().toISOString().slice(0, 10)}.csv`, window.BGNJ_COMMUNITY.exportCsv());
@@ -5937,10 +5962,19 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
             );
           })}
       </div>
-      <div style={{display:'flex', gap:12, marginBottom:16}}>
+      <div style={{display:'flex', gap:12, marginBottom:16, alignItems:'center', flexWrap:'wrap'}}>
         <label htmlFor="post-search" className="sr-only">게시글 검색</label>
-        <input id="post-search" className="field-input" placeholder="제목 또는 작성자 검색..." style={{flex:1}}
+        <input id="post-search" className="field-input" placeholder="제목 또는 작성자 검색..." style={{flex:1, minWidth:200}}
           value={search} onChange={(e) => setSearch(e.target.value)}/>
+        <label htmlFor="admin-post-per-page" className="sr-only">한 페이지 게시글 수</label>
+        <select id="admin-post-per-page" className="field-input"
+          value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}
+          style={{padding:'10px 12px', fontSize:12, cursor:'pointer'}}
+          title="한 페이지에 표시할 게시글 갯수">
+          {ADMIN_POSTS_PER_PAGE_OPTIONS.map((n) => (
+            <option key={n} value={n}>{n}개</option>
+          ))}
+        </select>
         <button type="button" className="btn btn-small" onClick={exportCsv}>CSV 다운로드</button>
       </div>
 
@@ -5969,12 +6003,16 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
           <tr style={{background:'var(--bg-2)', fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
             <th scope="col" style={{padding:'12px 8px', textAlign:'center', width:36}}>
               <input type="checkbox"
-                checked={visible.length > 0 && visible.every((p) => selectedIds.has(p.id))}
+                checked={pagePosts.length > 0 && pagePosts.every((p) => selectedIds.has(p.id))}
                 onChange={(e) => {
-                  if (e.target.checked) setSelectedIds(new Set(visible.map((p) => p.id)));
-                  else setSelectedIds(new Set());
+                  setSelectedIds((prev) => {
+                    const next = new Set(prev);
+                    if (e.target.checked) pagePosts.forEach((p) => next.add(p.id));
+                    else pagePosts.forEach((p) => next.delete(p.id));
+                    return next;
+                  });
                 }}
-                aria-label="전체 선택"/>
+                aria-label="현재 페이지 전체 선택"/>
             </th>
             <th scope="col" style={{padding:12, textAlign:'left'}}>ID</th>
             <th scope="col" style={{padding:12, textAlign:'left'}}>분류</th>
@@ -5986,7 +6024,7 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
           </tr>
         </thead>
         <tbody>
-          {visible.map((p) => (
+          {pagePosts.map((p) => (
             <tr key={p.id} style={{borderBottom:'1px solid var(--line)', background: selectedIds.has(p.id) ? 'rgba(245,213,72,0.04)' : undefined}}>
               <td style={{padding:'14px 8px', textAlign:'center'}}>
                 <input type="checkbox" checked={selectedIds.has(p.id)}
@@ -6021,6 +6059,35 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
           조건에 맞는 게시글이 없습니다.
         </div>
       )}
+
+      {/* v00.264.003 — admin 패널 페이지네이션 (홈과 동일 스타일) */}
+      {visible.length > 0 && totalPages > 1 && (
+        <nav aria-label="게시글 페이지 이동" style={{display:'flex', justifyContent:'center', alignItems:'center', gap:6, marginTop:18, flexWrap:'wrap'}}>
+          <button type="button" className="btn btn-small"
+            onClick={() => setPage(Math.max(1, safePage - 1))}
+            disabled={safePage <= 1}>← 이전</button>
+          {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((n) => (
+            <button key={n} type="button" className="btn btn-small"
+              aria-current={n === safePage ? 'page' : undefined}
+              onClick={() => setPage(n)}
+              style={{
+                borderColor: n === safePage ? 'var(--primary)' : 'var(--line)',
+                color: n === safePage ? 'var(--primary)' : 'var(--ink-2)',
+                background: n === safePage ? 'rgba(245,213,72,0.08)' : 'transparent',
+                minWidth: 36,
+              }}>{n}</button>
+          ))}
+          <button type="button" className="btn btn-small"
+            onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+            disabled={safePage >= totalPages}>다음 →</button>
+        </nav>
+      )}
+      {visible.length > 0 && (
+        <div className="mono dim-2" style={{textAlign:'center', fontSize:10, letterSpacing:'0.2em', marginTop:8}}>
+          전체 {visible.length}건 · {safePage}/{totalPages} 페이지
+        </div>
+      )}
+
       {viewingId && (
         <PostViewerModal postId={viewingId} onClose={() => setViewingId(null)}/>
       )}

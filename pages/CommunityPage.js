@@ -518,7 +518,9 @@ const MentionTextarea = ({ value, onChange, authors, rows = 4, placeholder, styl
     ))
   ));
 };
-const POSTS_PER_PAGE = 10;
+const POSTS_PER_PAGE_OPTIONS = [10, 30, 50, 100];
+const POSTS_PER_PAGE_LS_KEY = "bgnj_community_posts_per_page";
+const POSTS_PER_PAGE_DEFAULT = 10;
 const CommunityPage = ({ go, postId, setPostId, user }) => {
   const userLevel = useUserLevel(user);
   const categories = React.useMemo(() => getCategoriesForBoard("community"), [postId]);
@@ -529,6 +531,22 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const [sort, setSort] = React.useState("latest");
   const [writing, setWriting] = React.useState(null);
   const [page, setPage] = React.useState(1);
+  const [postsPerPage, setPostsPerPageState] = React.useState(() => {
+    try {
+      const v = Number(localStorage.getItem(POSTS_PER_PAGE_LS_KEY));
+      return POSTS_PER_PAGE_OPTIONS.includes(v) ? v : POSTS_PER_PAGE_DEFAULT;
+    } catch (e) {
+      return POSTS_PER_PAGE_DEFAULT;
+    }
+  });
+  const setPostsPerPage = (n) => {
+    setPostsPerPageState(n);
+    try {
+      localStorage.setItem(POSTS_PER_PAGE_LS_KEY, String(n));
+    } catch (e) {
+    }
+    setPage(1);
+  };
   React.useEffect(() => {
     let pending = null;
     try {
@@ -745,10 +763,10 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       }
     ), writing && /* @__PURE__ */ React.createElement(PostComposeModal, { onClose: () => setWriting(null) }));
   }
-  const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / postsPerPage));
   const safePage = Math.min(page, totalPages);
-  const pageStart = (safePage - 1) * POSTS_PER_PAGE;
-  const pagePosts = filtered.slice(pageStart, pageStart + POSTS_PER_PAGE);
+  const pageStart = (safePage - 1) * postsPerPage;
+  const pagePosts = filtered.slice(pageStart, pageStart + postsPerPage);
   const isAdminUser = !!((user == null ? void 0 : user.isAdmin) || (user == null ? void 0 : user.gradeId) === "admin");
   const canRenumber = isAdminUser && sort === "latest";
   const [movingPostId, setMovingPostId] = React.useState(null);
@@ -1021,6 +1039,17 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     /* @__PURE__ */ React.createElement("option", { value: "views" }, "\uC870\uD68C\uC21C"),
     /* @__PURE__ */ React.createElement("option", { value: "replies" }, "\uB313\uAE00\uC21C"),
     /* @__PURE__ */ React.createElement("option", { value: "likes" }, "\uC88B\uC544\uC694\uC21C")
+  ), /* @__PURE__ */ React.createElement("label", { htmlFor: "community-per-page", className: "sr-only" }, "\uD55C \uD398\uC774\uC9C0 \uAC8C\uC2DC\uAE00 \uC218"), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      id: "community-per-page",
+      value: postsPerPage,
+      onChange: (e) => setPostsPerPage(Number(e.target.value)),
+      className: "field-input",
+      style: { padding: "10px 12px", fontSize: 12, cursor: "pointer" },
+      title: "\uD55C \uD398\uC774\uC9C0\uC5D0 \uD45C\uC2DC\uD560 \uAC8C\uC2DC\uAE00 \uAC2F\uC218"
+    },
+    POSTS_PER_PAGE_OPTIONS.map((n) => /* @__PURE__ */ React.createElement("option", { key: n, value: n }, n, "\uAC1C"))
   ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: handleWrite }, user ? "\uAE00\uC4F0\uAE30 \uFF0B" : "\uB85C\uADF8\uC778 \uD6C4 \uAE00\uC4F0\uAE30"))), tab !== "all" && (currentBoard == null ? void 0 : currentBoard.desc) && /* @__PURE__ */ React.createElement("div", { style: {
     padding: "10px 16px",
     marginBottom: 16,

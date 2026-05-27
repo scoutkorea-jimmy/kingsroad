@@ -4899,6 +4899,9 @@ const InternalAlarmPanel = () => {
     color: resultMsg.startsWith("\u2717") ? "var(--danger)" : "var(--secondary)"
   } }, resultMsg))), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7 } }, "\u24D8 \uC54C\uB78C\uC740 D1 ", /* @__PURE__ */ React.createElement("code", { style: { padding: "1px 5px", background: "var(--bg-2)", border: "1px solid var(--line-2)" } }, "notifications"), " \uD14C\uC774\uBE14\uC5D0 type=", /* @__PURE__ */ React.createElement("code", { style: { padding: "1px 5px", background: "var(--bg-2)", border: "1px solid var(--line-2)" } }, "internal_alarm"), " \uC73C\uB85C \uC800\uC7A5\uB429\uB2C8\uB2E4. \uC218\uC2E0\uC790\uB294 \uD5E4\uB354\uC758 \uC54C\uB9BC \uC885(\u{1F514}) \uC5D0\uC11C \uC989\uC2DC \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."));
 };
+const ADMIN_POSTS_PER_PAGE_OPTIONS = [10, 30, 50, 100];
+const ADMIN_POSTS_PER_PAGE_LS_KEY = "bgnj_admin_posts_per_page";
+const ADMIN_POSTS_PER_PAGE_DEFAULT = 30;
 const CommunityPostsAdminPanel = ({ posts, onChange }) => {
   const [search, setSearch] = React.useState("");
   const [filter, setFilter] = React.useState("all");
@@ -4906,12 +4909,36 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
   const [viewingId, setViewingId] = React.useState(null);
   const [bulkCat, setBulkCat] = React.useState("");
   const [bulkPrefix, setBulkPrefix] = React.useState("");
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSizeState] = React.useState(() => {
+    try {
+      const v = Number(localStorage.getItem(ADMIN_POSTS_PER_PAGE_LS_KEY));
+      return ADMIN_POSTS_PER_PAGE_OPTIONS.includes(v) ? v : ADMIN_POSTS_PER_PAGE_DEFAULT;
+    } catch (e) {
+      return ADMIN_POSTS_PER_PAGE_DEFAULT;
+    }
+  });
+  const setPageSize = (n) => {
+    setPageSizeState(n);
+    try {
+      localStorage.setItem(ADMIN_POSTS_PER_PAGE_LS_KEY, String(n));
+    } catch (e) {
+    }
+    setPage(1);
+  };
   const visible = React.useMemo(() => posts.filter((p) => {
     const q = search.trim().toLowerCase();
     const matchSearch = !q || p.title.toLowerCase().includes(q) || String(p.author || "").toLowerCase().includes(q);
     const matchFilter = filter === "all" || p.categoryId === filter;
     return matchSearch && matchFilter;
   }), [posts, search, filter]);
+  React.useEffect(() => {
+    setPage(1);
+  }, [search, filter]);
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * pageSize;
+  const pagePosts = visible.slice(pageStart, pageStart + pageSize);
   const exportCsv = () => {
     downloadCsv(`community-posts-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv`, window.BGNJ_COMMUNITY.exportCsv());
   };
@@ -4983,28 +5010,43 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
       /* @__PURE__ */ React.createElement("span", null, chip.label),
       /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.05em", opacity: active ? 0.85 : 0.55 } }, chip.count)
     );
-  })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 16 } }, /* @__PURE__ */ React.createElement("label", { htmlFor: "post-search", className: "sr-only" }, "\uAC8C\uC2DC\uAE00 \uAC80\uC0C9"), /* @__PURE__ */ React.createElement(
+  })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 16, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("label", { htmlFor: "post-search", className: "sr-only" }, "\uAC8C\uC2DC\uAE00 \uAC80\uC0C9"), /* @__PURE__ */ React.createElement(
     "input",
     {
       id: "post-search",
       className: "field-input",
       placeholder: "\uC81C\uBAA9 \uB610\uB294 \uC791\uC131\uC790 \uAC80\uC0C9...",
-      style: { flex: 1 },
+      style: { flex: 1, minWidth: 200 },
       value: search,
       onChange: (e) => setSearch(e.target.value)
     }
+  ), /* @__PURE__ */ React.createElement("label", { htmlFor: "admin-post-per-page", className: "sr-only" }, "\uD55C \uD398\uC774\uC9C0 \uAC8C\uC2DC\uAE00 \uC218"), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      id: "admin-post-per-page",
+      className: "field-input",
+      value: pageSize,
+      onChange: (e) => setPageSize(Number(e.target.value)),
+      style: { padding: "10px 12px", fontSize: 12, cursor: "pointer" },
+      title: "\uD55C \uD398\uC774\uC9C0\uC5D0 \uD45C\uC2DC\uD560 \uAC8C\uC2DC\uAE00 \uAC2F\uC218"
+    },
+    ADMIN_POSTS_PER_PAGE_OPTIONS.map((n) => /* @__PURE__ */ React.createElement("option", { key: n, value: n }, n, "\uAC1C"))
   ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: exportCsv }, "CSV \uB2E4\uC6B4\uB85C\uB4DC")), selectedIds2.size > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "rgba(59,130,246,0.07)", border: "1px solid var(--primary-dim)", marginBottom: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono gold", style: { fontSize: 11 } }, selectedIds2.size, "\uAC1C \uC120\uD0DD\uB428"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { borderColor: "var(--danger)", color: "var(--danger)" }, onClick: bulkRemove }, "\uC120\uD0DD \uC0AD\uC81C"), /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { width: 1, alignSelf: "stretch", background: "var(--line)" } }), /* @__PURE__ */ React.createElement("select", { className: "field-input", style: { maxWidth: 160, padding: "4px 8px" }, value: bulkCat, onChange: (e) => setBulkCat(e.target.value) }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\uAC8C\uC2DC\uD310 \uC120\uD0DD..."), window.BGNJ_STORES.categories.filter((c) => c.boardType === "community").map((c) => /* @__PURE__ */ React.createElement("option", { key: c.id, value: c.id }, c.label))), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: bulkMove }, "\uC774\uB3D9"), /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { width: 1, alignSelf: "stretch", background: "var(--line)" } }), /* @__PURE__ */ React.createElement("input", { type: "text", className: "field-input", style: { maxWidth: 140, padding: "4px 8px" }, placeholder: "\uB9D0\uBA38\uB9AC (\uBE44\uC6B0\uBA74 \uC81C\uAC70)", value: bulkPrefix, onChange: (e) => setBulkPrefix(e.target.value), "aria-label": "\uC77C\uAD04 \uC801\uC6A9\uD560 \uB9D0\uBA38\uB9AC" }), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: bulkApplyPrefix }, "\uB9D0\uBA38\uB9AC \uC801\uC6A9"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { marginLeft: "auto" }, onClick: () => setSelectedIds(/* @__PURE__ */ new Set()) }, "\uC120\uD0DD \uD574\uC81C")), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 8px", textAlign: "center", width: 36 } }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "checkbox",
-      checked: visible.length > 0 && visible.every((p) => selectedIds2.has(p.id)),
+      checked: pagePosts.length > 0 && pagePosts.every((p) => selectedIds2.has(p.id)),
       onChange: (e) => {
-        if (e.target.checked) setSelectedIds(new Set(visible.map((p) => p.id)));
-        else setSelectedIds(/* @__PURE__ */ new Set());
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          if (e.target.checked) pagePosts.forEach((p) => next.add(p.id));
+          else pagePosts.forEach((p) => next.delete(p.id));
+          return next;
+        });
       },
-      "aria-label": "\uC804\uCCB4 \uC120\uD0DD"
+      "aria-label": "\uD604\uC7AC \uD398\uC774\uC9C0 \uC804\uCCB4 \uC120\uD0DD"
     }
-  )), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB9D0\uBA38\uB9AC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB0A0\uC9DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, visible.map((p) => /* @__PURE__ */ React.createElement("tr", { key: p.id, style: { borderBottom: "1px solid var(--line)", background: selectedIds2.has(p.id) ? "rgba(245,213,72,0.04)" : void 0 } }, /* @__PURE__ */ React.createElement("td", { style: { padding: "14px 8px", textAlign: "center" } }, /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB9D0\uBA38\uB9AC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB0A0\uC9DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, pagePosts.map((p) => /* @__PURE__ */ React.createElement("tr", { key: p.id, style: { borderBottom: "1px solid var(--line)", background: selectedIds2.has(p.id) ? "rgba(245,213,72,0.04)" : void 0 } }, /* @__PURE__ */ React.createElement("td", { style: { padding: "14px 8px", textAlign: "center" } }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "checkbox",
@@ -5028,7 +5070,41 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
       style: { borderColor: "var(--danger)", color: "var(--danger)" }
     },
     "\uC0AD\uC81C"
-  )))))), visible.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24, marginTop: 16, textAlign: "center" } }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), viewingId && /* @__PURE__ */ React.createElement(PostViewerModal, { postId: viewingId, onClose: () => setViewingId(null) }));
+  )))))), visible.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24, marginTop: 16, textAlign: "center" } }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), visible.length > 0 && totalPages > 1 && /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uAC8C\uC2DC\uAE00 \uD398\uC774\uC9C0 \uC774\uB3D9", style: { display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 18, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: () => setPage(Math.max(1, safePage - 1)),
+      disabled: safePage <= 1
+    },
+    "\u2190 \uC774\uC804"
+  ), Array.from({ length: totalPages }, (_, idx) => idx + 1).map((n) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: n,
+      type: "button",
+      className: "btn btn-small",
+      "aria-current": n === safePage ? "page" : void 0,
+      onClick: () => setPage(n),
+      style: {
+        borderColor: n === safePage ? "var(--primary)" : "var(--line)",
+        color: n === safePage ? "var(--primary)" : "var(--ink-2)",
+        background: n === safePage ? "rgba(245,213,72,0.08)" : "transparent",
+        minWidth: 36
+      }
+    },
+    n
+  )), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: () => setPage(Math.min(totalPages, safePage + 1)),
+      disabled: safePage >= totalPages
+    },
+    "\uB2E4\uC74C \u2192"
+  )), visible.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { textAlign: "center", fontSize: 10, letterSpacing: "0.2em", marginTop: 8 } }, "\uC804\uCCB4 ", visible.length, "\uAC74 \xB7 ", safePage, "/", totalPages, " \uD398\uC774\uC9C0"), viewingId && /* @__PURE__ */ React.createElement(PostViewerModal, { postId: viewingId, onClose: () => setViewingId(null) }));
 };
 const AdminPage = ({ go }) => {
   var _a, _b;

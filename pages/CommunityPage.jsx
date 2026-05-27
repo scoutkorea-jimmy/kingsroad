@@ -532,7 +532,10 @@ const MentionTextarea = ({ value, onChange, authors, rows = 4, placeholder, styl
 };
 
 // === Community Page ======================================================
-const POSTS_PER_PAGE = 10;
+// v00.264.003 — 한 페이지 게시글 갯수 사용자 선택. 기본 10, 옵션 10/30/50/100.
+const POSTS_PER_PAGE_OPTIONS = [10, 30, 50, 100];
+const POSTS_PER_PAGE_LS_KEY = 'bgnj_community_posts_per_page';
+const POSTS_PER_PAGE_DEFAULT = 10;
 
 const CommunityPage = ({ go, postId, setPostId, user }) => {
   const userLevel = useUserLevel(user);
@@ -544,6 +547,17 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const [sort, setSort] = React.useState("latest");
   const [writing, setWriting] = React.useState(null);
   const [page, setPage] = React.useState(1);
+  const [postsPerPage, setPostsPerPageState] = React.useState(() => {
+    try {
+      const v = Number(localStorage.getItem(POSTS_PER_PAGE_LS_KEY));
+      return POSTS_PER_PAGE_OPTIONS.includes(v) ? v : POSTS_PER_PAGE_DEFAULT;
+    } catch { return POSTS_PER_PAGE_DEFAULT; }
+  });
+  const setPostsPerPage = (n) => {
+    setPostsPerPageState(n);
+    try { localStorage.setItem(POSTS_PER_PAGE_LS_KEY, String(n)); } catch {}
+    setPage(1);
+  };
 
   // 알림 벨 / 외부 진입에서 stash해 둔 postId가 있으면 자동으로 상세로 이동
   React.useEffect(() => {
@@ -747,10 +761,10 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     );
   }
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / postsPerPage));
   const safePage = Math.min(page, totalPages);
-  const pageStart = (safePage - 1) * POSTS_PER_PAGE;
-  const pagePosts = filtered.slice(pageStart, pageStart + POSTS_PER_PAGE);
+  const pageStart = (safePage - 1) * postsPerPage;
+  const pagePosts = filtered.slice(pageStart, pageStart + postsPerPage);
 
   // v00.264 — admin 전용 게시글 순서 변경 (▲ 위로 / ▼ 아래로). 정렬이 'latest'
   // 일 때만 활성 (다른 정렬은 createdAt 와 무관). 인접 두 항목 사이의 createdAt
@@ -1009,6 +1023,14 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
               <option value="views">조회순</option>
               <option value="replies">댓글순</option>
               <option value="likes">좋아요순</option>
+            </select>
+            <label htmlFor="community-per-page" className="sr-only">한 페이지 게시글 수</label>
+            <select id="community-per-page" value={postsPerPage} onChange={e => setPostsPerPage(Number(e.target.value))}
+              className="field-input" style={{padding:'10px 12px', fontSize:12, cursor:'pointer'}}
+              title="한 페이지에 표시할 게시글 갯수">
+              {POSTS_PER_PAGE_OPTIONS.map((n) => (
+                <option key={n} value={n}>{n}개</option>
+              ))}
             </select>
             <button type="button" className="btn btn-gold btn-small" onClick={handleWrite}>
               {user ? '글쓰기 ＋' : '로그인 후 글쓰기'}
