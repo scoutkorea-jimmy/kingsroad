@@ -117,6 +117,25 @@ const ImageSlider = ({ images, autoplayMs = 4000 }) => {
   );
 };
 
+// === v00.264 — 첨부 이미지 블록 strip 헬퍼 ===============================
+// 발행 시 본문 끝에 append 되는 <div data-bgnj-attached-block="1">…</div> 한 단위를
+// 제거. 수정 라운드트립에서 본문에 이미지가 중복으로 누적되는 회귀 차단용.
+// DOMParser 로 파싱 후 마커 div 만 제거 → 사용자가 본문에 inline 으로 직접 삽입한
+// <img> 는 유지된다. DOMParser 실패 시 정규식 폴백.
+const _stripAttachedBlock = (html) => {
+  if (!html || typeof html !== 'string') return html || '';
+  if (!html.includes('data-bgnj-attached-block')) return html;
+  try {
+    const doc = new DOMParser().parseFromString(`<div id="__root__">${html}</div>`, 'text/html');
+    const root = doc.getElementById('__root__');
+    if (!root) return html;
+    root.querySelectorAll('[data-bgnj-attached-block="1"]').forEach((node) => node.remove());
+    return root.innerHTML;
+  } catch {
+    return html.replace(/<div\s+data-bgnj-attached-block="1"[^>]*>[\s\S]*?<\/div>/gi, '');
+  }
+};
+
 // === Image picker (editor side) — up to `max` images with thumbnails =====
 const ImageAttacher = ({ images, setImages, max = 10 }) => {
   const inputRef = React.useRef(null);
@@ -733,6 +752,65 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const pageStart = (safePage - 1) * POSTS_PER_PAGE;
   const pagePosts = filtered.slice(pageStart, pageStart + POSTS_PER_PAGE);
 
+  // v00.264 — admin 이 번호 셀을 클릭하면 prompt 로 새 번호 입력 → createdAt 재계산.
+  // 정렬이 'latest' 일 때만 활성 (다른 정렬은 createdAt 와 무관). 인접 항목 createdAt
+  // 중간값으로 배치 → 별도 sortOrder 컬럼/워커 배포 없이 즉시 적용.
+  const isAdminUser = !!(user?.isAdmin || user?.gradeId === 'admin');
+  const canRenumber = isAdminUser && sort === 'latest';
+  const handleRenumber = React.useCallback(async (post, currentNum) => {
+    const total = filtered.length;
+    const input = window.prompt(`새 번호를 입력하세요 (1 ~ ${total}, 현재 ${currentNum}번)`, String(currentNum));
+    if (input == null) return;
+    const trimmed = String(input).trim();
+    if (!trimmed) return;
+    const newNum = Number(trimmed);
+    if (!Number.isInteger(newNum) || newNum < 1 || newNum > total) {
+      window.BGNJ_TOAST?.error?.(`1 ~ ${total} 사이의 정수를 입력하세요.`);
+      return;
+    }
+    if (newNum === currentNum) return;
+    // 번호 = total - idx → idx = total - newNum (0-based, latest 정렬)
+    const targetIdx = total - newNum;
+    // 자기 자신을 제외한 정렬 배열에서 인접 항목 추출.
+    const others = filtered.filter((p) => String(p.id) !== String(post.id));
+    // others 는 createdAt desc 순. targetIdx 위치에 끼워 넣을 때 prev = others[targetIdx-1] (위), next = others[targetIdx] (아래).
+    const prev = targetIdx > 0 ? others[targetIdx - 1] : null;
+    const next = targetIdx < others.length ? others[targetIdx] : null;
+    const toMs = (p) => {
+      const v = p?.createdAt || p?.date || '';
+      const t = Date.parse(v);
+      return Number.isFinite(t) ? t : NaN;
+    };
+    const prevMs = prev ? toMs(prev) : NaN;
+    const nextMs = next ? toMs(next) : NaN;
+    let targetMs;
+    if (prev && next) {
+      // 두 항목 사이.
+      if (Number.isFinite(prevMs) && Number.isFinite(nextMs) && prevMs > nextMs) {
+        const gap = prevMs - nextMs;
+        targetMs = gap > 2000 ? Math.floor((prevMs + nextMs) / 2) : nextMs + Math.max(1, Math.floor(gap / 2));
+      } else {
+        targetMs = Date.now();
+      }
+    } else if (!prev && next) {
+      // 최상단으로.
+      targetMs = Number.isFinite(nextMs) ? nextMs + 1000 : Date.now();
+    } else if (prev && !next) {
+      // 최하단으로.
+      targetMs = Number.isFinite(prevMs) ? prevMs - 1000 : Date.now() - 1000;
+    } else {
+      targetMs = Date.now();
+    }
+    const iso = new Date(targetMs).toISOString();
+    try {
+      await window.BGNJ_COMMUNITY.updatePostRemote(post.id, { createdAt: iso });
+      window.BGNJ_TOAST?.success?.(`게시글 순서를 변경했습니다. (${currentNum}번 → ${newNum}번)`);
+      setRefreshKey((v) => v + 1);
+    } catch (err) {
+      window.BGNJ_TOAST?.error?.(`순서 변경 실패: ${err?.message || '알 수 없는 오류'}`);
+    }
+  }, [filtered]);
+
   const handleWrite = async () => {
     if (!user) {
       if ((await window.BGNJ_CONFIRM("글쓰기는 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?", { danger: true }))) {
@@ -868,6 +946,11 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           </div>
         )}
 
+        {canRenumber && (
+          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:8, padding:'6px 10px', background:'rgba(158,104,24,0.05)', borderLeft:'2px solid var(--primary-dim)'}}>
+            ADMIN · 번호를 클릭하면 게시글 순서를 변경할 수 있습니다.
+          </div>
+        )}
         <table className="community-table" style={{width:'100%', borderCollapse:'collapse'}}>
           <caption className="sr-only">게시글 목록</caption>
           <thead>
@@ -894,7 +977,17 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                 <tr key={p.id} style={{borderBottom:'1px solid var(--line)', transition:'background .2s'}}
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,213,72,0.03)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <td className="col-num mono dim-2" style={{padding:'18px 8px', fontSize:12}}>{rowNum}</td>
+                  <td className="col-num mono dim-2" style={{padding:'18px 8px', fontSize:12}}>
+                    {canRenumber ? (
+                      <button type="button"
+                        onClick={() => handleRenumber(p, filtered.length - (pageStart + i))}
+                        title="번호 클릭 = 순서 변경"
+                        className="row-num-edit"
+                        style={{all:'unset', cursor:'pointer', fontFamily:'inherit', fontSize:'inherit', color:'inherit', padding:'2px 4px', borderBottom:'1px dashed var(--primary-dim)'}}>
+                        {rowNum}
+                      </button>
+                    ) : rowNum}
+                  </td>
                   <td className="col-cat" style={{padding:'18px 8px'}}><span className="badge">{cat.label}</span></td>
                   <td className="col-title row-title" style={{padding:'18px 8px', fontSize:15}}>
                     <button type="button" onClick={() => setPostId(p.id)}
@@ -1102,7 +1195,9 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     setTags(initialPost?.tags || []);
     setImages(initialPost?.images || []);
     setAttachments(initialPost?.attachments || []);
-    setBodyHtml(initialPost?.body?.html || "");
+    // v00.264 — 수정 모드 진입 시 발행 단계에서 append 했던 첨부 이미지 블록을
+    // 제거한 본문만 Tiptap 으로 로드. 본문에 인라인 이미지가 누적되는 회귀 차단.
+    setBodyHtml(_stripAttachedBlock(initialPost?.body?.html || ""));
     setBodyText(initialPost?.body?.text || "");
     setError("");
     prevCategoryIdRef.current = initialPost?.categoryId || defaultCategoryId;
@@ -1146,7 +1241,9 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       }).filter(Boolean).join('');
       return figs ? `<div data-bgnj-attached-block="1">${figs}</div>` : '';
     })();
-    const _bodyHtmlWithImages = bodyHtml + _attachedImagesHtml;
+    // v00.264 — 이중 안전. Tiptap 본문(bodyHtml)에 마커 블록이 남아 있을 수
+    // 있는 어떤 경로라도 한 번 더 strip 후 새 append → 중복 누적 차단.
+    const _bodyHtmlWithImages = _stripAttachedBlock(bodyHtml) + _attachedImagesHtml;
     const payload = {
       categoryId: cat.id,
       category: cat.label,
