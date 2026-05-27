@@ -752,64 +752,55 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const pageStart = (safePage - 1) * POSTS_PER_PAGE;
   const pagePosts = filtered.slice(pageStart, pageStart + POSTS_PER_PAGE);
 
-  // v00.264 — admin 이 번호 셀을 클릭하면 prompt 로 새 번호 입력 → createdAt 재계산.
-  // 정렬이 'latest' 일 때만 활성 (다른 정렬은 createdAt 와 무관). 인접 항목 createdAt
-  // 중간값으로 배치 → 별도 sortOrder 컬럼/워커 배포 없이 즉시 적용.
+  // v00.264 — admin 전용 게시글 순서 변경 (▲ 위로 / ▼ 아래로). 정렬이 'latest'
+  // 일 때만 활성 (다른 정렬은 createdAt 와 무관). 인접 두 항목 사이의 createdAt
+  // 중간값으로 재배치 → 별도 sortOrder 컬럼/워커 배포 없이 즉시 적용.
   const isAdminUser = !!(user?.isAdmin || user?.gradeId === 'admin');
   const canRenumber = isAdminUser && sort === 'latest';
-  const handleRenumber = React.useCallback(async (post, currentNum) => {
-    const total = filtered.length;
-    const input = window.prompt(`새 번호를 입력하세요 (1 ~ ${total}, 현재 ${currentNum}번)`, String(currentNum));
-    if (input == null) return;
-    const trimmed = String(input).trim();
-    if (!trimmed) return;
-    const newNum = Number(trimmed);
-    if (!Number.isInteger(newNum) || newNum < 1 || newNum > total) {
-      window.BGNJ_TOAST?.error?.(`1 ~ ${total} 사이의 정수를 입력하세요.`);
-      return;
-    }
-    if (newNum === currentNum) return;
-    // 번호 = total - idx → idx = total - newNum (0-based, latest 정렬)
-    const targetIdx = total - newNum;
-    // 자기 자신을 제외한 정렬 배열에서 인접 항목 추출.
-    const others = filtered.filter((p) => String(p.id) !== String(post.id));
-    // others 는 createdAt desc 순. targetIdx 위치에 끼워 넣을 때 prev = others[targetIdx-1] (위), next = others[targetIdx] (아래).
-    const prev = targetIdx > 0 ? others[targetIdx - 1] : null;
-    const next = targetIdx < others.length ? others[targetIdx] : null;
+  const [movingPostId, setMovingPostId] = React.useState(null);
+  const handleMovePost = React.useCallback(async (post, direction) => {
+    if (movingPostId) return;
+    const idx = filtered.findIndex((p) => String(p.id) === String(post.id));
+    if (idx < 0) return;
+    // latest 정렬 = createdAt desc. 위 = 더 최신 = 더 큰 createdAt.
+    if (direction === 'up' && idx === 0) return;
+    if (direction === 'down' && idx === filtered.length - 1) return;
+    // 이동 후 idx 와 그 양쪽 (자기 자신 제외).
+    const others = filtered.filter((_, i) => i !== idx);
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    const newer = targetIdx > 0 ? others[targetIdx - 1] : null;     // 위 항목 (더 큰 ms)
+    const older = targetIdx < others.length ? others[targetIdx] : null; // 아래 항목 (더 작은 ms)
     const toMs = (p) => {
       const v = p?.createdAt || p?.date || '';
       const t = Date.parse(v);
       return Number.isFinite(t) ? t : NaN;
     };
-    const prevMs = prev ? toMs(prev) : NaN;
-    const nextMs = next ? toMs(next) : NaN;
+    const newerMs = newer ? toMs(newer) : NaN;
+    const olderMs = older ? toMs(older) : NaN;
     let targetMs;
-    if (prev && next) {
-      // 두 항목 사이.
-      if (Number.isFinite(prevMs) && Number.isFinite(nextMs) && prevMs > nextMs) {
-        const gap = prevMs - nextMs;
-        targetMs = gap > 2000 ? Math.floor((prevMs + nextMs) / 2) : nextMs + Math.max(1, Math.floor(gap / 2));
-      } else {
-        targetMs = Date.now();
-      }
-    } else if (!prev && next) {
+    if (newer && older && Number.isFinite(newerMs) && Number.isFinite(olderMs) && newerMs > olderMs) {
+      const gap = newerMs - olderMs;
+      targetMs = gap > 2000 ? Math.floor((newerMs + olderMs) / 2) : olderMs + Math.max(1, Math.floor(gap / 2));
+    } else if (!newer && older && Number.isFinite(olderMs)) {
       // 최상단으로.
-      targetMs = Number.isFinite(nextMs) ? nextMs + 1000 : Date.now();
-    } else if (prev && !next) {
+      targetMs = olderMs + 1000;
+    } else if (newer && !older && Number.isFinite(newerMs)) {
       // 최하단으로.
-      targetMs = Number.isFinite(prevMs) ? prevMs - 1000 : Date.now() - 1000;
+      targetMs = newerMs - 1000;
     } else {
       targetMs = Date.now();
     }
     const iso = new Date(targetMs).toISOString();
+    setMovingPostId(post.id);
     try {
       await window.BGNJ_COMMUNITY.updatePostRemote(post.id, { createdAt: iso });
-      window.BGNJ_TOAST?.success?.(`게시글 순서를 변경했습니다. (${currentNum}번 → ${newNum}번)`);
       setRefreshKey((v) => v + 1);
     } catch (err) {
       window.BGNJ_TOAST?.error?.(`순서 변경 실패: ${err?.message || '알 수 없는 오류'}`);
+    } finally {
+      setMovingPostId(null);
     }
-  }, [filtered]);
+  }, [filtered, movingPostId]);
 
   const handleWrite = async () => {
     if (!user) {
@@ -948,14 +939,14 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
 
         {canRenumber && (
           <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:8, padding:'6px 10px', background:'rgba(158,104,24,0.05)', borderLeft:'2px solid var(--primary-dim)'}}>
-            ADMIN · 번호를 클릭하면 게시글 순서를 변경할 수 있습니다.
+            ADMIN · 번호 옆 ▲ ▼ 버튼으로 게시글 순서를 변경할 수 있습니다.
           </div>
         )}
         <table className="community-table" style={{width:'100%', borderCollapse:'collapse'}}>
           <caption className="sr-only">게시글 목록</caption>
           <thead>
             <tr style={{fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
-              <th scope="col" className="col-num" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:60}}>번호</th>
+              <th scope="col" className="col-num" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width: canRenumber ? 90 : 60}}>번호</th>
               <th scope="col" className="col-cat" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:90}}>분류</th>
               <th scope="col" className="col-title" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)'}}>제목</th>
               <th scope="col" className="col-author" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:120}}>작성자</th>
@@ -978,15 +969,38 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,213,72,0.03)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <td className="col-num mono dim-2" style={{padding:'18px 8px', fontSize:12}}>
-                    {canRenumber ? (
-                      <button type="button"
-                        onClick={() => handleRenumber(p, filtered.length - (pageStart + i))}
-                        title="번호 클릭 = 순서 변경"
-                        className="row-num-edit"
-                        style={{all:'unset', cursor:'pointer', fontFamily:'inherit', fontSize:'inherit', color:'inherit', padding:'2px 4px', borderBottom:'1px dashed var(--primary-dim)'}}>
-                        {rowNum}
-                      </button>
-                    ) : rowNum}
+                    {canRenumber ? (() => {
+                      const absIdx = pageStart + i;
+                      const isTop = absIdx === 0;
+                      const isBottom = absIdx === filtered.length - 1;
+                      const busy = movingPostId === p.id;
+                      const arrowBtnStyle = (disabled) => ({
+                        background:'none', border:'1px solid var(--line)',
+                        color: disabled ? 'var(--ink-3)' : 'var(--primary)',
+                        cursor: disabled ? 'default' : 'pointer',
+                        padding:'1px 4px', lineHeight:1, fontSize:10, minHeight:0,
+                        opacity: disabled ? 0.4 : 1,
+                      });
+                      return (
+                        <span style={{display:'inline-flex', alignItems:'center', gap:6}}>
+                          <span>{rowNum}</span>
+                          <span style={{display:'inline-flex', flexDirection:'column', gap:1}}>
+                            <button type="button"
+                              onClick={() => handleMovePost(p, 'up')}
+                              disabled={isTop || busy}
+                              title="위로 (최신 방향)"
+                              aria-label="위로 한 칸"
+                              style={arrowBtnStyle(isTop || busy)}>▲</button>
+                            <button type="button"
+                              onClick={() => handleMovePost(p, 'down')}
+                              disabled={isBottom || busy}
+                              title="아래로 (과거 방향)"
+                              aria-label="아래로 한 칸"
+                              style={arrowBtnStyle(isBottom || busy)}>▼</button>
+                          </span>
+                        </span>
+                      );
+                    })() : rowNum}
                   </td>
                   <td className="col-cat" style={{padding:'18px 8px'}}><span className="badge">{cat.label}</span></td>
                   <td className="col-title row-title" style={{padding:'18px 8px', fontSize:15}}>

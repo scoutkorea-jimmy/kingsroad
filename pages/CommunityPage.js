@@ -751,54 +751,47 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const pagePosts = filtered.slice(pageStart, pageStart + POSTS_PER_PAGE);
   const isAdminUser = !!((user == null ? void 0 : user.isAdmin) || (user == null ? void 0 : user.gradeId) === "admin");
   const canRenumber = isAdminUser && sort === "latest";
-  const handleRenumber = React.useCallback(async (post, currentNum) => {
-    var _a, _b, _c, _d, _e, _f;
-    const total = filtered.length;
-    const input = window.prompt(`\uC0C8 \uBC88\uD638\uB97C \uC785\uB825\uD558\uC138\uC694 (1 ~ ${total}, \uD604\uC7AC ${currentNum}\uBC88)`, String(currentNum));
-    if (input == null) return;
-    const trimmed = String(input).trim();
-    if (!trimmed) return;
-    const newNum = Number(trimmed);
-    if (!Number.isInteger(newNum) || newNum < 1 || newNum > total) {
-      (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, `1 ~ ${total} \uC0AC\uC774\uC758 \uC815\uC218\uB97C \uC785\uB825\uD558\uC138\uC694.`);
-      return;
-    }
-    if (newNum === currentNum) return;
-    const targetIdx = total - newNum;
-    const others = filtered.filter((p) => String(p.id) !== String(post.id));
-    const prev = targetIdx > 0 ? others[targetIdx - 1] : null;
-    const next = targetIdx < others.length ? others[targetIdx] : null;
+  const [movingPostId, setMovingPostId] = React.useState(null);
+  const handleMovePost = React.useCallback(async (post, direction) => {
+    var _a, _b;
+    if (movingPostId) return;
+    const idx = filtered.findIndex((p) => String(p.id) === String(post.id));
+    if (idx < 0) return;
+    if (direction === "up" && idx === 0) return;
+    if (direction === "down" && idx === filtered.length - 1) return;
+    const others = filtered.filter((_, i) => i !== idx);
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    const newer = targetIdx > 0 ? others[targetIdx - 1] : null;
+    const older = targetIdx < others.length ? others[targetIdx] : null;
     const toMs = (p) => {
       const v = (p == null ? void 0 : p.createdAt) || (p == null ? void 0 : p.date) || "";
       const t = Date.parse(v);
       return Number.isFinite(t) ? t : NaN;
     };
-    const prevMs = prev ? toMs(prev) : NaN;
-    const nextMs = next ? toMs(next) : NaN;
+    const newerMs = newer ? toMs(newer) : NaN;
+    const olderMs = older ? toMs(older) : NaN;
     let targetMs;
-    if (prev && next) {
-      if (Number.isFinite(prevMs) && Number.isFinite(nextMs) && prevMs > nextMs) {
-        const gap = prevMs - nextMs;
-        targetMs = gap > 2e3 ? Math.floor((prevMs + nextMs) / 2) : nextMs + Math.max(1, Math.floor(gap / 2));
-      } else {
-        targetMs = Date.now();
-      }
-    } else if (!prev && next) {
-      targetMs = Number.isFinite(nextMs) ? nextMs + 1e3 : Date.now();
-    } else if (prev && !next) {
-      targetMs = Number.isFinite(prevMs) ? prevMs - 1e3 : Date.now() - 1e3;
+    if (newer && older && Number.isFinite(newerMs) && Number.isFinite(olderMs) && newerMs > olderMs) {
+      const gap = newerMs - olderMs;
+      targetMs = gap > 2e3 ? Math.floor((newerMs + olderMs) / 2) : olderMs + Math.max(1, Math.floor(gap / 2));
+    } else if (!newer && older && Number.isFinite(olderMs)) {
+      targetMs = olderMs + 1e3;
+    } else if (newer && !older && Number.isFinite(newerMs)) {
+      targetMs = newerMs - 1e3;
     } else {
       targetMs = Date.now();
     }
     const iso = new Date(targetMs).toISOString();
+    setMovingPostId(post.id);
     try {
       await window.BGNJ_COMMUNITY.updatePostRemote(post.id, { createdAt: iso });
-      (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, `\uAC8C\uC2DC\uAE00 \uC21C\uC11C\uB97C \uBCC0\uACBD\uD588\uC2B5\uB2C8\uB2E4. (${currentNum}\uBC88 \u2192 ${newNum}\uBC88)`);
       setRefreshKey((v) => v + 1);
     } catch (err) {
-      (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, `\uC21C\uC11C \uBCC0\uACBD \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+      (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, `\uC21C\uC11C \uBCC0\uACBD \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+    } finally {
+      setMovingPostId(null);
     }
-  }, [filtered]);
+  }, [filtered, movingPostId]);
   const handleWrite = async () => {
     if (!user) {
       if (await window.BGNJ_CONFIRM("\uAE00\uC4F0\uAE30\uB294 \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) {
@@ -959,7 +952,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       }
     },
     p
-  ))), canRenumber && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8, padding: "6px 10px", background: "rgba(158,104,24,0.05)", borderLeft: "2px solid var(--primary-dim)" } }, "ADMIN \xB7 \uBC88\uD638\uB97C \uD074\uB9AD\uD558\uBA74 \uAC8C\uC2DC\uAE00 \uC21C\uC11C\uB97C \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { className: "community-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("caption", { className: "sr-only" }, "\uAC8C\uC2DC\uAE00 \uBAA9\uB85D"), /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-num", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 60 } }, "\uBC88\uD638"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-cat", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 90 } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-title", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-author", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 120 } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-views", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 70 } }, "\uC870\uD68C"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-date", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 100 } }, "\uB0A0\uC9DC"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, style: { padding: 48, textAlign: "center" }, className: "dim" }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.")) : pagePosts.map((p, i) => {
+  ))), canRenumber && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8, padding: "6px 10px", background: "rgba(158,104,24,0.05)", borderLeft: "2px solid var(--primary-dim)" } }, "ADMIN \xB7 \uBC88\uD638 \uC606 \u25B2 \u25BC \uBC84\uD2BC\uC73C\uB85C \uAC8C\uC2DC\uAE00 \uC21C\uC11C\uB97C \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { className: "community-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("caption", { className: "sr-only" }, "\uAC8C\uC2DC\uAE00 \uBAA9\uB85D"), /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-num", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: canRenumber ? 90 : 60 } }, "\uBC88\uD638"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-cat", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 90 } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-title", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-author", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 120 } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-views", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 70 } }, "\uC870\uD68C"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-date", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 100 } }, "\uB0A0\uC9DC"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, style: { padding: 48, textAlign: "center" }, className: "dim" }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.")) : pagePosts.map((p, i) => {
     var _a, _b, _c, _d, _e;
     const cat = categories.find((c) => c.id === p.categoryId) || categories.find((c) => c.label === p.category) || { label: p.category };
     const likesCount = Array.isArray(p.likes) ? p.likes.length : 0;
@@ -976,17 +969,46 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
         onMouseEnter: (e) => e.currentTarget.style.background = "rgba(245,213,72,0.03)",
         onMouseLeave: (e) => e.currentTarget.style.background = "transparent"
       },
-      /* @__PURE__ */ React.createElement("td", { className: "col-num mono dim-2", style: { padding: "18px 8px", fontSize: 12 } }, canRenumber ? /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          onClick: () => handleRenumber(p, filtered.length - (pageStart + i)),
-          title: "\uBC88\uD638 \uD074\uB9AD = \uC21C\uC11C \uBCC0\uACBD",
-          className: "row-num-edit",
-          style: { all: "unset", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", color: "inherit", padding: "2px 4px", borderBottom: "1px dashed var(--primary-dim)" }
-        },
-        rowNum
-      ) : rowNum),
+      /* @__PURE__ */ React.createElement("td", { className: "col-num mono dim-2", style: { padding: "18px 8px", fontSize: 12 } }, canRenumber ? (() => {
+        const absIdx = pageStart + i;
+        const isTop = absIdx === 0;
+        const isBottom = absIdx === filtered.length - 1;
+        const busy = movingPostId === p.id;
+        const arrowBtnStyle = (disabled) => ({
+          background: "none",
+          border: "1px solid var(--line)",
+          color: disabled ? "var(--ink-3)" : "var(--primary)",
+          cursor: disabled ? "default" : "pointer",
+          padding: "1px 4px",
+          lineHeight: 1,
+          fontSize: 10,
+          minHeight: 0,
+          opacity: disabled ? 0.4 : 1
+        });
+        return /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement("span", null, rowNum), /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", flexDirection: "column", gap: 1 } }, /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => handleMovePost(p, "up"),
+            disabled: isTop || busy,
+            title: "\uC704\uB85C (\uCD5C\uC2E0 \uBC29\uD5A5)",
+            "aria-label": "\uC704\uB85C \uD55C \uCE78",
+            style: arrowBtnStyle(isTop || busy)
+          },
+          "\u25B2"
+        ), /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => handleMovePost(p, "down"),
+            disabled: isBottom || busy,
+            title: "\uC544\uB798\uB85C (\uACFC\uAC70 \uBC29\uD5A5)",
+            "aria-label": "\uC544\uB798\uB85C \uD55C \uCE78",
+            style: arrowBtnStyle(isBottom || busy)
+          },
+          "\u25BC"
+        )));
+      })() : rowNum),
       /* @__PURE__ */ React.createElement("td", { className: "col-cat", style: { padding: "18px 8px" } }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, cat.label)),
       /* @__PURE__ */ React.createElement("td", { className: "col-title row-title", style: { padding: "18px 8px", fontSize: 15 } }, /* @__PURE__ */ React.createElement(
         "button",
