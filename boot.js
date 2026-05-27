@@ -316,7 +316,7 @@ const TWEAK_DEFAULTS = (
     "interactive": true
   }
 );
-const VALID_ROUTES = ["home", "community", "lectures", "tour", "column", "book", "checkout", "mypage", "admin", "login", "signup", "faq", "terms", "privacy", "eat", "sleep", "shop", "error"];
+const VALID_ROUTES = ["home", "home-next", "community", "lectures", "tour", "column", "book", "checkout", "mypage", "admin", "login", "signup", "faq", "terms", "privacy", "eat", "sleep", "shop", "error"];
 const pathToRoute = (pathname) => {
   const p = (pathname || "/").replace(/\/+$/, "") || "/";
   if (p === "/") return "home";
@@ -639,6 +639,7 @@ const App = () => {
     const tagline = ((_d = sc.og) == null ? void 0 : _d.title) || "\uBC45\uAE30 \uD0C0\uACE0 \uD55C\uAD6D\uC744 \uB290\uB07C\uB2E4";
     const ROUTE_TITLES = {
       home: tagline,
+      "home-next": "\uC2E0\uADDC \uD648 \uD504\uB9AC\uBDF0",
       eat: "\uBA39\uACE0 \uB180\uC790",
       sleep: "\uC790\uACE0 \uB180\uC790",
       shop: "\uC0AC\uACE0 \uB180\uC790",
@@ -802,6 +803,10 @@ const App = () => {
       case "home": {
         const C = pick("HomePage", "\uD648");
         return /* @__PURE__ */ React.createElement(C, { go, tweaks });
+      }
+      case "home-next": {
+        const C = pick("HomeNextPage", "\uC2E0\uADDC \uD648 \uD504\uB9AC\uBDF0");
+        return /* @__PURE__ */ React.createElement(C, { go });
       }
       case "eat": {
         const C = pick("EatPage", "\uBA39\uACE0 \uB180\uC790");

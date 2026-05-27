@@ -286,7 +286,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 // URL 경로 ↔ 라우트 키 매핑.
 // 알려진 라우트만 화이트리스트로 받아 안전하게 폴백한다(home).
 // v00.229 — 'error' 라우트 추가. /error?code=403|404|500|401|network|maintenance
-const VALID_ROUTES = ['home','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy','eat','sleep','shop','error'];
+const VALID_ROUTES = ['home','home-next','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy','eat','sleep','shop','error'];
 const pathToRoute = (pathname) => {
   const p = (pathname || '/').replace(/\/+$/, '') || '/';
   if (p === '/') return 'home';
@@ -603,6 +603,7 @@ const App = () => {
     const tagline = sc.og?.title || '뱅기 타고 한국을 느끼다';
     const ROUTE_TITLES = {
       home: tagline,
+      'home-next': '신규 홈 프리뷰',
       eat: '먹고 놀자',
       sleep: '자고 놀자',
       shop: '사고 놀자',
@@ -744,6 +745,7 @@ const App = () => {
     const pick = (name, label) => W[name] || fallback(label);
     switch (route) {
       case "home":      { const C = pick('HomePage','홈');      return <C go={go} tweaks={tweaks}/>; }
+      case "home-next": { const C = pick('HomeNextPage','신규 홈 프리뷰'); return <C go={go}/>; }
       case "eat":       { const C = pick('EatPage','먹고 놀자'); return <C go={go} user={user}/>; }
       case "sleep":     { const C = pick('SleepPage','자고 놀자'); return <C go={go} user={user}/>; }
       case "shop":      { const C = pick('ShopPage','사고 놀자'); return <C go={go} user={user}/>; }
