@@ -792,6 +792,118 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       setMovingPostId(null);
     }
   }, [filtered, movingPostId]);
+  const [reorderMode, setReorderMode] = React.useState(false);
+  const [localOrderIds, setLocalOrderIds] = React.useState([]);
+  const [draggingId, setDraggingId] = React.useState(null);
+  const [savingOrder, setSavingOrder] = React.useState(false);
+  React.useEffect(() => {
+    if (reorderMode) {
+      setReorderMode(false);
+      setLocalOrderIds([]);
+      setDraggingId(null);
+    }
+  }, [tab, sort, activePrefix, search, safePage]);
+  const enterReorderMode = () => {
+    setLocalOrderIds(pagePosts.map((p) => String(p.id)));
+    setReorderMode(true);
+  };
+  const exitReorderMode = async () => {
+    const changed = localOrderIds.some((id, i) => {
+      var _a;
+      return String((_a = pagePosts[i]) == null ? void 0 : _a.id) !== String(id);
+    });
+    if (changed) {
+      const ok = await window.BGNJ_CONFIRM("\uC800\uC7A5\uD558\uC9C0 \uC54A\uC740 \uC21C\uC11C \uBCC0\uACBD\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uCDE8\uC18C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true, confirmLabel: "\uCDE8\uC18C" });
+      if (!ok) return;
+    }
+    setReorderMode(false);
+    setLocalOrderIds([]);
+    setDraggingId(null);
+  };
+  const moveLocalBefore = (sourceId, targetId) => {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    setLocalOrderIds((prev) => {
+      const from = prev.indexOf(String(sourceId));
+      if (from < 0) return prev;
+      const next = prev.slice();
+      const [moved] = next.splice(from, 1);
+      const insertAt = next.indexOf(String(targetId));
+      if (insertAt < 0) return prev;
+      next.splice(insertAt, 0, moved);
+      for (let i = 0; i < prev.length; i++) {
+        if (prev[i] !== next[i]) return next;
+      }
+      return prev;
+    });
+  };
+  const orderChangedCount = React.useMemo(() => {
+    var _a;
+    if (!reorderMode) return 0;
+    let n = 0;
+    for (let i = 0; i < localOrderIds.length; i++) {
+      if (String((_a = pagePosts[i]) == null ? void 0 : _a.id) !== String(localOrderIds[i])) n++;
+    }
+    return n;
+  }, [reorderMode, localOrderIds, pagePosts]);
+  const saveReorder = async () => {
+    var _a, _b, _c, _d, _e, _f;
+    if (savingOrder) return;
+    if (orderChangedCount === 0) {
+      setReorderMode(false);
+      return;
+    }
+    const N = localOrderIds.length;
+    if (N === 0) return;
+    const toMs = (p) => {
+      const v = (p == null ? void 0 : p.createdAt) || (p == null ? void 0 : p.date) || "";
+      const t = Date.parse(v);
+      return Number.isFinite(t) ? t : NaN;
+    };
+    const upperAnchor = pageStart > 0 ? toMs(filtered[pageStart - 1]) : NaN;
+    const lowerAnchor = pageStart + N < filtered.length ? toMs(filtered[pageStart + N]) : NaN;
+    const origTop = toMs(pagePosts[0]);
+    const origBottom = toMs(pagePosts[N - 1]);
+    const topMs = Number.isFinite(upperAnchor) ? upperAnchor : Number.isFinite(origTop) ? origTop + (N + 1) * 1e3 : Date.now() + (N + 1) * 1e3;
+    const botMs = Number.isFinite(lowerAnchor) ? lowerAnchor : Number.isFinite(origBottom) ? origBottom - (N + 1) * 1e3 : Date.now() - (N + 1) * 1e3;
+    const span = topMs - botMs;
+    if (!(span > 0)) {
+      (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, "\uC774\uC804/\uC774\uD6C4 \uAC8C\uC2DC\uAE00\uACFC \uC2DC\uAC04 \uAC04\uACA9\uC774 \uB108\uBB34 \uC881\uC544 \uC790\uB3D9 \uBD84\uBC30\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+      return;
+    }
+    const step = span / (N + 1);
+    const updates = [];
+    for (let i = 0; i < N; i++) {
+      const id = String(localOrderIds[i]);
+      const newMs = Math.round(topMs - step * (i + 1));
+      const origIdx = pagePosts.findIndex((p) => String(p.id) === id);
+      if (origIdx === i) continue;
+      updates.push({ id, iso: new Date(newMs).toISOString() });
+    }
+    if (updates.length === 0) {
+      setReorderMode(false);
+      return;
+    }
+    setSavingOrder(true);
+    try {
+      await Promise.all(updates.map(
+        ({ id, iso }) => window.BGNJ_API.posts.update(id, { createdAt: iso })
+      ));
+      await window.BGNJ_COMMUNITY.refreshPosts();
+      (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, `\uC21C\uC11C\uB97C \uC800\uC7A5\uD588\uC2B5\uB2C8\uB2E4. (${updates.length}\uAC74)`);
+      setReorderMode(false);
+      setLocalOrderIds([]);
+      setRefreshKey((v) => v + 1);
+    } catch (err) {
+      (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, `\uC21C\uC11C \uC800\uC7A5 \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+  const displayPagePosts = React.useMemo(() => {
+    if (!reorderMode || localOrderIds.length === 0) return pagePosts;
+    const byId = new Map(pagePosts.map((p) => [String(p.id), p]));
+    return localOrderIds.map((id) => byId.get(String(id))).filter(Boolean);
+  }, [reorderMode, localOrderIds, pagePosts]);
   const handleWrite = async () => {
     if (!user) {
       if (await window.BGNJ_CONFIRM("\uAE00\uC4F0\uAE30\uB294 \uB85C\uADF8\uC778 \uD6C4 \uC774\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uB85C\uADF8\uC778 \uD398\uC774\uC9C0\uB85C \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) {
@@ -952,7 +1064,44 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       }
     },
     p
-  ))), canRenumber && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 8, padding: "6px 10px", background: "rgba(158,104,24,0.05)", borderLeft: "2px solid var(--primary-dim)" } }, "ADMIN \xB7 \uBC88\uD638 \uC606 \u25B2 \u25BC \uBC84\uD2BC\uC73C\uB85C \uAC8C\uC2DC\uAE00 \uC21C\uC11C\uB97C \uBCC0\uACBD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { className: "community-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("caption", { className: "sr-only" }, "\uAC8C\uC2DC\uAE00 \uBAA9\uB85D"), /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-num", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: canRenumber ? 90 : 60 } }, "\uBC88\uD638"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-cat", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 90 } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-title", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-author", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 120 } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-views", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 70 } }, "\uC870\uD68C"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-date", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 100 } }, "\uB0A0\uC9DC"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, style: { padding: 48, textAlign: "center" }, className: "dim" }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.")) : pagePosts.map((p, i) => {
+  ))), canRenumber && /* @__PURE__ */ React.createElement("div", { style: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 8,
+    padding: "8px 10px",
+    background: reorderMode ? "rgba(245,213,72,0.10)" : "rgba(158,104,24,0.05)",
+    borderLeft: reorderMode ? "2px solid var(--primary)" : "2px solid var(--primary-dim)"
+  } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase" } }, reorderMode ? `ADMIN \xB7 \uC21C\uC11C \uD3B8\uC9D1 \uC911 \u2014 \uD589\uC744 \uB04C\uC5B4\uC11C \uC704\uCE58 \uBCC0\uACBD (\uBCC0\uACBD ${orderChangedCount}\uAC74)` : "ADMIN \xB7 \uBC88\uD638 \uC606 \u25B2 \u25BC \uB85C \uD55C \uCE78\uC529 \uC774\uB3D9 / \uC5EC\uB7EC \uAC1C \uC77C\uAD04 \uBCC0\uACBD\uC740 [\uC21C\uC11C \uD3B8\uC9D1] \uC0AC\uC6A9"), /* @__PURE__ */ React.createElement("span", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, reorderMode ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small btn-gold",
+      onClick: saveReorder,
+      disabled: savingOrder || orderChangedCount === 0
+    },
+    savingOrder ? "\uC800\uC7A5 \uC911..." : `\uC800\uC7A5 (${orderChangedCount}\uAC74)`
+  ), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: exitReorderMode,
+      disabled: savingOrder
+    },
+    "\uCDE8\uC18C"
+  )) : /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: enterReorderMode,
+      title: "\uD604\uC7AC \uD398\uC774\uC9C0\uC758 \uAC8C\uC2DC\uAE00\uC744 \uB4DC\uB798\uADF8\uC564\uB4DC\uB86D\uC73C\uB85C \uC77C\uAD04 \uC7AC\uBC30\uCE58"
+    },
+    "\u270E \uC21C\uC11C \uD3B8\uC9D1"
+  ))), /* @__PURE__ */ React.createElement("table", { className: "community-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("caption", { className: "sr-only" }, "\uAC8C\uC2DC\uAE00 \uBAA9\uB85D"), /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-num", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: canRenumber ? 90 : 60 } }, "\uBC88\uD638"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-cat", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 90 } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-title", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-author", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 120 } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-views", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 70 } }, "\uC870\uD68C"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-date", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 100 } }, "\uB0A0\uC9DC"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, style: { padding: 48, textAlign: "center" }, className: "dim" }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.")) : displayPagePosts.map((p, i) => {
     var _a, _b, _c, _d, _e;
     const cat = categories.find((c) => c.id === p.categoryId) || categories.find((c) => c.label === p.category) || { label: p.category };
     const likesCount = Array.isArray(p.likes) ? p.likes.length : 0;
@@ -961,15 +1110,56 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.isBookmarked) == null ? void 0 : _b2.call(_a2, user.id, p.id);
     }, false);
     const rowNum = String(filtered.length - (pageStart + i)).padStart(3, "0");
+    const isDragging = reorderMode && String(draggingId) === String(p.id);
+    const rowStyle = {
+      borderBottom: "1px solid var(--line)",
+      transition: "background .2s, opacity .15s",
+      opacity: isDragging ? 0.35 : 1,
+      cursor: reorderMode ? "move" : void 0
+    };
+    const dragProps = reorderMode ? {
+      draggable: true,
+      onDragStart: (e) => {
+        setDraggingId(String(p.id));
+        try {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", String(p.id));
+        } catch (e2) {
+        }
+      },
+      onDragOver: (e) => {
+        e.preventDefault();
+        try {
+          e.dataTransfer.dropEffect = "move";
+        } catch (e2) {
+        }
+        if (draggingId && String(draggingId) !== String(p.id)) {
+          moveLocalBefore(draggingId, p.id);
+        }
+      },
+      onDrop: (e) => {
+        e.preventDefault();
+        setDraggingId(null);
+      },
+      onDragEnd: () => setDraggingId(null)
+    } : {};
     return /* @__PURE__ */ React.createElement(
       "tr",
       {
         key: p.id,
-        style: { borderBottom: "1px solid var(--line)", transition: "background .2s" },
-        onMouseEnter: (e) => e.currentTarget.style.background = "rgba(245,213,72,0.03)",
-        onMouseLeave: (e) => e.currentTarget.style.background = "transparent"
+        style: rowStyle,
+        ...dragProps,
+        onMouseEnter: (e) => {
+          if (!reorderMode) e.currentTarget.style.background = "rgba(245,213,72,0.03)";
+        },
+        onMouseLeave: (e) => {
+          if (!reorderMode) e.currentTarget.style.background = "transparent";
+        }
       },
       /* @__PURE__ */ React.createElement("td", { className: "col-num mono dim-2", style: { padding: "18px 8px", fontSize: 12 } }, canRenumber ? (() => {
+        if (reorderMode) {
+          return /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", title: "\uB04C\uC5B4\uC11C \uC704\uCE58 \uBCC0\uACBD", style: { color: "var(--primary)", fontSize: 14, lineHeight: 1, cursor: "grab", userSelect: "none" } }, "\u2261"), /* @__PURE__ */ React.createElement("span", null, rowNum));
+        }
         const absIdx = pageStart + i;
         const isTop = absIdx === 0;
         const isBottom = absIdx === filtered.length - 1;
@@ -1014,9 +1204,12 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
         "button",
         {
           type: "button",
-          onClick: () => setPostId(p.id),
+          onClick: () => {
+            if (!reorderMode) setPostId(p.id);
+          },
+          disabled: reorderMode,
           className: "row-title-button",
-          style: { all: "unset", cursor: "pointer", textAlign: "left", display: "block", width: "100%" }
+          style: { all: "unset", cursor: reorderMode ? "move" : "pointer", textAlign: "left", display: "block", width: "100%" }
         },
         /* @__PURE__ */ React.createElement("span", { className: "row-title-text" }, bookmarked && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginRight: 6, fontSize: 11 }, "aria-label": "\uBD81\uB9C8\uD06C" }, "\u2605"), p.title, ((_a = p.images) == null ? void 0 : _a.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uC774\uBBF8\uC9C0 \uCCA8\uBD80" }, "\u{1F4F7}", p.images.length), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uACF5\uAC10 \uC218" }, "\u2665", likesCount), ((_b = p.tags) == null ? void 0 : _b.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono row-title-inline", style: { marginLeft: 8, fontSize: 10 } }, p.tags.slice(0, 3).map((t) => `#${t}`).join(" ")), p.hot && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "HOT"), p._new && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "NEW")),
         /* @__PURE__ */ React.createElement("span", { className: "row-mobile-meta", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, cat.label), /* @__PURE__ */ React.createElement("span", null, p.author), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("time", { dateTime: p.date.replace(/\./g, "-") }, p.date), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_c = p.views) != null ? _c : 0), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u2665 ", likesCount), ((_d = p.images) == null ? void 0 : _d.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u{1F4F7} ", p.images.length))
@@ -1025,13 +1218,13 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       /* @__PURE__ */ React.createElement("td", { className: "col-views mono dim-2", style: { padding: "18px 8px", fontSize: 12, textAlign: "right" } }, (_e = p.views) != null ? _e : 0),
       /* @__PURE__ */ React.createElement("td", { className: "col-date mono dim-2", style: { padding: "18px 8px", fontSize: 11, textAlign: "right" } }, /* @__PURE__ */ React.createElement("time", { dateTime: p.date.replace(/\./g, "-") }, p.date))
     );
-  }))), filtered.length > 0 && totalPages > 1 && /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uAC8C\uC2DC\uAE00 \uD398\uC774\uC9C0 \uC774\uB3D9", style: { display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 32, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+  }))), filtered.length > 0 && totalPages > 1 && /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uAC8C\uC2DC\uAE00 \uD398\uC774\uC9C0 \uC774\uB3D9", style: { display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 32, flexWrap: "wrap", opacity: reorderMode ? 0.4 : 1 } }, /* @__PURE__ */ React.createElement(
     "button",
     {
       type: "button",
       className: "btn btn-small",
       onClick: () => setPage(Math.max(1, safePage - 1)),
-      disabled: safePage <= 1
+      disabled: reorderMode || safePage <= 1
     },
     "\u2190 \uC774\uC804"
   ), Array.from({ length: totalPages }, (_, idx) => idx + 1).map((n) => /* @__PURE__ */ React.createElement(
@@ -1042,6 +1235,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       className: "btn btn-small",
       "aria-current": n === safePage ? "page" : void 0,
       onClick: () => setPage(n),
+      disabled: reorderMode,
       style: {
         borderColor: n === safePage ? "var(--primary)" : "var(--line)",
         color: n === safePage ? "var(--primary)" : "var(--ink-2)",
@@ -1056,7 +1250,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       type: "button",
       className: "btn btn-small",
       onClick: () => setPage(Math.min(totalPages, safePage + 1)),
-      disabled: safePage >= totalPages
+      disabled: reorderMode || safePage >= totalPages
     },
     "\uB2E4\uC74C \u2192"
   )), filtered.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { textAlign: "center", fontSize: 10, letterSpacing: "0.2em", marginTop: 12 } }, "\uC804\uCCB4 ", filtered.length, "\uAC74 \xB7 ", safePage, "/", totalPages, " \uD398\uC774\uC9C0"), /* @__PURE__ */ React.createElement("div", { style: {

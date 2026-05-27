@@ -802,6 +802,120 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     }
   }, [filtered, movingPostId]);
 
+  // v00.264.002 — 일괄 순서 편집 모드. admin · sort=latest 전용. 현재 페이지 내 게시글을
+  // 드래그앤드롭으로 자유 재배치 → '저장' 시 위/아래 anchor 사이에 createdAt 균등 분배.
+  const [reorderMode, setReorderMode] = React.useState(false);
+  const [localOrderIds, setLocalOrderIds] = React.useState([]);
+  const [draggingId, setDraggingId] = React.useState(null);
+  const [savingOrder, setSavingOrder] = React.useState(false);
+  // 정렬/검색/페이지/탭 변경 시 편집 모드 자동 종료 — stale 상태 방지.
+  React.useEffect(() => {
+    if (reorderMode) {
+      setReorderMode(false);
+      setLocalOrderIds([]);
+      setDraggingId(null);
+    }
+  }, [tab, sort, activePrefix, search, safePage]); // eslint-disable-line react-hooks/exhaustive-deps
+  const enterReorderMode = () => {
+    setLocalOrderIds(pagePosts.map((p) => String(p.id)));
+    setReorderMode(true);
+  };
+  const exitReorderMode = async () => {
+    const changed = localOrderIds.some((id, i) => String(pagePosts[i]?.id) !== String(id));
+    if (changed) {
+      const ok = await window.BGNJ_CONFIRM('저장하지 않은 순서 변경이 있습니다. 취소하시겠어요?', { danger: true, confirmLabel: '취소' });
+      if (!ok) return;
+    }
+    setReorderMode(false);
+    setLocalOrderIds([]);
+    setDraggingId(null);
+  };
+  const moveLocalBefore = (sourceId, targetId) => {
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    setLocalOrderIds((prev) => {
+      const from = prev.indexOf(String(sourceId));
+      if (from < 0) return prev;
+      const next = prev.slice();
+      const [moved] = next.splice(from, 1);
+      const insertAt = next.indexOf(String(targetId));
+      if (insertAt < 0) return prev;
+      next.splice(insertAt, 0, moved);
+      // 동일하면 prev 반환 → 불필요 re-render 차단 (dragOver 가 빈번히 발화).
+      for (let i = 0; i < prev.length; i++) {
+        if (prev[i] !== next[i]) return next;
+      }
+      return prev;
+    });
+  };
+  const orderChangedCount = React.useMemo(() => {
+    if (!reorderMode) return 0;
+    let n = 0;
+    for (let i = 0; i < localOrderIds.length; i++) {
+      if (String(pagePosts[i]?.id) !== String(localOrderIds[i])) n++;
+    }
+    return n;
+  }, [reorderMode, localOrderIds, pagePosts]);
+  const saveReorder = async () => {
+    if (savingOrder) return;
+    if (orderChangedCount === 0) { setReorderMode(false); return; }
+    const N = localOrderIds.length;
+    if (N === 0) return;
+    // anchor: 페이지 위쪽(더 최신) 보더 = filtered[pageStart-1], 아래쪽(더 과거) = filtered[pageStart+N].
+    const toMs = (p) => {
+      const v = p?.createdAt || p?.date || '';
+      const t = Date.parse(v);
+      return Number.isFinite(t) ? t : NaN;
+    };
+    const upperAnchor = pageStart > 0 ? toMs(filtered[pageStart - 1]) : NaN;
+    const lowerAnchor = (pageStart + N) < filtered.length ? toMs(filtered[pageStart + N]) : NaN;
+    // 페이지 첫/마지막 게시글의 원본 createdAt 을 fallback 으로.
+    const origTop = toMs(pagePosts[0]);
+    const origBottom = toMs(pagePosts[N - 1]);
+    const topMs = Number.isFinite(upperAnchor) ? upperAnchor
+      : (Number.isFinite(origTop) ? origTop + (N + 1) * 1000 : Date.now() + (N + 1) * 1000);
+    const botMs = Number.isFinite(lowerAnchor) ? lowerAnchor
+      : (Number.isFinite(origBottom) ? origBottom - (N + 1) * 1000 : Date.now() - (N + 1) * 1000);
+    const span = topMs - botMs;
+    if (!(span > 0)) {
+      window.BGNJ_TOAST?.error?.('이전/이후 게시글과 시간 간격이 너무 좁아 자동 분배에 실패했습니다.');
+      return;
+    }
+    const step = span / (N + 1);
+    // i=0 → 가장 위(최신), 가장 큰 ms. desc.
+    const updates = [];
+    for (let i = 0; i < N; i++) {
+      const id = String(localOrderIds[i]);
+      const newMs = Math.round(topMs - step * (i + 1));
+      // 변경된 항목만 PATCH (불필요 호출 차단).
+      const origIdx = pagePosts.findIndex((p) => String(p.id) === id);
+      if (origIdx === i) continue;
+      updates.push({ id, iso: new Date(newMs).toISOString() });
+    }
+    if (updates.length === 0) { setReorderMode(false); return; }
+    setSavingOrder(true);
+    try {
+      await Promise.all(updates.map(({ id, iso }) =>
+        window.BGNJ_API.posts.update(id, { createdAt: iso })
+      ));
+      await window.BGNJ_COMMUNITY.refreshPosts();
+      window.BGNJ_TOAST?.success?.(`순서를 저장했습니다. (${updates.length}건)`);
+      setReorderMode(false);
+      setLocalOrderIds([]);
+      setRefreshKey((v) => v + 1);
+    } catch (err) {
+      window.BGNJ_TOAST?.error?.(`순서 저장 실패: ${err?.message || '알 수 없는 오류'}`);
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  // 편집 모드일 때 실제 렌더에 사용할 페이지 게시글 — localOrderIds 순서 적용.
+  const displayPagePosts = React.useMemo(() => {
+    if (!reorderMode || localOrderIds.length === 0) return pagePosts;
+    const byId = new Map(pagePosts.map((p) => [String(p.id), p]));
+    return localOrderIds.map((id) => byId.get(String(id))).filter(Boolean);
+  }, [reorderMode, localOrderIds, pagePosts]);
+
   const handleWrite = async () => {
     if (!user) {
       if ((await window.BGNJ_CONFIRM("글쓰기는 로그인 후 이용할 수 있습니다. 로그인 페이지로 이동하시겠어요?", { danger: true }))) {
@@ -938,8 +1052,37 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
         )}
 
         {canRenumber && (
-          <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase', marginBottom:8, padding:'6px 10px', background:'rgba(158,104,24,0.05)', borderLeft:'2px solid var(--primary-dim)'}}>
-            ADMIN · 번호 옆 ▲ ▼ 버튼으로 게시글 순서를 변경할 수 있습니다.
+          <div style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:10,
+            marginBottom:8, padding:'8px 10px',
+            background: reorderMode ? 'rgba(245,213,72,0.10)' : 'rgba(158,104,24,0.05)',
+            borderLeft: reorderMode ? '2px solid var(--primary)' : '2px solid var(--primary-dim)',
+          }}>
+            <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', textTransform:'uppercase'}}>
+              {reorderMode
+                ? `ADMIN · 순서 편집 중 — 행을 끌어서 위치 변경 (변경 ${orderChangedCount}건)`
+                : 'ADMIN · 번호 옆 ▲ ▼ 로 한 칸씩 이동 / 여러 개 일괄 변경은 [순서 편집] 사용'}
+            </span>
+            <span style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+              {reorderMode ? (
+                <>
+                  <button type="button" className="btn btn-small btn-gold"
+                    onClick={saveReorder}
+                    disabled={savingOrder || orderChangedCount === 0}>
+                    {savingOrder ? '저장 중...' : `저장 (${orderChangedCount}건)`}
+                  </button>
+                  <button type="button" className="btn btn-small"
+                    onClick={exitReorderMode}
+                    disabled={savingOrder}>취소</button>
+                </>
+              ) : (
+                <button type="button" className="btn btn-small"
+                  onClick={enterReorderMode}
+                  title="현재 페이지의 게시글을 드래그앤드롭으로 일괄 재배치">
+                  ✎ 순서 편집
+                </button>
+              )}
+            </span>
           </div>
         )}
         <table className="community-table" style={{width:'100%', borderCollapse:'collapse'}}>
@@ -959,17 +1102,49 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
               <tr><td colSpan={6} style={{padding:48, textAlign:'center'}} className="dim">
                 조건에 맞는 게시글이 없습니다.
               </td></tr>
-            ) : pagePosts.map((p, i) => {
+            ) : displayPagePosts.map((p, i) => {
               const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category) || { label: p.category };
               const likesCount = Array.isArray(p.likes) ? p.likes.length : 0;
               const bookmarked = user && G.call(() => window.BGNJ_COMMUNITY?.isBookmarked?.(user.id, p.id), false);
               const rowNum = String(filtered.length - (pageStart + i)).padStart(3, '0');
+              const isDragging = reorderMode && String(draggingId) === String(p.id);
+              const rowStyle = {
+                borderBottom:'1px solid var(--line)',
+                transition:'background .2s, opacity .15s',
+                opacity: isDragging ? 0.35 : 1,
+                cursor: reorderMode ? 'move' : undefined,
+              };
+              const dragProps = reorderMode ? {
+                draggable: true,
+                onDragStart: (e) => {
+                  setDraggingId(String(p.id));
+                  try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(p.id)); } catch {}
+                },
+                onDragOver: (e) => {
+                  e.preventDefault();
+                  try { e.dataTransfer.dropEffect = 'move'; } catch {}
+                  if (draggingId && String(draggingId) !== String(p.id)) {
+                    moveLocalBefore(draggingId, p.id);
+                  }
+                },
+                onDrop: (e) => { e.preventDefault(); setDraggingId(null); },
+                onDragEnd: () => setDraggingId(null),
+              } : {};
               return (
-                <tr key={p.id} style={{borderBottom:'1px solid var(--line)', transition:'background .2s'}}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(245,213,72,0.03)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <tr key={p.id} style={rowStyle}
+                  {...dragProps}
+                  onMouseEnter={e => { if (!reorderMode) e.currentTarget.style.background = 'rgba(245,213,72,0.03)'; }}
+                  onMouseLeave={e => { if (!reorderMode) e.currentTarget.style.background = 'transparent'; }}>
                   <td className="col-num mono dim-2" style={{padding:'18px 8px', fontSize:12}}>
                     {canRenumber ? (() => {
+                      if (reorderMode) {
+                        return (
+                          <span style={{display:'inline-flex', alignItems:'center', gap:6}}>
+                            <span aria-hidden="true" title="끌어서 위치 변경" style={{color:'var(--primary)', fontSize:14, lineHeight:1, cursor:'grab', userSelect:'none'}}>≡</span>
+                            <span>{rowNum}</span>
+                          </span>
+                        );
+                      }
                       const absIdx = pageStart + i;
                       const isTop = absIdx === 0;
                       const isBottom = absIdx === filtered.length - 1;
@@ -1004,9 +1179,11 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                   </td>
                   <td className="col-cat" style={{padding:'18px 8px'}}><span className="badge">{cat.label}</span></td>
                   <td className="col-title row-title" style={{padding:'18px 8px', fontSize:15}}>
-                    <button type="button" onClick={() => setPostId(p.id)}
+                    <button type="button"
+                      onClick={() => { if (!reorderMode) setPostId(p.id); }}
+                      disabled={reorderMode}
                       className="row-title-button"
-                      style={{all:'unset', cursor:'pointer', textAlign:'left', display:'block', width:'100%'}}>
+                      style={{all:'unset', cursor: reorderMode ? 'move' : 'pointer', textAlign:'left', display:'block', width:'100%'}}>
                       <span className="row-title-text">
                         {bookmarked && <span className="gold" style={{marginRight:6, fontSize:11}} aria-label="북마크">★</span>}
                         {p.title}
@@ -1042,16 +1219,17 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           </tbody>
         </table>
 
-        {/* Pagination */}
+        {/* Pagination — 순서 편집 모드에서는 페이지 이동 잠금 (변경 사항 소실 방지) */}
         {filtered.length > 0 && totalPages > 1 && (
-          <nav aria-label="게시글 페이지 이동" style={{display:'flex', justifyContent:'center', alignItems:'center', gap:6, marginTop:32, flexWrap:'wrap'}}>
+          <nav aria-label="게시글 페이지 이동" style={{display:'flex', justifyContent:'center', alignItems:'center', gap:6, marginTop:32, flexWrap:'wrap', opacity: reorderMode ? 0.4 : 1}}>
             <button type="button" className="btn btn-small"
               onClick={() => setPage(Math.max(1, safePage - 1))}
-              disabled={safePage <= 1}>← 이전</button>
+              disabled={reorderMode || safePage <= 1}>← 이전</button>
             {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((n) => (
               <button key={n} type="button" className="btn btn-small"
                 aria-current={n === safePage ? 'page' : undefined}
                 onClick={() => setPage(n)}
+                disabled={reorderMode}
                 style={{
                   borderColor: n === safePage ? 'var(--primary)' : 'var(--line)',
                   color: n === safePage ? 'var(--primary)' : 'var(--ink-2)',
@@ -1061,7 +1239,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
             ))}
             <button type="button" className="btn btn-small"
               onClick={() => setPage(Math.min(totalPages, safePage + 1))}
-              disabled={safePage >= totalPages}>다음 →</button>
+              disabled={reorderMode || safePage >= totalPages}>다음 →</button>
           </nav>
         )}
 
