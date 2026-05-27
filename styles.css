@@ -2458,9 +2458,24 @@ main time, main .section-eyebrow {
   color: #fff;
   transform: translateY(-1px);
 }
-.hn-hero-cta-icon {
-  font-size: 16px;
-  line-height: 1;
+.hn-hero-cta-icon-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.hn-hero-cta-icon-placeholder {
+  display: block;
+  width: 28px;
+  height: 28px;
+  background: var(--line);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.hn-hero-cta-label {
+  white-space: pre-line;
+  text-align: left;
+  line-height: 1.3;
 }
 
 /* ── 프로그램 카드 4열 ── */
@@ -2545,6 +2560,16 @@ main time, main .section-eyebrow {
   align-self: flex-start;
   transition: background 0.15s;
 }
+.hn-program-card-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  border-radius: inherit;
+  z-index: 0;
+}
+.hn-program-card-bg + * { position: relative; z-index: 1; }
+.hn-program-card-bg ~ * { position: relative; z-index: 1; }
 .hn-program-card:hover .hn-program-cta {
   background: rgba(255,255,255,0.15);
 }
@@ -2586,10 +2611,18 @@ main time, main .section-eyebrow {
   gap: 12px;
   align-items: flex-start;
 }
-.hn-stat-icon {
+.hn-stat-icon-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.hn-stat-icon-placeholder {
   font-size: 22px;
   flex-shrink: 0;
   margin-top: 2px;
+  line-height: 1;
 }
 .hn-stat-label {
   font-family: var(--font-mono);
@@ -2701,6 +2734,88 @@ main time, main .section-eyebrow {
 .hn-cta-btn:hover {
   background: #78350F;
   transform: translateY(-1px);
+}
+
+/* ── 관리자 패널 ── */
+.hn-admin-panel {
+  background: #FFFBEB;
+  border-bottom: 2px solid #F59E0B;
+  padding: 0;
+}
+.hn-admin-toggle {
+  display: block;
+  width: 100%;
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #92400E;
+  cursor: pointer;
+}
+.hn-admin-toggle:hover { background: rgba(245,158,11,0.1); }
+.hn-admin-body {
+  padding: 0 20px 20px;
+}
+.hn-admin-section {
+  margin-bottom: 16px;
+}
+.hn-admin-section h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #78350F;
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+.hn-admin-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hn-admin-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.hn-admin-slot-label {
+  font-size: 10px;
+  color: #78350F;
+  font-weight: 500;
+  text-align: center;
+  max-width: 80px;
+  line-height: 1.3;
+}
+.hn-admin-slot-preview {
+  width: 72px;
+  height: 72px;
+  border: 2px dashed #D6D3D1;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  overflow: hidden;
+  background: #FFF;
+  transition: border-color 0.15s;
+}
+.hn-admin-slot-preview:hover { border-color: #92400E; }
+.hn-admin-slot-remove {
+  position: absolute;
+  top: 16px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: #EF4444;
+  color: #FFF;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
 }
 
 /* ── 반응형 ── */
