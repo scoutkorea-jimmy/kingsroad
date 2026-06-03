@@ -2317,6 +2317,534 @@ const handleAuditCreate = async (req, env) => {
   return { id };
 };
 
+// ============================================================================
+// 한켠(전주 숙소) 예약 관리 (PMS) — v00.267. schema-v6-hangyeon.sql
+// ============================================================================
+
+const HK_ACTIVE_STATUSES = "('pending','confirmed','checked_in','checked_out')";
+
+const hkNights = (checkIn, checkOut) => {
+  const out = [];
+  let d = new Date(checkIn + "T00:00:00Z");
+  const end = new Date(checkOut + "T00:00:00Z");
+  let guard = 0;
+  while (d < end && guard < 366) {
+    out.push(d.toISOString().slice(0, 10));
+    d = new Date(d.getTime() + 86400000);
+    guard++;
+  }
+  return out;
+};
+const hkIsValidDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s + "T00:00:00Z"));
+const hkGuestKey = (phone, email) => {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (digits) return "g-" + digits;
+  const em = String(email || "").trim().toLowerCase();
+  return em ? "g-" + em : null;
+};
+
+const hkMapRoomType = (r) => ({
+  id: r.id, name: r.name, description: r.description || "",
+  images: r.images_json ? safeJson(r.images_json, []) : [],
+  quantity: r.quantity, maxOccupancy: r.max_occupancy, bedConfig: r.bed_config || "",
+  amenities: r.amenities_json ? safeJson(r.amenities_json, []) : [],
+  basePrice: r.base_price, weekendPrice: r.weekend_price,
+  discounts: r.discounts_json ? safeJson(r.discounts_json, []) : [],
+  minNights: r.min_nights, maxNights: r.max_nights, status: r.status, sortOrder: r.sort_order,
+  createdAt: r.created_at, updatedAt: r.updated_at,
+});
+const safeJson = (s, fb) => { try { const v = JSON.parse(s); return v == null ? fb : v; } catch { return fb; } };
+
+// 한 객실타입의 [from,to) 날짜별 잔여 재고 계산 (오버부킹 방지의 핵심).
+const hkRoomAvailability = async (env, roomTypeId, from, to) => {
+  const rt = await env.DB.prepare("SELECT id, quantity FROM hk_room_types WHERE id = ?").bind(roomTypeId).first();
+  if (!rt) return [];
+  const ovRows = await env.DB.prepare(
+    "SELECT date, closed, qty_override FROM hk_availability WHERE room_type_id = ? AND date >= ? AND date < ?"
+  ).bind(roomTypeId, from, to).all();
+  const ovMap = {};
+  for (const o of (ovRows.results || [])) ovMap[o.date] = o;
+  const bkRows = await env.DB.prepare(
+    `SELECT check_in, check_out, rooms FROM hk_bookings
+     WHERE room_type_id = ? AND status IN ${HK_ACTIVE_STATUSES} AND check_in < ? AND check_out > ?`
+  ).bind(roomTypeId, to, from).all();
+  const bookings = bkRows.results || [];
+  return hkNights(from, to).map((date) => {
+    const ov = ovMap[date] || {};
+    const qty = ov.qty_override != null ? ov.qty_override : rt.quantity;
+    const closed = ov.closed ? 1 : 0;
+    let booked = 0;
+    for (const b of bookings) { if (b.check_in <= date && date < b.check_out) booked += (b.rooms || 1); }
+    return { date, qty, booked, remaining: closed ? 0 : Math.max(0, qty - booked), closed: !!closed };
+  });
+};
+
+// 1박 요금 결정 — price_override > rate rule(priority) > weekend > base.
+const hkNightlyPrice = (rt, dateStr, rules, priceOvMap) => {
+  if (priceOvMap[dateStr] != null) return priceOvMap[dateStr];
+  const dow = new Date(dateStr + "T00:00:00Z").getUTCDay(); // 0=일..6=토
+  let price = null, bestPri = -Infinity;
+  for (const r of rules) {
+    if (!r.active) continue;
+    let applies = false;
+    if (r.kind === "dow") { applies = safeJson(r.dow_json, []).includes(dow); }
+    else if (r.start_date && r.end_date) { applies = dateStr >= r.start_date && dateStr <= r.end_date; }
+    if (applies && r.price != null && r.priority >= bestPri) { price = r.price; bestPri = r.priority; }
+  }
+  if (price != null) return price;
+  if ((dow === 5 || dow === 6) && rt.weekend_price != null) return rt.weekend_price;
+  return rt.base_price;
+};
+
+// 숙박 견적 — 박별 요금 + 연박할인 + 쿠폰. ok=false 면 reason 반환.
+const hkComputeStay = async (env, roomTypeId, checkIn, checkOut, rooms, couponCode) => {
+  if (!hkIsValidDate(checkIn) || !hkIsValidDate(checkOut)) return { ok: false, reason: "날짜 형식이 올바르지 않습니다." };
+  if (checkOut <= checkIn) return { ok: false, reason: "체크아웃은 체크인보다 뒤여야 합니다." };
+  const rtRow = await env.DB.prepare("SELECT * FROM hk_room_types WHERE id = ?").bind(roomTypeId).first();
+  if (!rtRow) return { ok: false, reason: "객실을 찾을 수 없습니다." };
+  if (rtRow.status !== "active") return { ok: false, reason: "현재 판매하지 않는 객실입니다." };
+  const rt = hkMapRoomType(rtRow);
+  const nightsArr = hkNights(checkIn, checkOut);
+  const nights = nightsArr.length;
+  const roomCount = Math.max(1, Number(rooms) || 1);
+  if (nights < rt.minNights) return { ok: false, reason: `최소 ${rt.minNights}박부터 예약 가능합니다.` };
+  if (nights > rt.maxNights) return { ok: false, reason: `최대 ${rt.maxNights}박까지 예약 가능합니다.` };
+  // 재고 체크
+  const avail = await hkRoomAvailability(env, roomTypeId, checkIn, checkOut);
+  for (const a of avail) {
+    if (a.closed) return { ok: false, reason: `${a.date} 은(는) 판매하지 않습니다.` };
+    if (a.remaining < roomCount) return { ok: false, reason: `${a.date} 객실이 부족합니다 (잔여 ${a.remaining}).` };
+  }
+  // 요금
+  const ruleRows = await env.DB.prepare(
+    "SELECT * FROM hk_rate_rules WHERE active = 1 AND (room_type_id = ? OR room_type_id IS NULL)"
+  ).bind(roomTypeId).all();
+  const rules = ruleRows.results || [];
+  const ovRows = await env.DB.prepare(
+    "SELECT date, price_override FROM hk_availability WHERE room_type_id = ? AND date >= ? AND date < ?"
+  ).bind(roomTypeId, checkIn, checkOut).all();
+  const priceOvMap = {};
+  for (const o of (ovRows.results || [])) if (o.price_override != null) priceOvMap[o.date] = o.price_override;
+  const perNight = nightsArr.map((date) => ({ date, price: hkNightlyPrice(rtRow, date, rules, priceOvMap) }));
+  const oneRoom = perNight.reduce((s, n) => s + (n.price || 0), 0);
+  const subtotal = oneRoom * roomCount;
+  // 연박/장기 할인
+  let stayDiscount = 0, stayLabel = "";
+  const discs = (rt.discounts || []).filter((d) => Number(d.minNights) <= nights).sort((a, b) => Number(b.minNights) - Number(a.minNights));
+  if (discs.length) { stayDiscount = Math.round(subtotal * (Number(discs[0].percent) || 0) / 100); stayLabel = discs[0].label || `${discs[0].minNights}박 이상 할인`; }
+  // 쿠폰
+  let couponDiscount = 0, couponLabel = "", couponError = "";
+  const afterStay = subtotal - stayDiscount;
+  if (couponCode) {
+    const c = await env.DB.prepare("SELECT * FROM hk_coupons WHERE code = ? AND active = 1").bind(String(couponCode).trim()).first();
+    const today = nowIso().slice(0, 10);
+    if (!c) couponError = "유효하지 않은 쿠폰입니다.";
+    else if (c.starts_at && today < c.starts_at.slice(0, 10)) couponError = "아직 사용할 수 없는 쿠폰입니다.";
+    else if (c.expires_at && today > c.expires_at.slice(0, 10)) couponError = "만료된 쿠폰입니다.";
+    else if (afterStay < (c.min_amount || 0)) couponError = `최소 ${c.min_amount}원 이상부터 사용 가능합니다.`;
+    else {
+      couponDiscount = c.kind === "amount" ? Math.min(afterStay, c.value) : Math.round(afterStay * (c.value || 0) / 100);
+      couponLabel = c.label || c.code;
+    }
+  }
+  const total = Math.max(0, subtotal - stayDiscount - couponDiscount);
+  return {
+    ok: true, roomTypeId, roomTypeName: rt.name, nights, rooms: roomCount,
+    perNight, subtotal, stayDiscount, stayLabel, couponDiscount, couponLabel, couponError, total,
+  };
+};
+
+// ── 공개/사용자 ──
+const handleHkRoomTypesList = async (req, env) => {
+  const url = new URL(req.url);
+  const includeAll = url.searchParams.get("includeAll") === "1";
+  let user = null; try { user = await getCurrentUser(req, env); } catch {}
+  const all = includeAll && user?.isAdmin;
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM hk_room_types ${all ? "" : "WHERE status = 'active'"} ORDER BY sort_order ASC, created_at ASC`
+  ).all();
+  return { roomTypes: (results || []).map(hkMapRoomType) };
+};
+
+const handleHkAvailability = async (req, env) => {
+  const url = new URL(req.url);
+  const from = url.searchParams.get("from");
+  const to = url.searchParams.get("to");
+  const roomTypeId = url.searchParams.get("roomTypeId");
+  if (!hkIsValidDate(from) || !hkIsValidDate(to) || to <= from) throw new HttpError(400, "from/to 날짜가 올바르지 않습니다.");
+  if (hkNights(from, to).length > 92) throw new HttpError(400, "조회 범위는 최대 92일입니다.");
+  let rts;
+  if (roomTypeId) {
+    const r = await env.DB.prepare("SELECT id, name FROM hk_room_types WHERE id = ?").bind(roomTypeId).first();
+    rts = r ? [r] : [];
+  } else {
+    const { results } = await env.DB.prepare("SELECT id, name FROM hk_room_types WHERE status = 'active' ORDER BY sort_order ASC").all();
+    rts = results || [];
+  }
+  const out = {};
+  for (const rt of rts) out[rt.id] = await hkRoomAvailability(env, rt.id, from, to);
+  return { from, to, availability: out };
+};
+
+const handleHkQuote = async (req, env) => {
+  const body = await req.json().catch(() => ({}));
+  const q = await hkComputeStay(env, body.roomTypeId, body.checkIn, body.checkOut, body.rooms, body.couponCode);
+  return q;
+};
+
+const handleHkBookingCreate = async (req, env) => {
+  const body = await req.json().catch(() => ({}));
+  let user = null; try { user = await getCurrentUser(req, env); } catch {}
+  const name = String(body.name || user?.name || "").trim();
+  const email = String(body.email || user?.email || "").trim();
+  const phone = String(body.phone || "").trim();
+  if (!name || (!email && !phone)) throw new HttpError(400, "이름과 연락처(이메일 또는 전화)를 입력해 주세요.");
+  // 블랙리스트 차단
+  const gkey = hkGuestKey(phone, email);
+  if (gkey) {
+    const g = await env.DB.prepare("SELECT blacklist FROM hk_guests WHERE id = ?").bind(gkey).first();
+    if (g && g.blacklist) throw new HttpError(403, "예약이 제한된 고객입니다. 숙소로 문의해 주세요.");
+  }
+  const rooms = Math.max(1, Number(body.rooms) || 1);
+  const q = await hkComputeStay(env, body.roomTypeId, body.checkIn, body.checkOut, rooms, body.couponCode);
+  if (!q.ok) throw new HttpError(409, q.reason);
+  const id = randomId("hkb");
+  const code = "HK-" + randomId("").slice(0, 6).toUpperCase();
+  const guests = Math.max(1, Number(body.guests) || 1);
+  await env.DB.prepare(
+    `INSERT INTO hk_bookings (id, code, room_type_id, user_id, guest_name, guest_email, guest_phone,
+       check_in, check_out, nights, rooms, guests, total_price, coupon_code, status, payment_status, guest_request, cash_receipt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)`
+  ).bind(id, code, body.roomTypeId, user?.id || null, name, email, phone,
+    body.checkIn, body.checkOut, q.nights, rooms, guests, q.total,
+    q.couponDiscount > 0 ? String(body.couponCode || "").trim() : null,
+    String(body.request || "").slice(0, 1000), String(body.cashReceipt || "")).run();
+  await hkLog(env, id, "created", `${q.nights}박 ${rooms}실 / ${q.total}원`, user?.id ? (user.email || "guest") : "guest");
+  // 고객 upsert
+  if (gkey) {
+    await env.DB.prepare(
+      `INSERT INTO hk_guests (id, name, email, phone) VALUES (?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET name = excluded.name, email = excluded.email, phone = excluded.phone, updated_at = excluded.created_at`
+    ).bind(gkey, name, email, phone).run();
+  }
+  // 관리자 알림
+  try {
+    const admins = await env.DB.prepare("SELECT id FROM users WHERE grade_id = 'admin'").all();
+    for (const a of (admins.results || [])) {
+      await insertNotification(env, { userId: a.id, type: "hangyeon_new", message: `새 한켠 예약: ${q.roomTypeName} ${body.checkIn}~${body.checkOut}`, fromName: name });
+    }
+  } catch {}
+  return { ok: true, booking: { id, code, status: "pending", total: q.total, nights: q.nights } };
+};
+
+const hkLog = async (env, bookingId, action, detail, actor) => {
+  try {
+    await env.DB.prepare(
+      "INSERT INTO hk_booking_log (id, booking_id, action, detail, actor) VALUES (?, ?, ?, ?, ?)"
+    ).bind(randomId("hkl"), bookingId, action || "", detail || "", actor || "").run();
+  } catch {}
+};
+
+const hkMapBooking = (r) => ({
+  id: r.id, code: r.code, roomTypeId: r.room_type_id, roomTypeName: r.room_type_name || "",
+  userId: r.user_id, name: r.guest_name, email: r.guest_email, phone: r.guest_phone,
+  checkIn: r.check_in, checkOut: r.check_out, nights: r.nights, rooms: r.rooms, guests: r.guests,
+  totalPrice: r.total_price, couponCode: r.coupon_code, status: r.status,
+  paymentStatus: r.payment_status, paidAmount: r.paid_amount, memo: r.memo || "", guestRequest: r.guest_request || "",
+  roomAssignment: r.room_assignment || "", housekeeping: r.housekeeping || "", cashReceipt: r.cash_receipt || "",
+  createdAt: r.created_at, updatedAt: r.updated_at, cancelledAt: r.cancelled_at,
+  checkedInAt: r.checked_in_at, checkedOutAt: r.checked_out_at,
+});
+
+const handleHkMyBookings = async (req, env) => {
+  const user = await requireUser(req, env);
+  const { results } = await env.DB.prepare(
+    `SELECT b.*, rt.name AS room_type_name FROM hk_bookings b LEFT JOIN hk_room_types rt ON rt.id = b.room_type_id
+     WHERE b.user_id = ? ORDER BY b.created_at DESC`
+  ).bind(user.id).all();
+  return { bookings: (results || []).map(hkMapBooking) };
+};
+
+const handleHkBookingCancel = async (req, env, id) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare("SELECT id, user_id, status FROM hk_bookings WHERE id = ?").bind(id).first();
+  if (!row) throw new HttpError(404, "예약을 찾을 수 없습니다.");
+  if (!user.isAdmin && row.user_id !== user.id) throw new HttpError(403, "본인 예약만 취소할 수 있습니다.");
+  if (["checked_in", "checked_out"].includes(row.status)) throw new HttpError(409, "이미 체크인된 예약은 취소할 수 없습니다.");
+  await env.DB.prepare("UPDATE hk_bookings SET status = 'cancelled', cancelled_at = ?, updated_at = ? WHERE id = ?").bind(nowIso(), nowIso(), id).run();
+  await hkLog(env, id, "cancel", "예약 취소", user.isAdmin ? (user.email || "admin") : "guest");
+  return { ok: true };
+};
+
+// ── 관리자: 객실 타입 ──
+const handleHkRoomTypeCreate = async (req, env) => {
+  const admin = await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const id = b.id || randomId("hkrt");
+  await env.DB.prepare(
+    `INSERT INTO hk_room_types (id, name, description, images_json, quantity, max_occupancy, bed_config, amenities_json,
+       base_price, weekend_price, discounts_json, min_nights, max_nights, status, sort_order, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, b.name || "새 객실", b.description || "", JSON.stringify(b.images || []),
+    Math.max(0, Number(b.quantity) || 1), Math.max(1, Number(b.maxOccupancy) || 2), b.bedConfig || "",
+    JSON.stringify(b.amenities || []), Math.max(0, Number(b.basePrice) || 0),
+    b.weekendPrice != null && b.weekendPrice !== "" ? Math.max(0, Number(b.weekendPrice)) : null,
+    JSON.stringify(b.discounts || []), Math.max(1, Number(b.minNights) || 1), Math.max(1, Number(b.maxNights) || 30),
+    b.status === "inactive" ? "inactive" : "active", Number(b.sortOrder) || 0, nowIso()).run();
+  await auditWrite(env, admin.email, "hangyeon.roomType.create", `hkrt:${id}`);
+  return { id };
+};
+const handleHkRoomTypePatch = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const map = {
+    name: "name", description: "description", quantity: "quantity", maxOccupancy: "max_occupancy",
+    bedConfig: "bed_config", basePrice: "base_price", weekendPrice: "weekend_price",
+    minNights: "min_nights", maxNights: "max_nights", status: "status", sortOrder: "sort_order",
+  };
+  const sets = [], args = [];
+  for (const k in map) if (k in b) {
+    let v = b[k];
+    if (k === "weekendPrice") v = (v === "" || v == null) ? null : Math.max(0, Number(v));
+    sets.push(`${map[k]} = ?`); args.push(v);
+  }
+  if ("images" in b) { sets.push("images_json = ?"); args.push(JSON.stringify(b.images || [])); }
+  if ("amenities" in b) { sets.push("amenities_json = ?"); args.push(JSON.stringify(b.amenities || [])); }
+  if ("discounts" in b) { sets.push("discounts_json = ?"); args.push(JSON.stringify(b.discounts || [])); }
+  sets.push("updated_at = ?"); args.push(nowIso());
+  args.push(id);
+  await env.DB.prepare(`UPDATE hk_room_types SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+const handleHkRoomTypeDelete = async (req, env, id) => {
+  const admin = await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM hk_room_types WHERE id = ?").bind(id).run();
+  await auditWrite(env, admin.email, "hangyeon.roomType.delete", `hkrt:${id}`);
+  return { ok: true };
+};
+
+// ── 관리자: 요금 규칙 ──
+const handleHkRateRulesList = async (req, env) => {
+  await requireAdmin(req, env);
+  const { results } = await env.DB.prepare("SELECT * FROM hk_rate_rules ORDER BY priority DESC, created_at DESC").all();
+  return { rules: (results || []).map((r) => ({ id: r.id, roomTypeId: r.room_type_id, kind: r.kind, label: r.label, startDate: r.start_date, endDate: r.end_date, dow: safeJson(r.dow_json, []), price: r.price, priority: r.priority, active: !!r.active })) };
+};
+const handleHkRateRuleCreate = async (req, env) => {
+  await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const id = randomId("hkrr");
+  await env.DB.prepare(
+    `INSERT INTO hk_rate_rules (id, room_type_id, kind, label, start_date, end_date, dow_json, price, priority, active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, b.roomTypeId || null, b.kind || "season", b.label || "", b.startDate || null, b.endDate || null,
+    JSON.stringify(b.dow || []), b.price != null ? Number(b.price) : null, Number(b.priority) || 0, b.active === false ? 0 : 1).run();
+  return { id };
+};
+const handleHkRateRulePatch = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const map = { roomTypeId: "room_type_id", kind: "kind", label: "label", startDate: "start_date", endDate: "end_date", price: "price", priority: "priority" };
+  const sets = [], args = [];
+  for (const k in map) if (k in b) { sets.push(`${map[k]} = ?`); args.push(b[k] === "" ? null : b[k]); }
+  if ("dow" in b) { sets.push("dow_json = ?"); args.push(JSON.stringify(b.dow || [])); }
+  if ("active" in b) { sets.push("active = ?"); args.push(b.active ? 1 : 0); }
+  if (!sets.length) return { ok: true };
+  args.push(id);
+  await env.DB.prepare(`UPDATE hk_rate_rules SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+const handleHkRateRuleDelete = async (req, env, id) => {
+  await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM hk_rate_rules WHERE id = ?").bind(id).run();
+  return { ok: true };
+};
+
+// ── 관리자: 쿠폰 ──
+const handleHkCouponsList = async (req, env) => {
+  await requireAdmin(req, env);
+  const { results } = await env.DB.prepare("SELECT * FROM hk_coupons ORDER BY created_at DESC").all();
+  return { coupons: (results || []).map((c) => ({ code: c.code, label: c.label, kind: c.kind, value: c.value, minAmount: c.min_amount, startsAt: c.starts_at, expiresAt: c.expires_at, active: !!c.active })) };
+};
+const handleHkCouponUpsert = async (req, env) => {
+  await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const code = String(b.code || "").trim().toUpperCase();
+  if (!code) throw new HttpError(400, "쿠폰 코드를 입력해 주세요.");
+  await env.DB.prepare(
+    `INSERT INTO hk_coupons (code, label, kind, value, min_amount, starts_at, expires_at, active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(code) DO UPDATE SET label=excluded.label, kind=excluded.kind, value=excluded.value,
+       min_amount=excluded.min_amount, starts_at=excluded.starts_at, expires_at=excluded.expires_at, active=excluded.active`
+  ).bind(code, b.label || "", b.kind === "amount" ? "amount" : "percent", Math.max(0, Number(b.value) || 0),
+    Math.max(0, Number(b.minAmount) || 0), b.startsAt || null, b.expiresAt || null, b.active === false ? 0 : 1).run();
+  return { code };
+};
+const handleHkCouponDelete = async (req, env, code) => {
+  await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM hk_coupons WHERE code = ?").bind(String(code).toUpperCase()).run();
+  return { ok: true };
+};
+
+// ── 관리자: 재고/판매 오버라이드 (단건 + 범위 일괄) ──
+const handleHkAvailabilitySet = async (req, env) => {
+  await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const roomTypeId = b.roomTypeId;
+  if (!roomTypeId) throw new HttpError(400, "roomTypeId 필요");
+  const from = b.from || b.date;
+  const to = b.to || b.date;
+  if (!hkIsValidDate(from) || !hkIsValidDate(to)) throw new HttpError(400, "날짜 형식 오류");
+  const dates = b.to && b.to !== b.from ? hkNights(from, new Date(new Date(to + "T00:00:00Z").getTime() + 86400000).toISOString().slice(0, 10)) : [from];
+  for (const date of dates) {
+    await env.DB.prepare(
+      `INSERT INTO hk_availability (id, room_type_id, date, closed, qty_override, price_override, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(room_type_id, date) DO UPDATE SET closed=excluded.closed, qty_override=excluded.qty_override, price_override=excluded.price_override, note=excluded.note`
+    ).bind(randomId("hka"), roomTypeId, date, b.closed ? 1 : 0,
+      b.qtyOverride === "" || b.qtyOverride == null ? null : Number(b.qtyOverride),
+      b.priceOverride === "" || b.priceOverride == null ? null : Number(b.priceOverride), b.note || "").run();
+  }
+  return { ok: true, count: dates.length };
+};
+
+// ── 관리자: 예약 목록/수정/결제/이력 ──
+const handleHkBookingsList = async (req, env) => {
+  await requireAdmin(req, env);
+  const url = new URL(req.url);
+  const status = url.searchParams.get("status");
+  const from = url.searchParams.get("from");
+  const to = url.searchParams.get("to");
+  const where = [], args = [];
+  if (status) { where.push("b.status = ?"); args.push(status); }
+  if (hkIsValidDate(from)) { where.push("b.check_out > ?"); args.push(from); }
+  if (hkIsValidDate(to)) { where.push("b.check_in < ?"); args.push(to); }
+  const { results } = await env.DB.prepare(
+    `SELECT b.*, rt.name AS room_type_name FROM hk_bookings b LEFT JOIN hk_room_types rt ON rt.id = b.room_type_id
+     ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY b.check_in ASC, b.created_at DESC LIMIT 500`
+  ).bind(...args).all();
+  return { bookings: (results || []).map(hkMapBooking) };
+};
+const handleHkBookingPatch = async (req, env, id) => {
+  const admin = await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const before = await env.DB.prepare("SELECT * FROM hk_bookings WHERE id = ?").bind(id).first();
+  if (!before) throw new HttpError(404, "예약을 찾을 수 없습니다.");
+  const map = { status: "status", paymentStatus: "payment_status", paidAmount: "paid_amount", memo: "memo", roomAssignment: "room_assignment", housekeeping: "housekeeping", guestRequest: "guest_request" };
+  const sets = [], args = [];
+  for (const k in map) if (k in b) { sets.push(`${map[k]} = ?`); args.push(b[k]); }
+  if (b.status === "checked_in" && before.status !== "checked_in") { sets.push("checked_in_at = ?"); args.push(nowIso()); }
+  if (b.status === "checked_out" && before.status !== "checked_out") {
+    sets.push("checked_out_at = ?"); args.push(nowIso());
+    // 방문 횟수 +1
+    const gkey = hkGuestKey(before.guest_phone, before.guest_email);
+    if (gkey) { try { await env.DB.prepare("UPDATE hk_guests SET visits = visits + 1, updated_at = ? WHERE id = ?").bind(nowIso(), gkey).run(); } catch {} }
+  }
+  if (b.status === "cancelled" && before.status !== "cancelled") { sets.push("cancelled_at = ?"); args.push(nowIso()); }
+  sets.push("updated_at = ?"); args.push(nowIso());
+  args.push(id);
+  await env.DB.prepare(`UPDATE hk_bookings SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  if (b.status && b.status !== before.status) {
+    await hkLog(env, id, "status", `${before.status} → ${b.status}`, admin.email);
+    if (before.user_id) {
+      const msgMap = { confirmed: "한켠 예약이 확정되었습니다.", cancelled: "한켠 예약이 취소되었습니다.", checked_in: "체크인 처리되었습니다.", checked_out: "체크아웃 처리되었습니다. 이용해 주셔서 감사합니다.", no_show: "예약이 노쇼 처리되었습니다." };
+      if (msgMap[b.status]) await insertNotification(env, { userId: before.user_id, type: "hangyeon_" + b.status, message: msgMap[b.status], fromName: "한켠" });
+    }
+  }
+  if ("memo" in b && b.memo !== before.memo) await hkLog(env, id, "memo", "메모 수정", admin.email);
+  return { ok: true };
+};
+const handleHkBookingLog = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const { results } = await env.DB.prepare("SELECT * FROM hk_booking_log WHERE booking_id = ? ORDER BY created_at DESC").bind(id).all();
+  return { log: (results || []).map((r) => ({ id: r.id, action: r.action, detail: r.detail, actor: r.actor, createdAt: r.created_at })) };
+};
+const handleHkPaymentAdd = async (req, env, id) => {
+  const admin = await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const booking = await env.DB.prepare("SELECT total_price, paid_amount FROM hk_bookings WHERE id = ?").bind(id).first();
+  if (!booking) throw new HttpError(404, "예약을 찾을 수 없습니다.");
+  const amount = Number(b.amount) || 0;
+  if (!amount) throw new HttpError(400, "금액을 입력해 주세요.");
+  const kind = amount < 0 ? "refund" : "payment";
+  await env.DB.prepare(
+    "INSERT INTO hk_payments (id, booking_id, amount, method, kind, memo, actor) VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).bind(randomId("hkp"), id, amount, b.method || "bank", kind, b.memo || "", admin.email).run();
+  const paid = Math.max(0, (booking.paid_amount || 0) + amount);
+  let pstatus = "unpaid";
+  if (paid <= 0) pstatus = "unpaid";
+  else if (paid >= (booking.total_price || 0)) pstatus = "paid";
+  else pstatus = "partial";
+  // 환불로 0 미만 의도 → refunded 표기
+  const anyRefund = await env.DB.prepare("SELECT COUNT(*) AS c FROM hk_payments WHERE booking_id = ? AND kind = 'refund'").bind(id).first();
+  if (paid <= 0 && Number(anyRefund?.c || 0) > 0) pstatus = "refunded";
+  await env.DB.prepare("UPDATE hk_bookings SET paid_amount = ?, payment_status = ?, updated_at = ? WHERE id = ?").bind(paid, pstatus, nowIso(), id).run();
+  await hkLog(env, id, "payment", `${kind === "refund" ? "환불" : "입금"} ${amount}원 (누적 ${paid})`, admin.email);
+  return { ok: true, paidAmount: paid, paymentStatus: pstatus };
+};
+const handleHkPaymentsList = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const { results } = await env.DB.prepare("SELECT * FROM hk_payments WHERE booking_id = ? ORDER BY created_at DESC").bind(id).all();
+  return { payments: (results || []).map((r) => ({ id: r.id, amount: r.amount, method: r.method, kind: r.kind, memo: r.memo, actor: r.actor, createdAt: r.created_at })) };
+};
+
+// ── 관리자: 고객 ──
+const handleHkGuestsList = async (req, env) => {
+  await requireAdmin(req, env);
+  const { results } = await env.DB.prepare(
+    `SELECT g.*, (SELECT COUNT(*) FROM hk_bookings b WHERE (b.guest_phone != '' AND ('g-' || REPLACE(REPLACE(REPLACE(b.guest_phone,'-',''),' ',''),'+','')) = g.id)) AS booking_count
+     FROM hk_guests g ORDER BY g.vip DESC, g.visits DESC, g.updated_at DESC LIMIT 500`
+  ).all();
+  return { guests: (results || []).map((r) => ({ id: r.id, name: r.name, email: r.email, phone: r.phone, visits: r.visits, vip: !!r.vip, blacklist: !!r.blacklist, note: r.note || "", bookingCount: Number(r.booking_count || 0), createdAt: r.created_at })) };
+};
+const handleHkGuestPatch = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const sets = [], args = [];
+  if ("vip" in b) { sets.push("vip = ?"); args.push(b.vip ? 1 : 0); }
+  if ("blacklist" in b) { sets.push("blacklist = ?"); args.push(b.blacklist ? 1 : 0); }
+  if ("note" in b) { sets.push("note = ?"); args.push(b.note || ""); }
+  if (!sets.length) return { ok: true };
+  sets.push("updated_at = ?"); args.push(nowIso());
+  args.push(id);
+  await env.DB.prepare(`UPDATE hk_guests SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+
+// ── 관리자: 물리 객실 단위 (운영) ──
+const handleHkUnitsList = async (req, env) => {
+  await requireAdmin(req, env);
+  const { results } = await env.DB.prepare(
+    `SELECT u.*, rt.name AS room_type_name FROM hk_room_units u LEFT JOIN hk_room_types rt ON rt.id = u.room_type_id ORDER BY rt.sort_order ASC, u.unit_no ASC`
+  ).all();
+  return { units: (results || []).map((r) => ({ id: r.id, roomTypeId: r.room_type_id, roomTypeName: r.room_type_name || "", unitNo: r.unit_no, status: r.status, note: r.note || "", updatedAt: r.updated_at })) };
+};
+const handleHkUnitCreate = async (req, env) => {
+  await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const id = randomId("hku");
+  await env.DB.prepare("INSERT INTO hk_room_units (id, room_type_id, unit_no, status, note, updated_at) VALUES (?, ?, ?, ?, ?, ?)")
+    .bind(id, b.roomTypeId || null, b.unitNo || "", b.status || "vacant", b.note || "", nowIso()).run();
+  return { id };
+};
+const handleHkUnitPatch = async (req, env, id) => {
+  await requireAdmin(req, env);
+  const b = await req.json().catch(() => ({}));
+  const sets = [], args = [];
+  if ("unitNo" in b) { sets.push("unit_no = ?"); args.push(b.unitNo); }
+  if ("status" in b) { sets.push("status = ?"); args.push(b.status); }
+  if ("note" in b) { sets.push("note = ?"); args.push(b.note || ""); }
+  if (!sets.length) return { ok: true };
+  sets.push("updated_at = ?"); args.push(nowIso());
+  args.push(id);
+  await env.DB.prepare(`UPDATE hk_room_units SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
+  return { ok: true };
+};
+const handleHkUnitDelete = async (req, env, id) => {
+  await requireAdmin(req, env);
+  await env.DB.prepare("DELETE FROM hk_room_units WHERE id = ?").bind(id).run();
+  return { ok: true };
+};
+
 // ──────── 라우터 ──────────────────────────────────────────
 
 const route = async (req, env) => {
@@ -2589,6 +3117,55 @@ const route = async (req, env) => {
   if (req.method === "GET" && p === "/api/admin/reports") return json(await handleReportsList(req, env));
   if ((g = m(/^\/api\/admin\/reports\/([\w-]+)$/))) {
     if (req.method === "PATCH") return json(await handleReportPatch(req, env, g[1]));
+  }
+
+  // ── 한켠(숙소) 예약 PMS (v00.267) ──
+  if (req.method === "GET" && p === "/api/hangyeon/room-types") {
+    const resp = json(await handleHkRoomTypesList(req, env));
+    return _publicCacheable(req) ? _withPublicCache(resp, 30) : resp;
+  }
+  if (req.method === "POST" && p === "/api/hangyeon/room-types") return json(await handleHkRoomTypeCreate(req, env), { status: 201 });
+  if ((g = m(/^\/api\/hangyeon\/room-types\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleHkRoomTypePatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleHkRoomTypeDelete(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/hangyeon/availability") return json(await handleHkAvailability(req, env));
+  if (req.method === "PUT" && p === "/api/hangyeon/availability") return json(await handleHkAvailabilitySet(req, env));
+  if (req.method === "POST" && p === "/api/hangyeon/quote") return json(await handleHkQuote(req, env));
+  if (req.method === "POST" && p === "/api/hangyeon/bookings") return json(await handleHkBookingCreate(req, env), { status: 201 });
+  if (req.method === "GET" && p === "/api/hangyeon/bookings") return json(await handleHkBookingsList(req, env));
+  if (req.method === "GET" && p === "/api/me/hangyeon-bookings") return json(await handleHkMyBookings(req, env));
+  if ((g = m(/^\/api\/hangyeon\/bookings\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleHkBookingPatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleHkBookingCancel(req, env, g[1]));
+  }
+  if ((g = m(/^\/api\/hangyeon\/bookings\/([\w-]+)\/log$/))) {
+    if (req.method === "GET") return json(await handleHkBookingLog(req, env, g[1]));
+  }
+  if ((g = m(/^\/api\/hangyeon\/bookings\/([\w-]+)\/payments$/))) {
+    if (req.method === "GET") return json(await handleHkPaymentsList(req, env, g[1]));
+    if (req.method === "POST") return json(await handleHkPaymentAdd(req, env, g[1]), { status: 201 });
+  }
+  if (req.method === "GET" && p === "/api/hangyeon/rate-rules") return json(await handleHkRateRulesList(req, env));
+  if (req.method === "POST" && p === "/api/hangyeon/rate-rules") return json(await handleHkRateRuleCreate(req, env), { status: 201 });
+  if ((g = m(/^\/api\/hangyeon\/rate-rules\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleHkRateRulePatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleHkRateRuleDelete(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/hangyeon/coupons") return json(await handleHkCouponsList(req, env));
+  if (req.method === "POST" && p === "/api/hangyeon/coupons") return json(await handleHkCouponUpsert(req, env), { status: 201 });
+  if ((g = m(/^\/api\/hangyeon\/coupons\/([\w-]+)$/))) {
+    if (req.method === "DELETE") return json(await handleHkCouponDelete(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/hangyeon/guests") return json(await handleHkGuestsList(req, env));
+  if ((g = m(/^\/api\/hangyeon\/guests\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleHkGuestPatch(req, env, g[1]));
+  }
+  if (req.method === "GET" && p === "/api/hangyeon/room-units") return json(await handleHkUnitsList(req, env));
+  if (req.method === "POST" && p === "/api/hangyeon/room-units") return json(await handleHkUnitCreate(req, env), { status: 201 });
+  if ((g = m(/^\/api\/hangyeon\/room-units\/([\w-]+)$/))) {
+    if (req.method === "PATCH") return json(await handleHkUnitPatch(req, env, g[1]));
+    if (req.method === "DELETE") return json(await handleHkUnitDelete(req, env, g[1]));
   }
 
   return json({ error: "Not found" }, { status: 404 });

@@ -286,7 +286,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 // URL 경로 ↔ 라우트 키 매핑.
 // 알려진 라우트만 화이트리스트로 받아 안전하게 폴백한다(home).
 // v00.229 — 'error' 라우트 추가. /error?code=403|404|500|401|network|maintenance
-const VALID_ROUTES = ['home','home-next','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy','eat','sleep','shop','error'];
+const VALID_ROUTES = ['home','home-next','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy','eat','sleep','shop','hangyeon','error'];
 const pathToRoute = (pathname) => {
   const p = (pathname || '/').replace(/\/+$/, '') || '/';
   if (p === '/') return 'home';
@@ -305,6 +305,7 @@ const ADMIN_SCRIPTS = [
   'pages/admin/AdminShared.js',
   'pages/admin/AdminContentEditors.js',
   'pages/admin/AdminDesignHub.js',
+  'pages/admin/HangyeonAdminPanel.js',
   'pages/AuthAdminPage.js',
 ];
 let _adminLoadPromise = null;
@@ -607,6 +608,7 @@ const App = () => {
       eat: '먹고 놀자',
       sleep: '자고 놀자',
       shop: '사고 놀자',
+      hangyeon: '한켠 — 숙소 예약',
       tour: '투어 프로그램',
       lectures: '강연',
       column: '뱅기노자 칼럼',
@@ -748,6 +750,7 @@ const App = () => {
       case "home-next": { const C = pick('HomeNextPage','신규 홈 프리뷰'); return <C go={go}/>; }
       case "eat":       { const C = pick('EatPage','먹고 놀자'); return <C go={go} user={user}/>; }
       case "sleep":     { const C = pick('SleepPage','자고 놀자'); return <C go={go} user={user}/>; }
+      case "hangyeon":  { const C = pick('HangyeonPage','한켠'); return <C go={go} user={user}/>; }
       case "shop":      { const C = pick('ShopPage','사고 놀자'); return <C go={go} user={user}/>; }
       case "community": { const C = pick('CommunityPage','커뮤니티'); return <C go={go} postId={postId} setPostId={setPostId} user={user}/>; }
       case "tour":      { const C = pick('TourPage','투어'); return <C go={go} user={user}/>; }

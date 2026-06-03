@@ -40,6 +40,22 @@ const PlacePage = ({ go, kind, user }) => {
           <p className="section-subtitle" style={{maxWidth:780}}>{meta.desc}</p>
         </header>
 
+        {/* v00.267 — 한켠(뱅기노자 직영 숙소) 예약 진입로 — 자고 놀자 전용 */}
+        {kind === 'sleep' && (
+          <div className="card" style={{padding:0, overflow:'hidden', marginBottom:32, display:'flex', flexWrap:'wrap', alignItems:'stretch', border:'1px solid var(--secondary)'}}>
+            <div style={{flex:'1 1 320px', padding:'24px 26px', display:'flex', flexDirection:'column', justifyContent:'center', gap:8}}>
+              <div className="mono" style={{fontSize:10, letterSpacing:'0.22em', color:'var(--secondary)'}}>STAY · 뱅기노자 직영</div>
+              <h2 className="ko-serif" style={{fontSize:24, margin:0}}>한켠 — 전주의 하룻밤</h2>
+              <p className="dim" style={{fontSize:13.5, lineHeight:1.7, margin:'4px 0 12px'}}>
+                뱅기노자가 직접 운영하는 숙소 <strong style={{color:'var(--ink)'}}>한켠</strong>. 객실을 고르고 날짜를 선택해 바로 예약하세요.
+              </p>
+              <div>
+                <button type="button" className="btn btn-gold" onClick={() => go('hangyeon')}>한켠 예약하기 →</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 인포 박스 — 행문(行文) 슬로건 */}
         <div className="card card-gold" style={{padding:'18px 22px', marginBottom:32, display:'flex', gap:16, alignItems:'center', flexWrap:'wrap'}}>
           <div style={{flex:1, minWidth:240}}>

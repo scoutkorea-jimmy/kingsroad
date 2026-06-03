@@ -356,5 +356,50 @@
       },
       userJourney: (userId) => request("GET", `/admin/user-journey/${userId}`),
     },
+
+    // ── 한켠(숙소) 예약 PMS (v00.267) ──
+    hangyeon: {
+      roomTypes: ({ includeAll } = {}) => request("GET", `/hangyeon/room-types${includeAll ? "?includeAll=1" : ""}`),
+      createRoomType: (payload) => request("POST", "/hangyeon/room-types", payload),
+      updateRoomType: (id, patch) => request("PATCH", `/hangyeon/room-types/${id}`, patch),
+      removeRoomType: (id) => request("DELETE", `/hangyeon/room-types/${id}`),
+      availability: ({ from, to, roomTypeId } = {}) => {
+        const qs = new URLSearchParams();
+        if (from) qs.set("from", from);
+        if (to) qs.set("to", to);
+        if (roomTypeId) qs.set("roomTypeId", roomTypeId);
+        return request("GET", `/hangyeon/availability?${qs.toString()}`);
+      },
+      setAvailability: (payload) => request("PUT", "/hangyeon/availability", payload),
+      quote: (payload) => request("POST", "/hangyeon/quote", payload),
+      book: (payload) => request("POST", "/hangyeon/bookings", payload),
+      mineBookings: () => request("GET", "/me/hangyeon-bookings"),
+      cancelBooking: (id) => request("DELETE", `/hangyeon/bookings/${id}`),
+      adminBookings: ({ status, from, to } = {}) => {
+        const qs = new URLSearchParams();
+        if (status) qs.set("status", status);
+        if (from) qs.set("from", from);
+        if (to) qs.set("to", to);
+        const s = qs.toString();
+        return request("GET", `/hangyeon/bookings${s ? "?" + s : ""}`);
+      },
+      patchBooking: (id, patch) => request("PATCH", `/hangyeon/bookings/${id}`, patch),
+      bookingLog: (id) => request("GET", `/hangyeon/bookings/${id}/log`),
+      payments: (id) => request("GET", `/hangyeon/bookings/${id}/payments`),
+      addPayment: (id, payload) => request("POST", `/hangyeon/bookings/${id}/payments`, payload),
+      rateRules: () => request("GET", "/hangyeon/rate-rules"),
+      createRateRule: (payload) => request("POST", "/hangyeon/rate-rules", payload),
+      updateRateRule: (id, patch) => request("PATCH", `/hangyeon/rate-rules/${id}`, patch),
+      removeRateRule: (id) => request("DELETE", `/hangyeon/rate-rules/${id}`),
+      coupons: () => request("GET", "/hangyeon/coupons"),
+      upsertCoupon: (payload) => request("POST", "/hangyeon/coupons", payload),
+      removeCoupon: (code) => request("DELETE", `/hangyeon/coupons/${code}`),
+      guests: () => request("GET", "/hangyeon/guests"),
+      patchGuest: (id, patch) => request("PATCH", `/hangyeon/guests/${id}`, patch),
+      units: () => request("GET", "/hangyeon/room-units"),
+      createUnit: (payload) => request("POST", "/hangyeon/room-units", payload),
+      updateUnit: (id, patch) => request("PATCH", `/hangyeon/room-units/${id}`, patch),
+      removeUnit: (id) => request("DELETE", `/hangyeon/room-units/${id}`),
+    },
   };
 })();

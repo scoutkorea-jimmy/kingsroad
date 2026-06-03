@@ -6225,7 +6225,7 @@ const AdminPage = ({ go }) => {
   const tabGroups = [
     { group: "요약",          items: ["대시보드", "사용자 여정"] },
     { group: "콘텐츠",        items: ["뱅기노자 칼럼", "추천 여행지", "먹고 놀자", "자고 놀자", "사고 놀자"] },
-    { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "책 카탈로그", "책 주문"] },
+    { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "한켠 예약", "책 카탈로그", "책 주문"] },
     // v00.177 — 사용자 보고 '커뮤니티게시판이랑 커뮤니티랑 겹쳐 매우 불편'. 단일 [커뮤니티] sub-tab 통합 (게시글/게시판/신고).
     { group: "커뮤니티",      items: ["커뮤니티"] },
     { group: "회원",          items: ["회원", "회원 등급"] },
@@ -7245,6 +7245,8 @@ const AdminPage = ({ go }) => {
         {tab === "먹고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="eat"/>}
         {tab === "자고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="sleep"/>}
         {tab === "사고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="shop"/>}
+        {/* v00.267 — 한켠 숙소 예약 PMS (7 탭) */}
+        {tab === "한켠 예약" && window.HangyeonAdminPanel && <window.HangyeonAdminPanel/>}
         {/* 카테고리 CRUD */}
         {/* v00.166 — 사이트 설정 7 항목 단일 머지. v00.167 — 우측 라이브 미리보기 iframe. */}
         {tab === "사이트 설정" && (

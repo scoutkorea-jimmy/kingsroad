@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.266.001",
+  version: "00.267.000",
   build: "2026.06.04",
   channel: "preview",
 };
@@ -2727,6 +2727,76 @@ window.BGNJ_TOURS = {
     await window.BGNJ_API.tours.reviews.remove(reviewId);
     await this.refreshReviews(tourId);
   },
+};
+
+// === 한켠(전주 숙소) 예약 PMS (BGNJ_HANGYEON) — v00.267 =====================
+// D1 source-of-truth. schema-v6-hangyeon.sql / 워커 /api/hangyeon/* .
+// 객실(roomTypes) / 가용성(availability) / 예약(bookings) / 요금(rateRules,coupons)
+// / 고객(guests) / 운영(units) 전 영역.
+window.BGNJ_HANGYEON = {
+  _roomTypes: [],
+  _myBookings: [],
+  async refreshRoomTypes({ includeAll } = {}) {
+    try {
+      const { roomTypes } = await window.BGNJ_API.hangyeon.roomTypes({ includeAll: !!includeAll });
+      if (!Array.isArray(roomTypes)) { try { console.warn('[BGNJ_HANGYEON.refreshRoomTypes] non-array — cache preserved'); } catch {} return this._roomTypes.slice(); }
+      this._roomTypes = roomTypes;
+      try { window.dispatchEvent(new CustomEvent('bgnj-hangyeon-refresh')); } catch {}
+    } catch {}
+    return this._roomTypes.slice();
+  },
+  listRoomTypes({ includeAll } = {}) {
+    return includeAll ? this._roomTypes.slice() : this._roomTypes.filter((r) => r.status === 'active');
+  },
+  getRoomType(id) { return this._roomTypes.find((r) => String(r.id) === String(id)) || null; },
+  async availability({ from, to, roomTypeId } = {}) {
+    try { return await window.BGNJ_API.hangyeon.availability({ from, to, roomTypeId }); }
+    catch (err) { return { from, to, availability: {}, error: err?.body?.error || err?.message || '조회 실패' }; }
+  },
+  async quote(payload) {
+    try { return await window.BGNJ_API.hangyeon.quote(payload); }
+    catch (err) { return { ok: false, reason: err?.body?.error || err?.message || '견적 실패' }; }
+  },
+  async book(payload) {
+    try { const res = await window.BGNJ_API.hangyeon.book(payload); await this.refreshMine(); return { ok: true, ...res }; }
+    catch (err) { return { ok: false, message: err?.body?.error || err?.message || '예약 실패' }; }
+  },
+  async refreshMine() {
+    try {
+      const { bookings } = await window.BGNJ_API.hangyeon.mineBookings();
+      if (!Array.isArray(bookings)) { try { console.warn('[BGNJ_HANGYEON.refreshMine] non-array — cache preserved'); } catch {} return this._myBookings.slice(); }
+      this._myBookings = bookings;
+    } catch {}
+    return this._myBookings.slice();
+  },
+  listMine() { return this._myBookings.slice(); },
+  async cancelBooking(id) { await window.BGNJ_API.hangyeon.cancelBooking(id); await this.refreshMine(); },
+  // ── 관리자 ──
+  async saveRoomType(payload) {
+    if (payload.id && this.getRoomType(payload.id)) await window.BGNJ_API.hangyeon.updateRoomType(payload.id, payload);
+    else await window.BGNJ_API.hangyeon.createRoomType(payload);
+    await this.refreshRoomTypes({ includeAll: true });
+  },
+  async deleteRoomType(id) { await window.BGNJ_API.hangyeon.removeRoomType(id); await this.refreshRoomTypes({ includeAll: true }); },
+  async setAvailability(payload) { return window.BGNJ_API.hangyeon.setAvailability(payload); },
+  async adminBookings(opts = {}) { try { const { bookings } = await window.BGNJ_API.hangyeon.adminBookings(opts); return Array.isArray(bookings) ? bookings : []; } catch { return []; } },
+  async patchBooking(id, patch) { return window.BGNJ_API.hangyeon.patchBooking(id, patch); },
+  async bookingLog(id) { try { const { log } = await window.BGNJ_API.hangyeon.bookingLog(id); return log || []; } catch { return []; } },
+  async payments(id) { try { const { payments } = await window.BGNJ_API.hangyeon.payments(id); return payments || []; } catch { return []; } },
+  async addPayment(id, payload) { return window.BGNJ_API.hangyeon.addPayment(id, payload); },
+  async rateRules() { try { const { rules } = await window.BGNJ_API.hangyeon.rateRules(); return rules || []; } catch { return []; } },
+  async createRateRule(p) { return window.BGNJ_API.hangyeon.createRateRule(p); },
+  async updateRateRule(id, p) { return window.BGNJ_API.hangyeon.updateRateRule(id, p); },
+  async deleteRateRule(id) { return window.BGNJ_API.hangyeon.removeRateRule(id); },
+  async coupons() { try { const { coupons } = await window.BGNJ_API.hangyeon.coupons(); return coupons || []; } catch { return []; } },
+  async upsertCoupon(p) { return window.BGNJ_API.hangyeon.upsertCoupon(p); },
+  async deleteCoupon(code) { return window.BGNJ_API.hangyeon.removeCoupon(code); },
+  async guests() { try { const { guests } = await window.BGNJ_API.hangyeon.guests(); return guests || []; } catch { return []; } },
+  async patchGuest(id, p) { return window.BGNJ_API.hangyeon.patchGuest(id, p); },
+  async units() { try { const { units } = await window.BGNJ_API.hangyeon.units(); return units || []; } catch { return []; } },
+  async createUnit(p) { return window.BGNJ_API.hangyeon.createUnit(p); },
+  async updateUnit(id, p) { return window.BGNJ_API.hangyeon.updateUnit(id, p); },
+  async deleteUnit(id) { return window.BGNJ_API.hangyeon.removeUnit(id); },
 };
 
 // === 운영 감사 로그(BGNJ_AUDIT) ============================================

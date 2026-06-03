@@ -316,7 +316,7 @@ const TWEAK_DEFAULTS = (
     "interactive": true
   }
 );
-const VALID_ROUTES = ["home", "home-next", "community", "lectures", "tour", "column", "book", "checkout", "mypage", "admin", "login", "signup", "faq", "terms", "privacy", "eat", "sleep", "shop", "error"];
+const VALID_ROUTES = ["home", "home-next", "community", "lectures", "tour", "column", "book", "checkout", "mypage", "admin", "login", "signup", "faq", "terms", "privacy", "eat", "sleep", "shop", "hangyeon", "error"];
 const pathToRoute = (pathname) => {
   const p = (pathname || "/").replace(/\/+$/, "") || "/";
   if (p === "/") return "home";
@@ -328,6 +328,7 @@ const ADMIN_SCRIPTS = [
   "pages/admin/AdminShared.js",
   "pages/admin/AdminContentEditors.js",
   "pages/admin/AdminDesignHub.js",
+  "pages/admin/HangyeonAdminPanel.js",
   "pages/AuthAdminPage.js"
 ];
 let _adminLoadPromise = null;
@@ -643,6 +644,7 @@ const App = () => {
       eat: "\uBA39\uACE0 \uB180\uC790",
       sleep: "\uC790\uACE0 \uB180\uC790",
       shop: "\uC0AC\uACE0 \uB180\uC790",
+      hangyeon: "\uD55C\uCF20 \u2014 \uC219\uC18C \uC608\uC57D",
       tour: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8",
       lectures: "\uAC15\uC5F0",
       column: "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC",
@@ -814,6 +816,10 @@ const App = () => {
       }
       case "sleep": {
         const C = pick("SleepPage", "\uC790\uACE0 \uB180\uC790");
+        return /* @__PURE__ */ React.createElement(C, { go, user });
+      }
+      case "hangyeon": {
+        const C = pick("HangyeonPage", "\uD55C\uCF20");
         return /* @__PURE__ */ React.createElement(C, { go, user });
       }
       case "shop": {
