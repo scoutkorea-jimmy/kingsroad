@@ -649,8 +649,29 @@ const HomePage = ({ go }) => {
     [recentFiveColumns, featuredIdx]
   );
   const recentPosts = React.useMemo(() => G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()).slice(0, 4), [postsTick]);
-  const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden).slice(0, 4), [toursTick]);
-  const lectures = React.useMemo(() => G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden).slice(0, 3), [lecturesTick]);
+  // v00.266 — 홈 섹션도 오늘 기준 날짜 필터 적용 (HeroProgramCards 와 동일 정책).
+  //   투어: 예정(어제 이후)만 노출. 지난 일정만 있으면 빈 상태("이번에 걸을 길 없음").
+  //   강연: 예정 우선, 없으면 가장 최근 지난 강연 3개로 폴백 + "지난 강연" 마크 (v00.129 사용자 요청 유지).
+  const _cutoff = Date.now() - 86400000; // 어제 자정 근사 — 당일 진행분 노출 유지
+  const _validStart = (x) => x && !x.hidden && x.startsAt && !isNaN(Date.parse(x.startsAt));
+  const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.())
+    .filter(_validStart)
+    .filter((t) => Date.parse(t.startsAt) >= _cutoff)
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))
+    .slice(0, 4), [toursTick]);
+  const lectures = React.useMemo(() => {
+    const all = G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter(_validStart);
+    const upcoming = all
+      .filter((l) => Date.parse(l.startsAt) >= _cutoff)
+      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+    if (upcoming.length > 0) return upcoming.slice(0, 3);
+    return all
+      .filter((l) => Date.parse(l.startsAt) < _cutoff)
+      .sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt))
+      .slice(0, 3);
+  }, [lecturesTick]);
+  // 강연 섹션이 '지난 강연 폴백' 모드인지 (예정이 하나도 없을 때).
+  const lecturesArePast = lectures.length > 0 && lectures.every((l) => Date.parse(l.startsAt) < _cutoff);
 
   // hero.stats 가 있으면 콘텐츠(label/sub/valueFallback) 를 거기서. 동적 value(투어/커뮤니티 갯수) 는 코드 측 우선.
   const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
@@ -874,8 +895,8 @@ const HomePage = ({ go }) => {
       )}
 
       {/* ── 투어 프로그램 — v00.164 inline 헤더 + section-tight (지원 박자) ──── */}
-      {tours.length > 0 && (
-        <HomeSectionBoundary label="투어 프로그램"><section className="section-tight" style={{borderBottom:'1px solid var(--line)'}}>
+      {/* v00.266 — 예정 일정이 없어도 섹션은 노출하되 빈 상태 안내. (지난 일정 노출 금지) */}
+      <HomeSectionBoundary label="투어 프로그램"><section className="section-tight" style={{borderBottom:'1px solid var(--line)'}}>
           <div className="container">
             {/* v00.164 — inline 헤더: eyebrow + title + count + action 한 줄. subtitle 제거 (section-head--inline 가 hide). */}
             <div className="section-head section-head--inline">
@@ -883,14 +904,24 @@ const HomePage = ({ go }) => {
                 <div className="section-eyebrow" aria-hidden="true">{homeText.tourEyebrow}</div>
                 <h2 className="section-title">
                   {homeText.tourTitle}
-                  <span className="mono" style={{
-                    fontSize:13, fontWeight:600, letterSpacing:'0.18em',
-                    color:'var(--ink-3)', marginLeft:14, verticalAlign:'middle',
-                  }}>· {tours.length}개 일정</span>
+                  {tours.length > 0 && (
+                    <span className="mono" style={{
+                      fontSize:13, fontWeight:600, letterSpacing:'0.18em',
+                      color:'var(--ink-3)', marginLeft:14, verticalAlign:'middle',
+                    }}>· {tours.length}개 일정</span>
+                  )}
                 </h2>
               </div>
               <button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.tourAction}</button>
             </div>
+            {tours.length === 0 ? (
+              <div className="card" style={{padding:'40px 24px', textAlign:'center'}}>
+                <div className="ko-serif" style={{fontSize:18, color:'var(--ink-2)', marginBottom:8}}>이번에 함께 걸을 길이 아직 없습니다</div>
+                <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
+                  다음 답사 일정을 준비하고 있어요. <button type="button" className="link-inline" onClick={() => go('tour')} style={{background:'none', border:'none', padding:0, color:'var(--secondary)', cursor:'pointer', font:'inherit', textDecoration:'underline'}}>전체 일정</button>에서 지난 답사 기록을 볼 수 있습니다.
+                </p>
+              </div>
+            ) : (
             <div className="grid grid-2">
               {tours.map((t, i) => (
                 <article key={t.id} className="card"
@@ -923,9 +954,9 @@ const HomePage = ({ go }) => {
                 </article>
               ))}
             </div>
+            )}
           </div>
         </section></HomeSectionBoundary>
-      )}
 
       {/* ── 커뮤니티 — v00.164 mid 박자 + 헤더 박자 변형 ──────────────── */}
       <HomeSectionBoundary label="커뮤니티"><section className="section--mid" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
@@ -1131,6 +1162,12 @@ const HomePage = ({ go }) => {
               <div>
                 <div className="section-eyebrow" aria-hidden="true">{homeText.lecturesEyebrow}</div>
                 <h2 className="section-title">{homeText.lecturesTitle}</h2>
+                {/* v00.266 — 예정 강연이 없어 지난 강연을 노출 중임을 명시. */}
+                {lecturesArePast && (
+                  <p className="dim" style={{fontSize:12.5, marginTop:6, marginBottom:0, color:'var(--ink-3)'}}>
+                    현재 예정된 강연이 없어 지난 강연을 보여드립니다.
+                  </p>
+                )}
               </div>
               <button type="button" className="btn-ghost" onClick={() => go('lectures')}>{homeText.lecturesAction}</button>
             </div>
@@ -1153,6 +1190,8 @@ const HomePage = ({ go }) => {
                 const _daysSinceCreated = !isNaN(_createdTs) ? Math.floor((_now - _createdTs) / 86400000) : null;
                 const isImminent = _daysToStart != null && _daysToStart > 0 && _daysToStart <= 7;
                 const isNew = _daysSinceCreated != null && _daysSinceCreated <= 3;
+                // v00.266 — 지난 강연 표시 (어제 이전 시작분). 폴백 모드에서 마크 노출.
+                const isPast = !isNaN(_startsTs) && _startsTs < _now - 86400000;
                 const metaCell = (label, value) => (
                   <div>
                     <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.18em', textTransform:'uppercase', marginBottom:3}}>{label}</div>
@@ -1171,6 +1210,9 @@ const HomePage = ({ go }) => {
                     padding: heroMode ? '32px 32px 28px' : '20px 20px 18px'}}>
                   <div style={{display:'flex', gap:6, marginBottom:14, flexWrap:'wrap', alignItems:'center'}}>
                     <span className="badge">{homeText.lectureBadge}</span>
+                    {isPast && (
+                      <span className="badge" style={{borderColor:'var(--ink-3)', color:'var(--ink-3)', background:'var(--bg-2)'}}>지난 강연</span>
+                    )}
                     {isImminent && (
                       <span className="badge" style={{borderColor:'var(--danger)', color:'var(--danger)'}}>
                         {_daysToStart === 1 ? '내일 마감' : `D-${_daysToStart}`}

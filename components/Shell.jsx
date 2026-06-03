@@ -661,20 +661,41 @@ const SiteSearchOverlay = ({ go, onClose }) => {
 const Nav = ({ route, go, user, onLogout }) => {
   const navL = (window.BGNJ_SITE_CONTENT?.get?.() || {}).nav || {};
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  // v00.266 — 데스크톱 "놀자" 메가 드롭다운 클릭 토글 (호버 유지 + 클릭 보완).
-  // 호버 불가 환경(터치패드/태블릿)에서도 먹고/자고/사고 접근 가능하도록.
+  // v00.266 — 데스크톱 "놀자" 메가 드롭다운 (호버 + 클릭).
+  // .nav-menu 가 overflow-x:auto(가로 슬라이드) 라 그 안의 absolute 드롭다운이 세로로 잘림.
+  // → position:fixed + 버튼 위치 JS 계산으로 오버플로우 영역 밖으로 탈출시킴.
   const [playOpen, setPlayOpen] = React.useState(false);
+  const [playPos, setPlayPos] = React.useState(null); // {left, top}
   const playRef = React.useRef(null);
+  const playCloseTimer = React.useRef(null);
+  const computePlayPos = () => {
+    const el = playRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPlayPos({ left: Math.round(r.left), top: Math.round(r.bottom) });
+  };
+  const openPlay = () => {
+    if (playCloseTimer.current) { clearTimeout(playCloseTimer.current); playCloseTimer.current = null; }
+    computePlayPos();
+    setPlayOpen(true);
+  };
+  const closePlaySoon = () => {
+    if (playCloseTimer.current) clearTimeout(playCloseTimer.current);
+    playCloseTimer.current = setTimeout(() => setPlayOpen(false), 140);
+  };
+  const togglePlay = () => { if (playOpen) setPlayOpen(false); else openPlay(); };
   // 라우트 변경 시 모바일 메뉴 + 놀자 드롭다운 자동 닫힘
   React.useEffect(() => { setMobileOpen(false); setPlayOpen(false); }, [route]);
-  // 놀자 드롭다운 열림 시: 바깥 클릭 + Escape 로 닫힘
+  // 놀자 드롭다운 열림 시: 바깥 클릭 + Escape 로 닫힘 (fixed 라 스크롤 시에도 닫음)
   React.useEffect(() => {
     if (!playOpen) return;
     const onDown = (e) => { if (playRef.current && !playRef.current.contains(e.target)) setPlayOpen(false); };
     const onKey = (e) => { if (e.key === 'Escape') setPlayOpen(false); };
+    const onScroll = () => setPlayOpen(false);
     window.addEventListener('mousedown', onDown);
     window.addEventListener('keydown', onKey);
-    return () => { window.removeEventListener('mousedown', onDown); window.removeEventListener('keydown', onKey); };
+    window.addEventListener('scroll', onScroll, true);
+    return () => { window.removeEventListener('mousedown', onDown); window.removeEventListener('keydown', onKey); window.removeEventListener('scroll', onScroll, true); };
   }, [playOpen]);
   // 모바일 메뉴 열림 시: Escape 닫기 + body scroll lock + viewport 확대 시 자동 닫힘
   React.useEffect(() => {
@@ -755,12 +776,15 @@ const Nav = ({ route, go, user, onLogout }) => {
         <ul id="primary-nav-menu" className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>
           {items.map(it => {
             const hasMega = it.isMega === 'play' || (it.isMega === 'community' && communityBoards.length > 0);
+            const isPlay = it.isMega === 'play';
             // v00.266 — "놀자" 는 클릭 시 이동 대신 드롭다운 토글(호버 보완). 그 외는 기존대로 이동.
-            const onClick = it.isMega === 'play'
-              ? () => setPlayOpen((v) => !v)
+            const onClick = isPlay
+              ? togglePlay
               : () => go(it.defaultRoute || it.key);
             return (
-              <li key={it.key} ref={it.isMega === 'play' ? playRef : undefined}
+              <li key={it.key} ref={isPlay ? playRef : undefined}
+                onMouseEnter={isPlay ? openPlay : undefined}
+                onMouseLeave={isPlay ? closePlaySoon : undefined}
                 style={{position:'relative'}} className={hasMega ? 'nav-has-mega' : ''}>
                 <button
                   type="button"
@@ -771,14 +795,19 @@ const Nav = ({ route, go, user, onLogout }) => {
                   onClick={onClick}>{it.label}{hasMega ? ' ▾' : ''}</button>
 
                 {it.isMega === 'play' && (
-                  <div className={`nav-mega ${playOpen ? 'nav-mega-open' : ''}`} role="menu" aria-label="놀자 — 의식주 카테고리"
+                  <div className="nav-mega nav-mega-play" role="menu" aria-label="놀자 — 의식주 카테고리"
+                    onMouseEnter={openPlay} onMouseLeave={closePlaySoon}
                     style={{
-                      position:'absolute', top:'100%', left:'50%', transform:'translateX(-50%)',
+                      position:'fixed',
+                      left: playPos ? playPos.left : -9999,
+                      top: playPos ? playPos.top : -9999,
                       minWidth:280, padding:'10px 0',
                       background:'var(--bg)', border:'1px solid var(--line)',
                       boxShadow:'0 16px 40px rgba(15,23,42,0.10)',
-                      visibility:'hidden', opacity:0, transition:'opacity .12s ease',
-                      zIndex:50,
+                      visibility: playOpen ? 'visible' : 'hidden',
+                      opacity: playOpen ? 1 : 0,
+                      transition:'opacity .12s ease',
+                      zIndex:60,
                     }}>
                     <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>의식주 衣食住</div>
                     <ul style={{listStyle:'none', margin:0, padding:0}}>

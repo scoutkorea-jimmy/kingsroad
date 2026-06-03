@@ -1875,11 +1875,11 @@ main time, main .section-eyebrow {
   color: var(--primary) !important;
 }
 
-/* === Navigation mega menu (커뮤니티 hover) === */
-.nav-has-mega:hover .nav-mega,
-.nav-has-mega:focus-within .nav-mega,
-/* v00.266 — "놀자" 클릭 토글 시 강제 노출 (호버 불가 환경 보완) */
-.nav-mega.nav-mega-open {
+/* === Navigation mega menu (커뮤니티 hover) ===
+   v00.266 — "놀자"(.nav-mega-play) 는 JS 로 position:fixed + visibility 직접 제어하므로
+   이 CSS hover 룰에서 제외. (.nav-menu overflow-x:auto 클리핑 탈출용) */
+.nav-has-mega:hover .nav-mega:not(.nav-mega-play),
+.nav-has-mega:focus-within .nav-mega:not(.nav-mega-play) {
   visibility: visible !important;
   opacity: 1 !important;
 }

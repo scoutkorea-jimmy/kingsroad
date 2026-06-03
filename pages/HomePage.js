@@ -635,14 +635,22 @@ const HomePage = ({ go }) => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b2.call(_a2);
   }).slice(0, 4), [postsTick]);
+  const _cutoff = Date.now() - 864e5;
+  const _validStart = (x) => x && !x.hidden && x.startsAt && !isNaN(Date.parse(x.startsAt));
   const tours = React.useMemo(() => G.arr(() => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
-  }).filter((t) => t && !t.hidden).slice(0, 4), [toursTick]);
-  const lectures = React.useMemo(() => G.arr(() => {
-    var _a2, _b2;
-    return (_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
-  }).filter((l) => l && !l.hidden).slice(0, 3), [lecturesTick]);
+  }).filter(_validStart).filter((t) => Date.parse(t.startsAt) >= _cutoff).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(0, 4), [toursTick]);
+  const lectures = React.useMemo(() => {
+    const all = G.arr(() => {
+      var _a2, _b2;
+      return (_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
+    }).filter(_validStart);
+    const upcoming = all.filter((l) => Date.parse(l.startsAt) >= _cutoff).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+    if (upcoming.length > 0) return upcoming.slice(0, 3);
+    return all.filter((l) => Date.parse(l.startsAt) < _cutoff).sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).slice(0, 3);
+  }, [lecturesTick]);
+  const lecturesArePast = lectures.length > 0 && lectures.every((l) => Date.parse(l.startsAt) < _cutoff);
   const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
     { label: "\uC5EC\uD589\uC9C0", sub: "\uC8FC\uC694 \uB2F5\uC0AC\uC9C0 \uC6B4\uC601", valueFallback: "\uC804\uAD6D" },
     { label: "\uD22C\uC5B4", sub: "\uC9C1\uC811 \uAE30\uD68D \uD504\uB85C\uADF8\uB7A8", valueFallback: "\uC900\uBE44 \uC911" },
@@ -849,14 +857,14 @@ const HomePage = ({ go }) => {
       } }, r.subtitle),
       r.desc && /* @__PURE__ */ React.createElement("p", { style: { fontSize: isFeature ? 14 : 13, lineHeight: 1.7, color: "var(--ink-2)" } }, r.desc)
     );
-  }))))), tours.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.tourEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.tourTitle, /* @__PURE__ */ React.createElement("span", { className: "mono", style: {
+  }))))), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.tourEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.tourTitle, tours.length > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: {
     fontSize: 13,
     fontWeight: 600,
     letterSpacing: "0.18em",
     color: "var(--ink-3)",
     marginLeft: 14,
     verticalAlign: "middle"
-  } }, "\xB7 ", tours.length, "\uAC1C \uC77C\uC815"))), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("tour") }, homeText.tourAction)), /* @__PURE__ */ React.createElement("div", { className: "grid grid-2" }, tours.map((t, i) => /* @__PURE__ */ React.createElement(
+  } }, "\xB7 ", tours.length, "\uAC1C \uC77C\uC815"))), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("tour") }, homeText.tourAction)), tours.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "40px 24px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, color: "var(--ink-2)", marginBottom: 8 } }, "\uC774\uBC88\uC5D0 \uD568\uAED8 \uAC78\uC744 \uAE38\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, "\uB2E4\uC74C \uB2F5\uC0AC \uC77C\uC815\uC744 \uC900\uBE44\uD558\uACE0 \uC788\uC5B4\uC694. ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "link-inline", onClick: () => go("tour"), style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", cursor: "pointer", font: "inherit", textDecoration: "underline" } }, "\uC804\uCCB4 \uC77C\uC815"), "\uC5D0\uC11C \uC9C0\uB09C \uB2F5\uC0AC \uAE30\uB85D\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4.")) : /* @__PURE__ */ React.createElement("div", { className: "grid grid-2" }, tours.map((t, i) => /* @__PURE__ */ React.createElement(
     "article",
     {
       key: t.id,
@@ -1070,7 +1078,7 @@ const HomePage = ({ go }) => {
         textOverflow: "ellipsis"
       } }, truncatePreview(c.excerpt, 38))
     )), secondaryColumns.length === 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-3)", padding: "16px 0" } }, homeText.columnEmpty))
-  )))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: `lecture-strip${lectures.length <= 2 ? " lecture-strip--grid" : ""}`, role: "list" }, lectures.map((lecture) => {
+  )))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle), lecturesArePast && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12.5, marginTop: 6, marginBottom: 0, color: "var(--ink-3)" } }, "\uD604\uC7AC \uC608\uC815\uB41C \uAC15\uC5F0\uC774 \uC5C6\uC5B4 \uC9C0\uB09C \uAC15\uC5F0\uC744 \uBCF4\uC5EC\uB4DC\uB9BD\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: `lecture-strip${lectures.length <= 2 ? " lecture-strip--grid" : ""}`, role: "list" }, lectures.map((lecture) => {
     var _a2, _b2;
     const heroMode = lectures.length === 1;
     const price = (_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.priceOrFree) == null ? void 0 : _b2.call(_a2, lecture.price);
@@ -1082,6 +1090,7 @@ const HomePage = ({ go }) => {
     const _daysSinceCreated = !isNaN(_createdTs) ? Math.floor((_now - _createdTs) / 864e5) : null;
     const isImminent = _daysToStart != null && _daysToStart > 0 && _daysToStart <= 7;
     const isNew = _daysSinceCreated != null && _daysSinceCreated <= 3;
+    const isPast = !isNaN(_startsTs) && _startsTs < _now - 864e5;
     const metaCell = (label, value) => /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 3 } }, label), /* @__PURE__ */ React.createElement("div", { style: { fontSize: heroMode ? 14 : 13, fontWeight: 600, color: "var(--ink)", lineHeight: 1.4 } }, value || "-"));
     return /* @__PURE__ */ React.createElement(
       "article",
@@ -1103,7 +1112,7 @@ const HomePage = ({ go }) => {
           padding: heroMode ? "32px 32px 28px" : "20px 20px 18px"
         }
       },
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, homeText.lectureBadge), isImminent && /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--danger)", color: "var(--danger)" } }, _daysToStart === 1 ? "\uB0B4\uC77C \uB9C8\uAC10" : `D-${_daysToStart}`), isNew && /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--primary)", color: "var(--primary-active)" } }, "NEW")),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, homeText.lectureBadge), isPast && /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--ink-3)", color: "var(--ink-3)", background: "var(--bg-2)" } }, "\uC9C0\uB09C \uAC15\uC5F0"), isImminent && /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--danger)", color: "var(--danger)" } }, _daysToStart === 1 ? "\uB0B4\uC77C \uB9C8\uAC10" : `D-${_daysToStart}`), isNew && /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--primary)", color: "var(--primary-active)" } }, "NEW")),
       /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: heroMode ? 24 : 19, fontWeight: 600, lineHeight: 1.35, marginBottom: 10, flex: "0 0 auto", color: "var(--ink)" } }, lecture.topic || lecture.title),
       lecture.note && /* @__PURE__ */ React.createElement("p", { style: { fontSize: heroMode ? 15 : 14, lineHeight: 1.75, color: "var(--ink-2)", marginBottom: 18, flex: "1 1 auto" } }, truncatePreview(lecture.note, heroMode ? 180 : 110)),
       /* @__PURE__ */ React.createElement("div", { style: {

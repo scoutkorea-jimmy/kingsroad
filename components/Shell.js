@@ -721,7 +721,31 @@ const Nav = ({ route, go, user, onLogout }) => {
   const navL = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).nav || {};
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [playOpen, setPlayOpen] = React.useState(false);
+  const [playPos, setPlayPos] = React.useState(null);
   const playRef = React.useRef(null);
+  const playCloseTimer = React.useRef(null);
+  const computePlayPos = () => {
+    const el = playRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPlayPos({ left: Math.round(r.left), top: Math.round(r.bottom) });
+  };
+  const openPlay = () => {
+    if (playCloseTimer.current) {
+      clearTimeout(playCloseTimer.current);
+      playCloseTimer.current = null;
+    }
+    computePlayPos();
+    setPlayOpen(true);
+  };
+  const closePlaySoon = () => {
+    if (playCloseTimer.current) clearTimeout(playCloseTimer.current);
+    playCloseTimer.current = setTimeout(() => setPlayOpen(false), 140);
+  };
+  const togglePlay = () => {
+    if (playOpen) setPlayOpen(false);
+    else openPlay();
+  };
   React.useEffect(() => {
     setMobileOpen(false);
     setPlayOpen(false);
@@ -734,11 +758,14 @@ const Nav = ({ route, go, user, onLogout }) => {
     const onKey = (e) => {
       if (e.key === "Escape") setPlayOpen(false);
     };
+    const onScroll = () => setPlayOpen(false);
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, true);
     return () => {
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll, true);
     };
   }, [playOpen]);
   React.useEffect(() => {
@@ -833,12 +860,15 @@ const Nav = ({ route, go, user, onLogout }) => {
     /* @__PURE__ */ React.createElement("span", { className: "nav-toggle-label", "aria-hidden": "true" }, mobileOpen ? "\uB2EB\uAE30" : "\uBA54\uB274")
   ), /* @__PURE__ */ React.createElement("ul", { id: "primary-nav-menu", className: "nav-menu", role: "list", style: { listStyle: "none", margin: 0, padding: 0 } }, items.map((it) => {
     const hasMega = it.isMega === "play" || it.isMega === "community" && communityBoards.length > 0;
-    const onClick = it.isMega === "play" ? () => setPlayOpen((v) => !v) : () => go(it.defaultRoute || it.key);
+    const isPlay = it.isMega === "play";
+    const onClick = isPlay ? togglePlay : () => go(it.defaultRoute || it.key);
     return /* @__PURE__ */ React.createElement(
       "li",
       {
         key: it.key,
-        ref: it.isMega === "play" ? playRef : void 0,
+        ref: isPlay ? playRef : void 0,
+        onMouseEnter: isPlay ? openPlay : void 0,
+        onMouseLeave: isPlay ? closePlaySoon : void 0,
         style: { position: "relative" },
         className: hasMega ? "nav-has-mega" : ""
       },
@@ -858,23 +888,24 @@ const Nav = ({ route, go, user, onLogout }) => {
       it.isMega === "play" && /* @__PURE__ */ React.createElement(
         "div",
         {
-          className: `nav-mega ${playOpen ? "nav-mega-open" : ""}`,
+          className: "nav-mega nav-mega-play",
           role: "menu",
           "aria-label": "\uB180\uC790 \u2014 \uC758\uC2DD\uC8FC \uCE74\uD14C\uACE0\uB9AC",
+          onMouseEnter: openPlay,
+          onMouseLeave: closePlaySoon,
           style: {
-            position: "absolute",
-            top: "100%",
-            left: "50%",
-            transform: "translateX(-50%)",
+            position: "fixed",
+            left: playPos ? playPos.left : -9999,
+            top: playPos ? playPos.top : -9999,
             minWidth: 280,
             padding: "10px 0",
             background: "var(--bg)",
             border: "1px solid var(--line)",
             boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
-            visibility: "hidden",
-            opacity: 0,
+            visibility: playOpen ? "visible" : "hidden",
+            opacity: playOpen ? 1 : 0,
             transition: "opacity .12s ease",
-            zIndex: 50
+            zIndex: 60
           }
         },
         /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "\uC758\uC2DD\uC8FC \u8863\u98DF\u4F4F"),
