@@ -749,7 +749,8 @@ const App = () => {
       case "home":      { const C = pick('HomePage','홈');      return <C go={go} tweaks={tweaks}/>; }
       case "home-next": { const C = pick('HomeNextPage','신규 홈 프리뷰'); return <C go={go}/>; }
       case "eat":       { const C = pick('EatPage','먹고 놀자'); return <C go={go} user={user}/>; }
-      case "sleep":     { const C = pick('SleepPage','자고 놀자'); return <C go={go} user={user}/>; }
+      // v00.267 — 자고 놀자 = 한켠(직영 숙소) 예약 시스템. sleep 라우트가 한켠 예약 페이지를 직접 렌더.
+      case "sleep":
       case "hangyeon":  { const C = pick('HangyeonPage','한켠'); return <C go={go} user={user}/>; }
       case "shop":      { const C = pick('ShopPage','사고 놀자'); return <C go={go} user={user}/>; }
       case "community": { const C = pick('CommunityPage','커뮤니티'); return <C go={go} postId={postId} setPostId={setPostId} user={user}/>; }

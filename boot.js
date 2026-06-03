@@ -814,10 +814,8 @@ const App = () => {
         const C = pick("EatPage", "\uBA39\uACE0 \uB180\uC790");
         return /* @__PURE__ */ React.createElement(C, { go, user });
       }
-      case "sleep": {
-        const C = pick("SleepPage", "\uC790\uACE0 \uB180\uC790");
-        return /* @__PURE__ */ React.createElement(C, { go, user });
-      }
+      // v00.267 — 자고 놀자 = 한켠(직영 숙소) 예약 시스템. sleep 라우트가 한켠 예약 페이지를 직접 렌더.
+      case "sleep":
       case "hangyeon": {
         const C = pick("HangyeonPage", "\uD55C\uCF20");
         return /* @__PURE__ */ React.createElement(C, { go, user });
