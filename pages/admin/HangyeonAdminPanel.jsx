@@ -554,9 +554,41 @@ const HkaOperation = () => {
   );
 };
 
-// ── 메인 패널 (7 탭) ───────────────────────────────────────────────────────
+// ── 0) 숙소 정보 (이름/소개/주소/찾아가는길/대표사진) — site_content_kv.hangyeon ──
+const HkaProperty = () => {
+  const init = () => {
+    const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+    const h = sc.hangyeon || {};
+    return { name: h.name || '전주한켠', tagline: h.tagline || '', desc: h.desc || '', address: h.address || '', directions: h.directions || '', notice: h.notice || '', images: Array.isArray(h.images) ? h.images : [] };
+  };
+  const [form, setForm] = React.useState(init);
+  const up = (patch) => setForm((f) => ({ ...f, ...patch }));
+  const save = async () => {
+    try { await window.BGNJ_SITE_CONTENT.saveSection('hangyeon', form); hkaFlash('숙소 정보 저장됨.'); }
+    catch (err) { hkaFlash(err?.body?.error || err?.message || '저장 실패', false); }
+  };
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <p className="dim" style={{ fontSize: 13, margin: 0 }}>손님이 보는 한켠 소개 페이지(자고 놀자) 내용입니다. 사진은 없어도 예약은 정상 동작합니다.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <label style={{ fontSize: 12 }}>숙소 이름<input className="field-input" value={form.name} onChange={(e) => up({ name: e.target.value })} /></label>
+        <label style={{ fontSize: 12 }}>한 줄 소개(태그라인)<input className="field-input" value={form.tagline} onChange={(e) => up({ tagline: e.target.value })} placeholder="전주 도심 속, 조용한 하룻밤" /></label>
+      </div>
+      <label style={{ fontSize: 12 }}>소개글<textarea className="field-input" rows={3} value={form.desc} onChange={(e) => up({ desc: e.target.value })} /></label>
+      <label style={{ fontSize: 12 }}>주소<input className="field-input" value={form.address} onChange={(e) => up({ address: e.target.value })} placeholder="전북 전주시 덕진구 팔달로 340-37" /></label>
+      <label style={{ fontSize: 12 }}>찾아가는 길<textarea className="field-input" rows={3} value={form.directions} onChange={(e) => up({ directions: e.target.value })} /></label>
+      <label style={{ fontSize: 12 }}>안내/공지(선택)<textarea className="field-input" rows={2} value={form.notice} onChange={(e) => up({ notice: e.target.value })} placeholder="입실 15:00 / 퇴실 11:00 등" /></label>
+      {window.MediaGalleryEditor && (
+        <window.MediaGalleryEditor value={form.images} onChange={(imgs) => up({ images: imgs })} folder="hangyeon" label="숙소 대표 사진 (선택)" helpText="없어도 예약은 가능합니다." max={10} />
+      )}
+      <button type="button" className="btn btn-gold" style={{ alignSelf: 'flex-start' }} onClick={save}>숙소 정보 저장</button>
+    </div>
+  );
+};
+
+// ── 메인 패널 (8 탭) ───────────────────────────────────────────────────────
 const HK_TABS = [
-  ['객실', HkaRoomTypes], ['요금', HkaRates], ['재고', HkaAvailability],
+  ['숙소', HkaProperty], ['객실', HkaRoomTypes], ['요금', HkaRates], ['재고', HkaAvailability],
   ['예약', HkaBookings], ['고객', HkaGuests], ['결제', HkaPayments], ['운영', HkaOperation],
 ];
 const HangyeonAdminPanel = () => {

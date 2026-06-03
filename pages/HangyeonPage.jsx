@@ -323,35 +323,44 @@ const HangyeonPage = ({ go, user }) => {
 
   const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
   const info = sc.hangyeon || {};
-  const tagline = info.tagline || '전주 한옥마을 곁, 뱅기노자가 직접 운영하는 작은 숙소';
-  const desc = info.desc || '하루를 머무는 한 켠. 조용한 골목 끝에서 전주의 밤을 기록하세요.';
+  const name = info.name || '전주한켠';
+  const tagline = info.tagline || '전주 도심 속, 조용한 하룻밤';
+  const desc = info.desc || "전주 전자상가 뒤편 조용한 주택가에 자리한 공간 ‘한켠’. 도심 한가운데서도 차분히 머물며 쉬어 갈 수 있는 하룻밤을 제안합니다.";
+  const address = info.address || '전북 전주시 덕진구 팔달로 340-37';
+  const directions = info.directions || '전주역에서 차량 10분, 전주 고속버스터미널에서 도보 15분 거리로 접근성이 좋습니다. 한옥마을·자만벽화마을·경기전·풍남문 등 주요 명소까지 차량 5~10분이면 닿습니다. 도심 속에서도 조용히 머물며 집중할 수 있는 공간입니다.';
   const images = Array.isArray(info.images) ? info.images : [];
 
   return (
     <div className="section">
       <div className="container">
         <header style={{ marginBottom: 28 }}>
-          <div className="section-eyebrow" aria-hidden="true">STAY · 한켠</div>
+          <div className="section-eyebrow" aria-hidden="true">STAY · 자고 놀자</div>
           <h1 className="section-title" style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
-            <span>한켠</span>
+            <span>{name}</span>
             <span className="ko-serif" style={{ fontSize: '0.5em', color: 'var(--secondary)', fontStyle: 'italic', fontWeight: 400 }}>{tagline}</span>
           </h1>
           <p className="section-subtitle" style={{ maxWidth: 760 }}>{desc}</p>
         </header>
 
-        {/* 숙소 대표 이미지 갤러리 */}
+        {/* 숙소 대표 이미지 갤러리 — 없으면 생략(이미지 없이도 예약 가능) */}
         {images.length > 0 && window.MediaGalleryView && (
           <div style={{ marginBottom: 32 }}>
-            <window.MediaGalleryView images={images} title="한켠" sectionLabel="숙소 전경" withCover={true} />
+            <window.MediaGalleryView images={images} title={name} sectionLabel="숙소 전경" withCover={true} />
           </div>
         )}
 
-        {info.address && (
-          <div className="card" style={{ padding: '14px 18px', marginBottom: 28, fontSize: 13 }}>
-            <span className="mono dim-2" style={{ fontSize: 10, marginRight: 8 }}>주소</span>{info.address}
-            {info.checkinInfo && <div className="dim" style={{ marginTop: 6 }}>{info.checkinInfo}</div>}
+        <div className="card" style={{ padding: '16px 20px', marginBottom: 28, fontSize: 13.5, lineHeight: 1.7 }}>
+          <div style={{ marginBottom: directions ? 10 : 0 }}>
+            <span className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.18em', marginRight: 8 }}>주소</span>{address}
           </div>
-        )}
+          {directions && (
+            <div>
+              <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.18em', marginBottom: 4 }}>찾아가는 길</div>
+              <p className="dim" style={{ margin: 0 }}>{directions}</p>
+            </div>
+          )}
+          {info.notice && <p className="dim" style={{ margin: '10px 0 0' }}>{info.notice}</p>}
+        </div>
       </div>
 
       <div className="container">
