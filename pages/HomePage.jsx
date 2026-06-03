@@ -9,73 +9,6 @@
 //   3. 서버 응답이 비면 해당 섹션 자체를 렌더하지 않는다 (깡통 카드 금지).
 //   4. 모든 헬퍼 호출은 BGNJ_GUARD.arr/.call 로 try/catch + 타입 가드 통과.
 
-const DestinationMapModal = ({ onClose, go }) => {
-  const [selectedDest, setSelectedDest] = React.useState(null);
-  // v00.077 — useModalGuard 통일 (ESC + body scroll lock + popstate). 읽기 전용 → dirty=false.
-  window.useModalGuard?.({ open: true, dirty: false, onClose, onSaveDraft: null, label: '여행지 지도 탐색' });
-  return (
-    <div role="dialog" aria-modal="true" aria-label="여행지 지도 탐색"
-      style={{
-        position:'fixed', inset:0, zIndex:200,
-        background:'rgba(15,23,42,0.55)',
-        display:'grid', placeItems:'center', padding:20,
-      }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{
-        background:'var(--bg)', maxWidth:680, width:'100%', maxHeight:'92vh',
-        overflow:'auto', padding:'32px 28px 28px', position:'relative',
-        border:'1px solid var(--line)',
-      }}>
-        <button onClick={onClose} aria-label="닫기"
-          style={{
-            position:'absolute', top:14, right:14,
-            width:36, height:36, fontSize:24,
-            background:'transparent', border:'none', cursor:'pointer',
-            color:'var(--ink-2)', lineHeight:1,
-          }}>×</button>
-        <div className="section-eyebrow" style={{marginBottom:14}}>DESTINATIONS · 여행지 지도</div>
-        <h2 style={{fontFamily:'var(--font-display)', fontSize:26, fontWeight:900, marginBottom:10, lineHeight:1.2}}>
-          지도를 클릭해 탐색하세요
-        </h2>
-        <p style={{fontSize:13, color:'var(--ink-2)', marginBottom:20, lineHeight:1.7}}>
-          시도를 누르면 정보가 펼쳐집니다. 호버하면 지명이 표시됩니다.
-        </p>
-        {typeof KoreaMap === 'function' ? (
-          <KoreaMap
-            onSelect={(dest) => setSelectedDest(selectedDest?.id === dest.id ? null : dest)}
-            selected={selectedDest?.id}
-          />
-        ) : (
-          <div style={{height:300, display:'grid', placeItems:'center', color:'var(--ink-3)', fontSize:13}}>지도 로딩 중...</div>
-        )}
-        {selectedDest && (
-          <div style={{
-            marginTop:18, padding:'18px 20px',
-            background:'var(--bg-2)', border:'1px solid var(--line)',
-          }}>
-            <div style={{display:'flex', alignItems:'baseline', gap:10, marginBottom:8, flexWrap:'wrap'}}>
-              <span style={{fontFamily:'var(--font-serif)', fontSize:22, color:'var(--ink)', fontWeight:600}}>{selectedDest.name}</span>
-              <span style={{fontFamily:'var(--font-mono)', fontSize:11, color:'var(--ink-3)', letterSpacing:'0.12em'}}>{selectedDest.fullname}</span>
-            </div>
-            {selectedDest.desc && (
-              <p style={{fontSize:14, color:'var(--ink-2)', lineHeight:1.7, marginBottom:12}}>{selectedDest.desc}</p>
-            )}
-            {selectedDest.tags && (
-              <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:14}}>
-                {String(selectedDest.tags).split('·').map((t) => t.trim()).filter(Boolean).map((t) => (
-                  <span key={t} className="badge" style={{fontSize:10}}>{t}</span>
-                ))}
-              </div>
-            )}
-            <button className="btn btn-gold btn-small" onClick={() => { go('tour'); onClose(); }}>
-              이 지역 투어 보기 →
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // 섹션 단위 에러 바운더리 — 한 섹션이 망가져도 다른 섹션은 정상 렌더.
 class HomeSectionBoundary extends React.Component {
@@ -440,14 +373,14 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
               {hasPriceKR && (
                 <div>
                   <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{text.bookKrLabel}</div>
-                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{window.BGNJ_FMT.won(b.priceKR)}</div>
+                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{window.BGNJ_FMT?.won?.(b.priceKR) ?? ''}</div>
                 </div>
               )}
               {hasPriceKR && hasPriceEN && <div style={{width:1, background:'var(--line-2)', alignSelf:'stretch'}}/>}
               {hasPriceEN && (
                 <div>
                   <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{text.bookEnLabel}</div>
-                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{window.BGNJ_FMT.won(b.priceEN)}</div>
+                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{window.BGNJ_FMT?.won?.(b.priceEN) ?? ''}</div>
                 </div>
               )}
             </div>
@@ -545,7 +478,6 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
 };
 
 const HomePage = ({ go }) => {
-  const [mapOpen, setMapOpen] = React.useState(false);
   const [scTick, setScTick] = React.useState(0);
   // v00.198 — 사용자 우선순위 '속도감 ↑ + 회귀 0'.
   // 이전엔 단일 dataTick 으로 4 종 stream(columns/tours/lectures/posts) 변경을 모두 한 state 에 합쳐
@@ -615,12 +547,6 @@ const HomePage = ({ go }) => {
   const G = window.BGNJ_GUARD || {
     arr: (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } },
     call: (fn, fb) => { try { const v = fn(); return v === undefined ? fb : v; } catch { return fb; } },
-  };
-  // 유효한 startsAt(파싱 가능한 날짜) 만 통과 — NaN getTime 으로 sort 결과가 깨지는 것 방지.
-  const _hasValidDate = (iso) => {
-    if (!iso) return false;
-    const t = Date.parse(iso);
-    return !isNaN(t);
   };
   // v00.198 — 각 memo 는 자기 stream 의 tick 만 의존 → 무관 stream 갱신 시 재실행 차단.
   const publicColumns = React.useMemo(() => G.arr(() => window.BGNJ_COLUMNS?.listPublic?.()), [columnsTick]);
@@ -707,7 +633,6 @@ const HomePage = ({ go }) => {
   })();
   return (
     <div className="home-page" style={{ fontSize: `${fontScale}em` }}>
-      {mapOpen && <DestinationMapModal onClose={() => setMapOpen(false)} go={go}/>}
       {recDetail && <RecommendationDetailModal rec={recDetail} onClose={() => setRecDetail(null)} go={go}/>}
 
       {/* v00.143 — 오픈 안내 배너는 boot.jsx 로 이동 (sitewide, 메뉴 위쪽). */}
@@ -948,7 +873,7 @@ const HomePage = ({ go }) => {
                     </div>
                     <div style={{textAlign:'right'}}>
                       <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{homeText.tourPriceLabel}</div>
-                      <div className="ko-serif" style={{fontSize:20, marginTop:4, color:'var(--ink)', fontWeight:600}}>{t.price ? (typeof t.price === 'number' ? window.BGNJ_FMT.won(t.price) : t.price) : homeText.emptyFallback}</div>
+                      <div className="ko-serif" style={{fontSize:20, marginTop:4, color:'var(--ink)', fontWeight:600}}>{t.price ? (typeof t.price === 'number' ? window.BGNJ_FMT?.won?.(t.price) ?? '' : t.price) : homeText.emptyFallback}</div>
                     </div>
                   </div>
                 </article>

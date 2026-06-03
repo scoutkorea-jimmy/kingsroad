@@ -1,73 +1,4 @@
 (function(){
-const DestinationMapModal = ({ onClose, go }) => {
-  var _a;
-  const [selectedDest, setSelectedDest] = React.useState(null);
-  (_a = window.useModalGuard) == null ? void 0 : _a.call(window, { open: true, dirty: false, onClose, onSaveDraft: null, label: "\uC5EC\uD589\uC9C0 \uC9C0\uB3C4 \uD0D0\uC0C9" });
-  return /* @__PURE__ */ React.createElement(
-    "div",
-    {
-      role: "dialog",
-      "aria-modal": "true",
-      "aria-label": "\uC5EC\uD589\uC9C0 \uC9C0\uB3C4 \uD0D0\uC0C9",
-      style: {
-        position: "fixed",
-        inset: 0,
-        zIndex: 200,
-        background: "rgba(15,23,42,0.55)",
-        display: "grid",
-        placeItems: "center",
-        padding: 20
-      },
-      onClick: (e) => {
-        if (e.target === e.currentTarget) onClose();
-      }
-    },
-    /* @__PURE__ */ React.createElement("div", { style: {
-      background: "var(--bg)",
-      maxWidth: 680,
-      width: "100%",
-      maxHeight: "92vh",
-      overflow: "auto",
-      padding: "32px 28px 28px",
-      position: "relative",
-      border: "1px solid var(--line)"
-    } }, /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        onClick: onClose,
-        "aria-label": "\uB2EB\uAE30",
-        style: {
-          position: "absolute",
-          top: 14,
-          right: 14,
-          width: 36,
-          height: 36,
-          fontSize: 24,
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          color: "var(--ink-2)",
-          lineHeight: 1
-        }
-      },
-      "\xD7"
-    ), /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", style: { marginBottom: 14 } }, "DESTINATIONS \xB7 \uC5EC\uD589\uC9C0 \uC9C0\uB3C4"), /* @__PURE__ */ React.createElement("h2", { style: { fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 900, marginBottom: 10, lineHeight: 1.2 } }, "\uC9C0\uB3C4\uB97C \uD074\uB9AD\uD574 \uD0D0\uC0C9\uD558\uC138\uC694"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-2)", marginBottom: 20, lineHeight: 1.7 } }, "\uC2DC\uB3C4\uB97C \uB204\uB974\uBA74 \uC815\uBCF4\uAC00 \uD3BC\uCCD0\uC9D1\uB2C8\uB2E4. \uD638\uBC84\uD558\uBA74 \uC9C0\uBA85\uC774 \uD45C\uC2DC\uB429\uB2C8\uB2E4."), typeof KoreaMap === "function" ? /* @__PURE__ */ React.createElement(
-      KoreaMap,
-      {
-        onSelect: (dest) => setSelectedDest((selectedDest == null ? void 0 : selectedDest.id) === dest.id ? null : dest),
-        selected: selectedDest == null ? void 0 : selectedDest.id
-      }
-    ) : /* @__PURE__ */ React.createElement("div", { style: { height: 300, display: "grid", placeItems: "center", color: "var(--ink-3)", fontSize: 13 } }, "\uC9C0\uB3C4 \uB85C\uB529 \uC911..."), selectedDest && /* @__PURE__ */ React.createElement("div", { style: {
-      marginTop: 18,
-      padding: "18px 20px",
-      background: "var(--bg-2)",
-      border: "1px solid var(--line)"
-    } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "baseline", gap: 10, marginBottom: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "var(--font-serif)", fontSize: 22, color: "var(--ink)", fontWeight: 600 } }, selectedDest.name), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)", letterSpacing: "0.12em" } }, selectedDest.fullname)), selectedDest.desc && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 14, color: "var(--ink-2)", lineHeight: 1.7, marginBottom: 12 } }, selectedDest.desc), selectedDest.tags && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 } }, String(selectedDest.tags).split("\xB7").map((t) => t.trim()).filter(Boolean).map((t) => /* @__PURE__ */ React.createElement("span", { key: t, className: "badge", style: { fontSize: 10 } }, t))), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold btn-small", onClick: () => {
-      go("tour");
-      onClose();
-    } }, "\uC774 \uC9C0\uC5ED \uD22C\uC5B4 \uBCF4\uAE30 \u2192")))
-  );
-};
 class HomeSectionBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -377,7 +308,7 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
   if (books.length === 0) return null;
   const showChrome = books.length > 1;
   const renderBookCard = (b) => {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
     const hasPriceKR = Number(b.priceKR) > 0;
     const hasPriceEN = Number(b.priceEN) > 0;
     const yr = b.publishedAt ? new Date(b.publishedAt).getFullYear() : (/* @__PURE__ */ new Date()).getFullYear();
@@ -402,7 +333,7 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
       color: "var(--ink-2)",
       marginBottom: 20,
       lineHeight: 1.5
-    } }, b.subtitle), introText && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 15, lineHeight: 1.85, color: "var(--ink-2)", marginBottom: 28, whiteSpace: "pre-wrap", maxWidth: 560 } }, introText), (hasPriceKR || hasPriceEN) && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 20, marginBottom: 32, alignItems: "flex-end" } }, hasPriceKR && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, text.bookKrLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 22, marginTop: 4, color: "var(--ink)", fontWeight: 700 } }, window.BGNJ_FMT.won(b.priceKR))), hasPriceKR && hasPriceEN && /* @__PURE__ */ React.createElement("div", { style: { width: 1, background: "var(--line-2)", alignSelf: "stretch" } }), hasPriceEN && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, text.bookEnLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 22, marginTop: 4, color: "var(--ink)", fontWeight: 700 } }, window.BGNJ_FMT.won(b.priceEN)))), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => go("book") }, text.bookBuyCta)), /* @__PURE__ */ React.createElement("div", { style: {
+    } }, b.subtitle), introText && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 15, lineHeight: 1.85, color: "var(--ink-2)", marginBottom: 28, whiteSpace: "pre-wrap", maxWidth: 560 } }, introText), (hasPriceKR || hasPriceEN) && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 20, marginBottom: 32, alignItems: "flex-end" } }, hasPriceKR && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, text.bookKrLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 22, marginTop: 4, color: "var(--ink)", fontWeight: 700 } }, (_e = (_d = (_c = window.BGNJ_FMT) == null ? void 0 : _c.won) == null ? void 0 : _d.call(_c, b.priceKR)) != null ? _e : "")), hasPriceKR && hasPriceEN && /* @__PURE__ */ React.createElement("div", { style: { width: 1, background: "var(--line-2)", alignSelf: "stretch" } }), hasPriceEN && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, text.bookEnLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 22, marginTop: 4, color: "var(--ink)", fontWeight: 700 } }, (_h = (_g = (_f = window.BGNJ_FMT) == null ? void 0 : _f.won) == null ? void 0 : _g.call(_f, b.priceEN)) != null ? _h : ""))), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => go("book") }, text.bookBuyCta)), /* @__PURE__ */ React.createElement("div", { style: {
       aspectRatio: "3/4",
       maxWidth: 280,
       margin: "0 auto",
@@ -523,7 +454,6 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
 };
 const HomePage = ({ go }) => {
   var _a, _b, _c;
-  const [mapOpen, setMapOpen] = React.useState(false);
   const [scTick, setScTick] = React.useState(0);
   const [columnsTick, setColumnsTick] = React.useState(0);
   const [toursTick, setToursTick] = React.useState(0);
@@ -603,11 +533,6 @@ const HomePage = ({ go }) => {
         return fb;
       }
     }
-  };
-  const _hasValidDate = (iso) => {
-    if (!iso) return false;
-    const t = Date.parse(iso);
-    return !isNaN(t);
   };
   const publicColumns = React.useMemo(() => G.arr(() => {
     var _a2, _b2;
@@ -696,7 +621,7 @@ const HomePage = ({ go }) => {
     if (!isFinite(v)) return 1;
     return Math.max(0.85, Math.min(1.2, v));
   })();
-  return /* @__PURE__ */ React.createElement("div", { className: "home-page", style: { fontSize: `${fontScale}em` } }, mapOpen && /* @__PURE__ */ React.createElement(DestinationMapModal, { onClose: () => setMapOpen(false), go }), recDetail && /* @__PURE__ */ React.createElement(RecommendationDetailModal, { rec: recDetail, onClose: () => setRecDetail(null), go }), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C" }, /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "home-page", style: { fontSize: `${fontScale}em` } }, recDetail && /* @__PURE__ */ React.createElement(RecommendationDetailModal, { rec: recDetail, onClose: () => setRecDetail(null), go }), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C" }, /* @__PURE__ */ React.createElement(
     "section",
     {
       className: `home-hero${hero.bgDesktopUrl || hero.bgMobileUrl ? " has-bg" : ""}`,
@@ -864,33 +789,36 @@ const HomePage = ({ go }) => {
     color: "var(--ink-3)",
     marginLeft: 14,
     verticalAlign: "middle"
-  } }, "\xB7 ", tours.length, "\uAC1C \uC77C\uC815"))), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("tour") }, homeText.tourAction)), tours.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "40px 24px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, color: "var(--ink-2)", marginBottom: 8 } }, "\uC774\uBC88\uC5D0 \uD568\uAED8 \uAC78\uC744 \uAE38\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, "\uB2E4\uC74C \uB2F5\uC0AC \uC77C\uC815\uC744 \uC900\uBE44\uD558\uACE0 \uC788\uC5B4\uC694. ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "link-inline", onClick: () => go("tour"), style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", cursor: "pointer", font: "inherit", textDecoration: "underline" } }, "\uC804\uCCB4 \uC77C\uC815"), "\uC5D0\uC11C \uC9C0\uB09C \uB2F5\uC0AC \uAE30\uB85D\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4.")) : /* @__PURE__ */ React.createElement("div", { className: "grid grid-2" }, tours.map((t, i) => /* @__PURE__ */ React.createElement(
-    "article",
-    {
-      key: t.id,
-      className: "card",
-      ...clickable(() => go("tour"), `\uD22C\uC5B4: ${t.title}`),
-      style: { cursor: "pointer", position: "relative" }
-    },
-    /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
-      position: "absolute",
-      top: 20,
-      right: 20,
-      fontSize: 10,
-      color: "var(--ink-3)",
-      letterSpacing: "0.2em"
-    } }, "0", i + 1),
-    /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" } }, t.level && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.level), t.duration && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.duration), t.group && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.group)),
-    /* @__PURE__ */ React.createElement("h3", { className: "card-title", style: { fontSize: 22, marginBottom: 10 } }, t.title),
-    t.desc && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, marginBottom: 20 } }, truncatePreview(t.desc, 110)),
-    /* @__PURE__ */ React.createElement("div", { style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      borderTop: "1px solid var(--line)",
-      paddingTop: 16
-    } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourNextLabel), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, marginTop: 4, color: "var(--ink)", fontWeight: 500 } }, t.next || homeText.emptyFallback)), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourPriceLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 20, marginTop: 4, color: "var(--ink)", fontWeight: 600 } }, t.price ? typeof t.price === "number" ? window.BGNJ_FMT.won(t.price) : t.price : homeText.emptyFallback)))
-  )))))), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCEE4\uBBA4\uB2C8\uD2F0" }, /* @__PURE__ */ React.createElement("section", { className: "section--mid", style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: {
+  } }, "\xB7 ", tours.length, "\uAC1C \uC77C\uC815"))), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("tour") }, homeText.tourAction)), tours.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "40px 24px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, color: "var(--ink-2)", marginBottom: 8 } }, "\uC774\uBC88\uC5D0 \uD568\uAED8 \uAC78\uC744 \uAE38\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, "\uB2E4\uC74C \uB2F5\uC0AC \uC77C\uC815\uC744 \uC900\uBE44\uD558\uACE0 \uC788\uC5B4\uC694. ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "link-inline", onClick: () => go("tour"), style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", cursor: "pointer", font: "inherit", textDecoration: "underline" } }, "\uC804\uCCB4 \uC77C\uC815"), "\uC5D0\uC11C \uC9C0\uB09C \uB2F5\uC0AC \uAE30\uB85D\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4.")) : /* @__PURE__ */ React.createElement("div", { className: "grid grid-2" }, tours.map((t, i) => {
+    var _a2, _b2, _c2;
+    return /* @__PURE__ */ React.createElement(
+      "article",
+      {
+        key: t.id,
+        className: "card",
+        ...clickable(() => go("tour"), `\uD22C\uC5B4: ${t.title}`),
+        style: { cursor: "pointer", position: "relative" }
+      },
+      /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
+        position: "absolute",
+        top: 20,
+        right: 20,
+        fontSize: 10,
+        color: "var(--ink-3)",
+        letterSpacing: "0.2em"
+      } }, "0", i + 1),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" } }, t.level && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.level), t.duration && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.duration), t.group && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.group)),
+      /* @__PURE__ */ React.createElement("h3", { className: "card-title", style: { fontSize: 22, marginBottom: 10 } }, t.title),
+      t.desc && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, marginBottom: 20 } }, truncatePreview(t.desc, 110)),
+      /* @__PURE__ */ React.createElement("div", { style: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        borderTop: "1px solid var(--line)",
+        paddingTop: 16
+      } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourNextLabel), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, marginTop: 4, color: "var(--ink)", fontWeight: 500 } }, t.next || homeText.emptyFallback)), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourPriceLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 20, marginTop: 4, color: "var(--ink)", fontWeight: 600 } }, t.price ? typeof t.price === "number" ? (_c2 = (_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.won) == null ? void 0 : _b2.call(_a2, t.price)) != null ? _c2 : "" : t.price : homeText.emptyFallback)))
+    );
+  }))))), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCEE4\uBBA4\uB2C8\uD2F0" }, /* @__PURE__ */ React.createElement("section", { className: "section--mid", style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-end",
