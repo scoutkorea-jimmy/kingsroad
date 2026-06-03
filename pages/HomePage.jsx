@@ -126,6 +126,16 @@ const truncatePreview = (text, max = 110) => {
   return cut + '…';
 };
 
+// v00.274 — 이벤트(강연/투어) 시작 시각 해석. starts_at(ISO) 우선, 없으면 next 텍스트
+//   ("2026.05.15 10:00" 같은 사람이 입력한 일정) 를 파싱. 둘 다 없으면 NaN.
+//   관리자가 starts_at 구조화 입력 없이 next 텍스트만 넣은 데이터에서도 예정/지난 판정이 동작.
+const _eventTs = (x) => {
+  if (!x) return NaN;
+  if (x.startsAt) { const t = Date.parse(x.startsAt); if (!isNaN(t)) return t; }
+  if (x.next) { const t = Date.parse(String(x.next).trim().replace(/\./g, '-')); if (!isNaN(t)) return t; }
+  return NaN;
+};
+
 const HOME_TEXT_DEFAULT = {
   recEyebrow: '운영자가 다녀온 곳',
   recTitlePrefix: '요즘 ',
@@ -185,38 +195,17 @@ const HeroProgramCards = ({ go, dataTick, text }) => {
   };
   // v00.115 — startsAt 가 invalid 한 row 가 sort 에 들어가면 결과 순서가 임의로 깨짐.
   // 한 번 더 Date.parse !isNaN 로 거른 뒤 sort.
-  const _validStarts = (l) => {
-    if (!l || l.hidden || !l.startsAt) return false;
-    return !isNaN(Date.parse(l.startsAt));
-  };
-  // v00.129 — 사용자 요청 '진행 예정 강연이 없으면 지난 강연을 노출 (3개 이내)'.
-  // 1) 어제 이후 강연 우선. 2) 없으면 가장 최근 지난 강연 3개로 폴백.
-  const lectures = React.useMemo(() => {
-    const all = _arr(() => window.BGNJ_LECTURES?.listAll?.())
-      .filter(_validStarts);
-    const cutoff = Date.now() - 86400000;
-    const upcoming = all
-      .filter((l) => new Date(l.startsAt).getTime() >= cutoff)
-      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
-    if (upcoming.length > 0) return upcoming;
-    // fallback — 가장 최근 지난 강연 3개 (newest-first).
-    return all
-      .filter((l) => new Date(l.startsAt).getTime() < cutoff)
-      .sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
-      .slice(0, 3);
-  }, [dataTick]);
-  const tours = React.useMemo(() => {
-    return _arr(() => window.BGNJ_TOURS?.listAll?.())
-      .filter(_validStarts)
-      .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
-      .filter((t) => new Date(t.startsAt).getTime() >= Date.now() - 86400000);
-  }, [dataTick]);
+  // v00.274 — 날짜는 starts_at 없으면 next 텍스트로 해석(_eventTs). 히어로는 '예정(미래)' 만 노출 —
+  //   예정이 없으면 지난 일정을 '최근'으로 띄우지 않고 빈 상태("예정 없음")로 둔다 (사용자 요청).
+  const _cutoff = Date.now() - 86400000;
+  const _upcoming = (fn) => _arr(fn)
+    .filter((x) => x && !x.hidden && !isNaN(_eventTs(x)) && _eventTs(x) >= _cutoff)
+    .sort((a, b) => _eventTs(a) - _eventTs(b));
+  const lectures = React.useMemo(() => _upcoming(() => window.BGNJ_LECTURES?.listAll?.()), [dataTick]);
+  const tours = React.useMemo(() => _upcoming(() => window.BGNJ_TOURS?.listAll?.()), [dataTick]);
 
   const nextLecture = lectures[0];
   const nextTour = tours[0];
-  // v00.129 — 강연이 fallback (지난 강연 노출 모드) 인지 판정. nextLecture.startsAt 가 어제보다 과거면 past mode.
-  const lectureIsPast = nextLecture && nextLecture.startsAt &&
-    (new Date(nextLecture.startsAt).getTime() < Date.now() - 86400000);
 
   // v00.110 — 시간 표시는 사이트 전반 KST 기준. BGNJ_FMT.kstFriendly 사용.
   const fmtDate = (iso) => {
@@ -240,13 +229,13 @@ const HeroProgramCards = ({ go, dataTick, text }) => {
         tabIndex={nextLecture ? 0 : undefined}
         onKeyDown={(e) => { if (nextLecture && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go('lectures'); } }}>
         <div className="home-program-label">
-          {lectureIsPast ? text.heroRecentLectureLabel : text.heroNextLectureLabel}
+          {text.heroNextLectureLabel}
         </div>
         {nextLecture ? (
           <>
             <h3 className="ko-serif" style={{fontSize:20, marginBottom:8, color:'var(--ink)'}}>{nextLecture.topic || nextLecture.title}</h3>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10}}>
-              <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{fmtDate(nextLecture.startsAt)}</span>
+              <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{nextLecture.next || fmtDate(nextLecture.startsAt)}</span>
               <span className="dim-2" style={{fontSize:12}}>{nextLecture.venue || text.venueFallback}</span>
             </div>
           </>
@@ -275,7 +264,7 @@ const HeroProgramCards = ({ go, dataTick, text }) => {
               <p className="dim-2" style={{fontSize:13, marginBottom:8, fontStyle:'italic'}}>{nextTour.subtitle}</p>
             )}
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10}}>
-              <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{fmtDate(nextTour.startsAt)}</span>
+              <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{nextTour.next || fmtDate(nextTour.startsAt)}</span>
               <span className="dim-2" style={{fontSize:12}}>
                 {nextTour.level && <span style={{marginRight:8}}>{nextTour.level}</span>}
                 {nextTour.duration}
@@ -578,26 +567,29 @@ const HomePage = ({ go }) => {
   // v00.266 — 홈 섹션도 오늘 기준 날짜 필터 적용 (HeroProgramCards 와 동일 정책).
   //   투어: 예정(어제 이후)만 노출. 지난 일정만 있으면 빈 상태("이번에 걸을 길 없음").
   //   강연: 예정 우선, 없으면 가장 최근 지난 강연 3개로 폴백 + "지난 강연" 마크 (v00.129 사용자 요청 유지).
+  // v00.274 — 날짜는 _eventTs(starts_at 없으면 next 텍스트 파싱)로 해석.
+  //   투어: 예정(어제 이후)만 노출. 지난 일정만 있으면 빈 상태("이번에 걸을 길 없음").
+  //   강연: 예정 우선, 없으면 가장 최근 지난 강연 3개로 폴백 + "지난 강연" 마크 (v00.129 사용자 요청 유지).
   const _cutoff = Date.now() - 86400000; // 어제 자정 근사 — 당일 진행분 노출 유지
-  const _validStart = (x) => x && !x.hidden && x.startsAt && !isNaN(Date.parse(x.startsAt));
+  const _validStart = (x) => x && !x.hidden && !isNaN(_eventTs(x));
   const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.())
     .filter(_validStart)
-    .filter((t) => Date.parse(t.startsAt) >= _cutoff)
-    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))
+    .filter((t) => _eventTs(t) >= _cutoff)
+    .sort((a, b) => _eventTs(a) - _eventTs(b))
     .slice(0, 4), [toursTick]);
   const lectures = React.useMemo(() => {
     const all = G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter(_validStart);
     const upcoming = all
-      .filter((l) => Date.parse(l.startsAt) >= _cutoff)
-      .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+      .filter((l) => _eventTs(l) >= _cutoff)
+      .sort((a, b) => _eventTs(a) - _eventTs(b));
     if (upcoming.length > 0) return upcoming.slice(0, 3);
     return all
-      .filter((l) => Date.parse(l.startsAt) < _cutoff)
-      .sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt))
+      .filter((l) => _eventTs(l) < _cutoff)
+      .sort((a, b) => _eventTs(b) - _eventTs(a))
       .slice(0, 3);
   }, [lecturesTick]);
   // 강연 섹션이 '지난 강연 폴백' 모드인지 (예정이 하나도 없을 때).
-  const lecturesArePast = lectures.length > 0 && lectures.every((l) => Date.parse(l.startsAt) < _cutoff);
+  const lecturesArePast = lectures.length > 0 && lectures.every((l) => _eventTs(l) < _cutoff);
 
   // hero.stats 가 있으면 콘텐츠(label/sub/valueFallback) 를 거기서. 동적 value(투어/커뮤니티 갯수) 는 코드 측 우선.
   const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
@@ -1107,7 +1099,7 @@ const HomePage = ({ go }) => {
                   : null;
                 // v00.256 — 마감 임박 / 신규 라벨. startsAt 7일 이내 임박, createdAt 3일 이내 신규.
                 const _now = Date.now();
-                const _startsTs = lecture.startsAt ? Date.parse(lecture.startsAt) : NaN;
+                const _startsTs = _eventTs(lecture);
                 const _createdTs = lecture.createdAt ? Date.parse(lecture.createdAt) : NaN;
                 const _daysToStart = !isNaN(_startsTs) ? Math.ceil((_startsTs - _now) / 86400000) : null;
                 const _daysSinceCreated = !isNaN(_createdTs) ? Math.floor((_now - _createdTs) / 86400000) : null;

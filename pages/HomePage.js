@@ -131,6 +131,18 @@ const truncatePreview = (text, max = 110) => {
   const cut = lastSpace > max * 0.6 ? slice.slice(0, lastSpace) : slice;
   return cut + "\u2026";
 };
+const _eventTs = (x) => {
+  if (!x) return NaN;
+  if (x.startsAt) {
+    const t = Date.parse(x.startsAt);
+    if (!isNaN(t)) return t;
+  }
+  if (x.next) {
+    const t = Date.parse(String(x.next).trim().replace(/\./g, "-"));
+    if (!isNaN(t)) return t;
+  }
+  return NaN;
+};
 const HOME_TEXT_DEFAULT = {
   recEyebrow: "\uC6B4\uC601\uC790\uAC00 \uB2E4\uB140\uC628 \uACF3",
   recTitlePrefix: "\uC694\uC998 ",
@@ -187,29 +199,18 @@ const HeroProgramCards = ({ go, dataTick, text }) => {
       return [];
     }
   };
-  const _validStarts = (l) => {
-    if (!l || l.hidden || !l.startsAt) return false;
-    return !isNaN(Date.parse(l.startsAt));
-  };
-  const lectures = React.useMemo(() => {
-    const all = _arr(() => {
-      var _a, _b;
-      return (_b = (_a = window.BGNJ_LECTURES) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
-    }).filter(_validStarts);
-    const cutoff = Date.now() - 864e5;
-    const upcoming = all.filter((l) => new Date(l.startsAt).getTime() >= cutoff).sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
-    if (upcoming.length > 0) return upcoming;
-    return all.filter((l) => new Date(l.startsAt).getTime() < cutoff).sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime()).slice(0, 3);
-  }, [dataTick]);
-  const tours = React.useMemo(() => {
-    return _arr(() => {
-      var _a, _b;
-      return (_b = (_a = window.BGNJ_TOURS) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
-    }).filter(_validStarts).sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()).filter((t) => new Date(t.startsAt).getTime() >= Date.now() - 864e5);
-  }, [dataTick]);
+  const _cutoff = Date.now() - 864e5;
+  const _upcoming = (fn) => _arr(fn).filter((x) => x && !x.hidden && !isNaN(_eventTs(x)) && _eventTs(x) >= _cutoff).sort((a, b) => _eventTs(a) - _eventTs(b));
+  const lectures = React.useMemo(() => _upcoming(() => {
+    var _a, _b;
+    return (_b = (_a = window.BGNJ_LECTURES) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
+  }), [dataTick]);
+  const tours = React.useMemo(() => _upcoming(() => {
+    var _a, _b;
+    return (_b = (_a = window.BGNJ_TOURS) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
+  }), [dataTick]);
   const nextLecture = lectures[0];
   const nextTour = tours[0];
-  const lectureIsPast = nextLecture && nextLecture.startsAt && new Date(nextLecture.startsAt).getTime() < Date.now() - 864e5;
   const fmtDate = (iso) => {
     var _a;
     if (!iso) return "";
@@ -236,8 +237,8 @@ const HeroProgramCards = ({ go, dataTick, text }) => {
         }
       }
     },
-    /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, lectureIsPast ? text.heroRecentLectureLabel : text.heroNextLectureLabel),
-    nextLecture ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextLecture.topic || nextLecture.title), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, fmtDate(nextLecture.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextLecture.venue || text.venueFallback))) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, text.heroNoLectureText, " ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost gold", onClick: (e) => {
+    /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextLectureLabel),
+    nextLecture ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextLecture.topic || nextLecture.title), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, nextLecture.next || fmtDate(nextLecture.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextLecture.venue || text.venueFallback))) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, text.heroNoLectureText, " ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost gold", onClick: (e) => {
       e.stopPropagation();
       go("lectures");
     } }, text.heroNoLectureCta))
@@ -259,7 +260,7 @@ const HeroProgramCards = ({ go, dataTick, text }) => {
       }
     },
     /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextTourLabel),
-    nextTour ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextTour.title), nextTour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 8, fontStyle: "italic" } }, nextTour.subtitle), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, fmtDate(nextTour.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextTour.level && /* @__PURE__ */ React.createElement("span", { style: { marginRight: 8 } }, nextTour.level), nextTour.duration))) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, text.heroNoTourText, " ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost gold", onClick: (e) => {
+    nextTour ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextTour.title), nextTour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 8, fontStyle: "italic" } }, nextTour.subtitle), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, nextTour.next || fmtDate(nextTour.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextTour.level && /* @__PURE__ */ React.createElement("span", { style: { marginRight: 8 } }, nextTour.level), nextTour.duration))) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, text.heroNoTourText, " ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost gold", onClick: (e) => {
       e.stopPropagation();
       go("tour");
     } }, text.heroNoTourCta))
@@ -561,21 +562,21 @@ const HomePage = ({ go }) => {
     return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b2.call(_a2);
   }).slice(0, 4), [postsTick]);
   const _cutoff = Date.now() - 864e5;
-  const _validStart = (x) => x && !x.hidden && x.startsAt && !isNaN(Date.parse(x.startsAt));
+  const _validStart = (x) => x && !x.hidden && !isNaN(_eventTs(x));
   const tours = React.useMemo(() => G.arr(() => {
     var _a2, _b2;
     return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
-  }).filter(_validStart).filter((t) => Date.parse(t.startsAt) >= _cutoff).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt)).slice(0, 4), [toursTick]);
+  }).filter(_validStart).filter((t) => _eventTs(t) >= _cutoff).sort((a, b) => _eventTs(a) - _eventTs(b)).slice(0, 4), [toursTick]);
   const lectures = React.useMemo(() => {
     const all = G.arr(() => {
       var _a2, _b2;
       return (_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
     }).filter(_validStart);
-    const upcoming = all.filter((l) => Date.parse(l.startsAt) >= _cutoff).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+    const upcoming = all.filter((l) => _eventTs(l) >= _cutoff).sort((a, b) => _eventTs(a) - _eventTs(b));
     if (upcoming.length > 0) return upcoming.slice(0, 3);
-    return all.filter((l) => Date.parse(l.startsAt) < _cutoff).sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt)).slice(0, 3);
+    return all.filter((l) => _eventTs(l) < _cutoff).sort((a, b) => _eventTs(b) - _eventTs(a)).slice(0, 3);
   }, [lecturesTick]);
-  const lecturesArePast = lectures.length > 0 && lectures.every((l) => Date.parse(l.startsAt) < _cutoff);
+  const lecturesArePast = lectures.length > 0 && lectures.every((l) => _eventTs(l) < _cutoff);
   const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
     { label: "\uC5EC\uD589\uC9C0", sub: "\uC8FC\uC694 \uB2F5\uC0AC\uC9C0 \uC6B4\uC601", valueFallback: "\uC804\uAD6D" },
     { label: "\uD22C\uC5B4", sub: "\uC9C1\uC811 \uAE30\uD68D \uD504\uB85C\uADF8\uB7A8", valueFallback: "\uC900\uBE44 \uC911" },
@@ -1008,7 +1009,7 @@ const HomePage = ({ go }) => {
     const price = (_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.priceOrFree) == null ? void 0 : _b2.call(_a2, lecture.price);
     const hours = lecture.durationMinutes ? `${Math.round(lecture.durationMinutes / 60 * 10) / 10}\uC2DC\uAC04` : null;
     const _now = Date.now();
-    const _startsTs = lecture.startsAt ? Date.parse(lecture.startsAt) : NaN;
+    const _startsTs = _eventTs(lecture);
     const _createdTs = lecture.createdAt ? Date.parse(lecture.createdAt) : NaN;
     const _daysToStart = !isNaN(_startsTs) ? Math.ceil((_startsTs - _now) / 864e5) : null;
     const _daysSinceCreated = !isNaN(_createdTs) ? Math.floor((_now - _createdTs) / 864e5) : null;
