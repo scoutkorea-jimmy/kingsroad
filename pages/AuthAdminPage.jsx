@@ -6225,7 +6225,9 @@ const AdminPage = ({ go }) => {
   const tabGroups = [
     { group: "요약",          items: ["대시보드", "사용자 여정"] },
     { group: "콘텐츠",        items: ["뱅기노자 칼럼", "추천 여행지", "먹고 놀자", "자고 놀자", "사고 놀자"] },
-    { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "한켠 예약", "책 카탈로그", "책 주문"] },
+    { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "책 카탈로그", "책 주문"] },
+    // v00.267 — 한켠(자고 놀자) 숙소 예약 PMS. 찾기 쉽게 독립 그룹으로 분리.
+    { group: "한켠 숙소",     items: ["한켠 예약"] },
     // v00.177 — 사용자 보고 '커뮤니티게시판이랑 커뮤니티랑 겹쳐 매우 불편'. 단일 [커뮤니티] sub-tab 통합 (게시글/게시판/신고).
     { group: "커뮤니티",      items: ["커뮤니티"] },
     { group: "회원",          items: ["회원", "회원 등급"] },
@@ -6262,7 +6264,8 @@ const AdminPage = ({ go }) => {
     return g ? g.group : tabGroups[0].group;
   }, [tabGroups]);
   const currentGroup = React.useMemo(() => _findGroup(tab), [_findGroup, tab]);
-  const [openGroups, setOpenGroups] = React.useState(() => new Set([_findGroup(tab)]));
+  // v00.267 — 현재 탭 그룹 + 한켠 숙소 그룹은 기본 펼침(신규 기능 발견성).
+  const [openGroups, setOpenGroups] = React.useState(() => new Set([_findGroup(tab), "한켠 숙소"]));
   // 다른 곳에서 setTab 호출로 탭 바뀌면 그 그룹 자동 펼침 (이미 펼쳐져 있으면 그대로).
   React.useEffect(() => {
     setOpenGroups((prev) => {

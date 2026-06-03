@@ -5229,7 +5229,9 @@ const AdminPage = ({ go }) => {
   const tabGroups = [
     { group: "\uC694\uC57D", items: ["\uB300\uC2DC\uBCF4\uB4DC", "\uC0AC\uC6A9\uC790 \uC5EC\uC815"] },
     { group: "\uCF58\uD150\uCE20", items: ["\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC", "\uCD94\uCC9C \uC5EC\uD589\uC9C0", "\uBA39\uACE0 \uB180\uC790", "\uC790\uACE0 \uB180\uC790", "\uC0AC\uACE0 \uB180\uC790"] },
-    { group: "\uD504\uB85C\uADF8\uB7A8\xB7\uC1FC\uD551", items: ["\uAC15\uC5F0", "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8", "\uD55C\uCF20 \uC608\uC57D", "\uCC45 \uCE74\uD0C8\uB85C\uADF8", "\uCC45 \uC8FC\uBB38"] },
+    { group: "\uD504\uB85C\uADF8\uB7A8\xB7\uC1FC\uD551", items: ["\uAC15\uC5F0", "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8", "\uCC45 \uCE74\uD0C8\uB85C\uADF8", "\uCC45 \uC8FC\uBB38"] },
+    // v00.267 — 한켠(자고 놀자) 숙소 예약 PMS. 찾기 쉽게 독립 그룹으로 분리.
+    { group: "\uD55C\uCF20 \uC219\uC18C", items: ["\uD55C\uCF20 \uC608\uC57D"] },
     // v00.177 — 사용자 보고 '커뮤니티게시판이랑 커뮤니티랑 겹쳐 매우 불편'. 단일 [커뮤니티] sub-tab 통합 (게시글/게시판/신고).
     { group: "\uCEE4\uBBA4\uB2C8\uD2F0", items: ["\uCEE4\uBBA4\uB2C8\uD2F0"] },
     { group: "\uD68C\uC6D0", items: ["\uD68C\uC6D0", "\uD68C\uC6D0 \uB4F1\uAE09"] },
@@ -5260,7 +5262,7 @@ const AdminPage = ({ go }) => {
     return g ? g.group : tabGroups[0].group;
   }, [tabGroups]);
   const currentGroup = React.useMemo(() => _findGroup(tab), [_findGroup, tab]);
-  const [openGroups, setOpenGroups] = React.useState(() => /* @__PURE__ */ new Set([_findGroup(tab)]));
+  const [openGroups, setOpenGroups] = React.useState(() => /* @__PURE__ */ new Set([_findGroup(tab), "\uD55C\uCF20 \uC219\uC18C"]));
   React.useEffect(() => {
     setOpenGroups((prev) => {
       if (prev.has(currentGroup)) return prev;
