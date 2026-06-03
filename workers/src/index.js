@@ -2451,7 +2451,8 @@ const hkRoomAvailability = async (env, roomTypeId, from, to) => {
     let dayOcc = 0;
     for (const b of bookings) {
       const u = b.booking_unit;
-      if (u === "hourly") { /* 시간제는 종일 점유 아님 — 재고 차감 제외(부분점유) */ }
+      // 시간제 예약도 그 날 객실 1유닛을 점유 → 숙박 재고에서 차감(보수적, 더블부킹 방지).
+      if (u === "hourly") { if (b.check_in === date) dayOcc += 1; }
       else if (b.check_in <= date && date < b.check_out) dayOcc += 1; // nightly/daily 범위 점유
     }
     const price = stay ? hkNightlyPrice(rt, date, rules, priceOvMap) : null;
