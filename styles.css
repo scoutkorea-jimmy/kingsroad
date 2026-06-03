@@ -1877,7 +1877,9 @@ main time, main .section-eyebrow {
 
 /* === Navigation mega menu (커뮤니티 hover) === */
 .nav-has-mega:hover .nav-mega,
-.nav-has-mega:focus-within .nav-mega {
+.nav-has-mega:focus-within .nav-mega,
+/* v00.266 — "놀자" 클릭 토글 시 강제 노출 (호버 불가 환경 보완) */
+.nav-mega.nav-mega-open {
   visibility: visible !important;
   opacity: 1 !important;
 }

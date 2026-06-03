@@ -661,8 +661,21 @@ const SiteSearchOverlay = ({ go, onClose }) => {
 const Nav = ({ route, go, user, onLogout }) => {
   const navL = (window.BGNJ_SITE_CONTENT?.get?.() || {}).nav || {};
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  // 라우트 변경 시 모바일 메뉴 자동 닫힘
-  React.useEffect(() => { setMobileOpen(false); }, [route]);
+  // v00.266 — 데스크톱 "놀자" 메가 드롭다운 클릭 토글 (호버 유지 + 클릭 보완).
+  // 호버 불가 환경(터치패드/태블릿)에서도 먹고/자고/사고 접근 가능하도록.
+  const [playOpen, setPlayOpen] = React.useState(false);
+  const playRef = React.useRef(null);
+  // 라우트 변경 시 모바일 메뉴 + 놀자 드롭다운 자동 닫힘
+  React.useEffect(() => { setMobileOpen(false); setPlayOpen(false); }, [route]);
+  // 놀자 드롭다운 열림 시: 바깥 클릭 + Escape 로 닫힘
+  React.useEffect(() => {
+    if (!playOpen) return;
+    const onDown = (e) => { if (playRef.current && !playRef.current.contains(e.target)) setPlayOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setPlayOpen(false); };
+    window.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('mousedown', onDown); window.removeEventListener('keydown', onKey); };
+  }, [playOpen]);
   // 모바일 메뉴 열림 시: Escape 닫기 + body scroll lock + viewport 확대 시 자동 닫힘
   React.useEffect(() => {
     if (!mobileOpen) return;
@@ -742,18 +755,23 @@ const Nav = ({ route, go, user, onLogout }) => {
         <ul id="primary-nav-menu" className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>
           {items.map(it => {
             const hasMega = it.isMega === 'play' || (it.isMega === 'community' && communityBoards.length > 0);
-            const onClick = () => go(it.defaultRoute || it.key);
+            // v00.266 — "놀자" 는 클릭 시 이동 대신 드롭다운 토글(호버 보완). 그 외는 기존대로 이동.
+            const onClick = it.isMega === 'play'
+              ? () => setPlayOpen((v) => !v)
+              : () => go(it.defaultRoute || it.key);
             return (
-              <li key={it.key} style={{position:'relative'}} className={hasMega ? 'nav-has-mega' : ''}>
+              <li key={it.key} ref={it.isMega === 'play' ? playRef : undefined}
+                style={{position:'relative'}} className={hasMega ? 'nav-has-mega' : ''}>
                 <button
                   type="button"
                   className={`nav-link ${isActive(it) ? "active" : ""}`}
                   aria-current={isActive(it) ? "page" : undefined}
                   aria-haspopup={hasMega ? 'menu' : undefined}
+                  aria-expanded={it.isMega === 'play' ? playOpen : undefined}
                   onClick={onClick}>{it.label}{hasMega ? ' ▾' : ''}</button>
 
                 {it.isMega === 'play' && (
-                  <div className="nav-mega" role="menu" aria-label="놀자 — 의식주 카테고리"
+                  <div className={`nav-mega ${playOpen ? 'nav-mega-open' : ''}`} role="menu" aria-label="놀자 — 의식주 카테고리"
                     style={{
                       position:'absolute', top:'100%', left:'50%', transform:'translateX(-50%)',
                       minWidth:280, padding:'10px 0',
@@ -767,7 +785,7 @@ const Nav = ({ route, go, user, onLogout }) => {
                       {playChildren.map((p) => (
                         <li key={p.key}>
                           <button type="button" role="menuitem"
-                            onClick={() => go(p.key)}
+                            onClick={() => { setPlayOpen(false); go(p.key); }}
                             style={{
                               display:'block', width:'100%', textAlign:'left',
                               padding:'10px 16px',

@@ -720,9 +720,27 @@ const Nav = ({ route, go, user, onLogout }) => {
   var _a, _b, _c;
   const navL = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).nav || {};
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [playOpen, setPlayOpen] = React.useState(false);
+  const playRef = React.useRef(null);
   React.useEffect(() => {
     setMobileOpen(false);
+    setPlayOpen(false);
   }, [route]);
+  React.useEffect(() => {
+    if (!playOpen) return;
+    const onDown = (e) => {
+      if (playRef.current && !playRef.current.contains(e.target)) setPlayOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") setPlayOpen(false);
+    };
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [playOpen]);
   React.useEffect(() => {
     if (!mobileOpen) return;
     const onKey = (e) => {
@@ -815,147 +833,163 @@ const Nav = ({ route, go, user, onLogout }) => {
     /* @__PURE__ */ React.createElement("span", { className: "nav-toggle-label", "aria-hidden": "true" }, mobileOpen ? "\uB2EB\uAE30" : "\uBA54\uB274")
   ), /* @__PURE__ */ React.createElement("ul", { id: "primary-nav-menu", className: "nav-menu", role: "list", style: { listStyle: "none", margin: 0, padding: 0 } }, items.map((it) => {
     const hasMega = it.isMega === "play" || it.isMega === "community" && communityBoards.length > 0;
-    const onClick = () => go(it.defaultRoute || it.key);
-    return /* @__PURE__ */ React.createElement("li", { key: it.key, style: { position: "relative" }, className: hasMega ? "nav-has-mega" : "" }, /* @__PURE__ */ React.createElement(
-      "button",
+    const onClick = it.isMega === "play" ? () => setPlayOpen((v) => !v) : () => go(it.defaultRoute || it.key);
+    return /* @__PURE__ */ React.createElement(
+      "li",
       {
-        type: "button",
-        className: `nav-link ${isActive(it) ? "active" : ""}`,
-        "aria-current": isActive(it) ? "page" : void 0,
-        "aria-haspopup": hasMega ? "menu" : void 0,
-        onClick
+        key: it.key,
+        ref: it.isMega === "play" ? playRef : void 0,
+        style: { position: "relative" },
+        className: hasMega ? "nav-has-mega" : ""
       },
-      it.label,
-      hasMega ? " \u25BE" : ""
-    ), it.isMega === "play" && /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        className: "nav-mega",
-        role: "menu",
-        "aria-label": "\uB180\uC790 \u2014 \uC758\uC2DD\uC8FC \uCE74\uD14C\uACE0\uB9AC",
-        style: {
-          position: "absolute",
-          top: "100%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          minWidth: 280,
-          padding: "10px 0",
-          background: "var(--bg)",
-          border: "1px solid var(--line)",
-          boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
-          visibility: "hidden",
-          opacity: 0,
-          transition: "opacity .12s ease",
-          zIndex: 50
-        }
-      },
-      /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "\uC758\uC2DD\uC8FC \u8863\u98DF\u4F4F"),
-      /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0 } }, playChildren.map((p) => /* @__PURE__ */ React.createElement("li", { key: p.key }, /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
-          role: "menuitem",
-          onClick: () => go(p.key),
+          className: `nav-link ${isActive(it) ? "active" : ""}`,
+          "aria-current": isActive(it) ? "page" : void 0,
+          "aria-haspopup": hasMega ? "menu" : void 0,
+          "aria-expanded": it.isMega === "play" ? playOpen : void 0,
+          onClick
+        },
+        it.label,
+        hasMega ? " \u25BE" : ""
+      ),
+      it.isMega === "play" && /* @__PURE__ */ React.createElement(
+        "div",
+        {
+          className: `nav-mega ${playOpen ? "nav-mega-open" : ""}`,
+          role: "menu",
+          "aria-label": "\uB180\uC790 \u2014 \uC758\uC2DD\uC8FC \uCE74\uD14C\uACE0\uB9AC",
           style: {
-            display: "block",
-            width: "100%",
-            textAlign: "left",
-            padding: "10px 16px",
-            background: "transparent",
-            color: "var(--ink-2)",
-            border: "none",
-            cursor: "pointer"
-          },
-          onMouseEnter: (e) => {
-            e.currentTarget.style.background = "var(--bg-2)";
-          },
-          onMouseLeave: (e) => {
-            e.currentTarget.style.background = "transparent";
+            position: "absolute",
+            top: "100%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            minWidth: 280,
+            padding: "10px 0",
+            background: "var(--bg)",
+            border: "1px solid var(--line)",
+            boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
+            visibility: "hidden",
+            opacity: 0,
+            transition: "opacity .12s ease",
+            zIndex: 50
           }
         },
-        /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 500 } }, p.label),
-        /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.05em", marginTop: 2 } }, p.desc)
-      ))))
-    ), it.isMega === "play" && /* @__PURE__ */ React.createElement("ul", { className: "nav-mobile-submenu", role: "list", "aria-label": "\uB180\uC790 \uD558\uC704", style: { listStyle: "none", margin: 0, padding: 0 } }, playChildren.map((p) => /* @__PURE__ */ React.createElement("li", { key: p.key }, /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: `nav-link nav-sub-link ${route === p.key ? "active" : ""}`,
-        "aria-current": route === p.key ? "page" : void 0,
-        onClick: () => go(p.key)
-      },
-      p.label
-    )))), it.isMega === "community" && communityBoards.length > 0 && /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        className: "nav-mega",
-        role: "menu",
-        "aria-label": "\uAC8C\uC2DC\uD310 \uBAA9\uB85D",
-        style: {
-          position: "absolute",
-          top: "100%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          minWidth: 220,
-          padding: "10px 0",
-          background: "var(--bg)",
-          border: "1px solid var(--line)",
-          boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
-          visibility: "hidden",
-          opacity: 0,
-          transition: "opacity .12s ease",
-          zIndex: 50
-        }
-      },
-      /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "BOARDS"),
-      /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0 } }, communityBoards.map((b) => /* @__PURE__ */ React.createElement("li", { key: b.id }, /* @__PURE__ */ React.createElement(
+        /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "\uC758\uC2DD\uC8FC \u8863\u98DF\u4F4F"),
+        /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0 } }, playChildren.map((p) => /* @__PURE__ */ React.createElement("li", { key: p.key }, /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            role: "menuitem",
+            onClick: () => {
+              setPlayOpen(false);
+              go(p.key);
+            },
+            style: {
+              display: "block",
+              width: "100%",
+              textAlign: "left",
+              padding: "10px 16px",
+              background: "transparent",
+              color: "var(--ink-2)",
+              border: "none",
+              cursor: "pointer"
+            },
+            onMouseEnter: (e) => {
+              e.currentTarget.style.background = "var(--bg-2)";
+            },
+            onMouseLeave: (e) => {
+              e.currentTarget.style.background = "transparent";
+            }
+          },
+          /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 500 } }, p.label),
+          /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.05em", marginTop: 2 } }, p.desc)
+        ))))
+      ),
+      it.isMega === "play" && /* @__PURE__ */ React.createElement("ul", { className: "nav-mobile-submenu", role: "list", "aria-label": "\uB180\uC790 \uD558\uC704", style: { listStyle: "none", margin: 0, padding: 0 } }, playChildren.map((p) => /* @__PURE__ */ React.createElement("li", { key: p.key }, /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
-          role: "menuitem",
-          onClick: () => goBoard(b.id),
-          style: {
-            display: "block",
-            width: "100%",
-            textAlign: "left",
-            padding: "8px 16px",
-            fontSize: 13,
-            background: "transparent",
-            color: "var(--ink-2)",
-            border: "none",
-            cursor: "pointer"
-          },
-          onMouseEnter: (e) => {
-            e.currentTarget.style.background = "var(--bg-2)";
-          },
-          onMouseLeave: (e) => {
-            e.currentTarget.style.background = "transparent";
-          }
+          className: `nav-link nav-sub-link ${route === p.key ? "active" : ""}`,
+          "aria-current": route === p.key ? "page" : void 0,
+          onClick: () => go(p.key)
         },
-        /* @__PURE__ */ React.createElement("span", null, b.label)
-      ))), /* @__PURE__ */ React.createElement("li", { style: { borderTop: "1px solid var(--line)", marginTop: 6, paddingTop: 6 } }, /* @__PURE__ */ React.createElement(
-        "button",
+        p.label
+      )))),
+      it.isMega === "community" && communityBoards.length > 0 && /* @__PURE__ */ React.createElement(
+        "div",
         {
-          type: "button",
-          role: "menuitem",
-          onClick: () => go("community"),
+          className: "nav-mega",
+          role: "menu",
+          "aria-label": "\uAC8C\uC2DC\uD310 \uBAA9\uB85D",
           style: {
-            display: "block",
-            width: "100%",
-            textAlign: "left",
-            padding: "8px 16px",
-            fontSize: 12,
-            letterSpacing: "0.18em",
-            background: "transparent",
-            color: "var(--secondary)",
-            border: "none",
-            cursor: "pointer",
-            fontFamily: "var(--font-mono)"
+            position: "absolute",
+            top: "100%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            minWidth: 220,
+            padding: "10px 0",
+            background: "var(--bg)",
+            border: "1px solid var(--line)",
+            boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
+            visibility: "hidden",
+            opacity: 0,
+            transition: "opacity .12s ease",
+            zIndex: 50
           }
         },
-        "\uC804\uCCB4 \uBCF4\uAE30 \u2192"
-      )))
-    ));
+        /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "BOARDS"),
+        /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0 } }, communityBoards.map((b) => /* @__PURE__ */ React.createElement("li", { key: b.id }, /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            role: "menuitem",
+            onClick: () => goBoard(b.id),
+            style: {
+              display: "block",
+              width: "100%",
+              textAlign: "left",
+              padding: "8px 16px",
+              fontSize: 13,
+              background: "transparent",
+              color: "var(--ink-2)",
+              border: "none",
+              cursor: "pointer"
+            },
+            onMouseEnter: (e) => {
+              e.currentTarget.style.background = "var(--bg-2)";
+            },
+            onMouseLeave: (e) => {
+              e.currentTarget.style.background = "transparent";
+            }
+          },
+          /* @__PURE__ */ React.createElement("span", null, b.label)
+        ))), /* @__PURE__ */ React.createElement("li", { style: { borderTop: "1px solid var(--line)", marginTop: 6, paddingTop: 6 } }, /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            role: "menuitem",
+            onClick: () => go("community"),
+            style: {
+              display: "block",
+              width: "100%",
+              textAlign: "left",
+              padding: "8px 16px",
+              fontSize: 12,
+              letterSpacing: "0.18em",
+              background: "transparent",
+              color: "var(--secondary)",
+              border: "none",
+              cursor: "pointer",
+              fontFamily: "var(--font-mono)"
+            }
+          },
+          "\uC804\uCCB4 \uBCF4\uAE30 \u2192"
+        )))
+      )
+    );
   }), /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only nav-mobile-divider", "aria-hidden": "true" }), user ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("mypage") }, "\uB9C8\uC774\uD398\uC774\uC9C0")), user.isAdmin && /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("admin") }, "\uAD00\uB9AC")), /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: onLogout }, "\uB85C\uADF8\uC544\uC6C3"))) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("login") }, "\uB85C\uADF8\uC778")), /* @__PURE__ */ React.createElement("li", { className: "nav-mobile-only" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "nav-link", onClick: () => go("signup") }, "\uD68C\uC6D0\uAC00\uC785")))), /* @__PURE__ */ React.createElement("div", { className: "nav-actions" }, /* @__PURE__ */ React.createElement(SiteSearchToggle, { go }), user ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
     "span",
     {
