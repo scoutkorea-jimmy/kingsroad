@@ -12,5 +12,5 @@ ALTER TABLE hk_room_types ADD COLUMN close_time TEXT;     -- '22:00'
 ALTER TABLE hk_room_types ADD COLUMN slot_minutes INTEGER NOT NULL DEFAULT 60; -- 슬롯 길이(분). 3시간이면 180.
 
 -- 예약의 시간 슬롯 (timeslot 유형). nightly 는 NULL.
-ALTER TABLE hk_bookings ADD COLUMN slot_start TEXT;       -- 'HH:MM'
-ALTER TABLE hk_bookings ADD COLUMN slot_end TEXT;         -- 'HH:MM'
+ALTER TABLE hk_bookings ADD COLUMN slot_start TEXT;       -- HH:MM
+ALTER TABLE hk_bookings ADD COLUMN slot_end TEXT;         -- HH:MM
