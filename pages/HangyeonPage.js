@@ -124,7 +124,77 @@ const HkCalendar = ({ roomTypeId, checkIn, checkOut, onSelect }) => {
     );
   })), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8 } }, "\uB0A0\uC9DC\uB97C \uB450 \uBC88 \uB20C\uB7EC \uCCB4\uD06C\uC778\xB7\uCCB4\uD06C\uC544\uC6C3\uC744 \uC120\uD0DD\uD558\uC138\uC694. \uC22B\uC790\uB294 \uC794\uC5EC \uAC1D\uC2E4 \uC218\uC785\uB2C8\uB2E4."));
 };
-const HkBookingModal = ({ roomType, user, onClose, onDone }) => {
+const HkOverviewCalendar = () => {
+  const today = hkToday();
+  const [cursor, setCursor] = React.useState(today.slice(0, 7) + "-01");
+  const [map, setMap] = React.useState({});
+  const [loading, setLoading] = React.useState(false);
+  React.useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    window.BGNJ_HANGYEON.availability({ from: cursor, to: hkAddDays(cursor, 42) }).then((res) => {
+      if (!alive) return;
+      const agg = {};
+      const av = res.availability || {};
+      Object.keys(av).forEach((rid) => (av[rid] || []).forEach((a) => {
+        if (!agg[a.date]) agg[a.date] = { remaining: 0, qty: 0 };
+        agg[a.date].remaining += a.remaining;
+        agg[a.date].qty += a.qty;
+      }));
+      setMap(agg);
+      setLoading(false);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [cursor]);
+  const year = Number(cursor.slice(0, 4)), month = Number(cursor.slice(5, 7)) - 1;
+  const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const cells = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(`${cursor.slice(0, 8)}${String(d).padStart(2, "0")}`);
+  const prevDisabled = cursor <= today.slice(0, 7) + "-01";
+  const hasData = Object.keys(map).length > 0;
+  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } }, /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      disabled: prevDisabled,
+      style: { opacity: prevDisabled ? 0.4 : 1 },
+      onClick: () => setCursor(`${new Date(Date.UTC(year, month - 1, 1)).toISOString().slice(0, 8)}01`)
+    },
+    "\u2039 \uC774\uC804\uB2EC"
+  ), /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 16 } }, year, "\uB144 ", month + 1, "\uC6D4", loading ? " \u2026" : ""), /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: () => setCursor(`${new Date(Date.UTC(year, month + 1, 1)).toISOString().slice(0, 8)}01`)
+    },
+    "\uB2E4\uC74C\uB2EC \u203A"
+  )), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 } }, HK_WD.map((w, i) => /* @__PURE__ */ React.createElement("div", { key: w, className: "mono dim-2", style: { textAlign: "center", fontSize: 11, padding: "4px 0", color: i === 0 ? "var(--danger)" : "var(--ink-3)" } }, w)), cells.map((date, i) => {
+    if (!date) return /* @__PURE__ */ React.createElement("div", { key: `e${i}` });
+    const a = map[date];
+    const past = date < today;
+    const full = a && a.remaining < 1;
+    return /* @__PURE__ */ React.createElement("div", { key: date, style: {
+      aspectRatio: "1.15",
+      border: "1px solid var(--line)",
+      borderRadius: 7,
+      padding: "5px 4px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 2,
+      background: past ? "var(--bg-2)" : full ? "rgba(220,38,38,0.06)" : "var(--bg)",
+      opacity: past ? 0.45 : 1
+    } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 14, fontWeight: 500 } }, Number(date.slice(8))), !past && (!hasData ? null : full ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, color: "var(--danger)", fontWeight: 600 } }, "\uB9C8\uAC10") : /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, color: "var(--success)", fontWeight: 600 } }, a ? a.remaining : 0, "\uC2E4")));
+  })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, marginTop: 12, fontSize: 11 }, className: "dim-2" }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("span", { style: { color: "var(--success)", fontWeight: 600 } }, "N\uC2E4"), " \uC608\uC57D \uAC00\uB2A5"), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("span", { style: { color: "var(--danger)", fontWeight: 600 } }, "\uB9C8\uAC10"), " \uC794\uC5EC \uC5C6\uC74C"), /* @__PURE__ */ React.createElement("span", { style: { marginLeft: "auto" } }, "\uAC1D\uC2E4\uC744 \uC120\uD0DD\uD558\uBA74 \uB0A0\uC9DC\uBCC4\uB85C \uC608\uC57D\uD560 \uC218 \uC788\uC5B4\uC694.")));
+};
+const HkBookingModal = ({ roomType, user, property, onClose, onDone }) => {
   const [checkIn, setCheckIn] = React.useState(null);
   const [checkOut, setCheckOut] = React.useState(null);
   const [rooms, setRooms] = React.useState(1);
@@ -211,7 +281,7 @@ const HkBookingModal = ({ roomType, user, onClose, onDone }) => {
         style: { maxWidth: 520, width: "100%", padding: 0, background: "var(--bg)" }
       },
       /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 19, margin: 0 } }, roomType.name, " \uC608\uC57D"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, style: { background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "var(--ink-3)" } }, "\u2715")),
-      /* @__PURE__ */ React.createElement("div", { style: { padding: 22, display: "flex", flexDirection: "column", gap: 18 } }, /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { style: { padding: 22, display: "flex", flexDirection: "column", gap: 18 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "12px 16px", background: "var(--bg-2)", fontSize: 12.5, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: roomType.description || (property == null ? void 0 : property.address) ? 8 : 0 } }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, "\uCD5C\uB300 ", roomType.maxOccupancy, "\uC778"), roomType.bedConfig && /* @__PURE__ */ React.createElement("span", { className: "badge" }, roomType.bedConfig), (roomType.amenities || []).slice(0, 6).map((a) => /* @__PURE__ */ React.createElement("span", { key: a, className: "badge", style: { fontSize: 9 } }, a))), roomType.description && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: "0 0 8px" } }, roomType.description), (property == null ? void 0 : property.address) && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.16em", marginRight: 6 } }, "\uC8FC\uC18C"), property.address), (property == null ? void 0 : property.directions) && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: "6px 0 0" } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.16em", marginRight: 6 } }, "\uCC3E\uC544\uAC00\uB294 \uAE38"), property.directions), (property == null ? void 0 : property.notice) && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: "6px 0 0" } }, property.notice)), /* @__PURE__ */ React.createElement(
         HkCalendar,
         {
           roomTypeId: roomType.id,
@@ -285,11 +355,12 @@ const HangyeonPage = ({ go, user }) => {
   const address = info.address || "\uC804\uBD81 \uC804\uC8FC\uC2DC \uB355\uC9C4\uAD6C \uD314\uB2EC\uB85C 340-37";
   const directions = info.directions || "\uC804\uC8FC\uC5ED\uC5D0\uC11C \uCC28\uB7C9 10\uBD84, \uC804\uC8FC \uACE0\uC18D\uBC84\uC2A4\uD130\uBBF8\uB110\uC5D0\uC11C \uB3C4\uBCF4 15\uBD84 \uAC70\uB9AC\uB85C \uC811\uADFC\uC131\uC774 \uC88B\uC2B5\uB2C8\uB2E4. \uD55C\uC625\uB9C8\uC744\xB7\uC790\uB9CC\uBCBD\uD654\uB9C8\uC744\xB7\uACBD\uAE30\uC804\xB7\uD48D\uB0A8\uBB38 \uB4F1 \uC8FC\uC694 \uBA85\uC18C\uAE4C\uC9C0 \uCC28\uB7C9 5~10\uBD84\uC774\uBA74 \uB2FF\uC2B5\uB2C8\uB2E4. \uB3C4\uC2EC \uC18D\uC5D0\uC11C\uB3C4 \uC870\uC6A9\uD788 \uBA38\uBB3C\uBA70 \uC9D1\uC911\uD560 \uC218 \uC788\uB294 \uACF5\uAC04\uC785\uB2C8\uB2E4.";
   const images = Array.isArray(info.images) ? info.images : [];
-  return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("header", { style: { marginBottom: 28 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, "STAY \xB7 \uC790\uACE0 \uB180\uC790"), /* @__PURE__ */ React.createElement("h1", { className: "section-title", style: { display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", null, name), /* @__PURE__ */ React.createElement("span", { className: "ko-serif", style: { fontSize: "0.5em", color: "var(--secondary)", fontStyle: "italic", fontWeight: 400 } }, tagline)), /* @__PURE__ */ React.createElement("p", { className: "section-subtitle", style: { maxWidth: 760 } }, desc)), images.length > 0 && window.MediaGalleryView && /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images, title: name, sectionLabel: "\uC219\uC18C \uC804\uACBD", withCover: true })), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "16px 20px", marginBottom: 28, fontSize: 13.5, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: directions ? 10 : 0 } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginRight: 8 } }, "\uC8FC\uC18C"), address), directions && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4 } }, "\uCC3E\uC544\uAC00\uB294 \uAE38"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0 } }, directions)), info.notice && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: "10px 0 0" } }, info.notice))), /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 26, marginBottom: 18 } }, "\uAC1D\uC2E4"), roomTypes.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 40, textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0 } }, "\uD604\uC7AC \uB4F1\uB85D\uB41C \uAC1D\uC2E4\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uACE7 \uB9CC\uB098\uC694.")) : /* @__PURE__ */ React.createElement("div", { className: "grid grid-3", style: { marginBottom: 16 } }, roomTypes.map((rt) => /* @__PURE__ */ React.createElement(HkRoomCard, { key: rt.id, rt, onBook: setBooking })))), /* @__PURE__ */ React.createElement(HkMyBookings, { tick }), booking && /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("header", { style: { marginBottom: 28 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, "STAY \xB7 \uC790\uACE0 \uB180\uC790"), /* @__PURE__ */ React.createElement("h1", { className: "section-title", style: { display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", null, name), /* @__PURE__ */ React.createElement("span", { className: "ko-serif", style: { fontSize: "0.5em", color: "var(--secondary)", fontStyle: "italic", fontWeight: 400 } }, tagline)), /* @__PURE__ */ React.createElement("p", { className: "section-subtitle", style: { maxWidth: 760 } }, desc)), images.length > 0 && window.MediaGalleryView && /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images, title: name, sectionLabel: "\uC219\uC18C \uC804\uACBD", withCover: true }))), /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 24, marginBottom: 14 } }, "\uC608\uC57D \uD604\uD669"), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "18px 20px", marginBottom: 36 } }, /* @__PURE__ */ React.createElement(HkOverviewCalendar, null)), /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 26, marginBottom: 18 } }, "\uAC1D\uC2E4"), roomTypes.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 40, textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0 } }, "\uD604\uC7AC \uB4F1\uB85D\uB41C \uAC1D\uC2E4\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uACE7 \uB9CC\uB098\uC694.")) : /* @__PURE__ */ React.createElement("div", { className: "grid grid-3", style: { marginBottom: 16 } }, roomTypes.map((rt) => /* @__PURE__ */ React.createElement(HkRoomCard, { key: rt.id, rt, onBook: setBooking })))), /* @__PURE__ */ React.createElement(HkMyBookings, { tick }), booking && /* @__PURE__ */ React.createElement(
     HkBookingModal,
     {
       roomType: booking,
       user,
+      property: { name, address, directions, notice: info.notice },
       onClose: () => setBooking(null),
       onDone: () => setTick((v) => v + 1)
     }

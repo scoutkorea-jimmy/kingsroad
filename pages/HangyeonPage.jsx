@@ -106,8 +106,84 @@ const HkCalendar = ({ roomTypeId, checkIn, checkOut, onSelect }) => {
   );
 };
 
+// ── 예약 현황 개요 캘린더 (전체 객실 합산, 읽기 전용) ───────────────────────
+const HkOverviewCalendar = () => {
+  const today = hkToday();
+  const [cursor, setCursor] = React.useState(today.slice(0, 7) + '-01');
+  const [map, setMap] = React.useState({}); // date -> {remaining, qty}
+  const [loading, setLoading] = React.useState(false);
+  React.useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    window.BGNJ_HANGYEON.availability({ from: cursor, to: hkAddDays(cursor, 42) }).then((res) => {
+      if (!alive) return;
+      const agg = {};
+      const av = res.availability || {};
+      Object.keys(av).forEach((rid) => (av[rid] || []).forEach((a) => {
+        if (!agg[a.date]) agg[a.date] = { remaining: 0, qty: 0 };
+        agg[a.date].remaining += a.remaining;
+        agg[a.date].qty += a.qty;
+      }));
+      setMap(agg);
+      setLoading(false);
+    });
+    return () => { alive = false; };
+  }, [cursor]);
+
+  const year = Number(cursor.slice(0, 4)), month = Number(cursor.slice(5, 7)) - 1;
+  const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const cells = []; for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(`${cursor.slice(0, 8)}${String(d).padStart(2, '0')}`);
+  const prevDisabled = cursor <= today.slice(0, 7) + '-01';
+  const hasData = Object.keys(map).length > 0;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <button type="button" className="btn btn-small" disabled={prevDisabled} style={{ opacity: prevDisabled ? 0.4 : 1 }}
+          onClick={() => setCursor(`${new Date(Date.UTC(year, month - 1, 1)).toISOString().slice(0, 8)}01`)}>‹ 이전달</button>
+        <strong style={{ fontSize: 16 }}>{year}년 {month + 1}월{loading ? ' …' : ''}</strong>
+        <button type="button" className="btn btn-small"
+          onClick={() => setCursor(`${new Date(Date.UTC(year, month + 1, 1)).toISOString().slice(0, 8)}01`)}>다음달 ›</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
+        {HK_WD.map((w, i) => (
+          <div key={w} className="mono dim-2" style={{ textAlign: 'center', fontSize: 11, padding: '4px 0', color: i === 0 ? 'var(--danger)' : 'var(--ink-3)' }}>{w}</div>
+        ))}
+        {cells.map((date, i) => {
+          if (!date) return <div key={`e${i}`} />;
+          const a = map[date];
+          const past = date < today;
+          const full = a && a.remaining < 1;
+          return (
+            <div key={date} style={{
+              aspectRatio: '1.15', border: '1px solid var(--line)', borderRadius: 7, padding: '5px 4px',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+              background: past ? 'var(--bg-2)' : full ? 'rgba(220,38,38,0.06)' : 'var(--bg)',
+              opacity: past ? 0.45 : 1,
+            }}>
+              <span style={{ fontSize: 14, fontWeight: 500 }}>{Number(date.slice(8))}</span>
+              {!past && (
+                !hasData ? null
+                  : full ? <span className="mono" style={{ fontSize: 9, color: 'var(--danger)', fontWeight: 600 }}>마감</span>
+                    : <span className="mono" style={{ fontSize: 9, color: 'var(--success)', fontWeight: 600 }}>{a ? a.remaining : 0}실</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 11 }} className="dim-2">
+        <span><span style={{ color: 'var(--success)', fontWeight: 600 }}>N실</span> 예약 가능</span>
+        <span><span style={{ color: 'var(--danger)', fontWeight: 600 }}>마감</span> 잔여 없음</span>
+        <span style={{ marginLeft: 'auto' }}>객실을 선택하면 날짜별로 예약할 수 있어요.</span>
+      </div>
+    </div>
+  );
+};
+
 // ── 예약 모달 ─────────────────────────────────────────────────────────────
-const HkBookingModal = ({ roomType, user, onClose, onDone }) => {
+const HkBookingModal = ({ roomType, user, property, onClose, onDone }) => {
   const [checkIn, setCheckIn] = React.useState(null);
   const [checkOut, setCheckOut] = React.useState(null);
   const [rooms, setRooms] = React.useState(1);
@@ -165,6 +241,19 @@ const HkBookingModal = ({ roomType, user, onClose, onDone }) => {
           <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--ink-3)' }}>✕</button>
         </div>
         <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {/* 객실 + 숙소 상세 (세부 정보) */}
+          <div className="card" style={{ padding: '12px 16px', background: 'var(--bg-2)', fontSize: 12.5, lineHeight: 1.7 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: (roomType.description || property?.address) ? 8 : 0 }}>
+              <span className="badge">최대 {roomType.maxOccupancy}인</span>
+              {roomType.bedConfig && <span className="badge">{roomType.bedConfig}</span>}
+              {(roomType.amenities || []).slice(0, 6).map((a) => <span key={a} className="badge" style={{ fontSize: 9 }}>{a}</span>)}
+            </div>
+            {roomType.description && <p className="dim" style={{ margin: '0 0 8px' }}>{roomType.description}</p>}
+            {property?.address && <div><span className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.16em', marginRight: 6 }}>주소</span>{property.address}</div>}
+            {property?.directions && <p className="dim" style={{ margin: '6px 0 0' }}><span className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.16em', marginRight: 6 }}>찾아가는 길</span>{property.directions}</p>}
+            {property?.notice && <p className="dim" style={{ margin: '6px 0 0' }}>{property.notice}</p>}
+          </div>
+
           <HkCalendar roomTypeId={roomType.id} checkIn={checkIn} checkOut={checkOut}
             onSelect={(ci, co) => { setCheckIn(ci); setCheckOut(co); }} />
 
@@ -349,21 +438,15 @@ const HangyeonPage = ({ go, user }) => {
           </div>
         )}
 
-        <div className="card" style={{ padding: '16px 20px', marginBottom: 28, fontSize: 13.5, lineHeight: 1.7 }}>
-          <div style={{ marginBottom: directions ? 10 : 0 }}>
-            <span className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.18em', marginRight: 8 }}>주소</span>{address}
-          </div>
-          {directions && (
-            <div>
-              <div className="mono dim-2" style={{ fontSize: 10, letterSpacing: '0.18em', marginBottom: 4 }}>찾아가는 길</div>
-              <p className="dim" style={{ margin: 0 }}>{directions}</p>
-            </div>
-          )}
-          {info.notice && <p className="dim" style={{ margin: '10px 0 0' }}>{info.notice}</p>}
-        </div>
       </div>
 
       <div className="container">
+        {/* 예약 현황 — 객실보다 먼저 (전체 객실 합산 잔여) */}
+        <h2 className="section-title" style={{ fontSize: 24, marginBottom: 14 }}>예약 현황</h2>
+        <div className="card" style={{ padding: '18px 20px', marginBottom: 36 }}>
+          <HkOverviewCalendar />
+        </div>
+
         <h2 className="section-title" style={{ fontSize: 26, marginBottom: 18 }}>객실</h2>
         {roomTypes.length === 0 ? (
           <div className="card" style={{ padding: 40, textAlign: 'center' }}>
@@ -380,6 +463,7 @@ const HangyeonPage = ({ go, user }) => {
 
       {booking && (
         <HkBookingModal roomType={booking} user={user}
+          property={{ name, address, directions, notice: info.notice }}
           onClose={() => setBooking(null)}
           onDone={() => setTick((v) => v + 1)} />
       )}
