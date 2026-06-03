@@ -828,7 +828,7 @@ const HomePage = ({ go }) => {
 
       {/* ── 뱅기노자 추천 (관리자 콘텐츠 패널에서 추가) — v00.164 anchor 박자 + asymmetric grid ─── */}
       {recommendations.length > 0 && (
-        <HomeSectionBoundary label="뱅기노자 추천"><section className="section section--anchor" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="뱅기노자 추천"><section className="section section--anchor" style={{background:'var(--bg-2)'}}>
           <div className="container">
             {(() => {
               // v00.083 — site_content_kv.recommendationsHeading 에서 hero 읽음 (v00.073 sweep 미완 잔재).
@@ -896,7 +896,7 @@ const HomePage = ({ go }) => {
 
       {/* ── 투어 프로그램 — v00.164 inline 헤더 + section-tight (지원 박자) ──── */}
       {/* v00.266 — 예정 일정이 없어도 섹션은 노출하되 빈 상태 안내. (지난 일정 노출 금지) */}
-      <HomeSectionBoundary label="투어 프로그램"><section className="section-tight" style={{borderBottom:'1px solid var(--line)'}}>
+      <HomeSectionBoundary label="투어 프로그램"><section className="section-tight" style={{}}>
           <div className="container">
             {/* v00.164 — inline 헤더: eyebrow + title + count + action 한 줄. subtitle 제거 (section-head--inline 가 hide). */}
             <div className="section-head section-head--inline">
@@ -959,13 +959,12 @@ const HomePage = ({ go }) => {
         </section></HomeSectionBoundary>
 
       {/* ── 커뮤니티 — v00.164 mid 박자 + 헤더 박자 변형 ──────────────── */}
-      <HomeSectionBoundary label="커뮤니티"><section className="section--mid" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
+      <HomeSectionBoundary label="커뮤니티"><section className="section--mid" style={{background:'var(--bg-2)'}}>
         <div className="container">
           {/* v00.164 — 컴팩트 헤더 + subtitle 우측 인라인 (기존 SectionHead 의 4단 박자 깸). */}
           <div style={{
             display:'flex', justifyContent:'space-between', alignItems:'flex-end',
-            gap:32, flexWrap:'wrap', marginBottom:32, paddingBottom:18,
-            borderBottom:'1px solid var(--line)',
+            gap:32, flexWrap:'wrap', marginBottom:24,
           }}>
             <div style={{flex:'1 1 320px', minWidth:0}}>
               <div className="section-eyebrow" aria-hidden="true">{homeText.communityEyebrow}</div>
@@ -980,7 +979,7 @@ const HomePage = ({ go }) => {
             <button type="button" className="btn-ghost" onClick={() => go('community')}>{homeText.communityAction}</button>
           </div>
           {recentPosts.length > 0 ? (
-            <div style={{border:'1px solid var(--line)'}}>
+            <div style={{borderRadius:12, overflow:'hidden'}}>
               {recentPosts.map((post, i) => (
                 <div key={post.id}
                   {...clickable(() => go('community'), post.title)}
@@ -988,7 +987,6 @@ const HomePage = ({ go }) => {
                     display:'flex', gap:20, alignItems:'center',
                     padding:'16px 22px',
                     background: i % 2 === 0 ? 'var(--bg)' : 'var(--bg-2)',
-                    borderBottom: i < recentPosts.length - 1 ? '1px solid var(--line)' : 'none',
                   }}>
                   <div style={{flex:1, minWidth:0}}>
                     <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:5, flexWrap:'wrap'}}>
@@ -1031,7 +1029,7 @@ const HomePage = ({ go }) => {
 
       {/* ── 뱅기노자 칼럼 — v00.164 magazine spread 톤 (외부 SectionHead 폐기) ─── */}
       {featuredColumn && (
-        <HomeSectionBoundary label="칼럼"><section className="section--mid" style={{borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="칼럼"><section className="section--mid" style={{}}>
           <div className="container">
             {/* v00.164 — eyebrow 만 가벼운 헤더, title 은 featured 카드 안으로 흡수. */}
             <div style={{
@@ -1070,8 +1068,8 @@ const HomePage = ({ go }) => {
                   }}/>
                 ) : (
                   <div style={{
-                    height:320, background:'var(--bg-2)', marginBottom:24, flex:'0 0 auto',
-                    display:'grid', placeItems:'center', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)',
+                    height:320, background:'var(--bg-2)', marginBottom:24, flex:'0 0 auto', borderRadius:12,
+                    display:'grid', placeItems:'center',
                   }}>
                     <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.28em'}}>FEATURED COLUMN</div>
                   </div>
@@ -1155,7 +1153,7 @@ const HomePage = ({ go }) => {
 
       {/* ── 강연 일정 — v00.164 가로 스크롤 strip (film strip 톤) ──────── */}
       {lectures.length > 0 && (
-        <HomeSectionBoundary label="강연"><section className="section-tight" style={{background:'var(--bg-2)', borderBottom:'1px solid var(--line)'}}>
+        <HomeSectionBoundary label="강연"><section className="section-tight" style={{background:'var(--bg-2)'}}>
           <div className="container">
             {/* v00.164 — inline 헤더 (3열 grid 와 무게 다른 박자). */}
             <div className="section-head section-head--inline">

@@ -1168,21 +1168,22 @@ main time, main .section-eyebrow {
 /* ---- Card ---- */
 .card {
   background: var(--bg-2);
-  border: 1px solid var(--line);
+  border-radius: 12px;
   padding: 32px;
-  transition: border-color .3s, transform .3s;
+  /* v00.272 — 사용자 요청: 테두리선 제거(촌스러움). 부드러운 그림자로 위계 표현. */
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 20px rgba(15, 23, 42, 0.05);
+  transition: box-shadow .3s, transform .3s;
 }
-.card:hover { border-color: var(--primary-dim); }
+.card:hover { box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 14px 36px rgba(15, 23, 42, 0.09); }
 /* v00.164.001 — 박스 인상 제거 modifier. background + border 제거, padding 만 유지.
    사용처: 사진/콘텐츠가 시각 주체인 카드 (추천 사진 카드, 강연 strip, hero 무게의 책 CTA).
    투어처럼 '선택 가능 항목' 카드는 .card 그대로 유지. */
 .card--bare {
   background: transparent;
-  border-color: transparent;
+  box-shadow: none;
 }
-.card--bare:hover { border-color: transparent; }
+.card--bare:hover { box-shadow: none; }
 .card-gold {
-  border-color: var(--primary-dim);
   background: linear-gradient(180deg, rgba(245,213,72,0.04), transparent);
 }
 .card-title {
