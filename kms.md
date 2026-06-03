@@ -528,6 +528,7 @@ KMS의 제1 기능은 `기능정의서`다.
 - 일반 행동: `btn` 또는 `btn btn-small`.
 - 위험 행동: `borderColor: var(--danger), color: var(--danger)`.
 - 칩(필터 탭): pill 형태(`borderRadius:999`), 활성 시 옐로우 border + `rgba(245,213,72,0.06)` 배경, 항목별 카운트 동행 (예: `자유 12`).
+- **카드는 테두리선 대신 부드러운 그림자 (v00.272)** — `.card` 는 `border` 없이 `border-radius:12` + 은은한 box-shadow(`0 1px 2px / 0 6px 20px rgba(15,23,42,0.05)`), hover 시 살짝 떠오름. 섹션 구분도 가로 테두리선 대신 교차 배경(흰색↔`--bg-2`) + 여백으로. (사용자 피드백: 테두리선이 촌스럽다)
 - 배지·라벨은 짧고 명확하게(예: `숨김`, `대기`, `확정`, `초안`).
 - 아이콘은 라인아트 SVG (예: 알림 종 stroke-only). 이모지 아이콘은 보조용.
 - alert/confirm 금지 — `window.BGNJ_TOAST.error()` (v00.207 일괄 73건 교체) + `window.BGNJ_CONFIRM()` Promise (v00.208 일괄 47건 교체) 사용.
@@ -555,6 +556,7 @@ KMS의 제1 기능은 `기능정의서`다.
 - 일월오봉도/조선 왕실 도상 직접 차용 표현은 더 이상 사용하지 않는다(브랜드 분리 완료).
 - 인라인 `style={{position:'sticky', top:N}}` 카드는 데스크톱 전용 — 반드시 모바일 release 클래스(`mobile-release-sticky` 등) 함께 부여.
 - 다열 그리드 인라인 `gridTemplateColumns` 는 `.grid-feature-2` / `.book-grid` / `.cta-grid` 등 클래스 함께 부여 (모바일 1열 폴백 적용 위해).
+- **테두리선(`1px solid var(--line)`) 남발 금지 (v00.272)** — 박스 경계는 그림자/여백/배경 대비로 표현. 폼 입력창·focus ring 등 기능상 필요한 경계만 테두리 유지.
 
 # 부록 · 운영 기준
 
@@ -707,7 +709,7 @@ KMS를 수정할 때는 가능하면 아래 구조를 따른다.
 | 라우트 | 메뉴 | 의식주(衣食住) | 현 상태 | D1 테이블 |
 |---|---|---|---|---|
 | `/eat` | 먹고 놀자 | 식(食) | placeholder + 카테고리 | `venues`(다음 사이클) |
-| `/sleep` | 자고 놀자 | 주(住) | placeholder | `lodgings`(다음 사이클) |
+| `/sleep` `/hangyeon` | 자고 놀자 = **한켠** | 주(住) | ✅ **운영 (예약 PMS)** | `hk_*` 9 테이블 |
 | `/shop` | 사고 놀자 | 의(衣) + 토산 | placeholder | `goods`(다음 사이클) |
 | `/tour` | 투어 프로그램 | 행(行) | ✅ 운영 | `tours` |
 | `/lectures` | 강연 | 문(文) | ✅ 운영 | `lectures` |
@@ -715,6 +717,18 @@ KMS를 수정할 때는 가능하면 아래 구조를 따른다.
 | `/community` | 커뮤니티 | 통합 | ✅ 운영 | `posts`, `comments` |
 
 > **행문(行文)** = 길에서 만나는 글. 의식주(衣食住) 3 요소에 행(行) + 문(文) 이 결합되는 여정. 새 3 메뉴(먹고/자고/사고)와 기존 투어·강연·칼럼이 하나의 인문학 여행 매트릭스를 이룬다.
+
+## 🛏 한켠 — 자고 놀자 예약 PMS (v00.267~273)
+
+**자고 놀자(/sleep) = 전주 직영 숙소 '한켠' 예약 시스템.** sleep 라우트가 `HangyeonPage` 를 직접 렌더(`/hangyeon` 별칭). UI 는 야놀자/NOL 숙소 상세 스타일(상단 입실일~퇴실일 + 성인/아동 인원 → 이미지 갤러리 → 탭 내비 → 객실 카드 → 예약 주문 모달).
+
+- **예약 단위 (객실마다 선택)**: 숙박(`daily_enabled`, 체크인~체크아웃 박단위, 1박가 `daily_price`) + 시간제(`hourly_enabled`, 최소 `min_hours`시간, 시간당가 `hourly_price`). 한 객실이 둘 다 가능.
+- **7 영역 (관리자: 한켠 숙소 → 한켠 예약 탭)**: 숙소정보 / 객실 / 요금(시즌·공휴일·프로모션·요일 규칙 + 쿠폰 + 연박할인) / 재고(날짜별 판매중지·재고·요금 오버라이드) / 예약(생성·상태·결제기록·이력) / 고객(VIP·블랙리스트·방문) / 결제(무통장·현장, 정산요약) / 운영(체크인·아웃·객실배정·청소상태).
+- **결제**: 무통장 입금 + 현장 결제(PG 없음). 입금 확인 시 확정.
+- **재고/오버부킹 방지**: 날짜별 잔여 = 유닛 − 점유. 숙박↔시간제 양방향 차감(시간제 잡힌 날은 숙박 재고도 차감). 예약 삽입 직후 `hkConflict` 재검증으로 동시예약 더블부킹 롤백(D1 트랜잭션 부재 보완).
+- **워커**: `/api/hangyeon/*` — room-types / availability / slots / day / quote / bookings / rate-rules / coupons / guests / room-units / payments. 핵심 헬퍼 `hkRoomAvailability`·`hkHourRemaining`·`hkComputeStay`·`hkComputeHourly`·`hkConflict`.
+- **D1**: `workers/schema-hangyeon.sql` (단일 통합 스키마, hk_* 9 테이블). 클라: `BGNJ_API.hangyeon` + `BGNJ_HANGYEON`.
+- **샘플 객실**: 디럭스룸(시간당 1만/숙박 7만) · 스탠다드룸(시간당 8천/숙박 5.5만) · 작업실(시간제 전용 6천). 운영 시 관리자에서 수정.
 
 # 현재 위험 인벤토리 (v00.035.000 기준 · 2026-04-29 종합 점검)
 
@@ -750,6 +764,7 @@ KMS를 수정할 때는 가능하면 아래 구조를 따른다.
 
 # 변경 기록
 
+- 2026-06-04 (v00.267~273): **한켠(자고 놀자) 예약 PMS 신설** — 객실 시간제+숙박, 야놀자 스타일 UI(입실일~퇴실일+성인/아동+주문 모달), 7영역 관리자, 오버부킹 방지(hkConflict). **스키마 통합** — 한켠 v6/v7/v8 → 단일 `schema-hangyeon.sql`, 레거시 코어 마이그레이션은 `workers/migrations/` 로 정리 (`workers/SCHEMA.md`). **디자인** — 카드 테두리선 제거 → 그림자(§5/§8). 코드검토로 미정의 함수/죽은 코드/더블부킹 가드 수정.
 - 2026-05-09 (v00.241): **ADMIN_VERSION_HISTORY 재개**. 사용자 보고 — admin 콘솔 버전 기록이 v00.201 이후 멈춤. v00.226 의 'ADMIN_VERSION_HISTORY 미수정 패턴' 운영 룰 폐기. v00.202~240 39 사이클을 14 묶음 entry 로 압축 추가. 향후 사이클마다 다시 entry 추가 (메모리 `feedback_release_workflow.md` 갱신 필요).
 - 2026-05-09 (v00.227~240): **14 사이클 누적** — anchor scroll-padding-top / admin 프론트 add·edit 모달 / `/error` 라이브 라우트 / 노란글씨 가독성 / 데이터 사라짐 23곳 가드 + lint 룰 / 동의 필수 / 케이스 스터디 영구 기록 / 사진 갤러리 (10장 + 출처 + 대표) + 다중·drag&drop / 종료 강연 현장 사진 / admin 패널 갤러리 진입로 / 사이드바 가독성 / nav 슬라이드 + 좌우 nowrap / 포스터 가득 + 칩 KMS 정합 / 주관·줄바꿈 / 홈 칼럼 자동 순환.
 - 2026-05-09 (v00.231/v00.233): **데이터 사라짐 사고 + lint 룰 항구 차단**. `(data || []).map(...)` 패턴이 null/undefined/object 응답을 빈 배열로 평가해 메모리 캐시를 덮어쓰던 안티패턴 23곳을 `Array.isArray` 가드로 일괄 교체. `tools/check-syntax.mjs` 에 `cache_overwrite` lint 룰 추가 → pre-commit 자동 차단. 케이스 스터디는 `plans/v00.233.000.md`. 운영 가드는 `CONTEXT.md §6` "데이터 캐시 덮어쓰기" 항목.
