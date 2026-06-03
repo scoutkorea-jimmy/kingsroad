@@ -2389,39 +2389,14 @@ const hkHourRemaining = async (env, room, date) => {
       const e = parseInt((b.slot_end || b.slot_start).slice(0, 2), 10);
       if (s <= h && h < e) occ += 1;
     }
-    hours.push({ hour: hkHM(h), remaining: closed ? 0 : Math.max(0, units - occ) });
+    hours.push({ hour: hkHM(h), remaining: closed ? 0 : Math.max(0, units - occ), occ });
   }
   const dailyRemaining = closed ? 0 : (hours.length ? Math.min(...hours.map((x) => x.remaining)) : Math.max(0, units - dailyOcc));
   return { units, closed, openH, closeH, hours, dailyRemaining };
 };
 
-// 시간제 슬롯 시작시각 목록 생성 (open~close, slotMin 간격, 슬롯이 close 안에 들어가야 함).
-const hkSlots = (open, close, slotMin) => {
-  if (!open || !close || !slotMin) return [];
-  const toMin = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + (m || 0); };
-  const pad = (n) => String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0");
-  const start = toMin(open), end = toMin(close);
-  const out = [];
-  let guard = 0;
-  for (let t = start; t + slotMin <= end && guard < 96; t += slotMin, guard++) out.push({ start: pad(t), end: pad(t + slotMin) });
-  return out;
-};
-
-// 시간제 (date) 슬롯별 잔여 좌석.
-const hkSlotAvailability = async (env, productId, date) => {
-  const rt = await env.DB.prepare("SELECT * FROM hk_room_types WHERE id = ?").bind(productId).first();
-  if (!rt) return [];
-  const slots = hkSlots(rt.open_time, rt.close_time, rt.slot_minutes);
-  const bk = await env.DB.prepare(
-    `SELECT slot_start, SUM(guests) AS seats FROM hk_bookings
-     WHERE room_type_id = ? AND check_in = ? AND status IN ${HK_ACTIVE_STATUSES} AND slot_start IS NOT NULL
-     GROUP BY slot_start`
-  ).bind(productId, date).all();
-  const booked = {};
-  for (const r of (bk.results || [])) booked[r.slot_start] = Number(r.seats || 0);
-  const cap = rt.quantity;
-  return slots.map((s) => ({ start: s.start, end: s.end, capacity: cap, booked: booked[s.start] || 0, remaining: Math.max(0, cap - (booked[s.start] || 0)) }));
-};
+// 날짜 + n일 (YYYY-MM-DD)
+const hkAddDays = (str, n) => new Date(new Date(str + "T00:00:00Z").getTime() + n * 86400000).toISOString().slice(0, 10);
 const safeJson = (s, fb) => { try { const v = JSON.parse(s); return v == null ? fb : v; } catch { return fb; } };
 
 // 한 객실타입의 [from,to) 날짜별 잔여 재고 계산 (오버부킹 방지의 핵심).
@@ -2525,30 +2500,18 @@ const hkComputeHourly = async (env, body) => {
 };
 
 // 하루(전일) 견적 — date. 가격 = daily_price.
-const hkComputeDaily = async (env, body) => {
-  const date = body.checkIn || body.date;
-  const guests = Math.max(1, Number(body.guests) || 1);
-  if (!hkIsValidDate(date)) return { ok: false, reason: "날짜를 선택해 주세요." };
-  const rtRow = await env.DB.prepare("SELECT * FROM hk_room_types WHERE id = ?").bind(body.roomTypeId).first();
-  if (!rtRow) return { ok: false, reason: "객실을 찾을 수 없습니다." };
-  if (rtRow.status !== "active") return { ok: false, reason: "현재 판매하지 않는 객실입니다." };
-  if (!rtRow.daily_enabled) return { ok: false, reason: "하루 단위 예약이 불가한 객실입니다." };
-  if (guests > rtRow.max_occupancy) return { ok: false, reason: `최대 ${rtRow.max_occupancy}명까지 가능합니다.` };
-  const ha = await hkHourRemaining(env, hkMapRoomType(rtRow), date);
-  if (ha.dailyRemaining < 1) return { ok: false, reason: "해당 날짜는 예약이 마감되었습니다." };
-  // 요금규칙/오버라이드 적용 (daily_price 기준, price_override 우선).
-  const ruleRows = await env.DB.prepare("SELECT * FROM hk_rate_rules WHERE active = 1 AND (room_type_id = ? OR room_type_id IS NULL)").bind(body.roomTypeId).all();
-  const ovRow = await env.DB.prepare("SELECT price_override FROM hk_availability WHERE room_type_id = ? AND date = ?").bind(body.roomTypeId, date).first();
-  let unitPrice = rtRow.daily_price || 0;
-  if (ovRow && ovRow.price_override != null) unitPrice = ovRow.price_override;
-  const subtotal = unitPrice;
-  const cp = await hkApplyCoupon(env, body.couponCode, subtotal);
-  const total = Math.max(0, subtotal - cp.discount);
-  return {
-    ok: true, type: "daily", unitType: "daily", roomTypeId: body.roomTypeId, roomTypeName: rtRow.name,
-    date, guests, unitPrice, subtotal, stayDiscount: 0, stayLabel: "",
-    couponDiscount: cp.discount, couponLabel: cp.label, couponError: cp.error, total, nights: 1,
-  };
+// 예약 삽입 직후 더블부킹 재검증 (D1 트랜잭션/락 부재 보완). 점유가 수량을 넘으면 true.
+const hkConflict = async (env, roomTypeId, unit, checkIn, checkOut, slotStart, slotEnd) => {
+  const rtRow = await env.DB.prepare("SELECT * FROM hk_room_types WHERE id = ?").bind(roomTypeId).first();
+  if (!rtRow) return false;
+  if (unit === "hourly") {
+    if (!slotStart || !slotEnd) return false;
+    const ha = await hkHourRemaining(env, hkMapRoomType(rtRow), checkIn);
+    const sH = parseInt(slotStart.slice(0, 2), 10), eH = parseInt(slotEnd.slice(0, 2), 10);
+    return ha.hours.some((x) => { const h = parseInt(x.hour.slice(0, 2), 10); return h >= sH && h < eH && x.occ > ha.units; });
+  }
+  const av = await hkRoomAvailability(env, roomTypeId, checkIn, checkOut);
+  return av.some((a) => a.booked > a.qty);
 };
 
 // 숙박 견적 — 박별 요금 + 연박할인 + 쿠폰. ok=false 면 reason 반환.
@@ -2712,15 +2675,14 @@ const handleHkBookingCreate = async (req, env) => {
   }
   const q = await hkQuoteFor(env, body);
   if (!q.ok) throw new HttpError(409, q.reason);
-  const unit = q.unitType || "nightly"; // hourly | daily | nightly
-  const isHourly = unit === "hourly", isDaily = unit === "daily";
-  const dateOnly = isHourly || isDaily;
+  const unit = q.unitType || "nightly"; // hourly | nightly
+  const isHourly = unit === "hourly";
   const id = randomId("hkb");
   const code = "HK-" + randomId("").slice(0, 6).toUpperCase();
   const guests = Math.max(1, Number(body.guests) || 1);
-  const rooms = dateOnly ? 1 : Math.max(1, Number(body.rooms) || 1);
-  const checkIn = dateOnly ? q.date : body.checkIn;
-  const checkOut = dateOnly ? q.date : body.checkOut;
+  const rooms = isHourly ? 1 : Math.max(1, Number(body.rooms) || 1);
+  const checkIn = isHourly ? q.date : body.checkIn;
+  const checkOut = isHourly ? q.date : body.checkOut;
   await env.DB.prepare(
     `INSERT INTO hk_bookings (id, code, room_type_id, user_id, guest_name, guest_email, guest_phone,
        check_in, check_out, nights, rooms, guests, total_price, coupon_code, status, payment_status, guest_request, cash_receipt, slot_start, slot_end, booking_unit)
@@ -2730,8 +2692,13 @@ const handleHkBookingCreate = async (req, env) => {
     q.couponDiscount > 0 ? String(body.couponCode || "").trim().toUpperCase() : null,
     String(body.request || "").slice(0, 1000), String(body.cashReceipt || ""),
     isHourly ? q.slotStart : null, isHourly ? q.slotEnd : null, unit).run();
+  // 트랜잭션 부재 보완 — 삽입 직후 재검증해 동시예약 더블부킹이면 롤백(삭제).
+  if (await hkConflict(env, body.roomTypeId, unit, checkIn, checkOut, q.slotStart, q.slotEnd)) {
+    await env.DB.prepare("DELETE FROM hk_bookings WHERE id = ?").bind(id).run();
+    throw new HttpError(409, "방금 다른 예약이 접수되어 마감되었습니다. 다른 날짜·시간을 선택해 주세요.");
+  }
   const detail = isHourly ? `${q.date} ${q.slotStart}~${q.slotEnd} (${q.hours}시간) / ${q.total}원`
-    : isDaily ? `${q.date} 하루 / ${q.total}원` : `${q.nights}박 ${rooms}실 / ${q.total}원`;
+    : `${q.nights}박 ${rooms}실 / ${q.total}원`;
   await hkLog(env, id, "created", detail, user?.id ? (user.email || "guest") : "guest");
   // 고객 upsert
   if (gkey) {
