@@ -2427,13 +2427,17 @@ const safeJson = (s, fb) => { try { const v = JSON.parse(s); return v == null ? 
 // 한 객실타입의 [from,to) 날짜별 잔여 재고 계산 (오버부킹 방지의 핵심).
 // 월 캘린더 집계용 — 날짜별 잔여(유닛 − 종일 점유). 시간제 부분점유는 dot 에 미반영(개요).
 const hkRoomAvailability = async (env, roomTypeId, from, to) => {
-  const rt = await env.DB.prepare("SELECT id, quantity FROM hk_room_types WHERE id = ?").bind(roomTypeId).first();
+  const rt = await env.DB.prepare("SELECT * FROM hk_room_types WHERE id = ?").bind(roomTypeId).first();
   if (!rt) return [];
+  const stay = !!rt.daily_enabled;
+  const ruleRows = stay ? await env.DB.prepare("SELECT * FROM hk_rate_rules WHERE active = 1 AND (room_type_id = ? OR room_type_id IS NULL)").bind(roomTypeId).all() : { results: [] };
+  const rules = ruleRows.results || [];
   const ovRows = await env.DB.prepare(
-    "SELECT date, closed, qty_override FROM hk_availability WHERE room_type_id = ? AND date >= ? AND date < ?"
+    "SELECT date, closed, qty_override, price_override FROM hk_availability WHERE room_type_id = ? AND date >= ? AND date < ?"
   ).bind(roomTypeId, from, to).all();
   const ovMap = {};
-  for (const o of (ovRows.results || [])) ovMap[o.date] = o;
+  const priceOvMap = {};
+  for (const o of (ovRows.results || [])) { ovMap[o.date] = o; if (o.price_override != null) priceOvMap[o.date] = o.price_override; }
   // 종일 점유 (daily 당일 + nightly/legacy 범위) + 시간제 1건이라도 있으면 부분점유로 표기.
   const bkRows = await env.DB.prepare(
     `SELECT check_in, check_out, booking_unit FROM hk_bookings
@@ -2447,10 +2451,11 @@ const hkRoomAvailability = async (env, roomTypeId, from, to) => {
     let dayOcc = 0;
     for (const b of bookings) {
       const u = b.booking_unit;
-      if (u === "daily" || u === "hourly") { if (b.check_in === date) dayOcc += (u === "daily" ? 1 : 0); }
-      else if (b.check_in <= date && date < b.check_out) dayOcc += 1; // nightly/legacy 범위 점유
+      if (u === "hourly") { /* 시간제는 종일 점유 아님 — 재고 차감 제외(부분점유) */ }
+      else if (b.check_in <= date && date < b.check_out) dayOcc += 1; // nightly/daily 범위 점유
     }
-    return { date, qty, booked: dayOcc, remaining: closed ? 0 : Math.max(0, qty - dayOcc), closed: !!closed };
+    const price = stay ? hkNightlyPrice(rt, date, rules, priceOvMap) : null;
+    return { date, qty, booked: dayOcc, remaining: closed ? 0 : Math.max(0, qty - dayOcc), closed: !!closed, price };
   });
 };
 
@@ -2468,7 +2473,8 @@ const hkNightlyPrice = (rt, dateStr, rules, priceOvMap) => {
   }
   if (price != null) return price;
   if ((dow === 5 || dow === 6) && rt.weekend_price != null) return rt.weekend_price;
-  return rt.base_price;
+  // v00.271 — 숙박 1박 요금 기준은 daily_price. 없으면 legacy base_price.
+  return rt.daily_price != null ? rt.daily_price : rt.base_price;
 };
 
 // 쿠폰 적용 — { discount, label, error }.
@@ -2551,6 +2557,7 @@ const hkComputeStay = async (env, roomTypeId, checkIn, checkOut, rooms, couponCo
   const rtRow = await env.DB.prepare("SELECT * FROM hk_room_types WHERE id = ?").bind(roomTypeId).first();
   if (!rtRow) return { ok: false, reason: "객실을 찾을 수 없습니다." };
   if (rtRow.status !== "active") return { ok: false, reason: "현재 판매하지 않는 객실입니다." };
+  if (!rtRow.daily_enabled) return { ok: false, reason: "숙박 예약이 불가한 객실입니다." };
   const rt = hkMapRoomType(rtRow);
   const nightsArr = hkNights(checkIn, checkOut);
   const nights = nightsArr.length;
@@ -2597,7 +2604,8 @@ const hkComputeStay = async (env, roomTypeId, checkIn, checkOut, rooms, couponCo
   }
   const total = Math.max(0, subtotal - stayDiscount - couponDiscount);
   return {
-    ok: true, roomTypeId, roomTypeName: rt.name, nights, rooms: roomCount,
+    ok: true, type: "nightly", unitType: "nightly", roomTypeId, roomTypeName: rt.name,
+    checkIn, checkOut, nights, rooms: roomCount,
     perNight, subtotal, stayDiscount, stayLabel, couponDiscount, couponLabel, couponError, total,
   };
 };
@@ -2634,10 +2642,9 @@ const handleHkAvailability = async (req, env) => {
   return { from, to, availability: out };
 };
 
-// 이용 단위별 견적 라우팅 (hourly | daily | nightly 범위).
+// 이용 단위별 견적 라우팅 (hourly | nightly 범위).
 const hkQuoteFor = async (env, body) => {
   if (body.unit === "hourly") return await hkComputeHourly(env, body);
-  if (body.unit === "daily") return await hkComputeDaily(env, body);
   return await hkComputeStay(env, body.roomTypeId, body.checkIn, body.checkOut, body.rooms, body.couponCode);
 };
 
@@ -2659,21 +2666,29 @@ const handleHkSlots = async (req, env) => {
   };
 };
 
-// 특정 날짜의 예약 가능 객실 목록 (우측 컬럼용).
+// 선택 기간(체크인~체크아웃)의 예약 가능 객실 목록.
 const handleHkDay = async (req, env) => {
   const url = new URL(req.url);
-  const date = url.searchParams.get("date");
-  if (!hkIsValidDate(date)) throw new HttpError(400, "date 필요");
+  const from = url.searchParams.get("from") || url.searchParams.get("date");
+  const to = url.searchParams.get("to") || (hkIsValidDate(from) ? hkAddDays(from, 1) : null);
+  if (!hkIsValidDate(from) || !hkIsValidDate(to)) throw new HttpError(400, "from/to 필요");
+  const nights = Math.max(1, hkNights(from, to).length);
   const { results } = await env.DB.prepare("SELECT * FROM hk_room_types WHERE status = 'active' ORDER BY sort_order ASC, created_at ASC").all();
   const rooms = [];
   for (const r of (results || [])) {
     const rt = hkMapRoomType(r);
-    const ha = await hkHourRemaining(env, rt, date);
-    const hourlyAvailable = rt.hourlyEnabled && ha.hours.some((h) => h.remaining >= 1);
-    const dailyAvailable = rt.dailyEnabled && ha.dailyRemaining >= 1;
-    rooms.push({ ...rt, dayHourlyAvailable: hourlyAvailable, dayDailyAvailable: dailyAvailable });
+    // 숙박: 기간 견적으로 가능여부 + 총액
+    let stayAvailable = false, stayTotal = 0;
+    if (rt.dailyEnabled) {
+      const q = await hkComputeStay(env, rt.id, from, to, 1, null);
+      stayAvailable = !!q.ok; stayTotal = q.ok ? q.total : 0;
+    }
+    // 시간제: 체크인 당일 가능여부
+    let hourlyAvailable = false;
+    if (rt.hourlyEnabled) { const ha = await hkHourRemaining(env, rt, from); hourlyAvailable = ha.hours.some((h) => h.remaining >= 1); }
+    rooms.push({ ...rt, nights, stayAvailable, stayTotal, dayHourlyAvailable: hourlyAvailable, dayDailyAvailable: stayAvailable });
   }
-  return { date, rooms };
+  return { from, to, nights, rooms };
 };
 
 const handleHkQuote = async (req, env) => {

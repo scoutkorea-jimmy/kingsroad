@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.270.001",
+  version: "00.271.000",
   build: "2026.06.04",
   channel: "preview",
 };
@@ -2757,8 +2757,8 @@ window.BGNJ_HANGYEON = {
     try { return await window.BGNJ_API.hangyeon.slots({ roomTypeId, date }); }
     catch { return { hours: [], dailyRemaining: 0 }; }
   },
-  async day(date) {
-    try { const { rooms } = await window.BGNJ_API.hangyeon.day({ date }); return Array.isArray(rooms) ? rooms : []; }
+  async day({ from, to } = {}) {
+    try { const { rooms } = await window.BGNJ_API.hangyeon.day({ from, to }); return Array.isArray(rooms) ? rooms : []; }
     catch { return []; }
   },
   async quote(payload) {

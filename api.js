@@ -372,7 +372,7 @@
       },
       setAvailability: (payload) => request("PUT", "/hangyeon/availability", payload),
       slots: ({ roomTypeId, date } = {}) => request("GET", `/hangyeon/slots?roomTypeId=${encodeURIComponent(roomTypeId)}&date=${encodeURIComponent(date)}`),
-      day: ({ date } = {}) => request("GET", `/hangyeon/day?date=${encodeURIComponent(date)}`),
+      day: ({ from, to } = {}) => request("GET", `/hangyeon/day?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
       quote: (payload) => request("POST", "/hangyeon/quote", payload),
       book: (payload) => request("POST", "/hangyeon/bookings", payload),
       mineBookings: () => request("GET", "/me/hangyeon-bookings"),
