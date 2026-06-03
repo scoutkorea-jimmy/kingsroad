@@ -18,7 +18,7 @@ const HkaRoomTypes = () => {
   const reload = () => window.BGNJ_HANGYEON.refreshRoomTypes({ includeAll: true }).then(setList);
   React.useEffect(() => { reload(); }, []);
 
-  const blank = () => ({ name: '', description: '', images: [], quantity: 1, maxOccupancy: 2, bedConfig: '', amenities: [], basePrice: 0, weekendPrice: '', discounts: [], minNights: 1, maxNights: 30, status: 'active', sortOrder: 0 });
+  const blank = () => ({ name: '', description: '', images: [], quantity: 1, maxOccupancy: 2, bedConfig: '', amenities: [], basePrice: 0, weekendPrice: '', discounts: [], minNights: 1, maxNights: 30, status: 'active', sortOrder: 0, bookingType: 'nightly', openTime: '09:00', closeTime: '22:00', slotMinutes: 60 });
   const save = async () => {
     if (!editing.name.trim()) { hkaFlash('객실 이름을 입력하세요.', false); return; }
     try { await window.BGNJ_HANGYEON.saveRoomType(editing); setEditing(null); reload(); hkaFlash('저장됨.'); }
@@ -33,23 +33,40 @@ const HkaRoomTypes = () => {
   if (editing) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <h4 style={{ margin: 0 }}>{editing.id ? '객실 수정' : '새 객실'}</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <label style={{ fontSize: 12 }}>객실명<input className="field-input" value={editing.name} onChange={(e) => up({ name: e.target.value })} placeholder="스탠다드 더블룸" /></label>
+        <h4 style={{ margin: 0 }}>{editing.id ? '상품 수정' : '새 상품'}</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          <label style={{ fontSize: 12 }}>상품명<input className="field-input" value={editing.name} onChange={(e) => up({ name: e.target.value })} placeholder="스탠다드 더블룸 / 오늘의 작업실" /></label>
+          <label style={{ fontSize: 12 }}>예약 유형
+            <select className="field-input" value={editing.bookingType} onChange={(e) => up({ bookingType: e.target.value })}>
+              <option value="nightly">숙박 (1박, 체크인~체크아웃)</option>
+              <option value="timeslot">시간제 (인원+날짜+시간)</option>
+            </select>
+          </label>
           <label style={{ fontSize: 12 }}>판매 상태
             <select className="field-input" value={editing.status} onChange={(e) => up({ status: e.target.value })}>
               <option value="active">판매 가능</option><option value="inactive">판매 불가</option>
             </select>
           </label>
         </div>
+        {editing.bookingType === 'timeslot' && (
+          <div className="card" style={{ padding: 12, background: 'var(--bg-2)' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>시간제 설정</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <label style={{ fontSize: 12 }}>운영 시작<input type="time" className="field-input" value={editing.openTime || ''} onChange={(e) => up({ openTime: e.target.value })} /></label>
+              <label style={{ fontSize: 12 }}>운영 종료<input type="time" className="field-input" value={editing.closeTime || ''} onChange={(e) => up({ closeTime: e.target.value })} /></label>
+              <label style={{ fontSize: 12 }}>슬롯 길이(분)<input type="number" className="field-input" value={editing.slotMinutes} onChange={(e) => up({ slotMinutes: Number(e.target.value) })} placeholder="60 / 180" /></label>
+            </div>
+            <p className="dim-2" style={{ fontSize: 11, margin: '8px 0 0' }}>예: 09:00~22:00, 60분 → 한 시간 단위 슬롯. 3시간 단위면 180. 좌석 수 = 아래 ‘수량’, 세션 요금 = ‘기본 요금’.</p>
+          </div>
+        )}
         <label style={{ fontSize: 12 }}>설명<textarea className="field-input" rows={2} value={editing.description} onChange={(e) => up({ description: e.target.value })} /></label>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-          <label style={{ fontSize: 12 }}>객실 수량<input type="number" className="field-input" value={editing.quantity} onChange={(e) => up({ quantity: Number(e.target.value) })} /></label>
-          <label style={{ fontSize: 12 }}>최대 인원<input type="number" className="field-input" value={editing.maxOccupancy} onChange={(e) => up({ maxOccupancy: Number(e.target.value) })} /></label>
-          <label style={{ fontSize: 12 }}>침대 구성<input className="field-input" value={editing.bedConfig} onChange={(e) => up({ bedConfig: e.target.value })} placeholder="더블 1" /></label>
+          <label style={{ fontSize: 12 }}>{editing.bookingType === 'timeslot' ? '좌석 수' : '객실 수량'}<input type="number" className="field-input" value={editing.quantity} onChange={(e) => up({ quantity: Number(e.target.value) })} /></label>
+          <label style={{ fontSize: 12 }}>{editing.bookingType === 'timeslot' ? '최대 인원(1예약)' : '최대 인원'}<input type="number" className="field-input" value={editing.maxOccupancy} onChange={(e) => up({ maxOccupancy: Number(e.target.value) })} /></label>
+          <label style={{ fontSize: 12 }}>침대 구성<input className="field-input" value={editing.bedConfig} onChange={(e) => up({ bedConfig: e.target.value })} placeholder="더블 1 (숙박)" disabled={editing.bookingType === 'timeslot'} /></label>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
-          <label style={{ fontSize: 12 }}>기본(평일) 요금<input type="number" className="field-input" value={editing.basePrice} onChange={(e) => up({ basePrice: Number(e.target.value) })} /></label>
+          <label style={{ fontSize: 12 }}>{editing.bookingType === 'timeslot' ? '세션(1인) 요금' : '기본(평일) 요금'}<input type="number" className="field-input" value={editing.basePrice} onChange={(e) => up({ basePrice: Number(e.target.value) })} /></label>
           <label style={{ fontSize: 12 }}>주말(금·토) 요금<input type="number" className="field-input" value={editing.weekendPrice} onChange={(e) => up({ weekendPrice: e.target.value })} placeholder="기본과 같으면 비움" /></label>
           <label style={{ fontSize: 12 }}>최소 숙박(박)<input type="number" className="field-input" value={editing.minNights} onChange={(e) => up({ minNights: Number(e.target.value) })} /></label>
           <label style={{ fontSize: 12 }}>최대 숙박(박)<input type="number" className="field-input" value={editing.maxNights} onChange={(e) => up({ maxNights: Number(e.target.value) })} /></label>

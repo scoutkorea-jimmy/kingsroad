@@ -371,6 +371,7 @@
         return request("GET", `/hangyeon/availability?${qs.toString()}`);
       },
       setAvailability: (payload) => request("PUT", "/hangyeon/availability", payload),
+      slots: ({ roomTypeId, date } = {}) => request("GET", `/hangyeon/slots?roomTypeId=${encodeURIComponent(roomTypeId)}&date=${encodeURIComponent(date)}`),
       quote: (payload) => request("POST", "/hangyeon/quote", payload),
       book: (payload) => request("POST", "/hangyeon/bookings", payload),
       mineBookings: () => request("GET", "/me/hangyeon-bookings"),
