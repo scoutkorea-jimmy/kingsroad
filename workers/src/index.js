@@ -556,7 +556,7 @@ const handlePostGet = async (req, env, id) => {
       throw new HttpError(403, "이 게시판은 현재 읽기가 비활성화되어 있습니다.");
     }
   }
-  await env.DB.prepare("UPDATE posts SET views = views + 1 WHERE id = ?").bind(id).run();
+  // v00.278 — 조회수 증가는 POST /api/posts/:id/view(세션 dedup) 전담. GET 상세의 중복 증가 제거(이중 카운트 방지).
   return { post };
 };
 
@@ -2569,7 +2569,7 @@ const hkComputeStay = async (env, roomTypeId, checkIn, checkOut, rooms, couponCo
   let couponDiscount = 0, couponLabel = "", couponError = "";
   const afterStay = subtotal - stayDiscount;
   if (couponCode) {
-    const c = await env.DB.prepare("SELECT * FROM hk_coupons WHERE code = ? AND active = 1").bind(String(couponCode).trim()).first();
+    const c = await env.DB.prepare("SELECT * FROM hk_coupons WHERE code = ? AND active = 1").bind(String(couponCode).trim().toUpperCase()).first();
     const today = nowIso().slice(0, 10);
     if (!c) couponError = "유효하지 않은 쿠폰입니다.";
     else if (c.starts_at && today < c.starts_at.slice(0, 10)) couponError = "아직 사용할 수 없는 쿠폰입니다.";
@@ -2730,7 +2730,7 @@ const handleHkBookingCreate = async (req, env) => {
   try {
     const admins = await env.DB.prepare("SELECT id FROM users WHERE grade_id = 'admin'").all();
     for (const a of (admins.results || [])) {
-      await insertNotification(env, { userId: a.id, type: "hangyeon_new", message: `새 한켠 예약: ${q.roomTypeName} ${dateOnly ? q.date + (isHourly ? " " + q.slotStart : " 하루") : body.checkIn + "~" + body.checkOut}`, fromName: name });
+      await insertNotification(env, { userId: a.id, type: "hangyeon_new", message: `새 한켠 예약: ${q.roomTypeName} ${isHourly ? q.date + " " + q.slotStart : body.checkIn + "~" + body.checkOut}`, fromName: name });
     }
   } catch {}
   return { ok: true, booking: { id, code, status: "pending", total: q.total, nights: q.nights } };

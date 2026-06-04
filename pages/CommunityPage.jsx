@@ -1219,7 +1219,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                         <span className="badge">{cat.label}</span>
                         <span>{p.author}</span>
                         <span className="dot">·</span>
-                        <time dateTime={p.date.replace(/\./g,'-')}>{p.date}</time>
+                        <time dateTime={(p.date || '').replace(/\./g,'-')}>{p.date || ''}</time>
                         <span className="dot">·</span>
                         <span>조회 {p.views ?? 0}</span>
                         {likesCount > 0 && <span className="gold">♥ {likesCount}</span>}
@@ -1233,7 +1233,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                   </td>
                   <td className="col-views mono dim-2" style={{padding:'18px 8px', fontSize:12, textAlign:'right'}}>{p.views ?? 0}</td>
                   <td className="col-date mono dim-2" style={{padding:'18px 8px', fontSize:11, textAlign:'right'}}>
-                    <time dateTime={p.date.replace(/\./g,'-')}>{p.date}</time>
+                    <time dateTime={(p.date || '').replace(/\./g,'-')}>{p.date || ''}</time>
                   </td>
                 </tr>
               );

@@ -634,6 +634,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
   const [refundError, setRefundError] = React.useState("");
   // v00.232 — 사용자 요청: 강연 신청 시 개인정보 활용 + 제3자 제공 동의 필수.
   const [agreed, setAgreed] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false); // v00.278 — 중복 신청 방지
 
   React.useEffect(() => {
     setOpen(false); setSubmitted(null); setError(""); setCount(1); setNote("");
@@ -654,6 +655,8 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
     if (!user) return requireLogin('강연 신청');
     if (!name.trim() || !email.trim()) { setError("이름과 이메일은 필수입니다."); return; }
     if (!agreed) { setError("개인정보 활용 및 제3자 제공 동의는 필수입니다."); return; }
+    if (submitting) return; // 중복 신청 방지
+    setSubmitting(true);
     try {
       // v00.218 — 현금영수증 신청 정보 note prefix 인코딩
       const crPrefix = window.BGNJ_CashReceipt?.encode?.(cashReceipt) || '';
@@ -672,6 +675,8 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
       setOpen(false);
     } catch (err) {
       setError(err?.body?.error || err?.message || '신청 처리 중 오류가 발생했습니다.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -896,7 +901,7 @@ const LectureBookingPanel = ({ lecture, user, bank, myReg, seats, labelStatus, t
               </label>
               <div style={{display:'flex', gap:6, justifyContent:'flex-end'}}>
                 <button type="button" className="btn btn-small" onClick={() => setOpen(false)}>취소</button>
-                <button type="submit" className="btn btn-gold btn-small" disabled={!agreed}>신청 접수</button>
+                <button type="submit" className="btn btn-gold btn-small" disabled={!agreed || submitting}>{submitting ? '접수 중…' : '신청 접수'}</button>
               </div>
             </form>
           )}

@@ -519,6 +519,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const [refundReason, setRefundReason] = React.useState("");
   const [refundError, setRefundError] = React.useState("");
   const [agreed, setAgreed] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
   React.useEffect(() => {
     setOpen(false);
     setSubmitted(null);
@@ -550,6 +551,8 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       setError("\uAC1C\uC778\uC815\uBCF4 \uD65C\uC6A9 \uBC0F \uC81C3\uC790 \uC81C\uACF5 \uB3D9\uC758\uB294 \uD544\uC218\uC785\uB2C8\uB2E4.");
       return;
     }
+    if (submitting) return;
+    setSubmitting(true);
     try {
       const crPrefix = ((_b = (_a = window.BGNJ_CashReceipt) == null ? void 0 : _a.encode) == null ? void 0 : _b.call(_a, cashReceipt)) || "";
       const noteCombined = (crPrefix + (note.trim() || "")).trim();
@@ -570,6 +573,8 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       setOpen(false);
     } catch (err) {
       setError(((_c = err == null ? void 0 : err.body) == null ? void 0 : _c.error) || (err == null ? void 0 : err.message) || "\uC2E0\uCCAD \uCC98\uB9AC \uC911 \uC624\uB958");
+    } finally {
+      setSubmitting(false);
     }
   };
   const cancelMyReg = async () => {
@@ -707,7 +712,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", textDecoration: "underline", cursor: "pointer", fontSize: "inherit" }
     },
     "\uC790\uC138\uD788 \uBCF4\uAE30"
-  ))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setOpen(false) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: !agreed }, "\uC2E0\uCCAD \uC811\uC218")))), !user && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7, marginTop: 14, textAlign: "center" } }, "\uB2F5\uC0AC \uC2E0\uCCAD\uC740 \uD68C\uC6D0\uAC00\uC785\uD55C \uBD84\uB9CC \uAC00\uB2A5\uD569\uB2C8\uB2E4."));
+  ))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setOpen(false) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: !agreed || submitting }, submitting ? "\uC811\uC218 \uC911\u2026" : "\uC2E0\uCCAD \uC811\uC218")))), !user && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7, marginTop: 14, textAlign: "center" } }, "\uB2F5\uC0AC \uC2E0\uCCAD\uC740 \uD68C\uC6D0\uAC00\uC785\uD55C \uBD84\uB9CC \uAC00\uB2A5\uD569\uB2C8\uB2E4."));
 };
 const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
   const reviews = window.BGNJ_TOURS.listReviews(tour.id);

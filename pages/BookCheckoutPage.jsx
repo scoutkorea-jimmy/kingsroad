@@ -17,15 +17,18 @@ const BookReviewSection = ({ user, bookTitle }) => {
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
 
-  const canReview = user && window.BGNJ_BOOK_ORDERS.canReview(user.id);
-  const hasReviewed = user && window.BGNJ_BOOK_ORDERS.hasReviewed(user.id);
+  const canReview = !!(user && window.BGNJ_BOOK_ORDERS?.canReview?.(user.id));
+  const hasReviewed = !!(user && window.BGNJ_BOOK_ORDERS?.hasReviewed?.(user.id));
 
-  const submit = () => {
+  // v00.278 — addReview 는 async. await 누락 시 result 가 Promise → 항상 실패하던 버그 수정.
+  const submit = async () => {
     setError(''); setSuccess('');
-    const result = window.BGNJ_BOOK_ORDERS.addReview({ userId: user?.id, userName: user?.name, rating, text });
-    if (!result.ok) { setError(result.message); return; }
-    setReviews(window.BGNJ_BOOK_ORDERS.listReviews());
-    setText(''); setSuccess('리뷰가 등록되었습니다. 감사합니다.');
+    try {
+      const result = await window.BGNJ_BOOK_ORDERS.addReview({ userId: user?.id, userName: user?.name, rating, text });
+      if (!result?.ok) { setError(result?.message || '리뷰 등록에 실패했습니다.'); return; }
+      setReviews(_G.arr(() => window.BGNJ_BOOK_ORDERS?.listReviews?.()));
+      setText(''); setSuccess('리뷰가 등록되었습니다. 감사합니다.');
+    } catch (err) { setError(err?.body?.error || err?.message || '리뷰 등록에 실패했습니다.'); }
   };
 
   const remove = async (reviewId) => {

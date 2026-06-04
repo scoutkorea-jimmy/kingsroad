@@ -11,8 +11,19 @@ const ColumnPage = ({ go, user }) => {
   const [editColumn, setEditColumn] = React.useState(null);
   const isAdmin = !!(user == null ? void 0 : user.isAdmin);
   const refresh = () => setTick((v) => v + 1);
+  const _arr = (fn) => {
+    try {
+      const v = fn();
+      return Array.isArray(v) ? v : [];
+    } catch (e) {
+      return [];
+    }
+  };
   const publicColumns = React.useMemo(
-    () => window.BGNJ_COLUMNS.listPublic(),
+    () => _arr(() => {
+      var _a2, _b2;
+      return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listPublic) == null ? void 0 : _b2.call(_a2);
+    }),
     [tick]
   );
   const categories = React.useMemo(
@@ -20,7 +31,10 @@ const ColumnPage = ({ go, user }) => {
     [publicColumns]
   );
   const filtered = React.useMemo(
-    () => window.BGNJ_COLUMNS.searchPublic({ query: search, category }),
+    () => _arr(() => {
+      var _a2, _b2;
+      return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.searchPublic) == null ? void 0 : _b2.call(_a2, { query: search, category });
+    }),
     [search, category, tick]
   );
   React.useEffect(() => {

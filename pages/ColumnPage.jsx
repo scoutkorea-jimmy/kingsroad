@@ -14,8 +14,10 @@ const ColumnPage = ({ go, user }) => {
 
   const refresh = () => setTick((v) => v + 1);
 
+  // v00.278 — 데이터 번들 로드 전(BGNJ_COLUMNS 미정의) 첫 렌더 크래시 방지 — 가드 + 배열 보장.
+  const _arr = (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } };
   const publicColumns = React.useMemo(
-    () => window.BGNJ_COLUMNS.listPublic(),
+    () => _arr(() => window.BGNJ_COLUMNS?.listPublic?.()),
     [tick]
   );
   const categories = React.useMemo(
@@ -23,7 +25,7 @@ const ColumnPage = ({ go, user }) => {
     [publicColumns]
   );
   const filtered = React.useMemo(
-    () => window.BGNJ_COLUMNS.searchPublic({ query: search, category }),
+    () => _arr(() => window.BGNJ_COLUMNS?.searchPublic?.({ query: search, category })),
     [search, category, tick]
   );
 

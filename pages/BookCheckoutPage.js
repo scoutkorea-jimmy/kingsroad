@@ -19,28 +19,37 @@ const _G = window.BGNJ_GUARD || {
   }
 };
 const BookReviewSection = ({ user, bookTitle }) => {
+  var _a, _b, _c, _d;
   const _t = bookTitle || "\uCC45";
   const [reviews, setReviews] = React.useState(() => _G.arr(() => {
-    var _a, _b;
-    return (_b = (_a = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _a.listReviews) == null ? void 0 : _b.call(_a);
+    var _a2, _b2;
+    return (_b2 = (_a2 = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _a2.listReviews) == null ? void 0 : _b2.call(_a2);
   }));
   const [rating, setRating] = React.useState(5);
   const [text, setText] = React.useState("");
   const [error, setError] = React.useState("");
   const [success, setSuccess] = React.useState("");
-  const canReview = user && window.BGNJ_BOOK_ORDERS.canReview(user.id);
-  const hasReviewed = user && window.BGNJ_BOOK_ORDERS.hasReviewed(user.id);
-  const submit = () => {
+  const canReview = !!(user && ((_b = (_a = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _a.canReview) == null ? void 0 : _b.call(_a, user.id)));
+  const hasReviewed = !!(user && ((_d = (_c = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _c.hasReviewed) == null ? void 0 : _d.call(_c, user.id)));
+  const submit = async () => {
+    var _a2;
     setError("");
     setSuccess("");
-    const result = window.BGNJ_BOOK_ORDERS.addReview({ userId: user == null ? void 0 : user.id, userName: user == null ? void 0 : user.name, rating, text });
-    if (!result.ok) {
-      setError(result.message);
-      return;
+    try {
+      const result = await window.BGNJ_BOOK_ORDERS.addReview({ userId: user == null ? void 0 : user.id, userName: user == null ? void 0 : user.name, rating, text });
+      if (!(result == null ? void 0 : result.ok)) {
+        setError((result == null ? void 0 : result.message) || "\uB9AC\uBDF0 \uB4F1\uB85D\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+        return;
+      }
+      setReviews(_G.arr(() => {
+        var _a3, _b2;
+        return (_b2 = (_a3 = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _a3.listReviews) == null ? void 0 : _b2.call(_a3);
+      }));
+      setText("");
+      setSuccess("\uB9AC\uBDF0\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uAC10\uC0AC\uD569\uB2C8\uB2E4.");
+    } catch (err) {
+      setError(((_a2 = err == null ? void 0 : err.body) == null ? void 0 : _a2.error) || (err == null ? void 0 : err.message) || "\uB9AC\uBDF0 \uB4F1\uB85D\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
     }
-    setReviews(window.BGNJ_BOOK_ORDERS.listReviews());
-    setText("");
-    setSuccess("\uB9AC\uBDF0\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uAC10\uC0AC\uD569\uB2C8\uB2E4.");
   };
   const remove = async (reviewId) => {
     if (!await window.BGNJ_CONFIRM("\uC774 \uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?", { danger: true })) return;
