@@ -4,6 +4,17 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.280.000",
+    date: "2026-06-04",
+    datetime: "2026-06-04T15:54:17+09:00",
+    summary: "🧭 메가 드롭다운 위치 보정 — backdrop-filter containing block 이중 오프셋 제거",
+    details: [
+      "📐 [드롭다운 간격 과다 fix] 사용자 보고 '커뮤니티 드롭다운 간격이 너무 길다'. 원인: .nav 의 backdrop-filter:blur 가 position:fixed 자식의 containing block 을 뷰포트→.nav 로 바꿈. getBoundingClientRect(뷰포트 좌표)를 top 으로 그대로 쓰니 nav 상단 오프셋만큼 이중으로 밀려 드롭다운이 아래로 떴음. computeMegaPos 가 좌표를 containing block(.nav) 기준으로 보정 (r.left/r.bottom − navRect.left/top). 놀자·커뮤니티 양쪽 교정.",
+      "📦 cache-buster — `?v=00.280.000`. (v00.279 메가 일반화 후속 위치 보정)",
+    ],
+    context: "v00.279 에서 커뮤니티 메가를 fixed 로 일반화한 뒤 드롭다운이 nav 한참 아래에 뜨는 후속 보고. backdrop-filter 의 fixed containing-block 부작용을 좌표 보정으로 해소.",
+  },
+  {
     version: "00.279.000",
     date: "2026-06-04",
     datetime: "2026-06-04T15:47:28+09:00",

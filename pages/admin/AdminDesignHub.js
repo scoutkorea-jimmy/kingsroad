@@ -1,6 +1,17 @@
 (function(){
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.280.000",
+    date: "2026-06-04",
+    datetime: "2026-06-04T15:54:17+09:00",
+    summary: "\u{1F9ED} \uBA54\uAC00 \uB4DC\uB86D\uB2E4\uC6B4 \uC704\uCE58 \uBCF4\uC815 \u2014 backdrop-filter containing block \uC774\uC911 \uC624\uD504\uC14B \uC81C\uAC70",
+    details: [
+      "\u{1F4D0} [\uB4DC\uB86D\uB2E4\uC6B4 \uAC04\uACA9 \uACFC\uB2E4 fix] \uC0AC\uC6A9\uC790 \uBCF4\uACE0 '\uCEE4\uBBA4\uB2C8\uD2F0 \uB4DC\uB86D\uB2E4\uC6B4 \uAC04\uACA9\uC774 \uB108\uBB34 \uAE38\uB2E4'. \uC6D0\uC778: .nav \uC758 backdrop-filter:blur \uAC00 position:fixed \uC790\uC2DD\uC758 containing block \uC744 \uBDF0\uD3EC\uD2B8\u2192.nav \uB85C \uBC14\uAFC8. getBoundingClientRect(\uBDF0\uD3EC\uD2B8 \uC88C\uD45C)\uB97C top \uC73C\uB85C \uADF8\uB300\uB85C \uC4F0\uB2C8 nav \uC0C1\uB2E8 \uC624\uD504\uC14B\uB9CC\uD07C \uC774\uC911\uC73C\uB85C \uBC00\uB824 \uB4DC\uB86D\uB2E4\uC6B4\uC774 \uC544\uB798\uB85C \uB5B4\uC74C. computeMegaPos \uAC00 \uC88C\uD45C\uB97C containing block(.nav) \uAE30\uC900\uC73C\uB85C \uBCF4\uC815 (r.left/r.bottom \u2212 navRect.left/top). \uB180\uC790\xB7\uCEE4\uBBA4\uB2C8\uD2F0 \uC591\uCABD \uAD50\uC815.",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.280.000`. (v00.279 \uBA54\uAC00 \uC77C\uBC18\uD654 \uD6C4\uC18D \uC704\uCE58 \uBCF4\uC815)"
+    ],
+    context: "v00.279 \uC5D0\uC11C \uCEE4\uBBA4\uB2C8\uD2F0 \uBA54\uAC00\uB97C fixed \uB85C \uC77C\uBC18\uD654\uD55C \uB4A4 \uB4DC\uB86D\uB2E4\uC6B4\uC774 nav \uD55C\uCC38 \uC544\uB798\uC5D0 \uB728\uB294 \uD6C4\uC18D \uBCF4\uACE0. backdrop-filter \uC758 fixed containing-block \uBD80\uC791\uC6A9\uC744 \uC88C\uD45C \uBCF4\uC815\uC73C\uB85C \uD574\uC18C."
+  },
+  {
     version: "00.279.000",
     date: "2026-06-04",
     datetime: "2026-06-04T15:47:28+09:00",

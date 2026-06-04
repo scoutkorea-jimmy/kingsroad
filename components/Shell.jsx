@@ -672,7 +672,13 @@ const Nav = ({ route, go, user, onLogout }) => {
     const el = megaRefs.current[key];
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setMegaPos({ left: Math.round(r.left), top: Math.round(r.bottom) });
+    // v00.280 — .nav 에 backdrop-filter 가 걸려 fixed 자식의 containing block 이
+    // 뷰포트가 아닌 .nav 가 됨. 그래서 getBoundingClientRect(뷰포트 좌표)를 그대로
+    // top 으로 쓰면 nav 의 상단 오프셋만큼 이중으로 밀려 드롭다운이 아래로 뜬다.
+    // → containing block(.nav) 기준으로 좌표 보정.
+    const cb = el.closest('.nav');
+    const base = cb ? cb.getBoundingClientRect() : { left: 0, top: 0 };
+    setMegaPos({ left: Math.round(r.left - base.left), top: Math.round(r.bottom - base.top) });
   };
   const openMegaMenu = (key) => {
     if (megaCloseTimer.current) { clearTimeout(megaCloseTimer.current); megaCloseTimer.current = null; }

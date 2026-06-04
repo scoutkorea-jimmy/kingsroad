@@ -728,7 +728,9 @@ const Nav = ({ route, go, user, onLogout }) => {
     const el = megaRefs.current[key];
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setMegaPos({ left: Math.round(r.left), top: Math.round(r.bottom) });
+    const cb = el.closest(".nav");
+    const base = cb ? cb.getBoundingClientRect() : { left: 0, top: 0 };
+    setMegaPos({ left: Math.round(r.left - base.left), top: Math.round(r.bottom - base.top) });
   };
   const openMegaMenu = (key) => {
     if (megaCloseTimer.current) {
