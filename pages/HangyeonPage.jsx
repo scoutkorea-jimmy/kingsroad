@@ -169,7 +169,7 @@ const HkHourSelect = ({ roomTypeId, date, minHours, start, hours, onStart, onHou
 };
 
 // ── 예약 주문 모달 (야놀자 주문 페이지 간단 버전) ────────────────────────────
-const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, property, go, onClose, onDone }) => {
+const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, property, go, memberDiscount, onClose, onDone }) => {
   const canStay = room.dailyEnabled, canHourly = room.hourlyEnabled;
   const [unit, setUnit] = React.useState(canStay ? 'nightly' : 'hourly');
   const [start, setStart] = React.useState(null);
@@ -249,10 +249,14 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
               </div>
             ) : <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--danger)' }}>{quote?.reason || (unit === 'hourly' ? '시작 시간을 선택하세요' : '날짜를 확인하세요')}</p>}
             {quote?.couponError && <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--danger)' }}>{quote.couponError}</p>}
-            {!user && quote?.ok && (
-              <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--secondary)' }}>
-                💡 <strong>회원가입/로그인</strong> 시 회원가가 자동 적용됩니다. <button type="button" onClick={() => go && go('signup')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--secondary)', cursor: 'pointer', font: 'inherit', textDecoration: 'underline' }}>회원가입</button>
-              </p>
+            {!user && quote?.ok && memberDiscount > 0 && (
+              <div style={{ margin: '10px 0 0', padding: '10px 12px', borderRadius: 10, background: 'rgba(146,64,14,0.06)', fontSize: 12.5, lineHeight: 1.6 }}>
+                💡 <strong>회원가입하면 {memberDiscount}% 할인</strong> — 회원가 <strong className="ko-serif" style={{ color: 'var(--secondary)', fontSize: 15 }}>{hkWon(Math.round(quote.total * (100 - memberDiscount) / 100))}</strong>
+                <button type="button" onClick={() => go && go('signup')} style={{ marginLeft: 8, background: 'var(--secondary)', color: '#fff', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600 }}>회원가입하고 할인받기</button>
+              </div>
+            )}
+            {!user && quote?.ok && memberDiscount === 0 && (
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--secondary)' }}>💡 <strong>회원가입/로그인</strong> 시 회원 혜택이 적용됩니다.</p>
             )}
           </div>
 
@@ -297,9 +301,12 @@ const HkGallery = ({ images, name }) => {
 };
 
 // ── 객실 카드 (야놀자 스타일) ────────────────────────────────────────────────
-const HkRoomCard = ({ room, onBook }) => {
+const HkRoomCard = ({ room, onBook, memberDiscount }) => {
   const cover = (room.images || []).find((im) => im.isPrimary) || (room.images || [])[0];
   const available = room.stayAvailable || room.dayHourlyAvailable;
+  const md = Number(memberDiscount) || 0;
+  const mp = (p) => Math.round((p || 0) * (100 - md) / 100);
+  const basePrice = room.stayAvailable ? room.stayTotal : room.hourlyPrice;
   return (
     <div style={{ ...SOFT, padding: 0, overflow: 'hidden', display: 'flex', flexWrap: 'wrap', opacity: available ? 1 : 0.55 }}>
       <div style={{ flex: '0 0 220px', minWidth: 180, background: 'var(--bg-2)', overflow: 'hidden' }}>
@@ -317,8 +324,16 @@ const HkRoomCard = ({ room, onBook }) => {
         <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: 12, paddingTop: 8 }}>
           {available ? (
             <div style={{ textAlign: 'right' }}>
-              {room.stayAvailable && <><div className="dim-2" style={{ fontSize: 11 }}>{room.nights}박</div><div className="ko-serif" style={{ fontSize: 22, fontWeight: 700 }}>{hkWon(room.stayTotal)}</div></>}
-              {!room.stayAvailable && room.dayHourlyAvailable && <div className="ko-serif" style={{ fontSize: 20, fontWeight: 700 }}>{hkWon(room.hourlyPrice)}~</div>}
+              <div className="dim-2" style={{ fontSize: 11 }}>{room.stayAvailable ? `${room.nights}박` : '시간당'}</div>
+              <div className="ko-serif" style={{ fontSize: md > 0 ? 16 : 22, fontWeight: 700, color: md > 0 ? 'var(--ink-3)' : 'var(--ink)', textDecoration: md > 0 ? 'line-through' : 'none' }}>
+                {hkWon(basePrice)}{!room.stayAvailable ? '~' : ''}
+              </div>
+              {md > 0 && (
+                <div style={{ marginTop: 2 }}>
+                  <span style={{ fontSize: 10, color: 'var(--secondary)', fontWeight: 700, marginRight: 4 }}>회원가 -{md}%</span>
+                  <span className="ko-serif" style={{ fontSize: 22, fontWeight: 700, color: 'var(--secondary)' }}>{hkWon(mp(basePrice))}{!room.stayAvailable ? '~' : ''}</span>
+                </div>
+              )}
             </div>
           ) : <span className="badge" style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }}>예약 마감</span>}
           <button type="button" className="btn btn-gold" disabled={!available} onClick={() => onBook(room)} style={{ opacity: available ? 1 : 0.5, minWidth: 110 }}>예약하기</button>
@@ -386,6 +401,7 @@ const HangyeonPage = ({ go, user }) => {
   const address = info.address || '전북 전주시 덕진구 팔달로 340-37';
   const directions = info.directions || '전주역에서 차량 10분, 전주 고속버스터미널에서 도보 15분. 한옥마을·자만벽화마을·경기전·풍남문까지 차량 5~10분.';
   const images = Array.isArray(info.images) ? info.images : [];
+  const memberDiscount = Number(info.memberDiscount) || 0; // 비회원에게도 회원가 노출(가입 유도)
   const property = { name, address, directions, notice: info.notice };
   const amenities = Array.from(new Set(dayRooms.flatMap((r) => r.amenities || [])));
   const openClose = dayRooms.find((r) => r.hourlyEnabled);
@@ -432,7 +448,7 @@ const HangyeonPage = ({ go, user }) => {
                   <p className="dim" style={{ margin: '0 0 18px', fontSize: 13 }}>날짜를 변경해 주세요</p>
                   <button type="button" className="btn" onClick={() => setPickDate(true)}>날짜 변경하기</button>
                 </div>
-              ) : <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>{dayRooms.map((rm) => <HkRoomCard key={rm.id} room={rm} onBook={setBooking} />)}</div>}
+              ) : <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>{dayRooms.map((rm) => <HkRoomCard key={rm.id} room={rm} onBook={setBooking} memberDiscount={memberDiscount} />)}</div>}
         </section>
 
         <section ref={refs.loc} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
@@ -471,7 +487,7 @@ const HangyeonPage = ({ go, user }) => {
 
       {pickDate && <HkDatePicker checkIn={checkIn} checkOut={checkOut} onApply={(ci, co) => { setCheckIn(ci); setCheckOut(co); }} onClose={() => setPickDate(false)} />}
       {pickGuest && <HkGuestPicker adults={adults} children={children} onApply={(a, c) => { setAdults(a); setChildren(c); }} onClose={() => setPickGuest(false)} />}
-      {booking && <HkBookingModal room={booking} checkIn={checkIn} checkOut={checkOut} adults={adults} children={children} user={user} property={property} go={go} onClose={() => setBooking(null)} onDone={() => setTick((v) => v + 1)} />}
+      {booking && <HkBookingModal room={booking} checkIn={checkIn} checkOut={checkOut} adults={adults} children={children} user={user} property={property} go={go} memberDiscount={memberDiscount} onClose={() => setBooking(null)} onDone={() => setTick((v) => v + 1)} />}
     </div>
   );
 };
