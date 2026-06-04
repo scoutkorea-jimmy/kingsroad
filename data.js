@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.278.000",
+  version: "00.279.000",
   build: "2026.06.04",
   channel: "preview",
 };
@@ -1464,7 +1464,9 @@ window.BGNJ_COMMUNITY = {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         if (attempt > 0) await new Promise((r) => setTimeout(r, 600 * attempt));
-        const { posts } = await window.BGNJ_API.posts.list(opts);
+        // v00.279 — limit 미지정 시 워커 기본(50)으로 최신 50개만 와서 6페이지 이후 글이
+        // '삭제된 것처럼' 안 보이던 버그. 넉넉히 요청 (opts 가 명시하면 그쪽 우선).
+        const { posts } = await window.BGNJ_API.posts.list({ limit: 1000, ...opts });
         // v00.231 — 비-배열 응답으로 캐시가 빈 배열 덮어쓰던 데이터-사라짐 버그 방어.
         if (!Array.isArray(posts)) { try { console.warn('[BGNJ_COMMUNITY.refreshPosts] non-array — cache preserved'); } catch {} return this._serverPosts; }
         this._serverPosts = posts.map(_serverPostToUi);

@@ -4,6 +4,19 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.279.000",
+    date: "2026-06-04",
+    datetime: "2026-06-04T15:47:28+09:00",
+    summary: "🛠 커뮤니티 3대 결함 일괄 — React #300 크래시 + 6페이지↓ 글 사라짐 + 메가 드롭다운 잘림",
+    details: [
+      "💥 [React error #300 fix] 사용자 보고 '/community 진입 시 오류 페이지'. CommunityPage 가 `if (postId) return <상세>` early-return 뒤에 useState/useCallback/useMemo 등 hook 9개를 호출 → 목록↔상세 전환 시 실행 hook 수가 달라져 'Rendered fewer hooks' 크래시. 상세뷰 분기를 모든 hook 선언 아래로 이동해 hook 순서 고정.",
+      "📄 [6페이지 이후 글 사라짐 fix] 사용자 보고 '5페이지 이후로 안 넘어감 / 06.김제시 이전 글이 안 보임 — 삭제됐나?'. 원인: 워커 posts 목록 limit 기본 50 + 클라 refreshPosts 가 limit 미지정 → 최신 50개(=10개×5페이지)만 로드. D1 실측 85건 전량 존재(삭제 아님). refreshPosts 가 limit:1000 요청 + 워커 기본 1000/캡 2000 으로 상향.",
+      "🧭 [메가 드롭다운 잘림 fix] 사용자 보고 '서브메뉴가 영역 밖에서 보여야지'. .nav-menu overflow-x:auto(가로 슬라이드)가 그 안 absolute 드롭다운을 세로로 클리핑. v00.266 에 '놀자'만 fixed 로 탈출시켰던 것을 커뮤니티 포함 범용(openMega key)으로 일반화 — 모든 메가가 position:fixed + JS 위치계산으로 오버플로우 탈출. 구 CSS :hover 룰 제거.",
+      "📦 cache-buster — `?v=00.279.000`. 워커 재배포 (posts limit 상향).",
+    ],
+    context: "사용자가 커뮤니티에서 연달아 3건(크래시·글 사라짐·드롭다운 잘림) 보고. 글 삭제 아님(D1 85건 확인) — fetch limit 표시 한계였음을 규명 후 일괄 수정.",
+  },
+  {
     version: "00.240.000",
     date: "2026-05-09",
     datetime: "2026-05-09T13:30:00+09:00",

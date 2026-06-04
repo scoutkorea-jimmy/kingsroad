@@ -1876,14 +1876,10 @@ main time, main .section-eyebrow {
   color: var(--primary) !important;
 }
 
-/* === Navigation mega menu (커뮤니티 hover) ===
-   v00.266 — "놀자"(.nav-mega-play) 는 JS 로 position:fixed + visibility 직접 제어하므로
-   이 CSS hover 룰에서 제외. (.nav-menu overflow-x:auto 클리핑 탈출용) */
-.nav-has-mega:hover .nav-mega:not(.nav-mega-play),
-.nav-has-mega:focus-within .nav-mega:not(.nav-mega-play) {
-  visibility: visible !important;
-  opacity: 1 !important;
-}
+/* === Navigation mega menu ===
+   v00.279 — 놀자(.nav-mega-play) + 커뮤니티(.nav-mega-community) 모두 JS 로
+   position:fixed + visibility 를 직접 제어해 .nav-menu overflow-x:auto 클리핑을 탈출한다.
+   (이전 CSS :hover/:focus-within 룰은 absolute 드롭다운을 세로로 잘라 제거함.) */
 
 /* === 전역 본문 폰트 토글 (고딕 / 명조) ============================
    .app(루트)에서 --font-serif / --font-sans / --font-display / --font-reading

@@ -720,45 +720,50 @@ const Nav = ({ route, go, user, onLogout }) => {
   var _a, _b, _c;
   const navL = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).nav || {};
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [playOpen, setPlayOpen] = React.useState(false);
-  const [playPos, setPlayPos] = React.useState(null);
-  const playRef = React.useRef(null);
-  const playCloseTimer = React.useRef(null);
-  const computePlayPos = () => {
-    const el = playRef.current;
+  const [openMega, setOpenMega] = React.useState(null);
+  const [megaPos, setMegaPos] = React.useState(null);
+  const megaRefs = React.useRef({});
+  const megaCloseTimer = React.useRef(null);
+  const computeMegaPos = (key) => {
+    const el = megaRefs.current[key];
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setPlayPos({ left: Math.round(r.left), top: Math.round(r.bottom) });
+    setMegaPos({ left: Math.round(r.left), top: Math.round(r.bottom) });
   };
-  const openPlay = () => {
-    if (playCloseTimer.current) {
-      clearTimeout(playCloseTimer.current);
-      playCloseTimer.current = null;
+  const openMegaMenu = (key) => {
+    if (megaCloseTimer.current) {
+      clearTimeout(megaCloseTimer.current);
+      megaCloseTimer.current = null;
     }
-    computePlayPos();
-    setPlayOpen(true);
+    computeMegaPos(key);
+    setOpenMega(key);
   };
-  const closePlaySoon = () => {
-    if (playCloseTimer.current) clearTimeout(playCloseTimer.current);
-    playCloseTimer.current = setTimeout(() => setPlayOpen(false), 140);
+  const closeMegaSoon = () => {
+    if (megaCloseTimer.current) clearTimeout(megaCloseTimer.current);
+    megaCloseTimer.current = setTimeout(() => setOpenMega(null), 140);
   };
-  const togglePlay = () => {
-    if (playOpen) setPlayOpen(false);
-    else openPlay();
+  const toggleMega = (key) => {
+    if (openMega === key) {
+      setOpenMega(null);
+    } else {
+      computeMegaPos(key);
+      setOpenMega(key);
+    }
   };
   React.useEffect(() => {
     setMobileOpen(false);
-    setPlayOpen(false);
+    setOpenMega(null);
   }, [route]);
   React.useEffect(() => {
-    if (!playOpen) return;
+    if (!openMega) return;
     const onDown = (e) => {
-      if (playRef.current && !playRef.current.contains(e.target)) setPlayOpen(false);
+      const el = megaRefs.current[openMega];
+      if (el && !el.contains(e.target)) setOpenMega(null);
     };
     const onKey = (e) => {
-      if (e.key === "Escape") setPlayOpen(false);
+      if (e.key === "Escape") setOpenMega(null);
     };
-    const onScroll = () => setPlayOpen(false);
+    const onScroll = () => setOpenMega(null);
     window.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onKey);
     window.addEventListener("scroll", onScroll, true);
@@ -767,7 +772,7 @@ const Nav = ({ route, go, user, onLogout }) => {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("scroll", onScroll, true);
     };
-  }, [playOpen]);
+  }, [openMega]);
   React.useEffect(() => {
     if (!mobileOpen) return;
     const onKey = (e) => {
@@ -861,14 +866,17 @@ const Nav = ({ route, go, user, onLogout }) => {
   ), /* @__PURE__ */ React.createElement("ul", { id: "primary-nav-menu", className: "nav-menu", role: "list", style: { listStyle: "none", margin: 0, padding: 0 } }, items.map((it) => {
     const hasMega = it.isMega === "play" || it.isMega === "community" && communityBoards.length > 0;
     const isPlay = it.isMega === "play";
-    const onClick = isPlay ? togglePlay : () => go(it.defaultRoute || it.key);
+    const megaKey = hasMega ? it.isMega : null;
+    const onClick = isPlay ? () => toggleMega("play") : () => go(it.defaultRoute || it.key);
     return /* @__PURE__ */ React.createElement(
       "li",
       {
         key: it.key,
-        ref: isPlay ? playRef : void 0,
-        onMouseEnter: isPlay ? openPlay : void 0,
-        onMouseLeave: isPlay ? closePlaySoon : void 0,
+        ref: megaKey ? (el) => {
+          megaRefs.current[megaKey] = el;
+        } : void 0,
+        onMouseEnter: megaKey ? () => openMegaMenu(megaKey) : void 0,
+        onMouseLeave: megaKey ? closeMegaSoon : void 0,
         style: { position: "relative" },
         className: hasMega ? "nav-has-mega" : ""
       },
@@ -879,7 +887,7 @@ const Nav = ({ route, go, user, onLogout }) => {
           className: `nav-link ${isActive(it) ? "active" : ""}`,
           "aria-current": isActive(it) ? "page" : void 0,
           "aria-haspopup": hasMega ? "menu" : void 0,
-          "aria-expanded": it.isMega === "play" ? playOpen : void 0,
+          "aria-expanded": megaKey ? openMega === megaKey : void 0,
           onClick
         },
         it.label,
@@ -891,19 +899,19 @@ const Nav = ({ route, go, user, onLogout }) => {
           className: "nav-mega nav-mega-play",
           role: "menu",
           "aria-label": "\uB180\uC790 \u2014 \uC758\uC2DD\uC8FC \uCE74\uD14C\uACE0\uB9AC",
-          onMouseEnter: openPlay,
-          onMouseLeave: closePlaySoon,
+          onMouseEnter: () => openMegaMenu("play"),
+          onMouseLeave: closeMegaSoon,
           style: {
             position: "fixed",
-            left: playPos ? playPos.left : -9999,
-            top: playPos ? playPos.top : -9999,
+            left: openMega === "play" && megaPos ? megaPos.left : -9999,
+            top: openMega === "play" && megaPos ? megaPos.top : -9999,
             minWidth: 280,
             padding: "10px 0",
             background: "var(--bg)",
             border: "1px solid var(--line)",
             boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
-            visibility: playOpen ? "visible" : "hidden",
-            opacity: playOpen ? 1 : 0,
+            visibility: openMega === "play" ? "visible" : "hidden",
+            opacity: openMega === "play" ? 1 : 0,
             transition: "opacity .12s ease",
             zIndex: 60
           }
@@ -915,7 +923,7 @@ const Nav = ({ route, go, user, onLogout }) => {
             type: "button",
             role: "menuitem",
             onClick: () => {
-              setPlayOpen(false);
+              setOpenMega(null);
               go(p.key);
             },
             style: {
@@ -952,23 +960,24 @@ const Nav = ({ route, go, user, onLogout }) => {
       it.isMega === "community" && communityBoards.length > 0 && /* @__PURE__ */ React.createElement(
         "div",
         {
-          className: "nav-mega",
+          className: "nav-mega nav-mega-community",
           role: "menu",
           "aria-label": "\uAC8C\uC2DC\uD310 \uBAA9\uB85D",
+          onMouseEnter: () => openMegaMenu("community"),
+          onMouseLeave: closeMegaSoon,
           style: {
-            position: "absolute",
-            top: "100%",
-            left: "50%",
-            transform: "translateX(-50%)",
+            position: "fixed",
+            left: openMega === "community" && megaPos ? megaPos.left : -9999,
+            top: openMega === "community" && megaPos ? megaPos.top : -9999,
             minWidth: 220,
             padding: "10px 0",
             background: "var(--bg)",
             border: "1px solid var(--line)",
             boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
-            visibility: "hidden",
-            opacity: 0,
+            visibility: openMega === "community" ? "visible" : "hidden",
+            opacity: openMega === "community" ? 1 : 0,
             transition: "opacity .12s ease",
-            zIndex: 50
+            zIndex: 60
           }
         },
         /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "BOARDS"),
@@ -977,7 +986,10 @@ const Nav = ({ route, go, user, onLogout }) => {
           {
             type: "button",
             role: "menuitem",
-            onClick: () => goBoard(b.id),
+            onClick: () => {
+              setOpenMega(null);
+              goBoard(b.id);
+            },
             style: {
               display: "block",
               width: "100%",
@@ -1002,7 +1014,10 @@ const Nav = ({ route, go, user, onLogout }) => {
           {
             type: "button",
             role: "menuitem",
-            onClick: () => go("community"),
+            onClick: () => {
+              setOpenMega(null);
+              go("community");
+            },
             style: {
               display: "block",
               width: "100%",

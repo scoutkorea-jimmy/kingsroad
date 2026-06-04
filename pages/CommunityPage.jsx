@@ -723,43 +723,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     );
   };
 
-  if (postId) {
-    const post = allPosts.find(p => String(p.id) === String(postId)) || null;
-    if (!post) {
-      return (
-        <div className="section">
-          <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
-            <p className="dim" style={{fontSize:14, marginBottom:16}}>해당 게시글을 찾을 수 없습니다.</p>
-            <button type="button" className="btn" onClick={() => setPostId(null)}>목록으로</button>
-          </div>
-        </div>
-      );
-    }
-    if (!canReadPost(post)) {
-      return (
-        <div className="section">
-          <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
-            <p className="dim" style={{fontSize:14, marginBottom:16}}>현재 등급으로는 이 게시글을 볼 수 없습니다.</p>
-            <button type="button" className="btn" onClick={() => setPostId(null)}>목록으로</button>
-          </div>
-        </div>
-      );
-    }
-    // v00.176 — 수정 버튼 미반응 fix. detail 뷰일 때도 PostComposeModal 렌더해야 setWriting(post) → 모달 노출.
-    return (
-      <>
-        <PostDetail
-          post={post}
-          go={go}
-          setPostId={setPostId}
-          user={user}
-          onRefresh={() => setRefreshKey((value) => value + 1)}
-          onEdit={(nextPost) => setWriting(nextPost)}
-        />
-        {writing && <PostComposeModal onClose={() => setWriting(null)}/>}
-      </>
-    );
-  }
+  // v00.279 — 상세뷰 early-return 은 아래 모든 hook 선언 뒤로 이동 (React error #300 fix).
+  // postId 분기가 hook 위에 있으면 목록↔상세 전환 시 실행 hook 수가 달라져 크래시.
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / postsPerPage));
   const safePage = Math.min(page, totalPages);
@@ -952,6 +917,45 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     }
     setWriting(true);
   };
+
+  // v00.279 — 상세뷰 분기를 모든 hook 선언 뒤로 이동 (hook 순서 고정 → React error #300 해소).
+  if (postId) {
+    const post = allPosts.find(p => String(p.id) === String(postId)) || null;
+    if (!post) {
+      return (
+        <div className="section">
+          <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
+            <p className="dim" style={{fontSize:14, marginBottom:16}}>해당 게시글을 찾을 수 없습니다.</p>
+            <button type="button" className="btn" onClick={() => setPostId(null)}>목록으로</button>
+          </div>
+        </div>
+      );
+    }
+    if (!canReadPost(post)) {
+      return (
+        <div className="section">
+          <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
+            <p className="dim" style={{fontSize:14, marginBottom:16}}>현재 등급으로는 이 게시글을 볼 수 없습니다.</p>
+            <button type="button" className="btn" onClick={() => setPostId(null)}>목록으로</button>
+          </div>
+        </div>
+      );
+    }
+    // v00.176 — 수정 버튼 미반응 fix. detail 뷰일 때도 PostComposeModal 렌더해야 setWriting(post) → 모달 노출.
+    return (
+      <>
+        <PostDetail
+          post={post}
+          go={go}
+          setPostId={setPostId}
+          user={user}
+          onRefresh={() => setRefreshKey((value) => value + 1)}
+          onEdit={(nextPost) => setWriting(nextPost)}
+        />
+        {writing && <PostComposeModal onClose={() => setWriting(null)}/>}
+      </>
+    );
+  }
 
   return (
     <div className="section">

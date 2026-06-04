@@ -661,42 +661,45 @@ const SiteSearchOverlay = ({ go, onClose }) => {
 const Nav = ({ route, go, user, onLogout }) => {
   const navL = (window.BGNJ_SITE_CONTENT?.get?.() || {}).nav || {};
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  // v00.266 — 데스크톱 "놀자" 메가 드롭다운 (호버 + 클릭).
+  // v00.266/v00.279 — 데스크톱 메가 드롭다운 (호버 + 클릭). 놀자 + 커뮤니티 공용으로 일반화.
   // .nav-menu 가 overflow-x:auto(가로 슬라이드) 라 그 안의 absolute 드롭다운이 세로로 잘림.
-  // → position:fixed + 버튼 위치 JS 계산으로 오버플로우 영역 밖으로 탈출시킴.
-  const [playOpen, setPlayOpen] = React.useState(false);
-  const [playPos, setPlayPos] = React.useState(null); // {left, top}
-  const playRef = React.useRef(null);
-  const playCloseTimer = React.useRef(null);
-  const computePlayPos = () => {
-    const el = playRef.current;
+  // → position:fixed + 버튼 위치 JS 계산으로 오버플로우 영역 밖으로 탈출시킴 (모든 메가 공통).
+  const [openMega, setOpenMega] = React.useState(null); // 'play' | 'community' | null
+  const [megaPos, setMegaPos] = React.useState(null);   // {left, top}
+  const megaRefs = React.useRef({});                    // key -> li element
+  const megaCloseTimer = React.useRef(null);
+  const computeMegaPos = (key) => {
+    const el = megaRefs.current[key];
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setPlayPos({ left: Math.round(r.left), top: Math.round(r.bottom) });
+    setMegaPos({ left: Math.round(r.left), top: Math.round(r.bottom) });
   };
-  const openPlay = () => {
-    if (playCloseTimer.current) { clearTimeout(playCloseTimer.current); playCloseTimer.current = null; }
-    computePlayPos();
-    setPlayOpen(true);
+  const openMegaMenu = (key) => {
+    if (megaCloseTimer.current) { clearTimeout(megaCloseTimer.current); megaCloseTimer.current = null; }
+    computeMegaPos(key);
+    setOpenMega(key);
   };
-  const closePlaySoon = () => {
-    if (playCloseTimer.current) clearTimeout(playCloseTimer.current);
-    playCloseTimer.current = setTimeout(() => setPlayOpen(false), 140);
+  const closeMegaSoon = () => {
+    if (megaCloseTimer.current) clearTimeout(megaCloseTimer.current);
+    megaCloseTimer.current = setTimeout(() => setOpenMega(null), 140);
   };
-  const togglePlay = () => { if (playOpen) setPlayOpen(false); else openPlay(); };
-  // 라우트 변경 시 모바일 메뉴 + 놀자 드롭다운 자동 닫힘
-  React.useEffect(() => { setMobileOpen(false); setPlayOpen(false); }, [route]);
-  // 놀자 드롭다운 열림 시: 바깥 클릭 + Escape 로 닫힘 (fixed 라 스크롤 시에도 닫음)
+  const toggleMega = (key) => {
+    if (openMega === key) { setOpenMega(null); }
+    else { computeMegaPos(key); setOpenMega(key); }
+  };
+  // 라우트 변경 시 모바일 메뉴 + 메가 드롭다운 자동 닫힘
+  React.useEffect(() => { setMobileOpen(false); setOpenMega(null); }, [route]);
+  // 메가 드롭다운 열림 시: 바깥 클릭 + Escape + 스크롤 시 닫힘 (fixed 라 위치 stale 방지)
   React.useEffect(() => {
-    if (!playOpen) return;
-    const onDown = (e) => { if (playRef.current && !playRef.current.contains(e.target)) setPlayOpen(false); };
-    const onKey = (e) => { if (e.key === 'Escape') setPlayOpen(false); };
-    const onScroll = () => setPlayOpen(false);
+    if (!openMega) return;
+    const onDown = (e) => { const el = megaRefs.current[openMega]; if (el && !el.contains(e.target)) setOpenMega(null); };
+    const onKey = (e) => { if (e.key === 'Escape') setOpenMega(null); };
+    const onScroll = () => setOpenMega(null);
     window.addEventListener('mousedown', onDown);
     window.addEventListener('keydown', onKey);
     window.addEventListener('scroll', onScroll, true);
     return () => { window.removeEventListener('mousedown', onDown); window.removeEventListener('keydown', onKey); window.removeEventListener('scroll', onScroll, true); };
-  }, [playOpen]);
+  }, [openMega]);
   // 모바일 메뉴 열림 시: Escape 닫기 + body scroll lock + viewport 확대 시 자동 닫힘
   React.useEffect(() => {
     if (!mobileOpen) return;
@@ -777,35 +780,38 @@ const Nav = ({ route, go, user, onLogout }) => {
           {items.map(it => {
             const hasMega = it.isMega === 'play' || (it.isMega === 'community' && communityBoards.length > 0);
             const isPlay = it.isMega === 'play';
+            // v00.279 — 메가 키 ('play' | 'community'). 둘 다 fixed 드롭다운 + 호버/포커스 제어.
+            const megaKey = hasMega ? it.isMega : null;
             // v00.266 — "놀자" 는 클릭 시 이동 대신 드롭다운 토글(호버 보완). 그 외는 기존대로 이동.
             const onClick = isPlay
-              ? togglePlay
+              ? () => toggleMega('play')
               : () => go(it.defaultRoute || it.key);
             return (
-              <li key={it.key} ref={isPlay ? playRef : undefined}
-                onMouseEnter={isPlay ? openPlay : undefined}
-                onMouseLeave={isPlay ? closePlaySoon : undefined}
+              <li key={it.key}
+                ref={megaKey ? (el) => { megaRefs.current[megaKey] = el; } : undefined}
+                onMouseEnter={megaKey ? () => openMegaMenu(megaKey) : undefined}
+                onMouseLeave={megaKey ? closeMegaSoon : undefined}
                 style={{position:'relative'}} className={hasMega ? 'nav-has-mega' : ''}>
                 <button
                   type="button"
                   className={`nav-link ${isActive(it) ? "active" : ""}`}
                   aria-current={isActive(it) ? "page" : undefined}
                   aria-haspopup={hasMega ? 'menu' : undefined}
-                  aria-expanded={it.isMega === 'play' ? playOpen : undefined}
+                  aria-expanded={megaKey ? openMega === megaKey : undefined}
                   onClick={onClick}>{it.label}{hasMega ? ' ▾' : ''}</button>
 
                 {it.isMega === 'play' && (
                   <div className="nav-mega nav-mega-play" role="menu" aria-label="놀자 — 의식주 카테고리"
-                    onMouseEnter={openPlay} onMouseLeave={closePlaySoon}
+                    onMouseEnter={() => openMegaMenu('play')} onMouseLeave={closeMegaSoon}
                     style={{
                       position:'fixed',
-                      left: playPos ? playPos.left : -9999,
-                      top: playPos ? playPos.top : -9999,
+                      left: (openMega === 'play' && megaPos) ? megaPos.left : -9999,
+                      top: (openMega === 'play' && megaPos) ? megaPos.top : -9999,
                       minWidth:280, padding:'10px 0',
                       background:'var(--bg)', border:'1px solid var(--line)',
                       boxShadow:'0 16px 40px rgba(15,23,42,0.10)',
-                      visibility: playOpen ? 'visible' : 'hidden',
-                      opacity: playOpen ? 1 : 0,
+                      visibility: openMega === 'play' ? 'visible' : 'hidden',
+                      opacity: openMega === 'play' ? 1 : 0,
                       transition:'opacity .12s ease',
                       zIndex:60,
                     }}>
@@ -814,7 +820,7 @@ const Nav = ({ route, go, user, onLogout }) => {
                       {playChildren.map((p) => (
                         <li key={p.key}>
                           <button type="button" role="menuitem"
-                            onClick={() => { setPlayOpen(false); go(p.key); }}
+                            onClick={() => { setOpenMega(null); go(p.key); }}
                             style={{
                               display:'block', width:'100%', textAlign:'left',
                               padding:'10px 16px',
@@ -845,21 +851,26 @@ const Nav = ({ route, go, user, onLogout }) => {
                   </ul>
                 )}
                 {it.isMega === 'community' && communityBoards.length > 0 && (
-                  <div className="nav-mega" role="menu" aria-label="게시판 목록"
+                  <div className="nav-mega nav-mega-community" role="menu" aria-label="게시판 목록"
+                    onMouseEnter={() => openMegaMenu('community')} onMouseLeave={closeMegaSoon}
                     style={{
-                      position:'absolute', top:'100%', left:'50%', transform:'translateX(-50%)',
+                      position:'fixed',
+                      left: (openMega === 'community' && megaPos) ? megaPos.left : -9999,
+                      top: (openMega === 'community' && megaPos) ? megaPos.top : -9999,
                       minWidth:220, padding:'10px 0',
                       background:'var(--bg)', border:'1px solid var(--line)',
                       boxShadow:'0 16px 40px rgba(15,23,42,0.10)',
-                      visibility:'hidden', opacity:0, transition:'opacity .12s ease',
-                      zIndex:50,
+                      visibility: openMega === 'community' ? 'visible' : 'hidden',
+                      opacity: openMega === 'community' ? 1 : 0,
+                      transition:'opacity .12s ease',
+                      zIndex:60,
                     }}>
                     <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>BOARDS</div>
                     <ul style={{listStyle:'none', margin:0, padding:0}}>
                       {communityBoards.map((b) => (
                         <li key={b.id}>
                           <button type="button" role="menuitem"
-                            onClick={() => goBoard(b.id)}
+                            onClick={() => { setOpenMega(null); goBoard(b.id); }}
                             style={{
                               display:'block', width:'100%', textAlign:'left',
                               padding:'8px 16px', fontSize:13,
@@ -873,7 +884,7 @@ const Nav = ({ route, go, user, onLogout }) => {
                       ))}
                       <li style={{borderTop:'1px solid var(--line)', marginTop:6, paddingTop:6}}>
                         <button type="button" role="menuitem"
-                          onClick={() => go('community')}
+                          onClick={() => { setOpenMega(null); go('community'); }}
                           style={{
                             display:'block', width:'100%', textAlign:'left',
                             padding:'8px 16px', fontSize:12, letterSpacing:'0.18em',

@@ -477,7 +477,9 @@ const handlePostsList = async (req, env) => {
   const q = (url.searchParams.get("q") || "").trim();
   // v00.201 — 본문 검색 옵션 (P1 #4). includeBody=1 이면 body LIKE 도 OR 결합.
   const includeBody = url.searchParams.get("includeBody") === "1";
-  const limit = Math.min(Number(url.searchParams.get("limit") || 50), 200);
+  // v00.279 — 기본 50/캡 200 이면 클라가 limit 미지정 시 최신 50개만 와서 옛 글이 사라진 것처럼 보임.
+  // 기본 1000 / 캡 2000 으로 상향 (목록 전량 로드 + 페이지네이션은 클라에서).
+  const limit = Math.min(Number(url.searchParams.get("limit") || 1000), 2000);
   const args = [];
   let where = "1=1";
   if (category) { where += " AND category_id = ?"; args.push(category); }
