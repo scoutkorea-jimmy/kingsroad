@@ -2466,8 +2466,18 @@ const hkApplyCoupon = async (env, couponCode, baseAmount) => {
   return { discount, label: c.label || c.code, error: "" };
 };
 
+// 회원 할인율(%) — site_content_kv.hangyeon.memberDiscount. 로그인 예약 시 적용.
+const hkMemberDiscount = async (env) => {
+  try {
+    const row = await env.DB.prepare("SELECT data_json FROM site_content_kv WHERE section = 'hangyeon'").first();
+    if (!row) return 0;
+    const v = Number(JSON.parse(row.data_json || "{}").memberDiscount);
+    return isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
+  } catch { return 0; }
+};
+
 // 시간당 견적 — date + start('HH:00') + hours(>=min_hours). 가격 = hourly_price × hours.
-const hkComputeHourly = async (env, body) => {
+const hkComputeHourly = async (env, body, isMember) => {
   const date = body.checkIn || body.date;
   const guests = Math.max(1, Number(body.guests) || 1);
   const hours = Math.max(1, Number(body.hours) || 0);
@@ -2491,11 +2501,15 @@ const hkComputeHourly = async (env, body) => {
   const unitPrice = rtRow.hourly_price || 0;
   const subtotal = unitPrice * hours;
   const cp = await hkApplyCoupon(env, body.couponCode, subtotal);
-  const total = Math.max(0, subtotal - cp.discount);
+  const afterCoupon = Math.max(0, subtotal - cp.discount);
+  const md = isMember ? await hkMemberDiscount(env) : 0;
+  const memberDiscount = md > 0 ? Math.round(afterCoupon * md / 100) : 0;
+  const total = Math.max(0, afterCoupon - memberDiscount);
   return {
     ok: true, type: "hourly", unitType: "hourly", roomTypeId: body.roomTypeId, roomTypeName: rtRow.name,
     date, slotStart: hkHM(startH), slotEnd: hkHM(endH), hours, guests, unitPrice, subtotal,
-    stayDiscount: 0, stayLabel: "", couponDiscount: cp.discount, couponLabel: cp.label, couponError: cp.error, total, nights: 0,
+    stayDiscount: 0, stayLabel: "", couponDiscount: cp.discount, couponLabel: cp.label, couponError: cp.error,
+    memberDiscount, memberRate: md, total, nights: 0,
   };
 };
 
@@ -2515,7 +2529,7 @@ const hkConflict = async (env, roomTypeId, unit, checkIn, checkOut, slotStart, s
 };
 
 // 숙박 견적 — 박별 요금 + 연박할인 + 쿠폰. ok=false 면 reason 반환.
-const hkComputeStay = async (env, roomTypeId, checkIn, checkOut, rooms, couponCode) => {
+const hkComputeStay = async (env, roomTypeId, checkIn, checkOut, rooms, couponCode, isMember) => {
   if (!hkIsValidDate(checkIn) || !hkIsValidDate(checkOut)) return { ok: false, reason: "날짜 형식이 올바르지 않습니다." };
   if (checkOut <= checkIn) return { ok: false, reason: "체크아웃은 체크인보다 뒤여야 합니다." };
   const rtRow = await env.DB.prepare("SELECT * FROM hk_room_types WHERE id = ?").bind(roomTypeId).first();
@@ -2566,11 +2580,15 @@ const hkComputeStay = async (env, roomTypeId, checkIn, checkOut, rooms, couponCo
       couponLabel = c.label || c.code;
     }
   }
-  const total = Math.max(0, subtotal - stayDiscount - couponDiscount);
+  const afterDisc = Math.max(0, subtotal - stayDiscount - couponDiscount);
+  const md = isMember ? await hkMemberDiscount(env) : 0;
+  const memberDiscount = md > 0 ? Math.round(afterDisc * md / 100) : 0;
+  const total = Math.max(0, afterDisc - memberDiscount);
   return {
     ok: true, type: "nightly", unitType: "nightly", roomTypeId, roomTypeName: rt.name,
     checkIn, checkOut, nights, rooms: roomCount,
-    perNight, subtotal, stayDiscount, stayLabel, couponDiscount, couponLabel, couponError, total,
+    perNight, subtotal, stayDiscount, stayLabel, couponDiscount, couponLabel, couponError,
+    memberDiscount, memberRate: md, total,
   };
 };
 
@@ -2606,10 +2624,10 @@ const handleHkAvailability = async (req, env) => {
   return { from, to, availability: out };
 };
 
-// 이용 단위별 견적 라우팅 (hourly | nightly 범위).
-const hkQuoteFor = async (env, body) => {
-  if (body.unit === "hourly") return await hkComputeHourly(env, body);
-  return await hkComputeStay(env, body.roomTypeId, body.checkIn, body.checkOut, body.rooms, body.couponCode);
+// 이용 단위별 견적 라우팅 (hourly | nightly 범위). isMember=로그인 회원이면 회원가 적용.
+const hkQuoteFor = async (env, body, isMember) => {
+  if (body.unit === "hourly") return await hkComputeHourly(env, body, isMember);
+  return await hkComputeStay(env, body.roomTypeId, body.checkIn, body.checkOut, body.rooms, body.couponCode, isMember);
 };
 
 // 객실+날짜 시간대별 잔여 + 하루 가능 여부 (예약 모달용).
@@ -2657,7 +2675,8 @@ const handleHkDay = async (req, env) => {
 
 const handleHkQuote = async (req, env) => {
   const body = await req.json().catch(() => ({}));
-  return await hkQuoteFor(env, body);
+  let user = null; try { user = await getCurrentUser(req, env); } catch {}
+  return await hkQuoteFor(env, body, !!user);
 };
 
 const handleHkBookingCreate = async (req, env) => {
@@ -2673,7 +2692,7 @@ const handleHkBookingCreate = async (req, env) => {
     const g = await env.DB.prepare("SELECT blacklist FROM hk_guests WHERE id = ?").bind(gkey).first();
     if (g && g.blacklist) throw new HttpError(403, "예약이 제한된 고객입니다. 숙소로 문의해 주세요.");
   }
-  const q = await hkQuoteFor(env, body);
+  const q = await hkQuoteFor(env, body, !!user);
   if (!q.ok) throw new HttpError(409, q.reason);
   const unit = q.unitType || "nightly"; // hourly | nightly
   const isHourly = unit === "hourly";

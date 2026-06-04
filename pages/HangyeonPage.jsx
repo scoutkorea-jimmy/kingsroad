@@ -169,7 +169,7 @@ const HkHourSelect = ({ roomTypeId, date, minHours, start, hours, onStart, onHou
 };
 
 // ── 예약 주문 모달 (야놀자 주문 페이지 간단 버전) ────────────────────────────
-const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, property, onClose, onDone }) => {
+const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, property, go, onClose, onDone }) => {
   const canStay = room.dailyEnabled, canHourly = room.hourlyEnabled;
   const [unit, setUnit] = React.useState(canStay ? 'nightly' : 'hourly');
   const [start, setStart] = React.useState(null);
@@ -244,10 +244,16 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
               <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="dim">상품 금액 {unit === 'nightly' ? `(${nights}박)` : `(${quote.hours}시간)`}</span><span>{hkWon(quote.subtotal)}</span></div>
                 {quote.couponDiscount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success)' }}><span>쿠폰 {quote.couponLabel}</span><span>-{hkWon(quote.couponDiscount)}</span></div>}
+                {quote.memberDiscount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success)' }}><span>회원 할인 ({quote.memberRate}%)</span><span>-{hkWon(quote.memberDiscount)}</span></div>}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 16, marginTop: 4 }}><span>총 결제 금액</span><span className="ko-serif">{hkWon(quote.total)}</span></div>
               </div>
             ) : <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--danger)' }}>{quote?.reason || (unit === 'hourly' ? '시작 시간을 선택하세요' : '날짜를 확인하세요')}</p>}
             {quote?.couponError && <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--danger)' }}>{quote.couponError}</p>}
+            {!user && quote?.ok && (
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--secondary)' }}>
+                💡 <strong>회원가입/로그인</strong> 시 회원가가 자동 적용됩니다. <button type="button" onClick={() => go && go('signup')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--secondary)', cursor: 'pointer', font: 'inherit', textDecoration: 'underline' }}>회원가입</button>
+              </p>
+            )}
           </div>
 
           {/* 예약자 정보 */}
@@ -266,7 +272,7 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
 
           <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12.5, cursor: 'pointer' }}>
             <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} style={{ marginTop: 2 }} />
-            <span>개인정보 수집·이용 및 예약 진행에 동의합니다. 결제는 <strong>무통장 입금/현장 결제</strong>로 진행됩니다.</span>
+            <span>개인정보(이름·연락처·이메일) 수집·이용 및 예약 진행에 동의합니다. 수집한 개인정보는 <strong>1년간 보관 후 파기</strong>되며, 결제는 <strong>무통장 입금/현장 결제</strong>로 진행됩니다.</span>
           </label>
           <button type="button" className="btn btn-gold" disabled={submitting || !quote?.ok} onClick={submit} style={{ opacity: (submitting || !quote?.ok) ? 0.5 : 1, padding: '14px', fontSize: 15 }}>{submitting ? '접수 중…' : quote?.ok ? `${hkWon(quote.total)} 예약하기` : '예약하기'}</button>
         </div>
@@ -465,7 +471,7 @@ const HangyeonPage = ({ go, user }) => {
 
       {pickDate && <HkDatePicker checkIn={checkIn} checkOut={checkOut} onApply={(ci, co) => { setCheckIn(ci); setCheckOut(co); }} onClose={() => setPickDate(false)} />}
       {pickGuest && <HkGuestPicker adults={adults} children={children} onApply={(a, c) => { setAdults(a); setChildren(c); }} onClose={() => setPickGuest(false)} />}
-      {booking && <HkBookingModal room={booking} checkIn={checkIn} checkOut={checkOut} adults={adults} children={children} user={user} property={property} onClose={() => setBooking(null)} onDone={() => setTick((v) => v + 1)} />}
+      {booking && <HkBookingModal room={booking} checkIn={checkIn} checkOut={checkOut} adults={adults} children={children} user={user} property={property} go={go} onClose={() => setBooking(null)} onDone={() => setTick((v) => v + 1)} />}
     </div>
   );
 };

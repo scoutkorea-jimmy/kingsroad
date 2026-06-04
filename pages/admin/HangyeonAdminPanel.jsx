@@ -8,6 +8,7 @@ const hkaAddDays = (str, n) => new Date(new Date(str + 'T00:00:00Z').getTime() +
 const HKA_WD = ['일', '월', '화', '수', '목', '금', '토'];
 const hkaDate = (str) => { if (!str) return '-'; const d = new Date(str + 'T00:00:00Z'); return `${str.slice(2).replace(/-/g, '.')}(${HKA_WD[d.getUTCDay()]})`; };
 const HKA_STATUS = { pending: '예약대기', confirmed: '예약확정', checked_in: '체크인', checked_out: '체크아웃', cancelled: '취소', no_show: '노쇼' };
+const HKA_STATUS_COLOR = { pending: '#D97706', confirmed: '#16A34A', checked_in: '#2563EB', checked_out: '#475569', cancelled: '#DC2626', no_show: '#9333EA' };
 const HKA_PAY = { unpaid: '미결제', partial: '부분결제', paid: '결제완료', refunded: '환불완료' };
 const hkaFlash = (msg, ok) => (ok === false ? window.BGNJ_TOAST?.error?.(msg) : window.BGNJ_TOAST?.success?.(msg));
 
@@ -133,12 +134,23 @@ const HkaRates = () => {
   const [rooms, setRooms] = React.useState([]);
   const [rule, setRule] = React.useState(null);
   const [coupon, setCoupon] = React.useState(null);
+  const [memberDiscount, setMemberDiscount] = React.useState(0);
   const reload = () => {
     window.BGNJ_HANGYEON.rateRules().then(setRules);
     window.BGNJ_HANGYEON.coupons().then(setCoupons);
     window.BGNJ_HANGYEON.refreshRoomTypes({ includeAll: true }).then(setRooms);
+    const h = (window.BGNJ_SITE_CONTENT?.get?.() || {}).hangyeon || {};
+    setMemberDiscount(Number(h.memberDiscount) || 0);
   };
   React.useEffect(() => { reload(); }, []);
+  const saveMemberDiscount = async () => {
+    try {
+      const cur = (window.BGNJ_SITE_CONTENT?.get?.() || {}).hangyeon || {};
+      await window.BGNJ_SITE_CONTENT.saveSection('hangyeon', { ...cur, memberDiscount: Math.max(0, Math.min(100, Number(memberDiscount) || 0)) });
+      hkaFlash('회원 할인율 저장됨.');
+    } catch (err) { hkaFlash(err?.body?.error || err?.message || '실패', false); }
+  };
+  const memberPrice = (p) => p == null ? null : Math.round(p * (100 - (Number(memberDiscount) || 0)) / 100);
 
   const saveRule = async () => {
     try {
@@ -157,6 +169,40 @@ const HkaRates = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
+      {/* 회원가 (회원 할인) */}
+      <div>
+        <h4 style={{ margin: '0 0 10px' }}>회원가 (회원 전용 할인)</h4>
+        <div className="card" style={{ padding: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+            <span style={{ fontSize: 13 }}>회원(로그인) 예약 시 할인율</span>
+            <input type="number" className="field-input" style={{ width: 90 }} value={memberDiscount} min={0} max={100} onChange={(e) => setMemberDiscount(e.target.value)} /> %
+            <button type="button" className="btn btn-small btn-gold" onClick={saveMemberDiscount}>저장</button>
+            <span className="dim-2" style={{ fontSize: 11 }}>로그인 손님에게 자동 적용·표시됩니다. 0이면 회원가 미적용.</span>
+          </div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead><tr style={{ background: 'var(--bg-2)' }}>
+              <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 12, color: 'var(--ink-3)' }}>객실</th>
+              <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: 12, color: 'var(--ink-3)' }}>정상가</th>
+              <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: 12, color: 'var(--ink-3)' }}>회원가</th>
+            </tr></thead>
+            <tbody>
+              {rooms.map((r) => {
+                const base = r.dailyEnabled ? r.dailyPrice : r.hourlyPrice;
+                const unit = r.dailyEnabled ? '/박' : '/시간';
+                return (
+                  <tr key={r.id}>
+                    <td style={{ padding: '8px 10px', borderTop: '1px solid var(--line)' }}>{r.name}</td>
+                    <td style={{ padding: '8px 10px', borderTop: '1px solid var(--line)', textAlign: 'right' }}>{hkaWon(base)}{unit}</td>
+                    <td style={{ padding: '8px 10px', borderTop: '1px solid var(--line)', textAlign: 'right', fontWeight: 700, color: 'var(--success)' }}>{memberDiscount > 0 ? `${hkaWon(memberPrice(base))}${unit}` : '—'}</td>
+                  </tr>
+                );
+              })}
+              {rooms.length === 0 && <tr><td style={{ padding: '10px', color: 'var(--ink-3)' }} colSpan={3}>객실을 먼저 등록하세요.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <h4 style={{ margin: 0 }}>요금 규칙 (시즌·공휴일·프로모션·요일)</h4>
@@ -421,28 +467,46 @@ const HkaBookings = () => {
   const reload = () => window.BGNJ_HANGYEON.adminBookings(status ? { status } : {}).then(setBookings);
   React.useEffect(() => { reload(); }, [status]);
 
+  const th = { textAlign: 'left', padding: '10px 10px', fontSize: 12, color: 'var(--ink-3)', fontWeight: 600, whiteSpace: 'nowrap' };
+  const td = { padding: '10px 10px', fontSize: 13, borderTop: '1px solid var(--line)', verticalAlign: 'middle' };
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <button type="button" className="btn btn-small" style={{ background: !status ? 'var(--secondary)' : 'var(--bg)', color: !status ? '#fff' : 'var(--ink)' }} onClick={() => setStatus('')}>전체</button>
         {Object.keys(HKA_STATUS).map((k) => (
-          <button key={k} type="button" className="btn btn-small" style={{ background: status === k ? 'var(--secondary)' : 'var(--bg)', color: status === k ? '#fff' : 'var(--ink)' }} onClick={() => setStatus(k)}>{HKA_STATUS[k]}</button>
+          <button key={k} type="button" className="btn btn-small" style={{ background: status === k ? HKA_STATUS_COLOR[k] : 'var(--bg)', color: status === k ? '#fff' : 'var(--ink)', borderColor: HKA_STATUS_COLOR[k] }} onClick={() => setStatus(k)}>{HKA_STATUS[k]}</button>
         ))}
         <span className="dim-2" style={{ fontSize: 12, marginLeft: 'auto' }}>{bookings.length}건</span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {bookings.map((b) => (
-          <button key={b.id} type="button" className="card" onClick={() => setDetail(b)}
-            style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', cursor: 'pointer', border: '1px solid var(--line)', background: 'var(--bg)' }}>
-            <span className="mono dim-2" style={{ fontSize: 11, width: 84 }}>{b.code}</span>
-            <span style={{ flex: 1 }}><strong>{b.name}</strong> · {b.roomTypeName} · {hkaDate(b.checkIn)}~{hkaDate(b.checkOut)} ({b.nights}박)</span>
-            <span className="badge">{HKA_STATUS[b.status]}</span>
-            <span className="badge" style={{ borderColor: 'var(--line)' }}>{HKA_PAY[b.paymentStatus]}</span>
-            <span style={{ width: 90, textAlign: 'right', fontWeight: 600 }}>{hkaWon(b.totalPrice)}</span>
-          </button>
-        ))}
-        {bookings.length === 0 && <p className="dim">예약이 없습니다.</p>}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+          <thead><tr style={{ background: 'var(--bg-2)' }}>
+            <th style={th}>예약번호</th><th style={th}>예약자</th><th style={th}>객실</th><th style={th}>일정</th>
+            <th style={{ ...th, textAlign: 'center' }}>인원</th><th style={{ ...th, textAlign: 'right' }}>금액</th>
+            <th style={{ ...th, textAlign: 'center' }}>예약 상태</th><th style={{ ...th, textAlign: 'center' }}>결제</th>
+          </tr></thead>
+          <tbody>
+            {bookings.map((b) => (
+              <tr key={b.id} onClick={() => setDetail(b)} style={{ cursor: 'pointer' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-2)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}>
+                <td style={{ ...td, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{b.code}</td>
+                <td style={td}><strong>{b.name}</strong><div className="dim-2" style={{ fontSize: 11 }}>{b.phone}</div></td>
+                <td style={td}>{b.roomTypeName}</td>
+                <td style={{ ...td, whiteSpace: 'nowrap' }}>{b.bookingUnit === 'hourly' ? `${hkaDate(b.checkIn)} ${b.slotStart || ''}` : `${hkaDate(b.checkIn)}~${hkaDate(b.checkOut)} (${b.nights}박)`}</td>
+                <td style={{ ...td, textAlign: 'center' }}>{b.guests}</td>
+                <td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{hkaWon(b.totalPrice)}</td>
+                <td style={{ ...td, textAlign: 'center' }}>
+                  <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, color: '#fff', background: HKA_STATUS_COLOR[b.status] || 'var(--ink-3)' }}>{HKA_STATUS[b.status] || b.status}</span>
+                </td>
+                <td style={{ ...td, textAlign: 'center' }}><span className="badge" style={{ borderColor: 'var(--line)' }}>{HKA_PAY[b.paymentStatus]}</span></td>
+              </tr>
+            ))}
+            {bookings.length === 0 && <tr><td style={{ ...td, textAlign: 'center', color: 'var(--ink-3)' }} colSpan={8}>예약이 없습니다.</td></tr>}
+          </tbody>
+        </table>
       </div>
+      <p className="dim-2" style={{ fontSize: 11, marginTop: 10 }}>행을 클릭하면 상세(상태 변경·입금 기록·이력)를 볼 수 있습니다.</p>
       {detail && <HkaBookingDetail booking={detail} onClose={() => setDetail(null)} onChanged={reload} />}
     </div>
   );
@@ -457,6 +521,9 @@ const HkaGuests = () => {
   return (
     <div>
       <p className="dim" style={{ fontSize: 13 }}>투숙객 정보 · 방문 횟수 · VIP · 블랙리스트. (예약 시 자동 적립, 체크아웃 시 방문 +1)</p>
+      <div className="card" style={{ padding: '10px 14px', background: 'var(--bg-2)', fontSize: 12, marginBottom: 12 }}>
+        ⓘ <strong>고객 개인정보는 수집일로부터 1년간만 보관</strong>한 뒤 파기합니다. (예약·문의 처리 목적) — 손님에게도 예약 시 안내됩니다.
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {guests.map((g) => (
           <div key={g.id} className="card" style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12, fontSize: 13 }}>
@@ -609,16 +676,17 @@ const HkaProperty = () => {
 
 // ── 메인 패널 (8 탭) ───────────────────────────────────────────────────────
 const HK_TABS = [
-  ['숙소', HkaProperty], ['객실', HkaRoomTypes], ['요금', HkaRates], ['재고', HkaAvailability],
-  ['예약', HkaBookings], ['고객', HkaGuests], ['결제', HkaPayments], ['운영', HkaOperation],
+  ['대시보드', HkaOperation], ['숙소 관리', HkaProperty], ['객실 관리', HkaRoomTypes],
+  ['프로모션', HkaRates], ['예약현황', HkaAvailability], ['예약', HkaBookings],
+  ['고객', HkaGuests], ['결제', HkaPayments],
 ];
 const HangyeonAdminPanel = () => {
-  const [tab, setTab] = React.useState('객실');
+  const [tab, setTab] = React.useState('대시보드');
   const Active = (HK_TABS.find((t) => t[0] === tab) || HK_TABS[0])[1];
   return (
     <div>
       <p className="dim" style={{ fontSize: 13, marginBottom: 14, lineHeight: 1.7 }}>
-        <strong className="gold">한켠 예약 관리 (PMS)</strong> — 전주 숙소. 객실·요금·재고·예약·고객·결제·운영 통합 관리. 데이터는 D1 서버 저장.
+        <strong className="gold">한켠 예약 관리 (PMS)</strong> — 전주 숙소. 대시보드·숙소·객실·프로모션·예약현황·예약·고객·결제 통합 관리. 데이터는 D1 서버 저장.
       </p>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18, borderBottom: '1px solid var(--line)', paddingBottom: 12 }}>
         {HK_TABS.map(([name]) => (
