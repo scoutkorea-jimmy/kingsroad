@@ -557,11 +557,13 @@ const HomePage = ({ go }) => {
     }, 5000);
     return () => clearInterval(id);
   }, [columnPaused, recentFiveColumns.length]);
-  const featuredColumn = recentFiveColumns[featuredIdx] || recentFiveColumns[0];
+  // 리스트 축소 시 featuredIdx 가 범위를 벗어나도 한 프레임 깜빡임 없도록 파생 시점에 보정.
+  const _safeIdx = featuredIdx < recentFiveColumns.length ? featuredIdx : 0;
+  const featuredColumn = recentFiveColumns[_safeIdx];
   // 사이드 4개 = 메인 제외 나머지. 순서 유지.
   const secondaryColumns = React.useMemo(
-    () => recentFiveColumns.filter((_, i) => i !== featuredIdx),
-    [recentFiveColumns, featuredIdx]
+    () => recentFiveColumns.filter((_, i) => i !== _safeIdx),
+    [recentFiveColumns, _safeIdx]
   );
   const recentPosts = React.useMemo(() => G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()).slice(0, 4), [postsTick]);
   // v00.266 — 홈 섹션도 오늘 기준 날짜 필터 적용 (HeroProgramCards 와 동일 정책).

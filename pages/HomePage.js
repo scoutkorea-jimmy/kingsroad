@@ -552,10 +552,11 @@ const HomePage = ({ go }) => {
     }, 5e3);
     return () => clearInterval(id);
   }, [columnPaused, recentFiveColumns.length]);
-  const featuredColumn = recentFiveColumns[featuredIdx] || recentFiveColumns[0];
+  const _safeIdx = featuredIdx < recentFiveColumns.length ? featuredIdx : 0;
+  const featuredColumn = recentFiveColumns[_safeIdx];
   const secondaryColumns = React.useMemo(
-    () => recentFiveColumns.filter((_, i) => i !== featuredIdx),
-    [recentFiveColumns, featuredIdx]
+    () => recentFiveColumns.filter((_, i) => i !== _safeIdx),
+    [recentFiveColumns, _safeIdx]
   );
   const recentPosts = React.useMemo(() => G.arr(() => {
     var _a2, _b2;
