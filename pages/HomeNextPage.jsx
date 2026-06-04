@@ -189,9 +189,10 @@ const HomeNextPage = ({ go }) => {
           <div className="hn-cta-row">
             {heroCtas.map((c, i) => (
               <button key={i} type="button" className="hn-cta-pill" onClick={c.action}>
-                <span className="hn-cta-pill-icon">
-                  {ctaIcons[i] ? <img src={ctaIcons[i]} alt=""/> : <span className="hn-cta-pill-ph"/>}
-                </span>
+                {/* v00.281 — 아이콘 미업로드 시 회색 placeholder 박스(깨진 이미지처럼 보임) 미렌더. */}
+                {ctaIcons[i] && (
+                  <span className="hn-cta-pill-icon"><img src={ctaIcons[i]} alt=""/></span>
+                )}
                 <span className="hn-cta-pill-text">{c.label}</span>
               </button>
             ))}
