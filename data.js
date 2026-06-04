@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.276.000",
+  version: "00.277.000",
   build: "2026.06.04",
   channel: "preview",
 };
@@ -3159,6 +3159,11 @@ window.BGNJ_SITE_CONTENT = {
       } else {
         merged[key] = sv !== undefined ? sv : def;
       }
+    }
+    // v00.277 — DEFAULT_SITE_CONTENT 에 없는 서버 섹션(예: hangyeon)도 그대로 노출.
+    // (이전엔 기본값 키만 반환해 신규 섹션 데이터가 통째로 누락됐음)
+    for (const key of Object.keys(stored)) {
+      if (!(key in merged)) merged[key] = stored[key];
     }
     return merged;
   },
