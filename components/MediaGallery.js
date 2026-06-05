@@ -172,6 +172,9 @@ const MediaGalleryEditor = ({
   };
   const isFull = images.length >= limit;
   const dropZoneStyle = {
+    // v00.282 — label 기본 display:inline 탓에 border/배경이 첫 줄박스(왼쪽 세로 띠)만
+    // 감싸고 내부 블록 div 가 박스 밖으로 흘러 helpText 와 겹쳐 보이던 깨짐 수정. block 으로 강제.
+    display: "block",
     border: `2px ${dragOver ? "solid" : "dashed"} ${dragOver ? "var(--primary)" : "var(--line-2)"}`,
     borderRadius: 6,
     padding: "20px 16px",
