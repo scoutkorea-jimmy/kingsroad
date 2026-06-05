@@ -1,6 +1,17 @@
 (function(){
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.284.001",
+    date: "2026-06-06",
+    datetime: "2026-06-06T14:40:00+09:00",
+    summary: "\u{1F527} \uC704\uCE58/\uAD50\uD1B5 OpenStreetMap \uC9C0\uB3C4 CSP \uCC28\uB2E8 \uD574\uC81C",
+    details: [
+      "\u{1F5FA}\uFE0F [\uC9C0\uB3C4 \uAE68\uC9D0 fix] CSP frame-src \uAC00 YouTube/Vimeo \uB9CC \uD5C8\uC6A9\uD574 OpenStreetMap iframe \uC774 'Framing violates frame-src' \uB85C \uCC28\uB2E8\uB418\uB358 \uAC83 \u2192 frame-src \uC5D0 https://www.openstreetmap.org \uCD94\uAC00. (\uCF58\uC194\uC758 404\xB7chrome-error \uB294 \uCC28\uB2E8 \uD504\uB808\uC784\uC758 \uBD80\uC218\uD6A8\uACFC\uB85C, \uD5C8\uC6A9 \uD6C4 \uC790\uB3D9 \uD574\uC18C.)",
+      "\u{1F4E6} cache-buster \u2014 `?v=00.284.001`."
+    ],
+    context: "v00.283 \uC9C0\uB3C4 \uCD94\uAC00 \uD6C4 \uC190\uB2D8 \uD398\uC774\uC9C0\uC5D0\uC11C \uC9C0\uB3C4\uAC00 \uAE68\uC9C4 \uBB38\uC11C \uC544\uC774\uCF58\uC73C\uB85C \uD45C\uC2DC. \uADFC\uBCF8 \uC6D0\uC778\uC740 CSP frame-src \uD654\uC774\uD2B8\uB9AC\uC2A4\uD2B8 \uB204\uB77D."
+  },
+  {
     version: "00.284.000",
     date: "2026-06-06",
     datetime: "2026-06-06T14:00:00+09:00",

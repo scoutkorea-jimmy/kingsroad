@@ -4,6 +4,17 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.284.001",
+    date: "2026-06-06",
+    datetime: "2026-06-06T14:40:00+09:00",
+    summary: "🔧 위치/교통 OpenStreetMap 지도 CSP 차단 해제",
+    details: [
+      "🗺️ [지도 깨짐 fix] CSP frame-src 가 YouTube/Vimeo 만 허용해 OpenStreetMap iframe 이 'Framing violates frame-src' 로 차단되던 것 → frame-src 에 https://www.openstreetmap.org 추가. (콘솔의 404·chrome-error 는 차단 프레임의 부수효과로, 허용 후 자동 해소.)",
+      "📦 cache-buster — `?v=00.284.001`."
+    ],
+    context: "v00.283 지도 추가 후 손님 페이지에서 지도가 깨진 문서 아이콘으로 표시. 근본 원인은 CSP frame-src 화이트리스트 누락."
+  },
+  {
     version: "00.284.000",
     date: "2026-06-06",
     datetime: "2026-06-06T14:00:00+09:00",
