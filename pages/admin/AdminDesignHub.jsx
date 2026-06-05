@@ -4,6 +4,29 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.283.000",
+    date: "2026-06-06",
+    datetime: "2026-06-06T13:00:00+09:00",
+    summary: "🗺️ 한켠 위치/교통에 OpenStreetMap 지도 추가",
+    details: [
+      "🗺️ [손님 페이지] 자고 놀자 한켠 상세 '위치/교통' 섹션에 OpenStreetMap 임베드 지도(마커 + 「큰 지도에서 보기」 링크) 추가. 외부 라이브러리·API 키 없이 iframe 임베드. 좌표 미설정 시 팔달로 기준 기본값(35.8313, 127.1386).",
+      "⚙️ [관리자 패리티] 숙소 관리 > 숙소 정보 폼에 지도 위도(lat)·경도(lng) 입력 추가. server-first(site_content_kv.hangyeon)로 저장. openstreetmap.org URL의 mlat·mlon 값으로 정확한 핀 지정.",
+      "📦 cache-buster — `?v=00.283.000`."
+    ],
+    context: "사용자가 위치/교통 섹션에 OSM 지도를 넣고 싶다고 요청. 정확한 건물 핀은 admin 좌표 입력으로 직접 지정."
+  },
+  {
+    version: "00.282.000",
+    date: "2026-06-06",
+    datetime: "2026-06-06T12:00:00+09:00",
+    summary: "🔧 관리자 숙소 대표사진 업로드 영역 UI 깨짐 fix",
+    details: [
+      "🖼️ [드롭존 깨짐 fix] MediaGalleryEditor 드롭존이 label 기본 display:inline 탓에 border/배경이 첫 줄박스(왼쪽 세로 띠)만 감싸고, 내부 블록 div(「최대 10장 도달」 등)이 박스 밖으로 흘러 helpText 와 겹쳐 보이던 것 → dropZoneStyle 에 display:block 추가로 해결.",
+      "📦 cache-buster — `?v=00.282.000`."
+    ],
+    context: "사용자가 관리자 한켠 PMS 숙소 대표사진 영역 UI 깨짐을 보고. label 인라인 렌더링이 근본 원인."
+  },
+  {
     version: "00.281.000",
     date: "2026-06-04",
     datetime: "2026-06-04T16:13:51+09:00",

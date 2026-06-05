@@ -400,6 +400,13 @@ const HangyeonPage = ({ go, user }) => {
   const desc = info.desc || "전주 전자상가 뒤편 조용한 주택가에 자리한 공간 ‘한켠’.";
   const address = info.address || '전북 전주시 덕진구 팔달로 340-37';
   const directions = info.directions || '전주역에서 차량 10분, 전주 고속버스터미널에서 도보 15분. 한옥마을·자만벽화마을·경기전·풍남문까지 차량 5~10분.';
+  // 위치/교통 OSM 지도 — 좌표는 admin(숙소 정보)에서 설정. 미설정 시 팔달로 기준 기본값.
+  const lat = Number(info.lat) || 35.8313;
+  const lng = Number(info.lng) || 127.1386;
+  const mapD = 0.0045; // bbox 반경 ≈ 거리뷰 수준 줌
+  const osmBbox = `${(lng - mapD).toFixed(6)},${(lat - mapD).toFixed(6)},${(lng + mapD).toFixed(6)},${(lat + mapD).toFixed(6)}`;
+  const osmEmbed = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(osmBbox)}&layer=mapnik&marker=${lat},${lng}`;
+  const osmLink = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
   const images = Array.isArray(info.images) ? info.images : [];
   const memberDiscount = Number(info.memberDiscount) || 0; // 비회원에게도 회원가 노출(가입 유도)
   const property = { name, address, directions, notice: info.notice };
@@ -456,6 +463,10 @@ const HangyeonPage = ({ go, user }) => {
           <div style={{ ...SOFT, padding: '18px 20px' }}>
             <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>📍 {address}</div>
             <p className="dim" style={{ margin: 0, fontSize: 13.5, lineHeight: 1.8 }}>{directions}</p>
+            <div style={{ marginTop: 14, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--line)', background: 'var(--bg-2)' }}>
+              <iframe title={`${name} 위치 지도`} src={osmEmbed} loading="lazy" referrerPolicy="no-referrer-when-downgrade" style={{ width: '100%', height: 320, border: 0, display: 'block' }} />
+            </div>
+            <a href={osmLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 8, fontSize: 12.5, color: 'var(--secondary)', textDecoration: 'none' }}>큰 지도에서 보기 ↗</a>
           </div>
         </section>
 

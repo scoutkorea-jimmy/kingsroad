@@ -647,7 +647,7 @@ const HkaProperty = () => {
   const init = () => {
     const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
     const h = sc.hangyeon || {};
-    return { name: h.name || '전주한켠', tagline: h.tagline || '', desc: h.desc || '', address: h.address || '', directions: h.directions || '', notice: h.notice || '', images: Array.isArray(h.images) ? h.images : [] };
+    return { name: h.name || '전주한켠', tagline: h.tagline || '', desc: h.desc || '', address: h.address || '', lat: h.lat ?? '', lng: h.lng ?? '', directions: h.directions || '', notice: h.notice || '', images: Array.isArray(h.images) ? h.images : [] };
   };
   const [form, setForm] = React.useState(init);
   const up = (patch) => setForm((f) => ({ ...f, ...patch }));
@@ -664,6 +664,11 @@ const HkaProperty = () => {
       </div>
       <label style={{ fontSize: 12 }}>소개글<textarea className="field-input" rows={3} value={form.desc} onChange={(e) => up({ desc: e.target.value })} /></label>
       <label style={{ fontSize: 12 }}>주소<input className="field-input" value={form.address} onChange={(e) => up({ address: e.target.value })} placeholder="전북 전주시 덕진구 팔달로 340-37" /></label>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <label style={{ fontSize: 12 }}>지도 위도(lat)<input className="field-input" value={form.lat} onChange={(e) => up({ lat: e.target.value })} placeholder="35.8313" inputMode="decimal" /></label>
+        <label style={{ fontSize: 12 }}>지도 경도(lng)<input className="field-input" value={form.lng} onChange={(e) => up({ lng: e.target.value })} placeholder="127.1386" inputMode="decimal" /></label>
+      </div>
+      <p className="dim" style={{ fontSize: 11, margin: '-6px 0 0', lineHeight: 1.6 }}>손님 페이지 위치/교통의 OpenStreetMap 핀 위치입니다. openstreetmap.org에서 정확한 건물을 우클릭 → “이 위치 표시” 시 주소창 URL의 <code>mlat</code>·<code>mlon</code> 값을 그대로 넣으세요. 비워두면 팔달로 기준으로 표시됩니다.</p>
       <label style={{ fontSize: 12 }}>찾아가는 길<textarea className="field-input" rows={3} value={form.directions} onChange={(e) => up({ directions: e.target.value })} /></label>
       <label style={{ fontSize: 12 }}>안내/공지(선택)<textarea className="field-input" rows={2} value={form.notice} onChange={(e) => up({ notice: e.target.value })} placeholder="입실 15:00 / 퇴실 11:00 등" /></label>
       {window.MediaGalleryEditor && (
