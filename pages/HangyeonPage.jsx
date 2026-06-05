@@ -298,13 +298,27 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
 
 // ── 이미지 갤러리 ────────────────────────────────────────────────────────────
 const HkGallery = ({ images, name }) => {
-  const has = images.length > 0; const big = has ? images[0] : null; const side = has ? images.slice(1, 5) : [];
+  const has = images.length > 0; const big = has ? images[0] : null;
+  // 작은 4장 — 대표(big) 제외한 나머지 사진들에서 무작위 4장. 사진이 5장 초과면 5초마다 교체.
+  const [tick, setTick] = React.useState(0);
+  React.useEffect(() => {
+    if (images.length <= 5) return; // 풀(대표 제외)이 4장 이하면 회전 불필요
+    const id = setInterval(() => setTick((t) => t + 1), 5000);
+    return () => clearInterval(id);
+  }, [images.length]);
+  const side = React.useMemo(() => {
+    const pool = has ? images.slice(1) : [];
+    if (pool.length <= 4) return pool.slice(0, 4);
+    const a = pool.slice(); // Fisher–Yates 셔플 후 앞 4장
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a.slice(0, 4);
+  }, [images, has, tick]);
   const ph = () => window.CoverPlaceholder ? <window.CoverPlaceholder aspectRatio="1/1" iconSize={40} /> : <div style={{ background: 'var(--bg-2)', width: '100%', height: '100%' }} />;
   return (
     <div style={{ display: 'flex', gap: 6, marginBottom: 24, height: 360, borderRadius: 16, overflow: 'hidden' }}>
       <div style={{ flex: '1 1 60%', background: 'var(--bg-2)', overflow: 'hidden' }}>{big ? <img src={big.url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : ph()}</div>
       <div style={{ flex: '1 1 40%', display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 6, position: 'relative' }}>
-        {[0, 1, 2, 3].map((i) => <div key={i} style={{ background: 'var(--bg-2)', overflow: 'hidden' }}>{side[i] ? <img src={side[i].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : ph()}</div>)}
+        {[0, 1, 2, 3].map((i) => <div key={i} style={{ background: 'var(--bg-2)', overflow: 'hidden' }}>{side[i] ? <img key={side[i].url} src={side[i].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', animation: 'bgnj-fade-in .6s ease' }} /> : ph()}</div>)}
         {has && images.length > 1 && <span style={{ position: 'absolute', right: 12, bottom: 12, background: 'rgba(15,23,42,0.78)', color: '#fff', fontSize: 12, padding: '6px 12px', borderRadius: 999 }}>전체 사진 {images.length}</span>}
       </div>
     </div>

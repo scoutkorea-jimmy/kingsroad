@@ -4,6 +4,18 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.284.002",
+    date: "2026-06-06",
+    datetime: "2026-06-06T15:20:00+09:00",
+    summary: "🖼️ 한켠 갤러리 작은 4장 무작위 교체 + 무효 meta 보안 지시문 정리",
+    details: [
+      "🔀 [갤러리 회전] 자고 놀자 한켠 상단 갤러리의 작은 4장을 대표사진 제외 나머지에서 무작위 4장으로 표시하고, 사진이 5장 초과면 5초마다 페이드 교체. 올린 사진이 골고루 노출됨.",
+      "🧹 [콘솔 정리] HTTP 헤더 전용이라 <meta> 로는 브라우저가 무시하던 X-Frame-Options meta 삭제 + CSP frame-ancestors 제거(GitHub Pages 정적 호스팅은 헤더 주입 불가). 콘솔 경고 2건 제거.",
+      "📦 cache-buster — `?v=00.284.002`."
+    ],
+    context: "사용자 요청: 갤러리 작은 4장을 업로드 사진들에서 무작위로 바뀌게. + 콘솔의 무효 meta 보안 경고 정리(2번 선택)."
+  },
+  {
     version: "00.284.001",
     date: "2026-06-06",
     datetime: "2026-06-06T14:40:00+09:00",
