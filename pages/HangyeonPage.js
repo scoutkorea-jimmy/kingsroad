@@ -239,7 +239,8 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
 const HkGallery = ({ images, name }) => {
   const has = images.length > 0;
   const big = has ? images[0] : null;
-  const pool = React.useMemo(() => has ? images.slice(1) : [], [images, has]);
+  const sig = images.map((im) => im && im.url || "").join("|");
+  const pool = React.useMemo(() => has ? images.slice(1) : [], [sig]);
   const pickNext = React.useCallback((cur) => {
     const ex = new Set((Array.isArray(cur) ? cur : []).map((x) => x.url));
     let cand = pool.filter((x) => !ex.has(x.url));

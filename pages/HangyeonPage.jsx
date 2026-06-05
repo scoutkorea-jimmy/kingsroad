@@ -300,7 +300,10 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
 const HkGallery = ({ images, name }) => {
   const has = images.length > 0; const big = has ? images[0] : null;
   // 작은 4장 — 대표(big) 제외 풀에서 무작위. 직전 4장과 겹치지 않게 뽑고 3초마다 슬라이드 교체.
-  const pool = React.useMemo(() => (has ? images.slice(1) : []), [images, has]);
+  // pool 은 이미지 '내용'(url 시그니처) 기준으로만 재계산 — 부모가 매 렌더 새 배열([] 포함)을
+  // 넘겨도 참조가 흔들려 reset effect→setSide 가 무한 렌더하는 일을 차단(빈 배열 케이스 안전).
+  const sig = images.map((im) => (im && im.url) || '').join('|');
+  const pool = React.useMemo(() => (has ? images.slice(1) : []), [sig]); // images/has 는 sig 와 동기 변동
   const pickNext = React.useCallback((cur) => {
     const ex = new Set((Array.isArray(cur) ? cur : []).map((x) => x.url));
     let cand = pool.filter((x) => !ex.has(x.url));
