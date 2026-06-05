@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.284.000",
+    date: "2026-06-06",
+    datetime: "2026-06-06T14:00:00+09:00",
+    summary: "🏨 한켠 객실에 주간(7박)·월간(30박) 고정 정액 상품 추가",
+    details: [
+      "🗓️ [신규 상품] 기존 시간제·숙박(하루)에 더해 주간(7박 고정)·월간(30박 고정) 상품 추가. 손님은 시작일만 선택하면 체크아웃이 자동(+7/+30박) 설정되고 관리자가 정한 정액으로 결제.",
+      "⚙️ [관리자] 객실 관리 편집 폼에 '주간(7박)/월간(30박) 예약 받기' 토글 + 정액 요금 입력 추가. 목록 요약줄에도 주간/월간 요금 표기.",
+      "🧮 [워커] hkComputeFixed 견적(정액 + 쿠폰·회원할인), hkQuoteFor 라우팅, 재고 점유(hkHourRemaining/hkRoomAvailability)에 weekly·monthly 범위 점유 반영(더블부킹 방지). 객실 CRUD에 weekly_*/monthly_* 컬럼 매핑.",
+      "🗄️ [D1] hk_room_types 에 weekly_enabled/weekly_price/monthly_enabled/monthly_price 컬럼 추가. migrate-weekly-monthly.sql 로 remote 적용 필요.",
+      "📦 cache-buster — `?v=00.284.000`."
+    ],
+    context: "사용자가 객실관리에 주간·월간 상품 추가 요청(현재 일간만). 고정 1블록(7/30박)·정액·시작일만 선택으로 확정."
+  },
+  {
     version: "00.283.000",
     date: "2026-06-06",
     datetime: "2026-06-06T13:00:00+09:00",

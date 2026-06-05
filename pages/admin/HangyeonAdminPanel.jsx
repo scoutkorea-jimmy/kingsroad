@@ -19,7 +19,7 @@ const HkaRoomTypes = () => {
   const reload = () => window.BGNJ_HANGYEON.refreshRoomTypes({ includeAll: true }).then(setList);
   React.useEffect(() => { reload(); }, []);
 
-  const blank = () => ({ name: '', description: '', images: [], quantity: 1, maxOccupancy: 2, bedConfig: '', amenities: [], basePrice: 0, weekendPrice: '', discounts: [], minNights: 1, maxNights: 30, status: 'active', sortOrder: 0, bookingType: 'nightly', openTime: '09:00', closeTime: '22:00', slotMinutes: 60, hourlyEnabled: true, hourlyPrice: 10000, minHours: 3, dailyEnabled: true, dailyPrice: 60000 });
+  const blank = () => ({ name: '', description: '', images: [], quantity: 1, maxOccupancy: 2, bedConfig: '', amenities: [], basePrice: 0, weekendPrice: '', discounts: [], minNights: 1, maxNights: 30, status: 'active', sortOrder: 0, bookingType: 'nightly', openTime: '09:00', closeTime: '22:00', slotMinutes: 60, hourlyEnabled: true, hourlyPrice: 10000, minHours: 3, dailyEnabled: true, dailyPrice: 60000, weeklyEnabled: false, weeklyPrice: 0, monthlyEnabled: false, monthlyPrice: 0 });
   const save = async () => {
     if (!editing.name.trim()) { hkaFlash('객실 이름을 입력하세요.', false); return; }
     try { await window.BGNJ_HANGYEON.saveRoomType(editing); setEditing(null); reload(); hkaFlash('저장됨.'); }
@@ -75,6 +75,30 @@ const HkaRoomTypes = () => {
             </div>
           )}
         </div>
+        {/* 주간(7박 고정) 예약 */}
+        <div className="card" style={{ padding: 12, background: editing.weeklyEnabled ? 'rgba(22,163,74,0.06)' : 'var(--bg-2)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <input type="checkbox" checked={!!editing.weeklyEnabled} onChange={(e) => up({ weeklyEnabled: e.target.checked })} />주간(7박 고정) 예약 받기
+          </label>
+          {editing.weeklyEnabled && (
+            <div style={{ marginTop: 10 }}>
+              <label style={{ fontSize: 12 }}>주간 요금 (7박 정액)<input type="number" className="field-input" value={editing.weeklyPrice} onChange={(e) => up({ weeklyPrice: Number(e.target.value) })} placeholder="예: 350000" /></label>
+              <p className="dim" style={{ fontSize: 11, margin: '6px 0 0' }}>손님이 시작일을 고르면 7박이 자동 설정되고 위 정액으로 결제됩니다.</p>
+            </div>
+          )}
+        </div>
+        {/* 월간(30박 고정) 예약 */}
+        <div className="card" style={{ padding: 12, background: editing.monthlyEnabled ? 'rgba(22,163,74,0.06)' : 'var(--bg-2)' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <input type="checkbox" checked={!!editing.monthlyEnabled} onChange={(e) => up({ monthlyEnabled: e.target.checked })} />월간(30박 고정) 예약 받기
+          </label>
+          {editing.monthlyEnabled && (
+            <div style={{ marginTop: 10 }}>
+              <label style={{ fontSize: 12 }}>월간 요금 (30박 정액)<input type="number" className="field-input" value={editing.monthlyPrice} onChange={(e) => up({ monthlyPrice: Number(e.target.value) })} placeholder="예: 1200000" /></label>
+              <p className="dim" style={{ fontSize: 11, margin: '6px 0 0' }}>손님이 시작일을 고르면 30박이 자동 설정되고 위 정액으로 결제됩니다.</p>
+            </div>
+          )}
+        </div>
         <label style={{ fontSize: 12 }}>설명<textarea className="field-input" rows={2} value={editing.description} onChange={(e) => up({ description: e.target.value })} /></label>
         <label style={{ fontSize: 12 }}>편의시설 (쉼표 구분)
           <input className="field-input" value={(editing.amenities || []).join(', ')} onChange={(e) => up({ amenities: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })} placeholder="에어컨, 와이파이, 취사, 주차" />
@@ -116,7 +140,7 @@ const HkaRoomTypes = () => {
           <div key={rt.id} className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ flex: 1 }}>
               <strong>{rt.name}</strong> <span className="badge" style={{ marginLeft: 6 }}>{rt.status === 'active' ? '판매중' : '판매중지'}</span>
-              <div className="dim-2" style={{ fontSize: 12, marginTop: 4 }}>{rt.quantity}실 · 최대 {rt.maxOccupancy}인 · {[rt.hourlyEnabled ? `시간당 ${hkaWon(rt.hourlyPrice)}` : null, rt.dailyEnabled ? `하루 ${hkaWon(rt.dailyPrice)}` : null].filter(Boolean).join(' / ') || '요금 미설정'}</div>
+              <div className="dim-2" style={{ fontSize: 12, marginTop: 4 }}>{rt.quantity}실 · 최대 {rt.maxOccupancy}인 · {[rt.hourlyEnabled ? `시간당 ${hkaWon(rt.hourlyPrice)}` : null, rt.dailyEnabled ? `하루 ${hkaWon(rt.dailyPrice)}` : null, rt.weeklyEnabled ? `주간 ${hkaWon(rt.weeklyPrice)}` : null, rt.monthlyEnabled ? `월간 ${hkaWon(rt.monthlyPrice)}` : null].filter(Boolean).join(' / ') || '요금 미설정'}</div>
             </div>
             <button type="button" className="btn btn-small" onClick={() => setEditing({ ...rt, weekendPrice: rt.weekendPrice == null ? '' : rt.weekendPrice })}>수정</button>
           </div>

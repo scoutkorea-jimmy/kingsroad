@@ -170,8 +170,15 @@ const HkHourSelect = ({ roomTypeId, date, minHours, start, hours, onStart, onHou
 
 // ── 예약 주문 모달 (야놀자 주문 페이지 간단 버전) ────────────────────────────
 const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, property, go, memberDiscount, onClose, onDone }) => {
-  const canStay = room.dailyEnabled, canHourly = room.hourlyEnabled;
-  const [unit, setUnit] = React.useState(canStay ? 'nightly' : 'hourly');
+  // 이용 단위 — 객실이 켠 상품만. nightly/weekly/monthly/hourly 순.
+  const units = [];
+  if (room.dailyEnabled) units.push('nightly');
+  if (room.weeklyEnabled) units.push('weekly');
+  if (room.monthlyEnabled) units.push('monthly');
+  if (room.hourlyEnabled) units.push('hourly');
+  const [unit, setUnit] = React.useState(units[0] || 'nightly');
+  const unitLabel = (u) => u === 'nightly' ? `숙박 ${hkWon(room.dailyPrice)}~` : u === 'weekly' ? `주간 ${hkWon(room.weeklyPrice)}` : u === 'monthly' ? `월간 ${hkWon(room.monthlyPrice)}` : `시간제 ${hkWon(room.hourlyPrice)}/시간`;
+  const fixedNights = unit === 'weekly' ? 7 : unit === 'monthly' ? 30 : 0;
   const [start, setStart] = React.useState(null);
   const [hours, setHours] = React.useState(room.minHours || 3);
   const [coupon, setCoupon] = React.useState('');
@@ -184,10 +191,12 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
   const [submitting, setSubmitting] = React.useState(false);
   const guests = adults + children;
   const nights = hkNights(checkIn, checkOut);
+  const fixedCheckOut = fixedNights ? hkAddDays(checkIn, fixedNights) : checkOut;
   React.useEffect(() => { setStart(null); }, [unit]);
   React.useEffect(() => {
     let alive = true;
     if (unit === 'hourly') { if (!start) { setQuote(null); return; } window.BGNJ_HANGYEON.quote({ roomTypeId: room.id, unit: 'hourly', date: checkIn, slotStart: start, hours, guests, couponCode: coupon.trim() || undefined }).then((q) => { if (alive) setQuote(q); }); }
+    else if (unit === 'weekly' || unit === 'monthly') { window.BGNJ_HANGYEON.quote({ roomTypeId: room.id, unit, checkIn, rooms: 1, guests, couponCode: coupon.trim() || undefined }).then((q) => { if (alive) setQuote(q); }); }
     else { window.BGNJ_HANGYEON.quote({ roomTypeId: room.id, unit: 'nightly', checkIn, checkOut, rooms: 1, guests, couponCode: coupon.trim() || undefined }).then((q) => { if (alive) setQuote(q); }); }
     return () => { alive = false; };
   }, [unit, start, hours, coupon, room.id, checkIn, checkOut, guests]);
@@ -197,7 +206,9 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
     if (!quote?.ok) { window.BGNJ_TOAST?.error?.(quote?.reason || '예약할 수 없습니다.'); return; }
     setSubmitting(true);
     const base = { roomTypeId: room.id, guests, name: name.trim(), phone: phone.trim(), email: email.trim(), request: request.trim(), couponCode: coupon.trim() || undefined };
-    const payload = unit === 'hourly' ? { ...base, unit: 'hourly', date: checkIn, slotStart: start, hours } : { ...base, unit: 'nightly', checkIn, checkOut, rooms: 1 };
+    const payload = unit === 'hourly' ? { ...base, unit: 'hourly', date: checkIn, slotStart: start, hours }
+      : (unit === 'weekly' || unit === 'monthly') ? { ...base, unit, checkIn, rooms: 1 }
+        : { ...base, unit: 'nightly', checkIn, checkOut, rooms: 1 };
     const res = await window.BGNJ_HANGYEON.book(payload); setSubmitting(false);
     if (res.ok) { window.BGNJ_TOAST?.success?.(`예약 접수 완료 (${res.booking?.code}). 입금 확인 후 확정됩니다.`); onDone && onDone(); onClose(); } else window.BGNJ_TOAST?.error?.(res.message || '예약 실패');
   };
@@ -217,20 +228,20 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
         </div>
         <div style={{ padding: '0 22px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div className="dim-2" style={{ fontSize: 12.5 }}>기준 {Math.min(adults, room.maxOccupancy)}명 / 최대 {room.maxOccupancy}명 · {property?.address}</div>
-          {canStay && canHourly && (
-            <div style={{ display: 'flex', gap: 8 }}>
-              {['nightly', 'hourly'].map((u) => <button key={u} type="button" onClick={() => setUnit(u)} style={{ flex: 1, padding: '11px 0', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer', border: 'none', background: unit === u ? 'var(--bg-2)' : 'transparent', color: unit === u ? 'var(--ink)' : 'var(--ink-3)' }}>{u === 'nightly' ? `숙박 ${hkWon(room.dailyPrice)}~` : `시간제 ${hkWon(room.hourlyPrice)}/시간`}</button>)}
+          {units.length > 1 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {units.map((u) => <button key={u} type="button" onClick={() => setUnit(u)} style={{ flex: '1 1 80px', minWidth: 80, padding: '11px 8px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: unit === u ? 'var(--bg-2)' : 'transparent', color: unit === u ? 'var(--ink)' : 'var(--ink-3)' }}>{unitLabel(u)}</button>)}
             </div>
           )}
 
-          {unit === 'nightly' ? (
+          {unit === 'hourly' ? (
+            <HkHourSelect roomTypeId={room.id} date={checkIn} minHours={room.minHours || 3} start={start} hours={hours} onStart={setStart} onHours={setHours} />
+          ) : (
             <div style={{ background: 'var(--bg-2)', borderRadius: 12, display: 'flex', alignItems: 'center' }}>
               {cell('체크인', checkIn, '15:00')}
-              <span className="badge" style={{ flexShrink: 0 }}>{nights}박</span>
-              {cell('체크아웃', checkOut, '11:00')}
+              <span className="badge" style={{ flexShrink: 0 }}>{unit === 'nightly' ? nights : fixedNights}박</span>
+              {cell('체크아웃', unit === 'nightly' ? checkOut : fixedCheckOut, '11:00')}
             </div>
-          ) : (
-            <HkHourSelect roomTypeId={room.id} date={checkIn} minHours={room.minHours || 3} start={start} hours={hours} onStart={setStart} onHours={setHours} />
           )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5 }}>
@@ -242,7 +253,7 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
             <strong style={{ fontSize: 14 }}>결제 금액</strong>
             {quote?.ok ? (
               <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="dim">상품 금액 {unit === 'nightly' ? `(${nights}박)` : `(${quote.hours}시간)`}</span><span>{hkWon(quote.subtotal)}</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span className="dim">상품 금액 {unit === 'hourly' ? `(${quote.hours}시간)` : `(${quote.nights}박)`}</span><span>{hkWon(quote.subtotal)}</span></div>
                 {quote.couponDiscount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success)' }}><span>쿠폰 {quote.couponLabel}</span><span>-{hkWon(quote.couponDiscount)}</span></div>}
                 {quote.memberDiscount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--success)' }}><span>회원 할인 ({quote.memberRate}%)</span><span>-{hkWon(quote.memberDiscount)}</span></div>}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: 16, marginTop: 4 }}><span>총 결제 금액</span><span className="ko-serif">{hkWon(quote.total)}</span></div>
@@ -303,10 +314,16 @@ const HkGallery = ({ images, name }) => {
 // ── 객실 카드 (야놀자 스타일) ────────────────────────────────────────────────
 const HkRoomCard = ({ room, onBook, memberDiscount }) => {
   const cover = (room.images || []).find((im) => im.isPrimary) || (room.images || [])[0];
-  const available = room.stayAvailable || room.dayHourlyAvailable;
+  const available = room.stayAvailable || room.dayHourlyAvailable || room.weeklyAvailable || room.monthlyAvailable;
   const md = Number(memberDiscount) || 0;
   const mp = (p) => Math.round((p || 0) * (100 - md) / 100);
-  const basePrice = room.stayAvailable ? room.stayTotal : room.hourlyPrice;
+  // 대표 가격: 숙박 > 시간제 > 주간 > 월간. 시간제만 단가(~), 나머지는 정액/총액.
+  const priceInfo = room.stayAvailable ? { v: room.stayTotal, label: `${room.nights}박`, suffix: '' }
+    : room.dayHourlyAvailable ? { v: room.hourlyPrice, label: '시간당', suffix: '~' }
+      : room.weeklyAvailable ? { v: room.weeklyTotal, label: '주간(7박)', suffix: '' }
+        : room.monthlyAvailable ? { v: room.monthlyTotal, label: '월간(30박)', suffix: '' }
+          : { v: 0, label: '', suffix: '' };
+  const basePrice = priceInfo.v;
   return (
     <div style={{ ...SOFT, padding: 0, overflow: 'hidden', display: 'flex', flexWrap: 'wrap', opacity: available ? 1 : 0.55 }}>
       <div style={{ flex: '0 0 220px', minWidth: 180, background: 'var(--bg-2)', overflow: 'hidden' }}>
@@ -321,17 +338,19 @@ const HkRoomCard = ({ room, onBook, memberDiscount }) => {
           </div>
         )}
         {room.hourlyEnabled && <div className="dim-2" style={{ fontSize: 11.5 }}>시간제 {hkWon(room.hourlyPrice)}/시간 (최소 {room.minHours}시간)</div>}
+        {room.weeklyEnabled && <div className="dim-2" style={{ fontSize: 11.5 }}>주간(7박) {hkWon(room.weeklyPrice)}</div>}
+        {room.monthlyEnabled && <div className="dim-2" style={{ fontSize: 11.5 }}>월간(30박) {hkWon(room.monthlyPrice)}</div>}
         <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: 12, paddingTop: 8 }}>
           {available ? (
             <div style={{ textAlign: 'right' }}>
-              <div className="dim-2" style={{ fontSize: 11 }}>{room.stayAvailable ? `${room.nights}박` : '시간당'}</div>
+              <div className="dim-2" style={{ fontSize: 11 }}>{priceInfo.label}</div>
               <div className="ko-serif" style={{ fontSize: md > 0 ? 16 : 22, fontWeight: 700, color: md > 0 ? 'var(--ink-3)' : 'var(--ink)', textDecoration: md > 0 ? 'line-through' : 'none' }}>
-                {hkWon(basePrice)}{!room.stayAvailable ? '~' : ''}
+                {hkWon(basePrice)}{priceInfo.suffix}
               </div>
               {md > 0 && (
                 <div style={{ marginTop: 2 }}>
                   <span style={{ fontSize: 10, color: 'var(--secondary)', fontWeight: 700, marginRight: 4 }}>회원가 -{md}%</span>
-                  <span className="ko-serif" style={{ fontSize: 22, fontWeight: 700, color: 'var(--secondary)' }}>{hkWon(mp(basePrice))}{!room.stayAvailable ? '~' : ''}</span>
+                  <span className="ko-serif" style={{ fontSize: 22, fontWeight: 700, color: 'var(--secondary)' }}>{hkWon(mp(basePrice))}{priceInfo.suffix}</span>
                 </div>
               )}
             </div>

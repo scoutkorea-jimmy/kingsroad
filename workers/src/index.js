@@ -2358,6 +2358,9 @@ const hkMapRoomType = (r) => ({
   openTime: r.open_time || "09:00", closeTime: r.close_time || "22:00", slotMinutes: r.slot_minutes || 60,
   hourlyEnabled: !!r.hourly_enabled, hourlyPrice: r.hourly_price, minHours: r.min_hours || 3,
   dailyEnabled: !!r.daily_enabled, dailyPrice: r.daily_price,
+  // v00.284 — 주간(7박)/월간(30박) 고정 정액 상품
+  weeklyEnabled: !!r.weekly_enabled, weeklyPrice: r.weekly_price,
+  monthlyEnabled: !!r.monthly_enabled, monthlyPrice: r.monthly_price,
   createdAt: r.created_at, updatedAt: r.updated_at,
 });
 
@@ -2374,7 +2377,7 @@ const hkHourRemaining = async (env, room, date) => {
   // 종일 점유 (daily 당일 + nightly 범위 포함)
   const dayRow = await env.DB.prepare(
     `SELECT COUNT(*) AS c FROM hk_bookings WHERE room_type_id = ? AND status IN ${HK_ACTIVE_STATUSES}
-     AND ((booking_unit = 'daily' AND check_in = ?) OR (booking_unit = 'nightly' AND check_in <= ? AND check_out > ?)
+     AND ((booking_unit = 'daily' AND check_in = ?) OR (booking_unit IN ('nightly','weekly','monthly') AND check_in <= ? AND check_out > ?)
           OR (booking_unit IS NULL AND check_in <= ? AND check_out > ?))`
   ).bind(room.id, date, date, date, date, date).first();
   const dailyOcc = Number(dayRow?.c || 0);
@@ -2594,6 +2597,53 @@ const hkComputeStay = async (env, roomTypeId, checkIn, checkOut, rooms, couponCo
   };
 };
 
+// 주간(7박)/월간(30박) 고정 정액 상품 견적. 시작일만 받고 종료일·박수는 자동.
+// 정액 = weekly_price / monthly_price. 쿠폰·회원할인만 위에 적용(주말가·rate rule·연박할인 미적용).
+const HK_FIXED_NIGHTS = { weekly: 7, monthly: 30 };
+const hkComputeFixed = async (env, roomTypeId, unit, checkIn, rooms, couponCode, isMember) => {
+  const nightsN = HK_FIXED_NIGHTS[unit];
+  if (!nightsN) return { ok: false, reason: "알 수 없는 상품입니다." };
+  const unitKo = unit === "weekly" ? "주간" : "월간";
+  if (!hkIsValidDate(checkIn)) return { ok: false, reason: "날짜 형식이 올바르지 않습니다." };
+  const rtRow = await env.DB.prepare("SELECT * FROM hk_room_types WHERE id = ?").bind(roomTypeId).first();
+  if (!rtRow) return { ok: false, reason: "객실을 찾을 수 없습니다." };
+  if (rtRow.status !== "active") return { ok: false, reason: "현재 판매하지 않는 객실입니다." };
+  const enabled = unit === "weekly" ? rtRow.weekly_enabled : rtRow.monthly_enabled;
+  const flat = unit === "weekly" ? rtRow.weekly_price : rtRow.monthly_price;
+  if (!enabled) return { ok: false, reason: `${unitKo} 예약이 불가한 객실입니다.` };
+  if (flat == null || flat <= 0) return { ok: false, reason: `${unitKo} 요금이 설정되지 않았습니다.` };
+  const checkOut = hkAddDays(checkIn, nightsN);
+  const roomCount = Math.max(1, Number(rooms) || 1);
+  // 재고 체크 (N박 연속 점유)
+  const avail = await hkRoomAvailability(env, roomTypeId, checkIn, checkOut);
+  for (const a of avail) {
+    if (a.closed) return { ok: false, reason: `${a.date} 은(는) 판매하지 않습니다.` };
+    if (a.remaining < roomCount) return { ok: false, reason: `${a.date} 객실이 부족합니다 (잔여 ${a.remaining}).` };
+  }
+  const subtotal = flat * roomCount;
+  // 쿠폰
+  let couponDiscount = 0, couponLabel = "", couponError = "";
+  if (couponCode) {
+    const c = await env.DB.prepare("SELECT * FROM hk_coupons WHERE code = ? AND active = 1").bind(String(couponCode).trim().toUpperCase()).first();
+    const today = nowIso().slice(0, 10);
+    if (!c) couponError = "유효하지 않은 쿠폰입니다.";
+    else if (c.starts_at && today < c.starts_at.slice(0, 10)) couponError = "아직 사용할 수 없는 쿠폰입니다.";
+    else if (c.expires_at && today > c.expires_at.slice(0, 10)) couponError = "만료된 쿠폰입니다.";
+    else if (subtotal < (c.min_amount || 0)) couponError = `최소 ${c.min_amount}원 이상부터 사용 가능합니다.`;
+    else { couponDiscount = c.kind === "amount" ? Math.min(subtotal, c.value) : Math.round(subtotal * (c.value || 0) / 100); couponLabel = c.label || c.code; }
+  }
+  const afterDisc = Math.max(0, subtotal - couponDiscount);
+  const md = isMember ? await hkMemberDiscount(env) : 0;
+  const memberDiscount = md > 0 ? Math.round(afterDisc * md / 100) : 0;
+  const total = Math.max(0, afterDisc - memberDiscount);
+  return {
+    ok: true, type: unit, unitType: unit, roomTypeId, roomTypeName: rtRow.name,
+    checkIn, checkOut, nights: nightsN, rooms: roomCount,
+    subtotal, stayDiscount: 0, stayLabel: "", couponDiscount, couponLabel, couponError,
+    memberDiscount, memberRate: md, total,
+  };
+};
+
 // ── 공개/사용자 ──
 const handleHkRoomTypesList = async (req, env) => {
   const url = new URL(req.url);
@@ -2629,6 +2679,7 @@ const handleHkAvailability = async (req, env) => {
 // 이용 단위별 견적 라우팅 (hourly | nightly 범위). isMember=로그인 회원이면 회원가 적용.
 const hkQuoteFor = async (env, body, isMember) => {
   if (body.unit === "hourly") return await hkComputeHourly(env, body, isMember);
+  if (body.unit === "weekly" || body.unit === "monthly") return await hkComputeFixed(env, body.roomTypeId, body.unit, body.checkIn, body.rooms, body.couponCode, isMember);
   return await hkComputeStay(env, body.roomTypeId, body.checkIn, body.checkOut, body.rooms, body.couponCode, isMember);
 };
 
@@ -2670,7 +2721,12 @@ const handleHkDay = async (req, env) => {
     // 시간제: 체크인 당일 가능여부
     let hourlyAvailable = false;
     if (rt.hourlyEnabled) { const ha = await hkHourRemaining(env, rt, from); hourlyAvailable = ha.hours.some((h) => h.remaining >= 1); }
-    rooms.push({ ...rt, nights, stayAvailable, stayTotal, dayHourlyAvailable: hourlyAvailable, dayDailyAvailable: stayAvailable });
+    // 주간/월간: 체크인일 기준 7/30박 고정 가능여부 + 정액
+    let weeklyAvailable = false, weeklyTotal = 0;
+    if (rt.weeklyEnabled) { const q = await hkComputeFixed(env, rt.id, "weekly", from, 1, null); weeklyAvailable = !!q.ok; weeklyTotal = q.ok ? q.total : 0; }
+    let monthlyAvailable = false, monthlyTotal = 0;
+    if (rt.monthlyEnabled) { const q = await hkComputeFixed(env, rt.id, "monthly", from, 1, null); monthlyAvailable = !!q.ok; monthlyTotal = q.ok ? q.total : 0; }
+    rooms.push({ ...rt, nights, stayAvailable, stayTotal, dayHourlyAvailable: hourlyAvailable, dayDailyAvailable: stayAvailable, weeklyAvailable, weeklyTotal, monthlyAvailable, monthlyTotal });
   }
   return { from, to, nights, rooms };
 };
@@ -2702,8 +2758,8 @@ const handleHkBookingCreate = async (req, env) => {
   const code = "HK-" + randomId("").slice(0, 6).toUpperCase();
   const guests = Math.max(1, Number(body.guests) || 1);
   const rooms = isHourly ? 1 : Math.max(1, Number(body.rooms) || 1);
-  const checkIn = isHourly ? q.date : body.checkIn;
-  const checkOut = isHourly ? q.date : body.checkOut;
+  const checkIn = isHourly ? q.date : (q.checkIn || body.checkIn);
+  const checkOut = isHourly ? q.date : (q.checkOut || body.checkOut); // weekly/monthly 는 종료일 자동(q.checkOut)
   await env.DB.prepare(
     `INSERT INTO hk_bookings (id, code, room_type_id, user_id, guest_name, guest_email, guest_phone,
        check_in, check_out, nights, rooms, guests, total_price, coupon_code, status, payment_status, guest_request, cash_receipt, slot_start, slot_end, booking_unit)
@@ -2732,7 +2788,7 @@ const handleHkBookingCreate = async (req, env) => {
   try {
     const admins = await env.DB.prepare("SELECT id FROM users WHERE grade_id = 'admin'").all();
     for (const a of (admins.results || [])) {
-      await insertNotification(env, { userId: a.id, type: "hangyeon_new", message: `새 한켠 예약: ${q.roomTypeName} ${isHourly ? q.date + " " + q.slotStart : body.checkIn + "~" + body.checkOut}`, fromName: name });
+      await insertNotification(env, { userId: a.id, type: "hangyeon_new", message: `새 한켠 예약: ${q.roomTypeName} ${isHourly ? q.date + " " + q.slotStart : checkIn + "~" + checkOut}`, fromName: name });
     }
   } catch {}
   return { ok: true, booking: { id, code, status: "pending", total: q.total, nights: q.nights } };
@@ -2787,8 +2843,9 @@ const handleHkRoomTypeCreate = async (req, env) => {
     `INSERT INTO hk_room_types (id, name, description, images_json, quantity, max_occupancy, bed_config, amenities_json,
        base_price, weekend_price, discounts_json, min_nights, max_nights, status, sort_order, updated_at,
        booking_type, open_time, close_time, slot_minutes,
-       hourly_enabled, hourly_price, min_hours, daily_enabled, daily_price)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       hourly_enabled, hourly_price, min_hours, daily_enabled, daily_price,
+       weekly_enabled, weekly_price, monthly_enabled, monthly_price)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(id, b.name || "새 객실", b.description || "", JSON.stringify(b.images || []),
     Math.max(0, Number(b.quantity) || 1), Math.max(1, Number(b.maxOccupancy) || 2), b.bedConfig || "",
     JSON.stringify(b.amenities || []), Math.max(0, Number(b.basePrice) || 0),
@@ -2797,7 +2854,9 @@ const handleHkRoomTypeCreate = async (req, env) => {
     b.status === "inactive" ? "inactive" : "active", Number(b.sortOrder) || 0, nowIso(),
     b.bookingType === "timeslot" ? "timeslot" : "nightly", b.openTime || "09:00", b.closeTime || "22:00", Math.max(15, Number(b.slotMinutes) || 60),
     b.hourlyEnabled ? 1 : 0, b.hourlyPrice != null && b.hourlyPrice !== "" ? Math.max(0, Number(b.hourlyPrice)) : null, Math.max(1, Number(b.minHours) || 3),
-    b.dailyEnabled ? 1 : 0, b.dailyPrice != null && b.dailyPrice !== "" ? Math.max(0, Number(b.dailyPrice)) : null).run();
+    b.dailyEnabled ? 1 : 0, b.dailyPrice != null && b.dailyPrice !== "" ? Math.max(0, Number(b.dailyPrice)) : null,
+    b.weeklyEnabled ? 1 : 0, b.weeklyPrice != null && b.weeklyPrice !== "" ? Math.max(0, Number(b.weeklyPrice)) : null,
+    b.monthlyEnabled ? 1 : 0, b.monthlyPrice != null && b.monthlyPrice !== "" ? Math.max(0, Number(b.monthlyPrice)) : null).run();
   await auditWrite(env, admin.email, "hangyeon.roomType.create", `hkrt:${id}`);
   return { id };
 };
@@ -2810,15 +2869,16 @@ const handleHkRoomTypePatch = async (req, env, id) => {
     minNights: "min_nights", maxNights: "max_nights", status: "status", sortOrder: "sort_order",
     bookingType: "booking_type", openTime: "open_time", closeTime: "close_time", slotMinutes: "slot_minutes",
     hourlyEnabled: "hourly_enabled", hourlyPrice: "hourly_price", minHours: "min_hours", dailyEnabled: "daily_enabled", dailyPrice: "daily_price",
+    weeklyEnabled: "weekly_enabled", weeklyPrice: "weekly_price", monthlyEnabled: "monthly_enabled", monthlyPrice: "monthly_price",
   };
   const sets = [], args = [];
   for (const k in map) if (k in b) {
     let v = b[k];
-    if (k === "weekendPrice" || k === "hourlyPrice" || k === "dailyPrice") v = (v === "" || v == null) ? null : Math.max(0, Number(v));
+    if (k === "weekendPrice" || k === "hourlyPrice" || k === "dailyPrice" || k === "weeklyPrice" || k === "monthlyPrice") v = (v === "" || v == null) ? null : Math.max(0, Number(v));
     if (k === "openTime" || k === "closeTime") v = v || null;
     if (k === "slotMinutes") v = Math.max(15, Number(v) || 60);
     if (k === "minHours") v = Math.max(1, Number(v) || 3);
-    if (k === "hourlyEnabled" || k === "dailyEnabled") v = v ? 1 : 0;
+    if (k === "hourlyEnabled" || k === "dailyEnabled" || k === "weeklyEnabled" || k === "monthlyEnabled") v = v ? 1 : 0;
     sets.push(`${map[k]} = ?`); args.push(v);
   }
   if ("images" in b) { sets.push("images_json = ?"); args.push(JSON.stringify(b.images || [])); }

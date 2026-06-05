@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS hk_room_types (
   min_hours      INTEGER NOT NULL DEFAULT 3,       -- 시간제 최소 이용시간
   daily_enabled  INTEGER NOT NULL DEFAULT 0,       -- 숙박(박단위) 예약 받기
   daily_price    INTEGER,                          -- 1박 요금
+  weekly_enabled  INTEGER NOT NULL DEFAULT 0,      -- 주간(7박 고정) 예약 받기
+  weekly_price    INTEGER,                         -- 주간 정액(7박)
+  monthly_enabled INTEGER NOT NULL DEFAULT 0,      -- 월간(30박 고정) 예약 받기
+  monthly_price   INTEGER,                         -- 월간 정액(30박)
   created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at     TEXT
 );
