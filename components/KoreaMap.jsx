@@ -59,4 +59,4 @@ const KoreaMap = ({ onSelect, selected }) => {
   );
 };
 
-Object.assign(window, { KoreaMap });
+// (window 노출 제거 — ESM 전환)

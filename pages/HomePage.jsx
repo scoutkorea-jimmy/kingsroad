@@ -11,6 +11,9 @@
 
 
 // 섹션 단위 에러 바운더리 — 한 섹션이 망가져도 다른 섹션은 정상 렌더.
+// v00.287 ESM (main) — cross-module import (전역 결합 제거).
+import { SectionHead } from '../components/Shell.jsx';
+
 class HomeSectionBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
   static getDerivedStateFromError(err) { return { error: err }; }
@@ -1187,4 +1190,7 @@ const HomePage = ({ go }) => {
   );
 };
 
-Object.assign(window, { HomePage });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { HomePage };

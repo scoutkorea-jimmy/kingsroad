@@ -2,6 +2,10 @@
 // 등급별 접근 제어: 읽기/쓰기 권한은 카테고리.minLevel / postMinLevel로 판정.
 
 // 공용 훅 — 권한 계산
+// v00.287 ESM (main) — cross-module import (전역 결합 제거).
+import { AuthorGradeBadge } from '../components/Shell.jsx';
+import { TiptapEditor } from '../components/TiptapEditor.jsx';
+
 const useUserLevel = (user) => React.useMemo(() => window.BGNJ_USER_LEVEL(user), [user]);
 const getCategoriesForBoard = (boardType) =>
   window.BGNJ_STORES.categories.filter(c => c.boardType === boardType);
@@ -2052,4 +2056,10 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
   );
 };
 
-Object.assign(window, { CommunityPage, ImageSlider, HashtagInput, ImageAttacher, CommentTree });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 모듈 export (window 병행).
+export { CommentTree };
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { CommunityPage };

@@ -1,4 +1,8 @@
 // 왕사남 소개, 투어 상세
+// v00.287 ESM (main) — cross-module import (전역 결합 제거).
+import { MediaGalleryEditor, MediaGalleryView, pickPrimaryImage } from '../components/MediaGallery.jsx';
+import { AuthorGradeBadge, CoverPlaceholder, Ornament, PastBoardList } from '../components/Shell.jsx';
+
 const WangsanamPage = ({ go }) => {
   const members = [
     { name: "뱅기노자", role: "커뮤니티장 · 수석 가이드", spec: "조선 정치사 · 실록 독해", years: 15, desc: "15년간 실록과 궁궐을 걷다. 『왕의길』 저자. 뱅기노자 커뮤니티를 세우고 이끈다." },
@@ -219,7 +223,7 @@ const TourPage = ({ go, user }) => {
             v00.263.001: tours.length 조건 제거 — 0건이라도 PastBoardList 가 빈 안내 표시.
             PastBoardList 미정의 시 fallback. */}
         {bucket === 'past' && !pastDetailId && (
-          window.PastBoardList ? (
+          PastBoardList ? (
             <window.PastBoardList items={tours} type="tour"
               onSelect={(id) => {
                 const idx = tours.findIndex((t) => String(t.id) === String(id));
@@ -272,7 +276,7 @@ const TourPage = ({ go, user }) => {
               // v00.235 — 갤러리 대표사진을 가장 우선.
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
               const tp = sc.tourPages?.[tour.id] || {};
-              const galleryPrimary = window.pickPrimaryImage?.(tp.images);
+              const galleryPrimary = pickPrimaryImage?.(tp.images);
               const coverUri = galleryPrimary?.url || tour.coverUrl || tp.coverDataUri || '';
               if (coverUri) {
                 return (
@@ -291,7 +295,7 @@ const TourPage = ({ go, user }) => {
               // v00.105 — 커버 미설정 시 BANGINOJA 로고 50% 투명 placeholder.
               return (
                 <div style={{marginBottom:32}}>
-                  {window.CoverPlaceholder
+                  {CoverPlaceholder
                     ? <window.CoverPlaceholder aspectRatio="16/10" label={String(tour.title || '').toUpperCase()}/>
                     : <div className="placeholder" style={{aspectRatio:'16/10', fontSize:11}}>{String(tour.title || '').toUpperCase()}</div>}
                 </div>
@@ -344,7 +348,7 @@ const TourPage = ({ go, user }) => {
             )}
             <p className="dim bgnj-multiline" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{tour.desc}</p>
             {/* v00.235 — 사진 갤러리 (대표 외 추가 사진 그리드). */}
-            {window.MediaGalleryView && (() => {
+            {MediaGalleryView && (() => {
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
               const imgs = sc.tourPages?.[tour.id]?.images;
               return <window.MediaGalleryView images={imgs} title={tour.title}/>;
@@ -615,7 +619,7 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
               placeholder="답사 안내 (이후 관리자 패널에서 보강 가능)"/>
           </div>
           {/* v00.235 — 사진 갤러리 편집기. */}
-          {window.MediaGalleryEditor && (
+          {MediaGalleryEditor && (
             <window.MediaGalleryEditor value={images} onChange={setImages} folder="tour-gallery"/>
           )}
           {/* v00.236 — hidden 토글. */}
@@ -1095,4 +1099,7 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
   );
 };
 
-Object.assign(window, { WangsanamPage, TourPage, TourBookingPanel, TourReviewsSection, TourQuickAddModal });
+Object.assign(window, { TourQuickAddModal });
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { TourPage };

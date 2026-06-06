@@ -220,3 +220,6 @@ Object.assign(window, {
   ErrorNetworkPage,
   ErrorMaintenancePage,
 });
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { Error401Page, Error404Page };

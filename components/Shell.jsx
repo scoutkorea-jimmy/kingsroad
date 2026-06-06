@@ -1370,3 +1370,6 @@ Object.assign(window, {
   CookieConsent: _MemoCookieConsent,
   PastBoardList,
 });
+
+// v00.287 ESM (main) — 모듈 export (window 병행).
+export { AuthorGradeBadge, BanginojaIcon, CookieConsent, CoverPlaceholder, Footer, Nav, Ornament, PastBoardList, ScrollToTop, SectionHead, Tweaks };

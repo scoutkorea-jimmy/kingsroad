@@ -2,6 +2,9 @@
 // UI: 야놀자/NOL 숙소 상세 — 입실일~퇴실일 범위 + 성인/아동 인원 + 객실 카드 + 주문 모달(간단).
 // 테두리 최소화(부드러운 그림자 + 연한 구분선). 숙박(체크인~체크아웃) 기본 + 시간제 탭.
 
+// v00.287 ESM (main) — cross-module import (전역 결합 제거).
+import { CoverPlaceholder } from '../components/Shell.jsx';
+
 const hkToday = () => new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 const hkNowHM = () => new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(11, 16);
 const hkAddDays = (str, n) => new Date(new Date(str + 'T00:00:00Z').getTime() + n * 86400000).toISOString().slice(0, 10);
@@ -319,7 +322,7 @@ const HkGallery = ({ images, name }) => {
     const id = setInterval(() => setSide((cur) => pickNext(cur)), 3000);
     return () => clearInterval(id);
   }, [pool.length, pickNext]);
-  const ph = () => window.CoverPlaceholder ? <window.CoverPlaceholder aspectRatio="1/1" iconSize={40} /> : <div style={{ background: 'var(--bg-2)', width: '100%', height: '100%' }} />;
+  const ph = () => CoverPlaceholder ? <window.CoverPlaceholder aspectRatio="1/1" iconSize={40} /> : <div style={{ background: 'var(--bg-2)', width: '100%', height: '100%' }} />;
   return (
     <div style={{ display: 'flex', gap: 6, marginBottom: 24, height: 360, borderRadius: 16, overflow: 'hidden' }}>
       <div style={{ flex: '1 1 60%', background: 'var(--bg-2)', overflow: 'hidden' }}>{big ? <img src={big.url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : ph()}</div>
@@ -348,7 +351,7 @@ const HkRoomCard = ({ room, onBook, memberDiscount }) => {
   return (
     <div style={{ ...SOFT, padding: 0, overflow: 'hidden', display: 'flex', flexWrap: 'wrap', opacity: available ? 1 : 0.55 }}>
       <div style={{ flex: '0 0 220px', minWidth: 180, background: 'var(--bg-2)', overflow: 'hidden' }}>
-        {cover ? <img src={cover.url} alt={room.name} style={{ width: '100%', height: '100%', minHeight: 170, objectFit: 'cover', display: 'block' }} /> : (window.CoverPlaceholder ? <window.CoverPlaceholder aspectRatio="4/3" iconSize={44} /> : null)}
+        {cover ? <img src={cover.url} alt={room.name} style={{ width: '100%', height: '100%', minHeight: 170, objectFit: 'cover', display: 'block' }} /> : (CoverPlaceholder ? <window.CoverPlaceholder aspectRatio="4/3" iconSize={44} /> : null)}
       </div>
       <div style={{ flex: '1 1 280px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <h3 className="ko-serif" style={{ fontSize: 18, margin: 0 }}>{room.name}</h3>
@@ -543,4 +546,7 @@ const HangyeonPage = ({ go, user }) => {
   );
 };
 
-Object.assign(window, { HangyeonPage });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { HangyeonPage };

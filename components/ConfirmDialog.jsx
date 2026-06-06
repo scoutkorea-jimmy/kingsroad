@@ -156,5 +156,7 @@ const ConfirmDialogHost = () => {
   );
 };
 
-window.ConfirmDialog = ConfirmDialog;
 window.ConfirmDialogHost = ConfirmDialogHost;
+
+// v00.287 ESM (main) — 모듈 export (window 병행).
+export { ConfirmDialogHost };

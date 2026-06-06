@@ -3634,6 +3634,20 @@
   // pages/admin/AdminDesignHub.jsx
   var ADMIN_VERSION_HISTORY = [
     {
+      version: "00.287.000",
+      date: "2026-06-06",
+      datetime: "2026-06-06T23:46:47+09:00",
+      summary: "\u{1F9E9} \uC2A4\uD30C\uAC8C\uD2F0 \uADFC\uC6D0 \uC81C\uAC70 \uB9C8\uBB34\uB9AC \u2014 \uBA54\uC778 \uBC88\uB4E4\uB3C4 \uC804\uC5ED \uACB0\uD569(window)\u2192 import/export",
+      details: [
+        "\u{1F3AF} [\uBA54\uC778 \uBC88\uB4E4 \uC804\uD658] admin \uBC88\uB4E4(v00.286)\uC5D0 \uC774\uC5B4 pages/components/boot \uC758 \uC804\uC5ED \uACB0\uD569\uB3C4 ESM \uC73C\uB85C. const X=window.X 0, window.X= \uB178\uCD9C 51\u21927(\uB7F0\uD0C0\uC784/cross-bundle\uB9CC).",
+        "\u{1F500} [boot \uB77C\uC6B0\uD130] pick('HomePage') \uC2DD window \uB808\uC9C0\uC2A4\uD2B8\uB9AC \uB514\uC2A4\uD328\uCE58 \u2192 \uD398\uC774\uC9C0 \uCEF4\uD3EC\uB10C\uD2B8 \uC9C1\uC811 import(18\uACF3). admin lazy 3\uC885(AdminPage/AdminDenied/LoginPage)\uB9CC pick \uC720\uC9C0(\uBCC4\uB3C4 \uBC88\uB4E4).",
+        "\u{1F527} [\uC804\uD658] @babel/traverse \uC2A4\uCF54\uD504 \uBD84\uC11D\uC73C\uB85C cross-module \uCC38\uC870(free/alias/window.X \uBA64\uBC84) \uC804\uC218 \u2192 import/export. esbuild \uC758\uC874 \uADF8\uB798\uD504 \uC790\uB3D9 \uD574\uC18C.",
+        "\u{1F512} [\uACBD\uACC4 \uBCF4\uC874] useModalGuard\xB7ConfirmDialogHost\xB7UploadOverlayHost(\uB7F0\uD0C0\uC784 host/hook), LectureQuickAddModal\xB7TourQuickAddModal(admin\u2194\uBA54\uC778 cross-bundle), BGNJ_* API \uB294 window \uC720\uC9C0(\uC815\uB2F9).",
+        "\u2705 [\uAC80\uC99D] \uBE4C\uB4DC\xB7check-syntax(41)\xB7\uD5E4\uB4DC\uB9AC\uC2A4 admin \uC804 \uD328\uB110(refErr=0)\xB7\uACF5\uAC1C 13\uB77C\uC6B0\uD2B8 \uB9C8\uC6B4\uD2B8+\uCF58\uC194 clean.",
+        "\u{1F4E6} cache-buster \u2014 `?v=00.287.000`."
+      ]
+    },
+    {
       version: "00.286.000",
       date: "2026-06-06",
       datetime: "2026-06-06T23:08:50+09:00",

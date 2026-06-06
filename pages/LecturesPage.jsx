@@ -1,4 +1,8 @@
 // 뱅기노자 강연 일정 — 투어 페이지와 같은 스타일(탭 + 스티키 사이드바)
+// v00.287 ESM (main) — cross-module import (전역 결합 제거).
+import { MediaGalleryEditor, MediaGalleryView, pickPrimaryImage } from '../components/MediaGallery.jsx';
+import { AuthorGradeBadge, CoverPlaceholder, PastBoardList } from '../components/Shell.jsx';
+
 const LecturesPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
   const [selectedIdx, setSelectedIdx] = React.useState(0);
@@ -158,7 +162,7 @@ const LecturesPage = ({ go, user }) => {
             v00.263.001: lectures.length 조건 제거 — 0건이라도 PastBoardList 가 빈 안내를 표시.
             PastBoardList 미정의 시 fallback: 안내 카드 표시. */}
         {bucket === 'past' && !pastDetailId && (
-          window.PastBoardList ? (
+          PastBoardList ? (
             <window.PastBoardList items={lectures} type="lecture"
               onSelect={(id) => {
                 const idx = lectures.findIndex((l) => String(l.id) === String(id));
@@ -210,7 +214,7 @@ const LecturesPage = ({ go, user }) => {
               // v00.235 — 우선순위: 갤러리 대표사진 > legacy coverDataUri > placeholder.
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
               const lp = sc.lecturePages?.[lecture.id] || {};
-              const galleryPrimary = window.pickPrimaryImage?.(lp.images);
+              const galleryPrimary = pickPrimaryImage?.(lp.images);
               const coverUri = galleryPrimary?.url || lp.coverDataUri || '';
               if (coverUri) {
                 return (
@@ -230,7 +234,7 @@ const LecturesPage = ({ go, user }) => {
               // v00.105 — 커버 미설정 시 BANGINOJA 로고 50% 투명 placeholder.
               return (
                 <div style={{marginBottom:32}}>
-                  {window.CoverPlaceholder
+                  {CoverPlaceholder
                     ? <window.CoverPlaceholder aspectRatio="16/10" label={String(lecture.title || '').toUpperCase()}/>
                     : <div className="placeholder" style={{aspectRatio:'16/10', fontSize:11}}>{String(lecture.title || '').toUpperCase()}</div>}
                 </div>
@@ -290,13 +294,13 @@ const LecturesPage = ({ go, user }) => {
             <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24, whiteSpace:'pre-wrap'}}>{lecture.topic}</h2>
             <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32, whiteSpace:'pre-wrap'}}>{lecture.note}</p>
             {/* v00.235/v00.237 — 포스터 추가 그리드 (대표 외 나머지). 1장이면 cover 와 중복이라 미노출. */}
-            {window.MediaGalleryView && (() => {
+            {MediaGalleryView && (() => {
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
               const imgs = sc.lecturePages?.[lecture.id]?.images;
               return <window.MediaGalleryView images={imgs} title={lecture.title} sectionLabel="포스터"/>;
             })()}
             {/* v00.237 — 종료된 강연(past)에만 현장 사진 그리드 노출. 사용자 요청. */}
-            {window.MediaGalleryView && _isPast(lecture) && (() => {
+            {MediaGalleryView && _isPast(lecture) && (() => {
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
               const photos = sc.lecturePages?.[lecture.id]?.photos;
               return <window.MediaGalleryView images={photos} title={lecture.title} sectionLabel="현장 사진" withCover={false}/>;
@@ -577,7 +581,7 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
           </div>
           {/* v00.235 — 포스터 갤러리 (최대 10장). v00.236 — 최소 1장 필수.
               v00.237 — 다중 업로드 + drag&drop + label 커스터마이즈. */}
-          {window.MediaGalleryEditor && (
+          {MediaGalleryEditor && (
             <window.MediaGalleryEditor
               value={images} onChange={setImages}
               folder="lecture-poster"
@@ -586,7 +590,7 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
           )}
           {/* v00.237 — 현장 사진 갤러리 (사용자 요청: 종료된 강연에는 현장 사진을 추가). 등록 시점부터
               입력 가능하지만 표시 페이지에선 past(종료) 강연에만 노출. */}
-          {window.MediaGalleryEditor && (
+          {MediaGalleryEditor && (
             <window.MediaGalleryEditor
               value={photos} onChange={setPhotos}
               folder="lecture-photos"
@@ -1060,4 +1064,7 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
   );
 };
 
-Object.assign(window, { LecturesPage, LectureBookingPanel, LectureReviewsSection, LectureQuickAddModal });
+Object.assign(window, { LectureQuickAddModal });
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { LecturesPage };

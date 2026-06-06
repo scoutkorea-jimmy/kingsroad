@@ -2,6 +2,9 @@
 // 데이터 원칙: 모든 콘텐츠 데이터는 서버(D1) source-of-truth — BGNJ_LECTURES/TOURS/COMMUNITY/BOOK_ORDERS.
 // BANGINOJA_DATA 정적 시드는 더 이상 참조하지 않는다 (v00.046 정합).
 // v00.131 — 탭 구조 (강연/답사/주문/알림/커뮤니티/프로필 수정). 추천동선/북마크 섹션 제거 (사용자 요청).
+// v00.287 ESM (main) — cross-module import (전역 결합 제거).
+import { SectionHead } from '../components/Shell.jsx';
+
 const MyPage = ({ go, user, cart }) => {
   const [tab, setTab] = React.useState('lectures'); // 'lectures' | 'tours' | 'orders' | 'notifications' | 'community' | 'profile'
   const [orderTick, setOrderTick] = React.useState(0);
@@ -706,4 +709,7 @@ const PasswordChangeForm = () => {
   );
 };
 
-Object.assign(window, { MyPage });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { MyPage };

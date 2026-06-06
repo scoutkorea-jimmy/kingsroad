@@ -1,4 +1,7 @@
 // 뱅기노자 칼럼 아카이브
+// v00.287 ESM (main) — cross-module import (전역 결합 제거).
+import { CommentTree } from './CommunityPage.jsx';
+
 const ColumnPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
   const [selectedId, setSelectedId] = React.useState(null);
@@ -550,4 +553,7 @@ const ColumnWriterModal = ({ onClose, initialColumn = null }) => {
   );
 };
 
-Object.assign(window, { ColumnPage });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { ColumnPage };

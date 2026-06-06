@@ -316,4 +316,7 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
   );
 };
 
-Object.assign(window, { TiptapEditor });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 모듈 export (window 병행).
+export { TiptapEditor };

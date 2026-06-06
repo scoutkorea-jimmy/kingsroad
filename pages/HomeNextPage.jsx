@@ -324,4 +324,7 @@ const HomeNextPage = ({ go }) => {
   );
 };
 
-Object.assign(window, { HomeNextPage });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { HomeNextPage };

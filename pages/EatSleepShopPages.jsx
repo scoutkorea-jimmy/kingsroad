@@ -5,6 +5,9 @@
 //   - 현재는 페이지 골격만 잡고 placeholder 카드를 노출 (기능 정의 단계).
 //   - 다음 사이클에 D1 테이블(`venues` / `lodgings` / `goods`) 신설 + 관리자 입력 폼 + 예약 흐름.
 
+// v00.287 ESM (main) — cross-module import (전역 결합 제거).
+import { CoverPlaceholder } from '../components/Shell.jsx';
+
 const PlacePage = ({ go, kind, user }) => {
   // v00.073/v00.105 — eyebrow / title / sub / desc / accent / categories 모두 site_content_kv.{eat|sleep|shop}Intro 에서.
   const KIND_FALLBACK = {
@@ -96,7 +99,7 @@ const PlacePage = ({ go, kind, user }) => {
                       <div style={{aspectRatio:'4/3', background:'var(--bg-2)', overflow:'hidden'}}>
                         {it.imageUrl
                           ? <img src={it.imageUrl} alt={it.name || ''} style={{width:'100%', height:'100%', objectFit:'cover', display:'block'}}/>
-                          : (window.CoverPlaceholder ? <window.CoverPlaceholder aspectRatio="4/3" iconSize={64}/> : null)}
+                          : (CoverPlaceholder ? <window.CoverPlaceholder aspectRatio="4/3" iconSize={64}/> : null)}
                       </div>
                       <div style={{padding:'18px 20px'}}>
                         <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:8, display:'flex', justifyContent:'space-between', flexWrap:'wrap', gap:6}}>
@@ -128,4 +131,7 @@ const EatPage  = ({ go, user }) => <PlacePage go={go} user={user} kind="eat"/>;
 const SleepPage = ({ go, user }) => <PlacePage go={go} user={user} kind="sleep"/>;
 const ShopPage  = ({ go, user }) => <PlacePage go={go} user={user} kind="shop"/>;
 
-Object.assign(window, { EatPage, SleepPage, ShopPage });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { EatPage, ShopPage };

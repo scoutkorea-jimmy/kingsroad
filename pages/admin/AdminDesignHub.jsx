@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.287.000",
+    date: "2026-06-06",
+    datetime: "2026-06-06T23:46:47+09:00",
+    summary: "🧩 스파게티 근원 제거 마무리 — 메인 번들도 전역 결합(window)→ import/export",
+    details: [
+      "🎯 [메인 번들 전환] admin 번들(v00.286)에 이어 pages/components/boot 의 전역 결합도 ESM 으로. const X=window.X 0, window.X= 노출 51→7(런타임/cross-bundle만).",
+      "🔀 [boot 라우터] pick('HomePage') 식 window 레지스트리 디스패치 → 페이지 컴포넌트 직접 import(18곳). admin lazy 3종(AdminPage/AdminDenied/LoginPage)만 pick 유지(별도 번들).",
+      "🔧 [전환] @babel/traverse 스코프 분석으로 cross-module 참조(free/alias/window.X 멤버) 전수 → import/export. esbuild 의존 그래프 자동 해소.",
+      "🔒 [경계 보존] useModalGuard·ConfirmDialogHost·UploadOverlayHost(런타임 host/hook), LectureQuickAddModal·TourQuickAddModal(admin↔메인 cross-bundle), BGNJ_* API 는 window 유지(정당).",
+      "✅ [검증] 빌드·check-syntax(41)·헤드리스 admin 전 패널(refErr=0)·공개 13라우트 마운트+콘솔 clean.",
+      "📦 cache-buster — `?v=00.287.000`."
+    ]
+  },
+  {
     version: "00.286.000",
     date: "2026-06-06",
     datetime: "2026-06-06T23:08:50+09:00",

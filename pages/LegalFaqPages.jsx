@@ -156,4 +156,7 @@ const FaqPage = ({ go }) => {
   );
 };
 
-Object.assign(window, { LegalPage, FaqPage });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { FaqPage, LegalPage };

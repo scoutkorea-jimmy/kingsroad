@@ -1,4 +1,7 @@
 // === 독자 리뷰 서브컴포넌트 ============================================
+// v00.287 ESM (main) — cross-module import (전역 결합 제거).
+import { BanginojaIcon } from '../components/Shell.jsx';
+
 const STARS = ['★', '★★', '★★★', '★★★★', '★★★★★'];
 
 // v00.159 — helper 직접 호출 race 가드. mount-time 호출(useState 초기화)이 helper 미로드 시 throw → 페이지 전체 다운.
@@ -766,4 +769,7 @@ const CheckoutPage = ({ go, cart, user }) => {
   );
 };
 
-Object.assign(window, { BookPage, CheckoutPage });
+// (window 노출 제거 — ESM 전환)
+
+// v00.287 ESM (main) — 라우터용 export (window 병행).
+export { BookPage, CheckoutPage };

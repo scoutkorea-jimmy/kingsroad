@@ -1,6 +1,20 @@
 // 뱅기노자 — 부트스트랩 (App + AppErrorBoundary + ReactDOM.render)
 // v00.071 — index.html 의 인라인 <script type="text/babel"> 블록을 분리. esbuild 사전 컴파일.
 // 전체 앱 에러 바운더리 — 흰 화면 방지 + 정확한 진단 정보 노출.
+// v00.287 ESM (main) — 페이지 컴포넌트 직접 import (boot pick 레지스트리 → import).
+import { BookPage, CheckoutPage} from './pages/BookCheckoutPage.jsx';
+import { ColumnPage} from './pages/ColumnPage.jsx';
+import { CommunityPage} from './pages/CommunityPage.jsx';
+import { EatPage, ShopPage} from './pages/EatSleepShopPages.jsx';
+import { Error401Page, Error404Page} from './pages/ErrorPages.jsx';
+import { HangyeonPage} from './pages/HangyeonPage.jsx';
+import { HomeNextPage} from './pages/HomeNextPage.jsx';
+import { HomePage} from './pages/HomePage.jsx';
+import { LecturesPage} from './pages/LecturesPage.jsx';
+import { FaqPage, LegalPage} from './pages/LegalFaqPages.jsx';
+import { MyPage} from './pages/MyPage.jsx';
+import { TourPage} from './pages/WangsanamTourPage.jsx';
+
 class AppErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null, info: null }; }
   static getDerivedStateFromError(err) { return { error: err }; }
@@ -745,26 +759,26 @@ const App = () => {
     );
     const pick = (name, label) => W[name] || fallback(label);
     switch (route) {
-      case "home":      { const C = pick('HomePage','홈');      return <C go={go} tweaks={tweaks}/>; }
-      case "home-next": { const C = pick('HomeNextPage','신규 홈 프리뷰'); return <C go={go}/>; }
-      case "eat":       { const C = pick('EatPage','먹고 놀자'); return <C go={go} user={user}/>; }
+      case "home":      { const C = HomePage;      return <C go={go} tweaks={tweaks}/>; }
+      case "home-next": { const C = HomeNextPage; return <C go={go}/>; }
+      case "eat":       { const C = EatPage; return <C go={go} user={user}/>; }
       // v00.267 — 자고 놀자 = 한켠(직영 숙소) 예약 시스템. sleep 라우트가 한켠 예약 페이지를 직접 렌더.
       case "sleep":
-      case "hangyeon":  { const C = pick('HangyeonPage','한켠'); return <C go={go} user={user}/>; }
-      case "shop":      { const C = pick('ShopPage','사고 놀자'); return <C go={go} user={user}/>; }
-      case "community": { const C = pick('CommunityPage','커뮤니티'); return <C go={go} postId={postId} setPostId={setPostId} user={user}/>; }
-      case "tour":      { const C = pick('TourPage','투어'); return <C go={go} user={user}/>; }
-      case "lectures":  { const C = pick('LecturesPage','강연'); return <C go={go} user={user}/>; }
-      case "privacy":   { const C = pick('LegalPage','약관'); return <C go={go} slug="privacy"/>; }
-      case "terms":     { const C = pick('LegalPage','약관'); return <C go={go} slug="terms"/>; }
-      case "faq":       { const C = pick('FaqPage','자주 묻는 질문'); return <C go={go}/>; }
-      case "column":    { const C = pick('ColumnPage','칼럼'); return <C go={go} user={user}/>; }
-      case "book":      { const C = pick('BookPage','책'); return <C go={go} cart={cart} setCart={setCart} user={user}/>; }
-      case "checkout":  { const C = pick('CheckoutPage','결제'); return <C go={go} cart={cart} user={user}/>; }
+      case "hangyeon":  { const C = HangyeonPage; return <C go={go} user={user}/>; }
+      case "shop":      { const C = ShopPage; return <C go={go} user={user}/>; }
+      case "community": { const C = CommunityPage; return <C go={go} postId={postId} setPostId={setPostId} user={user}/>; }
+      case "tour":      { const C = TourPage; return <C go={go} user={user}/>; }
+      case "lectures":  { const C = LecturesPage; return <C go={go} user={user}/>; }
+      case "privacy":   { const C = LegalPage; return <C go={go} slug="privacy"/>; }
+      case "terms":     { const C = LegalPage; return <C go={go} slug="terms"/>; }
+      case "faq":       { const C = FaqPage; return <C go={go}/>; }
+      case "column":    { const C = ColumnPage; return <C go={go} user={user}/>; }
+      case "book":      { const C = BookPage; return <C go={go} cart={cart} setCart={setCart} user={user}/>; }
+      case "checkout":  { const C = CheckoutPage; return <C go={go} cart={cart} user={user}/>; }
       case "mypage":    {
         // v00.229 — /mypage 는 회원 전용. 비로그인 진입 시 401 페이지로 자동 wiring.
-        if (!user) { const C = pick('Error401Page','로그인 필요'); return <C go={go}/>; }
-        const C = pick('MyPage','마이페이지'); return <C go={go} user={user} cart={cart}/>;
+        if (!user) { const C = Error401Page; return <C go={go}/>; }
+        const C = MyPage; return <C go={go} user={user} cart={cart}/>;
       }
       case "login":
       case "signup":    {
@@ -779,7 +793,7 @@ const App = () => {
       }
       case "admin":     {
         // v00.229 — /admin 권한 분기 세분화. 비로그인 → 401, 로그인했지만 비-admin → 403 (AdminDenied 유지: email 표시 UX).
-        if (!user) { const C = pick('Error401Page','로그인 필요'); return <C go={go}/>; }
+        if (!user) { const C = Error401Page; return <C go={go}/>; }
         if (!user.isAdmin) { const D = pick('AdminDenied','관리'); return <D go={go} user={user}/>; }
         // v00.198 — 스크립트 lazy-load. 미준비 시 로딩 화면, 실패 시 retry UI.
         if (!adminLoaded) {
@@ -809,7 +823,7 @@ const App = () => {
         return <C go={go}/>;
       }
       // v00.145 — 404: 알 수 없는 라우트는 home 으로 폴백하지 않고 Error404Page 노출.
-      default:          { const C = pick('Error404Page','오류'); return <C go={go}/>; }
+      default:          { const C = Error404Page; return <C go={go}/>; }
     }
   };
   // 페이지별 에러 바운더리 — 한 페이지가 던진 오류가 전역으로 번지지 않게. key=route 로 라우트 변경 시 자동 reset.
