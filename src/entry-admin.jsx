@@ -14,4 +14,5 @@ import '../pages/admin/AdminLogin.jsx';
 import '../pages/admin/AdminPolicyPanels.jsx';
 import '../pages/admin/AdminMonitorPanels.jsx';
 import '../pages/admin/AdminMemberPanel.jsx';
+import '../pages/admin/AdminLogPanels.jsx';
 import '../pages/AuthAdminPage.jsx';
