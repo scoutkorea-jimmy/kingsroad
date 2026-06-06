@@ -657,132 +657,20 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
 // 사용자 요청 '관리자페이지의 모든 GUI를 통일성 있게'.
 // 모든 panel 에서 재사용. 기존 인라인 style 들을 점진 교체.
 
-const AdminPanelHeader = ({ eyebrow, title, description, actions }) => (
-  <header className="admin-panel-header">
-    <div className="admin-panel-header__main">
-      {eyebrow && <div className="admin-panel-header__eyebrow">{eyebrow}</div>}
-      {title && <h2 className="admin-panel-header__title">{title}</h2>}
-      {description && <p className="admin-panel-header__desc">{description}</p>}
-    </div>
-    {actions && <div className="admin-panel-header__actions">{actions}</div>}
-  </header>
-);
-
-// 상태 뱃지 — variant: gold | neutral | ink | danger | success
-const StatusBadge = ({ variant = 'neutral', children, title }) => (
-  <span className={`status-badge status-badge--${variant}`} title={title}>{children}</span>
-);
-
-// 빈 상태
-const AdminEmpty = ({ children }) => (
-  <div className="admin-empty">{children}</div>
-);
-
-// 필터 chips — items: [{ key, label, count? }]
-const AdminFilterChips = ({ items, value, onChange, ariaLabel = '필터' }) => (
-  <div className="admin-toolbar__filters" role="tablist" aria-label={ariaLabel}>
-    {items.map((it) => (
-      <button key={it.key} type="button" role="tab"
-        aria-selected={value === it.key}
-        className={`admin-filter-chip ${value === it.key ? 'admin-filter-chip--active' : ''}`}
-        onClick={() => onChange?.(it.key)}>
-        {it.label}{typeof it.count === 'number' ? ` (${it.count})` : ''}
-      </button>
-    ))}
-  </div>
-);
-
-// 저장 바
-const AdminSaveBar = ({ children, message, messageVariant = 'success' }) => (
-  <div className="admin-savebar">
-    {children}
-    {message && (
-      <span className={`admin-savebar__msg admin-savebar__msg--${messageVariant}`}>{message}</span>
-    )}
-  </div>
-);
+// v00.285 — Admin UI primitives 는 AdminShared.jsx 로 이동. const alias 로 받아 기존 참조 유지.
+const AdminPanelHeader  = window.AdminPanelHeader;
+const StatusBadge       = window.StatusBadge;
+const AdminEmpty        = window.AdminEmpty;
+const AdminFilterChips  = window.AdminFilterChips;
+const AdminSaveBar      = window.AdminSaveBar;
 
 // === Dashboard helpers (v00.146) ==================================
 // 일/주/월 활동 metrics + 가입 추이 + 활동 차트.
 // data source: BGNJ_AUTH.listUsers().created_at + BGNJ_COMMUNITY.listPosts().date + comments.
-
-// 통계 카드 — 큰 숫자 + 라벨 + 하단 보조설명 + 색상 변형.
-// v00.157 — 카드 호버/포커스 시 details popover. dashboardStats 카드와 MetricCard 둘 다 사용.
-// details: [{ label, value }, ...] — 비어있거나 미전달 시 popover 자체 미노출.
-const HoverDetailsPopover = ({ details, open, id, anchor = 'right' }) => {
-  if (!open || !Array.isArray(details) || details.length === 0) return null;
-  return (
-    <div role="tooltip" id={id}
-      style={{
-        position:'absolute', top:'100%', marginTop:8,
-        [anchor === 'left' ? 'left' : 'right']: 0,
-        background:'var(--bg)', border:'1px solid var(--primary-dim)',
-        boxShadow:'0 8px 24px rgba(0,0,0,0.18)', padding:'14px 16px',
-        minWidth:240, maxWidth:320, zIndex:50, borderRadius:8,
-      }}>
-      <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:10}}>DETAILS</div>
-      <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
-        {details.map((d, i) => (
-          <li key={i} style={{display:'flex', justifyContent:'space-between', gap:14, fontSize:12, alignItems:'baseline'}}>
-            <span className="dim" style={{flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis'}}>{d.label}</span>
-            <span className="mono" style={{fontWeight:600, color:'var(--secondary)', whiteSpace:'nowrap'}}>{d.value}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
-
-// dashboardStats 4 카드 — hover/focus 로 popover 노출. details 미전달 시 종전 동작 그대로.
-const StatTile = ({ stat }) => {
-  const [open, setOpen] = React.useState(false);
-  const id = React.useId ? React.useId() : `stat-${stat.l}`;
-  const hasDetails = Array.isArray(stat.details) && stat.details.length > 0;
-  return (
-    <div className="card" style={{position:'relative'}}
-      onMouseEnter={() => hasDetails && setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      onFocus={() => hasDetails && setOpen(true)}
-      onBlur={() => setOpen(false)}
-      tabIndex={hasDetails ? 0 : undefined}
-      aria-describedby={open ? id : undefined}>
-      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{stat.l}</div>
-      <div className="ko-serif" style={{fontSize:32, color:'var(--ink)'}}>
-        {stat.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{stat.unit||''}</span>
-      </div>
-      <div style={{fontSize:11, color: stat.p ? 'var(--primary)' : 'var(--danger)', marginTop:8}}>{stat.d}</div>
-      <HoverDetailsPopover details={stat.details} open={open} id={id}/>
-    </div>
-  );
-};
-
-const MetricCard = ({ label, value, sub, accent, icon, details }) => {
-  const [open, setOpen] = React.useState(false);
-  const id = React.useId ? React.useId() : `metric-${label}`;
-  const hasDetails = Array.isArray(details) && details.length > 0;
-  return (
-    <article className="metric-card" style={{
-      padding:'18px 20px', background:'var(--bg-2)', border:'1px solid var(--line)',
-      borderRadius:10, position:'relative', overflow:'visible',
-    }}
-      onMouseEnter={() => hasDetails && setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-      onFocus={() => hasDetails && setOpen(true)}
-      onBlur={() => setOpen(false)}
-      tabIndex={hasDetails ? 0 : undefined}
-      aria-describedby={open ? id : undefined}>
-      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
-        {icon && <span style={{fontSize:18}} aria-hidden="true">{icon}</span>}
-        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase'}}>{label}</div>
-      </div>
-      <div className="ko-serif" style={{fontSize:32, fontWeight:600, color: accent || 'var(--primary-hover)', lineHeight:1.1}}>
-        {value}
-      </div>
-      {sub && <div className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.5}}>{sub}</div>}
-      <HoverDetailsPopover details={details} open={open} id={id}/>
-    </article>
-  );
-};
+// v00.285 — HoverDetailsPopover / StatTile / MetricCard 는 AdminShared.jsx 로 이동. const alias.
+const HoverDetailsPopover = window.HoverDetailsPopover;
+const StatTile            = window.StatTile;
+const MetricCard          = window.MetricCard;
 
 // 간단한 SVG 막대 차트 — series: number[], labels: string[].
 // v00.187 — MiniBarChart / RankedBarList / COHORT_OPTIONS / CohortSelector 모두 AdminShared.jsx 로 이동.
