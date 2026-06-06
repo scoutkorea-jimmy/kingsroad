@@ -21,4 +21,5 @@ import '../pages/admin/AdminEventsPanels.jsx';
 import '../pages/admin/AdminSiteContentPanel.jsx';
 import '../pages/admin/AdminDashboardPanel.jsx';
 import '../pages/admin/AdminCommunityConfigPanels.jsx';
+import '../pages/admin/AdminGradeColumnPanels.jsx';
 import '../pages/AuthAdminPage.jsx';
