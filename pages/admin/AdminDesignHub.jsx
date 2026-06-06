@@ -4,6 +4,16 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.288.002",
+    date: "2026-06-07",
+    datetime: "2026-06-07T00:51:26+09:00",
+    summary: "🎨 전주한켠 — 섹션 사이 구분선 추가 (영역 구분 가독성)",
+    details: [
+      "➖ 기간 상품·숙소소개·위치/교통·시설/서비스·이용안내 섹션 상단에 구분선(border-top) + 여백(40px) 추가로 영역 구분 명확화. 첫 섹션(객실선택)은 탭 바로 아래라 제외.",
+      "📦 cache-buster — `?v=00.288.002`."
+    ]
+  },
+  {
     version: "00.288.001",
     date: "2026-06-07",
     datetime: "2026-06-07T00:46:54+09:00",

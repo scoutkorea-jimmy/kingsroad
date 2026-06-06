@@ -3634,6 +3634,16 @@
   // pages/admin/AdminDesignHub.jsx
   var ADMIN_VERSION_HISTORY = [
     {
+      version: "00.288.002",
+      date: "2026-06-07",
+      datetime: "2026-06-07T00:51:26+09:00",
+      summary: "\u{1F3A8} \uC804\uC8FC\uD55C\uCF20 \u2014 \uC139\uC158 \uC0AC\uC774 \uAD6C\uBD84\uC120 \uCD94\uAC00 (\uC601\uC5ED \uAD6C\uBD84 \uAC00\uB3C5\uC131)",
+      details: [
+        "\u2796 \uAE30\uAC04 \uC0C1\uD488\xB7\uC219\uC18C\uC18C\uAC1C\xB7\uC704\uCE58/\uAD50\uD1B5\xB7\uC2DC\uC124/\uC11C\uBE44\uC2A4\xB7\uC774\uC6A9\uC548\uB0B4 \uC139\uC158 \uC0C1\uB2E8\uC5D0 \uAD6C\uBD84\uC120(border-top) + \uC5EC\uBC31(40px) \uCD94\uAC00\uB85C \uC601\uC5ED \uAD6C\uBD84 \uBA85\uD655\uD654. \uCCAB \uC139\uC158(\uAC1D\uC2E4\uC120\uD0DD)\uC740 \uD0ED \uBC14\uB85C \uC544\uB798\uB77C \uC81C\uC678.",
+        "\u{1F4E6} cache-buster \u2014 `?v=00.288.002`."
+      ]
+    },
+    {
       version: "00.288.001",
       date: "2026-06-07",
       datetime: "2026-06-07T00:46:54+09:00",

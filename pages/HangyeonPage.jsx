@@ -598,7 +598,7 @@ const HangyeonPage = ({ go, user }) => {
         </section>
 
         {/* 기간 살아보기 상품 */}
-        <section ref={refs.packages} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
+        <section ref={refs.packages} style={{ scrollMarginTop: 120, marginBottom: 44, borderTop: '1px solid var(--line)', paddingTop: 40 }}>
           <h2 className="section-title" style={{ fontSize: 22, marginBottom: 4 }}>기간 살아보기 상품</h2>
           <p className="dim-2" style={{ fontSize: 13, marginBottom: 18 }}>원하는 기간과 시작일을 고르고 문의해 주세요. 일정·입금 방법은 문의 후 안내드려요.</p>
 
@@ -618,12 +618,12 @@ const HangyeonPage = ({ go, user }) => {
           </div>
         </section>
 
-        <section ref={refs.about} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
+        <section ref={refs.about} style={{ scrollMarginTop: 120, marginBottom: 44, borderTop: '1px solid var(--line)', paddingTop: 40 }}>
           <h2 className="section-title" style={{ fontSize: 22, marginBottom: 14 }}>숙소소개</h2>
           <div style={{ ...SOFT, padding: '18px 20px' }}><p className="dim" style={{ margin: 0, fontSize: 14, lineHeight: 1.9 }}>{desc}</p>{info.notice && <p className="dim" style={{ margin: '10px 0 0', fontSize: 13 }}>{info.notice}</p>}</div>
         </section>
 
-        <section ref={refs.loc} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
+        <section ref={refs.loc} style={{ scrollMarginTop: 120, marginBottom: 44, borderTop: '1px solid var(--line)', paddingTop: 40 }}>
           <h2 className="section-title" style={{ fontSize: 22, marginBottom: 14 }}>위치/교통</h2>
           <div style={{ ...SOFT, padding: '18px 20px' }}>
             <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>📍 {address}</div>
@@ -635,7 +635,7 @@ const HangyeonPage = ({ go, user }) => {
           </div>
         </section>
 
-        <section ref={refs.fac} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
+        <section ref={refs.fac} style={{ scrollMarginTop: 120, marginBottom: 44, borderTop: '1px solid var(--line)', paddingTop: 40 }}>
           <h2 className="section-title" style={{ fontSize: 22, marginBottom: 14 }}>시설/서비스</h2>
           <div style={{ ...SOFT, padding: '18px 20px' }}>
             {amenities.length === 0 ? <p className="dim" style={{ margin: 0, fontSize: 13 }}>등록된 편의시설 정보가 없습니다.</p>
@@ -643,7 +643,7 @@ const HangyeonPage = ({ go, user }) => {
           </div>
         </section>
 
-        <section ref={refs.guide} style={{ scrollMarginTop: 120, marginBottom: 20 }}>
+        <section ref={refs.guide} style={{ scrollMarginTop: 120, marginBottom: 20, borderTop: '1px solid var(--line)', paddingTop: 40 }}>
           <h2 className="section-title" style={{ fontSize: 22, marginBottom: 14 }}>이용안내</h2>
           <div style={{ ...SOFT, padding: '18px 20px', fontSize: 13.5, lineHeight: 2 }}>
             <div><strong>입실/퇴실</strong> 입실 15:00 · 퇴실 11:00</div>
