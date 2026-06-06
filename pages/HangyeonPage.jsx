@@ -417,24 +417,109 @@ const HkMyBookings = ({ tick }) => {
   );
 };
 
-const HK_TABS = [['rooms', '객실선택'], ['loc', '위치/교통'], ['about', '숙소소개'], ['fac', '시설/서비스'], ['guide', '이용안내']];
+// ── 기간 살아보기 상품 (v00.288) ─────────────────────────────────────────────
+// 전주한켠은 객실 단위 예약이 아니라 "기간 살아보기" 패키지 + 문의 기반.
+// site content `hangyeon.stayPackages` 가 있으면 override(추후 admin 편집 여지), 없으면 기본값.
+const STAY_PACKAGES_DEFAULT = [
+  { id: 'week1', name: '1주일 살아보기', nights: 7, price: 190000, desc: '전주에서 7박, 가볍게 머물러보기' },
+  { id: 'week2', name: '2주 살기', nights: 14, price: 350000, desc: '2주간 천천히 전주에 스며들기' },
+  { id: 'month1', name: '1달 살기', nights: 30, price: 550000, desc: '한 달 살기, 전주 로컬처럼' },
+];
+
+const HkPackageCard = ({ pkg, selected, startDate, onSelect, onInquire }) => {
+  const end = startDate ? hkAddDays(startDate, pkg.nights) : '';
+  return (
+    <div style={{ ...SOFT, padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 10, outline: selected ? '2px solid var(--secondary)' : 'none' }}
+      onClick={() => onSelect(pkg.id)} role="button" tabIndex={0}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+        <h3 className="ko-serif" style={{ fontSize: 20, margin: 0 }}>{pkg.name}</h3>
+        <span className="badge" style={{ flexShrink: 0 }}>{pkg.nights}박</span>
+      </div>
+      {pkg.desc && <p className="dim" style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7 }}>{pkg.desc}</p>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, marginTop: 'auto', paddingTop: 6, flexWrap: 'wrap' }}>
+        <div>
+          <div className="ko-serif" style={{ fontSize: 24, fontWeight: 700 }}>{hkWon(pkg.price)}</div>
+          {startDate && <div className="dim-2" style={{ fontSize: 12, marginTop: 2 }}>{hkFmtDate(startDate)} ~ {hkFmtDate(end)}</div>}
+        </div>
+        <button type="button" className="btn btn-gold" style={{ minWidth: 120 }}
+          onClick={(e) => { e.stopPropagation(); onInquire(pkg); }}>문의하기</button>
+      </div>
+    </div>
+  );
+};
+
+// ── 기간 상품 문의 모달 (예약·결제 대신 운영자 연락 유도) ──────────────────────
+const HkInquiryModal = ({ pkg, startDate, property, contactEmail, contactPhone, onClose }) => {
+  const [name, setName] = React.useState('');
+  const [phone, setPhone] = React.useState('');
+  const [message, setMessage] = React.useState('');
+  window.useModalGuard?.({ open: true, dirty: !!(name || phone || message), onClose, label: `${pkg.name} 문의` });
+  const end = startDate ? hkAddDays(startDate, pkg.nights) : '';
+  const summary = `[전주한켠 기간 살아보기 문의]\n· 상품: ${pkg.name} (${pkg.nights}박)\n· 금액: ${hkWon(pkg.price)}\n· 희망 시작일: ${startDate ? hkFmtDate(startDate) : '미정'}${startDate ? ` ~ ${hkFmtDate(end)}` : ''}\n· 이름: ${name || '(미입력)'}\n· 연락처: ${phone || '(미입력)'}${message ? `\n· 메시지: ${message}` : ''}`;
+  const mailHref = `mailto:${contactEmail}?subject=${encodeURIComponent(`[전주한켠] ${pkg.name} 문의`)}&body=${encodeURIComponent(summary)}`;
+  const sendMail = () => {
+    if (!name.trim() || !phone.trim()) { window.BGNJ_TOAST?.error?.('이름과 연락처를 입력해 주세요.'); return; }
+    try { window.location.href = mailHref; } catch {}
+    window.BGNJ_TOAST?.success?.('문의 메일 작성 화면을 열었어요. 전송해 주세요.');
+  };
+  const copySummary = async () => {
+    try { await navigator.clipboard.writeText(summary); window.BGNJ_TOAST?.success?.('문의 내용을 복사했어요. 메시지로 보내주세요.'); }
+    catch { window.BGNJ_TOAST?.error?.('복사 실패 — 직접 입력해 주세요.'); }
+  };
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`${pkg.name} 문의`} onClick={onClose}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 1000, display: 'grid', placeItems: 'center', padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--bg)', borderRadius: 16, maxWidth: 460, width: '100%', maxHeight: '88vh', overflow: 'auto', padding: '22px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+          <div>
+            <h3 className="ko-serif" style={{ fontSize: 19, margin: 0 }}>{pkg.name} 문의</h3>
+            <p className="dim-2" style={{ fontSize: 12.5, margin: '4px 0 0' }}>{property?.name || '전주한켠'} · 입금·일정은 문의 후 안내드려요</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="닫기" style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--ink-3)', lineHeight: 1 }}>×</button>
+        </div>
+
+        <div style={{ background: 'var(--bg-2)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, fontSize: 13.5, lineHeight: 1.9 }}>
+          <div><span className="dim-2">상품</span> <strong>{pkg.name}</strong> · {pkg.nights}박</div>
+          <div><span className="dim-2">금액</span> <strong>{hkWon(pkg.price)}</strong></div>
+          <div><span className="dim-2">시작일</span> {startDate ? `${hkFmtDate(startDate)} ~ ${hkFmtDate(end)}` : '문의 시 협의'}</div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+          <input style={FIELD} placeholder="이름" value={name} onChange={(e) => setName(e.target.value)} />
+          <input style={FIELD} placeholder="연락처 (전화번호)" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" />
+          <textarea style={{ ...FIELD, minHeight: 72, resize: 'vertical' }} placeholder="문의 내용 (선택) — 인원, 희망 일정, 궁금한 점 등" value={message} onChange={(e) => setMessage(e.target.value)} />
+        </div>
+
+        <button type="button" className="btn btn-gold" onClick={sendMail} style={{ width: '100%', padding: 14, fontSize: 15, marginBottom: 10 }}>✉️ 메일로 문의 보내기</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {contactPhone && <a href={`tel:${contactPhone}`} className="btn" style={{ flex: 1, textAlign: 'center', textDecoration: 'none', padding: 12 }}>📞 전화 문의</a>}
+          <button type="button" className="btn" onClick={copySummary} style={{ flex: 1, padding: 12 }}>📋 내용 복사</button>
+        </div>
+        <p className="dim-2" style={{ fontSize: 11.5, lineHeight: 1.7, margin: '14px 0 0', textAlign: 'center' }}>
+          문의 주시면 운영자가 일정·입금 방법을 안내드려요.{contactEmail ? ` (${contactEmail})` : ''}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const HK_TABS = [['rooms', '기간 상품'], ['loc', '위치/교통'], ['about', '숙소소개'], ['fac', '시설/서비스'], ['guide', '이용안내']];
 
 const HangyeonPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
-  const [checkIn, setCheckIn] = React.useState(hkToday());
-  const [checkOut, setCheckOut] = React.useState(hkAddDays(hkToday(), 1));
-  const [adults, setAdults] = React.useState(2);
-  const [children, setChildren] = React.useState(0);
+  // v00.288 — 전주한켠은 기간 살아보기 패키지 + 문의 기반. 객실 단위 예약 UI 제거.
+  // checkIn/checkOut 은 시설/편의정보(amenities·운영시간) 표시용 day() fetch 에만 쓰는 내부 기본값.
+  const [checkIn] = React.useState(hkToday());
+  const [checkOut] = React.useState(hkAddDays(hkToday(), 30));
   const [dayRooms, setDayRooms] = React.useState([]);
-  const [dayLoading, setDayLoading] = React.useState(true);
-  const [booking, setBooking] = React.useState(null);
-  const [pickDate, setPickDate] = React.useState(false);
-  const [pickGuest, setPickGuest] = React.useState(false);
+  const [startDate, setStartDate] = React.useState(hkAddDays(hkToday(), 7));
+  const [selectedPkgId, setSelectedPkgId] = React.useState(null);
+  const [inquiry, setInquiry] = React.useState(null);
   const [scTick, setScTick] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState('rooms');
   const refs = { rooms: React.useRef(null), loc: React.useRef(null), about: React.useRef(null), fac: React.useRef(null), guide: React.useRef(null) };
   React.useEffect(() => { const onR = () => setScTick((v) => v + 1); window.addEventListener('bgnj-site-content-refresh', onR); return () => window.removeEventListener('bgnj-site-content-refresh', onR); }, []);
-  React.useEffect(() => { let alive = true; setDayLoading(true); window.BGNJ_HANGYEON.day({ from: checkIn, to: checkOut }).then((rooms) => { if (alive) { setDayRooms(rooms); setDayLoading(false); } }); return () => { alive = false; }; }, [checkIn, checkOut, tick]);
+  React.useEffect(() => { let alive = true; window.BGNJ_HANGYEON.day({ from: checkIn, to: checkOut }).then((rooms) => { if (alive) setDayRooms(Array.isArray(rooms) ? rooms : []); }).catch(() => {}); return () => { alive = false; }; }, [checkIn, checkOut, tick]);
 
   const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
   const info = sc.hangyeon || {};
@@ -455,25 +540,17 @@ const HangyeonPage = ({ go, user }) => {
   const property = { name, address, directions, notice: info.notice };
   const amenities = Array.from(new Set(dayRooms.flatMap((r) => r.amenities || [])));
   const openClose = dayRooms.find((r) => r.hourlyEnabled);
-  const nights = hkNights(checkIn, checkOut);
+  // 기간 상품: site content override(유효 배열) 우선, 없으면 기본값.
+  const packages = (Array.isArray(info.stayPackages) && info.stayPackages.length ? info.stayPackages : STAY_PACKAGES_DEFAULT)
+    .map((p, i) => ({ id: p.id || `pkg-${i}`, name: p.name || '살아보기', nights: Number(p.nights) || 7, price: Number(p.price) || 0, desc: p.desc || '' }));
+  const contactEmail = (sc.contact?.email) || 'contact@bgnj.net';
+  const contactPhone = info.phone || sc.contact?.phone || '';
   const scrollTo = (k) => { setActiveTab(k); const el = refs[k].current; if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-  const datePill = { flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '16px 18px', cursor: 'pointer', fontSize: 15, fontWeight: 600, background: 'none', border: 'none', color: 'var(--ink)' };
 
   return (
     <div className="section" style={{ paddingTop: 0 }}>
       <div className="container" style={{ maxWidth: 1080 }}>
-        {/* 상단 날짜·인원 바 */}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '24px 0 22px' }}>
-          <div style={{ ...SOFT, flex: '2 1 360px', display: 'flex', alignItems: 'center' }}>
-            <button type="button" style={datePill} onClick={() => setPickDate(true)}>📅 <span>{hkFmtDate(checkIn)}</span></button>
-            <span className="badge" style={{ flexShrink: 0 }}>{nights}박</span>
-            <button type="button" style={{ ...datePill, justifyContent: 'flex-end' }} onClick={() => setPickDate(true)}><span>{hkFmtDate(checkOut)}</span> 📅</button>
-          </div>
-          <button type="button" style={{ ...SOFT, flex: '1 1 220px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '16px 18px', cursor: 'pointer', fontSize: 15, fontWeight: 600, border: 'none', color: 'var(--ink)' }} onClick={() => setPickGuest(true)}>
-            👤 성인 {adults}{children ? `, 아동 ${children}` : ', 아동 0'}
-          </button>
-        </div>
-
+        <div style={{ height: 24 }} />
         <HkGallery images={images} name={name} />
 
         <div style={{ marginBottom: 18 }}>
@@ -486,19 +563,25 @@ const HangyeonPage = ({ go, user }) => {
           {HK_TABS.map(([k, label]) => <button key={k} type="button" onClick={() => scrollTo(k)} style={{ padding: '14px 16px', background: 'none', border: 'none', borderBottom: `2px solid ${activeTab === k ? 'var(--ink)' : 'transparent'}`, color: activeTab === k ? 'var(--ink)' : 'var(--ink-3)', fontWeight: activeTab === k ? 700 : 500, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</button>)}
         </div>
 
-        {/* 객실 선택 */}
+        {/* 기간 살아보기 상품 */}
         <section ref={refs.rooms} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
-          <h2 className="section-title" style={{ fontSize: 22, marginBottom: 4 }}>객실 선택</h2>
-          <p className="dim-2" style={{ fontSize: 13, marginBottom: 18 }}>{hkFmtDate(checkIn)} → {hkFmtDate(checkOut)} · {nights}박 · 성인 {adults}{children ? `·아동 ${children}` : ''}</p>
-          {dayLoading ? <div style={{ ...SOFT, padding: 40, textAlign: 'center' }}><p className="dim" style={{ margin: 0 }}>불러오는 중…</p></div>
-            : dayRooms.length === 0 ? <div style={{ ...SOFT, padding: 50, textAlign: 'center' }}><p className="dim" style={{ margin: 0 }}>등록된 객실이 없습니다.</p></div>
-              : dayRooms.every((r) => !(r.stayAvailable || r.dayHourlyAvailable)) ? (
-                <div style={{ ...SOFT, padding: 50, textAlign: 'center' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 600 }}>예약할 수 있는 객실이 없어요</p>
-                  <p className="dim" style={{ margin: '0 0 18px', fontSize: 13 }}>날짜를 변경해 주세요</p>
-                  <button type="button" className="btn" onClick={() => setPickDate(true)}>날짜 변경하기</button>
-                </div>
-              ) : <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>{dayRooms.map((rm) => <HkRoomCard key={rm.id} room={rm} onBook={setBooking} memberDiscount={memberDiscount} />)}</div>}
+          <h2 className="section-title" style={{ fontSize: 22, marginBottom: 4 }}>기간 살아보기 상품</h2>
+          <p className="dim-2" style={{ fontSize: 13, marginBottom: 18 }}>원하는 기간과 시작일을 고르고 문의해 주세요. 일정·입금 방법은 문의 후 안내드려요.</p>
+
+          {/* 시작일 선택 */}
+          <div style={{ ...SOFT, padding: '14px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <label htmlFor="hk-start" style={{ fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>📅 희망 시작일</label>
+            <input id="hk-start" type="date" value={startDate} min={hkToday()} onChange={(e) => setStartDate(e.target.value)}
+              style={{ ...FIELD, width: 'auto', flex: '1 1 180px', maxWidth: 220 }} />
+            {startDate && <span className="dim-2" style={{ fontSize: 12.5 }}>{hkFmtDate(startDate)} 시작</span>}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 14 }}>
+            {packages.map((p) => (
+              <HkPackageCard key={p.id} pkg={p} selected={selectedPkgId === p.id} startDate={startDate}
+                onSelect={setSelectedPkgId} onInquire={(pkg) => { setSelectedPkgId(pkg.id); setInquiry(pkg); }} />
+            ))}
+          </div>
         </section>
 
         <section ref={refs.loc} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
@@ -529,19 +612,17 @@ const HangyeonPage = ({ go, user }) => {
         <section ref={refs.guide} style={{ scrollMarginTop: 120, marginBottom: 20 }}>
           <h2 className="section-title" style={{ fontSize: 22, marginBottom: 14 }}>이용안내</h2>
           <div style={{ ...SOFT, padding: '18px 20px', fontSize: 13.5, lineHeight: 2 }}>
-            <div><strong>체크인</strong> 15:00 · <strong>체크아웃</strong> 11:00</div>
-            {openClose && <div><strong>시간제 운영</strong> {openClose.openTime} ~ {openClose.closeTime} (최소 {openClose.minHours}시간)</div>}
-            <div><strong>결제</strong> 무통장 입금 또는 현장 결제 — 입금 확인 시 예약 확정</div>
-            <div><strong>예약 취소</strong> 아래 ‘내 예약’에서 가능 (체크인 전)</div>
+            <div><strong>입실/퇴실</strong> 입실 15:00 · 퇴실 11:00 (협의 가능)</div>
+            <div><strong>예약 방법</strong> 원하는 기간 상품 + 시작일 선택 후 <strong>문의하기</strong> → 운영자가 일정·입금 방법 안내</div>
+            <div><strong>결제</strong> 무통장 입금 — 입금 확인 시 예약 확정</div>
+            <div><strong>문의</strong> {contactEmail}{contactPhone ? ` · ${contactPhone}` : ''}</div>
           </div>
         </section>
 
         <HkMyBookings tick={tick} />
       </div>
 
-      {pickDate && <HkDatePicker checkIn={checkIn} checkOut={checkOut} onApply={(ci, co) => { setCheckIn(ci); setCheckOut(co); }} onClose={() => setPickDate(false)} />}
-      {pickGuest && <HkGuestPicker adults={adults} children={children} onApply={(a, c) => { setAdults(a); setChildren(c); }} onClose={() => setPickGuest(false)} />}
-      {booking && <HkBookingModal room={booking} checkIn={checkIn} checkOut={checkOut} adults={adults} children={children} user={user} property={property} go={go} memberDiscount={memberDiscount} onClose={() => setBooking(null)} onDone={() => setTick((v) => v + 1)} />}
+      {inquiry && <HkInquiryModal pkg={inquiry} startDate={startDate} property={property} contactEmail={contactEmail} contactPhone={contactPhone} onClose={() => setInquiry(null)} />}
     </div>
   );
 };

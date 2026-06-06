@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.288.000",
+    date: "2026-06-07",
+    datetime: "2026-06-07T00:39:39+09:00",
+    summary: "🏠 전주한켠 — 객실 단위 예약 → '기간 살아보기' 상품 + 문의 기반",
+    details: [
+      "🛏 [기간 상품] 전주한켠을 객실 선택이 아니라 기간 패키지로 전환: 1주일 살아보기 19만 / 2주 살기 35만 / 1달 살기 55만(7·14·30박). site content hangyeon.stayPackages 로 override 가능.",
+      "📅 [시작일 + 문의] 희망 시작일 선택 → '문의하기' → 문의 모달(이름·연락처·메시지 + 상품·시작일 요약). 메일 prefill(contact 이메일) + 전화/내용복사. 입금·일정은 문의 후 운영자 안내(예약·결제 즉시처리 아님).",
+      "🧹 [UI 정리] 상단 체크인~체크아웃·인원 바 제거, 탭 '객실선택'→'기간 상품', 이용안내 문구를 문의 기반으로. 미사용 객실 컴포넌트(HkRoomCard/HkBookingModal 등)는 tree-shake 로 번들 제외(app.js 976→942KB).",
+      "🔒 [무중단] 워커/PMS 백엔드 무변경(프론트 전용). 위치/숙소소개/시설 탭·내 예약(기존 PMS)은 유지.",
+      "✅ [검증] 빌드·check-syntax(41)·헤드리스 /hangyeon·/sleep 상품 렌더+문의 모달+콘솔 clean.",
+      "📦 cache-buster — `?v=00.288.000`."
+    ]
+  },
+  {
     version: "00.287.000",
     date: "2026-06-06",
     datetime: "2026-06-06T23:46:47+09:00",
