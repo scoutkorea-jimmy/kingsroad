@@ -2,6 +2,11 @@
 // v00.285 — 로그인/회원가입 흐름(LegalModal·AuthErrorPanel·INTEREST_OPTIONS·LoginPage)은
 //   pages/admin/AdminLogin.jsx 로 분리. LoginPage 는 window.LoginPage 로 노출되어 boot 가 사용.
 
+// 분석/시간 유틸은 AdminShared.jsx 에 정의 + window 노출 (v00.285).
+const _countSince    = window._countSince;
+const _dailySeries   = window._dailySeries;
+const formatTimeLeft = window.formatTimeLeft;
+
 // 라우터 패널 묶음은 admin/AdminRouterPanels.jsx 로 분리 (v00.285).
 const PRIVACY_DATA             = window.PRIVACY_DATA;
 const DSR_LABELS              = window.DSR_LABELS;

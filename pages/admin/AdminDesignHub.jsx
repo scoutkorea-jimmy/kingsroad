@@ -4,6 +4,18 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.285.001",
+    date: "2026-06-06",
+    datetime: "2026-06-06T22:34:47+09:00",
+    summary: "🔧 핫픽스 — 관리자 페이지 진입 불가(ReferenceError) 해결",
+    details: [
+      "🐞 [원인] v00.285 도메인 분할 시 공용 분석 헬퍼(_countSince·_dailySeries·_hourlySeries·_toDate·formatTimeLeft)가 AdminRouterPanels.jsx(후반 로드) 에 module-scope 로 남아, 먼저 로드되는 DashboardPanel/AuthAdminPage 가 참조 → `_countSince is not defined` 로 관리자 렌더 크래시.",
+      "🔧 [수정] 5개 헬퍼를 가장 먼저 로드되는 AdminShared.jsx 로 이동 + window 노출. 소비 파일은 load-order 안전한 `const X = window.X` alias 로 참조.",
+      "✅ [검증] cross-file module-scope 참조 전수 audit 0건. 헤드리스에서 admin 유저로 AdminPage 강제 렌더 → admin-shell 정상, ReferenceError 0.",
+      "📦 cache-buster — `?v=00.285.001` (캐시된 깨진 admin.js 무효화)."
+    ]
+  },
+  {
     version: "00.285.000",
     date: "2026-06-06",
     datetime: "2026-06-06T22:09:33+09:00",

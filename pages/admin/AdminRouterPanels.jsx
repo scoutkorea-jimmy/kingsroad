@@ -74,15 +74,6 @@ const DSR_LABELS = {
   object:      { ko: "처리 거부",     gdpr: "Art.21", pipa: "§37" },
 };
 
-const formatTimeLeft = (dueIso) => {
-  const diff = new Date(dueIso).getTime() - Date.now();
-  if (diff <= 0) return { text: "기한 경과", tone: "danger" };
-  const d = Math.floor(diff / 86400000);
-  const h = Math.floor((diff % 86400000) / 3600000);
-  if (d === 0) return { text: `${h}시간 남음`, tone: "warn" };
-  if (d <= 3) return { text: `${d}일 ${h}시간 남음`, tone: "warn" };
-  return { text: `${d}일 남음`, tone: "ok" };
-};
 
 // === v00.070 trampoline =================================================
 // ADMIN_VERSION_HISTORY / ADMIN_DESIGN_SECTIONS / MISSION_OVERVIEW / FEATURE_DOMAINS / DesignSystemView
@@ -299,62 +290,6 @@ const RankedBarList = window.RankedBarList;
 const COHORT_OPTIONS = window.COHORT_OPTIONS;
 const CohortSelector = window.CohortSelector;
 
-// 일/주/월 카운트 헬퍼 — items 의 dateField 가 ISO 또는 'YYYY.MM.DD'.
-const _toDate = (v) => {
-  if (!v) return null;
-  const t = Date.parse(v);
-  if (!isNaN(t)) return new Date(t);
-  // 'YYYY.MM.DD' 형식
-  const m = String(v).match(/^(\d{4})[.-](\d{1,2})[.-](\d{1,2})/);
-  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  return null;
-};
-const _countSince = (items, dateField, days) => {
-  const cutoff = Date.now() - days * 86400000;
-  return items.filter((it) => {
-    const d = _toDate(it[dateField]);
-    return d && d.getTime() >= cutoff;
-  }).length;
-};
-// v00.176 — 24시간 시간단위 series (days=1 코호트용). 현재 시각 포함 24시간 (1시간 간격).
-// v00.191 — 사용자 보고 '시간 단위로 볼 때 모든 시간에 라벨 달아줘'. 이전 매 3시간만 라벨 → 매 시간 표시.
-const _hourlySeries = (items, dateField, hours = 24) => {
-  const counts = new Array(hours).fill(0);
-  const labels = new Array(hours).fill('');
-  const now = new Date(); now.setMinutes(0, 0, 0);
-  const baseTs = now.getTime() - (hours - 1) * 3600000;
-  items.forEach((it) => {
-    const d = _toDate(it[dateField]);
-    if (!d) return;
-    const idx = Math.floor((d.getTime() - baseTs) / 3600000);
-    if (idx >= 0 && idx < hours) counts[idx]++;
-  });
-  for (let i = 0; i < hours; i++) {
-    const dt = new Date(baseTs + i * 3600000);
-    labels[i] = (i === hours - 1) ? '지금' : `${dt.getHours()}시`;
-  }
-  return { counts, labels };
-};
-
-// 14일치 일별 카운트 series — 오늘 포함 14개.
-const _dailySeries = (items, dateField, days = 14) => {
-  const counts = new Array(days).fill(0);
-  const labels = new Array(days).fill('');
-  const todayMid = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
-  items.forEach((it) => {
-    const d = _toDate(it[dateField]);
-    if (!d) return;
-    d.setHours(0, 0, 0, 0);
-    const idx = Math.floor((d.getTime() - todayMid) / 86400000) + (days - 1);
-    if (idx >= 0 && idx < days) counts[idx]++;
-  });
-  // v00.195 — 사용자 보고 '임의로 중간에 값들을 축약하지마'. 모든 일자에 라벨 (이전엔 짝수 인덱스만).
-  for (let i = 0; i < days; i++) {
-    const dt = new Date(todayMid + (i - (days - 1)) * 86400000);
-    labels[i] = (i === days - 1) ? '오늘' : `${dt.getMonth()+1}/${dt.getDate()}`;
-  }
-  return { counts, labels };
-};
 
 // DashboardPanel · UserJourneyPanel 은 admin/AdminDashboardPanel.jsx 로 분리 (v00.285).
 const DashboardPanel   = window.DashboardPanel;

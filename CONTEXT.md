@@ -7,7 +7,7 @@
 
 ## 0. 한 페이지 요약
 
-뱅기노자는 한국 여행·역사·문화 커뮤니티 사이트(`bgnj.net`). 정적 호스팅(GitHub Pages) + 동적 백엔드(Cloudflare Worker + D1 + R2) hybrid. **React 18.3.1 (UMD) + esbuild 사전 컴파일** — 빌드 단계가 pre-commit 훅에서 자동 실행되어 `*.jsx → *.js` 사전 transpile (v00.071 부터 in-browser Babel 폐기). 페이지/컴포넌트는 `BGNJ_*` 헬퍼를 거쳐 D1 을 source-of-truth 로 사용. v00.123 부터 categories_kv / grades_kv 가 D1 에 시드되어 server-first 정상화. **현재 v00.226 시점** — v00.157~225 사이클에서 admin 대시보드 가시화 + 모바일 UX 4-사이클 (v00.221~225) + 레거시 컬러 토큰 정리 (v00.209) + alert/confirm Promise 화 (v00.207-208) 등 누적.
+뱅기노자는 한국 여행·역사·문화 커뮤니티 사이트(`bgnj.net`). 정적 호스팅(GitHub Pages) + 동적 백엔드(Cloudflare Worker + D1 + R2) hybrid. **React 18.3.1 (UMD) + esbuild 단일 엔트리 번들** — v00.285 부터 per-file IIFE transpile → `src/entry-{main,admin}.jsx` 단일 번들(`dist/{app,admin}.js`)로 전환. index.html script 22개→1개, 커밋된 per-file `.js` 25개 추방(dist/ gitignore, Pages 브랜치-서빙용으로 main 강제 커밋). 거대 `AuthAdminPage.jsx`(9,274줄) → AdminPage 라우터(~1.3k) + 12개 admin/ 도메인 패널 파일로 분할. 페이지/컴포넌트는 `BGNJ_*` 헬퍼를 거쳐 D1 을 source-of-truth 로 사용. **현재 v00.285 시점** (이전: v00.157~225 admin 대시보드/모바일 UX/컬러 토큰, v00.226~284 한켠 PMS·주문·게시판 등).
 
 세 가지 운영 축:
 1. **D1 source-of-truth** — 사용자가 보는 모든 콘텐츠는 서버 D1 에서 옴. 시드/로컬 폴백 금지.
@@ -35,11 +35,10 @@
    │  GET https://bgnj.net/...
    ▼
 GitHub Pages (정적 호스팅)
-   ├─ index.html (App + ErrorBoundary boot.js + 라우터)
-   ├─ data.js / api.js / styles.css
-   ├─ boot.js (PageErrorBoundary + App + go/route)
-   ├─ components/*.js (esbuild 산출물 — *.jsx 가 소스)
-   ├─ pages/*.js + pages/admin/*.js
+   ├─ index.html (단일 번들 <script dist/app.js> 1개 로드 + 라우터, v00.285~)
+   ├─ data.js / api.js / styles.css (data.js·api.js 는 손작성, 번들 제외)
+   ├─ dist/app.js (메인 번들) / dist/admin.js (admin route lazy) — src/entry-*.jsx 가 엔트리
+   ├─ components/*.jsx + pages/*.jsx + pages/admin/*.jsx (번들 소스. 커밋된 per-file .js 는 v00.285 에서 추방)
    └─ workers/ (배포 안 함, 소스만)
    │
    │  fetch /api/...
@@ -122,7 +121,7 @@ window.BGNJ_GUARD = {
 - `.mono` weight 500, `.mono.dim-2` weight 600 (한글 보조에서 IBM Plex Mono 가는 weight 가독성 보강).
 
 ### 2.7 자동화 — 5 도구 (pre-commit 통합)
-- **build.mjs** (v00.071): `*.jsx → *.js` 사전 컴파일 (esbuild). @babel/standalone CDN 폐기 (~3MB ↓).
+- **build.mjs** (v00.071, v00.285 번들 전환): `src/entry-{main,admin}.jsx` → `dist/{app,admin}.js` 단일 엔트리 esbuild 번들 (iife, jsxFactory=React.createElement). @babel/standalone CDN 폐기. (이전 per-file `*.jsx→*.js` transpile 경로는 v00.285 에서 제거.)
 - **stamp-datetime.mjs** (v00.111): ADMIN_VERSION_HISTORY[0].datetime sentinel `new Date().toISOString()` → 실제 KST(+09:00) ISO 자동 치환.
 - **csp-hashes.mjs** (v00.118): index.html 인라인 `<script>` 본문 → SHA-256 base64 → CSP meta script-src 자동 동기. 정적 호스팅 환경 nonce 대안.
 - **check-version.mjs** (v00.120): BGNJ_VERSION 과 index.html cache-buster 21곳 일관성 검증. 불일치 시 pre-commit 차단.

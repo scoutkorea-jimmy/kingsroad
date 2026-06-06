@@ -965,6 +965,74 @@
     StatTile: StatTile2,
     MetricCard: MetricCard2
   });
+  var formatTimeLeft = (dueIso) => {
+    const diff = new Date(dueIso).getTime() - Date.now();
+    if (diff <= 0) return { text: "\uAE30\uD55C \uACBD\uACFC", tone: "danger" };
+    const d = Math.floor(diff / 864e5);
+    const h = Math.floor(diff % 864e5 / 36e5);
+    if (d === 0) return { text: `${h}\uC2DC\uAC04 \uB0A8\uC74C`, tone: "warn" };
+    if (d <= 3) return { text: `${d}\uC77C ${h}\uC2DC\uAC04 \uB0A8\uC74C`, tone: "warn" };
+    return { text: `${d}\uC77C \uB0A8\uC74C`, tone: "ok" };
+  };
+  var _toDate = (v) => {
+    if (!v) return null;
+    const t = Date.parse(v);
+    if (!isNaN(t)) return new Date(t);
+    const m = String(v).match(/^(\d{4})[.-](\d{1,2})[.-](\d{1,2})/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return null;
+  };
+  var _countSince = (items, dateField, days) => {
+    const cutoff = Date.now() - days * 864e5;
+    return items.filter((it) => {
+      const d = _toDate(it[dateField]);
+      return d && d.getTime() >= cutoff;
+    }).length;
+  };
+  var _hourlySeries = (items, dateField, hours = 24) => {
+    const counts = new Array(hours).fill(0);
+    const labels = new Array(hours).fill("");
+    const now = /* @__PURE__ */ new Date();
+    now.setMinutes(0, 0, 0);
+    const baseTs = now.getTime() - (hours - 1) * 36e5;
+    items.forEach((it) => {
+      const d = _toDate(it[dateField]);
+      if (!d) return;
+      const idx = Math.floor((d.getTime() - baseTs) / 36e5);
+      if (idx >= 0 && idx < hours) counts[idx]++;
+    });
+    for (let i = 0; i < hours; i++) {
+      const dt = new Date(baseTs + i * 36e5);
+      labels[i] = i === hours - 1 ? "\uC9C0\uAE08" : `${dt.getHours()}\uC2DC`;
+    }
+    return { counts, labels };
+  };
+  var _dailySeries = (items, dateField, days = 14) => {
+    const counts = new Array(days).fill(0);
+    const labels = new Array(days).fill("");
+    const todayMid = (() => {
+      const d = /* @__PURE__ */ new Date();
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    })();
+    items.forEach((it) => {
+      const d = _toDate(it[dateField]);
+      if (!d) return;
+      d.setHours(0, 0, 0, 0);
+      const idx = Math.floor((d.getTime() - todayMid) / 864e5) + (days - 1);
+      if (idx >= 0 && idx < days) counts[idx]++;
+    });
+    for (let i = 0; i < days; i++) {
+      const dt = new Date(todayMid + (i - (days - 1)) * 864e5);
+      labels[i] = i === days - 1 ? "\uC624\uB298" : `${dt.getMonth() + 1}/${dt.getDate()}`;
+    }
+    return { counts, labels };
+  };
+  window.formatTimeLeft = formatTimeLeft;
+  window._toDate = _toDate;
+  window._countSince = _countSince;
+  window._hourlySeries = _hourlySeries;
+  window._dailySeries = _dailySeries;
 
   // pages/admin/AdminContentEditors.jsx
   var RecommendationsAdminPanel2 = () => {
@@ -3570,6 +3638,18 @@
 
   // pages/admin/AdminDesignHub.jsx
   var ADMIN_VERSION_HISTORY2 = [
+    {
+      version: "00.285.001",
+      date: "2026-06-06",
+      datetime: "2026-06-06T22:34:47+09:00",
+      summary: "\u{1F527} \uD56B\uD53D\uC2A4 \u2014 \uAD00\uB9AC\uC790 \uD398\uC774\uC9C0 \uC9C4\uC785 \uBD88\uAC00(ReferenceError) \uD574\uACB0",
+      details: [
+        "\u{1F41E} [\uC6D0\uC778] v00.285 \uB3C4\uBA54\uC778 \uBD84\uD560 \uC2DC \uACF5\uC6A9 \uBD84\uC11D \uD5EC\uD37C(_countSince\xB7_dailySeries\xB7_hourlySeries\xB7_toDate\xB7formatTimeLeft)\uAC00 AdminRouterPanels.jsx(\uD6C4\uBC18 \uB85C\uB4DC) \uC5D0 module-scope \uB85C \uB0A8\uC544, \uBA3C\uC800 \uB85C\uB4DC\uB418\uB294 DashboardPanel/AuthAdminPage \uAC00 \uCC38\uC870 \u2192 `_countSince is not defined` \uB85C \uAD00\uB9AC\uC790 \uB80C\uB354 \uD06C\uB798\uC2DC.",
+        "\u{1F527} [\uC218\uC815] 5\uAC1C \uD5EC\uD37C\uB97C \uAC00\uC7A5 \uBA3C\uC800 \uB85C\uB4DC\uB418\uB294 AdminShared.jsx \uB85C \uC774\uB3D9 + window \uB178\uCD9C. \uC18C\uBE44 \uD30C\uC77C\uC740 load-order \uC548\uC804\uD55C `const X = window.X` alias \uB85C \uCC38\uC870.",
+        "\u2705 [\uAC80\uC99D] cross-file module-scope \uCC38\uC870 \uC804\uC218 audit 0\uAC74. \uD5E4\uB4DC\uB9AC\uC2A4\uC5D0\uC11C admin \uC720\uC800\uB85C AdminPage \uAC15\uC81C \uB80C\uB354 \u2192 admin-shell \uC815\uC0C1, ReferenceError 0.",
+        "\u{1F4E6} cache-buster \u2014 `?v=00.285.001` (\uCE90\uC2DC\uB41C \uAE68\uC9C4 admin.js \uBB34\uD6A8\uD654)."
+      ]
+    },
     {
       version: "00.285.000",
       date: "2026-06-06",
@@ -12434,6 +12514,9 @@
   window.SiteContentAdminPanel = SiteContentAdminPanel2;
 
   // pages/admin/AdminDashboardPanel.jsx
+  var _countSince2 = window._countSince;
+  var _hourlySeries2 = window._hourlySeries;
+  var _dailySeries2 = window._dailySeries;
   var DashboardPanel2 = ({ dashboardStats, allUsers, allCommunityPosts, latestCommunityPost, latestColumn, setTab, G }) => {
     var _a, _b, _c, _d, _e, _f, _g, _h;
     const [summary, setSummary] = React.useState(null);
@@ -12480,10 +12563,10 @@
         cancelled = true;
       };
     }, []);
-    const dailySignups = _countSince(allUsers, "joinedAt", 1);
-    const weeklySignups = _countSince(allUsers, "joinedAt", 7);
-    const monthlySignups = _countSince(allUsers, "joinedAt", 30);
-    const signupSeries = signupDays === 1 ? _hourlySeries(allUsers, "joinedAt", 24) : _dailySeries(allUsers, "joinedAt", signupDays);
+    const dailySignups = _countSince2(allUsers, "joinedAt", 1);
+    const weeklySignups = _countSince2(allUsers, "joinedAt", 7);
+    const monthlySignups = _countSince2(allUsers, "joinedAt", 30);
+    const signupSeries = signupDays === 1 ? _hourlySeries2(allUsers, "joinedAt", 24) : _dailySeries2(allUsers, "joinedAt", signupDays);
     const pv = summary || {};
     const dayViews = (_a = pv.day) != null ? _a : null;
     const weekViews = (_b = pv.week) != null ? _b : null;
@@ -15360,6 +15443,9 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
   window.CommunityPostsAdminPanel = CommunityPostsAdminPanel;
 
   // pages/AuthAdminPage.jsx
+  var _countSince3 = window._countSince;
+  var _dailySeries3 = window._dailySeries;
+  var formatTimeLeft2 = window.formatTimeLeft;
   var PRIVACY_DATA2 = window.PRIVACY_DATA;
   var DSR_LABELS2 = window.DSR_LABELS;
   var CorruptedBodyInspector2 = window.CorruptedBodyInspector;
@@ -15411,12 +15497,12 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       const adminCount = allUsers.filter((u) => u.isAdmin).length;
       const superAdminCount = allUsers.filter((u) => u.isSuperAdmin).length;
       const userCount = allUsers.length - adminCount;
-      const userToday = _countSince(allUsers, "joinedAt", 1);
-      const userWeek = _countSince(allUsers, "joinedAt", 7);
-      const userMonth = _countSince(allUsers, "joinedAt", 30);
-      const postToday = _countSince(allCommunityPosts, "createdAt", 1);
-      const postWeek = _countSince(allCommunityPosts, "createdAt", 7);
-      const postMonth = _countSince(allCommunityPosts, "createdAt", 30);
+      const userToday = _countSince3(allUsers, "joinedAt", 1);
+      const userWeek = _countSince3(allUsers, "joinedAt", 7);
+      const userMonth = _countSince3(allUsers, "joinedAt", 30);
+      const postToday = _countSince3(allCommunityPosts, "createdAt", 1);
+      const postWeek = _countSince3(allCommunityPosts, "createdAt", 7);
+      const postMonth = _countSince3(allCommunityPosts, "createdAt", 30);
       const postCatCounts = {};
       allCommunityPosts.forEach((p) => {
         const k = p.category || p.categoryId || "\uBBF8\uBD84\uB958";
@@ -15861,7 +15947,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         ]
       }
     ), tab === "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC" && /* @__PURE__ */ React.createElement(ColumnsHubPanel2, { allColumns }), tab === "\uAC15\uC5F0" && /* @__PURE__ */ React.createElement(LectureAdminPanel, { go }), tab === "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8" && /* @__PURE__ */ React.createElement(TourAdminPanel, { go }), tab === "\uD68C\uC6D0" && /* @__PURE__ */ React.createElement(MemberAdminPanel, { go }), tab === "\uCC45 \uC8FC\uBB38" && /* @__PURE__ */ React.createElement(BookOrderAdminPanel, { go }), tab === "\uCC45 \uCE74\uD0C8\uB85C\uADF8" && /* @__PURE__ */ React.createElement(BooksAdminPanel, null), tab === "\uC815\uBCF4\uC8FC\uCCB4 \uAD8C\uB9AC" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.15\u201322 / PIPA \xA735\u201338. \uC751\uB2F5\uAE30\uD55C: ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "GDPR 1\uAC1C\uC6D4"), " / ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "PIPA 10\uC77C"), "."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAD8C\uB9AC\uC720\uD615"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC815\uBCF4\uC8FC\uCCB4"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC801\uC6A9\uBC95"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC811\uC218"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAE30\uD55C"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC0C1\uD0DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA2.dsrRequests.map((r) => {
-      const left = r.status === "done" ? null : formatTimeLeft(r.dueAt);
+      const left = r.status === "done" ? null : formatTimeLeft2(r.dueAt);
       const toneColor = (left == null ? void 0 : left.tone) === "danger" ? "var(--danger)" : (left == null ? void 0 : left.tone) === "warn" ? "var(--primary-hover)" : "var(--ink-2)";
       const label = DSR_LABELS2[r.type];
       return /* @__PURE__ */ React.createElement("tr", { key: r.id, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: 14 } }, r.id), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "ko-serif" }, label == null ? void 0 : label.ko), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, label == null ? void 0 : label.gdpr, " \xB7 ", label == null ? void 0 : label.pipa)), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("div", null, r.user), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, r.email)), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, r.law)), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, r.openedAt.slice(0, 10)), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 14, color: toneColor } }, r.status === "done" ? "\uC644\uB8CC" : left == null ? void 0 : left.text), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge", style: {

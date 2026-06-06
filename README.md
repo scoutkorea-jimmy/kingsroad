@@ -17,8 +17,9 @@
 ```bash
 git clone https://github.com/scoutkorea-jimmy/kingsroad.git
 cd kingsroad
-bash tools/install-hooks.sh    # pre-commit 자동화 6단계 설치
-node tools/build.mjs            # *.jsx → *.js esbuild 사전 컴파일
+cd tools && npm install && cd ..  # esbuild 등 (tools/node_modules 는 gitignore)
+bash tools/install-hooks.sh    # pre-commit 자동화 설치
+node tools/build.mjs            # 단일 엔트리 번들 → dist/{app,admin}.js (esbuild bundle, v00.285~)
 ```
 
 ### 로컬 미리보기
@@ -74,25 +75,27 @@ cd workers && npx wrangler d1 execute banginoja-db --remote --file=schema-vN.sql
 
 ```
 /                        ← bgnj.net 루트 (정적 호스팅)
-├─ index.html            App + 라우팅 + ErrorBoundary boot.js + CSP meta + JSON-LD
-├─ data.js               BGNJ_VERSION, BGNJ_STORES, BGNJ_GUARD, BGNJ_FMT, BGNJ_SAFE_HTML, 모든 BGNJ_* 헬퍼
-├─ api.js                BGNJ_API (Worker fetch wrapper)
+├─ index.html            App + 라우팅 + CSP meta + JSON-LD. 단일 번들 <script src="dist/app.js"> 1개 로드 (v00.285~)
+├─ data.js               BGNJ_VERSION, BGNJ_STORES, BGNJ_GUARD, BGNJ_FMT, BGNJ_SAFE_HTML, 모든 BGNJ_* 헬퍼 (손작성, 번들 제외)
+├─ api.js                BGNJ_API (Worker fetch wrapper) (손작성, 번들 제외)
 ├─ styles.css            토큰 + 컴포넌트 + 반응형
-├─ boot.jsx → boot.js    PageErrorBoundary + App + go/route + Promise.allSettled init
 ├─ 404.html              GitHub Pages SPA fallback
 ├─ robots.txt            검색엔진 정책
 ├─ sitemap.xml           SEO 사이트맵
-├─ components/           Shell / KoreaMap / TiptapEditor (.jsx 소스 + .js 산출물)
+├─ src/                  번들 엔트리 — entry-main.jsx (index.html 순서) / entry-admin.jsx (admin 스플릿)
+├─ dist/                 번들 산출물 — app.js (메인) / admin.js (admin route lazy). gitignore (Pages 브랜치-서빙용으로 main 에 강제 커밋)
+├─ boot.jsx              PageErrorBoundary + App + go/route + admin 번들 동적 로드 (번들에 포함)
+├─ components/           Shell / KoreaMap / TiptapEditor 등 (.jsx 소스 — 번들로 컴파일)
 ├─ pages/                HomePage / Community / Column / WangsanamTour / Lectures / BookCheckout /
-│                        MyPage / EatSleepShop / LegalFaq / AuthAdmin (.jsx + .js)
-│  └─ admin/             AdminDesignHub / AdminContentEditors
+│                        MyPage / EatSleepShop / LegalFaq / AuthAdminPage(=AdminPage 라우터, ~1.3k줄) (.jsx 소스)
+│  └─ admin/             AdminDesignHub / AdminContentEditors + 12개 도메인 패널 파일 (v00.285 분할)
 ├─ workers/              Cloudflare Worker (배포 안 됨, 소스만)
 │  ├─ src/index.js       모든 endpoint
 │  ├─ schema*.sql        D1 schema (v1~v5)
 │  ├─ seed-kv.sql        categories_kv / grades_kv 기본 시드
 │  └─ wrangler.toml      D1 + R2 bindings + 환경 변수
 ├─ tools/                local-only (배포 안 됨)
-│  ├─ build.mjs          esbuild *.jsx → *.js
+│  ├─ build.mjs          esbuild 단일 엔트리 번들 → dist/{app,admin}.js (v00.285~)
 │  ├─ check-syntax.mjs   babel parser + 룰 4종 + 정보 3종
 │  ├─ check-version.mjs  BGNJ_VERSION ↔ ?v= 동기 검증
 │  ├─ csp-hashes.mjs     인라인 script SHA-256 → CSP meta 자동 동기
@@ -109,14 +112,16 @@ cd workers && npx wrangler d1 execute banginoja-db --remote --file=schema-vN.sql
 ### 새 사이클 시작
 1. **ROADMAP.md** 큐 1 의 첫 pending 항목 확인.
 2. 코드 변경.
-3. `BGNJ_VERSION` (data.js) 갱신 + `?v=` cache-buster 동기 (index.html 21곳, 일괄 sed).
+3. `BGNJ_VERSION` (data.js) 갱신 + `?v=` cache-buster 동기 (index.html 2곳: styles.css·dist/app.js) + version.json.
 4. `pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY` 맨 앞에 신규 entry. datetime 은 `new Date().toISOString()` sentinel.
 5. `git commit` — pre-commit 훅이 자동 실행:
    - stamp-datetime → datetime 실제 KST 시간 치환
    - csp-hashes → 인라인 script SHA-256 동기
    - check-version → 버전 일관성 검증 (불일치 차단)
-   - build → *.jsx → *.js esbuild
+   - write-version-json → version.json 매니페스트 갱신
+   - build → 단일 엔트리 번들 dist/{app,admin}.js (esbuild bundle)
    - check-syntax → 신택스 + 룰 검증
+6. 배포 시 ⚠️ Pages 브랜치-서빙 모드라 `node tools/build.mjs && git add -f dist/app.js dist/admin.js` 로 번들도 함께 커밋해야 라이브 반영 (Pages source 를 GitHub Actions 로 전환하면 불필요).
 
 ---
 

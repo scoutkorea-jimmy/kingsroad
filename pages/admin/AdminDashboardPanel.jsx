@@ -4,6 +4,11 @@
 // 자기완결적 — 의존은 모두 window 전역(BGNJ_API/GUARD/FMT, SankeyFlow 등 AdminShared 글로벌).
 // entry-admin 에서 AuthAdminPage 앞에 로드. DashboardPanel·UserJourneyPanel window 노출.
 
+// 분석 유틸은 AdminShared.jsx 에 정의 + window 노출 (v00.285 — 가장 먼저 로드되어 load-order 안전).
+const _countSince   = window._countSince;
+const _hourlySeries = window._hourlySeries;
+const _dailySeries  = window._dailySeries;
+
 // === Dashboard Panel (v00.148) — 실제 page-view analytics summary 사용 ====
 const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCommunityPost, latestColumn, setTab, G }) => {
   const [summary, setSummary] = React.useState(null);
