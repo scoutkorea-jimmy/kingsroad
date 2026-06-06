@@ -25,6 +25,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # v00.285 Stage 3 — index.html 이 dist/app.js 번들을 참조. dist/ 는 gitignore 이므로
+      # 업로드 전에 CI 에서 빌드해야 한다. (admin 번들 dist/admin.js 도 함께 생성.)
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install tool deps
+        working-directory: tools
+        run: npm ci || npm install
+
+      - name: Build bundles
+        working-directory: tools
+        run: npm run build:bundle
+
+      - name: Verify bundles exist
+        run: |
+          test -f dist/app.js   || { echo "dist/app.js 누락 — 배포 중단"; exit 1; }
+          test -f dist/admin.js || { echo "dist/admin.js 누락 — 배포 중단"; exit 1; }
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

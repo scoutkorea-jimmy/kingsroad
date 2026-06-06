@@ -325,11 +325,7 @@ const pathToRoute = (pathname) => {
 };
 const routeToPath = (r) => r === "home" ? "/" : "/" + r;
 const ADMIN_SCRIPTS = [
-  "pages/admin/AdminShared.js",
-  "pages/admin/AdminContentEditors.js",
-  "pages/admin/AdminDesignHub.js",
-  "pages/admin/HangyeonAdminPanel.js",
-  "pages/AuthAdminPage.js"
+  "dist/admin.js"
 ];
 let _adminLoadPromise = null;
 const _loadAdminScripts = (attempt = 0) => {
