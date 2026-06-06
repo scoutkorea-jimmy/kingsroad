@@ -422,8 +422,8 @@ const HkMyBookings = ({ tick }) => {
 // site content `hangyeon.stayPackages` 가 있으면 override(추후 admin 편집 여지), 없으면 기본값.
 const STAY_PACKAGES_DEFAULT = [
   { id: 'week1', name: '1주일 살아보기', nights: 7, price: 190000, desc: '전주에서 7박, 가볍게 머물러보기' },
-  { id: 'week2', name: '2주 살기', nights: 14, price: 350000, desc: '2주간 천천히 전주에 스며들기' },
-  { id: 'month1', name: '1달 살기', nights: 30, price: 550000, desc: '한 달 살기, 전주 로컬처럼' },
+  { id: 'week2', name: '2주일 살아보기', nights: 14, price: 350000, desc: '2주간 천천히 전주에 스며들기' },
+  { id: 'month1', name: '1달 살아보기', nights: 30, price: 550000, desc: '한 달 살기, 전주 로컬처럼' },
 ];
 
 const HkPackageCard = ({ pkg, selected, startDate, onSelect, onInquire }) => {
@@ -438,7 +438,7 @@ const HkPackageCard = ({ pkg, selected, startDate, onSelect, onInquire }) => {
       {pkg.desc && <p className="dim" style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7 }}>{pkg.desc}</p>}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, marginTop: 'auto', paddingTop: 6, flexWrap: 'wrap' }}>
         <div>
-          <div className="ko-serif" style={{ fontSize: 24, fontWeight: 700 }}>{hkWon(pkg.price)}</div>
+          <div className="ko-serif" style={{ fontSize: 24, fontWeight: 700 }}>{hkWon(pkg.price)} ~</div>
           {startDate && <div className="dim-2" style={{ fontSize: 12, marginTop: 2 }}>{hkFmtDate(startDate)} ~ {hkFmtDate(end)}</div>}
         </div>
         <button type="button" className="btn btn-gold" style={{ minWidth: 120 }}
@@ -455,7 +455,7 @@ const HkInquiryModal = ({ pkg, startDate, property, contactEmail, contactPhone, 
   const [message, setMessage] = React.useState('');
   window.useModalGuard?.({ open: true, dirty: !!(name || phone || message), onClose, label: `${pkg.name} 문의` });
   const end = startDate ? hkAddDays(startDate, pkg.nights) : '';
-  const summary = `[전주한켠 기간 살아보기 문의]\n· 상품: ${pkg.name} (${pkg.nights}박)\n· 금액: ${hkWon(pkg.price)}\n· 희망 시작일: ${startDate ? hkFmtDate(startDate) : '미정'}${startDate ? ` ~ ${hkFmtDate(end)}` : ''}\n· 이름: ${name || '(미입력)'}\n· 연락처: ${phone || '(미입력)'}${message ? `\n· 메시지: ${message}` : ''}`;
+  const summary = `[전주한켠 기간 살아보기 문의]\n· 상품: ${pkg.name} (${pkg.nights}박)\n· 금액: ${hkWon(pkg.price)} ~\n· 희망 시작일: ${startDate ? hkFmtDate(startDate) : '미정'}${startDate ? ` ~ ${hkFmtDate(end)}` : ''}\n· 이름: ${name || '(미입력)'}\n· 연락처: ${phone || '(미입력)'}${message ? `\n· 메시지: ${message}` : ''}`;
   const mailHref = `mailto:${contactEmail}?subject=${encodeURIComponent(`[전주한켠] ${pkg.name} 문의`)}&body=${encodeURIComponent(summary)}`;
   const sendMail = () => {
     if (!name.trim() || !phone.trim()) { window.BGNJ_TOAST?.error?.('이름과 연락처를 입력해 주세요.'); return; }
@@ -480,7 +480,7 @@ const HkInquiryModal = ({ pkg, startDate, property, contactEmail, contactPhone, 
 
         <div style={{ background: 'var(--bg-2)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, fontSize: 13.5, lineHeight: 1.9 }}>
           <div><span className="dim-2">상품</span> <strong>{pkg.name}</strong> · {pkg.nights}박</div>
-          <div><span className="dim-2">금액</span> <strong>{hkWon(pkg.price)}</strong></div>
+          <div><span className="dim-2">금액</span> <strong>{hkWon(pkg.price)} ~</strong></div>
           <div><span className="dim-2">시작일</span> {startDate ? `${hkFmtDate(startDate)} ~ ${hkFmtDate(end)}` : '문의 시 협의'}</div>
         </div>
 
@@ -503,23 +503,29 @@ const HkInquiryModal = ({ pkg, startDate, property, contactEmail, contactPhone, 
   );
 };
 
-const HK_TABS = [['rooms', '기간 상품'], ['loc', '위치/교통'], ['about', '숙소소개'], ['fac', '시설/서비스'], ['guide', '이용안내']];
+const HK_TABS = [['rooms', '객실선택'], ['packages', '기간 상품'], ['about', '숙소소개'], ['loc', '위치/교통'], ['fac', '시설/서비스'], ['guide', '이용안내']];
 
 const HangyeonPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
-  // v00.288 — 전주한켠은 기간 살아보기 패키지 + 문의 기반. 객실 단위 예약 UI 제거.
-  // checkIn/checkOut 은 시설/편의정보(amenities·운영시간) 표시용 day() fetch 에만 쓰는 내부 기본값.
-  const [checkIn] = React.useState(hkToday());
-  const [checkOut] = React.useState(hkAddDays(hkToday(), 30));
+  // 객실선택(숙박 단위 예약) + 기간 살아보기(패키지 문의) 병행. (v00.289 — 객실선택 복원)
+  const [checkIn, setCheckIn] = React.useState(hkToday());
+  const [checkOut, setCheckOut] = React.useState(hkAddDays(hkToday(), 1));
+  const [adults, setAdults] = React.useState(2);
+  const [children, setChildren] = React.useState(0);
   const [dayRooms, setDayRooms] = React.useState([]);
+  const [dayLoading, setDayLoading] = React.useState(true);
+  const [booking, setBooking] = React.useState(null);
+  const [pickDate, setPickDate] = React.useState(false);
+  const [pickGuest, setPickGuest] = React.useState(false);
+  // 기간 살아보기(패키지 문의)
   const [startDate, setStartDate] = React.useState(hkAddDays(hkToday(), 7));
   const [selectedPkgId, setSelectedPkgId] = React.useState(null);
   const [inquiry, setInquiry] = React.useState(null);
   const [scTick, setScTick] = React.useState(0);
   const [activeTab, setActiveTab] = React.useState('rooms');
-  const refs = { rooms: React.useRef(null), loc: React.useRef(null), about: React.useRef(null), fac: React.useRef(null), guide: React.useRef(null) };
+  const refs = { rooms: React.useRef(null), packages: React.useRef(null), loc: React.useRef(null), about: React.useRef(null), fac: React.useRef(null), guide: React.useRef(null) };
   React.useEffect(() => { const onR = () => setScTick((v) => v + 1); window.addEventListener('bgnj-site-content-refresh', onR); return () => window.removeEventListener('bgnj-site-content-refresh', onR); }, []);
-  React.useEffect(() => { let alive = true; window.BGNJ_HANGYEON.day({ from: checkIn, to: checkOut }).then((rooms) => { if (alive) setDayRooms(Array.isArray(rooms) ? rooms : []); }).catch(() => {}); return () => { alive = false; }; }, [checkIn, checkOut, tick]);
+  React.useEffect(() => { let alive = true; setDayLoading(true); window.BGNJ_HANGYEON.day({ from: checkIn, to: checkOut }).then((rooms) => { if (alive) { setDayRooms(Array.isArray(rooms) ? rooms : []); setDayLoading(false); } }).catch(() => { if (alive) setDayLoading(false); }); return () => { alive = false; }; }, [checkIn, checkOut, tick]);
 
   const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
   const info = sc.hangyeon || {};
@@ -545,12 +551,25 @@ const HangyeonPage = ({ go, user }) => {
     .map((p, i) => ({ id: p.id || `pkg-${i}`, name: p.name || '살아보기', nights: Number(p.nights) || 7, price: Number(p.price) || 0, desc: p.desc || '' }));
   const contactEmail = (sc.contact?.email) || 'contact@bgnj.net';
   const contactPhone = info.phone || sc.contact?.phone || '';
+  const nights = hkNights(checkIn, checkOut);
   const scrollTo = (k) => { setActiveTab(k); const el = refs[k].current; if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const datePill = { flex: 1, display: 'flex', alignItems: 'center', gap: 10, padding: '16px 18px', cursor: 'pointer', fontSize: 15, fontWeight: 600, background: 'none', border: 'none', color: 'var(--ink)' };
 
   return (
     <div className="section" style={{ paddingTop: 0 }}>
       <div className="container" style={{ maxWidth: 1080 }}>
-        <div style={{ height: 24 }} />
+        {/* 상단 날짜·인원 바 (객실선택용) */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '24px 0 22px' }}>
+          <div style={{ ...SOFT, flex: '2 1 360px', display: 'flex', alignItems: 'center' }}>
+            <button type="button" style={datePill} onClick={() => setPickDate(true)}>📅 <span>{hkFmtDate(checkIn)}</span></button>
+            <span className="badge" style={{ flexShrink: 0 }}>{nights}박</span>
+            <button type="button" style={{ ...datePill, justifyContent: 'flex-end' }} onClick={() => setPickDate(true)}><span>{hkFmtDate(checkOut)}</span> 📅</button>
+          </div>
+          <button type="button" style={{ ...SOFT, flex: '1 1 220px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '16px 18px', cursor: 'pointer', fontSize: 15, fontWeight: 600, border: 'none', color: 'var(--ink)' }} onClick={() => setPickGuest(true)}>
+            👤 성인 {adults}{children ? `, 아동 ${children}` : ', 아동 0'}
+          </button>
+        </div>
+
         <HkGallery images={images} name={name} />
 
         <div style={{ marginBottom: 18 }}>
@@ -563,8 +582,23 @@ const HangyeonPage = ({ go, user }) => {
           {HK_TABS.map(([k, label]) => <button key={k} type="button" onClick={() => scrollTo(k)} style={{ padding: '14px 16px', background: 'none', border: 'none', borderBottom: `2px solid ${activeTab === k ? 'var(--ink)' : 'transparent'}`, color: activeTab === k ? 'var(--ink)' : 'var(--ink-3)', fontWeight: activeTab === k ? 700 : 500, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}>{label}</button>)}
         </div>
 
-        {/* 기간 살아보기 상품 */}
+        {/* 객실 선택 (숙박 단위 예약) */}
         <section ref={refs.rooms} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
+          <h2 className="section-title" style={{ fontSize: 22, marginBottom: 4 }}>객실 선택</h2>
+          <p className="dim-2" style={{ fontSize: 13, marginBottom: 18 }}>{hkFmtDate(checkIn)} → {hkFmtDate(checkOut)} · {nights}박 · 성인 {adults}{children ? `·아동 ${children}` : ''}</p>
+          {dayLoading ? <div style={{ ...SOFT, padding: 40, textAlign: 'center' }}><p className="dim" style={{ margin: 0 }}>불러오는 중…</p></div>
+            : dayRooms.length === 0 ? <div style={{ ...SOFT, padding: 50, textAlign: 'center' }}><p className="dim" style={{ margin: 0 }}>등록된 객실이 없습니다.</p></div>
+              : dayRooms.every((r) => !(r.stayAvailable || r.dayHourlyAvailable)) ? (
+                <div style={{ ...SOFT, padding: 50, textAlign: 'center' }}>
+                  <p style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 600 }}>예약할 수 있는 객실이 없어요</p>
+                  <p className="dim" style={{ margin: '0 0 18px', fontSize: 13 }}>날짜를 변경해 주세요</p>
+                  <button type="button" className="btn" onClick={() => setPickDate(true)}>날짜 변경하기</button>
+                </div>
+              ) : <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>{dayRooms.map((rm) => <HkRoomCard key={rm.id} room={rm} onBook={setBooking} memberDiscount={memberDiscount} />)}</div>}
+        </section>
+
+        {/* 기간 살아보기 상품 */}
+        <section ref={refs.packages} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
           <h2 className="section-title" style={{ fontSize: 22, marginBottom: 4 }}>기간 살아보기 상품</h2>
           <p className="dim-2" style={{ fontSize: 13, marginBottom: 18 }}>원하는 기간과 시작일을 고르고 문의해 주세요. 일정·입금 방법은 문의 후 안내드려요.</p>
 
@@ -584,6 +618,11 @@ const HangyeonPage = ({ go, user }) => {
           </div>
         </section>
 
+        <section ref={refs.about} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
+          <h2 className="section-title" style={{ fontSize: 22, marginBottom: 14 }}>숙소소개</h2>
+          <div style={{ ...SOFT, padding: '18px 20px' }}><p className="dim" style={{ margin: 0, fontSize: 14, lineHeight: 1.9 }}>{desc}</p>{info.notice && <p className="dim" style={{ margin: '10px 0 0', fontSize: 13 }}>{info.notice}</p>}</div>
+        </section>
+
         <section ref={refs.loc} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
           <h2 className="section-title" style={{ fontSize: 22, marginBottom: 14 }}>위치/교통</h2>
           <div style={{ ...SOFT, padding: '18px 20px' }}>
@@ -594,11 +633,6 @@ const HangyeonPage = ({ go, user }) => {
             </div>
             <a href={osmLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 8, fontSize: 12.5, color: 'var(--secondary)', textDecoration: 'none' }}>큰 지도에서 보기 ↗</a>
           </div>
-        </section>
-
-        <section ref={refs.about} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
-          <h2 className="section-title" style={{ fontSize: 22, marginBottom: 14 }}>숙소소개</h2>
-          <div style={{ ...SOFT, padding: '18px 20px' }}><p className="dim" style={{ margin: 0, fontSize: 14, lineHeight: 1.9 }}>{desc}</p>{info.notice && <p className="dim" style={{ margin: '10px 0 0', fontSize: 13 }}>{info.notice}</p>}</div>
         </section>
 
         <section ref={refs.fac} style={{ scrollMarginTop: 120, marginBottom: 44 }}>
@@ -612,9 +646,9 @@ const HangyeonPage = ({ go, user }) => {
         <section ref={refs.guide} style={{ scrollMarginTop: 120, marginBottom: 20 }}>
           <h2 className="section-title" style={{ fontSize: 22, marginBottom: 14 }}>이용안내</h2>
           <div style={{ ...SOFT, padding: '18px 20px', fontSize: 13.5, lineHeight: 2 }}>
-            <div><strong>입실/퇴실</strong> 입실 15:00 · 퇴실 11:00 (협의 가능)</div>
-            <div><strong>예약 방법</strong> 원하는 기간 상품 + 시작일 선택 후 <strong>문의하기</strong> → 운영자가 일정·입금 방법 안내</div>
-            <div><strong>결제</strong> 무통장 입금 — 입금 확인 시 예약 확정</div>
+            <div><strong>입실/퇴실</strong> 입실 15:00 · 퇴실 11:00</div>
+            <div><strong>객실 예약</strong> 날짜·인원 선택 후 객실에서 바로 예약 — 무통장 입금 확인 시 확정</div>
+            <div><strong>기간 살아보기</strong> 기간 상품 + 시작일 선택 후 <strong>문의하기</strong> → 운영자가 일정·입금 방법 안내</div>
             <div><strong>문의</strong> {contactEmail}{contactPhone ? ` · ${contactPhone}` : ''}</div>
           </div>
         </section>
@@ -622,6 +656,9 @@ const HangyeonPage = ({ go, user }) => {
         <HkMyBookings tick={tick} />
       </div>
 
+      {pickDate && <HkDatePicker checkIn={checkIn} checkOut={checkOut} onApply={(ci, co) => { setCheckIn(ci); setCheckOut(co); }} onClose={() => setPickDate(false)} />}
+      {pickGuest && <HkGuestPicker adults={adults} children={children} onApply={(a, c) => { setAdults(a); setChildren(c); }} onClose={() => setPickGuest(false)} />}
+      {booking && <HkBookingModal room={booking} checkIn={checkIn} checkOut={checkOut} adults={adults} children={children} user={user} property={property} go={go} memberDiscount={memberDiscount} onClose={() => setBooking(null)} onDone={() => setTick((v) => v + 1)} />}
       {inquiry && <HkInquiryModal pkg={inquiry} startDate={startDate} property={property} contactEmail={contactEmail} contactPhone={contactPhone} onClose={() => setInquiry(null)} />}
     </div>
   );

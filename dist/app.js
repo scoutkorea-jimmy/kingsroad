@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.288.000",
+    version: "00.288.001",
     build: "2026.06.06",
     channel: "preview"
   };
@@ -11699,7 +11699,9 @@
 
   // pages/HangyeonPage.jsx
   var hkToday = () => new Date(Date.now() + 9 * 3600 * 1e3).toISOString().slice(0, 10);
+  var hkNowHM = () => new Date(Date.now() + 9 * 3600 * 1e3).toISOString().slice(11, 16);
   var hkAddDays = (str, n) => new Date((/* @__PURE__ */ new Date(str + "T00:00:00Z")).getTime() + n * 864e5).toISOString().slice(0, 10);
+  var hkNights = (a, b) => Math.max(0, Math.round((/* @__PURE__ */ new Date(b + "T00:00:00Z") - /* @__PURE__ */ new Date(a + "T00:00:00Z")) / 864e5));
   var HK_WD = ["\uC77C", "\uC6D4", "\uD654", "\uC218", "\uBAA9", "\uAE08", "\uD1A0"];
   var hkFmtDate = (str) => {
     if (!str) return "";
@@ -11710,14 +11712,229 @@
     var _a;
     return ((_a = window.BGNJ_FMT) == null ? void 0 : _a.won) ? window.BGNJ_FMT.won(n) : `${Number(n || 0).toLocaleString("ko-KR")}\uC6D0`;
   };
+  var hkMan = (n) => {
+    if (n == null) return "";
+    const m = n / 1e4;
+    return (m >= 10 ? Math.round(m) : Math.round(m * 10) / 10) + "\uB9CC";
+  };
+  var HK_HOLIDAYS = {
+    "2026-01-01": "\uC2E0\uC815",
+    "2026-02-16": "\uC124\uB0A0",
+    "2026-02-17": "\uC124\uB0A0",
+    "2026-02-18": "\uC124\uB0A0",
+    "2026-03-01": "\uC0BC\uC77C\uC808",
+    "2026-05-05": "\uC5B4\uB9B0\uC774\uB0A0",
+    "2026-05-24": "\uC11D\uAC00\uD0C4\uC2E0\uC77C",
+    "2026-06-06": "\uD604\uCDA9\uC77C",
+    "2026-08-15": "\uAD11\uBCF5\uC808",
+    "2026-09-24": "\uCD94\uC11D",
+    "2026-09-25": "\uCD94\uC11D",
+    "2026-09-26": "\uCD94\uC11D",
+    "2026-10-03": "\uAC1C\uCC9C\uC808",
+    "2026-10-09": "\uD55C\uAE00\uB0A0",
+    "2026-12-25": "\uC131\uD0C4\uC808"
+  };
   var hk12h = (hm) => {
     if (!hm) return "";
     const [h, m] = hm.split(":").map(Number);
     const hh = h % 12 === 0 ? 12 : h % 12;
     return `${h < 12 ? "\uC624\uC804" : "\uC624\uD6C4"} ${hh}:${String(m).padStart(2, "0")}`;
   };
+  var hkAmPm = (hm) => Number(hm.slice(0, 2)) < 12;
   var SOFT = { background: "var(--bg)", borderRadius: 16, boxShadow: "0 1px 2px rgba(15,23,42,0.05), 0 8px 24px rgba(15,23,42,0.05)" };
   var FIELD = { width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid var(--line)", background: "var(--bg)", fontSize: 14, color: "var(--ink)", fontFamily: "inherit" };
+  var HkMiniMonth = ({ cursorYM, checkIn, checkOut, avail, today, onPick }) => {
+    const year = Number(cursorYM.slice(0, 4)), month = Number(cursorYM.slice(5, 7)) - 1;
+    const firstDow = new Date(Date.UTC(year, month, 1)).getUTCDay();
+    const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const cells = [];
+    for (let i = 0; i < firstDow; i++) cells.push(null);
+    for (let d = 1; d <= days; d++) cells.push(`${cursorYM.slice(0, 8)}${String(d).padStart(2, "0")}`);
+    const inRange = (date) => checkIn && checkOut && date > checkIn && date < checkOut;
+    return /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 260 } }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", fontWeight: 700, fontSize: 15, marginBottom: 8 } }, year, ".", String(month + 1).padStart(2, "0")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(7,1fr)" } }, HK_WD.map((w, i) => /* @__PURE__ */ React.createElement("div", { key: w, style: { textAlign: "center", fontSize: 11, padding: "4px 0", color: i === 0 ? "var(--danger)" : i === 6 ? "#2563EB" : "var(--ink-3)" } }, w)), cells.map((date, i) => {
+      if (!date) return /* @__PURE__ */ React.createElement("div", { key: `e${i}` });
+      const dow = (/* @__PURE__ */ new Date(date + "T00:00:00Z")).getUTCDay();
+      const a = avail[date];
+      const past = date < today;
+      const full = a && a.remaining < 1;
+      const isCI = date === checkIn, isCO = date === checkOut, ranged = inRange(date);
+      const holiday = HK_HOLIDAYS[date];
+      const disabled = past || full && !checkIn;
+      const ends = isCI || isCO;
+      const color = ends ? "#fff" : disabled ? "var(--ink-3)" : holiday || dow === 0 ? "var(--danger)" : dow === 6 ? "#2563EB" : "var(--ink)";
+      return /* @__PURE__ */ React.createElement("div", { key: date, style: { display: "flex", justifyContent: "center", padding: "1px 0", background: ranged ? "var(--bg-2)" : "transparent" } }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          disabled: past,
+          onClick: () => onPick(date),
+          style: { width: 40, height: 46, borderRadius: 11, border: "none", cursor: past ? "default" : "pointer", background: ends ? "var(--ink)" : "transparent", color, opacity: past ? 0.35 : 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, fontSize: 14, fontWeight: ends ? 700 : 500 }
+        },
+        /* @__PURE__ */ React.createElement("span", null, Number(date.slice(8))),
+        /* @__PURE__ */ React.createElement("span", { style: { fontSize: 8.5, lineHeight: 1, color: ends ? "#fff" : full ? "var(--danger)" : "var(--success)", fontWeight: 600 } }, !past && (full ? "\uB9C8\uAC10" : a && a.price != null ? hkMan(a.price) : ""))
+      ));
+    })));
+  };
+  var HkDatePicker = ({ checkIn, checkOut, onApply, onClose }) => {
+    const today = hkToday();
+    const [base, setBase] = React.useState((checkIn || today).slice(0, 7) + "-01");
+    const [avail, setAvail] = React.useState({});
+    const [ci, setCi] = React.useState(checkIn);
+    const [co, setCo] = React.useState(checkOut);
+    React.useEffect(() => {
+      let alive = true;
+      window.BGNJ_HANGYEON.availability({ from: base, to: hkAddDays(base, 70) }).then((res) => {
+        if (!alive) return;
+        const agg = {};
+        const av = res && res.availability || {};
+        Object.keys(av).forEach((rid) => (av[rid] || []).forEach((a) => {
+          const cur = agg[a.date] || { remaining: 0, price: null };
+          cur.remaining += a.remaining;
+          if (a.price != null && (cur.price == null || a.price < cur.price)) cur.price = a.price;
+          agg[a.date] = cur;
+        }));
+        setAvail(agg);
+      });
+      return () => {
+        alive = false;
+      };
+    }, [base]);
+    const pick = (date) => {
+      if (!ci || ci && co || date <= ci) {
+        setCi(date);
+        setCo(null);
+      } else setCo(date);
+    };
+    const y = Number(base.slice(0, 4)), m = Number(base.slice(5, 7)) - 1;
+    const nextYM = `${new Date(Date.UTC(y, m + 1, 1)).toISOString().slice(0, 8)}01`;
+    const prevDisabled = base <= today.slice(0, 7) + "-01";
+    const nights = ci && co ? hkNights(ci, co) : 0;
+    return /* @__PURE__ */ React.createElement("div", { onClick: onClose, style: { position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 1100, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "60px 16px" } }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { ...SOFT, maxWidth: 720, width: "100%", padding: 22 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { type: "button", disabled: prevDisabled, onClick: () => setBase(`${new Date(Date.UTC(y, m - 1, 1)).toISOString().slice(0, 8)}01`), style: { background: "none", border: "none", fontSize: 20, cursor: prevDisabled ? "default" : "pointer", color: prevDisabled ? "var(--line)" : "var(--ink)" } }, "\u2039"), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, textAlign: "center", fontSize: 13 }, className: "dim-2" }, ci ? co ? `${hkFmtDate(ci)} ~ ${hkFmtDate(co)} \xB7 ${nights}\uBC15` : `${hkFmtDate(ci)} \xB7 \uD1F4\uC2E4\uC77C \uC120\uD0DD` : "\uC785\uC2E4\uC77C\uC744 \uC120\uD0DD\uD558\uC138\uC694"), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setBase(nextYM), style: { background: "none", border: "none", fontSize: 20, cursor: "pointer" } }, "\u203A")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 24, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(HkMiniMonth, { cursorYM: base, checkIn: ci, checkOut: co, avail, today, onPick: pick }), /* @__PURE__ */ React.createElement(HkMiniMonth, { cursorYM: nextYM, checkIn: ci, checkOut: co, avail, today, onPick: pick })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line-2, var(--line))" } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, "\uAC00\uACA9 : 1\uBC15 \uAE30\uC900 \uCD5C\uC800\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", disabled: !ci || !co, onClick: () => {
+      onApply(ci, co);
+      onClose();
+    }, style: { opacity: ci && co ? 1 : 0.5 } }, "\uC801\uC6A9\uD558\uAE30"))));
+  };
+  var HkStep = ({ label, value, onMinus, onPlus, min = 0 }) => /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0" } }, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 15 } }, label), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 14 } }, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onMinus, disabled: value <= min, style: { width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--line)", background: "var(--bg)", cursor: value <= min ? "default" : "pointer", fontSize: 18, color: value <= min ? "var(--ink-3)" : "var(--ink)" } }, "\u2212"), /* @__PURE__ */ React.createElement("span", { style: { minWidth: 20, textAlign: "center", fontSize: 16, fontWeight: 600 } }, value), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onPlus, style: { width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--line)", background: "var(--bg)", cursor: "pointer", fontSize: 18 } }, "\uFF0B")));
+  var HkGuestPicker = ({ adults, children, onApply, onClose }) => {
+    const [a, setA] = React.useState(adults);
+    const [c, setC] = React.useState(children);
+    return /* @__PURE__ */ React.createElement("div", { onClick: onClose, style: { position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 1100, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "80px 16px" } }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { ...SOFT, maxWidth: 420, width: "100%", padding: 22 } }, /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 12, padding: "14px 16px", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 14 } }, "\uAE30\uC900\uC778\uC6D0 \uCD08\uACFC \uC2DC \uCD94\uAC00\uC694\uAE08\uC774 \uBC1C\uC0DD\uD560 \uC218 \uC788\uC5B4\uC694."), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12.5, margin: "6px 0 0", lineHeight: 1.6 } }, "\uAC1D\uC2E4\uB9C8\uB2E4 \uC544\uB3D9 \uC785\uC2E4 \uC5EC\uBD80\uC640 \uCD94\uAC00\uC694\uAE08\uC774 \uB2EC\uB77C\uC694. \uC774\uC6A9 \uC548\uB0B4 \uBC0F \uC608\uC57D \uACF5\uC9C0\uB97C \uD655\uC778\uD574 \uC8FC\uC138\uC694.")), /* @__PURE__ */ React.createElement(HkStep, { label: "\uC131\uC778", value: a, min: 1, onMinus: () => setA((v) => Math.max(1, v - 1)), onPlus: () => setA((v) => Math.min(10, v + 1)) }), /* @__PURE__ */ React.createElement(HkStep, { label: "\uC544\uB3D9", value: c, min: 0, onMinus: () => setC((v) => Math.max(0, v - 1)), onPlus: () => setC((v) => Math.min(10, v + 1)) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginTop: 12 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: () => {
+      onApply(a, c);
+      onClose();
+    } }, "\uC801\uC6A9\uD558\uAE30"))));
+  };
+  var HkHourSelect = ({ roomTypeId, date, minHours, start, hours, onStart, onHours }) => {
+    const [info, setInfo] = React.useState({ hours: [], minHours: minHours || 3 });
+    React.useEffect(() => {
+      let alive = true;
+      window.BGNJ_HANGYEON.slots({ roomTypeId, date }).then((res) => {
+        if (alive) setInfo(res || { hours: [] });
+      });
+      return () => {
+        alive = false;
+      };
+    }, [roomTypeId, date]);
+    const today = hkToday();
+    const nowHM = hkNowHM();
+    const openH = info.hours.length ? Number(info.hours[0].hour.slice(0, 2)) : 9;
+    const closeH = info.hours.length ? Number(info.hours[info.hours.length - 1].hour.slice(0, 2)) + 1 : 22;
+    const minH = info.minHours || minHours || 3;
+    const dur = [];
+    for (let d = minH; d <= Math.max(minH, closeH - openH); d++) dur.push(d);
+    const remAt = (h) => {
+      const s = info.hours.find((x) => x.hour === `${String(h).padStart(2, "0")}:00`);
+      return s ? s.remaining : 0;
+    };
+    const canStart = (h) => {
+      if (h + hours > closeH) return false;
+      if (date === today && `${String(h).padStart(2, "0")}:00` <= nowHM) return false;
+      for (let x = h; x < h + hours; x++) if (remAt(x) < 1) return false;
+      return true;
+    };
+    const grp = (label, arr) => arr.length === 0 ? null : /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginBottom: 6 } }, label), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 } }, arr.map((s) => {
+      const h = Number(s.hour.slice(0, 2));
+      const ok = canStart(h);
+      const sel = start === s.hour;
+      return /* @__PURE__ */ React.createElement("button", { key: s.hour, type: "button", disabled: !ok, onClick: () => onStart(s.hour), style: { padding: "10px 0", borderRadius: 9, fontSize: 13, fontWeight: 600, border: `1px solid ${sel ? "var(--ink)" : "var(--line)"}`, background: sel ? "var(--ink)" : "var(--bg)", color: sel ? "#fff" : ok ? "var(--ink)" : "var(--ink-3)", cursor: ok ? "pointer" : "default", opacity: ok ? 1 : 0.4 } }, s.hour.replace(":00", "\uC2DC"));
+    })));
+    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 12 } }, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 14, display: "block", marginBottom: 8 } }, "\uC774\uC6A9 \uC2DC\uAC04 (\uCD5C\uC18C ", minH, "\uC2DC\uAC04)"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, dur.map((d) => /* @__PURE__ */ React.createElement("button", { key: d, type: "button", onClick: () => onHours(d), style: { minWidth: 50, padding: "8px 0", borderRadius: 9, fontSize: 13, fontWeight: 600, flex: "1 1 0", border: `1px solid ${hours === d ? "var(--ink)" : "var(--line)"}`, background: hours === d ? "var(--ink)" : "var(--bg)", color: hours === d ? "#fff" : "var(--ink)", cursor: "pointer" } }, d, "\uC2DC\uAC04")))), /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 14, display: "block", marginBottom: 8 } }, "\uC2DC\uC791 \uC2DC\uAC04"), info.hours.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13 } }, "\uC774\uC6A9 \uAC00\uB2A5\uD55C \uC2DC\uAC04\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement(React.Fragment, null, grp("\uC624\uC804", info.hours.filter((s) => hkAmPm(s.hour))), grp("\uC624\uD6C4", info.hours.filter((s) => !hkAmPm(s.hour)))));
+  };
+  var HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, property, go, memberDiscount, onClose, onDone }) => {
+    const units = [];
+    if (room.dailyEnabled) units.push("nightly");
+    if (room.weeklyEnabled) units.push("weekly");
+    if (room.monthlyEnabled) units.push("monthly");
+    if (room.hourlyEnabled) units.push("hourly");
+    const [unit, setUnit] = React.useState(units[0] || "nightly");
+    const unitLabel = (u) => u === "nightly" ? `\uC219\uBC15 ${hkWon(room.dailyPrice)}~` : u === "weekly" ? `\uC8FC\uAC04 ${hkWon(room.weeklyPrice)}` : u === "monthly" ? `\uC6D4\uAC04 ${hkWon(room.monthlyPrice)}` : `\uC2DC\uAC04\uC81C ${hkWon(room.hourlyPrice)}/\uC2DC\uAC04`;
+    const fixedNights = unit === "weekly" ? 7 : unit === "monthly" ? 30 : 0;
+    const [start, setStart] = React.useState(null);
+    const [hours, setHours] = React.useState(room.minHours || 3);
+    const [coupon, setCoupon] = React.useState("");
+    const [name, setName] = React.useState((user == null ? void 0 : user.name) || "");
+    const [phone, setPhone] = React.useState("");
+    const [email, setEmail] = React.useState((user == null ? void 0 : user.email) || "");
+    const [request, setRequest] = React.useState("");
+    const [agreed, setAgreed] = React.useState(false);
+    const [quote, setQuote] = React.useState(null);
+    const [submitting, setSubmitting] = React.useState(false);
+    const guests = adults + children;
+    const nights = hkNights(checkIn, checkOut);
+    const fixedCheckOut = fixedNights ? hkAddDays(checkIn, fixedNights) : checkOut;
+    React.useEffect(() => {
+      setStart(null);
+    }, [unit]);
+    React.useEffect(() => {
+      let alive = true;
+      if (unit === "hourly") {
+        if (!start) {
+          setQuote(null);
+          return;
+        }
+        window.BGNJ_HANGYEON.quote({ roomTypeId: room.id, unit: "hourly", date: checkIn, slotStart: start, hours, guests, couponCode: coupon.trim() || void 0 }).then((q) => {
+          if (alive) setQuote(q);
+        });
+      } else if (unit === "weekly" || unit === "monthly") {
+        window.BGNJ_HANGYEON.quote({ roomTypeId: room.id, unit, checkIn, rooms: 1, guests, couponCode: coupon.trim() || void 0 }).then((q) => {
+          if (alive) setQuote(q);
+        });
+      } else {
+        window.BGNJ_HANGYEON.quote({ roomTypeId: room.id, unit: "nightly", checkIn, checkOut, rooms: 1, guests, couponCode: coupon.trim() || void 0 }).then((q) => {
+          if (alive) setQuote(q);
+        });
+      }
+      return () => {
+        alive = false;
+      };
+    }, [unit, start, hours, coupon, room.id, checkIn, checkOut, guests]);
+    const submit = async () => {
+      var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
+      if (!name.trim() || !phone.trim()) {
+        (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, "\uC774\uB984\uACFC \uC5F0\uB77D\uCC98\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
+        return;
+      }
+      if (!agreed) {
+        (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.error) == null ? void 0 : _d.call(_c, "\uAC1C\uC778\uC815\uBCF4 \uC218\uC9D1\xB7\uC774\uC6A9\uC5D0 \uB3D9\uC758\uD574 \uC8FC\uC138\uC694.");
+        return;
+      }
+      if (!(quote == null ? void 0 : quote.ok)) {
+        (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, (quote == null ? void 0 : quote.reason) || "\uC608\uC57D\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4.");
+        return;
+      }
+      setSubmitting(true);
+      const base = { roomTypeId: room.id, guests, name: name.trim(), phone: phone.trim(), email: email.trim(), request: request.trim(), couponCode: coupon.trim() || void 0 };
+      const payload = unit === "hourly" ? { ...base, unit: "hourly", date: checkIn, slotStart: start, hours } : unit === "weekly" || unit === "monthly" ? { ...base, unit, checkIn, rooms: 1 } : { ...base, unit: "nightly", checkIn, checkOut, rooms: 1 };
+      const res = await window.BGNJ_HANGYEON.book(payload);
+      setSubmitting(false);
+      if (res.ok) {
+        (_i = (_g = window.BGNJ_TOAST) == null ? void 0 : _g.success) == null ? void 0 : _i.call(_g, `\uC608\uC57D \uC811\uC218 \uC644\uB8CC (${(_h = res.booking) == null ? void 0 : _h.code}). \uC785\uAE08 \uD655\uC778 \uD6C4 \uD655\uC815\uB429\uB2C8\uB2E4.`);
+        onDone && onDone();
+        onClose();
+      } else (_k = (_j = window.BGNJ_TOAST) == null ? void 0 : _j.error) == null ? void 0 : _k.call(_j, res.message || "\uC608\uC57D \uC2E4\uD328");
+    };
+    const cell = (label, date, time) => /* @__PURE__ */ React.createElement("div", { style: { flex: 1, textAlign: "center", padding: "12px 8px" } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginBottom: 4 } }, label), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 700 } }, hkFmtDate(date)), /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 13 } }, time));
+    return /* @__PURE__ */ React.createElement("div", { onClick: onClose, style: { position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 1e3, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "40px 16px" } }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { ...SOFT, maxWidth: 480, width: "100%", padding: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px" } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, room.name), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, style: { background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "var(--ink-3)" } }, "\u2715")), /* @__PURE__ */ React.createElement("div", { style: { padding: "0 22px 22px", display: "flex", flexDirection: "column", gap: 16 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12.5 } }, "\uAE30\uC900 ", Math.min(adults, room.maxOccupancy), "\uBA85 / \uCD5C\uB300 ", room.maxOccupancy, "\uBA85 \xB7 ", property == null ? void 0 : property.address), units.length > 1 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, units.map((u) => /* @__PURE__ */ React.createElement("button", { key: u, type: "button", onClick: () => setUnit(u), style: { flex: "1 1 80px", minWidth: 80, padding: "11px 8px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none", background: unit === u ? "var(--bg-2)" : "transparent", color: unit === u ? "var(--ink)" : "var(--ink-3)" } }, unitLabel(u)))), unit === "hourly" ? /* @__PURE__ */ React.createElement(HkHourSelect, { roomTypeId: room.id, date: checkIn, minHours: room.minHours || 3, start, hours, onStart: setStart, onHours: setHours }) : /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 12, display: "flex", alignItems: "center" } }, cell("\uCCB4\uD06C\uC778", checkIn, "15:00"), /* @__PURE__ */ React.createElement("span", { className: "badge", style: { flexShrink: 0 } }, unit === "nightly" ? nights : fixedNights, "\uBC15"), cell("\uCCB4\uD06C\uC544\uC6C3", unit === "nightly" ? checkOut : fixedCheckOut, "11:00")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 13.5 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC778\uC6D0"), /* @__PURE__ */ React.createElement("span", null, "\uC131\uC778 ", adults, children ? `, \uC544\uB3D9 ${children}` : "")), /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 12, padding: "14px 16px" } }, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 14 } }, "\uACB0\uC81C \uAE08\uC561"), (quote == null ? void 0 : quote.ok) ? /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, display: "flex", flexDirection: "column", gap: 6, fontSize: 13 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uC0C1\uD488 \uAE08\uC561 ", unit === "hourly" ? `(${quote.hours}\uC2DC\uAC04)` : `(${quote.nights}\uBC15)`), /* @__PURE__ */ React.createElement("span", null, hkWon(quote.subtotal))), quote.couponDiscount > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", color: "var(--success)" } }, /* @__PURE__ */ React.createElement("span", null, "\uCFE0\uD3F0 ", quote.couponLabel), /* @__PURE__ */ React.createElement("span", null, "-", hkWon(quote.couponDiscount))), quote.memberDiscount > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", color: "var(--success)" } }, /* @__PURE__ */ React.createElement("span", null, "\uD68C\uC6D0 \uD560\uC778 (", quote.memberRate, "%)"), /* @__PURE__ */ React.createElement("span", null, "-", hkWon(quote.memberDiscount))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 16, marginTop: 4 } }, /* @__PURE__ */ React.createElement("span", null, "\uCD1D \uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "ko-serif" }, hkWon(quote.total)))) : /* @__PURE__ */ React.createElement("p", { style: { margin: "8px 0 0", fontSize: 13, color: "var(--danger)" } }, (quote == null ? void 0 : quote.reason) || (unit === "hourly" ? "\uC2DC\uC791 \uC2DC\uAC04\uC744 \uC120\uD0DD\uD558\uC138\uC694" : "\uB0A0\uC9DC\uB97C \uD655\uC778\uD558\uC138\uC694")), (quote == null ? void 0 : quote.couponError) && /* @__PURE__ */ React.createElement("p", { style: { margin: "6px 0 0", fontSize: 12, color: "var(--danger)" } }, quote.couponError), !user && (quote == null ? void 0 : quote.ok) && memberDiscount > 0 && /* @__PURE__ */ React.createElement("div", { style: { margin: "10px 0 0", padding: "10px 12px", borderRadius: 10, background: "rgba(146,64,14,0.06)", fontSize: 12.5, lineHeight: 1.6 } }, "\u{1F4A1} ", /* @__PURE__ */ React.createElement("strong", null, "\uD68C\uC6D0\uAC00\uC785\uD558\uBA74 ", memberDiscount, "% \uD560\uC778"), " \u2014 \uD68C\uC6D0\uAC00 ", /* @__PURE__ */ React.createElement("strong", { className: "ko-serif", style: { color: "var(--secondary)", fontSize: 15 } }, hkWon(Math.round(quote.total * (100 - memberDiscount) / 100))), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go && go("signup"), style: { marginLeft: 8, background: "var(--secondary)", color: "#fff", border: "none", borderRadius: 8, padding: "4px 10px", cursor: "pointer", font: "inherit", fontSize: 12, fontWeight: 600 } }, "\uD68C\uC6D0\uAC00\uC785\uD558\uACE0 \uD560\uC778\uBC1B\uAE30")), !user && (quote == null ? void 0 : quote.ok) && memberDiscount === 0 && /* @__PURE__ */ React.createElement("p", { style: { margin: "8px 0 0", fontSize: 12, color: "var(--secondary)" } }, "\u{1F4A1} ", /* @__PURE__ */ React.createElement("strong", null, "\uD68C\uC6D0\uAC00\uC785/\uB85C\uADF8\uC778"), " \uC2DC \uD68C\uC6D0 \uD61C\uD0DD\uC774 \uC801\uC6A9\uB429\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 14, display: "block", marginBottom: 10 } }, "\uC608\uC57D\uC790 \uC815\uBCF4"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } }, /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC131\uBA85 *", value: name, onChange: (e) => setName(e.target.value) }), /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uD734\uB300\uD3F0 \uBC88\uD638 * (010-0000-0000)", value: phone, onChange: (e) => setPhone(e.target.value) }), /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC774\uBA54\uC77C (\uC120\uD0DD)", value: email, onChange: (e) => setEmail(e.target.value) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10 } }, /* @__PURE__ */ React.createElement("input", { style: { ...FIELD, flex: 1 }, placeholder: "\uCFE0\uD3F0 \uCF54\uB4DC (\uC120\uD0DD)", value: coupon, onChange: (e) => setCoupon(e.target.value.toUpperCase()) })), /* @__PURE__ */ React.createElement("textarea", { style: { ...FIELD, resize: "vertical" }, rows: 2, placeholder: "\uC694\uCCAD\uC0AC\uD56D (\uC120\uD0DD)", value: request, onChange: (e) => setRequest(e.target.value) }))), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, cursor: "pointer" } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: agreed, onChange: (e) => setAgreed(e.target.checked), style: { marginTop: 2 } }), /* @__PURE__ */ React.createElement("span", null, "\uAC1C\uC778\uC815\uBCF4(\uC774\uB984\xB7\uC5F0\uB77D\uCC98\xB7\uC774\uBA54\uC77C) \uC218\uC9D1\xB7\uC774\uC6A9 \uBC0F \uC608\uC57D \uC9C4\uD589\uC5D0 \uB3D9\uC758\uD569\uB2C8\uB2E4. \uC218\uC9D1\uD55C \uAC1C\uC778\uC815\uBCF4\uB294 ", /* @__PURE__ */ React.createElement("strong", null, "1\uB144\uAC04 \uBCF4\uAD00 \uD6C4 \uD30C\uAE30"), "\uB418\uBA70, \uACB0\uC81C\uB294 ", /* @__PURE__ */ React.createElement("strong", null, "\uBB34\uD1B5\uC7A5 \uC785\uAE08/\uD604\uC7A5 \uACB0\uC81C"), "\uB85C \uC9C4\uD589\uB429\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", disabled: submitting || !(quote == null ? void 0 : quote.ok), onClick: submit, style: { opacity: submitting || !(quote == null ? void 0 : quote.ok) ? 0.5 : 1, padding: "14px", fontSize: 15 } }, submitting ? "\uC811\uC218 \uC911\u2026" : (quote == null ? void 0 : quote.ok) ? `${hkWon(quote.total)} \uC608\uC57D\uD558\uAE30` : "\uC608\uC57D\uD558\uAE30"))));
+  };
   var HkGallery = ({ images, name }) => {
     const has = images.length > 0;
     const big = has ? images[0] : null;
@@ -11745,6 +11962,16 @@
     }, [pool.length, pickNext]);
     const ph = () => CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "1/1", iconSize: 40 }) : /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", width: "100%", height: "100%" } });
     return /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginBottom: 24, height: 360, borderRadius: 16, overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: { flex: "1 1 60%", background: "var(--bg-2)", overflow: "hidden" } }, big ? /* @__PURE__ */ React.createElement("img", { src: big.url, alt: name, style: { width: "100%", height: "100%", objectFit: "cover", display: "block" } }) : ph()), /* @__PURE__ */ React.createElement("div", { style: { flex: "1 1 40%", display: "grid", gridTemplateColumns: "1fr 1fr", gridTemplateRows: "1fr 1fr", gap: 6, position: "relative" } }, [0, 1, 2, 3].map((i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { background: "var(--bg-2)", overflow: "hidden" } }, side[i] ? /* @__PURE__ */ React.createElement("img", { key: side[i].url, src: side[i].url, alt: "", style: { width: "100%", height: "100%", objectFit: "cover", display: "block", animation: "bgnj-slide-in .55s cubic-bezier(.22,.61,.36,1) both", animationDelay: `${i * 0.07}s` } }) : ph())), has && images.length > 1 && /* @__PURE__ */ React.createElement("span", { style: { position: "absolute", right: 12, bottom: 12, background: "rgba(15,23,42,0.78)", color: "#fff", fontSize: 12, padding: "6px 12px", borderRadius: 999 } }, "\uC804\uCCB4 \uC0AC\uC9C4 ", images.length)));
+  };
+  var HkRoomCard = ({ room, onBook, memberDiscount }) => {
+    const cover = (room.images || []).find((im) => im.isPrimary) || (room.images || [])[0];
+    const available = room.stayAvailable || room.dayHourlyAvailable || room.weeklyAvailable || room.monthlyAvailable;
+    const md = Number(memberDiscount) || 0;
+    const mp = (p) => Math.round((p || 0) * (100 - md) / 100);
+    const hMin = Math.max(1, room.minHours || 1);
+    const priceInfo = room.stayAvailable ? { v: room.stayTotal, label: `${room.nights}\uBC15`, suffix: "" } : room.dayHourlyAvailable ? { v: (room.hourlyPrice || 0) * hMin, label: `\uCD5C\uC18C ${hMin}\uC2DC\uAC04`, suffix: "~" } : room.weeklyAvailable ? { v: room.weeklyTotal, label: "\uC8FC\uAC04(7\uBC15)", suffix: "" } : room.monthlyAvailable ? { v: room.monthlyTotal, label: "\uC6D4\uAC04(30\uBC15)", suffix: "" } : { v: 0, label: "", suffix: "" };
+    const basePrice = priceInfo.v;
+    return /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: 0, overflow: "hidden", display: "flex", flexWrap: "wrap", opacity: available ? 1 : 0.55 } }, /* @__PURE__ */ React.createElement("div", { style: { flex: "0 0 220px", minWidth: 180, background: "var(--bg-2)", overflow: "hidden" } }, cover ? /* @__PURE__ */ React.createElement("img", { src: cover.url, alt: room.name, style: { width: "100%", height: "100%", minHeight: 170, objectFit: "cover", display: "block" } }) : CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "4/3", iconSize: 44 }) : null), /* @__PURE__ */ React.createElement("div", { style: { flex: "1 1 280px", padding: "18px 20px", display: "flex", flexDirection: "column", gap: 8 } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, room.name), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12.5 } }, "\uAE30\uC900 ", Math.min(2, room.maxOccupancy), "\uBA85 / \uCD5C\uB300 ", room.maxOccupancy, "\uBA85", room.bedConfig ? ` \xB7 ${room.bedConfig}` : ""), room.dailyEnabled && /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 10, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12.5 } }, /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uCCB4\uD06C\uC778"), " 15:00"), /* @__PURE__ */ React.createElement("span", { className: "badge" }, room.nights, "\uBC15"), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uCCB4\uD06C\uC544\uC6C3"), " 11:00")), room.hourlyEnabled && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11.5 } }, "\uC2DC\uAC04\uC81C ", hkWon(room.hourlyPrice), "/\uC2DC\uAC04 (\uCD5C\uC18C ", room.minHours, "\uC2DC\uAC04)"), room.weeklyEnabled && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11.5 } }, "\uC8FC\uAC04(7\uBC15) ", hkWon(room.weeklyPrice)), room.monthlyEnabled && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11.5 } }, "\uC6D4\uAC04(30\uBC15) ", hkWon(room.monthlyPrice)), /* @__PURE__ */ React.createElement("div", { style: { marginTop: "auto", display: "flex", justifyContent: "flex-end", alignItems: "flex-end", gap: 12, paddingTop: 8 } }, available ? /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11 } }, priceInfo.label), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: md > 0 ? 16 : 22, fontWeight: 700, color: md > 0 ? "var(--ink-3)" : "var(--ink)", textDecoration: md > 0 ? "line-through" : "none" } }, hkWon(basePrice), priceInfo.suffix), md > 0 && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 2 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, color: "var(--secondary)", fontWeight: 700, marginRight: 4 } }, "\uD68C\uC6D0\uAC00 -", md, "%"), /* @__PURE__ */ React.createElement("span", { className: "ko-serif", style: { fontSize: 22, fontWeight: 700, color: "var(--secondary)" } }, hkWon(mp(basePrice)), priceInfo.suffix))) : /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--danger)", color: "var(--danger)" } }, "\uC608\uC57D \uB9C8\uAC10"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", disabled: !available, onClick: () => onBook(room), style: { opacity: available ? 1 : 0.5, minWidth: 110 } }, "\uC608\uC57D\uD558\uAE30"))));
   };
   var HK_STATUS_LABEL = { pending: "\uC608\uC57D\uB300\uAE30", confirmed: "\uC608\uC57D\uD655\uC815", checked_in: "\uCCB4\uD06C\uC778", checked_out: "\uCCB4\uD06C\uC544\uC6C3", cancelled: "\uCDE8\uC18C", no_show: "\uB178\uC1FC" };
   var HK_PAY_LABEL = { unpaid: "\uBBF8\uACB0\uC81C", partial: "\uBD80\uBD84\uACB0\uC81C", paid: "\uACB0\uC81C\uC644\uB8CC", refunded: "\uD658\uBD88\uC644\uB8CC" };
@@ -11774,8 +12001,8 @@
   };
   var STAY_PACKAGES_DEFAULT = [
     { id: "week1", name: "1\uC8FC\uC77C \uC0B4\uC544\uBCF4\uAE30", nights: 7, price: 19e4, desc: "\uC804\uC8FC\uC5D0\uC11C 7\uBC15, \uAC00\uBCCD\uAC8C \uBA38\uBB3C\uB7EC\uBCF4\uAE30" },
-    { id: "week2", name: "2\uC8FC \uC0B4\uAE30", nights: 14, price: 35e4, desc: "2\uC8FC\uAC04 \uCC9C\uCC9C\uD788 \uC804\uC8FC\uC5D0 \uC2A4\uBA70\uB4E4\uAE30" },
-    { id: "month1", name: "1\uB2EC \uC0B4\uAE30", nights: 30, price: 55e4, desc: "\uD55C \uB2EC \uC0B4\uAE30, \uC804\uC8FC \uB85C\uCEEC\uCC98\uB7FC" }
+    { id: "week2", name: "2\uC8FC\uC77C \uC0B4\uC544\uBCF4\uAE30", nights: 14, price: 35e4, desc: "2\uC8FC\uAC04 \uCC9C\uCC9C\uD788 \uC804\uC8FC\uC5D0 \uC2A4\uBA70\uB4E4\uAE30" },
+    { id: "month1", name: "1\uB2EC \uC0B4\uC544\uBCF4\uAE30", nights: 30, price: 55e4, desc: "\uD55C \uB2EC \uC0B4\uAE30, \uC804\uC8FC \uB85C\uCEEC\uCC98\uB7FC" }
   ];
   var HkPackageCard = ({ pkg, selected, startDate, onSelect, onInquire }) => {
     const end = startDate ? hkAddDays(startDate, pkg.nights) : "";
@@ -11789,7 +12016,7 @@
       },
       /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, margin: 0 } }, pkg.name), /* @__PURE__ */ React.createElement("span", { className: "badge", style: { flexShrink: 0 } }, pkg.nights, "\uBC15")),
       pkg.desc && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 13.5, lineHeight: 1.7 } }, pkg.desc),
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, marginTop: "auto", paddingTop: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 24, fontWeight: 700 } }, hkWon(pkg.price)), startDate && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginTop: 2 } }, hkFmtDate(startDate), " ~ ", hkFmtDate(end))), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, marginTop: "auto", paddingTop: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 24, fontWeight: 700 } }, hkWon(pkg.price), " ~"), startDate && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginTop: 2 } }, hkFmtDate(startDate), " ~ ", hkFmtDate(end))), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -11813,7 +12040,7 @@
     const end = startDate ? hkAddDays(startDate, pkg.nights) : "";
     const summary = `[\uC804\uC8FC\uD55C\uCF20 \uAE30\uAC04 \uC0B4\uC544\uBCF4\uAE30 \uBB38\uC758]
 \xB7 \uC0C1\uD488: ${pkg.name} (${pkg.nights}\uBC15)
-\xB7 \uAE08\uC561: ${hkWon(pkg.price)}
+\xB7 \uAE08\uC561: ${hkWon(pkg.price)} ~
 \xB7 \uD76C\uB9DD \uC2DC\uC791\uC77C: ${startDate ? hkFmtDate(startDate) : "\uBBF8\uC815"}${startDate ? ` ~ ${hkFmtDate(end)}` : ""}
 \xB7 \uC774\uB984: ${name || "(\uBBF8\uC785\uB825)"}
 \xB7 \uC5F0\uB77D\uCC98: ${phone || "(\uBBF8\uC785\uB825)"}${message ? `
@@ -11849,22 +12076,28 @@
         onClick: onClose,
         style: { position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 1e3, display: "grid", placeItems: "center", padding: 16 }
       },
-      /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { background: "var(--bg)", borderRadius: 16, maxWidth: 460, width: "100%", maxHeight: "88vh", overflow: "auto", padding: "22px 24px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 19, margin: 0 } }, pkg.name, " \uBB38\uC758"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12.5, margin: "4px 0 0" } }, (property == null ? void 0 : property.name) || "\uC804\uC8FC\uD55C\uCF20", " \xB7 \uC785\uAE08\xB7\uC77C\uC815\uC740 \uBB38\uC758 \uD6C4 \uC548\uB0B4\uB4DC\uB824\uC694")), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, "aria-label": "\uB2EB\uAE30", style: { background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "var(--ink-3)", lineHeight: 1 } }, "\xD7")), /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 12, padding: "14px 16px", marginBottom: 16, fontSize: 13.5, lineHeight: 1.9 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC0C1\uD488"), " ", /* @__PURE__ */ React.createElement("strong", null, pkg.name), " \xB7 ", pkg.nights, "\uBC15"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uAE08\uC561"), " ", /* @__PURE__ */ React.createElement("strong", null, hkWon(pkg.price))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC2DC\uC791\uC77C"), " ", startDate ? `${hkFmtDate(startDate)} ~ ${hkFmtDate(end)}` : "\uBB38\uC758 \uC2DC \uD611\uC758")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 } }, /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC774\uB984", value: name, onChange: (e) => setName(e.target.value) }), /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC5F0\uB77D\uCC98 (\uC804\uD654\uBC88\uD638)", value: phone, onChange: (e) => setPhone(e.target.value), inputMode: "tel" }), /* @__PURE__ */ React.createElement("textarea", { style: { ...FIELD, minHeight: 72, resize: "vertical" }, placeholder: "\uBB38\uC758 \uB0B4\uC6A9 (\uC120\uD0DD) \u2014 \uC778\uC6D0, \uD76C\uB9DD \uC77C\uC815, \uAD81\uAE08\uD55C \uC810 \uB4F1", value: message, onChange: (e) => setMessage(e.target.value) })), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: sendMail, style: { width: "100%", padding: 14, fontSize: 15, marginBottom: 10 } }, "\u2709\uFE0F \uBA54\uC77C\uB85C \uBB38\uC758 \uBCF4\uB0B4\uAE30"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, contactPhone && /* @__PURE__ */ React.createElement("a", { href: `tel:${contactPhone}`, className: "btn", style: { flex: 1, textAlign: "center", textDecoration: "none", padding: 12 } }, "\u{1F4DE} \uC804\uD654 \uBB38\uC758"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: copySummary, style: { flex: 1, padding: 12 } }, "\u{1F4CB} \uB0B4\uC6A9 \uBCF5\uC0AC")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11.5, lineHeight: 1.7, margin: "14px 0 0", textAlign: "center" } }, "\uBB38\uC758 \uC8FC\uC2DC\uBA74 \uC6B4\uC601\uC790\uAC00 \uC77C\uC815\xB7\uC785\uAE08 \uBC29\uBC95\uC744 \uC548\uB0B4\uB4DC\uB824\uC694.", contactEmail ? ` (${contactEmail})` : ""))
+      /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { background: "var(--bg)", borderRadius: 16, maxWidth: 460, width: "100%", maxHeight: "88vh", overflow: "auto", padding: "22px 24px" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 19, margin: 0 } }, pkg.name, " \uBB38\uC758"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12.5, margin: "4px 0 0" } }, (property == null ? void 0 : property.name) || "\uC804\uC8FC\uD55C\uCF20", " \xB7 \uC785\uAE08\xB7\uC77C\uC815\uC740 \uBB38\uC758 \uD6C4 \uC548\uB0B4\uB4DC\uB824\uC694")), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, "aria-label": "\uB2EB\uAE30", style: { background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "var(--ink-3)", lineHeight: 1 } }, "\xD7")), /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 12, padding: "14px 16px", marginBottom: 16, fontSize: 13.5, lineHeight: 1.9 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC0C1\uD488"), " ", /* @__PURE__ */ React.createElement("strong", null, pkg.name), " \xB7 ", pkg.nights, "\uBC15"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uAE08\uC561"), " ", /* @__PURE__ */ React.createElement("strong", null, hkWon(pkg.price), " ~")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC2DC\uC791\uC77C"), " ", startDate ? `${hkFmtDate(startDate)} ~ ${hkFmtDate(end)}` : "\uBB38\uC758 \uC2DC \uD611\uC758")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 } }, /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC774\uB984", value: name, onChange: (e) => setName(e.target.value) }), /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC5F0\uB77D\uCC98 (\uC804\uD654\uBC88\uD638)", value: phone, onChange: (e) => setPhone(e.target.value), inputMode: "tel" }), /* @__PURE__ */ React.createElement("textarea", { style: { ...FIELD, minHeight: 72, resize: "vertical" }, placeholder: "\uBB38\uC758 \uB0B4\uC6A9 (\uC120\uD0DD) \u2014 \uC778\uC6D0, \uD76C\uB9DD \uC77C\uC815, \uAD81\uAE08\uD55C \uC810 \uB4F1", value: message, onChange: (e) => setMessage(e.target.value) })), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: sendMail, style: { width: "100%", padding: 14, fontSize: 15, marginBottom: 10 } }, "\u2709\uFE0F \uBA54\uC77C\uB85C \uBB38\uC758 \uBCF4\uB0B4\uAE30"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, contactPhone && /* @__PURE__ */ React.createElement("a", { href: `tel:${contactPhone}`, className: "btn", style: { flex: 1, textAlign: "center", textDecoration: "none", padding: 12 } }, "\u{1F4DE} \uC804\uD654 \uBB38\uC758"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: copySummary, style: { flex: 1, padding: 12 } }, "\u{1F4CB} \uB0B4\uC6A9 \uBCF5\uC0AC")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11.5, lineHeight: 1.7, margin: "14px 0 0", textAlign: "center" } }, "\uBB38\uC758 \uC8FC\uC2DC\uBA74 \uC6B4\uC601\uC790\uAC00 \uC77C\uC815\xB7\uC785\uAE08 \uBC29\uBC95\uC744 \uC548\uB0B4\uB4DC\uB824\uC694.", contactEmail ? ` (${contactEmail})` : ""))
     );
   };
-  var HK_TABS = [["rooms", "\uAE30\uAC04 \uC0C1\uD488"], ["loc", "\uC704\uCE58/\uAD50\uD1B5"], ["about", "\uC219\uC18C\uC18C\uAC1C"], ["fac", "\uC2DC\uC124/\uC11C\uBE44\uC2A4"], ["guide", "\uC774\uC6A9\uC548\uB0B4"]];
+  var HK_TABS = [["rooms", "\uAC1D\uC2E4\uC120\uD0DD"], ["packages", "\uAE30\uAC04 \uC0C1\uD488"], ["about", "\uC219\uC18C\uC18C\uAC1C"], ["loc", "\uC704\uCE58/\uAD50\uD1B5"], ["fac", "\uC2DC\uC124/\uC11C\uBE44\uC2A4"], ["guide", "\uC774\uC6A9\uC548\uB0B4"]];
   var HangyeonPage = ({ go, user }) => {
     var _a, _b, _c, _d;
     const [tick, setTick] = React.useState(0);
-    const [checkIn] = React.useState(hkToday());
-    const [checkOut] = React.useState(hkAddDays(hkToday(), 30));
+    const [checkIn, setCheckIn] = React.useState(hkToday());
+    const [checkOut, setCheckOut] = React.useState(hkAddDays(hkToday(), 1));
+    const [adults, setAdults] = React.useState(2);
+    const [children, setChildren] = React.useState(0);
     const [dayRooms, setDayRooms] = React.useState([]);
+    const [dayLoading, setDayLoading] = React.useState(true);
+    const [booking, setBooking] = React.useState(null);
+    const [pickDate, setPickDate] = React.useState(false);
+    const [pickGuest, setPickGuest] = React.useState(false);
     const [startDate, setStartDate] = React.useState(hkAddDays(hkToday(), 7));
     const [selectedPkgId, setSelectedPkgId] = React.useState(null);
     const [inquiry, setInquiry] = React.useState(null);
     const [scTick, setScTick] = React.useState(0);
     const [activeTab, setActiveTab] = React.useState("rooms");
-    const refs = { rooms: React.useRef(null), loc: React.useRef(null), about: React.useRef(null), fac: React.useRef(null), guide: React.useRef(null) };
+    const refs = { rooms: React.useRef(null), packages: React.useRef(null), loc: React.useRef(null), about: React.useRef(null), fac: React.useRef(null), guide: React.useRef(null) };
     React.useEffect(() => {
       const onR = () => setScTick((v) => v + 1);
       window.addEventListener("bgnj-site-content-refresh", onR);
@@ -11872,9 +12105,14 @@
     }, []);
     React.useEffect(() => {
       let alive = true;
+      setDayLoading(true);
       window.BGNJ_HANGYEON.day({ from: checkIn, to: checkOut }).then((rooms) => {
-        if (alive) setDayRooms(Array.isArray(rooms) ? rooms : []);
+        if (alive) {
+          setDayRooms(Array.isArray(rooms) ? rooms : []);
+          setDayLoading(false);
+        }
       }).catch(() => {
+        if (alive) setDayLoading(false);
       });
       return () => {
         alive = false;
@@ -11901,12 +12139,14 @@
     const packages = (Array.isArray(info.stayPackages) && info.stayPackages.length ? info.stayPackages : STAY_PACKAGES_DEFAULT).map((p, i) => ({ id: p.id || `pkg-${i}`, name: p.name || "\uC0B4\uC544\uBCF4\uAE30", nights: Number(p.nights) || 7, price: Number(p.price) || 0, desc: p.desc || "" }));
     const contactEmail = ((_c = sc.contact) == null ? void 0 : _c.email) || "contact@bgnj.net";
     const contactPhone = info.phone || ((_d = sc.contact) == null ? void 0 : _d.phone) || "";
+    const nights = hkNights(checkIn, checkOut);
     const scrollTo = (k) => {
       setActiveTab(k);
       const el = refs[k].current;
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "section", style: { paddingTop: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 1080 } }, /* @__PURE__ */ React.createElement("div", { style: { height: 24 } }), /* @__PURE__ */ React.createElement(HkGallery, { images, name }), /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 18 } }, /* @__PURE__ */ React.createElement("h1", { className: "ko-serif", style: { fontSize: 28, margin: "0 0 6px" } }, name), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 14 } }, tagline, " \xB7 ", /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => scrollTo("loc"), style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", cursor: "pointer", font: "inherit" } }, "\uC704\uCE58 \uBCF4\uAE30"))), /* @__PURE__ */ React.createElement("div", { style: { position: "sticky", top: 64, zIndex: 40, background: "var(--bg)", borderBottom: "1px solid var(--line-2, var(--line))", display: "flex", gap: 4, marginBottom: 24, overflowX: "auto" } }, HK_TABS.map(([k, label]) => /* @__PURE__ */ React.createElement("button", { key: k, type: "button", onClick: () => scrollTo(k), style: { padding: "14px 16px", background: "none", border: "none", borderBottom: `2px solid ${activeTab === k ? "var(--ink)" : "transparent"}`, color: activeTab === k ? "var(--ink)" : "var(--ink-3)", fontWeight: activeTab === k ? 700 : 500, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" } }, label))), /* @__PURE__ */ React.createElement("section", { ref: refs.rooms, style: { scrollMarginTop: 120, marginBottom: 44 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 4 } }, "\uAE30\uAC04 \uC0B4\uC544\uBCF4\uAE30 \uC0C1\uD488"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 18 } }, "\uC6D0\uD558\uB294 \uAE30\uAC04\uACFC \uC2DC\uC791\uC77C\uC744 \uACE0\uB974\uACE0 \uBB38\uC758\uD574 \uC8FC\uC138\uC694. \uC77C\uC815\xB7\uC785\uAE08 \uBC29\uBC95\uC740 \uBB38\uC758 \uD6C4 \uC548\uB0B4\uB4DC\uB824\uC694."), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "14px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("label", { htmlFor: "hk-start", style: { fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 } }, "\u{1F4C5} \uD76C\uB9DD \uC2DC\uC791\uC77C"), /* @__PURE__ */ React.createElement(
+    const datePill = { flex: 1, display: "flex", alignItems: "center", gap: 10, padding: "16px 18px", cursor: "pointer", fontSize: 15, fontWeight: 600, background: "none", border: "none", color: "var(--ink)" };
+    return /* @__PURE__ */ React.createElement("div", { className: "section", style: { paddingTop: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 1080 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, flexWrap: "wrap", margin: "24px 0 22px" } }, /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, flex: "2 1 360px", display: "flex", alignItems: "center" } }, /* @__PURE__ */ React.createElement("button", { type: "button", style: datePill, onClick: () => setPickDate(true) }, "\u{1F4C5} ", /* @__PURE__ */ React.createElement("span", null, hkFmtDate(checkIn))), /* @__PURE__ */ React.createElement("span", { className: "badge", style: { flexShrink: 0 } }, nights, "\uBC15"), /* @__PURE__ */ React.createElement("button", { type: "button", style: { ...datePill, justifyContent: "flex-end" }, onClick: () => setPickDate(true) }, /* @__PURE__ */ React.createElement("span", null, hkFmtDate(checkOut)), " \u{1F4C5}")), /* @__PURE__ */ React.createElement("button", { type: "button", style: { ...SOFT, flex: "1 1 220px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "16px 18px", cursor: "pointer", fontSize: 15, fontWeight: 600, border: "none", color: "var(--ink)" }, onClick: () => setPickGuest(true) }, "\u{1F464} \uC131\uC778 ", adults, children ? `, \uC544\uB3D9 ${children}` : ", \uC544\uB3D9 0")), /* @__PURE__ */ React.createElement(HkGallery, { images, name }), /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 18 } }, /* @__PURE__ */ React.createElement("h1", { className: "ko-serif", style: { fontSize: 28, margin: "0 0 6px" } }, name), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 14 } }, tagline, " \xB7 ", /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => scrollTo("loc"), style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", cursor: "pointer", font: "inherit" } }, "\uC704\uCE58 \uBCF4\uAE30"))), /* @__PURE__ */ React.createElement("div", { style: { position: "sticky", top: 64, zIndex: 40, background: "var(--bg)", borderBottom: "1px solid var(--line-2, var(--line))", display: "flex", gap: 4, marginBottom: 24, overflowX: "auto" } }, HK_TABS.map(([k, label]) => /* @__PURE__ */ React.createElement("button", { key: k, type: "button", onClick: () => scrollTo(k), style: { padding: "14px 16px", background: "none", border: "none", borderBottom: `2px solid ${activeTab === k ? "var(--ink)" : "transparent"}`, color: activeTab === k ? "var(--ink)" : "var(--ink-3)", fontWeight: activeTab === k ? 700 : 500, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" } }, label))), /* @__PURE__ */ React.createElement("section", { ref: refs.rooms, style: { scrollMarginTop: 120, marginBottom: 44 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 4 } }, "\uAC1D\uC2E4 \uC120\uD0DD"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 18 } }, hkFmtDate(checkIn), " \u2192 ", hkFmtDate(checkOut), " \xB7 ", nights, "\uBC15 \xB7 \uC131\uC778 ", adults, children ? `\xB7\uC544\uB3D9 ${children}` : ""), dayLoading ? /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: 40, textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0 } }, "\uBD88\uB7EC\uC624\uB294 \uC911\u2026")) : dayRooms.length === 0 ? /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: 50, textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0 } }, "\uB4F1\uB85D\uB41C \uAC1D\uC2E4\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.")) : dayRooms.every((r) => !(r.stayAvailable || r.dayHourlyAvailable)) ? /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: 50, textAlign: "center" } }, /* @__PURE__ */ React.createElement("p", { style: { margin: "0 0 6px", fontSize: 16, fontWeight: 600 } }, "\uC608\uC57D\uD560 \uC218 \uC788\uB294 \uAC1D\uC2E4\uC774 \uC5C6\uC5B4\uC694"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: "0 0 18px", fontSize: 13 } }, "\uB0A0\uC9DC\uB97C \uBCC0\uACBD\uD574 \uC8FC\uC138\uC694"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: () => setPickDate(true) }, "\uB0A0\uC9DC \uBCC0\uACBD\uD558\uAE30")) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 14 } }, dayRooms.map((rm) => /* @__PURE__ */ React.createElement(HkRoomCard, { key: rm.id, room: rm, onBook: setBooking, memberDiscount })))), /* @__PURE__ */ React.createElement("section", { ref: refs.packages, style: { scrollMarginTop: 120, marginBottom: 44 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 4 } }, "\uAE30\uAC04 \uC0B4\uC544\uBCF4\uAE30 \uC0C1\uD488"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 18 } }, "\uC6D0\uD558\uB294 \uAE30\uAC04\uACFC \uC2DC\uC791\uC77C\uC744 \uACE0\uB974\uACE0 \uBB38\uC758\uD574 \uC8FC\uC138\uC694. \uC77C\uC815\xB7\uC785\uAE08 \uBC29\uBC95\uC740 \uBB38\uC758 \uD6C4 \uC548\uB0B4\uB4DC\uB824\uC694."), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "14px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("label", { htmlFor: "hk-start", style: { fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 } }, "\u{1F4C5} \uD76C\uB9DD \uC2DC\uC791\uC77C"), /* @__PURE__ */ React.createElement(
       "input",
       {
         id: "hk-start",
@@ -11929,7 +12169,13 @@
           setInquiry(pkg);
         }
       }
-    )))), /* @__PURE__ */ React.createElement("section", { ref: refs.loc, style: { scrollMarginTop: 120, marginBottom: 44 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 14 } }, "\uC704\uCE58/\uAD50\uD1B5"), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "18px 20px" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, fontWeight: 600, marginBottom: 8 } }, "\u{1F4CD} ", address), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 13.5, lineHeight: 1.8 } }, directions), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 14, borderRadius: 10, overflow: "hidden", border: "1px solid var(--line)", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("iframe", { title: `${name} \uC704\uCE58 \uC9C0\uB3C4`, src: osmEmbed, loading: "lazy", referrerPolicy: "no-referrer-when-downgrade", style: { width: "100%", height: 320, border: 0, display: "block" } })), /* @__PURE__ */ React.createElement("a", { href: osmLink, target: "_blank", rel: "noopener noreferrer", style: { display: "inline-block", marginTop: 8, fontSize: 12.5, color: "var(--secondary)", textDecoration: "none" } }, "\uD070 \uC9C0\uB3C4\uC5D0\uC11C \uBCF4\uAE30 \u2197"))), /* @__PURE__ */ React.createElement("section", { ref: refs.about, style: { scrollMarginTop: 120, marginBottom: 44 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 14 } }, "\uC219\uC18C\uC18C\uAC1C"), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "18px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 14, lineHeight: 1.9 } }, desc), info.notice && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: "10px 0 0", fontSize: 13 } }, info.notice))), /* @__PURE__ */ React.createElement("section", { ref: refs.fac, style: { scrollMarginTop: 120, marginBottom: 44 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 14 } }, "\uC2DC\uC124/\uC11C\uBE44\uC2A4"), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "18px 20px" } }, amenities.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 13 } }, "\uB4F1\uB85D\uB41C \uD3B8\uC758\uC2DC\uC124 \uC815\uBCF4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: 12 } }, amenities.map((a) => /* @__PURE__ */ React.createElement("div", { key: a, style: { fontSize: 13.5 } }, /* @__PURE__ */ React.createElement("span", { style: { color: "var(--success)", marginRight: 6 } }, "\u2713"), a))))), /* @__PURE__ */ React.createElement("section", { ref: refs.guide, style: { scrollMarginTop: 120, marginBottom: 20 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 14 } }, "\uC774\uC6A9\uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "18px 20px", fontSize: 13.5, lineHeight: 2 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "\uC785\uC2E4/\uD1F4\uC2E4"), " \uC785\uC2E4 15:00 \xB7 \uD1F4\uC2E4 11:00 (\uD611\uC758 \uAC00\uB2A5)"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "\uC608\uC57D \uBC29\uBC95"), " \uC6D0\uD558\uB294 \uAE30\uAC04 \uC0C1\uD488 + \uC2DC\uC791\uC77C \uC120\uD0DD \uD6C4 ", /* @__PURE__ */ React.createElement("strong", null, "\uBB38\uC758\uD558\uAE30"), " \u2192 \uC6B4\uC601\uC790\uAC00 \uC77C\uC815\xB7\uC785\uAE08 \uBC29\uBC95 \uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "\uACB0\uC81C"), " \uBB34\uD1B5\uC7A5 \uC785\uAE08 \u2014 \uC785\uAE08 \uD655\uC778 \uC2DC \uC608\uC57D \uD655\uC815"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "\uBB38\uC758"), " ", contactEmail, contactPhone ? ` \xB7 ${contactPhone}` : ""))), /* @__PURE__ */ React.createElement(HkMyBookings, { tick })), inquiry && /* @__PURE__ */ React.createElement(HkInquiryModal, { pkg: inquiry, startDate, property, contactEmail, contactPhone, onClose: () => setInquiry(null) }));
+    )))), /* @__PURE__ */ React.createElement("section", { ref: refs.about, style: { scrollMarginTop: 120, marginBottom: 44 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 14 } }, "\uC219\uC18C\uC18C\uAC1C"), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "18px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 14, lineHeight: 1.9 } }, desc), info.notice && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: "10px 0 0", fontSize: 13 } }, info.notice))), /* @__PURE__ */ React.createElement("section", { ref: refs.loc, style: { scrollMarginTop: 120, marginBottom: 44 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 14 } }, "\uC704\uCE58/\uAD50\uD1B5"), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "18px 20px" } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 15, fontWeight: 600, marginBottom: 8 } }, "\u{1F4CD} ", address), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 13.5, lineHeight: 1.8 } }, directions), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 14, borderRadius: 10, overflow: "hidden", border: "1px solid var(--line)", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("iframe", { title: `${name} \uC704\uCE58 \uC9C0\uB3C4`, src: osmEmbed, loading: "lazy", referrerPolicy: "no-referrer-when-downgrade", style: { width: "100%", height: 320, border: 0, display: "block" } })), /* @__PURE__ */ React.createElement("a", { href: osmLink, target: "_blank", rel: "noopener noreferrer", style: { display: "inline-block", marginTop: 8, fontSize: 12.5, color: "var(--secondary)", textDecoration: "none" } }, "\uD070 \uC9C0\uB3C4\uC5D0\uC11C \uBCF4\uAE30 \u2197"))), /* @__PURE__ */ React.createElement("section", { ref: refs.fac, style: { scrollMarginTop: 120, marginBottom: 44 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 14 } }, "\uC2DC\uC124/\uC11C\uBE44\uC2A4"), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "18px 20px" } }, amenities.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 13 } }, "\uB4F1\uB85D\uB41C \uD3B8\uC758\uC2DC\uC124 \uC815\uBCF4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: 12 } }, amenities.map((a) => /* @__PURE__ */ React.createElement("div", { key: a, style: { fontSize: 13.5 } }, /* @__PURE__ */ React.createElement("span", { style: { color: "var(--success)", marginRight: 6 } }, "\u2713"), a))))), /* @__PURE__ */ React.createElement("section", { ref: refs.guide, style: { scrollMarginTop: 120, marginBottom: 20 } }, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 22, marginBottom: 14 } }, "\uC774\uC6A9\uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", { style: { ...SOFT, padding: "18px 20px", fontSize: 13.5, lineHeight: 2 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "\uC785\uC2E4/\uD1F4\uC2E4"), " \uC785\uC2E4 15:00 \xB7 \uD1F4\uC2E4 11:00"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "\uAC1D\uC2E4 \uC608\uC57D"), " \uB0A0\uC9DC\xB7\uC778\uC6D0 \uC120\uD0DD \uD6C4 \uAC1D\uC2E4\uC5D0\uC11C \uBC14\uB85C \uC608\uC57D \u2014 \uBB34\uD1B5\uC7A5 \uC785\uAE08 \uD655\uC778 \uC2DC \uD655\uC815"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "\uAE30\uAC04 \uC0B4\uC544\uBCF4\uAE30"), " \uAE30\uAC04 \uC0C1\uD488 + \uC2DC\uC791\uC77C \uC120\uD0DD \uD6C4 ", /* @__PURE__ */ React.createElement("strong", null, "\uBB38\uC758\uD558\uAE30"), " \u2192 \uC6B4\uC601\uC790\uAC00 \uC77C\uC815\xB7\uC785\uAE08 \uBC29\uBC95 \uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", null, "\uBB38\uC758"), " ", contactEmail, contactPhone ? ` \xB7 ${contactPhone}` : ""))), /* @__PURE__ */ React.createElement(HkMyBookings, { tick })), pickDate && /* @__PURE__ */ React.createElement(HkDatePicker, { checkIn, checkOut, onApply: (ci, co) => {
+      setCheckIn(ci);
+      setCheckOut(co);
+    }, onClose: () => setPickDate(false) }), pickGuest && /* @__PURE__ */ React.createElement(HkGuestPicker, { adults, children, onApply: (a, c) => {
+      setAdults(a);
+      setChildren(c);
+    }, onClose: () => setPickGuest(false) }), booking && /* @__PURE__ */ React.createElement(HkBookingModal, { room: booking, checkIn, checkOut, adults, children, user, property, go, memberDiscount, onClose: () => setBooking(null), onDone: () => setTick((v) => v + 1) }), inquiry && /* @__PURE__ */ React.createElement(HkInquiryModal, { pkg: inquiry, startDate, property, contactEmail, contactPhone, onClose: () => setInquiry(null) }));
   };
 
   // pages/LecturesPage.jsx
