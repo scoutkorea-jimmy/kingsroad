@@ -7,7 +7,8 @@
   "scripts": {
     "check": "node check-syntax.mjs",
     "build": "node build.mjs",
-    "build:bundle": "node build.mjs --bundle",
+    "build:bundle": "node build.mjs",
+    "build:watch": "node build.mjs --watch",
     "install-hooks": "bash install-hooks.sh"
   },
   "dependencies": {
