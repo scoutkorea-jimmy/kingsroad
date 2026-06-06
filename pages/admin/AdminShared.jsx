@@ -1079,8 +1079,8 @@ const _dailySeries = (items, dateField, days = 14) => {
   return { counts, labels };
 };
 
-window.formatTimeLeft = formatTimeLeft;
-window._toDate = _toDate;
-window._countSince = _countSince;
-window._hourlySeries = _hourlySeries;
-window._dailySeries = _dailySeries;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { AdminEmpty, AdminPanelHeader, AdminSaveBar, CohortSelector, MetricCard, MiniBarChart, RankedBarList, StatTile, SubTabsView, downloadCsv, downloadJson, pickImageWithR2Fallback };
+
+export { AdminFilterChips, SankeyFlow, _countSince, _dailySeries, _hourlySeries, formatTimeLeft };

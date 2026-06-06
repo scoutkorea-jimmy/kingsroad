@@ -2954,3 +2954,8 @@ Object.assign(window, {
   TPE_TimeInput, // v00.106 (헬퍼 — 외부 호출자 없음, 노출만)
   BannerEditorPanel, // v00.257
 });
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { BannerEditorPanel, FooterStyleEditor, HeroEditorPanel, HomeTextEditorPanel, RecommendationsAdminPanel, TPE_PrepEditor, TPE_ScheduleEditor, _arrAdd, _arrMove, _arrRemove, _arrUpdate };
+
+export { KindPagePanel, LecturePageEditorPanel, TourPageEditorPanel };

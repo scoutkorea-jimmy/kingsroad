@@ -4,6 +4,10 @@
 // 자기완결적 — 의존은 모두 window 전역(BGNJ_SITE_CONTENT/API/CONFIRM/TOAST 등).
 // entry-admin 에서 AuthAdminPage 앞에 로드. SiteContentAdminPanel 만 window 노출.
 
+// v00.286 ESM — cross-module import (전역 결합 제거).
+import { FooterStyleEditor } from './AdminContentEditors.jsx';
+import { pickImageWithR2Fallback } from './AdminShared.jsx';
+
 const SiteContentAdminPanel = () => {
   const [tick, setTick] = React.useState(0);
   const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
@@ -409,4 +413,6 @@ const OgPreviewBlock = ({ sc }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────
-window.SiteContentAdminPanel = SiteContentAdminPanel;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { SiteContentAdminPanel };

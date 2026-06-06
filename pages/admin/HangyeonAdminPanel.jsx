@@ -729,4 +729,6 @@ const HangyeonAdminPanel = () => {
   );
 };
 
-Object.assign(window, { HangyeonAdminPanel });
+// (window 노출 제거 — ESM 전환 완료)
+
+export { HangyeonAdminPanel };

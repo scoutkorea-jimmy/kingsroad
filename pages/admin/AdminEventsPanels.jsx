@@ -10,6 +10,14 @@
 // 형식 (한 줄 = 한 강연, 헤더 첫 줄):
 //   title,topic,venue,host,startsAt,durationMinutes,capacity,price,note
 //   "공개 강연","경복궁의 사계","경복궁","뱅기노자","2026-06-01T19:00:00+09:00",90,30,15000,"무료 입장"
+// v00.286 ESM — cross-module import (전역 결합 제거).
+// v00.286 ESM — window.X 멤버 읽기 → import 전환.
+import { LecturePageEditorPanel } from './AdminContentEditors.jsx';
+import { TourPageEditorPanel } from './AdminContentEditors.jsx';
+
+import { TPE_PrepEditor, TPE_ScheduleEditor, _arrAdd, _arrMove, _arrRemove, _arrUpdate } from './AdminContentEditors.jsx';
+import { pickImageWithR2Fallback } from './AdminShared.jsx';
+
 const BulkLectureImport = ({ onClose, onDone }) => {
   const [text, setText] = React.useState('title,topic,venue,host,startsAt,durationMinutes,capacity,price,note\n');
   const [busy, setBusy] = React.useState(false);
@@ -284,7 +292,7 @@ const LectureAdminPanel = ({ go }) => {
         </button>
         {showPageEditor && (
           <div style={{padding:'14px 18px', borderTop:'1px solid var(--line)', background:'var(--bg)'}}>
-            {window.LecturePageEditorPanel ? <window.LecturePageEditorPanel/> : <p className="dim">패널 로딩 중...</p>}
+            {LecturePageEditorPanel ? <window.LecturePageEditorPanel/> : <p className="dim">패널 로딩 중...</p>}
           </div>
         )}
       </div>
@@ -777,7 +785,7 @@ const TourAdminPanel = ({ go }) => {
         </button>
         {showPageEditor && (
           <div style={{padding:'14px 18px', borderTop:'1px solid var(--line)', background:'var(--bg)'}}>
-            {window.TourPageEditorPanel ? <window.TourPageEditorPanel/> : <p className="dim">패널 로딩 중...</p>}
+            {TourPageEditorPanel ? <window.TourPageEditorPanel/> : <p className="dim">패널 로딩 중...</p>}
           </div>
         )}
       </div>
@@ -1107,5 +1115,6 @@ const TourAdminPanel = ({ go }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────
-window.LectureAdminPanel = LectureAdminPanel;
-window.TourAdminPanel = TourAdminPanel;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { LectureAdminPanel, TourAdminPanel };

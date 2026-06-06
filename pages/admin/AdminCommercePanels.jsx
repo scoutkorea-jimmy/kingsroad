@@ -8,6 +8,9 @@
 
 // === Bank Account Settings Panel ==================================
 // 무통장 입금 계좌 — 멀티 계좌 CRUD. 강연/투어/책 결제 화면에서 계좌 선택 가능.
+// v00.286 ESM — cross-module import (전역 결합 제거).
+import { downloadCsv } from './AdminShared.jsx';
+
 const BankAccountPanel = () => {
   const [tick, setTick] = React.useState(0);
   const [accounts, setAccounts] = React.useState(() => window.BGNJ_LECTURES.listBankAccounts());
@@ -503,5 +506,6 @@ const BookOrderAdminPanel = ({ go }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────
-window.BankAccountPanel = BankAccountPanel;
-window.BookOrderAdminPanel = BookOrderAdminPanel;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { BankAccountPanel, BookOrderAdminPanel };

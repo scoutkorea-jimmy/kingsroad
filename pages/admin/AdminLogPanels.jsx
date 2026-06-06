@@ -5,6 +5,9 @@
 // entry-admin 에서 AuthAdminPage 앞에 로드. AuditLogPanel·ActivityLogPanel 만 window 노출.
 
 // 감사 로그 details — JSON 덤프 대신 key/value 칩 리스트로 노출.
+// v00.286 ESM — cross-module import (전역 결합 제거).
+import { AdminEmpty, AdminPanelHeader, downloadCsv } from './AdminShared.jsx';
+
 const AuditDetailsCell = ({ details }) => {
   if (!details || (typeof details === 'object' && !Object.keys(details).length)) {
     return <span className="dim-2">—</span>;
@@ -31,7 +34,6 @@ const AuditDetailsCell = ({ details }) => {
 };
 
 // SuspendDialog · ProfileFields · MemberAdminPanel 은 admin/AdminMemberPanel.jsx 로 분리 (v00.285).
-const MemberAdminPanel = window.MemberAdminPanel;
 
 
 // === Audit Log Panel ==============================================
@@ -416,5 +418,6 @@ const ActivityLogPanel = () => {
 
 
 // ─────────────────────────────────────────────────────────────────
-window.AuditLogPanel = AuditLogPanel;
-window.ActivityLogPanel = ActivityLogPanel;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { ActivityLogPanel, AuditLogPanel };

@@ -6,6 +6,9 @@
 // ⚠️ AdminColumnEditor 는 공개 ColumnPage 가 window guard + admin 번들 lazy-load 로 소비 — 기존 동작 보존.
 // entry-admin 에서 AuthAdminPage 앞에 로드. AdminGradePanel·AdminColumnEditor·ColumnsHubPanel window 노출.
 
+// v00.286 ESM — cross-module import (전역 결합 제거).
+import { AdminPanelHeader, AdminSaveBar } from './AdminShared.jsx';
+
 const AdminGradePanel = () => {
   // v00.141 — 통합 패널: 회원 등급 + 자동 승급/강등 기준을 한 곳에서 편집.
   // 사용자 요청 '자동 승급/강등과 회원등급 관리가 한 기능에서 진행되게 + 저장 버튼 살려주고'.
@@ -1087,6 +1090,6 @@ const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────
-window.AdminGradePanel = AdminGradePanel;
 window.AdminColumnEditor = AdminColumnEditor;
-window.ColumnsHubPanel = ColumnsHubPanel;
+
+export { AdminGradePanel, ColumnsHubPanel };

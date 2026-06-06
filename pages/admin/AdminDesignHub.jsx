@@ -4,6 +4,20 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.286.000",
+    date: "2026-06-06",
+    datetime: "2026-06-06T23:08:50+09:00",
+    summary: "🧩 스파게티 근원 제거 — admin 번들 전역 결합(window)→ import/export 전면 전환",
+    details: [
+      "🎯 [근본 원인 해소] 진단서가 꼽은 '의존성을 import 아닌 전역 네임스페이스+로드순서로 표현' 구조를 admin 번들에서 완전 제거. `const X=window.X` 브리지 199→0, `window.X=` 노출 51→4(must-stay만).",
+      "🔧 [전환 방식] @babel/traverse 정식 스코프 분석으로 cross-module 참조(bare 전역·const alias·window.X 멤버 읽기 3종) 전수 식별 → ESM import/export 로 변환. esbuild 가 의존 그래프 자동 해소 → load-order 의존성 소멸(= _countSince류 회귀 원천 차단).",
+      "🧹 [정리] 죽은 trampoline alias 51개 삭제. import 67/export 18 의 명시적 그래프.",
+      "🔒 [경계 보존] boot 의 pick(AdminPage/AdminDenied/LoginPage), 공개 ColumnPage(AdminColumnEditor)·MediaGallery(pickImageWithR2Fallback), BGNJ_* 런타임 API 는 번들 경계/비-번들 소비라 window 유지(정당).",
+      "✅ [검증] 빌드·check-syntax·헤드리스 admin 전 패널 순회 렌더(48클릭 refErr=0)·공개 페이지 6종 마운트 전부 통과. cross-module free-ref audit 0.",
+      "📦 cache-buster — `?v=00.286.000`."
+    ]
+  },
+  {
     version: "00.285.001",
     date: "2026-06-06",
     datetime: "2026-06-06T22:34:47+09:00",
@@ -4768,3 +4782,6 @@ Object.assign(window, {
   FEATURE_DOMAINS,
   DesignSystemView,
 });
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { ADMIN_VERSION_HISTORY, DesignSystemView, FEATURE_DOMAINS, MISSION_OVERVIEW };

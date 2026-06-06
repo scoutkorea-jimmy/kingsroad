@@ -214,5 +214,6 @@ const FaqAdminPanel = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────
-window.LegalAdminPanel = LegalAdminPanel;
-window.FaqAdminPanel = FaqAdminPanel;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { FaqAdminPanel, LegalAdminPanel };

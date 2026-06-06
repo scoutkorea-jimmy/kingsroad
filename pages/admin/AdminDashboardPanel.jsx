@@ -5,9 +5,12 @@
 // entry-admin 에서 AuthAdminPage 앞에 로드. DashboardPanel·UserJourneyPanel window 노출.
 
 // 분석 유틸은 AdminShared.jsx 에 정의 + window 노출 (v00.285 — 가장 먼저 로드되어 load-order 안전).
-const _countSince   = window._countSince;
-const _hourlySeries = window._hourlySeries;
-const _dailySeries  = window._dailySeries;
+// v00.286 ESM — cross-module import (전역 결합 제거).
+import { AdminPanelHeader, CohortSelector, MetricCard, MiniBarChart, RankedBarList, StatTile } from './AdminShared.jsx';
+
+import { _countSince } from './AdminShared.jsx';
+import { _hourlySeries } from './AdminShared.jsx';
+import { _dailySeries } from './AdminShared.jsx';
 
 // === Dashboard Panel (v00.148) — 실제 page-view analytics summary 사용 ====
 const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCommunityPost, latestColumn, setTab, G }) => {
@@ -321,7 +324,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
 };
 
 // v00.187 — Sankey 흐름도 + 헬퍼 모두 AdminShared.jsx 로 이동. SankeyFlow 만 외부 사용.
-const SankeyFlow = window.SankeyFlow;
+import { SankeyFlow } from './AdminShared.jsx';
 
 // === User Journey Panel (v00.178 단순화) ===========================
 // v00.146 시작 (회원별 타임라인) → v00.174 Sankey 추가 → v00.176 사용자 보고 '회원 단위 X, 전체적으로만'
@@ -357,5 +360,6 @@ const UserJourneyPanel = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────
-window.DashboardPanel = DashboardPanel;
-window.UserJourneyPanel = UserJourneyPanel;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { DashboardPanel, UserJourneyPanel };

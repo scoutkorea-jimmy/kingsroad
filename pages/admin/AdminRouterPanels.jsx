@@ -7,6 +7,9 @@
 // 라우터가 참조하는 7개 심볼만 window 노출.
 
 // === GDPR/PIPA 모의 데이터 ========================================
+// v00.286 ESM — cross-module import (전역 결합 제거).
+import { downloadCsv } from './AdminShared.jsx';
+
 const PRIVACY_DATA = {
   // Data Subject Rights — 정보주체 권리 요청 큐
   // GDPR Art.15–22 / PIPA §35–38. 기본 응답기한: GDPR 1개월, PIPA 10일. 72h 타이머는 권고.
@@ -79,31 +82,10 @@ const DSR_LABELS = {
 // ADMIN_VERSION_HISTORY / ADMIN_DESIGN_SECTIONS / MISSION_OVERVIEW / FEATURE_DOMAINS / DesignSystemView
 // 는 pages/admin/AdminDesignHub.jsx 로 분할(이 파일이 8000 줄을 넘어 large_file lint 위반 → 분할).
 // 인덱스에서 AdminDesignHub.jsx 가 본 파일보다 먼저 로드되므로 window 에서 안전하게 가져올 수 있다.
-const ADMIN_VERSION_HISTORY = window.ADMIN_VERSION_HISTORY;
-const ADMIN_DESIGN_SECTIONS = window.ADMIN_DESIGN_SECTIONS;
-const MISSION_OVERVIEW      = window.MISSION_OVERVIEW;
-const FEATURE_DOMAINS       = window.FEATURE_DOMAINS;
-const DesignSystemView      = window.DesignSystemView;
 
 // === v00.078 trampoline ================================================
 // 콘텐츠 편집 패널 묶음(~1300 줄)을 pages/admin/AdminContentEditors.jsx 로 분할.
 // AdminContentEditors.jsx 가 본 파일보다 먼저 로드 → window 에서 받아 사용.
-const RecommendationsAdminPanel = window.RecommendationsAdminPanel;
-const TPE_ScheduleEditor = window.TPE_ScheduleEditor;
-const TPE_PrepEditor     = window.TPE_PrepEditor;
-const TPE_PreviewCard    = window.TPE_PreviewCard;
-const _arrAdd    = window._arrAdd;
-const _arrRemove = window._arrRemove;
-const _arrUpdate = window._arrUpdate;
-const _arrMove   = window._arrMove;
-const TourPageEditorPanel = window.TourPageEditorPanel;
-const LecturePageEditorPanel = window.LecturePageEditorPanel; // v00.083
-const LegacyMigrationPanel = window.LegacyMigrationPanel; // v00.086
-const EatSleepShopAdminPanel = window.EatSleepShopAdminPanel; // v00.105
-const FooterStyleEditor   = window.FooterStyleEditor;
-const HeroEditorPanel     = window.HeroEditorPanel;
-const HomeTextEditorPanel = window.HomeTextEditorPanel;
-const BannerEditorPanel   = window.BannerEditorPanel; // v00.257
 
 
 // === Report Queue Panel ===========================================
@@ -268,55 +250,36 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
 // 모든 panel 에서 재사용. 기존 인라인 style 들을 점진 교체.
 
 // v00.285 — Admin UI primitives 는 AdminShared.jsx 로 이동. const alias 로 받아 기존 참조 유지.
-const AdminPanelHeader  = window.AdminPanelHeader;
-const StatusBadge       = window.StatusBadge;
-const AdminEmpty        = window.AdminEmpty;
-const AdminFilterChips  = window.AdminFilterChips;
-const AdminSaveBar      = window.AdminSaveBar;
+import { AdminPanelHeader } from './AdminShared.jsx';
+import { AdminEmpty } from './AdminShared.jsx';
+import { AdminFilterChips } from './AdminShared.jsx';
 
 // === Dashboard helpers (v00.146) ==================================
 // 일/주/월 활동 metrics + 가입 추이 + 활동 차트.
 // data source: BGNJ_AUTH.listUsers().created_at + BGNJ_COMMUNITY.listPosts().date + comments.
 // v00.285 — HoverDetailsPopover / StatTile / MetricCard 는 AdminShared.jsx 로 이동. const alias.
-const HoverDetailsPopover = window.HoverDetailsPopover;
-const StatTile            = window.StatTile;
-const MetricCard          = window.MetricCard;
 
 // 간단한 SVG 막대 차트 — series: number[], labels: string[].
 // v00.187 — MiniBarChart / RankedBarList / COHORT_OPTIONS / CohortSelector 모두 AdminShared.jsx 로 이동.
 // 외부 module-scope 정의를 const alias 로 가져와 closure 내부 사용 패턴 유지.
-const MiniBarChart = window.MiniBarChart;
-const RankedBarList = window.RankedBarList;
-const COHORT_OPTIONS = window.COHORT_OPTIONS;
-const CohortSelector = window.CohortSelector;
 
 
 // DashboardPanel · UserJourneyPanel 은 admin/AdminDashboardPanel.jsx 로 분리 (v00.285).
-const DashboardPanel   = window.DashboardPanel;
-const UserJourneyPanel = window.UserJourneyPanel;
 
 
 // BulkLectureImport · LectureAdminPanel · TourAdminPanel 은 admin/AdminEventsPanels.jsx 로 분리 (v00.285).
-const LectureAdminPanel = window.LectureAdminPanel;
-const TourAdminPanel    = window.TourAdminPanel;
 
 
 // BankAccountPanel · BookOrderAdminPanel (+BGNJ_BankAccountPicker) 은 admin/AdminCommercePanels.jsx 로 분리 (v00.285).
-const BankAccountPanel    = window.BankAccountPanel;
-const BookOrderAdminPanel = window.BookOrderAdminPanel;
 
 
 // LegalAdminPanel · FaqAdminPanel 은 admin/AdminPolicyPanels.jsx 로 분리 (v00.285).
-const LegalAdminPanel = window.LegalAdminPanel;
-const FaqAdminPanel   = window.FaqAdminPanel;
 
 
 // SiteContentAdminPanel · OgPreviewBlock 은 admin/AdminSiteContentPanel.jsx 로 분리 (v00.285).
-const SiteContentAdminPanel = window.SiteContentAdminPanel;
 
 
 // BooksAdminPanel 은 admin/AdminBooksPanel.jsx 로 분리 (v00.285).
-const BooksAdminPanel = window.BooksAdminPanel;
 
 // === Error Pages Preview Panel ====================================
 // v00.145 — 사용자 요청 '관리자 페이지에서 오류 페이지들 미리보기'.
@@ -388,13 +351,8 @@ const ErrorPagesPreviewPanel = ({ go }) => {
 };
 
 // ErrorLogPanel · SEOAdminPanel · SearchConsoleAdminPanel 은 admin/AdminMonitorPanels.jsx 로 분리 (v00.285).
-const ErrorLogPanel          = window.ErrorLogPanel;
-const SEOAdminPanel          = window.SEOAdminPanel;
-const SearchConsoleAdminPanel = window.SearchConsoleAdminPanel;
 
 // AuditDetailsCell · AuditLogPanel · ActivityLogPanel 은 admin/AdminLogPanels.jsx 로 분리 (v00.285).
-const AuditLogPanel    = window.AuditLogPanel;
-const ActivityLogPanel = window.ActivityLogPanel;
 
 // 게시글 뷰어 모달 — 관리자 패널에서 페이지 이동 없이 본문/메타/댓글을 한눈에.
 const PostViewerModal = ({ postId, onClose }) => {
@@ -965,10 +923,5 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────
-window.PRIVACY_DATA = PRIVACY_DATA;
-window.DSR_LABELS = DSR_LABELS;
-window.CorruptedBodyInspector = CorruptedBodyInspector;
-window.ReportQueuePanel = ReportQueuePanel;
-window.ErrorPagesPreviewPanel = ErrorPagesPreviewPanel;
-window.InternalAlarmPanel = InternalAlarmPanel;
-window.CommunityPostsAdminPanel = CommunityPostsAdminPanel;
+
+export { CommunityPostsAdminPanel, CorruptedBodyInspector, DSR_LABELS, ErrorPagesPreviewPanel, InternalAlarmPanel, PRIVACY_DATA, ReportQueuePanel };

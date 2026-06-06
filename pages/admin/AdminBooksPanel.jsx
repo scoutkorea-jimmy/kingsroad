@@ -6,6 +6,9 @@
 
 // === Books Admin Panel ============================================
 // 다양한 책 콘텐츠 관리 — 메타/표지/PDF 미리보기/소개/목차/저자/리뷰.
+// v00.286 ESM — cross-module import (전역 결합 제거).
+import { AdminSaveBar, pickImageWithR2Fallback } from './AdminShared.jsx';
+
 const BooksAdminPanel = () => {
   const [tick, setTick] = React.useState(0);
   // v00.193 — 새 책 추가 prompt 제거. 사용자 보고 '그냥 새 책 만들어주고 저장 누르면 반영'.
@@ -754,4 +757,6 @@ const BooksAdminPanel = () => {
 
 
 // ─────────────────────────────────────────────────────────────────
-window.BooksAdminPanel = BooksAdminPanel;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { BooksAdminPanel };

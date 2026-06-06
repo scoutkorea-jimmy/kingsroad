@@ -65,7 +65,8 @@ for (const f of TARGET_ROOT_FILES) {
 
 // 3) 파싱 — babel-standalone 과 동일한 plugin 세트.
 const PARSER_OPTS = {
-  sourceType: "script",
+  // v00.286 — ESM 전환(import/export) 이후 module 로 파싱. esbuild 도 module 로 번들.
+  sourceType: "module",
   plugins: ["jsx", "classProperties", "optionalChaining", "nullishCoalescingOperator", "objectRestSpread"],
   allowReturnOutsideFunction: true,
 };

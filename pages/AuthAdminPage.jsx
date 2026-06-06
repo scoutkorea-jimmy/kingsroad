@@ -3,18 +3,36 @@
 //   pages/admin/AdminLogin.jsx 로 분리. LoginPage 는 window.LoginPage 로 노출되어 boot 가 사용.
 
 // 분석/시간 유틸은 AdminShared.jsx 에 정의 + window 노출 (v00.285).
-const _countSince    = window._countSince;
-const _dailySeries   = window._dailySeries;
-const formatTimeLeft = window.formatTimeLeft;
+// v00.286 ESM — cross-module import (전역 결합 제거).
+// v00.286 ESM — window.X 멤버 읽기 → import 전환.
+import { HangyeonAdminPanel } from './admin/HangyeonAdminPanel.jsx';
+import { KindPagePanel } from './admin/AdminContentEditors.jsx';
+
+import { BooksAdminPanel } from './admin/AdminBooksPanel.jsx';
+import { BankAccountPanel, BookOrderAdminPanel } from './admin/AdminCommercePanels.jsx';
+import { BannerEditorPanel, HeroEditorPanel, HomeTextEditorPanel, RecommendationsAdminPanel } from './admin/AdminContentEditors.jsx';
+import { DashboardPanel, UserJourneyPanel } from './admin/AdminDashboardPanel.jsx';
+import { ADMIN_VERSION_HISTORY, DesignSystemView, FEATURE_DOMAINS, MISSION_OVERVIEW } from './admin/AdminDesignHub.jsx';
+import { LectureAdminPanel, TourAdminPanel } from './admin/AdminEventsPanels.jsx';
+import { ActivityLogPanel, AuditLogPanel } from './admin/AdminLogPanels.jsx';
+import { MemberAdminPanel } from './admin/AdminMemberPanel.jsx';
+import { ErrorLogPanel, SEOAdminPanel, SearchConsoleAdminPanel } from './admin/AdminMonitorPanels.jsx';
+import { FaqAdminPanel, LegalAdminPanel } from './admin/AdminPolicyPanels.jsx';
+import { MetricCard, MiniBarChart, SubTabsView, downloadCsv, downloadJson } from './admin/AdminShared.jsx';
+import { SiteContentAdminPanel } from './admin/AdminSiteContentPanel.jsx';
+
+import { _countSince } from './admin/AdminShared.jsx';
+import { _dailySeries } from './admin/AdminShared.jsx';
+import { formatTimeLeft } from './admin/AdminShared.jsx';
 
 // 라우터 패널 묶음은 admin/AdminRouterPanels.jsx 로 분리 (v00.285).
-const PRIVACY_DATA             = window.PRIVACY_DATA;
-const DSR_LABELS              = window.DSR_LABELS;
-const CorruptedBodyInspector  = window.CorruptedBodyInspector;
-const ReportQueuePanel        = window.ReportQueuePanel;
-const ErrorPagesPreviewPanel  = window.ErrorPagesPreviewPanel;
-const InternalAlarmPanel      = window.InternalAlarmPanel;
-const CommunityPostsAdminPanel = window.CommunityPostsAdminPanel;
+import { PRIVACY_DATA } from './admin/AdminRouterPanels.jsx';
+import { DSR_LABELS } from './admin/AdminRouterPanels.jsx';
+import { CorruptedBodyInspector } from './admin/AdminRouterPanels.jsx';
+import { ReportQueuePanel } from './admin/AdminRouterPanels.jsx';
+import { ErrorPagesPreviewPanel } from './admin/AdminRouterPanels.jsx';
+import { InternalAlarmPanel } from './admin/AdminRouterPanels.jsx';
+import { CommunityPostsAdminPanel } from './admin/AdminRouterPanels.jsx';
 
 
 // === Admin Page ===================================================
@@ -1167,11 +1185,11 @@ const AdminPage = ({ go }) => {
 
         {tab === "추천 여행지" && <RecommendationsAdminPanel/>}
         {/* v00.106 — 놀자 시리즈 3개 sub-tab: KindPagePanel(kind) */}
-        {tab === "먹고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="eat"/>}
-        {tab === "자고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="sleep"/>}
-        {tab === "사고 놀자" && window.KindPagePanel && <window.KindPagePanel kind="shop"/>}
+        {tab === "먹고 놀자" && KindPagePanel && <window.KindPagePanel kind="eat"/>}
+        {tab === "자고 놀자" && KindPagePanel && <window.KindPagePanel kind="sleep"/>}
+        {tab === "사고 놀자" && KindPagePanel && <window.KindPagePanel kind="shop"/>}
         {/* v00.267 — 한켠 숙소 예약 PMS (7 탭) */}
-        {tab === "한켠 예약" && window.HangyeonAdminPanel && <window.HangyeonAdminPanel/>}
+        {tab === "한켠 예약" && HangyeonAdminPanel && <window.HangyeonAdminPanel/>}
         {/* 카테고리 CRUD */}
         {/* v00.166 — 사이트 설정 7 항목 단일 머지. v00.167 — 우측 라이브 미리보기 iframe. */}
         {tab === "사이트 설정" && (
@@ -1242,14 +1260,13 @@ const AdminPage = ({ go }) => {
 };
 
 // AdminCategoryPanel · PromoChip · CommunityBoardsPanel 은 admin/AdminCommunityConfigPanels.jsx 로 분리 (v00.285).
-const AdminCategoryPanel   = window.AdminCategoryPanel;
-const CommunityBoardsPanel = window.CommunityBoardsPanel;
+import { AdminCategoryPanel } from './admin/AdminCommunityConfigPanels.jsx';
+import { CommunityBoardsPanel } from './admin/AdminCommunityConfigPanels.jsx';
 
 
 // 등급/칼럼 클러스터(AdminGradePanel·AdminColumnEditor·ColumnsHubPanel + 종속)는 admin/AdminGradeColumnPanels.jsx 로 분리 (v00.285).
-const AdminGradePanel   = window.AdminGradePanel;
-const AdminColumnEditor = window.AdminColumnEditor;
-const ColumnsHubPanel   = window.ColumnsHubPanel;
+import { AdminGradePanel } from './admin/AdminGradeColumnPanels.jsx';
+import { ColumnsHubPanel } from './admin/AdminGradeColumnPanels.jsx';
 
 
 const AdminDenied = ({ go, user }) => (
@@ -1272,4 +1289,4 @@ const AdminDenied = ({ go, user }) => (
 );
 
 // LoginPage 는 AdminLogin.jsx 로 분리되어 거기서 window 노출.
-Object.assign(window, { AdminPage, AdminDenied, RecommendationsAdminPanel });
+Object.assign(window, { AdminPage, AdminDenied });

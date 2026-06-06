@@ -467,12 +467,10 @@ const MemberAdminPanel = ({ go }) => {
 };
 
 // v00.187 — pickImageWithR2Fallback / downloadBlob/Csv/Json / SubTabsView 모두 AdminShared.jsx 로 이동.
-const pickImageWithR2Fallback = window.pickImageWithR2Fallback;
-const downloadBlob = window.downloadBlob;
-const downloadCsv = window.downloadCsv;
-const downloadJson = window.downloadJson;
-const SubTabsView = window.SubTabsView;
+import { downloadCsv } from './AdminShared.jsx';
 
 
 // ─────────────────────────────────────────────────────────────────
-window.MemberAdminPanel = MemberAdminPanel;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { MemberAdminPanel };

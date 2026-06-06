@@ -5,6 +5,9 @@
 // entry-admin 에서 AuthAdminPage 앞에 로드. AdminCategoryPanel·CommunityBoardsPanel window 노출.
 
 // === Admin: Category CRUD ==============================================
+// v00.286 ESM — cross-module import (전역 결합 제거).
+import { AdminEmpty, AdminPanelHeader, AdminSaveBar } from './AdminShared.jsx';
+
 const AdminCategoryPanel = () => {
   const [cats, setCats] = React.useState(() => window.BGNJ_STORES.categories.slice());
   const [draft, setDraft] = React.useState({ id:"", label:"", boardType:"community", minLevel:0, postMinLevel:0, desc:"", allowRead:true, allowWrite:true, allowCommentRead:true, allowCommentWrite:true });
@@ -857,5 +860,5 @@ const CommunityBoardsPanel = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────
-window.AdminCategoryPanel = AdminCategoryPanel;
-window.CommunityBoardsPanel = CommunityBoardsPanel;
+
+export { AdminCategoryPanel, CommunityBoardsPanel };

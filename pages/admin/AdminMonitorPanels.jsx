@@ -435,6 +435,6 @@ const SearchConsoleAdminPanel = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────
-window.ErrorLogPanel = ErrorLogPanel;
-window.SEOAdminPanel = SEOAdminPanel;
-window.SearchConsoleAdminPanel = SearchConsoleAdminPanel;
+
+// v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
+export { ErrorLogPanel, SEOAdminPanel, SearchConsoleAdminPanel };

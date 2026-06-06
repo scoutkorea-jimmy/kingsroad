@@ -15,9 +15,9 @@
       window.BGNJ_TOAST.error("\uB2E4\uC6B4\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
     }
   };
-  var downloadCsv2 = (filename, csv) => downloadBlob(filename, csv, "text/csv;charset=utf-8");
-  var downloadJson2 = (filename, obj) => downloadBlob(filename, JSON.stringify(obj, null, 2), "application/json");
-  var pickImageWithR2Fallback2 = async (e, { folder, maxBytes = 5 * 1024 * 1024, fallbackMaxBytes = 1.5 * 1024 * 1024 } = {}) => {
+  var downloadCsv = (filename, csv) => downloadBlob(filename, csv, "text/csv;charset=utf-8");
+  var downloadJson = (filename, obj) => downloadBlob(filename, JSON.stringify(obj, null, 2), "application/json");
+  var pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, fallbackMaxBytes = 1.5 * 1024 * 1024 } = {}) => {
     var _a;
     const file = (_a = e.target.files) == null ? void 0 : _a[0];
     if (!file) return null;
@@ -51,7 +51,7 @@
       return null;
     }
   };
-  var MiniBarChart2 = ({ series, labels, height = 120, color = "var(--primary)", label, unit = "", formatTooltip, headerRight }) => {
+  var MiniBarChart = ({ series, labels, height = 120, color = "var(--primary)", label, unit = "", formatTooltip, headerRight }) => {
     const [hoverIdx, setHoverIdx] = React.useState(null);
     const max = Math.max(1, ...series);
     const W = 100;
@@ -124,7 +124,7 @@
       } }, l)));
     })());
   };
-  var RankedBarList2 = ({ items = [], unit = "", headerLeft, headerRight, emptyText = "\uB370\uC774\uD130 \uC5C6\uC74C", maxItems = 10, valueFormat }) => {
+  var RankedBarList = ({ items = [], unit = "", headerLeft, headerRight, emptyText = "\uB370\uC774\uD130 \uC5C6\uC74C", maxItems = 10, valueFormat }) => {
     const [hoverIdx, setHoverIdx] = React.useState(null);
     const visible = items.slice(0, maxItems);
     const total = visible.reduce((s, it) => s + (Number(it.count) || 0), 0) || 1;
@@ -194,7 +194,7 @@
     { value: 30, label: "30\uC77C" },
     { value: 90, label: "90\uC77C" }
   ];
-  var CohortSelector2 = ({ value, onChange, options = COHORT_OPTIONS }) => /* @__PURE__ */ React.createElement("div", { role: "tablist", "aria-label": "\uAE30\uAC04 \uC120\uD0DD", style: { display: "inline-flex", gap: 0, border: "1px solid var(--line-2)", borderRadius: 0 } }, options.map((opt, i) => /* @__PURE__ */ React.createElement(
+  var CohortSelector = ({ value, onChange, options = COHORT_OPTIONS }) => /* @__PURE__ */ React.createElement("div", { role: "tablist", "aria-label": "\uAE30\uAC04 \uC120\uD0DD", style: { display: "inline-flex", gap: 0, border: "1px solid var(--line-2)", borderRadius: 0 } }, options.map((opt, i) => /* @__PURE__ */ React.createElement(
     "button",
     {
       key: opt.value,
@@ -374,7 +374,7 @@
       return { ...lk, y1, y2, t };
     }).filter(Boolean);
     if (channelSums.length === 0) {
-      return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.24em", marginBottom: 4 } }, "JOURNEY \xB7 \uACE0\uAC1D \uC5EC\uC815 \uD750\uB984"), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC720\uC785 \uCC44\uB110 \u2192 \uB2E8\uACC4 \u2192 \uB300\uD45C \uB3C4\uCC29 \uD398\uC774\uC9C0")), /* @__PURE__ */ React.createElement(CohortSelector2, { value: days, onChange: onDaysChange })), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7 } }, "\uCD5C\uADFC ", days, "\uC77C\uAC04 \uCE21\uC815\uB41C \uD398\uC774\uC9C0\uBDF0\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uC0AC\uC6A9\uC790 \uBC29\uBB38\uC774 \uB204\uC801\uB418\uAC70\uB098 \uCF54\uD638\uD2B8\uB97C \uB298\uB9AC\uBA74 \uD45C\uC2DC\uB429\uB2C8\uB2E4."));
+      return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.24em", marginBottom: 4 } }, "JOURNEY \xB7 \uACE0\uAC1D \uC5EC\uC815 \uD750\uB984"), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC720\uC785 \uCC44\uB110 \u2192 \uB2E8\uACC4 \u2192 \uB300\uD45C \uB3C4\uCC29 \uD398\uC774\uC9C0")), /* @__PURE__ */ React.createElement(CohortSelector, { value: days, onChange: onDaysChange })), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7 } }, "\uCD5C\uADFC ", days, "\uC77C\uAC04 \uCE21\uC815\uB41C \uD398\uC774\uC9C0\uBDF0\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uC0AC\uC6A9\uC790 \uBC29\uBB38\uC774 \uB204\uC801\uB418\uAC70\uB098 \uCF54\uD638\uD2B8\uB97C \uB298\uB9AC\uBA74 \uD45C\uC2DC\uB429\uB2C8\uB2E4."));
     }
     const cubicPath = (x1, y1, x2, y2, t) => {
       const cx1 = (x1 + x2) / 2;
@@ -429,7 +429,7 @@
       return false;
     };
     const truncate = (s, n) => String(s || "").length > n ? String(s).slice(0, n - 1) + "\u2026" : String(s || "");
-    return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24, marginBottom: 18 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.24em", marginBottom: 4 } }, "JOURNEY \xB7 \uACE0\uAC1D \uC5EC\uC815 \uD750\uB984"), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC720\uC785 \uCC44\uB110 \u2192 \uB2E8\uACC4 \u2192 \uB300\uD45C \uB3C4\uCC29 \uD398\uC774\uC9C0"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 6, lineHeight: 1.6 } }, "\uB178\uB4DC \uB610\uB294 \uACE1\uC120\uC5D0 \uD638\uBC84\uD558\uBA74 \uC5F0\uACB0\uB41C \uD750\uB984\uC774 \uAC15\uC870\uB429\uB2C8\uB2E4. \uC704\uCABD [\uAE30\uAC04] \uC73C\uB85C \uCF54\uD638\uD2B8 \uBCC0\uACBD.")), /* @__PURE__ */ React.createElement(CohortSelector2, { value: days, onChange: onDaysChange })), /* @__PURE__ */ React.createElement("div", { style: { position: "relative", overflow: "auto" } }, /* @__PURE__ */ React.createElement("svg", { viewBox: `0 0 ${W} ${HEIGHT}`, style: { width: "100%", minWidth: 720, height: HEIGHT, display: "block" } }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24, marginBottom: 18 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.24em", marginBottom: 4 } }, "JOURNEY \xB7 \uACE0\uAC1D \uC5EC\uC815 \uD750\uB984"), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, "\uC720\uC785 \uCC44\uB110 \u2192 \uB2E8\uACC4 \u2192 \uB300\uD45C \uB3C4\uCC29 \uD398\uC774\uC9C0"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 6, lineHeight: 1.6 } }, "\uB178\uB4DC \uB610\uB294 \uACE1\uC120\uC5D0 \uD638\uBC84\uD558\uBA74 \uC5F0\uACB0\uB41C \uD750\uB984\uC774 \uAC15\uC870\uB429\uB2C8\uB2E4. \uC704\uCABD [\uAE30\uAC04] \uC73C\uB85C \uCF54\uD638\uD2B8 \uBCC0\uACBD.")), /* @__PURE__ */ React.createElement(CohortSelector, { value: days, onChange: onDaysChange })), /* @__PURE__ */ React.createElement("div", { style: { position: "relative", overflow: "auto" } }, /* @__PURE__ */ React.createElement("svg", { viewBox: `0 0 ${W} ${HEIGHT}`, style: { width: "100%", minWidth: 720, height: HEIGHT, display: "block" } }, /* @__PURE__ */ React.createElement(
       "text",
       {
         x: COL_X[0] + NODE_W / 2,
@@ -638,7 +638,7 @@
       pointerEvents: "none"
     } }, hover.type === "channel" && `\uCC44\uB110: ${hover.key} \xB7 ${((_a = chPos.get(hover.key)) == null ? void 0 : _a.count) || 0}\uD68C`, hover.type === "stage" && `\uB2E8\uACC4: ${hover.key} \xB7 ${((_b = stPos.get(hover.key)) == null ? void 0 : _b.count) || 0}\uD68C`, hover.type === "route" && `\uD398\uC774\uC9C0: ${hover.key} \xB7 ${((_c = rtPos.get(hover.key)) == null ? void 0 : _c.count) || 0}\uD68C`, hover.type === "linkA" && `${hover.key.channel} \u2192 ${hover.key.stage} \xB7 ${hover.key.count}\uD68C`, hover.type === "linkB" && `${hover.key.stage} \u2192 ${hover.key.route} \xB7 ${hover.key.count}\uD68C`)));
   };
-  var SubTabsView2 = ({ subTabs, defaultKey, storageKey }) => {
+  var SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
     const [active, setActive] = React.useState(() => {
       if (storageKey) {
         try {
@@ -850,9 +850,9 @@
       whiteSpace: "nowrap"
     } }, _DOW_LABELS[hover.dow], " ", String(hover.hour).padStart(2, "0"), ":00 \xB7 ", hover.views, " views \xB7 ", hover.uniq, " sessions"));
   };
-  var AdminPanelHeader2 = ({ eyebrow, title, description, actions }) => /* @__PURE__ */ React.createElement("header", { className: "admin-panel-header" }, /* @__PURE__ */ React.createElement("div", { className: "admin-panel-header__main" }, eyebrow && /* @__PURE__ */ React.createElement("div", { className: "admin-panel-header__eyebrow" }, eyebrow), title && /* @__PURE__ */ React.createElement("h2", { className: "admin-panel-header__title" }, title), description && /* @__PURE__ */ React.createElement("p", { className: "admin-panel-header__desc" }, description)), actions && /* @__PURE__ */ React.createElement("div", { className: "admin-panel-header__actions" }, actions));
+  var AdminPanelHeader = ({ eyebrow, title, description, actions }) => /* @__PURE__ */ React.createElement("header", { className: "admin-panel-header" }, /* @__PURE__ */ React.createElement("div", { className: "admin-panel-header__main" }, eyebrow && /* @__PURE__ */ React.createElement("div", { className: "admin-panel-header__eyebrow" }, eyebrow), title && /* @__PURE__ */ React.createElement("h2", { className: "admin-panel-header__title" }, title), description && /* @__PURE__ */ React.createElement("p", { className: "admin-panel-header__desc" }, description)), actions && /* @__PURE__ */ React.createElement("div", { className: "admin-panel-header__actions" }, actions));
   var StatusBadge = ({ variant = "neutral", children, title }) => /* @__PURE__ */ React.createElement("span", { className: `status-badge status-badge--${variant}`, title }, children);
-  var AdminEmpty2 = ({ children }) => /* @__PURE__ */ React.createElement("div", { className: "admin-empty" }, children);
+  var AdminEmpty = ({ children }) => /* @__PURE__ */ React.createElement("div", { className: "admin-empty" }, children);
   var AdminFilterChips = ({ items, value, onChange, ariaLabel = "\uD544\uD130" }) => /* @__PURE__ */ React.createElement("div", { className: "admin-toolbar__filters", role: "tablist", "aria-label": ariaLabel }, items.map((it) => /* @__PURE__ */ React.createElement(
     "button",
     {
@@ -866,7 +866,7 @@
     it.label,
     typeof it.count === "number" ? ` (${it.count})` : ""
   )));
-  var AdminSaveBar2 = ({ children, message, messageVariant = "success" }) => /* @__PURE__ */ React.createElement("div", { className: "admin-savebar" }, children, message && /* @__PURE__ */ React.createElement("span", { className: `admin-savebar__msg admin-savebar__msg--${messageVariant}` }, message));
+  var AdminSaveBar = ({ children, message, messageVariant = "success" }) => /* @__PURE__ */ React.createElement("div", { className: "admin-savebar" }, children, message && /* @__PURE__ */ React.createElement("span", { className: `admin-savebar__msg admin-savebar__msg--${messageVariant}` }, message));
   var HoverDetailsPopover = ({ details, open, id, anchor = "right" }) => {
     if (!open || !Array.isArray(details) || details.length === 0) return null;
     return /* @__PURE__ */ React.createElement(
@@ -893,7 +893,7 @@
       /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 } }, details.map((d, i) => /* @__PURE__ */ React.createElement("li", { key: i, style: { display: "flex", justifyContent: "space-between", gap: 14, fontSize: 12, alignItems: "baseline" } }, /* @__PURE__ */ React.createElement("span", { className: "dim", style: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" } }, d.label), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontWeight: 600, color: "var(--secondary)", whiteSpace: "nowrap" } }, d.value))))
     );
   };
-  var StatTile2 = ({ stat }) => {
+  var StatTile = ({ stat }) => {
     const [open, setOpen] = React.useState(false);
     const id = React.useId ? React.useId() : `stat-${stat.l}`;
     const hasDetails = Array.isArray(stat.details) && stat.details.length > 0;
@@ -915,7 +915,7 @@
       /* @__PURE__ */ React.createElement(HoverDetailsPopover, { details: stat.details, open, id })
     );
   };
-  var MetricCard2 = ({ label, value, sub, accent, icon, details }) => {
+  var MetricCard = ({ label, value, sub, accent, icon, details }) => {
     const [open, setOpen] = React.useState(false);
     const id = React.useId ? React.useId() : `metric-${label}`;
     const hasDetails = Array.isArray(details) && details.length > 0;
@@ -946,24 +946,24 @@
   };
   Object.assign(window, {
     downloadBlob,
-    downloadCsv: downloadCsv2,
-    downloadJson: downloadJson2,
-    pickImageWithR2Fallback: pickImageWithR2Fallback2,
-    MiniBarChart: MiniBarChart2,
-    RankedBarList: RankedBarList2,
+    downloadCsv,
+    downloadJson,
+    pickImageWithR2Fallback,
+    MiniBarChart,
+    RankedBarList,
     COHORT_OPTIONS,
-    CohortSelector: CohortSelector2,
+    CohortSelector,
     SankeyFlow,
-    SubTabsView: SubTabsView2,
+    SubTabsView,
     HeatmapGrid,
-    AdminPanelHeader: AdminPanelHeader2,
+    AdminPanelHeader,
     StatusBadge,
-    AdminEmpty: AdminEmpty2,
+    AdminEmpty,
     AdminFilterChips,
-    AdminSaveBar: AdminSaveBar2,
+    AdminSaveBar,
     HoverDetailsPopover,
-    StatTile: StatTile2,
-    MetricCard: MetricCard2
+    StatTile,
+    MetricCard
   });
   var formatTimeLeft = (dueIso) => {
     const diff = new Date(dueIso).getTime() - Date.now();
@@ -1028,14 +1028,9 @@
     }
     return { counts, labels };
   };
-  window.formatTimeLeft = formatTimeLeft;
-  window._toDate = _toDate;
-  window._countSince = _countSince;
-  window._hourlySeries = _hourlySeries;
-  window._dailySeries = _dailySeries;
 
   // pages/admin/AdminContentEditors.jsx
-  var RecommendationsAdminPanel2 = () => {
+  var RecommendationsAdminPanel = () => {
     const [tick, setTick] = React.useState(0);
     const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
     const items = React.useMemo(() => Array.isArray(sc.recommendations) ? sc.recommendations : [], [sc]);
@@ -1188,7 +1183,7 @@
       }
     ), /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11 } }, "m"));
   };
-  var TPE_ScheduleEditor2 = ({ rows, onAdd, onRemove, onUpdate, onMove }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uB2F5\uC0AC \uC77C\uC815"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.6 } }, "\uC2DC\uC791 \uC2DC\uAC01\uC73C\uB85C\uBD80\uD130 \uACBD\uACFC \uC2DC\uAC04 \uB2E8\uC704. \uCCAB \uD56D\uBAA9\uC740 \uBCF4\uD1B5 0h 0m.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: onAdd }, "\uFF0B \uD56D\uBAA9 \uCD94\uAC00")), rows.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.6, padding: "14px 0", textAlign: "center", background: "var(--bg-2)", border: "1px dashed var(--line)", borderRadius: 2 } }, "\u24D8 \uD56D\uBAA9\uC774 \uC5C6\uC73C\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C '\uB2F5\uC0AC \uC77C\uC815' \uC139\uC158 \uBBF8\uB178\uCD9C."), rows.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: {
+  var TPE_ScheduleEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uB2F5\uC0AC \uC77C\uC815"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.6 } }, "\uC2DC\uC791 \uC2DC\uAC01\uC73C\uB85C\uBD80\uD130 \uACBD\uACFC \uC2DC\uAC04 \uB2E8\uC704. \uCCAB \uD56D\uBAA9\uC740 \uBCF4\uD1B5 0h 0m.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: onAdd }, "\uFF0B \uD56D\uBAA9 \uCD94\uAC00")), rows.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.6, padding: "14px 0", textAlign: "center", background: "var(--bg-2)", border: "1px dashed var(--line)", borderRadius: 2 } }, "\u24D8 \uD56D\uBAA9\uC774 \uC5C6\uC73C\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C '\uB2F5\uC0AC \uC77C\uC815' \uC139\uC158 \uBBF8\uB178\uCD9C."), rows.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: {
     display: "grid",
     gridTemplateColumns: "24px 145px 1fr auto",
     gap: 10,
@@ -1208,7 +1203,7 @@
       style: { padding: "7px 10px", fontSize: 14 }
     }
   ), /* @__PURE__ */ React.createElement(TPE_RowActions, { i, total: rows.length, onMove, onRemove }))));
-  var TPE_PrepEditor2 = ({ rows, onAdd, onRemove, onUpdate, onMove }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uC900\uBE44\uBB3C"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.6 } }, "\uCC38\uAC00\uC790\uAC00 \uAC00\uC838\uC640\uC57C \uD560 \uBB3C\uD488 / \uC548\uB0B4 \uC0AC\uD56D.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: onAdd }, "\uFF0B \uD56D\uBAA9 \uCD94\uAC00")), rows.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.6, padding: "14px 0", textAlign: "center", background: "var(--bg-2)", border: "1px dashed var(--line)", borderRadius: 2 } }, "\u24D8 \uD56D\uBAA9\uC774 \uC5C6\uC73C\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C '\uC900\uBE44\uBB3C' \uC139\uC158 \uBBF8\uB178\uCD9C."), rows.map((p, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: {
+  var TPE_PrepEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uC900\uBE44\uBB3C"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.6 } }, "\uCC38\uAC00\uC790\uAC00 \uAC00\uC838\uC640\uC57C \uD560 \uBB3C\uD488 / \uC548\uB0B4 \uC0AC\uD56D.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: onAdd }, "\uFF0B \uD56D\uBAA9 \uCD94\uAC00")), rows.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.6, padding: "14px 0", textAlign: "center", background: "var(--bg-2)", border: "1px dashed var(--line)", borderRadius: 2 } }, "\u24D8 \uD56D\uBAA9\uC774 \uC5C6\uC73C\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C '\uC900\uBE44\uBB3C' \uC139\uC158 \uBBF8\uB178\uCD9C."), rows.map((p, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: {
     display: "grid",
     gridTemplateColumns: "24px 1fr auto",
     gap: 10,
@@ -1229,14 +1224,14 @@
     }
   ), /* @__PURE__ */ React.createElement(TPE_RowActions, { i, total: rows.length, onMove, onRemove }))));
   var TPE_PreviewCard = ({ schedule, prep }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 0, overflow: "hidden", position: "sticky", top: 24 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", padding: "8px 12px", borderBottom: "1px solid var(--line)", background: "var(--bg-2)" } }, "PREVIEW \xB7 \uD22C\uC5B4 \uD398\uC774\uC9C0"), /* @__PURE__ */ React.createElement("div", { style: { padding: "24px" } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--line)" } }, "\uB2F5\uC0AC \uC77C\uC815"), schedule.filter((s) => s && (s.t || s.l)).length > 0 ? schedule.filter((s) => s && (s.t || s.l)).map((s, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { display: "grid", gridTemplateColumns: "80px 1fr", gap: 16, padding: "10px 0", borderBottom: "1px dashed var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.1em" } }, s.t || "\u2014"), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 13 } }, s.l || "\uB0B4\uC6A9 \uBBF8\uC785\uB825"))) : /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, fontStyle: "italic" } }, "(\uBBF8\uB178\uCD9C)"), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginTop: 24, marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--line)" } }, "\uC900\uBE44\uBB3C"), prep.filter(Boolean).length > 0 ? /* @__PURE__ */ React.createElement("ul", { style: { paddingLeft: 18, color: "var(--ink-2)", fontSize: 13, lineHeight: 1.9 } }, prep.filter(Boolean).map((p, i) => /* @__PURE__ */ React.createElement("li", { key: i }, p))) : /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, fontStyle: "italic" } }, "(\uBBF8\uB178\uCD9C)")));
-  var _arrAdd2 = (arr, item) => [...arr, item];
-  var _arrRemove2 = (arr, i) => arr.filter((_, j) => j !== i);
-  var _arrUpdate2 = (arr, i, value) => {
+  var _arrAdd = (arr, item) => [...arr, item];
+  var _arrRemove = (arr, i) => arr.filter((_, j) => j !== i);
+  var _arrUpdate = (arr, i, value) => {
     const next = arr.slice();
     next[i] = value;
     return next;
   };
-  var _arrMove2 = (arr, i, dir) => {
+  var _arrMove = (arr, i, dir) => {
     const next = arr.slice();
     const j = i + dir;
     if (j < 0 || j >= next.length) return arr;
@@ -1433,26 +1428,26 @@
         m.label
       );
     })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 20 }, className: "hero-editor-grid" }, /* @__PURE__ */ React.createElement("div", null, mode === "global" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
-      TPE_ScheduleEditor2,
+      TPE_ScheduleEditor,
       {
         rows: gSchedule,
-        onAdd: () => setGSchedule((a) => _arrAdd2(a, { t: "", l: "" })),
-        onRemove: (i) => setGSchedule((a) => _arrRemove2(a, i)),
+        onAdd: () => setGSchedule((a) => _arrAdd(a, { t: "", l: "" })),
+        onRemove: (i) => setGSchedule((a) => _arrRemove(a, i)),
         onUpdate: (i, k, v) => setGSchedule((a) => {
           const n = a.slice();
           n[i] = { ...n[i], [k]: v };
           return n;
         }),
-        onMove: (i, d) => setGSchedule((a) => _arrMove2(a, i, d))
+        onMove: (i, d) => setGSchedule((a) => _arrMove(a, i, d))
       }
     ), /* @__PURE__ */ React.createElement(
-      TPE_PrepEditor2,
+      TPE_PrepEditor,
       {
         rows: gPrep,
-        onAdd: () => setGPrep((a) => _arrAdd2(a, "")),
-        onRemove: (i) => setGPrep((a) => _arrRemove2(a, i)),
-        onUpdate: (i, v) => setGPrep((a) => _arrUpdate2(a, i, v)),
-        onMove: (i, d) => setGPrep((a) => _arrMove2(a, i, d))
+        onAdd: () => setGPrep((a) => _arrAdd(a, "")),
+        onRemove: (i) => setGPrep((a) => _arrRemove(a, i)),
+        onUpdate: (i, v) => setGPrep((a) => _arrUpdate(a, i, v)),
+        onMove: (i, d) => setGPrep((a) => _arrMove(a, i, d))
       }
     ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: saveGlobal }, "\uC800\uC7A5"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: resetGlobal, style: { borderColor: "var(--line-2)" } }, "default \uBCF5\uC6D0"))), mode === "templates" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 14, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uD15C\uD50C\uB9BF \uBAA9\uB85D"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: addTemplate }, "\uFF0B \uC0C8 \uD15C\uD50C\uB9BF")), templates.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.6 } }, "\uC544\uC9C1 \uD15C\uD50C\uB9BF\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uC790\uC8FC \uC4F0\uB294 \uB2F5\uC0AC \uC77C\uC815/\uC900\uBE44\uBB3C \uD328\uD134\uC744 \uC800\uC7A5\uD574 \uB450\uBA74 \uD22C\uC5B4\uBCC4 override \uC5D0\uC11C \uBE60\uB974\uAC8C \uC801\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, templates.map((t, i) => /* @__PURE__ */ React.createElement(
       "button",
@@ -1488,26 +1483,26 @@
       },
       "\uC774 \uD15C\uD50C\uB9BF \uC0AD\uC81C"
     )), /* @__PURE__ */ React.createElement(
-      TPE_ScheduleEditor2,
+      TPE_ScheduleEditor,
       {
         rows: activeTpl.schedule || [],
-        onAdd: () => updateActiveTpl({ schedule: _arrAdd2(activeTpl.schedule || [], { t: "", l: "" }) }),
-        onRemove: (i) => updateActiveTpl({ schedule: _arrRemove2(activeTpl.schedule || [], i) }),
+        onAdd: () => updateActiveTpl({ schedule: _arrAdd(activeTpl.schedule || [], { t: "", l: "" }) }),
+        onRemove: (i) => updateActiveTpl({ schedule: _arrRemove(activeTpl.schedule || [], i) }),
         onUpdate: (i, k, v) => {
           const n = (activeTpl.schedule || []).slice();
           n[i] = { ...n[i], [k]: v };
           updateActiveTpl({ schedule: n });
         },
-        onMove: (i, d) => updateActiveTpl({ schedule: _arrMove2(activeTpl.schedule || [], i, d) })
+        onMove: (i, d) => updateActiveTpl({ schedule: _arrMove(activeTpl.schedule || [], i, d) })
       }
     ), /* @__PURE__ */ React.createElement(
-      TPE_PrepEditor2,
+      TPE_PrepEditor,
       {
         rows: activeTpl.prep || [],
-        onAdd: () => updateActiveTpl({ prep: _arrAdd2(activeTpl.prep || [], "") }),
-        onRemove: (i) => updateActiveTpl({ prep: _arrRemove2(activeTpl.prep || [], i) }),
-        onUpdate: (i, v) => updateActiveTpl({ prep: _arrUpdate2(activeTpl.prep || [], i, v) }),
-        onMove: (i, d) => updateActiveTpl({ prep: _arrMove2(activeTpl.prep || [], i, d) })
+        onAdd: () => updateActiveTpl({ prep: _arrAdd(activeTpl.prep || [], "") }),
+        onRemove: (i) => updateActiveTpl({ prep: _arrRemove(activeTpl.prep || [], i) }),
+        onUpdate: (i, v) => updateActiveTpl({ prep: _arrUpdate(activeTpl.prep || [], i, v) }),
+        onMove: (i, d) => updateActiveTpl({ prep: _arrMove(activeTpl.prep || [], i, d) })
       }
     )), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: saveTemplates }, "\uBAA8\uB4E0 \uD15C\uD50C\uB9BF \uC800\uC7A5"))), mode === "per_tour" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 14, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("label", { style: { display: "block", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 5 } }, "\uD22C\uC5B4 \uC120\uD0DD"), /* @__PURE__ */ React.createElement(
       "select",
@@ -1548,26 +1543,26 @@
       },
       "\uC81C\uAC70"
     )))), /* @__PURE__ */ React.createElement(
-      TPE_ScheduleEditor2,
+      TPE_ScheduleEditor,
       {
         rows: pSchedule,
-        onAdd: () => setPSchedule((a) => _arrAdd2(a, { t: "", l: "" })),
-        onRemove: (i) => setPSchedule((a) => _arrRemove2(a, i)),
+        onAdd: () => setPSchedule((a) => _arrAdd(a, { t: "", l: "" })),
+        onRemove: (i) => setPSchedule((a) => _arrRemove(a, i)),
         onUpdate: (i, k, v) => setPSchedule((a) => {
           const n = a.slice();
           n[i] = { ...n[i], [k]: v };
           return n;
         }),
-        onMove: (i, d) => setPSchedule((a) => _arrMove2(a, i, d))
+        onMove: (i, d) => setPSchedule((a) => _arrMove(a, i, d))
       }
     ), /* @__PURE__ */ React.createElement(
-      TPE_PrepEditor2,
+      TPE_PrepEditor,
       {
         rows: pPrep,
-        onAdd: () => setPPrep((a) => _arrAdd2(a, "")),
-        onRemove: (i) => setPPrep((a) => _arrRemove2(a, i)),
-        onUpdate: (i, v) => setPPrep((a) => _arrUpdate2(a, i, v)),
-        onMove: (i, d) => setPPrep((a) => _arrMove2(a, i, d))
+        onAdd: () => setPPrep((a) => _arrAdd(a, "")),
+        onRemove: (i) => setPPrep((a) => _arrRemove(a, i)),
+        onUpdate: (i, v) => setPPrep((a) => _arrUpdate(a, i, v)),
+        onMove: (i, d) => setPPrep((a) => _arrMove(a, i, d))
       }
     ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: savePerTour }, "\uC774 \uD22C\uC5B4 \uC800\uC7A5"), activeOverride && /* @__PURE__ */ React.createElement(
       "button",
@@ -1790,26 +1785,26 @@
         m.label
       );
     })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 20 }, className: "hero-editor-grid" }, /* @__PURE__ */ React.createElement("div", null, mode === "global" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
-      TPE_ScheduleEditor2,
+      TPE_ScheduleEditor,
       {
         rows: gSchedule,
-        onAdd: () => setGSchedule((a) => _arrAdd2(a, { t: "", l: "" })),
-        onRemove: (i) => setGSchedule((a) => _arrRemove2(a, i)),
+        onAdd: () => setGSchedule((a) => _arrAdd(a, { t: "", l: "" })),
+        onRemove: (i) => setGSchedule((a) => _arrRemove(a, i)),
         onUpdate: (i, k, v) => setGSchedule((a) => {
           const n = a.slice();
           n[i] = { ...n[i], [k]: v };
           return n;
         }),
-        onMove: (i, d) => setGSchedule((a) => _arrMove2(a, i, d))
+        onMove: (i, d) => setGSchedule((a) => _arrMove(a, i, d))
       }
     ), /* @__PURE__ */ React.createElement(
       LPE_NotesEditor,
       {
         rows: gNotes,
-        onAdd: () => setGNotes((a) => _arrAdd2(a, "")),
-        onRemove: (i) => setGNotes((a) => _arrRemove2(a, i)),
-        onUpdate: (i, v) => setGNotes((a) => _arrUpdate2(a, i, v)),
-        onMove: (i, d) => setGNotes((a) => _arrMove2(a, i, d))
+        onAdd: () => setGNotes((a) => _arrAdd(a, "")),
+        onRemove: (i) => setGNotes((a) => _arrRemove(a, i)),
+        onUpdate: (i, v) => setGNotes((a) => _arrUpdate(a, i, v)),
+        onMove: (i, d) => setGNotes((a) => _arrMove(a, i, d))
       }
     ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: saveGlobal }, "\uC800\uC7A5"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: resetGlobal, style: { borderColor: "var(--line-2)" } }, "default \uBCF5\uC6D0"))), mode === "templates" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 14, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uD15C\uD50C\uB9BF \uBAA9\uB85D"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: addTemplate }, "\uFF0B \uC0C8 \uD15C\uD50C\uB9BF")), templates.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.6 } }, "\uC544\uC9C1 \uD15C\uD50C\uB9BF\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uC790\uC8FC \uC4F0\uB294 \uAC15\uC5F0 \uC9C4\uD589/\uCC38\uACE0 \uD328\uD134\uC744 \uC800\uC7A5\uD574 \uB450\uBA74 \uAC15\uC5F0\uBCC4 override \uC5D0\uC11C \uBE60\uB974\uAC8C \uC801\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, templates.map((t, i) => /* @__PURE__ */ React.createElement(
       "button",
@@ -1845,26 +1840,26 @@
       },
       "\uC774 \uD15C\uD50C\uB9BF \uC0AD\uC81C"
     )), /* @__PURE__ */ React.createElement(
-      TPE_ScheduleEditor2,
+      TPE_ScheduleEditor,
       {
         rows: activeTpl.schedule || [],
-        onAdd: () => updateActiveTpl({ schedule: _arrAdd2(activeTpl.schedule || [], { t: "", l: "" }) }),
-        onRemove: (i) => updateActiveTpl({ schedule: _arrRemove2(activeTpl.schedule || [], i) }),
+        onAdd: () => updateActiveTpl({ schedule: _arrAdd(activeTpl.schedule || [], { t: "", l: "" }) }),
+        onRemove: (i) => updateActiveTpl({ schedule: _arrRemove(activeTpl.schedule || [], i) }),
         onUpdate: (i, k, v) => {
           const n = (activeTpl.schedule || []).slice();
           n[i] = { ...n[i], [k]: v };
           updateActiveTpl({ schedule: n });
         },
-        onMove: (i, d) => updateActiveTpl({ schedule: _arrMove2(activeTpl.schedule || [], i, d) })
+        onMove: (i, d) => updateActiveTpl({ schedule: _arrMove(activeTpl.schedule || [], i, d) })
       }
     ), /* @__PURE__ */ React.createElement(
       LPE_NotesEditor,
       {
         rows: activeTpl.notes || [],
-        onAdd: () => updateActiveTpl({ notes: _arrAdd2(activeTpl.notes || [], "") }),
-        onRemove: (i) => updateActiveTpl({ notes: _arrRemove2(activeTpl.notes || [], i) }),
-        onUpdate: (i, v) => updateActiveTpl({ notes: _arrUpdate2(activeTpl.notes || [], i, v) }),
-        onMove: (i, d) => updateActiveTpl({ notes: _arrMove2(activeTpl.notes || [], i, d) })
+        onAdd: () => updateActiveTpl({ notes: _arrAdd(activeTpl.notes || [], "") }),
+        onRemove: (i) => updateActiveTpl({ notes: _arrRemove(activeTpl.notes || [], i) }),
+        onUpdate: (i, v) => updateActiveTpl({ notes: _arrUpdate(activeTpl.notes || [], i, v) }),
+        onMove: (i, d) => updateActiveTpl({ notes: _arrMove(activeTpl.notes || [], i, d) })
       }
     )), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: saveTemplates }, "\uBAA8\uB4E0 \uD15C\uD50C\uB9BF \uC800\uC7A5"))), mode === "per_lecture" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 14, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("label", { style: { display: "block", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 5 } }, "\uAC15\uC5F0 \uC120\uD0DD"), /* @__PURE__ */ React.createElement(
       "select",
@@ -1905,26 +1900,26 @@
       },
       "\uC81C\uAC70"
     )))), /* @__PURE__ */ React.createElement(
-      TPE_ScheduleEditor2,
+      TPE_ScheduleEditor,
       {
         rows: pSchedule,
-        onAdd: () => setPSchedule((a) => _arrAdd2(a, { t: "", l: "" })),
-        onRemove: (i) => setPSchedule((a) => _arrRemove2(a, i)),
+        onAdd: () => setPSchedule((a) => _arrAdd(a, { t: "", l: "" })),
+        onRemove: (i) => setPSchedule((a) => _arrRemove(a, i)),
         onUpdate: (i, k, v) => setPSchedule((a) => {
           const n = a.slice();
           n[i] = { ...n[i], [k]: v };
           return n;
         }),
-        onMove: (i, d) => setPSchedule((a) => _arrMove2(a, i, d))
+        onMove: (i, d) => setPSchedule((a) => _arrMove(a, i, d))
       }
     ), /* @__PURE__ */ React.createElement(
       LPE_NotesEditor,
       {
         rows: pNotes,
-        onAdd: () => setPNotes((a) => _arrAdd2(a, "")),
-        onRemove: (i) => setPNotes((a) => _arrRemove2(a, i)),
-        onUpdate: (i, v) => setPNotes((a) => _arrUpdate2(a, i, v)),
-        onMove: (i, d) => setPNotes((a) => _arrMove2(a, i, d))
+        onAdd: () => setPNotes((a) => _arrAdd(a, "")),
+        onRemove: (i) => setPNotes((a) => _arrRemove(a, i)),
+        onUpdate: (i, v) => setPNotes((a) => _arrUpdate(a, i, v)),
+        onMove: (i, d) => setPNotes((a) => _arrMove(a, i, d))
       }
     ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: savePerLecture }, "\uC774 \uAC15\uC5F0 \uC800\uC7A5"), activeOverride && /* @__PURE__ */ React.createElement(
       "button",
@@ -1945,7 +1940,7 @@
     { value: "--secondary", label: "\uCE74\uB77C\uBA5C (--secondary)" },
     { value: "--tertiary", label: "\uC2AC\uB808\uC774\uD2B8 (--tertiary)" }
   ];
-  var FooterStyleEditor2 = () => {
+  var FooterStyleEditor = () => {
     var _a, _b;
     const [tick, setTick] = React.useState(0);
     const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
@@ -2193,7 +2188,7 @@
   var HERO_WEIGHTS = [300, 400, 500, 600, 700, 800, 900];
   var HERO_ALIGNS = ["left", "center", "right"];
   var HERO_TFORMS = ["none", "uppercase", "lowercase", "capitalize"];
-  var HeroEditorPanel2 = () => {
+  var HeroEditorPanel = () => {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i;
     const [tick, setTick] = React.useState(0);
     const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
@@ -2846,10 +2841,10 @@
         ESS_CategoryEditor,
         {
           rows: d.categories,
-          onAdd: () => update(k.key, { categories: _arrAdd2(d.categories, "") }),
-          onRemove: (i) => update(k.key, { categories: _arrRemove2(d.categories, i) }),
-          onUpdate: (i, v) => update(k.key, { categories: _arrUpdate2(d.categories, i, v) }),
-          onMove: (i, dir) => update(k.key, { categories: _arrMove2(d.categories, i, dir) })
+          onAdd: () => update(k.key, { categories: _arrAdd(d.categories, "") }),
+          onRemove: (i) => update(k.key, { categories: _arrRemove(d.categories, i) }),
+          onUpdate: (i, v) => update(k.key, { categories: _arrUpdate(d.categories, i, v) }),
+          onMove: (i, dir) => update(k.key, { categories: _arrMove(d.categories, i, dir) })
         }
       ));
     }), msg && /* @__PURE__ */ React.createElement("p", { role: "status", className: "mono", style: { fontSize: 12, color: "var(--secondary)", fontWeight: 600, marginTop: 10 } }, msg));
@@ -2990,10 +2985,10 @@
       ESS_CategoryEditor,
       {
         rows: intro.categories,
-        onAdd: () => setIntro({ ...intro, categories: _arrAdd2(intro.categories, "") }),
-        onRemove: (i) => setIntro({ ...intro, categories: _arrRemove2(intro.categories, i) }),
-        onUpdate: (i, v) => setIntro({ ...intro, categories: _arrUpdate2(intro.categories, i, v) }),
-        onMove: (i, dir) => setIntro({ ...intro, categories: _arrMove2(intro.categories, i, dir) })
+        onAdd: () => setIntro({ ...intro, categories: _arrAdd(intro.categories, "") }),
+        onRemove: (i) => setIntro({ ...intro, categories: _arrRemove(intro.categories, i) }),
+        onUpdate: (i, v) => setIntro({ ...intro, categories: _arrUpdate(intro.categories, i, v) }),
+        onMove: (i, dir) => setIntro({ ...intro, categories: _arrMove(intro.categories, i, dir) })
       }
     )), /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 18, marginBottom: 18 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 16, margin: 0 } }, "\u2461 \uCF58\uD150\uCE20 (\uD30C\uD2B8\uB108\xB7\uCD94\uCC9C\xB7\uD2B9\uC0B0\uD488)"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.6 } }, "\uAC01 \uD56D\uBAA9: \uC774\uB984\xB7\uC9C0\uC5ED\xB7\uC8FC\uC18C\xB7\uCE74\uD14C\uACE0\uB9AC\xB7\uC124\uBA85\xB7\uC774\uBBF8\uC9C0\xB7\uB9C1\uD06C\xB7\uD0DC\uADF8.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: addItem }, "\uFF0B \uD56D\uBAA9 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveItems }, "\uBAA8\uB4E0 \uD56D\uBAA9 \uC800\uC7A5"))), items.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, textAlign: "center", padding: "24px 0", background: "var(--bg-2)", border: "1px dashed var(--line)", borderRadius: 2 } }, "\u24D8 \uD56D\uBAA9\uC774 \uC5C6\uC73C\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C \uCF58\uD150\uCE20 \uC139\uC158 \uBBF8\uB178\uCD9C."), items.map((it, i) => /* @__PURE__ */ React.createElement("div", { key: it.id || i, style: {
       padding: "14px",
@@ -3235,7 +3230,7 @@
       }
     ), /* @__PURE__ */ React.createElement(HomePreviewSection, { eyebrow: text.tourEyebrow, title: text.tourTitle, subtitle: text.tourSubtitle, action: text.tourAction }), /* @__PURE__ */ React.createElement(HomePreviewSection, { eyebrow: text.communityEyebrow, title: text.communityTitle, subtitle: text.communitySubtitle, action: text.communityAction }), /* @__PURE__ */ React.createElement("section", { style: { padding: "22px 24px", borderBottom: "1px solid var(--line)", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "var(--font-serif)", fontSize: 18, marginBottom: 8 } }, text.communityEmptyTitle), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 14 } }, text.communityEmptySubtitle), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small" }, text.communityEmptyCta)), /* @__PURE__ */ React.createElement(HomePreviewSection, { eyebrow: text.columnEyebrow, title: text.columnTitle, subtitle: text.columnSubtitle, action: text.columnAction }), /* @__PURE__ */ React.createElement(HomePreviewSection, { eyebrow: text.lecturesEyebrow, title: text.lecturesTitle, action: text.lecturesAction }), /* @__PURE__ */ React.createElement("section", { style: { padding: "24px", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow" }, text.bookEyebrowPrefix, " \xB7 2026"), /* @__PURE__ */ React.createElement("h3", { style: { fontFamily: "var(--font-serif)", fontSize: 26, marginBottom: 12 } }, "\u300E\uC655\uC758\uAE38\u300F"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, text.bookKrLabel), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, text.bookEnLabel)), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small" }, text.bookBuyCta)));
   };
-  var HomeTextEditorPanel2 = () => {
+  var HomeTextEditorPanel = () => {
     var _a, _b, _c;
     const [tick, setTick] = React.useState(0);
     const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
@@ -3489,7 +3484,7 @@
       "\uAC1C)"
     )), lectureScan && /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 14, marginBottom: 18, fontSize: 12, lineHeight: 1.7 } }, lectureScan.items.length === 0 ? /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\u25B8 \uB9C8\uC774\uADF8\uD560 \uD56D\uBAA9 \uC5C6\uC74C (\uBAA8\uB450 URL \uD615\uD0DC\uC774\uAC70\uB098 \uBE44\uC5B4\uC788\uC74C).") : /* @__PURE__ */ React.createElement("ul", { style: { paddingLeft: 18, margin: 0 } }, lectureScan.items.map((it) => /* @__PURE__ */ React.createElement("li", { key: it.id }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2" }, it.id), " \xB7 ", it.title, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { marginLeft: 8, fontSize: 10 } }, "~", (it.sizeBytes / 1024 / 1.33).toFixed(0), " KB"))))), lectureResult && /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 14, marginBottom: 18, fontSize: 12, lineHeight: 1.7, borderColor: "var(--primary)" } }, "\u2705 \uB9C8\uC774\uADF8 \uC644\uB8CC \u2014 ", lectureResult.migrated, " \uAC74 R2 \uC5C5\uB85C\uB4DC, ", lectureResult.failed.length, " \uAC74 \uC2E4\uD328.", lectureResult.failed.length > 0 && /* @__PURE__ */ React.createElement("ul", { style: { paddingLeft: 18, margin: "8px 0 0", color: "var(--danger)" } }, lectureResult.failed.map((f, i) => /* @__PURE__ */ React.createElement("li", { key: i }, f.id, ": ", f.msg)))), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 24, lineHeight: 1.7 } }, "\u24D8 \uCD94\uAC00 \uB9C8\uC774\uADF8\uAC00 \uD544\uC694\uD55C \uD56D\uBAA9 (\uCC45 \uD45C\uC9C0/PDF dataURI, \uCD94\uCC9C \uC774\uBBF8\uC9C0, \uAC8C\uC2DC\uAE00 \uCCA8\uBD80) \uC740 \uD5A5\uD6C4 \uBCC4\uB3C4 \uB3C4\uAD6C. \uD604\uC7AC\uB294 v00.081/v00.083 \uC2E0\uADDC \uCEEC\uB7FC\xB7R2 \uD328\uC2A4 \uC801\uC6A9 \uC9C1\uD6C4\uC758 \uC794\uC7AC\uB9CC \uCC98\uB9AC."));
   };
-  var BannerEditorPanel2 = () => {
+  var BannerEditorPanel = () => {
     const [tick, setTick] = React.useState(0);
     const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
     const initial = sc.banner && typeof sc.banner === "object" ? sc.banner : {};
@@ -3595,22 +3590,22 @@
     } }, !draft.enabled ? /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\u2014 \uBE44\uD65C\uC131 \uC0C1\uD0DC (\uC0AC\uC774\uD2B8\uC5D0\uC11C \uBBF8\uB178\uCD9C) \u2014") : /* @__PURE__ */ React.createElement(React.Fragment, null, draft.emoji ? `${draft.emoji} ` : "", draft.title && /* @__PURE__ */ React.createElement("strong", null, draft.title), draft.body && /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, draft.title ? " " : "", draft.body), draft.dismissible && /* @__PURE__ */ React.createElement("span", { style: { position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "var(--ink-3)", fontSize: 16 } }, "\xD7"))));
   };
   Object.assign(window, {
-    RecommendationsAdminPanel: RecommendationsAdminPanel2,
+    RecommendationsAdminPanel,
     TPE_RowActions,
-    TPE_ScheduleEditor: TPE_ScheduleEditor2,
-    TPE_PrepEditor: TPE_PrepEditor2,
+    TPE_ScheduleEditor,
+    TPE_PrepEditor,
     TPE_PreviewCard,
-    _arrAdd: _arrAdd2,
-    _arrRemove: _arrRemove2,
-    _arrUpdate: _arrUpdate2,
-    _arrMove: _arrMove2,
+    _arrAdd,
+    _arrRemove,
+    _arrUpdate,
+    _arrMove,
     TourPageEditorPanel,
     LecturePageEditorPanel,
     // v00.083
     LPE_NotesEditor,
     LPE_PreviewCard,
     FOOTER_COLOR_OPTIONS,
-    FooterStyleEditor: FooterStyleEditor2,
+    FooterStyleEditor,
     HE_Field,
     HE_Input,
     HE_TextArea,
@@ -3621,8 +3616,8 @@
     HERO_WEIGHTS,
     HERO_ALIGNS,
     HERO_TFORMS,
-    HeroEditorPanel: HeroEditorPanel2,
-    HomeTextEditorPanel: HomeTextEditorPanel2,
+    HeroEditorPanel,
+    HomeTextEditorPanel,
     LegacyMigrationPanel,
     // v00.086
     EatSleepShopAdminPanel,
@@ -3632,12 +3627,26 @@
     // v00.106
     TPE_TimeInput,
     // v00.106 (헬퍼 — 외부 호출자 없음, 노출만)
-    BannerEditorPanel: BannerEditorPanel2
+    BannerEditorPanel
     // v00.257
   });
 
   // pages/admin/AdminDesignHub.jsx
-  var ADMIN_VERSION_HISTORY2 = [
+  var ADMIN_VERSION_HISTORY = [
+    {
+      version: "00.286.000",
+      date: "2026-06-06",
+      datetime: "2026-06-06T23:08:50+09:00",
+      summary: "\u{1F9E9} \uC2A4\uD30C\uAC8C\uD2F0 \uADFC\uC6D0 \uC81C\uAC70 \u2014 admin \uBC88\uB4E4 \uC804\uC5ED \uACB0\uD569(window)\u2192 import/export \uC804\uBA74 \uC804\uD658",
+      details: [
+        "\u{1F3AF} [\uADFC\uBCF8 \uC6D0\uC778 \uD574\uC18C] \uC9C4\uB2E8\uC11C\uAC00 \uAF3D\uC740 '\uC758\uC874\uC131\uC744 import \uC544\uB2CC \uC804\uC5ED \uB124\uC784\uC2A4\uD398\uC774\uC2A4+\uB85C\uB4DC\uC21C\uC11C\uB85C \uD45C\uD604' \uAD6C\uC870\uB97C admin \uBC88\uB4E4\uC5D0\uC11C \uC644\uC804 \uC81C\uAC70. `const X=window.X` \uBE0C\uB9AC\uC9C0 199\u21920, `window.X=` \uB178\uCD9C 51\u21924(must-stay\uB9CC).",
+        "\u{1F527} [\uC804\uD658 \uBC29\uC2DD] @babel/traverse \uC815\uC2DD \uC2A4\uCF54\uD504 \uBD84\uC11D\uC73C\uB85C cross-module \uCC38\uC870(bare \uC804\uC5ED\xB7const alias\xB7window.X \uBA64\uBC84 \uC77D\uAE30 3\uC885) \uC804\uC218 \uC2DD\uBCC4 \u2192 ESM import/export \uB85C \uBCC0\uD658. esbuild \uAC00 \uC758\uC874 \uADF8\uB798\uD504 \uC790\uB3D9 \uD574\uC18C \u2192 load-order \uC758\uC874\uC131 \uC18C\uBA78(= _countSince\uB958 \uD68C\uADC0 \uC6D0\uCC9C \uCC28\uB2E8).",
+        "\u{1F9F9} [\uC815\uB9AC] \uC8FD\uC740 trampoline alias 51\uAC1C \uC0AD\uC81C. import 67/export 18 \uC758 \uBA85\uC2DC\uC801 \uADF8\uB798\uD504.",
+        "\u{1F512} [\uACBD\uACC4 \uBCF4\uC874] boot \uC758 pick(AdminPage/AdminDenied/LoginPage), \uACF5\uAC1C ColumnPage(AdminColumnEditor)\xB7MediaGallery(pickImageWithR2Fallback), BGNJ_* \uB7F0\uD0C0\uC784 API \uB294 \uBC88\uB4E4 \uACBD\uACC4/\uBE44-\uBC88\uB4E4 \uC18C\uBE44\uB77C window \uC720\uC9C0(\uC815\uB2F9).",
+        "\u2705 [\uAC80\uC99D] \uBE4C\uB4DC\xB7check-syntax\xB7\uD5E4\uB4DC\uB9AC\uC2A4 admin \uC804 \uD328\uB110 \uC21C\uD68C \uB80C\uB354(48\uD074\uB9AD refErr=0)\xB7\uACF5\uAC1C \uD398\uC774\uC9C0 6\uC885 \uB9C8\uC6B4\uD2B8 \uC804\uBD80 \uD1B5\uACFC. cross-module free-ref audit 0.",
+        "\u{1F4E6} cache-buster \u2014 `?v=00.286.000`."
+      ]
+    },
     {
       version: "00.285.001",
       date: "2026-06-06",
@@ -6860,7 +6869,7 @@
       return /* @__PURE__ */ React.createElement("div", { key: c.token, style: { border: "1px solid var(--line)", overflow: "hidden", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { style: { height: 60, background: `var(${c.token})`, borderBottom: "1px solid var(--line)" } }), /* @__PURE__ */ React.createElement("div", { style: { padding: "10px 12px" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.1em" } }, c.token), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, marginTop: 2 } }, live || c.hex, driftFromDesign && /* @__PURE__ */ React.createElement("span", { style: { marginLeft: 6, color: "var(--secondary)" }, title: `\uB514\uC790\uC778\uAC12: ${c.hex}` }, "\xB7 \uB77C\uC774\uBE0C")), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, marginTop: 6, lineHeight: 1.5, color: "var(--ink)" } }, c.usage), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.5 } }, c.notes)));
     }));
   };
-  var DesignSystemView2 = () => {
+  var DesignSystemView = () => {
     const COLOR_TOKENS = [
       // === Primary (5% — KEY ACCENT) ===
       { token: "--primary", hex: "#F5D548", usage: "CTA \xB7 \uD65C\uC131 \xB7 focus \xB7 \uB85C\uACE0", notes: "KEY ACCENT \u2014 5% \uC601\uC5ED\uC5D0\uB9CC. \uB85C\uACE0 \uC610\uB85C\uC6B0." },
@@ -7309,7 +7318,7 @@
       ]
     }
   ];
-  var MISSION_OVERVIEW2 = [
+  var MISSION_OVERVIEW = [
     {
       id: "community",
       number: "01",
@@ -7356,7 +7365,7 @@
       verdict: "\uB2E4\uAD8C\uD654(D1.books + R2 \uD45C\uC9C0/PDF) + \uD68C\uC6D0 \uC804\uC6A9 \uBB34\uD1B5\uC7A5 \uC785\uAE08 \u2192 \uAD00\uB9AC\uC790 \uC785\uAE08 \uD655\uC778 \u2192 \uBC1C\uC1A1(\uC1A1\uC7A5) \u2192 \uBC30\uC1A1 \uC644\uB8CC + \uD658\uBD88 \uC2E0\uCCAD + \uB2E4\uC911 \uACC4\uC88C + \uCC45\uBCC4 \uD6C4\uAE30\uAE4C\uC9C0 \uC6B4\uC601. \uB0A8\uC740 \uD070 \uD56D\uBAA9\uC740 PG \uACB0\uC81C\xB7\uC7AC\uACE0\xB7\uC601\uC218\uC99D\xB7\uAD50\uD658\xB7\uCFE0\uD3F0."
     }
   ];
-  var FEATURE_DOMAINS2 = [
+  var FEATURE_DOMAINS = [
     {
       id: "infra",
       number: "00",
@@ -8142,11 +8151,11 @@
     }
   ];
   Object.assign(window, {
-    ADMIN_VERSION_HISTORY: ADMIN_VERSION_HISTORY2,
+    ADMIN_VERSION_HISTORY,
     ADMIN_DESIGN_SECTIONS,
-    MISSION_OVERVIEW: MISSION_OVERVIEW2,
-    FEATURE_DOMAINS: FEATURE_DOMAINS2,
-    DesignSystemView: DesignSystemView2
+    MISSION_OVERVIEW,
+    FEATURE_DOMAINS,
+    DesignSystemView
   });
 
   // pages/admin/HangyeonAdminPanel.jsx
@@ -8539,7 +8548,6 @@
       name
     ))), /* @__PURE__ */ React.createElement(Active, null));
   };
-  Object.assign(window, { HangyeonAdminPanel });
 
   // pages/admin/AdminLogin.jsx
   var LegalModal = ({ slug, onClose }) => {
@@ -8958,7 +8966,7 @@
   window.LoginPage = LoginPage;
 
   // pages/admin/AdminPolicyPanels.jsx
-  var LegalAdminPanel2 = () => {
+  var LegalAdminPanel = () => {
     const [slug, setSlug] = React.useState("terms");
     const [tick, setTick] = React.useState(0);
     const [doc, setDoc] = React.useState({ title: "", body: "", updatedAt: null });
@@ -9053,7 +9061,7 @@
       color: msg.startsWith("\u2717") || msg.startsWith("\u26A0") ? "var(--danger)" : "var(--primary)"
     } }, msg), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", borderTop: "1px solid var(--line)", paddingTop: 14 } }, /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: saving, "aria-busy": saving }, saving ? "\uC800\uC7A5 \uC911..." : "\uC800\uC7A5"))));
   };
-  var FaqAdminPanel2 = () => {
+  var FaqAdminPanel = () => {
     const [tick, setTick] = React.useState(0);
     const [draft, setDraft] = React.useState({ question: "", answer: "", category: "\uC77C\uBC18" });
     const [error, setError] = React.useState("");
@@ -9164,11 +9172,9 @@
       }
     ))))));
   };
-  window.LegalAdminPanel = LegalAdminPanel2;
-  window.FaqAdminPanel = FaqAdminPanel2;
 
   // pages/admin/AdminMonitorPanels.jsx
-  var ErrorLogPanel2 = () => {
+  var ErrorLogPanel = () => {
     const [errors, setErrors] = React.useState([]);
     const [search, setSearch] = React.useState("");
     const [codeFilter, setCodeFilter] = React.useState("all");
@@ -9237,7 +9243,7 @@
       "\uC804\uCCB4 \uC0AD\uC81C"
     ), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\uCD1D ", errors.length, "\uAC74 \xB7 \uD45C\uC2DC ", filtered.length, "\uAC74")), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 980 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 160 } }, "\uC2DC\uAC01"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 140 } }, "\uCF54\uB4DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 60 } }, "HTTP"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left" } }, "\uBA54\uC2DC\uC9C0"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 160 } }, "\uACBD\uB85C"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 200 } }, "\uC694\uCCAD URL"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, className: "dim", style: { padding: 32, textAlign: "center" } }, loading ? "\uBD88\uB7EC\uC624\uB294 \uC911..." : "\uC624\uB958 \uB85C\uADF8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.")) : filtered.map((e) => /* @__PURE__ */ React.createElement("tr", { key: e.id, style: { borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 12px", fontSize: 11, verticalAlign: "top" } }, e.ts ? window.BGNJ_FMT.kstDateTime(e.ts) : "-"), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: "10px 12px", fontSize: 11, verticalAlign: "top", color: "var(--danger)", letterSpacing: "0.1em" } }, e.code || "-"), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: "10px 12px", fontSize: 11, verticalAlign: "top" } }, e.status || "-"), /* @__PURE__ */ React.createElement("td", { style: { padding: "10px 12px", fontSize: 13, verticalAlign: "top", lineHeight: 1.6 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 500 } }, e.message), e.hint && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginTop: 4 } }, e.hint)), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 12px", fontSize: 10, verticalAlign: "top", wordBreak: "break-all" } }, e.pathname || "-"), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 12px", fontSize: 10, verticalAlign: "top", wordBreak: "break-all" } }, e.url || "-")))))));
   };
-  var SEOAdminPanel2 = () => {
+  var SEOAdminPanel = () => {
     const [tick, setTick] = React.useState(0);
     const [og, setOg] = React.useState({ title: "", description: "", imageDataUri: "" });
     const [hero, setHero] = React.useState({ eyebrow: "", title1: "", title2: "", title3: "", subtitle: "" });
@@ -9373,7 +9379,7 @@
       }
     ))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", borderTop: "1px solid var(--line)", paddingTop: 14, marginTop: 14 } }, /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold" }, "\uBE0C\uB79C\uB4DC \uC800\uC7A5"))));
   };
-  var SearchConsoleAdminPanel2 = () => {
+  var SearchConsoleAdminPanel = () => {
     const [data, setData] = React.useState({
       google: "",
       naver: "",
@@ -9520,9 +9526,6 @@
       "\u2197 Naver \uC0AC\uC774\uD2B8\uB9F5 \uCF58\uC194 \uC5F4\uAE30"
     )), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 10, lineHeight: 1.6 } }, "\u203B Naver \uB294 \uC9C1\uC811 ping \uC5D4\uB4DC\uD3EC\uC778\uD2B8 \uBBF8\uACF5\uC2DD \u2014 \uCF58\uC194\uC5D0\uC11C \uC218\uB3D9 \uB4F1\uB85D \uD544\uC694. Bing \uC740 Google \uACFC \uC0C9\uC778 \uACF5\uC720.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uB9C8\uC9C0\uB9C9 \uC800\uC7A5: ", lastUpdLabel), /* @__PURE__ */ React.createElement("span", { style: { flex: 1 } }), dirty && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: refresh }, "\uBCC0\uACBD \uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: save, disabled: saving || !dirty }, saving ? "\uC800\uC7A5 \uC911\u2026" : dirty ? "\u{1F4BE} \uC800\uC7A5" : "\uC800\uC7A5\uB428 \u2713")));
   };
-  window.ErrorLogPanel = ErrorLogPanel2;
-  window.SEOAdminPanel = SEOAdminPanel2;
-  window.SearchConsoleAdminPanel = SearchConsoleAdminPanel2;
 
   // pages/admin/AdminMemberPanel.jsx
   var SuspendDialog = ({ target, reason, onChange, onConfirm, onCancel }) => {
@@ -9599,7 +9602,7 @@
       return /* @__PURE__ */ React.createElement(React.Fragment, { key: k }, /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11, paddingTop: 2 } }, label), /* @__PURE__ */ React.createElement("div", { style: { color: isEmpty ? "var(--ink-3)" : "var(--ink)", fontStyle: isEmpty ? "italic" : "normal" } }, isEmpty ? "\u2014" : String(value)));
     }));
   };
-  var MemberAdminPanel2 = ({ go }) => {
+  var MemberAdminPanel = ({ go }) => {
     var _a;
     const [tick, setTick] = React.useState(0);
     const [selectedId, setSelectedId] = React.useState(null);
@@ -9685,7 +9688,7 @@
         return [u.id, u.name, u.email, u.gradeId, u.isAdmin ? "Y" : "N", u.suspended ? "Y" : "N", u.joinedAt || "", a.postCount || 0, a.commentCount || 0, (a.bookOrders || []).length, (a.lectures || []).length, (a.tours || []).length];
       });
       const csv = [header, ...rows].map((row) => row.map((c) => `"${String(c != null ? c : "").replace(/"/g, '""')}"`).join(",")).join("\n");
-      downloadCsv3(`members-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv`, csv);
+      downloadCsv(`members-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv`, csv);
     };
     const changeGrade = async (user, gradeId) => {
       try {
@@ -9889,12 +9892,6 @@
       ), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 12, fontSize: 10, textAlign: "right" } }, activitySummary), /* @__PURE__ */ React.createElement("td", { style: { padding: 12, textAlign: "right" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setSelectedId(u.id) }, "\uC0C1\uC138")));
     }))), filtered.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center", marginTop: 14 } }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uD68C\uC6D0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
   };
-  var pickImageWithR2Fallback3 = window.pickImageWithR2Fallback;
-  var downloadBlob2 = window.downloadBlob;
-  var downloadCsv3 = window.downloadCsv;
-  var downloadJson3 = window.downloadJson;
-  var SubTabsView3 = window.SubTabsView;
-  window.MemberAdminPanel = MemberAdminPanel2;
 
   // pages/admin/AdminLogPanels.jsx
   var AuditDetailsCell = ({ details }) => {
@@ -9914,8 +9911,7 @@
       fontSize: 11
     } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.1em" } }, k), /* @__PURE__ */ React.createElement("span", { style: { color: "var(--ink)" } }, typeof v === "object" ? JSON.stringify(v) : String(v)))));
   };
-  var MemberAdminPanel3 = window.MemberAdminPanel;
-  var AuditLogPanel2 = () => {
+  var AuditLogPanel = () => {
     const [tick, setTick] = React.useState(0);
     const [search, setSearch] = React.useState("");
     const refresh = () => setTick((v) => v + 1);
@@ -9963,7 +9959,7 @@
       }
     )), list.length === 0 ? /* @__PURE__ */ React.createElement(AdminEmpty, null, "\uD45C\uC2DC\uD560 \uAC10\uC0AC \uB85C\uADF8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("div", { className: "admin-table-wrap" }, /* @__PURE__ */ React.createElement("table", { className: "admin-table", style: { fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { width: 170 } }, "\uC2DC\uAC01"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { width: 220 } }, "\uC561\uC158"), /* @__PURE__ */ React.createElement("th", { scope: "col" }, "\uB300\uC0C1"), /* @__PURE__ */ React.createElement("th", { scope: "col" }, "\uC791\uC5C5\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col" }, "\uC138\uBD80"))), /* @__PURE__ */ React.createElement("tbody", null, list.map((e) => /* @__PURE__ */ React.createElement("tr", { key: e.id }, /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { fontSize: 11 } }, window.BGNJ_FMT.kstDateTime(e.ts)), /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { fontSize: 11 } }, e.action), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { fontSize: 11 } }, e.target), /* @__PURE__ */ React.createElement("td", { style: { fontSize: 12 } }, e.by), /* @__PURE__ */ React.createElement("td", { style: { fontSize: 11, lineHeight: 1.6 } }, /* @__PURE__ */ React.createElement(AuditDetailsCell, { details: e.details }))))))), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11, marginTop: 12, textAlign: "right" } }, "\uD45C\uC2DC ", list.length, "\uAC74 (\uC804\uCCB4 \uCD5C\uADFC 500\uAC74 \uC911)"));
   };
-  var ActivityLogPanel2 = () => {
+  var ActivityLogPanel = () => {
     const [auditRows, setAuditRows] = React.useState([]);
     const [errorRows, setErrorRows] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
@@ -10234,11 +10230,9 @@
       } }, TYPE_LABEL[e.type] || e.type)), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: "10px 12px", fontSize: 11, color: "var(--ink)" } }, e.actor, e.ip && /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { marginLeft: 8, fontSize: 10 } }, "\xB7 ", e.ip)), /* @__PURE__ */ React.createElement("td", { style: { padding: "10px 12px", fontFamily: "var(--font-mono)", fontSize: 11 } }, /* @__PURE__ */ React.createElement("span", { style: { color: "var(--ink)" } }, e.action), e.target && /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { marginLeft: 8, fontSize: 10 } }, e.target)), /* @__PURE__ */ React.createElement("td", { className: "dim", style: { padding: "10px 12px", fontSize: 12, lineHeight: 1.5, wordBreak: "break-word", maxWidth: 540 } }, e.detail || "\u2014"));
     }))), filtered.length > 500 && /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { padding: "10px 14px", fontSize: 11, textAlign: "center", borderTop: "1px solid var(--line)" } }, "\uC0C1\uC704 500\uAC74\uB9CC \uD45C\uC2DC. \uB354 \uC624\uB798\uB41C \uAE30\uB85D\uC740 [\uAC10\uC0AC \uB85C\uADF8] \uB610\uB294 [\uC624\uB958 \uB85C\uADF8] \uBCC4\uB3C4 \uD328\uB110\uC5D0\uC11C \uAC80\uC0C9.")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 12, lineHeight: 1.7 } }, "\u24D8 \uB370\uC774\uD130 \uC18C\uC2A4: ", /* @__PURE__ */ React.createElement("code", { style: { padding: "1px 5px", background: "var(--bg-2)", border: "1px solid var(--line-2)" } }, "audit_log"), "(D1 \u2014 \uAD00\uB9AC\uC790 \uD589\uB3D9 + \uD68C\uC6D0\uAC00\uC785) +", /* @__PURE__ */ React.createElement("code", { style: { padding: "1px 5px", background: "var(--bg-2)", border: "1px solid var(--line-2)", marginLeft: 6 } }, "error_log"), "(D1 \u2014 \uC624\uB958 \uBCF4\uACE0) + \uCD5C\uADFC \uAC8C\uC2DC\uAE00(BGNJ_COMMUNITY \uCE90\uC2DC). \uD2B8\uB7EC\uBE14\uC288\uD305 \uC2DC \uC2DC\uAC04 \uC5ED\uC21C\uC73C\uB85C \uC0AC\uACE0 \uBC1C\uC0DD \uC9C1\uC804 \uD65C\uB3D9\uC744 \uCD94\uC801."));
   };
-  window.AuditLogPanel = AuditLogPanel2;
-  window.ActivityLogPanel = ActivityLogPanel2;
 
   // pages/admin/AdminBooksPanel.jsx
-  var BooksAdminPanel2 = () => {
+  var BooksAdminPanel = () => {
     var _a, _b, _c, _d;
     const [tick, setTick] = React.useState(0);
     const [newDraft, setNewDraft] = React.useState(null);
@@ -10866,10 +10860,9 @@
       "\uBCC0\uACBD \uCDE8\uC18C"
     ), /* @__PURE__ */ React.createElement("span", { className: "admin-savebar__spacer" }), /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, color: editing._isNew ? "var(--primary)" : void 0 } }, editing._isNew ? "\u25CF \uC0C8 \uCC45 (\uBBF8\uC800\uC7A5 \u2014 [\u{1F4BE} \uC0C8 \uCC45 \uC800\uC7A5] \uD074\uB9AD \uC2DC D1 \uBC18\uC601)" : dirty ? "\u25CF \uBBF8\uC800\uC7A5 \uBCC0\uACBD \uC788\uC74C" : "\u25CB \uBAA8\uB4E0 \uBCC0\uACBD \uC800\uC7A5\uB428"))))));
   };
-  window.BooksAdminPanel = BooksAdminPanel2;
 
   // pages/admin/AdminCommercePanels.jsx
-  var BankAccountPanel2 = () => {
+  var BankAccountPanel = () => {
     const [tick, setTick] = React.useState(0);
     const [accounts, setAccounts] = React.useState(() => window.BGNJ_LECTURES.listBankAccounts());
     const [editingId, setEditingId] = React.useState(null);
@@ -11066,7 +11059,7 @@
       list.map((a) => /* @__PURE__ */ React.createElement("option", { key: a.id, value: a.id }, a.label, a.isDefault ? " (\uAE30\uBCF8)" : ""))
     )), selected && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "90px 1fr", gap: "6px 14px", fontSize: 13, lineHeight: 1.6 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uC740\uD589"), /* @__PURE__ */ React.createElement("div", null, selected.bankName || "-"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uACC4\uC88C\uBC88\uD638"), /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontWeight: 500 } }, selected.accountNumber || "-"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uC608\uAE08\uC8FC"), /* @__PURE__ */ React.createElement("div", null, selected.holder || "-"), selected.memo && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", null, selected.memo))));
   };
-  var BookOrderAdminPanel2 = ({ go }) => {
+  var BookOrderAdminPanel = ({ go }) => {
     const [tick, setTick] = React.useState(0);
     const [filter, setFilter] = React.useState("pending_payment");
     const [trackingDraft, setTrackingDraft] = React.useState({});
@@ -11287,8 +11280,6 @@
       "\uD658\uBD88 \uBC18\uB824"
     )))))))));
   };
-  window.BankAccountPanel = BankAccountPanel2;
-  window.BookOrderAdminPanel = BookOrderAdminPanel2;
 
   // pages/admin/AdminEventsPanels.jsx
   var BulkLectureImport = ({ onClose, onDone }) => {
@@ -11375,7 +11366,7 @@
       }
     ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: submit, disabled: busy }, busy ? "\uB4F1\uB85D \uC911\u2026" : "\uC77C\uAD04 \uB4F1\uB85D \uC2E4\uD589")), result && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12, padding: 12, border: "1px solid var(--line)", fontSize: 12, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { className: "gold mono", style: { marginBottom: 6 } }, "\uACB0\uACFC"), /* @__PURE__ */ React.createElement("div", null, "\u2705 \uC131\uACF5: ", /* @__PURE__ */ React.createElement("strong", null, result.ok), "\uAC74"), result.fail.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { marginTop: 6 } }, "\u274C \uC2E4\uD328: ", /* @__PURE__ */ React.createElement("strong", { style: { color: "var(--danger)" } }, result.fail.length), "\uAC74"), /* @__PURE__ */ React.createElement("ul", { style: { margin: "6px 0 0", paddingLeft: 18 } }, result.fail.map((f, i) => /* @__PURE__ */ React.createElement("li", { key: i, style: { color: "var(--danger)" } }, f.line, "\uD589 \u2014 ", f.err))))));
   };
-  var LectureAdminPanel2 = ({ go }) => {
+  var LectureAdminPanel = ({ go }) => {
     const [tick, setTick] = React.useState(0);
     const [editingId, setEditingId] = React.useState(null);
     const [galleryEditTarget, setGalleryEditTarget] = React.useState(null);
@@ -11554,7 +11545,7 @@
       },
       /* @__PURE__ */ React.createElement("span", null, "\u{1F4CB} \uAC15\uC5F0 \uD398\uC774\uC9C0 \uCF58\uD150\uCE20 \u2014 \uAE00\uB85C\uBC8C \uC9C4\uD589\xB7\uCC38\uACE0 / \uD15C\uD50C\uB9BF / \uAC15\uC5F0\uBCC4 override"),
       /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, showPageEditor ? "\u25B2 \uB2EB\uAE30" : "\u25BC \uD3BC\uCE58\uAE30")
-    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, window.LecturePageEditorPanel ? /* @__PURE__ */ React.createElement(window.LecturePageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uAC15\uC5F0 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4. \uACC4\uC88C\uBC88\uD638\uB294 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC2DC\uC2A4\uD15C \u2192 \uC124\uC815"), " \uD0ED\uC5D0\uC11C \uB4F1\uB85D\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, lectures.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, LecturePageEditorPanel ? /* @__PURE__ */ React.createElement(window.LecturePageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uAC15\uC5F0 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4. \uACC4\uC88C\uBC88\uD638\uB294 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC2DC\uC2A4\uD15C \u2192 \uC124\uC815"), " \uD0ED\uC5D0\uC11C \uB4F1\uB85D\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, lectures.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
       if (!await window.BGNJ_CONFIRM("\uC0D8\uD50C \uAC15\uC5F0 3\uAC1C\uB97C \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
       const samples = [
         { title: "\uC655\uC758 \uAE38", topic: "\uC870\uC120 \uC655\uC2E4\uC758 \uC77C\uC0C1\uACFC \uC758\uB840", venue: "\uACBD\uBCF5\uAD81 \uC218\uC815\uC804", host: "\uBC45\uAE30\uB178\uC790", durationMinutes: 90, capacity: 30, price: 0, note: "\uACBD\uBCF5\uAD81 \uB2F5\uC0AC\uC640 \uD568\uAED8\uD558\uB294 \uC778\uBB38\uD559 \uAC15\uC5F0." },
@@ -11760,7 +11751,7 @@
       }
     ));
   };
-  var TourAdminPanel2 = ({ go }) => {
+  var TourAdminPanel = ({ go }) => {
     const [tick, setTick] = React.useState(0);
     const [editingId, setEditingId] = React.useState(null);
     const [draft, setDraft] = React.useState({});
@@ -11976,7 +11967,7 @@
       },
       /* @__PURE__ */ React.createElement("span", null, "\u{1F4CB} \uD22C\uC5B4 \uD398\uC774\uC9C0 \uCF58\uD150\uCE20 \u2014 \uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C / \uD15C\uD50C\uB9BF / \uD22C\uC5B4\uBCC4 override"),
       /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, showPageEditor ? "\u25B2 \uB2EB\uAE30" : "\u25BC \uD3BC\uCE58\uAE30")
-    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, window.TourPageEditorPanel ? /* @__PURE__ */ React.createElement(window.TourPageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uD22C\uC5B4 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4(\uAC15\uC5F0\uACFC \uAC19\uC740 \uACC4\uC88C \uC0AC\uC6A9)."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, tours.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, TourPageEditorPanel ? /* @__PURE__ */ React.createElement(window.TourPageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uD22C\uC5B4 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4(\uAC15\uC5F0\uACFC \uAC19\uC740 \uACC4\uC88C \uC0AC\uC6A9)."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, tours.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
       if (!await window.BGNJ_CONFIRM("\uC0D8\uD50C \uB2F5\uC0AC 3\uAC1C\uB97C \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
       const samples = [
         { title: "\uACBD\uBCF5\uAD81 \u2014 \uC655\uC758 \uC77C\uC0C1", location: "\uACBD\uBCF5\uAD81 \uC77C\uB300", host: "\uBC45\uAE30\uB178\uC790", durationMinutes: 180, capacity: 15, price: 3e4, desc: "\uACBD\uBCF5\uAD81 \uC678\uC804\xB7\uB0B4\uC804\uC744 \uB530\uB77C \uC655\uC758 \uD558\uB8E8\uB97C \uC887\uB294 \uB2F5\uC0AC." },
@@ -12241,11 +12232,9 @@
       }
     ));
   };
-  window.LectureAdminPanel = LectureAdminPanel2;
-  window.TourAdminPanel = TourAdminPanel2;
 
   // pages/admin/AdminSiteContentPanel.jsx
-  var SiteContentAdminPanel2 = () => {
+  var SiteContentAdminPanel = () => {
     const [tick, setTick] = React.useState(0);
     const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
     const [msg, setMsg] = React.useState("");
@@ -12511,13 +12500,9 @@
       { name: "LinkedIn", svg: "\u2717", png: "\u2713", current: isSvg ? "\u2717" : isUserUpload ? "\u2713" : "\u2717" }
     ].map((p) => /* @__PURE__ */ React.createElement("tr", { key: p.name, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { style: { padding: 10, color: "var(--ink)", fontWeight: 500 } }, p.name), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, fontSize: 13, color: p.svg === "\u2713" ? "var(--success)" : p.svg === "\u25B3" ? "var(--warning)" : "var(--ink-3)" } }, p.svg), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, fontSize: 13, color: p.png === "\u2713" ? "var(--success)" : "var(--ink-3)" } }, p.png), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, fontSize: 13, color: p.current === "\u2713" ? "var(--success)" : p.current === "\u25B3" ? "var(--warning)" : "var(--danger)", fontWeight: 600 } }, p.current)))))), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.6 } }, "\u24D8 ", /* @__PURE__ */ React.createElement("strong", null, "\uC804 \uD50C\uB7AB\uD3FC \uCEE4\uBC84 \uAD8C\uC7A5:"), " 1200\xD7630 PNG/JPG \uB97C \uC5C5\uB85C\uB4DC\uD558\uBA74 SVG fallback \uC744 \uB36E\uC5B4\uC4F0\uACE0 Facebook/Kakao \uB4F1\uC5D0\uC11C\uB3C4 \uBBF8\uB9AC\uBCF4\uAE30\uAC00 \uD45C\uC2DC\uB429\uB2C8\uB2E4."));
   };
-  window.SiteContentAdminPanel = SiteContentAdminPanel2;
 
   // pages/admin/AdminDashboardPanel.jsx
-  var _countSince2 = window._countSince;
-  var _hourlySeries2 = window._hourlySeries;
-  var _dailySeries2 = window._dailySeries;
-  var DashboardPanel2 = ({ dashboardStats, allUsers, allCommunityPosts, latestCommunityPost, latestColumn, setTab, G }) => {
+  var DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCommunityPost, latestColumn, setTab, G }) => {
     var _a, _b, _c, _d, _e, _f, _g, _h;
     const [summary, setSummary] = React.useState(null);
     const [loadingSummary, setLoadingSummary] = React.useState(true);
@@ -12563,10 +12548,10 @@
         cancelled = true;
       };
     }, []);
-    const dailySignups = _countSince2(allUsers, "joinedAt", 1);
-    const weeklySignups = _countSince2(allUsers, "joinedAt", 7);
-    const monthlySignups = _countSince2(allUsers, "joinedAt", 30);
-    const signupSeries = signupDays === 1 ? _hourlySeries2(allUsers, "joinedAt", 24) : _dailySeries2(allUsers, "joinedAt", signupDays);
+    const dailySignups = _countSince(allUsers, "joinedAt", 1);
+    const weeklySignups = _countSince(allUsers, "joinedAt", 7);
+    const monthlySignups = _countSince(allUsers, "joinedAt", 30);
+    const signupSeries = signupDays === 1 ? _hourlySeries(allUsers, "joinedAt", 24) : _dailySeries(allUsers, "joinedAt", signupDays);
     const pv = summary || {};
     const dayViews = (_a = pv.day) != null ? _a : null;
     const weekViews = (_b = pv.week) != null ? _b : null;
@@ -12770,8 +12755,7 @@
       return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
     }).filter((t) => t && !t.hidden)[0]) == null ? void 0 : _h.next) || "\uC5C6\uC74C"))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setTab("\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC") }, "\uCE7C\uB7FC \uAD00\uB9AC"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setTab("\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8") }, "\uD22C\uC5B4 \uAD00\uB9AC")))));
   };
-  var SankeyFlow2 = window.SankeyFlow;
-  var UserJourneyPanel2 = () => {
+  var UserJourneyPanel = () => {
     const [flowPairs, setFlowPairs] = React.useState([]);
     const [flowDays, setFlowDays] = React.useState(30);
     React.useEffect(() => {
@@ -12798,341 +12782,10 @@
         title: "\uACE0\uAC1D \uC5EC\uC815 \uD750\uB984",
         description: "\uC720\uC785 \uCC44\uB110 \u2192 \uB2E8\uACC4 \u2192 \uB3C4\uCC29 \uD398\uC774\uC9C0\uC758 \uC9D1\uACC4 Sankey \uD750\uB984. \uB178\uB4DC/\uACE1\uC120 \uD638\uBC84 \uC2DC \uC5F0\uACB0 \uD750\uB984 \uAC15\uC870. \uC6B0\uC0C1\uB2E8 [\uAE30\uAC04] \uC73C\uB85C \uCF54\uD638\uD2B8 \uBCC0\uACBD."
       }
-    ), /* @__PURE__ */ React.createElement(SankeyFlow2, { pairs: flowPairs, days: flowDays, onDaysChange: setFlowDays }));
+    ), /* @__PURE__ */ React.createElement(SankeyFlow, { pairs: flowPairs, days: flowDays, onDaysChange: setFlowDays }));
   };
-  window.DashboardPanel = DashboardPanel2;
-  window.UserJourneyPanel = UserJourneyPanel2;
 
   // pages/admin/AdminCommunityConfigPanels.jsx
-  var AdminCategoryPanel = () => {
-    var _a;
-    const [cats, setCats] = React.useState(() => window.BGNJ_STORES.categories.slice());
-    const [draft, setDraft] = React.useState({ id: "", label: "", boardType: "community", minLevel: 0, postMinLevel: 0, desc: "", allowRead: true, allowWrite: true, allowCommentRead: true, allowCommentWrite: true });
-    const [error, setError] = React.useState("");
-    const [prefixDrafts, setPrefixDrafts] = React.useState({});
-    const save = (next) => {
-      window.BGNJ_STORES.categories = next;
-      window.BGNJ_SAVE.categories();
-      setCats(next);
-    };
-    const persistToServer = async (cat, patch) => {
-      var _a2, _b, _c;
-      const remap = {};
-      for (const [k, v] of Object.entries(patch)) {
-        if (k === "desc") remap.description = v;
-        else remap[k] = v;
-      }
-      try {
-        await ((_c = (_b = (_a2 = window.BGNJ_API) == null ? void 0 : _a2.categories) == null ? void 0 : _b.update) == null ? void 0 : _c.call(_b, cat.id, remap));
-      } catch (err) {
-        console.warn("[AdminCategoryPanel] PATCH \uC2E4\uD328:", err == null ? void 0 : err.message);
-      }
-    };
-    const slugify = (s) => String(s || "").trim().toLowerCase().replace(/[^a-z0-9-_가-힣]+/g, "-").replace(/-{2,}/g, "-").replace(/^-|-$/g, "");
-    const add = async (e) => {
-      var _a2, _b, _c;
-      e.preventDefault();
-      setError("");
-      let id = draft.id || slugify(draft.label);
-      if (!id || !draft.label) return setError("ID\uC640 \uC774\uB984\uC740 \uD544\uC218\uC785\uB2C8\uB2E4.");
-      if (cats.find((c) => c.id === id)) return setError("\uC774\uBBF8 \uC874\uC7AC\uD558\uB294 ID\uC785\uB2C8\uB2E4.");
-      const newCat = { ...draft, id, minLevel: Number(draft.minLevel), postMinLevel: Number(draft.postMinLevel) };
-      save([...cats, newCat]);
-      try {
-        await ((_c = (_b = (_a2 = window.BGNJ_API) == null ? void 0 : _a2.categories) == null ? void 0 : _b.create) == null ? void 0 : _c.call(_b, {
-          id,
-          label: newCat.label,
-          boardType: newCat.boardType,
-          minLevel: newCat.minLevel,
-          postMinLevel: newCat.postMinLevel,
-          description: newCat.desc,
-          prefixes: newCat.prefixes || [],
-          allowRead: newCat.allowRead,
-          allowWrite: newCat.allowWrite,
-          allowCommentRead: newCat.allowCommentRead,
-          allowCommentWrite: newCat.allowCommentWrite
-        }));
-      } catch (err) {
-        console.warn("[AdminCategoryPanel] create \uC2E4\uD328:", err == null ? void 0 : err.message);
-      }
-      setDraft({ id: "", label: "", boardType: "community", minLevel: 0, postMinLevel: 0, desc: "", allowRead: true, allowWrite: true, allowCommentRead: true, allowCommentWrite: true });
-    };
-    const update = (i, key, val) => {
-      const next = cats.slice();
-      let coerced = val;
-      if (key.endsWith("Level")) coerced = Number(val);
-      else if (key.startsWith("allow")) coerced = !!val;
-      next[i] = { ...next[i], [key]: coerced };
-      save(next);
-      persistToServer(next[i], { [key]: coerced });
-    };
-    const move = (i, dir) => {
-      const j = i + dir;
-      if (j < 0 || j >= cats.length) return;
-      const next = cats.slice();
-      [next[i], next[j]] = [next[j], next[i]];
-      save(next);
-    };
-    const remove = async (i) => {
-      var _a2, _b, _c;
-      const cat = cats[i];
-      const used = postCount(cat.id);
-      const note = used > 0 ? `
-\uD604\uC7AC \uC774 \uAC8C\uC2DC\uD310\uC5D0 ${used}\uAC1C\uC758 \uAE00\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uC0AD\uC81C \uD6C4\uC5D0\uB3C4 \uAC8C\uC2DC\uAE00\uC740 \uB0A8\uB418 \uBD84\uB958\uAC00 \uBE44\uAC8C \uB429\uB2C8\uB2E4.` : "";
-      if (!await window.BGNJ_CONFIRM(`"${cat.label}" \uAC8C\uC2DC\uD310\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?${note}`, { danger: true })) return;
-      try {
-        await ((_c = (_b = (_a2 = window.BGNJ_API) == null ? void 0 : _a2.categories) == null ? void 0 : _b.remove) == null ? void 0 : _c.call(_b, cat.id));
-      } catch (err) {
-        window.BGNJ_TOAST.error("\uC11C\uBC84 \uC0AD\uC81C \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958") + "\n\uB85C\uCEEC\uC5D0\uC11C\uB9CC \uC81C\uAC70\uD569\uB2C8\uB2E4.");
-      }
-      save(cats.filter((_, j) => j !== i));
-    };
-    const postCount = (catId) => {
-      var _a2, _b;
-      const posts = ((_b = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b.call(_a2)) || [];
-      return posts.filter((p) => p.categoryId === catId).length;
-    };
-    const grades = (((_a = window.BGNJ_STORES) == null ? void 0 : _a.grades) || []).slice().sort((a, b) => (a.level || 0) - (b.level || 0));
-    const communityCats = cats.filter((c) => c.boardType === "community");
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
-      AdminPanelHeader,
-      {
-        eyebrow: "BOARDS \xB7 \uCE74\uD14C\uACE0\uB9AC",
-        title: "\uAC8C\uC2DC\uD310 \uCE74\uD14C\uACE0\uB9AC + \uAD8C\uD55C",
-        description: "\uAC8C\uC2DC\uD310\uC744 \uCD94\uAC00/\uC0AD\uC81C\uD558\uACE0 \uAC01 \uAC8C\uC2DC\uD310\uC758 \uC77D\uAE30\xB7\uC4F0\uAE30 \uCD5C\uC18C \uB4F1\uAE09 + 4\uC885 \uAD8C\uD55C(\uAE00\uC77D/\uAE00\uC4F0/\uB313\uC77D/\uB313\uC4F0)\uC744 \uCCB4\uD06C\uBC15\uC2A4\uB85C \uC124\uC815\uD569\uB2C8\uB2E4. \uC21C\uC11C\uB97C \uBC14\uAFB8\uBA74 \uC0AC\uC774\uD2B8 \uB0B4\uBE44\uC640 \uCEE4\uBBA4\uB2C8\uD2F0 \uD0ED\uC5D0 \uC989\uC2DC \uBC18\uC601\uB429\uB2C8\uB2E4."
-      }
-    ), /* @__PURE__ */ React.createElement("article", { className: "admin-form-card" }, /* @__PURE__ */ React.createElement("div", { className: "admin-form-card__eyebrow" }, "\uFF0B \uC0C8 \uAC8C\uC2DC\uD310 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("form", { onSubmit: add, style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, alignItems: "end" } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "cat-label" }, "\uC774\uB984 ", /* @__PURE__ */ React.createElement("span", { className: "gold", "aria-hidden": "true" }, "*")), /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        id: "cat-label",
-        className: "field-input",
-        value: draft.label,
-        onChange: (e) => setDraft({ ...draft, label: e.target.value, id: draft.id || slugify(e.target.value) }),
-        placeholder: "\uC790\uC720 / \uC9C8\uBB38 / \uC815\uBCF4 ..."
-      }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "cat-id" }, "ID (slug)"), /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        id: "cat-id",
-        className: "field-input",
-        value: draft.id,
-        onChange: (e) => setDraft({ ...draft, id: slugify(e.target.value) }),
-        placeholder: "\uC790\uB3D9 \uC0DD\uC131"
-      }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "cat-type" }, "\uC720\uD615"), /* @__PURE__ */ React.createElement(
-      "select",
-      {
-        id: "cat-type",
-        className: "field-input",
-        value: draft.boardType,
-        onChange: (e) => setDraft({ ...draft, boardType: e.target.value })
-      },
-      /* @__PURE__ */ React.createElement("option", { value: "community" }, "\uCEE4\uBBA4\uB2C8\uD2F0"),
-      /* @__PURE__ */ React.createElement("option", { value: "column" }, "\uCE7C\uB7FC")
-    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "cat-min" }, "\uC77D\uAE30 \uCD5C\uC18C Lv"), /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        id: "cat-min",
-        type: "number",
-        className: "field-input",
-        value: draft.minLevel,
-        onChange: (e) => setDraft({ ...draft, minLevel: e.target.value })
-      }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "cat-post" }, "\uC4F0\uAE30 \uCD5C\uC18C Lv"), /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        id: "cat-post",
-        type: "number",
-        className: "field-input",
-        value: draft.postMinLevel,
-        onChange: (e) => setDraft({ ...draft, postMinLevel: e.target.value })
-      }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "span 2" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "cat-desc" }, "\uC124\uBA85"), /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        id: "cat-desc",
-        className: "field-input",
-        value: draft.desc,
-        onChange: (e) => setDraft({ ...draft, desc: e.target.value }),
-        placeholder: "\uAC8C\uC2DC\uD310 \uC548\uB0B4 (\uC120\uD0DD)"
-      }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1", display: "flex", gap: 14, flexWrap: "wrap", padding: "8px 0" } }, /* @__PURE__ */ React.createElement("label", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer" } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: draft.allowRead, onChange: (e) => setDraft({ ...draft, allowRead: e.target.checked }) }), " \uAC8C\uC2DC\uAE00 \uC77D\uAE30"), /* @__PURE__ */ React.createElement("label", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer" } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: draft.allowWrite, onChange: (e) => setDraft({ ...draft, allowWrite: e.target.checked }) }), " \uAC8C\uC2DC\uAE00 \uC4F0\uAE30"), /* @__PURE__ */ React.createElement("label", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer" } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: draft.allowCommentRead, onChange: (e) => setDraft({ ...draft, allowCommentRead: e.target.checked }) }), " \uB313\uAE00 \uBCF4\uAE30"), /* @__PURE__ */ React.createElement("label", { style: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer" } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: draft.allowCommentWrite, onChange: (e) => setDraft({ ...draft, allowCommentWrite: e.target.checked }) }), " \uB313\uAE00 \uC791\uC131"), /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 10, alignSelf: "center" } }, "\xB7 \uCCB4\uD06C \uD574\uC81C \uC2DC \uBE44\uAD00\uB9AC\uC790 \uCC28\uB2E8")), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small" }, "\uFF0B \uCD94\uAC00")), error && /* @__PURE__ */ React.createElement("div", { role: "alert", className: "mono", style: { color: "var(--danger)", fontSize: 11, marginTop: 10 } }, error)), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 1100 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "center", width: 80 } }, "\uC21C\uC11C"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC774\uB984"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC720\uD615"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "right" } }, "\uC77D\uAE30\u2265"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "right" } }, "\uC4F0\uAE30\u2265"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "center", width: 50 }, title: "\uAC8C\uC2DC\uAE00 \uC77D\uAE30 \uD5C8\uC6A9" }, "\uAE00\uC77D"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "center", width: 50 }, title: "\uAC8C\uC2DC\uAE00 \uC4F0\uAE30 \uD5C8\uC6A9" }, "\uAE00\uC4F0"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "center", width: 50 }, title: "\uB313\uAE00 \uBCF4\uAE30 \uD5C8\uC6A9" }, "\uB313\uC77D"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "center", width: 50 }, title: "\uB313\uAE00 \uC791\uC131 \uD5C8\uC6A9" }, "\uB313\uC4F0"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "right" } }, "\uAE00 \uC218"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC124\uBA85"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, cats.map((c, i) => {
-      var _a2, _b;
-      return /* @__PURE__ */ React.createElement("tr", { key: c.id, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { style: { padding: 8, textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "inline-flex", gap: 4 } }, /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          className: "btn btn-small",
-          onClick: () => move(i, -1),
-          disabled: i === 0,
-          style: { padding: "2px 6px", minHeight: 0, fontSize: 11 },
-          "aria-label": "\uC704\uB85C"
-        },
-        "\u25B2"
-      ), /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          className: "btn btn-small",
-          onClick: () => move(i, 1),
-          disabled: i === cats.length - 1,
-          style: { padding: "2px 6px", minHeight: 0, fontSize: 11 },
-          "aria-label": "\uC544\uB798\uB85C"
-        },
-        "\u25BC"
-      ))), /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: 10, fontSize: 11 } }, c.id), /* @__PURE__ */ React.createElement("td", { style: { padding: 10 } }, /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          style: { padding: "4px 8px" },
-          value: c.label,
-          onChange: (e) => update(i, "label", e.target.value)
-        }
-      )), /* @__PURE__ */ React.createElement("td", { style: { padding: 10 } }, /* @__PURE__ */ React.createElement(
-        "select",
-        {
-          className: "field-input",
-          style: { padding: "4px 8px" },
-          value: c.boardType,
-          onChange: (e) => update(i, "boardType", e.target.value)
-        },
-        /* @__PURE__ */ React.createElement("option", { value: "community" }, "\uCEE4\uBBA4\uB2C8\uD2F0"),
-        /* @__PURE__ */ React.createElement("option", { value: "column" }, "\uCE7C\uB7FC")
-      )), /* @__PURE__ */ React.createElement("td", { style: { padding: 10, textAlign: "right" } }, /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "number",
-          className: "field-input",
-          style: { padding: "4px 8px", width: 64, textAlign: "right" },
-          value: (_a2 = c.minLevel) != null ? _a2 : 0,
-          onChange: (e) => update(i, "minLevel", e.target.value)
-        }
-      )), /* @__PURE__ */ React.createElement("td", { style: { padding: 10, textAlign: "right" } }, /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "number",
-          className: "field-input",
-          style: { padding: "4px 8px", width: 64, textAlign: "right" },
-          value: (_b = c.postMinLevel) != null ? _b : 0,
-          onChange: (e) => update(i, "postMinLevel", e.target.value)
-        }
-      )), /* @__PURE__ */ React.createElement("td", { style: { padding: 10, textAlign: "center" } }, /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "checkbox",
-          "aria-label": "\uAC8C\uC2DC\uAE00 \uC77D\uAE30 \uD5C8\uC6A9",
-          checked: c.allowRead !== false,
-          onChange: (e) => update(i, "allowRead", e.target.checked)
-        }
-      )), /* @__PURE__ */ React.createElement("td", { style: { padding: 10, textAlign: "center" } }, /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "checkbox",
-          "aria-label": "\uAC8C\uC2DC\uAE00 \uC4F0\uAE30 \uD5C8\uC6A9",
-          checked: c.allowWrite !== false,
-          onChange: (e) => update(i, "allowWrite", e.target.checked)
-        }
-      )), /* @__PURE__ */ React.createElement("td", { style: { padding: 10, textAlign: "center" } }, /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "checkbox",
-          "aria-label": "\uB313\uAE00 \uBCF4\uAE30 \uD5C8\uC6A9",
-          checked: c.allowCommentRead !== false,
-          onChange: (e) => update(i, "allowCommentRead", e.target.checked)
-        }
-      )), /* @__PURE__ */ React.createElement("td", { style: { padding: 10, textAlign: "center" } }, /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "checkbox",
-          "aria-label": "\uB313\uAE00 \uC791\uC131 \uD5C8\uC6A9",
-          checked: c.allowCommentWrite !== false,
-          onChange: (e) => update(i, "allowCommentWrite", e.target.checked)
-        }
-      )), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 10, textAlign: "right", fontSize: 11 } }, c.boardType === "community" ? postCount(c.id) : "-"), /* @__PURE__ */ React.createElement("td", { style: { padding: 10 } }, /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          style: { padding: "4px 8px" },
-          value: c.desc || "",
-          onChange: (e) => update(i, "desc", e.target.value),
-          placeholder: "\uC124\uBA85"
-        }
-      )), /* @__PURE__ */ React.createElement("td", { style: { padding: 10, textAlign: "right" } }, /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          className: "btn btn-small",
-          onClick: () => remove(i),
-          style: { borderColor: "var(--danger)", color: "var(--danger)" }
-        },
-        "\uC0AD\uC81C"
-      )));
-    })))), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        style: { marginTop: 20 },
-        onClick: async () => {
-          if (await window.BGNJ_CONFIRM("\uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB9BD\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) {
-            window.BGNJ_SAVE.resetCategories();
-            setCats(window.BGNJ_STORES.categories.slice());
-          }
-        }
-      },
-      "\uAE30\uBCF8\uAC12 \uBCF5\uC6D0"
-    ), /* @__PURE__ */ React.createElement("article", { className: "card", style: { padding: 20, marginTop: 32 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 } }, "PERMISSION MATRIX"), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 8 } }, "\uB4F1\uAE09 \xD7 \uAC8C\uC2DC\uD310 \uAD8C\uD55C"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 16 } }, "\u2713 = \uAC00\uB2A5 / \xB7 = \uBD88\uAC00. \uC774 \uB9E4\uD2B8\uB9AD\uC2A4\uB294 \uC704 \uD45C\uC758 \uB4F1\uAE09 \uAE30\uC900\uC774 \uBC14\uB00C\uBA74 \uC989\uC2DC \uBC18\uC601\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { overflow: "auto" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 540 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left", position: "sticky", left: 0, background: "var(--bg-2)", zIndex: 1 } }, "\uB4F1\uAE09"), communityCats.map((c) => /* @__PURE__ */ React.createElement("th", { key: c.id, scope: "col", style: { padding: 10, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.18em", color: "var(--ink-3)" } }, c.label)))), /* @__PURE__ */ React.createElement("tbody", null, grades.map((g) => {
-      const lv = g.id === "admin" ? 100 : g.level || 0;
-      return /* @__PURE__ */ React.createElement("tr", { key: g.id, style: { borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { style: { padding: 10, position: "sticky", left: 0, background: "var(--bg)", zIndex: 1 } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.14em", color: g.color || "var(--primary)", border: `1px solid ${g.color || "var(--primary-dim)"}`, padding: "1px 6px", marginRight: 8 } }, g.label), /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 10 } }, "Lv ", lv)), communityCats.map((c) => {
-        var _a2, _b, _c;
-        const canRead = lv >= ((_a2 = c.minLevel) != null ? _a2 : 0);
-        const canWrite = lv >= ((_c = (_b = c.postMinLevel) != null ? _b : c.minLevel) != null ? _c : 0);
-        return /* @__PURE__ */ React.createElement("td", { key: c.id, style: { padding: 10, textAlign: "center", fontSize: 11 } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { color: canRead ? "var(--primary)" : "var(--ink-3)" } }, "\uC77D ", canRead ? "\u2713" : "\xB7"), " / ", /* @__PURE__ */ React.createElement("span", { className: "mono", style: { color: canWrite ? "var(--primary)" : "var(--ink-3)" } }, "\uC4F0 ", canWrite ? "\u2713" : "\xB7"));
-      }));
-    }))))), /* @__PURE__ */ React.createElement("article", { className: "card", style: { padding: 20, marginTop: 32 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 } }, "THREAD PREFIXES \xB7 \uB9D0\uBA38\uB9AC"), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 8 } }, "\uAC8C\uC2DC\uD310\uBCC4 \uB9D0\uBA38\uB9AC \uC124\uC815"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 20 } }, "\uAC8C\uC2DC\uD310\uB9C8\uB2E4 \uAE00 \uC791\uC131 \uC2DC \uC120\uD0DD\uD560 \uC218 \uC788\uB294 \uB9D0\uBA38\uB9AC(\uBD84\uB958 \uD0DC\uADF8)\uB97C \uC124\uC815\uD569\uB2C8\uB2E4. \uB9D0\uBA38\uB9AC\uAC00 \uB4F1\uB85D\uB41C \uAC8C\uC2DC\uD310\uC5D0\uC11C\uB294 \uCEE4\uBBA4\uB2C8\uD2F0 \uC0C1\uB2E8\uC5D0 \uD544\uD130 \uD0ED\uC73C\uB85C\uB3C4 \uB178\uCD9C\uB429\uB2C8\uB2E4."), communityCats.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 13 } }, "\uCEE4\uBBA4\uB2C8\uD2F0 \uAC8C\uC2DC\uD310\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), communityCats.map((c) => {
-      const catIdx = cats.findIndex((x) => x.id === c.id);
-      const prefixes = c.prefixes || [];
-      const draftVal = prefixDrafts[c.id] || "";
-      return /* @__PURE__ */ React.createElement("div", { key: c.id, style: { marginBottom: 16, padding: "14px 16px", background: "var(--bg-2)", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "ko-serif", style: { fontSize: 15 } }, c.label), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, "#", c.id), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, marginLeft: 4 } }, prefixes.length, "\uAC1C")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10, minHeight: 28 } }, prefixes.length === 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uB9D0\uBA38\uB9AC \uC5C6\uC74C \u2014 \uCD94\uAC00\uD558\uBA74 \uCEE4\uBBA4\uB2C8\uD2F0 \uD544\uD130\uB85C \uC790\uB3D9 \uB178\uCD9C\uB429\uB2C8\uB2E4"), prefixes.map((p) => /* @__PURE__ */ React.createElement("span", { key: p, style: { display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 10px", border: "1px solid var(--primary-dim)", fontSize: 12 } }, /* @__PURE__ */ React.createElement("span", { className: "gold" }, p), /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          onClick: () => update(catIdx, "prefixes", prefixes.filter((x) => x !== p)),
-          style: { background: "none", border: "none", cursor: "pointer", color: "var(--danger)", fontSize: 15, lineHeight: 1, padding: 0 },
-          "aria-label": `${p} \uC0AD\uC81C`
-        },
-        "\xD7"
-      )))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          style: { padding: "4px 8px", maxWidth: 220 },
-          value: draftVal,
-          placeholder: "\uB9D0\uBA38\uB9AC \uC785\uB825 \uD6C4 Enter \uB610\uB294 \uCD94\uAC00...",
-          onChange: (e) => setPrefixDrafts((prev) => ({ ...prev, [c.id]: e.target.value })),
-          onKeyDown: (e) => {
-            if (e.key !== "Enter") return;
-            e.preventDefault();
-            const val = draftVal.trim();
-            if (val && !prefixes.includes(val)) update(catIdx, "prefixes", [...prefixes, val]);
-            setPrefixDrafts((prev) => ({ ...prev, [c.id]: "" }));
-          }
-        }
-      ), /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          className: "btn btn-small btn-gold",
-          onClick: () => {
-            const val = draftVal.trim();
-            if (val && !prefixes.includes(val)) update(catIdx, "prefixes", [...prefixes, val]);
-            setPrefixDrafts((prev) => ({ ...prev, [c.id]: "" }));
-          }
-        },
-        "\uCD94\uAC00"
-      )));
-    })));
-  };
   var CommunityBoardsPanel = () => {
     const [tick, setTick] = React.useState(0);
     const grades = React.useMemo(
@@ -13639,8 +13292,6 @@
       /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: commitAll, disabled: saving || !dirty }, saving ? "\uC800\uC7A5 \uC911\u2026" : dirty ? "\u{1F4BE} \uC800\uC7A5" : "\uC800\uC7A5\uB428 \u2713")
     ), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 10, lineHeight: 1.7 } }, "\u24D8 ", /* @__PURE__ */ React.createElement("strong", null, "\uACF5\uC9C0(notice)"), " \uAC8C\uC2DC\uD310\uC740 admin \uC804\uC6A9 \uAC15\uC81C \uADDC\uCE59 \u2014 \uC0AD\uC81C \uBD88\uAC00. \uCD94\uAC00/\uC0AD\uC81C\uB294 \uC989\uC2DC \uC11C\uBC84\uC5D0 \uBC18\uC601\uB429\uB2C8\uB2E4. \uC81C\uBAA9/\uC124\uBA85 \uD3B8\uC9D1\uC740 [\u{1F4BE} \uC800\uC7A5] \uBC84\uD2BC \uD074\uB9AD \uC2DC commit."));
   };
-  window.AdminCategoryPanel = AdminCategoryPanel;
-  window.CommunityBoardsPanel = CommunityBoardsPanel;
 
   // pages/admin/AdminGradeColumnPanels.jsx
   var AdminGradePanel = () => {
@@ -14677,9 +14328,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       ))
     );
   };
-  window.AdminGradePanel = AdminGradePanel;
   window.AdminColumnEditor = AdminColumnEditor;
-  window.ColumnsHubPanel = ColumnsHubPanel;
 
   // pages/admin/AdminRouterPanels.jsx
   var PRIVACY_DATA = {
@@ -14747,27 +14396,6 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
     portability: { ko: "\uB370\uC774\uD130 \uC774\uB3D9", gdpr: "Art.20", pipa: "\u2014" },
     object: { ko: "\uCC98\uB9AC \uAC70\uBD80", gdpr: "Art.21", pipa: "\xA737" }
   };
-  var ADMIN_VERSION_HISTORY3 = window.ADMIN_VERSION_HISTORY;
-  var ADMIN_DESIGN_SECTIONS2 = window.ADMIN_DESIGN_SECTIONS;
-  var MISSION_OVERVIEW3 = window.MISSION_OVERVIEW;
-  var FEATURE_DOMAINS3 = window.FEATURE_DOMAINS;
-  var DesignSystemView3 = window.DesignSystemView;
-  var RecommendationsAdminPanel3 = window.RecommendationsAdminPanel;
-  var TPE_ScheduleEditor3 = window.TPE_ScheduleEditor;
-  var TPE_PrepEditor3 = window.TPE_PrepEditor;
-  var TPE_PreviewCard2 = window.TPE_PreviewCard;
-  var _arrAdd3 = window._arrAdd;
-  var _arrRemove3 = window._arrRemove;
-  var _arrUpdate3 = window._arrUpdate;
-  var _arrMove3 = window._arrMove;
-  var TourPageEditorPanel2 = window.TourPageEditorPanel;
-  var LecturePageEditorPanel2 = window.LecturePageEditorPanel;
-  var LegacyMigrationPanel2 = window.LegacyMigrationPanel;
-  var EatSleepShopAdminPanel2 = window.EatSleepShopAdminPanel;
-  var FooterStyleEditor3 = window.FooterStyleEditor;
-  var HeroEditorPanel3 = window.HeroEditorPanel;
-  var HomeTextEditorPanel3 = window.HomeTextEditorPanel;
-  var BannerEditorPanel3 = window.BannerEditorPanel;
   var CorruptedBodyInspector = ({ go }) => {
     const [tick, setTick] = React.useState(0);
     const G = window.BGNJ_GUARD;
@@ -14863,28 +14491,6 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       )));
     })), viewingPostId && /* @__PURE__ */ React.createElement(PostViewerModal, { postId: viewingPostId, onClose: () => setViewingPostId(null) }));
   };
-  var AdminPanelHeader3 = window.AdminPanelHeader;
-  var StatusBadge2 = window.StatusBadge;
-  var AdminEmpty3 = window.AdminEmpty;
-  var AdminFilterChips2 = window.AdminFilterChips;
-  var AdminSaveBar3 = window.AdminSaveBar;
-  var HoverDetailsPopover2 = window.HoverDetailsPopover;
-  var StatTile3 = window.StatTile;
-  var MetricCard3 = window.MetricCard;
-  var MiniBarChart3 = window.MiniBarChart;
-  var RankedBarList3 = window.RankedBarList;
-  var COHORT_OPTIONS2 = window.COHORT_OPTIONS;
-  var CohortSelector3 = window.CohortSelector;
-  var DashboardPanel3 = window.DashboardPanel;
-  var UserJourneyPanel3 = window.UserJourneyPanel;
-  var LectureAdminPanel3 = window.LectureAdminPanel;
-  var TourAdminPanel3 = window.TourAdminPanel;
-  var BankAccountPanel3 = window.BankAccountPanel;
-  var BookOrderAdminPanel3 = window.BookOrderAdminPanel;
-  var LegalAdminPanel3 = window.LegalAdminPanel;
-  var FaqAdminPanel3 = window.FaqAdminPanel;
-  var SiteContentAdminPanel3 = window.SiteContentAdminPanel;
-  var BooksAdminPanel3 = window.BooksAdminPanel;
   var ErrorPagesPreviewPanel = ({ go }) => {
     const [active, setActive] = React.useState("404");
     const [tick, setTick] = React.useState(0);
@@ -14916,14 +14522,14 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       }
     };
     return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(
-      AdminPanelHeader3,
+      AdminPanelHeader,
       {
         eyebrow: "ERROR PAGES \xB7 \uBBF8\uB9AC\uBCF4\uAE30",
         title: "\uC624\uB958 \uD398\uC774\uC9C0 \uBBF8\uB9AC\uBCF4\uAE30",
         description: "404 / 500 / 403 / 401 / \uB124\uD2B8\uC6CC\uD06C / \uC810\uAC80 \uC911 6\uC885\uC744 \uCE74\uB4DC\uB85C \uBBF8\uB9AC \uBD05\uB2C8\uB2E4. \uC77C\uB7EC\uC2A4\uD2B8\uB294 assets/errors/ \uC5D0 \uC704\uCE58 \u2014 \uD30C\uC77C \uB204\uB77D \uC2DC \u2708\uFE0F \uC774\uBAA8\uC9C0 \uD3F4\uBC31."
       }
     ), /* @__PURE__ */ React.createElement("div", { className: "admin-toolbar" }, /* @__PURE__ */ React.createElement(
-      AdminFilterChips2,
+      AdminFilterChips,
       {
         ariaLabel: "\uC624\uB958 \uD398\uC774\uC9C0 \uC885\uB958",
         items: variants.map((v) => ({ key: v.k, label: v.l })),
@@ -14941,13 +14547,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
     } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 14, alignSelf: "flex-start" } }, "PREVIEW \xB7 ", current.l), Preview ? (
       // v00.149 — embedded prop 으로 full-viewport wrapper 비활성 (preview 컨테이너에 fit).
       /* @__PURE__ */ React.createElement(Preview, { go: previewGo, embedded: true })
-    ) : /* @__PURE__ */ React.createElement(AdminEmpty3, null, "\uC624\uB958 \uD398\uC774\uC9C0 \uCEF4\uD3EC\uB10C\uD2B8 (", current.k, ") \uAC00 \uC544\uC9C1 \uB85C\uB4DC\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. ErrorPages.js \uAC00 \uCE90\uC2DC\uC5D0 \uC7A1\uD614\uB294\uC9C0 \uD655\uC778 \uD6C4 hard reload (Cmd+Shift+R) \uD574 \uC8FC\uC138\uC694.")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 10, lineHeight: 1.7 } }, "\u24D8 \uBBF8\uB9AC\uBCF4\uAE30 \uC548\uC758 \uBC84\uD2BC\uC740 \uC2E4\uC81C \uB77C\uC6B0\uD305\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4 (\uCF58\uC194\uC5D0 \uB85C\uADF8\uB9CC \uCD9C\uB825). \uB77C\uC774\uBE0C \uD398\uC774\uC9C0\uC5D0\uC11C\uB294 \uC815\uC0C1 \uB3D9\uC791\uD569\uB2C8\uB2E4."));
+    ) : /* @__PURE__ */ React.createElement(AdminEmpty, null, "\uC624\uB958 \uD398\uC774\uC9C0 \uCEF4\uD3EC\uB10C\uD2B8 (", current.k, ") \uAC00 \uC544\uC9C1 \uB85C\uB4DC\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. ErrorPages.js \uAC00 \uCE90\uC2DC\uC5D0 \uC7A1\uD614\uB294\uC9C0 \uD655\uC778 \uD6C4 hard reload (Cmd+Shift+R) \uD574 \uC8FC\uC138\uC694.")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 10, lineHeight: 1.7 } }, "\u24D8 \uBBF8\uB9AC\uBCF4\uAE30 \uC548\uC758 \uBC84\uD2BC\uC740 \uC2E4\uC81C \uB77C\uC6B0\uD305\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4 (\uCF58\uC194\uC5D0 \uB85C\uADF8\uB9CC \uCD9C\uB825). \uB77C\uC774\uBE0C \uD398\uC774\uC9C0\uC5D0\uC11C\uB294 \uC815\uC0C1 \uB3D9\uC791\uD569\uB2C8\uB2E4."));
   };
-  var ErrorLogPanel3 = window.ErrorLogPanel;
-  var SEOAdminPanel3 = window.SEOAdminPanel;
-  var SearchConsoleAdminPanel3 = window.SearchConsoleAdminPanel;
-  var AuditLogPanel3 = window.AuditLogPanel;
-  var ActivityLogPanel3 = window.ActivityLogPanel;
   var PostViewerModal = ({ postId, onClose }) => {
     var _a, _b, _c, _d;
     const [post, setPost] = React.useState(() => {
@@ -15144,7 +14745,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       return 0;
     })();
     return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(
-      AdminPanelHeader3,
+      AdminPanelHeader,
       {
         eyebrow: "ALARM \xB7 \uB0B4\uBD80 \uC54C\uB78C",
         title: "\uB0B4\uBD80 \uC778\uC6D0 \uC54C\uB78C \uBCF4\uB0B4\uAE30",
@@ -15434,25 +15035,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       "\uB2E4\uC74C \u2192"
     )), visible.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { textAlign: "center", fontSize: 10, letterSpacing: "0.2em", marginTop: 8 } }, "\uC804\uCCB4 ", visible.length, "\uAC74 \xB7 ", safePage, "/", totalPages, " \uD398\uC774\uC9C0"), viewingId && /* @__PURE__ */ React.createElement(PostViewerModal, { postId: viewingId, onClose: () => setViewingId(null) }));
   };
-  window.PRIVACY_DATA = PRIVACY_DATA;
-  window.DSR_LABELS = DSR_LABELS;
-  window.CorruptedBodyInspector = CorruptedBodyInspector;
-  window.ReportQueuePanel = ReportQueuePanel;
-  window.ErrorPagesPreviewPanel = ErrorPagesPreviewPanel;
-  window.InternalAlarmPanel = InternalAlarmPanel;
-  window.CommunityPostsAdminPanel = CommunityPostsAdminPanel;
 
   // pages/AuthAdminPage.jsx
-  var _countSince3 = window._countSince;
-  var _dailySeries3 = window._dailySeries;
-  var formatTimeLeft2 = window.formatTimeLeft;
-  var PRIVACY_DATA2 = window.PRIVACY_DATA;
-  var DSR_LABELS2 = window.DSR_LABELS;
-  var CorruptedBodyInspector2 = window.CorruptedBodyInspector;
-  var ReportQueuePanel2 = window.ReportQueuePanel;
-  var ErrorPagesPreviewPanel2 = window.ErrorPagesPreviewPanel;
-  var InternalAlarmPanel2 = window.InternalAlarmPanel;
-  var CommunityPostsAdminPanel2 = window.CommunityPostsAdminPanel;
   var AdminPage = ({ go }) => {
     var _a, _b;
     const G = window.BGNJ_GUARD;
@@ -15497,12 +15081,12 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       const adminCount = allUsers.filter((u) => u.isAdmin).length;
       const superAdminCount = allUsers.filter((u) => u.isSuperAdmin).length;
       const userCount = allUsers.length - adminCount;
-      const userToday = _countSince3(allUsers, "joinedAt", 1);
-      const userWeek = _countSince3(allUsers, "joinedAt", 7);
-      const userMonth = _countSince3(allUsers, "joinedAt", 30);
-      const postToday = _countSince3(allCommunityPosts, "createdAt", 1);
-      const postWeek = _countSince3(allCommunityPosts, "createdAt", 7);
-      const postMonth = _countSince3(allCommunityPosts, "createdAt", 30);
+      const userToday = _countSince(allUsers, "joinedAt", 1);
+      const userWeek = _countSince(allUsers, "joinedAt", 7);
+      const userMonth = _countSince(allUsers, "joinedAt", 30);
+      const postToday = _countSince(allCommunityPosts, "createdAt", 1);
+      const postWeek = _countSince(allCommunityPosts, "createdAt", 7);
+      const postMonth = _countSince(allCommunityPosts, "createdAt", 30);
       const postCatCounts = {};
       allCommunityPosts.forEach((p) => {
         const k = p.category || p.categoryId || "\uBBF8\uBD84\uB958";
@@ -15594,9 +15178,9 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         exported_at: (/* @__PURE__ */ new Date()).toISOString(),
         legal_basis: "GDPR Art.15 / PIPA \xA735",
         subject: m,
-        consents: m.consents.map((k) => PRIVACY_DATA2.consentDefs.find((c) => c.key === k)).filter(Boolean),
-        processing_activities: PRIVACY_DATA2.ropa,
-        retention: PRIVACY_DATA2.retentionPolicies
+        consents: m.consents.map((k) => PRIVACY_DATA.consentDefs.find((c) => c.key === k)).filter(Boolean),
+        processing_activities: PRIVACY_DATA.ropa,
+        retention: PRIVACY_DATA.retentionPolicies
       };
       downloadJson(`dsr-access-${m.id}-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.json`, snapshot);
     };
@@ -15936,28 +15520,28 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         subTabs: [
           // v00.180 — 인라인 JSX → CommunityPostsAdminPanel 호출 (DRY 추출).
           { key: "posts", label: "\uAC8C\uC2DC\uAE00", render: () => /* @__PURE__ */ React.createElement(
-            CommunityPostsAdminPanel2,
+            CommunityPostsAdminPanel,
             {
               posts: allCommunityPosts,
               onChange: () => setPostRefreshKey((v) => v + 1)
             }
           ) },
-          { key: "boards", label: "\uAC8C\uC2DC\uD310", render: () => /* @__PURE__ */ React.createElement(CommunityBoardsPanel2, null) },
-          { key: "reports", label: "\uC2E0\uACE0", render: () => /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(CorruptedBodyInspector2, { go }), /* @__PURE__ */ React.createElement(ReportQueuePanel2, { onRefresh: () => setPostRefreshKey((v) => v + 1), go })) }
+          { key: "boards", label: "\uAC8C\uC2DC\uD310", render: () => /* @__PURE__ */ React.createElement(CommunityBoardsPanel, null) },
+          { key: "reports", label: "\uC2E0\uACE0", render: () => /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(CorruptedBodyInspector, { go }), /* @__PURE__ */ React.createElement(ReportQueuePanel, { onRefresh: () => setPostRefreshKey((v) => v + 1), go })) }
         ]
       }
-    ), tab === "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC" && /* @__PURE__ */ React.createElement(ColumnsHubPanel2, { allColumns }), tab === "\uAC15\uC5F0" && /* @__PURE__ */ React.createElement(LectureAdminPanel, { go }), tab === "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8" && /* @__PURE__ */ React.createElement(TourAdminPanel, { go }), tab === "\uD68C\uC6D0" && /* @__PURE__ */ React.createElement(MemberAdminPanel, { go }), tab === "\uCC45 \uC8FC\uBB38" && /* @__PURE__ */ React.createElement(BookOrderAdminPanel, { go }), tab === "\uCC45 \uCE74\uD0C8\uB85C\uADF8" && /* @__PURE__ */ React.createElement(BooksAdminPanel, null), tab === "\uC815\uBCF4\uC8FC\uCCB4 \uAD8C\uB9AC" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.15\u201322 / PIPA \xA735\u201338. \uC751\uB2F5\uAE30\uD55C: ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "GDPR 1\uAC1C\uC6D4"), " / ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "PIPA 10\uC77C"), "."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAD8C\uB9AC\uC720\uD615"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC815\uBCF4\uC8FC\uCCB4"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC801\uC6A9\uBC95"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC811\uC218"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAE30\uD55C"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC0C1\uD0DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA2.dsrRequests.map((r) => {
-      const left = r.status === "done" ? null : formatTimeLeft2(r.dueAt);
+    ), tab === "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC" && /* @__PURE__ */ React.createElement(ColumnsHubPanel, { allColumns }), tab === "\uAC15\uC5F0" && /* @__PURE__ */ React.createElement(LectureAdminPanel, { go }), tab === "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8" && /* @__PURE__ */ React.createElement(TourAdminPanel, { go }), tab === "\uD68C\uC6D0" && /* @__PURE__ */ React.createElement(MemberAdminPanel, { go }), tab === "\uCC45 \uC8FC\uBB38" && /* @__PURE__ */ React.createElement(BookOrderAdminPanel, { go }), tab === "\uCC45 \uCE74\uD0C8\uB85C\uADF8" && /* @__PURE__ */ React.createElement(BooksAdminPanel, null), tab === "\uC815\uBCF4\uC8FC\uCCB4 \uAD8C\uB9AC" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.15\u201322 / PIPA \xA735\u201338. \uC751\uB2F5\uAE30\uD55C: ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "GDPR 1\uAC1C\uC6D4"), " / ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "PIPA 10\uC77C"), "."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAD8C\uB9AC\uC720\uD615"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC815\uBCF4\uC8FC\uCCB4"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC801\uC6A9\uBC95"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC811\uC218"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAE30\uD55C"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC0C1\uD0DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA.dsrRequests.map((r) => {
+      const left = r.status === "done" ? null : formatTimeLeft(r.dueAt);
       const toneColor = (left == null ? void 0 : left.tone) === "danger" ? "var(--danger)" : (left == null ? void 0 : left.tone) === "warn" ? "var(--primary-hover)" : "var(--ink-2)";
-      const label = DSR_LABELS2[r.type];
+      const label = DSR_LABELS[r.type];
       return /* @__PURE__ */ React.createElement("tr", { key: r.id, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: 14 } }, r.id), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("div", { className: "ko-serif" }, label == null ? void 0 : label.ko), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, label == null ? void 0 : label.gdpr, " \xB7 ", label == null ? void 0 : label.pipa)), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("div", null, r.user), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, r.email)), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, r.law)), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, r.openedAt.slice(0, 10)), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 14, color: toneColor } }, r.status === "done" ? "\uC644\uB8CC" : left == null ? void 0 : left.text), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge", style: {
         borderColor: r.status === "done" ? "var(--primary-dim)" : r.status === "in_progress" ? "var(--primary)" : "var(--line-2)",
         color: r.status === "done" ? "var(--primary-dim)" : r.status === "in_progress" ? "var(--primary)" : "var(--ink-2)"
       } }, r.status === "open" ? "\uC811\uC218" : r.status === "in_progress" ? "\uCC98\uB9AC\uC911" : "\uC644\uB8CC")), /* @__PURE__ */ React.createElement("td", { style: { padding: 14, textAlign: "right" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small" }, "\uCC98\uB9AC")));
-    })))), tab === "\uB3D9\uC758 \uAD00\uB9AC" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.7 / PIPA \xA715, \xA722. \uB3D9\uC758\uB294 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC790\uC720\xB7\uAD6C\uCCB4\xB7\uACE0\uC9C0\xB7\uCCA0\uD68C \uAC00\uB2A5"), "\uD574\uC57C \uD558\uBA70, \uBC84\uC804\uBCC4 \uC774\uB825\uC774 \uBCF4\uC874\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uD56D\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uD544\uC218"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBC84\uC804"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBC95\uC801 \uADFC\uAC70"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAC1C\uC815\uC77C"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA2.consentDefs.map((c) => /* @__PURE__ */ React.createElement("tr", { key: c.key, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: 14 } }, c.label), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: c.required ? "var(--primary)" : "var(--line-2)", color: c.required ? "var(--primary)" : "var(--ink-2)" } }, c.required ? "\uD544\uC218" : "\uC120\uD0DD")), /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: 14 } }, c.version), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, c.lawful), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, c.updated)))))), tab === "\uCC98\uB9AC\uD65C\uB3D9(ROPA)" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.30. \uBAA8\uB4E0 \uCC98\uB9AC \uBAA9\uC801\xB7\uBC95\uC801 \uADFC\uAC70\xB7\uBCF4\uC720\uAE30\uAC04\xB7\uC218\uD0C1\uC790\xB7\uAD6D\uC678\uC774\uC804\uC744 \uBB38\uC11C\uD654\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 880 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 90 } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left" } }, "\uCC98\uB9AC \uBAA9\uC801"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 120 } }, "\uBC95\uC801 \uADFC\uAC70"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left" } }, "\uC218\uC9D1 \uD56D\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 140 } }, "\uBCF4\uC720\uAE30\uAC04"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 140 } }, "\uC218\uD0C1\uC0AC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 120 } }, "\uAD6D\uC678\uC774\uC804"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA2.ropa.map((r) => /* @__PURE__ */ React.createElement("tr", { key: r.id, style: { borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: "12px 14px", fontSize: 11, letterSpacing: "0.14em", verticalAlign: "top" } }, r.id), /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: "12px 14px", fontWeight: 500, verticalAlign: "top" } }, r.purpose), /* @__PURE__ */ React.createElement("td", { className: "gold", style: { padding: "12px 14px", verticalAlign: "top" } }, r.lawful), /* @__PURE__ */ React.createElement("td", { style: { padding: "12px 14px", verticalAlign: "top" } }, r.items), /* @__PURE__ */ React.createElement("td", { style: { padding: "12px 14px", verticalAlign: "top" } }, r.retention), /* @__PURE__ */ React.createElement("td", { style: { padding: "12px 14px", verticalAlign: "top" } }, r.processor), /* @__PURE__ */ React.createElement("td", { style: { padding: "12px 14px", verticalAlign: "top" } }, r.transfer))))))), tab === "\uCFE0\uD0A4\xB7\uCD94\uC801" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "ePrivacy Directive / PIPA \xA739\uC7588. \uD544\uC218 \uC678 \uCFE0\uD0A4\uB294 \uC0AC\uC804 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC635\uD2B8\uC778 \uB3D9\uC758"), "\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uCFE0\uD0A4\uBA85"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBAA9\uC801"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBCF4\uAD00"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB2F9\uC0AC\uC790"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA2.cookies.map((c) => /* @__PURE__ */ React.createElement("tr", { key: c.name, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: 14 } }, c.name), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: c.cat === "\uD544\uC218" ? "var(--primary)" : "var(--line-2)", color: c.cat === "\uD544\uC218" ? "var(--primary)" : "var(--ink-2)" } }, c.cat)), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, c.purpose), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, c.ttl), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, c.party)))))), tab === "\uBCF4\uC548 \uC0AC\uACE0" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.33 \u2014 \uC778\uC9C0 \uD6C4 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "72\uC2DC\uAC04 \uB0B4 \uAC10\uB3C5\uAE30\uAD00 \uD1B5\uC9C0"), ". PIPA \xA734 \u2014 \uC778\uC9C0 \uD6C4 72\uC2DC\uAC04 \uB0B4 \uC815\uBCF4\uC8FC\uCCB4 \uBC0F \uAC1C\uC778\uC815\uBCF4\uC704 \uD1B5\uC9C0."), PRIVACY_DATA2.breaches.map((b) => {
+    })))), tab === "\uB3D9\uC758 \uAD00\uB9AC" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.7 / PIPA \xA715, \xA722. \uB3D9\uC758\uB294 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC790\uC720\xB7\uAD6C\uCCB4\xB7\uACE0\uC9C0\xB7\uCCA0\uD68C \uAC00\uB2A5"), "\uD574\uC57C \uD558\uBA70, \uBC84\uC804\uBCC4 \uC774\uB825\uC774 \uBCF4\uC874\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uD56D\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uD544\uC218"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBC84\uC804"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBC95\uC801 \uADFC\uAC70"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAC1C\uC815\uC77C"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA.consentDefs.map((c) => /* @__PURE__ */ React.createElement("tr", { key: c.key, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: 14 } }, c.label), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: c.required ? "var(--primary)" : "var(--line-2)", color: c.required ? "var(--primary)" : "var(--ink-2)" } }, c.required ? "\uD544\uC218" : "\uC120\uD0DD")), /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: 14 } }, c.version), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, c.lawful), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, c.updated)))))), tab === "\uCC98\uB9AC\uD65C\uB3D9(ROPA)" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.30. \uBAA8\uB4E0 \uCC98\uB9AC \uBAA9\uC801\xB7\uBC95\uC801 \uADFC\uAC70\xB7\uBCF4\uC720\uAE30\uAC04\xB7\uC218\uD0C1\uC790\xB7\uAD6D\uC678\uC774\uC804\uC744 \uBB38\uC11C\uD654\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 880 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 90 } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left" } }, "\uCC98\uB9AC \uBAA9\uC801"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 120 } }, "\uBC95\uC801 \uADFC\uAC70"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left" } }, "\uC218\uC9D1 \uD56D\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 140 } }, "\uBCF4\uC720\uAE30\uAC04"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 140 } }, "\uC218\uD0C1\uC0AC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 14px", textAlign: "left", width: 120 } }, "\uAD6D\uC678\uC774\uC804"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA.ropa.map((r) => /* @__PURE__ */ React.createElement("tr", { key: r.id, style: { borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: "12px 14px", fontSize: 11, letterSpacing: "0.14em", verticalAlign: "top" } }, r.id), /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: "12px 14px", fontWeight: 500, verticalAlign: "top" } }, r.purpose), /* @__PURE__ */ React.createElement("td", { className: "gold", style: { padding: "12px 14px", verticalAlign: "top" } }, r.lawful), /* @__PURE__ */ React.createElement("td", { style: { padding: "12px 14px", verticalAlign: "top" } }, r.items), /* @__PURE__ */ React.createElement("td", { style: { padding: "12px 14px", verticalAlign: "top" } }, r.retention), /* @__PURE__ */ React.createElement("td", { style: { padding: "12px 14px", verticalAlign: "top" } }, r.processor), /* @__PURE__ */ React.createElement("td", { style: { padding: "12px 14px", verticalAlign: "top" } }, r.transfer))))))), tab === "\uCFE0\uD0A4\xB7\uCD94\uC801" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "ePrivacy Directive / PIPA \xA739\uC7588. \uD544\uC218 \uC678 \uCFE0\uD0A4\uB294 \uC0AC\uC804 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC635\uD2B8\uC778 \uB3D9\uC758"), "\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uCFE0\uD0A4\uBA85"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBAA9\uC801"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBCF4\uAD00"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB2F9\uC0AC\uC790"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA.cookies.map((c) => /* @__PURE__ */ React.createElement("tr", { key: c.name, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: 14 } }, c.name), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: c.cat === "\uD544\uC218" ? "var(--primary)" : "var(--line-2)", color: c.cat === "\uD544\uC218" ? "var(--primary)" : "var(--ink-2)" } }, c.cat)), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, c.purpose), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, c.ttl), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, c.party)))))), tab === "\uBCF4\uC548 \uC0AC\uACE0" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.33 \u2014 \uC778\uC9C0 \uD6C4 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "72\uC2DC\uAC04 \uB0B4 \uAC10\uB3C5\uAE30\uAD00 \uD1B5\uC9C0"), ". PIPA \xA734 \u2014 \uC778\uC9C0 \uD6C4 72\uC2DC\uAC04 \uB0B4 \uC815\uBCF4\uC8FC\uCCB4 \uBC0F \uAC1C\uC778\uC815\uBCF4\uC704 \uD1B5\uC9C0."), PRIVACY_DATA.breaches.map((b) => {
       const toneColor = b.severity === "high" ? "var(--danger)" : b.severity === "medium" ? "var(--primary-hover)" : "var(--ink-2)";
       return /* @__PURE__ */ React.createElement("article", { key: b.id, className: "card", style: { marginBottom: 16 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, b.id), /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: toneColor, color: toneColor } }, "\uC2EC\uAC01\uB3C4: ", b.severity)), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 8 } }, b.kind), /* @__PURE__ */ React.createElement("dl", { style: { display: "grid", gridTemplateColumns: "120px 1fr", gap: "4px 16px", fontSize: 12, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uAC10\uC9C0"), /* @__PURE__ */ React.createElement("dd", { className: "mono" }, b.detectedAt), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 10 } }, "72h \uAE30\uD55C"), /* @__PURE__ */ React.createElement("dd", { className: "mono" }, b.notifyDueAt), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uC601\uD5A5 \uC8FC\uCCB4"), /* @__PURE__ */ React.createElement("dd", null, window.BGNJ_FMT.currency(b.affected), "\uBA85"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uB2F9\uAD6D \uD1B5\uC9C0"), /* @__PURE__ */ React.createElement("dd", { className: b.authorityNotified ? "gold" : "dim-2" }, b.authorityNotified ? "\u2713 \uC644\uB8CC" : "\u2014"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uC8FC\uCCB4 \uD1B5\uC9C0"), /* @__PURE__ */ React.createElement("dd", { className: b.subjectNotified ? "gold" : "dim-2" }, b.subjectNotified ? "\u2713 \uC644\uB8CC" : "\u2014")), b.note && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginTop: 12, lineHeight: 1.7 } }, b.note));
-    }), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold" }, "\uC0C8 \uC0AC\uACE0 \uC811\uC218 \u2192")), tab === "\uBCF4\uC720\xB7\uD30C\uAE30" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.5(1)(e) \uC800\uC7A5\uC81C\uD55C \uC6D0\uCE59 / PIPA \xA721. \uBAA9\uC801 \uB2EC\uC131 \uD6C4 \uC9C0\uCCB4 \uC5C6\uC774 \uD30C\uAE30\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB370\uC774\uD130 \uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBCF4\uC720\uAE30\uAC04"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uADFC\uAC70"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA2.retentionPolicies.map((r, i) => /* @__PURE__ */ React.createElement("tr", { key: i, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: 14 } }, r.category), /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: 14 } }, r.period), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, r.lawful)))))), tab === "\uAD6D\uC678 \uC774\uC804" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Chapter V / PIPA \xA728\uC7588. \uC81C3\uAD6D \uC774\uC804 \uC2DC \uC801\uC815\uC131 \uACB0\uC815 \uB610\uB294 SCCs \uB4F1 \uC548\uC804\uC7A5\uCE58\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC218\uD0C1\xB7\uC774\uC804 \uB300\uC0C1"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAD6D\uAC00"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBAA9\uC801"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uD56D\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC548\uC804\uC7A5\uCE58"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA2.transfers.map((t, i) => /* @__PURE__ */ React.createElement("tr", { key: i, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: 14 } }, t.recipient), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, t.country), /* @__PURE__ */ React.createElement("td", { className: "dim", style: { padding: 14 } }, t.purpose), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 14, fontSize: 11 } }, t.items), /* @__PURE__ */ React.createElement("td", { className: "gold mono", style: { padding: 14, fontSize: 11 } }, t.basis)))))), tab === "\uCD94\uCC9C \uC5EC\uD589\uC9C0" && /* @__PURE__ */ React.createElement(RecommendationsAdminPanel, null), tab === "\uBA39\uACE0 \uB180\uC790" && window.KindPagePanel && /* @__PURE__ */ React.createElement(window.KindPagePanel, { kind: "eat" }), tab === "\uC790\uACE0 \uB180\uC790" && window.KindPagePanel && /* @__PURE__ */ React.createElement(window.KindPagePanel, { kind: "sleep" }), tab === "\uC0AC\uACE0 \uB180\uC790" && window.KindPagePanel && /* @__PURE__ */ React.createElement(window.KindPagePanel, { kind: "shop" }), tab === "\uD55C\uCF20 \uC608\uC57D" && window.HangyeonAdminPanel && /* @__PURE__ */ React.createElement(window.HangyeonAdminPanel, null), tab === "\uC0AC\uC774\uD2B8 \uC124\uC815" && /* @__PURE__ */ React.createElement(
+    }), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold" }, "\uC0C8 \uC0AC\uACE0 \uC811\uC218 \u2192")), tab === "\uBCF4\uC720\xB7\uD30C\uAE30" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Art.5(1)(e) \uC800\uC7A5\uC81C\uD55C \uC6D0\uCE59 / PIPA \xA721. \uBAA9\uC801 \uB2EC\uC131 \uD6C4 \uC9C0\uCCB4 \uC5C6\uC774 \uD30C\uAE30\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB370\uC774\uD130 \uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBCF4\uC720\uAE30\uAC04"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uADFC\uAC70"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA.retentionPolicies.map((r, i) => /* @__PURE__ */ React.createElement("tr", { key: i, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: 14 } }, r.category), /* @__PURE__ */ React.createElement("td", { className: "mono gold", style: { padding: 14 } }, r.period), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, r.lawful)))))), tab === "\uAD6D\uC678 \uC774\uC804" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 16 } }, "GDPR Chapter V / PIPA \xA728\uC7588. \uC81C3\uAD6D \uC774\uC804 \uC2DC \uC801\uC815\uC131 \uACB0\uC815 \uB610\uB294 SCCs \uB4F1 \uC548\uC804\uC7A5\uCE58\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 13 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC218\uD0C1\xB7\uC774\uC804 \uB300\uC0C1"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uAD6D\uAC00"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBAA9\uC801"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uD56D\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC548\uC804\uC7A5\uCE58"))), /* @__PURE__ */ React.createElement("tbody", null, PRIVACY_DATA.transfers.map((t, i) => /* @__PURE__ */ React.createElement("tr", { key: i, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: 14 } }, t.recipient), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, t.country), /* @__PURE__ */ React.createElement("td", { className: "dim", style: { padding: 14 } }, t.purpose), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 14, fontSize: 11 } }, t.items), /* @__PURE__ */ React.createElement("td", { className: "gold mono", style: { padding: 14, fontSize: 11 } }, t.basis)))))), tab === "\uCD94\uCC9C \uC5EC\uD589\uC9C0" && /* @__PURE__ */ React.createElement(RecommendationsAdminPanel, null), tab === "\uBA39\uACE0 \uB180\uC790" && KindPagePanel && /* @__PURE__ */ React.createElement(window.KindPagePanel, { kind: "eat" }), tab === "\uC790\uACE0 \uB180\uC790" && KindPagePanel && /* @__PURE__ */ React.createElement(window.KindPagePanel, { kind: "sleep" }), tab === "\uC0AC\uACE0 \uB180\uC790" && KindPagePanel && /* @__PURE__ */ React.createElement(window.KindPagePanel, { kind: "shop" }), tab === "\uD55C\uCF20 \uC608\uC57D" && HangyeonAdminPanel && /* @__PURE__ */ React.createElement(window.HangyeonAdminPanel, null), tab === "\uC0AC\uC774\uD2B8 \uC124\uC815" && /* @__PURE__ */ React.createElement(
       SubTabsView,
       {
         storageKey: "bgnj_admin_subtab_site_settings",
@@ -15977,13 +15561,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
           { key: "bank", label: "\uACC4\uC88C\uBC88\uD638", previewUrl: "/faq", render: () => /* @__PURE__ */ React.createElement(BankAccountPanel, null) }
         ]
       }
-    ), tab === "\uAC10\uC0AC \uB85C\uADF8" && /* @__PURE__ */ React.createElement(AuditLogPanel, null), tab === "\uB0B4\uBD80 \uC54C\uB78C" && /* @__PURE__ */ React.createElement(InternalAlarmPanel2, null), tab === "\uD65C\uB3D9 \uB85C\uADF8" && /* @__PURE__ */ React.createElement(ActivityLogPanel, null), tab === "\uC624\uB958 \uB85C\uADF8" && /* @__PURE__ */ React.createElement(ErrorLogPanel, null), tab === "\uC624\uB958 \uD398\uC774\uC9C0 \uBBF8\uB9AC\uBCF4\uAE30" && /* @__PURE__ */ React.createElement(ErrorPagesPreviewPanel2, { go }), tab === "\uD68C\uC6D0 \uB4F1\uAE09" && /* @__PURE__ */ React.createElement(AdminGradePanel2, null), tab === "\uCE7C\uB7FC \uC791\uC131" && /* @__PURE__ */ React.createElement(ColumnsHubPanel2, { allColumns }), tab === "\uC124\uC815" && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 24 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "14px 18px", background: "var(--bg-2)", borderLeft: "3px solid var(--primary-dim)" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, "\u24D8 \uBB34\uD1B5\uC7A5 \uC785\uAE08 \uACC4\uC88C\uB294 \uC88C\uCE21 \uBA54\uB274\uC758 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uACC4\uC88C\uBC88\uD638 \uC124\uC815"), " \uD0ED\uC5D0\uC11C \uAD00\uB9AC\uD569\uB2C8\uB2E4 (\uBA40\uD2F0 \uACC4\uC88C \uC9C0\uC6D0).")), /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 20, marginBottom: 16 } }, "\uC0AC\uC774\uD2B8 \uC124\uC815"), /* @__PURE__ */ React.createElement("dl", { style: { display: "grid", gridTemplateColumns: "200px 1fr", gap: "8px 24px", fontSize: 13, lineHeight: 1.8 } }, /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "DPO"), /* @__PURE__ */ React.createElement("dd", null, "contact@bgnj.net \xB7 02-0000-0001"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uAC1C\uC778\uC815\uBCF4 \uCC45\uC784\uC790"), /* @__PURE__ */ React.createElement("dd", null, "\uBC45\uAE30\uB178\uC790 / contact@bgnj.net"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uCD5C\uADFC DPIA"), /* @__PURE__ */ React.createElement("dd", null, "2026-03-02"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uC801\uC6A9 \uBC95\uC5ED"), /* @__PURE__ */ React.createElement("dd", null, "\uB300\uD55C\uBBFC\uAD6D(PIPA) \xB7 \uC720\uB7FD\uC5F0\uD569(GDPR)"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uAC10\uB3C5\uAE30\uAD00"), /* @__PURE__ */ React.createElement("dd", null, "\uAC1C\uC778\uC815\uBCF4\uBCF4\uD638\uC704\uC6D0\uD68C / \uAD00\uD560 EU DPA"))))));
+    ), tab === "\uAC10\uC0AC \uB85C\uADF8" && /* @__PURE__ */ React.createElement(AuditLogPanel, null), tab === "\uB0B4\uBD80 \uC54C\uB78C" && /* @__PURE__ */ React.createElement(InternalAlarmPanel, null), tab === "\uD65C\uB3D9 \uB85C\uADF8" && /* @__PURE__ */ React.createElement(ActivityLogPanel, null), tab === "\uC624\uB958 \uB85C\uADF8" && /* @__PURE__ */ React.createElement(ErrorLogPanel, null), tab === "\uC624\uB958 \uD398\uC774\uC9C0 \uBBF8\uB9AC\uBCF4\uAE30" && /* @__PURE__ */ React.createElement(ErrorPagesPreviewPanel, { go }), tab === "\uD68C\uC6D0 \uB4F1\uAE09" && /* @__PURE__ */ React.createElement(AdminGradePanel, null), tab === "\uCE7C\uB7FC \uC791\uC131" && /* @__PURE__ */ React.createElement(ColumnsHubPanel, { allColumns }), tab === "\uC124\uC815" && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 24 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "14px 18px", background: "var(--bg-2)", borderLeft: "3px solid var(--primary-dim)" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, "\u24D8 \uBB34\uD1B5\uC7A5 \uC785\uAE08 \uACC4\uC88C\uB294 \uC88C\uCE21 \uBA54\uB274\uC758 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uACC4\uC88C\uBC88\uD638 \uC124\uC815"), " \uD0ED\uC5D0\uC11C \uAD00\uB9AC\uD569\uB2C8\uB2E4 (\uBA40\uD2F0 \uACC4\uC88C \uC9C0\uC6D0).")), /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 20, marginBottom: 16 } }, "\uC0AC\uC774\uD2B8 \uC124\uC815"), /* @__PURE__ */ React.createElement("dl", { style: { display: "grid", gridTemplateColumns: "200px 1fr", gap: "8px 24px", fontSize: 13, lineHeight: 1.8 } }, /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "DPO"), /* @__PURE__ */ React.createElement("dd", null, "contact@bgnj.net \xB7 02-0000-0001"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uAC1C\uC778\uC815\uBCF4 \uCC45\uC784\uC790"), /* @__PURE__ */ React.createElement("dd", null, "\uBC45\uAE30\uB178\uC790 / contact@bgnj.net"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uCD5C\uADFC DPIA"), /* @__PURE__ */ React.createElement("dd", null, "2026-03-02"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uC801\uC6A9 \uBC95\uC5ED"), /* @__PURE__ */ React.createElement("dd", null, "\uB300\uD55C\uBBFC\uAD6D(PIPA) \xB7 \uC720\uB7FD\uC5F0\uD569(GDPR)"), /* @__PURE__ */ React.createElement("dt", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uAC10\uB3C5\uAE30\uAD00"), /* @__PURE__ */ React.createElement("dd", null, "\uAC1C\uC778\uC815\uBCF4\uBCF4\uD638\uC704\uC6D0\uD68C / \uAD00\uD560 EU DPA"))))));
   };
-  var AdminCategoryPanel2 = window.AdminCategoryPanel;
-  var CommunityBoardsPanel2 = window.CommunityBoardsPanel;
-  var AdminGradePanel2 = window.AdminGradePanel;
-  var AdminColumnEditor2 = window.AdminColumnEditor;
-  var ColumnsHubPanel2 = window.ColumnsHubPanel;
   var AdminDenied = ({ go, user }) => /* @__PURE__ */ React.createElement("div", { className: "section", style: { minHeight: "calc(100vh - 72px)", display: "grid", placeItems: "center" } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { maxWidth: 480, textAlign: "center", padding: 48 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.3em", marginBottom: 12 } }, "\u25C6 ACCESS DENIED"), /* @__PURE__ */ React.createElement("h1", { className: "ko-serif", style: { fontSize: 24, marginBottom: 16 } }, "\uAD00\uB9AC\uC790 \uAD8C\uD55C\uC774 \uD544\uC694\uD569\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 24 } }, user ? /* @__PURE__ */ React.createElement(React.Fragment, null, "\uD604\uC7AC \uB85C\uADF8\uC778 \uACC4\uC815(", /* @__PURE__ */ React.createElement("span", { className: "gold" }, user.email), ")\uC740 \uAD00\uB9AC\uC790 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.") : "\uC774 \uD398\uC774\uC9C0\uB294 \uB85C\uADF8\uC778\uD55C \uAD00\uB9AC\uC790\uB9CC \uC811\uADFC\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, justifyContent: "center" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: () => go(user ? "home" : "login") }, user ? "\uD648\uC73C\uB85C" : "\uB85C\uADF8\uC778"))));
-  Object.assign(window, { AdminPage, AdminDenied, RecommendationsAdminPanel });
+  Object.assign(window, { AdminPage, AdminDenied });
 })();
