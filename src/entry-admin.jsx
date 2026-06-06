@@ -18,4 +18,5 @@ import '../pages/admin/AdminLogPanels.jsx';
 import '../pages/admin/AdminBooksPanel.jsx';
 import '../pages/admin/AdminCommercePanels.jsx';
 import '../pages/admin/AdminEventsPanels.jsx';
+import '../pages/admin/AdminSiteContentPanel.jsx';
 import '../pages/AuthAdminPage.jsx';
