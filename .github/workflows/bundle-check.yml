@@ -1,0 +1,40 @@
+# 뱅기노자 — 번들 빌드 검증 (v00.285 Stage 1)
+#
+# 목적: 번들 파이프라인(tools/build.mjs --bundle)이 항상 깨지지 않고 빌드되는지 PR/푸시마다 검증.
+#   아직 배포(deploy-pages.yml)는 per-file .js 를 그대로 쓰므로 이 워크플로는 배포에 영향 없음.
+#   Stage 3 에서 index.html 을 번들로 전환할 때, 이 검증이 안전망이 된다.
+name: Bundle build check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install tool deps
+        working-directory: tools
+        run: npm ci || npm install
+
+      - name: Build bundles
+        working-directory: tools
+        run: npm run build:bundle
+
+      - name: Verify bundle output exists & parses
+        run: |
+          test -f dist/app.js   || { echo "dist/app.js 누락"; exit 1; }
+          test -f dist/admin.js || { echo "dist/admin.js 누락"; exit 1; }
+          node --check dist/app.js
+          node --check dist/admin.js
+          echo "✅ 번들 빌드 + 문법 검증 통과"

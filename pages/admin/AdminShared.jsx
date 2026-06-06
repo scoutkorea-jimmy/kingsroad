@@ -872,6 +872,132 @@ const HeatmapGrid = ({ data, label, headerRight, days = 30 }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────
+// Admin UI primitives (v00.285 — AuthAdminPage 에서 이동). 모든 panel 에서 재사용.
+// 자기완결적(React + CSS 클래스 + 그룹 내부 참조만). AuthAdminPage 는 const X = window.X 로 받는다.
+
+const AdminPanelHeader = ({ eyebrow, title, description, actions }) => (
+  <header className="admin-panel-header">
+    <div className="admin-panel-header__main">
+      {eyebrow && <div className="admin-panel-header__eyebrow">{eyebrow}</div>}
+      {title && <h2 className="admin-panel-header__title">{title}</h2>}
+      {description && <p className="admin-panel-header__desc">{description}</p>}
+    </div>
+    {actions && <div className="admin-panel-header__actions">{actions}</div>}
+  </header>
+);
+
+// 상태 뱃지 — variant: gold | neutral | ink | danger | success
+const StatusBadge = ({ variant = 'neutral', children, title }) => (
+  <span className={`status-badge status-badge--${variant}`} title={title}>{children}</span>
+);
+
+// 빈 상태
+const AdminEmpty = ({ children }) => (
+  <div className="admin-empty">{children}</div>
+);
+
+// 필터 chips — items: [{ key, label, count? }]
+const AdminFilterChips = ({ items, value, onChange, ariaLabel = '필터' }) => (
+  <div className="admin-toolbar__filters" role="tablist" aria-label={ariaLabel}>
+    {items.map((it) => (
+      <button key={it.key} type="button" role="tab"
+        aria-selected={value === it.key}
+        className={`admin-filter-chip ${value === it.key ? 'admin-filter-chip--active' : ''}`}
+        onClick={() => onChange?.(it.key)}>
+        {it.label}{typeof it.count === 'number' ? ` (${it.count})` : ''}
+      </button>
+    ))}
+  </div>
+);
+
+// 저장 바
+const AdminSaveBar = ({ children, message, messageVariant = 'success' }) => (
+  <div className="admin-savebar">
+    {children}
+    {message && (
+      <span className={`admin-savebar__msg admin-savebar__msg--${messageVariant}`}>{message}</span>
+    )}
+  </div>
+);
+
+// 카드 호버/포커스 시 details popover. dashboardStats 카드와 MetricCard 둘 다 사용.
+// details: [{ label, value }, ...] — 비어있거나 미전달 시 popover 자체 미노출.
+const HoverDetailsPopover = ({ details, open, id, anchor = 'right' }) => {
+  if (!open || !Array.isArray(details) || details.length === 0) return null;
+  return (
+    <div role="tooltip" id={id}
+      style={{
+        position:'absolute', top:'100%', marginTop:8,
+        [anchor === 'left' ? 'left' : 'right']: 0,
+        background:'var(--bg)', border:'1px solid var(--primary-dim)',
+        boxShadow:'0 8px 24px rgba(0,0,0,0.18)', padding:'14px 16px',
+        minWidth:240, maxWidth:320, zIndex:50, borderRadius:8,
+      }}>
+      <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', marginBottom:10}}>DETAILS</div>
+      <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
+        {details.map((d, i) => (
+          <li key={i} style={{display:'flex', justifyContent:'space-between', gap:14, fontSize:12, alignItems:'baseline'}}>
+            <span className="dim" style={{flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis'}}>{d.label}</span>
+            <span className="mono" style={{fontWeight:600, color:'var(--secondary)', whiteSpace:'nowrap'}}>{d.value}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+// dashboardStats 4 카드 — hover/focus 로 popover 노출. details 미전달 시 종전 동작 그대로.
+const StatTile = ({ stat }) => {
+  const [open, setOpen] = React.useState(false);
+  const id = React.useId ? React.useId() : `stat-${stat.l}`;
+  const hasDetails = Array.isArray(stat.details) && stat.details.length > 0;
+  return (
+    <div className="card" style={{position:'relative'}}
+      onMouseEnter={() => hasDetails && setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => hasDetails && setOpen(true)}
+      onBlur={() => setOpen(false)}
+      tabIndex={hasDetails ? 0 : undefined}
+      aria-describedby={open ? id : undefined}>
+      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{stat.l}</div>
+      <div className="ko-serif" style={{fontSize:32, color:'var(--ink)'}}>
+        {stat.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{stat.unit||''}</span>
+      </div>
+      <div style={{fontSize:11, color: stat.p ? 'var(--primary)' : 'var(--danger)', marginTop:8}}>{stat.d}</div>
+      <HoverDetailsPopover details={stat.details} open={open} id={id}/>
+    </div>
+  );
+};
+
+const MetricCard = ({ label, value, sub, accent, icon, details }) => {
+  const [open, setOpen] = React.useState(false);
+  const id = React.useId ? React.useId() : `metric-${label}`;
+  const hasDetails = Array.isArray(details) && details.length > 0;
+  return (
+    <article className="metric-card" style={{
+      padding:'18px 20px', background:'var(--bg-2)', border:'1px solid var(--line)',
+      borderRadius:10, position:'relative', overflow:'visible',
+    }}
+      onMouseEnter={() => hasDetails && setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => hasDetails && setOpen(true)}
+      onBlur={() => setOpen(false)}
+      tabIndex={hasDetails ? 0 : undefined}
+      aria-describedby={open ? id : undefined}>
+      <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
+        {icon && <span style={{fontSize:18}} aria-hidden="true">{icon}</span>}
+        <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase'}}>{label}</div>
+      </div>
+      <div className="ko-serif" style={{fontSize:32, fontWeight:600, color: accent || 'var(--primary-hover)', lineHeight:1.1}}>
+        {value}
+      </div>
+      {sub && <div className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.5}}>{sub}</div>}
+      <HoverDetailsPopover details={details} open={open} id={id}/>
+    </article>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────
 // 노출 — AuthAdminPage 가 const X = window.X 로 참조.
 Object.assign(window, {
   downloadBlob, downloadCsv, downloadJson,
@@ -879,4 +1005,6 @@ Object.assign(window, {
   MiniBarChart, RankedBarList, COHORT_OPTIONS, CohortSelector,
   SankeyFlow, SubTabsView,
   HeatmapGrid,
+  AdminPanelHeader, StatusBadge, AdminEmpty, AdminFilterChips, AdminSaveBar,
+  HoverDetailsPopover, StatTile, MetricCard,
 });

@@ -299,14 +299,13 @@ const routeToPath = (r) => r === 'home' ? '/' : '/' + r;
 // 사용자 우선순위 '홈페이지 반응성 + 기능 회귀 0 + 속도감'.
 // 이전엔 4개 admin 스크립트 (총 ~3.85MB raw / ~360KB gz) 가 모든 방문자에게 강제 defer 로드 →
 // 비-admin 99% 가 admin 코드 다운/파스/컴파일.
-// 해법: index.html 에서 4개 제거 + admin route 진입 시 동적 주입. async=false 로 순서 보존.
-// idempotent — 한 번 로드되면 메모리 캐시 (재진입 시 즉시 렌더). 실패 시 1회 retry.
+// 해법: index.html 에서 제거 + admin route 진입 시 동적 주입. idempotent — 한 번 로드되면
+// 메모리 캐시 (재진입 시 즉시 렌더). 실패 시 1회 retry.
+// v00.285 Stage 3 — admin 5개 per-file 스크립트 → 단일 번들 dist/admin.js.
+//   esbuild 가 src/entry-admin.jsx (AdminShared→ContentEditors→DesignHub→HangyeonAdminPanel→AuthAdminPage
+//   순서)를 하나로 번들. 코드 스플리팅 경계는 그대로(비-admin 은 받지 않음).
 const ADMIN_SCRIPTS = [
-  'pages/admin/AdminShared.js',
-  'pages/admin/AdminContentEditors.js',
-  'pages/admin/AdminDesignHub.js',
-  'pages/admin/HangyeonAdminPanel.js',
-  'pages/AuthAdminPage.js',
+  'dist/admin.js',
 ];
 let _adminLoadPromise = null;
 const _loadAdminScripts = (attempt = 0) => {
