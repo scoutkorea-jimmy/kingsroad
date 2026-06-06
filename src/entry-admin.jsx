@@ -12,4 +12,5 @@ import '../pages/admin/AdminDesignHub.jsx';
 import '../pages/admin/HangyeonAdminPanel.jsx';
 import '../pages/admin/AdminLogin.jsx';
 import '../pages/admin/AdminPolicyPanels.jsx';
+import '../pages/admin/AdminMonitorPanels.jsx';
 import '../pages/AuthAdminPage.jsx';
