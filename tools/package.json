@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "check": "node check-syntax.mjs",
+    "build": "node build.mjs",
+    "build:bundle": "node build.mjs --bundle",
     "install-hooks": "bash install-hooks.sh"
   },
   "dependencies": {

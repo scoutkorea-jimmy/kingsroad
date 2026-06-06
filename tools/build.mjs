@@ -34,6 +34,8 @@ const ROOT_FILES = ['boot.jsx'];
 
 const args = process.argv.slice(2);
 const WATCH = args.includes('--watch');
+// v00.285 Stage 1 — 번들 모드. per-file transform 과 병행(롤백 안전). 기본은 기존 transform.
+const BUNDLE = args.includes('--bundle');
 
 const collectJsx = (dir, out = []) => {
   const abs = path.join(ROOT, dir);
@@ -91,7 +93,47 @@ const buildOnce = async () => {
   return outs;
 };
 
-if (WATCH) {
+// v00.285 Stage 1 — 번들 모드.
+//
+// 메인/admin 두 엔트리를 각각 단일 IIFE 번들로. React/ReactDOM/DOMPurify/Tiptap 은
+// 소스에서 import 하지 않고 전역(자유변수)으로 참조 → external 설정 불필요(esbuild 가 그대로 둠).
+// 각 모듈은 독립 스코프(현 IIFE 격리와 동일), side-effect import 가 window.X 할당을
+// 기존 로드 순서대로 실행 → 런타임 동작 불변.
+//
+// 코드 스플리팅 경계 보존: admin 4종(+AuthAdminPage)은 entry-admin → dist/admin.js 로 분리.
+// 비-admin 트래픽은 dist/app.js 만 받음.
+const BUNDLE_TARGETS = [
+  { entry: 'src/entry-main.jsx',  outfile: 'dist/app.js'   },
+  { entry: 'src/entry-admin.jsx', outfile: 'dist/admin.js' },
+];
+
+const bundleOnce = async () => {
+  const t0 = Date.now();
+  const includeSourcemap = process.env.BGNJ_SOURCEMAP === '1';
+  for (const { entry, outfile } of BUNDLE_TARGETS) {
+    await esbuild.build({
+      entryPoints: [path.join(ROOT, entry)],
+      outfile: path.join(ROOT, outfile),
+      bundle: true,
+      format: 'iife',
+      loader: { '.js': 'jsx', '.jsx': 'jsx' },
+      jsx: 'transform',
+      jsxFactory: 'React.createElement',
+      jsxFragment: 'React.Fragment',
+      target: 'es2018',
+      sourcemap: includeSourcemap ? 'inline' : false,
+      legalComments: 'none',
+      logLevel: 'warning',
+    });
+    const bytes = fs.statSync(path.join(ROOT, outfile)).size;
+    console.log(`  · ${entry} → ${outfile}  (${(bytes / 1024).toFixed(1)} KB)`);
+  }
+  console.log(`✅ ${BUNDLE_TARGETS.length} bundles built in ${Date.now() - t0}ms`);
+};
+
+if (BUNDLE) {
+  await bundleOnce();
+} else if (WATCH) {
   await buildOnce();
   console.log('👀 watching pages/ and components/ ...');
   for (const d of SOURCE_DIRS) {
