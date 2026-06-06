@@ -4,6 +4,21 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.285.000",
+    date: "2026-06-06",
+    datetime: "2026-06-06T22:09:33+09:00",
+    summary: "🧱 번들러 전환 + AuthAdminPage 도메인 분할 — 스파게티 구조 근본 해소",
+    details: [
+      "📦 [번들 파이프라인] esbuild per-file IIFE → 단일 엔트리 번들(dist/app.js·dist/admin.js). index.html script 22개 → 1개, admin 5개 → 1개(코드 스플리팅 경계 보존). CI/deploy 워크플로에 빌드 스텝 추가, dist/ gitignore.",
+      "🗂 [빌드 산출물 추방] 커밋되던 .js 산출물 25개 git 제거 — PR diff 중복 절반↓. 손작성 소스(api.js·data.js·KoreaMapData.js)는 보존.",
+      "✂️ [AuthAdminPage 도메인 분할] 9,274 → 1,270줄(=AdminPage 라우터 + AdminDenied). 12개 도메인 파일로 추출: AdminShared·AdminLogin·Policy·Monitor·Member·Log·Books·Commerce·Events·SiteContent·Dashboard·CommunityConfig·GradeColumn·RouterPanels.",
+      "🔗 [공유/공개 의존 보존] PostViewerModal·AuditDetailsCell 공유 컴포넌트 식별 보존. BGNJ_BankAccountPicker·AdminColumnEditor 는 공개 페이지가 window guard + admin 번들 lazy-load 로 소비 — admin 번들 배치 그대로 유지해 기존 동작 보존.",
+      "✅ [검증] 빌드·check-syntax(41파일)·헤드리스(홈/admin/login/칼럼/커뮤니티) 콘솔 에러·CSP 위반 0.",
+      "🧹 [후속] PromoChip·UploadOverlay dead code 제거 + 문서 아키텍처 절 갱신은 Stage 5 로 이월.",
+      "📦 cache-buster — `?v=00.285.000`."
+    ]
+  },
+  {
     version: "00.284.004",
     date: "2026-06-06",
     datetime: "2026-06-06T16:50:00+09:00",
