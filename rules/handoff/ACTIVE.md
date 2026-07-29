@@ -151,10 +151,20 @@
 
 ---
 
-## 5. 사용자 직접 작업
+## 5. D1 직접 작업 (v00.291.003 — 완료)
 
-1. **한켠역사문화포럼 게시판 생성** — 관리자 → 커뮤니티 → 게시판 카테고리에서 추가.
-   카테고리 CRUD 가 이미 있다 ([AdminCommunityConfigPanels.jsx](../../pages/admin/AdminCommunityConfigPanels.jsx)).
-   추가만 하면 메뉴에는 자동으로 뜬다. (D1 직접 쓰기는 불가)
-2. **`언론보도` 게시판 id `어` → ASCII 로 교체** 권장.
-3. (직전 건에서 이월) **히어로 PC/모바일 배경 이미지 비우기** — 관리자 → 사이트 콘텐츠 → 히어로.
+사용자 요청으로 wrangler 를 통해 remote D1 에 직접 반영했다.
+`workers/node_modules` 의 workerd 바이너리도 PC 이동으로 깨져 있어 재설치가 선행됐다
+(tools/ 와 같은 증상 → [../60-environment.md](../60-environment.md)).
+
+- [x] **`hangyeon-forum` (한켠역사문화포럼) 게시판 생성** — order 5, 읽기 누구나 / 쓰기 로그인 회원(post_min_level 10)
+- [x] **`어` → `press` id 교체** — 한글 id 는 URL·세션 키에서 문제를 일으킨다.
+      새 행 INSERT → `posts.category_id` 6건 UPDATE → 옛 행 DELETE 순으로 처리.
+      `faqs` · `user_columns` 에는 참조가 없음을 미리 확인했다. 고아 데이터 0건.
+- [x] **빈 껍데기 `column` 게시판 삭제** — 글 0건 확인 후 제거. Shell.jsx 의 임시 제외 필터도 함께 걷어냄.
+
+최종 게시판: `notice` 공지 · `free` 자유 · `question` 질문 · `info` 정보 · `press` 언론보도 · `hangyeon-forum` 한켠역사문화포럼
+
+## 6. 남은 사용자 직접 작업
+
+1. (직전 건에서 이월) **히어로 PC/모바일 배경 이미지 비우기** — 관리자 → 사이트 콘텐츠 → 히어로.

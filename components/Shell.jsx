@@ -740,10 +740,9 @@ const Nav = ({ route, go, user, onLogout }) => {
   ];
   // 커뮤니티 메가메뉴: BGNJ_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
   const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : (user ? 10 : 0);
-  // v00.290 — 'column' 게시판은 글 0개인 빈 껍데기다(진짜 칼럼 72편은 /column 페이지의 별도 테이블).
-  // 메뉴에 중복 노출하지 않는다. 게시판 자체 삭제는 관리자 작업.
+  // v00.291.003 — 빈 껍데기 'column' 게시판을 D1 에서 삭제해 임시 필터를 제거했다.
   const communityBoards = (window.BGNJ_STORES?.categories || [])
-    .filter((c) => c.boardType === 'community' && userLevel >= (c.minLevel ?? 0) && c.id !== 'column');
+    .filter((c) => c.boardType === 'community' && userLevel >= (c.minLevel ?? 0));
 
   const goBoard = (boardId) => {
     try { sessionStorage.setItem('bgnj_pending_board_id', boardId); } catch {}
