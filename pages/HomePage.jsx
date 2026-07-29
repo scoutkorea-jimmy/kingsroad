@@ -561,18 +561,31 @@ const HomePage = ({ go }) => {
     [recentFiveColumns, _safeIdx]
   );
   // v00.266 — 홈 섹션도 오늘 기준 날짜 필터 적용 (HeroProgramCards 와 동일 정책).
-  //   투어: 예정(어제 이후)만 노출. 지난 일정만 있으면 빈 상태("이번에 걸을 길 없음").
-  //   강연: 예정 우선, 없으면 가장 최근 지난 강연 3개로 폴백 + "지난 강연" 마크 (v00.129 사용자 요청 유지).
   // v00.274 — 날짜는 _eventTs(starts_at 없으면 next 텍스트 파싱)로 해석.
-  //   투어: 예정(어제 이후)만 노출. 지난 일정만 있으면 빈 상태("이번에 걸을 길 없음").
   //   강연: 예정 우선, 없으면 가장 최근 지난 강연 3개로 폴백 + "지난 강연" 마크 (v00.129 사용자 요청 유지).
+  //   v00.291 — 투어도 같은 폴백을 쓴다. 이전엔 투어만 빈 상태 카드("이번에 걸을 길 없음")를 띄워
+  //     같은 홈 안에서 강연은 지난 기록을 보여주고 투어는 "없습니다"만 남는 불일치가 있었다.
+  //     현재 투어 5건·강연 3건이 전부 지난 일정이라 이 차이가 그대로 화면에 드러난다.
+  //     도움 위젯도 "지난 답사 보기"로 안내하므로 홈도 같은 태도로 통일한다.
   const _cutoff = Date.now() - 86400000; // 어제 자정 근사 — 당일 진행분 노출 유지
   const _validStart = (x) => x && !x.hidden && !isNaN(_eventTs(x));
-  const tours = React.useMemo(() => G.arr(() => window.BGNJ_TOURS?.listAll?.())
-    .filter(_validStart)
-    .filter((t) => _eventTs(t) >= _cutoff)
-    .sort((a, b) => _eventTs(a) - _eventTs(b))
-    .slice(0, 4), [toursTick]);
+  const tours = React.useMemo(() => {
+    const all = G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter(_validStart);
+    const upcoming = all
+      .filter((t) => _eventTs(t) >= _cutoff)
+      .sort((a, b) => _eventTs(a) - _eventTs(b));
+    if (upcoming.length > 0) return upcoming.slice(0, 4);
+    return all
+      .filter((t) => _eventTs(t) < _cutoff)
+      .sort((a, b) => _eventTs(b) - _eventTs(a))
+      .slice(0, 4);
+  }, [toursTick]);
+  // 투어 섹션이 '지난 답사 폴백' 모드인지 (예정이 하나도 없을 때).
+  const toursArePast = tours.length > 0 && tours.every((t) => _eventTs(t) < _cutoff);
+  // 히어로 지표용 전체 개수 — 위 tours 는 카드용으로 4개까지만 자르므로 지표에 쓰면 틀린 수가 나온다.
+  // 라벨이 '투어 · 직접 기획 프로그램' 이므로 지난 것 포함 전체가 맞는 의미다.
+  const toursTotal = React.useMemo(
+    () => G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter(_validStart).length, [toursTick]);
   const lectures = React.useMemo(() => {
     const all = G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter(_validStart);
     const upcoming = all
@@ -607,7 +620,7 @@ const HomePage = ({ go }) => {
   };
   const stats = [
     _stat(0, recommendations.length > 0 ? `${recommendations.length}곳` : ''),
-    _stat(1, tours.length > 0 ? `${tours.length}개` : ''),
+    _stat(1, toursTotal > 0 ? `${toursTotal}개` : ''),
     _stat(2, allPostsCount > 0 ? `${allPostsCount}+` : ''),
   ].filter(Boolean);
 
@@ -748,138 +761,6 @@ const HomePage = ({ go }) => {
 
       </HomeSectionBoundary>
 
-      {/* ── 뱅기노자 추천 (관리자 콘텐츠 패널에서 추가) — v00.164 anchor 박자 + asymmetric grid ─── */}
-      {recommendations.length > 0 && (
-        <HomeSectionBoundary label="뱅기노자 추천"><section className="section section--anchor" style={{background:'var(--bg-2)'}}>
-          <div className="container">
-            {(() => {
-              // v00.083 — site_content_kv.recommendationsHeading 에서 hero 읽음 (v00.073 sweep 미완 잔재).
-              const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).recommendationsHeading || {};
-              const eb = homeText.recEyebrow || _i.eyebrow || HOME_TEXT_DEFAULT.recEyebrow;
-              const tp = homeText.recTitlePrefix ?? _i.titlePrefix ?? HOME_TEXT_DEFAULT.recTitlePrefix;
-              const ta = homeText.recTitleAccent ?? _i.titleAccent ?? HOME_TEXT_DEFAULT.recTitleAccent;
-              const ts = homeText.recTitleSuffix ?? _i.titleSuffix ?? HOME_TEXT_DEFAULT.recTitleSuffix;
-              const sb = homeText.recSubtitle || _i.subtitle || HOME_TEXT_DEFAULT.recSubtitle;
-              return (
-                <SectionHead
-                  eyebrow={eb}
-                  title={<>{tp}<span className="accent">{ta}</span>{ts}</>}
-                  subtitle={sb}
-                  action={<button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.recAction}</button>}
-                />
-              );
-            })()}
-            {/* v00.164 — 추천 카드 3개 이상이면 asymmetric (첫 카드 2x). 그 미만이면 grid-3 폴백. */}
-            <div className={recommendations.length >= 3 ? 'grid grid-feature-2' : 'grid grid-3'}>
-              {recommendations.map((r, ri) => {
-                const tags = Array.isArray(r.tags) ? r.tags : (typeof r.tags === 'string' ? r.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : []);
-                // v00.164 — 첫 카드 (asymmetric 모드) 는 사진/타이틀/desc 모두 큼.
-                const isFeature = recommendations.length >= 3 && ri === 0;
-                return (
-                  <article key={r.id || r.name}
-                    className="card card--bare"
-                    {...clickable(() => setRecDetail(r), `${r.name || '추천'} 상세 보기`)}
-                    style={{cursor:'pointer', display:'flex', flexDirection:'column', padding:0}}>
-                    <div style={{
-                      height: isFeature ? 320 : 160, marginBottom:18, position:'relative', overflow:'hidden',
-                      background: r.imageDataUri ? `url(${r.imageDataUri}) center/cover` : 'var(--bg-3)',
-                    }}>
-                      {r.region && (
-                        <div style={{
-                          position:'absolute', top:10, left:12,
-                          padding:'3px 8px', background:'var(--bg-2)',
-                          fontFamily:'var(--font-mono)', fontSize:10, fontWeight:600,
-                          letterSpacing:'0.18em', color:'var(--ink-2)',
-                        }}>{r.region}</div>
-                      )}
-                    </div>
-                    {tags.length > 0 && (
-                      <div style={{display:'flex', gap:6, marginBottom:10, flexWrap:'wrap'}}>
-                        {tags.slice(0, 3).map((t) => (
-                          <span key={t} className="badge" style={{fontSize:9}}>{t}</span>
-                        ))}
-                      </div>
-                    )}
-                    <h3 className="ko-serif" style={{fontSize: isFeature ? 30 : 22, fontWeight:600, marginBottom:5, lineHeight:1.25}}>{r.name || '제목 없음'}</h3>
-                    {r.subtitle && (
-                      <div style={{
-                        fontFamily:'var(--font-mono)', fontSize:11, fontWeight:600,
-                        color:'var(--secondary)', letterSpacing:'0.05em', marginBottom:10,
-                      }}>{r.subtitle}</div>
-                    )}
-                    {r.desc && <p style={{fontSize: isFeature ? 14 : 13, lineHeight:1.7, color:'var(--ink-2)'}}>{r.desc}</p>}
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section></HomeSectionBoundary>
-      )}
-
-      {/* ── 투어 프로그램 — v00.164 inline 헤더 + section-tight (지원 박자) ──── */}
-      {/* v00.266 — 예정 일정이 없어도 섹션은 노출하되 빈 상태 안내. (지난 일정 노출 금지) */}
-      <HomeSectionBoundary label="투어 프로그램"><section className="section-tight" style={{}}>
-          <div className="container">
-            {/* v00.164 — inline 헤더: eyebrow + title + count + action 한 줄. subtitle 제거 (section-head--inline 가 hide). */}
-            <div className="section-head section-head--inline">
-              <div>
-                <div className="section-eyebrow" aria-hidden="true">{homeText.tourEyebrow}</div>
-                <h2 className="section-title">
-                  {homeText.tourTitle}
-                  {tours.length > 0 && (
-                    <span className="mono" style={{
-                      fontSize:13, fontWeight:600, letterSpacing:'0.18em',
-                      color:'var(--ink-3)', marginLeft:14, verticalAlign:'middle',
-                    }}>· {tours.length}개 일정</span>
-                  )}
-                </h2>
-              </div>
-              <button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.tourAction}</button>
-            </div>
-            {tours.length === 0 ? (
-              <div className="card" style={{padding:'40px 24px', textAlign:'center'}}>
-                <div className="ko-serif" style={{fontSize:18, color:'var(--ink-2)', marginBottom:8}}>이번에 함께 걸을 길이 아직 없습니다</div>
-                <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
-                  다음 답사 일정을 준비하고 있어요. <button type="button" className="link-inline" onClick={() => go('tour')} style={{background:'none', border:'none', padding:0, color:'var(--secondary)', cursor:'pointer', font:'inherit', textDecoration:'underline'}}>전체 일정</button>에서 지난 답사 기록을 볼 수 있습니다.
-                </p>
-              </div>
-            ) : (
-            <div className="grid grid-2">
-              {tours.map((t, i) => (
-                <article key={t.id} className="card"
-                  {...clickable(() => go('tour'), `투어: ${t.title}`)}
-                  style={{cursor:'pointer', position:'relative'}}>
-                  <div className="mono" style={{
-                    position:'absolute', top:20, right:20,
-                    fontSize:10, color:'var(--ink-3)', letterSpacing:'0.2em',
-                  }}>0{i+1}</div>
-                  <div style={{display:'flex', gap:8, marginBottom:16, flexWrap:'wrap'}}>
-                    {t.level && <span className="badge">{t.level}</span>}
-                    {t.duration && <span className="badge">{t.duration}</span>}
-                    {t.group && <span className="badge">{t.group}</span>}
-                  </div>
-                  <h3 className="card-title" style={{fontSize:22, marginBottom:10}}>{t.title}</h3>
-                  {t.desc && <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:20}}>{truncatePreview(t.desc, 110)}</p>}
-                  <div style={{
-                    display:'flex', justifyContent:'space-between', alignItems:'center',
-                    borderTop:'1px solid var(--line)', paddingTop:16,
-                  }}>
-                    <div>
-                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{homeText.tourNextLabel}</div>
-                      <div style={{fontSize:14, marginTop:4, color:'var(--ink)', fontWeight:500}}>{t.next || homeText.emptyFallback}</div>
-                    </div>
-                    <div style={{textAlign:'right'}}>
-                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{homeText.tourPriceLabel}</div>
-                      <div className="ko-serif" style={{fontSize:20, marginTop:4, color:'var(--ink)', fontWeight:600}}>{t.price ? (typeof t.price === 'number' ? window.BGNJ_FMT?.won?.(t.price) ?? '' : t.price) : homeText.emptyFallback}</div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-            )}
-          </div>
-        </section></HomeSectionBoundary>
-
       {/* ── 뱅기노자 칼럼 — v00.164 magazine spread 톤 (외부 SectionHead 폐기) ─── */}
       {featuredColumn && (
         <HomeSectionBoundary label="칼럼"><section className="section--mid" style={{}}>
@@ -1003,6 +884,150 @@ const HomePage = ({ go }) => {
           </div>
         </section></HomeSectionBoundary>
       )}
+
+      {/* ── 뱅기노자 추천 (관리자 콘텐츠 패널에서 추가) — v00.164 anchor 박자 + asymmetric grid ─── */}
+      {recommendations.length > 0 && (
+        <HomeSectionBoundary label="뱅기노자 추천"><section className="section section--anchor" style={{background:'var(--bg-2)'}}>
+          <div className="container">
+            {(() => {
+              // v00.083 — site_content_kv.recommendationsHeading 에서 hero 읽음 (v00.073 sweep 미완 잔재).
+              const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).recommendationsHeading || {};
+              const eb = homeText.recEyebrow || _i.eyebrow || HOME_TEXT_DEFAULT.recEyebrow;
+              const tp = homeText.recTitlePrefix ?? _i.titlePrefix ?? HOME_TEXT_DEFAULT.recTitlePrefix;
+              const ta = homeText.recTitleAccent ?? _i.titleAccent ?? HOME_TEXT_DEFAULT.recTitleAccent;
+              const ts = homeText.recTitleSuffix ?? _i.titleSuffix ?? HOME_TEXT_DEFAULT.recTitleSuffix;
+              const sb = homeText.recSubtitle || _i.subtitle || HOME_TEXT_DEFAULT.recSubtitle;
+              return (
+                <SectionHead
+                  eyebrow={eb}
+                  title={<>{tp}<span className="accent">{ta}</span>{ts}</>}
+                  subtitle={sb}
+                  action={<button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.recAction}</button>}
+                />
+              );
+            })()}
+            {/* v00.164 — 추천 카드 3개 이상이면 asymmetric (첫 카드 2x). 그 미만이면 grid-3 폴백. */}
+            <div className={recommendations.length >= 3 ? 'grid grid-feature-2' : 'grid grid-3'}>
+              {recommendations.map((r, ri) => {
+                const tags = Array.isArray(r.tags) ? r.tags : (typeof r.tags === 'string' ? r.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : []);
+                // v00.164 — 첫 카드 (asymmetric 모드) 는 사진/타이틀/desc 모두 큼.
+                const isFeature = recommendations.length >= 3 && ri === 0;
+                return (
+                  <article key={r.id || r.name}
+                    className="card card--bare"
+                    {...clickable(() => setRecDetail(r), `${r.name || '추천'} 상세 보기`)}
+                    style={{cursor:'pointer', display:'flex', flexDirection:'column', padding:0}}>
+                    <div style={{
+                      height: isFeature ? 320 : 160, marginBottom:18, position:'relative', overflow:'hidden',
+                      background: r.imageDataUri ? `url(${r.imageDataUri}) center/cover` : 'var(--bg-3)',
+                    }}>
+                      {r.region && (
+                        <div style={{
+                          position:'absolute', top:10, left:12,
+                          padding:'3px 8px', background:'var(--bg-2)',
+                          fontFamily:'var(--font-mono)', fontSize:10, fontWeight:600,
+                          letterSpacing:'0.18em', color:'var(--ink-2)',
+                        }}>{r.region}</div>
+                      )}
+                    </div>
+                    {tags.length > 0 && (
+                      <div style={{display:'flex', gap:6, marginBottom:10, flexWrap:'wrap'}}>
+                        {tags.slice(0, 3).map((t) => (
+                          <span key={t} className="badge" style={{fontSize:9}}>{t}</span>
+                        ))}
+                      </div>
+                    )}
+                    <h3 className="ko-serif" style={{fontSize: isFeature ? 30 : 22, fontWeight:600, marginBottom:5, lineHeight:1.25}}>{r.name || '제목 없음'}</h3>
+                    {r.subtitle && (
+                      <div style={{
+                        fontFamily:'var(--font-mono)', fontSize:11, fontWeight:600,
+                        color:'var(--secondary)', letterSpacing:'0.05em', marginBottom:10,
+                      }}>{r.subtitle}</div>
+                    )}
+                    {r.desc && <p style={{fontSize: isFeature ? 14 : 13, lineHeight:1.7, color:'var(--ink-2)'}}>{r.desc}</p>}
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section></HomeSectionBoundary>
+      )}
+
+      {/* ── 투어 프로그램 — v00.164 inline 헤더 + section-tight (지원 박자) ──── */}
+      {/* v00.291 — 예정이 없으면 지난 답사를 보여준다(강연 섹션과 동일 태도).
+          v00.266 의 '지난 일정 노출 금지' 정책을 철회 — 투어만 빈 카드가 남아 홈 안에서 불일치했고,
+          실제로 예정이 0건인 기간이 길어 "없습니다"만 보여주는 화면이 고착됐다. */}
+      <HomeSectionBoundary label="투어 프로그램"><section className="section-tight" style={{}}>
+          <div className="container">
+            {/* v00.164 — inline 헤더: eyebrow + title + count + action 한 줄. subtitle 제거 (section-head--inline 가 hide). */}
+            <div className="section-head section-head--inline">
+              <div>
+                <div className="section-eyebrow" aria-hidden="true">{homeText.tourEyebrow}</div>
+                <h2 className="section-title">
+                  {homeText.tourTitle}
+                  {tours.length > 0 && !toursArePast && (
+                    <span className="mono" style={{
+                      fontSize:13, fontWeight:600, letterSpacing:'0.18em',
+                      color:'var(--ink-3)', marginLeft:14, verticalAlign:'middle',
+                    }}>· {tours.length}개 일정</span>
+                  )}
+                </h2>
+                {toursArePast && (
+                  <p className="dim" style={{fontSize:12.5, marginTop:6, marginBottom:0, color:'var(--ink-3)'}}>
+                    현재 예정된 답사가 없어 지난 답사를 보여드립니다.
+                  </p>
+                )}
+              </div>
+              <button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.tourAction}</button>
+            </div>
+            {tours.length === 0 ? (
+              <div className="card" style={{padding:'40px 24px', textAlign:'center'}}>
+                <div className="ko-serif" style={{fontSize:18, color:'var(--ink-2)', marginBottom:8}}>이번에 함께 걸을 길이 아직 없습니다</div>
+                <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
+                  다음 답사 일정을 준비하고 있어요. <button type="button" className="link-inline" onClick={() => go('tour')} style={{background:'none', border:'none', padding:0, color:'var(--secondary)', cursor:'pointer', font:'inherit', textDecoration:'underline'}}>전체 일정</button>에서 지난 답사 기록을 볼 수 있습니다.
+                </p>
+              </div>
+            ) : (
+            <div className="grid grid-2">
+              {tours.map((t, i) => (
+                <article key={t.id} className="card"
+                  {...clickable(() => go('tour'), `투어: ${t.title}`)}
+                  style={{cursor:'pointer', position:'relative'}}>
+                  <div className="mono" style={{
+                    position:'absolute', top:20, right:20,
+                    fontSize:10, color:'var(--ink-3)', letterSpacing:'0.2em',
+                  }}>0{i+1}</div>
+                  <div style={{display:'flex', gap:8, marginBottom:16, flexWrap:'wrap', alignItems:'center'}}>
+                    {/* v00.291 — 지난 답사 폴백 모드에서 '지난 답사' 마크 (강연 카드와 동일 패턴). */}
+                    {toursArePast && (
+                      <span className="badge" style={{borderColor:'var(--ink-3)', color:'var(--ink-3)', background:'var(--bg-2)'}}>지난 답사</span>
+                    )}
+                    {t.level && <span className="badge">{t.level}</span>}
+                    {t.duration && <span className="badge">{t.duration}</span>}
+                    {t.group && <span className="badge">{t.group}</span>}
+                  </div>
+                  <h3 className="card-title" style={{fontSize:22, marginBottom:10}}>{t.title}</h3>
+                  {t.desc && <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:20}}>{truncatePreview(t.desc, 110)}</p>}
+                  <div style={{
+                    display:'flex', justifyContent:'space-between', alignItems:'center',
+                    borderTop:'1px solid var(--line)', paddingTop:16,
+                  }}>
+                    <div>
+                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{homeText.tourNextLabel}</div>
+                      <div style={{fontSize:14, marginTop:4, color:'var(--ink)', fontWeight:500}}>{t.next || homeText.emptyFallback}</div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{homeText.tourPriceLabel}</div>
+                      <div className="ko-serif" style={{fontSize:20, marginTop:4, color:'var(--ink)', fontWeight:600}}>{t.price ? (typeof t.price === 'number' ? window.BGNJ_FMT?.won?.(t.price) ?? '' : t.price) : homeText.emptyFallback}</div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+            )}
+          </div>
+        </section></HomeSectionBoundary>
+
 
       {/* ── 강연 일정 — v00.164 가로 스크롤 strip (film strip 톤) ──────── */}
       {lectures.length > 0 && (

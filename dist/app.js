@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.290.000",
+    version: "00.291.001",
     build: "2026.07.29",
     channel: "preview"
   };
@@ -7372,10 +7372,23 @@
     );
     const _cutoff = Date.now() - 864e5;
     const _validStart = (x) => x && !x.hidden && !isNaN(_eventTs(x));
-    const tours = React.useMemo(() => G2.arr(() => {
-      var _a2, _b2;
-      return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
-    }).filter(_validStart).filter((t) => _eventTs(t) >= _cutoff).sort((a, b) => _eventTs(a) - _eventTs(b)).slice(0, 4), [toursTick]);
+    const tours = React.useMemo(() => {
+      const all = G2.arr(() => {
+        var _a2, _b2;
+        return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
+      }).filter(_validStart);
+      const upcoming = all.filter((t) => _eventTs(t) >= _cutoff).sort((a, b) => _eventTs(a) - _eventTs(b));
+      if (upcoming.length > 0) return upcoming.slice(0, 4);
+      return all.filter((t) => _eventTs(t) < _cutoff).sort((a, b) => _eventTs(b) - _eventTs(a)).slice(0, 4);
+    }, [toursTick]);
+    const toursArePast = tours.length > 0 && tours.every((t) => _eventTs(t) < _cutoff);
+    const toursTotal = React.useMemo(
+      () => G2.arr(() => {
+        var _a2, _b2;
+        return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
+      }).filter(_validStart).length,
+      [toursTick]
+    );
     const lectures = React.useMemo(() => {
       const all = G2.arr(() => {
         var _a2, _b2;
@@ -7403,7 +7416,7 @@
     };
     const stats = [
       _stat(0, recommendations.length > 0 ? `${recommendations.length}\uACF3` : ""),
-      _stat(1, tours.length > 0 ? `${tours.length}\uAC1C` : ""),
+      _stat(1, toursTotal > 0 ? `${toursTotal}\uAC1C` : ""),
       _stat(2, allPostsCount > 0 ? `${allPostsCount}+` : "")
     ].filter(Boolean);
     const clickable = (onClick, label) => ({
@@ -7529,101 +7542,7 @@
         fontSize: heroStyle.stats.sub.fontSize,
         color: `var(${heroStyle.stats.sub.color})`
       } }, stat.s))))), /* @__PURE__ */ React.createElement(HeroProgramCards, { go, dataTick, text: homeText })))
-    )), recommendations.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uBC45\uAE30\uB178\uC790 \uCD94\uCC9C" }, /* @__PURE__ */ React.createElement("section", { className: "section section--anchor", style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, (() => {
-      var _a2, _b2, _c2, _d, _e, _f, _g, _h;
-      const _i = (((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {}).recommendationsHeading || {};
-      const eb = homeText.recEyebrow || _i.eyebrow || HOME_TEXT_DEFAULT.recEyebrow;
-      const tp = (_d = (_c2 = homeText.recTitlePrefix) != null ? _c2 : _i.titlePrefix) != null ? _d : HOME_TEXT_DEFAULT.recTitlePrefix;
-      const ta = (_f = (_e = homeText.recTitleAccent) != null ? _e : _i.titleAccent) != null ? _f : HOME_TEXT_DEFAULT.recTitleAccent;
-      const ts = (_h = (_g = homeText.recTitleSuffix) != null ? _g : _i.titleSuffix) != null ? _h : HOME_TEXT_DEFAULT.recTitleSuffix;
-      const sb = homeText.recSubtitle || _i.subtitle || HOME_TEXT_DEFAULT.recSubtitle;
-      return /* @__PURE__ */ React.createElement(
-        SectionHead,
-        {
-          eyebrow: eb,
-          title: /* @__PURE__ */ React.createElement(React.Fragment, null, tp, /* @__PURE__ */ React.createElement("span", { className: "accent" }, ta), ts),
-          subtitle: sb,
-          action: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("tour") }, homeText.recAction)
-        }
-      );
-    })(), /* @__PURE__ */ React.createElement("div", { className: recommendations.length >= 3 ? "grid grid-feature-2" : "grid grid-3" }, recommendations.map((r, ri) => {
-      const tags = Array.isArray(r.tags) ? r.tags : typeof r.tags === "string" ? r.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : [];
-      const isFeature = recommendations.length >= 3 && ri === 0;
-      return /* @__PURE__ */ React.createElement(
-        "article",
-        {
-          key: r.id || r.name,
-          className: "card card--bare",
-          ...clickable(() => setRecDetail(r), `${r.name || "\uCD94\uCC9C"} \uC0C1\uC138 \uBCF4\uAE30`),
-          style: { cursor: "pointer", display: "flex", flexDirection: "column", padding: 0 }
-        },
-        /* @__PURE__ */ React.createElement("div", { style: {
-          height: isFeature ? 320 : 160,
-          marginBottom: 18,
-          position: "relative",
-          overflow: "hidden",
-          background: r.imageDataUri ? `url(${r.imageDataUri}) center/cover` : "var(--bg-3)"
-        } }, r.region && /* @__PURE__ */ React.createElement("div", { style: {
-          position: "absolute",
-          top: 10,
-          left: 12,
-          padding: "3px 8px",
-          background: "var(--bg-2)",
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          fontWeight: 600,
-          letterSpacing: "0.18em",
-          color: "var(--ink-2)"
-        } }, r.region)),
-        tags.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" } }, tags.slice(0, 3).map((t) => /* @__PURE__ */ React.createElement("span", { key: t, className: "badge", style: { fontSize: 9 } }, t))),
-        /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: isFeature ? 30 : 22, fontWeight: 600, marginBottom: 5, lineHeight: 1.25 } }, r.name || "\uC81C\uBAA9 \uC5C6\uC74C"),
-        r.subtitle && /* @__PURE__ */ React.createElement("div", { style: {
-          fontFamily: "var(--font-mono)",
-          fontSize: 11,
-          fontWeight: 600,
-          color: "var(--secondary)",
-          letterSpacing: "0.05em",
-          marginBottom: 10
-        } }, r.subtitle),
-        r.desc && /* @__PURE__ */ React.createElement("p", { style: { fontSize: isFeature ? 14 : 13, lineHeight: 1.7, color: "var(--ink-2)" } }, r.desc)
-      );
-    }))))), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: {} }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.tourEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.tourTitle, tours.length > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: {
-      fontSize: 13,
-      fontWeight: 600,
-      letterSpacing: "0.18em",
-      color: "var(--ink-3)",
-      marginLeft: 14,
-      verticalAlign: "middle"
-    } }, "\xB7 ", tours.length, "\uAC1C \uC77C\uC815"))), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("tour") }, homeText.tourAction)), tours.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "40px 24px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, color: "var(--ink-2)", marginBottom: 8 } }, "\uC774\uBC88\uC5D0 \uD568\uAED8 \uAC78\uC744 \uAE38\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, "\uB2E4\uC74C \uB2F5\uC0AC \uC77C\uC815\uC744 \uC900\uBE44\uD558\uACE0 \uC788\uC5B4\uC694. ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "link-inline", onClick: () => go("tour"), style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", cursor: "pointer", font: "inherit", textDecoration: "underline" } }, "\uC804\uCCB4 \uC77C\uC815"), "\uC5D0\uC11C \uC9C0\uB09C \uB2F5\uC0AC \uAE30\uB85D\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4.")) : /* @__PURE__ */ React.createElement("div", { className: "grid grid-2" }, tours.map((t, i) => {
-      var _a2, _b2, _c2;
-      return /* @__PURE__ */ React.createElement(
-        "article",
-        {
-          key: t.id,
-          className: "card",
-          ...clickable(() => go("tour"), `\uD22C\uC5B4: ${t.title}`),
-          style: { cursor: "pointer", position: "relative" }
-        },
-        /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
-          position: "absolute",
-          top: 20,
-          right: 20,
-          fontSize: 10,
-          color: "var(--ink-3)",
-          letterSpacing: "0.2em"
-        } }, "0", i + 1),
-        /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" } }, t.level && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.level), t.duration && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.duration), t.group && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.group)),
-        /* @__PURE__ */ React.createElement("h3", { className: "card-title", style: { fontSize: 22, marginBottom: 10 } }, t.title),
-        t.desc && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, marginBottom: 20 } }, truncatePreview(t.desc, 110)),
-        /* @__PURE__ */ React.createElement("div", { style: {
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderTop: "1px solid var(--line)",
-          paddingTop: 16
-        } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourNextLabel), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, marginTop: 4, color: "var(--ink)", fontWeight: 500 } }, t.next || homeText.emptyFallback)), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourPriceLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 20, marginTop: 4, color: "var(--ink)", fontWeight: 600 } }, t.price ? typeof t.price === "number" ? (_c2 = (_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.won) == null ? void 0 : _b2.call(_a2, t.price)) != null ? _c2 : "" : t.price : homeText.emptyFallback)))
-      );
-    }))))), featuredColumn && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCE7C\uB7FC" }, /* @__PURE__ */ React.createElement("section", { className: "section--mid", style: {} }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: {
+    )), featuredColumn && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCE7C\uB7FC" }, /* @__PURE__ */ React.createElement("section", { className: "section--mid", style: {} }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "baseline",
@@ -7761,7 +7680,101 @@
           textOverflow: "ellipsis"
         } }, truncatePreview(c.excerpt, 38))
       )), secondaryColumns.length === 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-3)", padding: "16px 0" } }, homeText.columnEmpty))
-    )))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle), lecturesArePast && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12.5, marginTop: 6, marginBottom: 0, color: "var(--ink-3)" } }, "\uD604\uC7AC \uC608\uC815\uB41C \uAC15\uC5F0\uC774 \uC5C6\uC5B4 \uC9C0\uB09C \uAC15\uC5F0\uC744 \uBCF4\uC5EC\uB4DC\uB9BD\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: `lecture-strip${lectures.length <= 2 ? " lecture-strip--grid" : ""}`, role: "list" }, lectures.map((lecture) => {
+    )))), recommendations.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uBC45\uAE30\uB178\uC790 \uCD94\uCC9C" }, /* @__PURE__ */ React.createElement("section", { className: "section section--anchor", style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, (() => {
+      var _a2, _b2, _c2, _d, _e, _f, _g, _h;
+      const _i = (((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {}).recommendationsHeading || {};
+      const eb = homeText.recEyebrow || _i.eyebrow || HOME_TEXT_DEFAULT.recEyebrow;
+      const tp = (_d = (_c2 = homeText.recTitlePrefix) != null ? _c2 : _i.titlePrefix) != null ? _d : HOME_TEXT_DEFAULT.recTitlePrefix;
+      const ta = (_f = (_e = homeText.recTitleAccent) != null ? _e : _i.titleAccent) != null ? _f : HOME_TEXT_DEFAULT.recTitleAccent;
+      const ts = (_h = (_g = homeText.recTitleSuffix) != null ? _g : _i.titleSuffix) != null ? _h : HOME_TEXT_DEFAULT.recTitleSuffix;
+      const sb = homeText.recSubtitle || _i.subtitle || HOME_TEXT_DEFAULT.recSubtitle;
+      return /* @__PURE__ */ React.createElement(
+        SectionHead,
+        {
+          eyebrow: eb,
+          title: /* @__PURE__ */ React.createElement(React.Fragment, null, tp, /* @__PURE__ */ React.createElement("span", { className: "accent" }, ta), ts),
+          subtitle: sb,
+          action: /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("tour") }, homeText.recAction)
+        }
+      );
+    })(), /* @__PURE__ */ React.createElement("div", { className: recommendations.length >= 3 ? "grid grid-feature-2" : "grid grid-3" }, recommendations.map((r, ri) => {
+      const tags = Array.isArray(r.tags) ? r.tags : typeof r.tags === "string" ? r.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : [];
+      const isFeature = recommendations.length >= 3 && ri === 0;
+      return /* @__PURE__ */ React.createElement(
+        "article",
+        {
+          key: r.id || r.name,
+          className: "card card--bare",
+          ...clickable(() => setRecDetail(r), `${r.name || "\uCD94\uCC9C"} \uC0C1\uC138 \uBCF4\uAE30`),
+          style: { cursor: "pointer", display: "flex", flexDirection: "column", padding: 0 }
+        },
+        /* @__PURE__ */ React.createElement("div", { style: {
+          height: isFeature ? 320 : 160,
+          marginBottom: 18,
+          position: "relative",
+          overflow: "hidden",
+          background: r.imageDataUri ? `url(${r.imageDataUri}) center/cover` : "var(--bg-3)"
+        } }, r.region && /* @__PURE__ */ React.createElement("div", { style: {
+          position: "absolute",
+          top: 10,
+          left: 12,
+          padding: "3px 8px",
+          background: "var(--bg-2)",
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          fontWeight: 600,
+          letterSpacing: "0.18em",
+          color: "var(--ink-2)"
+        } }, r.region)),
+        tags.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" } }, tags.slice(0, 3).map((t) => /* @__PURE__ */ React.createElement("span", { key: t, className: "badge", style: { fontSize: 9 } }, t))),
+        /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: isFeature ? 30 : 22, fontWeight: 600, marginBottom: 5, lineHeight: 1.25 } }, r.name || "\uC81C\uBAA9 \uC5C6\uC74C"),
+        r.subtitle && /* @__PURE__ */ React.createElement("div", { style: {
+          fontFamily: "var(--font-mono)",
+          fontSize: 11,
+          fontWeight: 600,
+          color: "var(--secondary)",
+          letterSpacing: "0.05em",
+          marginBottom: 10
+        } }, r.subtitle),
+        r.desc && /* @__PURE__ */ React.createElement("p", { style: { fontSize: isFeature ? 14 : 13, lineHeight: 1.7, color: "var(--ink-2)" } }, r.desc)
+      );
+    }))))), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: {} }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.tourEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.tourTitle, tours.length > 0 && !toursArePast && /* @__PURE__ */ React.createElement("span", { className: "mono", style: {
+      fontSize: 13,
+      fontWeight: 600,
+      letterSpacing: "0.18em",
+      color: "var(--ink-3)",
+      marginLeft: 14,
+      verticalAlign: "middle"
+    } }, "\xB7 ", tours.length, "\uAC1C \uC77C\uC815")), toursArePast && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12.5, marginTop: 6, marginBottom: 0, color: "var(--ink-3)" } }, "\uD604\uC7AC \uC608\uC815\uB41C \uB2F5\uC0AC\uAC00 \uC5C6\uC5B4 \uC9C0\uB09C \uB2F5\uC0AC\uB97C \uBCF4\uC5EC\uB4DC\uB9BD\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("tour") }, homeText.tourAction)), tours.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "40px 24px", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 18, color: "var(--ink-2)", marginBottom: 8 } }, "\uC774\uBC88\uC5D0 \uD568\uAED8 \uAC78\uC744 \uAE38\uC774 \uC544\uC9C1 \uC5C6\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, "\uB2E4\uC74C \uB2F5\uC0AC \uC77C\uC815\uC744 \uC900\uBE44\uD558\uACE0 \uC788\uC5B4\uC694. ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "link-inline", onClick: () => go("tour"), style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", cursor: "pointer", font: "inherit", textDecoration: "underline" } }, "\uC804\uCCB4 \uC77C\uC815"), "\uC5D0\uC11C \uC9C0\uB09C \uB2F5\uC0AC \uAE30\uB85D\uC744 \uBCFC \uC218 \uC788\uC2B5\uB2C8\uB2E4.")) : /* @__PURE__ */ React.createElement("div", { className: "grid grid-2" }, tours.map((t, i) => {
+      var _a2, _b2, _c2;
+      return /* @__PURE__ */ React.createElement(
+        "article",
+        {
+          key: t.id,
+          className: "card",
+          ...clickable(() => go("tour"), `\uD22C\uC5B4: ${t.title}`),
+          style: { cursor: "pointer", position: "relative" }
+        },
+        /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
+          position: "absolute",
+          top: 20,
+          right: 20,
+          fontSize: 10,
+          color: "var(--ink-3)",
+          letterSpacing: "0.2em"
+        } }, "0", i + 1),
+        /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", alignItems: "center" } }, toursArePast && /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--ink-3)", color: "var(--ink-3)", background: "var(--bg-2)" } }, "\uC9C0\uB09C \uB2F5\uC0AC"), t.level && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.level), t.duration && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.duration), t.group && /* @__PURE__ */ React.createElement("span", { className: "badge" }, t.group)),
+        /* @__PURE__ */ React.createElement("h3", { className: "card-title", style: { fontSize: 22, marginBottom: 10 } }, t.title),
+        t.desc && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, marginBottom: 20 } }, truncatePreview(t.desc, 110)),
+        /* @__PURE__ */ React.createElement("div", { style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderTop: "1px solid var(--line)",
+          paddingTop: 16
+        } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourNextLabel), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, marginTop: 4, color: "var(--ink)", fontWeight: 500 } }, t.next || homeText.emptyFallback)), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourPriceLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 20, marginTop: 4, color: "var(--ink)", fontWeight: 600 } }, t.price ? typeof t.price === "number" ? (_c2 = (_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.won) == null ? void 0 : _b2.call(_a2, t.price)) != null ? _c2 : "" : t.price : homeText.emptyFallback)))
+      );
+    }))))), lectures.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uAC15\uC5F0" }, /* @__PURE__ */ React.createElement("section", { className: "section-tight", style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "section-head section-head--inline" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.lecturesEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title" }, homeText.lecturesTitle), lecturesArePast && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12.5, marginTop: 6, marginBottom: 0, color: "var(--ink-3)" } }, "\uD604\uC7AC \uC608\uC815\uB41C \uAC15\uC5F0\uC774 \uC5C6\uC5B4 \uC9C0\uB09C \uAC15\uC5F0\uC744 \uBCF4\uC5EC\uB4DC\uB9BD\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("lectures") }, homeText.lecturesAction)), /* @__PURE__ */ React.createElement("div", { className: `lecture-strip${lectures.length <= 2 ? " lecture-strip--grid" : ""}`, role: "list" }, lectures.map((lecture) => {
       var _a2, _b2;
       const heroMode = lectures.length === 1;
       const price = (_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.priceOrFree) == null ? void 0 : _b2.call(_a2, lecture.price);
