@@ -2866,3 +2866,67 @@ body.cookie-pending .help-panel { display: none !important; }
   .hero-d-cta { margin-left: 0; width: 100%; margin-top: var(--s3); }
   .hero-ticker-item { font-size: 17px; }
 }
+
+/* ── 반전 블록 (v00.293) — 다크에서 오던 대비를 여기 한 번에 몰았다 ── */
+.home-split { display: grid; grid-template-columns: 1fr 1fr; }
+.home-split-half {
+  padding: var(--s8) var(--s7);
+  background: var(--bg);
+  cursor: pointer;
+  transition: background-color .2s;
+}
+.home-split-half:hover { background: var(--bg-2); }
+.home-split-half--ink { background: var(--ink); color: var(--on-primary); }
+.home-split-half--ink:hover { background: #2A2C31; }
+.home-split-eb {
+  font-size: var(--fs-micro); letter-spacing: 0.24em;
+  color: var(--ink-4); margin-bottom: var(--s5);
+}
+.home-split-half--ink .home-split-eb { color: rgba(245,243,239,.5); }
+.home-split-title {
+  font-family: var(--font-display); font-size: 30px; line-height: 1.36;
+  font-weight: 400; margin: 0 0 var(--s4);
+}
+.home-split-body {
+  font-size: var(--fs-sm); line-height: 1.95; color: var(--ink-2);
+  max-width: 390px; margin: 0;
+}
+.home-split-half--ink .home-split-body { color: rgba(245,243,239,.72); }
+.home-split-link {
+  display: inline-block; margin-top: var(--s5);
+  font-size: 11px; letter-spacing: 0.14em;
+  padding-bottom: 5px; border-bottom: 1px solid currentColor;
+}
+
+/* ── 통합 기록 목록 (v00.293) ── */
+.home-feed { padding: var(--s9) 0; background: var(--bg); }
+.home-feed-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding-bottom: var(--s4); border-bottom: 1px solid var(--line);
+}
+.home-feed-label {
+  font-size: 9.5px; letter-spacing: 0.26em; color: var(--ink-4);
+  text-transform: uppercase;
+}
+.home-feed-row {
+  display: grid; grid-template-columns: 88px 1fr auto;
+  gap: var(--s5); align-items: baseline;
+  padding: var(--s4) 0; border-bottom: 1px solid var(--line);
+  cursor: pointer; transition: opacity .18s;
+}
+.home-feed-row:hover { opacity: .58; }
+.home-feed-date { font-size: 10.5px; color: var(--ink-4); }
+.home-feed-title {
+  font-family: var(--font-display); font-size: 17px;
+  font-weight: 400; line-height: 1.5; margin: 0; color: var(--ink);
+}
+.home-feed-tag { font-size: 9.5px; letter-spacing: 0.18em; color: var(--ink-4); }
+
+@media (max-width: 900px) {
+  .home-split { grid-template-columns: 1fr !important; }
+  .home-split-half { padding: var(--s7) var(--s5); }
+  .home-split-title { font-size: 23px; }
+  .home-feed { padding: var(--s7) 0; }
+  .home-feed-row { grid-template-columns: 1fr auto; gap: var(--s3); }
+  .home-feed-date { grid-column: 1 / -1; }
+}

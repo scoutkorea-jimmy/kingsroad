@@ -582,6 +582,7 @@ const HomePage = ({ go }) => {
   }, [toursTick]);
   // 투어 섹션이 '지난 답사 폴백' 모드인지 (예정이 하나도 없을 때).
   const toursArePast = tours.length > 0 && tours.every((t) => _eventTs(t) < _cutoff);
+
   // 히어로 지표용 전체 개수 — 위 tours 는 카드용으로 4개까지만 자르므로 지표에 쓰면 틀린 수가 나온다.
   // 라벨이 '투어 · 직접 기획 프로그램' 이므로 지난 것 포함 전체가 맞는 의미다.
   const toursTotal = React.useMemo(
@@ -599,6 +600,47 @@ const HomePage = ({ go }) => {
   }, [lecturesTick]);
   // 강연 섹션이 '지난 강연 폴백' 모드인지 (예정이 하나도 없을 때).
   const lecturesArePast = lectures.length > 0 && lectures.every((l) => _eventTs(l) < _cutoff);
+
+  // v00.293 — 홈 통합 피드. 칼럼·답사·강연을 날짜순 한 줄로 섞는다.
+  // 이전엔 세 섹션이 따로 있어 같은 리듬(아이브로우→제목→전체보기→카드)이 세 번 반복됐다.
+  // 각 항목은 자기 페이지로 가고, 상세가 있는 것은 sessionStorage 펜딩 키로 바로 연다.
+  const recentEntries = React.useMemo(() => {
+    const fmt = (t) => {
+      if (isNaN(t)) return '';
+      const d = new Date(t);
+      const p2 = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())}`;
+    };
+    const colTs = (c) => {
+      const raw = c.publishedAt || c.createdAt || c.date;
+      const t = raw ? Date.parse(raw) : NaN;
+      return isNaN(t) ? 0 : t;
+    };
+    const items = [
+      ...publicColumns.slice(0, 10).map((c) => ({
+        kind: 'col', id: c.id, title: c.title, tag: '기록',
+        ts: colTs(c), date: fmt(colTs(c)),
+        onGo: () => go('column'),
+      })),
+      ...tours.map((t) => ({
+        kind: 'tour', id: t.id, title: t.title, tag: '답사',
+        ts: _eventTs(t) || 0, date: fmt(_eventTs(t)),
+        onGo: () => {
+          try { sessionStorage.setItem('bgnj_pending_tour_id', String(t.id)); } catch {}
+          go('tour');
+        },
+      })),
+      ...lectures.map((l) => ({
+        kind: 'lec', id: l.id, title: l.topic || l.title, tag: '강연',
+        ts: _eventTs(l) || 0, date: fmt(_eventTs(l)),
+        onGo: () => {
+          try { sessionStorage.setItem('bgnj_pending_lecture_id', String(l.id)); } catch {}
+          go('lectures');
+        },
+      })),
+    ];
+    return items.filter((x) => x.title).sort((a, b) => b.ts - a.ts).slice(0, 8);
+  }, [publicColumns, tours, lectures]);
 
   // hero.stats 가 있으면 콘텐츠(label/sub/valueFallback) 를 거기서. 동적 value(투어/커뮤니티 갯수) 는 코드 측 우선.
   const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
@@ -708,128 +750,65 @@ const HomePage = ({ go }) => {
         </HomeSectionBoundary>
       )}
 
-      {/* ── 뱅기노자 칼럼 — v00.164 magazine spread 톤 (외부 SectionHead 폐기) ─── */}
-      {featuredColumn && (
-        <HomeSectionBoundary label="칼럼"><section className="section--mid" style={{}}>
-          <div className="container">
-            {/* v00.164 — eyebrow 만 가벼운 헤더, title 은 featured 카드 안으로 흡수. */}
-            <div style={{
-              display:'flex', justifyContent:'space-between', alignItems:'baseline',
-              marginBottom:28, gap:16, flexWrap:'wrap',
-            }}>
-              <div className="section-eyebrow" aria-hidden="true" style={{margin:0}}>{homeText.columnEyebrow}</div>
-              <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap'}}>
-                {/* v00.169 — admin 전용 글쓰기 진입. /column 으로 이동하며 sessionStorage flag 로 모달 자동 오픈. */}
-                {!!window.BGNJ_AUTH?.currentUser?.()?.isAdmin && (
-                  <button type="button" className="btn btn-gold btn-small"
-                    onClick={() => {
-                      try { sessionStorage.setItem('bgnj_pending_column_write', '1'); } catch {}
-                      go('column');
-                    }}>＋ 글쓰기</button>
-                )}
-                <button type="button" className="btn-ghost" onClick={() => go('column')}>{homeText.columnAction}</button>
-              </div>
-            </div>
-            <div style={{display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:56}} className="col-grid"
-              onMouseEnter={() => setColumnPaused(true)} onMouseLeave={() => setColumnPaused(false)}
-              onFocusCapture={() => setColumnPaused(true)} onBlurCapture={() => setColumnPaused(false)}>
-              {/* v00.164 — 피처드 = magazine spread. v00.240 — 자동 순환 (5초).
-                  v00.246 — slide-in 애니메이션 + 높이 안정화 + 제목 20자 통일.
-                  key={featuredIdx} 로 매 순환마다 unmount/mount → CSS keyframe 재생. */}
-              <article
-                key={featuredIdx}
-                className="column-featured-slide"
-                style={{cursor:'pointer', position:'relative', minHeight:600, display:'flex', flexDirection:'column'}}
-                {...clickable(() => go('column'), `칼럼: ${featuredColumn.title}`)}>
-                {(featuredColumn.coverUrl || featuredColumn.coverImage) ? (
-                  <div style={{
-                    height:320, marginBottom:24, flex:'0 0 auto',
-                    backgroundImage:`url(${featuredColumn.coverUrl || featuredColumn.coverImage})`,
-                    backgroundSize:'cover', backgroundPosition:'center',
-                  }}/>
-                ) : (
-                  <div style={{
-                    height:320, background:'var(--bg-2)', marginBottom:24, flex:'0 0 auto', borderRadius:12,
-                    display:'grid', placeItems:'center',
-                  }}>
-                    <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.28em'}}>FEATURED COLUMN</div>
-                  </div>
-                )}
-                <div style={{display:'flex', gap:12, alignItems:'center', marginBottom:14, flexWrap:'wrap'}}>
-                  {featuredColumn.category && <span className="pill">{featuredColumn.category}</span>}
-                  {featuredColumn.date && <span className="mono dim-2" style={{fontSize:11}}>{featuredColumn.date}</span>}
-                  {featuredColumn.readTime && <span className="mono dim-2" style={{fontSize:11}}>· {featuredColumn.readTime}</span>}
-                </div>
-                {/* v00.246 — 제목 20자 통일 (사용자 요청 — 이전엔 자르지 않아 들쭉날쭉). lineHeight 1.25 + 1줄 강제. */}
-                <h2 style={{
-                  fontFamily:'var(--font-serif)', fontSize:'clamp(24px, 2.6vw, 32px)',
-                  fontWeight:600, lineHeight:1.25, marginBottom:14, color:'var(--ink)',
-                  letterSpacing:'-0.01em',
-                  whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-                }}>{truncatePreview(featuredColumn.title, 20)}</h2>
+      {/* ── 반전 블록 (v00.293 · D안) ────────────────────────────────
+          좌: 최신 칼럼 (5편 자동 순환 — featuredIdx 로직 그대로 사용)
+          우: 최신 답사 (잉크 배경) — 다크에서 오던 대비를 여기 한 번에 몰았다.
+          한쪽이라도 데이터가 없으면 그쪽 칸을 렌더하지 않고, 둘 다 없으면 블록 자체가 사라진다. */}
+      {(featuredColumn || tours[0]) && (
+        <HomeSectionBoundary label="반전 블록">
+          <section className="home-split">
+            {featuredColumn && (
+              <div className="home-split-half"
+                {...clickable(() => go('column'), `칼럼: ${featuredColumn.title}`)}
+                onMouseEnter={() => setColumnPaused(true)}
+                onMouseLeave={() => setColumnPaused(false)}>
+                <div className="home-split-eb mono">{homeText.columnEyebrow || '이번 주의 기록'}</div>
+                <h3 className="home-split-title">{featuredColumn.title}</h3>
                 {featuredColumn.excerpt && (
-                  <p style={{fontSize:15, lineHeight:1.75, color:'var(--ink-2)', marginBottom:18, maxWidth:580, minHeight:80}}>
-                    {truncatePreview(featuredColumn.excerpt, 90)}
-                  </p>
+                  <p className="home-split-body">{truncatePreview(featuredColumn.excerpt, 130)}</p>
                 )}
-                <div className="mono" style={{fontSize:11, fontWeight:700, letterSpacing:'0.2em', color:'var(--secondary)'}}>{homeText.columnReadMore}</div>
-                {/* v00.240 — 자동 순환 인디케이터 (점 N 개). 클릭 시 수동 이동. */}
-                {recentFiveColumns.length > 1 && (
-                  <div style={{display:'flex', gap:6, marginTop:18, alignItems:'center'}}
-                    onClick={(e) => e.stopPropagation()}>
-                    {recentFiveColumns.map((_, i) => (
-                      <button key={i} type="button"
-                        aria-label={`${i + 1}번째 칼럼 보기`}
-                        aria-current={i === featuredIdx ? 'true' : undefined}
-                        onClick={() => setFeaturedIdx(i)}
-                        style={{
-                          width: i === featuredIdx ? 22 : 8, height: 8,
-                          borderRadius: 999, border: 'none', cursor: 'pointer',
-                          background: i === featuredIdx ? 'var(--primary)' : 'var(--line-2)',
-                          transition: 'width .25s, background .2s', padding: 0,
-                        }}/>
-                    ))}
-                    <span className="mono dim-2" style={{fontSize:9, marginLeft:8, letterSpacing:'0.15em'}}>
-                      {columnPaused ? '⏸ HOVER' : '▶ AUTO'}
-                    </span>
-                  </div>
-                )}
-              </article>
-              {/* v00.164 — sidebar = 깨끗한 텍스트 list. 카드 라인 X, 구분선만. */}
-              <aside style={{paddingTop:8}}>
-                <div className="mono" style={{
-                  fontSize:10, fontWeight:600, letterSpacing:'0.22em',
-                  color:'var(--ink-3)', marginBottom:18, textTransform:'uppercase',
-                }}>{homeText.columnTitle}</div>
-                {secondaryColumns.map((c, ci) => (
-                  <div key={c.id}
-                    {...clickable(() => go('column'), `칼럼: ${c.title}`)}
-                    style={{
-                      padding:'14px 0', minHeight:88,
-                      borderBottom: ci < secondaryColumns.length - 1 ? '1px solid var(--line)' : 'none',
-                      cursor:'pointer',
-                    }}>
-                    <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:6, flexWrap:'wrap'}}>
-                      {c.category && <span className="pill" style={{fontSize:9, padding:'2px 8px'}}>{c.category}</span>}
-                      {c.date && <span className="mono dim-2" style={{fontSize:10}}>{c.date}</span>}
-                    </div>
-                    {/* v00.246 — 제목 20자 통일 + 1줄 ellipsis (높이 안정화). */}
-                    <h4 className="ko-serif" style={{
-                      fontSize:16, fontWeight:600, lineHeight:1.4, marginBottom:4,
-                      whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-                    }}>{truncatePreview(c.title, 20)}</h4>
-                    {c.excerpt && <p style={{fontSize:12, lineHeight:1.6, color:'var(--ink-3)', margin:0,
-                      whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
-                    }}>{truncatePreview(c.excerpt, 38)}</p>}
-                  </div>
-                ))}
-                {secondaryColumns.length === 0 && (
-                  <p style={{fontSize:13, color:'var(--ink-3)', padding:'16px 0'}}>{homeText.columnEmpty}</p>
-                )}
-              </aside>
+                <span className="home-split-link mono">읽기 →</span>
+              </div>
+            )}
+            {tours[0] && (
+              <div className="home-split-half home-split-half--ink"
+                {...clickable(() => go('tour'), `답사: ${tours[0].title}`)}>
+                <div className="home-split-eb mono">{toursArePast ? '지난 답사' : '다음 답사'}</div>
+                <h3 className="home-split-title">{tours[0].title}</h3>
+                <p className="home-split-body">
+                  {tours[0].desc ? truncatePreview(tours[0].desc, 120) : (tours[0].next || '')}
+                </p>
+                <span className="home-split-link mono">답사 기록 보기 →</span>
+              </div>
+            )}
+          </section>
+        </HomeSectionBoundary>
+      )}
+
+      {/* ── 통합 기록 목록 (v00.293 · D안) ───────────────────────────
+          칼럼·답사·강연을 날짜순 한 줄로 섞는다. 이전엔 세 섹션이 따로 있어
+          같은 리듬(아이브로우→제목→전체보기→카드)이 세 번 반복됐다.
+          유형은 우측 태그로만 구분한다. */}
+      {recentEntries.length > 0 && (
+        <HomeSectionBoundary label="최근 기록">
+          <section className="home-feed">
+            <div className="container">
+              <div className="home-feed-head">
+                <div className="home-feed-label mono">최근 기록</div>
+                <button type="button" className="btn-ghost mono" style={{fontSize:11}}
+                  onClick={() => go('column')}>전체 {publicColumns.length}편 →</button>
+              </div>
+              {recentEntries.map((it) => (
+                <div key={`${it.kind}-${it.id}`} className="home-feed-row"
+                  {...clickable(it.onGo, `${it.tag}: ${it.title}`)}>
+                  <div className="home-feed-date mono">{it.date}</div>
+                  <h4 className="home-feed-title">{it.title}</h4>
+                  <div className="home-feed-tag mono">{it.tag}</div>
+                </div>
+              ))}
             </div>
-          </div>
-        </section></HomeSectionBoundary>
+          </section>
+        </HomeSectionBoundary>
       )}
 
       {/* ── 소개 블록 + 세로 사진 (v00.292) ────────────────────────
@@ -926,191 +905,6 @@ const HomePage = ({ go }) => {
         </section></HomeSectionBoundary>
       )}
 
-      {/* ── 투어 프로그램 — v00.164 inline 헤더 + section-tight (지원 박자) ──── */}
-      {/* v00.291 — 예정이 없으면 지난 답사를 보여준다(강연 섹션과 동일 태도).
-          v00.266 의 '지난 일정 노출 금지' 정책을 철회 — 투어만 빈 카드가 남아 홈 안에서 불일치했고,
-          실제로 예정이 0건인 기간이 길어 "없습니다"만 보여주는 화면이 고착됐다. */}
-      <HomeSectionBoundary label="투어 프로그램"><section className="section-tight" style={{}}>
-          <div className="container">
-            {/* v00.164 — inline 헤더: eyebrow + title + count + action 한 줄. subtitle 제거 (section-head--inline 가 hide). */}
-            <div className="section-head section-head--inline">
-              <div>
-                <div className="section-eyebrow" aria-hidden="true">{homeText.tourEyebrow}</div>
-                <h2 className="section-title">
-                  {homeText.tourTitle}
-                  {tours.length > 0 && !toursArePast && (
-                    <span className="mono" style={{
-                      fontSize:13, fontWeight:600, letterSpacing:'0.18em',
-                      color:'var(--ink-3)', marginLeft:14, verticalAlign:'middle',
-                    }}>· {tours.length}개 일정</span>
-                  )}
-                </h2>
-                {toursArePast && (
-                  <p className="dim" style={{fontSize:12.5, marginTop:6, marginBottom:0, color:'var(--ink-3)'}}>
-                    현재 예정된 답사가 없어 지난 답사를 보여드립니다.
-                  </p>
-                )}
-              </div>
-              <button type="button" className="btn-ghost" onClick={() => go('tour')}>{homeText.tourAction}</button>
-            </div>
-            {tours.length === 0 ? (
-              <div className="card" style={{padding:'40px 24px', textAlign:'center'}}>
-                <div className="ko-serif" style={{fontSize:18, color:'var(--ink-2)', marginBottom:8}}>이번에 함께 걸을 길이 아직 없습니다</div>
-                <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
-                  다음 답사 일정을 준비하고 있어요. <button type="button" className="link-inline" onClick={() => go('tour')} style={{background:'none', border:'none', padding:0, color:'var(--secondary)', cursor:'pointer', font:'inherit', textDecoration:'underline'}}>전체 일정</button>에서 지난 답사 기록을 볼 수 있습니다.
-                </p>
-              </div>
-            ) : (
-            <div className="grid grid-2">
-              {tours.map((t, i) => (
-                <article key={t.id} className="card"
-                  {...clickable(() => go('tour'), `투어: ${t.title}`)}
-                  style={{cursor:'pointer', position:'relative'}}>
-                  <div className="mono" style={{
-                    position:'absolute', top:20, right:20,
-                    fontSize:10, color:'var(--ink-3)', letterSpacing:'0.2em',
-                  }}>0{i+1}</div>
-                  <div style={{display:'flex', gap:8, marginBottom:16, flexWrap:'wrap', alignItems:'center'}}>
-                    {/* v00.291 — 지난 답사 폴백 모드에서 '지난 답사' 마크 (강연 카드와 동일 패턴). */}
-                    {toursArePast && (
-                      <span className="badge" style={{borderColor:'var(--ink-3)', color:'var(--ink-3)', background:'var(--bg-2)'}}>지난 답사</span>
-                    )}
-                    {t.level && <span className="badge">{t.level}</span>}
-                    {t.duration && <span className="badge">{t.duration}</span>}
-                    {t.group && <span className="badge">{t.group}</span>}
-                  </div>
-                  <h3 className="card-title" style={{fontSize:22, marginBottom:10}}>{t.title}</h3>
-                  {t.desc && <p className="dim" style={{fontSize:13, lineHeight:1.7, marginBottom:20}}>{truncatePreview(t.desc, 110)}</p>}
-                  <div style={{
-                    display:'flex', justifyContent:'space-between', alignItems:'center',
-                    borderTop:'1px solid var(--line)', paddingTop:16,
-                  }}>
-                    <div>
-                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{homeText.tourNextLabel}</div>
-                      <div style={{fontSize:14, marginTop:4, color:'var(--ink)', fontWeight:500}}>{t.next || homeText.emptyFallback}</div>
-                    </div>
-                    <div style={{textAlign:'right'}}>
-                      <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{homeText.tourPriceLabel}</div>
-                      <div className="ko-serif" style={{fontSize:20, marginTop:4, color:'var(--ink)', fontWeight:600}}>{t.price ? (typeof t.price === 'number' ? window.BGNJ_FMT?.won?.(t.price) ?? '' : t.price) : homeText.emptyFallback}</div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-            )}
-          </div>
-        </section></HomeSectionBoundary>
-
-
-      {/* ── 강연 일정 — v00.164 가로 스크롤 strip (film strip 톤) ──────── */}
-      {lectures.length > 0 && (
-        <HomeSectionBoundary label="강연"><section className="section-tight" style={{background:'var(--bg-2)'}}>
-          <div className="container">
-            {/* v00.164 — inline 헤더 (3열 grid 와 무게 다른 박자). */}
-            <div className="section-head section-head--inline">
-              <div>
-                <div className="section-eyebrow" aria-hidden="true">{homeText.lecturesEyebrow}</div>
-                <h2 className="section-title">{homeText.lecturesTitle}</h2>
-                {/* v00.266 — 예정 강연이 없어 지난 강연을 노출 중임을 명시. */}
-                {lecturesArePast && (
-                  <p className="dim" style={{fontSize:12.5, marginTop:6, marginBottom:0, color:'var(--ink-3)'}}>
-                    현재 예정된 강연이 없어 지난 강연을 보여드립니다.
-                  </p>
-                )}
-              </div>
-              <button type="button" className="btn-ghost" onClick={() => go('lectures')}>{homeText.lecturesAction}</button>
-            </div>
-            {/* v00.164 — film strip 가로 스크롤. 폭 320px 카드 + scroll-snap.
-                v00.254 — 사용자 보고 '카드 1-2개일 때 좌측만 채우고 우측 빈 공간 → 가독성 ↓'.
-                lectures.length 별 분기: ≤2 grid (풀폭 분할) / ≥3 strip (가로 스크롤). */}
-            <div className={`lecture-strip${lectures.length <= 2 ? ' lecture-strip--grid' : ''}`} role="list">
-              {lectures.map((lecture) => {
-                const heroMode = lectures.length === 1;
-                // v00.255 — 사용자 명시 강연 카드 핵심 정보 5종.
-                const price = window.BGNJ_FMT?.priceOrFree?.(lecture.price);
-                const hours = lecture.durationMinutes
-                  ? `${Math.round(lecture.durationMinutes / 60 * 10) / 10}시간`
-                  : null;
-                // v00.256 — 마감 임박 / 신규 라벨. startsAt 7일 이내 임박, createdAt 3일 이내 신규.
-                const _now = Date.now();
-                const _startsTs = _eventTs(lecture);
-                const _createdTs = lecture.createdAt ? Date.parse(lecture.createdAt) : NaN;
-                const _daysToStart = !isNaN(_startsTs) ? Math.ceil((_startsTs - _now) / 86400000) : null;
-                const _daysSinceCreated = !isNaN(_createdTs) ? Math.floor((_now - _createdTs) / 86400000) : null;
-                const isImminent = _daysToStart != null && _daysToStart > 0 && _daysToStart <= 7;
-                const isNew = _daysSinceCreated != null && _daysSinceCreated <= 3;
-                // v00.266 — 지난 강연 표시 (어제 이전 시작분). 폴백 모드에서 마크 노출.
-                const isPast = !isNaN(_startsTs) && _startsTs < _now - 86400000;
-                const metaCell = (label, value) => (
-                  <div>
-                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.18em', textTransform:'uppercase', marginBottom:3}}>{label}</div>
-                    <div style={{fontSize: heroMode ? 14 : 13, fontWeight:600, color:'var(--ink)', lineHeight:1.4}}>{value || '-'}</div>
-                  </div>
-                );
-                return (
-                <article key={lecture.id}
-                  role="listitem"
-                  className="card"
-                  {...clickable(() => {
-                    try { sessionStorage.setItem('bgnj_pending_lecture_id', String(lecture.id)); } catch {}
-                    go('lectures');
-                  }, `강연: ${lecture.topic || lecture.title}`)}
-                  style={{cursor:'pointer', display:'flex', flexDirection:'column',
-                    padding: heroMode ? '32px 32px 28px' : '20px 20px 18px'}}>
-                  <div style={{display:'flex', gap:6, marginBottom:14, flexWrap:'wrap', alignItems:'center'}}>
-                    <span className="badge">{homeText.lectureBadge}</span>
-                    {isPast && (
-                      <span className="badge" style={{borderColor:'var(--ink-3)', color:'var(--ink-3)', background:'var(--bg-2)'}}>지난 강연</span>
-                    )}
-                    {isImminent && (
-                      <span className="badge" style={{borderColor:'var(--danger)', color:'var(--danger)'}}>
-                        {_daysToStart === 1 ? '내일 마감' : `D-${_daysToStart}`}
-                      </span>
-                    )}
-                    {isNew && <span className="badge" style={{borderColor:'var(--primary)', color:'var(--primary-active)'}}>NEW</span>}
-                  </div>
-                  <h3 className="ko-serif" style={{fontSize: heroMode ? 24 : 19, fontWeight:600, lineHeight:1.35, marginBottom:10, flex:'0 0 auto', color:'var(--ink)'}}>{lecture.topic || lecture.title}</h3>
-                  {/* 5) 행사 간단 소개 */}
-                  {lecture.note && <p style={{fontSize: heroMode ? 15 : 14, lineHeight:1.75, color:'var(--ink-2)', marginBottom:18, flex:'1 1 auto'}}>{truncatePreview(lecture.note, heroMode ? 180 : 110)}</p>}
-                  {/* 1) 일정 · 2) 참가비 · 3) 정원 · 4) 소요시간 — 2x2 grid */}
-                  <div style={{
-                    display:'grid', gridTemplateColumns:'1fr 1fr',
-                    gap: heroMode ? '12px 24px' : '10px 14px',
-                    paddingTop:14, paddingBottom: heroMode ? 14 : 10,
-                    borderTop:'1px solid var(--line)',
-                    marginTop:'auto',
-                  }}>
-                    {metaCell('일정', lecture.next)}
-                    {metaCell('참가비', price)}
-                    {metaCell('정원', lecture.capacity ? `${lecture.capacity}명` : null)}
-                    {metaCell('소요시간', hours)}
-                  </div>
-                  {/* 장소 — 메타 행 아래 (운영 정보 보조) */}
-                  {lecture.venue && (
-                    <div className="dim-2" style={{
-                      fontSize:11, marginTop: heroMode ? 12 : 8,
-                      paddingTop: heroMode ? 12 : 8,
-                      borderTop: heroMode ? '1px dashed var(--line)' : 'none',
-                      letterSpacing:'0.02em',
-                    }}>
-                      <span className="mono" style={{fontSize:9, letterSpacing:'0.18em', textTransform:'uppercase', marginRight:6, color:'var(--ink-3)'}}>장소</span>
-                      {lecture.venue}
-                    </div>
-                  )}
-                </article>
-                );
-              })}
-            </div>
-            {/* 가로 스크롤 힌트 — 카드 ≥ 3개 일 때만 (보통 3 이상이지만 방어). */}
-            {lectures.length >= 3 && (
-              <div className="mono" style={{
-                marginTop:14, fontSize:10, fontWeight:600, letterSpacing:'0.22em',
-                color:'var(--ink-3)', textAlign:'right',
-              }}>← 가로로 스크롤 →</div>
-            )}
-          </div>
-        </section></HomeSectionBoundary>
-      )}
 
       {/* ── 책 CTA — v00.152 다권 카루셀 + 좌우 무한 반복 ────────────── */}
       <BookCarouselSection go={go} dataTick={dataTick} text={homeText}/>
