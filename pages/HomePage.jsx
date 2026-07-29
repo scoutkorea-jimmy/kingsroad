@@ -568,7 +568,6 @@ const HomePage = ({ go }) => {
     () => recentFiveColumns.filter((_, i) => i !== _safeIdx),
     [recentFiveColumns, _safeIdx]
   );
-  const recentPosts = React.useMemo(() => G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()).slice(0, 4), [postsTick]);
   // v00.266 — 홈 섹션도 오늘 기준 날짜 필터 적용 (HeroProgramCards 와 동일 정책).
   //   투어: 예정(어제 이후)만 노출. 지난 일정만 있으면 빈 상태("이번에 걸을 길 없음").
   //   강연: 예정 우선, 없으면 가장 최근 지난 강연 3개로 폴백 + "지난 강연" 마크 (v00.129 사용자 요청 유지).
@@ -879,75 +878,6 @@ const HomePage = ({ go }) => {
             )}
           </div>
         </section></HomeSectionBoundary>
-
-      {/* ── 커뮤니티 — v00.164 mid 박자 + 헤더 박자 변형 ──────────────── */}
-      <HomeSectionBoundary label="커뮤니티"><section className="section--mid" style={{background:'var(--bg-2)'}}>
-        <div className="container">
-          {/* v00.164 — 컴팩트 헤더 + subtitle 우측 인라인 (기존 SectionHead 의 4단 박자 깸). */}
-          <div style={{
-            display:'flex', justifyContent:'space-between', alignItems:'flex-end',
-            gap:32, flexWrap:'wrap', marginBottom:24,
-          }}>
-            <div style={{flex:'1 1 320px', minWidth:0}}>
-              <div className="section-eyebrow" aria-hidden="true">{homeText.communityEyebrow}</div>
-              <h2 className="section-title" style={{fontSize:28, marginBottom:0}}>{homeText.communityTitle}</h2>
-            </div>
-            {homeText.communitySubtitle && (
-              <p style={{
-                flex:'1 1 280px', fontSize:13, color:'var(--ink-3)',
-                lineHeight:1.7, margin:0, maxWidth:380,
-              }}>{homeText.communitySubtitle}</p>
-            )}
-            <button type="button" className="btn-ghost" onClick={() => go('community')}>{homeText.communityAction}</button>
-          </div>
-          {recentPosts.length > 0 ? (
-            <div style={{borderRadius:12, overflow:'hidden'}}>
-              {recentPosts.map((post, i) => (
-                <div key={post.id}
-                  {...clickable(() => go('community'), post.title)}
-                  style={{
-                    display:'flex', gap:20, alignItems:'center',
-                    padding:'16px 22px',
-                    background: i % 2 === 0 ? 'var(--bg)' : 'var(--bg-2)',
-                  }}>
-                  <div style={{flex:1, minWidth:0}}>
-                    <div style={{display:'flex', gap:8, alignItems:'center', marginBottom:5, flexWrap:'wrap'}}>
-                      {post.category && <span className="badge" style={{fontSize:9}}>{post.category}</span>}
-                      {post.prefix && (
-                        <span style={{
-                          fontFamily:'var(--font-mono)', fontSize:9, fontWeight:700,
-                          color:'var(--secondary)', letterSpacing:'0.1em',
-                        }}>[{post.prefix}]</span>
-                      )}
-                    </div>
-                    <div className="ko-serif" style={{fontSize:15, color:'var(--ink)', marginBottom:3, fontWeight:500}}>{post.title}</div>
-                    <div style={{fontSize:11, color:'var(--ink-3)', fontFamily:'var(--font-mono)'}}>
-                      {post.author} · {post.date}
-                    </div>
-                  </div>
-                  <div style={{
-                    display:'flex', gap:14, color:'var(--ink-3)',
-                    fontFamily:'var(--font-mono)', fontSize:11, flexShrink:0, fontWeight:500,
-                  }}>
-                    <span>{homeText.communityReplyLabel} {post.replies ?? 0}</span>
-                    <span style={{color:'var(--ink-2)'}}>→</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="card" style={{textAlign:'center', padding:60}}>
-              <div style={{fontFamily:'var(--font-serif)', fontSize:20, color:'var(--ink)', marginBottom:12, fontWeight:600}}>
-                {homeText.communityEmptyTitle}
-              </div>
-              <p style={{fontSize:13, color:'var(--ink-2)', marginBottom:24, lineHeight:1.7}}>
-                {homeText.communityEmptySubtitle}
-              </p>
-              <button className="btn btn-gold" onClick={() => go('community')}>{homeText.communityEmptyCta}</button>
-            </div>
-          )}
-        </div>
-      </section></HomeSectionBoundary>
 
       {/* ── 뱅기노자 칼럼 — v00.164 magazine spread 톤 (외부 SectionHead 폐기) ─── */}
       {featuredColumn && (

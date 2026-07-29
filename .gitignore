@@ -20,3 +20,7 @@ tools/node_modules/
 # v00.285 Stage 1 — 번들 산출물. 아직 index.html 이 소비하지 않음(파이프라인 검증 단계).
 # Stage 3 에서 index.html 전환, Stage 4 에서 per-file .js 추방과 함께 배포 경로로 승격.
 dist/
+
+# Superpowers 브레인스토밍 로컬 산출물
+.superpowers/
+.playwright-mcp/

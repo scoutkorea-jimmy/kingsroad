@@ -1,5 +1,5 @@
 (() => {
-  // api.js
+  // ../api.js
   (function() {
     const BASE = "https://banginoja-api.scoutkorea.workers.dev/api";
     try {
@@ -363,10 +363,10 @@
     };
   })();
 
-  // data.js
+  // ../data.js
   window.BGNJ_VERSION = {
-    version: "00.288.002",
-    build: "2026.06.06",
+    version: "00.288.003",
+    build: "2026.07.29",
     channel: "preview"
   };
   try {
@@ -4438,7 +4438,7 @@
     }
   };
 
-  // components/KoreaMapData.js
+  // ../components/KoreaMapData.js
   window.KOREA_REGIONS = [
     { id: "busan", name: "\uBD80\uC0B0", fullname: "\uBD80\uC0B0\uAD11\uC5ED\uC2DC", cx: 370, cy: 415, tags: "\uD574\uC548\xB7\uD56D\uAD6C\xB7\uBB38\uD654", desc: "\uD574\uC6B4\uB300\xB7\uAC10\uCC9C\uBB38\uD654\uB9C8\uC744\xB7\uC790\uAC08\uCE58\uC2DC\uC7A5, \uC5ED\uB3D9\uC801\uC778 \uC81C2\uC758 \uB3C4\uC2DC.", path: "m 362.20429,382.50884 0.04,0.76 3.97,0 1.34,1.34 0,0 1,1.68 -0.17,1.51 -0.9,0.32 -0.6,0.77 -0.37,1.02 0.26,1.67 -0.73,2.34 -0.87,-0.06 -0.1,0.93 -0.89,0.13 0.58,0.55 1.02,-0.35 0.31,1.63 -1.42,3.04 -0.63,-0.03 -0.34,-0.48 -0.6,1.41 0.79,1.38 -0.08,0.48 -0.45,0 -0.03,1.25 -0.5,0.26 -0.31,-0.45 -0.53,0.74 -1,0.13 -0.58,2.21 -0.76,0.16 -0.37,0.54 -1.65,-0.61 -0.6,0.1 -0.68,0.83 -1.65,-1.09 0.11,0.8 -1.63,0.22 -0.23,0.54 0.29,0.86 -0.66,0.67 1.02,0.16 0.52,1.5 -0.13,2.62 -1.18,-0.64 -0.71,0 -0.29,0.51 -0.92,-0.19 -0.1,-1.02 -0.21,0.64 -1.94,-0.26 0.21,-1.98 -0.71,-0.45 -0.58,0.8 -1.21,0.51 -0.31,0.57 0.24,0.38 -1.63,1.73 -0.21,1.79 -0.81,0.1 0.68,1.44 -0.71,1.15 -0.92,-2.04 -0.18,-1.53 -1.08,0.19 0.92,3.86 -0.34,0.54 -0.6,-0.13 -0.16,-1.47 -0.97,-0.35 -0.29,0.67 0.63,0.16 -0.13,0.83 -1.16,-0.13 0.69,0.93 -0.45,0 -0.73,0.83 0.1,-1.76 -0.73,-0.38 -0.81,-3.32 0.55,-3.03 -0.58,-0.06 -0.34,1.73 -1.15,0.77 -0.13,-1.18 0.47,-1.6 -0.42,-0.1 -0.68,2.01 -1.26,0.74 -0.03,0.86 -1.65,0 0.5,-3.8 0.53,-0.73 -1.05,-0.38 -0.97,4.92 -1.5,-0.51 -2.94,0 -1.5,-1.63 -0.24,0.7 -1.55,0.16 -1.15,1.31 -0.52,-0.06 -0.24,-0.83 0.76,-1.05 0.87,0.16 0.21,-0.64 -1.26,0.19 0.32,-2.32 0,0 0.2,-0.47 2.43,-1 4.3,-1.15 0.43,-5.01 2.29,-0.29 3.87,-2.43 4.15,-0.14 1.43,-1.57 0.86,-2 0.79,-0.2 0.98,-1.16 3.95,-2.48 1.84,0.32 1.03,-1.34 0.86,-2.72 1.72,-2.58 4.87,-0.57 0.57,-1.86 2.95,-2.71 0,0 0.24,0.27 z m -14.5,30.88 1.86,1.6 -0.29,1.63 1.94,1.63 -0.5,1.09 -0.89,0 -0.47,-1.18 -0.63,0.26 -0.5,-0.48 -0.08,-0.8 -1.31,-0.42 -1.81,-1.88 0.03,-0.48 0.81,-0.51 1.84,-0.46 z" },
     { id: "daegu", name: "\uB300\uAD6C", fullname: "\uB300\uAD6C\uAD11\uC5ED\uC2DC", cx: 300, cy: 355, tags: "\uC5ED\uC0AC\xB7\uBB38\uD654\xB7\uD314\uACF5\uC0B0", desc: "\uD314\uACF5\uC0B0\xB7\uB3D9\uC131\uB85C\xB7\uC11C\uBB38\uC2DC\uC7A5, \uACBD\uBD81 \uBB38\uD654\uC758 \uC911\uC2EC.", path: "m 298.06429,351.13884 -0.78,1 -0.8,3.59 -1.08,0.6 -2.42,-0.89 0,0 -1.53,0.37 0,0 -3.49,2.5 -2.41,0.06 0,0 -0.73,-3.43 -4.06,-4.99 0.31,-2.81 1.87,0.62 1.56,1.25 2.19,0 0.62,-2.49 -3.12,-3.44 1.25,-3.12 1.25,-2.81 5.3,-0.93 -0.31,-1.87 -2.81,-2.19 -4.68,-0.31 0.31,-3.12 1.25,-2.81 2.19,-3.12 2.18,-0.62 1.87,-1.25 0.63,5.61 2.49,0 0.94,-3.12 2.5,-4.99 5.92,-1.25 2.81,-3.12 3.43,-0.93 3.12,0.31 3.75,3.12 0,4.37 0.62,3.12 1.88,4.05 -0.94,2.19 -3.43,1.25 -1.56,3.43 0,3.12 -2.5,0.31 0,1.87 1.25,1.56 0,4.06 -3.43,1.25 -1.57,1.87 -2.8,-0.31 -0.63,-2.81 -3.12,0 -2.18,1.25 -1.56,2.5 z" },
@@ -4459,7 +4459,7 @@
     { id: "ulsan", name: "\uC6B8\uC0B0", fullname: "\uC6B8\uC0B0\uAD11\uC5ED\uC2DC", cx: 378, cy: 358, tags: "\uACE0\uB798\xB7\uD0DC\uD654\uAC15\xB7\uBC18\uAD6C\uB300", desc: "\uACE0\uB798\uBC15\uBB3C\uAD00\xB7\uD0DC\uD654\uAC15\xB7\uBC18\uAD6C\uB300\uC554\uAC01\uD654, \uC0B0\uC5C5\uB3C4\uC2DC\uC758 \uC228\uACB0.", path: "m 361.40429,346.70884 1.8,1.47 2.01,0.31 0.98,0.59 0.23,0.82 0,0 -0.42,2.85 0,0 0.28,0.77 0.74,0.33 0,0 1.97,0.66 0,0 1.43,-0.25 2.82,-1.84 1.12,-0.31 0,0 1.48,-0.01 0,0 4.89,1.74 0,0 1.76,0.42 0,0 2.9,0.41 0.7,1.45 -0.03,1.38 -0.74,0.2 -0.39,0.58 0.53,3.14 -0.61,1.06 -0.05,1.35 -0.11,0.36 -1.02,0.16 0.03,0.48 0.73,-0.39 -0.18,1.58 -1.21,0.51 0.03,0.29 0.84,-0.16 0.13,0.61 -1.26,0.61 0.18,0.45 0.95,-0.39 0.36,0.65 -0.47,-0.07 -0.55,1.25 -1,-0.41 0.08,0.35 -1,0.13 0.05,0.51 -0.52,0.48 -0.42,-0.19 -0.24,-1.48 0.4,-0.99 -0.63,-0.84 -0.53,-0.06 0.19,-1.38 -0.82,-1.57 -1.94,-2.13 -1.5,-0.48 0,0.68 1.39,0.48 0.92,1.19 -0.08,1.12 0.97,0.26 -0.07,0.83 0.42,0.62 -0.32,0.44 -0.52,-0.22 -1.03,0.35 -0.5,-0.45 0.53,0.71 0.97,-0.26 0.89,1.58 -0.63,0.45 -0.13,1.15 -0.65,0.23 -1.19,1.41 -0.68,-0.03 -0.5,-1.13 -1.05,-0.54 0.68,0.8 0.08,2.21 0.29,0.26 0.87,-0.32 -0.5,0.99 1.36,-0.73 -0.41,0.73 0.41,0.87 -0.31,0.39 -1.02,0.06 -0.24,0.77 0.39,1.15 0.71,0 0.03,0.58 -0.5,0.16 -0.29,1.41 -0.81,0.36 -0.21,0.99 0.1,0.74 0.97,0.29 0.71,1.47 -1.49,0.87 -0.56,-0.55 -0.63,0.06 -0.5,1.13 -0.6,-0.03 -0.1,0.67 -0.5,0.22 -0.32,1.09 -1.07,0.07 -0.27,1.18 -1.15,-0.13 -0.29,-0.8 -0.55,0.26 0.17,-1.51 -1,-1.68 0,0 -1.34,-1.34 -3.98,0 -0.04,-0.76 0,0 -1.54,-1.88 0,0 -3.09,-0.21 0,0 -2.23,-1.89 -3.43,-3.98 0,0 -3.26,-3.36 -2.4,-0.2 0,0 -2.75,0 -2.23,-1.05 -0.34,-4.83 2.23,-1.89 0,0 1.2,-1.05 0,-1.46 -1.47,-2.43 0,0 3.92,-3.09 0,0 1.66,-0.17 0,0 0.68,0.13 0.65,-0.87 -1.35,-2.48 -0.22,-1.06 0.59,-0.5 4.16,-2.57 3.11,-1.02 1.63,0.29 2.59,-0.65 z" }
   ];
 
-  // components/Shell.jsx
+  // ../components/Shell.jsx
   window.__bgnjScrollLock = window.__bgnjScrollLock || { count: 0, prev: "" };
   window.BGNJ_SCROLL_LOCK = window.BGNJ_SCROLL_LOCK || {
     lock: () => {
@@ -5819,7 +5819,7 @@
     PastBoardList
   });
 
-  // components/TiptapEditor.jsx
+  // ../components/TiptapEditor.jsx
   var TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, placeholder = "\uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694..." }) => {
     const host = React.useRef(null);
     const editorRef = React.useRef(null);
@@ -6203,7 +6203,7 @@
     ))), /* @__PURE__ */ React.createElement("div", { ref: host, className: "tiptap-host" }), (preset === "column" || preset === "rich") && /* @__PURE__ */ React.createElement("p", { className: "dim-2 mono", style: { fontSize: 10, marginTop: 6, letterSpacing: "0.1em" } }, "\uBCF8\uBB38 \uC774\uBBF8\uC9C0\uB294 \uB4DC\uB798\uADF8\uB85C \uC790\uC720\uB86D\uAC8C \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uC774\uBBF8\uC9C0\uB97C \uB04C\uC5B4 \uC6D0\uD558\uB294 \uC704\uCE58\uB85C \uB193\uC73C\uC138\uC694."));
   };
 
-  // components/ConfirmDialog.jsx
+  // ../components/ConfirmDialog.jsx
   var ConfirmDialog = ({ open, title, message, hint, confirmLabel = "\uD655\uC778", cancelLabel = "\uCDE8\uC18C", danger = false, dismissOnBackdrop = true, thirdLabel = null, thirdDanger = false, onConfirm, onCancel, onThird }) => {
     React.useEffect(() => {
       var _a, _b;
@@ -6367,7 +6367,7 @@
   };
   window.ConfirmDialogHost = ConfirmDialogHost;
 
-  // components/CashReceiptField.jsx
+  // ../components/CashReceiptField.jsx
   var _emptyCashReceipt = () => ({ requested: false, type: "personal", identifier: "" });
   var CashReceiptField = ({ value, onChange }) => {
     const v = value || _emptyCashReceipt();
@@ -6446,7 +6446,7 @@
   window.BGNJ_CashReceiptField = CashReceiptField;
   window.BGNJ_CashReceipt = { encode: encodeCashReceipt, empty: _emptyCashReceipt };
 
-  // components/MediaGallery.jsx
+  // ../components/MediaGallery.jsx
   var MAX_IMAGES = 10;
   var _normalizeImages = (raw, { showPrimary = true } = {}) => {
     if (!Array.isArray(raw)) return [];
@@ -6757,7 +6757,7 @@
     BGNJ_GALLERY_MAX: MAX_IMAGES
   });
 
-  // pages/HomePage.jsx
+  // ../pages/HomePage.jsx
   var HomeSectionBoundary = class extends React.Component {
     constructor(props) {
       super(props);
@@ -7317,10 +7317,6 @@
       () => recentFiveColumns.filter((_, i) => i !== _safeIdx),
       [recentFiveColumns, _safeIdx]
     );
-    const recentPosts = React.useMemo(() => G2.arr(() => {
-      var _a2, _b2;
-      return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b2.call(_a2);
-    }).slice(0, 4), [postsTick]);
     const _cutoff = Date.now() - 864e5;
     const _validStart = (x) => x && !x.hidden && !isNaN(_eventTs(x));
     const tours = React.useMemo(() => G2.arr(() => {
@@ -7579,53 +7575,7 @@
           paddingTop: 16
         } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourNextLabel), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, marginTop: 4, color: "var(--ink)", fontWeight: 500 } }, t.next || homeText.emptyFallback)), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, homeText.tourPriceLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 20, marginTop: 4, color: "var(--ink)", fontWeight: 600 } }, t.price ? typeof t.price === "number" ? (_c2 = (_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.won) == null ? void 0 : _b2.call(_a2, t.price)) != null ? _c2 : "" : t.price : homeText.emptyFallback)))
       );
-    }))))), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCEE4\uBBA4\uB2C8\uD2F0" }, /* @__PURE__ */ React.createElement("section", { className: "section--mid", style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "flex-end",
-      gap: 32,
-      flexWrap: "wrap",
-      marginBottom: 24
-    } }, /* @__PURE__ */ React.createElement("div", { style: { flex: "1 1 320px", minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, homeText.communityEyebrow), /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 28, marginBottom: 0 } }, homeText.communityTitle)), homeText.communitySubtitle && /* @__PURE__ */ React.createElement("p", { style: {
-      flex: "1 1 280px",
-      fontSize: 13,
-      color: "var(--ink-3)",
-      lineHeight: 1.7,
-      margin: 0,
-      maxWidth: 380
-    } }, homeText.communitySubtitle), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("community") }, homeText.communityAction)), recentPosts.length > 0 ? /* @__PURE__ */ React.createElement("div", { style: { borderRadius: 12, overflow: "hidden" } }, recentPosts.map((post, i) => {
-      var _a2;
-      return /* @__PURE__ */ React.createElement(
-        "div",
-        {
-          key: post.id,
-          ...clickable(() => go("community"), post.title),
-          style: {
-            display: "flex",
-            gap: 20,
-            alignItems: "center",
-            padding: "16px 22px",
-            background: i % 2 === 0 ? "var(--bg)" : "var(--bg-2)"
-          }
-        },
-        /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", marginBottom: 5, flexWrap: "wrap" } }, post.category && /* @__PURE__ */ React.createElement("span", { className: "badge", style: { fontSize: 9 } }, post.category), post.prefix && /* @__PURE__ */ React.createElement("span", { style: {
-          fontFamily: "var(--font-mono)",
-          fontSize: 9,
-          fontWeight: 700,
-          color: "var(--secondary)",
-          letterSpacing: "0.1em"
-        } }, "[", post.prefix, "]")), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 15, color: "var(--ink)", marginBottom: 3, fontWeight: 500 } }, post.title), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)" } }, post.author, " \xB7 ", post.date)),
-        /* @__PURE__ */ React.createElement("div", { style: {
-          display: "flex",
-          gap: 14,
-          color: "var(--ink-3)",
-          fontFamily: "var(--font-mono)",
-          fontSize: 11,
-          flexShrink: 0,
-          fontWeight: 500
-        } }, /* @__PURE__ */ React.createElement("span", null, homeText.communityReplyLabel, " ", (_a2 = post.replies) != null ? _a2 : 0), /* @__PURE__ */ React.createElement("span", { style: { color: "var(--ink-2)" } }, "\u2192"))
-      );
-    })) : /* @__PURE__ */ React.createElement("div", { className: "card", style: { textAlign: "center", padding: 60 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "var(--font-serif)", fontSize: 20, color: "var(--ink)", marginBottom: 12, fontWeight: 600 } }, homeText.communityEmptyTitle), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-2)", marginBottom: 24, lineHeight: 1.7 } }, homeText.communityEmptySubtitle), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => go("community") }, homeText.communityEmptyCta))))), featuredColumn && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCE7C\uB7FC" }, /* @__PURE__ */ React.createElement("section", { className: "section--mid", style: {} }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: {
+    }))))), featuredColumn && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCE7C\uB7FC" }, /* @__PURE__ */ React.createElement("section", { className: "section--mid", style: {} }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "baseline",
@@ -7827,7 +7777,7 @@
     } }, "\u2190 \uAC00\uB85C\uB85C \uC2A4\uD06C\uB864 \u2192")))), /* @__PURE__ */ React.createElement(BookCarouselSection, { go, dataTick, text: homeText }));
   };
 
-  // pages/HomeNextPage.jsx
+  // ../pages/HomeNextPage.jsx
   var HnImageSlot = ({ url, label, onUpload, onRemove, wide }) => {
     const ref = React.useRef(null);
     const handleFile = async (e) => {
@@ -8097,7 +8047,7 @@
     )))), /* @__PURE__ */ React.createElement("section", { className: "hn-stats" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "hn-stats-row" }, statsData.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: s.label, className: "hn-stat" }, /* @__PURE__ */ React.createElement("span", { className: "hn-stat-ic" }, statIcons[i] ? /* @__PURE__ */ React.createElement("img", { src: statIcons[i], alt: "", className: "hn-stat-ic-img" }) : /* @__PURE__ */ React.createElement("span", { className: "hn-stat-ic-ph" }, ["\u{1F4CB}", "\u{1F5FA}", "\u{1F465}", "\u{1F4F0}", "\u2764"][i])), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "hn-stat-lbl" }, s.label), /* @__PURE__ */ React.createElement("div", { className: "hn-stat-val" }, s.value), /* @__PURE__ */ React.createElement("div", { className: "hn-stat-sub" }, s.sub))))))), /* @__PURE__ */ React.createElement("section", { className: "hn-foot" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "hn-foot-grid" }, /* @__PURE__ */ React.createElement("div", { className: "hn-foot-quote" }, /* @__PURE__ */ React.createElement("blockquote", { className: "hn-bq" }, '"\uD55C \uAC78\uC74C\uC758 \uAE30\uB85D\uC774', /* @__PURE__ */ React.createElement("br", null), '\uD55C \uC2DC\uB300\uC758 \uAE30\uC5B5\uC774 \uB429\uB2C8\uB2E4."')), /* @__PURE__ */ React.createElement("div", { className: "hn-foot-about" }, /* @__PURE__ */ React.createElement("p", { className: "hn-foot-about-text" }, "\uBC45\uAE30\uB178\uC790\uB294 \uC0AC\uB78C\uACFC \uACF5\uAC04, \uC2DC\uAC04\uACFC \uBB38\uD654\uB97C \uC5F0\uACB0\uD558\uC5EC", /* @__PURE__ */ React.createElement("br", null), "\uC624\uB298\uC758 \uACBD\uD5D8\uC744 \uB0B4\uC77C\uC758 \uAE30\uB85D\uC73C\uB85C \uB0A8\uAE41\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "hn-foot-about-btn", onClick: () => go("column") }, "\uBC45\uAE30\uB178\uC790 \uC18C\uAC1C \uBCF4\uAE30 \u2192")), /* @__PURE__ */ React.createElement("div", { className: "hn-foot-cta" }, /* @__PURE__ */ React.createElement("h3", { className: "hn-foot-cta-h" }, "\uD604\uB300 \uC0AC\uAD00\uC774 \uB418\uC5B4\uC8FC\uC138\uC694."), /* @__PURE__ */ React.createElement("p", { className: "hn-foot-cta-p" }, "\uB2F9\uC2E0\uC758 \uC2DC\uC120\uACFC \uAE30\uB85D\uC774", /* @__PURE__ */ React.createElement("br", null), "\uC5ED\uC0AC\uAC00 \uB418\uB294 \uAE38\uC5D0 \uD568\uAED8 \uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "hn-foot-cta-btn", onClick: () => go("signup") }, "\uD604\uB300 \uC0AC\uAD00\uB2E8 \uAC00\uC785\uD558\uAE30 \u2192"))))));
   };
 
-  // pages/CommunityPage.jsx
+  // ../pages/CommunityPage.jsx
   var useUserLevel = (user) => React.useMemo(() => window.BGNJ_USER_LEVEL(user), [user]);
   var getCategoriesForBoard = (boardType) => window.BGNJ_STORES.categories.filter((c) => c.boardType === boardType);
   var HashtagInput = ({ tags, setTags, max = 10 }) => {
@@ -10048,7 +9998,7 @@
     ))));
   };
 
-  // pages/WangsanamTourPage.jsx
+  // ../pages/WangsanamTourPage.jsx
   var TourPage = ({ go, user }) => {
     var _a, _b, _c, _d;
     const [tick, setTick] = React.useState(0);
@@ -10831,7 +10781,7 @@
   };
   Object.assign(window, { TourQuickAddModal });
 
-  // pages/ColumnPage.jsx
+  // ../pages/ColumnPage.jsx
   var ColumnPage = ({ go, user }) => {
     var _a, _b, _c;
     const [tick, setTick] = React.useState(0);
@@ -11261,7 +11211,7 @@
     );
   };
 
-  // pages/BookCheckoutPage.jsx
+  // ../pages/BookCheckoutPage.jsx
   var STARS = ["\u2605", "\u2605\u2605", "\u2605\u2605\u2605", "\u2605\u2605\u2605\u2605", "\u2605\u2605\u2605\u2605\u2605"];
   var _G = window.BGNJ_GUARD || {
     call: (fn, fb) => {
@@ -11653,7 +11603,7 @@
     ))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card card-gold mobile-release-sticky", style: { position: "sticky", top: 100 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.3em", marginBottom: 20 } }, "ORDER SUMMARY"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--line)" } }, book.coverDataUri ? /* @__PURE__ */ React.createElement("div", { style: { width: 72, aspectRatio: "3/4", flexShrink: 0, border: "1px solid var(--line-2)", overflow: "hidden" } }, /* @__PURE__ */ React.createElement("img", { src: book.coverDataUri, alt: `${book.title} \uD45C\uC9C0`, style: { width: "100%", height: "100%", objectFit: "contain", display: "block" } })) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: 72, aspectRatio: "3/4", fontSize: 8, flexShrink: 0 } }, (book.title || "\uCC45").slice(0, 1)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 17, marginBottom: 4 } }, "\u300E", book.title, "\u300F"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", " \xB7 ", qty, "\uAD8C"), /* @__PURE__ */ React.createElement("div", { className: "gold ko-serif", style: { fontSize: 16, marginTop: 8 } }, window.BGNJ_FMT.won(subtotal)))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", color: "var(--ink-2)" } }, /* @__PURE__ */ React.createElement("span", null, "\uC0C1\uD488 \uD569\uACC4"), /* @__PURE__ */ React.createElement("span", null, window.BGNJ_FMT.won(subtotal))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", color: "var(--ink-2)" } }, /* @__PURE__ */ React.createElement("span", null, "\uBC30\uC1A1\uBE44"), /* @__PURE__ */ React.createElement("span", null, shipping === 0 ? "\uBB34\uB8CC" : window.BGNJ_FMT.won(shipping))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "1px solid var(--line)", marginTop: 8 } }, /* @__PURE__ */ React.createElement("span", null, "\uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold-2 ko-serif", style: { fontSize: 24 } }, window.BGNJ_FMT.won(total))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 24, padding: "16px", background: "rgba(245,213,72,0.04)", border: "1px dashed var(--primary-dim)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 8 } }, "\u25C6 \uC6B4\uC601 \uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 12, lineHeight: 1.7 } }, "\xB7 \uC785\uAE08 \uD655\uC778 \uD6C4 \uD3C9\uC77C 1-2\uC77C \uB0B4 \uBC1C\uC1A1", /* @__PURE__ */ React.createElement("br", null), "\xB7 \uC8FC\uBB38 \uCDE8\uC18C\xB7\uD658\uBD88\uC740 \uB9C8\uC774\uD398\uC774\uC9C0\uC5D0\uC11C \uC694\uCCAD")))))));
   };
 
-  // pages/EatSleepShopPages.jsx
+  // ../pages/EatSleepShopPages.jsx
   var PlacePage = ({ go, kind, user }) => {
     var _a, _b;
     const KIND_FALLBACK = {
@@ -11697,7 +11647,7 @@
   var EatPage = ({ go, user }) => /* @__PURE__ */ React.createElement(PlacePage, { go, user, kind: "eat" });
   var ShopPage = ({ go, user }) => /* @__PURE__ */ React.createElement(PlacePage, { go, user, kind: "shop" });
 
-  // pages/HangyeonPage.jsx
+  // ../pages/HangyeonPage.jsx
   var hkToday = () => new Date(Date.now() + 9 * 3600 * 1e3).toISOString().slice(0, 10);
   var hkNowHM = () => new Date(Date.now() + 9 * 3600 * 1e3).toISOString().slice(11, 16);
   var hkAddDays = (str, n) => new Date((/* @__PURE__ */ new Date(str + "T00:00:00Z")).getTime() + n * 864e5).toISOString().slice(0, 10);
@@ -12178,7 +12128,7 @@
     }, onClose: () => setPickGuest(false) }), booking && /* @__PURE__ */ React.createElement(HkBookingModal, { room: booking, checkIn, checkOut, adults, children, user, property, go, memberDiscount, onClose: () => setBooking(null), onDone: () => setTick((v) => v + 1) }), inquiry && /* @__PURE__ */ React.createElement(HkInquiryModal, { pkg: inquiry, startDate, property, contactEmail, contactPhone, onClose: () => setInquiry(null) }));
   };
 
-  // pages/LecturesPage.jsx
+  // ../pages/LecturesPage.jsx
   var LecturesPage = ({ go, user }) => {
     var _a, _b, _c, _d;
     const [tick, setTick] = React.useState(0);
@@ -13002,7 +12952,7 @@
   };
   Object.assign(window, { LectureQuickAddModal });
 
-  // pages/LegalFaqPages.jsx
+  // ../pages/LegalFaqPages.jsx
   var G = window.BGNJ_GUARD || {
     call: (fn, fb) => {
       try {
@@ -13131,7 +13081,7 @@
     })))))));
   };
 
-  // pages/MyPage.jsx
+  // ../pages/MyPage.jsx
   var MyPage = ({ go, user, cart }) => {
     var _a, _b, _c, _d;
     const [tab, setTab] = React.useState("lectures");
@@ -13675,7 +13625,7 @@
     } }, msg.text), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: !valid || saving }, saving ? "\uBCC0\uACBD \uC911\u2026" : "\uBE44\uBC00\uBC88\uD638 \uBCC0\uACBD"))));
   };
 
-  // pages/ErrorPages.jsx
+  // ../pages/ErrorPages.jsx
   var _ErrorBrand = () => /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "18px 22px", borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: {
     width: 22,
     height: 22,
@@ -13924,7 +13874,7 @@
     ErrorMaintenancePage
   });
 
-  // boot.jsx
+  // ../boot.jsx
   var AppErrorBoundary = class extends React.Component {
     constructor(props) {
       super(props);

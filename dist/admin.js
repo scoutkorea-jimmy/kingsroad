@@ -1,5 +1,5 @@
 (() => {
-  // pages/admin/AdminShared.jsx
+  // ../pages/admin/AdminShared.jsx
   var downloadBlob = (filename, content, mime = "text/plain;charset=utf-8") => {
     try {
       const blob = new Blob([content], { type: mime });
@@ -1029,7 +1029,7 @@
     return { counts, labels };
   };
 
-  // pages/admin/AdminContentEditors.jsx
+  // ../pages/admin/AdminContentEditors.jsx
   var RecommendationsAdminPanel = () => {
     const [tick, setTick] = React.useState(0);
     const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
@@ -3631,7 +3631,7 @@
     // v00.257
   });
 
-  // pages/admin/AdminDesignHub.jsx
+  // ../pages/admin/AdminDesignHub.jsx
   var ADMIN_VERSION_HISTORY = [
     {
       version: "00.288.002",
@@ -8209,7 +8209,7 @@
     DesignSystemView
   });
 
-  // pages/admin/HangyeonAdminPanel.jsx
+  // ../pages/admin/HangyeonAdminPanel.jsx
   var hkaWon = (n) => {
     var _a;
     return ((_a = window.BGNJ_FMT) == null ? void 0 : _a.won) ? window.BGNJ_FMT.won(n) : `${Number(n || 0).toLocaleString("ko-KR")}\uC6D0`;
@@ -8600,7 +8600,7 @@
     ))), /* @__PURE__ */ React.createElement(Active, null));
   };
 
-  // pages/admin/AdminLogin.jsx
+  // ../pages/admin/AdminLogin.jsx
   var LegalModal = ({ slug, onClose }) => {
     var _a, _b;
     const doc = ((_a = window.BGNJ_LEGAL) == null ? void 0 : _a.get(slug)) || { title: slug === "terms" ? "\uC774\uC6A9\uC57D\uAD00" : "\uAC1C\uC778\uC815\uBCF4 \uCC98\uB9AC\uBC29\uCE68", body: "<p>(\uC900\uBE44 \uC911)</p>" };
@@ -9016,7 +9016,7 @@
   };
   window.LoginPage = LoginPage;
 
-  // pages/admin/AdminPolicyPanels.jsx
+  // ../pages/admin/AdminPolicyPanels.jsx
   var LegalAdminPanel = () => {
     const [slug, setSlug] = React.useState("terms");
     const [tick, setTick] = React.useState(0);
@@ -9224,7 +9224,7 @@
     ))))));
   };
 
-  // pages/admin/AdminMonitorPanels.jsx
+  // ../pages/admin/AdminMonitorPanels.jsx
   var ErrorLogPanel = () => {
     const [errors, setErrors] = React.useState([]);
     const [search, setSearch] = React.useState("");
@@ -9578,7 +9578,7 @@
     )), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 10, lineHeight: 1.6 } }, "\u203B Naver \uB294 \uC9C1\uC811 ping \uC5D4\uB4DC\uD3EC\uC778\uD2B8 \uBBF8\uACF5\uC2DD \u2014 \uCF58\uC194\uC5D0\uC11C \uC218\uB3D9 \uB4F1\uB85D \uD544\uC694. Bing \uC740 Google \uACFC \uC0C9\uC778 \uACF5\uC720.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uB9C8\uC9C0\uB9C9 \uC800\uC7A5: ", lastUpdLabel), /* @__PURE__ */ React.createElement("span", { style: { flex: 1 } }), dirty && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: refresh }, "\uBCC0\uACBD \uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: save, disabled: saving || !dirty }, saving ? "\uC800\uC7A5 \uC911\u2026" : dirty ? "\u{1F4BE} \uC800\uC7A5" : "\uC800\uC7A5\uB428 \u2713")));
   };
 
-  // pages/admin/AdminMemberPanel.jsx
+  // ../pages/admin/AdminMemberPanel.jsx
   var SuspendDialog = ({ target, reason, onChange, onConfirm, onCancel }) => {
     var _a;
     (_a = window.useModalGuard) == null ? void 0 : _a.call(window, { open: true, dirty: false, onClose: onCancel, onSaveDraft: null, label: "\uD68C\uC6D0 \uC815\uC9C0" });
@@ -9944,7 +9944,7 @@
     }))), filtered.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center", marginTop: 14 } }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uD68C\uC6D0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
   };
 
-  // pages/admin/AdminLogPanels.jsx
+  // ../pages/admin/AdminLogPanels.jsx
   var AuditDetailsCell = ({ details }) => {
     if (!details || typeof details === "object" && !Object.keys(details).length) {
       return /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\u2014");
@@ -10282,7 +10282,7 @@
     }))), filtered.length > 500 && /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { padding: "10px 14px", fontSize: 11, textAlign: "center", borderTop: "1px solid var(--line)" } }, "\uC0C1\uC704 500\uAC74\uB9CC \uD45C\uC2DC. \uB354 \uC624\uB798\uB41C \uAE30\uB85D\uC740 [\uAC10\uC0AC \uB85C\uADF8] \uB610\uB294 [\uC624\uB958 \uB85C\uADF8] \uBCC4\uB3C4 \uD328\uB110\uC5D0\uC11C \uAC80\uC0C9.")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 12, lineHeight: 1.7 } }, "\u24D8 \uB370\uC774\uD130 \uC18C\uC2A4: ", /* @__PURE__ */ React.createElement("code", { style: { padding: "1px 5px", background: "var(--bg-2)", border: "1px solid var(--line-2)" } }, "audit_log"), "(D1 \u2014 \uAD00\uB9AC\uC790 \uD589\uB3D9 + \uD68C\uC6D0\uAC00\uC785) +", /* @__PURE__ */ React.createElement("code", { style: { padding: "1px 5px", background: "var(--bg-2)", border: "1px solid var(--line-2)", marginLeft: 6 } }, "error_log"), "(D1 \u2014 \uC624\uB958 \uBCF4\uACE0) + \uCD5C\uADFC \uAC8C\uC2DC\uAE00(BGNJ_COMMUNITY \uCE90\uC2DC). \uD2B8\uB7EC\uBE14\uC288\uD305 \uC2DC \uC2DC\uAC04 \uC5ED\uC21C\uC73C\uB85C \uC0AC\uACE0 \uBC1C\uC0DD \uC9C1\uC804 \uD65C\uB3D9\uC744 \uCD94\uC801."));
   };
 
-  // pages/admin/AdminBooksPanel.jsx
+  // ../pages/admin/AdminBooksPanel.jsx
   var BooksAdminPanel = () => {
     var _a, _b, _c, _d;
     const [tick, setTick] = React.useState(0);
@@ -10912,7 +10912,7 @@
     ), /* @__PURE__ */ React.createElement("span", { className: "admin-savebar__spacer" }), /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, color: editing._isNew ? "var(--primary)" : void 0 } }, editing._isNew ? "\u25CF \uC0C8 \uCC45 (\uBBF8\uC800\uC7A5 \u2014 [\u{1F4BE} \uC0C8 \uCC45 \uC800\uC7A5] \uD074\uB9AD \uC2DC D1 \uBC18\uC601)" : dirty ? "\u25CF \uBBF8\uC800\uC7A5 \uBCC0\uACBD \uC788\uC74C" : "\u25CB \uBAA8\uB4E0 \uBCC0\uACBD \uC800\uC7A5\uB428"))))));
   };
 
-  // pages/admin/AdminCommercePanels.jsx
+  // ../pages/admin/AdminCommercePanels.jsx
   var BankAccountPanel = () => {
     const [tick, setTick] = React.useState(0);
     const [accounts, setAccounts] = React.useState(() => window.BGNJ_LECTURES.listBankAccounts());
@@ -11332,7 +11332,7 @@
     )))))))));
   };
 
-  // pages/admin/AdminEventsPanels.jsx
+  // ../pages/admin/AdminEventsPanels.jsx
   var BulkLectureImport = ({ onClose, onDone }) => {
     const [text, setText] = React.useState("title,topic,venue,host,startsAt,durationMinutes,capacity,price,note\n");
     const [busy, setBusy] = React.useState(false);
@@ -12284,7 +12284,7 @@
     ));
   };
 
-  // pages/admin/AdminSiteContentPanel.jsx
+  // ../pages/admin/AdminSiteContentPanel.jsx
   var SiteContentAdminPanel = () => {
     const [tick, setTick] = React.useState(0);
     const sc = React.useMemo(() => window.BGNJ_SITE_CONTENT.get(), [tick]);
@@ -12552,7 +12552,7 @@
     ].map((p) => /* @__PURE__ */ React.createElement("tr", { key: p.name, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { style: { padding: 10, color: "var(--ink)", fontWeight: 500 } }, p.name), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, fontSize: 13, color: p.svg === "\u2713" ? "var(--success)" : p.svg === "\u25B3" ? "var(--warning)" : "var(--ink-3)" } }, p.svg), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, fontSize: 13, color: p.png === "\u2713" ? "var(--success)" : "var(--ink-3)" } }, p.png), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, fontSize: 13, color: p.current === "\u2713" ? "var(--success)" : p.current === "\u25B3" ? "var(--warning)" : "var(--danger)", fontWeight: 600 } }, p.current)))))), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.6 } }, "\u24D8 ", /* @__PURE__ */ React.createElement("strong", null, "\uC804 \uD50C\uB7AB\uD3FC \uCEE4\uBC84 \uAD8C\uC7A5:"), " 1200\xD7630 PNG/JPG \uB97C \uC5C5\uB85C\uB4DC\uD558\uBA74 SVG fallback \uC744 \uB36E\uC5B4\uC4F0\uACE0 Facebook/Kakao \uB4F1\uC5D0\uC11C\uB3C4 \uBBF8\uB9AC\uBCF4\uAE30\uAC00 \uD45C\uC2DC\uB429\uB2C8\uB2E4."));
   };
 
-  // pages/admin/AdminDashboardPanel.jsx
+  // ../pages/admin/AdminDashboardPanel.jsx
   var DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCommunityPost, latestColumn, setTab, G }) => {
     var _a, _b, _c, _d, _e, _f, _g, _h;
     const [summary, setSummary] = React.useState(null);
@@ -12836,7 +12836,7 @@
     ), /* @__PURE__ */ React.createElement(SankeyFlow, { pairs: flowPairs, days: flowDays, onDaysChange: setFlowDays }));
   };
 
-  // pages/admin/AdminCommunityConfigPanels.jsx
+  // ../pages/admin/AdminCommunityConfigPanels.jsx
   var CommunityBoardsPanel = () => {
     const [tick, setTick] = React.useState(0);
     const grades = React.useMemo(
@@ -13344,7 +13344,7 @@
     ), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 10, lineHeight: 1.7 } }, "\u24D8 ", /* @__PURE__ */ React.createElement("strong", null, "\uACF5\uC9C0(notice)"), " \uAC8C\uC2DC\uD310\uC740 admin \uC804\uC6A9 \uAC15\uC81C \uADDC\uCE59 \u2014 \uC0AD\uC81C \uBD88\uAC00. \uCD94\uAC00/\uC0AD\uC81C\uB294 \uC989\uC2DC \uC11C\uBC84\uC5D0 \uBC18\uC601\uB429\uB2C8\uB2E4. \uC81C\uBAA9/\uC124\uBA85 \uD3B8\uC9D1\uC740 [\u{1F4BE} \uC800\uC7A5] \uBC84\uD2BC \uD074\uB9AD \uC2DC commit."));
   };
 
-  // pages/admin/AdminGradeColumnPanels.jsx
+  // ../pages/admin/AdminGradeColumnPanels.jsx
   var AdminGradePanel = () => {
     const G = window.BGNJ_GUARD;
     const _initialRules = () => {
@@ -14381,7 +14381,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
   };
   window.AdminColumnEditor = AdminColumnEditor;
 
-  // pages/admin/AdminRouterPanels.jsx
+  // ../pages/admin/AdminRouterPanels.jsx
   var PRIVACY_DATA = {
     // Data Subject Rights — 정보주체 권리 요청 큐
     // GDPR Art.15–22 / PIPA §35–38. 기본 응답기한: GDPR 1개월, PIPA 10일. 72h 타이머는 권고.
@@ -15087,7 +15087,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
     )), visible.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { textAlign: "center", fontSize: 10, letterSpacing: "0.2em", marginTop: 8 } }, "\uC804\uCCB4 ", visible.length, "\uAC74 \xB7 ", safePage, "/", totalPages, " \uD398\uC774\uC9C0"), viewingId && /* @__PURE__ */ React.createElement(PostViewerModal, { postId: viewingId, onClose: () => setViewingId(null) }));
   };
 
-  // pages/AuthAdminPage.jsx
+  // ../pages/AuthAdminPage.jsx
   var AdminPage = ({ go }) => {
     var _a, _b;
     const G = window.BGNJ_GUARD;
