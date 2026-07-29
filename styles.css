@@ -56,50 +56,69 @@
      접근성     : WCAG 2.1 AA — 본문/배경 ≥ 4.5:1 보장
      레거시 토큰 (--gold/--cta-*) 은 v00.209 에서 제거 — 모든 코드 --primary* / --on-primary 직접 사용. */
 
-  /* ─── Primary (5% — KEY ACCENT) ─── */
-  --primary:        #F5D548;      /* 로고 옐로우 */
-  --primary-hover:  #E5BF2E;      /* Honey Amber — hover */
-  --primary-active: #C99E1A;      /* Deep Amber — active/focus */
-  --primary-dim:    #FDE68A;      /* 옅은 옐로우 — 미세 강조 */
-  --on-primary:     #0F172A;      /* primary 위 텍스트 — 다크 잉크 */
+  /* ═══ v00.293 — 전면 재디자인 (D안 · 라이트톤) ═══
+     핵심 변경: 옐로우를 UI 에서 걷어내고 **로고 전용**으로 되돌린다.
+     --primary 를 잉크로 재정의해 기존 코드(.btn-gold, focus ring, active dot 등 100+ 곳)를
+     한 번에 뒤집는다 — 클래스명은 그대로 두고 의미만 교체하는 최소 diff 전략.
+     로고는 SVG 에 #F5D548 이 하드코딩돼 있어 토큰과 무관하게 옐로우로 남는다. */
 
-  /* ─── Secondary (15–25% — 보조 강조) ─── */
-  --secondary:       #92400E;     /* Caramel Ink — 링크·강조 */
-  --secondary-hover: #7C2D12;     /* 한 단 깊음 */
+  /* ─── Primary = 잉크. CTA·focus·활성 상태 ─── */
+  --primary:        #1B1C1F;      /* 잉크 — CTA 배경 */
+  --primary-hover:  #34363B;
+  --primary-active: #4A4C52;      /* focus ring */
+  --primary-dim:    #E2DFD8;      /* 옅은 tint → 선 톤 */
+  --on-primary:     #F5F3EF;      /* 잉크 위 텍스트 = 종이빛 */
 
-  /* ─── Tertiary (부가 위계) ─── */
-  --tertiary:        #475569;     /* Slate 600 — 부차 강조 */
+  /* ─── Brand — 로고에만. UI 에서 쓰지 않는다 ─── */
+  --brand:          #F5D548;
 
-  /* ─── Neutral (70–80% — 베이스) ─── */
-  --bg:    #FFFFFF;               /* 페이지 베이스 (가장 큰 면적) */
-  --bg-2:  #F8FAFC;               /* 서브 배경·카드 */
-  --bg-3:  #F1F5F9;               /* 입력·코드 배경 */
-  --line:  #E5E7EB;               /* 기본 라인 */
-  --line-2:#D1D5DB;               /* 진한 라인 */
+  /* ─── Secondary / Tertiary ─── */
+  --secondary:       #5A5C63;     /* 링크·서브 강조 */
+  --secondary-hover: #34363B;
+  --tertiary:        #8A8C93;
 
-  /* ─── Text (위계 3단) ─── */
-  --ink:   #0F172A;               /* 1차 — 제목·본문 */
-  --ink-2: #334155;               /* 2차 — 보조 텍스트 */
-  --ink-3: #64748B;               /* 3차 — 메타·라벨·placeholder */
+  /* ─── Neutral — 종이빛. 순백을 쓰지 않는다 ─── */
+  --bg:    #F5F3EF;               /* 페이지 바탕 */
+  --bg-2:  #FFFFFF;               /* 올려진 면 */
+  --bg-3:  #EAE7DF;               /* 들어간 면 · 입력 */
+  --line:  #E2DFD8;
+  --line-2:#D4D0C7;
 
-  /* ─── System Colors (상태) ─── */
-  --success: #16A34A;             /* 성공·확정 */
-  --warning: #D97706;             /* 주의 (primary 와 명도 차이로 구분) */
-  --info:    #2563EB;             /* 정보·안내 */
-  --danger:  #DC2626;             /* 에러·삭제·거부 */
+  /* ─── Text ─── */
+  --ink:   #1B1C1F;
+  --ink-2: #5A5C63;
+  --ink-3: #8A8C93;
+  --ink-4: #B0AFA8;               /* v00.293 신설 — 라벨·마이크로 */
 
-  --focus:   #C99E1A;             /* focus ring (= primary-active) */
+  /* ─── System — 채도를 낮춰 종이빛과 붙인다 ─── */
+  --success: #2E6F4E;
+  --warning: #96631E;
+  --info:    #35507A;
+  --danger:  #A33A2E;
 
-  /* v00.209 — 레거시 호환 alias(--gold/--cta-*) 전면 제거 완료. 모든 코드는 --primary* / --on-primary 사용. */
-  --gold-strength: 1;  /* 사용처 없음 — 다음 사이클 제거 */
-  /* KBL 폰트 계층 */
-  --font-display: 'KblJumpExtended', 'KblJump', "Wanted Sans Variable", sans-serif; /* 대제목·히어로 */
-  --font-title:   'KblJump', 'KblJumpExtended', "Wanted Sans Variable", sans-serif; /* 소제목·카드 타이틀 */
-  --font-hero:    'KblJumpExtended', "Wanted Sans Variable", sans-serif;
-  --font-serif:   'KblJump', "Noto Serif KR", serif;
+  --focus:   #4A4C52;
+
+  /* ─── Type ───
+     디스플레이를 KBL Jump(굵은 고딕) → 조선일보명조로 교체.
+     한글 명조를 디스플레이로 쓰는 사이트는 흔치 않아 개성이 생긴다. */
+  --font-display: 'ChosunIlboMyungjo', "Noto Serif KR", serif;
+  --font-title:   'ChosunIlboMyungjo', "Noto Serif KR", serif;
+  --font-hero:    'ChosunIlboMyungjo', "Noto Serif KR", serif;
+  --font-serif:   'ChosunIlboMyungjo', "Noto Serif KR", serif;
   --font-sans:    "Wanted Sans Variable", "Wanted Sans", "Noto Sans KR", -apple-system, sans-serif;
   --font-mono:    "IBM Plex Mono", "D2 Coding", monospace;
   --font-reading: var(--font-sans);
+
+  /* ─── 타입 스케일 — 8단계 고정 (이전 20종 난립) ─── */
+  --fs-display: 122px; --fs-h1: 29px; --fs-h2: 22px; --fs-h3: 18px;
+  --fs-body: 15px; --fs-sm: 13px; --fs-xs: 11.5px; --fs-micro: 10px;
+
+  /* ─── 여백 — 4 배수 ─── */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
+  --s6:32px; --s7:48px; --s8:64px; --s9:96px; --s10:128px;
+
+  /* ─── 형태 — 각지게 ─── */
+  --radius: 2px;
 }
 
 /* ===============================================================
@@ -1040,7 +1059,7 @@ main time, main .section-eyebrow {
   font-size: 13px;
   letter-spacing: 0.12em;
   border: 1px solid var(--line-2);
-  border-radius: 8px;
+  border-radius: var(--radius);
   color: var(--ink);
   cursor: pointer;
   background: transparent;
@@ -1173,13 +1192,13 @@ main time, main .section-eyebrow {
 /* ---- Card ---- */
 .card {
   background: var(--bg-2);
-  border-radius: 12px;
-  padding: 32px;
-  /* v00.272 — 사용자 요청: 테두리선 제거(촌스러움). 부드러운 그림자로 위계 표현. */
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 20px rgba(15, 23, 42, 0.05);
-  transition: box-shadow .3s, transform .3s;
+  border-radius: var(--radius);
+  padding: var(--s6);
+  /* v00.272 테두리선 제거 유지. v00.293 — 그림자도 걷어낸다.
+     경계는 배경 차이(--bg vs --bg-2)와 여백으로 만든다. 그림자는 떠 있는 것에만. */
+  transition: background-color .2s;
 }
-.card:hover { box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 14px 36px rgba(15, 23, 42, 0.09); }
+.card:hover { background: var(--bg-3); }
 /* v00.164.001 — 박스 인상 제거 modifier. background + border 제거, padding 만 유지.
    사용처: 사진/콘텐츠가 시각 주체인 카드 (추천 사진 카드, 강연 strip, hero 무게의 책 CTA).
    투어처럼 '선택 가능 항목' 카드는 .card 그대로 유지. */
@@ -1242,15 +1261,11 @@ main time, main .section-eyebrow {
    경계는 .card 와 같은 그림자 언어로 표현하고, hover 는 살짝 떠오르는 것으로. */
 .home-program-card {
   padding: 22px 24px;
-  background: var(--bg);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 20px rgba(15, 23, 42, 0.05);
-  transition: box-shadow .3s, transform .3s;
+  background: var(--bg-2);
+  border-radius: var(--radius);
+  transition: background-color .2s;
 }
-.home-program-card:hover {
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 14px 36px rgba(15, 23, 42, 0.09);
-  transform: translateY(-1px);
-}
+.home-program-card:hover { background: var(--bg-3); }
 .home-program-label {
   font-family: var(--font-sans);
   font-size: 12px;
@@ -2744,4 +2759,110 @@ body.cookie-pending .help-panel { display: none !important; }
   /* 모바일에선 세로 사진이 화면을 다 먹지 않도록 비율 완화 */
   .home-intro-photo-img { aspect-ratio: 3 / 2; }
   .home-photo-wide-img { aspect-ratio: 16 / 9; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   v00.293 — 히어로 D안 (대형 타이포 · 라이트톤)
+   배경 이미지를 쓰지 않는다. 종이빛 바탕 위에 명조 대형 타이포만.
+   화려함은 ① 글자 크기 ② 외곽선 글자 대비 ③ 큰 숫자 ④ 티커 에서 온다.
+   ═══════════════════════════════════════════════════════════════ */
+.hero-d {
+  background: var(--bg);
+  padding: var(--s9) 0 var(--s7);
+}
+.hero-d-eyebrow {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.26em;
+  color: var(--ink-4);
+  margin-bottom: var(--s6);
+}
+.hero-d-title {
+  font-family: var(--font-display);
+  /* clamp 로 모바일까지 한 줄 규칙 — 뷰포트 폭에 비례해 꽉 채운다 */
+  font-size: clamp(44px, 9.2vw, var(--fs-display));
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  font-weight: 400;
+  color: var(--ink);
+  margin: 0;
+}
+/* 외곽선 글자 — 대형 타이포의 대비를 만드는 핵심 장치.
+   -webkit-text-stroke 미지원 브라우저에서는 그냥 --ink-3 색 글자로 보인다(폴백). */
+.hero-d-outline {
+  color: var(--ink-3);
+}
+@supports (-webkit-text-stroke: 1px black) {
+  .hero-d-outline {
+    -webkit-text-stroke: 1.2px var(--ink-4);
+    color: transparent;
+  }
+}
+.hero-d-sub {
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--ink-2);
+  max-width: 440px;
+  margin-top: var(--s6);
+}
+.hero-d-meta {
+  display: flex;
+  gap: var(--s7);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-top: var(--s7);
+  padding-top: var(--s5);
+  border-top: 1px solid var(--line);
+}
+.hero-d-num {
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.hero-d-key {
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: var(--ink-4);
+  margin-top: var(--s2);
+  text-transform: uppercase;
+}
+.hero-d-cta { margin-left: auto; }
+
+/* ── 티커 ── */
+.hero-ticker {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+  padding: var(--s5) 0;
+  background: var(--bg);
+}
+.hero-ticker-track {
+  display: flex;
+  gap: var(--s6);
+  width: max-content;
+  animation: bgnj-ticker 44s linear infinite;
+}
+.hero-ticker-item {
+  font-family: var(--font-display);
+  font-size: 21px;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+.hero-ticker-item:nth-child(2n) { color: var(--ink); }
+@keyframes bgnj-ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+/* 움직임을 줄이도록 설정한 사용자에게는 흐르지 않는다 — 규칙 §6 */
+@media (prefers-reduced-motion: reduce) {
+  .hero-ticker-track { animation: none; }
+  .hero-ticker { overflow-x: auto; }
+}
+
+@media (max-width: 900px) {
+  .hero-d { padding: var(--s7) 0 var(--s6); }
+  .hero-d-meta { gap: var(--s5); margin-top: var(--s6); }
+  .hero-d-num { font-size: 30px; }
+  .hero-d-cta { margin-left: 0; width: 100%; margin-top: var(--s3); }
+  .hero-ticker-item { font-size: 17px; }
 }

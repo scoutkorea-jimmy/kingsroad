@@ -642,124 +642,58 @@ const HomePage = ({ go }) => {
 
       {/* v00.143 — 오픈 안내 배너는 boot.jsx 로 이동 (sitewide, 메뉴 위쪽). */}
 
-      {/* ── HERO (텍스트 + 우측 지도 미리보기, 모바일 1단) ─────────── */}
-      <HomeSectionBoundary label="히어로"><section
-        className={`home-hero${(hero.bgDesktopUrl || hero.bgMobileUrl) ? ' has-bg' : ''}`}
-        style={{
-          position:'relative', overflow:'hidden',
-          background:'var(--bg)', borderBottom:'1px solid var(--line)',
-          padding:'72px 0 88px',
-        }}>
-        {/* v00.247 — 사용자 설정 배경 이미지 (PC/모바일 별도). 미설정 시 렌더 X — 기존 빈 배경 유지.
-            v00.248 — 모바일 슬롯 비면 PC 이미지를 fallback (사용자 보고 '한 번 올린 거로 양쪽 살아나면 좋겠다').
-            반대로 PC 슬롯 비고 모바일만 있어도 모바일 div 만 렌더 — 모바일 viewport 만 노출, PC 는 빈 배경. */}
-        {hero.bgDesktopUrl && (
-          <div className="hero-bg-image hero-bg-desktop" aria-hidden="true"
-            style={{backgroundImage:`url(${hero.bgDesktopUrl})`}}/>
-        )}
-        {(hero.bgMobileUrl || hero.bgDesktopUrl) && (
-          <div className="hero-bg-image hero-bg-mobile" aria-hidden="true"
-            style={{backgroundImage:`url(${hero.bgMobileUrl || hero.bgDesktopUrl})`}}/>
-        )}
-        <div className="container" style={{position:'relative', zIndex:1}}>
-          <div className="hero-grid home-hero-grid" style={{
-            display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:56, alignItems:'center',
-          }}>
-            {/* 좌측: 텍스트 — heroStyle 트윗(관리자 '히어로' 탭) 인라인 적용 */}
-            <div style={{textAlign: heroStyle.title.textAlign || 'left'}}>
-              <div className="section-eyebrow" style={{
-                fontSize: heroStyle.eyebrow.fontSize,
-                fontWeight: heroStyle.eyebrow.fontWeight,
-                letterSpacing: `${heroStyle.eyebrow.letterSpacing}em`,
-                color: `var(${heroStyle.eyebrow.color})`,
-                textTransform: heroStyle.eyebrow.textTransform || 'uppercase',
-              }}>
-                <span>{hero.eyebrow || "먹고 자고 걷고 읽는 한국"}</span>
-              </div>
-              <h1 style={{
-                fontFamily:'var(--font-display)',
-                fontSize: `clamp(36px, 5vw, ${heroStyle.title.fontSize}px)`,
-                fontWeight: heroStyle.title.fontWeight,
-                lineHeight: heroStyle.title.lineHeight,
-                letterSpacing: `${heroStyle.title.letterSpacing}em`,
-                marginBottom:22,
-                color:`var(${heroStyle.title.color})`,
-              }}>
-                {hero.title1 || "한국을"}<br/>
-                <span style={{color:`var(${heroStyle.title.accentColor})`}}>{hero.title2 || "직접 걷고"}</span><br/>
-                {hero.title3 || "천천히 읽다"}
-              </h1>
-              <p className="bgnj-multiline" style={{
-                fontSize: heroStyle.subtitle.fontSize,
-                lineHeight: heroStyle.subtitle.lineHeight,
-                color: `var(${heroStyle.subtitle.color})`,
-                maxWidth: heroStyle.subtitle.maxWidth,
-                marginBottom:32,
-                fontWeight: heroStyle.subtitle.fontWeight,
-                marginLeft: heroStyle.title.textAlign === 'center' ? 'auto' : undefined,
-                marginRight: heroStyle.title.textAlign === 'center' ? 'auto' : undefined,
-              }}>
-                {hero.subtitle || "궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다. 뱅기노자는 여행을 기록하고 함께 떠나는 사람들의 작은 모임입니다."}
-              </p>
-              <div style={{
-                display:'flex', gap:12, flexWrap:'wrap', marginBottom:40,
-                justifyContent: heroStyle.title.textAlign === 'center' ? 'center' : (heroStyle.title.textAlign === 'right' ? 'flex-end' : 'flex-start'),
-                fontWeight: heroStyle.cta.fontWeight,
-              }}>
-                {/* v00.152 — 사용자 요청 '지도에서 여행지 찾기 버튼 삭제'. */}
-                <button className="btn btn-gold" onClick={() => go('community')}
-                  style={{fontWeight: heroStyle.cta.fontWeight}}>
-                  {hero.ctaPrimary || "커뮤니티 보기"}
-                </button>
-                {/* v00.289 — 두 CTA 가 동등해 보여 "뭐부터 봐야 할지 모르겠다"에 일조.
-                    보조 행동은 btn-ghost 로 낮춰 주행동 하나만 남긴다. */}
-                <button className="btn-ghost" onClick={() => go('tour')}
-                  style={{fontWeight: heroStyle.cta.fontWeight, fontSize:13}}>
-                  {hero.ctaSecondary || "답사 일정 보기"} →
+      {/* ── HERO — v00.293 전면 재디자인(D안 · 라이트톤) ─────────────
+          이전 히어로는 좌측 텍스트 + 우측 프로그램 카드 2단이었고 배경 이미지를 깔았다.
+          새 구조는 배경 이미지를 쓰지 않는다 — 종이빛 바탕 위에 명조 대형 타이포만 세운다.
+          hero.bgDesktopUrl / bgMobileUrl 은 더 이상 소비되지 않는다(데이터는 보존).
+          heroStyle 트윗(관리자 '히어로' 탭)도 이 구조에선 적용하지 않는다 —
+          크기·색이 구조의 일부가 됐기 때문. 문구(title1~3, subtitle, cta*)만 계속 관리자에서 편집된다. */}
+      <HomeSectionBoundary label="히어로">
+        <section className="hero-d">
+          <div className="container">
+            <div className="hero-d-eyebrow mono">{hero.eyebrow || 'BANGINOJA · 한국의 역사 · 문화 · 자연을 걷다'}</div>
+            <h1 className="hero-d-title">
+              {hero.title1 || '걸어서'}<br/>
+              <span className="hero-d-outline">{hero.title2 || '한국의'}</span> {hero.title3 || '안쪽으로'}
+            </h1>
+            <p className="hero-d-sub bgnj-multiline">
+              {hero.subtitle || '궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다. 발로 확인한 것만 기록에 남깁니다.'}
+            </p>
+            <div className="hero-d-meta">
+              {stats.map((stat) => (
+                <div key={stat.l} className="hero-d-stat">
+                  <div className="hero-d-num mono">{stat.v}</div>
+                  <div className="hero-d-key mono">{stat.l}</div>
+                </div>
+              ))}
+              <div className="hero-d-cta">
+                <button type="button" className="btn btn-gold" onClick={() => go('column')}>
+                  {hero.ctaPrimary || '기록 읽으러 가기'}
                 </button>
               </div>
-              {/* v00.289 — 남은 지표가 0개면 구분선까지 통째로 사라진다. 칸 수에 맞춰 열도 조정. */}
-              {stats.length > 0 && (
-              <div className="hero-stats" style={{
-                display:'grid', gridTemplateColumns:`repeat(${stats.length},1fr)`, gap:20,
-                paddingTop:24, borderTop:'1px solid var(--line)',
-              }}>
-                {stats.map((stat) => (
-                  <div key={stat.l}>
-                    <div style={{
-                      fontFamily:'var(--font-serif)',
-                      fontSize: heroStyle.stats.value.fontSize,
-                      fontWeight: heroStyle.stats.value.fontWeight,
-                      color: `var(${heroStyle.stats.value.color})`,
-                      marginBottom:4,
-                    }}>{stat.v}</div>
-                    <div style={{
-                      fontFamily:'var(--font-mono)',
-                      fontSize: heroStyle.stats.label.fontSize,
-                      fontWeight: heroStyle.stats.label.fontWeight,
-                      letterSpacing: `${heroStyle.stats.label.letterSpacing}em`,
-                      color: `var(${heroStyle.stats.label.color})`,
-                      textTransform: heroStyle.stats.label.textTransform || 'uppercase',
-                      marginBottom:3,
-                    }}>{stat.l}</div>
-                    <div style={{
-                      fontSize: heroStyle.stats.sub.fontSize,
-                      color: `var(${heroStyle.stats.sub.color})`,
-                    }}>{stat.s}</div>
-                  </div>
-                ))}
-              </div>
-              )}
             </div>
-
-            {/* 우측: 지도 미리보기 — 시도 클릭 → 전체 모달 (a11y: 외곽 div 는 단순 컨테이너, 실제 버튼은 region path 와 우상단 텍스트 버튼). 폰(≤600px) 에서는 hero-map-preview CSS 로 숨김 + CTA 버튼만 노출. */}
-            {/* v00.106 — 지도 → 다음 강연 / 다음 답사 미니 카드 (A안) */}
-            <HeroProgramCards go={go} dataTick={dataTick} text={homeText}/>
           </div>
-        </div>
-      </section>
-
+        </section>
       </HomeSectionBoundary>
+
+      {/* ── 티커 — 최근 기록 제목이 흐른다 (v00.293)
+          실데이터만 쓴다. 칼럼이 없으면 렌더하지 않는다.
+          prefers-reduced-motion 에서는 애니메이션이 멈추고 정적으로 남는다(styles.css). */}
+      {publicColumns.length > 0 && (
+        <HomeSectionBoundary label="티커">
+          <section className="hero-ticker" aria-label="최근 기록">
+            <div className="hero-ticker-track">
+              {publicColumns.slice(0, 8).map((c) => (
+                <span key={c.id} className="hero-ticker-item">{c.title}</span>
+              ))}
+              {/* 끊김 없이 이어지도록 같은 목록을 한 번 더 — aria 에서는 숨긴다 */}
+              {publicColumns.slice(0, 8).map((c) => (
+                <span key={`dup-${c.id}`} className="hero-ticker-item" aria-hidden="true">{c.title}</span>
+              ))}
+            </div>
+          </section>
+        </HomeSectionBoundary>
+      )}
 
       {/* ── 히어로 사진 (v00.292) ─────────────────────────────────────
           관리자 → 사이트 콘텐츠 → 히어로 → '홈 사진' 에서 업로드.

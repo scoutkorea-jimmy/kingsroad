@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.291.003",
+    version: "00.292.000",
     build: "2026.07.29",
     channel: "preview"
   };
@@ -7008,76 +7008,6 @@
     bookAuthorSuffix: "\uC9C0\uC74C"
   };
   var getHomeText = (sc) => ({ ...HOME_TEXT_DEFAULT, ...sc && typeof sc.homeText === "object" ? sc.homeText : {} });
-  var HeroProgramCards = ({ go, dataTick, text }) => {
-    const _arr2 = (fn) => {
-      try {
-        const v = fn();
-        return Array.isArray(v) ? v : [];
-      } catch (e) {
-        return [];
-      }
-    };
-    const _cutoff = Date.now() - 864e5;
-    const _upcoming = (fn) => _arr2(fn).filter((x) => x && !x.hidden && !isNaN(_eventTs(x)) && _eventTs(x) >= _cutoff).sort((a, b) => _eventTs(a) - _eventTs(b));
-    const lectures = React.useMemo(() => _upcoming(() => {
-      var _a, _b;
-      return (_b = (_a = window.BGNJ_LECTURES) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
-    }), [dataTick]);
-    const tours = React.useMemo(() => _upcoming(() => {
-      var _a, _b;
-      return (_b = (_a = window.BGNJ_TOURS) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
-    }), [dataTick]);
-    const nextLecture = lectures[0];
-    const nextTour = tours[0];
-    const fmtDate = (iso) => {
-      var _a;
-      if (!iso) return "";
-      if ((_a = window.BGNJ_FMT) == null ? void 0 : _a.kstFriendly) return window.BGNJ_FMT.kstFriendly(iso);
-      const d = new Date(iso);
-      const pad = (n) => String(n).padStart(2, "0");
-      const dow = ["\uC77C", "\uC6D4", "\uD654", "\uC218", "\uBAA9", "\uAE08", "\uD1A0"][d.getDay()];
-      return `${d.getMonth() + 1}.${pad(d.getDate())} (${dow}) ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    };
-    if (!nextLecture && !nextTour) return null;
-    return /* @__PURE__ */ React.createElement("div", { className: "home-program-stack" }, nextLecture && /* @__PURE__ */ React.createElement(
-      "article",
-      {
-        onClick: () => go("lectures"),
-        className: "home-program-card",
-        style: { cursor: "pointer" },
-        role: "button",
-        tabIndex: 0,
-        onKeyDown: (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            go("lectures");
-          }
-        }
-      },
-      /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextLectureLabel),
-      /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextLecture.topic || nextLecture.title),
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, nextLecture.next || fmtDate(nextLecture.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextLecture.venue || text.venueFallback))
-    ), nextTour && /* @__PURE__ */ React.createElement(
-      "article",
-      {
-        onClick: () => go("tour"),
-        className: "home-program-card",
-        style: { cursor: "pointer" },
-        role: "button",
-        tabIndex: 0,
-        onKeyDown: (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            go("tour");
-          }
-        }
-      },
-      /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextTourLabel),
-      /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextTour.title),
-      nextTour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 8, fontStyle: "italic" } }, nextTour.subtitle),
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, nextTour.next || fmtDate(nextTour.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextTour.level && /* @__PURE__ */ React.createElement("span", { style: { marginRight: 8 } }, nextTour.level), nextTour.duration))
-    ));
-  };
   var BookCarouselSection = ({ go, dataTick, text }) => {
     const _arr2 = (fn) => {
       try {
@@ -7438,111 +7368,7 @@
       if (!isFinite(v)) return 1;
       return Math.max(0.85, Math.min(1.2, v));
     })();
-    return /* @__PURE__ */ React.createElement("div", { className: "home-page", style: { fontSize: `${fontScale}em` } }, recDetail && /* @__PURE__ */ React.createElement(RecommendationDetailModal, { rec: recDetail, onClose: () => setRecDetail(null), go }), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C" }, /* @__PURE__ */ React.createElement(
-      "section",
-      {
-        className: `home-hero${hero.bgDesktopUrl || hero.bgMobileUrl ? " has-bg" : ""}`,
-        style: {
-          position: "relative",
-          overflow: "hidden",
-          background: "var(--bg)",
-          borderBottom: "1px solid var(--line)",
-          padding: "72px 0 88px"
-        }
-      },
-      hero.bgDesktopUrl && /* @__PURE__ */ React.createElement(
-        "div",
-        {
-          className: "hero-bg-image hero-bg-desktop",
-          "aria-hidden": "true",
-          style: { backgroundImage: `url(${hero.bgDesktopUrl})` }
-        }
-      ),
-      (hero.bgMobileUrl || hero.bgDesktopUrl) && /* @__PURE__ */ React.createElement(
-        "div",
-        {
-          className: "hero-bg-image hero-bg-mobile",
-          "aria-hidden": "true",
-          style: { backgroundImage: `url(${hero.bgMobileUrl || hero.bgDesktopUrl})` }
-        }
-      ),
-      /* @__PURE__ */ React.createElement("div", { className: "container", style: { position: "relative", zIndex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "hero-grid home-hero-grid", style: {
-        display: "grid",
-        gridTemplateColumns: "1.2fr 1fr",
-        gap: 56,
-        alignItems: "center"
-      } }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: heroStyle.title.textAlign || "left" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", style: {
-        fontSize: heroStyle.eyebrow.fontSize,
-        fontWeight: heroStyle.eyebrow.fontWeight,
-        letterSpacing: `${heroStyle.eyebrow.letterSpacing}em`,
-        color: `var(${heroStyle.eyebrow.color})`,
-        textTransform: heroStyle.eyebrow.textTransform || "uppercase"
-      } }, /* @__PURE__ */ React.createElement("span", null, hero.eyebrow || "\uBA39\uACE0 \uC790\uACE0 \uAC77\uACE0 \uC77D\uB294 \uD55C\uAD6D")), /* @__PURE__ */ React.createElement("h1", { style: {
-        fontFamily: "var(--font-display)",
-        fontSize: `clamp(36px, 5vw, ${heroStyle.title.fontSize}px)`,
-        fontWeight: heroStyle.title.fontWeight,
-        lineHeight: heroStyle.title.lineHeight,
-        letterSpacing: `${heroStyle.title.letterSpacing}em`,
-        marginBottom: 22,
-        color: `var(${heroStyle.title.color})`
-      } }, hero.title1 || "\uD55C\uAD6D\uC744", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { style: { color: `var(${heroStyle.title.accentColor})` } }, hero.title2 || "\uC9C1\uC811 \uAC77\uACE0"), /* @__PURE__ */ React.createElement("br", null), hero.title3 || "\uCC9C\uCC9C\uD788 \uC77D\uB2E4"), /* @__PURE__ */ React.createElement("p", { className: "bgnj-multiline", style: {
-        fontSize: heroStyle.subtitle.fontSize,
-        lineHeight: heroStyle.subtitle.lineHeight,
-        color: `var(${heroStyle.subtitle.color})`,
-        maxWidth: heroStyle.subtitle.maxWidth,
-        marginBottom: 32,
-        fontWeight: heroStyle.subtitle.fontWeight,
-        marginLeft: heroStyle.title.textAlign === "center" ? "auto" : void 0,
-        marginRight: heroStyle.title.textAlign === "center" ? "auto" : void 0
-      } }, hero.subtitle || "\uAD81\uAD90\uACFC \uACE8\uBAA9, \uC2DC\uC7A5\uACFC \uC219\uC18C, \uCC45\uACFC \uAC15\uC5F0\uC744 \uC624\uAC00\uBA70 \uD55C\uAD6D\uC744 \uC870\uAE08 \uB354 \uAC00\uAE4C\uC774 \uBD05\uB2C8\uB2E4. \uBC45\uAE30\uB178\uC790\uB294 \uC5EC\uD589\uC744 \uAE30\uB85D\uD558\uACE0 \uD568\uAED8 \uB5A0\uB098\uB294 \uC0AC\uB78C\uB4E4\uC758 \uC791\uC740 \uBAA8\uC784\uC785\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: {
-        display: "flex",
-        gap: 12,
-        flexWrap: "wrap",
-        marginBottom: 40,
-        justifyContent: heroStyle.title.textAlign === "center" ? "center" : heroStyle.title.textAlign === "right" ? "flex-end" : "flex-start",
-        fontWeight: heroStyle.cta.fontWeight
-      } }, /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          className: "btn btn-gold",
-          onClick: () => go("community"),
-          style: { fontWeight: heroStyle.cta.fontWeight }
-        },
-        hero.ctaPrimary || "\uCEE4\uBBA4\uB2C8\uD2F0 \uBCF4\uAE30"
-      ), /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          className: "btn-ghost",
-          onClick: () => go("tour"),
-          style: { fontWeight: heroStyle.cta.fontWeight, fontSize: 13 }
-        },
-        hero.ctaSecondary || "\uB2F5\uC0AC \uC77C\uC815 \uBCF4\uAE30",
-        " \u2192"
-      )), stats.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "hero-stats", style: {
-        display: "grid",
-        gridTemplateColumns: `repeat(${stats.length},1fr)`,
-        gap: 20,
-        paddingTop: 24,
-        borderTop: "1px solid var(--line)"
-      } }, stats.map((stat) => /* @__PURE__ */ React.createElement("div", { key: stat.l }, /* @__PURE__ */ React.createElement("div", { style: {
-        fontFamily: "var(--font-serif)",
-        fontSize: heroStyle.stats.value.fontSize,
-        fontWeight: heroStyle.stats.value.fontWeight,
-        color: `var(${heroStyle.stats.value.color})`,
-        marginBottom: 4
-      } }, stat.v), /* @__PURE__ */ React.createElement("div", { style: {
-        fontFamily: "var(--font-mono)",
-        fontSize: heroStyle.stats.label.fontSize,
-        fontWeight: heroStyle.stats.label.fontWeight,
-        letterSpacing: `${heroStyle.stats.label.letterSpacing}em`,
-        color: `var(${heroStyle.stats.label.color})`,
-        textTransform: heroStyle.stats.label.textTransform || "uppercase",
-        marginBottom: 3
-      } }, stat.l), /* @__PURE__ */ React.createElement("div", { style: {
-        fontSize: heroStyle.stats.sub.fontSize,
-        color: `var(${heroStyle.stats.sub.color})`
-      } }, stat.s))))), /* @__PURE__ */ React.createElement(HeroProgramCards, { go, dataTick, text: homeText })))
-    )), hero.photoWideUrl && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C \uC0AC\uC9C4" }, /* @__PURE__ */ React.createElement("section", { className: "home-photo-wide", "aria-label": "\uB2F5\uC0AC \uD604\uC7A5 \uC0AC\uC9C4" }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { className: "home-page", style: { fontSize: `${fontScale}em` } }, recDetail && /* @__PURE__ */ React.createElement(RecommendationDetailModal, { rec: recDetail, onClose: () => setRecDetail(null), go }), /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C" }, /* @__PURE__ */ React.createElement("section", { className: "hero-d" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "hero-d-eyebrow mono" }, hero.eyebrow || "BANGINOJA \xB7 \uD55C\uAD6D\uC758 \uC5ED\uC0AC \xB7 \uBB38\uD654 \xB7 \uC790\uC5F0\uC744 \uAC77\uB2E4"), /* @__PURE__ */ React.createElement("h1", { className: "hero-d-title" }, hero.title1 || "\uAC78\uC5B4\uC11C", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { className: "hero-d-outline" }, hero.title2 || "\uD55C\uAD6D\uC758"), " ", hero.title3 || "\uC548\uCABD\uC73C\uB85C"), /* @__PURE__ */ React.createElement("p", { className: "hero-d-sub bgnj-multiline" }, hero.subtitle || "\uAD81\uAD90\uACFC \uACE8\uBAA9, \uC2DC\uC7A5\uACFC \uC219\uC18C, \uCC45\uACFC \uAC15\uC5F0\uC744 \uC624\uAC00\uBA70 \uD55C\uAD6D\uC744 \uC870\uAE08 \uB354 \uAC00\uAE4C\uC774 \uBD05\uB2C8\uB2E4. \uBC1C\uB85C \uD655\uC778\uD55C \uAC83\uB9CC \uAE30\uB85D\uC5D0 \uB0A8\uAE41\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { className: "hero-d-meta" }, stats.map((stat) => /* @__PURE__ */ React.createElement("div", { key: stat.l, className: "hero-d-stat" }, /* @__PURE__ */ React.createElement("div", { className: "hero-d-num mono" }, stat.v), /* @__PURE__ */ React.createElement("div", { className: "hero-d-key mono" }, stat.l))), /* @__PURE__ */ React.createElement("div", { className: "hero-d-cta" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: () => go("column") }, hero.ctaPrimary || "\uAE30\uB85D \uC77D\uC73C\uB7EC \uAC00\uAE30")))))), publicColumns.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD2F0\uCEE4" }, /* @__PURE__ */ React.createElement("section", { className: "hero-ticker", "aria-label": "\uCD5C\uADFC \uAE30\uB85D" }, /* @__PURE__ */ React.createElement("div", { className: "hero-ticker-track" }, publicColumns.slice(0, 8).map((c) => /* @__PURE__ */ React.createElement("span", { key: c.id, className: "hero-ticker-item" }, c.title)), publicColumns.slice(0, 8).map((c) => /* @__PURE__ */ React.createElement("span", { key: `dup-${c.id}`, className: "hero-ticker-item", "aria-hidden": "true" }, c.title))))), hero.photoWideUrl && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C \uC0AC\uC9C4" }, /* @__PURE__ */ React.createElement("section", { className: "home-photo-wide", "aria-label": "\uB2F5\uC0AC \uD604\uC7A5 \uC0AC\uC9C4" }, /* @__PURE__ */ React.createElement(
       "div",
       {
         className: "home-photo-wide-img",
