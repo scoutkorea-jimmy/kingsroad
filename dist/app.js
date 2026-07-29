@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.291.001",
+    version: "00.291.002",
     build: "2026.07.29",
     channel: "preview"
   };

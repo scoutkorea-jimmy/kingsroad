@@ -94,7 +94,17 @@
    경계는 그림자·여백·배경 대비로. 폼 입력창과 focus ring 등 기능상 필요한 것만 남깁니다.
 6. 레거시 컬러 토큰 (`--gold*` / `--cta-*`) 신규 사용 금지.
 
-## 9. 이 문서를 고칠 때
+## 9. 알려진 예외 — 판단이 끝난 것
+
+새로 논쟁하지 마세요. 아래는 검토를 마치고 **그대로 두기로 결정한** 것입니다.
+
+| 위치 | 지적 | 판단 |
+|---|---|---|
+| `pages/HomePage.jsx` 칼럼 캐러셀 인디케이터 | `transition: width` — 레이아웃 애니메이션 | **유지.** 8px 점이 22px 알약으로 늘어나는 표현이라 `transform: scaleX` 로 바꾸면 `border-radius:999` 의 둥근 양 끝이 찌그러진다. 8px 단일 요소라 레이아웃 비용도 사실상 없다 |
+| 프로그레스 바 3곳 · CTA 버튼 · 로고 마크 · 알림 배지 dot | 옐로우 배경 사용 | **유지.** 규칙이 명시적으로 허용하는 "CTA·focus·로고·active dot" 그대로다 → [10-coding.md](10-coding.md) |
+| `ErrorPages.jsx` · `boot.jsx` 의 하드코딩 hex | 토큰 대신 `#F5D548` 직접 사용 | **유지.** ErrorBoundary 안이라 CSS 로드가 실패한 상황에서도 렌더돼야 한다. 의도적 선택 |
+
+## 10. 이 문서를 고칠 때
 
 디자인 결정이 바뀌면 **세 곳을 함께 갱신합니다** — 이 문서 · [../design/tokens.md](../design/tokens.md) ·
 `pages/admin/AdminDesignHub.jsx` 의 Design System View.
