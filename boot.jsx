@@ -6,6 +6,7 @@ import { BookPage, CheckoutPage} from './pages/BookCheckoutPage.jsx';
 import { ColumnPage} from './pages/ColumnPage.jsx';
 import { CommunityPage} from './pages/CommunityPage.jsx';
 import { EatPage, ShopPage} from './pages/EatSleepShopPages.jsx';
+import { HelpWidget} from './components/HelpWidget.jsx';
 import { Error401Page, Error404Page} from './pages/ErrorPages.jsx';
 import { HangyeonPage} from './pages/HangyeonPage.jsx';
 import { HomeNextPage} from './pages/HomeNextPage.jsx';
@@ -854,6 +855,8 @@ const App = () => {
       {!hideNav && <Footer go={go}/>}
       <Tweaks tweaks={tweaks} setTweaks={updateTweaks} visible={editMode}/>
       <ScrollToTop/>
+      {/* v00.290 — 우하단 도움 위젯. Nav 가 숨겨진 화면(에러/전체화면)에서는 함께 숨긴다. */}
+      {!hideNav && <HelpWidget go={go}/>}
       <CookieConsent/>
       <GlobalErrorToast/>
       <VersionUpdateBanner/>

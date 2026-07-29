@@ -20,7 +20,7 @@
 
 | 시작 | 건 | 문서 |
 |---|---|---|
-| 2026-07-29 | 문서 구조 재편 + UI 개편 | [ACTIVE.md](ACTIVE.md) · [계획](plan-2026-07-29-restructure-and-ui.md) |
+| 2026-07-29 | 챗봇·Top 위젯 + 메뉴 재편 + 홈 재구성 | [ACTIVE.md](ACTIVE.md) |
 
 ---
 
@@ -31,6 +31,7 @@
 
 | 버전 | 내용 | 문서 |
 |---|---|---|
+| v00.289 | 문서 구조 재편(CLAUDE.md+rules/+handoff+design/) + 홈 UI 1차 개편 | [2026-07-29-restructure-and-ui.md](done/2026-07-29-restructure-and-ui.md) |
 | v00.288 | v00.288 — 전주한켠: 객실 선택 → 기간 살아보기 상품 + 문의 | [v00.288-hangyeon-stay-packages.md](done/v00.288-hangyeon-stay-packages.md) |
 | v00.288 | v00.288.003 — 홈 커뮤니티 섹션 제거 | [v00.288.003.md](done/v00.288.003.md) |
 | v00.285 | v00.285 — 번들러 전환 (스파게티 구조 근본 해소) | [v00.285-bundler-migration.md](done/v00.285-bundler-migration.md) |

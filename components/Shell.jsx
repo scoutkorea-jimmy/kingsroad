@@ -1191,6 +1191,16 @@ const CookieConsent = () => {
   const rejectAll = () => persist({ necessary: true, analytics: false, marketing: false, ts: new Date().toISOString() });
   const saveCustom = () => persist({ necessary: true, analytics: !!analytics, marketing: !!marketing, ts: new Date().toISOString() });
 
+  // v00.290 — 쿠키 결정 전에는 body 에 표식을 남긴다.
+  // 모바일에서 쿠키 배너(z80)가 도움 위젯 패널(z78)의 질문 칩을 덮어 후속 질문을 못 하는 문제.
+  // 첫 방문 1회뿐이므로 그동안은 도움 위젯을 숨기고 동의 여부부터 받는다.
+  React.useEffect(() => {
+    try {
+      document.body.classList.toggle('cookie-pending', !decision);
+      return () => document.body.classList.remove('cookie-pending');
+    } catch { return undefined; }
+  }, [decision]);
+
   if (decision) return null;
 
   return (

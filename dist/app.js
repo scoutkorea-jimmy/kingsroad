@@ -5684,6 +5684,14 @@
     const acceptAll = () => persist({ necessary: true, analytics: true, marketing: true, ts: (/* @__PURE__ */ new Date()).toISOString() });
     const rejectAll = () => persist({ necessary: true, analytics: false, marketing: false, ts: (/* @__PURE__ */ new Date()).toISOString() });
     const saveCustom = () => persist({ necessary: true, analytics: !!analytics, marketing: !!marketing, ts: (/* @__PURE__ */ new Date()).toISOString() });
+    React.useEffect(() => {
+      try {
+        document.body.classList.toggle("cookie-pending", !decision);
+        return () => document.body.classList.remove("cookie-pending");
+      } catch (e) {
+        return void 0;
+      }
+    }, [decision]);
     if (decision) return null;
     return /* @__PURE__ */ React.createElement(
       "div",
@@ -6954,7 +6962,7 @@
   };
   var getHomeText = (sc) => ({ ...HOME_TEXT_DEFAULT, ...sc && typeof sc.homeText === "object" ? sc.homeText : {} });
   var HeroProgramCards = ({ go, dataTick, text }) => {
-    const _arr = (fn) => {
+    const _arr2 = (fn) => {
       try {
         const v = fn();
         return Array.isArray(v) ? v : [];
@@ -6963,7 +6971,7 @@
       }
     };
     const _cutoff = Date.now() - 864e5;
-    const _upcoming = (fn) => _arr(fn).filter((x) => x && !x.hidden && !isNaN(_eventTs(x)) && _eventTs(x) >= _cutoff).sort((a, b) => _eventTs(a) - _eventTs(b));
+    const _upcoming = (fn) => _arr2(fn).filter((x) => x && !x.hidden && !isNaN(_eventTs(x)) && _eventTs(x) >= _cutoff).sort((a, b) => _eventTs(a) - _eventTs(b));
     const lectures = React.useMemo(() => _upcoming(() => {
       var _a, _b;
       return (_b = (_a = window.BGNJ_LECTURES) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
@@ -7024,7 +7032,7 @@
     ));
   };
   var BookCarouselSection = ({ go, dataTick, text }) => {
-    const _arr = (fn) => {
+    const _arr2 = (fn) => {
       try {
         const v = fn();
         return Array.isArray(v) ? v : [];
@@ -7039,7 +7047,7 @@
       return () => window.removeEventListener("bgnj-books-refresh", onR);
     }, []);
     const books = React.useMemo(() => {
-      const all = _arr(() => {
+      const all = _arr2(() => {
         var _a, _b;
         return (_b = (_a = window.BGNJ_BOOKS) == null ? void 0 : _a.list) == null ? void 0 : _b.call(_a, { status: "published" });
       });
@@ -10787,7 +10795,7 @@
     const [editColumn, setEditColumn] = React.useState(null);
     const isAdmin = !!(user == null ? void 0 : user.isAdmin);
     const refresh = () => setTick((v) => v + 1);
-    const _arr = (fn) => {
+    const _arr2 = (fn) => {
       try {
         const v = fn();
         return Array.isArray(v) ? v : [];
@@ -10796,7 +10804,7 @@
       }
     };
     const publicColumns = React.useMemo(
-      () => _arr(() => {
+      () => _arr2(() => {
         var _a2, _b2;
         return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listPublic) == null ? void 0 : _b2.call(_a2);
       }),
@@ -10807,7 +10815,7 @@
       [publicColumns]
     );
     const filtered = React.useMemo(
-      () => _arr(() => {
+      () => _arr2(() => {
         var _a2, _b2;
         return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.searchPublic) == null ? void 0 : _b2.call(_a2, { query: search, category });
       }),
@@ -13867,6 +13875,204 @@
     ErrorMaintenancePage
   });
 
+  // components/HelpWidget.jsx
+  var _ts = (x) => {
+    if (!x) return NaN;
+    if (x.startsAt) {
+      const t = Date.parse(x.startsAt);
+      if (!isNaN(t)) return t;
+    }
+    if (x.next) {
+      const t = Date.parse(String(x.next).trim().replace(/\./g, "-"));
+      if (!isNaN(t)) return t;
+    }
+    return NaN;
+  };
+  var _arr = (fn) => {
+    try {
+      const v = fn();
+      return Array.isArray(v) ? v : [];
+    } catch (e) {
+      return [];
+    }
+  };
+  var _fmt = (x) => {
+    var _a, _b;
+    const t = _ts(x);
+    if (isNaN(t)) return (x == null ? void 0 : x.next) || "";
+    try {
+      return ((_b = (_a = window.BGNJ_FMT) == null ? void 0 : _a.kstFriendly) == null ? void 0 : _b.call(_a, new Date(t).toISOString())) || (x == null ? void 0 : x.next) || "";
+    } catch (e) {
+      return (x == null ? void 0 : x.next) || "";
+    }
+  };
+  var _CUTOFF = () => Date.now() - 864e5;
+  var _eventAnswer = ({ items, label, route, pendingKey }) => {
+    const dated = items.filter((x) => x && !x.hidden && !isNaN(_ts(x)));
+    const upcoming = dated.filter((x) => _ts(x) >= _CUTOFF()).sort((a, b) => _ts(a) - _ts(b));
+    const past = dated.filter((x) => _ts(x) < _CUTOFF()).sort((a, b) => _ts(b) - _ts(a));
+    if (upcoming.length > 0) {
+      const n = upcoming[0];
+      return {
+        lines: [
+          `\uAC00\uC7A5 \uBE60\uB978 ${label}\uC740 \uC774\uAC83\uC785\uB2C8\uB2E4.`,
+          `**${n.topic || n.title}**`,
+          `${_fmt(n)}${n.venue ? ` \xB7 ${n.venue}` : ""}`,
+          upcoming.length > 1 ? `\uC774\uD6C4\uB85C ${upcoming.length - 1}\uAC74\uC774 \uB354 \uC608\uC815\uB3FC \uC788\uC5B4\uC694.` : ""
+        ].filter(Boolean),
+        action: { text: `${label} \uC790\uC138\uD788 \uBCF4\uAE30`, route, pendingKey, pendingId: n.id }
+      };
+    }
+    if (past.length > 0) {
+      const p = past[0];
+      return {
+        lines: [
+          `\uC9C0\uAE08 \uC608\uC815\uB41C ${label}\uC740 \uC5C6\uC2B5\uB2C8\uB2E4.`,
+          `\uAC00\uC7A5 \uCD5C\uADFC\uC5D0\uB294 \uC774\uB7F0 ${label}\uC774 \uC788\uC5C8\uC5B4\uC694.`,
+          `**${p.topic || p.title}**`,
+          `${_fmt(p)}`,
+          `\uC9C0\uB09C \uAE30\uB85D ${past.length}\uAC74\uC744 \uBCF4\uC2E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4.`
+        ],
+        action: { text: `\uC9C0\uB09C ${label} \uBCF4\uAE30`, route, pendingKey: null, pendingId: null }
+      };
+    }
+    return {
+      lines: [`\uC544\uC9C1 \uB4F1\uB85D\uB41C ${label}\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.`, "\uC0C8 \uC77C\uC815\uC774 \uC5F4\uB9AC\uBA74 \uC774\uACF3\uC5D0\uC11C \uAC00\uC7A5 \uBA3C\uC800 \uC54C\uB824\uB4DC\uB9B4\uAC8C\uC694."],
+      action: { text: "\uCEE4\uBBA4\uB2C8\uD2F0 \uB458\uB7EC\uBCF4\uAE30", route: "community", pendingKey: null, pendingId: null }
+    };
+  };
+  var HELP_TOPICS = [
+    {
+      id: "lecture",
+      q: "\uAC00\uC7A5 \uBE60\uB978 \uAC15\uC5F0 \uC77C\uC815",
+      answer: () => _eventAnswer({
+        items: _arr(() => {
+          var _a, _b;
+          return (_b = (_a = window.BGNJ_LECTURES) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
+        }),
+        label: "\uAC15\uC5F0",
+        route: "lectures",
+        pendingKey: "bgnj_pending_lecture_id"
+      })
+    },
+    {
+      id: "tour",
+      q: "\uAC00\uC7A5 \uBE60\uB978 \uB2F5\uC0AC\xB7\uD22C\uC5B4 \uC77C\uC815",
+      answer: () => _eventAnswer({
+        items: _arr(() => {
+          var _a, _b;
+          return (_b = (_a = window.BGNJ_TOURS) == null ? void 0 : _a.listAll) == null ? void 0 : _b.call(_a);
+        }),
+        label: "\uB2F5\uC0AC",
+        route: "tour",
+        pendingKey: "bgnj_pending_tour_id"
+      })
+    },
+    {
+      id: "column",
+      q: "\uAC00\uC7A5 \uCD5C\uADFC \uCE7C\uB7FC",
+      answer: () => {
+        const cols = _arr(() => {
+          var _a, _b;
+          return (_b = (_a = window.BGNJ_COLUMNS) == null ? void 0 : _a.listPublic) == null ? void 0 : _b.call(_a);
+        });
+        if (cols.length === 0) {
+          return {
+            lines: ["\uC544\uC9C1 \uACF5\uAC1C\uB41C \uCE7C\uB7FC\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."],
+            action: { text: "\uCEE4\uBBA4\uB2C8\uD2F0 \uB458\uB7EC\uBCF4\uAE30", route: "community", pendingKey: null, pendingId: null }
+          };
+        }
+        const c = cols[0];
+        const who = c.author || c.authorName || "";
+        return {
+          lines: [
+            "\uAC00\uC7A5 \uCD5C\uADFC\uC5D0 \uC62C\uB77C\uC628 \uCE7C\uB7FC\uC785\uB2C8\uB2E4.",
+            `**${c.title}**`,
+            [who, c.date || c.createdAt ? String(c.date || c.createdAt).slice(0, 10) : ""].filter(Boolean).join(" \xB7 "),
+            `\uC9C0\uAE08\uAE4C\uC9C0 ${cols.length}\uD3B8\uC774 \uC313\uC5EC \uC788\uC5B4\uC694.`
+          ].filter(Boolean),
+          action: { text: "\uCE7C\uB7FC \uBCF4\uB7EC \uAC00\uAE30", route: "column", pendingKey: null, pendingId: null }
+        };
+      }
+    }
+  ];
+  var _Line = ({ text }) => {
+    const parts = String(text).split(/\*\*(.+?)\*\*/g);
+    return /* @__PURE__ */ React.createElement("span", null, parts.map((p, i) => i % 2 === 1 ? /* @__PURE__ */ React.createElement("strong", { key: i, style: { color: "var(--ink)" } }, p) : /* @__PURE__ */ React.createElement("span", { key: i }, p)));
+  };
+  var HelpWidget = ({ go }) => {
+    const [open, setOpen] = React.useState(false);
+    const [thread, setThread] = React.useState([]);
+    const bodyRef = React.useRef(null);
+    const panelRef = React.useRef(null);
+    React.useEffect(() => {
+      if (!open) return;
+      const el = bodyRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, [thread, open]);
+    React.useEffect(() => {
+      if (!open) return;
+      const onKey = (e) => {
+        if (e.key === "Escape") setOpen(false);
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [open]);
+    React.useEffect(() => {
+      try {
+        document.body.classList.toggle("help-open", open);
+        return () => document.body.classList.remove("help-open");
+      } catch (e) {
+        return void 0;
+      }
+    }, [open]);
+    const ask = (topic) => {
+      let res;
+      try {
+        res = topic.answer();
+      } catch (err) {
+        console.warn("[HelpWidget] answer failed", err);
+        res = {
+          lines: ["\uB2F5\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."],
+          action: null
+        };
+      }
+      setThread((prev) => [...prev, { role: "user", text: topic.q }, { role: "bot", ...res }]);
+    };
+    const goTo = (action) => {
+      if (!action) return;
+      if (action.pendingKey && action.pendingId != null) {
+        try {
+          sessionStorage.setItem(action.pendingKey, String(action.pendingId));
+        } catch (e) {
+        }
+      }
+      setOpen(false);
+      go(action.route);
+    };
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, open && /* @__PURE__ */ React.createElement("div", { className: "help-panel", role: "dialog", "aria-label": "\uB3C4\uC6C0\uB9D0", ref: panelRef }, /* @__PURE__ */ React.createElement("div", { className: "help-panel-head" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "help-panel-title" }, "\uBB34\uC5C7\uC744 \uB3C4\uC640\uB4DC\uB9B4\uAE4C\uC694?"), /* @__PURE__ */ React.createElement("div", { className: "help-panel-sub" }, "\uC544\uB798\uC5D0\uC11C \uACE8\uB77C\uC8FC\uC138\uC694")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "help-close", onClick: () => setOpen(false), "aria-label": "\uB3C4\uC6C0\uB9D0 \uB2EB\uAE30" }, "\xD7")), /* @__PURE__ */ React.createElement("div", { className: "help-panel-body", ref: bodyRef }, thread.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "help-hint" }, "\uC790\uC8FC \uCC3E\uC73C\uC2DC\uB294 \uC138 \uAC00\uC9C0\uB97C \uC900\uBE44\uD588\uC2B5\uB2C8\uB2E4."), thread.map((m, i) => m.role === "user" ? /* @__PURE__ */ React.createElement("div", { key: i, className: "help-msg help-msg-user" }, m.text) : /* @__PURE__ */ React.createElement("div", { key: i, className: "help-msg help-msg-bot" }, m.lines.map((l, j) => /* @__PURE__ */ React.createElement("p", { key: j }, /* @__PURE__ */ React.createElement(_Line, { text: l }))), m.action && /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn btn-small btn-gold help-action",
+        onClick: () => goTo(m.action)
+      },
+      m.action.text,
+      " \u2192"
+    )))), /* @__PURE__ */ React.createElement("div", { className: "help-panel-foot" }, HELP_TOPICS.map((t) => /* @__PURE__ */ React.createElement("button", { key: t.id, type: "button", className: "help-chip", onClick: () => ask(t) }, t.q)))), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: `help-fab${open ? " is-open" : ""}`,
+        onClick: () => setOpen((v) => !v),
+        "aria-expanded": open,
+        "aria-label": open ? "\uB3C4\uC6C0\uB9D0 \uB2EB\uAE30" : "\uB3C4\uC6C0\uB9D0 \uC5F4\uAE30",
+        title: "\uBB34\uC5C7\uC744 \uB3C4\uC640\uB4DC\uB9B4\uAE4C\uC694?"
+      },
+      open ? "\xD7" : "\u{1F4AC}"
+    ));
+  };
+
   // boot.jsx
   var AppErrorBoundary = class extends React.Component {
     constructor(props) {
@@ -14822,7 +15028,7 @@
       }
     };
     const page = /* @__PURE__ */ React.createElement(PageErrorBoundary, { key: route, route, go }, renderPage());
-    return /* @__PURE__ */ React.createElement("div", { className: "app" }, !hideNav && /* @__PURE__ */ React.createElement(SiteBanner, null), /* @__PURE__ */ React.createElement(Nav, { route, go, user, onLogout: logout }), /* @__PURE__ */ React.createElement("main", { id: "main", tabIndex: "-1", style: { flex: 1, outline: "none" }, "aria-label": `${route} \uD398\uC774\uC9C0 \uBCF8\uBB38` }, page), !hideNav && /* @__PURE__ */ React.createElement(Footer, { go }), /* @__PURE__ */ React.createElement(Tweaks, { tweaks, setTweaks: updateTweaks, visible: editMode }), /* @__PURE__ */ React.createElement(ScrollToTop, null), /* @__PURE__ */ React.createElement(CookieConsent, null), /* @__PURE__ */ React.createElement(GlobalErrorToast, null), /* @__PURE__ */ React.createElement(VersionUpdateBanner, null), window.ConfirmDialogHost ? /* @__PURE__ */ React.createElement(window.ConfirmDialogHost, null) : null);
+    return /* @__PURE__ */ React.createElement("div", { className: "app" }, !hideNav && /* @__PURE__ */ React.createElement(SiteBanner, null), /* @__PURE__ */ React.createElement(Nav, { route, go, user, onLogout: logout }), /* @__PURE__ */ React.createElement("main", { id: "main", tabIndex: "-1", style: { flex: 1, outline: "none" }, "aria-label": `${route} \uD398\uC774\uC9C0 \uBCF8\uBB38` }, page), !hideNav && /* @__PURE__ */ React.createElement(Footer, { go }), /* @__PURE__ */ React.createElement(Tweaks, { tweaks, setTweaks: updateTweaks, visible: editMode }), /* @__PURE__ */ React.createElement(ScrollToTop, null), !hideNav && /* @__PURE__ */ React.createElement(HelpWidget, { go }), /* @__PURE__ */ React.createElement(CookieConsent, null), /* @__PURE__ */ React.createElement(GlobalErrorToast, null), /* @__PURE__ */ React.createElement(VersionUpdateBanner, null), window.ConfirmDialogHost ? /* @__PURE__ */ React.createElement(window.ConfirmDialogHost, null) : null);
   };
   var root = ReactDOM.createRoot(document.getElementById("root"));
   root.render(/* @__PURE__ */ React.createElement(AppErrorBoundary, null, /* @__PURE__ */ React.createElement(App, null)));
