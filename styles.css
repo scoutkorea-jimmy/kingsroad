@@ -2710,3 +2710,38 @@ body.cookie-pending .help-panel { display: none !important; }
   .scroll-top-fab { right: 14px !important; bottom: 70px !important; }
   .help-panel { right: 14px; left: 14px; bottom: 70px; width: auto; max-height: 62vh; }
 }
+
+/* ===============================================================
+   v00.292 — 홈 사진 블록 (관리자 업로드 · 비면 렌더 안 함)
+   배경 이미지(.hero-bg-image)와 다른 용도다. 이쪽은 텍스트 뒤가 아니라
+   독립된 사진 블록으로, 사진 자체가 콘텐츠다.
+   =============================================================== */
+.home-photo-wide { padding: 0; }
+.home-photo-wide-img {
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.home-intro-photo { padding: 84px 0; }
+.home-intro-photo-grid {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 52px;
+  align-items: center;
+}
+.home-intro-photo-img {
+  aspect-ratio: 4 / 5;
+  border-radius: 2px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+@media (max-width: 900px) {
+  .home-intro-photo { padding: 52px 0; }
+  .home-intro-photo-grid { grid-template-columns: 1fr !important; gap: 28px; }
+  /* 모바일에선 세로 사진이 화면을 다 먹지 않도록 비율 완화 */
+  .home-intro-photo-img { aspect-ratio: 3 / 2; }
+  .home-photo-wide-img { aspect-ratio: 16 / 9; }
+}

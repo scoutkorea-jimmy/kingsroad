@@ -1310,6 +1310,62 @@ const HeroBgSlot = ({ label, url, aspect, preview, onPick, onClear }) => (
   </div>
 );
 
+// v00.292 — 홈 사진 슬롯. HeroBgSlot(160x90 썸네일)보다 큰 실제 비율 미리보기 + 해상도 경고.
+//
+// 경고를 넣은 이유: 2026-07 조사에서 기존 이미지 자산 대부분이 폭 510px(네이버 블로그 본문 폭)로
+// 히어로에 쓸 수 없는 크기였다. 업로드 시점에 알려주지 않으면 같은 일이 반복된다.
+// 업로드는 막지 않는다 — 경고만 하고 판단은 운영자가 한다.
+const PhotoSlot = ({ label, hint, url, aspect, minWidth, onPick, onClear }) => {
+  const [dim, setDim] = React.useState(null);
+  // 이미 올라간 이미지의 실제 크기를 읽어 경고 판단에 쓴다.
+  React.useEffect(() => {
+    if (!url) { setDim(null); return; }
+    let alive = true;
+    const img = new Image();
+    img.onload = () => { if (alive) setDim({ w: img.naturalWidth, h: img.naturalHeight }); };
+    img.onerror = () => { if (alive) setDim(null); };
+    img.src = url;
+    return () => { alive = false; };
+  }, [url]);
+  const tooSmall = dim && dim.w < minWidth;
+  return (
+    <div style={{marginBottom:18, padding:14, background:'var(--bg-2)', borderRadius:8}}>
+      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.15em', marginBottom:4}}>{label}</div>
+      {hint && <p className="dim-2" style={{fontSize:11, lineHeight:1.6, marginBottom:10}}>{hint}</p>}
+      <div style={{
+        width:'100%', maxWidth:420, aspectRatio: aspect,
+        background: url ? `url(${url}) center/cover` : 'var(--bg-3)',
+        borderRadius:6, display:'grid', placeItems:'center', marginBottom:10,
+      }}>
+        {!url && (
+          <span className="mono" style={{fontSize:10, color:'var(--ink-3)', letterSpacing:'0.18em', textAlign:'center', lineHeight:2}}>
+            사진 없음<br/>{aspect.replace('/', ' : ')}
+          </span>
+        )}
+      </div>
+      {dim && (
+        <div className="mono" style={{
+          fontSize:10, letterSpacing:'0.08em', marginBottom:10,
+          color: tooSmall ? 'var(--danger)' : 'var(--ink-3)',
+        }}>
+          업로드된 크기 {dim.w} × {dim.h}
+          {tooSmall && ` — 권장 폭 ${minWidth}px 에 못 미칩니다. 확대되면서 뭉개져 보입니다.`}
+        </div>
+      )}
+      <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+        <label className="btn btn-small" style={{cursor:'pointer'}}>
+          {url ? '교체' : '업로드'}
+          <input type="file" accept="image/*" style={{display:'none'}} onChange={onPick}/>
+        </label>
+        {url && (
+          <button type="button" className="btn btn-small" onClick={onClear}
+            style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const HE_StyleGroup = ({ title, children, onResetGroup }) => (
   <div className="card" style={{padding:16, marginBottom:14}}>
     <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10}}>
@@ -1526,6 +1582,45 @@ const HeroEditorPanel = () => {
                   } catch (err) { window.BGNJ_TOAST?.error?.('업로드 실패: ' + (err?.message || '')); }
                 }}
                 onClear={() => updateContent('bgMobileUrl', '')}
+              />
+            </div>
+
+            {/* v00.292 — 홈 개편(B안) 사진 슬롯. 배경 이미지와 다른 용도다:
+                배경은 텍스트 뒤에 깔리고, 아래 둘은 독립된 사진 블록으로 노출된다.
+                비워두면 해당 블록이 렌더되지 않는다 — 빈 자리가 생기지 않는다. */}
+            <div style={{marginTop:18, paddingTop:14, borderTop:'1px solid var(--line)'}}>
+              <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em', marginBottom:10}}>홈 사진 (선택)</div>
+              <p className="dim-2" style={{fontSize:11, marginBottom:14, lineHeight:1.6}}>
+                비워두면 해당 사진 블록이 <strong className="gold">아예 렌더되지 않습니다</strong> — 빈 자리가 남지 않으니
+                준비되는 대로 하나씩 채우시면 됩니다. 원본 그대로 올려주세요(리사이즈는 자동).
+              </p>
+              <PhotoSlot
+                label="히어로 사진 · 가로형"
+                hint="히어로 문구 아래 폭 전체로 들어갑니다. 21:9 로 잘리니 위아래가 잘려도 되는 풍경이 좋습니다. 권장 폭 2400px 이상."
+                url={contentDraft.photoWideUrl || ''} aspect="21/9" minWidth={1920}
+                onPick={async (e) => {
+                  const file = e.target.files?.[0]; e.target.value = '';
+                  if (!file) return;
+                  try {
+                    const url = await window.pickImageWithR2Fallback({ target: { files: [file], value: '' } }, { folder: 'home-photos' });
+                    if (url) updateContent('photoWideUrl', url);
+                  } catch (err) { window.BGNJ_TOAST?.error?.('업로드 실패: ' + (err?.message || '')); }
+                }}
+                onClear={() => updateContent('photoWideUrl', '')}
+              />
+              <PhotoSlot
+                label="소개 사진 · 세로형"
+                hint="'기록이 쌓였습니다' 소개 블록 왼쪽에 들어갑니다. 답사 현장의 사람·손·걸음이 담긴 사진이 좋습니다. 권장 1200 × 1500 이상."
+                url={contentDraft.photoTallUrl || ''} aspect="4/5" minWidth={1000}
+                onPick={async (e) => {
+                  const file = e.target.files?.[0]; e.target.value = '';
+                  if (!file) return;
+                  try {
+                    const url = await window.pickImageWithR2Fallback({ target: { files: [file], value: '' } }, { folder: 'home-photos' });
+                    if (url) updateContent('photoTallUrl', url);
+                  } catch (err) { window.BGNJ_TOAST?.error?.('업로드 실패: ' + (err?.message || '')); }
+                }}
+                onClear={() => updateContent('photoTallUrl', '')}
               />
             </div>
           </div>

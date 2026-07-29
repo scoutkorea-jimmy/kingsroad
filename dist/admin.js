@@ -2175,6 +2175,52 @@
     },
     "\uC0AD\uC81C"
   ))));
+  var PhotoSlot = ({ label, hint, url, aspect, minWidth, onPick, onClear }) => {
+    const [dim, setDim] = React.useState(null);
+    React.useEffect(() => {
+      if (!url) {
+        setDim(null);
+        return;
+      }
+      let alive = true;
+      const img = new Image();
+      img.onload = () => {
+        if (alive) setDim({ w: img.naturalWidth, h: img.naturalHeight });
+      };
+      img.onerror = () => {
+        if (alive) setDim(null);
+      };
+      img.src = url;
+      return () => {
+        alive = false;
+      };
+    }, [url]);
+    const tooSmall = dim && dim.w < minWidth;
+    return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 18, padding: 14, background: "var(--bg-2)", borderRadius: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.15em", marginBottom: 4 } }, label), hint && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.6, marginBottom: 10 } }, hint), /* @__PURE__ */ React.createElement("div", { style: {
+      width: "100%",
+      maxWidth: 420,
+      aspectRatio: aspect,
+      background: url ? `url(${url}) center/cover` : "var(--bg-3)",
+      borderRadius: 6,
+      display: "grid",
+      placeItems: "center",
+      marginBottom: 10
+    } }, !url && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.18em", textAlign: "center", lineHeight: 2 } }, "\uC0AC\uC9C4 \uC5C6\uC74C", /* @__PURE__ */ React.createElement("br", null), aspect.replace("/", " : "))), dim && /* @__PURE__ */ React.createElement("div", { className: "mono", style: {
+      fontSize: 10,
+      letterSpacing: "0.08em",
+      marginBottom: 10,
+      color: tooSmall ? "var(--danger)" : "var(--ink-3)"
+    } }, "\uC5C5\uB85C\uB4DC\uB41C \uD06C\uAE30 ", dim.w, " \xD7 ", dim.h, tooSmall && ` \u2014 \uAD8C\uC7A5 \uD3ED ${minWidth}px \uC5D0 \uBABB \uBBF8\uCE69\uB2C8\uB2E4. \uD655\uB300\uB418\uBA74\uC11C \uBB49\uAC1C\uC838 \uBCF4\uC785\uB2C8\uB2E4.`), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, url ? "\uAD50\uCCB4" : "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", style: { display: "none" }, onChange: onPick })), url && /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn btn-small",
+        onClick: onClear,
+        style: { borderColor: "var(--danger)", color: "var(--danger)" }
+      },
+      "\uC0AD\uC81C"
+    )));
+  };
   var HE_StyleGroup = ({ title, children, onResetGroup }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 16, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, title), onResetGroup && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onResetGroup, style: { fontSize: 10 } }, "\uC774 \uADF8\uB8F9 default")), children);
   var HERO_COLOR_OPTIONS = [
     { value: "--ink", label: "\uBA54\uC778 \uC789\uD06C (--ink)" },
@@ -2366,6 +2412,50 @@
           }
         },
         onClear: () => updateContent("bgMobileUrl", "")
+      }
+    )), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em", marginBottom: 10 } }, "\uD648 \uC0AC\uC9C4 (\uC120\uD0DD)"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginBottom: 14, lineHeight: 1.6 } }, "\uBE44\uC6CC\uB450\uBA74 \uD574\uB2F9 \uC0AC\uC9C4 \uBE14\uB85D\uC774 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC544\uC608 \uB80C\uB354\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4"), " \u2014 \uBE48 \uC790\uB9AC\uAC00 \uB0A8\uC9C0 \uC54A\uC73C\uB2C8 \uC900\uBE44\uB418\uB294 \uB300\uB85C \uD558\uB098\uC529 \uCC44\uC6B0\uC2DC\uBA74 \uB429\uB2C8\uB2E4. \uC6D0\uBCF8 \uADF8\uB300\uB85C \uC62C\uB824\uC8FC\uC138\uC694(\uB9AC\uC0AC\uC774\uC988\uB294 \uC790\uB3D9)."), /* @__PURE__ */ React.createElement(
+      PhotoSlot,
+      {
+        label: "\uD788\uC5B4\uB85C \uC0AC\uC9C4 \xB7 \uAC00\uB85C\uD615",
+        hint: "\uD788\uC5B4\uB85C \uBB38\uAD6C \uC544\uB798 \uD3ED \uC804\uCCB4\uB85C \uB4E4\uC5B4\uAC11\uB2C8\uB2E4. 21:9 \uB85C \uC798\uB9AC\uB2C8 \uC704\uC544\uB798\uAC00 \uC798\uB824\uB3C4 \uB418\uB294 \uD48D\uACBD\uC774 \uC88B\uC2B5\uB2C8\uB2E4. \uAD8C\uC7A5 \uD3ED 2400px \uC774\uC0C1.",
+        url: contentDraft.photoWideUrl || "",
+        aspect: "21/9",
+        minWidth: 1920,
+        onPick: async (e) => {
+          var _a2, _b2, _c2;
+          const file = (_a2 = e.target.files) == null ? void 0 : _a2[0];
+          e.target.value = "";
+          if (!file) return;
+          try {
+            const url = await window.pickImageWithR2Fallback({ target: { files: [file], value: "" } }, { folder: "home-photos" });
+            if (url) updateContent("photoWideUrl", url);
+          } catch (err) {
+            (_c2 = (_b2 = window.BGNJ_TOAST) == null ? void 0 : _b2.error) == null ? void 0 : _c2.call(_b2, "\uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || ""));
+          }
+        },
+        onClear: () => updateContent("photoWideUrl", "")
+      }
+    ), /* @__PURE__ */ React.createElement(
+      PhotoSlot,
+      {
+        label: "\uC18C\uAC1C \uC0AC\uC9C4 \xB7 \uC138\uB85C\uD615",
+        hint: "'\uAE30\uB85D\uC774 \uC313\uC600\uC2B5\uB2C8\uB2E4' \uC18C\uAC1C \uBE14\uB85D \uC67C\uCABD\uC5D0 \uB4E4\uC5B4\uAC11\uB2C8\uB2E4. \uB2F5\uC0AC \uD604\uC7A5\uC758 \uC0AC\uB78C\xB7\uC190\xB7\uAC78\uC74C\uC774 \uB2F4\uAE34 \uC0AC\uC9C4\uC774 \uC88B\uC2B5\uB2C8\uB2E4. \uAD8C\uC7A5 1200 \xD7 1500 \uC774\uC0C1.",
+        url: contentDraft.photoTallUrl || "",
+        aspect: "4/5",
+        minWidth: 1e3,
+        onPick: async (e) => {
+          var _a2, _b2, _c2;
+          const file = (_a2 = e.target.files) == null ? void 0 : _a2[0];
+          e.target.value = "";
+          if (!file) return;
+          try {
+            const url = await window.pickImageWithR2Fallback({ target: { files: [file], value: "" } }, { folder: "home-photos" });
+            if (url) updateContent("photoTallUrl", url);
+          } catch (err) {
+            (_c2 = (_b2 = window.BGNJ_TOAST) == null ? void 0 : _b2.error) == null ? void 0 : _c2.call(_b2, "\uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || ""));
+          }
+        },
+        onClear: () => updateContent("photoTallUrl", "")
       }
     ))), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 16, marginBottom: 10 } }, "\uC2A4\uD0C0\uC77C \uD2B8\uC717"), /* @__PURE__ */ React.createElement(HE_StyleGroup, { title: "EYEBROW \uC2A4\uD0C0\uC77C", onResetGroup: () => resetGroup("eyebrow") }, /* @__PURE__ */ React.createElement(Field, { label: `\uD3F0\uD2B8 \uD06C\uAE30 \xB7 ${eff.eyebrow.fontSize}px` }, /* @__PURE__ */ React.createElement(
       NumberRange,

@@ -761,6 +761,19 @@ const HomePage = ({ go }) => {
 
       </HomeSectionBoundary>
 
+      {/* ── 히어로 사진 (v00.292) ─────────────────────────────────────
+          관리자 → 사이트 콘텐츠 → 히어로 → '홈 사진' 에서 업로드.
+          비어 있으면 이 블록 자체를 렌더하지 않는다 — 빈 자리를 남기지 않기 위함. */}
+      {hero.photoWideUrl && (
+        <HomeSectionBoundary label="히어로 사진">
+          <section className="home-photo-wide" aria-label="답사 현장 사진">
+            <div className="home-photo-wide-img" role="img"
+              aria-label={hero.photoWideAlt || '뱅기노자 답사 현장'}
+              style={{backgroundImage:`url(${hero.photoWideUrl})`}}/>
+          </section>
+        </HomeSectionBoundary>
+      )}
+
       {/* ── 뱅기노자 칼럼 — v00.164 magazine spread 톤 (외부 SectionHead 폐기) ─── */}
       {featuredColumn && (
         <HomeSectionBoundary label="칼럼"><section className="section--mid" style={{}}>
@@ -883,6 +896,32 @@ const HomePage = ({ go }) => {
             </div>
           </div>
         </section></HomeSectionBoundary>
+      )}
+
+      {/* ── 소개 블록 + 세로 사진 (v00.292) ────────────────────────
+          사진이 없으면 렌더하지 않는다. 사진이 생기면 좌측 사진 + 우측 문구 2단으로 뜬다. */}
+      {hero.photoTallUrl && (
+        <HomeSectionBoundary label="소개">
+          <section className="home-intro-photo">
+            <div className="container home-intro-photo-grid">
+              <div className="home-intro-photo-img" role="img"
+                aria-label={hero.photoTallAlt || '뱅기노자 답사 현장'}
+                style={{backgroundImage:`url(${hero.photoTallUrl})`}}/>
+              <div>
+                <h2 className="section-title" style={{fontSize:29, lineHeight:1.55, marginBottom:16}}>
+                  {publicColumns.length > 0
+                    ? `${publicColumns.length}편의 기록이 쌓였습니다.`
+                    : '걸어서 확인한 것만 기록합니다.'}
+                </h2>
+                <p style={{fontSize:13.5, lineHeight:2.05, color:'var(--ink-2)', marginBottom:22, maxWidth:460}}>
+                  {homeText.introBody
+                    || '걸어서 풍류 속으로, 걸어서 인물 속으로. 발로 확인한 것만 적었습니다. 지난 답사와 강연의 기록도 함께 남아 있습니다.'}
+                </p>
+                <button type="button" className="btn-ghost" onClick={() => go('column')}>전체 기록 보기 →</button>
+              </div>
+            </div>
+          </section>
+        </HomeSectionBoundary>
       )}
 
       {/* ── 뱅기노자 추천 (관리자 콘텐츠 패널에서 추가) — v00.164 anchor 박자 + asymmetric grid ─── */}

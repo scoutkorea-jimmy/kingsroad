@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.291.002",
+    version: "00.291.003",
     build: "2026.07.29",
     channel: "preview"
   };
@@ -5271,7 +5271,7 @@
     const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : user ? 10 : 0;
     const communityBoards = (((_c = window.BGNJ_STORES) == null ? void 0 : _c.categories) || []).filter((c) => {
       var _a2;
-      return c.boardType === "community" && userLevel >= ((_a2 = c.minLevel) != null ? _a2 : 0) && c.id !== "column";
+      return c.boardType === "community" && userLevel >= ((_a2 = c.minLevel) != null ? _a2 : 0);
     });
     const goBoard = (boardId) => {
       try {
@@ -7542,7 +7542,15 @@
         fontSize: heroStyle.stats.sub.fontSize,
         color: `var(${heroStyle.stats.sub.color})`
       } }, stat.s))))), /* @__PURE__ */ React.createElement(HeroProgramCards, { go, dataTick, text: homeText })))
-    )), featuredColumn && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCE7C\uB7FC" }, /* @__PURE__ */ React.createElement("section", { className: "section--mid", style: {} }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: {
+    )), hero.photoWideUrl && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uD788\uC5B4\uB85C \uC0AC\uC9C4" }, /* @__PURE__ */ React.createElement("section", { className: "home-photo-wide", "aria-label": "\uB2F5\uC0AC \uD604\uC7A5 \uC0AC\uC9C4" }, /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: "home-photo-wide-img",
+        role: "img",
+        "aria-label": hero.photoWideAlt || "\uBC45\uAE30\uB178\uC790 \uB2F5\uC0AC \uD604\uC7A5",
+        style: { backgroundImage: `url(${hero.photoWideUrl})` }
+      }
+    ))), featuredColumn && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCE7C\uB7FC" }, /* @__PURE__ */ React.createElement("section", { className: "section--mid", style: {} }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "baseline",
@@ -7680,7 +7688,15 @@
           textOverflow: "ellipsis"
         } }, truncatePreview(c.excerpt, 38))
       )), secondaryColumns.length === 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13, color: "var(--ink-3)", padding: "16px 0" } }, homeText.columnEmpty))
-    )))), recommendations.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uBC45\uAE30\uB178\uC790 \uCD94\uCC9C" }, /* @__PURE__ */ React.createElement("section", { className: "section section--anchor", style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, (() => {
+    )))), hero.photoTallUrl && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uC18C\uAC1C" }, /* @__PURE__ */ React.createElement("section", { className: "home-intro-photo" }, /* @__PURE__ */ React.createElement("div", { className: "container home-intro-photo-grid" }, /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: "home-intro-photo-img",
+        role: "img",
+        "aria-label": hero.photoTallAlt || "\uBC45\uAE30\uB178\uC790 \uB2F5\uC0AC \uD604\uC7A5",
+        style: { backgroundImage: `url(${hero.photoTallUrl})` }
+      }
+    ), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h2", { className: "section-title", style: { fontSize: 29, lineHeight: 1.55, marginBottom: 16 } }, publicColumns.length > 0 ? `${publicColumns.length}\uD3B8\uC758 \uAE30\uB85D\uC774 \uC313\uC600\uC2B5\uB2C8\uB2E4.` : "\uAC78\uC5B4\uC11C \uD655\uC778\uD55C \uAC83\uB9CC \uAE30\uB85D\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 13.5, lineHeight: 2.05, color: "var(--ink-2)", marginBottom: 22, maxWidth: 460 } }, homeText.introBody || "\uAC78\uC5B4\uC11C \uD48D\uB958 \uC18D\uC73C\uB85C, \uAC78\uC5B4\uC11C \uC778\uBB3C \uC18D\uC73C\uB85C. \uBC1C\uB85C \uD655\uC778\uD55C \uAC83\uB9CC \uC801\uC5C8\uC2B5\uB2C8\uB2E4. \uC9C0\uB09C \uB2F5\uC0AC\uC640 \uAC15\uC5F0\uC758 \uAE30\uB85D\uB3C4 \uD568\uAED8 \uB0A8\uC544 \uC788\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", onClick: () => go("column") }, "\uC804\uCCB4 \uAE30\uB85D \uBCF4\uAE30 \u2192"))))), recommendations.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uBC45\uAE30\uB178\uC790 \uCD94\uCC9C" }, /* @__PURE__ */ React.createElement("section", { className: "section section--anchor", style: { background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement("div", { className: "container" }, (() => {
       var _a2, _b2, _c2, _d, _e, _f, _g, _h;
       const _i = (((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {}).recommendationsHeading || {};
       const eb = homeText.recEyebrow || _i.eyebrow || HOME_TEXT_DEFAULT.recEyebrow;
