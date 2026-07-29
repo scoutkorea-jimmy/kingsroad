@@ -1235,17 +1235,21 @@ main time, main .section-eyebrow {
   display: grid;
   gap: 12px;
 }
+/* v00.289.003 — 테두리 1px + 좌측 3px 옐로우 바를 제거.
+   자체 규칙 두 개를 어기고 있었다: ① 카드는 테두리선 대신 그림자(v00.272 — "테두리선이 촌스럽다")
+   ② 옐로우는 인터랙션 상태에만, 면적으로 깔지 않음. 3px 세로 바는 면적에 가깝고,
+   한쪽에만 두꺼운 컬러 보더를 두는 표현 자체가 흔한 템플릿 인상을 준다.
+   경계는 .card 와 같은 그림자 언어로 표현하고, hover 는 살짝 떠오르는 것으로. */
 .home-program-card {
   padding: 22px 24px;
   background: var(--bg);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--primary);
-  transition: border-color .18s, background-color .18s;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 20px rgba(15, 23, 42, 0.05);
+  transition: box-shadow .3s, transform .3s;
 }
 .home-program-card:hover {
-  background: var(--bg-2);
-  border-color: var(--line-2);
-  border-left-color: var(--primary-active);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08), 0 14px 36px rgba(15, 23, 42, 0.09);
+  transform: translateY(-1px);
 }
 .home-program-label {
   font-family: var(--font-sans);
