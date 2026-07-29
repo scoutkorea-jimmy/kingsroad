@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.288.003",
+    version: "00.289.000",
     build: "2026.07.29",
     channel: "preview"
   };
@@ -1317,7 +1317,10 @@
   window.BGNJ_HOME_TEXT_DEFAULT = { ...DEFAULT_SITE_CONTENT.homeText || {} };
   window.BGNJ_HERO_STYLE_DEFAULT = {
     eyebrow: { fontSize: 13, fontWeight: 600, letterSpacing: 0.02, color: "--ink-2", textTransform: "none" },
-    title: { fontSize: 58, fontWeight: 800, lineHeight: 1.1, letterSpacing: 0, color: "--ink", accentColor: "--primary", textAlign: "left" },
+    // v00.289 — accentColor 를 --primary(옐로우)에서 --secondary(Caramel Ink)로.
+    // 히어로 둘째 줄 전체가 옐로우라 "옐로우는 인터랙션 상태에만, 5% 면적" 자체 원칙을 히어로가 어기고 있었다.
+    // 대형 노란 글자는 값싸 보이는 가장 빠른 길이기도 하다. 옐로우는 CTA 버튼 하나에만 남긴다.
+    title: { fontSize: 58, fontWeight: 800, lineHeight: 1.1, letterSpacing: 0, color: "--ink", accentColor: "--secondary", textAlign: "left" },
     subtitle: { fontSize: 16, fontWeight: 500, lineHeight: 1.85, color: "--ink-2", maxWidth: 560, textAlign: "left" },
     cta: { fontWeight: 700, textTransform: "none" },
     stats: {
@@ -5688,6 +5691,7 @@
         role: "dialog",
         "aria-modal": "false",
         "aria-labelledby": "cookie-banner-title",
+        className: "cookie-consent",
         style: {
           position: "fixed",
           left: 16,
@@ -5696,15 +5700,14 @@
           maxWidth: 720,
           margin: "0 auto",
           zIndex: 80,
-          background: "var(--bg-2)",
-          border: "1px solid var(--primary-dim)",
-          boxShadow: "0 16px 40px rgba(0,0,0,0.45)",
-          padding: "20px 22px",
-          borderRadius: 4
+          background: "var(--bg)",
+          boxShadow: "0 1px 2px rgba(15,23,42,.06), 0 14px 36px rgba(15,23,42,.16)",
+          padding: "16px 18px",
+          borderRadius: 12
         }
       },
-      /* @__PURE__ */ React.createElement("h2", { id: "cookie-banner-title", className: "ko-serif", style: { fontSize: 16, marginBottom: 8 } }, "\uCFE0\uD0A4 \uC0AC\uC6A9 \uB3D9\uC758"),
-      /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, marginBottom: 14 } }, "\uBC45\uAE30\uB178\uC790\uB294 \uC11C\uBE44\uC2A4 \uC6B4\uC601\uC744 \uC704\uD55C ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uD544\uC218 \uCFE0\uD0A4"), "\uC640, \uC0AC\uC774\uD2B8 \uAC1C\uC120\uC744 \uC704\uD55C", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, " \uBD84\uC11D \uCFE0\uD0A4"), "\xB7", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uB9C8\uCF00\uD305 \uCFE0\uD0A4"), "\uB97C \uC0AC\uC6A9\uD569\uB2C8\uB2E4. \uC138\uBD80 \uC124\uC815\uC5D0\uC11C \uD56D\uBAA9\uBCC4\uB85C \uC120\uD0DD\uD558\uC2E4 \uC218 \uC788\uC5B4\uC694."),
+      /* @__PURE__ */ React.createElement("h2", { id: "cookie-banner-title", style: { fontSize: 14, fontWeight: 600, marginBottom: 6 } }, "\uCFE0\uD0A4 \uC0AC\uC6A9 \uB3D9\uC758"),
+      /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12.5, lineHeight: 1.65, marginBottom: 12 } }, "\uC11C\uBE44\uC2A4 \uC6B4\uC601\uC5D0 \uD544\uC694\uD55C \uD544\uC218 \uCFE0\uD0A4\uC640, \uC0AC\uC774\uD2B8 \uAC1C\uC120\uC744 \uC704\uD55C \uBD84\uC11D\xB7\uB9C8\uCF00\uD305 \uCFE0\uD0A4\uB97C \uC0AC\uC6A9\uD569\uB2C8\uB2E4."),
       details && /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 14, paddingTop: 10, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("fieldset", { style: { border: "none", padding: 0, margin: 0 } }, /* @__PURE__ */ React.createElement("legend", { className: "sr-only" }, "\uCFE0\uD0A4 \uD56D\uBAA9\uBCC4 \uB3D9\uC758"), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 10 } }, /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 10, alignItems: "flex-start", opacity: 0.7 } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: true, readOnly: true, "aria-label": "\uD544\uC218 \uCFE0\uD0A4 (\uD56D\uC0C1 \uD65C\uC131)" }), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 13 } }, "\uD544\uC218"), /* @__PURE__ */ React.createElement("span", { className: "dim", style: { fontSize: 12, display: "block" } }, "\uB85C\uADF8\uC778 \uC138\uC158, \uBCF4\uC548, \uD544\uC218 \uAE30\uB2A5 \uB3D9\uC791\uC5D0 \uC0AC\uC6A9. \uAC70\uBD80 \uBD88\uAC00."))), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 10, alignItems: "flex-start" } }, /* @__PURE__ */ React.createElement(
         "input",
         {
@@ -5722,11 +5725,12 @@
           "aria-label": "\uB9C8\uCF00\uD305 \uCFE0\uD0A4 \uB3D9\uC758"
         }
       ), /* @__PURE__ */ React.createElement("span", null, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 13 } }, "\uB9C8\uCF00\uD305"), /* @__PURE__ */ React.createElement("span", { className: "dim", style: { fontSize: 12, display: "block" } }, "\uAD00\uC2EC\uC0AC \uAE30\uBC18 \uC548\uB0B4, \uC678\uBD80 \uAD11\uACE0 \uB9E4\uCCB4 \uC5F0\uB3D9\uC5D0 \uC0AC\uC6A9.")))))),
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
-          className: "btn btn-small",
+          className: "btn-ghost",
+          style: { fontSize: 12, marginRight: "auto" },
           onClick: () => setDetails((v) => !v),
           "aria-expanded": details
         },
@@ -6979,50 +6983,44 @@
       const dow = ["\uC77C", "\uC6D4", "\uD654", "\uC218", "\uBAA9", "\uAE08", "\uD1A0"][d.getDay()];
       return `${d.getMonth() + 1}.${pad(d.getDate())} (${dow}) ${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "home-program-stack" }, /* @__PURE__ */ React.createElement(
+    if (!nextLecture && !nextTour) return null;
+    return /* @__PURE__ */ React.createElement("div", { className: "home-program-stack" }, nextLecture && /* @__PURE__ */ React.createElement(
       "article",
       {
-        onClick: () => {
-          if (nextLecture) go("lectures");
-        },
+        onClick: () => go("lectures"),
         className: "home-program-card",
-        style: { cursor: nextLecture ? "pointer" : "default" },
-        role: nextLecture ? "button" : void 0,
-        tabIndex: nextLecture ? 0 : void 0,
+        style: { cursor: "pointer" },
+        role: "button",
+        tabIndex: 0,
         onKeyDown: (e) => {
-          if (nextLecture && (e.key === "Enter" || e.key === " ")) {
+          if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             go("lectures");
           }
         }
       },
       /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextLectureLabel),
-      nextLecture ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextLecture.topic || nextLecture.title), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, nextLecture.next || fmtDate(nextLecture.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextLecture.venue || text.venueFallback))) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, text.heroNoLectureText, " ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost gold", onClick: (e) => {
-        e.stopPropagation();
-        go("lectures");
-      } }, text.heroNoLectureCta))
-    ), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextLecture.topic || nextLecture.title),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, nextLecture.next || fmtDate(nextLecture.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextLecture.venue || text.venueFallback))
+    ), nextTour && /* @__PURE__ */ React.createElement(
       "article",
       {
-        onClick: () => {
-          if (nextTour) go("tour");
-        },
+        onClick: () => go("tour"),
         className: "home-program-card",
-        style: { cursor: nextTour ? "pointer" : "default" },
-        role: nextTour ? "button" : void 0,
-        tabIndex: nextTour ? 0 : void 0,
+        style: { cursor: "pointer" },
+        role: "button",
+        tabIndex: 0,
         onKeyDown: (e) => {
-          if (nextTour && (e.key === "Enter" || e.key === " ")) {
+          if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             go("tour");
           }
         }
       },
       /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextTourLabel),
-      nextTour ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextTour.title), nextTour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 8, fontStyle: "italic" } }, nextTour.subtitle), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, nextTour.next || fmtDate(nextTour.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextTour.level && /* @__PURE__ */ React.createElement("span", { style: { marginRight: 8 } }, nextTour.level), nextTour.duration))) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.7, margin: 0 } }, text.heroNoTourText, " ", /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost gold", onClick: (e) => {
-        e.stopPropagation();
-        go("tour");
-      } }, text.heroNoTourCta))
+      /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 20, marginBottom: 8, color: "var(--ink)" } }, nextTour.title),
+      nextTour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 8, fontStyle: "italic" } }, nextTour.subtitle),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "gold-2 mono", style: { fontSize: 13, fontWeight: 600 } }, nextTour.next || fmtDate(nextTour.startsAt)), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 12 } }, nextTour.level && /* @__PURE__ */ React.createElement("span", { style: { marginRight: 8 } }, nextTour.level), nextTour.duration))
     ));
   };
   var BookCarouselSection = ({ go, dataTick, text }) => {
@@ -7342,23 +7340,17 @@
       var _a2, _b2;
       return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b2.call(_a2);
     }).length;
+    const STALE_FALLBACKS = ["\uC900\uBE44 \uC911", "\uC900\uBE44\uC911", "\uC6B4\uC601 \uC911", "\uC6B4\uC601\uC911", "\uC804\uAD6D"];
+    const _stat = (i, realValue) => {
+      const fb = (heroStats[i].valueFallback || "").trim();
+      const v = realValue || (fb && !STALE_FALLBACKS.includes(fb) ? fb : "");
+      return v ? { l: heroStats[i].label, v, s: heroStats[i].sub } : null;
+    };
     const stats = [
-      {
-        l: heroStats[0].label,
-        v: recommendations.length > 0 ? `${recommendations.length}\uACF3` : heroStats[0].valueFallback || "\uC804\uAD6D",
-        s: heroStats[0].sub
-      },
-      {
-        l: heroStats[1].label,
-        v: tours.length > 0 ? `${tours.length}\uAC1C` : heroStats[1].valueFallback || "\uC900\uBE44 \uC911",
-        s: heroStats[1].sub
-      },
-      {
-        l: heroStats[2].label,
-        v: allPostsCount > 0 ? `${allPostsCount}+` : heroStats[2].valueFallback || "\uC6B4\uC601 \uC911",
-        s: heroStats[2].sub
-      }
-    ];
+      _stat(0, recommendations.length > 0 ? `${recommendations.length}\uACF3` : ""),
+      _stat(1, tours.length > 0 ? `${tours.length}\uAC1C` : ""),
+      _stat(2, allPostsCount > 0 ? `${allPostsCount}+` : "")
+    ].filter(Boolean);
     const clickable = (onClick, label) => ({
       role: "button",
       tabIndex: 0,
@@ -7452,14 +7444,15 @@
       ), /* @__PURE__ */ React.createElement(
         "button",
         {
-          className: "btn",
+          className: "btn-ghost",
           onClick: () => go("tour"),
-          style: { fontWeight: heroStyle.cta.fontWeight }
+          style: { fontWeight: heroStyle.cta.fontWeight, fontSize: 13 }
         },
-        hero.ctaSecondary || "\uB2F5\uC0AC \uC77C\uC815 \uBCF4\uAE30"
-      )), /* @__PURE__ */ React.createElement("div", { className: "hero-stats", style: {
+        hero.ctaSecondary || "\uB2F5\uC0AC \uC77C\uC815 \uBCF4\uAE30",
+        " \u2192"
+      )), stats.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "hero-stats", style: {
         display: "grid",
-        gridTemplateColumns: "repeat(3,1fr)",
+        gridTemplateColumns: `repeat(${stats.length},1fr)`,
         gap: 20,
         paddingTop: 24,
         borderTop: "1px solid var(--line)"
@@ -14128,6 +14121,7 @@
     }));
   };
   var VERSION_POLL_MS = 5 * 60 * 1e3;
+  var UPDATE_DISMISSED_KEY = "bgnj_update_dismissed_version";
   var VersionUpdateBanner = () => {
     var _a;
     const [latest, setLatest] = React.useState(null);
@@ -14142,7 +14136,12 @@
           if (!r.ok) return;
           const j = await r.json();
           const v = String((j == null ? void 0 : j.version) || "");
-          if (!cancelled && v && v !== current) setLatest(j);
+          let dismissed = "";
+          try {
+            dismissed = localStorage.getItem(UPDATE_DISMISSED_KEY) || "";
+          } catch (e) {
+          }
+          if (!cancelled && v && v !== current && v !== dismissed) setLatest(j);
         } catch (e) {
         }
       };
@@ -14167,21 +14166,15 @@
         window.location.reload();
       }
     };
+    const dismiss = () => {
+      try {
+        localStorage.setItem(UPDATE_DISMISSED_KEY, String((latest == null ? void 0 : latest.version) || ""));
+      } catch (e) {
+      }
+      setLatest(null);
+    };
     if (!latest) return null;
-    return /* @__PURE__ */ React.createElement("div", { role: "status", "aria-live": "polite", style: {
-      position: "fixed",
-      top: 12,
-      right: 12,
-      zIndex: 2100,
-      maxWidth: 360,
-      background: "#fff",
-      border: "1px solid var(--primary-active)",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
-      padding: "12px 14px",
-      fontSize: 13,
-      lineHeight: 1.6,
-      color: "var(--ink)"
-    } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", color: "var(--primary-active)", marginBottom: 4 } }, "NEW BUILD AVAILABLE"), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: 6 } }, "\uC0C8 \uBC84\uC804 v", latest.version, " \uC0AC\uC6A9 \uAC00\uB2A5"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginBottom: 10 } }, "\uD604\uC7AC v", current, " \xB7 \uBE4C\uB4DC ", latest.build || "\u2014"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setLatest(null) }, "\uB098\uC911\uC5D0"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: reload }, "\uC9C0\uAE08 \uC0C8\uB85C\uACE0\uCE68")));
+    return /* @__PURE__ */ React.createElement("div", { role: "status", "aria-live": "polite", className: "version-update-toast" }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: 8 } }, "\uC0C8 \uBC84\uC804 v", latest.version, " \uC774 \uB098\uC654\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: reload }, "\uC0C8\uB85C\uACE0\uCE68"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", style: { fontSize: 12 }, onClick: dismiss }, "\uB098\uC911\uC5D0")));
   };
   var TWEAK_DEFAULTS = (
     /*EDITMODE-BEGIN*/

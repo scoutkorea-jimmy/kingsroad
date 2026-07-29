@@ -1735,9 +1735,13 @@ main time, main .section-eyebrow {
 
   /* 카드 / 그리드 단순화 — 모든 다열 1열 */
   .grid-3, .grid-4, .grid-2 { grid-template-columns: 1fr; }
-  /* v00.249 — 사용자 보고 '메인에 비해 빈약·조악'. 1열 stack 시 통계가 세로로 길게
-     늘어져 시각 밀도 떨어짐 → 3열 가로 유지(라벨 짧음 — 폭 좁아도 무방). */
-  .hero-stats { grid-template-columns: repeat(3, 1fr) !important; gap: 12px !important; }
+  /* v00.249 — 1열 stack 시 통계가 세로로 길게 늘어져 밀도가 떨어짐 → 가로 유지.
+     v00.289 — 다만 3열은 390px 에서 칸당 ~110px 라, 라벨 자간 0.22em 과 겹쳐
+     "여 행 지" "커 뮤 니 티" 로 글자가 쪼개졌다(실측 확인). 2열 + 자간 축소 + keep-all 로 해소.
+     칸 수는 JSX 가 실제 지표 개수로 정하므로 여기선 상한만 2열로 제한한다. */
+  .hero-stats { grid-template-columns: repeat(2, 1fr) !important; gap: 14px 12px !important; }
+  .hero-stats > div > div { word-break: keep-all; }
+  .hero-stats > div > div:nth-child(2) { letter-spacing: 0.08em !important; }
   .card { padding: 20px; }
 
   /* 터치 타겟 — WCAG 3.0 권장 ≥ 44×44 */
@@ -2557,3 +2561,36 @@ main time, main .section-eyebrow {
   .hn-foot-cta { padding:22px 18px; }
 }
 
+
+/* ===============================================================
+   v00.289 — 버전 업데이트 토스트 (좌하단 소형)
+   이전엔 우상단 360px 카드라 데스크톱에선 히어로를, 모바일에선 로고를 덮었다.
+   우하단은 오류 토스트 + scroll-top FAB 가 이미 쓰므로 좌하단.
+   z-index 70 — 쿠키 배너(80)보다 낮게 두어 첫 방문 동의가 항상 우선.
+   =============================================================== */
+.version-update-toast {
+  position: fixed;
+  left: 16px; bottom: 16px;
+  z-index: 70;
+  width: min(300px, calc(100vw - 32px));
+  background: var(--bg);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 10px 30px rgba(15,23,42,.14);
+  padding: 14px 16px;
+  font-size: 13px; line-height: 1.6;
+  color: var(--ink);
+}
+@media (max-width: 600px) {
+  /* 모바일에선 scroll-top FAB(bottom:12) 위로 올려 겹침 회피 */
+  .version-update-toast { left: 12px; bottom: 60px; }
+}
+
+/* v00.289 — 쿠키 배너: 모바일에서 화면을 절반 넘게 먹지 않도록 상한.
+   세부 설정 펼침 시에도 40vh 를 넘으면 내부 스크롤. */
+@media (max-width: 600px) {
+  .cookie-consent {
+    max-height: 40vh;
+    overflow-y: auto;
+    padding: 14px 16px !important;
+  }
+}

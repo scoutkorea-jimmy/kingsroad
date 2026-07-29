@@ -1195,18 +1195,19 @@ const CookieConsent = () => {
 
   return (
     <div role="dialog" aria-modal="false" aria-labelledby="cookie-banner-title"
+      className="cookie-consent"
       style={{
         position: 'fixed', left: 16, right: 16, bottom: 16,
         maxWidth: 720, margin: '0 auto', zIndex: 80,
-        background: 'var(--bg-2)', border: '1px solid var(--primary-dim)',
-        boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
-        padding: '20px 22px', borderRadius: 4,
+        background: 'var(--bg)',
+        boxShadow: '0 1px 2px rgba(15,23,42,.06), 0 14px 36px rgba(15,23,42,.16)',
+        padding: '16px 18px', borderRadius: 12,
       }}>
-      <h2 id="cookie-banner-title" className="ko-serif" style={{ fontSize: 16, marginBottom: 8 }}>쿠키 사용 동의</h2>
-      <p className="dim" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 14 }}>
-        뱅기노자는 서비스 운영을 위한 <strong className="gold">필수 쿠키</strong>와, 사이트 개선을 위한
-        <strong className="gold"> 분석 쿠키</strong>·<strong className="gold">마케팅 쿠키</strong>를 사용합니다.
-        세부 설정에서 항목별로 선택하실 수 있어요.
+      {/* v00.289 — 모바일에서 화면 절반을 먹던 문제. 제목+본문을 2줄로 줄이고
+          테두리(옐로우 tint) 제거 + 다크 시절 잔재였던 rgba(0,0,0,.45) 그림자를 카드 토큰으로 교체. */}
+      <h2 id="cookie-banner-title" style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>쿠키 사용 동의</h2>
+      <p className="dim" style={{ fontSize: 12.5, lineHeight: 1.65, marginBottom: 12 }}>
+        서비스 운영에 필요한 필수 쿠키와, 사이트 개선을 위한 분석·마케팅 쿠키를 사용합니다.
       </p>
       {details && (
         <div style={{ marginBottom: 14, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
@@ -1240,9 +1241,10 @@ const CookieConsent = () => {
           </fieldset>
         </div>
       )}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-        <button type="button" className="btn btn-small" onClick={() => setDetails((v) => !v)}
-          aria-expanded={details}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
+        {/* 세부 설정은 링크 위계로 강등 — 주행동(동의/거부)과 경쟁하지 않게 */}
+        <button type="button" className="btn-ghost" style={{ fontSize: 12, marginRight: 'auto' }}
+          onClick={() => setDetails((v) => !v)} aria-expanded={details}>
           {details ? '간단히' : '세부 설정'}
         </button>
         <button type="button" className="btn btn-small" onClick={rejectAll}>모두 거부</button>

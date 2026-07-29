@@ -221,65 +221,57 @@ const HeroProgramCards = ({ go, dataTick, text }) => {
     return `${d.getMonth()+1}.${pad(d.getDate())} (${dow}) ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
+  // v00.289 — 예정이 없으면 "예정된 강연이 아직 없습니다" 빈 카드를 띄우지 않고 아예 렌더하지 않는다.
+  // 처음 온 사람이 첫 화면에서 두 번째로 보는 정보가 '없다' 가 되면 안 된다.
+  // (rules/11-data-flow.md '깡통 카드 금지' + design/components.md '빈 상태' 와 같은 원칙.)
+  // 둘 다 없으면 히어로 우측 컬럼 자체가 사라지고, 하나만 있으면 있는 것만 보인다.
+  if (!nextLecture && !nextTour) return null;
+
   return (
     <div className="home-program-stack">
-      {/* 다음 강연 카드 */}
-      <article
-        onClick={() => { if (nextLecture) go('lectures'); }}
-        className="home-program-card"
-        style={{cursor: nextLecture ? 'pointer' : 'default'}}
-        role={nextLecture ? 'button' : undefined}
-        tabIndex={nextLecture ? 0 : undefined}
-        onKeyDown={(e) => { if (nextLecture && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go('lectures'); } }}>
-        <div className="home-program-label">
-          {text.heroNextLectureLabel}
-        </div>
-        {nextLecture ? (
-          <>
-            <h3 className="ko-serif" style={{fontSize:20, marginBottom:8, color:'var(--ink)'}}>{nextLecture.topic || nextLecture.title}</h3>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10}}>
-              <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{nextLecture.next || fmtDate(nextLecture.startsAt)}</span>
-              <span className="dim-2" style={{fontSize:12}}>{nextLecture.venue || text.venueFallback}</span>
-            </div>
-          </>
-        ) : (
-          <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
-            {text.heroNoLectureText} <button type="button" className="btn-ghost gold" onClick={(e) => { e.stopPropagation(); go('lectures'); }}>{text.heroNoLectureCta}</button>
-          </p>
-        )}
-      </article>
+      {nextLecture && (
+        <article
+          onClick={() => go('lectures')}
+          className="home-program-card"
+          style={{cursor: 'pointer'}}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go('lectures'); } }}>
+          <div className="home-program-label">
+            {text.heroNextLectureLabel}
+          </div>
+          <h3 className="ko-serif" style={{fontSize:20, marginBottom:8, color:'var(--ink)'}}>{nextLecture.topic || nextLecture.title}</h3>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10}}>
+            <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{nextLecture.next || fmtDate(nextLecture.startsAt)}</span>
+            <span className="dim-2" style={{fontSize:12}}>{nextLecture.venue || text.venueFallback}</span>
+          </div>
+        </article>
+      )}
 
-      {/* 다음 답사 카드 */}
-      <article
-        onClick={() => { if (nextTour) go('tour'); }}
-        className="home-program-card"
-        style={{cursor: nextTour ? 'pointer' : 'default'}}
-        role={nextTour ? 'button' : undefined}
-        tabIndex={nextTour ? 0 : undefined}
-        onKeyDown={(e) => { if (nextTour && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); go('tour'); } }}>
-        <div className="home-program-label">
-          {text.heroNextTourLabel}
-        </div>
-        {nextTour ? (
-          <>
-            <h3 className="ko-serif" style={{fontSize:20, marginBottom:8, color:'var(--ink)'}}>{nextTour.title}</h3>
-            {nextTour.subtitle && (
-              <p className="dim-2" style={{fontSize:13, marginBottom:8, fontStyle:'italic'}}>{nextTour.subtitle}</p>
-            )}
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10}}>
-              <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{nextTour.next || fmtDate(nextTour.startsAt)}</span>
-              <span className="dim-2" style={{fontSize:12}}>
-                {nextTour.level && <span style={{marginRight:8}}>{nextTour.level}</span>}
-                {nextTour.duration}
-              </span>
-            </div>
-          </>
-        ) : (
-          <p className="dim" style={{fontSize:13, lineHeight:1.7, margin:0}}>
-            {text.heroNoTourText} <button type="button" className="btn-ghost gold" onClick={(e) => { e.stopPropagation(); go('tour'); }}>{text.heroNoTourCta}</button>
-          </p>
-        )}
-      </article>
+      {nextTour && (
+        <article
+          onClick={() => go('tour')}
+          className="home-program-card"
+          style={{cursor: 'pointer'}}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go('tour'); } }}>
+          <div className="home-program-label">
+            {text.heroNextTourLabel}
+          </div>
+          <h3 className="ko-serif" style={{fontSize:20, marginBottom:8, color:'var(--ink)'}}>{nextTour.title}</h3>
+          {nextTour.subtitle && (
+            <p className="dim-2" style={{fontSize:13, marginBottom:8, fontStyle:'italic'}}>{nextTour.subtitle}</p>
+          )}
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:10}}>
+            <span className="gold-2 mono" style={{fontSize:13, fontWeight:600}}>{nextTour.next || fmtDate(nextTour.startsAt)}</span>
+            <span className="dim-2" style={{fontSize:12}}>
+              {nextTour.level && <span style={{marginRight:8}}>{nextTour.level}</span>}
+              {nextTour.duration}
+            </span>
+          </div>
+        </article>
+      )}
     </div>
   );
 };
@@ -601,19 +593,23 @@ const HomePage = ({ go }) => {
     { label: '투어',     sub: '직접 기획 프로그램', valueFallback: '준비 중' },
     { label: '커뮤니티', sub: '함께 만드는 여행',   valueFallback: '운영 중' },
   ];
-  // v00.256 — hero 통계 실데이터 동적화. valueFallback 은 데이터 없을 때만.
+  // v00.256 — hero 통계 실데이터 동적화.
+  // v00.289 — 실데이터가 없는 칸은 아예 렌더하지 않는다. 이전엔 valueFallback 으로 '준비 중' 같은
+  //   상태 문구가 숫자 자리에 들어가 신뢰를 깎았다(전국 / 준비 중 / 85+). 지표는 사실이거나 없거나 둘 중 하나다.
+  //   관리자가 hero.stats 에 valueFallback 을 명시적으로 넣어둔 경우는 의도로 보고 존중한다.
   const allPostsCount = G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()).length;
+  const STALE_FALLBACKS = ['준비 중', '준비중', '운영 중', '운영중', '전국'];
+  const _stat = (i, realValue) => {
+    const fb = (heroStats[i].valueFallback || '').trim();
+    // 실데이터가 있으면 그것을, 없으면 관리자가 넣은 의미 있는 폴백만. 상태 문구 폴백은 버린다.
+    const v = realValue || (fb && !STALE_FALLBACKS.includes(fb) ? fb : '');
+    return v ? { l: heroStats[i].label, v, s: heroStats[i].sub } : null;
+  };
   const stats = [
-    { l: heroStats[0].label,
-      v: recommendations.length > 0 ? `${recommendations.length}곳` : (heroStats[0].valueFallback || '전국'),
-      s: heroStats[0].sub },
-    { l: heroStats[1].label,
-      v: tours.length > 0 ? `${tours.length}개` : (heroStats[1].valueFallback || '준비 중'),
-      s: heroStats[1].sub },
-    { l: heroStats[2].label,
-      v: allPostsCount > 0 ? `${allPostsCount}+` : (heroStats[2].valueFallback || '운영 중'),
-      s: heroStats[2].sub },
-  ];
+    _stat(0, recommendations.length > 0 ? `${recommendations.length}곳` : ''),
+    _stat(1, tours.length > 0 ? `${tours.length}개` : ''),
+    _stat(2, allPostsCount > 0 ? `${allPostsCount}+` : ''),
+  ].filter(Boolean);
 
   const clickable = (onClick, label) => ({
     role:'button', tabIndex:0, 'aria-label':label, onClick,
@@ -702,13 +698,17 @@ const HomePage = ({ go }) => {
                   style={{fontWeight: heroStyle.cta.fontWeight}}>
                   {hero.ctaPrimary || "커뮤니티 보기"}
                 </button>
-                <button className="btn" onClick={() => go('tour')}
-                  style={{fontWeight: heroStyle.cta.fontWeight}}>
-                  {hero.ctaSecondary || "답사 일정 보기"}
+                {/* v00.289 — 두 CTA 가 동등해 보여 "뭐부터 봐야 할지 모르겠다"에 일조.
+                    보조 행동은 btn-ghost 로 낮춰 주행동 하나만 남긴다. */}
+                <button className="btn-ghost" onClick={() => go('tour')}
+                  style={{fontWeight: heroStyle.cta.fontWeight, fontSize:13}}>
+                  {hero.ctaSecondary || "답사 일정 보기"} →
                 </button>
               </div>
+              {/* v00.289 — 남은 지표가 0개면 구분선까지 통째로 사라진다. 칸 수에 맞춰 열도 조정. */}
+              {stats.length > 0 && (
               <div className="hero-stats" style={{
-                display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:20,
+                display:'grid', gridTemplateColumns:`repeat(${stats.length},1fr)`, gap:20,
                 paddingTop:24, borderTop:'1px solid var(--line)',
               }}>
                 {stats.map((stat) => (
@@ -736,6 +736,7 @@ const HomePage = ({ go }) => {
                   </div>
                 ))}
               </div>
+              )}
             </div>
 
             {/* 우측: 지도 미리보기 — 시도 클릭 → 전체 모달 (a11y: 외곽 div 는 단순 컨테이너, 실제 버튼은 region path 와 우상단 텍스트 버튼). 폰(≤600px) 에서는 hero-map-preview CSS 로 숨김 + CTA 버튼만 노출. */}

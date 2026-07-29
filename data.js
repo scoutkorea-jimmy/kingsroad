@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.288.003",
+  version: "00.289.000",
   build: "2026.07.29",
   channel: "preview",
 };
@@ -874,7 +874,10 @@ window.BGNJ_HOME_TEXT_DEFAULT = { ...(DEFAULT_SITE_CONTENT.homeText || {}) };
 // HomePage Hero 가 BGNJ_HERO_STYLE() 헬퍼로 읽어 인라인 스타일에 적용.
 window.BGNJ_HERO_STYLE_DEFAULT = {
   eyebrow:  { fontSize: 13, fontWeight: 600, letterSpacing: 0.02, color: '--ink-2', textTransform: 'none' },
-  title:    { fontSize: 58, fontWeight: 800, lineHeight: 1.1, letterSpacing: 0, color: '--ink', accentColor: '--primary', textAlign: 'left' },
+  // v00.289 — accentColor 를 --primary(옐로우)에서 --secondary(Caramel Ink)로.
+  // 히어로 둘째 줄 전체가 옐로우라 "옐로우는 인터랙션 상태에만, 5% 면적" 자체 원칙을 히어로가 어기고 있었다.
+  // 대형 노란 글자는 값싸 보이는 가장 빠른 길이기도 하다. 옐로우는 CTA 버튼 하나에만 남긴다.
+  title:    { fontSize: 58, fontWeight: 800, lineHeight: 1.1, letterSpacing: 0, color: '--ink', accentColor: '--secondary', textAlign: 'left' },
   subtitle: { fontSize: 16, fontWeight: 500, lineHeight: 1.85, color: '--ink-2', maxWidth: 560, textAlign: 'left' },
   cta:      { fontWeight: 700, textTransform: 'none' },
   stats:    {

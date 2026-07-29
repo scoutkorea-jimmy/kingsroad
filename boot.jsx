@@ -240,6 +240,11 @@ const GlobalErrorToast = () => {
 // '지금 새로고침' 클릭 시 cache-bust reload (location.href + ?_=now).
 // 자동 reload 는 의도적으로 안 함 — 사용자 form 입력 등 중간 상태 보존.
 const VERSION_POLL_MS = 5 * 60 * 1000; // 5분
+// v00.289 — 우상단 큰 카드 → 좌하단 소형 토스트로 강등.
+// 이유: 데스크톱에선 히어로를, 모바일에선 로고를 덮고 있었다(첫 화면의 절반이 안내문).
+// 우하단은 이미 오류 토스트(bottom:16/right:16)와 scroll-top FAB(bottom:28/right:24)가 쓰고 있어 좌하단으로.
+// z-index 는 쿠키 배너(80)보다 낮은 70 — 첫 방문 동의가 항상 우선.
+const UPDATE_DISMISSED_KEY = 'bgnj_update_dismissed_version';
 const VersionUpdateBanner = () => {
   const [latest, setLatest] = React.useState(null);
   const current = (window.BGNJ_VERSION?.version || '').toString();
@@ -254,7 +259,10 @@ const VersionUpdateBanner = () => {
         if (!r.ok) return;
         const j = await r.json();
         const v = String(j?.version || '');
-        if (!cancelled && v && v !== current) setLatest(j);
+        // '나중에' 로 닫은 버전은 다시 띄우지 않는다. 더 새 버전이 나오면 다시 뜬다.
+        let dismissed = '';
+        try { dismissed = localStorage.getItem(UPDATE_DISMISSED_KEY) || ''; } catch {}
+        if (!cancelled && v && v !== current && v !== dismissed) setLatest(j);
       } catch {}
     };
     check(); // 진입 즉시 1회
@@ -272,19 +280,17 @@ const VersionUpdateBanner = () => {
       window.location.reload();
     }
   };
+  const dismiss = () => {
+    try { localStorage.setItem(UPDATE_DISMISSED_KEY, String(latest?.version || '')); } catch {}
+    setLatest(null);
+  };
   if (!latest) return null;
   return (
-    <div role="status" aria-live="polite" style={{
-      position:'fixed', top:12, right:12, zIndex:2100, maxWidth:360,
-      background:'#fff', border:'1px solid var(--primary-active)', boxShadow:'0 8px 24px rgba(0,0,0,0.14)',
-      padding:'12px 14px', fontSize:13, lineHeight:1.6, color:'var(--ink)',
-    }}>
-      <div className="mono" style={{fontSize:10, letterSpacing:'0.18em', color:'var(--primary-active)', marginBottom:4}}>NEW BUILD AVAILABLE</div>
-      <div style={{fontWeight:600, marginBottom:6}}>새 버전 v{latest.version} 사용 가능</div>
-      <div className="dim-2" style={{fontSize:11, marginBottom:10}}>현재 v{current} · 빌드 {latest.build || '—'}</div>
-      <div style={{display:'flex', gap:6, justifyContent:'flex-end'}}>
-        <button type="button" className="btn btn-small" onClick={() => setLatest(null)}>나중에</button>
-        <button type="button" className="btn btn-small btn-gold" onClick={reload}>지금 새로고침</button>
+    <div role="status" aria-live="polite" className="version-update-toast">
+      <div style={{fontWeight:600, marginBottom:8}}>새 버전 v{latest.version} 이 나왔습니다</div>
+      <div style={{display:'flex', gap:6}}>
+        <button type="button" className="btn btn-small btn-gold" onClick={reload}>새로고침</button>
+        <button type="button" className="btn-ghost" style={{fontSize:12}} onClick={dismiss}>나중에</button>
       </div>
     </div>
   );
