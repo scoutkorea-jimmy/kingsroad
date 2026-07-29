@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.289.000",
+    version: "00.289.001",
     build: "2026.07.29",
     channel: "preview"
   };
@@ -14264,6 +14264,7 @@
   var SITE_BANNER_DISMISSED_KEY = "bgnj_banner_dismissed";
   var SiteBanner = () => {
     const [tick, setTick] = React.useState(0);
+    const [expanded, setExpanded] = React.useState(false);
     const [dismissed, setDismissed] = React.useState(() => {
       try {
         return !!sessionStorage.getItem(SITE_BANNER_DISMISSED_KEY);
@@ -14300,7 +14301,7 @@
       }
       setDismissed(true);
     };
-    return /* @__PURE__ */ React.createElement("div", { role: "status", "aria-label": "\uC0AC\uC774\uD2B8 \uACF5\uC9C0", style: {
+    return /* @__PURE__ */ React.createElement("div", { role: "status", "aria-label": "\uC0AC\uC774\uD2B8 \uACF5\uC9C0", className: "site-banner", style: {
       background: palette.bg,
       borderBottom: `1px solid ${palette.border}`,
       color: palette.text,
@@ -14309,7 +14310,24 @@
       fontSize: 13,
       lineHeight: 1.55,
       position: "relative"
-    } }, banner.emoji ? `${banner.emoji} ` : "", banner.title && /* @__PURE__ */ React.createElement("strong", null, banner.title), banner.body && /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, banner.title ? " " : "", banner.body), banner.dismissible && /* @__PURE__ */ React.createElement(
+    } }, /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: `site-banner-text${expanded ? " is-expanded" : ""}`,
+        onClick: () => setExpanded((v) => !v),
+        role: banner.body ? "button" : void 0,
+        tabIndex: banner.body ? 0 : void 0,
+        onKeyDown: (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded((v) => !v);
+          }
+        }
+      },
+      banner.emoji ? `${banner.emoji} ` : "",
+      banner.title && /* @__PURE__ */ React.createElement("strong", null, banner.title),
+      banner.body && /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, banner.title ? " " : "", banner.body)
+    ), banner.dismissible && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",

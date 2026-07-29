@@ -416,6 +416,7 @@ const _AdminLoadingFallback = ({ error, onRetry, label = '관리자' }) => {
 const SITE_BANNER_DISMISSED_KEY = 'bgnj_banner_dismissed';
 const SiteBanner = () => {
   const [tick, setTick] = React.useState(0);
+  const [expanded, setExpanded] = React.useState(false);
   const [dismissed, setDismissed] = React.useState(() => {
     try { return !!sessionStorage.getItem(SITE_BANNER_DISMISSED_KEY); } catch { return false; }
   });
@@ -443,7 +444,7 @@ const SiteBanner = () => {
     setDismissed(true);
   };
   return (
-    <div role="status" aria-label="사이트 공지" style={{
+    <div role="status" aria-label="사이트 공지" className="site-banner" style={{
       background: palette.bg,
       borderBottom: `1px solid ${palette.border}`,
       color: palette.text,
@@ -453,9 +454,17 @@ const SiteBanner = () => {
       lineHeight: 1.55,
       position: 'relative',
     }}>
-      {banner.emoji ? `${banner.emoji} ` : ''}
-      {banner.title && <strong>{banner.title}</strong>}
-      {banner.body && <span className="dim-2">{banner.title ? ' ' : ''}{banner.body}</span>}
+      {/* v00.289.002 — 긴 공지가 모바일에서 3줄까지 차지해 첫 화면을 먹었다.
+          기본 2줄로 접고 탭하면 펼친다. 데스크톱은 원래 1줄이라 영향 없음. */}
+      <div className={`site-banner-text${expanded ? ' is-expanded' : ''}`}
+        onClick={() => setExpanded((v) => !v)}
+        role={banner.body ? 'button' : undefined}
+        tabIndex={banner.body ? 0 : undefined}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded((v) => !v); } }}>
+        {banner.emoji ? `${banner.emoji} ` : ''}
+        {banner.title && <strong>{banner.title}</strong>}
+        {banner.body && <span className="dim-2">{banner.title ? ' ' : ''}{banner.body}</span>}
+      </div>
       {banner.dismissible && (
         <button type="button" onClick={onDismiss} aria-label="배너 닫기"
           style={{
