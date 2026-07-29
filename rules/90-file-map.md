@@ -93,18 +93,20 @@
 ## 4. 라우팅
 
 `VALID_ROUTES` = `home` `home-next` `community` `lectures` `tour` `column` `book` `checkout`
-`mypage` `admin` `login` `signup` `faq` `terms` `privacy` `eat` `sleep` `shop` `hangyeon` `error`
+`mypage` `admin` `login` `signup` `faq` `terms` `privacy` `sleep` `hangyeon` `error`
+
+> v00.291 — `/eat`(먹고 놀자)·`/shop`(사고 놀자) 삭제. 라우트·페이지·사이트맵·관리자 편집 화면 모두 제거.
 
 | URL | 화면 |
 |---|---|
 | `/` | 홈 |
-| `/eat` `/sleep` `/shop` | 먹고·자고·사고 놀자 (메가메뉴 자식) |
+| `/sleep` | 자고 놀자 = 한켠 (`/hangyeon` 과 같은 페이지) |
 | `/tour` | 답사·투어 (왕사남) |
 | `/lectures` | 강연 |
 | `/column` | 칼럼 |
 | `/community` | 커뮤니티 |
 | `/book` `/checkout` | 책 · 결제 |
-| `/hangyeon` | 한켠 숙소 예약 — **네비게이션에 진입로 없음** |
+| `/hangyeon` | 한켠 숙소 예약 (네비는 `/sleep` 으로 진입) |
 | `/mypage` `/admin` `/login` `/signup` | 계정·관리자 |
 | `/faq` `/terms` `/privacy` | 약관·FAQ |
 

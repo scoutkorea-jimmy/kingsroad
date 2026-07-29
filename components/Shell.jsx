@@ -664,7 +664,7 @@ const Nav = ({ route, go, user, onLogout }) => {
   // v00.266/v00.279 — 데스크톱 메가 드롭다운 (호버 + 클릭). 놀자 + 커뮤니티 공용으로 일반화.
   // .nav-menu 가 overflow-x:auto(가로 슬라이드) 라 그 안의 absolute 드롭다운이 세로로 잘림.
   // → position:fixed + 버튼 위치 JS 계산으로 오버플로우 영역 밖으로 탈출시킴 (모든 메가 공통).
-  const [openMega, setOpenMega] = React.useState(null); // 'play' | 'community' | null
+  const [openMega, setOpenMega] = React.useState(null); // 'learn' | 'community' | null
   const [megaPos, setMegaPos] = React.useState(null);   // {left, top}
   const megaRefs = React.useRef({});                    // key -> li element
   const megaCloseTimer = React.useRef(null);
@@ -720,28 +720,30 @@ const Nav = ({ route, go, user, onLogout }) => {
       unlockBodyScroll();
     };
   }, [mobileOpen]);
-  // 놀자 메가메뉴 자식 (의식주: 먹고/자고/사고). "놀자" 자체 클릭 시 첫 항목으로 진입.
-  const playChildren = [
-    { key: "eat",   label: navL.eat   || "먹고 놀자",  desc: "식 食 — 한정식·향토음식·시장" },
-    { key: "sleep", label: navL.sleep || "자고 놀자",  desc: "주 住 — 한옥·고택·템플스테이" },
-    { key: "shop",  label: navL.shop  || "사고 놀자",  desc: "의 衣 — 전통공예·토산물" },
+  // v00.290 — 메뉴 재편 (7개 → 5개).
+  //  · 놀자 메가메뉴 폐기: '먹고 놀자'(/eat)·'사고 놀자'(/shop) 삭제, '자고 놀자'(/sleep)만 단독 메뉴로.
+  //    /sleep 과 /hangyeon 은 원래부터 같은 페이지(HangyeonPage)였다 — boot.jsx 라우팅 참조.
+  //  · 강연 + 도서 → '배움' 메가메뉴로 통합. URL(/lectures, /book)은 그대로 살려 검색 유입 보존.
+  //  · 칼럼(/column)은 커뮤니티 메가메뉴 안으로 이동. 페이지·URL은 그대로 — 데이터 이관 아님.
+  const learnChildren = [
+    { key: "lectures", label: navL.lectures || "강연", desc: "함께 듣는 역사·문화 강연" },
+    { key: "book",     label: navL.book     || "도서", desc: "뱅기노자가 펴낸 책" },
   ];
-  const playKeys = playChildren.map((p) => p.key);
+  const learnKeys = learnChildren.map((c) => c.key);
 
-  // v00.147 — '책' 메뉴 추가. 사용자 요청 '상단에 뱅기노자 책을 볼 수 있는 메뉴'.
   const items = [
     { key: "home", label: navL.home || "홈" },
-    { key: "play", label: navL.play || "놀자", isMega: 'play', defaultRoute: 'eat' },
-    { key: "tour", label: navL.tour || "투어" },
-    { key: "lectures", label: navL.lectures || "강연" },
-    { key: "column", label: navL.column || "칼럼" },
-    { key: "book", label: navL.book || "뱅기노자 도서" },
+    { key: "sleep", label: navL.sleep || "자고 놀자" },
+    { key: "tour", label: navL.tour || "답사·투어" },
+    { key: "learn", label: navL.learn || "배움", isMega: 'learn', defaultRoute: 'lectures' },
     { key: "community", label: navL.community || "커뮤니티", isMega: 'community' },
   ];
   // 커뮤니티 메가메뉴: BGNJ_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
   const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : (user ? 10 : 0);
+  // v00.290 — 'column' 게시판은 글 0개인 빈 껍데기다(진짜 칼럼 72편은 /column 페이지의 별도 테이블).
+  // 메뉴에 중복 노출하지 않는다. 게시판 자체 삭제는 관리자 작업.
   const communityBoards = (window.BGNJ_STORES?.categories || [])
-    .filter((c) => c.boardType === 'community' && userLevel >= (c.minLevel ?? 0));
+    .filter((c) => c.boardType === 'community' && userLevel >= (c.minLevel ?? 0) && c.id !== 'column');
 
   const goBoard = (boardId) => {
     try { sessionStorage.setItem('bgnj_pending_board_id', boardId); } catch {}
@@ -750,7 +752,9 @@ const Nav = ({ route, go, user, onLogout }) => {
 
   // 활성 상태 판정 — 메가 그룹은 자식 라우트도 활성으로 간주
   const isActive = (it) => {
-    if (it.isMega === 'play') return playKeys.includes(route);
+    if (it.isMega === 'learn') return learnKeys.includes(route);
+    // 커뮤니티 그룹은 칼럼(/column)도 자식으로 간주 — v00.290 메뉴 이동.
+    if (it.isMega === 'community') return route === 'community' || route === 'column';
     return route === it.key;
   };
 
@@ -784,13 +788,13 @@ const Nav = ({ route, go, user, onLogout }) => {
         </button>
         <ul id="primary-nav-menu" className="nav-menu" role="list" style={{listStyle:'none', margin:0, padding:0}}>
           {items.map(it => {
-            const hasMega = it.isMega === 'play' || (it.isMega === 'community' && communityBoards.length > 0);
-            const isPlay = it.isMega === 'play';
-            // v00.279 — 메가 키 ('play' | 'community'). 둘 다 fixed 드롭다운 + 호버/포커스 제어.
+            const hasMega = it.isMega === 'learn' || it.isMega === 'community';
+            const isLearn = it.isMega === 'learn';
+            // v00.279 — 메가 키 ('learn' | 'community'). 둘 다 fixed 드롭다운 + 호버/포커스 제어.
             const megaKey = hasMega ? it.isMega : null;
-            // v00.266 — "놀자" 는 클릭 시 이동 대신 드롭다운 토글(호버 보완). 그 외는 기존대로 이동.
-            const onClick = isPlay
-              ? () => toggleMega('play')
+            // v00.266 — 메가 부모는 클릭 시 이동 대신 드롭다운 토글(호버 보완). 그 외는 기존대로 이동.
+            const onClick = isLearn
+              ? () => toggleMega('learn')
               : () => go(it.defaultRoute || it.key);
             return (
               <li key={it.key}
@@ -806,24 +810,24 @@ const Nav = ({ route, go, user, onLogout }) => {
                   aria-expanded={megaKey ? openMega === megaKey : undefined}
                   onClick={onClick}>{it.label}{hasMega ? ' ▾' : ''}</button>
 
-                {it.isMega === 'play' && (
-                  <div className="nav-mega nav-mega-play" role="menu" aria-label="놀자 — 의식주 카테고리"
-                    onMouseEnter={() => openMegaMenu('play')} onMouseLeave={closeMegaSoon}
+                {it.isMega === 'learn' && (
+                  <div className="nav-mega nav-mega-play" role="menu" aria-label="배움 — 강연·도서"
+                    onMouseEnter={() => openMegaMenu('learn')} onMouseLeave={closeMegaSoon}
                     style={{
                       position:'fixed',
-                      left: (openMega === 'play' && megaPos) ? megaPos.left : -9999,
-                      top: (openMega === 'play' && megaPos) ? megaPos.top : -9999,
+                      left: (openMega === 'learn' && megaPos) ? megaPos.left : -9999,
+                      top: (openMega === 'learn' && megaPos) ? megaPos.top : -9999,
                       minWidth:280, padding:'10px 0',
                       background:'var(--bg)', border:'1px solid var(--line)',
                       boxShadow:'0 16px 40px rgba(15,23,42,0.10)',
-                      visibility: openMega === 'play' ? 'visible' : 'hidden',
-                      opacity: openMega === 'play' ? 1 : 0,
+                      visibility: openMega === 'learn' ? 'visible' : 'hidden',
+                      opacity: openMega === 'learn' ? 1 : 0,
                       transition:'opacity .12s ease',
                       zIndex:60,
                     }}>
-                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>의식주 衣食住</div>
+                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>LEARN</div>
                     <ul style={{listStyle:'none', margin:0, padding:0}}>
-                      {playChildren.map((p) => (
+                      {learnChildren.map((p) => (
                         <li key={p.key}>
                           <button type="button" role="menuitem"
                             onClick={() => { setOpenMega(null); go(p.key); }}
@@ -843,15 +847,33 @@ const Nav = ({ route, go, user, onLogout }) => {
                   </div>
                 )}
 
-                {/* 모바일 전용: 놀자 메가 자식들을 인라인 펼침으로 노출 */}
-                {it.isMega === 'play' && (
-                  <ul className="nav-mobile-submenu" role="list" aria-label="놀자 하위" style={{listStyle:'none', margin:0, padding:0}}>
-                    {playChildren.map((p) => (
+                {/* 모바일 전용: 배움 메가 자식들을 인라인 펼침으로 노출 */}
+                {it.isMega === 'learn' && (
+                  <ul className="nav-mobile-submenu" role="list" aria-label="배움 하위" style={{listStyle:'none', margin:0, padding:0}}>
+                    {learnChildren.map((p) => (
                       <li key={p.key}>
                         <button type="button"
                           className={`nav-link nav-sub-link ${route === p.key ? 'active' : ''}`}
                           aria-current={route === p.key ? 'page' : undefined}
                           onClick={() => go(p.key)}>{p.label}</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {/* 모바일 전용: 커뮤니티 하위(칼럼 + 게시판)를 인라인 펼침으로.
+                    v00.290 이전엔 모바일에 커뮤니티 서브메뉴가 아예 없어 게시판 진입 경로가 없었다. */}
+                {it.isMega === 'community' && (
+                  <ul className="nav-mobile-submenu" role="list" aria-label="커뮤니티 하위" style={{listStyle:'none', margin:0, padding:0}}>
+                    <li>
+                      <button type="button"
+                        className={`nav-link nav-sub-link ${route === 'column' ? 'active' : ''}`}
+                        aria-current={route === 'column' ? 'page' : undefined}
+                        onClick={() => go('column')}>뱅기노자 칼럼</button>
+                    </li>
+                    {communityBoards.map((b) => (
+                      <li key={b.id}>
+                        <button type="button" className="nav-link nav-sub-link"
+                          onClick={() => goBoard(b.id)}>{b.label}</button>
                       </li>
                     ))}
                   </ul>
@@ -871,7 +893,25 @@ const Nav = ({ route, go, user, onLogout }) => {
                       transition:'opacity .12s ease',
                       zIndex:60,
                     }}>
-                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>BOARDS</div>
+                    {/* v00.290 — 칼럼을 커뮤니티 그룹 안으로. 페이지·URL(/column)은 그대로다 —
+                        메뉴 위치만 옮긴 것이지 데이터를 게시판으로 옮긴 게 아니다. */}
+                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'6px 16px 8px'}}>COLUMN</div>
+                    <ul style={{listStyle:'none', margin:0, padding:0}}>
+                      <li>
+                        <button type="button" role="menuitem"
+                          onClick={() => { setOpenMega(null); go('column'); }}
+                          style={{
+                            display:'block', width:'100%', textAlign:'left',
+                            padding:'8px 16px', fontSize:13, fontWeight:600,
+                            background:'transparent', color:'var(--ink)', border:'none', cursor:'pointer',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-2)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}>
+                          <span>뱅기노자 칼럼</span>
+                        </button>
+                      </li>
+                    </ul>
+                    <div className="mono dim-2" style={{fontSize:9, letterSpacing:'0.22em', padding:'10px 16px 8px', borderTop:'1px solid var(--line)', marginTop:6}}>BOARDS</div>
                     <ul style={{listStyle:'none', margin:0, padding:0}}>
                       {communityBoards.map((b) => (
                         <li key={b.id}>

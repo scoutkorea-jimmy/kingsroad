@@ -5,7 +5,6 @@
 import { BookPage, CheckoutPage} from './pages/BookCheckoutPage.jsx';
 import { ColumnPage} from './pages/ColumnPage.jsx';
 import { CommunityPage} from './pages/CommunityPage.jsx';
-import { EatPage, ShopPage} from './pages/EatSleepShopPages.jsx';
 import { HelpWidget} from './components/HelpWidget.jsx';
 import { Error401Page, Error404Page} from './pages/ErrorPages.jsx';
 import { HangyeonPage} from './pages/HangyeonPage.jsx';
@@ -307,7 +306,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 // URL 경로 ↔ 라우트 키 매핑.
 // 알려진 라우트만 화이트리스트로 받아 안전하게 폴백한다(home).
 // v00.229 — 'error' 라우트 추가. /error?code=403|404|500|401|network|maintenance
-const VALID_ROUTES = ['home','home-next','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy','eat','sleep','shop','hangyeon','error'];
+const VALID_ROUTES = ['home','home-next','community','lectures','tour','column','book','checkout','mypage','admin','login','signup','faq','terms','privacy','sleep','hangyeon','error'];
 const pathToRoute = (pathname) => {
   const p = (pathname || '/').replace(/\/+$/, '') || '/';
   if (p === '/') return 'home';
@@ -634,9 +633,7 @@ const App = () => {
     const ROUTE_TITLES = {
       home: tagline,
       'home-next': '신규 홈 프리뷰',
-      eat: '먹고 놀자',
-      sleep: '자고 놀자',
-      shop: '사고 놀자',
+      sleep: '자고 놀자 — 한켠',
       hangyeon: '한켠 — 숙소 예약',
       tour: '투어 프로그램',
       lectures: '강연',
@@ -777,11 +774,9 @@ const App = () => {
     switch (route) {
       case "home":      { const C = HomePage;      return <C go={go} tweaks={tweaks}/>; }
       case "home-next": { const C = HomeNextPage; return <C go={go}/>; }
-      case "eat":       { const C = EatPage; return <C go={go} user={user}/>; }
       // v00.267 — 자고 놀자 = 한켠(직영 숙소) 예약 시스템. sleep 라우트가 한켠 예약 페이지를 직접 렌더.
       case "sleep":
       case "hangyeon":  { const C = HangyeonPage; return <C go={go} user={user}/>; }
-      case "shop":      { const C = ShopPage; return <C go={go} user={user}/>; }
       case "community": { const C = CommunityPage; return <C go={go} postId={postId} setPostId={setPostId} user={user}/>; }
       case "tour":      { const C = TourPage; return <C go={go} user={user}/>; }
       case "lectures":  { const C = LecturesPage; return <C go={go} user={user}/>; }

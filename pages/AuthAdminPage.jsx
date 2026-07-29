@@ -164,7 +164,7 @@ const AdminPage = ({ go }) => {
   // v00.165 — 9 그룹 → 8 그룹 (프로그램 + 쇼핑 머지). collapsible 로 시각 부하 절감.
   const tabGroups = [
     { group: "요약",          items: ["대시보드", "사용자 여정"] },
-    { group: "콘텐츠",        items: ["뱅기노자 칼럼", "추천 여행지", "먹고 놀자", "자고 놀자", "사고 놀자"] },
+    { group: "콘텐츠",        items: ["뱅기노자 칼럼", "추천 여행지", "자고 놀자"] },
     { group: "프로그램·쇼핑", items: ["강연", "투어 프로그램", "책 카탈로그", "책 주문"] },
     // v00.267 — 한켠(자고 놀자) 숙소 예약 PMS. 찾기 쉽게 독립 그룹으로 분리.
     { group: "한켠 숙소",     items: ["한켠 예약"] },
@@ -1184,10 +1184,8 @@ const AdminPage = ({ go }) => {
         )}
 
         {tab === "추천 여행지" && <RecommendationsAdminPanel/>}
-        {/* v00.106 — 놀자 시리즈 3개 sub-tab: KindPagePanel(kind) */}
-        {tab === "먹고 놀자" && KindPagePanel && <window.KindPagePanel kind="eat"/>}
+        {/* v00.290 — 먹고/사고 놀자 삭제. 자고 놀자(=한켠)만 유지. */}
         {tab === "자고 놀자" && KindPagePanel && <window.KindPagePanel kind="sleep"/>}
-        {tab === "사고 놀자" && KindPagePanel && <window.KindPagePanel kind="shop"/>}
         {/* v00.267 — 한켠 숙소 예약 PMS (7 탭) */}
         {tab === "한켠 예약" && HangyeonAdminPanel && <window.HangyeonAdminPanel/>}
         {/* 카테고리 CRUD */}

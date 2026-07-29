@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.289.003",
+    version: "00.290.000",
     build: "2026.07.29",
     channel: "preview"
   };
@@ -5256,25 +5256,22 @@
         unlockBodyScroll();
       };
     }, [mobileOpen]);
-    const playChildren = [
-      { key: "eat", label: navL.eat || "\uBA39\uACE0 \uB180\uC790", desc: "\uC2DD \u98DF \u2014 \uD55C\uC815\uC2DD\xB7\uD5A5\uD1A0\uC74C\uC2DD\xB7\uC2DC\uC7A5" },
-      { key: "sleep", label: navL.sleep || "\uC790\uACE0 \uB180\uC790", desc: "\uC8FC \u4F4F \u2014 \uD55C\uC625\xB7\uACE0\uD0DD\xB7\uD15C\uD50C\uC2A4\uD14C\uC774" },
-      { key: "shop", label: navL.shop || "\uC0AC\uACE0 \uB180\uC790", desc: "\uC758 \u8863 \u2014 \uC804\uD1B5\uACF5\uC608\xB7\uD1A0\uC0B0\uBB3C" }
+    const learnChildren = [
+      { key: "lectures", label: navL.lectures || "\uAC15\uC5F0", desc: "\uD568\uAED8 \uB4E3\uB294 \uC5ED\uC0AC\xB7\uBB38\uD654 \uAC15\uC5F0" },
+      { key: "book", label: navL.book || "\uB3C4\uC11C", desc: "\uBC45\uAE30\uB178\uC790\uAC00 \uD3B4\uB0B8 \uCC45" }
     ];
-    const playKeys = playChildren.map((p) => p.key);
+    const learnKeys = learnChildren.map((c) => c.key);
     const items = [
       { key: "home", label: navL.home || "\uD648" },
-      { key: "play", label: navL.play || "\uB180\uC790", isMega: "play", defaultRoute: "eat" },
-      { key: "tour", label: navL.tour || "\uD22C\uC5B4" },
-      { key: "lectures", label: navL.lectures || "\uAC15\uC5F0" },
-      { key: "column", label: navL.column || "\uCE7C\uB7FC" },
-      { key: "book", label: navL.book || "\uBC45\uAE30\uB178\uC790 \uB3C4\uC11C" },
+      { key: "sleep", label: navL.sleep || "\uC790\uACE0 \uB180\uC790" },
+      { key: "tour", label: navL.tour || "\uB2F5\uC0AC\xB7\uD22C\uC5B4" },
+      { key: "learn", label: navL.learn || "\uBC30\uC6C0", isMega: "learn", defaultRoute: "lectures" },
       { key: "community", label: navL.community || "\uCEE4\uBBA4\uB2C8\uD2F0", isMega: "community" }
     ];
     const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : user ? 10 : 0;
     const communityBoards = (((_c = window.BGNJ_STORES) == null ? void 0 : _c.categories) || []).filter((c) => {
       var _a2;
-      return c.boardType === "community" && userLevel >= ((_a2 = c.minLevel) != null ? _a2 : 0);
+      return c.boardType === "community" && userLevel >= ((_a2 = c.minLevel) != null ? _a2 : 0) && c.id !== "column";
     });
     const goBoard = (boardId) => {
       try {
@@ -5284,7 +5281,8 @@
       go("community");
     };
     const isActive = (it) => {
-      if (it.isMega === "play") return playKeys.includes(route);
+      if (it.isMega === "learn") return learnKeys.includes(route);
+      if (it.isMega === "community") return route === "community" || route === "column";
       return route === it.key;
     };
     return /* @__PURE__ */ React.createElement("nav", { className: `nav ${mobileOpen ? "mobile-open" : ""}`, "aria-label": "\uC8FC \uBA54\uB274" }, /* @__PURE__ */ React.createElement("div", { className: "container nav-inner" }, /* @__PURE__ */ React.createElement(Brand, { onClick: () => go("home") }), /* @__PURE__ */ React.createElement(
@@ -5330,10 +5328,10 @@
       ),
       /* @__PURE__ */ React.createElement("span", { className: "nav-toggle-label", "aria-hidden": "true" }, mobileOpen ? "\uB2EB\uAE30" : "\uBA54\uB274")
     ), /* @__PURE__ */ React.createElement("ul", { id: "primary-nav-menu", className: "nav-menu", role: "list", style: { listStyle: "none", margin: 0, padding: 0 } }, items.map((it) => {
-      const hasMega = it.isMega === "play" || it.isMega === "community" && communityBoards.length > 0;
-      const isPlay = it.isMega === "play";
+      const hasMega = it.isMega === "learn" || it.isMega === "community";
+      const isLearn = it.isMega === "learn";
       const megaKey = hasMega ? it.isMega : null;
-      const onClick = isPlay ? () => toggleMega("play") : () => go(it.defaultRoute || it.key);
+      const onClick = isLearn ? () => toggleMega("learn") : () => go(it.defaultRoute || it.key);
       return /* @__PURE__ */ React.createElement(
         "li",
         {
@@ -5359,31 +5357,31 @@
           it.label,
           hasMega ? " \u25BE" : ""
         ),
-        it.isMega === "play" && /* @__PURE__ */ React.createElement(
+        it.isMega === "learn" && /* @__PURE__ */ React.createElement(
           "div",
           {
             className: "nav-mega nav-mega-play",
             role: "menu",
-            "aria-label": "\uB180\uC790 \u2014 \uC758\uC2DD\uC8FC \uCE74\uD14C\uACE0\uB9AC",
-            onMouseEnter: () => openMegaMenu("play"),
+            "aria-label": "\uBC30\uC6C0 \u2014 \uAC15\uC5F0\xB7\uB3C4\uC11C",
+            onMouseEnter: () => openMegaMenu("learn"),
             onMouseLeave: closeMegaSoon,
             style: {
               position: "fixed",
-              left: openMega === "play" && megaPos ? megaPos.left : -9999,
-              top: openMega === "play" && megaPos ? megaPos.top : -9999,
+              left: openMega === "learn" && megaPos ? megaPos.left : -9999,
+              top: openMega === "learn" && megaPos ? megaPos.top : -9999,
               minWidth: 280,
               padding: "10px 0",
               background: "var(--bg)",
               border: "1px solid var(--line)",
               boxShadow: "0 16px 40px rgba(15,23,42,0.10)",
-              visibility: openMega === "play" ? "visible" : "hidden",
-              opacity: openMega === "play" ? 1 : 0,
+              visibility: openMega === "learn" ? "visible" : "hidden",
+              opacity: openMega === "learn" ? 1 : 0,
               transition: "opacity .12s ease",
               zIndex: 60
             }
           },
-          /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "\uC758\uC2DD\uC8FC \u8863\u98DF\u4F4F"),
-          /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0 } }, playChildren.map((p) => /* @__PURE__ */ React.createElement("li", { key: p.key }, /* @__PURE__ */ React.createElement(
+          /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "LEARN"),
+          /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0 } }, learnChildren.map((p) => /* @__PURE__ */ React.createElement("li", { key: p.key }, /* @__PURE__ */ React.createElement(
             "button",
             {
               type: "button",
@@ -5413,7 +5411,7 @@
             /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.05em", marginTop: 2 } }, p.desc)
           ))))
         ),
-        it.isMega === "play" && /* @__PURE__ */ React.createElement("ul", { className: "nav-mobile-submenu", role: "list", "aria-label": "\uB180\uC790 \uD558\uC704", style: { listStyle: "none", margin: 0, padding: 0 } }, playChildren.map((p) => /* @__PURE__ */ React.createElement("li", { key: p.key }, /* @__PURE__ */ React.createElement(
+        it.isMega === "learn" && /* @__PURE__ */ React.createElement("ul", { className: "nav-mobile-submenu", role: "list", "aria-label": "\uBC30\uC6C0 \uD558\uC704", style: { listStyle: "none", margin: 0, padding: 0 } }, learnChildren.map((p) => /* @__PURE__ */ React.createElement("li", { key: p.key }, /* @__PURE__ */ React.createElement(
           "button",
           {
             type: "button",
@@ -5422,6 +5420,24 @@
             onClick: () => go(p.key)
           },
           p.label
+        )))),
+        it.isMega === "community" && /* @__PURE__ */ React.createElement("ul", { className: "nav-mobile-submenu", role: "list", "aria-label": "\uCEE4\uBBA4\uB2C8\uD2F0 \uD558\uC704", style: { listStyle: "none", margin: 0, padding: 0 } }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            className: `nav-link nav-sub-link ${route === "column" ? "active" : ""}`,
+            "aria-current": route === "column" ? "page" : void 0,
+            onClick: () => go("column")
+          },
+          "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC"
+        )), communityBoards.map((b) => /* @__PURE__ */ React.createElement("li", { key: b.id }, /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            className: "nav-link nav-sub-link",
+            onClick: () => goBoard(b.id)
+          },
+          b.label
         )))),
         it.isMega === "community" && communityBoards.length > 0 && /* @__PURE__ */ React.createElement(
           "div",
@@ -5446,7 +5462,38 @@
               zIndex: 60
             }
           },
-          /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "BOARDS"),
+          /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "6px 16px 8px" } }, "COLUMN"),
+          /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0 } }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement(
+            "button",
+            {
+              type: "button",
+              role: "menuitem",
+              onClick: () => {
+                setOpenMega(null);
+                go("column");
+              },
+              style: {
+                display: "block",
+                width: "100%",
+                textAlign: "left",
+                padding: "8px 16px",
+                fontSize: 13,
+                fontWeight: 600,
+                background: "transparent",
+                color: "var(--ink)",
+                border: "none",
+                cursor: "pointer"
+              },
+              onMouseEnter: (e) => {
+                e.currentTarget.style.background = "var(--bg-2)";
+              },
+              onMouseLeave: (e) => {
+                e.currentTarget.style.background = "transparent";
+              }
+            },
+            /* @__PURE__ */ React.createElement("span", null, "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC")
+          ))),
+          /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.22em", padding: "10px 16px 8px", borderTop: "1px solid var(--line)", marginTop: 6 } }, "BOARDS"),
           /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0 } }, communityBoards.map((b) => /* @__PURE__ */ React.createElement("li", { key: b.id }, /* @__PURE__ */ React.createElement(
             "button",
             {
@@ -11604,50 +11651,6 @@
     ))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card card-gold mobile-release-sticky", style: { position: "sticky", top: 100 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.3em", marginBottom: 20 } }, "ORDER SUMMARY"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--line)" } }, book.coverDataUri ? /* @__PURE__ */ React.createElement("div", { style: { width: 72, aspectRatio: "3/4", flexShrink: 0, border: "1px solid var(--line-2)", overflow: "hidden" } }, /* @__PURE__ */ React.createElement("img", { src: book.coverDataUri, alt: `${book.title} \uD45C\uC9C0`, style: { width: "100%", height: "100%", objectFit: "contain", display: "block" } })) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: 72, aspectRatio: "3/4", fontSize: 8, flexShrink: 0 } }, (book.title || "\uCC45").slice(0, 1)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 17, marginBottom: 4 } }, "\u300E", book.title, "\u300F"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", " \xB7 ", qty, "\uAD8C"), /* @__PURE__ */ React.createElement("div", { className: "gold ko-serif", style: { fontSize: 16, marginTop: 8 } }, window.BGNJ_FMT.won(subtotal)))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", color: "var(--ink-2)" } }, /* @__PURE__ */ React.createElement("span", null, "\uC0C1\uD488 \uD569\uACC4"), /* @__PURE__ */ React.createElement("span", null, window.BGNJ_FMT.won(subtotal))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", color: "var(--ink-2)" } }, /* @__PURE__ */ React.createElement("span", null, "\uBC30\uC1A1\uBE44"), /* @__PURE__ */ React.createElement("span", null, shipping === 0 ? "\uBB34\uB8CC" : window.BGNJ_FMT.won(shipping))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "1px solid var(--line)", marginTop: 8 } }, /* @__PURE__ */ React.createElement("span", null, "\uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold-2 ko-serif", style: { fontSize: 24 } }, window.BGNJ_FMT.won(total))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 24, padding: "16px", background: "rgba(245,213,72,0.04)", border: "1px dashed var(--primary-dim)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 8 } }, "\u25C6 \uC6B4\uC601 \uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 12, lineHeight: 1.7 } }, "\xB7 \uC785\uAE08 \uD655\uC778 \uD6C4 \uD3C9\uC77C 1-2\uC77C \uB0B4 \uBC1C\uC1A1", /* @__PURE__ */ React.createElement("br", null), "\xB7 \uC8FC\uBB38 \uCDE8\uC18C\xB7\uD658\uBD88\uC740 \uB9C8\uC774\uD398\uC774\uC9C0\uC5D0\uC11C \uC694\uCCAD")))))));
   };
 
-  // pages/EatSleepShopPages.jsx
-  var PlacePage = ({ go, kind, user }) => {
-    var _a, _b;
-    const KIND_FALLBACK = {
-      eat: { categories: ["\uC804\uD1B5 \uD55C\uC815\uC2DD", "\uD5A5\uD1A0 \uC74C\uC2DD", "\uC2DC\uC7A5 \uBA39\uAC70\uB9AC", "\uC81C\uCCA0 \uC2DD\uC7AC", "\uC8FC\uC548\uC0C1\xB7\uBC1C\uD6A8"] },
-      sleep: { categories: ["\uD55C\uC625 \uC2A4\uD14C\uC774", "\uACE0\uD0DD / \uC885\uAC00", "\uAC8C\uC2A4\uD2B8\uD558\uC6B0\uC2A4", "\uD15C\uD50C \uC2A4\uD14C\uC774", "\uB18D\uAC00 \uCCB4\uD5D8"] },
-      shop: { categories: ["\uC804\uD1B5 \uACF5\uC608", "\uC9C0\uC5ED \uD1A0\uC0B0\uBB3C", "\uC758\uB958\xB7\uC804\uD1B5 \uC9C1\uBB3C", "\uB3C4\uC790\xB7\uAE08\uC18D", "\uBCF4\uC874\xB7\uBC1C\uD6A8 \uC2DD\uD488"] }
-    };
-    const _sc = ((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {};
-    const _intro = _sc[`${kind}Intro`] || _sc.eatIntro || {};
-    const meta = {
-      eyebrow: _intro.eyebrow || "EAT \xB7 \uBA39\uACE0 \uB180\uC790",
-      title: _intro.title || "\uBA39\uACE0 \uB180\uC790",
-      sub: _intro.sub || "\uD55C\uAD6D\uC758 \uB9DB, \uD55C \uB07C\uC758 \uC778\uBB38\uD559",
-      desc: _intro.desc || "\uC2DD(\u98DF) \u2014 \uC9C0\uC5ED\uC758 \uC2DD\uC7AC\uB8CC\uC640 \uC190\uB9DB\uC744 \uB530\uB77C\uAC00\uB294 \uC5EC\uC815. \uBC45\uAE30\uB178\uC790\uC640 \uD568\uAED8 \uAC80\uC99D\uB41C \uC2DD\uB2F9\uACFC \uC885\uAC00 \uC74C\uC2DD\uC744 \uB9CC\uB0A9\uB2C8\uB2E4.",
-      accent: _intro.accent || "#E8A540",
-      categories: Array.isArray(_intro.categories) && _intro.categories.length > 0 ? _intro.categories : (KIND_FALLBACK[kind] || KIND_FALLBACK.eat).categories
-    };
-    return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("header", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, meta.eyebrow), /* @__PURE__ */ React.createElement("h1", { className: "section-title", style: { display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", null, meta.title), /* @__PURE__ */ React.createElement("span", { className: "ko-serif", style: { fontSize: "0.55em", color: meta.accent, fontStyle: "italic", fontWeight: 400 } }, meta.sub)), /* @__PURE__ */ React.createElement("p", { className: "section-subtitle", style: { maxWidth: 780 } }, meta.desc)), /* @__PURE__ */ React.createElement("div", { className: "card card-gold", style: { padding: "18px 22px", marginBottom: 32, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 240 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 6 } }, "\u884C\u6587 \xB7 \uD589\uBB38"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { margin: 0, fontSize: 13, lineHeight: 1.8 } }, /* @__PURE__ */ React.createElement("strong", { style: { color: "var(--ink)" } }, "\uC758\uC2DD\uC8FC(\u8863\u98DF\u4F4F) + \uD589\uBB38(\u884C\u6587)"), " \u2014 \uC0AC\uB78C\uC774 \uC0AC\uB294 \uB370 \uD544\uC694\uD55C 4 \uAC00\uC9C0 \uC694\uC18C\uAC00 \uD55C \uC5EC\uC815\uC5D0\uC11C \uB9CC\uB098\uB294 \uACF3\uC785\uB2C8\uB2E4. \uBA39\uACE0, \uC790\uACE0, \uC0AC\uACE0, \uADF8\uB9AC\uACE0 \uAE38\uC5D0\uC11C \uAE00\uC744 \uB9CC\uB098\uB294 \uC778\uBB38\uD559 \uC5EC\uD589."))), meta.categories && meta.categories.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 32 } }, meta.categories.map((c) => /* @__PURE__ */ React.createElement("span", { key: c, className: "badge", style: { borderColor: "var(--primary-dim)", color: "var(--primary)" } }, c))), (() => {
-      const items = Array.isArray(_sc[`${kind}Items`]) ? _sc[`${kind}Items`].filter(Boolean) : [];
-      if (items.length === 0) {
-        return /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 32, textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.24em", marginBottom: 10 } }, "RESERVATION \xB7 \uC608\uC57D \uC548\uB0B4"), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 26, marginBottom: 14 } }, "\uACE7 \uB9CC\uB098\uC694"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14, lineHeight: 1.9, maxWidth: 560, margin: "0 auto 22px" } }, "\uD050\uB808\uC774\uC158\xB7\uAC80\uC99D\uC744 \uAC70\uCE5C ", meta.title.replace("\uB180\uC790", "").trim(), " \uBAA9\uB85D\uC774 \uACE7 \uC5F4\uB9BD\uB2C8\uB2E4. \uC5C5\uB370\uC774\uD2B8 \uC54C\uB9BC\uC744 \uBC1B\uACE0 \uC2F6\uC73C\uC2DC\uBA74 \uD68C\uC6D0\uAC00\uC785 \uD6C4 \uC54C\uB9BC \uC124\uC815\uC744 \uCF1C \uC8FC\uC138\uC694."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" } }, !user ? /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: () => go("signup") }, "\uD68C\uC6D0\uAC00\uC785 \u2192") : /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: () => go("community") }, "\uCEE4\uBBA4\uB2C8\uD2F0\uC5D0\uC11C \uD568\uAED8 \uC774\uC57C\uAE30 \u2192"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: () => go("tour") }, "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8 \uB458\uB7EC\uBCF4\uAE30")));
-      }
-      return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 24, marginBottom: 18 } }, meta.title.replace("\uB180\uC790", "").trim()), /* @__PURE__ */ React.createElement("div", { className: "grid grid-3", style: { marginBottom: 48 } }, items.map((it, i) => {
-        const tagList = typeof it.tags === "string" ? it.tags.split(/[,·]/).map((s) => s.trim()).filter(Boolean) : [];
-        const Wrap = it.link ? "a" : "article";
-        const wrapProps = it.link ? { href: it.link, target: "_blank", rel: "noopener noreferrer" } : {};
-        return /* @__PURE__ */ React.createElement(
-          Wrap,
-          {
-            key: it.id || i,
-            className: "card",
-            ...wrapProps,
-            style: { padding: 0, overflow: "hidden", display: "block", textDecoration: "none", color: "inherit", background: "var(--bg)" }
-          },
-          /* @__PURE__ */ React.createElement("div", { style: { aspectRatio: "4/3", background: "var(--bg-2)", overflow: "hidden" } }, it.imageUrl ? /* @__PURE__ */ React.createElement("img", { src: it.imageUrl, alt: it.name || "", style: { width: "100%", height: "100%", objectFit: "cover", display: "block" } }) : CoverPlaceholder ? /* @__PURE__ */ React.createElement(window.CoverPlaceholder, { aspectRatio: "4/3", iconSize: 64 }) : null),
-          /* @__PURE__ */ React.createElement("div", { style: { padding: "18px 20px" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 8, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 6 } }, /* @__PURE__ */ React.createElement("span", null, String(i + 1).padStart(2, "0"), it.region ? ` \xB7 ${it.region}` : ""), it.category && /* @__PURE__ */ React.createElement("span", { style: { color: meta.accent } }, it.category)), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 6 } }, it.name), it.address && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginBottom: 8 } }, it.address), it.desc && /* @__PURE__ */ React.createElement("p", { className: "dim bgnj-multiline", style: { fontSize: 13, lineHeight: 1.6, marginBottom: tagList.length > 0 ? 10 : 0 } }, it.desc), tagList.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 5, flexWrap: "wrap" } }, tagList.slice(0, 4).map((t) => /* @__PURE__ */ React.createElement("span", { key: t, className: "badge", style: { fontSize: 9 } }, t))))
-        );
-      })));
-    })()));
-  };
-  var EatPage = ({ go, user }) => /* @__PURE__ */ React.createElement(PlacePage, { go, user, kind: "eat" });
-  var ShopPage = ({ go, user }) => /* @__PURE__ */ React.createElement(PlacePage, { go, user, kind: "shop" });
-
   // pages/HangyeonPage.jsx
   var hkToday = () => new Date(Date.now() + 9 * 3600 * 1e3).toISOString().slice(0, 10);
   var hkNowHM = () => new Date(Date.now() + 9 * 3600 * 1e3).toISOString().slice(11, 16);
@@ -14391,7 +14394,7 @@
       "interactive": true
     }
   );
-  var VALID_ROUTES = ["home", "home-next", "community", "lectures", "tour", "column", "book", "checkout", "mypage", "admin", "login", "signup", "faq", "terms", "privacy", "eat", "sleep", "shop", "hangyeon", "error"];
+  var VALID_ROUTES = ["home", "home-next", "community", "lectures", "tour", "column", "book", "checkout", "mypage", "admin", "login", "signup", "faq", "terms", "privacy", "sleep", "hangyeon", "error"];
   var pathToRoute = (pathname) => {
     const p = (pathname || "/").replace(/\/+$/, "") || "/";
     if (p === "/") return "home";
@@ -14730,9 +14733,7 @@
       const ROUTE_TITLES = {
         home: tagline,
         "home-next": "\uC2E0\uADDC \uD648 \uD504\uB9AC\uBDF0",
-        eat: "\uBA39\uACE0 \uB180\uC790",
-        sleep: "\uC790\uACE0 \uB180\uC790",
-        shop: "\uC0AC\uACE0 \uB180\uC790",
+        sleep: "\uC790\uACE0 \uB180\uC790 \u2014 \uD55C\uCF20",
         hangyeon: "\uD55C\uCF20 \u2014 \uC219\uC18C \uC608\uC57D",
         tour: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8",
         lectures: "\uAC15\uC5F0",
@@ -14899,18 +14900,10 @@
           const C = HomeNextPage;
           return /* @__PURE__ */ React.createElement(C, { go });
         }
-        case "eat": {
-          const C = EatPage;
-          return /* @__PURE__ */ React.createElement(C, { go, user });
-        }
         // v00.267 — 자고 놀자 = 한켠(직영 숙소) 예약 시스템. sleep 라우트가 한켠 예약 페이지를 직접 렌더.
         case "sleep":
         case "hangyeon": {
           const C = HangyeonPage;
-          return /* @__PURE__ */ React.createElement(C, { go, user });
-        }
-        case "shop": {
-          const C = ShopPage;
           return /* @__PURE__ */ React.createElement(C, { go, user });
         }
         case "community": {

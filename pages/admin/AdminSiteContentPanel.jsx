@@ -299,16 +299,8 @@ const SiteContentAdminPanel = () => {
         { key: 'subtitle',    label: '본문 설명', full: true, multiline: true },
       ]}/>
 
-      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>먹고 놀자 (/eat) 페이지</h3>
-      <SectionForm key={`eatIntro-${tick}`} section="eatIntro" fields={[
-        { key: 'eyebrow', label: '아이브로우', full: true },
-        { key: 'title',   label: '큰 제목 (예: 먹고 놀자)' },
-        { key: 'sub',     label: '제목 우측 작은 부제 (예: 한국의 맛, 한 끼의 인문학)' },
-        { key: 'desc',    label: '본문 설명', full: true, multiline: true },
-        { key: 'accent',  label: '부제 강조 색상 (HEX, 예: #E8A540)' },
-      ]}/>
 
-      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>자고 놀자 (/sleep) 페이지</h3>
+      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>자고 놀자 (/sleep — 한켠) 페이지</h3>
       <SectionForm key={`sleepIntro-${tick}`} section="sleepIntro" fields={[
         { key: 'eyebrow', label: '아이브로우', full: true },
         { key: 'title',   label: '큰 제목' },
@@ -317,14 +309,6 @@ const SiteContentAdminPanel = () => {
         { key: 'accent',  label: '부제 강조 색상 (HEX)' },
       ]}/>
 
-      <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>사고 놀자 (/shop) 페이지</h3>
-      <SectionForm key={`shopIntro-${tick}`} section="shopIntro" fields={[
-        { key: 'eyebrow', label: '아이브로우', full: true },
-        { key: 'title',   label: '큰 제목' },
-        { key: 'sub',     label: '제목 우측 작은 부제' },
-        { key: 'desc',    label: '본문 설명', full: true, multiline: true },
-        { key: 'accent',  label: '부제 강조 색상 (HEX)' },
-      ]}/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>OG 메타 (공유 미리보기)</h3>
       <SectionForm key={`og-${tick}`} section="og" fields={[

@@ -23,7 +23,6 @@ import '../pages/CommunityPage.jsx';
 import '../pages/WangsanamTourPage.jsx';
 import '../pages/ColumnPage.jsx';
 import '../pages/BookCheckoutPage.jsx';
-import '../pages/EatSleepShopPages.jsx';
 import '../pages/HangyeonPage.jsx';
 import '../pages/LecturesPage.jsx';
 import '../pages/LegalFaqPages.jsx';
