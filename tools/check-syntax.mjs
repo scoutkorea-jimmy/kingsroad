@@ -179,6 +179,24 @@ const INFO_RULES = [
     pattern: /aspectRatio[\s\S]{0,80}objectFit\s*:\s*['"]cover['"]/,
     msg: "aspectRatio + objectFit:cover 조합은 이미지 자름 — contain 검토 (v00.260 ImageSlider 사고)",
   },
+  {
+    // v00.289 — 옐로우 면적 5% 룰의 가시화.
+    //
+    // 차단 룰로 만들려 했으나 실측 결과 오탐 100% 라 정보성으로 둔다.
+    // 조사 시점(v00.289) JSX 인라인 배경 옐로우는 7건이고 전부 규칙이 허용하는 용도였다 —
+    // 프로그레스 바 3(AuthAdminPage / UploadOverlay / MediaGallery), CTA 버튼 2(ErrorPages / boot),
+    // 로고 마크 1(ErrorPages), 알림 배지 dot 1(Shell). 규칙이 허용하는 "CTA·focus·로고·active dot" 그대로다.
+    //
+    // 정규식은 '면적'을 볼 수 없다. 버튼의 옐로우 배경(정당)과 섹션의 옐로우 배경(위반)이
+    // 소스에선 똑같이 생겼다. 그래서 판단은 사람/리뷰가 하고, 룰은 개수만 세어 눈에 띄게 한다.
+    // 이 숫자가 눈에 띄게 늘면 그때 실제로 면적을 깔고 있는지 확인할 것.
+    //
+    // 진짜 위반이었던 히어로 제목 옐로우(둘째 줄 전체)는 background 가 아니라 text color 라
+    // 애초에 이 패턴으로 잡히지도 않았다 — v00.289 에서 --secondary 로 교체 완료.
+    name: "brand_yellow_surface",
+    pattern: /background(?:Color)?\s*:\s*['"`]?\s*(?:var\(--primary\)|#[Ff]5[Dd]548)/,
+    msg: "옐로우 배경 사용 — CTA/focus/로고/active dot 외의 면적이면 위반 (rules/20-design.md §8)",
+  },
 ];
 
 // 파일 라인 수 limit — 정보성. 큰 파일은 분할 권장.
