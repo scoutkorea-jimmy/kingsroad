@@ -2930,3 +2930,64 @@ body.cookie-pending .help-panel { display: none !important; }
   .home-feed-row { grid-template-columns: 1fr auto; gap: var(--s3); }
   .home-feed-date { grid-column: 1 / -1; }
 }
+
+/* ── 반전 블록 일정 칸 — 포스터 동반 (v00.293.002) ──
+   포스터가 있으면 좌측에 세워 붙이고, 없으면 텍스트만 남는다(빈 액자 금지). */
+.home-split-half--event { display: flex; gap: var(--s5); align-items: flex-start; }
+.home-split-poster {
+  flex: 0 0 132px;
+  aspect-ratio: 3 / 4;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-radius: var(--radius);
+}
+.home-split-eventtext { flex: 1; min-width: 0; }
+.home-split-when {
+  font-size: 10.5px; letter-spacing: 0.1em;
+  color: rgba(245,243,239,.62); margin-bottom: var(--s3);
+}
+@media (max-width: 900px) {
+  .home-split-half--event { gap: var(--s4); }
+  .home-split-poster { flex-basis: 96px; }
+}
+@media (max-width: 480px) {
+  .home-split-half--event { flex-direction: column; }
+  .home-split-poster { flex-basis: auto; width: 132px; }
+}
+
+/* ── 책 격자 (v00.293.002) — 캐러셀 폐기 ── */
+.home-books { padding: var(--s9) 0; background: var(--bg-2); }
+.home-book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--s6) var(--s5);
+  margin-top: var(--s6);
+}
+.home-book { cursor: pointer; }
+.home-book-cover {
+  aspect-ratio: 3 / 4;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-radius: var(--radius);
+  margin-bottom: var(--s4);
+  transition: opacity .2s;
+}
+.home-book:hover .home-book-cover { opacity: .82; }
+.home-book-cover--none {
+  background: var(--bg-3);
+  display: grid; place-items: center;
+}
+.home-book-cover--none span { font-size: 9.5px; letter-spacing: .18em; color: var(--ink-4); }
+.home-book-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3); font-weight: 400; line-height: 1.45;
+  margin: 0 0 var(--s1); color: var(--ink);
+}
+.home-book-sub { font-size: var(--fs-xs); color: var(--ink-3); line-height: 1.6; margin-bottom: var(--s2); }
+.home-book-price { font-size: var(--fs-sm); color: var(--ink-2); }
+@media (max-width: 900px) {
+  .home-books { padding: var(--s7) 0; }
+  .home-book-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s5) var(--s4); }
+}

@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.293.000",
+    version: "00.293.001",
     build: "2026.07.29",
     channel: "preview"
   };
@@ -6949,6 +6949,31 @@
     const cut = lastSpace > max * 0.6 ? slice.slice(0, lastSpace) : slice;
     return cut + "\u2026";
   };
+  var clickable = (onClick, label) => ({
+    role: "button",
+    tabIndex: 0,
+    "aria-label": label,
+    onClick,
+    onKeyDown: (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onClick();
+      }
+    },
+    style: { cursor: "pointer" }
+  });
+  var _fmtEventDate = (x) => {
+    var _a;
+    const t = _eventTs(x);
+    if (isNaN(t)) return "";
+    try {
+      if ((_a = window.BGNJ_FMT) == null ? void 0 : _a.kstFriendly) return window.BGNJ_FMT.kstFriendly(new Date(t).toISOString());
+    } catch (e) {
+    }
+    const d = new Date(t);
+    const p2 = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())}`;
+  };
   var _eventTs = (x) => {
     if (!x) return NaN;
     if (x.startsAt) {
@@ -7008,7 +7033,7 @@
     bookAuthorSuffix: "\uC9C0\uC74C"
   };
   var getHomeText = (sc) => ({ ...HOME_TEXT_DEFAULT, ...sc && typeof sc.homeText === "object" ? sc.homeText : {} });
-  var BookCarouselSection = ({ go, dataTick, text }) => {
+  var BookGridSection = ({ go, dataTick, text }) => {
     const _arr2 = (fn) => {
       try {
         const v = fn();
@@ -7035,164 +7060,45 @@
         return ((_a = a.order) != null ? _a : 0) - ((_b = b.order) != null ? _b : 0);
       });
     }, [dataTick, bookTick]);
-    const [idx, setIdx] = React.useState(0);
-    const [paused, setPaused] = React.useState(false);
-    React.useEffect(() => {
-      if (books.length > 0 && idx >= books.length) setIdx(0);
-    }, [books.length, idx]);
-    const wrap = (n) => books.length === 0 ? 0 : (n + books.length) % books.length;
-    const goPrev = () => setIdx((i) => wrap(i - 1));
-    const goNext = () => setIdx((i) => wrap(i + 1));
-    React.useEffect(() => {
-      if (books.length < 2 || paused) return;
-      const t = setTimeout(() => setIdx((i) => wrap(i + 1)), 7e3);
-      return () => clearTimeout(t);
-    }, [idx, books.length, paused]);
     if (books.length === 0) return null;
-    const showChrome = books.length > 1;
-    const renderBookCard = (b) => {
-      var _a, _b, _c, _d, _e, _f, _g, _h;
-      const hasPriceKR = Number(b.priceKR) > 0;
-      const hasPriceEN = Number(b.priceEN) > 0;
-      const yr = b.publishedAt ? new Date(b.publishedAt).getFullYear() : (/* @__PURE__ */ new Date()).getFullYear();
-      const homeIntros = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).bookHomeIntros || {};
-      const homeIntro = homeIntros[b.id] || homeIntros[String(b.id)] || "";
-      const introText = homeIntro || b.desc || "";
-      return /* @__PURE__ */ React.createElement("div", { className: "cta-grid", style: {
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 80,
-        alignItems: "center"
-      } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow" }, text.bookEyebrowPrefix, " \xB7 ", yr), /* @__PURE__ */ React.createElement("h2", { style: {
-        fontFamily: "var(--font-serif)",
-        fontSize: "clamp(36px, 4vw, 52px)",
-        fontWeight: 600,
-        lineHeight: 1.1,
-        marginBottom: b.subtitle ? 8 : 16
-      } }, "\u300E", b.title, "\u300F"), b.subtitle && /* @__PURE__ */ React.createElement("p", { style: {
-        fontFamily: "var(--font-serif)",
-        fontSize: 18,
-        fontStyle: "italic",
-        color: "var(--ink-2)",
-        marginBottom: 20,
-        lineHeight: 1.5
-      } }, b.subtitle), introText && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 15, lineHeight: 1.85, color: "var(--ink-2)", marginBottom: 28, whiteSpace: "pre-wrap", maxWidth: 560 } }, introText), (hasPriceKR || hasPriceEN) && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 20, marginBottom: 32, alignItems: "flex-end" } }, hasPriceKR && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, text.bookKrLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 22, marginTop: 4, color: "var(--ink)", fontWeight: 700 } }, (_e = (_d = (_c = window.BGNJ_FMT) == null ? void 0 : _c.won) == null ? void 0 : _d.call(_c, b.priceKR)) != null ? _e : "")), hasPriceKR && hasPriceEN && /* @__PURE__ */ React.createElement("div", { style: { width: 1, background: "var(--line-2)", alignSelf: "stretch" } }), hasPriceEN && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", color: "var(--ink-3)" } }, text.bookEnLabel), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 22, marginTop: 4, color: "var(--ink)", fontWeight: 700 } }, (_h = (_g = (_f = window.BGNJ_FMT) == null ? void 0 : _f.won) == null ? void 0 : _g.call(_f, b.priceEN)) != null ? _h : ""))), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => go("book") }, text.bookBuyCta)), /* @__PURE__ */ React.createElement("div", { style: {
-        aspectRatio: "3/4",
-        maxWidth: 280,
-        margin: "0 auto",
-        background: "var(--bg)",
-        border: "1px solid var(--line-2)",
-        display: "grid",
-        placeItems: "center",
-        overflow: "hidden"
-      } }, b.coverDataUri ? /* @__PURE__ */ React.createElement(
-        "img",
-        {
-          src: b.coverDataUri,
-          alt: `${b.title} \uD45C\uC9C0`,
-          style: { width: "100%", height: "100%", objectFit: "contain", display: "block" }
-        }
-      ) : /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: "0 24px" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "var(--font-serif)", fontSize: 28, color: "var(--ink)", marginBottom: 10, fontWeight: 600 } }, b.title), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600, color: "var(--ink-3)", letterSpacing: "0.2em" } }, b.author || "\uBC45\uAE30\uB178\uC790", " ", text.bookAuthorSuffix))));
+    const won = (n) => {
+      var _a, _b, _c;
+      try {
+        return (_c = (_b = (_a = window.BGNJ_FMT) == null ? void 0 : _a.won) == null ? void 0 : _b.call(_a, n)) != null ? _c : `${Number(n || 0).toLocaleString("ko-KR")}\uC6D0`;
+      } catch (e) {
+        return `${n}\uC6D0`;
+      }
     };
-    return /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCC45 CTA" }, /* @__PURE__ */ React.createElement("section", { className: "section section--anchor" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        onMouseEnter: () => setPaused(true),
-        onMouseLeave: () => setPaused(false),
-        style: { position: "relative" }
-      },
-      /* @__PURE__ */ React.createElement("div", { style: { position: "relative" } }, books.map((b, i) => {
-        const active = i === idx;
-        return /* @__PURE__ */ React.createElement(
-          "div",
-          {
-            key: b.id || i,
-            "aria-hidden": active ? void 0 : "true",
-            style: {
-              position: i === 0 ? "relative" : "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              opacity: active ? 1 : 0,
-              transform: active ? "translateX(0)" : i < idx ? "translateX(-24px)" : "translateX(24px)",
-              transition: "opacity .55s ease, transform .55s ease",
-              pointerEvents: active ? "auto" : "none"
-            }
-          },
-          renderBookCard(b)
-        );
-      })),
-      showChrome && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          "aria-label": "\uC774\uC804 \uCC45",
-          onClick: goPrev,
-          style: {
-            position: "absolute",
-            left: -8,
-            top: "50%",
-            transform: "translate(-100%, -50%)",
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            border: "1px solid var(--line)",
-            background: "var(--bg)",
-            color: "var(--ink)",
-            cursor: "pointer",
-            display: "grid",
-            placeItems: "center",
-            fontSize: 22,
-            fontWeight: 600,
-            lineHeight: 1
-          }
-        },
-        "\u2039"
-      ), /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          type: "button",
-          "aria-label": "\uB2E4\uC74C \uCC45",
-          onClick: goNext,
-          style: {
-            position: "absolute",
-            right: -8,
-            top: "50%",
-            transform: "translate(100%, -50%)",
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            border: "1px solid var(--line)",
-            background: "var(--bg)",
-            color: "var(--ink)",
-            cursor: "pointer",
-            display: "grid",
-            placeItems: "center",
-            fontSize: 22,
-            fontWeight: 600,
-            lineHeight: 1
-          }
-        },
-        "\u203A"
-      ))
-    ), showChrome && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center", gap: 8, marginTop: 18 } }, books.map((b, i) => /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCC45" }, /* @__PURE__ */ React.createElement("section", { className: "home-books" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "home-feed-head" }, /* @__PURE__ */ React.createElement("div", { className: "home-feed-label mono" }, text.bookEyebrow || "\uBC45\uAE30\uB178\uC790 \uCD9C\uD310"), /* @__PURE__ */ React.createElement(
       "button",
       {
-        key: b.id || i,
         type: "button",
-        "aria-label": `${i + 1}\uBC88\uC9F8 \uCC45\uC73C\uB85C \uC774\uB3D9`,
-        onClick: () => setIdx(i),
-        style: {
-          width: i === idx ? 24 : 8,
-          height: 8,
-          padding: 0,
-          borderRadius: 4,
-          border: "none",
-          cursor: "pointer",
-          background: i === idx ? "var(--primary)" : "var(--line-2)",
-          transition: "all 0.2s"
+        className: "btn-ghost mono",
+        style: { fontSize: 11 },
+        onClick: () => go("book")
+      },
+      "\uC804\uCCB4 ",
+      books.length,
+      "\uAD8C \u2192"
+    )), /* @__PURE__ */ React.createElement("div", { className: "home-book-grid" }, books.map((b) => /* @__PURE__ */ React.createElement(
+      "article",
+      {
+        key: b.id,
+        className: "home-book",
+        ...clickable(() => go("book"), `\uCC45: ${b.title}`)
+      },
+      b.coverDataUri ? /* @__PURE__ */ React.createElement(
+        "div",
+        {
+          className: "home-book-cover",
+          role: "img",
+          "aria-label": `${b.title} \uD45C\uC9C0`,
+          style: { backgroundImage: `url(${b.coverDataUri})` }
         }
-      }
+      ) : /* @__PURE__ */ React.createElement("div", { className: "home-book-cover home-book-cover--none" }, /* @__PURE__ */ React.createElement("span", { className: "mono" }, "NO COVER")),
+      /* @__PURE__ */ React.createElement("h4", { className: "home-book-title" }, b.title),
+      b.subtitle && /* @__PURE__ */ React.createElement("div", { className: "home-book-sub" }, b.subtitle),
+      b.priceKR > 0 && /* @__PURE__ */ React.createElement("div", { className: "home-book-price mono" }, won(b.priceKR))
     ))))));
   };
   var HomePage = ({ go }) => {
@@ -7328,6 +7234,23 @@
       return all.filter((l) => _eventTs(l) < _cutoff).sort((a, b) => _eventTs(b) - _eventTs(a)).slice(0, 3);
     }, [lecturesTick]);
     const lecturesArePast = lectures.length > 0 && lectures.every((l) => _eventTs(l) < _cutoff);
+    const primaryImage = React.useCallback((kind, id) => {
+      var _a, _b;
+      try {
+        const pages = kind === "tour" ? sc.tourPages : sc.lecturePages;
+        const imgs = (_a = pages == null ? void 0 : pages[id]) == null ? void 0 : _a.images;
+        if (!Array.isArray(imgs) || imgs.length === 0) return "";
+        return ((_b = imgs.find((x) => x && x.isPrimary) || imgs[0]) == null ? void 0 : _b.url) || "";
+      } catch (e) {
+        return "";
+      }
+    }, [sc]);
+    const featuredEvent = React.useMemo(() => {
+      const t = tours[0], l = lectures[0];
+      if (t) return { kind: "tour", item: t, isPast: toursArePast, label: "\uB2F5\uC0AC", route: "tour", pendKey: "bgnj_pending_tour_id" };
+      if (l) return { kind: "lecture", item: l, isPast: lecturesArePast, label: "\uAC15\uC5F0", route: "lectures", pendKey: "bgnj_pending_lecture_id" };
+      return null;
+    }, [tours, lectures, toursArePast, lecturesArePast]);
     const recentEntries = React.useMemo(() => {
       const fmt = (t) => {
         if (isNaN(t)) return "";
@@ -7403,19 +7326,6 @@
       _stat(1, toursTotal > 0 ? `${toursTotal}\uAC1C` : ""),
       _stat(2, allPostsCount > 0 ? `${allPostsCount}+` : "")
     ].filter(Boolean);
-    const clickable = (onClick, label) => ({
-      role: "button",
-      tabIndex: 0,
-      "aria-label": label,
-      onClick,
-      onKeyDown: (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      },
-      style: { cursor: "pointer" }
-    });
     const fontScale = (() => {
       var _a;
       const v = Number((_a = homeText.fontScale) != null ? _a : 1);
@@ -7430,7 +7340,7 @@
         "aria-label": hero.photoWideAlt || "\uBC45\uAE30\uB178\uC790 \uB2F5\uC0AC \uD604\uC7A5",
         style: { backgroundImage: `url(${hero.photoWideUrl})` }
       }
-    ))), (featuredColumn || tours[0]) && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uBC18\uC804 \uBE14\uB85D" }, /* @__PURE__ */ React.createElement("section", { className: "home-split" }, featuredColumn && /* @__PURE__ */ React.createElement(
+    ))), (featuredColumn || featuredEvent) && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uBC18\uC804 \uBE14\uB85D" }, /* @__PURE__ */ React.createElement("section", { className: "home-split" }, featuredColumn && /* @__PURE__ */ React.createElement(
       "div",
       {
         className: "home-split-half",
@@ -7442,17 +7352,35 @@
       /* @__PURE__ */ React.createElement("h3", { className: "home-split-title" }, featuredColumn.title),
       featuredColumn.excerpt && /* @__PURE__ */ React.createElement("p", { className: "home-split-body" }, truncatePreview(featuredColumn.excerpt, 130)),
       /* @__PURE__ */ React.createElement("span", { className: "home-split-link mono" }, "\uC77D\uAE30 \u2192")
-    ), tours[0] && /* @__PURE__ */ React.createElement(
-      "div",
-      {
-        className: "home-split-half home-split-half--ink",
-        ...clickable(() => go("tour"), `\uB2F5\uC0AC: ${tours[0].title}`)
-      },
-      /* @__PURE__ */ React.createElement("div", { className: "home-split-eb mono" }, toursArePast ? "\uC9C0\uB09C \uB2F5\uC0AC" : "\uB2E4\uC74C \uB2F5\uC0AC"),
-      /* @__PURE__ */ React.createElement("h3", { className: "home-split-title" }, tours[0].title),
-      /* @__PURE__ */ React.createElement("p", { className: "home-split-body" }, tours[0].desc ? truncatePreview(tours[0].desc, 120) : tours[0].next || ""),
-      /* @__PURE__ */ React.createElement("span", { className: "home-split-link mono" }, "\uB2F5\uC0AC \uAE30\uB85D \uBCF4\uAE30 \u2192")
-    ))), recentEntries.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCD5C\uADFC \uAE30\uB85D" }, /* @__PURE__ */ React.createElement("section", { className: "home-feed" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "home-feed-head" }, /* @__PURE__ */ React.createElement("div", { className: "home-feed-label mono" }, "\uCD5C\uADFC \uAE30\uB85D"), /* @__PURE__ */ React.createElement(
+    ), featuredEvent && (() => {
+      const { item, isPast, label, route, pendKey } = featuredEvent;
+      const poster = primaryImage(featuredEvent.kind, item.id);
+      const title = item.topic || item.title;
+      const when = item.next || _fmtEventDate(item);
+      return /* @__PURE__ */ React.createElement(
+        "div",
+        {
+          className: "home-split-half home-split-half--ink home-split-half--event",
+          ...clickable(() => {
+            try {
+              sessionStorage.setItem(pendKey, String(item.id));
+            } catch (e) {
+            }
+            go(route);
+          }, `${label}: ${title}`)
+        },
+        poster && /* @__PURE__ */ React.createElement(
+          "div",
+          {
+            className: "home-split-poster",
+            role: "img",
+            "aria-label": `${title} \uD3EC\uC2A4\uD130`,
+            style: { backgroundImage: `url(${poster})` }
+          }
+        ),
+        /* @__PURE__ */ React.createElement("div", { className: "home-split-eventtext" }, /* @__PURE__ */ React.createElement("div", { className: "home-split-eb mono" }, isPast ? `\uC9C0\uB09C ${label}\uC785\uB2C8\uB2E4` : `\uB2E4\uC74C ${label}`), /* @__PURE__ */ React.createElement("h3", { className: "home-split-title" }, title), when && /* @__PURE__ */ React.createElement("div", { className: "home-split-when mono" }, when), /* @__PURE__ */ React.createElement("p", { className: "home-split-body" }, item.desc ? truncatePreview(item.desc, 110) : item.venue || ""), /* @__PURE__ */ React.createElement("span", { className: "home-split-link mono" }, isPast ? `\uC9C0\uB09C ${label} \uBCF4\uAE30` : `${label} \uC790\uC138\uD788 \uBCF4\uAE30`, " \u2192"))
+      );
+    })())), recentEntries.length > 0 && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uCD5C\uADFC \uAE30\uB85D" }, /* @__PURE__ */ React.createElement("section", { className: "home-feed" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { className: "home-feed-head" }, /* @__PURE__ */ React.createElement("div", { className: "home-feed-label mono" }, "\uCD5C\uADFC \uAE30\uB85D"), /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -7539,7 +7467,7 @@
         } }, r.subtitle),
         r.desc && /* @__PURE__ */ React.createElement("p", { style: { fontSize: isFeature ? 14 : 13, lineHeight: 1.7, color: "var(--ink-2)" } }, r.desc)
       );
-    }))))), /* @__PURE__ */ React.createElement(BookCarouselSection, { go, dataTick, text: homeText }));
+    }))))), /* @__PURE__ */ React.createElement(BookGridSection, { go, dataTick, text: homeText }));
   };
 
   // pages/HomeNextPage.jsx

@@ -132,6 +132,26 @@ const truncatePreview = (text, max = 110) => {
 // v00.274 — 이벤트(강연/투어) 시작 시각 해석. starts_at(ISO) 우선, 없으면 next 텍스트
 //   ("2026.05.15 10:00" 같은 사람이 입력한 일정) 를 파싱. 둘 다 없으면 NaN.
 //   관리자가 starts_at 구조화 입력 없이 next 텍스트만 넣은 데이터에서도 예정/지난 판정이 동작.
+// div 를 버튼처럼 쓸 때의 접근성 props. 순수 함수라 컴포넌트 밖에 둔다
+// (v00.293.002 — BookGridSection 이 모듈 레벨이라 HomePage 스코프 안에 있으면 참조 불가였다).
+const clickable = (onClick, label) => ({
+  role: 'button', tabIndex: 0, 'aria-label': label, onClick,
+  onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } },
+  style: { cursor: 'pointer' },
+});
+
+// v00.293.002 — 일정 날짜 표시용. _eventTs 로 해석한 뒤 KST 포맷.
+const _fmtEventDate = (x) => {
+  const t = _eventTs(x);
+  if (isNaN(t)) return '';
+  try {
+    if (window.BGNJ_FMT?.kstFriendly) return window.BGNJ_FMT.kstFriendly(new Date(t).toISOString());
+  } catch {}
+  const d = new Date(t);
+  const p2 = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())}`;
+};
+
 const _eventTs = (x) => {
   if (!x) return NaN;
   if (x.startsAt) { const t = Date.parse(x.startsAt); if (!isNaN(t)) return t; }
@@ -278,9 +298,13 @@ const HeroProgramCards = ({ go, dataTick, text }) => {
 
 // v00.152 — 홈 책 CTA 다권 카루셀. v00.151 단일-책 IIFE 를 컴포넌트화 + 좌우 무한 wrap + autoplay.
 // 데이터 소스: BGNJ_BOOKS.list({status:'published'}). 정렬: primary 우선 → order. 0권이면 섹션 hide.
-const BookCarouselSection = ({ go, dataTick, text }) => {
+// v00.293.002 — 책 섹션: 캐러셀 → 격자.
+// 사용자 지적: 중앙이 텅 비고, 화살표가 화면 가장자리에 붙어 컨트롤로 안 읽히고,
+// 인디케이터가 하단에 떠 있고, 6권이 있는데 한 번에 1권씩만 보였다.
+// D안은 격자와 목록의 언어인데 이 섹션만 캐러셀이라 리듬이 깨졌다.
+// 자동재생·화살표·인디케이터를 전부 걷어내고 전권을 한 화면에 편다.
+const BookGridSection = ({ go, dataTick, text }) => {
   const _arr = (fn) => { try { const v = fn(); return Array.isArray(v) ? v : []; } catch { return []; } };
-  // admin 의 책 변경을 새로고침 없이 즉시 반영. dataTick + bgnj-books-refresh 둘 다 청취.
   const [bookTick, setBookTick] = React.useState(0);
   React.useEffect(() => {
     const onR = () => setBookTick((v) => v + 1);
@@ -296,171 +320,43 @@ const BookCarouselSection = ({ go, dataTick, text }) => {
     });
   }, [dataTick, bookTick]);
 
-  const [idx, setIdx] = React.useState(0);
-  const [paused, setPaused] = React.useState(false);
-  // 책 목록 길이 변동 시 idx 재정렬.
-  React.useEffect(() => {
-    if (books.length > 0 && idx >= books.length) setIdx(0);
-  }, [books.length, idx]);
-
-  const wrap = (n) => books.length === 0 ? 0 : (n + books.length) % books.length;
-  const goPrev = () => setIdx((i) => wrap(i - 1));
-  const goNext = () => setIdx((i) => wrap(i + 1));
-
-  // autoplay 7s — 2권 이상 + hover 정지 아닐 때만.
-  React.useEffect(() => {
-    if (books.length < 2 || paused) return;
-    const t = setTimeout(() => setIdx((i) => wrap(i + 1)), 7000);
-    return () => clearTimeout(t);
-  }, [idx, books.length, paused]);
-
   if (books.length === 0) return null;
-  const showChrome = books.length > 1;
 
-  // v00.162 — 단일 책 카드 렌더 (slide layer 안에서 호출).
-  // v00.172 — 홈 CTA 본문은 site_content_kv.bookHomeIntros[id] 우선, 없으면 book.desc 폴백.
-  const renderBookCard = (b) => {
-    const hasPriceKR = Number(b.priceKR) > 0;
-    const hasPriceEN = Number(b.priceEN) > 0;
-    const yr = b.publishedAt ? new Date(b.publishedAt).getFullYear() : new Date().getFullYear();
-    const homeIntros = (window.BGNJ_SITE_CONTENT?.get?.() || {}).bookHomeIntros || {};
-    const homeIntro = homeIntros[b.id] || homeIntros[String(b.id)] || '';
-    const introText = homeIntro || b.desc || '';
-    return (
-      <div className="cta-grid" style={{
-        display:'grid', gridTemplateColumns:'1fr 1fr', gap:80, alignItems:'center',
-      }}>
-        <div>
-          <div className="section-eyebrow">{text.bookEyebrowPrefix} · {yr}</div>
-          <h2 style={{
-            fontFamily:'var(--font-serif)', fontSize:'clamp(36px, 4vw, 52px)',
-            fontWeight:600, lineHeight:1.1, marginBottom: b.subtitle ? 8 : 16,
-          }}>
-            『{b.title}』
-          </h2>
-          {/* v00.162 — 한 줄 소개 (subtitle). 사용자 요청 '한줄소개가 보이게'. */}
-          {b.subtitle && (
-            <p style={{
-              fontFamily:'var(--font-serif)', fontSize:18, fontStyle:'italic',
-              color:'var(--ink-2)', marginBottom:20, lineHeight:1.5,
-            }}>
-              {b.subtitle}
-            </p>
-          )}
-          {introText && (
-            <p style={{fontSize:15, lineHeight:1.85, color:'var(--ink-2)', marginBottom:28, whiteSpace:'pre-wrap', maxWidth:560}}>
-              {introText}
-            </p>
-          )}
-          {(hasPriceKR || hasPriceEN) && (
-            <div style={{display:'flex', gap:20, marginBottom:32, alignItems:'flex-end'}}>
-              {hasPriceKR && (
-                <div>
-                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{text.bookKrLabel}</div>
-                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{window.BGNJ_FMT?.won?.(b.priceKR) ?? ''}</div>
-                </div>
-              )}
-              {hasPriceKR && hasPriceEN && <div style={{width:1, background:'var(--line-2)', alignSelf:'stretch'}}/>}
-              {hasPriceEN && (
-                <div>
-                  <div className="mono" style={{fontSize:10, fontWeight:600, letterSpacing:'0.18em', color:'var(--ink-3)'}}>{text.bookEnLabel}</div>
-                  <div className="ko-serif" style={{fontSize:22, marginTop:4, color:'var(--ink)', fontWeight:700}}>{window.BGNJ_FMT?.won?.(b.priceEN) ?? ''}</div>
-                </div>
-              )}
-            </div>
-          )}
-          <button className="btn btn-gold" onClick={() => go('book')}>{text.bookBuyCta}</button>
-        </div>
-        <div style={{
-          aspectRatio:'3/4', maxWidth:280, margin:'0 auto',
-          background:'var(--bg)', border:'1px solid var(--line-2)',
-          display:'grid', placeItems:'center', overflow:'hidden',
-        }}>
-          {b.coverDataUri ? (
-            <img src={b.coverDataUri} alt={`${b.title} 표지`}
-              /* v00.262.004 — G2 cover→contain. 정사각/와이드 표지가 3:4 box 에서 잘리던 사고. */
-              style={{width:'100%', height:'100%', objectFit:'contain', display:'block'}}/>
-          ) : (
-            <div style={{textAlign:'center', padding:'0 24px'}}>
-              <div style={{fontFamily:'var(--font-serif)', fontSize:28, color:'var(--ink)', marginBottom:10, fontWeight:600}}>{b.title}</div>
-              <div style={{fontFamily:'var(--font-mono)', fontSize:9, fontWeight:600, color:'var(--ink-3)', letterSpacing:'0.2em'}}>{b.author || '뱅기노자'} {text.bookAuthorSuffix}</div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+  const won = (n) => {
+    try { return window.BGNJ_FMT?.won?.(n) ?? `${Number(n || 0).toLocaleString('ko-KR')}원`; }
+    catch { return `${n}원`; }
   };
 
   return (
-    <HomeSectionBoundary label="책 CTA"><section className="section section--anchor">
-      <div className="container">
-        <div
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-          style={{position:'relative'}}>
-          {/* v00.162 — 슬라이드 레이어. 모든 books 를 layered 로 렌더, active 만 opacity 1 + translateX 0.
-              jump 없는 부드러운 crossfade-slide. 첫 책만 relative 로 wrapper 높이 보존. */}
-          <div style={{position:'relative'}}>
-            {books.map((b, i) => {
-              const active = i === idx;
-              return (
-                <div key={b.id || i}
-                  aria-hidden={active ? undefined : 'true'}
-                  style={{
-                    position: i === 0 ? 'relative' : 'absolute',
-                    top: 0, left: 0, right: 0,
-                    opacity: active ? 1 : 0,
-                    transform: active
-                      ? 'translateX(0)'
-                      : (i < idx ? 'translateX(-24px)' : 'translateX(24px)'),
-                    transition: 'opacity .55s ease, transform .55s ease',
-                    pointerEvents: active ? 'auto' : 'none',
-                  }}>
-                  {renderBookCard(b)}
-                </div>
-              );
-            })}
+    <HomeSectionBoundary label="책">
+      <section className="home-books">
+        <div className="container">
+          <div className="home-feed-head">
+            <div className="home-feed-label mono">{text.bookEyebrow || '뱅기노자 출판'}</div>
+            <button type="button" className="btn-ghost mono" style={{fontSize:11}}
+              onClick={() => go('book')}>전체 {books.length}권 →</button>
           </div>
-
-          {showChrome && (
-            <>
-              <button type="button" aria-label="이전 책" onClick={goPrev}
-                style={{
-                  position:'absolute', left:-8, top:'50%', transform:'translate(-100%, -50%)',
-                  width:44, height:44, borderRadius:'50%', border:'1px solid var(--line)',
-                  background:'var(--bg)', color:'var(--ink)', cursor:'pointer',
-                  display:'grid', placeItems:'center', fontSize:22, fontWeight:600, lineHeight:1,
-                }}>‹</button>
-              <button type="button" aria-label="다음 책" onClick={goNext}
-                style={{
-                  position:'absolute', right:-8, top:'50%', transform:'translate(100%, -50%)',
-                  width:44, height:44, borderRadius:'50%', border:'1px solid var(--line)',
-                  background:'var(--bg)', color:'var(--ink)', cursor:'pointer',
-                  display:'grid', placeItems:'center', fontSize:22, fontWeight:600, lineHeight:1,
-                }}>›</button>
-            </>
-          )}
-        </div>
-
-        {showChrome && (
-          <div style={{display:'flex', justifyContent:'center', gap:8, marginTop:18}}>
-            {books.map((b, i) => (
-              <button key={b.id || i} type="button" aria-label={`${i+1}번째 책으로 이동`}
-                onClick={() => setIdx(i)}
-                style={{
-                  width: i === idx ? 24 : 8, height: 8, padding: 0,
-                  borderRadius: 4, border: 'none', cursor: 'pointer',
-                  background: i === idx ? 'var(--primary)' : 'var(--line-2)',
-                  transition: 'all 0.2s',
-                }}/>
+          <div className="home-book-grid">
+            {books.map((b) => (
+              <article key={b.id} className="home-book"
+                {...clickable(() => go('book'), `책: ${b.title}`)}>
+                {/* v00.293.002 — 필드명 주의: 헬퍼가 cover_key → coverDataUri, price_kr → priceKR 로 매핑한다.
+                    priceKr(소문자 r) 이 아니라 priceKR 이다. */}
+                {b.coverDataUri
+                  ? <div className="home-book-cover" role="img" aria-label={`${b.title} 표지`}
+                      style={{backgroundImage:`url(${b.coverDataUri})`}}/>
+                  : <div className="home-book-cover home-book-cover--none"><span className="mono">NO COVER</span></div>}
+                <h4 className="home-book-title">{b.title}</h4>
+                {b.subtitle && <div className="home-book-sub">{b.subtitle}</div>}
+                {b.priceKR > 0 && <div className="home-book-price mono">{won(b.priceKR)}</div>}
+              </article>
             ))}
           </div>
-        )}
-      </div>
-    </section></HomeSectionBoundary>
+        </div>
+      </section>
+    </HomeSectionBoundary>
   );
 };
-
 const HomePage = ({ go }) => {
   const [scTick, setScTick] = React.useState(0);
   // v00.198 — 사용자 우선순위 '속도감 ↑ + 회귀 0'.
@@ -604,6 +500,27 @@ const HomePage = ({ go }) => {
   // v00.293 — 홈 통합 피드. 칼럼·답사·강연을 날짜순 한 줄로 섞는다.
   // 이전엔 세 섹션이 따로 있어 같은 리듬(아이브로우→제목→전체보기→카드)이 세 번 반복됐다.
   // 각 항목은 자기 페이지로 가고, 상세가 있는 것은 sessionStorage 펜딩 키로 바로 연다.
+  // v00.293.002 — 일정 대표 이미지(포스터). 사용자 요청: "최신 일정이 없으면 지난 일정입니다 하고
+  // 가장 최신 일정의 포스터를 띄워줘".
+  // 포스터는 D1 이 아니라 site_content_kv 의 lecturePages / tourPages 에 있다 —
+  // { [id]: { images: [{ url, credit, isPrimary }] } }. LecturesPage 가 쓰는 것과 같은 경로.
+  const primaryImage = React.useCallback((kind, id) => {
+    try {
+      const pages = kind === 'tour' ? sc.tourPages : sc.lecturePages;
+      const imgs = pages?.[id]?.images;
+      if (!Array.isArray(imgs) || imgs.length === 0) return '';
+      return (imgs.find((x) => x && x.isPrimary) || imgs[0])?.url || '';
+    } catch { return ''; }
+  }, [sc]);
+
+  // 홈 일정 카드에 쓸 대상 — 답사 우선, 없으면 강연.
+  const featuredEvent = React.useMemo(() => {
+    const t = tours[0], l = lectures[0];
+    if (t) return { kind: 'tour', item: t, isPast: toursArePast, label: '답사', route: 'tour', pendKey: 'bgnj_pending_tour_id' };
+    if (l) return { kind: 'lecture', item: l, isPast: lecturesArePast, label: '강연', route: 'lectures', pendKey: 'bgnj_pending_lecture_id' };
+    return null;
+  }, [tours, lectures, toursArePast, lecturesArePast]);
+
   const recentEntries = React.useMemo(() => {
     const fmt = (t) => {
       if (isNaN(t)) return '';
@@ -665,12 +582,6 @@ const HomePage = ({ go }) => {
     _stat(1, toursTotal > 0 ? `${toursTotal}개` : ''),
     _stat(2, allPostsCount > 0 ? `${allPostsCount}+` : ''),
   ].filter(Boolean);
-
-  const clickable = (onClick, label) => ({
-    role:'button', tabIndex:0, 'aria-label':label, onClick,
-    onKeyDown:(e) => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); onClick(); } },
-    style:{cursor:'pointer'},
-  });
 
   // v00.199 — 사용자 요청 '홈 설정 트윅으로 글자 크기 소폭 조절'. fontScale 0.85~1.20 범위로 제한 (안전 가드).
   const fontScale = (() => {
@@ -754,7 +665,7 @@ const HomePage = ({ go }) => {
           좌: 최신 칼럼 (5편 자동 순환 — featuredIdx 로직 그대로 사용)
           우: 최신 답사 (잉크 배경) — 다크에서 오던 대비를 여기 한 번에 몰았다.
           한쪽이라도 데이터가 없으면 그쪽 칸을 렌더하지 않고, 둘 다 없으면 블록 자체가 사라진다. */}
-      {(featuredColumn || tours[0]) && (
+      {(featuredColumn || featuredEvent) && (
         <HomeSectionBoundary label="반전 블록">
           <section className="home-split">
             {featuredColumn && (
@@ -770,17 +681,35 @@ const HomePage = ({ go }) => {
                 <span className="home-split-link mono">읽기 →</span>
               </div>
             )}
-            {tours[0] && (
-              <div className="home-split-half home-split-half--ink"
-                {...clickable(() => go('tour'), `답사: ${tours[0].title}`)}>
-                <div className="home-split-eb mono">{toursArePast ? '지난 답사' : '다음 답사'}</div>
-                <h3 className="home-split-title">{tours[0].title}</h3>
-                <p className="home-split-body">
-                  {tours[0].desc ? truncatePreview(tours[0].desc, 120) : (tours[0].next || '')}
-                </p>
-                <span className="home-split-link mono">답사 기록 보기 →</span>
-              </div>
-            )}
+            {featuredEvent && (() => {
+              const { item, isPast, label, route, pendKey } = featuredEvent;
+              const poster = primaryImage(featuredEvent.kind, item.id);
+              const title = item.topic || item.title;
+              const when = item.next || _fmtEventDate(item);
+              return (
+                <div className="home-split-half home-split-half--ink home-split-half--event"
+                  {...clickable(() => {
+                    try { sessionStorage.setItem(pendKey, String(item.id)); } catch {}
+                    go(route);
+                  }, `${label}: ${title}`)}>
+                  {/* v00.293.002 — 포스터가 있으면 좌측에 세워 붙인다. 없으면 텍스트만 렌더 —
+                      빈 액자를 남기지 않는다(rules: 깡통 카드 금지). */}
+                  {poster && (
+                    <div className="home-split-poster" role="img" aria-label={`${title} 포스터`}
+                      style={{backgroundImage:`url(${poster})`}}/>
+                  )}
+                  <div className="home-split-eventtext">
+                    <div className="home-split-eb mono">{isPast ? `지난 ${label}입니다` : `다음 ${label}`}</div>
+                    <h3 className="home-split-title">{title}</h3>
+                    {when && <div className="home-split-when mono">{when}</div>}
+                    <p className="home-split-body">
+                      {item.desc ? truncatePreview(item.desc, 110) : (item.venue || '')}
+                    </p>
+                    <span className="home-split-link mono">{isPast ? `지난 ${label} 보기` : `${label} 자세히 보기`} →</span>
+                  </div>
+                </div>
+              );
+            })()}
           </section>
         </HomeSectionBoundary>
       )}
@@ -907,7 +836,7 @@ const HomePage = ({ go }) => {
 
 
       {/* ── 책 CTA — v00.152 다권 카루셀 + 좌우 무한 반복 ────────────── */}
-      <BookCarouselSection go={go} dataTick={dataTick} text={homeText}/>
+      <BookGridSection go={go} dataTick={dataTick} text={homeText}/>
 
     </div>
   );
