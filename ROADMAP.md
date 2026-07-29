@@ -1,8 +1,10 @@
 # 뱅기노자 사이클 로드맵
 
 > **목적:** 향후 작업 단위(사이클)의 단일 백로그. 사이클 시작 시 이 문서에서 다음 항목을 가져오고, 완료 시 status 갱신.
-> **연관 문서:** 완료된 사이클 회고는 `CONTEXT.md §5` + commit message + `plans/<버전>.md` + `ADMIN_VERSION_HISTORY`.
-> **마지막 갱신:** 2026-06-06 (v00.284 — 현행화 sweep: 완료 항목 정리 + 한켠 PMS 후속 백로그 재작성. 직전 갱신 v00.241/2026-05-09 이후 43버전 누적분 반영)
+> **연관 문서:** 규칙은 [rules/](rules/), 작업 기록은 [rules/handoff/](rules/handoff/).
+> 과거 사이클 히스토리는 [rules/handoff/done/archive-cycle-history.md](rules/handoff/done/archive-cycle-history.md).
+> **마지막 갱신:** 2026-07-29 (문서 재편 — project-priority-table.md 흡수, CONTEXT.md §7.5 이관)
+> **직전 갱신:** 2026-06-06 (v00.284 — 현행화 sweep: 완료 항목 정리 + 한켠 PMS 후속 백로그 재작성. 직전 갱신 v00.241/2026-05-09 이후 43버전 누적분 반영)
 
 ---
 
@@ -12,6 +14,52 @@
 2. **사이클 완료** — status `✅ done` + 한 줄 회고 (commit hash). `ADMIN_VERSION_HISTORY` 신규 엔트리는 항목과 1:1 대응.
 3. **새 보고/발견** — 적절한 큐(코드측 / 워커의존 / 메이저)에 즉시 추가. 이 문서가 single source of truth.
 4. **순서 변경** — 사용자 지시 또는 차단 발견 시 자유롭게 재정렬. 단 의존성(★) 명시 항목은 차단 해소 전 진입 금지.
+
+---
+
+## 우선순위 기준
+
+> 2026-07-29 `project-priority-table.md` 에서 흡수. 개발은 이 순서를 따르고, 사용자가 명시적으로 승인하지 않는 한 임의로 건너뛰지 않습니다.
+
+1. 인증/권한 → 2. 데이터 저장 구조 → 3. 관리자 발행물과 공개 페이지 연결 → 4. 커뮤니티 실서비스화 →
+5. 관리자 운영 기능 고도화 → 6. 투어 예약 → 7. 책 주문/결제 → 8. 부가 기능
+
+### 상세 표
+
+| Priority | Feature Group | Current Status | Why It Comes First | Done Means |
+|---|---|---|---|---|
+| P1 | Authentication and authorization | ✅ 완료 | Most other features depend on account and permission structure | Real sign up, login, session persistence, role separation |
+| P1 | Data storage architecture | ✅ 완료 | `localStorage` is not enough for real operations | Storage for members, posts, columns, orders is decided and wired |
+| P1 | Admin publishing to public site connection | ✅ 완료 | Admin actions must appear on the public site to be meaningful | Admin-created columns and managed content appear on public pages |
+| P2 | Community serverization | ✅ 완료 | This area already has the most UI and interaction work done | Posts, comments, replies, likes, bookmarks, reports, notifications, badges |
+| P2 | Admin operational tooling | ✅ 완료 | Some actions are named but not truly functional yet | Member management, audit log, auto-grade promotion, legal/FAQ editing |
+| P3 | External DB + server auth migration | 🔜 착수 예정 — Cloudflare | local-first is the single biggest blocker to real operations | Real users can register and data persists across devices/browsers |
+| P3 | PG payment integration | 🔜 스켈레톤 추가 예정 (비활성화) | Bank transfer is a temporary workaround for lectures, tours, and books | UI skeleton wired, payment disabled until provider is contracted |
+| P4 | Image external storage | 미착수 | base64 in localStorage will hit quota in real operations | Images stored outside localStorage (Cloudflare R2) |
+| P4 | Email notifications | 🔜 비활성화 상태로 착수 예정 | D-1 reminders and status-change emails are expected by users | Infrastructure wired but sending disabled; activate when provider is ready |
+| P5 | Refund / cancellation flow (book) | ✅ 완료 | Cancellation exists but actual refund processing is manual | Refund request + admin processing + status tracking — books only |
+| P5 | Refund / cancellation flow (lecture/tour) | ✅ 완료 | Book has refund flow but lectures/tours still lack request→approve cycle | Same requestRefund/approveRefund/rejectRefund pattern applied to lectures and tours |
+| P5 | Full-text search + sort options | ✅ 완료 | Community search is title-only, no sort options | Search body text, sort by popularity/comments |
+| P5 | Book reader reviews | ✅ 완료 | Book detail page has hardcoded dummy reviews | Real user reviews wired to `BGNJ_BOOK_ORDERS` confirmed orders |
+
+### 결정 사항 (Decisions Made)
+
+| Topic | Decision | Date |
+|---|---|---|
+| Authentication | Cloudflare (Workers + D1 or KV) — migrate from local-first | 2026-04-27 |
+| Database | Cloudflare D1 (SQLite-compatible) — same ecosystem as Workers | 2026-04-27 |
+| Payment | PG 스켈레톤 먼저 추가, 실제 연동은 제공사 계약 후 활성화 | 2026-04-27 |
+| Image storage | Cloudflare R2 — consistent with CF ecosystem decision | 2026-04-27 |
+| Email | 비활성화 상태로 인프라 준비, 제공사 미결정 | 2026-04-27 |
+| Refund policy | 관리자 수동 승인(책 구현됨). 강연/투어 동일 패턴 적용 예정 | 2026-04-27 |
+
+### 권장 순서 (Recommended Order)
+
+1. **Cloudflare 마이그레이션** — Workers + D1 + KV + R2 통합 설계
+2. **PG 결제 스켈레톤** — UI 먼저, 실결제는 비활성화
+3. **강연/투어 환불 신청 흐름** — 책과 동일한 requestRefund 패턴
+4. **이메일 알림 인프라** — 비활성화 상태로 hook 먼저 추가
+5. **마이페이지 프로필 수정 / 비밀번호 변경** — Cloudflare 인증 후 의미 있어짐
 
 ---
 
@@ -62,7 +110,7 @@
 
 | 항목 | 차단 영향 | 비고 |
 |---|---|---|
-| **HTTPS/SSL 확인** | bgnj.net SSL | 현재 `https://bgnj.net` 정상 서빙 확인됨(v00.284 점검). 라이브 회귀만 권장 — 미해결이면 CONTEXT.md §7.5 가이드 참조 |
+| **HTTPS/SSL 확인** | bgnj.net SSL | 현재 `https://bgnj.net` 정상 서빙 확인됨(v00.284 점검). 라이브 회귀만 권장 — 미해결이면 아래 「HTTPS/SSL 도입 가이드」 참조 |
 | **한켠 지도 좌표 입력** | 위치 핀 정밀도 | 관리자 → 숙소 관리 → 숙소 정보 → 지도 위도/경도 에 openstreetmap.org URL 의 mlat·mlon 입력(미입력 시 팔달로 기본값) |
 | ✅ ~~Cloudflare Secrets 이관~~ | (v00.125 결정: 미진행 — 평문 유지) | |
 | ✅ ~~schema-v4/v5 · seed-kv 적용~~ | (v00.113/v00.123 완료) | |
@@ -77,6 +125,35 @@
 - [ ] **갤러리** — 작은 4장 3초마다 슬라이드 교체, 같은 사진 연속 미노출 (사진 0장 숙소도 크래시 없음 — v00.284.004)
 - [ ] **R2 업로드** — admin 사진 업로드 → `/api/media/upload` 200 + 드롭존 UI 정상(v00.282 display:block fix)
 - [ ] **Tiptap 3 회귀** — 글쓰기 모달 표/체크리스트/형광펜/정렬/코드블록/YouTube 정상
+
+---
+
+## HTTPS / SSL 도입 가이드 (사용자 직접 작업)
+
+v00.064 에 코드 측 정합 완료(og:url 메타 + 조건부 HTTPS 강제 헬퍼). v00.109 부터 워커 ALLOWED_ORIGINS 가 https-only — 하단 §3 단계는 적용됨. §1, §2, §4 가 사용자 수동.
+
+#### 단계 1 — Cloudflare DNS / SSL 설정
+1. Cloudflare 대시보드 → bgnj.net → SSL/TLS → "Full" 또는 "Full (strict)" 모드.
+2. SSL/TLS → Edge Certificates → "Always Use HTTPS" ON.
+3. SSL/TLS → Edge Certificates → "Automatic HTTPS Rewrites" ON.
+
+#### 단계 2 — GitHub Pages 커스텀 도메인 SSL
+1. GitHub repo → Settings → Pages → Custom domain `bgnj.net` 입력.
+2. "Enforce HTTPS" 체크 (DNS 전파 후 자동 활성화 가능).
+
+#### 단계 3 — 워커 ALLOWED_ORIGINS http 항목 제거 ✅ (v00.109 완료)
+완료. https-only.
+
+#### 단계 4 — 클라이언트 HTTPS 강제 활성화
+```js
+localStorage.setItem('bgnj_force_https', '1')
+```
+
+#### 검증
+- `curl -I http://bgnj.net` → 301 / Location https://bgnj.net 확인.
+- `curl -I https://bgnj.net` → 200 OK + valid SSL.
+
+---
 
 ---
 

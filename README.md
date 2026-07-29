@@ -67,7 +67,7 @@ cd workers && npx wrangler d1 execute banginoja-db --remote --file=schema-vN.sql
 2. **표준 가드 + ErrorBoundary 2-tier** — 한 섹션이 죽어도 전역 트리는 살아남음.
 3. **pre-commit 자동화** — datetime stamp / CSP 해시 / version 동기 / 빌드 / 신택스+룰 검증.
 
-상세는 [CONTEXT.md](CONTEXT.md) 참고.
+상세는 [rules/00-index.md](rules/00-index.md) 참고.
 
 ---
 
@@ -101,8 +101,12 @@ cd workers && npx wrangler d1 execute banginoja-db --remote --file=schema-vN.sql
 │  ├─ csp-hashes.mjs     인라인 script SHA-256 → CSP meta 자동 동기
 │  ├─ stamp-datetime.mjs ADMIN_VERSION_HISTORY datetime sentinel 치환
 │  └─ install-hooks.sh   pre-commit 훅 설치
-├─ ROADMAP.md            forward-looking 사이클 백로그
-└─ CONTEXT.md            상세 컨텍스트 문서 (운영 원칙 9 + 라우팅 + 라인 참조)
+├─ CLAUDE.md             AI 진입점 — "이 질문이면 이 파일" 라우팅 표
+├─ rules/                주제별 규칙 (코딩/데이터/디자인/릴리스/보안/절차/환경/파일맵)
+│  └─ handoff/           작업 기록 — ACTIVE(진행중) / INDEX(목록) / done(완료)
+├─ design/               디자인 토큰·컴포넌트 스펙·시안
+├─ docs/kms.md           기능 정의서 · 운영 매트릭스 (관리자 KMS 화면과 동기)
+└─ ROADMAP.md            forward-looking 사이클 백로그 + 우선순위 기준
 ```
 
 ---
@@ -110,24 +114,24 @@ cd workers && npx wrangler d1 execute banginoja-db --remote --file=schema-vN.sql
 ## 개발 워크플로우
 
 ### 새 사이클 시작
-1. **ROADMAP.md** 큐 1 의 첫 pending 항목 확인.
-2. 코드 변경.
+1. **[rules/handoff/ACTIVE.md](rules/handoff/ACTIVE.md)** 확인 — 진행 중인 건이 있으면 이어받는다.
+   새 작업이면 지시 내역·범위·체크리스트를 여기에 먼저 쓴다.
+2. **[ROADMAP.md](ROADMAP.md)** 큐 1 의 첫 pending 항목 확인 후 코드 변경.
 3. `BGNJ_VERSION` (data.js) 갱신 + `?v=` cache-buster 동기 (index.html 2곳: styles.css·dist/app.js) + version.json.
-4. `pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY` 맨 앞에 신규 entry. datetime 은 `new Date().toISOString()` sentinel.
-5. `git commit` — pre-commit 훅이 자동 실행:
+4. `git commit` — pre-commit 훅이 자동 실행:
    - stamp-datetime → datetime 실제 KST 시간 치환
    - csp-hashes → 인라인 script SHA-256 동기
    - check-version → 버전 일관성 검증 (불일치 차단)
    - write-version-json → version.json 매니페스트 갱신
    - build → 단일 엔트리 번들 dist/{app,admin}.js (esbuild bundle)
    - check-syntax → 신택스 + 룰 검증
-6. 배포 시 ⚠️ Pages 브랜치-서빙 모드라 `node tools/build.mjs && git add -f dist/app.js dist/admin.js` 로 번들도 함께 커밋해야 라이브 반영 (Pages source 를 GitHub Actions 로 전환하면 불필요).
+5. 배포 시 ⚠️ Pages 브랜치-서빙 모드라 `node tools/build.mjs && git add -f dist/app.js dist/admin.js` 로 번들도 함께 커밋해야 라이브 반영 (Pages source 를 GitHub Actions 로 전환하면 불필요).
 
 ---
 
 ## 운영 원칙 (요약)
 
-상세는 [CONTEXT.md §2](CONTEXT.md) 참고.
+상세는 [rules/](rules/) 의 주제별 규칙 문서 참고 — 진입점은 [CLAUDE.md](CLAUDE.md).
 
 - **D1 source-of-truth** — `window.BANGINOJA_DATA` 직접 참조 금지 (lint 차단)
 - **BGNJ_GUARD** 패턴 — `G.arr(() => window.BGNJ_X.listFoo())`
