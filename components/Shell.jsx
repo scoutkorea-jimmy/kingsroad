@@ -1061,16 +1061,20 @@ const Footer = ({ go }) => {
           <nav aria-label="콘텐츠 바로가기">
             <h4 id="ft-content" style={headingStyle}>{footer.headingContent || "콘텐츠"}</h4>
             <ul aria-labelledby="ft-content">
-              <li><button type="button" onClick={() => go("column")}>뱅기노자 칼럼</button></li>
+              {/* v00.291 — 상단 메뉴 재편(5개)에 맞춰 푸터도 동기. */}
+              <li><button type="button" onClick={() => go("sleep")}>자고 놀자</button></li>
               <li><button type="button" onClick={() => go("tour")}>투어 프로그램</button></li>
-              {/* v00.147 — 사용자 요청 '하단에 왕의길은 삭제'. 책은 상단 nav 의 '책' 메뉴에서 진입. */}
+              <li><button type="button" onClick={() => go("lectures")}>강연</button></li>
+              <li><button type="button" onClick={() => go("book")}>뱅기노자 도서</button></li>
+              <li><button type="button" onClick={() => go("column")}>뱅기노자 칼럼</button></li>
               <li><button type="button" onClick={() => go("community")}>커뮤니티</button></li>
             </ul>
           </nav>
           <nav aria-label="정보 바로가기">
             <h4 id="ft-info" style={headingStyle}>{footer.headingInfo || "정보"}</h4>
             <ul aria-labelledby="ft-info">
-              <li><button type="button" onClick={() => go("home")}>강연 일정</button></li>
+              {/* v00.291 — '강연 일정' 이 go("home") 이라 홈으로 가던 기존 버그 수정. */}
+              <li><button type="button" onClick={() => go("lectures")}>강연 일정</button></li>
               <li><button type="button" onClick={() => go("community")}>공지사항</button></li>
               <li><button type="button" onClick={() => go("faq")}>자주 묻는 질문</button></li>
               <li><button type="button" onClick={() => go("terms")}>이용약관</button></li>
