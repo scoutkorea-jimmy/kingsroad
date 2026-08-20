@@ -3,6 +3,11 @@
 // LegalAdminPanel (이용약관/개인정보 처리방침 본문 편집) · FaqAdminPanel (자주 묻는 질문).
 // 자기완결적 — 의존은 모두 window 전역(BGNJ_LEGAL/FMT/FAQ/CONFIRM, TiptapEditor).
 // entry-admin 에서 AuthAdminPage 앞에 로드. 각 패널 window 노출.
+//
+// v00.294.007 — TiptapEditor 를 명시적으로 import. v00.287 ESM 전환 전에는 모든 파일이
+// 같은 전역 스코프를 공유해 그냥 쓸 수 있었지만, 번들이 main/admin 둘로 갈리면서
+// TiptapEditor 는 main 번들에만 들어갔다 → 이 패널을 열면 ReferenceError 로 화면이 깨졌다.
+import { TiptapEditor } from '../../components/TiptapEditor.jsx';
 
 // === Legal Documents Admin Panel (Privacy / Terms) ================
 const LegalAdminPanel = () => {

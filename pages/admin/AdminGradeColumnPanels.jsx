@@ -8,6 +8,9 @@
 
 // v00.286 ESM — cross-module import (전역 결합 제거).
 import { AdminPanelHeader, AdminSaveBar } from './AdminShared.jsx';
+// v00.294.007 — 칼럼 편집기가 쓰는 TiptapEditor 는 main 번들에만 있었다.
+// admin 번들에서는 미정의 식별자라 편집 화면 진입 시 ReferenceError 로 깨졌다.
+import { TiptapEditor } from '../../components/TiptapEditor.jsx';
 
 const AdminGradePanel = () => {
   // v00.141 — 통합 패널: 회원 등급 + 자동 승급/강등 기준을 한 곳에서 편집.

@@ -3,6 +3,8 @@
 // MemberAdminPanel + 종속 컴포넌트(SuspendDialog 정지 모달 · ProfileFields 프로필 카드).
 // 자기완결적 — 의존은 모두 window 전역(BGNJ_AUTH/API/CONFIRM/TOAST/FMT 등).
 // entry-admin 에서 AuthAdminPage 앞에 로드. MemberAdminPanel 만 window 노출.
+// AuthorGradeBadge 는 Shell 이 Object.assign(window, …) 로 전역에 올린다(main 번들).
+// Shell 을 여기서 import 하면 admin 번들에 사본이 생겨 window.Nav 가 덮이므로 하지 않는다.
 
 // 정지 사유 입력 모달 — prompt() 대신 GUI.
 const SuspendDialog = ({ target, reason, onChange, onConfirm, onCancel }) => {

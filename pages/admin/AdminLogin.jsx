@@ -3,6 +3,9 @@
 // LegalModal · AuthErrorPanel · INTEREST_OPTIONS · LoginPage.
 // 자기완결적 — 의존은 모두 window 전역(BGNJ_AUTH/SITE_CONTENT/LEGAL/SAFE_HTML, useModalGuard).
 // boot 가 로그인/관리자 route 진입 시 admin 번들로 로드. LoginPage 만 window 노출.
+// BanginojaIcon 은 Shell 이 Object.assign(window, …) 로 전역에 올린다(main 번들).
+// 여기서 Shell 을 import 하면 admin 번들에 Shell 사본이 하나 더 생기고,
+// 그 사본의 Object.assign 이 window.Nav 를 다른 인스턴스로 덮어 메뉴가 재마운트된다.
 // === 약관/개인정보 모달 ==================================================
 // 회원가입 시 이용약관 텍스트를 클릭하면 모달로 본문을 노출.
 const LegalModal = ({ slug, onClose }) => {
