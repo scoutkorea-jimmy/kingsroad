@@ -402,10 +402,10 @@ const BookOrderAdminPanel = ({ go }) => {
                     if (!ok) return;
                     const res = await window.BGNJ_BOOK_ORDERS.adminDeleteOrder(o.id);
                     if (!res?.ok) {
-                      try { window.BGNJ_TOAST?.error?.(res?.message || '주문 삭제 실패'); } catch {}
+                      try { window.BGNJ_TOAST?.error?.(res?.message || '주문 삭제 실패'); } catch (_e) { console.warn('[bgnj] AdminCommercePanels.jsx:405 오류(무시하고 진행)', _e); }
                       return;
                     }
-                    try { window.BGNJ_TOAST?.success?.(`주문 ${o.orderNo} 삭제 완료`); } catch {}
+                    try { window.BGNJ_TOAST?.success?.(`주문 ${o.orderNo} 삭제 완료`); } catch (_e) { console.warn('[bgnj] AdminCommercePanels.jsx:408 오류(무시하고 진행)', _e); }
                     refresh();
                   }}
                   style={{borderColor:'var(--danger)', color:'var(--danger)'}}>

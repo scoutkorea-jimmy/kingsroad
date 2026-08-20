@@ -45,7 +45,7 @@ const pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, 
     e.target.value = '';
     return url;
   } catch (err) {
-    try { console.warn(`[upload] R2 ${folder} 업로드 실패 — dataURI 폴백:`, err); } catch {}
+    try { console.warn(`[upload] R2 ${folder} 업로드 실패 — dataURI 폴백:`, err); } catch (_e) { console.warn('[bgnj] AdminShared.jsx:48 오류(무시하고 진행)', _e); }
   }
   if (file.size > fallbackMaxBytes) {
     window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + ${(fallbackMaxBytes/1024/1024).toFixed(1)}MB 폴백 한도 초과.`);
@@ -649,22 +649,22 @@ const SankeyFlow = ({ pairs, days, onDaysChange }) => {
 const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
   const [active, setActive] = React.useState(() => {
     if (storageKey) {
-      try { const v = localStorage.getItem(storageKey); if (v && subTabs.some((t) => t.key === v)) return v; } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+      try { const v = localStorage.getItem(storageKey); if (v && subTabs.some((t) => t.key === v)) return v; } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (AdminShared.jsx:652)', _e); }
     }
     return defaultKey || (subTabs[0] && subTabs[0].key);
   });
   React.useEffect(() => {
-    if (storageKey) try { localStorage.setItem(storageKey, active); } catch {}
+    if (storageKey) try { localStorage.setItem(storageKey, active); } catch (_e) { console.warn('[bgnj] AdminShared.jsx:657 오류(무시하고 진행)', _e); }
   }, [active, storageKey]);
 
   const [previewMode, setPreviewMode] = React.useState(() => {
     if (storageKey) {
-      try { const v = localStorage.getItem(storageKey + '_pmode'); if (v && ['desktop','tablet','mobile'].includes(v)) return v; } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+      try { const v = localStorage.getItem(storageKey + '_pmode'); if (v && ['desktop','tablet','mobile'].includes(v)) return v; } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (AdminShared.jsx:662)', _e); }
     }
     return 'desktop';
   });
   React.useEffect(() => {
-    if (storageKey) try { localStorage.setItem(storageKey + '_pmode', previewMode); } catch {}
+    if (storageKey) try { localStorage.setItem(storageKey + '_pmode', previewMode); } catch (_e) { console.warn('[bgnj] AdminShared.jsx:667 오류(무시하고 진행)', _e); }
   }, [previewMode, storageKey]);
   const [reloadTick, setReloadTick] = React.useState(0);
   React.useEffect(() => {

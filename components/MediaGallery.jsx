@@ -71,7 +71,7 @@ const _uploadFiles = async (files, folder, onProgress) => {
       const url = await window.pickImageWithR2Fallback(fakeEvent, { folder });
       if (url) urls.push(url);
     } catch (err) {
-      try { console.warn('[MediaGalleryEditor] 한 장 업로드 실패 (다음 장 진행):', err); } catch {}
+      try { console.warn('[MediaGalleryEditor] 한 장 업로드 실패 (다음 장 진행):', err); } catch (_e) { console.warn('[bgnj] MediaGallery.jsx:74 오류(무시하고 진행)', _e); }
     }
     onProgress?.(i + 1, files.length);
   }

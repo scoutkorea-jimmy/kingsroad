@@ -488,7 +488,7 @@ const MentionTextarea = ({ value, onChange, authors, rows = 4, placeholder, styl
         const pos = replaced.length;
         el?.focus();
         el?.setSelectionRange(pos, pos);
-      } catch {}  // bgnj-allow-silent — 스크롤·포커스
+      } catch (_e) { console.warn('[bgnj] 스크롤·포커스 (CommunityPage.jsx:491)', _e); }
     }, 0);
   };
 
@@ -562,23 +562,23 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   });
   const setPostsPerPage = (n) => {
     setPostsPerPageState(n);
-    try { localStorage.setItem(POSTS_PER_PAGE_LS_KEY, String(n)); } catch {}
+    try { localStorage.setItem(POSTS_PER_PAGE_LS_KEY, String(n)); } catch (_e) { console.warn('[bgnj] CommunityPage.jsx:565 오류(무시하고 진행)', _e); }
     setPage(1);
   };
 
   // 알림 벨 / 외부 진입에서 stash해 둔 postId가 있으면 자동으로 상세로 이동
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem('bgnj_pending_post_id'); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+    try { pending = sessionStorage.getItem('bgnj_pending_post_id'); } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (CommunityPage.jsx:572)', _e); }
     if (pending) {
-      try { sessionStorage.removeItem('bgnj_pending_post_id'); } catch {}  // bgnj-allow-silent — 저장소 정리
+      try { sessionStorage.removeItem('bgnj_pending_post_id'); } catch (_e) { console.warn('[bgnj] 저장소 정리 (CommunityPage.jsx:574)', _e); }
       setPostId(pending);
     }
     // 내비 메가메뉴에서 들어온 게시판 ID
     let pendingBoard = null;
-    try { pendingBoard = sessionStorage.getItem('bgnj_pending_board_id'); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+    try { pendingBoard = sessionStorage.getItem('bgnj_pending_board_id'); } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (CommunityPage.jsx:579)', _e); }
     if (pendingBoard) {
-      try { sessionStorage.removeItem('bgnj_pending_board_id'); } catch {}  // bgnj-allow-silent — 저장소 정리
+      try { sessionStorage.removeItem('bgnj_pending_board_id'); } catch (_e) { console.warn('[bgnj] 저장소 정리 (CommunityPage.jsx:581)', _e); }
       setTab(pendingBoard);
     }
   }, []);
@@ -650,7 +650,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       try {
         await window.BGNJ_COMMUNITY?._hydratePostBody?.(postId);
         if (alive) setRefreshKey((v) => v + 1);
-      } catch {}
+      } catch (_e) { console.warn('[bgnj] CommunityPage.jsx:653 오류(무시하고 진행)', _e); }
     })();
     return () => { alive = false; };
   }, [postId]);
@@ -685,7 +685,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           if (saved?.id) draftIdRef.current = saved.id;
           window.BGNJ_TOAST?.success?.('임시저장됐습니다. (글쓰기 모달 상단에서 확인)');
         } catch (err) {
-          try { window.BGNJ_TOAST?.error?.('임시저장 실패: ' + (err?.message || err)); } catch {}
+          try { window.BGNJ_TOAST?.error?.('임시저장 실패: ' + (err?.message || err)); } catch (_e) { console.warn('[bgnj] CommunityPage.jsx:688 오류(무시하고 진행)', _e); }
         }
       },
       label: '게시글',
@@ -706,7 +706,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
             onPayloadChange={setDraftPayload}
             onPublish={async (payload) => {
               // 발행 성공 시 임시저장 목록에서 제거.
-              try { if (draftIdRef.current) window.BGNJ_DRAFTS?.remove?.(draftIdRef.current); } catch {}
+              try { if (draftIdRef.current) window.BGNJ_DRAFTS?.remove?.(draftIdRef.current); } catch (_e) { console.warn('[bgnj] CommunityPage.jsx:709 오류(무시하고 진행)', _e); }
               let savedPost;
               try {
                 savedPost = writing === true
@@ -1156,11 +1156,11 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                 draggable: true,
                 onDragStart: (e) => {
                   setDraggingId(String(p.id));
-                  try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(p.id)); } catch {}
+                  try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(p.id)); } catch (_e) { console.warn('[bgnj] CommunityPage.jsx:1159 오류(무시하고 진행)', _e); }
                 },
                 onDragOver: (e) => {
                   e.preventDefault();
-                  try { e.dataTransfer.dropEffect = 'move'; } catch {}
+                  try { e.dataTransfer.dropEffect = 'move'; } catch (_e) { console.warn('[bgnj] CommunityPage.jsx:1163 오류(무시하고 진행)', _e); }
                   if (draggingId && String(draggingId) !== String(p.id)) {
                     moveLocalBefore(draggingId, p.id);
                   }
@@ -1411,7 +1411,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   }, [draftKey, isEditing, categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText]);
 
   const clearDraft = () => {
-    try { localStorage.removeItem(draftKey); } catch {}  // bgnj-allow-silent — 저장소 정리
+    try { localStorage.removeItem(draftKey); } catch (_e) { console.warn('[bgnj] 저장소 정리 (CommunityPage.jsx:1414)', _e); }
     setSavedAt(null);
     setDraftRestored(false);
   };
@@ -1427,7 +1427,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   });
   React.useEffect(() => {
     const onChange = () => {
-      try { setPostDrafts(window.BGNJ_DRAFTS?.list?.('post') || []); } catch {}
+      try { setPostDrafts(window.BGNJ_DRAFTS?.list?.('post') || []); } catch (_e) { console.warn('[bgnj] CommunityPage.jsx:1430 오류(무시하고 진행)', _e); }
     };
     window.addEventListener('bgnj-drafts-change', onChange);
     return () => window.removeEventListener('bgnj-drafts-change', onChange);
@@ -1446,7 +1446,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   };
   const removePostDraft = async (id) => {
     if (!(await window.BGNJ_CONFIRM('이 임시저장 글을 삭제하시겠어요?', { danger: true, confirmLabel: '삭제' }))) return;
-    try { window.BGNJ_DRAFTS?.remove?.(id); } catch {}
+    try { window.BGNJ_DRAFTS?.remove?.(id); } catch (_e) { console.warn('[bgnj] CommunityPage.jsx:1449 오류(무시하고 진행)', _e); }
   };
   const MAX_POST_DRAFTS = window.BGNJ_DRAFTS?.MAX_COUNT || 5;
 
@@ -1486,7 +1486,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     const pad = (n) => String(n).padStart(2, '0');
     // 발행 성공 가정으로 임시저장 정리 (실패 시 onPublish 측에서 다시 저장은 안 함).
     if (!isEditing) {
-      try { localStorage.removeItem(draftKey); } catch {}  // bgnj-allow-silent — 저장소 정리
+      try { localStorage.removeItem(draftKey); } catch (_e) { console.warn('[bgnj] 저장소 정리 (CommunityPage.jsx:1489)', _e); }
     }
     // v00.115 — admin 만 createdAt 오버라이드 가능. 다른 사용자 값 전송은 워커가 무시.
     // v00.294.008 — 본문 끝에 <img> 를 끼워 넣던 v00.242 응급 조치를 걷어낸다.
@@ -1786,7 +1786,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
     try {
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
-    } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+    } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (CommunityPage.jsx:1789)', _e); }
     window.BGNJ_COMMUNITY.incrementViews(post.id);
     onRefresh?.();
   }, [post.id]);
@@ -1955,7 +1955,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
               }
               return ''; // 본문에서 제거.
             });
-          } catch {}
+          } catch (_e) { console.warn('[bgnj] CommunityPage.jsx:1958 오류(무시하고 진행)', _e); }
           // post.images (v00.243+ schema 추가 후 정통 source) 우선 + 추출된 fallback.
           const slideImages = (Array.isArray(post.images) && post.images.length > 0)
             ? post.images

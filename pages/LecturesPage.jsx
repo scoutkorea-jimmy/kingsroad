@@ -50,9 +50,9 @@ const LecturesPage = ({ go, user }) => {
   // v00.263.000 — past 로 진입하면 게시판 상세 모드로 즉시 표시.
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem('bgnj_pending_lecture_id'); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+    try { pending = sessionStorage.getItem('bgnj_pending_lecture_id'); } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (LecturesPage.jsx:53)', _e); }
     if (pending) {
-      try { sessionStorage.removeItem('bgnj_pending_lecture_id'); } catch {}  // bgnj-allow-silent — 저장소 정리
+      try { sessionStorage.removeItem('bgnj_pending_lecture_id'); } catch (_e) { console.warn('[bgnj] 저장소 정리 (LecturesPage.jsx:55)', _e); }
       // 양쪽 버킷에서 검색해 적절한 탭으로 이동.
       const inUpcoming = lecturesUpcoming.findIndex((l) => String(l.id) === String(pending));
       if (inUpcoming >= 0) { setBucket('upcoming'); setSelectedIdx(inUpcoming); return; }
@@ -168,7 +168,7 @@ const LecturesPage = ({ go, user }) => {
                 const idx = lectures.findIndex((l) => String(l.id) === String(id));
                 if (idx >= 0) setSelectedIdx(idx);
                 setPastDetailId(String(id));
-                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}  // bgnj-allow-silent — 스크롤·포커스
+                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_e) { console.warn('[bgnj] 스크롤·포커스 (LecturesPage.jsx:171)', _e); }
               }}/>
           ) : (
             <div style={{padding:'60px 20px', textAlign:'center'}}>
@@ -486,14 +486,14 @@ const LectureQuickAddModal = ({ onClose, onSaved, initialLecture = null }) => {
           await window.BGNJ_SITE_CONTENT.saveSection('lecturePages', {
             [id]: { ...existing, images, photos, organizer: organizer.trim() },
           });
-          try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch {}
+          try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch (_e) { console.warn('[bgnj] LecturesPage.jsx:489 오류(무시하고 진행)', _e); }
         } catch (galleryErr) {
-          try { console.warn('[LectureQuickAddModal] 갤러리/주관 저장 실패:', galleryErr); } catch {}
+          try { console.warn('[LectureQuickAddModal] 갤러리/주관 저장 실패:', galleryErr); } catch (_e) { console.warn('[bgnj] LecturesPage.jsx:491 오류(무시하고 진행)', _e); }
           window.BGNJ_TOAST?.error?.('강연 정보는 저장됐지만 갤러리·주관 저장에 실패했습니다.');
         }
       }
-      try { await window.BGNJ_AUDIT?.log?.({ action: isEdit ? 'lecture.update' : 'lecture.create', target: `lecture:${id}` }); } catch {}
-      try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
+      try { await window.BGNJ_AUDIT?.log?.({ action: isEdit ? 'lecture.update' : 'lecture.create', target: `lecture:${id}` }); } catch (_e) { console.warn('[bgnj] LecturesPage.jsx:495 오류(무시하고 진행)', _e); }
+      try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch (_e) { console.warn('[bgnj] LecturesPage.jsx:496 오류(무시하고 진행)', _e); }
       window.BGNJ_TOAST?.success?.(isEdit ? '강연이 수정되었습니다.' : '강연이 등록되었습니다.');
       onSaved?.();
       onClose?.();

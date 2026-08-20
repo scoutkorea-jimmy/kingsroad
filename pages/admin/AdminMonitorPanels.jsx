@@ -18,7 +18,7 @@ const ErrorLogPanel = () => {
     try {
       const { errors: list } = await window.BGNJ_API.errorLog.list({ limit: 500 });
       setErrors(list || []);
-    } catch {} finally { setLoading(false); }  // bgnj-allow-silent — 오류 보고 자체 — 실패해도 재보고하면 무한루프
+    } catch (_e) { console.warn('[bgnj] AdminMonitorPanels.jsx:21 오류(무시하고 진행)', _e); } finally { setLoading(false); }
   };
   React.useEffect(() => { refresh(); }, []);
 
@@ -275,7 +275,7 @@ const SearchConsoleAdminPanel = () => {
   const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2400); };
 
   const refresh = React.useCallback(async () => {
-    try { await window.BGNJ_SITE_CONTENT.refresh(); } catch {}
+    try { await window.BGNJ_SITE_CONTENT.refresh(); } catch (_e) { console.warn('[bgnj] AdminMonitorPanels.jsx:278 오류(무시하고 진행)', _e); }
     const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
     const cur = sc.searchConsole || {};
     const origin = (typeof location !== 'undefined' ? location.origin : 'https://bgnj.net');
@@ -299,7 +299,7 @@ const SearchConsoleAdminPanel = () => {
     try {
       const next = { ...data, lastUpdated: new Date().toISOString() };
       await window.BGNJ_SITE_CONTENT.saveSection('searchConsole', next);
-      try { window.BGNJ_SITE_CONTENT.applyHead(); } catch {}
+      try { window.BGNJ_SITE_CONTENT.applyHead(); } catch (_e) { console.warn('[bgnj] AdminMonitorPanels.jsx:302 오류(무시하고 진행)', _e); }
       setData(next);
       setDirty(false);
       flash('✓ 저장됨 — <head> 검증 meta 즉시 갱신');
@@ -321,7 +321,7 @@ const SearchConsoleAdminPanel = () => {
     }
   };
 
-  const openConsole = (url) => { try { window.open(url, '_blank', 'noopener'); } catch {} };
+  const openConsole = (url) => { try { window.open(url, '_blank', 'noopener'); } catch (_e) { console.warn('[bgnj] AdminMonitorPanels.jsx:324 오류(무시하고 진행)', _e); } };
 
   const lastUpdLabel = data.lastUpdated
     ? window.BGNJ_FMT.kstDateTime(data.lastUpdated)

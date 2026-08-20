@@ -232,7 +232,7 @@ const LectureAdminPanel = ({ go }) => {
         price: Number(draft.price) || 0,
         note: draft.note,
       });
-      try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
+      try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:235 오류(무시하고 진행)', _e); }
       setEditingId(null);
       refresh();
     } catch (err) {
@@ -262,8 +262,8 @@ const LectureAdminPanel = ({ go }) => {
         price: 0,
         note: '강연 안내를 입력하세요.',
       });
-      try { await window.BGNJ_AUDIT?.log?.({ action: 'lecture.create', target: `lecture:${id}` }); } catch {}
-      try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
+      try { await window.BGNJ_AUDIT?.log?.({ action: 'lecture.create', target: `lecture:${id}` }); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:265 오류(무시하고 진행)', _e); }
+      try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:266 오류(무시하고 진행)', _e); }
       refresh();
       if (created) startEdit(created);
       else window.BGNJ_TOAST.error('강연 생성 후 객체를 가져오지 못했습니다. 페이지를 새로고침해 주세요.');
@@ -329,7 +329,7 @@ const LectureAdminPanel = ({ go }) => {
 
       {/* v00.131 — 일괄 등록 (CSV / pipe-separated). 사용자 요청 '관리자페이지 강연 탭에서 일괄 등록은 할 수 있게'. */}
       {showBulk && (
-        <BulkLectureImport onClose={() => setShowBulk(false)} onDone={() => { setShowBulk(false); refresh(); try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {} }}/>
+        <BulkLectureImport onClose={() => setShowBulk(false)} onDone={() => { setShowBulk(false); refresh(); try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:332 오류(무시하고 진행)', _e); } }}/>
       )}
 
       {lectures.length === 0 ? (
@@ -417,7 +417,7 @@ const LectureAdminPanel = ({ go }) => {
                         try {
                           await window.BGNJ_LECTURES.deleteLecture(l.id);
                           window.BGNJ_AUDIT?.log({ action: 'lecture.remove', target: `lecture:${l.id}` });
-                          try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch {}
+                          try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:420 오류(무시하고 진행)', _e); }
                           refresh();
                         } catch (err) {
                           window.BGNJ_TOAST.error('강연 삭제 실패: ' + (err?.message || '알 수 없는 오류'));
@@ -732,7 +732,7 @@ const TourAdminPanel = ({ go }) => {
       });
       if (!tour) throw new Error('서버 응답 없음');
       window.BGNJ_AUDIT?.log({ action: 'tour.create', target: `tour:${id}` });
-      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch {}
+      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:735 오류(무시하고 진행)', _e); }
       refresh();
       startEdit(tour);
     } catch (err) {
@@ -748,7 +748,7 @@ const TourAdminPanel = ({ go }) => {
     try {
       await window.BGNJ_TOURS.deleteTour(id);
       window.BGNJ_AUDIT?.log({ action: 'tour.remove', target: `tour:${id}` });
-      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch {}
+      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:751 오류(무시하고 진행)', _e); }
       refresh();
     } catch (err) {
       window.BGNJ_TOAST.error('투어 삭제 실패: ' + (err?.message || '알 수 없는 오류'));

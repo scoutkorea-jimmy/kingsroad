@@ -4,7 +4,8 @@
     const BASE = "https://banginoja-api.scoutkorea.workers.dev/api";
     try {
       window.BGNJ_API_BASE = BASE;
-    } catch (e) {
+    } catch (_e) {
+      console.warn("[bgnj] api.js:16 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
     }
     const classifyFetchError = (rawErr, url) => {
       const err = new Error((rawErr == null ? void 0 : rawErr.message) || "\uC694\uCCAD \uC2E4\uD328");
@@ -365,7 +366,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.009",
+    version: "00.294.010",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -374,7 +375,8 @@
       `%c[BGNJ] v${window.BGNJ_VERSION.version} \xB7 build ${window.BGNJ_VERSION.build}`,
       "background:#92400E;color:#F5D548;padding:3px 8px;border-radius:3px;font-weight:600;"
     );
-  } catch (e) {
+  } catch (_e) {
+    console.warn("[bgnj] data.js:17 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
   }
   window.BGNJ_GUARD = {
     arr(fn, fallback) {
@@ -461,7 +463,8 @@
       }
       try {
         window.dispatchEvent(new CustomEvent("bgnj-drafts-change"));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:92)", _e);
       }
       return draft;
     },
@@ -470,7 +473,8 @@
       this._write(arr);
       try {
         window.dispatchEvent(new CustomEvent("bgnj-drafts-change"));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:98)", _e);
       }
     },
     get(id) {
@@ -479,7 +483,8 @@
   };
   try {
     window.BGNJ_DRAFTS.purge();
-  } catch (e) {
+  } catch (_e) {
+    console.warn("[bgnj] data.js:102 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
   }
   window.BGNJ_THEME = {
     KEY: "bgnj_theme",
@@ -494,7 +499,8 @@
       const v = value === "light" || value === "dark" ? value : "auto";
       try {
         localStorage.setItem(this.KEY, v);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] data.js:113 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       this.apply();
       return v;
@@ -519,17 +525,20 @@
         const eff = this.effective();
         document.documentElement.setAttribute("data-theme", eff);
         document.documentElement.style.colorScheme = eff;
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] data.js:134 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       try {
         window.dispatchEvent(new CustomEvent("bgnj-theme-change", { detail: { mode: this.get(), effective: this.effective() } }));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:135)", _e);
       }
     }
   };
   try {
     window.BGNJ_THEME.apply();
-  } catch (e) {
+  } catch (_e) {
+    console.warn("[bgnj] data.js:138 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
   }
   try {
     const mq = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
@@ -540,7 +549,8 @@
       if (mq.addEventListener) mq.addEventListener("change", onChange);
       else if (mq.addListener) mq.addListener(onChange);
     }
-  } catch (e) {
+  } catch (_e) {
+    console.warn("[bgnj] \uBE0C\uB77C\uC6B0\uC800 \uAE30\uB2A5 \uAC10\uC9C0 (data.js:146)", _e);
   }
   window.BGNJ_DIAG = {
     async run() {
@@ -587,7 +597,8 @@
         }
       }
       localStorage.setItem("bgnj_migration_v1", "done");
-    } catch (e) {
+    } catch (_e) {
+      console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (data.js:200)", _e);
     }
   })();
   (function cleanupV33() {
@@ -654,7 +665,8 @@
       });
       localStorage.setItem("bgnj_cleanup_v33", "done");
       if (removed.length) console.log("[BGNJ] v33 cleanup \u2014 removed localStorage keys:", removed);
-    } catch (e) {
+    } catch (_e) {
+      console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (data.js:242)", _e);
     }
   })();
   (function() {
@@ -694,7 +706,8 @@
       if (!window.DOMPurify) {
         try {
           console.warn("[BGNJ_SAFE_HTML] DOMPurify \uBBF8\uB85C\uB4DC \u2014 sanitize \uC2E4\uD328. CDN \uCC28\uB2E8 \uB610\uB294 SRI \uBBF8\uC2A4\uB9E4\uCE58 \uC758\uC2EC.");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] data.js:294 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         return "";
       }
@@ -769,17 +782,20 @@
     let ch = null;
     try {
       if (typeof BroadcastChannel !== "undefined") ch = new BroadcastChannel(CHANNEL);
-    } catch (e) {
+    } catch (_e) {
+      console.warn("[bgnj] data.js:334 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
     }
     const publish = (domain) => {
       const msg = { domain, at: Date.now() };
       try {
         ch == null ? void 0 : ch.postMessage(msg);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] data.js:338 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       try {
         localStorage.setItem("bgnj_purge_signal", JSON.stringify(msg));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] data.js:340 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     };
     const subscribe = (fn) => {
@@ -787,29 +803,34 @@
       const handler = (e) => {
         try {
           fn((e == null ? void 0 : e.data) || JSON.parse((e == null ? void 0 : e.newValue) || "{}"));
-        } catch (e2) {
+        } catch (_e) {
+          console.warn("[bgnj] data.js:343 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       };
       try {
         (_a = ch == null ? void 0 : ch.addEventListener) == null ? void 0 : _a.call(ch, "message", handler);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] data.js:344 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       const onStorage = (e) => {
         if (e.key === "bgnj_purge_signal" && e.newValue) handler(e);
       };
       try {
         window.addEventListener("storage", onStorage);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] data.js:346 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       return () => {
         var _a2;
         try {
           (_a2 = ch == null ? void 0 : ch.removeEventListener) == null ? void 0 : _a2.call(ch, "message", handler);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uB9AC\uC2A4\uB108 \uD574\uC81C (data.js:348)", _e);
         }
         try {
           window.removeEventListener("storage", onStorage);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uB9AC\uC2A4\uB108 \uD574\uC81C (data.js:349)", _e);
         }
       };
     };
@@ -824,7 +845,8 @@
         sessionId = "sess-" + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
         sessionStorage.setItem(SESSION_KEY, sessionId);
       }
-    } catch (e) {
+    } catch (_e) {
+      console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (data.js:368)", _e);
     }
     let lastTracked = null;
     const track = (route) => {
@@ -978,7 +1000,8 @@
       localStorage.removeItem("bgnj_comments");
       localStorage.setItem("bgnj_storage_version", BGNJ_STORAGE_VERSION);
     }
-  } catch (e) {
+  } catch (_e) {
+    console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (data.js:529)", _e);
   }
   var hashPassword = (input) => {
     const value = String(input || "");
@@ -1467,7 +1490,8 @@
       if (raw.some((g, i) => g && migrated[i] && g.color !== migrated[i].color)) {
         try {
           _lsSet("bgnj_grades", migrated);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] data.js:1073 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       }
       return migrated;
@@ -1539,7 +1563,8 @@
       _lsSet("bgnj_categories", window.BGNJ_STORES.categories);
       try {
         window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] data.js:1171 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     }
   };
@@ -1577,7 +1602,8 @@
       try {
         if (user) localStorage.setItem(this._SESSION_KEY, JSON.stringify(this._sanitizeForCache(user)));
         else localStorage.removeItem(this._SESSION_KEY);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (data.js:1207)", _e);
       }
     },
     getSessionUser() {
@@ -1667,7 +1693,8 @@
       if (!serverOk) {
         try {
           (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, "\uC774 \uAE30\uAE30\uC5D0\uC11C\uB294 \uB85C\uADF8\uC544\uC6C3\uB410\uC9C0\uB9CC \uC11C\uBC84 \uC5F0\uACB0\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uACF5\uC6A9 PC \uB77C\uBA74 \uB124\uD2B8\uC6CC\uD06C \uC5F0\uACB0 \uD6C4 \uB2E4\uC2DC \uB85C\uADF8\uC544\uC6C3\uD574 \uC8FC\uC138\uC694.");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uD1A0\uC2A4\uD2B8\uAC00 \uC5C6\uC5B4\uB3C4 \uB85C\uADF8\uC544\uC6C3 \uC790\uCCB4\uB294 \uB05D\uB0B4\uC57C \uD55C\uB2E4 (data.js:1297)", _e);
         }
       }
       return null;
@@ -1680,7 +1707,8 @@
         this._writeCache(user || null);
         try {
           window.dispatchEvent(new CustomEvent("bgnj-session-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1308)", _e);
         }
         return { ok: true, user };
       } catch (err) {
@@ -1697,7 +1725,8 @@
         if (!Array.isArray(users)) {
           try {
             console.warn("[BGNJ_AUTH.refreshUsers] non-array response \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1323 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._usersCache.slice();
         }
@@ -1717,7 +1746,8 @@
         }));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-users-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1335)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -1885,7 +1915,8 @@
           if (!Array.isArray(posts)) {
             try {
               console.warn("[BGNJ_COMMUNITY.refreshPosts] non-array \u2014 cache preserved");
-            } catch (e) {
+            } catch (_e) {
+              console.warn("[bgnj] data.js:1511 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
             }
             return this._serverPosts;
           }
@@ -1894,7 +1925,8 @@
           this._lastError = null;
           try {
             window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1515)", _e);
           }
           return this._serverPosts;
         } catch (err) {
@@ -1904,7 +1936,8 @@
       this._lastError = (lastErr == null ? void 0 : lastErr.message) || "refresh failed";
       try {
         window.dispatchEvent(new CustomEvent("bgnj-posts-refresh-error", { detail: { message: this._lastError } }));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1522)", _e);
       }
       return this._serverPosts;
     },
@@ -1929,7 +1962,8 @@
         if (!window.BGNJ_AUTO_GRADE_DISABLED) {
           try {
             (_a = window.BGNJ_GRADE_PROMO) == null ? void 0 : _a.maybePromote(payload.authorId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1543 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         }
       }
@@ -1999,7 +2033,8 @@
         }
         try {
           window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1616)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -2027,12 +2062,14 @@
         this._serverPosts = this._serverPosts.filter((p) => String(p.id) !== String(postId));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1641)", _e);
         }
         if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) {
           try {
             (_a = window.BGNJ_GRADE_PROMO) == null ? void 0 : _a.maybeDemote(authorId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1643 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         }
         return;
@@ -2042,7 +2079,8 @@
       if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) {
         try {
           (_b = window.BGNJ_GRADE_PROMO) == null ? void 0 : _b.maybeDemote(authorId);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] data.js:1650 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       }
     },
@@ -2058,7 +2096,8 @@
           this._serverPosts[idx] = { ...this._serverPosts[idx], views };
           try {
             window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1662)", _e);
           }
         }
         return views || 0;
@@ -2069,7 +2108,8 @@
           this._serverPosts[idx] = { ...this._serverPosts[idx], views: cur + 1 };
           try {
             window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1671)", _e);
           }
           return cur + 1;
         }
@@ -2088,7 +2128,8 @@
         if (!Array.isArray(comments)) {
           try {
             console.warn("[BGNJ_COMMUNITY.refreshComments] non-array \u2014 cache preserved for post", postId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1688 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._commentsCache[String(postId)] || [];
         }
@@ -2103,7 +2144,8 @@
         }));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1698)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -2125,7 +2167,8 @@
         if (!window.BGNJ_AUTO_GRADE_DISABLED) {
           try {
             (_a = window.BGNJ_GRADE_PROMO) == null ? void 0 : _a.maybePromote(payload.authorId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1714 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         }
       }
@@ -2142,7 +2185,8 @@
         });
         try {
           window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1726)", _e);
         }
         return this._commentsCache[String(postId)];
       }
@@ -2152,7 +2196,8 @@
         if (!window.BGNJ_AUTO_GRADE_DISABLED) {
           try {
             (_a = window.BGNJ_GRADE_PROMO) == null ? void 0 : _a.maybePromote(payload.authorId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1733 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         }
       }
@@ -2169,12 +2214,14 @@
         this._commentsCache[String(postId)] = arr.filter((c) => String(c.id) !== String(commentId));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1747)", _e);
         }
         if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) {
           try {
             (_a = window.BGNJ_GRADE_PROMO) == null ? void 0 : _a.maybeDemote(authorId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1749 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         }
         return this._commentsCache[String(postId)];
@@ -2184,7 +2231,8 @@
       if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) {
         try {
           (_b = window.BGNJ_GRADE_PROMO) == null ? void 0 : _b.maybeDemote(authorId);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] data.js:1755 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       }
       return nextComments;
@@ -2230,7 +2278,8 @@
       this._patchLikesInMemory(postId, optimistic);
       try {
         window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1800)", _e);
       }
       try {
         const res = await window.BGNJ_API.likes.toggle(postId);
@@ -2238,14 +2287,16 @@
         this._patchLikesInMemory(postId, arr);
         try {
           window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1805)", _e);
         }
         return arr;
       } catch (err) {
         this._patchLikesInMemory(postId, cur);
         try {
           window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1809)", _e);
         }
         throw err;
       }
@@ -2260,7 +2311,8 @@
         if (!Array.isArray(bookmarks)) {
           try {
             console.warn("[BGNJ_COMMUNITY.refreshBookmarks] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1822 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._bookmarks[userId] || [];
         }
@@ -2293,7 +2345,8 @@
         if (!Array.isArray(reports)) {
           try {
             console.warn("[BGNJ_COMMUNITY.refreshReports] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1849 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._reports.slice();
         }
@@ -2333,7 +2386,8 @@
         if (!Array.isArray(notifications)) {
           try {
             console.warn("[BGNJ_COMMUNITY.refreshNotifications] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1883 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._notifications[userId] || [];
         }
@@ -2351,7 +2405,8 @@
         }));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-notifications-refresh", { detail: { userId } }));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1890)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -2439,14 +2494,16 @@
         if (!Array.isArray(columns)) {
           try {
             console.warn("[BGNJ_COLUMNS.refresh] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:1966 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._columns.slice();
         }
         this._columns = columns.map((c) => this._toColumn(c));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-columns-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1968)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -2468,7 +2525,8 @@
         if (target) target.likes = Array.isArray(likes) ? likes : target.likes || [];
         try {
           window.dispatchEvent(new CustomEvent("bgnj-columns-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1979)", _e);
         }
         return (target == null ? void 0 : target.likes) || [];
       } catch (err) {
@@ -2487,7 +2545,8 @@
         if (target && typeof views === "number") target.views = views;
         try {
           window.dispatchEvent(new CustomEvent("bgnj-columns-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1992)", _e);
         }
         return views || 0;
       } catch (e) {
@@ -2614,14 +2673,16 @@
         if (!Array.isArray(lectures)) {
           try {
             console.warn("[BGNJ_LECTURES.refresh] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2103 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._lectures.slice();
         }
         this._lectures = lectures.map((l) => this._toLecture(l));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-lectures-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:2105)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -2634,7 +2695,8 @@
         if (!Array.isArray(registrations)) {
           try {
             console.warn("[BGNJ_LECTURES.refreshMine] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2113 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._myRegs.slice();
         }
@@ -2694,7 +2756,8 @@
         if (!Array.isArray(registrations)) {
           try {
             console.warn("[BGNJ_LECTURES.refreshRegistrations] non-array \u2014 cache preserved for", lectureId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2153 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._registrationsByLecture[String(lectureId)] || [];
         }
@@ -2830,7 +2893,8 @@
         if (!Array.isArray(reviews)) {
           try {
             console.warn("[BGNJ_LECTURES.refreshReviews] non-array \u2014 cache preserved for", lectureId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2259 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._reviewsByLecture[String(lectureId)] || [];
         }
@@ -2873,7 +2937,8 @@
         if (!Array.isArray(accounts)) {
           try {
             console.warn("[BGNJ_BOOK_ORDERS.refreshBankAccount] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2290 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return;
         }
@@ -2894,7 +2959,8 @@
         this._bank = def ? { ...def } : null;
         try {
           window.dispatchEvent(new CustomEvent("bgnj-bank-accounts-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:2299)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -2974,19 +3040,22 @@
         if (!Array.isArray(orders)) {
           try {
             console.warn("[BGNJ_BOOK_ORDERS.refreshMine] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2367 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._ordersMine.slice();
         }
         this._ordersMine = orders.map((o) => this._toOrder(o));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-orders-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:2369)", _e);
         }
       } catch (e) {
         try {
           console.warn("[BGNJ_BOOK_ORDERS.refreshMine]", e);
-        } catch (e2) {
+        } catch (_e) {
+          console.warn("[bgnj] data.js:2370 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       }
       return this._ordersMine.slice();
@@ -2997,19 +3066,22 @@
         if (!Array.isArray(orders)) {
           try {
             console.warn("[BGNJ_BOOK_ORDERS.refreshAll] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2377 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._ordersAll.slice();
         }
         this._ordersAll = orders.map((o) => this._toOrder(o));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-orders-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:2379)", _e);
         }
       } catch (e) {
         try {
           console.warn("[BGNJ_BOOK_ORDERS.refreshAll]", e);
-        } catch (e2) {
+        } catch (_e) {
+          console.warn("[bgnj] data.js:2380 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       }
       return this._ordersAll.slice();
@@ -3122,7 +3194,8 @@
         this._ordersMine = this._ordersMine.filter((o) => o.id !== id);
         try {
           window.dispatchEvent(new CustomEvent("bgnj-book-orders-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:2468)", _e);
         }
         await this.refreshAll();
         return { ok: true };
@@ -3207,7 +3280,8 @@
         if (!Array.isArray(reviews)) {
           try {
             console.warn("[BGNJ_BOOKS.refreshReviews] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2540 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._reviews.slice();
         }
@@ -3285,14 +3359,16 @@
         if (!Array.isArray(tours)) {
           try {
             console.warn("[BGNJ_TOURS.refresh] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2608 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._tours.slice();
         }
         this._tours = tours.map((t) => this._toTour(t));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-tours-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:2610)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -3305,7 +3381,8 @@
         if (!Array.isArray(reservations)) {
           try {
             console.warn("[BGNJ_TOURS.refreshMine] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2618 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._myReservations.slice();
         }
@@ -3366,7 +3443,8 @@
         if (!Array.isArray(reservations)) {
           try {
             console.warn("[BGNJ_TOURS.refreshReservations] non-array \u2014 cache preserved for", tourId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2659 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._reservationsByTour[String(tourId)] || [];
         }
@@ -3494,7 +3572,8 @@
         if (!Array.isArray(reviews)) {
           try {
             console.warn("[BGNJ_TOURS.refreshReviews] non-array \u2014 cache preserved for", tourId);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2758 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._reviewsByTour[String(tourId)] || [];
         }
@@ -3535,14 +3614,16 @@
         if (!Array.isArray(roomTypes)) {
           try {
             console.warn("[BGNJ_HANGYEON.refreshRoomTypes] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2793 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._roomTypes.slice();
         }
         this._roomTypes = roomTypes;
         try {
           window.dispatchEvent(new CustomEvent("bgnj-hangyeon-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:2795)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -3602,7 +3683,8 @@
         if (!Array.isArray(bookings)) {
           try {
             console.warn("[BGNJ_HANGYEON.refreshMine] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2826 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._myBookings.slice();
         }
@@ -3749,7 +3831,8 @@
         if (!Array.isArray(log)) {
           try {
             console.warn("[BGNJ_AUDIT.refresh] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:2889 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this.list({ search, limit });
         }
@@ -3906,7 +3989,8 @@
           } catch (e) {
             try {
               console.warn("[prefetchAllServerMetrics]", u.id, e);
-            } catch (e2) {
+            } catch (_e) {
+              console.warn("[bgnj] data.js:3044 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
             }
           }
         }
@@ -3936,13 +4020,15 @@
         (((_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.listPosts) == null ? void 0 : _b.call(_a)) || []).filter((p) => p.authorId === userId).forEach((p) => {
           likesReceived += Array.isArray(p.likes) ? p.likes.length : 0;
         });
-      } catch (e) {
+      } catch (_e2) {
+        console.warn("[bgnj] data.js:3066 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
       }
       let reportCount = 0;
       try {
         const reports = ((_c = window.BGNJ_COMMUNITY) == null ? void 0 : _c._reports) || [];
         reportCount = reports.filter((r) => r && (r.targetUserId === userId || r.target_user_id === userId)).length;
-      } catch (e) {
+      } catch (_e2) {
+        console.warn("[bgnj] data.js:3071 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
       }
       const sv = this._serverCache[userId];
       return {
@@ -4068,7 +4154,8 @@
         if (!siteContent || typeof siteContent !== "object") {
           try {
             console.warn("[BGNJ_SITE_CONTENT.refresh] non-object \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:3206 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this.get();
         }
@@ -4076,7 +4163,8 @@
         this.applyHead();
         try {
           window.dispatchEvent(new CustomEvent("bgnj-site-content-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:3209)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -4162,13 +4250,15 @@
         if (sCon.naver) setMeta('meta[name="naver-site-verification"]', "content", sCon.naver);
         if (sCon.bing) setMeta('meta[name="msvalidate.01"]', "content", sCon.bing);
         if (sCon.yandex) setMeta('meta[name="yandex-verification"]', "content", sCon.yandex);
-      } catch (e) {
+      } catch (_e2) {
+        console.warn("[bgnj] \uBB38\uC11C \uC81C\uBAA9 (data.js:3300)", _e2);
       }
     }
   };
   try {
     window.BGNJ_SITE_CONTENT.applyHead();
-  } catch (e) {
+  } catch (_e) {
+    console.warn("[bgnj] data.js:3304 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
   }
   window.BGNJ_BOOKS = {
     _books: [],
@@ -4231,14 +4321,16 @@
         if (!Array.isArray(books)) {
           try {
             console.warn("[BGNJ_BOOKS.refresh] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:3348 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._books.slice();
         }
         this._books = books.map((b) => this._toBook(b));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-books-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:3350)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -4339,11 +4431,13 @@
       this._cache[slug] = { ...next, updatedAt: (/* @__PURE__ */ new Date()).toISOString() };
       try {
         (_b = (_a = window.BGNJ_BROADCAST) == null ? void 0 : _a.publish) == null ? void 0 : _b.call(_a, "legal");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] data.js:3455 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       try {
         window.dispatchEvent(new CustomEvent("bgnj-legal-refresh", { detail: { slug } }));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:3456)", _e);
       }
       return this._cache[slug];
     },
@@ -4359,7 +4453,8 @@
         if (!Array.isArray(faqs)) {
           try {
             console.warn("[BGNJ_FAQ.refresh] non-array \u2014 cache preserved");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] data.js:3472 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           return this._cache.slice();
         }
@@ -4376,7 +4471,8 @@
         });
         try {
           window.dispatchEvent(new CustomEvent("bgnj-faqs-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:3479)", _e);
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
@@ -4575,7 +4671,8 @@
         if (choice === "save") {
           try {
             s.onSaveDraft();
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] Shell.jsx:63 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         }
         (_b = s.onClose) == null ? void 0 : _b.call(s);
@@ -4612,7 +4709,8 @@
       try {
         window.history.pushState({ bgnjModal: true }, "");
         pushed = true;
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD788\uC2A4\uD1A0\uB9AC \uC870\uC791 (Shell.jsx:101)", _e);
       }
       const onPop = () => {
         handleAttemptClose();
@@ -4620,7 +4718,8 @@
           if (stateRef.current.dirty) {
             window.history.pushState({ bgnjModal: true }, "");
           }
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uD788\uC2A4\uD1A0\uB9AC \uC870\uC791 (Shell.jsx:112)", _e);
         }
       };
       if (pushed) window.addEventListener("popstate", onPop);
@@ -4632,7 +4731,8 @@
           window.removeEventListener("popstate", onPop);
           try {
             if ((_a = window.history.state) == null ? void 0 : _a.bgnjModal) window.history.back();
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uD788\uC2A4\uD1A0\uB9AC \uC870\uC791 (Shell.jsx:120)", _e);
           }
         }
       };
@@ -4668,13 +4768,15 @@
           e.preventDefault();
           try {
             last.focus();
-          } catch (e2) {
+          } catch (_e) {
+            console.warn("[bgnj] Shell.jsx:157 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         } else if (!e.shiftKey && active === last) {
           e.preventDefault();
           try {
             first.focus();
-          } catch (e2) {
+          } catch (_e) {
+            console.warn("[bgnj] Shell.jsx:158 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         }
       };
@@ -4684,7 +4786,8 @@
         if (fs.length > 0 && !container.contains(document.activeElement)) {
           try {
             fs[0].focus();
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (Shell.jsx:165)", _e);
           }
         }
         container.addEventListener("keydown", onKey);
@@ -4696,7 +4799,8 @@
         if (container) container.removeEventListener("keydown", onKey);
         try {
           (_a = prevFocus == null ? void 0 : prevFocus.focus) == null ? void 0 : _a.call(prevFocus);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] Shell.jsx:174 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       };
     }, [open, contentRef]);
@@ -4814,7 +4918,8 @@
       var _a, _b;
       try {
         (_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.markNotificationRead) == null ? void 0 : _b.call(_a, user.id, n.id);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] Shell.jsx:304 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       setOpen(false);
       if (onPick) onPick(n);
@@ -4824,7 +4929,8 @@
       var _a, _b;
       try {
         (_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.markAllNotificationsRead) == null ? void 0 : _b.call(_a, user.id);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] Shell.jsx:311 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       setTick((t) => t + 1);
     };
@@ -5078,7 +5184,8 @@
       if (pendingKey && pendingId != null) {
         try {
           sessionStorage.setItem(pendingKey, String(pendingId));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (Shell.jsx:542)", _e);
         }
       }
       onClose();
@@ -5358,7 +5465,8 @@
     const goBoard = (boardId) => {
       try {
         sessionStorage.setItem("bgnj_pending_board_id", boardId);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (Shell.jsx:756)", _e);
       }
       go("community");
     };
@@ -5664,7 +5772,8 @@
           sessionStorage.setItem("bgnj_pending_post_id", String(n.postId));
           go("community");
         }
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (Shell.jsx:1011)", _e);
       }
     } }), /* @__PURE__ */ React.createElement("button", { className: "btn btn-small", onClick: () => go("mypage") }, "\uB9C8\uC774\uD398\uC774\uC9C0"), user.isAdmin && /* @__PURE__ */ React.createElement("button", { className: "btn btn-small", onClick: () => go("admin") }, "\uAD00\uB9AC"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-small", onClick: onLogout }, "\uB85C\uADF8\uC544\uC6C3")) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
       "button",
@@ -5802,12 +5911,14 @@
     const persist = (next) => {
       try {
         localStorage.setItem(KEY, JSON.stringify(next));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] Shell.jsx:1236 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       setDecision(next);
       try {
         window.dispatchEvent(new CustomEvent("bgnj-cookie-consent", { detail: next }));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (Shell.jsx:1238)", _e);
       }
     };
     const acceptAll = () => persist({ necessary: true, analytics: true, marketing: true, ts: (/* @__PURE__ */ new Date()).toISOString() });
@@ -6099,7 +6210,8 @@
       return () => {
         try {
           editor.destroy();
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] TiptapEditor.jsx:168 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       };
     }, [ready, preset]);
@@ -6128,7 +6240,8 @@
         } catch (err) {
           try {
             window.BGNJ_TOAST.error("\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] TiptapEditor.jsx:199 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         } finally {
           setUploadingImage(false);
@@ -6151,13 +6264,15 @@
       if (!url) return;
       try {
         ed.chain().focus().setYoutubeVideo({ src: url, width: 640, height: 360 }).run();
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (TiptapEditor.jsx:219)", _e);
       }
     };
     const insertTable = () => {
       try {
         ed.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (TiptapEditor.jsx:223)", _e);
       }
     };
     const pickColor = () => {
@@ -6165,7 +6280,8 @@
       if (!color) return;
       try {
         ed.chain().focus().setColor(color).run();
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (TiptapEditor.jsx:229)", _e);
       }
     };
     const Btn = ({ cmd, label, active, disabled, shortcut }) => /* @__PURE__ */ React.createElement(
@@ -6388,14 +6504,16 @@
       window.addEventListener("keydown", onKey, true);
       try {
         (_b = (_a = window.BGNJ_SCROLL_LOCK) == null ? void 0 : _a.lock) == null ? void 0 : _b.call(_a);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] ConfirmDialog.jsx:27 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       return () => {
         var _a2, _b2;
         window.removeEventListener("keydown", onKey, true);
         try {
           (_b2 = (_a2 = window.BGNJ_SCROLL_LOCK) == null ? void 0 : _a2.unlock) == null ? void 0 : _b2.call(_a2);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] ConfirmDialog.jsx:30 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       };
     }, [open, onCancel]);
@@ -6670,7 +6788,8 @@
       } catch (err) {
         try {
           console.warn("[MediaGalleryEditor] \uD55C \uC7A5 \uC5C5\uB85C\uB4DC \uC2E4\uD328 (\uB2E4\uC74C \uC7A5 \uC9C4\uD589):", err);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] MediaGallery.jsx:74 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       }
       onProgress == null ? void 0 : onProgress(i + 1, files.length);
@@ -6940,7 +7059,8 @@
       var _a, _b, _c, _d;
       try {
         console.error("[HomeSectionBoundary]", this.props.label || "section", err);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] HomePage.jsx:21 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       try {
         (_d = (_c = (_b = (_a = window.BGNJ_API) == null ? void 0 : _a.errorLog) == null ? void 0 : _b.report({
@@ -6954,7 +7074,8 @@
           origin: location.origin
         })) == null ? void 0 : _c.catch) == null ? void 0 : _d.call(_c, () => {
         });
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC624\uB958 \uBCF4\uACE0 \uC790\uCCB4 \u2014 \uC2E4\uD328\uD574\uB3C4 \uC7AC\uBCF4\uACE0\uD558\uBA74 \uBB34\uD55C\uB8E8\uD504 (HomePage.jsx:29)", _e);
       }
     }
     render() {
@@ -7079,7 +7200,8 @@
     if (isNaN(t)) return "";
     try {
       if ((_a = window.BGNJ_FMT) == null ? void 0 : _a.kstFriendly) return window.BGNJ_FMT.kstFriendly(new Date(t).toISOString());
-    } catch (e) {
+    } catch (_e) {
+      console.warn("[bgnj] HomePage.jsx:149 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
     }
     const d = new Date(t);
     const p2 = (n) => String(n).padStart(2, "0");
@@ -7263,7 +7385,8 @@
           if (mq.removeEventListener) mq.removeEventListener("change", handler);
           else if (mq.removeListener) mq.removeListener(handler);
         };
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uB9AC\uC2A4\uB108 \uD574\uC81C (HomePage.jsx:416)", _e);
       }
     }, []);
     const heroStyle = React.useMemo(
@@ -7394,7 +7517,8 @@
           onGo: () => {
             try {
               sessionStorage.setItem("bgnj_pending_tour_id", String(t.id));
-            } catch (e) {
+            } catch (_e) {
+              console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (HomePage.jsx:546)", _e);
             }
             go("tour");
           }
@@ -7409,7 +7533,8 @@
           onGo: () => {
             try {
               sessionStorage.setItem("bgnj_pending_lecture_id", String(l.id));
-            } catch (e) {
+            } catch (_e) {
+              console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (HomePage.jsx:554)", _e);
             }
             go("lectures");
           }
@@ -7487,7 +7612,8 @@
           ...clickable(() => {
             try {
               sessionStorage.setItem(pendKey, String(item.id));
-            } catch (e) {
+            } catch (_e) {
+              console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (HomePage.jsx:706)", _e);
             }
             go(route);
           }, `${label}: ${title}`)
@@ -7740,7 +7866,8 @@
       { label: "\uC601\uC0C1 \uC2E4\uB85D\n(\uC720\uD29C\uBE0C)", action: () => {
         try {
           window.open("https://www.youtube.com/@banginoja", "_blank", "noopener");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] HomeNextPage.jsx:105 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       } }
     ];
@@ -7845,7 +7972,8 @@
         onClick: () => {
           try {
             window.open("https://www.youtube.com/@banginoja", "_blank", "noopener");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] HomeNextPage.jsx:254 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         },
         onKeyDown: (e) => {
@@ -7853,7 +7981,8 @@
             e.preventDefault();
             try {
               window.open("https://www.youtube.com/@banginoja", "_blank", "noopener");
-            } catch (e2) {
+            } catch (_e) {
+              console.warn("[bgnj] HomeNextPage.jsx:255 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
             }
           }
         }
@@ -8299,7 +8428,8 @@
           const pos = replaced.length;
           el == null ? void 0 : el.focus();
           el == null ? void 0 : el.setSelectionRange(pos, pos);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (CommunityPage.jsx:491)", _e);
         }
       }, 0);
     };
@@ -8404,7 +8534,8 @@
       setPostsPerPageState(n);
       try {
         localStorage.setItem(POSTS_PER_PAGE_LS_KEY, String(n));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] CommunityPage.jsx:565 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       setPage(1);
     };
@@ -8412,24 +8543,28 @@
       let pending = null;
       try {
         pending = sessionStorage.getItem("bgnj_pending_post_id");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (CommunityPage.jsx:572)", _e);
       }
       if (pending) {
         try {
           sessionStorage.removeItem("bgnj_pending_post_id");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (CommunityPage.jsx:574)", _e);
         }
         setPostId(pending);
       }
       let pendingBoard = null;
       try {
         pendingBoard = sessionStorage.getItem("bgnj_pending_board_id");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (CommunityPage.jsx:579)", _e);
       }
       if (pendingBoard) {
         try {
           sessionStorage.removeItem("bgnj_pending_board_id");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (CommunityPage.jsx:581)", _e);
         }
         setTab(pendingBoard);
       }
@@ -8516,7 +8651,8 @@
         try {
           await ((_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a._hydratePostBody) == null ? void 0 : _b.call(_a, postId));
           if (alive) setRefreshKey((v) => v + 1);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] CommunityPage.jsx:653 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       })();
       return () => {
@@ -8552,7 +8688,8 @@
           } catch (err) {
             try {
               (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, "\uC784\uC2DC\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
-            } catch (e) {
+            } catch (_e2) {
+              console.warn("[bgnj] CommunityPage.jsx:688 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
             }
           }
         },
@@ -8586,7 +8723,8 @@
               var _a2, _b;
               try {
                 if (draftIdRef.current) (_b = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.remove) == null ? void 0 : _b.call(_a2, draftIdRef.current);
-              } catch (e) {
+              } catch (_e) {
+                console.warn("[bgnj] CommunityPage.jsx:709 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
               }
               let savedPost;
               try {
@@ -9017,14 +9155,16 @@
           try {
             e.dataTransfer.effectAllowed = "move";
             e.dataTransfer.setData("text/plain", String(p.id));
-          } catch (e2) {
+          } catch (_e2) {
+            console.warn("[bgnj] CommunityPage.jsx:1159 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
           }
         },
         onDragOver: (e) => {
           e.preventDefault();
           try {
             e.dataTransfer.dropEffect = "move";
-          } catch (e2) {
+          } catch (_e2) {
+            console.warn("[bgnj] CommunityPage.jsx:1163 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
           }
           if (draggingId && String(draggingId) !== String(p.id)) {
             moveLocalBefore(draggingId, p.id);
@@ -9262,7 +9402,8 @@
     const clearDraft = () => {
       try {
         localStorage.removeItem(draftKey);
-      } catch (e) {
+      } catch (_e2) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (CommunityPage.jsx:1414)", _e2);
       }
       setSavedAt(null);
       setDraftRestored(false);
@@ -9283,7 +9424,8 @@
         var _a2, _b2;
         try {
           setPostDrafts(((_b2 = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.list) == null ? void 0 : _b2.call(_a2, "post")) || []);
-        } catch (e) {
+        } catch (_e2) {
+          console.warn("[bgnj] CommunityPage.jsx:1430 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
       };
       window.addEventListener("bgnj-drafts-change", onChange);
@@ -9306,7 +9448,8 @@
       if (!await window.BGNJ_CONFIRM("\uC774 \uC784\uC2DC\uC800\uC7A5 \uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true, confirmLabel: "\uC0AD\uC81C" })) return;
       try {
         (_b2 = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.remove) == null ? void 0 : _b2.call(_a2, id);
-      } catch (e) {
+      } catch (_e2) {
+        console.warn("[bgnj] CommunityPage.jsx:1449 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
       }
     };
     const MAX_POST_DRAFTS = ((_e = window.BGNJ_DRAFTS) == null ? void 0 : _e.MAX_COUNT) || 5;
@@ -9343,7 +9486,8 @@
       if (!isEditing) {
         try {
           localStorage.removeItem(draftKey);
-        } catch (e) {
+        } catch (_e2) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (CommunityPage.jsx:1489)", _e2);
         }
       }
       const _bodyHtmlWithImages = _stripAttachedBlock(bodyHtml);
@@ -9591,7 +9735,8 @@
       try {
         if (sessionStorage.getItem(key)) return;
         sessionStorage.setItem(key, "1");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (CommunityPage.jsx:1789)", _e);
       }
       window.BGNJ_COMMUNITY.incrementViews(post.id);
       onRefresh == null ? void 0 : onRefresh();
@@ -9714,7 +9859,8 @@
           }
           return "";
         });
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] CommunityPage.jsx:1958 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       const slideImages = Array.isArray(post.images) && post.images.length > 0 ? post.images : extractedImages;
       return /* @__PURE__ */ React.createElement(React.Fragment, null, slideImages.length > 0 && /* @__PURE__ */ React.createElement("section", { "aria-label": "\uCCA8\uBD80 \uC774\uBBF8\uC9C0", style: { margin: "24px 0 32px" } }, /* @__PURE__ */ React.createElement(ImageSlider, { images: slideImages })), cleanHtml ? /* @__PURE__ */ React.createElement("div", { className: "post-body", dangerouslySetInnerHTML: { __html: window.BGNJ_SAFE_HTML(cleanHtml) } }) : ((_b2 = post.body) == null ? void 0 : _b2.text) ? /* @__PURE__ */ React.createElement("div", { className: "post-body", style: { whiteSpace: "pre-wrap" } }, post.body.text) : /* @__PURE__ */ React.createElement("div", { className: "post-body dim-2", style: { fontStyle: "italic" } }, "\uBCF8\uBB38\uC774 \uBE44\uC5B4\uC788\uC2B5\uB2C8\uB2E4."));
@@ -9950,12 +10096,14 @@
       let pending = null;
       try {
         pending = sessionStorage.getItem("bgnj_pending_tour_id");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (WangsanamTourPage.jsx:119)", _e);
       }
       if (pending) {
         try {
           sessionStorage.removeItem("bgnj_pending_tour_id");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (WangsanamTourPage.jsx:121)", _e);
         }
         const inUpcoming = toursUpcoming.findIndex((t) => String(t.id) === String(pending));
         if (inUpcoming >= 0) {
@@ -10051,7 +10199,8 @@
           setPastDetailId(String(id));
           try {
             window.scrollTo({ top: 0, behavior: "smooth" });
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (WangsanamTourPage.jsx:232)", _e);
           }
         }
       }
@@ -10240,23 +10389,27 @@
             await window.BGNJ_SITE_CONTENT.saveSection("tourPages", { [id]: { ...existing, images } });
             try {
               (_d = (_c2 = window.BGNJ_BROADCAST) == null ? void 0 : _c2.publish) == null ? void 0 : _d.call(_c2, "site-content");
-            } catch (e2) {
+            } catch (_e2) {
+              console.warn("[bgnj] WangsanamTourPage.jsx:530 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
             }
           } catch (galleryErr) {
             try {
               console.warn("[TourQuickAddModal] \uAC24\uB7EC\uB9AC \uC800\uC7A5 \uC2E4\uD328:", galleryErr);
-            } catch (e2) {
+            } catch (_e2) {
+              console.warn("[bgnj] WangsanamTourPage.jsx:532 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
             }
             (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, "\uD22C\uC5B4 \uC815\uBCF4\uB294 \uC800\uC7A5\uB410\uC9C0\uB9CC \uAC24\uB7EC\uB9AC \uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
           }
         }
         try {
           await ((_h = (_g = window.BGNJ_AUDIT) == null ? void 0 : _g.log) == null ? void 0 : _h.call(_g, { action: isEdit ? "tour.update" : "tour.create", target: `tour:${id}` }));
-        } catch (e2) {
+        } catch (_e2) {
+          console.warn("[bgnj] WangsanamTourPage.jsx:536 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
         try {
           (_j = (_i = window.BGNJ_BROADCAST) == null ? void 0 : _i.publish) == null ? void 0 : _j.call(_i, "tours");
-        } catch (e2) {
+        } catch (_e2) {
+          console.warn("[bgnj] WangsanamTourPage.jsx:537 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
         (_l = (_k = window.BGNJ_TOAST) == null ? void 0 : _k.success) == null ? void 0 : _l.call(_k, isEdit ? "\uD22C\uC5B4\uAC00 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4." : "\uD22C\uC5B4\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
         onSaved == null ? void 0 : onSaved();
@@ -10726,12 +10879,14 @@
       let pending = null;
       try {
         pending = sessionStorage.getItem("bgnj_pending_column_id");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (ColumnPage.jsx:38)", _e);
       }
       if (pending) {
         try {
           sessionStorage.removeItem("bgnj_pending_column_id");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (ColumnPage.jsx:40)", _e);
         }
         setSelectedId(pending);
       }
@@ -10740,12 +10895,14 @@
       let pendingWrite = null;
       try {
         pendingWrite = sessionStorage.getItem("bgnj_pending_column_write");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (ColumnPage.jsx:48)", _e);
       }
       if (pendingWrite) {
         try {
           sessionStorage.removeItem("bgnj_pending_column_write");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (ColumnPage.jsx:50)", _e);
         }
         if (user == null ? void 0 : user.isAdmin) setWriterOpen(true);
       }
@@ -10765,7 +10922,8 @@
           sessionStorage.setItem(key, "1");
           Promise.resolve(window.BGNJ_COLUMNS.incrementViews(selectedId)).then(() => refresh());
         }
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (ColumnPage.jsx:75)", _e);
       }
     }, [selectedId]);
     const requireLogin = async (label) => {
@@ -11869,7 +12027,8 @@
       }
       try {
         window.location.href = mailHref;
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] HangyeonPage.jsx:462 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, "\uBB38\uC758 \uBA54\uC77C \uC791\uC131 \uD654\uBA74\uC744 \uC5F4\uC5C8\uC5B4\uC694. \uC804\uC1A1\uD574 \uC8FC\uC138\uC694.");
     };
@@ -12037,12 +12196,14 @@
       let pending = null;
       try {
         pending = sessionStorage.getItem("bgnj_pending_lecture_id");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (LecturesPage.jsx:53)", _e);
       }
       if (pending) {
         try {
           sessionStorage.removeItem("bgnj_pending_lecture_id");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (LecturesPage.jsx:55)", _e);
         }
         const inUpcoming = lecturesUpcoming.findIndex((l) => String(l.id) === String(pending));
         if (inUpcoming >= 0) {
@@ -12138,7 +12299,8 @@
           setPastDetailId(String(id));
           try {
             window.scrollTo({ top: 0, behavior: "smooth" });
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (LecturesPage.jsx:171)", _e);
           }
         }
       }
@@ -12353,23 +12515,27 @@
             });
             try {
               (_d = (_c = window.BGNJ_BROADCAST) == null ? void 0 : _c.publish) == null ? void 0 : _d.call(_c, "site-content");
-            } catch (e2) {
+            } catch (_e2) {
+              console.warn("[bgnj] LecturesPage.jsx:489 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
             }
           } catch (galleryErr) {
             try {
               console.warn("[LectureQuickAddModal] \uAC24\uB7EC\uB9AC/\uC8FC\uAD00 \uC800\uC7A5 \uC2E4\uD328:", galleryErr);
-            } catch (e2) {
+            } catch (_e2) {
+              console.warn("[bgnj] LecturesPage.jsx:491 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
             }
             (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, "\uAC15\uC5F0 \uC815\uBCF4\uB294 \uC800\uC7A5\uB410\uC9C0\uB9CC \uAC24\uB7EC\uB9AC\xB7\uC8FC\uAD00 \uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
           }
         }
         try {
           await ((_h = (_g = window.BGNJ_AUDIT) == null ? void 0 : _g.log) == null ? void 0 : _h.call(_g, { action: isEdit ? "lecture.update" : "lecture.create", target: `lecture:${id}` }));
-        } catch (e2) {
+        } catch (_e2) {
+          console.warn("[bgnj] LecturesPage.jsx:495 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
         try {
           (_j = (_i = window.BGNJ_BROADCAST) == null ? void 0 : _i.publish) == null ? void 0 : _j.call(_i, "lectures");
-        } catch (e2) {
+        } catch (_e2) {
+          console.warn("[bgnj] LecturesPage.jsx:496 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
         (_l = (_k = window.BGNJ_TOAST) == null ? void 0 : _k.success) == null ? void 0 : _l.call(_k, isEdit ? "\uAC15\uC5F0\uC774 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4." : "\uAC15\uC5F0\uC774 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
         onSaved == null ? void 0 : onSaved();
@@ -13029,7 +13195,8 @@
     const goToTour = (tourId) => {
       try {
         sessionStorage.setItem("bgnj_pending_tour_id", String(tourId));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (MyPage.jsx:68)", _e);
       }
       go("tour");
     };
@@ -13052,14 +13219,16 @@
     const goToPost = (postId) => {
       try {
         sessionStorage.setItem("bgnj_pending_post_id", String(postId));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (MyPage.jsx:89)", _e);
       }
       go("community");
     };
     const goToLecture = (lectureId) => {
       try {
         sessionStorage.setItem("bgnj_pending_lecture_id", String(lectureId));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (MyPage.jsx:93)", _e);
       }
       go("lectures");
     };
@@ -13654,7 +13823,8 @@
       tertiaryAction: { label: "\uC774\uC804 \uD398\uC774\uC9C0\uB85C", icon: "\u2190", onClick: () => {
         try {
           history.back();
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] ErrorPages.jsx:140 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       } }
     }
@@ -13670,7 +13840,8 @@
       primaryAction: { label: "\uB2E4\uC2DC \uC2DC\uB3C4\uD558\uAE30", icon: "\u{1F504}", onClick: () => {
         try {
           onRetry ? onRetry() : window.location.reload();
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] ErrorPages.jsx:153 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       } },
       secondaryAction: { label: "\uD648\uC73C\uB85C \uB3CC\uC544\uAC00\uAE30", icon: "\u{1F3E0}", onClick: () => go == null ? void 0 : go("home") }
@@ -13711,7 +13882,8 @@
       primaryAction: { label: "\uB2E4\uC2DC \uC2DC\uB3C4\uD558\uAE30", icon: "\u{1F504}", onClick: () => {
         try {
           onRetry ? onRetry() : window.location.reload();
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] ErrorPages.jsx:195 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       } }
     }
@@ -13908,7 +14080,8 @@
       if (action.pendingKey && action.pendingId != null) {
         try {
           sessionStorage.setItem(action.pendingKey, String(action.pendingId));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (HelpWidget.jsx:177)", _e);
         }
       }
       setOpen(false);
@@ -13951,7 +14124,8 @@
       this.setState({ info });
       try {
         console.error("[AppErrorBoundary]", err, info);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] boot.jsx:23 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       try {
         (_d = (_c = (_b = (_a = window.BGNJ_API) == null ? void 0 : _a.errorLog) == null ? void 0 : _b.report({
@@ -13965,7 +14139,8 @@
           origin: location.origin
         })) == null ? void 0 : _c.catch) == null ? void 0 : _d.call(_c, () => {
         });
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC624\uB958 \uBCF4\uACE0 \uC790\uCCB4 \u2014 \uC2E4\uD328\uD574\uB3C4 \uC7AC\uBCF4\uACE0\uD558\uBA74 \uBB34\uD55C\uB8E8\uD504 (boot.jsx:33)", _e);
       }
     }
     render() {
@@ -13985,7 +14160,8 @@
         } }, /* @__PURE__ */ React.createElement("div", { style: { color: "#dc2626", fontSize: 11, letterSpacing: "0.18em", marginBottom: 6 } }, "CODE \xB7 ", code), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: 8 } }, reason), (e == null ? void 0 : e.stack) && /* @__PURE__ */ React.createElement("details", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { style: { cursor: "pointer", fontSize: 11, color: "#475569" } }, "\uC2A4\uD0DD \uCD94\uC801 (\uAC1C\uBC1C\uC790\uC6A9)"), /* @__PURE__ */ React.createElement("pre", { style: { whiteSpace: "pre-wrap", fontSize: 11, color: "#475569", marginTop: 8 } }, e.stack)), ((_a = this.state.info) == null ? void 0 : _a.componentStack) && /* @__PURE__ */ React.createElement("details", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { style: { cursor: "pointer", fontSize: 11, color: "#475569" } }, "\uCEF4\uD3EC\uB10C\uD2B8 \uC2A4\uD0DD (\uAC1C\uBC1C\uC790\uC6A9)"), /* @__PURE__ */ React.createElement("pre", { style: { whiteSpace: "pre-wrap", fontSize: 11, color: "#475569", marginTop: 8 } }, this.state.info.componentStack))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { onClick: () => this.setState({ error: null, info: null }), style: { padding: "8px 16px", cursor: "pointer" } }, "\uB2E4\uC2DC \uC2DC\uB3C4"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
           try {
             window.location.reload();
-          } catch (e2) {
+          } catch (_e) {
+            console.warn("[bgnj] boot.jsx:66 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         }, style: { padding: "8px 16px", cursor: "pointer" } }, "\uD398\uC774\uC9C0 \uC0C8\uB85C\uACE0\uCE68")), /* @__PURE__ */ React.createElement("p", { style: { marginTop: 12, fontSize: 11, color: "#64748b" } }, "\u24D8 \uCD94\uAC00 \uC815\uBCF4\uB294 \uBE0C\uB77C\uC6B0\uC800 \uAC1C\uBC1C\uC790 \uB3C4\uAD6C(F12) \uCF58\uC194\uC5D0\uC11C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."));
       }
@@ -14004,7 +14180,8 @@
       var _a, _b, _c, _d;
       try {
         console.error("[PageErrorBoundary]", this.props.route, err, info);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] boot.jsx:82 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       try {
         (_d = (_c = (_b = (_a = window.BGNJ_API) == null ? void 0 : _a.errorLog) == null ? void 0 : _b.report({
@@ -14018,7 +14195,8 @@
           origin: location.origin
         })) == null ? void 0 : _c.catch) == null ? void 0 : _d.call(_c, () => {
         });
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC624\uB958 \uBCF4\uACE0 \uC790\uCCB4 \u2014 \uC2E4\uD328\uD574\uB3C4 \uC7AC\uBCF4\uACE0\uD558\uBA74 \uBB34\uD55C\uB8E8\uD504 (boot.jsx:91)", _e);
       }
     }
     componentDidUpdate(prevProps) {
@@ -14044,7 +14222,8 @@
               try {
                 this.props.go("home");
                 this.setState({ error: null });
-              } catch (e2) {
+              } catch (_e) {
+                console.warn("[bgnj] boot.jsx:112 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
               }
             },
             style: { padding: "10px 18px", cursor: "pointer", border: "1px solid #cbd5e1", background: "#fff" }
@@ -14056,7 +14235,8 @@
             onClick: () => {
               try {
                 window.location.reload();
-              } catch (e2) {
+              } catch (_e) {
+                console.warn("[bgnj] boot.jsx:114 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
               }
             },
             style: { padding: "10px 18px", cursor: "pointer", border: "1px solid #f5d548", background: "#f5d548", color: "#0f172a", fontWeight: 600 }
@@ -14118,7 +14298,8 @@
         push({ kind: "error", code, status: r.status || null, message, hint: r.hint || "", url: r.url || "" });
         try {
           console.error("[GlobalErrorToast]", r);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] boot.jsx:172 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       };
       const onError = (ev) => {
@@ -14127,7 +14308,8 @@
         push({ kind: "error", code: "WINDOW_ERROR", status: null, message, hint: "", url: (ev == null ? void 0 : ev.filename) || "" });
         try {
           console.error("[GlobalErrorToast]", (ev == null ? void 0 : ev.error) || ev);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] boot.jsx:177 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       };
       const onProgrammatic = (ev) => {
@@ -14209,10 +14391,12 @@
           let dismissed = "";
           try {
             dismissed = localStorage.getItem(UPDATE_DISMISSED_KEY) || "";
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (boot.jsx:264)", _e);
           }
           if (!cancelled && v && v !== current && v !== dismissed) setLatest(j);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (boot.jsx:266)", _e);
         }
       };
       check();
@@ -14239,7 +14423,8 @@
     const dismiss = () => {
       try {
         localStorage.setItem(UPDATE_DISMISSED_KEY, String((latest == null ? void 0 : latest.version) || ""));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] boot.jsx:284 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       setLatest(null);
     };
@@ -14321,7 +14506,8 @@
     }).then(() => {
       try {
         window.dispatchEvent(new Event("bgnj-admin-scripts-loaded"));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (boot.jsx:382)", _e);
       }
     });
     return _adminLoadPromise;
@@ -14367,7 +14553,8 @@
     const onDismiss = () => {
       try {
         sessionStorage.setItem(SITE_BANNER_DISMISSED_KEY, "1");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] boot.jsx:443 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       setDismissed(true);
     };
@@ -14440,7 +14627,8 @@
         if (u == null ? void 0 : u.id) {
           try {
             (_b2 = (_a2 = window.BGNJ_VISITS) == null ? void 0 : _a2.record) == null ? void 0 : _b2.call(_a2, u.id);
-          } catch (e) {
+          } catch (_e3) {
+            console.warn("[bgnj] boot.jsx:498 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e3);
           }
           Promise.allSettled([
             (_d2 = (_c2 = window.BGNJ_LECTURES) == null ? void 0 : _c2.refreshMine) == null ? void 0 : _d2.call(_c2),
@@ -14503,7 +14691,8 @@
             });
             try {
               window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
-            } catch (e) {
+            } catch (_e2) {
+              console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (boot.jsx:553)", _e2);
             }
           }
         })) == null ? void 0 : _I.catch) == null ? void 0 : _J.call(_I, () => {
@@ -14532,10 +14721,12 @@
             await ((_p = (_o = window.BGNJ_LEGAL) == null ? void 0 : _o.refresh) == null ? void 0 : _p.call(_o, "privacy"));
             try {
               window.dispatchEvent(new CustomEvent("bgnj-legal-refresh"));
-            } catch (e) {
+            } catch (_e2) {
+              console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (boot.jsx:578)", _e2);
             }
           }
-        } catch (e) {
+        } catch (_e2) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (boot.jsx:580)", _e2);
         }
       });
       return unsub;
@@ -14552,7 +14743,8 @@
       try {
         if (cart) localStorage.setItem("bgnj_cart", JSON.stringify(cart));
         else localStorage.removeItem("bgnj_cart");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (boot.jsx:595)", _e);
       }
     }, [cart]);
     const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
@@ -14562,14 +14754,16 @@
       setPostId(null);
       try {
         localStorage.setItem("bgnj_route", r);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:603)", _e);
       }
       try {
         const target = routeToPath(r);
         if (window.location.pathname !== target) {
           window.history.pushState(null, "", target);
         }
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD788\uC2A4\uD1A0\uB9AC \uC870\uC791 (boot.jsx:610)", _e);
       }
       window.scrollTo(0, 0);
     };
@@ -14587,7 +14781,8 @@
       var _a, _b;
       try {
         (_b = (_a = window.BGNJ_ANALYTICS) == null ? void 0 : _a.track) == null ? void 0 : _b.call(_a, route);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] boot.jsx:629 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     }, [route]);
     React.useEffect(() => {
@@ -14618,7 +14813,8 @@
       const title = route === "home" ? `${brand} \u2014 ${tagline}` : `${seg} \u2014 ${brand}`;
       try {
         document.title = title;
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uBB38\uC11C \uC81C\uBAA9 (boot.jsx:659)", _e);
       }
       const onScRefresh = () => {
         var _a2, _b2, _c2, _d2;
@@ -14629,7 +14825,8 @@
         const newTitle = route === "home" ? `${b2} \u2014 ${t2}` : `${s} \u2014 ${b2}`;
         try {
           document.title = newTitle;
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uBB38\uC11C \uC81C\uBAA9 (boot.jsx:667)", _e);
         }
       };
       window.addEventListener("bgnj-site-content-refresh", onScRefresh);
@@ -14642,7 +14839,8 @@
       setRoute("home");
       try {
         localStorage.setItem("bgnj_route", "home");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:680)", _e);
       }
       window.scrollTo(0, 0);
     };
@@ -14657,7 +14855,8 @@
       window.addEventListener("message", onMsg);
       try {
         window.parent.postMessage({ type: "__edit_mode_available" }, selfOrigin);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] boot.jsx:696 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       return () => window.removeEventListener("message", onMsg);
     }, []);
@@ -14674,44 +14873,52 @@
           const resolved = isNumeric ? ((_b = (_a = window.BGNJ_COLUMNS) == null ? void 0 : _a.idByNumber) == null ? void 0 : _b.call(_a, raw)) || raw : raw;
           try {
             sessionStorage.setItem("bgnj_pending_column_id", resolved);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:712)", _e);
           }
           setRoute("column");
           try {
             localStorage.setItem("bgnj_route", "column");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:714)", _e);
           }
         } else if (postMatch) {
           try {
             sessionStorage.setItem("bgnj_pending_post_id", decodeURIComponent(postMatch[1]));
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:716)", _e);
           }
           setRoute("community");
           try {
             localStorage.setItem("bgnj_route", "community");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:718)", _e);
           }
         } else if (lectureMatch) {
           try {
             sessionStorage.setItem("bgnj_pending_lecture_id", decodeURIComponent(lectureMatch[1]));
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:720)", _e);
           }
           setRoute("lectures");
           try {
             localStorage.setItem("bgnj_route", "lectures");
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:722)", _e);
           }
         } else {
           const tourMatch = h.match(/^#tour-(.+)$/);
           if (tourMatch) {
             try {
               sessionStorage.setItem("bgnj_pending_tour_id", decodeURIComponent(tourMatch[1]));
-            } catch (e) {
+            } catch (_e) {
+              console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:726)", _e);
             }
             setRoute("tour");
             try {
               localStorage.setItem("bgnj_route", "tour");
-            } catch (e) {
+            } catch (_e) {
+              console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx:728)", _e);
             }
           }
         }
@@ -14739,7 +14946,8 @@
       }).catch((err) => {
         try {
           console.error("[adminBundle] load failed", err);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] boot.jsx:760 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         if (!cancelled) setAdminLoadError(err);
       });
@@ -14752,7 +14960,8 @@
       const fallback = (label) => () => /* @__PURE__ */ React.createElement("div", { style: { padding: 48, textAlign: "center", color: "#1f2937" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 11, color: "#dc2626", letterSpacing: "0.18em", marginBottom: 8 } }, "PAGE_NOT_LOADED"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "serif", fontSize: 18, marginBottom: 6 } }, label, " \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginBottom: 18 } }, "\uC0C8\uB85C\uACE0\uCE68 \uD6C4\uC5D0\uB3C4 \uAC19\uC740 \uD654\uBA74\uC774 \uBCF4\uC778\uB2E4\uBA74 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."), /* @__PURE__ */ React.createElement("button", { onClick: () => {
         try {
           window.location.reload();
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] boot.jsx:775 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       }, style: { padding: "8px 16px", cursor: "pointer" } }, "\uD398\uC774\uC9C0 \uC0C8\uB85C\uACE0\uCE68"));
       const pick = (name, label) => W[name] || fallback(label);
@@ -14865,7 +15074,8 @@
             const sp = new URLSearchParams(window.location.search);
             const c = (sp.get("code") || "").toLowerCase();
             if (c) code = c;
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] boot.jsx:829 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           const map = {
             "401": "Error401Page",

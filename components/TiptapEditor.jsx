@@ -165,7 +165,7 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
     });
     editorRef.current = editor;
     onReady?.(editor);
-    return () => { try { editor.destroy(); } catch (e) {} };
+    return () => { try { editor.destroy(); } catch (_e) { console.warn('[bgnj] TiptapEditor.jsx:168 오류(무시하고 진행)', _e); } };
   }, [ready, preset]);
 
   if (!ready) {
@@ -196,7 +196,7 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
         const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
         ed.chain().focus().setImage({ src: url, alt: f.name }).run();
       } catch (err) {
-        try { window.BGNJ_TOAST.error('이미지 업로드 실패: ' + (err?.message || err)); } catch {}
+        try { window.BGNJ_TOAST.error('이미지 업로드 실패: ' + (err?.message || err)); } catch (_e) { console.warn('[bgnj] TiptapEditor.jsx:199 오류(무시하고 진행)', _e); }
       } finally {
         setUploadingImage(false);
       }
@@ -216,17 +216,17 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
   const addYoutube = () => {
     const url = window.prompt('YouTube URL', 'https://youtu.be/...');
     if (!url) return;
-    try { ed.chain().focus().setYoutubeVideo({ src: url, width: 640, height: 360 }).run(); } catch {}  // bgnj-allow-silent — 스크롤·포커스
+    try { ed.chain().focus().setYoutubeVideo({ src: url, width: 640, height: 360 }).run(); } catch (_e) { console.warn('[bgnj] 스크롤·포커스 (TiptapEditor.jsx:219)', _e); }
   };
   // 표 삽입.
   const insertTable = () => {
-    try { ed.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } catch {}  // bgnj-allow-silent — 스크롤·포커스
+    try { ed.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } catch (_e) { console.warn('[bgnj] 스크롤·포커스 (TiptapEditor.jsx:223)', _e); }
   };
   // 텍스트 색상.
   const pickColor = () => {
     const color = window.prompt('텍스트 색상 (hex 또는 CSS 변수)', '#92400E');
     if (!color) return;
-    try { ed.chain().focus().setColor(color).run(); } catch {}  // bgnj-allow-silent — 스크롤·포커스
+    try { ed.chain().focus().setColor(color).run(); } catch (_e) { console.warn('[bgnj] 스크롤·포커스 (TiptapEditor.jsx:229)', _e); }
   };
 
   const Btn = ({ cmd, label, active, disabled, shortcut }) => (

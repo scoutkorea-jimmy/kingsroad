@@ -24,10 +24,10 @@ const ConfirmDialog = ({ open, title, message, hint, confirmLabel='확인', canc
       }
     };
     window.addEventListener('keydown', onKey, true);
-    try { window.BGNJ_SCROLL_LOCK?.lock?.(); } catch {}
+    try { window.BGNJ_SCROLL_LOCK?.lock?.(); } catch (_e) { console.warn('[bgnj] ConfirmDialog.jsx:27 오류(무시하고 진행)', _e); }
     return () => {
       window.removeEventListener('keydown', onKey, true);
-      try { window.BGNJ_SCROLL_LOCK?.unlock?.(); } catch {}
+      try { window.BGNJ_SCROLL_LOCK?.unlock?.(); } catch (_e) { console.warn('[bgnj] ConfirmDialog.jsx:30 오류(무시하고 진행)', _e); }
     };
   }, [open, onCancel]);
   if (!open) return null;

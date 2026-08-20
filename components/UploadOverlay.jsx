@@ -14,7 +14,7 @@
 (function () {
   let listeners = new Set();
   let state = { open: false, label: '', done: 0, total: 0, count: 0 };
-  const _emit = () => listeners.forEach((fn) => { try { fn(state); } catch {} });
+  const _emit = () => listeners.forEach((fn) => { try { fn(state); } catch (_e) { console.warn('[bgnj] UploadOverlay.jsx:17 오류(무시하고 진행)', _e); } });
 
   window.BGNJ_UPLOAD = {
     show({ label = '업로드 중입니다…', total = 0 } = {}) {
@@ -37,7 +37,7 @@
     },
     _subscribe(fn) {
       listeners.add(fn);
-      try { fn(state); } catch {}
+      try { fn(state); } catch (_e) { console.warn('[bgnj] UploadOverlay.jsx:40 오류(무시하고 진행)', _e); }
       return () => listeners.delete(fn);
     },
   };

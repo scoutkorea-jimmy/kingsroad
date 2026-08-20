@@ -28,7 +28,8 @@
     } catch (err) {
       try {
         console.warn(`[upload] R2 ${folder} \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 dataURI \uD3F4\uBC31:`, err);
-      } catch (e2) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminShared.jsx:48 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     }
     if (file.size > fallbackMaxBytes) {
@@ -644,7 +645,8 @@
         try {
           const v = localStorage.getItem(storageKey);
           if (v && subTabs.some((t) => t.key === v)) return v;
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (AdminShared.jsx:652)", _e);
         }
       }
       return defaultKey || subTabs[0] && subTabs[0].key;
@@ -652,7 +654,8 @@
     React.useEffect(() => {
       if (storageKey) try {
         localStorage.setItem(storageKey, active);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminShared.jsx:657 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     }, [active, storageKey]);
     const [previewMode, setPreviewMode] = React.useState(() => {
@@ -660,7 +663,8 @@
         try {
           const v = localStorage.getItem(storageKey + "_pmode");
           if (v && ["desktop", "tablet", "mobile"].includes(v)) return v;
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (AdminShared.jsx:662)", _e);
         }
       }
       return "desktop";
@@ -668,7 +672,8 @@
     React.useEffect(() => {
       if (storageKey) try {
         localStorage.setItem(storageKey + "_pmode", previewMode);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminShared.jsx:667 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     }, [previewMode, storageKey]);
     const [reloadTick, setReloadTick] = React.useState(0);
@@ -6996,7 +7001,8 @@
           const next = {};
           for (const t of tokens) next[t.token] = root.getPropertyValue(t.token).trim();
           setComputed(next);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminDesignHub.jsx:3259 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       };
       read();
@@ -8861,7 +8867,8 @@
         if (!authResult.ok) {
           try {
             console.error("[BGNJ_AUTH]", mode, authResult);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] AdminLogin.jsx:163 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           setAuthError(authResult);
           return;
@@ -9245,7 +9252,8 @@
       return () => {
         try {
           editor.destroy();
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] TiptapEditor.jsx:168 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       };
     }, [ready, preset]);
@@ -9274,7 +9282,8 @@
         } catch (err) {
           try {
             window.BGNJ_TOAST.error("\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] TiptapEditor.jsx:199 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         } finally {
           setUploadingImage(false);
@@ -9297,13 +9306,15 @@
       if (!url) return;
       try {
         ed.chain().focus().setYoutubeVideo({ src: url, width: 640, height: 360 }).run();
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (TiptapEditor.jsx:219)", _e);
       }
     };
     const insertTable = () => {
       try {
         ed.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (TiptapEditor.jsx:223)", _e);
       }
     };
     const pickColor = () => {
@@ -9311,7 +9322,8 @@
       if (!color) return;
       try {
         ed.chain().focus().setColor(color).run();
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (TiptapEditor.jsx:229)", _e);
       }
     };
     const Btn = ({ cmd, label, active, disabled, shortcut }) => /* @__PURE__ */ React.createElement(
@@ -9738,7 +9750,8 @@
       try {
         const { errors: list } = await window.BGNJ_API.errorLog.list({ limit: 500 });
         setErrors(list || []);
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminMonitorPanels.jsx:21 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       } finally {
         setLoading(false);
       }
@@ -9953,7 +9966,8 @@
       var _a, _b;
       try {
         await window.BGNJ_SITE_CONTENT.refresh();
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminMonitorPanels.jsx:278 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       const sc = ((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {};
       const cur = sc.searchConsole || {};
@@ -9984,7 +9998,8 @@
         await window.BGNJ_SITE_CONTENT.saveSection("searchConsole", next);
         try {
           window.BGNJ_SITE_CONTENT.applyHead();
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminMonitorPanels.jsx:302 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         setData(next);
         setDirty(false);
@@ -10011,7 +10026,8 @@
     const openConsole = (url) => {
       try {
         window.open(url, "_blank", "noopener");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminMonitorPanels.jsx:324 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     };
     const lastUpdLabel = data.lastUpdated ? window.BGNJ_FMT.kstDateTime(data.lastUpdated) : "\uC800\uC7A5 \uC774\uB825 \uC5C6\uC74C";
@@ -10538,7 +10554,8 @@
           const errors = errorRes.status === "fulfilled" && Array.isArray((_j = errorRes.value) == null ? void 0 : _j.entries) ? errorRes.value.entries : [];
           setAuditRows(audits);
           setErrorRows(errors);
-        } catch (e) {
+        } catch (_e2) {
+          console.warn("[bgnj] AdminLogPanels.jsx:150 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         } finally {
           if (!cancelled) setLoading(false);
         }
@@ -10813,7 +10830,8 @@
       (async () => {
         try {
           await window.BGNJ_BOOKS.refresh({ admin: true });
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminBooksPanel.jsx:41 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         if (!cancelled) {
           setLoading(false);
@@ -10879,7 +10897,8 @@
           if (!(created == null ? void 0 : created.id)) throw new Error("\uC11C\uBC84 \uC751\uB2F5\uC5D0 id \uC5C6\uC74C");
           try {
             (_c2 = (_b2 = window.BGNJ_BROADCAST) == null ? void 0 : _b2.publish) == null ? void 0 : _c2.call(_b2, "books");
-          } catch (e) {
+          } catch (_e2) {
+            console.warn("[bgnj] AdminBooksPanel.jsx:108 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
           }
           setNewDraft(null);
           setSelectedId(created.id);
@@ -10902,7 +10921,8 @@
         await window.BGNJ_BOOKS.update(selectedId, changes);
         try {
           (_e = (_d2 = window.BGNJ_BROADCAST) == null ? void 0 : _d2.publish) == null ? void 0 : _e.call(_d2, "books");
-        } catch (e) {
+        } catch (_e2) {
+          console.warn("[bgnj] AdminBooksPanel.jsx:125 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
         setDirty(false);
         flash(`\u2713 \uC800\uC7A5 \uC644\uB8CC (${Object.keys(changes).length}\uAC1C \uD544\uB4DC)`);
@@ -10970,7 +10990,8 @@
         await window.BGNJ_BOOKS.remove(id);
         try {
           (_b2 = (_a2 = window.BGNJ_BROADCAST) == null ? void 0 : _a2.publish) == null ? void 0 : _b2.call(_a2, "books");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminBooksPanel.jsx:181 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         refresh();
         if (selectedId === id) {
@@ -11024,7 +11045,8 @@
       setLoading(true);
       try {
         await window.BGNJ_BOOKS.refresh({ admin: true });
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminBooksPanel.jsx:251 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       setLoading(false);
       refresh();
@@ -11718,13 +11740,15 @@
           if (!(res == null ? void 0 : res.ok)) {
             try {
               (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, (res == null ? void 0 : res.message) || "\uC8FC\uBB38 \uC0AD\uC81C \uC2E4\uD328");
-            } catch (e) {
+            } catch (_e) {
+              console.warn("[bgnj] AdminCommercePanels.jsx:405 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
             }
             return;
           }
           try {
             (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, `\uC8FC\uBB38 ${o.orderNo} \uC0AD\uC81C \uC644\uB8CC`);
-          } catch (e) {
+          } catch (_e) {
+            console.warn("[bgnj] AdminCommercePanels.jsx:408 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
           refresh();
         },
@@ -12032,7 +12056,8 @@
         });
         try {
           (_b = (_a = window.BGNJ_BROADCAST) == null ? void 0 : _a.publish) == null ? void 0 : _b.call(_a, "lectures");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminEventsPanels.jsx:235 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         setEditingId(null);
         refresh();
@@ -12063,11 +12088,13 @@
         });
         try {
           await ((_b = (_a = window.BGNJ_AUDIT) == null ? void 0 : _a.log) == null ? void 0 : _b.call(_a, { action: "lecture.create", target: `lecture:${id}` }));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminEventsPanels.jsx:265 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         try {
           (_d = (_c = window.BGNJ_BROADCAST) == null ? void 0 : _c.publish) == null ? void 0 : _d.call(_c, "lectures");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminEventsPanels.jsx:266 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         refresh();
         if (created) startEdit(created);
@@ -12120,7 +12147,8 @@
       refresh();
       try {
         (_b = (_a = window.BGNJ_BROADCAST) == null ? void 0 : _a.publish) == null ? void 0 : _b.call(_a, "lectures");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminEventsPanels.jsx:332 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     } }), lectures.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, "\uAD00\uB9AC\uD560 \uAC15\uC5F0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, lectures.map((l) => {
       const seats = window.BGNJ_LECTURES.getSeats(l.id);
@@ -12184,7 +12212,8 @@
               (_a = window.BGNJ_AUDIT) == null ? void 0 : _a.log({ action: "lecture.remove", target: `lecture:${l.id}` });
               try {
                 (_c = (_b = window.BGNJ_BROADCAST) == null ? void 0 : _b.publish) == null ? void 0 : _c.call(_b, "lectures");
-              } catch (e) {
+              } catch (_e) {
+                console.warn("[bgnj] AdminEventsPanels.jsx:420 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
               }
               refresh();
             } catch (err) {
@@ -12464,7 +12493,8 @@
         (_a = window.BGNJ_AUDIT) == null ? void 0 : _a.log({ action: "tour.create", target: `tour:${id}` });
         try {
           (_c = (_b = window.BGNJ_BROADCAST) == null ? void 0 : _b.publish) == null ? void 0 : _c.call(_b, "tours");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminEventsPanels.jsx:735 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         refresh();
         startEdit(tour);
@@ -12481,7 +12511,8 @@
         (_a = window.BGNJ_AUDIT) == null ? void 0 : _a.log({ action: "tour.remove", target: `tour:${id}` });
         try {
           (_c = (_b = window.BGNJ_BROADCAST) == null ? void 0 : _b.publish) == null ? void 0 : _c.call(_b, "tours");
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminEventsPanels.jsx:751 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         refresh();
       } catch (err) {
@@ -13082,7 +13113,8 @@
         var _a2, _b2;
         try {
           await ((_b2 = (_a2 = window.BGNJ_AUTH) == null ? void 0 : _a2.refreshUsers) == null ? void 0 : _b2.call(_a2));
-        } catch (e) {
+        } catch (_e2) {
+          console.warn("[bgnj] AdminDashboardPanel.jsx:56 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
         if (cancelled) return;
       })();
@@ -13416,7 +13448,8 @@
         window.BGNJ_STORES.categories = allCats;
         try {
           window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (AdminCommunityConfigPanels.jsx:449)", _e);
         }
         window.BGNJ_SAVE.categories();
         setDraft({ id: "", label: "", desc: "" });
@@ -13449,7 +13482,8 @@
         window.BGNJ_STORES.categories = allCats;
         try {
           window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
-        } catch (e) {
+        } catch (_e2) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (AdminCommunityConfigPanels.jsx:474)", _e2);
         }
         window.BGNJ_SAVE.categories();
         setEdits((cur) => {
@@ -13498,7 +13532,8 @@
         window.BGNJ_STORES.categories = allCats;
         try {
           window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (AdminCommunityConfigPanels.jsx:511)", _e);
         }
         window.BGNJ_SAVE.categories();
         setTick((v) => v + 1);
@@ -13536,7 +13571,8 @@
         window.BGNJ_STORES.categories = allCats;
         try {
           window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
-        } catch (e2) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (AdminCommunityConfigPanels.jsx:548)", _e);
         }
         window.BGNJ_SAVE.categories();
         setEdits((cur) => {
@@ -13587,7 +13623,8 @@
         window.BGNJ_STORES.categories = allCats;
         try {
           window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (AdminCommunityConfigPanels.jsx:590)", _e);
         }
         window.BGNJ_SAVE.categories();
         setEdits({});
@@ -13676,7 +13713,8 @@
             setDraggingId(b.id);
             try {
               e.dataTransfer.effectAllowed = "move";
-            } catch (e2) {
+            } catch (_e) {
+              console.warn("[bgnj] AdminCommunityConfigPanels.jsx:690 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
             }
           },
           onDragOver: (e) => {
@@ -13900,7 +13938,8 @@
               return fresh.slice();
             });
           }
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminGradeColumnPanels.jsx:57 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       })();
       return () => {
@@ -14043,7 +14082,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         await ((_b = (_a = window.BGNJ_AUTH) == null ? void 0 : _a.refreshUsers) == null ? void 0 : _b.call(_a));
         try {
           await ((_d = (_c = window.BGNJ_GRADE_PROMO) == null ? void 0 : _c.prefetchAllServerMetrics) == null ? void 0 : _d.call(_c));
-        } catch (e) {
+        } catch (_e2) {
+          console.warn("[bgnj] AdminGradeColumnPanels.jsx:198 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
         const summary = ((_f = (_e = window.BGNJ_GRADE_PROMO) == null ? void 0 : _e.reevaluateAll) == null ? void 0 : _f.call(_e)) || { promoted: 0, demoted: 0 };
         setReevalResult(summary);
@@ -14463,7 +14503,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         else setEditingId(payload.id);
         try {
           onAfterSave == null ? void 0 : onAfterSave(status);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminGradeColumnPanels.jsx:615 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
       } catch (err) {
         setMsg("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
@@ -14589,7 +14630,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
             } catch (err) {
               try {
                 window.BGNJ_TOAST.error("\uB300\uD45C \uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
-              } catch (e) {
+              } catch (_e) {
+                console.warn("[bgnj] AdminGradeColumnPanels.jsx:758 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
               }
             } finally {
               setUploadingCover(false);
@@ -14670,7 +14712,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         var _a2, _b;
         try {
           await ((_b = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.refresh) == null ? void 0 : _b.call(_a2, { admin: true }));
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminGradeColumnPanels.jsx:869 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
         setTick((v) => v + 1);
       })();
@@ -14998,7 +15041,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
     return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 18, border: "1px dashed var(--primary-dim)" } }, /* @__PURE__ */ React.createElement("h4", { className: "ko-serif", style: { fontSize: 15, margin: "0 0 10px" } }, "\u{1F50D} \uCEE4\uBBA4\uB2C8\uD2F0 \uBCF8\uBB38 \uC190\uC0C1 \uC810\uAC80 (v00.130 hotfix)"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 12 } }, "v00.129 \uC774\uD558\uC5D0\uC11C \uC791\uC131\uB41C \uAE00\uC740 D1 \uC5D0 \uBCF8\uBB38\uC774 ", /* @__PURE__ */ React.createElement("code", null, "[object Object]"), " \uB85C \uC800\uC7A5\uB3FC \uD654\uBA74\uC5D0 \uACBD\uACE0 \uD14D\uC2A4\uD2B8\uAC00 \uD45C\uC2DC\uB420 \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uD574\uB2F9 \uAE00\uC744 \uD074\uB9AD\uD574 \uC791\uC131\uC790\uAC00 \uB2E4\uC2DC \uC800\uC7A5\uD558\uBA74 \uC815\uC0C1 \uBCF8\uBB38\uC73C\uB85C \uBCF5\uAD6C\uB429\uB2C8\uB2E4."), corrupted.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "gold mono", style: { fontSize: 12 } }, "\u2705 \uC190\uC0C1 \uAE00 0\uAC74 \u2014 \uBAA8\uB450 \uC815\uC0C1.") : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 10, fontSize: 13 } }, "\u26A0 \uC190\uC0C1 \uC758\uC2EC \uAE00 ", /* @__PURE__ */ React.createElement("strong", { style: { color: "var(--danger)" } }, corrupted.length), "\uAC74 \uBC1C\uACAC"), /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 } }, corrupted.slice(0, 30).map((p) => /* @__PURE__ */ React.createElement("li", { key: p.id, style: { display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", border: "1px solid var(--line)", fontSize: 12 } }, /* @__PURE__ */ React.createElement("span", { className: "pill", style: { fontSize: 10 } }, p.category || "?"), /* @__PURE__ */ React.createElement("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.title || "(\uC81C\uBAA9 \uC5C6\uC74C)"), /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 10 } }, p.author || "?", " \xB7 ", p.date || ""), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => {
       try {
         sessionStorage.setItem("bgnj_pending_post_id", String(p.id));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (AdminRouterPanels.jsx:129)", _e);
       }
       go("community");
     } }, "\uC5F4\uAE30"))), corrupted.length > 30 && /* @__PURE__ */ React.createElement("li", { className: "dim-2 mono", style: { fontSize: 11, textAlign: "right" } }, "\uC678 ", corrupted.length - 30, "\uAC74"))));
@@ -15100,7 +15144,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
     const previewGo = (route) => {
       try {
         console.warn("[preview] go(", route, ") \u2014 \uBBF8\uB9AC\uBCF4\uAE30\uC5D0\uC11C\uB294 \uC2E4\uC81C \uC774\uB3D9 \uC548 \uD568");
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminRouterPanels.jsx:315 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     };
     return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(
@@ -15148,7 +15193,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.refreshComments) == null ? void 0 : _b2.call(_a2, postId).then(() => {
           setComments(window.BGNJ_COMMUNITY.getComments(postId));
         });
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminRouterPanels.jsx:367 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     }, [postId]);
     if (!post) {
@@ -15259,7 +15305,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
           const data = await ((_d = (_c = (_b = (_a2 = window.BGNJ_API) == null ? void 0 : _a2.admin) == null ? void 0 : _b.users) == null ? void 0 : _c.list) == null ? void 0 : _d.call(_c));
           if (cancelled) return;
           setUsers(Array.isArray(data == null ? void 0 : data.users) ? data.users : []);
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] AdminRouterPanels.jsx:515 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         } finally {
           if (!cancelled) setLoading(false);
         }
@@ -15433,7 +15480,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       setPageSizeState(n);
       try {
         localStorage.setItem(ADMIN_POSTS_PER_PAGE_LS_KEY, String(n));
-      } catch (e) {
+      } catch (_e) {
+        console.warn("[bgnj] AdminRouterPanels.jsx:705 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
       setPage(1);
     };
@@ -15799,7 +15847,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
           const main = document.querySelector(".admin-main");
           if (main && typeof main.scrollTo === "function") main.scrollTo({ top: 0, behavior: "smooth" });
           if (typeof window.scrollTo === "function") window.scrollTo({ top: 0, behavior: "smooth" });
-        } catch (e) {
+        } catch (_e) {
+          console.warn("[bgnj] \uC2A4\uD06C\uB864\xB7\uD3EC\uCEE4\uC2A4 (AuthAdminPage.jsx:237)", _e);
         }
       });
     }, []);

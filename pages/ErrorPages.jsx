@@ -137,7 +137,7 @@ const Error404Page = ({ go, embedded }) => (
       imageAlt="길을 잃은 비행기"
       primaryAction={{ label: '홈으로 돌아가기', icon: '🏠', onClick: () => go?.('home') }}
       secondaryAction={{ label: '투어 둘러보기', icon: '🧭', onClick: () => go?.('tour') }}
-      tertiaryAction={{ label: '이전 페이지로', icon: '←', onClick: () => { try { history.back(); } catch {} } }}/>
+      tertiaryAction={{ label: '이전 페이지로', icon: '←', onClick: () => { try { history.back(); } catch (_e) { console.warn('[bgnj] ErrorPages.jsx:140 오류(무시하고 진행)', _e); } } }}/>
   </ErrorScreen>
 );
 
@@ -150,7 +150,7 @@ const Error500Page = ({ go, onRetry, embedded }) => (
       subtitle={(<>서비스 처리 중 일시적인 문제가 발생했어요.<br/>잠시 후 다시 시도해 주세요.</>)}
       imageSrc="/assets/errors/500.png"
       imageAlt="신호를 정리하는 관제탑"
-      primaryAction={{ label: '다시 시도하기', icon: '🔄', onClick: () => { try { onRetry ? onRetry() : window.location.reload(); } catch {} } }}  // bgnj-allow-silent — 새로고침
+      primaryAction={{ label: '다시 시도하기', icon: '🔄', onClick: () => { try { onRetry ? onRetry() : window.location.reload(); } catch (_e) { console.warn('[bgnj] ErrorPages.jsx:153 오류(무시하고 진행)', _e); } } }}
       secondaryAction={{ label: '홈으로 돌아가기', icon: '🏠', onClick: () => go?.('home') }}/>
   </ErrorScreen>
 );
@@ -192,7 +192,7 @@ const ErrorNetworkPage = ({ onRetry, embedded }) => (
       subtitle={(<>인터넷 연결 상태를 확인한 뒤<br/>다시 시도해 주세요.</>)}
       imageSrc="/assets/errors/network.png"
       imageAlt="네트워크 신호 약함"
-      primaryAction={{ label: '다시 시도하기', icon: '🔄', onClick: () => { try { onRetry ? onRetry() : window.location.reload(); } catch {} } }}/>
+      primaryAction={{ label: '다시 시도하기', icon: '🔄', onClick: () => { try { onRetry ? onRetry() : window.location.reload(); } catch (_e) { console.warn('[bgnj] ErrorPages.jsx:195 오류(무시하고 진행)', _e); } } }}/>
   </ErrorScreen>
 );
 

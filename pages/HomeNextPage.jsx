@@ -102,7 +102,7 @@ const HomeNextPage = ({ go }) => {
     { label: '현대 사관\n모집', action: () => go('community') },
     { label: '탐방 프로그램\n신청하기', action: () => go('tour') },
     { label: '출간 실록\n(도서)', action: () => go('book') },
-    { label: '영상 실록\n(유튜브)', action: () => { try { window.open('https://www.youtube.com/@banginoja', '_blank', 'noopener'); } catch {} } },
+    { label: '영상 실록\n(유튜브)', action: () => { try { window.open('https://www.youtube.com/@banginoja', '_blank', 'noopener'); } catch (_e) { console.warn('[bgnj] HomeNextPage.jsx:105 오류(무시하고 진행)', _e); } } },
   ];
 
   const statsData = [
@@ -251,8 +251,8 @@ const HomeNextPage = ({ go }) => {
 
             {/* 영상 실록 */}
             <article className="hn-card hn-card--dark" role="button" tabIndex={0}
-              onClick={() => { try { window.open('https://www.youtube.com/@banginoja','_blank','noopener'); } catch {} }}
-              onKeyDown={(e) => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); try { window.open('https://www.youtube.com/@banginoja','_blank','noopener'); } catch {} } }}>
+              onClick={() => { try { window.open('https://www.youtube.com/@banginoja','_blank','noopener'); } catch (_e) { console.warn('[bgnj] HomeNextPage.jsx:254 오류(무시하고 진행)', _e); } }}
+              onKeyDown={(e) => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); try { window.open('https://www.youtube.com/@banginoja','_blank','noopener'); } catch (_e) { console.warn('[bgnj] HomeNextPage.jsx:255 오류(무시하고 진행)', _e); } } }}>
               <div className="hn-card-img">
                 {programImages[3] ? (
                   <img src={programImages[3]} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>

@@ -38,7 +38,7 @@ const BooksAdminPanel = () => {
     (async () => {
       try {
         await window.BGNJ_BOOKS.refresh({ admin: true });
-      } catch {}
+      } catch (_e) { console.warn('[bgnj] AdminBooksPanel.jsx:41 오류(무시하고 진행)', _e); }
       if (!cancelled) {
         setLoading(false);
         setTick((v) => v + 1);
@@ -105,7 +105,7 @@ const BooksAdminPanel = () => {
         const { _isNew, id: _droppedId, ...payload } = editing;
         const created = await window.BGNJ_BOOKS.create(payload);
         if (!created?.id) throw new Error('서버 응답에 id 없음');
-        try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
+        try { window.BGNJ_BROADCAST?.publish?.('books'); } catch (_e) { console.warn('[bgnj] AdminBooksPanel.jsx:108 오류(무시하고 진행)', _e); }
         setNewDraft(null);
         setSelectedId(created.id);
         setDirty(false);
@@ -122,7 +122,7 @@ const BooksAdminPanel = () => {
       });
       if (Object.keys(changes).length === 0) { setDirty(false); flash('변경 없음'); return; }
       await window.BGNJ_BOOKS.update(selectedId, changes);
-      try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
+      try { window.BGNJ_BROADCAST?.publish?.('books'); } catch (_e) { console.warn('[bgnj] AdminBooksPanel.jsx:125 오류(무시하고 진행)', _e); }
       setDirty(false);
       flash(`✓ 저장 완료 (${Object.keys(changes).length}개 필드)`);
       refresh();
@@ -178,7 +178,7 @@ const BooksAdminPanel = () => {
     if (!(await window.BGNJ_CONFIRM(`"${target.title}" 책을 삭제할까요? (되돌릴 수 없음)`, { danger: true }))) return;
     try {
       await window.BGNJ_BOOKS.remove(id);
-      try { window.BGNJ_BROADCAST?.publish?.('books'); } catch {}
+      try { window.BGNJ_BROADCAST?.publish?.('books'); } catch (_e) { console.warn('[bgnj] AdminBooksPanel.jsx:181 오류(무시하고 진행)', _e); }
       refresh();
       if (selectedId === id) {
         const remaining = window.BGNJ_BOOKS.list();
@@ -248,7 +248,7 @@ const BooksAdminPanel = () => {
       <div style={{marginBottom:12}}>
         <button type="button" className="btn btn-small" onClick={async () => {
           setLoading(true);
-          try { await window.BGNJ_BOOKS.refresh({ admin: true }); } catch {}
+          try { await window.BGNJ_BOOKS.refresh({ admin: true }); } catch (_e) { console.warn('[bgnj] AdminBooksPanel.jsx:251 오류(무시하고 진행)', _e); }
           setLoading(false);
           refresh();
           flash('✓ 다시 불러오기 완료 — ' + window.BGNJ_BOOKS.list().length + '권');

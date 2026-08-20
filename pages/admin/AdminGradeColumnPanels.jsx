@@ -54,7 +54,7 @@ const AdminGradePanel = () => {
             return fresh.slice();
           });
         }
-      } catch {}
+      } catch (_e) { console.warn('[bgnj] AdminGradeColumnPanels.jsx:57 오류(무시하고 진행)', _e); }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,7 +195,7 @@ const AdminGradePanel = () => {
     setBusyReevaluate(true);
     try {
       await window.BGNJ_AUTH?.refreshUsers?.();
-      try { await window.BGNJ_GRADE_PROMO?.prefetchAllServerMetrics?.(); } catch {}
+      try { await window.BGNJ_GRADE_PROMO?.prefetchAllServerMetrics?.(); } catch (_e) { console.warn('[bgnj] AdminGradeColumnPanels.jsx:198 오류(무시하고 진행)', _e); }
       const summary = window.BGNJ_GRADE_PROMO?.reevaluateAll?.() || { promoted: 0, demoted: 0 };
       setReevalResult(summary);
     } catch (err) {
@@ -612,7 +612,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
       if (status === 'published') reset();
       else setEditingId(payload.id);
       // 모달 wrapper 에 결과 전달 — published / scheduled 면 wrapper 가 닫음.
-      try { onAfterSave?.(status); } catch {}
+      try { onAfterSave?.(status); } catch (_e) { console.warn('[bgnj] AdminGradeColumnPanels.jsx:615 오류(무시하고 진행)', _e); }
     } catch (err) {
       setMsg('저장 실패: ' + (err?.message || '알 수 없는 오류'));
     }
@@ -755,7 +755,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
                       const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'column-covers', maxBytes: 10 * 1024 * 1024 });
                       setCoverUrl(url);
                     } catch (err) {
-                      try { window.BGNJ_TOAST.error('대표 이미지 업로드 실패: ' + (err?.message || err)); } catch {}
+                      try { window.BGNJ_TOAST.error('대표 이미지 업로드 실패: ' + (err?.message || err)); } catch (_e) { console.warn('[bgnj] AdminGradeColumnPanels.jsx:758 오류(무시하고 진행)', _e); }
                     } finally { setUploadingCover(false); }
                   };
                   input.click();
@@ -866,7 +866,7 @@ const ColumnsHubPanel = ({ allColumns }) => {
   // v00.148 — boot prefetch 가 admin:false (published 만). admin 진입 시 admin:true 재fetch.
   React.useEffect(() => {
     (async () => {
-      try { await window.BGNJ_COLUMNS?.refresh?.({ admin: true }); } catch {}
+      try { await window.BGNJ_COLUMNS?.refresh?.({ admin: true }); } catch (_e) { console.warn('[bgnj] AdminGradeColumnPanels.jsx:869 오류(무시하고 진행)', _e); }
       setTick((v) => v + 1);
     })();
   }, []);

@@ -116,9 +116,9 @@ const TourPage = ({ go, user }) => {
   // v00.263.000 — past 로 진입하면 게시판 상세 모드로 즉시 표시.
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem('bgnj_pending_tour_id'); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+    try { pending = sessionStorage.getItem('bgnj_pending_tour_id'); } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (WangsanamTourPage.jsx:119)', _e); }
     if (pending) {
-      try { sessionStorage.removeItem('bgnj_pending_tour_id'); } catch {}  // bgnj-allow-silent — 저장소 정리
+      try { sessionStorage.removeItem('bgnj_pending_tour_id'); } catch (_e) { console.warn('[bgnj] 저장소 정리 (WangsanamTourPage.jsx:121)', _e); }
       const inUpcoming = toursUpcoming.findIndex((t) => String(t.id) === String(pending));
       if (inUpcoming >= 0) { setBucket('upcoming'); setSelectedIdx(inUpcoming); return; }
       const inPast = toursPast.findIndex((t) => String(t.id) === String(pending));
@@ -229,7 +229,7 @@ const TourPage = ({ go, user }) => {
                 const idx = tours.findIndex((t) => String(t.id) === String(id));
                 if (idx >= 0) setSelectedIdx(idx);
                 setPastDetailId(String(id));
-                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}  // bgnj-allow-silent — 스크롤·포커스
+                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_e) { console.warn('[bgnj] 스크롤·포커스 (WangsanamTourPage.jsx:232)', _e); }
               }}/>
           ) : (
             <div style={{padding:'60px 20px', textAlign:'center'}}>
@@ -527,14 +527,14 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
           const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
           const existing = (sc.tourPages && typeof sc.tourPages === 'object' && sc.tourPages[id]) || {};
           await window.BGNJ_SITE_CONTENT.saveSection('tourPages', { [id]: { ...existing, images } });
-          try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch {}
+          try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch (_e) { console.warn('[bgnj] WangsanamTourPage.jsx:530 오류(무시하고 진행)', _e); }
         } catch (galleryErr) {
-          try { console.warn('[TourQuickAddModal] 갤러리 저장 실패:', galleryErr); } catch {}
+          try { console.warn('[TourQuickAddModal] 갤러리 저장 실패:', galleryErr); } catch (_e) { console.warn('[bgnj] WangsanamTourPage.jsx:532 오류(무시하고 진행)', _e); }
           window.BGNJ_TOAST?.error?.('투어 정보는 저장됐지만 갤러리 저장에 실패했습니다.');
         }
       }
-      try { await window.BGNJ_AUDIT?.log?.({ action: isEdit ? 'tour.update' : 'tour.create', target: `tour:${id}` }); } catch {}
-      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch {}
+      try { await window.BGNJ_AUDIT?.log?.({ action: isEdit ? 'tour.update' : 'tour.create', target: `tour:${id}` }); } catch (_e) { console.warn('[bgnj] WangsanamTourPage.jsx:536 오류(무시하고 진행)', _e); }
+      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch (_e) { console.warn('[bgnj] WangsanamTourPage.jsx:537 오류(무시하고 진행)', _e); }
       window.BGNJ_TOAST?.success?.(isEdit ? '투어가 수정되었습니다.' : '투어가 등록되었습니다.');
       onSaved?.();
       onClose?.();

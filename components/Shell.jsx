@@ -60,7 +60,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       const choice = await window.BGNJ_DRAFT_PROMPT(s.promptName, {});
       if (choice === 'cancel') return;        // 모달 유지
       if (choice === 'save') {
-        try { s.onSaveDraft(); } catch {}
+        try { s.onSaveDraft(); } catch (_e) { console.warn('[bgnj] Shell.jsx:63 오류(무시하고 진행)', _e); }
       }
       // 'save' 또는 'discard' 모두 onClose.
       s.onClose?.();
@@ -98,7 +98,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
     try {
       window.history.pushState({ bgnjModal: true }, '');
       pushed = true;
-    } catch {}  // bgnj-allow-silent — 히스토리 조작
+    } catch (_e) { console.warn('[bgnj] 히스토리 조작 (Shell.jsx:101)', _e); }
     // v00.262.007 — 뒤로가기로 popstate 가 sentinel entry 를 소비한 뒤 사용자가 prompt 에서 [취소] 누르면
     // 모달은 유지되지만 sentinel 이 사라져 다음 뒤로가기는 진짜 페이지 이탈로 이어짐. 모달이 여전히 열려 있으면
     // sentinel 을 재 push 해 뒤로가기 가드를 복원.
@@ -109,7 +109,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
           // dirty=true 라면 handleAttemptClose 가 prompt 띄움. 사용자가 [취소] 선택해 모달 유지될 가능성 → sentinel 즉시 재 push.
           window.history.pushState({ bgnjModal: true }, '');
         }
-      } catch {}  // bgnj-allow-silent — 히스토리 조작
+      } catch (_e) { console.warn('[bgnj] 히스토리 조작 (Shell.jsx:112)', _e); }
     };
     if (pushed) window.addEventListener('popstate', onPop);
     return () => {
@@ -117,7 +117,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       unlockBodyScroll();
       if (pushed) {
         window.removeEventListener('popstate', onPop);
-        try { if (window.history.state?.bgnjModal) window.history.back(); } catch {}  // bgnj-allow-silent — 히스토리 조작
+        try { if (window.history.state?.bgnjModal) window.history.back(); } catch (_e) { console.warn('[bgnj] 히스토리 조작 (Shell.jsx:120)', _e); }
       }
     };
   }, [open, handleAttemptClose]);
@@ -154,15 +154,15 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       if (fs.length === 0) return;
       const first = fs[0], last = fs[fs.length - 1];
       const active = document.activeElement;
-      if (e.shiftKey && active === first) { e.preventDefault(); try { last.focus(); } catch {} }  // bgnj-allow-silent — 스크롤·포커스
-      else if (!e.shiftKey && active === last) { e.preventDefault(); try { first.focus(); } catch {} }  // bgnj-allow-silent — 스크롤·포커스
+      if (e.shiftKey && active === first) { e.preventDefault(); try { last.focus(); } catch (_e) { console.warn('[bgnj] Shell.jsx:157 오류(무시하고 진행)', _e); } }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); try { first.focus(); } catch (_e) { console.warn('[bgnj] Shell.jsx:158 오류(무시하고 진행)', _e); } }
     };
     function attach() {
       if (!container) return;
       // 첫 focus — 이미 모달 안에 focus 가 있지 않을 때만.
       const fs = listFocusables();
       if (fs.length > 0 && !container.contains(document.activeElement)) {
-        try { fs[0].focus(); } catch {}  // bgnj-allow-silent — 스크롤·포커스
+        try { fs[0].focus(); } catch (_e) { console.warn('[bgnj] 스크롤·포커스 (Shell.jsx:165)', _e); }
       }
       container.addEventListener('keydown', onKey);
     }
@@ -171,7 +171,7 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
       if (raf) cancelAnimationFrame(raf);
       if (container) container.removeEventListener('keydown', onKey);
       // 직전 focus 복원 — element 가 unmount 됐으면 silent.
-      try { prevFocus?.focus?.(); } catch {}
+      try { prevFocus?.focus?.(); } catch (_e) { console.warn('[bgnj] Shell.jsx:174 오류(무시하고 진행)', _e); }
     };
   }, [open, contentRef]);
 
@@ -301,14 +301,14 @@ const NotificationBell = ({ user, onPick }) => {
   const unread = list.filter((n) => n && !n.read).length;
 
   const pick = (n) => {
-    try { window.BGNJ_COMMUNITY?.markNotificationRead?.(user.id, n.id); } catch {}
+    try { window.BGNJ_COMMUNITY?.markNotificationRead?.(user.id, n.id); } catch (_e) { console.warn('[bgnj] Shell.jsx:304 오류(무시하고 진행)', _e); }
     setOpen(false);
     if (onPick) onPick(n);
     setTick((t) => t + 1);
   };
 
   const markAll = () => {
-    try { window.BGNJ_COMMUNITY?.markAllNotificationsRead?.(user.id); } catch {}
+    try { window.BGNJ_COMMUNITY?.markAllNotificationsRead?.(user.id); } catch (_e) { console.warn('[bgnj] Shell.jsx:311 오류(무시하고 진행)', _e); }
     setTick((t) => t + 1);
   };
 
@@ -539,7 +539,7 @@ const SiteSearchOverlay = ({ go, onClose }) => {
 
   const goAndClose = (route, pendingKey, pendingId) => {
     if (pendingKey && pendingId != null) {
-      try { sessionStorage.setItem(pendingKey, String(pendingId)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+      try { sessionStorage.setItem(pendingKey, String(pendingId)); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (Shell.jsx:542)', _e); }
     }
     onClose();
     go(route);
@@ -753,7 +753,7 @@ const Nav = ({ route, go, user, onLogout }) => {
     [userLevel, catVersion]);
 
   const goBoard = (boardId) => {
-    try { sessionStorage.setItem('bgnj_pending_board_id', boardId); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+    try { sessionStorage.setItem('bgnj_pending_board_id', boardId); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (Shell.jsx:756)', _e); }
     go('community');
   };
 
@@ -1008,7 +1008,7 @@ const Nav = ({ route, go, user, onLogout }) => {
                     sessionStorage.setItem('bgnj_pending_post_id', String(n.postId));
                     go('community');
                   }
-                } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+                } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (Shell.jsx:1011)', _e); }
               }}/>
               <button className="btn btn-small" onClick={() => go("mypage")}>마이페이지</button>
               {user.isAdmin && (
@@ -1233,9 +1233,9 @@ const CookieConsent = () => {
   const [marketing, setMarketing] = React.useState(false);
 
   const persist = (next) => {
-    try { localStorage.setItem(KEY, JSON.stringify(next)); } catch {}
+    try { localStorage.setItem(KEY, JSON.stringify(next)); } catch (_e) { console.warn('[bgnj] Shell.jsx:1236 오류(무시하고 진행)', _e); }
     setDecision(next);
-    try { window.dispatchEvent(new CustomEvent('bgnj-cookie-consent', { detail: next })); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    try { window.dispatchEvent(new CustomEvent('bgnj-cookie-consent', { detail: next })); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (Shell.jsx:1238)', _e); }
   };
 
   const acceptAll = () => persist({ necessary: true, analytics: true, marketing: true, ts: new Date().toISOString() });

@@ -234,7 +234,7 @@ const AdminPage = ({ go }) => {
         const main = document.querySelector('.admin-main');
         if (main && typeof main.scrollTo === 'function') main.scrollTo({ top: 0, behavior: 'smooth' });
         if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch {}  // bgnj-allow-silent — 스크롤·포커스
+      } catch (_e) { console.warn('[bgnj] 스크롤·포커스 (AuthAdminPage.jsx:237)', _e); }
     });
   }, []);
   React.useEffect(() => {

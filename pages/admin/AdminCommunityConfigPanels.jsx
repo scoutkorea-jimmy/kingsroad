@@ -17,7 +17,7 @@ const AdminCategoryPanel = () => {
   const save = (next) => {
     window.BGNJ_STORES.categories = next;
     // v00.294.003 — 스토어 교체를 광장 화면·메가메뉴에 알린다(구독: CommunityPage·Shell).
-    try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (AdminCommunityConfigPanels.jsx:20)', _e); }
     window.BGNJ_SAVE.categories();
     setCats(next);
   };
@@ -446,7 +446,7 @@ const CommunityBoardsPanel = () => {
       });
       window.BGNJ_STORES.categories = allCats;
       // v00.294.003 — 스토어 교체를 광장 화면·메가메뉴에 알린다(구독: CommunityPage·Shell).
-      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (AdminCommunityConfigPanels.jsx:449)', _e); }
       window.BGNJ_SAVE.categories();
       setDraft({ id: '', label: '', desc: '' });
       setAdding(false);
@@ -471,7 +471,7 @@ const CommunityBoardsPanel = () => {
       const allCats = (window.BGNJ_STORES?.categories || []).filter((c) => c.id !== id);
       window.BGNJ_STORES.categories = allCats;
       // v00.294.003 — 스토어 교체를 광장 화면·메가메뉴에 알린다(구독: CommunityPage·Shell).
-      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (AdminCommunityConfigPanels.jsx:474)', _e); }
       window.BGNJ_SAVE.categories();
       setEdits((cur) => { const next = { ...cur }; delete next[id]; return next; });
       setTick((v) => v + 1);
@@ -508,7 +508,7 @@ const CommunityBoardsPanel = () => {
       });
       window.BGNJ_STORES.categories = allCats;
       // v00.294.003 — 스토어 교체를 광장 화면·메가메뉴에 알린다(구독: CommunityPage·Shell).
-      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (AdminCommunityConfigPanels.jsx:511)', _e); }
       window.BGNJ_SAVE.categories();
       setTick((v) => v + 1);
       setSaveMsg('✓ 순서 변경됨.');
@@ -545,7 +545,7 @@ const CommunityBoardsPanel = () => {
       }
       window.BGNJ_STORES.categories = allCats;
       // v00.294.003 — 스토어 교체를 광장 화면·메가메뉴에 알린다(구독: CommunityPage·Shell).
-      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (AdminCommunityConfigPanels.jsx:548)', _e); }
       window.BGNJ_SAVE.categories();
       setEdits((cur) => { const next = { ...cur }; delete next[id]; return next; });
       setTick((v) => v + 1);
@@ -587,7 +587,7 @@ const CommunityBoardsPanel = () => {
       });
       window.BGNJ_STORES.categories = allCats;
       // v00.294.003 — 스토어 교체를 광장 화면·메가메뉴에 알린다(구독: CommunityPage·Shell).
-      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+      try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (AdminCommunityConfigPanels.jsx:590)', _e); }
       window.BGNJ_SAVE.categories();
       setEdits({});
       setTick((v) => v + 1);
@@ -687,7 +687,7 @@ const CommunityBoardsPanel = () => {
                 onDragStart={(e) => {
                   if (isNotice) { e.preventDefault(); return; }
                   setDraggingId(b.id);
-                  try { e.dataTransfer.effectAllowed = 'move'; } catch {}
+                  try { e.dataTransfer.effectAllowed = 'move'; } catch (_e) { console.warn('[bgnj] AdminCommunityConfigPanels.jsx:690 오류(무시하고 진행)', _e); }
                 }}
                 onDragOver={(e) => { e.preventDefault(); setDragOverId(b.id); }}
                 onDragLeave={() => setDragOverId((cur) => cur === b.id ? null : cur)}

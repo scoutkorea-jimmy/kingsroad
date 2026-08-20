@@ -20,7 +20,7 @@ class AppErrorBoundary extends React.Component {
   static getDerivedStateFromError(err) { return { error: err }; }
   componentDidCatch(err, info) {
     this.setState({ info });
-    try { console.error('[AppErrorBoundary]', err, info); } catch {}
+    try { console.error('[AppErrorBoundary]', err, info); } catch (_e) { console.warn('[bgnj] boot.jsx:23 오류(무시하고 진행)', _e); }
     // 렌더링 오류도 서버에 기록.
     try {
       window.BGNJ_API?.errorLog?.report({
@@ -30,7 +30,7 @@ class AppErrorBoundary extends React.Component {
         hint: '', url: '',
         pathname: location.pathname, origin: location.origin,
       })?.catch?.(() => {});
-    } catch {}  // bgnj-allow-silent — 오류 보고 자체 — 실패해도 재보고하면 무한루프
+    } catch (_e) { console.warn('[bgnj] 오류 보고 자체 — 실패해도 재보고하면 무한루프 (boot.jsx:33)', _e); }
   }
   render() {
     if (this.state.error) {
@@ -63,7 +63,7 @@ class AppErrorBoundary extends React.Component {
           </div>
           <div style={{display:'flex', gap:8}}>
             <button onClick={() => this.setState({error:null, info:null})} style={{padding:'8px 16px', cursor:'pointer'}}>다시 시도</button>
-            <button onClick={() => { try { window.location.reload(); } catch {} }} style={{padding:'8px 16px', cursor:'pointer'}}>페이지 새로고침</button>
+            <button onClick={() => { try { window.location.reload(); } catch (_e) { console.warn('[bgnj] boot.jsx:66 오류(무시하고 진행)', _e); } }} style={{padding:'8px 16px', cursor:'pointer'}}>페이지 새로고침</button>
           </div>
           <p style={{marginTop:12, fontSize:11, color:'#64748b'}}>ⓘ 추가 정보는 브라우저 개발자 도구(F12) 콘솔에서 확인할 수 있습니다.</p>
         </div>
@@ -79,7 +79,7 @@ class PageErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
   static getDerivedStateFromError(err) { return { error: err }; }
   componentDidCatch(err, info) {
-    try { console.error('[PageErrorBoundary]', this.props.route, err, info); } catch {}
+    try { console.error('[PageErrorBoundary]', this.props.route, err, info); } catch (_e) { console.warn('[bgnj] boot.jsx:82 오류(무시하고 진행)', _e); }
     try {
       window.BGNJ_API?.errorLog?.report({
         code: err?.code || (err?.name || 'PAGE_RENDER_ERROR'),
@@ -88,7 +88,7 @@ class PageErrorBoundary extends React.Component {
         hint: `route=${this.props.route}`, url: '',
         pathname: location.pathname, origin: location.origin,
       })?.catch?.(() => {});
-    } catch {}  // bgnj-allow-silent — 오류 보고 자체 — 실패해도 재보고하면 무한루프
+    } catch (_e) { console.warn('[bgnj] 오류 보고 자체 — 실패해도 재보고하면 무한루프 (boot.jsx:91)', _e); }
   }
   componentDidUpdate(prevProps) {
     if (prevProps.route !== this.props.route && this.state.error) {
@@ -109,9 +109,9 @@ class PageErrorBoundary extends React.Component {
           <div style={{display:'inline-flex', gap:8}}>
             <button onClick={() => this.setState({ error: null })}
               style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #cbd5e1', background:'#fff'}}>다시 시도</button>
-            <button onClick={() => { try { this.props.go('home'); this.setState({ error: null }); } catch {} }}
+            <button onClick={() => { try { this.props.go('home'); this.setState({ error: null }); } catch (_e) { console.warn('[bgnj] boot.jsx:112 오류(무시하고 진행)', _e); } }}
               style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #cbd5e1', background:'#fff'}}>홈으로</button>
-            <button onClick={() => { try { window.location.reload(); } catch {} }}  // bgnj-allow-silent — 새로고침
+            <button onClick={() => { try { window.location.reload(); } catch (_e) { console.warn('[bgnj] boot.jsx:114 오류(무시하고 진행)', _e); } }}
               style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #f5d548', background:'#f5d548', color:'#0f172a', fontWeight:600}}>새로고침</button>
           </div>
         </div>
@@ -169,12 +169,12 @@ const GlobalErrorToast = () => {
       const code = r.code || (r.status ? `HTTP_${r.status}` : (r.name || 'PROMISE_REJECTION'));
       const message = r.message || String(r);
       push({ kind:'error', code, status: r.status || null, message, hint: r.hint || '', url: r.url || '' });
-      try { console.error('[GlobalErrorToast]', r); } catch {}
+      try { console.error('[GlobalErrorToast]', r); } catch (_e) { console.warn('[bgnj] boot.jsx:172 오류(무시하고 진행)', _e); }
     };
     const onError = (ev) => {
       const message = ev?.message || ev?.error?.message || 'Script error';
       push({ kind:'error', code: 'WINDOW_ERROR', status: null, message, hint: '', url: ev?.filename || '' });
-      try { console.error('[GlobalErrorToast]', ev?.error || ev); } catch {}
+      try { console.error('[GlobalErrorToast]', ev?.error || ev); } catch (_e) { console.warn('[bgnj] boot.jsx:177 오류(무시하고 진행)', _e); }
     };
     const onProgrammatic = (ev) => {
       const d = ev?.detail || {};
@@ -261,9 +261,9 @@ const VersionUpdateBanner = () => {
         const v = String(j?.version || '');
         // '나중에' 로 닫은 버전은 다시 띄우지 않는다. 더 새 버전이 나오면 다시 뜬다.
         let dismissed = '';
-        try { dismissed = localStorage.getItem(UPDATE_DISMISSED_KEY) || ''; } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+        try { dismissed = localStorage.getItem(UPDATE_DISMISSED_KEY) || ''; } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (boot.jsx:264)', _e); }
         if (!cancelled && v && v !== current && v !== dismissed) setLatest(j);
-      } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+      } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (boot.jsx:266)', _e); }
     };
     check(); // 진입 즉시 1회
     const t = setInterval(check, VERSION_POLL_MS);
@@ -281,7 +281,7 @@ const VersionUpdateBanner = () => {
     }
   };
   const dismiss = () => {
-    try { localStorage.setItem(UPDATE_DISMISSED_KEY, String(latest?.version || '')); } catch {}
+    try { localStorage.setItem(UPDATE_DISMISSED_KEY, String(latest?.version || '')); } catch (_e) { console.warn('[bgnj] boot.jsx:284 오류(무시하고 진행)', _e); }
     setLatest(null);
   };
   if (!latest) return null;
@@ -379,7 +379,7 @@ const _loadAdminScripts = (attempt = 0) => {
     throw err;
   }).then(() => {
     // v00.210 — 로드 완료 알림. /admin route 외 진입(예: ColumnPage 칼럼 작성 모달) 도 동일 이벤트로 리렌더.
-    try { window.dispatchEvent(new Event('bgnj-admin-scripts-loaded')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    try { window.dispatchEvent(new Event('bgnj-admin-scripts-loaded')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (boot.jsx:382)', _e); }
   });
   return _adminLoadPromise;
 };
@@ -440,7 +440,7 @@ const SiteBanner = () => {
     danger:  { bg: 'rgba(220,38,38,0.10)',   border: 'var(--danger)',          text: 'var(--ink)' },
   }[tone] || { bg: 'rgba(245,213,72,0.12)', border: 'var(--primary-active)', text: 'var(--ink)' };
   const onDismiss = () => {
-    try { sessionStorage.setItem(SITE_BANNER_DISMISSED_KEY, '1'); } catch {}
+    try { sessionStorage.setItem(SITE_BANNER_DISMISSED_KEY, '1'); } catch (_e) { console.warn('[bgnj] boot.jsx:443 오류(무시하고 진행)', _e); }
     setDismissed(true);
   };
   return (
@@ -495,7 +495,7 @@ const App = () => {
       if (!cancelled) setUser(u || null);
       if (u?.id) {
         // 방문 기록 — 자동 승급 평가의 visitsLast30Days 측정에 사용. 같은 날 첫 진입만 카운트.
-        try { window.BGNJ_VISITS?.record?.(u.id); } catch {}
+        try { window.BGNJ_VISITS?.record?.(u.id); } catch (_e) { console.warn('[bgnj] boot.jsx:498 오류(무시하고 진행)', _e); }
         // 로그인 사용자라면 본인 활동 데이터 일괄 동기화.
         Promise.allSettled([
           window.BGNJ_LECTURES?.refreshMine?.(),
@@ -550,7 +550,7 @@ const App = () => {
           // 부팅 시점의 DEFAULT_CATEGORIES 스냅샷을 계속 쥐고 있었다.
           // 증상: 광장 게시판 탭에 '자유·언론보도·한켠역사문화포럼' 이 아예 안 뜸
           // (DEFAULT 의 minLevel 10 에 걸려 비로그인 사용자에게 숨겨짐).
-          try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+          try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (boot.jsx:553)', _e); }
         }
       })?.catch?.(() => {}),
     ]).catch(() => {});
@@ -575,9 +575,9 @@ const App = () => {
         else if (d === 'legal') {
           await window.BGNJ_LEGAL?.refresh?.('terms');
           await window.BGNJ_LEGAL?.refresh?.('privacy');
-          try { window.dispatchEvent(new CustomEvent('bgnj-legal-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+          try { window.dispatchEvent(new CustomEvent('bgnj-legal-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (boot.jsx:578)', _e); }
         }
-      } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+      } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (boot.jsx:580)', _e); }
     });
     return unsub;
   }, []);
@@ -592,7 +592,7 @@ const App = () => {
     try {
       if (cart) localStorage.setItem('bgnj_cart', JSON.stringify(cart));
       else localStorage.removeItem('bgnj_cart');
-    } catch {}  // bgnj-allow-silent — 저장소 정리
+    } catch (_e) { console.warn('[bgnj] 저장소 정리 (boot.jsx:595)', _e); }
   }, [cart]);
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = React.useState(false);
@@ -600,14 +600,14 @@ const App = () => {
   const go = (r) => {
     setRoute(r);
     setPostId(null);
-    try { localStorage.setItem('bgnj_route', r); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+    try { localStorage.setItem('bgnj_route', r); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:603)', _e); }
     // 브라우저 주소를 동기화 — 같은 경로면 push 생략(불필요한 스택 누적 방지).
     try {
       const target = routeToPath(r);
       if (window.location.pathname !== target) {
         window.history.pushState(null, '', target);
       }
-    } catch {}  // bgnj-allow-silent — 히스토리 조작
+    } catch (_e) { console.warn('[bgnj] 히스토리 조작 (boot.jsx:610)', _e); }
     window.scrollTo(0, 0);
   };
 
@@ -626,7 +626,7 @@ const App = () => {
   // v00.148 — 페이지뷰 익명 트래킹. route 변경 시마다 BGNJ_ANALYTICS.track 호출.
   // sendBeacon 우선 + silent fail (분석은 사용자 영향 없음).
   React.useEffect(() => {
-    try { window.BGNJ_ANALYTICS?.track?.(route); } catch {}
+    try { window.BGNJ_ANALYTICS?.track?.(route); } catch (_e) { console.warn('[bgnj] boot.jsx:629 오류(무시하고 진행)', _e); }
   }, [route]);
 
   // 라우트별 document.title — 북마크 / 공유 / 탭 라벨 의미화.
@@ -656,7 +656,7 @@ const App = () => {
     };
     const seg = ROUTE_TITLES[route] || '';
     const title = route === 'home' ? `${brand} — ${tagline}` : `${seg} — ${brand}`;
-    try { document.title = title; } catch {}  // bgnj-allow-silent — 문서 제목
+    try { document.title = title; } catch (_e) { console.warn('[bgnj] 문서 제목 (boot.jsx:659)', _e); }
     // route 변경 시 사이트 콘텐츠 refresh 이벤트도 listen — 브랜드명/태그라인 바뀌면 즉시 반영.
     const onScRefresh = () => {
       const sc2 = window.BGNJ_SITE_CONTENT?.get?.() || {};
@@ -664,7 +664,7 @@ const App = () => {
       const t2 = sc2.og?.title || '뱅기 타고 한국을 느끼다';
       const s = ROUTE_TITLES[route] || '';
       const newTitle = route === 'home' ? `${b2} — ${t2}` : `${s} — ${b2}`;
-      try { document.title = newTitle; } catch {}  // bgnj-allow-silent — 문서 제목
+      try { document.title = newTitle; } catch (_e) { console.warn('[bgnj] 문서 제목 (boot.jsx:667)', _e); }
     };
     window.addEventListener('bgnj-site-content-refresh', onScRefresh);
     return () => window.removeEventListener('bgnj-site-content-refresh', onScRefresh);
@@ -677,7 +677,7 @@ const App = () => {
     setRoute("home");
     try {
       localStorage.setItem('bgnj_route', 'home');
-    } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+    } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:680)', _e); }
     window.scrollTo(0, 0);
   };
 
@@ -693,7 +693,7 @@ const App = () => {
       if (d.type === '__deactivate_edit_mode') setEditMode(false);
     };
     window.addEventListener('message', onMsg);
-    try { window.parent.postMessage({ type: '__edit_mode_available' }, selfOrigin); } catch {}
+    try { window.parent.postMessage({ type: '__edit_mode_available' }, selfOrigin); } catch (_e) { console.warn('[bgnj] boot.jsx:696 오류(무시하고 진행)', _e); }
     return () => window.removeEventListener('message', onMsg);
   }, []);
 
@@ -709,23 +709,23 @@ const App = () => {
         const raw = decodeURIComponent(colMatch[1]);
         const isNumeric = /^\d+$/.test(raw);
         const resolved = isNumeric ? (window.BGNJ_COLUMNS?.idByNumber?.(raw) || raw) : raw;
-        try { sessionStorage.setItem('bgnj_pending_column_id', resolved); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+        try { sessionStorage.setItem('bgnj_pending_column_id', resolved); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:712)', _e); }
         setRoute('column');
-        try { localStorage.setItem('bgnj_route', 'column'); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+        try { localStorage.setItem('bgnj_route', 'column'); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:714)', _e); }
       } else if (postMatch) {
-        try { sessionStorage.setItem('bgnj_pending_post_id', decodeURIComponent(postMatch[1])); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+        try { sessionStorage.setItem('bgnj_pending_post_id', decodeURIComponent(postMatch[1])); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:716)', _e); }
         setRoute('community');
-        try { localStorage.setItem('bgnj_route', 'community'); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+        try { localStorage.setItem('bgnj_route', 'community'); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:718)', _e); }
       } else if (lectureMatch) {
-        try { sessionStorage.setItem('bgnj_pending_lecture_id', decodeURIComponent(lectureMatch[1])); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+        try { sessionStorage.setItem('bgnj_pending_lecture_id', decodeURIComponent(lectureMatch[1])); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:720)', _e); }
         setRoute('lectures');
-        try { localStorage.setItem('bgnj_route', 'lectures'); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+        try { localStorage.setItem('bgnj_route', 'lectures'); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:722)', _e); }
       } else {
         const tourMatch = h.match(/^#tour-(.+)$/);
         if (tourMatch) {
-          try { sessionStorage.setItem('bgnj_pending_tour_id', decodeURIComponent(tourMatch[1])); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+          try { sessionStorage.setItem('bgnj_pending_tour_id', decodeURIComponent(tourMatch[1])); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:726)', _e); }
           setRoute('tour');
-          try { localStorage.setItem('bgnj_route', 'tour'); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+          try { localStorage.setItem('bgnj_route', 'tour'); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:728)', _e); }
         }
       }
     };
@@ -757,7 +757,7 @@ const App = () => {
       .then(() => { if (!cancelled) setAdminLoaded(true); })
       .catch((err) => {
         // v00.262.004 — A4 silent 였던 catch. PAGE_NOT_LOADED 가 떠도 콘솔에 단서 없었음.
-        try { console.error('[adminBundle] load failed', err); } catch {}
+        try { console.error('[adminBundle] load failed', err); } catch (_e) { console.warn('[bgnj] boot.jsx:760 오류(무시하고 진행)', _e); }
         if (!cancelled) setAdminLoadError(err);
       });
     return () => { cancelled = true; };
@@ -772,7 +772,7 @@ const App = () => {
         <div style={{fontFamily:'monospace', fontSize:11, color:'#dc2626', letterSpacing:'0.18em', marginBottom:8}}>PAGE_NOT_LOADED</div>
         <div style={{fontFamily:'serif', fontSize:18, marginBottom:6}}>{label} 페이지를 불러오지 못했습니다</div>
         <div style={{fontSize:12, color:'#64748b', marginBottom:18}}>새로고침 후에도 같은 화면이 보인다면 잠시 후 다시 시도해 주세요.</div>
-        <button onClick={() => { try { window.location.reload(); } catch {} }} style={{padding:'8px 16px', cursor:'pointer'}}>페이지 새로고침</button>
+        <button onClick={() => { try { window.location.reload(); } catch (_e) { console.warn('[bgnj] boot.jsx:775 오류(무시하고 진행)', _e); } }} style={{padding:'8px 16px', cursor:'pointer'}}>페이지 새로고침</button>
       </div>
     );
     const pick = (name, label) => W[name] || fallback(label);
@@ -826,7 +826,7 @@ const App = () => {
           const sp = new URLSearchParams(window.location.search);
           const c = (sp.get('code') || '').toLowerCase();
           if (c) code = c;
-        } catch {}
+        } catch (_e) { console.warn('[bgnj] boot.jsx:829 오류(무시하고 진행)', _e); }
         const map = {
           '401':         'Error401Page',
           '403':         'Error403Page',

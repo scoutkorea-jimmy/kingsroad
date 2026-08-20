@@ -160,7 +160,7 @@ const LoginPage = ({ go, setUser, initialMode = "login" }) => {
 
       if (!authResult.ok) {
         // 콘솔에도 동일 정보를 남겨 운영자가 개발자 도구에서 빠르게 확인할 수 있도록.
-        try { console.error('[BGNJ_AUTH]', mode, authResult); } catch {}
+        try { console.error('[BGNJ_AUTH]', mode, authResult); } catch (_e) { console.warn('[bgnj] AdminLogin.jsx:163 오류(무시하고 진행)', _e); }
         setAuthError(authResult);
         return;
       }

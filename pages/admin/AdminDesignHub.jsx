@@ -3256,7 +3256,7 @@ const LiveColorCards = ({ tokens }) => {
         const next = {};
         for (const t of tokens) next[t.token] = root.getPropertyValue(t.token).trim();
         setComputed(next);
-      } catch {}
+      } catch (_e) { console.warn('[bgnj] AdminDesignHub.jsx:3259 오류(무시하고 진행)', _e); }
     };
     read();
     const onTheme = () => read();

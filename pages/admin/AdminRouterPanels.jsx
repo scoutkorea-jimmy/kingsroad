@@ -126,7 +126,7 @@ const CorruptedBodyInspector = ({ go }) => {
                 <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{p.title || '(제목 없음)'}</span>
                 <span className="dim-2 mono" style={{fontSize:10}}>{p.author || '?'} · {p.date || ''}</span>
                 <button type="button" className="btn btn-small" onClick={() => {
-                  try { sessionStorage.setItem('bgnj_pending_post_id', String(p.id)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+                  try { sessionStorage.setItem('bgnj_pending_post_id', String(p.id)); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (AdminRouterPanels.jsx:129)', _e); }
                   go('community');
                 }}>열기</button>
               </li>
@@ -312,7 +312,7 @@ const ErrorPagesPreviewPanel = ({ go }) => {
   const current = variants.find((v) => v.k === active) || variants[0];
   const Preview = current.Comp;
   // 미리보기 안에서 go 가 호출되면 실제로 라우팅하면 곤란하니 noop 으로 가로채기.
-  const previewGo = (route) => { try { console.warn('[preview] go(', route, ') — 미리보기에서는 실제 이동 안 함'); } catch {} };
+  const previewGo = (route) => { try { console.warn('[preview] go(', route, ') — 미리보기에서는 실제 이동 안 함'); } catch (_e) { console.warn('[bgnj] AdminRouterPanels.jsx:315 오류(무시하고 진행)', _e); } };
   return (
     <div>
       <AdminPanelHeader
@@ -364,7 +364,7 @@ const PostViewerModal = ({ postId, onClose }) => {
     // 서버 게시글이면 댓글 동기화 시도.
     try { window.BGNJ_COMMUNITY?.refreshComments?.(postId).then(() => {
       setComments(window.BGNJ_COMMUNITY.getComments(postId));
-    }); } catch {}
+    }); } catch (_e) { console.warn('[bgnj] AdminRouterPanels.jsx:367 오류(무시하고 진행)', _e); }
   }, [postId]);
 
   if (!post) {
@@ -512,7 +512,7 @@ const InternalAlarmPanel = () => {
         const data = await window.BGNJ_API?.admin?.users?.list?.();
         if (cancelled) return;
         setUsers(Array.isArray(data?.users) ? data.users : []);
-      } catch {} finally { if (!cancelled) setLoading(false); }
+      } catch (_e) { console.warn('[bgnj] AdminRouterPanels.jsx:515 오류(무시하고 진행)', _e); } finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -702,7 +702,7 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
   });
   const setPageSize = (n) => {
     setPageSizeState(n);
-    try { localStorage.setItem(ADMIN_POSTS_PER_PAGE_LS_KEY, String(n)); } catch {}
+    try { localStorage.setItem(ADMIN_POSTS_PER_PAGE_LS_KEY, String(n)); } catch (_e) { console.warn('[bgnj] AdminRouterPanels.jsx:705 오류(무시하고 진행)', _e); }
     setPage(1);
   };
 

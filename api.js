@@ -13,7 +13,7 @@
 (function () {
   const BASE = "https://banginoja-api.scoutkorea.workers.dev/api";
   // v00.148 — BGNJ_ANALYTICS sendBeacon 용 base url 노출.
-  try { window.BGNJ_API_BASE = BASE; } catch {}
+  try { window.BGNJ_API_BASE = BASE; } catch (_e) { console.warn('[bgnj] api.js:16 오류(무시하고 진행)', _e); }
 
   // 에러는 단일 형태로 분류해 호출 측에서 사용자에게 정확한 원인을 보일 수 있게 한다.
   // err.kind: 'network' | 'cors' | 'http' | 'parse' | 'unknown'

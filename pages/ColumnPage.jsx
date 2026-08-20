@@ -35,9 +35,9 @@ const ColumnPage = ({ go, user }) => {
   // 외부 진입 (해시 / 마이페이지 / 알림 등)으로 들어오는 칼럼 ID
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem("bgnj_pending_column_id"); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+    try { pending = sessionStorage.getItem("bgnj_pending_column_id"); } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (ColumnPage.jsx:38)', _e); }
     if (pending) {
-      try { sessionStorage.removeItem("bgnj_pending_column_id"); } catch {}  // bgnj-allow-silent — 저장소 정리
+      try { sessionStorage.removeItem("bgnj_pending_column_id"); } catch (_e) { console.warn('[bgnj] 저장소 정리 (ColumnPage.jsx:40)', _e); }
       setSelectedId(pending);
     }
   }, []);
@@ -45,9 +45,9 @@ const ColumnPage = ({ go, user }) => {
   // v00.169 — 홈 '＋ 글쓰기' 진입 → 모달 자동 오픈 (admin 전용 플래그).
   React.useEffect(() => {
     let pendingWrite = null;
-    try { pendingWrite = sessionStorage.getItem("bgnj_pending_column_write"); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+    try { pendingWrite = sessionStorage.getItem("bgnj_pending_column_write"); } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (ColumnPage.jsx:48)', _e); }
     if (pendingWrite) {
-      try { sessionStorage.removeItem("bgnj_pending_column_write"); } catch {}  // bgnj-allow-silent — 저장소 정리
+      try { sessionStorage.removeItem("bgnj_pending_column_write"); } catch (_e) { console.warn('[bgnj] 저장소 정리 (ColumnPage.jsx:50)', _e); }
       if (user?.isAdmin) setWriterOpen(true);
     }
   }, [user]);
@@ -72,7 +72,7 @@ const ColumnPage = ({ go, user }) => {
         sessionStorage.setItem(key, "1");
         Promise.resolve(window.BGNJ_COLUMNS.incrementViews(selectedId)).then(() => refresh());
       }
-    } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
+    } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (ColumnPage.jsx:75)', _e); }
   }, [selectedId]);
 
   const requireLogin = async (label) => {

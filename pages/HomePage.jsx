@@ -18,7 +18,7 @@ class HomeSectionBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null }; }
   static getDerivedStateFromError(err) { return { error: err }; }
   componentDidCatch(err) {
-    try { console.error('[HomeSectionBoundary]', this.props.label || 'section', err); } catch {}
+    try { console.error('[HomeSectionBoundary]', this.props.label || 'section', err); } catch (_e) { console.warn('[bgnj] HomePage.jsx:21 오류(무시하고 진행)', _e); }
     try {
       window.BGNJ_API?.errorLog?.report({
         code: 'HOME_SECTION_ERROR', status: null, kind: 'render',
@@ -26,7 +26,7 @@ class HomeSectionBoundary extends React.Component {
         hint: `section=${this.props.label || ''}`, url: '',
         pathname: location.pathname, origin: location.origin,
       })?.catch?.(() => {});
-    } catch {}  // bgnj-allow-silent — 오류 보고 자체 — 실패해도 재보고하면 무한루프
+    } catch (_e) { console.warn('[bgnj] 오류 보고 자체 — 실패해도 재보고하면 무한루프 (HomePage.jsx:29)', _e); }
   }
   render() {
     if (this.state.error) {
@@ -146,7 +146,7 @@ const _fmtEventDate = (x) => {
   if (isNaN(t)) return '';
   try {
     if (window.BGNJ_FMT?.kstFriendly) return window.BGNJ_FMT.kstFriendly(new Date(t).toISOString());
-  } catch {}
+  } catch (_e) { console.warn('[bgnj] HomePage.jsx:149 오류(무시하고 진행)', _e); }
   const d = new Date(t);
   const p2 = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}.${p2(d.getMonth() + 1)}.${p2(d.getDate())}`;
@@ -413,7 +413,7 @@ const HomePage = ({ go }) => {
         if (mq.removeEventListener) mq.removeEventListener('change', handler);
         else if (mq.removeListener) mq.removeListener(handler);
       };
-    } catch {}  // bgnj-allow-silent — 리스너 해제
+    } catch (_e) { console.warn('[bgnj] 리스너 해제 (HomePage.jsx:416)', _e); }
   }, []);
   const heroStyle = React.useMemo(
     () => (window.BGNJ_HERO_STYLE?.(isMobile ? 'mobile' : 'desktop') || window.BGNJ_HERO_STYLE_DEFAULT),
@@ -543,7 +543,7 @@ const HomePage = ({ go }) => {
         kind: 'tour', id: t.id, title: t.title, tag: '답사',
         ts: _eventTs(t) || 0, date: fmt(_eventTs(t)),
         onGo: () => {
-          try { sessionStorage.setItem('bgnj_pending_tour_id', String(t.id)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+          try { sessionStorage.setItem('bgnj_pending_tour_id', String(t.id)); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (HomePage.jsx:546)', _e); }
           go('tour');
         },
       })),
@@ -551,7 +551,7 @@ const HomePage = ({ go }) => {
         kind: 'lec', id: l.id, title: l.topic || l.title, tag: '강연',
         ts: _eventTs(l) || 0, date: fmt(_eventTs(l)),
         onGo: () => {
-          try { sessionStorage.setItem('bgnj_pending_lecture_id', String(l.id)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+          try { sessionStorage.setItem('bgnj_pending_lecture_id', String(l.id)); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (HomePage.jsx:554)', _e); }
           go('lectures');
         },
       })),
@@ -703,7 +703,7 @@ const HomePage = ({ go }) => {
               return (
                 <div className="home-split-half home-split-half--ink home-split-half--event"
                   {...clickable(() => {
-                    try { sessionStorage.setItem(pendKey, String(item.id)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
+                    try { sessionStorage.setItem(pendKey, String(item.id)); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (HomePage.jsx:706)', _e); }
                     go(route);
                   }, `${label}: ${title}`)}>
                   {/* v00.293.002 — 포스터가 있으면 좌측에 세워 붙인다. 없으면 텍스트만 렌더 —

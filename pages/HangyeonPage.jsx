@@ -459,7 +459,7 @@ const HkInquiryModal = ({ pkg, startDate, property, contactEmail, contactPhone, 
   const mailHref = `mailto:${contactEmail}?subject=${encodeURIComponent(`[전주한켠] ${pkg.name} 문의`)}&body=${encodeURIComponent(summary)}`;
   const sendMail = () => {
     if (!name.trim() || !phone.trim()) { window.BGNJ_TOAST?.error?.('이름과 연락처를 입력해 주세요.'); return; }
-    try { window.location.href = mailHref; } catch {}
+    try { window.location.href = mailHref; } catch (_e) { console.warn('[bgnj] HangyeonPage.jsx:462 오류(무시하고 진행)', _e); }
     window.BGNJ_TOAST?.success?.('문의 메일 작성 화면을 열었어요. 전송해 주세요.');
   };
   const copySummary = async () => {

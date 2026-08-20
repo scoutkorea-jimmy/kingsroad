@@ -53,7 +53,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
-      try { await window.BGNJ_AUTH?.refreshUsers?.(); } catch {}
+      try { await window.BGNJ_AUTH?.refreshUsers?.(); } catch (_e) { console.warn('[bgnj] AdminDashboardPanel.jsx:56 오류(무시하고 진행)', _e); }
       if (cancelled) return;
     })();
     return () => { cancelled = true; };
