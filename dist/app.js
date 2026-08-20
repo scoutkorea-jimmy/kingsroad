@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.001",
+    version: "00.294.002",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -8815,13 +8815,15 @@
       },
       POSTS_PER_PAGE_OPTIONS.map((n) => /* @__PURE__ */ React.createElement("option", { key: n, value: n }, n, "\uAC1C"))
     ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: handleWrite }, user ? "\uAE00\uC4F0\uAE30 \uFF0B" : "\uB85C\uADF8\uC778 \uD6C4 \uAE00\uC4F0\uAE30"))), tab !== "all" && (currentBoard == null ? void 0 : currentBoard.desc) && /* @__PURE__ */ React.createElement("div", { style: {
-      padding: "10px 16px",
+      padding: "12px 16px",
       marginBottom: 16,
       background: "var(--bg-2)",
-      borderLeft: "3px solid var(--primary)",
+      border: "1px solid var(--line)",
       fontSize: 13,
       color: "var(--ink-2)",
-      lineHeight: 1.6
+      lineHeight: 1.6,
+      wordBreak: "keep-all",
+      overflowWrap: "break-word"
     } }, currentBoard.desc), boardPrefixes.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 } }, /* @__PURE__ */ React.createElement(
       "button",
       {

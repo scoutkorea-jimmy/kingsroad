@@ -1067,12 +1067,16 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           </div>
         </div>
 
-        {/* 게시판 설명 — 특정 게시판 뷰에서만 표시 */}
+        {/* 게시판 설명 — 특정 게시판 뷰에서만 표시.
+            v00.294 — 좌측 3px 색 띠 → 실선 테두리. v00.293 재디자인이 잡은
+            '각지고 얇은 선' 톤(--radius 2px · 헤어라인)과 어긋나 있었고,
+            첨부 파일 목록 등 같은 화면의 다른 안내 박스와도 모양이 달랐다. */}
         {tab !== "all" && currentBoard?.desc && (
           <div style={{
-            padding:'10px 16px', marginBottom:16,
-            background:'var(--bg-2)', borderLeft:'3px solid var(--primary)',
+            padding:'12px 16px', marginBottom:16,
+            background:'var(--bg-2)', border:'1px solid var(--line)',
             fontSize:13, color:'var(--ink-2)', lineHeight:1.6,
+            wordBreak:'keep-all', overflowWrap:'break-word',
           }}>{currentBoard.desc}</div>
         )}
 
