@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.294.011",
+  version: "00.294.012",
   build: "2026.08.20",
   channel: "preview",
 };

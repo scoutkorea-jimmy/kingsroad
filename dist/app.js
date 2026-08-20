@@ -366,7 +366,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.011",
+    version: "00.294.012",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -14376,12 +14376,18 @@
   var AUTO_RELOAD_KEY = "bgnj_auto_reloaded_version";
   var _safeToAutoReload = () => {
     try {
-      if (document.querySelector('[role="dialog"]')) return false;
+      const EDITABLE = 'textarea, [contenteditable="true"], input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=button]):not([type=submit])';
+      for (const d of document.querySelectorAll('[role="dialog"]')) {
+        if (d.querySelector(EDITABLE)) return false;
+      }
       const a = document.activeElement;
       if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable)) return false;
       for (const el of document.querySelectorAll("input, textarea")) {
         if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") continue;
         if (String(el.value || "").trim()) return false;
+      }
+      for (const el of document.querySelectorAll('[contenteditable="true"]')) {
+        if (String(el.textContent || "").trim()) return false;
       }
       return true;
     } catch (_e) {

@@ -251,8 +251,13 @@ const AUTO_RELOAD_KEY = 'bgnj_auto_reloaded_version';
 // 자동 새로고침이 사용자 작업을 날리면 안 된다. 하나라도 걸리면 배너로 물러선다.
 const _safeToAutoReload = () => {
   try {
-    // 모달(글쓰기·칼럼·확인창 등)이 떠 있으면 작성 중일 수 있다.
-    if (document.querySelector('[role="dialog"]')) return false;
+    // 모달이 떠 있다고 무조건 막으면 안 된다 — 쿠키 동의창도 role="dialog" 라서
+    // 동의 전 방문자(=대개 첫 방문·재방문자)는 자동 새로고침이 영영 안 걸렸다.
+    // '잃을 것이 있는 모달' 만 막는다: 글을 담을 수 있는 입력이 안에 있는 경우.
+    const EDITABLE = 'textarea, [contenteditable="true"], input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=button]):not([type=submit])';
+    for (const d of document.querySelectorAll('[role="dialog"]')) {
+      if (d.querySelector(EDITABLE)) return false;
+    }
     // 입력 중이면 건드리지 않는다.
     const a = document.activeElement;
     if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return false;
@@ -260,6 +265,10 @@ const _safeToAutoReload = () => {
     for (const el of document.querySelectorAll('input, textarea')) {
       if (el.type === 'hidden' || el.type === 'checkbox' || el.type === 'radio') continue;
       if (String(el.value || '').trim()) return false;
+    }
+    // 리치 에디터(Tiptap)는 <textarea> 가 아니라 contenteditable 이다.
+    for (const el of document.querySelectorAll('[contenteditable="true"]')) {
+      if (String(el.textContent || '').trim()) return false;
     }
     return true;
   } catch (_e) {
