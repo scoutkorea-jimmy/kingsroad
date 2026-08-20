@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.002",
+    version: "00.294.003",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -1518,6 +1518,10 @@
     resetCategories: () => {
       window.BGNJ_STORES.categories = DEFAULT_CATEGORIES.slice();
       _lsSet("bgnj_categories", window.BGNJ_STORES.categories);
+      try {
+        window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
+      } catch (e) {
+      }
     }
   };
   window.BGNJ_DB = {
@@ -9085,7 +9089,9 @@
       var _a2, _b2;
       return userLevel >= ((_b2 = (_a2 = c.postMinLevel) != null ? _a2 : c.minLevel) != null ? _b2 : 0);
     });
-    const defaultCategoryId = (initialPost == null ? void 0 : initialPost.categoryId) || ((_a = writable[0]) == null ? void 0 : _a.id) || ((_b = categories[0]) == null ? void 0 : _b.id) || "";
+    const _fallbackCatId = ((_a = writable[0]) == null ? void 0 : _a.id) || ((_b = categories[0]) == null ? void 0 : _b.id) || "";
+    const _validCatId = React.useCallback((id) => id && categories.some((c) => c.id === id) ? id : _fallbackCatId, [categories, _fallbackCatId]);
+    const defaultCategoryId = _validCatId(initialPost == null ? void 0 : initialPost.categoryId);
     const isEditing = !!initialPost;
     const draftKey = draftKeyFor(user == null ? void 0 : user.id);
     const initialDraft = React.useMemo(() => {
@@ -9097,7 +9103,7 @@
         return null;
       }
     }, [draftKey, isEditing]);
-    const [categoryId, setCategoryId] = React.useState((initialDraft == null ? void 0 : initialDraft.categoryId) || defaultCategoryId);
+    const [categoryId, setCategoryId] = React.useState(_validCatId(initialDraft == null ? void 0 : initialDraft.categoryId) || defaultCategoryId);
     const [title, setTitle] = React.useState((initialPost == null ? void 0 : initialPost.title) || (initialDraft == null ? void 0 : initialDraft.title) || "");
     const [prefix, setPrefix] = React.useState((initialPost == null ? void 0 : initialPost.prefix) || (initialDraft == null ? void 0 : initialDraft.prefix) || "");
     const [tags, setTags] = React.useState((initialPost == null ? void 0 : initialPost.tags) || (initialDraft == null ? void 0 : initialDraft.tags) || []);
@@ -9173,7 +9179,7 @@
     }, []);
     const loadPostDraft = (d) => {
       if (!d) return;
-      setCategoryId(d.categoryId || defaultCategoryId);
+      setCategoryId(_validCatId(d.categoryId) || defaultCategoryId);
       setTitle(d.title || "");
       setPrefix(d.prefix || "");
       setTags(Array.isArray(d.tags) ? d.tags : []);
@@ -9194,7 +9200,7 @@
     const MAX_POST_DRAFTS = ((_e = window.BGNJ_DRAFTS) == null ? void 0 : _e.MAX_COUNT) || 5;
     React.useEffect(() => {
       var _a2, _b2;
-      setCategoryId((initialPost == null ? void 0 : initialPost.categoryId) || defaultCategoryId);
+      setCategoryId(_validCatId(initialPost == null ? void 0 : initialPost.categoryId) || defaultCategoryId);
       setTitle((initialPost == null ? void 0 : initialPost.title) || "");
       setPrefix((initialPost == null ? void 0 : initialPost.prefix) || "");
       setTags((initialPost == null ? void 0 : initialPost.tags) || []);
@@ -9203,7 +9209,7 @@
       setBodyHtml(_stripAttachedBlock(((_a2 = initialPost == null ? void 0 : initialPost.body) == null ? void 0 : _a2.html) || ""));
       setBodyText(((_b2 = initialPost == null ? void 0 : initialPost.body) == null ? void 0 : _b2.text) || "");
       setError("");
-      prevCategoryIdRef.current = (initialPost == null ? void 0 : initialPost.categoryId) || defaultCategoryId;
+      prevCategoryIdRef.current = _validCatId(initialPost == null ? void 0 : initialPost.categoryId) || defaultCategoryId;
     }, [initialPost, defaultCategoryId]);
     const selectedCat = categories.find((c) => c.id === categoryId);
     const boardPrefixes = (selectedCat == null ? void 0 : selectedCat.prefixes) || [];
@@ -9415,11 +9421,13 @@
     const sibIndex = sibList.findIndex((p) => String(p.id) === String(post.id));
     const prevPost = sibIndex > 0 ? sibList[sibIndex - 1] : null;
     const nextPost = sibIndex >= 0 && sibIndex < sibList.length - 1 ? sibList[sibIndex + 1] : null;
+    const inList = sibIndex >= 0;
     const nearby = React.useMemo(() => {
       if (sibList.length <= 1) return [];
+      if (!inList) return sibList.slice(0, 5);
       const start = Math.max(0, Math.min(sibIndex - 2, sibList.length - 5));
       return sibList.slice(start, start + 5);
-    }, [sibList, sibIndex]);
+    }, [sibList, sibIndex, inList]);
     const [comment, setComment] = React.useState("");
     const [commentsList, setCommentsList] = React.useState(() => G2.arr(() => {
       var _a2, _b2;
@@ -9458,6 +9466,13 @@
       };
       window.addEventListener("bgnj-comments-refresh", onRefreshComments);
       return () => window.removeEventListener("bgnj-comments-refresh", onRefreshComments);
+    }, [post.id]);
+    React.useEffect(() => {
+      try {
+        window.scrollTo({ top: 0, behavior: "auto" });
+      } catch (e) {
+        window.scrollTo(0, 0);
+      }
     }, [post.id]);
     React.useEffect(() => {
       const key = `bgnj_viewed_post_${post.id}`;
@@ -9712,7 +9727,7 @@
           onRefresh == null ? void 0 : onRefresh();
         }
       }
-    )), /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uAE00 \uC774\uB3D9", style: { marginTop: 64, paddingTop: 32, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "post-nav-pair", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 } }, /* @__PURE__ */ React.createElement(
+    )), /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uAE00 \uC774\uB3D9", style: { marginTop: 64, paddingTop: 32, borderTop: "1px solid var(--line)" } }, inList && /* @__PURE__ */ React.createElement("div", { className: "post-nav-pair", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 } }, /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -9734,7 +9749,7 @@
       },
       /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", display: "block", marginBottom: 6 } }, "\uB2E4\uC74C \uAE00 \u2192"),
       /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, color: "var(--ink)", wordBreak: "keep-all", overflowWrap: "break-word" } }, nextPost ? nextPost.title : "\uB2E4\uC74C \uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4")
-    )), nearby.length > 0 && /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: "0 0 24px", border: "1px solid var(--line)", background: "var(--bg-2)" } }, nearby.map((p) => {
+    )), nearby.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true", style: { marginBottom: 10 } }, inList ? "MORE \xB7 \uC774 \uAC8C\uC2DC\uD310\uC758 \uB2E4\uB978 \uAE00" : "MORE \xB7 \uCD5C\uADFC \uAE00"), /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: "0 0 24px", border: "1px solid var(--line)", background: "var(--bg-2)" } }, nearby.map((p) => {
       const isCurrent = String(p.id) === String(post.id);
       return /* @__PURE__ */ React.createElement("li", { key: p.id, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement(
         "button",
@@ -9761,7 +9776,7 @@
         /* @__PURE__ */ React.createElement("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.title),
         /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, p.author)
       ));
-    })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(
+    }))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",

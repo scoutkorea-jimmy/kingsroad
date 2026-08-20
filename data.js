@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.294.002",
+  version: "00.294.003",
   build: "2026.08.20",
   channel: "preview",
 };
@@ -1145,7 +1145,7 @@ window.BGNJ_SAVE = {
   books: () => _lsSet('bgnj_books', window.BGNJ_STORES.books),
   auditLog: () => _lsSet('bgnj_audit_log', window.BGNJ_STORES.auditLog),
   resetGrades: () => { window.BGNJ_STORES.grades = DEFAULT_GRADES.slice(); _lsSet('bgnj_grades', window.BGNJ_STORES.grades); },
-  resetCategories: () => { window.BGNJ_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('bgnj_categories', window.BGNJ_STORES.categories); },
+  resetCategories: () => { window.BGNJ_STORES.categories = DEFAULT_CATEGORIES.slice(); _lsSet('bgnj_categories', window.BGNJ_STORES.categories); try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {} },
 };
 
 window.BGNJ_DB = {

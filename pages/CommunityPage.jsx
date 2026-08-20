@@ -1336,7 +1336,14 @@ const draftKeyFor = (userId) => `bgnj_post_draft_${userId || 'guest'}`;
 // BGNJ_DRAFTS 에 임시저장. 사용자 보고: 임시저장 글 어디서 보는지 모름 + 최대 5개 제한.
 const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userLevel, onPayloadChange }) => {
   const writable = categories.filter(c => userLevel >= (c.postMinLevel ?? c.minLevel ?? 0));
-  const defaultCategoryId = initialPost?.categoryId || writable[0]?.id || categories[0]?.id || "";
+  // v00.294.003 — 게시판은 운영 중에 삭제될 수 있다(v00.294 에서 질문·정보 폐쇄).
+  // 삭제된 게시판 id 로 저장된 임시저장 글이나 옛 게시글을 그대로 복원하면
+  // 존재하지 않는 분류가 선택된 채 발행돼 서버가 거부한다. 항상 실재 여부를 확인한다.
+  const _fallbackCatId = writable[0]?.id || categories[0]?.id || "";
+  const _validCatId = React.useCallback((id) => (
+    id && categories.some((c) => c.id === id) ? id : _fallbackCatId
+  ), [categories, _fallbackCatId]);
+  const defaultCategoryId = _validCatId(initialPost?.categoryId);
   const isEditing = !!initialPost;
 
   // 새 글 작성일 때만 임시저장 복원/저장. 수정 모드에서는 원본 게시글이 source of truth.
@@ -1349,7 +1356,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     } catch { return null; }
   }, [draftKey, isEditing]);
 
-  const [categoryId, setCategoryId] = React.useState(initialDraft?.categoryId || defaultCategoryId);
+  const [categoryId, setCategoryId] = React.useState(_validCatId(initialDraft?.categoryId) || defaultCategoryId);
   const [title, setTitle] = React.useState(initialPost?.title || initialDraft?.title || "");
   const [prefix, setPrefix] = React.useState(initialPost?.prefix || initialDraft?.prefix || "");
   const [tags, setTags] = React.useState(initialPost?.tags || initialDraft?.tags || []);
@@ -1419,7 +1426,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   }, []);
   const loadPostDraft = (d) => {
     if (!d) return;
-    setCategoryId(d.categoryId || defaultCategoryId);
+    setCategoryId(_validCatId(d.categoryId) || defaultCategoryId);
     setTitle(d.title || '');
     setPrefix(d.prefix || '');
     setTags(Array.isArray(d.tags) ? d.tags : []);
@@ -1436,7 +1443,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   const MAX_POST_DRAFTS = window.BGNJ_DRAFTS?.MAX_COUNT || 5;
 
   React.useEffect(() => {
-    setCategoryId(initialPost?.categoryId || defaultCategoryId);
+    setCategoryId(_validCatId(initialPost?.categoryId) || defaultCategoryId);
     setTitle(initialPost?.title || "");
     setPrefix(initialPost?.prefix || "");
     setTags(initialPost?.tags || []);
@@ -1447,7 +1454,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     setBodyHtml(_stripAttachedBlock(initialPost?.body?.html || ""));
     setBodyText(initialPost?.body?.text || "");
     setError("");
-    prevCategoryIdRef.current = initialPost?.categoryId || defaultCategoryId;
+    prevCategoryIdRef.current = _validCatId(initialPost?.categoryId) || defaultCategoryId;
     // initialPost 가 들어오면 (= 수정 모드) 임시저장은 무시.
   }, [initialPost, defaultCategoryId]);
 
@@ -1723,11 +1730,15 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
   const prevPost = sibIndex > 0 ? sibList[sibIndex - 1] : null;
   const nextPost = sibIndex >= 0 && sibIndex < sibList.length - 1 ? sibList[sibIndex + 1] : null;
   // 하단 목록 — 현재 글 주변 최대 5개. 목록으로 돌아가지 않고도 다음 글로 넘어갈 수 있게.
+  // v00.294.003 — 딥링크(#post-123)나 검색 중 진입이면 이 글이 목록에 없다(sibIndex === -1).
+  // 그때 '주변 글' 이라고 부르면 거짓말이 되므로 최신 5개를 '다른 글' 로 보여준다.
+  const inList = sibIndex >= 0;
   const nearby = React.useMemo(() => {
     if (sibList.length <= 1) return [];
+    if (!inList) return sibList.slice(0, 5);
     const start = Math.max(0, Math.min(sibIndex - 2, sibList.length - 5));
     return sibList.slice(start, start + 5);
-  }, [sibList, sibIndex]);
+  }, [sibList, sibIndex, inList]);
   const [comment, setComment] = React.useState("");
   const [commentsList, setCommentsList] = React.useState(() => G.arr(() => window.BGNJ_COMMUNITY?.getComments?.(post.id)));
   const [reportOpen, setReportOpen] = React.useState(false);
@@ -1756,6 +1767,13 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
     };
     window.addEventListener('bgnj-comments-refresh', onRefreshComments);
     return () => window.removeEventListener('bgnj-comments-refresh', onRefreshComments);
+  }, [post.id]);
+
+  // v00.294.003 — 글이 바뀌면 맨 위로. 하단 '이전/다음 글' 은 페이지 끝에 있어서,
+  // 스크롤을 그대로 두면 새 글의 **끝부분**에 도착한다(제목도 안 보인다).
+  // 목록 → 상세 진입도 같은 문제가 있었다. 첫 렌더 포함 post.id 마다 실행한다.
+  React.useEffect(() => {
+    try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch { window.scrollTo(0, 0); }
   }, [post.id]);
 
   React.useEffect(() => {
@@ -2101,6 +2119,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
         {/* v00.294 — 하단 글 이동. 긴 글 끝에서 상단 버튼까지 올라갈 필요 없이
             이전/다음 글과 목록으로 바로 갈 수 있게 한다. */}
         <nav aria-label="글 이동" style={{marginTop:64, paddingTop:32, borderTop:'1px solid var(--line)'}}>
+          {inList && (
           <div className="post-nav-pair" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20}}>
             <button type="button" className="btn"
               disabled={!prevPost}
@@ -2121,8 +2140,13 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
               </span>
             </button>
           </div>
+          )}
 
           {nearby.length > 0 && (
+            <>
+            <div className="section-eyebrow" aria-hidden="true" style={{marginBottom:10}}>
+              {inList ? 'MORE · 이 게시판의 다른 글' : 'MORE · 최근 글'}
+            </div>
             <ul style={{listStyle:'none', padding:0, margin:'0 0 24px', border:'1px solid var(--line)', background:'var(--bg-2)'}}>
               {nearby.map((p) => {
                 const isCurrent = String(p.id) === String(post.id);
@@ -2146,6 +2170,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
                 );
               })}
             </ul>
+            </>
           )}
 
           <div style={{display:'flex', justifyContent:'center'}}>

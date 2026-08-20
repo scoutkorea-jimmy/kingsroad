@@ -3052,6 +3052,6 @@ body.cookie-pending .help-panel { display: none !important; }
   letter-spacing: 0.08em;
 }
 @media (max-width: 900px) {
-  .post-back-bar { top: 60px; }
+  .post-back-bar { top: 64px; }  /* .nav-inner 모바일 높이와 일치 */
   .post-back-btn { width: 100%; justify-content: center; padding: 14px 18px; }
 }

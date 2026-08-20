@@ -13001,6 +13001,10 @@
           order: boards.length
         });
         window.BGNJ_STORES.categories = allCats;
+        try {
+          window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
+        } catch (e) {
+        }
         window.BGNJ_SAVE.categories();
         setDraft({ id: "", label: "", desc: "" });
         setAdding(false);
@@ -13030,6 +13034,10 @@
         await ((_e = (_d = (_c = window.BGNJ_API) == null ? void 0 : _c.categories) == null ? void 0 : _d.remove) == null ? void 0 : _e.call(_d, id));
         const allCats = (((_f = window.BGNJ_STORES) == null ? void 0 : _f.categories) || []).filter((c) => c.id !== id);
         window.BGNJ_STORES.categories = allCats;
+        try {
+          window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
+        } catch (e) {
+        }
         window.BGNJ_SAVE.categories();
         setEdits((cur) => {
           const next = { ...cur };
@@ -13075,6 +13083,10 @@
           if (idx >= 0) allCats[idx] = { ...allCats[idx], order: i };
         });
         window.BGNJ_STORES.categories = allCats;
+        try {
+          window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
+        } catch (e) {
+        }
         window.BGNJ_SAVE.categories();
         setTick((v) => v + 1);
         setSaveMsg("\u2713 \uC21C\uC11C \uBCC0\uACBD\uB428.");
@@ -13109,6 +13121,10 @@
           allCats[idx] = { ...allCats[idx], ...e };
         }
         window.BGNJ_STORES.categories = allCats;
+        try {
+          window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
+        } catch (e2) {
+        }
         window.BGNJ_SAVE.categories();
         setEdits((cur) => {
           const next = { ...cur };
@@ -13156,6 +13172,10 @@
           if (idx >= 0) allCats[idx] = { ...allCats[idx], ...edits[id] };
         });
         window.BGNJ_STORES.categories = allCats;
+        try {
+          window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
+        } catch (e) {
+        }
         window.BGNJ_SAVE.categories();
         setEdits({});
         setTick((v) => v + 1);
