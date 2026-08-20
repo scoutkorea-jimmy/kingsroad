@@ -7074,7 +7074,7 @@
         ],
         usage: [
           "CSS: `color: var(--ink-2)`, `background: var(--bg-2)`",
-          "\uC778\uB77C\uC778 style: `style={{ color: 'var(--gold)' }}`",
+          "\uC778\uB77C\uC778 style: `style={{ color: 'var(--primary)' }}`",
           "\uD074\uB798\uC2A4: `.gold` `.dim` `.dim-2` `.danger` \uB4F1 \uBBF8\uB9AC \uC815\uC758\uB41C \uC720\uD2F8 \uD074\uB798\uC2A4"
         ]
       },
@@ -7127,7 +7127,7 @@
         ]
       },
       /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.14em", marginBottom: 8 } }, "SPACING SCALE (px)"),
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 18 } }, SPACING.map((px) => /* @__PURE__ */ React.createElement("div", { key: px, style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement("div", { style: { width: px, height: px, background: "var(--gold)" } }), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, px)))),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 18 } }, SPACING.map((px) => /* @__PURE__ */ React.createElement("div", { key: px, style: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement("div", { style: { width: px, height: px, background: "var(--primary)" } }), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, px)))),
       /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.14em", marginBottom: 8 } }, "RADIUS"),
       /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 14, marginBottom: 18, flexWrap: "wrap" } }, RADIUS.map((r) => /* @__PURE__ */ React.createElement("div", { key: r.name, style: {
         padding: "10px 14px",
@@ -7157,7 +7157,7 @@
           "\uC0AD\uC81C/\uC815\uC9C0/\uC704\uD5D8\uC740 `btn` + `style={{borderColor:'var(--danger)', color:'var(--danger)'}}`."
         ]
       },
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn" }, "btn"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold" }, "btn-gold"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small" }, "btn-small"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold" }, "small + gold"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", style: { color: "var(--gold)" } }, "btn-ghost"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { borderColor: "var(--danger)", color: "var(--danger)" } }, "\uC704\uD5D8"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", disabled: true, "aria-busy": "true" }, "\uB85C\uB529 \uC911..."))
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn" }, "btn"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold" }, "btn-gold"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small" }, "btn-small"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold" }, "small + gold"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", style: { color: "var(--primary)" } }, "btn-ghost"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { borderColor: "var(--danger)", color: "var(--danger)" } }, "\uC704\uD5D8"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", disabled: true, "aria-busy": "true" }, "\uB85C\uB529 \uC911..."))
     ), /* @__PURE__ */ React.createElement(
       DSSection,
       {
@@ -7180,8 +7180,8 @@
         padding: "6px 14px",
         fontSize: 12,
         borderRadius: 999,
-        background: "var(--gold)",
-        color: "var(--bg)",
+        background: "var(--primary)",
+        color: "var(--on-primary)",
         fontFamily: "var(--font-serif)"
       } }, "\uC804\uCCB4"), /* @__PURE__ */ React.createElement("span", { style: {
         padding: "6px 14px",
@@ -7313,8 +7313,8 @@
       } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 11, letterSpacing: "0.18em", marginBottom: 4 } }, "\uB124\uD2B8\uC6CC\uD06C \uC624\uB958 \xB7 NETWORK_OR_CORS"), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 500 } }, "\uC694\uCCAD \uC2E4\uD328"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, marginTop: 4 } }, "\uC778\uD130\uB137 \uC5F0\uACB0 \uB610\uB294 \uC11C\uBC84 \uB3C4\uB2EC\uC774 \uCC28\uB2E8\uB410\uC2B5\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", { role: "status", style: {
         padding: "10px 14px",
         border: "1px solid var(--gold-dim)",
-        background: "rgba(245,213,72,0.06)",
-        color: "var(--gold)",
+        background: "var(--bg-3)",
+        color: "var(--ink-2)",
         fontSize: 13
       } }, "\u2713 \uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: {
         padding: "12px 14px",
@@ -12620,7 +12620,7 @@
         alt: "\uD604\uC7AC og:image",
         style: { width: "100%", display: "block", aspectRatio: "1200/630", objectFit: "cover", background: "var(--bg-2)" }
       }
-    ) : /* @__PURE__ */ React.createElement("div", { style: { aspectRatio: "1200/630", display: "grid", placeItems: "center", background: "var(--bg-3)", color: "var(--ink-3)", fontSize: 13 } }, "og:image \uBBF8\uC124\uC815"), /* @__PURE__ */ React.createElement("div", { style: { padding: "12px 14px" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.18em", marginBottom: 4 } }, "BGNJ.NET"), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 15, fontWeight: 600, color: "var(--ink)", marginBottom: 4, lineHeight: 1.3 } }, title), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.5, color: "var(--ink-2)" } }, description))), /* @__PURE__ */ React.createElement("h4", { className: "ko-serif", style: { fontSize: 15, marginBottom: 8 } }, "\uD50C\uB7AB\uD3FC \uD638\uD658\uC131"), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", minWidth: 480, borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.18em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uD50C\uB7AB\uD3FC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "SVG dataURI"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "PNG/JPG dataURI"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uD604\uC7AC \uC0C1\uD0DC"))), /* @__PURE__ */ React.createElement("tbody", null, [
+    ) : /* @__PURE__ */ React.createElement("div", { style: { aspectRatio: "1200/630", display: "grid", placeItems: "center", background: "var(--bg-3)", color: "var(--ink-2)", fontSize: 13 } }, "og:image \uBBF8\uC124\uC815"), /* @__PURE__ */ React.createElement("div", { style: { padding: "12px 14px" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 9, letterSpacing: "0.18em", marginBottom: 4 } }, "BGNJ.NET"), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 15, fontWeight: 600, color: "var(--ink)", marginBottom: 4, lineHeight: 1.3 } }, title), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.5, color: "var(--ink-2)" } }, description))), /* @__PURE__ */ React.createElement("h4", { className: "ko-serif", style: { fontSize: 15, marginBottom: 8 } }, "\uD50C\uB7AB\uD3FC \uD638\uD658\uC131"), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", minWidth: 480, borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.18em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uD50C\uB7AB\uD3FC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "SVG dataURI"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "PNG/JPG dataURI"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uD604\uC7AC \uC0C1\uD0DC"))), /* @__PURE__ */ React.createElement("tbody", null, [
       { name: "Twitter / X", svg: "\u2713", png: "\u2713", current: isSvg ? "\u2713" : isUserUpload ? "\u2713" : "\u2717" },
       { name: "Discord", svg: "\u2713", png: "\u2713", current: isSvg ? "\u2713" : isUserUpload ? "\u2713" : "\u2717" },
       { name: "Slack", svg: "\u25B3", png: "\u2713", current: isUserUpload ? "\u2713" : "\u25B3" },

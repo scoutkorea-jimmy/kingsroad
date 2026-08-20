@@ -638,7 +638,7 @@ const App = () => {
       tour: '투어 프로그램',
       lectures: '강연',
       column: '뱅기노자 칼럼',
-      community: '커뮤니티',
+      community: '광장',
       book: '뱅기노자 도서',
       checkout: '결제',
       mypage: '마이페이지',

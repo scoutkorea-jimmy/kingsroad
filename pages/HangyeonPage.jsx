@@ -266,7 +266,7 @@ const HkBookingModal = ({ room, checkIn, checkOut, adults, children, user, prope
             {!user && quote?.ok && memberDiscount > 0 && (
               <div style={{ margin: '10px 0 0', padding: '10px 12px', borderRadius: 10, background: 'rgba(146,64,14,0.06)', fontSize: 12.5, lineHeight: 1.6 }}>
                 💡 <strong>회원가입하면 {memberDiscount}% 할인</strong> — 회원가 <strong className="ko-serif" style={{ color: 'var(--secondary)', fontSize: 15 }}>{hkWon(Math.round(quote.total * (100 - memberDiscount) / 100))}</strong>
-                <button type="button" onClick={() => go && go('signup')} style={{ marginLeft: 8, background: 'var(--secondary)', color: '#fff', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600 }}>회원가입하고 할인받기</button>
+                <button type="button" onClick={() => go && go('signup')} style={{ marginLeft: 8, background: 'var(--secondary)', color: 'var(--bg)', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600 }}>회원가입하고 할인받기</button>
               </div>
             )}
             {!user && quote?.ok && memberDiscount === 0 && (

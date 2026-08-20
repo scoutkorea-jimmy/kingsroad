@@ -331,7 +331,7 @@ const NotificationBell = ({ user, onPick }) => {
             aria-hidden="true"
             style={{
               position: 'absolute', top: -4, right: -4,
-              background: 'var(--primary)', color: 'var(--bg)',
+              background: 'var(--primary)', color: 'var(--on-primary)',
               borderRadius: 999, fontSize: 9, fontWeight: 700,
               padding: '1px 5px', letterSpacing: 0,
               minWidth: 14, textAlign: 'center', lineHeight: 1.4,
@@ -736,7 +736,7 @@ const Nav = ({ route, go, user, onLogout }) => {
     { key: "sleep", label: navL.sleep || "자고 놀자" },
     { key: "tour", label: navL.tour || "답사·투어" },
     { key: "learn", label: navL.learn || "배움", isMega: 'learn', defaultRoute: 'lectures' },
-    { key: "community", label: navL.community || "커뮤니티", isMega: 'community' },
+    { key: "community", label: navL.community || "광장", isMega: 'community' },
   ];
   // 커뮤니티 메가메뉴: BGNJ_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
   const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : (user ? 10 : 0);
@@ -1066,7 +1066,7 @@ const Footer = ({ go }) => {
               <li><button type="button" onClick={() => go("lectures")}>강연</button></li>
               <li><button type="button" onClick={() => go("book")}>뱅기노자 도서</button></li>
               <li><button type="button" onClick={() => go("column")}>뱅기노자 칼럼</button></li>
-              <li><button type="button" onClick={() => go("community")}>커뮤니티</button></li>
+              <li><button type="button" onClick={() => go("community")}>광장</button></li>
             </ul>
           </nav>
           <nav aria-label="정보 바로가기">

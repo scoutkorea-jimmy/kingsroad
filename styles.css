@@ -68,6 +68,10 @@
   --primary-active: #4A4C52;      /* focus ring */
   --primary-dim:    #E2DFD8;      /* 옅은 tint → 선 톤 */
   --on-primary:     #F5F3EF;      /* 잉크 위 텍스트 = 종이빛 */
+  /* v00.294 — 어두운 스크림(rgba(0,0,0,.5~.7)) 위 컨트롤 전용.
+     라이트 모드에서 --ink/--primary 가 잉크라 검정 스크림 위에 검정 글씨가 됐다.
+     스크림은 테마와 무관하게 늘 어두우므로 이 토큰은 오버라이드하지 않는다. */
+  --on-scrim:       #F5F3EF;      /* 스크림 위 텍스트·아이콘 */
 
   /* ─── Brand — 로고에만. UI 에서 쓰지 않는다 ─── */
   --brand:          #F5D548;
@@ -143,6 +147,17 @@
   --secondary:       #FBBF24;   /* Amber 400 — 다크 위에서 가독성 ↑ */
   --secondary-hover: #FCD34D;   /* Amber 300 */
   --tertiary:        #94A3B8;   /* Slate 400 */
+
+  /* v00.294 — 다크모드 검정-위-검정 해소.
+     v00.293 에서 --primary 를 옐로우 → 잉크(#1B1C1F)로 뒤집었는데 다크 오버라이드를
+     같이 넣지 않았다. 그 결과 다크에서 CTA(.btn-gold)·FAB·알림 뱃지·.gold 텍스트가
+     전부 #1B1C1F → 배경 #0F172A 위에서 거의 안 보였다. 다크에서는 잉크를 뒤집는다. */
+  --primary:        #F1F5F9;    /* 다크 위의 '잉크' = 밝은 면 */
+  --primary-hover:  #FFFFFF;
+  --primary-active: #CBD5E1;    /* focus ring */
+  --primary-dim:    #334155;    /* 옅은 tint → 선 톤 */
+  --on-primary:     #0F172A;    /* 밝은 면 위 텍스트 = 어두운 잉크 */
+  --focus:          #CBD5E1;
 
   --success: #22C55E;
   --warning: #F59E0B;
@@ -826,20 +841,20 @@ main time, main .section-eyebrow {
   width: 40px; height: 40px;
   background: rgba(0,0,0,0.5);
   border: 1px solid var(--line-2);
-  color: var(--ink);
+  color: var(--on-scrim);
   display: grid; place-items: center;
   cursor: pointer;
 }
 .img-slider-nav.prev { left: 12px; }
 .img-slider-nav.next { right: 12px; }
-.img-slider-nav:hover { background: rgba(0,0,0,0.7); color: var(--primary); }
+.img-slider-nav:hover { background: rgba(0,0,0,0.7); color: #FFFFFF; }
 .img-slider-caption {
   position: absolute;
   top: 12px;
   right: 12px;
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--ink-2);
+  color: var(--on-scrim);
   background: rgba(0,0,0,0.5);
   padding: 4px 8px;
   letter-spacing: 0.15em;
@@ -865,7 +880,7 @@ main time, main .section-eyebrow {
   top: 4px; right: 4px;
   width: 22px; height: 22px;
   background: rgba(0,0,0,0.7);
-  color: var(--ink);
+  color: var(--on-scrim);
   border: none;
   font-size: 14px;
   cursor: pointer;
@@ -877,7 +892,7 @@ main time, main .section-eyebrow {
   bottom: 4px; left: 4px;
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--primary);
+  color: var(--on-scrim);
   background: rgba(0,0,0,0.6);
   padding: 1px 5px;
   letter-spacing: 0.1em;
@@ -2990,4 +3005,14 @@ body.cookie-pending .help-panel { display: none !important; }
 @media (max-width: 900px) {
   .home-books { padding: var(--s7) 0; }
   .home-book-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s5) var(--s4); }
+}
+
+/* === v00.294 — 글 상세 하단 이동 ========================================
+   사용자 보고 '글을 보고 나면 다시 목록으로 돌아올 방법이 없다'.
+   상단 '← 목록으로' 하나뿐이라 긴 글에서는 화면 밖으로 밀려 있었다.
+   이전/다음 글은 PC 2단, 모바일(≤900px) 1단 — 인라인 grid 에 클래스 동반(프로젝트 룰). */
+.post-nav-pair button { word-break: keep-all; overflow-wrap: break-word; }
+@media (max-width: 900px) {
+  .post-nav-pair { grid-template-columns: 1fr !important; }
+  .post-nav-pair button { text-align: left !important; }
 }

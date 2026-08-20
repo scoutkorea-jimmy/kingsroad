@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.293.002",
-  build: "2026.07.29",
+  version: "00.294.000",
+  build: "2026.08.20",
   channel: "preview",
 };
 
@@ -599,7 +599,7 @@ const DEFAULT_SITE_CONTENT = {
     tour: "투어 프로그램",
     lectures: "강연",
     column: "뱅기노자 칼럼",
-    community: "커뮤니티",
+    community: "광장",
     book: "뱅기노자 도서",
   },
   brand: { name: "뱅기노자", sub: "BANGINOJA" },
@@ -609,14 +609,14 @@ const DEFAULT_SITE_CONTENT = {
     title2: "직접 걷고",
     title3: "천천히 읽다",
     subtitle: "궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다. 뱅기노자는 여행을 기록하고 함께 떠나는 사람들의 작은 모임입니다.",
-    ctaPrimary: "커뮤니티 보기",
+    ctaPrimary: "광장 보기",
     ctaSecondary: "답사 일정 보기",
     mapHint: "지도를 클릭해 여행지를 탐색하세요",
     // 히어로 하단 통계 카드 — value 는 동적이지만 label/sub/valueFallback 은 편집 가능.
     stats: [
       { label: '여행지',   sub: '주요 답사지 운영',   valueFallback: '전국'    },
       { label: '투어',     sub: '직접 기획 프로그램', valueFallback: '준비 중' },
-      { label: '커뮤니티', sub: '함께 만드는 여행',   valueFallback: '운영 중' },
+      { label: '광장', sub: '함께 만드는 여행',   valueFallback: '운영 중' },
     ],
   },
   footer: {
@@ -749,13 +749,13 @@ const DEFAULT_SITE_CONTENT = {
     tourAction: '전체 일정 →',
     tourNextLabel: '다음 일정',
     tourPriceLabel: '참가비',
-    communityEyebrow: '커뮤니티',
+    communityEyebrow: '광장',
     communityTitle: '다녀온 사람들의 기록',
     communitySubtitle: '좋았던 식당, 애매했던 동선, 다시 가고 싶은 골목까지 편하게 남겨주세요.',
-    communityAction: '커뮤니티 가기 →',
+    communityAction: '광장 가기 →',
     communityReplyLabel: '댓글',
     communityEmptyTitle: '첫 번째 여행 이야기를 써주세요',
-    communityEmptySubtitle: '커뮤니티에 여행 경험을 나누면 더 많은 여행자들이 모여듭니다.',
+    communityEmptySubtitle: '광장에 여행 경험을 나누면 더 많은 여행자들이 모여듭니다.',
     communityEmptyCta: '글 작성하기 →',
     columnEyebrow: '읽을거리',
     columnTitle: '길 위에서 이어지는 생각',
@@ -783,7 +783,7 @@ const DEFAULT_SITE_CONTENT = {
     bookAuthorSuffix: '지음',
   },
   communityIntro: {
-    eyebrow: 'COMMUNITY · 커뮤니티',
+    eyebrow: 'COMMUNITY · 광장',
     titlePrefix: '다섯 봉우리 ',
     titleAccent: '광장',
     subtitle: '뱅기노자이 모여 나누는 이야기. 질문도 답도 환영합니다.',
@@ -950,20 +950,15 @@ window.BGNJ_FOOTER_STYLE = function () {
 const DEFAULT_CATEGORIES = [
   { id: "notice",   label: "공지",  boardType: "community", minLevel: 0,  postMinLevel: 100, desc: "운영진 공지 (읽기: 누구나 · 쓰기: 관리자)" },
   { id: "free",     label: "자유",  boardType: "community", minLevel: 10, postMinLevel: 10,  desc: "자유 게시판 (쓰기: 회원)" },
-  { id: "question", label: "질문",  boardType: "community", minLevel: 10, postMinLevel: 10,  desc: "질문 게시판 (쓰기: 회원)" },
-  { id: "info",     label: "정보",  boardType: "community", minLevel: 10, postMinLevel: 30,  desc: "정보 공유 (쓰기: 독자 이상)" },
+  // v00.294 — 질문(0건) → '걸어서독립운동속으로'(여행 감상문) 로 교체, 정보(0건) 폐쇄.
+  { id: "walk-independence", label: "걸어서독립운동속으로", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "걸어서 만나는 독립운동의 자취 — 여행 감상문 (읽기: 누구나 · 쓰기: 로그인 회원)" },
   { id: "column",   label: "칼럼",  boardType: "column",    minLevel: 0,  postMinLevel: 100, desc: "뱅기노자 칼럼 (쓰기: 관리자)" },
 ];
 
 const DEFAULT_COMMUNITY_POSTS = [
   { id: 1, categoryId: "free", category: "자유", title: "첫 답사 후기 — 창덕궁 후원 야간 프로그램", author: "돌담아래", replies: 24, views: 512, date: "2026.04.17", hot: true },
-  { id: 2, categoryId: "question", category: "질문", title: "『왕의길』 2장에 나오는 '측근 정치'에 대해 여쭙니다", author: "역사애호", replies: 18, views: 342, date: "2026.04.16" },
-  { id: 3, categoryId: "info", category: "정보", title: "국립고궁박물관 특별전 — 조선 왕실 회화 원본 공개", author: "고궁지기", replies: 41, views: 1203, date: "2026.04.15", hot: true },
   { id: 4, categoryId: "free", category: "자유", title: "뱅기노자 선생님 강연 들은 후기 (긴 글 주의)", author: "봄밤의자", replies: 33, views: 876, date: "2026.04.14" },
-  { id: 5, categoryId: "question", category: "질문", title: "세종실록과 성종실록, 초심자는 어디부터?", author: "입문자", replies: 12, views: 245, date: "2026.04.13" },
-  { id: 6, categoryId: "info", category: "정보", title: "4월 답사 일정 총정리", author: "운영진", replies: 8, views: 612, date: "2026.04.12" },
   { id: 7, categoryId: "free", category: "자유", title: "어좌 뒤 병풍 — 왜 하필 다섯 봉우리일까", author: "고요한아침", replies: 27, views: 453, date: "2026.04.11" },
-  { id: 8, categoryId: "question", category: "질문", title: "영문판 구매 시 해외 배송 가능한가요?", author: "overseas_reader", replies: 5, views: 189, date: "2026.04.10" },
 ];
 
 const DEFAULT_USERS = [
@@ -988,7 +983,7 @@ const ensureUsersSeeded = (users) => {
 
 const normalizeCommunityPost = (post) => {
   const categoryId = post.categoryId
-    || ({ "공지": "notice", "자유": "free", "질문": "question", "정보": "info" }[post.category])
+    || ({ "공지": "notice", "자유": "free", "걸어서독립운동속으로": "walk-independence" }[post.category])
     || "free";
   const category = post.category
     || (DEFAULT_CATEGORIES.find((item) => item.id === categoryId)?.label || "자유");

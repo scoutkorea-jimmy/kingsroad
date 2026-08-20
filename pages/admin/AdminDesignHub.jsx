@@ -3374,7 +3374,7 @@ const DesignSystemView = () => {
         ]}
         usage={[
           'CSS: `color: var(--ink-2)`, `background: var(--bg-2)`',
-          '인라인 style: `style={{ color: \'var(--gold)\' }}`',
+          '인라인 style: `style={{ color: \'var(--primary)\' }}`',
           '클래스: `.gold` `.dim` `.dim-2` `.danger` 등 미리 정의된 유틸 클래스',
         ]}
       >
@@ -3446,7 +3446,7 @@ const DesignSystemView = () => {
         <div style={{display:'flex', alignItems:'flex-end', gap:6, marginBottom:18}}>
           {SPACING.map((px) => (
             <div key={px} style={{display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
-              <div style={{width:px, height:px, background:'var(--gold)'}}/>
+              <div style={{width:px, height:px, background:'var(--primary)'}}/>
               <div className="mono dim-2" style={{fontSize:10}}>{px}</div>
             </div>
           ))}
@@ -3498,7 +3498,7 @@ const DesignSystemView = () => {
           <button type="button" className="btn btn-gold">btn-gold</button>
           <button type="button" className="btn btn-small">btn-small</button>
           <button type="button" className="btn btn-small btn-gold">small + gold</button>
-          <button type="button" className="btn-ghost" style={{color:'var(--gold)'}}>btn-ghost</button>
+          <button type="button" className="btn-ghost" style={{color:'var(--primary)'}}>btn-ghost</button>
           <button type="button" className="btn btn-small" style={{borderColor:'var(--danger)', color:'var(--danger)'}}>위험</button>
           <button type="button" className="btn btn-gold" disabled aria-busy="true">로딩 중...</button>
         </div>
@@ -3529,7 +3529,7 @@ const DesignSystemView = () => {
           <span className="tag-chip">#답사</span>
           <span style={{
             padding:'6px 14px', fontSize:12, borderRadius:999,
-            background:'var(--gold)', color:'var(--bg)',
+            background:'var(--primary)', color:'var(--on-primary)',
             fontFamily:'var(--font-serif)',
           }}>전체</span>
           <span style={{
@@ -3744,7 +3744,7 @@ const DesignSystemView = () => {
           </div>
           <div role="status" style={{
             padding:'10px 14px', border:'1px solid var(--gold-dim)',
-            background:'rgba(245,213,72,0.06)', color:'var(--gold)', fontSize:13,
+            background:'var(--bg-3)', color:'var(--ink-2)', fontSize:13,
           }}>✓ 저장되었습니다.</div>
           <div style={{
             padding:'12px 14px', background:'var(--bg)',

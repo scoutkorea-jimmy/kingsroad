@@ -365,8 +365,8 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.293.001",
-    build: "2026.07.29",
+    version: "00.294.000",
+    build: "2026.08.20",
     channel: "preview"
   };
   try {
@@ -1043,7 +1043,7 @@
       tour: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8",
       lectures: "\uAC15\uC5F0",
       column: "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC",
-      community: "\uCEE4\uBBA4\uB2C8\uD2F0",
+      community: "\uAD11\uC7A5",
       book: "\uBC45\uAE30\uB178\uC790 \uB3C4\uC11C"
     },
     brand: { name: "\uBC45\uAE30\uB178\uC790", sub: "BANGINOJA" },
@@ -1053,14 +1053,14 @@
       title2: "\uC9C1\uC811 \uAC77\uACE0",
       title3: "\uCC9C\uCC9C\uD788 \uC77D\uB2E4",
       subtitle: "\uAD81\uAD90\uACFC \uACE8\uBAA9, \uC2DC\uC7A5\uACFC \uC219\uC18C, \uCC45\uACFC \uAC15\uC5F0\uC744 \uC624\uAC00\uBA70 \uD55C\uAD6D\uC744 \uC870\uAE08 \uB354 \uAC00\uAE4C\uC774 \uBD05\uB2C8\uB2E4. \uBC45\uAE30\uB178\uC790\uB294 \uC5EC\uD589\uC744 \uAE30\uB85D\uD558\uACE0 \uD568\uAED8 \uB5A0\uB098\uB294 \uC0AC\uB78C\uB4E4\uC758 \uC791\uC740 \uBAA8\uC784\uC785\uB2C8\uB2E4.",
-      ctaPrimary: "\uCEE4\uBBA4\uB2C8\uD2F0 \uBCF4\uAE30",
+      ctaPrimary: "\uAD11\uC7A5 \uBCF4\uAE30",
       ctaSecondary: "\uB2F5\uC0AC \uC77C\uC815 \uBCF4\uAE30",
       mapHint: "\uC9C0\uB3C4\uB97C \uD074\uB9AD\uD574 \uC5EC\uD589\uC9C0\uB97C \uD0D0\uC0C9\uD558\uC138\uC694",
       // 히어로 하단 통계 카드 — value 는 동적이지만 label/sub/valueFallback 은 편집 가능.
       stats: [
         { label: "\uC5EC\uD589\uC9C0", sub: "\uC8FC\uC694 \uB2F5\uC0AC\uC9C0 \uC6B4\uC601", valueFallback: "\uC804\uAD6D" },
         { label: "\uD22C\uC5B4", sub: "\uC9C1\uC811 \uAE30\uD68D \uD504\uB85C\uADF8\uB7A8", valueFallback: "\uC900\uBE44 \uC911" },
-        { label: "\uCEE4\uBBA4\uB2C8\uD2F0", sub: "\uD568\uAED8 \uB9CC\uB4DC\uB294 \uC5EC\uD589", valueFallback: "\uC6B4\uC601 \uC911" }
+        { label: "\uAD11\uC7A5", sub: "\uD568\uAED8 \uB9CC\uB4DC\uB294 \uC5EC\uD589", valueFallback: "\uC6B4\uC601 \uC911" }
       ]
     },
     footer: {
@@ -1196,13 +1196,13 @@
       tourAction: "\uC804\uCCB4 \uC77C\uC815 \u2192",
       tourNextLabel: "\uB2E4\uC74C \uC77C\uC815",
       tourPriceLabel: "\uCC38\uAC00\uBE44",
-      communityEyebrow: "\uCEE4\uBBA4\uB2C8\uD2F0",
+      communityEyebrow: "\uAD11\uC7A5",
       communityTitle: "\uB2E4\uB140\uC628 \uC0AC\uB78C\uB4E4\uC758 \uAE30\uB85D",
       communitySubtitle: "\uC88B\uC558\uB358 \uC2DD\uB2F9, \uC560\uB9E4\uD588\uB358 \uB3D9\uC120, \uB2E4\uC2DC \uAC00\uACE0 \uC2F6\uC740 \uACE8\uBAA9\uAE4C\uC9C0 \uD3B8\uD558\uAC8C \uB0A8\uACA8\uC8FC\uC138\uC694.",
-      communityAction: "\uCEE4\uBBA4\uB2C8\uD2F0 \uAC00\uAE30 \u2192",
+      communityAction: "\uAD11\uC7A5 \uAC00\uAE30 \u2192",
       communityReplyLabel: "\uB313\uAE00",
       communityEmptyTitle: "\uCCAB \uBC88\uC9F8 \uC5EC\uD589 \uC774\uC57C\uAE30\uB97C \uC368\uC8FC\uC138\uC694",
-      communityEmptySubtitle: "\uCEE4\uBBA4\uB2C8\uD2F0\uC5D0 \uC5EC\uD589 \uACBD\uD5D8\uC744 \uB098\uB204\uBA74 \uB354 \uB9CE\uC740 \uC5EC\uD589\uC790\uB4E4\uC774 \uBAA8\uC5EC\uB4ED\uB2C8\uB2E4.",
+      communityEmptySubtitle: "\uAD11\uC7A5\uC5D0 \uC5EC\uD589 \uACBD\uD5D8\uC744 \uB098\uB204\uBA74 \uB354 \uB9CE\uC740 \uC5EC\uD589\uC790\uB4E4\uC774 \uBAA8\uC5EC\uB4ED\uB2C8\uB2E4.",
       communityEmptyCta: "\uAE00 \uC791\uC131\uD558\uAE30 \u2192",
       columnEyebrow: "\uC77D\uC744\uAC70\uB9AC",
       columnTitle: "\uAE38 \uC704\uC5D0\uC11C \uC774\uC5B4\uC9C0\uB294 \uC0DD\uAC01",
@@ -1230,7 +1230,7 @@
       bookAuthorSuffix: "\uC9C0\uC74C"
     },
     communityIntro: {
-      eyebrow: "COMMUNITY \xB7 \uCEE4\uBBA4\uB2C8\uD2F0",
+      eyebrow: "COMMUNITY \xB7 \uAD11\uC7A5",
       titlePrefix: "\uB2E4\uC12F \uBD09\uC6B0\uB9AC ",
       titleAccent: "\uAD11\uC7A5",
       subtitle: "\uBC45\uAE30\uB178\uC790\uC774 \uBAA8\uC5EC \uB098\uB204\uB294 \uC774\uC57C\uAE30. \uC9C8\uBB38\uB3C4 \uB2F5\uB3C4 \uD658\uC601\uD569\uB2C8\uB2E4."
@@ -1393,19 +1393,14 @@
   var DEFAULT_CATEGORIES = [
     { id: "notice", label: "\uACF5\uC9C0", boardType: "community", minLevel: 0, postMinLevel: 100, desc: "\uC6B4\uC601\uC9C4 \uACF5\uC9C0 (\uC77D\uAE30: \uB204\uAD6C\uB098 \xB7 \uC4F0\uAE30: \uAD00\uB9AC\uC790)" },
     { id: "free", label: "\uC790\uC720", boardType: "community", minLevel: 10, postMinLevel: 10, desc: "\uC790\uC720 \uAC8C\uC2DC\uD310 (\uC4F0\uAE30: \uD68C\uC6D0)" },
-    { id: "question", label: "\uC9C8\uBB38", boardType: "community", minLevel: 10, postMinLevel: 10, desc: "\uC9C8\uBB38 \uAC8C\uC2DC\uD310 (\uC4F0\uAE30: \uD68C\uC6D0)" },
-    { id: "info", label: "\uC815\uBCF4", boardType: "community", minLevel: 10, postMinLevel: 30, desc: "\uC815\uBCF4 \uACF5\uC720 (\uC4F0\uAE30: \uB3C5\uC790 \uC774\uC0C1)" },
+    // v00.294 — 질문(0건) → '걸어서독립운동속으로'(여행 감상문) 로 교체, 정보(0건) 폐쇄.
+    { id: "walk-independence", label: "\uAC78\uC5B4\uC11C\uB3C5\uB9BD\uC6B4\uB3D9\uC18D\uC73C\uB85C", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "\uAC78\uC5B4\uC11C \uB9CC\uB098\uB294 \uB3C5\uB9BD\uC6B4\uB3D9\uC758 \uC790\uCDE8 \u2014 \uC5EC\uD589 \uAC10\uC0C1\uBB38 (\uC77D\uAE30: \uB204\uAD6C\uB098 \xB7 \uC4F0\uAE30: \uB85C\uADF8\uC778 \uD68C\uC6D0)" },
     { id: "column", label: "\uCE7C\uB7FC", boardType: "column", minLevel: 0, postMinLevel: 100, desc: "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC (\uC4F0\uAE30: \uAD00\uB9AC\uC790)" }
   ];
   var DEFAULT_COMMUNITY_POSTS = [
     { id: 1, categoryId: "free", category: "\uC790\uC720", title: "\uCCAB \uB2F5\uC0AC \uD6C4\uAE30 \u2014 \uCC3D\uB355\uAD81 \uD6C4\uC6D0 \uC57C\uAC04 \uD504\uB85C\uADF8\uB7A8", author: "\uB3CC\uB2F4\uC544\uB798", replies: 24, views: 512, date: "2026.04.17", hot: true },
-    { id: 2, categoryId: "question", category: "\uC9C8\uBB38", title: "\u300E\uC655\uC758\uAE38\u300F 2\uC7A5\uC5D0 \uB098\uC624\uB294 '\uCE21\uADFC \uC815\uCE58'\uC5D0 \uB300\uD574 \uC5EC\uCB59\uB2C8\uB2E4", author: "\uC5ED\uC0AC\uC560\uD638", replies: 18, views: 342, date: "2026.04.16" },
-    { id: 3, categoryId: "info", category: "\uC815\uBCF4", title: "\uAD6D\uB9BD\uACE0\uAD81\uBC15\uBB3C\uAD00 \uD2B9\uBCC4\uC804 \u2014 \uC870\uC120 \uC655\uC2E4 \uD68C\uD654 \uC6D0\uBCF8 \uACF5\uAC1C", author: "\uACE0\uAD81\uC9C0\uAE30", replies: 41, views: 1203, date: "2026.04.15", hot: true },
     { id: 4, categoryId: "free", category: "\uC790\uC720", title: "\uBC45\uAE30\uB178\uC790 \uC120\uC0DD\uB2D8 \uAC15\uC5F0 \uB4E4\uC740 \uD6C4\uAE30 (\uAE34 \uAE00 \uC8FC\uC758)", author: "\uBD04\uBC24\uC758\uC790", replies: 33, views: 876, date: "2026.04.14" },
-    { id: 5, categoryId: "question", category: "\uC9C8\uBB38", title: "\uC138\uC885\uC2E4\uB85D\uACFC \uC131\uC885\uC2E4\uB85D, \uCD08\uC2EC\uC790\uB294 \uC5B4\uB514\uBD80\uD130?", author: "\uC785\uBB38\uC790", replies: 12, views: 245, date: "2026.04.13" },
-    { id: 6, categoryId: "info", category: "\uC815\uBCF4", title: "4\uC6D4 \uB2F5\uC0AC \uC77C\uC815 \uCD1D\uC815\uB9AC", author: "\uC6B4\uC601\uC9C4", replies: 8, views: 612, date: "2026.04.12" },
-    { id: 7, categoryId: "free", category: "\uC790\uC720", title: "\uC5B4\uC88C \uB4A4 \uBCD1\uD48D \u2014 \uC65C \uD558\uD544 \uB2E4\uC12F \uBD09\uC6B0\uB9AC\uC77C\uAE4C", author: "\uACE0\uC694\uD55C\uC544\uCE68", replies: 27, views: 453, date: "2026.04.11" },
-    { id: 8, categoryId: "question", category: "\uC9C8\uBB38", title: "\uC601\uBB38\uD310 \uAD6C\uB9E4 \uC2DC \uD574\uC678 \uBC30\uC1A1 \uAC00\uB2A5\uD55C\uAC00\uC694?", author: "overseas_reader", replies: 5, views: 189, date: "2026.04.10" }
+    { id: 7, categoryId: "free", category: "\uC790\uC720", title: "\uC5B4\uC88C \uB4A4 \uBCD1\uD48D \u2014 \uC65C \uD558\uD544 \uB2E4\uC12F \uBD09\uC6B0\uB9AC\uC77C\uAE4C", author: "\uACE0\uC694\uD55C\uC544\uCE68", replies: 27, views: 453, date: "2026.04.11" }
   ];
   var DEFAULT_USERS = [
     {
@@ -1425,7 +1420,7 @@
   };
   var normalizeCommunityPost = (post) => {
     var _a, _b, _c;
-    const categoryId = post.categoryId || { "\uACF5\uC9C0": "notice", "\uC790\uC720": "free", "\uC9C8\uBB38": "question", "\uC815\uBCF4": "info" }[post.category] || "free";
+    const categoryId = post.categoryId || { "\uACF5\uC9C0": "notice", "\uC790\uC720": "free", "\uAC78\uC5B4\uC11C\uB3C5\uB9BD\uC6B4\uB3D9\uC18D\uC73C\uB85C": "walk-independence" }[post.category] || "free";
     const category = post.category || (((_a = DEFAULT_CATEGORIES.find((item) => item.id === categoryId)) == null ? void 0 : _a.label) || "\uC790\uC720");
     return {
       ...post,
@@ -4793,7 +4788,7 @@
             top: -4,
             right: -4,
             background: "var(--primary)",
-            color: "var(--bg)",
+            color: "var(--on-primary)",
             borderRadius: 999,
             fontSize: 9,
             fontWeight: 700,
@@ -5266,7 +5261,7 @@
       { key: "sleep", label: navL.sleep || "\uC790\uACE0 \uB180\uC790" },
       { key: "tour", label: navL.tour || "\uB2F5\uC0AC\xB7\uD22C\uC5B4" },
       { key: "learn", label: navL.learn || "\uBC30\uC6C0", isMega: "learn", defaultRoute: "lectures" },
-      { key: "community", label: navL.community || "\uCEE4\uBBA4\uB2C8\uD2F0", isMega: "community" }
+      { key: "community", label: navL.community || "\uAD11\uC7A5", isMega: "community" }
     ];
     const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : user ? 10 : 0;
     const communityBoards = (((_c = window.BGNJ_STORES) == null ? void 0 : _c.categories) || []).filter((c) => {
@@ -5621,7 +5616,7 @@
       lineHeight: fStyle.description.lineHeight,
       color: `var(${fStyle.description.color})`,
       maxWidth: fStyle.description.maxWidth
-    } }, footer.description || "\uBC45\uAE30\uD0C0\uACE0 \uB178\uC790. \uBC45\uAE30\uB178\uC790\uB294 \uD55C\uAD6D\uC758 \uC5ED\uC0AC\xB7\uBB38\uD654\xB7\uC790\uC5F0\uC744 \uC9C1\uC811 \uAC77\uACE0 \uB290\uB07C\uBA70 \uB098\uB204\uB294 \uC5EC\uD589 \uCEE4\uBBA4\uB2C8\uD2F0\uC785\uB2C8\uB2E4. \uAD81\uAD90 \uB2F5\uC0AC\uBD80\uD130 \uC9C0\uC5ED \uC5EC\uD589\uAE4C\uC9C0, \uD568\uAED8 \uB9CC\uB4E4\uC5B4\uAC00\uB294 \uC5EC\uD589.")), /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uCF58\uD150\uCE20 \uBC14\uB85C\uAC00\uAE30" }, /* @__PURE__ */ React.createElement("h4", { id: "ft-content", style: headingStyle }, footer.headingContent || "\uCF58\uD150\uCE20"), /* @__PURE__ */ React.createElement("ul", { "aria-labelledby": "ft-content" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("sleep") }, "\uC790\uACE0 \uB180\uC790")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("tour") }, "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("lectures") }, "\uAC15\uC5F0")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("book") }, "\uBC45\uAE30\uB178\uC790 \uB3C4\uC11C")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("column") }, "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("community") }, "\uCEE4\uBBA4\uB2C8\uD2F0")))), /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uC815\uBCF4 \uBC14\uB85C\uAC00\uAE30" }, /* @__PURE__ */ React.createElement("h4", { id: "ft-info", style: headingStyle }, footer.headingInfo || "\uC815\uBCF4"), /* @__PURE__ */ React.createElement("ul", { "aria-labelledby": "ft-info" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("lectures") }, "\uAC15\uC5F0 \uC77C\uC815")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("community") }, "\uACF5\uC9C0\uC0AC\uD56D")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("faq") }, "\uC790\uC8FC \uBB3B\uB294 \uC9C8\uBB38")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("terms") }, "\uC774\uC6A9\uC57D\uAD00")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("privacy") }, "\uAC1C\uC778\uC815\uBCF4 \uCC98\uB9AC\uBC29\uCE68")))), /* @__PURE__ */ React.createElement("address", { style: { fontStyle: "normal" } }, /* @__PURE__ */ React.createElement("h4", { id: "ft-contact", style: headingStyle }, footer.headingContact || "\uC5F0\uB77D"), /* @__PURE__ */ React.createElement("ul", { "aria-labelledby": "ft-contact" }, email && /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: `mailto:${email}` }, email)), address && /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", null, address))))), (companyName || bizRegNo || ceo) && /* @__PURE__ */ React.createElement("div", { className: "footer-biz", style: {
+    } }, footer.description || "\uBC45\uAE30\uD0C0\uACE0 \uB178\uC790. \uBC45\uAE30\uB178\uC790\uB294 \uD55C\uAD6D\uC758 \uC5ED\uC0AC\xB7\uBB38\uD654\xB7\uC790\uC5F0\uC744 \uC9C1\uC811 \uAC77\uACE0 \uB290\uB07C\uBA70 \uB098\uB204\uB294 \uC5EC\uD589 \uCEE4\uBBA4\uB2C8\uD2F0\uC785\uB2C8\uB2E4. \uAD81\uAD90 \uB2F5\uC0AC\uBD80\uD130 \uC9C0\uC5ED \uC5EC\uD589\uAE4C\uC9C0, \uD568\uAED8 \uB9CC\uB4E4\uC5B4\uAC00\uB294 \uC5EC\uD589.")), /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uCF58\uD150\uCE20 \uBC14\uB85C\uAC00\uAE30" }, /* @__PURE__ */ React.createElement("h4", { id: "ft-content", style: headingStyle }, footer.headingContent || "\uCF58\uD150\uCE20"), /* @__PURE__ */ React.createElement("ul", { "aria-labelledby": "ft-content" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("sleep") }, "\uC790\uACE0 \uB180\uC790")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("tour") }, "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("lectures") }, "\uAC15\uC5F0")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("book") }, "\uBC45\uAE30\uB178\uC790 \uB3C4\uC11C")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("column") }, "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("community") }, "\uAD11\uC7A5")))), /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uC815\uBCF4 \uBC14\uB85C\uAC00\uAE30" }, /* @__PURE__ */ React.createElement("h4", { id: "ft-info", style: headingStyle }, footer.headingInfo || "\uC815\uBCF4"), /* @__PURE__ */ React.createElement("ul", { "aria-labelledby": "ft-info" }, /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("lectures") }, "\uAC15\uC5F0 \uC77C\uC815")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("community") }, "\uACF5\uC9C0\uC0AC\uD56D")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("faq") }, "\uC790\uC8FC \uBB3B\uB294 \uC9C8\uBB38")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("terms") }, "\uC774\uC6A9\uC57D\uAD00")), /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go("privacy") }, "\uAC1C\uC778\uC815\uBCF4 \uCC98\uB9AC\uBC29\uCE68")))), /* @__PURE__ */ React.createElement("address", { style: { fontStyle: "normal" } }, /* @__PURE__ */ React.createElement("h4", { id: "ft-contact", style: headingStyle }, footer.headingContact || "\uC5F0\uB77D"), /* @__PURE__ */ React.createElement("ul", { "aria-labelledby": "ft-contact" }, email && /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("a", { href: `mailto:${email}` }, email)), address && /* @__PURE__ */ React.createElement("li", null, /* @__PURE__ */ React.createElement("span", null, address))))), (companyName || bizRegNo || ceo) && /* @__PURE__ */ React.createElement("div", { className: "footer-biz", style: {
       marginTop: 24,
       paddingTop: 16,
       borderTop: "1px solid var(--line-2)",
@@ -6999,13 +6994,13 @@
     tourAction: "\uC804\uCCB4 \uC77C\uC815 \u2192",
     tourNextLabel: "\uB2E4\uC74C \uC77C\uC815",
     tourPriceLabel: "\uCC38\uAC00\uBE44",
-    communityEyebrow: "\uCEE4\uBBA4\uB2C8\uD2F0",
+    communityEyebrow: "\uAD11\uC7A5",
     communityTitle: "\uB2E4\uB140\uC628 \uC0AC\uB78C\uB4E4\uC758 \uAE30\uB85D",
     communitySubtitle: "\uC88B\uC558\uB358 \uC2DD\uB2F9, \uC560\uB9E4\uD588\uB358 \uB3D9\uC120, \uB2E4\uC2DC \uAC00\uACE0 \uC2F6\uC740 \uACE8\uBAA9\uAE4C\uC9C0 \uD3B8\uD558\uAC8C \uB0A8\uACA8\uC8FC\uC138\uC694.",
-    communityAction: "\uCEE4\uBBA4\uB2C8\uD2F0 \uAC00\uAE30 \u2192",
+    communityAction: "\uAD11\uC7A5 \uAC00\uAE30 \u2192",
     communityReplyLabel: "\uB313\uAE00",
     communityEmptyTitle: "\uCCAB \uBC88\uC9F8 \uC5EC\uD589 \uC774\uC57C\uAE30\uB97C \uC368\uC8FC\uC138\uC694",
-    communityEmptySubtitle: "\uCEE4\uBBA4\uB2C8\uD2F0\uC5D0 \uC5EC\uD589 \uACBD\uD5D8\uC744 \uB098\uB204\uBA74 \uB354 \uB9CE\uC740 \uC5EC\uD589\uC790\uB4E4\uC774 \uBAA8\uC5EC\uB4ED\uB2C8\uB2E4.",
+    communityEmptySubtitle: "\uAD11\uC7A5\uC5D0 \uC5EC\uD589 \uACBD\uD5D8\uC744 \uB098\uB204\uBA74 \uB354 \uB9CE\uC740 \uC5EC\uD589\uC790\uB4E4\uC774 \uBAA8\uC5EC\uB4ED\uB2C8\uB2E4.",
     communityEmptyCta: "\uAE00 \uC791\uC131\uD558\uAE30 \u2192",
     columnEyebrow: "\uC77D\uC744\uAC70\uB9AC",
     columnTitle: "\uAE38 \uC704\uC5D0\uC11C \uC774\uC5B4\uC9C0\uB294 \uC0DD\uAC01",
@@ -7309,7 +7304,7 @@
     const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
       { label: "\uC5EC\uD589\uC9C0", sub: "\uC8FC\uC694 \uB2F5\uC0AC\uC9C0 \uC6B4\uC601", valueFallback: "\uC804\uAD6D" },
       { label: "\uD22C\uC5B4", sub: "\uC9C1\uC811 \uAE30\uD68D \uD504\uB85C\uADF8\uB7A8", valueFallback: "\uC900\uBE44 \uC911" },
-      { label: "\uCEE4\uBBA4\uB2C8\uD2F0", sub: "\uD568\uAED8 \uB9CC\uB4DC\uB294 \uC5EC\uD589", valueFallback: "\uC6B4\uC601 \uC911" }
+      { label: "\uAD11\uC7A5", sub: "\uD568\uAED8 \uB9CC\uB4DC\uB294 \uC5EC\uD589", valueFallback: "\uC6B4\uC601 \uC911" }
     ];
     const allPostsCount = G2.arr(() => {
       var _a, _b;
@@ -7931,7 +7926,7 @@
         onClick: () => move(i, -1),
         disabled: i === 0,
         "aria-label": `${i + 1}\uBC88 \uC774\uBBF8\uC9C0 \uC55E\uC73C\uB85C`,
-        style: { background: "rgba(0,0,0,0.6)", border: "none", color: "var(--primary)", fontSize: 10, padding: "1px 5px", cursor: "pointer", minHeight: 0 }
+        style: { background: "rgba(0,0,0,0.6)", border: "none", color: "var(--on-scrim)", fontSize: 10, padding: "1px 5px", cursor: "pointer", minHeight: 0 }
       },
       "\u25C0"
     ), /* @__PURE__ */ React.createElement(
@@ -7941,12 +7936,13 @@
         onClick: () => move(i, 1),
         disabled: i === images.length - 1,
         "aria-label": `${i + 1}\uBC88 \uC774\uBBF8\uC9C0 \uB4A4\uB85C`,
-        style: { background: "rgba(0,0,0,0.6)", border: "none", color: "var(--primary)", fontSize: 10, padding: "1px 5px", cursor: "pointer", minHeight: 0 }
+        style: { background: "rgba(0,0,0,0.6)", border: "none", color: "var(--on-scrim)", fontSize: 10, padding: "1px 5px", cursor: "pointer", minHeight: 0 }
       },
       "\u25B6"
     ))))) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "5/1", fontSize: 10 } }, "\uC774\uBBF8\uC9C0\uB97C \uCCA8\uBD80\uD558\uBA74 \uC0C1\uC138 \uD398\uC774\uC9C0 \uD558\uB2E8\uC5D0 \uC790\uB3D9 \uC2AC\uB77C\uC774\uB4DC\uB85C \uD45C\uC2DC\uB429\uB2C8\uB2E4"));
   };
-  var FILE_MAX_SIZE = 10 * 1024 * 1024;
+  var FILE_MAX_TOTAL = 10 * 1024 * 1024;
+  var FILE_MAX_SIZE = FILE_MAX_TOTAL;
   var FILE_MAX_COUNT = 3;
   var _fmtSize = (n) => {
     if (!n && n !== 0) return "";
@@ -7954,9 +7950,10 @@
     if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
     return `${(n / 1024 / 1024).toFixed(1)} MB`;
   };
-  var FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MAX_SIZE }) => {
+  var FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MAX_SIZE, maxTotal = FILE_MAX_TOTAL }) => {
     const inputRef = React.useRef(null);
     const [error, setError] = React.useState("");
+    const usedBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
     const handleFiles = async (fileList) => {
       setError("");
       const incoming = Array.from(fileList || []);
@@ -7966,11 +7963,17 @@
         return;
       }
       const accepted = [];
+      let running = usedBytes;
       for (const f of incoming.slice(0, remaining)) {
         if (f.size > maxSize) {
           setError(`'${f.name}' \uC740(\uB294) ${_fmtSize(maxSize)} \uCD08\uACFC \u2014 \uCCA8\uBD80 \uBD88\uAC00.`);
           continue;
         }
+        if (running + f.size > maxTotal) {
+          setError(`\uCCA8\uBD80 \uD30C\uC77C\uC740 \uC804\uBD80 \uD569\uCCD0 ${_fmtSize(maxTotal)} \uC774\uD558\uC5EC\uC57C \uD569\uB2C8\uB2E4 \u2014 '${f.name}' \uC740(\uB294) \uC81C\uC678\uD588\uC2B5\uB2C8\uB2E4. (\uD604\uC7AC ${_fmtSize(running)})`);
+          continue;
+        }
+        running += f.size;
         accepted.push(f);
       }
       const results = await Promise.all(accepted.map(async (f) => {
@@ -7995,12 +7998,12 @@
       setFiles([...files, ...results.filter(Boolean)]);
     };
     const remove = (i) => setFiles(files.filter((_, j) => j !== i));
-    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uCCA8\uBD80 \uD30C\uC77C ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "(", files.length, "/", max, " \xB7 \uAC01 ", _fmtSize(maxSize), " \uC774\uD558)")), /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uCCA8\uBD80 \uD30C\uC77C ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "(", files.length, "/", max, " \xB7 \uD569\uACC4 ", _fmtSize(usedBytes), " / ", _fmtSize(maxTotal), ")")), /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
         className: "btn btn-small",
-        disabled: files.length >= max,
+        disabled: files.length >= max || usedBytes >= maxTotal,
         onClick: () => {
           var _a;
           return (_a = inputRef.current) == null ? void 0 : _a.click();
@@ -8028,7 +8031,7 @@
         style: { background: "none", border: "none", color: "var(--danger)", fontSize: 14, cursor: "pointer", padding: "2px 6px" }
       },
       "\u2715"
-    )))) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "8/1", fontSize: 10 } }, "PDF \xB7 DOCX \xB7 \uC774\uBBF8\uC9C0 \uC678 \uC790\uB8CC\uB97C \uCCA8\uBD80 (\uAC8C\uC2DC\uAE00 \uBCF8\uBB38 \uD558\uB2E8\uC5D0 \uB2E4\uC6B4\uB85C\uB4DC \uB9C1\uD06C\uB85C \uD45C\uC2DC)"));
+    )))) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "8/1", fontSize: 10 } }, "PDF \xB7 DOCX \xB7 \uC774\uBBF8\uC9C0 \uC678 \uC790\uB8CC\uB97C \uCD5C\uB300 ", max, "\uAC1C, \uC804\uBD80 \uD569\uCCD0 ", _fmtSize(maxTotal), " \uAE4C\uC9C0 \uCCA8\uBD80 (\uAC8C\uC2DC\uAE00 \uBCF8\uBB38 \uD558\uB2E8\uC5D0 \uB2E4\uC6B4\uB85C\uB4DC \uB9C1\uD06C\uB85C \uD45C\uC2DC)"));
   };
   var MAX_VISIBLE_DEPTH = 3;
   var renderCommentText = (text) => {
@@ -8676,6 +8679,7 @@
         PostDetail,
         {
           post,
+          siblings: filtered,
           go,
           setPostId,
           user,
@@ -8687,7 +8691,7 @@
     return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("header", { style: { marginBottom: 24 } }, (() => {
       var _a, _b, _c, _d;
       const _i = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).communityIntro || {};
-      const eb = _i.eyebrow || "COMMUNITY \xB7 \uCEE4\uBBA4\uB2C8\uD2F0";
+      const eb = _i.eyebrow || "COMMUNITY \xB7 \uAD11\uC7A5";
       const tp = (_c = _i.titlePrefix) != null ? _c : "\uB2E4\uC12F \uBD09\uC6B0\uB9AC ";
       const ta = (_d = _i.titleAccent) != null ? _d : "\uAD11\uC7A5";
       const sb = _i.subtitle || "\uBC45\uAE30\uB178\uC790\uC774 \uBAA8\uC5EC \uB098\uB204\uB294 \uC774\uC57C\uAE30. \uC9C8\uBB38\uB3C4 \uB2F5\uB3C4 \uD658\uC601\uD569\uB2C8\uB2E4.";
@@ -9384,9 +9388,18 @@
       "\u{1F4BE} \uC784\uC2DC\uC800\uC7A5"
     ), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold" }, isEditing ? "\uC218\uC815 \uC800\uC7A5 \u2192" : "\uAC8C\uC2DC\uD558\uAE30 \u2192")))));
   };
-  var PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
+  var PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) => {
     var _a, _b, _c;
     const G2 = window.BGNJ_GUARD;
+    const sibList = Array.isArray(siblings) ? siblings : [];
+    const sibIndex = sibList.findIndex((p) => String(p.id) === String(post.id));
+    const prevPost = sibIndex > 0 ? sibList[sibIndex - 1] : null;
+    const nextPost = sibIndex >= 0 && sibIndex < sibList.length - 1 ? sibList[sibIndex + 1] : null;
+    const nearby = React.useMemo(() => {
+      if (sibList.length <= 1) return [];
+      const start = Math.max(0, Math.min(sibIndex - 2, sibList.length - 5));
+      return sibList.slice(start, start + 5);
+    }, [sibList, sibIndex]);
     const [comment, setComment] = React.useState("");
     const [commentsList, setCommentsList] = React.useState(() => G2.arr(() => {
       var _a2, _b2;
@@ -9688,7 +9701,65 @@
           onRefresh == null ? void 0 : onRefresh();
         }
       }
-    ))));
+    )), /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uAE00 \uC774\uB3D9", style: { marginTop: 64, paddingTop: 32, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "post-nav-pair", style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 } }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn",
+        disabled: !prevPost,
+        onClick: () => prevPost && setPostId(prevPost.id),
+        style: { textAlign: "left", padding: "14px 16px", opacity: prevPost ? 1 : 0.4 }
+      },
+      /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", display: "block", marginBottom: 6 } }, "\u2190 \uC774\uC804 \uAE00"),
+      /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, color: "var(--ink)", wordBreak: "keep-all", overflowWrap: "break-word" } }, prevPost ? prevPost.title : "\uC774\uC804 \uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4")
+    ), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn",
+        disabled: !nextPost,
+        onClick: () => nextPost && setPostId(nextPost.id),
+        style: { textAlign: "right", padding: "14px 16px", opacity: nextPost ? 1 : 0.4 }
+      },
+      /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", display: "block", marginBottom: 6 } }, "\uB2E4\uC74C \uAE00 \u2192"),
+      /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, color: "var(--ink)", wordBreak: "keep-all", overflowWrap: "break-word" } }, nextPost ? nextPost.title : "\uB2E4\uC74C \uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4")
+    )), nearby.length > 0 && /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: "0 0 24px", border: "1px solid var(--line)", background: "var(--bg-2)" } }, nearby.map((p) => {
+      const isCurrent = String(p.id) === String(post.id);
+      return /* @__PURE__ */ React.createElement("li", { key: p.id, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: () => !isCurrent && setPostId(p.id),
+          "aria-current": isCurrent ? "true" : void 0,
+          style: {
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "12px 14px",
+            background: "transparent",
+            border: "none",
+            textAlign: "left",
+            cursor: isCurrent ? "default" : "pointer",
+            fontSize: 13,
+            color: isCurrent ? "var(--ink)" : "var(--ink-2)",
+            fontWeight: isCurrent ? 600 : 400
+          }
+        },
+        /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", className: "mono dim-2", style: { fontSize: 10 } }, isCurrent ? "\u25B6" : "\xB7"),
+        /* @__PURE__ */ React.createElement("span", { style: { flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.title),
+        /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, p.author)
+      ));
+    })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn btn-gold",
+        onClick: () => setPostId(null),
+        style: { padding: "12px 32px" }
+      },
+      "\uBAA9\uB85D\uC73C\uB85C \uB3CC\uC544\uAC00\uAE30"
+    )))));
   };
 
   // pages/WangsanamTourPage.jsx
@@ -11532,7 +11603,7 @@
       } else (_k = (_j = window.BGNJ_TOAST) == null ? void 0 : _j.error) == null ? void 0 : _k.call(_j, res.message || "\uC608\uC57D \uC2E4\uD328");
     };
     const cell = (label, date, time) => /* @__PURE__ */ React.createElement("div", { style: { flex: 1, textAlign: "center", padding: "12px 8px" } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginBottom: 4 } }, label), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 700 } }, hkFmtDate(date)), /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 13 } }, time));
-    return /* @__PURE__ */ React.createElement("div", { onClick: onClose, style: { position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 1e3, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "40px 16px" } }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { ...SOFT, maxWidth: 480, width: "100%", padding: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px" } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, room.name), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, style: { background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "var(--ink-3)" } }, "\u2715")), /* @__PURE__ */ React.createElement("div", { style: { padding: "0 22px 22px", display: "flex", flexDirection: "column", gap: 16 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12.5 } }, "\uAE30\uC900 ", Math.min(adults, room.maxOccupancy), "\uBA85 / \uCD5C\uB300 ", room.maxOccupancy, "\uBA85 \xB7 ", property == null ? void 0 : property.address), units.length > 1 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, units.map((u) => /* @__PURE__ */ React.createElement("button", { key: u, type: "button", onClick: () => setUnit(u), style: { flex: "1 1 80px", minWidth: 80, padding: "11px 8px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none", background: unit === u ? "var(--bg-2)" : "transparent", color: unit === u ? "var(--ink)" : "var(--ink-3)" } }, unitLabel(u)))), unit === "hourly" ? /* @__PURE__ */ React.createElement(HkHourSelect, { roomTypeId: room.id, date: checkIn, minHours: room.minHours || 3, start, hours, onStart: setStart, onHours: setHours }) : /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 12, display: "flex", alignItems: "center" } }, cell("\uCCB4\uD06C\uC778", checkIn, "15:00"), /* @__PURE__ */ React.createElement("span", { className: "badge", style: { flexShrink: 0 } }, unit === "nightly" ? nights : fixedNights, "\uBC15"), cell("\uCCB4\uD06C\uC544\uC6C3", unit === "nightly" ? checkOut : fixedCheckOut, "11:00")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 13.5 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC778\uC6D0"), /* @__PURE__ */ React.createElement("span", null, "\uC131\uC778 ", adults, children ? `, \uC544\uB3D9 ${children}` : "")), /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 12, padding: "14px 16px" } }, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 14 } }, "\uACB0\uC81C \uAE08\uC561"), (quote == null ? void 0 : quote.ok) ? /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, display: "flex", flexDirection: "column", gap: 6, fontSize: 13 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uC0C1\uD488 \uAE08\uC561 ", unit === "hourly" ? `(${quote.hours}\uC2DC\uAC04)` : `(${quote.nights}\uBC15)`), /* @__PURE__ */ React.createElement("span", null, hkWon(quote.subtotal))), quote.couponDiscount > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", color: "var(--success)" } }, /* @__PURE__ */ React.createElement("span", null, "\uCFE0\uD3F0 ", quote.couponLabel), /* @__PURE__ */ React.createElement("span", null, "-", hkWon(quote.couponDiscount))), quote.memberDiscount > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", color: "var(--success)" } }, /* @__PURE__ */ React.createElement("span", null, "\uD68C\uC6D0 \uD560\uC778 (", quote.memberRate, "%)"), /* @__PURE__ */ React.createElement("span", null, "-", hkWon(quote.memberDiscount))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 16, marginTop: 4 } }, /* @__PURE__ */ React.createElement("span", null, "\uCD1D \uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "ko-serif" }, hkWon(quote.total)))) : /* @__PURE__ */ React.createElement("p", { style: { margin: "8px 0 0", fontSize: 13, color: "var(--danger)" } }, (quote == null ? void 0 : quote.reason) || (unit === "hourly" ? "\uC2DC\uC791 \uC2DC\uAC04\uC744 \uC120\uD0DD\uD558\uC138\uC694" : "\uB0A0\uC9DC\uB97C \uD655\uC778\uD558\uC138\uC694")), (quote == null ? void 0 : quote.couponError) && /* @__PURE__ */ React.createElement("p", { style: { margin: "6px 0 0", fontSize: 12, color: "var(--danger)" } }, quote.couponError), !user && (quote == null ? void 0 : quote.ok) && memberDiscount > 0 && /* @__PURE__ */ React.createElement("div", { style: { margin: "10px 0 0", padding: "10px 12px", borderRadius: 10, background: "rgba(146,64,14,0.06)", fontSize: 12.5, lineHeight: 1.6 } }, "\u{1F4A1} ", /* @__PURE__ */ React.createElement("strong", null, "\uD68C\uC6D0\uAC00\uC785\uD558\uBA74 ", memberDiscount, "% \uD560\uC778"), " \u2014 \uD68C\uC6D0\uAC00 ", /* @__PURE__ */ React.createElement("strong", { className: "ko-serif", style: { color: "var(--secondary)", fontSize: 15 } }, hkWon(Math.round(quote.total * (100 - memberDiscount) / 100))), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go && go("signup"), style: { marginLeft: 8, background: "var(--secondary)", color: "#fff", border: "none", borderRadius: 8, padding: "4px 10px", cursor: "pointer", font: "inherit", fontSize: 12, fontWeight: 600 } }, "\uD68C\uC6D0\uAC00\uC785\uD558\uACE0 \uD560\uC778\uBC1B\uAE30")), !user && (quote == null ? void 0 : quote.ok) && memberDiscount === 0 && /* @__PURE__ */ React.createElement("p", { style: { margin: "8px 0 0", fontSize: 12, color: "var(--secondary)" } }, "\u{1F4A1} ", /* @__PURE__ */ React.createElement("strong", null, "\uD68C\uC6D0\uAC00\uC785/\uB85C\uADF8\uC778"), " \uC2DC \uD68C\uC6D0 \uD61C\uD0DD\uC774 \uC801\uC6A9\uB429\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 14, display: "block", marginBottom: 10 } }, "\uC608\uC57D\uC790 \uC815\uBCF4"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } }, /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC131\uBA85 *", value: name, onChange: (e) => setName(e.target.value) }), /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uD734\uB300\uD3F0 \uBC88\uD638 * (010-0000-0000)", value: phone, onChange: (e) => setPhone(e.target.value) }), /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC774\uBA54\uC77C (\uC120\uD0DD)", value: email, onChange: (e) => setEmail(e.target.value) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10 } }, /* @__PURE__ */ React.createElement("input", { style: { ...FIELD, flex: 1 }, placeholder: "\uCFE0\uD3F0 \uCF54\uB4DC (\uC120\uD0DD)", value: coupon, onChange: (e) => setCoupon(e.target.value.toUpperCase()) })), /* @__PURE__ */ React.createElement("textarea", { style: { ...FIELD, resize: "vertical" }, rows: 2, placeholder: "\uC694\uCCAD\uC0AC\uD56D (\uC120\uD0DD)", value: request, onChange: (e) => setRequest(e.target.value) }))), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, cursor: "pointer" } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: agreed, onChange: (e) => setAgreed(e.target.checked), style: { marginTop: 2 } }), /* @__PURE__ */ React.createElement("span", null, "\uAC1C\uC778\uC815\uBCF4(\uC774\uB984\xB7\uC5F0\uB77D\uCC98\xB7\uC774\uBA54\uC77C) \uC218\uC9D1\xB7\uC774\uC6A9 \uBC0F \uC608\uC57D \uC9C4\uD589\uC5D0 \uB3D9\uC758\uD569\uB2C8\uB2E4. \uC218\uC9D1\uD55C \uAC1C\uC778\uC815\uBCF4\uB294 ", /* @__PURE__ */ React.createElement("strong", null, "1\uB144\uAC04 \uBCF4\uAD00 \uD6C4 \uD30C\uAE30"), "\uB418\uBA70, \uACB0\uC81C\uB294 ", /* @__PURE__ */ React.createElement("strong", null, "\uBB34\uD1B5\uC7A5 \uC785\uAE08/\uD604\uC7A5 \uACB0\uC81C"), "\uB85C \uC9C4\uD589\uB429\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", disabled: submitting || !(quote == null ? void 0 : quote.ok), onClick: submit, style: { opacity: submitting || !(quote == null ? void 0 : quote.ok) ? 0.5 : 1, padding: "14px", fontSize: 15 } }, submitting ? "\uC811\uC218 \uC911\u2026" : (quote == null ? void 0 : quote.ok) ? `${hkWon(quote.total)} \uC608\uC57D\uD558\uAE30` : "\uC608\uC57D\uD558\uAE30"))));
+    return /* @__PURE__ */ React.createElement("div", { onClick: onClose, style: { position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", zIndex: 1e3, display: "flex", alignItems: "flex-start", justifyContent: "center", overflowY: "auto", padding: "40px 16px" } }, /* @__PURE__ */ React.createElement("div", { onClick: (e) => e.stopPropagation(), style: { ...SOFT, maxWidth: 480, width: "100%", padding: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px" } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, room.name), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, style: { background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "var(--ink-3)" } }, "\u2715")), /* @__PURE__ */ React.createElement("div", { style: { padding: "0 22px 22px", display: "flex", flexDirection: "column", gap: 16 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12.5 } }, "\uAE30\uC900 ", Math.min(adults, room.maxOccupancy), "\uBA85 / \uCD5C\uB300 ", room.maxOccupancy, "\uBA85 \xB7 ", property == null ? void 0 : property.address), units.length > 1 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, units.map((u) => /* @__PURE__ */ React.createElement("button", { key: u, type: "button", onClick: () => setUnit(u), style: { flex: "1 1 80px", minWidth: 80, padding: "11px 8px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none", background: unit === u ? "var(--bg-2)" : "transparent", color: unit === u ? "var(--ink)" : "var(--ink-3)" } }, unitLabel(u)))), unit === "hourly" ? /* @__PURE__ */ React.createElement(HkHourSelect, { roomTypeId: room.id, date: checkIn, minHours: room.minHours || 3, start, hours, onStart: setStart, onHours: setHours }) : /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 12, display: "flex", alignItems: "center" } }, cell("\uCCB4\uD06C\uC778", checkIn, "15:00"), /* @__PURE__ */ React.createElement("span", { className: "badge", style: { flexShrink: 0 } }, unit === "nightly" ? nights : fixedNights, "\uBC15"), cell("\uCCB4\uD06C\uC544\uC6C3", unit === "nightly" ? checkOut : fixedCheckOut, "11:00")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontSize: 13.5 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC778\uC6D0"), /* @__PURE__ */ React.createElement("span", null, "\uC131\uC778 ", adults, children ? `, \uC544\uB3D9 ${children}` : "")), /* @__PURE__ */ React.createElement("div", { style: { background: "var(--bg-2)", borderRadius: 12, padding: "14px 16px" } }, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 14 } }, "\uACB0\uC81C \uAE08\uC561"), (quote == null ? void 0 : quote.ok) ? /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, display: "flex", flexDirection: "column", gap: 6, fontSize: 13 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uC0C1\uD488 \uAE08\uC561 ", unit === "hourly" ? `(${quote.hours}\uC2DC\uAC04)` : `(${quote.nights}\uBC15)`), /* @__PURE__ */ React.createElement("span", null, hkWon(quote.subtotal))), quote.couponDiscount > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", color: "var(--success)" } }, /* @__PURE__ */ React.createElement("span", null, "\uCFE0\uD3F0 ", quote.couponLabel), /* @__PURE__ */ React.createElement("span", null, "-", hkWon(quote.couponDiscount))), quote.memberDiscount > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", color: "var(--success)" } }, /* @__PURE__ */ React.createElement("span", null, "\uD68C\uC6D0 \uD560\uC778 (", quote.memberRate, "%)"), /* @__PURE__ */ React.createElement("span", null, "-", hkWon(quote.memberDiscount))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 16, marginTop: 4 } }, /* @__PURE__ */ React.createElement("span", null, "\uCD1D \uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "ko-serif" }, hkWon(quote.total)))) : /* @__PURE__ */ React.createElement("p", { style: { margin: "8px 0 0", fontSize: 13, color: "var(--danger)" } }, (quote == null ? void 0 : quote.reason) || (unit === "hourly" ? "\uC2DC\uC791 \uC2DC\uAC04\uC744 \uC120\uD0DD\uD558\uC138\uC694" : "\uB0A0\uC9DC\uB97C \uD655\uC778\uD558\uC138\uC694")), (quote == null ? void 0 : quote.couponError) && /* @__PURE__ */ React.createElement("p", { style: { margin: "6px 0 0", fontSize: 12, color: "var(--danger)" } }, quote.couponError), !user && (quote == null ? void 0 : quote.ok) && memberDiscount > 0 && /* @__PURE__ */ React.createElement("div", { style: { margin: "10px 0 0", padding: "10px 12px", borderRadius: 10, background: "rgba(146,64,14,0.06)", fontSize: 12.5, lineHeight: 1.6 } }, "\u{1F4A1} ", /* @__PURE__ */ React.createElement("strong", null, "\uD68C\uC6D0\uAC00\uC785\uD558\uBA74 ", memberDiscount, "% \uD560\uC778"), " \u2014 \uD68C\uC6D0\uAC00 ", /* @__PURE__ */ React.createElement("strong", { className: "ko-serif", style: { color: "var(--secondary)", fontSize: 15 } }, hkWon(Math.round(quote.total * (100 - memberDiscount) / 100))), /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => go && go("signup"), style: { marginLeft: 8, background: "var(--secondary)", color: "var(--bg)", border: "none", borderRadius: 8, padding: "4px 10px", cursor: "pointer", font: "inherit", fontSize: 12, fontWeight: 600 } }, "\uD68C\uC6D0\uAC00\uC785\uD558\uACE0 \uD560\uC778\uBC1B\uAE30")), !user && (quote == null ? void 0 : quote.ok) && memberDiscount === 0 && /* @__PURE__ */ React.createElement("p", { style: { margin: "8px 0 0", fontSize: 12, color: "var(--secondary)" } }, "\u{1F4A1} ", /* @__PURE__ */ React.createElement("strong", null, "\uD68C\uC6D0\uAC00\uC785/\uB85C\uADF8\uC778"), " \uC2DC \uD68C\uC6D0 \uD61C\uD0DD\uC774 \uC801\uC6A9\uB429\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("strong", { style: { fontSize: 14, display: "block", marginBottom: 10 } }, "\uC608\uC57D\uC790 \uC815\uBCF4"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } }, /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC131\uBA85 *", value: name, onChange: (e) => setName(e.target.value) }), /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uD734\uB300\uD3F0 \uBC88\uD638 * (010-0000-0000)", value: phone, onChange: (e) => setPhone(e.target.value) }), /* @__PURE__ */ React.createElement("input", { style: FIELD, placeholder: "\uC774\uBA54\uC77C (\uC120\uD0DD)", value: email, onChange: (e) => setEmail(e.target.value) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10 } }, /* @__PURE__ */ React.createElement("input", { style: { ...FIELD, flex: 1 }, placeholder: "\uCFE0\uD3F0 \uCF54\uB4DC (\uC120\uD0DD)", value: coupon, onChange: (e) => setCoupon(e.target.value.toUpperCase()) })), /* @__PURE__ */ React.createElement("textarea", { style: { ...FIELD, resize: "vertical" }, rows: 2, placeholder: "\uC694\uCCAD\uC0AC\uD56D (\uC120\uD0DD)", value: request, onChange: (e) => setRequest(e.target.value) }))), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, cursor: "pointer" } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: agreed, onChange: (e) => setAgreed(e.target.checked), style: { marginTop: 2 } }), /* @__PURE__ */ React.createElement("span", null, "\uAC1C\uC778\uC815\uBCF4(\uC774\uB984\xB7\uC5F0\uB77D\uCC98\xB7\uC774\uBA54\uC77C) \uC218\uC9D1\xB7\uC774\uC6A9 \uBC0F \uC608\uC57D \uC9C4\uD589\uC5D0 \uB3D9\uC758\uD569\uB2C8\uB2E4. \uC218\uC9D1\uD55C \uAC1C\uC778\uC815\uBCF4\uB294 ", /* @__PURE__ */ React.createElement("strong", null, "1\uB144\uAC04 \uBCF4\uAD00 \uD6C4 \uD30C\uAE30"), "\uB418\uBA70, \uACB0\uC81C\uB294 ", /* @__PURE__ */ React.createElement("strong", null, "\uBB34\uD1B5\uC7A5 \uC785\uAE08/\uD604\uC7A5 \uACB0\uC81C"), "\uB85C \uC9C4\uD589\uB429\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", disabled: submitting || !(quote == null ? void 0 : quote.ok), onClick: submit, style: { opacity: submitting || !(quote == null ? void 0 : quote.ok) ? 0.5 : 1, padding: "14px", fontSize: 15 } }, submitting ? "\uC811\uC218 \uC911\u2026" : (quote == null ? void 0 : quote.ok) ? `${hkWon(quote.total)} \uC608\uC57D\uD558\uAE30` : "\uC608\uC57D\uD558\uAE30"))));
   };
   var HkGallery = ({ images, name }) => {
     const has = images.length > 0;
@@ -13281,7 +13352,7 @@
     display: "inline-grid",
     placeItems: "center",
     background: "var(--primary)",
-    color: "#0F172A",
+    color: "var(--on-primary)",
     fontWeight: 800,
     fontSize: 11,
     borderRadius: 4,
@@ -13366,7 +13437,7 @@
         fontSize: 13,
         fontWeight: 600,
         background: "var(--primary)",
-        color: "#0F172A",
+        color: "var(--on-primary)",
         border: "1px solid var(--primary)",
         borderRadius: 10,
         cursor: "pointer",
@@ -14383,7 +14454,7 @@
         tour: "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8",
         lectures: "\uAC15\uC5F0",
         column: "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC",
-        community: "\uCEE4\uBBA4\uB2C8\uD2F0",
+        community: "\uAD11\uC7A5",
         book: "\uBC45\uAE30\uB178\uC790 \uB3C4\uC11C",
         checkout: "\uACB0\uC81C",
         mypage: "\uB9C8\uC774\uD398\uC774\uC9C0",

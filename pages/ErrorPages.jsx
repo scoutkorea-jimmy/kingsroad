@@ -10,7 +10,7 @@ const _ErrorBrand = () => (
   <div style={{display:'flex', alignItems:'center', gap:8, padding:'18px 22px', borderBottom:'1px solid var(--line)'}}>
     <span aria-hidden="true" style={{
       width:22, height:22, display:'inline-grid', placeItems:'center',
-      background:'var(--primary)', color:'#0F172A', fontWeight:800, fontSize:11,
+      background:'var(--primary)', color:'var(--on-primary)', fontWeight:800, fontSize:11,
       borderRadius:4, fontFamily:'var(--font-mono)',
     }}>B</span>
     <span style={{fontSize:13, fontWeight:600, letterSpacing:'0.04em', color:'var(--ink)'}}>뱅기노자</span>
@@ -78,7 +78,7 @@ const ErrorCard = ({
             <button type="button" onClick={primaryAction.onClick}
               style={{
                 flex:1, padding:'12px 16px', fontSize:13, fontWeight:600,
-                background:'var(--primary)', color:'#0F172A',
+                background:'var(--primary)', color:'var(--on-primary)',
                 border:'1px solid var(--primary)', borderRadius:10,
                 cursor:'pointer', display:'inline-flex',
                 alignItems:'center', justifyContent:'center', gap:6,

@@ -172,13 +172,13 @@ const HOME_TEXT_DEFAULT = {
   tourAction: '전체 일정 →',
   tourNextLabel: '다음 일정',
   tourPriceLabel: '참가비',
-  communityEyebrow: '커뮤니티',
+  communityEyebrow: '광장',
   communityTitle: '다녀온 사람들의 기록',
   communitySubtitle: '좋았던 식당, 애매했던 동선, 다시 가고 싶은 골목까지 편하게 남겨주세요.',
-  communityAction: '커뮤니티 가기 →',
+  communityAction: '광장 가기 →',
   communityReplyLabel: '댓글',
   communityEmptyTitle: '첫 번째 여행 이야기를 써주세요',
-  communityEmptySubtitle: '커뮤니티에 여행 경험을 나누면 더 많은 여행자들이 모여듭니다.',
+  communityEmptySubtitle: '광장에 여행 경험을 나누면 더 많은 여행자들이 모여듭니다.',
   communityEmptyCta: '글 작성하기 →',
   columnEyebrow: '읽을거리',
   columnTitle: '길 위에서 이어지는 생각',
@@ -563,7 +563,7 @@ const HomePage = ({ go }) => {
   const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
     { label: '여행지',   sub: '주요 답사지 운영',   valueFallback: '전국'    },
     { label: '투어',     sub: '직접 기획 프로그램', valueFallback: '준비 중' },
-    { label: '커뮤니티', sub: '함께 만드는 여행',   valueFallback: '운영 중' },
+    { label: '광장', sub: '함께 만드는 여행',   valueFallback: '운영 중' },
   ];
   // v00.256 — hero 통계 실데이터 동적화.
   // v00.289 — 실데이터가 없는 칸은 아예 렌더하지 않는다. 이전엔 valueFallback 으로 '준비 중' 같은

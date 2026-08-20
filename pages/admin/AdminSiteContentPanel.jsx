@@ -348,7 +348,7 @@ const OgPreviewBlock = ({ sc }) => {
           <img src={imageSrc} alt="현재 og:image"
             style={{width:'100%', display:'block', aspectRatio:'1200/630', objectFit:'cover', background:'var(--bg-2)'}}/>
         ) : (
-          <div style={{aspectRatio:'1200/630', display:'grid', placeItems:'center', background:'var(--bg-3)', color:'var(--ink-3)', fontSize:13}}>
+          <div style={{aspectRatio:'1200/630', display:'grid', placeItems:'center', background:'var(--bg-3)', color:'var(--ink-2)', fontSize:13}}>
             og:image 미설정
           </div>
         )}

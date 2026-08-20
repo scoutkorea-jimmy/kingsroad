@@ -207,10 +207,10 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
               <div style={{position:'absolute', bottom:4, right:4, display:'flex', gap:2}}>
                 <button type="button" onClick={() => move(i, -1)} disabled={i === 0}
                   aria-label={`${i+1}번 이미지 앞으로`}
-                  style={{background:'rgba(0,0,0,0.6)', border:'none', color:'var(--primary)', fontSize:10, padding:'1px 5px', cursor:'pointer', minHeight:0}}>◀</button>
+                  style={{background:'rgba(0,0,0,0.6)', border:'none', color:'var(--on-scrim)', fontSize:10, padding:'1px 5px', cursor:'pointer', minHeight:0}}>◀</button>
                 <button type="button" onClick={() => move(i, 1)} disabled={i === images.length - 1}
                   aria-label={`${i+1}번 이미지 뒤로`}
-                  style={{background:'rgba(0,0,0,0.6)', border:'none', color:'var(--primary)', fontSize:10, padding:'1px 5px', cursor:'pointer', minHeight:0}}>▶</button>
+                  style={{background:'rgba(0,0,0,0.6)', border:'none', color:'var(--on-scrim)', fontSize:10, padding:'1px 5px', cursor:'pointer', minHeight:0}}>▶</button>
               </div>
             </div>
           ))}
@@ -227,7 +227,10 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
 // === File attacher (v00.069) — 비-이미지 파일 첨부, 10MB × 최대 3 ======
 // 게시글에 attachments: [{ name, type, size, dataUrl }] 으로 저장. dataUrl 은 base64.
 // 보관 한도가 작아 v1 은 D1 인라인 JSON. 추후 R2 업로드 흐름은 별도 사이클.
-const FILE_MAX_SIZE = 10 * 1024 * 1024; // 10MB
+// v00.294 — 사용자 규칙: 최대 3개 · **3개를 합쳐** 10MB 이하.
+// 이전엔 '개당 10MB' 라 최대 30MB 까지 올라갔다. 총량 기준으로 바꾼다.
+const FILE_MAX_TOTAL = 10 * 1024 * 1024; // 합계 10MB
+const FILE_MAX_SIZE = FILE_MAX_TOTAL;    // 단일 파일도 총량을 넘을 수 없다
 const FILE_MAX_COUNT = 3;
 const _fmtSize = (n) => {
   if (!n && n !== 0) return '';
@@ -235,9 +238,10 @@ const _fmtSize = (n) => {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 };
-const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MAX_SIZE }) => {
+const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MAX_SIZE, maxTotal = FILE_MAX_TOTAL }) => {
   const inputRef = React.useRef(null);
   const [error, setError] = React.useState('');
+  const usedBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
 
   const handleFiles = async (fileList) => {
     setError('');
@@ -245,8 +249,15 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
     const remaining = max - files.length;
     if (remaining <= 0) { setError(`첨부는 최대 ${max}개까지 가능합니다.`); return; }
     const accepted = [];
+    // v00.294 — 총량 기준. 이미 담긴 용량 + 이번에 고른 파일들의 누적을 함께 본다.
+    let running = usedBytes;
     for (const f of incoming.slice(0, remaining)) {
       if (f.size > maxSize) { setError(`'${f.name}' 은(는) ${_fmtSize(maxSize)} 초과 — 첨부 불가.`); continue; }
+      if (running + f.size > maxTotal) {
+        setError(`첨부 파일은 전부 합쳐 ${_fmtSize(maxTotal)} 이하여야 합니다 — '${f.name}' 은(는) 제외했습니다. (현재 ${_fmtSize(running)})`);
+        continue;
+      }
+      running += f.size;
       accepted.push(f);
     }
     // v00.085 — R2 우선 (maxSize=10MB) + dataURI 폴백. dataUrl 필드명 유지 — <a href={dataUrl} download> 도 R2 URL 로 호환.
@@ -278,9 +289,9 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
   return (
     <div>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
-        <div className="field-label">첨부 파일 <span className="dim-2">({files.length}/{max} · 각 {_fmtSize(maxSize)} 이하)</span></div>
+        <div className="field-label">첨부 파일 <span className="dim-2">({files.length}/{max} · 합계 {_fmtSize(usedBytes)} / {_fmtSize(maxTotal)})</span></div>
         <button type="button" className="btn btn-small"
-          disabled={files.length >= max}
+          disabled={files.length >= max || usedBytes >= maxTotal}
           onClick={() => inputRef.current?.click()}>
           + 파일 선택
         </button>
@@ -305,7 +316,8 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
         </ul>
       ) : (
         <div className="placeholder" style={{aspectRatio:'8/1', fontSize:10}}>
-          PDF · DOCX · 이미지 외 자료를 첨부 (게시글 본문 하단에 다운로드 링크로 표시)
+          PDF · DOCX · 이미지 외 자료를 최대 {max}개, 전부 합쳐 {_fmtSize(maxTotal)} 까지 첨부
+          (게시글 본문 하단에 다운로드 링크로 표시)
         </div>
       )}
     </div>
@@ -950,6 +962,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       <>
         <PostDetail
           post={post}
+          siblings={filtered}
           go={go}
           setPostId={setPostId}
           user={user}
@@ -968,7 +981,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           {(() => {
             // v00.073 — site_content_kv.communityIntro 에서 hero 읽기.
             const _i = (window.BGNJ_SITE_CONTENT?.get?.() || {}).communityIntro || {};
-            const eb = _i.eyebrow || 'COMMUNITY · 커뮤니티';
+            const eb = _i.eyebrow || 'COMMUNITY · 광장';
             const tp = _i.titlePrefix ?? '다섯 봉우리 ';
             const ta = _i.titleAccent ?? '광장';
             const sb = _i.subtitle || '뱅기노자이 모여 나누는 이야기. 질문도 답도 환영합니다.';
@@ -1688,8 +1701,21 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
 };
 
 // === Post Detail =========================================================
-const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
+const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) => {
   const G = window.BGNJ_GUARD;
+  // v00.294 — 사용자 보고 '글을 보고 나면 돌아올 방법이 없다'.
+  // 상단 '← 목록으로' 하나뿐이라 긴 글에서는 화면 밖으로 밀려 보이지 않았다.
+  // 목록에서 보던 순서(filtered)를 그대로 받아 이전/다음 글 + 하단 목록을 만든다.
+  const sibList = Array.isArray(siblings) ? siblings : [];
+  const sibIndex = sibList.findIndex((p) => String(p.id) === String(post.id));
+  const prevPost = sibIndex > 0 ? sibList[sibIndex - 1] : null;
+  const nextPost = sibIndex >= 0 && sibIndex < sibList.length - 1 ? sibList[sibIndex + 1] : null;
+  // 하단 목록 — 현재 글 주변 최대 5개. 목록으로 돌아가지 않고도 다음 글로 넘어갈 수 있게.
+  const nearby = React.useMemo(() => {
+    if (sibList.length <= 1) return [];
+    const start = Math.max(0, Math.min(sibIndex - 2, sibList.length - 5));
+    return sibList.slice(start, start + 5);
+  }, [sibList, sibIndex]);
   const [comment, setComment] = React.useState("");
   const [commentsList, setCommentsList] = React.useState(() => G.arr(() => window.BGNJ_COMMUNITY?.getComments?.(post.id)));
   const [reportOpen, setReportOpen] = React.useState(false);
@@ -2051,6 +2077,64 @@ const PostDetail = ({ post, go, setPostId, user, onRefresh, onEdit }) => {
             }}
           />
         </section>
+
+        {/* v00.294 — 하단 글 이동. 긴 글 끝에서 상단 버튼까지 올라갈 필요 없이
+            이전/다음 글과 목록으로 바로 갈 수 있게 한다. */}
+        <nav aria-label="글 이동" style={{marginTop:64, paddingTop:32, borderTop:'1px solid var(--line)'}}>
+          <div className="post-nav-pair" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:20}}>
+            <button type="button" className="btn"
+              disabled={!prevPost}
+              onClick={() => prevPost && setPostId(prevPost.id)}
+              style={{textAlign:'left', padding:'14px 16px', opacity: prevPost ? 1 : 0.4}}>
+              <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', display:'block', marginBottom:6}}>← 이전 글</span>
+              <span style={{fontSize:13, color:'var(--ink)', wordBreak:'keep-all', overflowWrap:'break-word'}}>
+                {prevPost ? prevPost.title : '이전 글이 없습니다'}
+              </span>
+            </button>
+            <button type="button" className="btn"
+              disabled={!nextPost}
+              onClick={() => nextPost && setPostId(nextPost.id)}
+              style={{textAlign:'right', padding:'14px 16px', opacity: nextPost ? 1 : 0.4}}>
+              <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', display:'block', marginBottom:6}}>다음 글 →</span>
+              <span style={{fontSize:13, color:'var(--ink)', wordBreak:'keep-all', overflowWrap:'break-word'}}>
+                {nextPost ? nextPost.title : '다음 글이 없습니다'}
+              </span>
+            </button>
+          </div>
+
+          {nearby.length > 0 && (
+            <ul style={{listStyle:'none', padding:0, margin:'0 0 24px', border:'1px solid var(--line)', background:'var(--bg-2)'}}>
+              {nearby.map((p) => {
+                const isCurrent = String(p.id) === String(post.id);
+                return (
+                  <li key={p.id} style={{borderBottom:'1px solid var(--line)'}}>
+                    <button type="button"
+                      onClick={() => !isCurrent && setPostId(p.id)}
+                      aria-current={isCurrent ? 'true' : undefined}
+                      style={{
+                        width:'100%', display:'flex', alignItems:'center', gap:10,
+                        padding:'12px 14px', background:'transparent', border:'none',
+                        textAlign:'left', cursor: isCurrent ? 'default' : 'pointer',
+                        fontSize:13, color: isCurrent ? 'var(--ink)' : 'var(--ink-2)',
+                        fontWeight: isCurrent ? 600 : 400,
+                      }}>
+                      <span aria-hidden="true" className="mono dim-2" style={{fontSize:10}}>{isCurrent ? '▶' : '·'}</span>
+                      <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{p.title}</span>
+                      <span className="mono dim-2" style={{fontSize:10}}>{p.author}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div style={{display:'flex', justifyContent:'center'}}>
+            <button type="button" className="btn btn-gold" onClick={() => setPostId(null)}
+              style={{padding:'12px 32px'}}>
+              목록으로 돌아가기
+            </button>
+          </div>
+        </nav>
       </div>
     </article>
   );
