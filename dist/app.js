@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.000",
+    version: "00.294.001",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -5176,7 +5176,7 @@
     );
   };
   var Nav2 = ({ route, go, user, onLogout }) => {
-    var _a, _b, _c;
+    var _a, _b;
     const navL = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).nav || {};
     const [mobileOpen, setMobileOpen] = React.useState(false);
     const [openMega, setOpenMega] = React.useState(null);
@@ -5264,10 +5264,22 @@
       { key: "community", label: navL.community || "\uAD11\uC7A5", isMega: "community" }
     ];
     const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : user ? 10 : 0;
-    const communityBoards = (((_c = window.BGNJ_STORES) == null ? void 0 : _c.categories) || []).filter((c) => {
-      var _a2;
-      return c.boardType === "community" && userLevel >= ((_a2 = c.minLevel) != null ? _a2 : 0);
-    });
+    const [catVersion, setCatVersion] = React.useState(0);
+    React.useEffect(() => {
+      const onCats = () => setCatVersion((v) => v + 1);
+      window.addEventListener("bgnj-categories-refresh", onCats);
+      return () => window.removeEventListener("bgnj-categories-refresh", onCats);
+    }, []);
+    const communityBoards = React.useMemo(
+      () => {
+        var _a2;
+        return (((_a2 = window.BGNJ_STORES) == null ? void 0 : _a2.categories) || []).filter((c) => {
+          var _a3;
+          return c.boardType === "community" && userLevel >= ((_a3 = c.minLevel) != null ? _a3 : 0);
+        });
+      },
+      [userLevel, catVersion]
+    );
     const goBoard = (boardId) => {
       try {
         sessionStorage.setItem("bgnj_pending_board_id", boardId);
@@ -8268,7 +8280,13 @@
   var POSTS_PER_PAGE_DEFAULT = 10;
   var CommunityPage = ({ go, postId, setPostId, user }) => {
     const userLevel = useUserLevel(user);
-    const categories = React.useMemo(() => getCategoriesForBoard("community"), [postId]);
+    const [catVersion, setCatVersion] = React.useState(0);
+    React.useEffect(() => {
+      const onCats = () => setCatVersion((v) => v + 1);
+      window.addEventListener("bgnj-categories-refresh", onCats);
+      return () => window.removeEventListener("bgnj-categories-refresh", onCats);
+    }, []);
+    const categories = React.useMemo(() => getCategoriesForBoard("community"), [postId, catVersion]);
     const [refreshKey, setRefreshKey] = React.useState(0);
     const [tab, setTab] = React.useState("all");
     const [activePrefix, setActivePrefix] = React.useState("");
@@ -9542,16 +9560,7 @@
       setCommentsList(next);
       onRefresh == null ? void 0 : onRefresh();
     };
-    return /* @__PURE__ */ React.createElement("article", { className: "section post-read" }, /* @__PURE__ */ React.createElement("div", { className: "container post-read-container" }, /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn-ghost",
-        onClick: () => setPostId(null),
-        style: { marginBottom: 32, color: "var(--ink-2)", fontSize: 12, letterSpacing: "0.1em" }
-      },
-      "\u2190 \uBAA9\uB85D\uC73C\uB85C"
-    ), /* @__PURE__ */ React.createElement("header", { style: { borderBottom: "1px solid var(--line-2)", paddingBottom: 32, marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, post.category), post.hot && /* @__PURE__ */ React.createElement("span", { className: "badge" }, "HOT"), post._userCreated && /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, "\uC0C8 \uAE00")), /* @__PURE__ */ React.createElement("h1", { className: "post-title", style: {
+    return /* @__PURE__ */ React.createElement("article", { className: "section post-read" }, /* @__PURE__ */ React.createElement("div", { className: "container post-read-container" }, /* @__PURE__ */ React.createElement("div", { className: "post-back-bar" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn post-back-btn", onClick: () => setPostId(null) }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 16, lineHeight: 1 } }, "\u2190"), /* @__PURE__ */ React.createElement("span", null, "\uBAA9\uB85D\uC73C\uB85C"), post.category && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2 post-back-board" }, post.category))), /* @__PURE__ */ React.createElement("header", { style: { borderBottom: "1px solid var(--line-2)", paddingBottom: 32, marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, post.category), post.hot && /* @__PURE__ */ React.createElement("span", { className: "badge" }, "HOT"), post._userCreated && /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, "\uC0C8 \uAE00")), /* @__PURE__ */ React.createElement("h1", { className: "post-title", style: {
       fontFamily: "var(--font-display)",
       // v00.244 — PC 44 → 26 (~60% 사용자 요청). 모바일 도 28→22 동반 축소.
       // 게시글 본문(17px) 와 위계 균형: 제목 26 ÷ 본문 17 ≈ 1.5x.
@@ -14356,6 +14365,10 @@
                 allowCommentWrite: c.allow_comment_write === 0 ? false : true
               };
             });
+            try {
+              window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
+            } catch (e) {
+            }
           }
         })) == null ? void 0 : _I.catch) == null ? void 0 : _J.call(_I, () => {
         })

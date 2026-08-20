@@ -741,8 +741,16 @@ const Nav = ({ route, go, user, onLogout }) => {
   // 커뮤니티 메가메뉴: BGNJ_STORES.categories의 boardType=community + 사용자 등급 가시 카테고리
   const userLevel = window.BGNJ_USER_LEVEL ? window.BGNJ_USER_LEVEL(user) : (user ? 10 : 0);
   // v00.291.003 — 빈 껍데기 'column' 게시판을 D1 에서 삭제해 임시 필터를 제거했다.
-  const communityBoards = (window.BGNJ_STORES?.categories || [])
-    .filter((c) => c.boardType === 'community' && userLevel >= (c.minLevel ?? 0));
+  // v00.294 — 서버 게시판 목록이 늦게 도착해도 메가메뉴가 갱신되도록 구독.
+  const [catVersion, setCatVersion] = React.useState(0);
+  React.useEffect(() => {
+    const onCats = () => setCatVersion((v) => v + 1);
+    window.addEventListener('bgnj-categories-refresh', onCats);
+    return () => window.removeEventListener('bgnj-categories-refresh', onCats);
+  }, []);
+  const communityBoards = React.useMemo(() => (window.BGNJ_STORES?.categories || [])
+    .filter((c) => c.boardType === 'community' && userLevel >= (c.minLevel ?? 0)),
+    [userLevel, catVersion]);
 
   const goBoard = (boardId) => {
     try { sessionStorage.setItem('bgnj_pending_board_id', boardId); } catch {}

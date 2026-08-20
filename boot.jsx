@@ -546,6 +546,11 @@ const App = () => {
             allowCommentRead: c.allow_comment_read === 0 ? false : true,
             allowCommentWrite: c.allow_comment_write === 0 ? false : true,
           }));
+          // v00.294 — 스토어만 갈아끼우고 알리지 않아, 이미 마운트된 화면이
+          // 부팅 시점의 DEFAULT_CATEGORIES 스냅샷을 계속 쥐고 있었다.
+          // 증상: 광장 게시판 탭에 '자유·언론보도·한켠역사문화포럼' 이 아예 안 뜸
+          // (DEFAULT 의 minLevel 10 에 걸려 비로그인 사용자에게 숨겨짐).
+          try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}
         }
       })?.catch?.(() => {}),
     ]).catch(() => {});

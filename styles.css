@@ -3016,3 +3016,42 @@ body.cookie-pending .help-panel { display: none !important; }
   .post-nav-pair { grid-template-columns: 1fr !important; }
   .post-nav-pair button { text-align: left !important; }
 }
+
+/* === v00.294 — 글 상세 상단 '목록으로' ==================================
+   사용자 요청 '조금 더 잘 보이는 버튼 형식의 큰 메뉴'.
+   기존엔 12px btn-ghost 텍스트 링크라 글 제목에 묻혔다.
+   sticky 로 붙여 스크롤 중에도 빠져나갈 길이 항상 보이게 한다. */
+.post-back-bar {
+  position: sticky;
+  top: 72px;
+  z-index: 20;
+  margin: 0 0 28px;
+  padding: 8px 0;
+  background: linear-gradient(var(--bg) 70%, transparent);
+}
+.post-back-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 22px;
+  font-size: 14px; font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.post-back-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+.post-back-btn:hover .post-back-board { color: var(--on-primary); opacity: 0.75; }
+.post-back-board {
+  font-size: 11px;
+  padding-left: 10px;
+  border-left: 1px solid var(--line-2);
+  letter-spacing: 0.08em;
+}
+@media (max-width: 900px) {
+  .post-back-bar { top: 60px; }
+  .post-back-btn { width: 100%; justify-content: center; padding: 14px 18px; }
+}

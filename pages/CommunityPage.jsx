@@ -555,7 +555,15 @@ const POSTS_PER_PAGE_DEFAULT = 10;
 
 const CommunityPage = ({ go, postId, setPostId, user }) => {
   const userLevel = useUserLevel(user);
-  const categories = React.useMemo(() => getCategoriesForBoard("community"), [postId]);
+  // v00.294 — 게시판 목록은 부팅 시 DEFAULT 스냅샷 → 서버(D1) 응답으로 교체된다.
+  // 교체를 구독하지 않으면 첫 렌더의 DEFAULT 를 계속 써서 탭이 모자라게 보인다.
+  const [catVersion, setCatVersion] = React.useState(0);
+  React.useEffect(() => {
+    const onCats = () => setCatVersion((v) => v + 1);
+    window.addEventListener('bgnj-categories-refresh', onCats);
+    return () => window.removeEventListener('bgnj-categories-refresh', onCats);
+  }, []);
+  const categories = React.useMemo(() => getCategoriesForBoard("community"), [postId, catVersion]);
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [tab, setTab] = React.useState("all");
   const [activePrefix, setActivePrefix] = React.useState("");
@@ -1851,10 +1859,18 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
   return (
     <article className="section post-read">
       <div className="container post-read-container">
-        <button type="button" className="btn-ghost" onClick={() => setPostId(null)}
-          style={{marginBottom:32, color:'var(--ink-2)', fontSize:12, letterSpacing:'0.1em'}}>
-          ← 목록으로
-        </button>
+        {/* v00.294 — 사용자 요청 '목록으로가 더 잘 보이는 큰 버튼이었으면'.
+            btn-ghost 12px 텍스트 링크 → 테두리 있는 큼직한 버튼 + 게시판 이름 병기.
+            스크롤을 내려도 따라오도록 상단에 고정(sticky). */}
+        <div className="post-back-bar">
+          <button type="button" className="btn post-back-btn" onClick={() => setPostId(null)}>
+            <span aria-hidden="true" style={{fontSize:16, lineHeight:1}}>←</span>
+            <span>목록으로</span>
+            {post.category && (
+              <span className="mono dim-2 post-back-board">{post.category}</span>
+            )}
+          </button>
+        </div>
 
         <header style={{borderBottom:'1px solid var(--line-2)', paddingBottom:32, marginBottom:48}}>
           <div style={{display:'flex', gap:12, marginBottom:20, flexWrap:'wrap'}}>
