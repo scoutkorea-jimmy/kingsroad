@@ -366,7 +366,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.010",
+    version: "00.294.011",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -14373,6 +14373,22 @@
     }));
   };
   var VERSION_POLL_MS = 5 * 60 * 1e3;
+  var AUTO_RELOAD_KEY = "bgnj_auto_reloaded_version";
+  var _safeToAutoReload = () => {
+    try {
+      if (document.querySelector('[role="dialog"]')) return false;
+      const a = document.activeElement;
+      if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.isContentEditable)) return false;
+      for (const el of document.querySelectorAll("input, textarea")) {
+        if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") continue;
+        if (String(el.value || "").trim()) return false;
+      }
+      return true;
+    } catch (_e) {
+      console.warn("[bgnj] \uC790\uB3D9 \uC0C8\uB85C\uACE0\uCE68 \uC548\uC804 \uD310\uC815 \uC2E4\uD328 \u2014 \uBC30\uB108\uB85C \uB300\uCCB4 (boot.jsx)", _e);
+      return false;
+    }
+  };
   var UPDATE_DISMISSED_KEY = "bgnj_update_dismissed_version";
   var VersionUpdateBanner = () => {
     var _a;
@@ -14394,7 +14410,25 @@
           } catch (_e) {
             console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (boot.jsx:264)", _e);
           }
-          if (!cancelled && v && v !== current && v !== dismissed) setLatest(j);
+          if (cancelled || !v || v === current || v === dismissed) return;
+          let autoDone = "";
+          try {
+            autoDone = sessionStorage.getItem(AUTO_RELOAD_KEY) || "";
+          } catch (_e) {
+            console.warn("[bgnj] \uC790\uB3D9 \uC0C8\uB85C\uACE0\uCE68 \uAE30\uB85D \uC77D\uAE30 \uC2E4\uD328 (boot.jsx)", _e);
+          }
+          if (autoDone !== v && _safeToAutoReload()) {
+            try {
+              sessionStorage.setItem(AUTO_RELOAD_KEY, v);
+            } catch (_e) {
+              console.warn("[bgnj] \uC790\uB3D9 \uC0C8\uB85C\uACE0\uCE68 \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328 (boot.jsx)", _e);
+            }
+            const u = new URL(window.location.href);
+            u.searchParams.set("_v", v);
+            window.location.replace(u.toString());
+            return;
+          }
+          setLatest(j);
         } catch (_e) {
           console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (boot.jsx:266)", _e);
         }

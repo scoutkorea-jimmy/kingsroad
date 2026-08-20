@@ -238,8 +238,35 @@ const GlobalErrorToast = () => {
 // v00.214 — 새 빌드 감지 배너. 매 커밋 마다 /version.json 이 갱신됨 (pre-commit hook).
 // 동작: 5분마다 + 탭 visibility=visible 전환 시 fetch. 다른 버전이면 우상단 배너 노출.
 // '지금 새로고침' 클릭 시 cache-bust reload (location.href + ?_=now).
-// 자동 reload 는 의도적으로 안 함 — 사용자 form 입력 등 중간 상태 보존.
+// v00.294.011 — 사용자 보고 '사이트를 열면 과거 사이트/임시 문구가 보인다'.
+//   root cause: GitHub Pages 가 **index.html 에도** `Cache-Control: max-age=600` 을 준다.
+//   자산은 `?v=` 로 캐시버스팅하지만 그 `?v=` 를 적어 둔 HTML 자체가 10분간 캐시되므로,
+//   재방문자는 최대 10분 동안 **옛 HTML → 옛 번들 → 옛 화면** 을 통째로 본다.
+//   Pages 는 응답 헤더를 못 바꾸므로 클라이언트에서 끊어야 한다.
+//   기존엔 배너로 '새로고침' 을 권하기만 해서, 누르기 전까지는 옛 사이트가 그대로였다.
+//   → 안전할 때(작성 중이 아님)는 자동으로 한 번 새로고침한다. 아니면 종전대로 배너.
 const VERSION_POLL_MS = 5 * 60 * 1000; // 5분
+const AUTO_RELOAD_KEY = 'bgnj_auto_reloaded_version';
+
+// 자동 새로고침이 사용자 작업을 날리면 안 된다. 하나라도 걸리면 배너로 물러선다.
+const _safeToAutoReload = () => {
+  try {
+    // 모달(글쓰기·칼럼·확인창 등)이 떠 있으면 작성 중일 수 있다.
+    if (document.querySelector('[role="dialog"]')) return false;
+    // 입력 중이면 건드리지 않는다.
+    const a = document.activeElement;
+    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return false;
+    // 내용이 담긴 입력이 하나라도 있으면 작성 중으로 본다.
+    for (const el of document.querySelectorAll('input, textarea')) {
+      if (el.type === 'hidden' || el.type === 'checkbox' || el.type === 'radio') continue;
+      if (String(el.value || '').trim()) return false;
+    }
+    return true;
+  } catch (_e) {
+    console.warn('[bgnj] 자동 새로고침 안전 판정 실패 — 배너로 대체 (boot.jsx)', _e);
+    return false;
+  }
+};
 // v00.289 — 우상단 큰 카드 → 좌하단 소형 토스트로 강등.
 // 이유: 데스크톱에선 히어로를, 모바일에선 로고를 덮고 있었다(첫 화면의 절반이 안내문).
 // 우하단은 이미 오류 토스트(bottom:16/right:16)와 scroll-top FAB(bottom:28/right:24)가 쓰고 있어 좌하단으로.
@@ -262,7 +289,21 @@ const VersionUpdateBanner = () => {
         // '나중에' 로 닫은 버전은 다시 띄우지 않는다. 더 새 버전이 나오면 다시 뜬다.
         let dismissed = '';
         try { dismissed = localStorage.getItem(UPDATE_DISMISSED_KEY) || ''; } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (boot.jsx:264)', _e); }
-        if (!cancelled && v && v !== current && v !== dismissed) setLatest(j);
+        if (cancelled || !v || v === current || v === dismissed) return;
+        // 같은 버전으로 이미 한 번 자동 새로고침했다면 다시 하지 않는다 —
+        // CDN 이 아직 옛 HTML 을 주는 상황에서 무한 새로고침이 되는 것을 막는다.
+        let autoDone = '';
+        try { autoDone = sessionStorage.getItem(AUTO_RELOAD_KEY) || ''; }
+        catch (_e) { console.warn('[bgnj] 자동 새로고침 기록 읽기 실패 (boot.jsx)', _e); }
+        if (autoDone !== v && _safeToAutoReload()) {
+          try { sessionStorage.setItem(AUTO_RELOAD_KEY, v); }
+          catch (_e) { console.warn('[bgnj] 자동 새로고침 기록 저장 실패 (boot.jsx)', _e); }
+          const u = new URL(window.location.href);
+          u.searchParams.set('_v', v);
+          window.location.replace(u.toString());
+          return;
+        }
+        setLatest(j);
       } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (boot.jsx:266)', _e); }
     };
     check(); // 진입 즉시 1회
