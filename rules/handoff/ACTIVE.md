@@ -248,3 +248,43 @@
 - [ ] 칼럼·커뮤니티 페이지 (읽는 화면 — 우선순위 높음)
 - [ ] 답사·배움·한켠 페이지
 - [ ] `styles.css` font-size 103개 px 하드코딩 → `--fs-*` 토큰 치환
+
+---
+
+## 8. 광장 개편 + 대비 정합 (v00.294.000 ~ .001 — 완료·배포됨)
+
+사용자 지시 4건. 전부 반영 후 push → GitHub Pages 배포 확인(v00.294.001).
+
+### ① 커뮤니티 → 광장
+메뉴·푸터·홈 섹션·히어로 CTA/스탯. **코드만 고치면 안 된다** — 히어로 문구는
+D1 `site_content_kv.hero` 에 저장돼 있어 서버 값이 코드 기본값을 이긴다. 둘 다 갱신했다.
+내비 라벨은 서버에 `nav` 섹션이 없어(=null) 코드 폴백이 이긴다.
+
+### ② 글 상세 — 돌아올 길
+상단 `← 목록으로` 12px 텍스트 링크 하나뿐이라 긴 글에서 화면 밖으로 밀렸다.
+- 상단: 테두리 버튼(14px) + 게시판 이름 병기 + **sticky**. 모바일 전폭.
+- 하단: 이전/다음 글 + 주변 글 5개 + `목록으로 돌아가기`. 목록의 정렬(`filtered`)을 그대로 물려준다.
+
+### ③ 게시판 정리 (D1 remote 직접 반영)
+사전 실사: `SELECT category_id, COUNT(*) FROM posts GROUP BY category_id` → question·info **0건**.
+- `question`(질문) 삭제 → **`walk-independence` '걸어서독립운동속으로'** 신설(여행 감상문, order 2, 읽기 누구나 / 쓰기 로그인 회원)
+- `info`(정보) 폐쇄
+- 첨부: **개당 10MB → 최대 3개, 합계 10MB**. 이전 규칙은 최대 30MB 까지 올라갔다.
+
+최종 게시판: `notice` · `free` · `walk-independence` · `press` · `hangyeon-forum`
+
+### ④ 검정-위-검정 전면 검토
+root cause 는 **v00.293 에서 `--primary` 를 옐로우 → 잉크(#1B1C1F)로 뒤집은 것**.
+- **다크모드 오버라이드 누락** — 다크에서 `--primary` 가 배경(#0F172A)과 같은 먹색이라
+  CTA·FAB·알림뱃지·`.gold` 텍스트가 통째로 안 보였다. 다크 전용 `--primary`/`--on-primary`/`--focus` 신설.
+- **옛 옐로우 전제의 하드코딩** — ErrorPages 로그인 CTA·브랜드 뱃지 `#0F172A`(사용자 스크린샷), Shell 알림 뱃지 `var(--bg)`.
+- **`--on-scrim` 토큰 신설** — 어두운 스크림 위 컨트롤(슬라이더 화살표·캡션·썸네일 제거/순서)이 라이트에서 검정 위 검정.
+- AdminDesignHub 의 죽은 `var(--gold)`(v00.209 제거) 4곳.
+- 토큰 해석 기반 대비 검사(styles.css + 인라인 style 전수) → **3:1 미만 0건**.
+
+### 덤으로 잡은 선재 결함 — 게시판 탭 유실
+boot 이 서버 목록으로 `BGNJ_STORES.categories` 를 갈아끼우며 **아무에게도 알리지 않았다.**
+이미 마운트된 화면은 부팅 시점 `DEFAULT_CATEGORIES` 스냅샷(`useMemo` deps=`[postId]`)을 계속 썼다.
+증상: 비로그인 광장 탭에 자유·언론보도·한켠포럼이 **아예 안 뜸**(DEFAULT 의 minLevel 10 에 걸림).
+→ `bgnj-categories-refresh` dispatch + CommunityPage·Shell 구독.
+**내 변경 전부터 있던 결함**이고, 게시판을 정리하며 드러났을 뿐이다.
