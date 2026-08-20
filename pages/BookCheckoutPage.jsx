@@ -150,7 +150,9 @@ const BookPage = ({ go, cart, setCart, user }) => {
     );
   }
 
-  const price = version === "KR" ? (book.priceKR || 0) : (book.priceEN || 0);
+  // v00.295 — 장바구니·주문에 담기는 값은 '정가' 가 아니라 '판매가' 다.
+  const priceInfo = window.BGNJ_BOOK_PRICE(book, version);
+  const price = priceInfo.sale;
 
   const addToCart = () => {
     // v00.154 — cart 에 bookId 포함. CheckoutPage 가 책 lookup 하여 다권 cart-flow 지원.
@@ -323,8 +325,8 @@ const BookPage = ({ go, cart, setCart, user }) => {
                 const _sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
                 const _vis = (_sc.bookFieldVisibility || {})[book.id] || (_sc.bookFieldVisibility || {})[String(book.id)] || {};
                 const versions = [];
-                if (Number(book.priceKR) > 0 && _vis.priceKR !== false) versions.push({ k: 'KR', label: '국문판', sub: 'Korean', price: book.priceKR });
-                if (Number(book.priceEN) > 0 && _vis.priceEN !== false) versions.push({ k: 'EN', label: '영문판', sub: 'English', price: book.priceEN });
+                if (Number(book.priceKR) > 0 && _vis.priceKR !== false) versions.push({ k: 'KR', label: '국문판', sub: 'Korean', ...window.BGNJ_BOOK_PRICE(book, 'KR') });
+                if (Number(book.priceEN) > 0 && _vis.priceEN !== false) versions.push({ k: 'EN', label: '영문판', sub: 'English', ...window.BGNJ_BOOK_PRICE(book, 'EN') });
                 if (versions.length === 0) return <p className="dim" style={{fontSize:13}}>판매 준비 중입니다.</p>;
                 return (
                   <div style={{display:'grid', gridTemplateColumns: versions.length === 1 ? '1fr' : '1fr 1fr', gap:12}}>
@@ -340,7 +342,14 @@ const BookPage = ({ go, cart, setCart, user }) => {
                         }}>
                         <div className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: version === v.k ? 'var(--primary)' : 'var(--ink-3)'}}>{v.sub.toUpperCase()}</div>
                         <div className="ko-serif" style={{fontSize:20, marginTop:4}}>{v.label}</div>
-                        <div className="gold-2 ko-serif" style={{fontSize:20, marginTop:8}}>{window.BGNJ_FMT.won(v.price)}</div>
+                        {/* v00.295 — 세일 중이면 정가를 취소선으로 함께 보인다. 아니면 가격 한 줄 그대로. */}
+                        <div style={{marginTop:8, display:'flex', alignItems:'baseline', gap:8, flexWrap:'wrap'}}>
+                          {v.isSale && (
+                            <span className="mono dim-2" style={{fontSize:12, textDecoration:'line-through'}}>{window.BGNJ_FMT.won(v.list)}</span>
+                          )}
+                          <span className="gold-2 ko-serif" style={{fontSize:20}}>{window.BGNJ_FMT.won(v.sale)}</span>
+                          {v.isSale && <span className="mono" style={{fontSize:11, color:'var(--ink-2)'}}>{v.percent}% OFF</span>}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -359,9 +368,17 @@ const BookPage = ({ go, cart, setCart, user }) => {
             </div>
 
             {/* total */}
-            <div style={{padding:'24px 0', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24}}>
-              <span className="mono dim-2" style={{letterSpacing:'0.2em', fontSize:11}}>TOTAL</span>
-              <span className="ko-serif gold-2" style={{fontSize:36}}>{window.BGNJ_FMT.won(price * qty)}</span>
+            <div style={{padding:'24px 0', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)', marginBottom:24}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <span className="mono dim-2" style={{letterSpacing:'0.2em', fontSize:11}}>TOTAL</span>
+                <span className="ko-serif gold-2" style={{fontSize:36}}>{window.BGNJ_FMT.won(price * qty)}</span>
+              </div>
+              {/* v00.295 — 택배비를 따로 받지 않는다. 값을 치르기 전에 알아야 하는 정보라 가격 바로 아래 둔다. */}
+              {window.BGNJ_BOOK_SALE().shippingIncluded && (
+                <div className="dim" style={{fontSize:12, marginTop:8, textAlign:'right', wordBreak:'keep-all'}}>
+                  택배비 별도 없음 — 책값에 포함된 금액입니다.
+                </div>
+              )}
             </div>
 
             <div style={{display:'flex', gap:12}}>
@@ -475,9 +492,11 @@ const CheckoutPage = ({ go, cart, user }) => {
   }, null);
   const version = cart ? cart.version : "KR";
   const qty = cart ? cart.qty : 1;
-  const unit = book ? (version === "EN" ? (book.priceEN || 0) : (book.priceKR || 0)) : 0;
+  // v00.295 — 정가가 아니라 판매가(세일 반영)로 계산한다. 배송비는 책값에 포함이라 0.
+  const unitInfo = book ? window.BGNJ_BOOK_PRICE(book, version) : { list: 0, sale: 0, isSale: false, percent: 0 };
+  const unit = unitInfo.sale;
   const subtotal = unit * qty;
-  const shipping = subtotal >= 30000 ? 0 : 3000;
+  const shipping = window.BGNJ_BOOK_SHIPPING(subtotal);
   const total = subtotal + shipping;
 
   const bank = G.call(() => window.BGNJ_LECTURES?.getBankAccount?.() || window.BGNJ_STORES?.bankAccount, {});
@@ -586,7 +605,7 @@ const CheckoutPage = ({ go, cart, user }) => {
             </div>
             <div style={{display:'flex', justifyContent:'space-between', marginBottom:8}}>
               <span className="dim">배송비</span>
-              <span>{submittedOrder.shipping === 0 ? '무료' : window.BGNJ_FMT.won(submittedOrder.shipping)}</span>
+              <span>{submittedOrder.shipping === 0 ? '책값에 포함' : window.BGNJ_FMT.won(submittedOrder.shipping)}</span>
             </div>
             <div style={{display:'flex', justifyContent:'space-between', paddingTop:12, borderTop:'1px solid var(--line)', marginTop:6}}>
               <span>결제 금액</span>
@@ -738,6 +757,11 @@ const CheckoutPage = ({ go, cart, user }) => {
                 <div>
                   <div className="ko-serif" style={{fontSize:17, marginBottom:4}}>『{book.title}』</div>
                   <div className="dim-2 mono" style={{fontSize:11}}>{version === "KR" ? "국문판" : "영문판"} · {qty}권</div>
+                  {unitInfo.isSale && (
+                    <div className="dim-2 mono" style={{fontSize:11, marginTop:6}}>
+                      정가 <span style={{textDecoration:'line-through'}}>{window.BGNJ_FMT.won(unitInfo.list * qty)}</span> · {unitInfo.percent}% 할인
+                    </div>
+                  )}
                   <div className="gold ko-serif" style={{fontSize:16, marginTop:8}}>{window.BGNJ_FMT.won(subtotal)}</div>
                 </div>
               </div>
@@ -747,7 +771,8 @@ const CheckoutPage = ({ go, cart, user }) => {
               </div>
               <div style={{display:'flex', justifyContent:'space-between', padding:'10px 0', color:'var(--ink-2)'}}>
                 <span>배송비</span>
-                <span>{shipping === 0 ? "무료" : window.BGNJ_FMT.won(shipping)}</span>
+                {/* v00.295 — 택배비를 따로 받지 않는다. '무료' 보다 '책값에 포함' 이 사실에 가깝다. */}
+                <span>{shipping === 0 ? (window.BGNJ_BOOK_SALE().shippingIncluded ? '책값에 포함' : '무료') : window.BGNJ_FMT.won(shipping)}</span>
               </div>
               <div style={{display:'flex', justifyContent:'space-between', padding:'16px 0', borderTop:'1px solid var(--line)', marginTop:8}}>
                 <span>결제 금액</span>

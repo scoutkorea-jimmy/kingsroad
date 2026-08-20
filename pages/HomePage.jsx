@@ -348,7 +348,16 @@ const BookGridSection = ({ go, dataTick, text }) => {
                   : <div className="home-book-cover home-book-cover--none"><span className="mono">NO COVER</span></div>}
                 <h4 className="home-book-title">{b.title}</h4>
                 {b.subtitle && <div className="home-book-sub">{b.subtitle}</div>}
-                {b.priceKR > 0 && <div className="home-book-price mono">{won(b.priceKR)}</div>}
+                {/* v00.295 — 세일 중이면 정가 취소선 + 판매가. 아니면 종전대로 한 줄. */}
+                {b.priceKR > 0 && (() => {
+                  const pr = window.BGNJ_BOOK_PRICE(b, 'KR');
+                  return (
+                    <div className="home-book-price mono">
+                      {pr.isSale && <span className="dim-2" style={{textDecoration:'line-through', marginRight:6}}>{won(pr.list)}</span>}
+                      {won(pr.sale)}
+                    </div>
+                  );
+                })()}
               </article>
             ))}
           </div>
@@ -524,7 +533,7 @@ const HomePage = ({ go }) => {
   // v00.294.015 — 사용자 요청: 광장 글도 '최근 기록' 에 올린다.
   // 다만 전부 올리면 자유 게시판(75편)이 칼럼·답사를 통째로 밀어낸다.
   // '읽을거리' 성격의 게시판만 골라 넣는다 — 늘리려면 이 배열에 id 한 줄 추가.
-  const FEED_BOARD_IDS = ['walk-independence']; // 걸어서독립운동속으로
+  const FEED_BOARD_IDS = ['walk-independence']; // 신지식 청년사관 (id 는 v00.294 신설 당시 그대로)
   const feedPosts = React.useMemo(() => (
     G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.())
       .filter((p) => p && FEED_BOARD_IDS.includes(p.categoryId))

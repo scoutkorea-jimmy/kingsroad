@@ -366,8 +366,8 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.015",
-    build: "2026.08.20",
+    version: "00.295.000",
+    build: "2026.08.21",
     channel: "preview"
   };
   try {
@@ -1296,6 +1296,17 @@
       titleAccent: "\uACB0\uC81C",
       subtitle: ""
     },
+    // v00.295 — 도서 세일. 사용자 요청 '책은 모두 10% 세일 · 택배비는 책값에 포함'.
+    //   정가(price_kr)는 건드리지 않는다. enabled:false 로 끄면 원래 가격이 그대로 돌아온다.
+    //   excludeIds — 인터넷북(전자책)은 할인 불가. 제목에 '전자책' 이 들어가면 자동 제외되므로
+    //   보통은 비워 둬도 된다. 특정 책만 빼고 싶을 때 쓰는 칸.
+    bookSale: {
+      enabled: true,
+      percent: 10,
+      excludeIds: [],
+      shippingIncluded: true,
+      note: "\uD0DD\uBC30\uBE44 \uD3EC\uD568"
+    },
     // v00.162 — BookPage hero. 칼럼 페이지 패턴과 동일.
     bookIntro: {
       eyebrow: "BOOKS \xB7 \uBC45\uAE30\uB178\uC790 \uB3C4\uC11C",
@@ -1438,8 +1449,11 @@
   var DEFAULT_CATEGORIES = [
     { id: "notice", label: "\uACF5\uC9C0", boardType: "community", minLevel: 0, postMinLevel: 100, desc: "\uC6B4\uC601\uC9C4 \uACF5\uC9C0 (\uC77D\uAE30: \uB204\uAD6C\uB098 \xB7 \uC4F0\uAE30: \uAD00\uB9AC\uC790)" },
     { id: "free", label: "\uC790\uC720", boardType: "community", minLevel: 10, postMinLevel: 10, desc: "\uC790\uC720 \uAC8C\uC2DC\uD310 (\uC4F0\uAE30: \uD68C\uC6D0)" },
-    // v00.294 — 질문(0건) → '걸어서독립운동속으로'(여행 감상문) 로 교체, 정보(0건) 폐쇄.
-    { id: "walk-independence", label: "\uAC78\uC5B4\uC11C\uB3C5\uB9BD\uC6B4\uB3D9\uC18D\uC73C\uB85C", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "\uAC78\uC5B4\uC11C \uB9CC\uB098\uB294 \uB3C5\uB9BD\uC6B4\uB3D9\uC758 \uC790\uCDE8 \u2014 \uC5EC\uD589 \uAC10\uC0C1\uBB38 (\uC77D\uAE30: \uB204\uAD6C\uB098 \xB7 \uC4F0\uAE30: \uB85C\uADF8\uC778 \uD68C\uC6D0)" },
+    // v00.294 — 질문(0건) → 여행 감상문 게시판으로 교체, 정보(0건) 폐쇄.
+    // v00.295 — 사용자 요청으로 이름 정리. id 는 그대로 둔다(글·첨부 참조가 전부 따라와야 하므로).
+    //   '걸어서독립운동속으로' → '신지식 청년사관' · 폐쇄했던 정보 자리에 '국민사학자' 신설.
+    { id: "walk-independence", label: "\uC2E0\uC9C0\uC2DD \uCCAD\uB144\uC0AC\uAD00", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "\uAC78\uC5B4\uC11C \uB9CC\uB098\uB294 \uB3C5\uB9BD\uC6B4\uB3D9\uC758 \uC790\uCDE8 \u2014 \uC5EC\uD589 \uAC10\uC0C1\uBB38 (\uC77D\uAE30: \uB204\uAD6C\uB098 \xB7 \uC4F0\uAE30: \uB85C\uADF8\uC778 \uD68C\uC6D0)" },
+    { id: "national-historian", label: "\uAD6D\uBBFC\uC0AC\uD559\uC790", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "" },
     { id: "column", label: "\uCE7C\uB7FC", boardType: "column", minLevel: 0, postMinLevel: 100, desc: "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC (\uC4F0\uAE30: \uAD00\uB9AC\uC790)" }
   ];
   var DEFAULT_COMMUNITY_POSTS = [
@@ -1465,7 +1479,13 @@
   };
   var normalizeCommunityPost = (post) => {
     var _a, _b, _c;
-    const categoryId = post.categoryId || { "\uACF5\uC9C0": "notice", "\uC790\uC720": "free", "\uAC78\uC5B4\uC11C\uB3C5\uB9BD\uC6B4\uB3D9\uC18D\uC73C\uB85C": "walk-independence" }[post.category] || "free";
+    const categoryId = post.categoryId || {
+      "\uACF5\uC9C0": "notice",
+      "\uC790\uC720": "free",
+      "\uC2E0\uC9C0\uC2DD \uCCAD\uB144\uC0AC\uAD00": "walk-independence",
+      "\uAD6D\uBBFC\uC0AC\uD559\uC790": "national-historian",
+      "\uAC78\uC5B4\uC11C\uB3C5\uB9BD\uC6B4\uB3D9\uC18D\uC73C\uB85C": "walk-independence"
+    }[post.category] || "free";
     const category = post.category || (((_a = DEFAULT_CATEGORIES.find((item) => item.id === categoryId)) == null ? void 0 : _a.label) || "\uC790\uC720");
     return {
       ...post,
@@ -3224,7 +3244,7 @@
         "",
         "--- \uC8FC\uBB38 \uC0C1\uD488 ----------------------------",
         `\u300E${this.getOrderBookTitle(order)}\u300F ${order.version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310"} \xD7 ${order.qty}    ${formatPrice(order.subtotal)}`,
-        `\uBC30\uC1A1\uBE44                                ${order.shipping === 0 ? "\uBB34\uB8CC" : formatPrice(order.shipping)}`,
+        `\uBC30\uC1A1\uBE44                                ${order.shipping === 0 ? "\uCC45\uAC12\uC5D0 \uD3EC\uD568" : formatPrice(order.shipping)}`,
         "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
         `\uD569\uACC4                              ${formatPrice(order.total)}`,
         "",
@@ -4263,6 +4283,31 @@
   } catch (_e) {
     console.warn("[bgnj] data.js:3304 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
   }
+  window.BGNJ_BOOK_SALE = function() {
+    var _a, _b;
+    const d = DEFAULT_SITE_CONTENT.bookSale;
+    try {
+      const o = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).bookSale;
+      return o && typeof o === "object" ? { ...d, ...o } : d;
+    } catch (_e) {
+      console.warn("[bgnj] \uB3C4\uC11C \uC138\uC77C \uC124\uC815 \uC77D\uAE30 \uC2E4\uD328 \u2014 \uCF54\uB4DC \uAE30\uBCF8\uAC12\uC73C\uB85C \uC9C4\uD589 (data.js)", _e);
+      return d;
+    }
+  };
+  window.BGNJ_BOOK_PRICE = function(book, version) {
+    const list = Number((version === "EN" ? book == null ? void 0 : book.priceEN : book == null ? void 0 : book.priceKR) || 0);
+    const cfg = window.BGNJ_BOOK_SALE();
+    const isEbook = String((book == null ? void 0 : book.title) || "").includes("\uC804\uC790\uCC45");
+    const excluded = !cfg.enabled || !(list > 0) || isEbook || Array.isArray(cfg.excludeIds) && cfg.excludeIds.some((id) => String(id) === String(book == null ? void 0 : book.id));
+    if (excluded) return { list, sale: list, isSale: false, percent: 0 };
+    const pct = Number(cfg.percent) || 0;
+    const sale = Math.floor(list * (100 - pct) / 100 / 10) * 10;
+    return { list, sale, isSale: sale < list, percent: pct };
+  };
+  window.BGNJ_BOOK_SHIPPING = function(subtotal) {
+    if (window.BGNJ_BOOK_SALE().shippingIncluded) return 0;
+    return Number(subtotal || 0) >= 3e4 ? 0 : 3e3;
+  };
   window.BGNJ_BOOKS = {
     _books: [],
     // v00.074 audit fix — DB 컬럼 (cover_key / pdf_key / is_primary / sort_order) 을 정확히 읽음.
@@ -7334,7 +7379,10 @@
       ) : /* @__PURE__ */ React.createElement("div", { className: "home-book-cover home-book-cover--none" }, /* @__PURE__ */ React.createElement("span", { className: "mono" }, "NO COVER")),
       /* @__PURE__ */ React.createElement("h4", { className: "home-book-title" }, b.title),
       b.subtitle && /* @__PURE__ */ React.createElement("div", { className: "home-book-sub" }, b.subtitle),
-      b.priceKR > 0 && /* @__PURE__ */ React.createElement("div", { className: "home-book-price mono" }, won(b.priceKR))
+      b.priceKR > 0 && (() => {
+        const pr = window.BGNJ_BOOK_PRICE(b, "KR");
+        return /* @__PURE__ */ React.createElement("div", { className: "home-book-price mono" }, pr.isSale && /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { textDecoration: "line-through", marginRight: 6 } }, won(pr.list)), won(pr.sale));
+      })()
     ))))));
   };
   var HomePage = ({ go }) => {
@@ -11436,7 +11484,8 @@
     if (!book) {
       return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 560, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 14, color: "var(--ink-2)" } }, "\uCC45 \uC815\uBCF4\uB97C \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4\u2026")));
     }
-    const price = version === "KR" ? book.priceKR || 0 : book.priceEN || 0;
+    const priceInfo = window.BGNJ_BOOK_PRICE(book, version);
+    const price = priceInfo.sale;
     const addToCart = () => {
       setCart({ bookId: book.id, version, qty, price });
       go("checkout");
@@ -11525,8 +11574,8 @@
       const _sc = ((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {};
       const _vis = (_sc.bookFieldVisibility || {})[book.id] || (_sc.bookFieldVisibility || {})[String(book.id)] || {};
       const versions = [];
-      if (Number(book.priceKR) > 0 && _vis.priceKR !== false) versions.push({ k: "KR", label: "\uAD6D\uBB38\uD310", sub: "Korean", price: book.priceKR });
-      if (Number(book.priceEN) > 0 && _vis.priceEN !== false) versions.push({ k: "EN", label: "\uC601\uBB38\uD310", sub: "English", price: book.priceEN });
+      if (Number(book.priceKR) > 0 && _vis.priceKR !== false) versions.push({ k: "KR", label: "\uAD6D\uBB38\uD310", sub: "Korean", ...window.BGNJ_BOOK_PRICE(book, "KR") });
+      if (Number(book.priceEN) > 0 && _vis.priceEN !== false) versions.push({ k: "EN", label: "\uC601\uBB38\uD310", sub: "English", ...window.BGNJ_BOOK_PRICE(book, "EN") });
       if (versions.length === 0) return /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13 } }, "\uD310\uB9E4 \uC900\uBE44 \uC911\uC785\uB2C8\uB2E4.");
       return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: versions.length === 1 ? "1fr" : "1fr 1fr", gap: 12 } }, versions.map((v) => /* @__PURE__ */ React.createElement(
         "button",
@@ -11543,9 +11592,9 @@
         },
         /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: version === v.k ? "var(--primary)" : "var(--ink-3)" } }, v.sub.toUpperCase()),
         /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 20, marginTop: 4 } }, v.label),
-        /* @__PURE__ */ React.createElement("div", { className: "gold-2 ko-serif", style: { fontSize: 20, marginTop: 8 } }, window.BGNJ_FMT.won(v.price))
+        /* @__PURE__ */ React.createElement("div", { style: { marginTop: 8, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" } }, v.isSale && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 12, textDecoration: "line-through" } }, window.BGNJ_FMT.won(v.list)), /* @__PURE__ */ React.createElement("span", { className: "gold-2 ko-serif", style: { fontSize: 20 } }, window.BGNJ_FMT.won(v.sale)), v.isSale && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 11, color: "var(--ink-2)" } }, v.percent, "% OFF"))
       )));
-    })()), /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.25em", marginBottom: 12, textTransform: "uppercase" } }, "\uC218\uB7C9"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 0, border: "1px solid var(--line-2)", width: "fit-content" } }, /* @__PURE__ */ React.createElement("button", { style: { width: 44, height: 44, color: "var(--ink-2)", borderRight: "1px solid var(--line-2)" }, onClick: () => setQty(Math.max(1, qty - 1)) }, "\u2212"), /* @__PURE__ */ React.createElement("div", { style: { width: 60, textAlign: "center" }, className: "ko-serif" }, qty), /* @__PURE__ */ React.createElement("button", { style: { width: 44, height: 44, color: "var(--ink-2)", borderLeft: "1px solid var(--line-2)" }, onClick: () => setQty(qty + 1) }, "+"))), /* @__PURE__ */ React.createElement("div", { style: { padding: "24px 0", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { letterSpacing: "0.2em", fontSize: 11 } }, "TOTAL"), /* @__PURE__ */ React.createElement("span", { className: "ko-serif gold-2", style: { fontSize: 36 } }, window.BGNJ_FMT.won(price * qty))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12 } }, /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold btn-block", onClick: addToCart }, "\uBC14\uB85C \uAD6C\uB9E4"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-block" }, "\uC7A5\uBC14\uAD6C\uB2C8")), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 60, borderTop: "1px solid var(--line-2)", paddingTop: 40 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 0, borderBottom: "1px solid var(--line)", marginBottom: 32 } }, ["\uC18C\uAC1C", "\uBAA9\uCC28", "\uC800\uC790", "\uB9AC\uBDF0"].map((t) => /* @__PURE__ */ React.createElement(
+    })()), /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.25em", marginBottom: 12, textTransform: "uppercase" } }, "\uC218\uB7C9"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 0, border: "1px solid var(--line-2)", width: "fit-content" } }, /* @__PURE__ */ React.createElement("button", { style: { width: 44, height: 44, color: "var(--ink-2)", borderRight: "1px solid var(--line-2)" }, onClick: () => setQty(Math.max(1, qty - 1)) }, "\u2212"), /* @__PURE__ */ React.createElement("div", { style: { width: 60, textAlign: "center" }, className: "ko-serif" }, qty), /* @__PURE__ */ React.createElement("button", { style: { width: 44, height: 44, color: "var(--ink-2)", borderLeft: "1px solid var(--line-2)" }, onClick: () => setQty(qty + 1) }, "+"))), /* @__PURE__ */ React.createElement("div", { style: { padding: "24px 0", borderTop: "1px solid var(--line)", borderBottom: "1px solid var(--line)", marginBottom: 24 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { letterSpacing: "0.2em", fontSize: 11 } }, "TOTAL"), /* @__PURE__ */ React.createElement("span", { className: "ko-serif gold-2", style: { fontSize: 36 } }, window.BGNJ_FMT.won(price * qty))), window.BGNJ_BOOK_SALE().shippingIncluded && /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 12, marginTop: 8, textAlign: "right", wordBreak: "keep-all" } }, "\uD0DD\uBC30\uBE44 \uBCC4\uB3C4 \uC5C6\uC74C \u2014 \uCC45\uAC12\uC5D0 \uD3EC\uD568\uB41C \uAE08\uC561\uC785\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12 } }, /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold btn-block", onClick: addToCart }, "\uBC14\uB85C \uAD6C\uB9E4"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-block" }, "\uC7A5\uBC14\uAD6C\uB2C8")), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 60, borderTop: "1px solid var(--line-2)", paddingTop: 40 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 0, borderBottom: "1px solid var(--line)", marginBottom: 32 } }, ["\uC18C\uAC1C", "\uBAA9\uCC28", "\uC800\uC790", "\uB9AC\uBDF0"].map((t) => /* @__PURE__ */ React.createElement(
       "button",
       {
         key: t,
@@ -11596,9 +11645,10 @@
     }, null);
     const version = cart ? cart.version : "KR";
     const qty = cart ? cart.qty : 1;
-    const unit = book ? version === "EN" ? book.priceEN || 0 : book.priceKR || 0 : 0;
+    const unitInfo = book ? window.BGNJ_BOOK_PRICE(book, version) : { list: 0, sale: 0, isSale: false, percent: 0 };
+    const unit = unitInfo.sale;
     const subtotal = unit * qty;
-    const shipping = subtotal >= 3e4 ? 0 : 3e3;
+    const shipping = window.BGNJ_BOOK_SHIPPING(subtotal);
     const total = subtotal + shipping;
     const bank = G2.call(() => {
       var _a, _b, _c;
@@ -11635,7 +11685,7 @@
         display: "flex",
         justifyContent: "space-between",
         alignItems: "baseline"
-      } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uC785\uAE08 \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold ko-serif", style: { fontSize: 22 } }, window.BGNJ_FMT.won(submittedOrder.total))), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginTop: 10 } }, "\uC785\uAE08\uC790\uBA85\uC5D0 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, submittedOrder.recipient), " \uB610\uB294 \uC8FC\uBB38\uBC88\uD638 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, submittedOrder.orderNo), "\uB97C \uB0A8\uACA8 \uC8FC\uC138\uC694.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { textAlign: "left", marginBottom: 32, padding: 20 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 12 } }, "ORDER SUMMARY"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\u300E", book.title, "\u300F (", submittedOrder.version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", ") \xD7 ", submittedOrder.qty), /* @__PURE__ */ React.createElement("span", null, window.BGNJ_FMT.won(submittedOrder.subtotal))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uBC30\uC1A1\uBE44"), /* @__PURE__ */ React.createElement("span", null, submittedOrder.shipping === 0 ? "\uBB34\uB8CC" : window.BGNJ_FMT.won(submittedOrder.shipping))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid var(--line)", marginTop: 6 } }, /* @__PURE__ */ React.createElement("span", null, "\uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold-2 ko-serif", style: { fontSize: 22 } }, window.BGNJ_FMT.won(submittedOrder.total))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 14, paddingTop: 12, borderTop: "1px dashed var(--line)", fontSize: 13, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 6 } }, "SHIPPING TO"), submittedOrder.recipient, " \xB7 ", submittedOrder.phone, /* @__PURE__ */ React.createElement("br", null), submittedOrder.address, submittedOrder.addressDetail && ` ${submittedOrder.addressDetail}`, submittedOrder.memo && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginTop: 4 } }, "\xB7 ", submittedOrder.memo))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => go("home") }, "\uD648\uC73C\uB85C"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => go("mypage") }, "\uC8FC\uBB38 \uB0B4\uC5ED \uBCF4\uAE30"))));
+      } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uC785\uAE08 \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold ko-serif", style: { fontSize: 22 } }, window.BGNJ_FMT.won(submittedOrder.total))), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginTop: 10 } }, "\uC785\uAE08\uC790\uBA85\uC5D0 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, submittedOrder.recipient), " \uB610\uB294 \uC8FC\uBB38\uBC88\uD638 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, submittedOrder.orderNo), "\uB97C \uB0A8\uACA8 \uC8FC\uC138\uC694.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { textAlign: "left", marginBottom: 32, padding: 20 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 12 } }, "ORDER SUMMARY"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\u300E", book.title, "\u300F (", submittedOrder.version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", ") \xD7 ", submittedOrder.qty), /* @__PURE__ */ React.createElement("span", null, window.BGNJ_FMT.won(submittedOrder.subtotal))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uBC30\uC1A1\uBE44"), /* @__PURE__ */ React.createElement("span", null, submittedOrder.shipping === 0 ? "\uCC45\uAC12\uC5D0 \uD3EC\uD568" : window.BGNJ_FMT.won(submittedOrder.shipping))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid var(--line)", marginTop: 6 } }, /* @__PURE__ */ React.createElement("span", null, "\uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold-2 ko-serif", style: { fontSize: 22 } }, window.BGNJ_FMT.won(submittedOrder.total))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 14, paddingTop: 12, borderTop: "1px dashed var(--line)", fontSize: 13, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 6 } }, "SHIPPING TO"), submittedOrder.recipient, " \xB7 ", submittedOrder.phone, /* @__PURE__ */ React.createElement("br", null), submittedOrder.address, submittedOrder.addressDetail && ` ${submittedOrder.addressDetail}`, submittedOrder.memo && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginTop: 4 } }, "\xB7 ", submittedOrder.memo))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => go("home") }, "\uD648\uC73C\uB85C"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => go("mypage") }, "\uC8FC\uBB38 \uB0B4\uC5ED \uBCF4\uAE30"))));
     }
     const submit = async (e) => {
       var _a, _b, _c;
@@ -11697,7 +11747,7 @@
         style: submitting ? { opacity: 0.6, cursor: "wait" } : void 0
       },
       submitting ? "\uC8FC\uBB38 \uCC98\uB9AC \uC911\u2026" : `\uC8FC\uBB38 \uC811\uC218 \xB7 ${window.BGNJ_FMT.won(total)}`
-    ))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card card-gold mobile-release-sticky", style: { position: "sticky", top: 100 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.3em", marginBottom: 20 } }, "ORDER SUMMARY"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--line)" } }, book.coverDataUri ? /* @__PURE__ */ React.createElement("div", { style: { width: 72, aspectRatio: "3/4", flexShrink: 0, border: "1px solid var(--line-2)", overflow: "hidden" } }, /* @__PURE__ */ React.createElement("img", { src: book.coverDataUri, alt: `${book.title} \uD45C\uC9C0`, style: { width: "100%", height: "100%", objectFit: "contain", display: "block" } })) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: 72, aspectRatio: "3/4", fontSize: 8, flexShrink: 0 } }, (book.title || "\uCC45").slice(0, 1)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 17, marginBottom: 4 } }, "\u300E", book.title, "\u300F"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", " \xB7 ", qty, "\uAD8C"), /* @__PURE__ */ React.createElement("div", { className: "gold ko-serif", style: { fontSize: 16, marginTop: 8 } }, window.BGNJ_FMT.won(subtotal)))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", color: "var(--ink-2)" } }, /* @__PURE__ */ React.createElement("span", null, "\uC0C1\uD488 \uD569\uACC4"), /* @__PURE__ */ React.createElement("span", null, window.BGNJ_FMT.won(subtotal))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", color: "var(--ink-2)" } }, /* @__PURE__ */ React.createElement("span", null, "\uBC30\uC1A1\uBE44"), /* @__PURE__ */ React.createElement("span", null, shipping === 0 ? "\uBB34\uB8CC" : window.BGNJ_FMT.won(shipping))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "1px solid var(--line)", marginTop: 8 } }, /* @__PURE__ */ React.createElement("span", null, "\uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold-2 ko-serif", style: { fontSize: 24 } }, window.BGNJ_FMT.won(total))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 24, padding: "16px", background: "rgba(245,213,72,0.04)", border: "1px dashed var(--primary-dim)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 8 } }, "\u25C6 \uC6B4\uC601 \uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 12, lineHeight: 1.7 } }, "\xB7 \uC785\uAE08 \uD655\uC778 \uD6C4 \uD3C9\uC77C 1-2\uC77C \uB0B4 \uBC1C\uC1A1", /* @__PURE__ */ React.createElement("br", null), "\xB7 \uC8FC\uBB38 \uCDE8\uC18C\xB7\uD658\uBD88\uC740 \uB9C8\uC774\uD398\uC774\uC9C0\uC5D0\uC11C \uC694\uCCAD")))))));
+    ))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "card card-gold mobile-release-sticky", style: { position: "sticky", top: 100 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.3em", marginBottom: 20 } }, "ORDER SUMMARY"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid var(--line)" } }, book.coverDataUri ? /* @__PURE__ */ React.createElement("div", { style: { width: 72, aspectRatio: "3/4", flexShrink: 0, border: "1px solid var(--line-2)", overflow: "hidden" } }, /* @__PURE__ */ React.createElement("img", { src: book.coverDataUri, alt: `${book.title} \uD45C\uC9C0`, style: { width: "100%", height: "100%", objectFit: "contain", display: "block" } })) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: 72, aspectRatio: "3/4", fontSize: 8, flexShrink: 0 } }, (book.title || "\uCC45").slice(0, 1)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 17, marginBottom: 4 } }, "\u300E", book.title, "\u300F"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", " \xB7 ", qty, "\uAD8C"), unitInfo.isSale && /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11, marginTop: 6 } }, "\uC815\uAC00 ", /* @__PURE__ */ React.createElement("span", { style: { textDecoration: "line-through" } }, window.BGNJ_FMT.won(unitInfo.list * qty)), " \xB7 ", unitInfo.percent, "% \uD560\uC778"), /* @__PURE__ */ React.createElement("div", { className: "gold ko-serif", style: { fontSize: 16, marginTop: 8 } }, window.BGNJ_FMT.won(subtotal)))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", color: "var(--ink-2)" } }, /* @__PURE__ */ React.createElement("span", null, "\uC0C1\uD488 \uD569\uACC4"), /* @__PURE__ */ React.createElement("span", null, window.BGNJ_FMT.won(subtotal))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "10px 0", color: "var(--ink-2)" } }, /* @__PURE__ */ React.createElement("span", null, "\uBC30\uC1A1\uBE44"), /* @__PURE__ */ React.createElement("span", null, shipping === 0 ? window.BGNJ_BOOK_SALE().shippingIncluded ? "\uCC45\uAC12\uC5D0 \uD3EC\uD568" : "\uBB34\uB8CC" : window.BGNJ_FMT.won(shipping))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", padding: "16px 0", borderTop: "1px solid var(--line)", marginTop: 8 } }, /* @__PURE__ */ React.createElement("span", null, "\uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold-2 ko-serif", style: { fontSize: 24 } }, window.BGNJ_FMT.won(total))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 24, padding: "16px", background: "rgba(245,213,72,0.04)", border: "1px dashed var(--primary-dim)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 8 } }, "\u25C6 \uC6B4\uC601 \uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 12, lineHeight: 1.7 } }, "\xB7 \uC785\uAE08 \uD655\uC778 \uD6C4 \uD3C9\uC77C 1-2\uC77C \uB0B4 \uBC1C\uC1A1", /* @__PURE__ */ React.createElement("br", null), "\xB7 \uC8FC\uBB38 \uCDE8\uC18C\xB7\uD658\uBD88\uC740 \uB9C8\uC774\uD398\uC774\uC9C0\uC5D0\uC11C \uC694\uCCAD")))))));
   };
 
   // pages/HangyeonPage.jsx

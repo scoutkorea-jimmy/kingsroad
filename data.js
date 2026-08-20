@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.294.015",
-  build: "2026.08.20",
+  version: "00.295.000",
+  build: "2026.08.21",
   channel: "preview",
 };
 
@@ -830,6 +830,17 @@ const DEFAULT_SITE_CONTENT = {
     titleAccent: '결제',
     subtitle: '',
   },
+  // v00.295 — 도서 세일. 사용자 요청 '책은 모두 10% 세일 · 택배비는 책값에 포함'.
+  //   정가(price_kr)는 건드리지 않는다. enabled:false 로 끄면 원래 가격이 그대로 돌아온다.
+  //   excludeIds — 인터넷북(전자책)은 할인 불가. 제목에 '전자책' 이 들어가면 자동 제외되므로
+  //   보통은 비워 둬도 된다. 특정 책만 빼고 싶을 때 쓰는 칸.
+  bookSale: {
+    enabled: true,
+    percent: 10,
+    excludeIds: [],
+    shippingIncluded: true,
+    note: '택배비 포함',
+  },
   // v00.162 — BookPage hero. 칼럼 페이지 패턴과 동일.
   bookIntro: {
     eyebrow: 'BOOKS · 뱅기노자 도서',
@@ -976,8 +987,11 @@ window.BGNJ_FOOTER_STYLE = function () {
 const DEFAULT_CATEGORIES = [
   { id: "notice",   label: "공지",  boardType: "community", minLevel: 0,  postMinLevel: 100, desc: "운영진 공지 (읽기: 누구나 · 쓰기: 관리자)" },
   { id: "free",     label: "자유",  boardType: "community", minLevel: 10, postMinLevel: 10,  desc: "자유 게시판 (쓰기: 회원)" },
-  // v00.294 — 질문(0건) → '걸어서독립운동속으로'(여행 감상문) 로 교체, 정보(0건) 폐쇄.
-  { id: "walk-independence", label: "걸어서독립운동속으로", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "걸어서 만나는 독립운동의 자취 — 여행 감상문 (읽기: 누구나 · 쓰기: 로그인 회원)" },
+  // v00.294 — 질문(0건) → 여행 감상문 게시판으로 교체, 정보(0건) 폐쇄.
+  // v00.295 — 사용자 요청으로 이름 정리. id 는 그대로 둔다(글·첨부 참조가 전부 따라와야 하므로).
+  //   '걸어서독립운동속으로' → '신지식 청년사관' · 폐쇄했던 정보 자리에 '국민사학자' 신설.
+  { id: "walk-independence",  label: "신지식 청년사관", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "걸어서 만나는 독립운동의 자취 — 여행 감상문 (읽기: 누구나 · 쓰기: 로그인 회원)" },
+  { id: "national-historian", label: "국민사학자",      boardType: "community", minLevel: 0, postMinLevel: 10, desc: "" },
   { id: "column",   label: "칼럼",  boardType: "column",    minLevel: 0,  postMinLevel: 100, desc: "뱅기노자 칼럼 (쓰기: 관리자)" },
 ];
 
@@ -1009,7 +1023,8 @@ const ensureUsersSeeded = (users) => {
 
 const normalizeCommunityPost = (post) => {
   const categoryId = post.categoryId
-    || ({ "공지": "notice", "자유": "free", "걸어서독립운동속으로": "walk-independence" }[post.category])
+    || ({ "공지": "notice", "자유": "free", "신지식 청년사관": "walk-independence", "국민사학자": "national-historian",
+          "걸어서독립운동속으로": "walk-independence" }[post.category])
     || "free";
   const category = post.category
     || (DEFAULT_CATEGORIES.find((item) => item.id === categoryId)?.label || "자유");
@@ -2493,7 +2508,7 @@ window.BGNJ_BOOK_ORDERS = {
       '',
       '--- 주문 상품 ----------------------------',
       `『${this.getOrderBookTitle(order)}』 ${order.version === 'KR' ? '국문판' : '영문판'} × ${order.qty}    ${formatPrice(order.subtotal)}`,
-      `배송비                                ${order.shipping === 0 ? '무료' : formatPrice(order.shipping)}`,
+      `배송비                                ${order.shipping === 0 ? '책값에 포함' : formatPrice(order.shipping)}`,
       '─────────────────────────────────────────',
       `합계                              ${formatPrice(order.total)}`,
       '',
@@ -3309,6 +3324,44 @@ try { window.BGNJ_SITE_CONTENT.applyHead(); } catch (_e) { console.warn('[bgnj] 
 // === 책 카탈로그(BGNJ_BOOKS) helper =======================================
 // 다양한 책을 관리하고 표지(PNG)/본문 미리보기(PDF)를 dataURI로 보관한다.
 // 책마다 독립된 reviews 배열을 갖는다 — 기존 BGNJ_BOOK_ORDERS의 글로벌 리뷰와 별개.
+// === 도서 세일 · 표시 가격(BGNJ_BOOK_PRICE) ================================
+// v00.295 — 사용자 요청: 전 도서 10% 세일, 택배비는 책값에 포함, 인터넷북(전자책)은 할인 제외.
+// 정가는 D1 의 price_kr 그대로 두고 '얼마에 판다' 만 여기서 계산한다.
+// 세일을 내리면(bookSale.enabled=false) 정가가 그대로 다시 판매가가 된다 — 되돌릴 것이 없다.
+window.BGNJ_BOOK_SALE = function () {
+  const d = DEFAULT_SITE_CONTENT.bookSale;
+  try {
+    const o = (window.BGNJ_SITE_CONTENT?.get?.() || {}).bookSale;
+    return (o && typeof o === 'object') ? { ...d, ...o } : d;
+  } catch (_e) {
+    console.warn('[bgnj] 도서 세일 설정 읽기 실패 — 코드 기본값으로 진행 (data.js)', _e);
+    return d;
+  }
+};
+
+// 책 한 권의 표시 가격 → { list: 정가, sale: 판매가, isSale, percent }
+// version: 'KR' | 'EN'. 할인 대상이 아니면 list === sale 이고 isSale 은 false.
+window.BGNJ_BOOK_PRICE = function (book, version) {
+  const list = Number((version === 'EN' ? book?.priceEN : book?.priceKR) || 0);
+  const cfg = window.BGNJ_BOOK_SALE();
+  const isEbook = String(book?.title || '').includes('전자책');
+  const excluded = !cfg.enabled
+    || !(list > 0)
+    || isEbook
+    || (Array.isArray(cfg.excludeIds) && cfg.excludeIds.some((id) => String(id) === String(book?.id)));
+  if (excluded) return { list, sale: list, isSale: false, percent: 0 };
+  const pct = Number(cfg.percent) || 0;
+  // 10원 단위 내림 — 끝수가 남으면 계좌이체 금액이 지저분해진다.
+  const sale = Math.floor((list * (100 - pct)) / 100 / 10) * 10;
+  return { list, sale, isSale: sale < list, percent: pct };
+};
+
+// 배송비. shippingIncluded 면 책값에 포함이므로 언제나 0.
+window.BGNJ_BOOK_SHIPPING = function (subtotal) {
+  if (window.BGNJ_BOOK_SALE().shippingIncluded) return 0;
+  return Number(subtotal || 0) >= 30000 ? 0 : 3000;
+};
+
 // === 책 카탈로그(BGNJ_BOOKS) — 서버(D1.books) source of truth =============
 window.BGNJ_BOOKS = {
   _books: [],
