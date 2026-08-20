@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.294.012",
+  version: "00.294.013",
   build: "2026.08.20",
   channel: "preview",
 };
@@ -682,8 +682,11 @@ const DEFAULT_SITE_CONTENT = {
   recommendations: [],
   // v00.257 — 사이트 상단 공지/배너 (admin 관리). 메뉴 위쪽 sitewide.
   // enabled: false 면 미노출 (boot.jsx 가 가드). tone: 'info' | 'warning' | 'success' | 'danger'.
+  // v00.294.013 — 사용자 요청으로 오픈 안내 배너를 내렸다.
+  // 문구는 지우지 않고 남긴다 — 관리자 → 사이트 콘텐츠에서 enabled 만 켜면 그대로 돌아온다.
+  // 서버(site_content_kv)에 banner 섹션이 없어 이 코드 기본값이 곧 운영 값이다.
   banner: {
-    enabled: true,
+    enabled: false,
     tone: 'info',
     emoji: '🌱',
     title: '홈페이지를 오픈한 지 얼마 되지 않았습니다.',
