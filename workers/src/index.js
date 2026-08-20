@@ -493,8 +493,12 @@ const handlePostsList = async (req, env) => {
     }
   }
   // v00.170 — body 컬럼 포함. 사용자 보고: '글 작성 후 본문 사라짐'. 클라이언트가 list 캐시에서 detail 을 읽어 본문이 빈 상태로 표시되던 버그.
-  const sql = `SELECT id, category_id, category, prefix, title, body, author_id, author, views, replies, created_at FROM posts WHERE ${where} ORDER BY created_at DESC LIMIT ?`;
-  const { results } = await env.DB.prepare(sql).bind(...args, limit).all();
+  // v00.294.008 — images/attachments/tags 컬럼 동반 조회. 없으면 목록에서 📎 표시가 안 산다.
+  const sql = `SELECT id, category_id, category, prefix, title, body, author_id, author, views, replies, created_at,
+                      images_json, attachments_json, tags_json
+               FROM posts WHERE ${where} ORDER BY created_at DESC LIMIT ?`;
+  const { results: rawResults } = await env.DB.prepare(sql).bind(...args, limit).all();
+  const results = (rawResults || []).map(decoratePostRow);
   // v00.141 — allow_read 가 명시 0 인 카테고리의 글은 비관리자에 숨김.
   let isAdmin = false;
   // v00.262.003 — C2 transient D1 에러로 admin 권한 silent 강등 사고 방지. 가시화.
@@ -506,6 +510,85 @@ const handlePostsList = async (req, env) => {
   if (!blocked || !blocked.length) return { posts: results };
   const blockedSet = new Set(blocked.map((c) => c.id));
   return { posts: (results || []).filter((p) => !blockedSet.has(p.category_id)) };
+};
+
+// === v00.294.008 — 게시글 부속 데이터(첨부·이미지·태그) ==================
+// posts 에 담을 칸이 없어 지금까지 전부 버려졌다. schema-v11 로 컬럼을 만들고
+// 여기서 검증 → JSON 문자열로 저장한다.
+//
+// 첨부 한도는 클라이언트에도 있지만 그건 편의일 뿐이다. 요청은 조작될 수 있으므로
+// 서버가 최종 판정한다. (개당이 아니라 **합계** 기준 — 사용자 규칙)
+const POST_ATTACH_MAX_COUNT = 3;
+const POST_ATTACH_MAX_TOTAL = 10 * 1024 * 1024; // 3개를 합쳐 10MB
+const POST_IMAGE_MAX_COUNT = 10;
+const POST_TAG_MAX_COUNT = 10;
+
+// dataURI(base64) 는 받지 않는다. D1 row 를 통째로 비대하게 만들고 목록 조회까지
+// 느려진다 — 파일은 R2 에 올리고 URL 만 저장하는 것이 이 프로젝트의 규칙이다.
+const assertUploadedUrl = (url, label) => {
+  const u = String(url || '');
+  if (!u) throw new HttpError(400, `${label} 주소가 비어 있습니다.`);
+  if (u.startsWith('data:')) {
+    throw new HttpError(413, `${label} 은(는) 파일 업로드로만 첨부할 수 있습니다. (본문에 끼워 넣은 이미지 데이터는 저장하지 않습니다)`);
+  }
+  return u;
+};
+
+const normalizePostAttachments = (raw) => {
+  const list = Array.isArray(raw) ? raw : [];
+  if (list.length > POST_ATTACH_MAX_COUNT) {
+    throw new HttpError(400, `첨부파일은 최대 ${POST_ATTACH_MAX_COUNT}개까지 가능합니다.`);
+  }
+  let total = 0;
+  const out = list.map((a) => {
+    const size = Number(a?.size || 0);
+    total += size > 0 ? size : 0;
+    return {
+      name: String(a?.name || '첨부파일').slice(0, 200),
+      type: String(a?.type || '').slice(0, 100),
+      size: size > 0 ? size : 0,
+      dataUrl: assertUploadedUrl(a?.dataUrl, `첨부파일 '${String(a?.name || '')}'`),
+    };
+  });
+  if (total > POST_ATTACH_MAX_TOTAL) {
+    throw new HttpError(413, `첨부파일은 전부 합쳐 ${(POST_ATTACH_MAX_TOTAL / 1024 / 1024).toFixed(0)}MB 이하여야 합니다.`);
+  }
+  return out;
+};
+
+const normalizePostImages = (raw) => {
+  const list = Array.isArray(raw) ? raw : [];
+  if (list.length > POST_IMAGE_MAX_COUNT) {
+    throw new HttpError(400, `첨부 이미지는 최대 ${POST_IMAGE_MAX_COUNT}장까지 가능합니다.`);
+  }
+  return list.map((i) => ({
+    name: String(i?.name || '').slice(0, 200),
+    alt: String(i?.alt || i?.name || '').slice(0, 200),
+    size: Number(i?.size || 0) || 0,
+    // 클라이언트는 dataUrl 필드명을 쓰고, 렌더러는 src 도 읽는다 — 둘 다 받아준다.
+    dataUrl: assertUploadedUrl(i?.dataUrl || i?.src, `첨부 이미지 '${String(i?.name || '')}'`),
+  }));
+};
+
+const normalizePostTags = (raw) => {
+  const list = Array.isArray(raw) ? raw : [];
+  return list
+    .map((t) => String(t || '').trim().slice(0, 40))
+    .filter(Boolean)
+    .slice(0, POST_TAG_MAX_COUNT);
+};
+
+// 저장된 JSON 컬럼 → 클라이언트가 쓰는 배열. NULL(마이그레이션 이전 글)은 빈 배열.
+const decoratePostRow = (row) => {
+  if (!row) return row;
+  // 원본 *_json 컬럼은 응답에서 뺀다 — 파싱한 배열과 중복이라 목록 응답이 두 배가 된다.
+  const { images_json, attachments_json, tags_json, ...rest } = row;
+  return {
+    ...rest,
+    images: images_json ? safeJson(images_json, []) : [],
+    attachments: attachments_json ? safeJson(attachments_json, []) : [],
+    tags: tags_json ? safeJson(tags_json, []) : [],
+  };
 };
 
 const handlePostsCreate = async (req, env) => {
@@ -538,10 +621,18 @@ const handlePostsCreate = async (req, env) => {
     }
   }
   const createdAt = resolveCreatedAt(user, body);
+  // v00.294.008 — 첨부·이미지·태그를 정식 컬럼에 저장. 이전엔 받자마자 버렸다.
+  const images = normalizePostImages(body.images);
+  const attachments = normalizePostAttachments(body.attachments);
+  const tags = normalizePostTags(body.tags);
   const r = await env.DB.prepare(
-    `INSERT INTO posts (category_id, category, prefix, title, body, author_id, author, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(categoryId, cat?.label || categoryId, body.prefix || null, title, text, user.id, user.name, createdAt).run();
+    `INSERT INTO posts (category_id, category, prefix, title, body, author_id, author, created_at,
+                        images_json, attachments_json, tags_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    categoryId, cat?.label || categoryId, body.prefix || null, title, text, user.id, user.name, createdAt,
+    JSON.stringify(images), JSON.stringify(attachments), JSON.stringify(tags),
+  ).run();
   return { id: r.meta.last_row_id };
 };
 
@@ -559,7 +650,7 @@ const handlePostGet = async (req, env, id) => {
     }
   }
   // v00.278 — 조회수 증가는 POST /api/posts/:id/view(세션 dedup) 전담. GET 상세의 중복 증가 제거(이중 카운트 방지).
-  return { post };
+  return { post: decoratePostRow(post) };
 };
 
 const handlePostPatch = async (req, env, id) => {
@@ -573,6 +664,11 @@ const handlePostPatch = async (req, env, id) => {
   for (const k of ["title", "body", "prefix", "category_id"]) {
     if (k in body) { fields.push(`${k} = ?`); args.push(body[k]); }
   }
+  // v00.294.008 — 수정 시에도 첨부·이미지·태그를 반영. 보내온 경우에만 건드린다
+  // (안 보냈는데 빈 배열로 덮으면 기존 첨부가 사라진다).
+  if ("images" in body)      { fields.push("images_json = ?");      args.push(JSON.stringify(normalizePostImages(body.images))); }
+  if ("attachments" in body) { fields.push("attachments_json = ?"); args.push(JSON.stringify(normalizePostAttachments(body.attachments))); }
+  if ("tags" in body)        { fields.push("tags_json = ?");        args.push(JSON.stringify(normalizePostTags(body.tags))); }
   // v00.115 — admin 만 created_at 수정 가능.
   if (user.isAdmin && body.createdAt) {
     fields.push("created_at = ?"); args.push(resolveCreatedAt(user, body));

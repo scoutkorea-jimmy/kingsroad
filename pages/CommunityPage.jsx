@@ -149,26 +149,18 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
     const remaining = max - images.length;
     if (remaining <= 0) return;
     const toAdd = files.slice(0, remaining);
-    // v00.085 — R2 우선 (10MB) + dataURI 폴백. dataUrl 필드명 유지 — R2 URL 도 <img src> 로 호환.
+    // v00.294.008 — dataURI(base64) 폴백 제거. schema-v11 로 이미지가 정식 컬럼에
+    // 저장되기 시작했고, 서버는 base64 를 거부한다(글 하나가 수 MB 가 되어 목록 조회까지
+    // 느려지기 때문). 업로드가 실패하면 조용히 우회하지 말고 그대로 알린다.
     const results = await Promise.all(toAdd.map(async (f) => {
       const meta = { name: f.name, size: f.size, alt: f.name.replace(/\.[^.]+$/, '') };
       try {
         const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-images', maxBytes: 10 * 1024 * 1024 });
         return { ...meta, dataUrl: url };
       } catch (err) {
-        console.warn('[v00.085] R2 게시글 이미지 업로드 실패 — dataURI 폴백:', err);
-      }
-      // 폴백: 5MB 이하만 dataURI 인라인 (D1 부담 감안). 초과 시 거부.
-      if (f.size > 5 * 1024 * 1024) {
-        window.BGNJ_TOAST.error(`'${f.name}' R2 실패 + dataURI 폴백 한도 5MB 초과 — 건너뜀.`);
+        window.BGNJ_TOAST.error(`'${f.name}' 업로드 실패 — 잠시 후 다시 시도해 주세요. (${err?.message || '알 수 없는 오류'})`);
         return null;
       }
-      const dataUrl = await new Promise((resolve) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result);
-        r.readAsDataURL(f);
-      });
-      return { ...meta, dataUrl };
     }));
     setImages([...images, ...results.filter(Boolean)]);
   };
@@ -260,26 +252,17 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
       running += f.size;
       accepted.push(f);
     }
-    // v00.085 — R2 우선 (maxSize=10MB) + dataURI 폴백. dataUrl 필드명 유지 — <a href={dataUrl} download> 도 R2 URL 로 호환.
+    // v00.294.008 — dataURI(base64) 폴백 제거. 서버가 base64 첨부를 거부한다
+    // (한 글이 수 MB 가 되어 목록 조회까지 느려진다). 실패는 조용히 우회하지 않고 알린다.
     const results = await Promise.all(accepted.map(async (f) => {
       const meta = { name: f.name, type: f.type || '', size: f.size };
       try {
         const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-attachments', maxBytes: maxSize });
         return { ...meta, dataUrl: url };
       } catch (err) {
-        console.warn('[v00.085] R2 게시글 첨부 업로드 실패 — dataURI 폴백:', err);
-      }
-      // 폴백: 5MB 이하만 dataURI 인라인. 초과 시 거부.
-      if (f.size > 5 * 1024 * 1024) {
-        setError(`'${f.name}' R2 실패 + dataURI 폴백 한도 5MB 초과 — 첨부 불가.`);
+        setError(`'${f.name}' 업로드 실패 — 잠시 후 다시 시도해 주세요. (${err?.message || '알 수 없는 오류'})`);
         return null;
       }
-      const dataUrl = await new Promise((resolve) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result);
-        r.readAsDataURL(f);
-      });
-      return { ...meta, dataUrl };
     }));
     setFiles([...files, ...results.filter(Boolean)]);
   };
@@ -1506,23 +1489,12 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       try { localStorage.removeItem(draftKey); } catch {}
     }
     // v00.115 — admin 만 createdAt 오버라이드 가능. 다른 사용자 값 전송은 워커가 무시.
-    // v00.242 — 사용자 보고 '커뮤니티 이미지 안 보임'. root cause: 워커 handlePostsCreate 가
-    // body.images 무시 + D1 posts 테이블에 images 컬럼 부재. 워커 deploy 회피하면서 표시 보장 →
-    // body HTML 끝에 첨부 이미지 <img> 태그로 직접 인코딩 (DOMPurify ALLOWED_TAGS 'img' 통과 확인).
-    const _attachedImagesHtml = (() => {
-      if (!Array.isArray(images) || images.length === 0) return '';
-      // 이미 본문에 같은 이미지가 들어있을 수도 있어 중복 차단을 위해 marker 로 감싼다 — 본문 재편집 시 추출/제거 가능.
-      const figs = images.map((img) => {
-        const url = (img && (img.dataUrl || img.src || img.url)) || '';
-        if (!url) return '';
-        const alt = (img.alt || img.name || '첨부 이미지').replace(/"/g, '&quot;');
-        return `<p data-bgnj-attach="1" style="margin:16px 0;text-align:center"><img src="${url}" alt="${alt}" style="max-width:100%;height:auto;display:inline-block;border-radius:4px"/></p>`;
-      }).filter(Boolean).join('');
-      return figs ? `<div data-bgnj-attached-block="1">${figs}</div>` : '';
-    })();
-    // v00.264 — 이중 안전. Tiptap 본문(bodyHtml)에 마커 블록이 남아 있을 수
-    // 있는 어떤 경로라도 한 번 더 strip 후 새 append → 중복 누적 차단.
-    const _bodyHtmlWithImages = _stripAttachedBlock(bodyHtml) + _attachedImagesHtml;
+    // v00.294.008 — 본문 끝에 <img> 를 끼워 넣던 v00.242 응급 조치를 걷어낸다.
+    // 그건 'D1 에 images 컬럼이 없고 워커 배포를 피하고 싶다' 는 제약에서 나온 우회로였다.
+    // schema-v11 + 워커 배포로 images 가 정식 컬럼에 저장되므로 더는 필요 없다.
+    // 본문에 남아 있을 수 있는 옛 마커 블록은 계속 걷어낸다 — 옛 글을 수정할 때
+    // 그대로 두면 이미지가 본문과 슬라이드에 두 번 나온다.
+    const _bodyHtmlWithImages = _stripAttachedBlock(bodyHtml);
     const payload = {
       categoryId: cat.id,
       category: cat.label,
@@ -1535,7 +1507,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
       views: initialPost?.views ?? 0,
       date: `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())}`,
       tags,
-      images,       // 클라 측에서 imageSlider 카로셀용 (워커 무시 — 다음 사이클 schema 추가)
+      images,       // v00.294.008 — schema-v11 로 워커가 정식 저장한다(이전엔 무시했다).
       attachments,
       _new: true,
       _userCreated: true,

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.294.007",
+  version: "00.294.008",
   build: "2026.08.20",
   channel: "preview",
 };
@@ -1429,6 +1429,11 @@ const _serverPostToUi = (p) => ({
   replies: Number(p.replies || 0),
   date: (p.created_at || p.createdAt || '').slice(0, 10).replace(/-/g, '.'),
   createdAt: p.created_at || p.createdAt,
+  // v00.294.008 — 첨부·이미지·태그. 서버(schema-v11)가 정식 컬럼으로 돌려주기 전에는
+  // 아예 오지 않던 값이라 새로고침하면 사라졌다. 구버전 응답 호환으로 Array.isArray 가드.
+  images: Array.isArray(p.images) ? p.images : [],
+  attachments: Array.isArray(p.attachments) ? p.attachments : [],
+  tags: Array.isArray(p.tags) ? p.tags : [],
   _remote: true,
 });
 
@@ -1523,6 +1528,11 @@ window.BGNJ_COMMUNITY = {
       title: payload.title,
       body: this._bodyHtmlFromPayload(payload.body),
       prefix: payload.prefix || null,
+      // v00.294.008 — 지금까지 안 보내고 있었다(=워커도 안 받았다). 첨부파일이
+      // R2 에만 남고 글에는 안 붙던 원인. 서버가 개수·총량을 최종 검증한다.
+      images: Array.isArray(payload.images) ? payload.images : [],
+      attachments: Array.isArray(payload.attachments) ? payload.attachments : [],
+      tags: Array.isArray(payload.tags) ? payload.tags : [],
     };
     if (payload.createdAt) reqBody.createdAt = payload.createdAt;
     const { id } = await window.BGNJ_API.posts.create(reqBody);
@@ -1542,6 +1552,10 @@ window.BGNJ_COMMUNITY = {
     if ('body' in patch) apiPatch.body = this._bodyHtmlFromPayload(patch.body);
     if ('prefix' in patch) apiPatch.prefix = patch.prefix;
     if ('categoryId' in patch) apiPatch.category_id = patch.categoryId;
+    // v00.294.008 — 보낸 경우에만 담는다. 안 보냈는데 빈 배열을 실으면 기존 첨부가 지워진다.
+    if ('images' in patch) apiPatch.images = Array.isArray(patch.images) ? patch.images : [];
+    if ('attachments' in patch) apiPatch.attachments = Array.isArray(patch.attachments) ? patch.attachments : [];
+    if ('tags' in patch) apiPatch.tags = Array.isArray(patch.tags) ? patch.tags : [];
     // v00.116 — admin 만 createdAt 수정 가능 (워커가 검증). admin 외 보내도 무시됨.
     if ('createdAt' in patch && patch.createdAt) apiPatch.createdAt = patch.createdAt;
     await window.BGNJ_API.posts.update(postId, apiPatch);
