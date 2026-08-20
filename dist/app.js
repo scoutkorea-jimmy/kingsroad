@@ -366,7 +366,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.295.001",
+    version: "00.295.002",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -3046,6 +3046,12 @@
         addressDetail: r.address_detail,
         zip: r.zip,
         memo: r.memo,
+        // v00.295.002 — 세금계산서. schema-v12 이전 주문은 전부 NULL → 미신청으로 읽힌다.
+        taxInvoice: !!(r.tax_invoice || r.taxInvoice),
+        bizName: r.biz_name || r.bizName || "",
+        bizNo: r.biz_no || r.bizNo || "",
+        bizCeo: r.biz_ceo || r.bizCeo || "",
+        bizEmail: r.biz_email || r.bizEmail || "",
         status: r.status,
         paid: r.status !== "pending_payment" && r.status !== "cancelled",
         tracking: r.tracking || r.tracking_no,
@@ -3156,7 +3162,13 @@
           address: payload.address,
           addressDetail: payload.addressDetail || "",
           zip: payload.zip || "",
-          memo: payload.memo || ""
+          memo: payload.memo || "",
+          // v00.295.002 — 세금계산서 발행 요청 (book_orders 정식 컬럼, schema-v12)
+          taxInvoice: !!payload.taxInvoice,
+          bizName: payload.bizName || "",
+          bizNo: payload.bizNo || "",
+          bizCeo: payload.bizCeo || "",
+          bizEmail: payload.bizEmail || ""
         });
         await this.refreshMine();
         const order = this._ordersMine.find((o) => o.id === id);
@@ -3245,6 +3257,7 @@
         "--- \uC8FC\uBB38 \uC0C1\uD488 ----------------------------",
         `\u300E${this.getOrderBookTitle(order)}\u300F ${order.version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310"} \xD7 ${order.qty}    ${formatPrice(order.subtotal)}`,
         `\uBC30\uC1A1\uBE44                                ${order.shipping === 0 ? "\uCC45\uAC12\uC5D0 \uD3EC\uD568" : formatPrice(order.shipping)}`,
+        ...order.taxInvoice ? [`\uC138\uAE08\uACC4\uC0B0\uC11C                            \uBC1C\uD589 \uC694\uCCAD \xB7 ${order.bizName || "\uC0C1\uD638 \uBBF8\uAE30\uC7AC"} (${order.bizNo || "\uBC88\uD638 \uBBF8\uAE30\uC7AC"})`] : [],
         "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500",
         `\uD569\uACC4                              ${formatPrice(order.total)}`,
         "",
@@ -6782,6 +6795,105 @@
   window.BGNJ_CashReceiptField = CashReceiptField;
   window.BGNJ_CashReceipt = { encode: encodeCashReceipt, empty: _emptyCashReceipt };
 
+  // components/TaxInvoiceField.jsx
+  var _emptyTaxInvoice = () => ({ requested: false, name: "", bizNo: "", ceo: "", email: "" });
+  var _digits = (v) => String(v || "").replace(/[^0-9]/g, "");
+  var formatBizNo = (v) => {
+    const d = _digits(v).slice(0, 10);
+    if (d.length <= 3) return d;
+    if (d.length <= 5) return `${d.slice(0, 3)}-${d.slice(3)}`;
+    return `${d.slice(0, 3)}-${d.slice(3, 5)}-${d.slice(5)}`;
+  };
+  var isValidBizNo = (v) => _digits(v).length === 10;
+  var validateTaxInvoice = (value) => {
+    const v = value || {};
+    if (!v.requested) return "";
+    if (!String(v.name || "").trim()) return "\uC138\uAE08\uACC4\uC0B0\uC11C\uB97C \uBC1B\uC744 \uC0C1\uD638\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.";
+    if (!isValidBizNo(v.bizNo)) return "\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638\uB294 \uC22B\uC790 10\uC790\uB9AC\uC785\uB2C8\uB2E4.";
+    if (!String(v.email || "").includes("@")) return "\uC138\uAE08\uACC4\uC0B0\uC11C\uB97C \uBC1B\uC744 \uC774\uBA54\uC77C\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694.";
+    return "";
+  };
+  var TaxInvoiceField = ({ value, onChange }) => {
+    const v = value || _emptyTaxInvoice();
+    const set = (patch) => onChange == null ? void 0 : onChange({ ...v, ...patch });
+    const bizNoTouched = String(v.bizNo || "").length > 0;
+    const bizNoBad = bizNoTouched && !isValidBizNo(v.bizNo);
+    return /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: "0 0 14px" } }, /* @__PURE__ */ React.createElement("div", { className: "field-label", style: { display: "flex", alignItems: "center", justifyContent: "space-between" } }, /* @__PURE__ */ React.createElement("span", null, "\uC138\uAE08\uACC4\uC0B0\uC11C"), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.14em" } }, "TAX INVOICE")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: v.requested ? 10 : 0, flexWrap: "wrap" } }, [
+      { k: false, l: "\uBBF8\uC2E0\uCCAD" },
+      { k: true, l: "\uBC1C\uD589 \uC694\uCCAD" }
+    ].map((opt) => {
+      const active = v.requested === opt.k;
+      return /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          key: String(opt.k),
+          type: "button",
+          onClick: () => set({ requested: opt.k }),
+          "aria-pressed": active,
+          style: {
+            padding: "8px 16px",
+            fontSize: 13,
+            background: active ? "rgba(245,213,72,0.14)" : "var(--bg)",
+            color: active ? "var(--secondary)" : "var(--ink-2)",
+            border: "1px solid " + (active ? "var(--primary)" : "var(--line)"),
+            fontWeight: active ? 700 : 500,
+            cursor: "pointer"
+          }
+        },
+        opt.l
+      );
+    })), v.requested && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 10, padding: "12px 14px", background: "var(--bg-2)", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", style: { fontSize: 11 } }, "\uC0C1\uD638 (\uBC95\uC778\uBA85)"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "text",
+        className: "field-input",
+        value: v.name,
+        onChange: (e) => set({ name: e.target.value }),
+        placeholder: "\uC608: \uC8FC\uC2DD\uD68C\uC0AC \uBC45\uAE30\uB178\uC790",
+        autoComplete: "organization"
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", style: { fontSize: 11 } }, "\uC0AC\uC5C5\uC790\uB4F1\uB85D\uBC88\uD638"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "text",
+        className: "field-input",
+        value: v.bizNo,
+        onChange: (e) => set({ bizNo: formatBizNo(e.target.value) }),
+        placeholder: "000-00-00000",
+        inputMode: "numeric",
+        autoComplete: "off"
+      }
+    ), bizNoBad && /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, marginTop: 5, color: "var(--danger)" } }, "\uC22B\uC790 10\uC790\uB9AC\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.")), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", style: { fontSize: 11 } }, "\uB300\uD45C\uC790\uBA85 ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "(\uC120\uD0DD)")), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "text",
+        className: "field-input",
+        value: v.ceo,
+        onChange: (e) => set({ ceo: e.target.value }),
+        placeholder: "\uB300\uD45C\uC790 \uC131\uD568",
+        autoComplete: "off"
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", style: { fontSize: 11 } }, "\uACC4\uC0B0\uC11C \uBC1B\uC744 \uC774\uBA54\uC77C"), /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        type: "email",
+        className: "field-input",
+        value: v.email,
+        onChange: (e) => set({ email: e.target.value }),
+        placeholder: "tax@example.com",
+        autoComplete: "email"
+      }
+    )), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7, wordBreak: "keep-all" } }, "\u24D8 \uC785\uAE08 \uD655\uC778 \uD6C4 \uC804\uC790\uC138\uAE08\uACC4\uC0B0\uC11C\uB97C \uC704 \uC774\uBA54\uC77C\uB85C \uBCF4\uB0B4 \uB4DC\uB9BD\uB2C8\uB2E4. \uD604\uAE08\uC601\uC218\uC99D\uACFC\uB294 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC911\uBCF5 \uBC1C\uD589\uC774 \uC548 \uB429\uB2C8\uB2E4"), " \u2014 \uB458 \uC911 \uD558\uB098\uB9CC \uC2E0\uCCAD\uD574 \uC8FC\uC138\uC694.")));
+  };
+  window.BGNJ_TaxInvoiceField = TaxInvoiceField;
+  window.BGNJ_TaxInvoice = {
+    empty: _emptyTaxInvoice,
+    validate: validateTaxInvoice,
+    isValidBizNo,
+    formatBizNo,
+    digits: _digits
+  };
+
   // components/MediaGallery.jsx
   var MAX_IMAGES = 10;
   var _normalizeImages = (raw, { showPrimary = true } = {}) => {
@@ -7366,7 +7478,14 @@
       {
         key: b.id,
         className: "home-book",
-        ...clickable(() => go("book"), `\uCC45: ${b.title}`)
+        ...clickable(() => {
+          try {
+            sessionStorage.setItem("bgnj_pending_book_id", String(b.id));
+          } catch (_e) {
+            console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uCC45 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (HomePage.jsx)", _e);
+          }
+          go("book");
+        }, `\uCC45: ${b.title}`)
       },
       b.coverDataUri ? /* @__PURE__ */ React.createElement(
         "div",
@@ -11476,7 +11595,21 @@
         return ((_a = a.order) != null ? _a : 0) - ((_b = b.order) != null ? _b : 0);
       });
     }, [tick]);
-    const [selectedId, setSelectedId] = React.useState(null);
+    const [selectedId, setSelectedId] = React.useState(() => {
+      try {
+        return sessionStorage.getItem("bgnj_pending_book_id") || null;
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uCCAB \uCC45\uC73C\uB85C (BookCheckoutPage.jsx)", _e);
+        return null;
+      }
+    });
+    React.useEffect(() => {
+      try {
+        sessionStorage.removeItem("bgnj_pending_book_id");
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (BookCheckoutPage.jsx)", _e);
+      }
+    }, []);
     React.useEffect(() => {
       if (books.length === 0) return;
       if (!selectedId || !books.find((b) => b.id === selectedId)) {
@@ -11648,11 +11781,12 @@
     })(), tab === "\uC800\uC790" && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 24, alignItems: "flex-start" } }, /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: 140, aspectRatio: "3/4", flexShrink: 0 } }, book.author || "\uC800\uC790"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h4", { className: "ko-serif gold", style: { fontSize: 22, marginBottom: 12 } }, book.author || "\uC800\uC790 \uBBF8\uC785\uB825"), book.authorBio ? /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14, lineHeight: 1.9, whiteSpace: "pre-wrap" } }, book.authorBio) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13 } }, "\uC800\uC790 \uC18C\uAC1C\uAC00 \uC544\uC9C1 \uC785\uB825\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."))), tab === "\uB9AC\uBDF0" && /* @__PURE__ */ React.createElement(BookReviewSection, { user, bookTitle: book.title }))))));
   };
   var CheckoutPage = ({ go, cart, user }) => {
+    var _a, _b;
     const G2 = window.BGNJ_GUARD;
     const book = G2.call(() => {
-      var _a, _b, _c, _d;
+      var _a2, _b2, _c, _d;
       const id = cart == null ? void 0 : cart.bookId;
-      return id && ((_b = (_a = window.BGNJ_BOOKS) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a, id)) || ((_d = (_c = window.BGNJ_BOOKS) == null ? void 0 : _c.primary) == null ? void 0 : _d.call(_c)) || null;
+      return id && ((_b2 = (_a2 = window.BGNJ_BOOKS) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2, id)) || ((_d = (_c = window.BGNJ_BOOKS) == null ? void 0 : _c.primary) == null ? void 0 : _d.call(_c)) || null;
     }, null);
     const version = cart ? cart.version : "KR";
     const qty = cart ? cart.qty : 1;
@@ -11662,8 +11796,8 @@
     const shipping = window.BGNJ_BOOK_SHIPPING(subtotal);
     const total = subtotal + shipping;
     const bank = G2.call(() => {
-      var _a, _b, _c;
-      return ((_b = (_a = window.BGNJ_LECTURES) == null ? void 0 : _a.getBankAccount) == null ? void 0 : _b.call(_a)) || ((_c = window.BGNJ_STORES) == null ? void 0 : _c.bankAccount);
+      var _a2, _b2, _c;
+      return ((_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.getBankAccount) == null ? void 0 : _b2.call(_a2)) || ((_c = window.BGNJ_STORES) == null ? void 0 : _c.bankAccount);
     }, {});
     const [selectedBankId, setSelectedBankId] = React.useState(null);
     const [recipient, setRecipient] = React.useState((user == null ? void 0 : user.name) || "");
@@ -11672,8 +11806,12 @@
     const [addressDetail, setAddressDetail] = React.useState("");
     const [memo, setMemo] = React.useState("");
     const [cashReceipt, setCashReceipt] = React.useState(() => {
-      var _a, _b;
-      return ((_b = (_a = window.BGNJ_CashReceipt) == null ? void 0 : _a.empty) == null ? void 0 : _b.call(_a)) || { requested: false, type: "personal", identifier: "" };
+      var _a2, _b2;
+      return ((_b2 = (_a2 = window.BGNJ_CashReceipt) == null ? void 0 : _a2.empty) == null ? void 0 : _b2.call(_a2)) || { requested: false, type: "personal", identifier: "" };
+    });
+    const [taxInvoice, setTaxInvoice] = React.useState(() => {
+      var _a2, _b2;
+      return ((_b2 = (_a2 = window.BGNJ_TaxInvoice) == null ? void 0 : _a2.empty) == null ? void 0 : _b2.call(_a2)) || { requested: false, name: "", bizNo: "", ceo: "", email: "" };
     });
     const [error, setError] = React.useState("");
     const [submittedOrder, setSubmittedOrder] = React.useState(null);
@@ -11696,19 +11834,21 @@
         display: "flex",
         justifyContent: "space-between",
         alignItems: "baseline"
-      } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uC785\uAE08 \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold ko-serif", style: { fontSize: 22 } }, window.BGNJ_FMT.won(submittedOrder.total))), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginTop: 10 } }, "\uC785\uAE08\uC790\uBA85\uC5D0 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, submittedOrder.recipient), " \uB610\uB294 \uC8FC\uBB38\uBC88\uD638 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, submittedOrder.orderNo), "\uB97C \uB0A8\uACA8 \uC8FC\uC138\uC694.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { textAlign: "left", marginBottom: 32, padding: 20 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 12 } }, "ORDER SUMMARY"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\u300E", book.title, "\u300F (", submittedOrder.version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", ") \xD7 ", submittedOrder.qty), /* @__PURE__ */ React.createElement("span", null, window.BGNJ_FMT.won(submittedOrder.subtotal))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uBC30\uC1A1\uBE44"), /* @__PURE__ */ React.createElement("span", null, submittedOrder.shipping === 0 ? "\uCC45\uAC12\uC5D0 \uD3EC\uD568" : window.BGNJ_FMT.won(submittedOrder.shipping))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid var(--line)", marginTop: 6 } }, /* @__PURE__ */ React.createElement("span", null, "\uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold-2 ko-serif", style: { fontSize: 22 } }, window.BGNJ_FMT.won(submittedOrder.total))), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 14, paddingTop: 12, borderTop: "1px dashed var(--line)", fontSize: 13, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 6 } }, "SHIPPING TO"), submittedOrder.recipient, " \xB7 ", submittedOrder.phone, /* @__PURE__ */ React.createElement("br", null), submittedOrder.address, submittedOrder.addressDetail && ` ${submittedOrder.addressDetail}`, submittedOrder.memo && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginTop: 4 } }, "\xB7 ", submittedOrder.memo))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => go("home") }, "\uD648\uC73C\uB85C"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => go("mypage") }, "\uC8FC\uBB38 \uB0B4\uC5ED \uBCF4\uAE30"))));
+      } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uC785\uAE08 \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold ko-serif", style: { fontSize: 22 } }, window.BGNJ_FMT.won(submittedOrder.total))), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginTop: 10 } }, "\uC785\uAE08\uC790\uBA85\uC5D0 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, submittedOrder.recipient), " \uB610\uB294 \uC8FC\uBB38\uBC88\uD638 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, submittedOrder.orderNo), "\uB97C \uB0A8\uACA8 \uC8FC\uC138\uC694.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { textAlign: "left", marginBottom: 32, padding: 20 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 12 } }, "ORDER SUMMARY"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\u300E", book.title, "\u300F (", submittedOrder.version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", ") \xD7 ", submittedOrder.qty), /* @__PURE__ */ React.createElement("span", null, window.BGNJ_FMT.won(submittedOrder.subtotal))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("span", { className: "dim" }, "\uBC30\uC1A1\uBE44"), /* @__PURE__ */ React.createElement("span", null, submittedOrder.shipping === 0 ? "\uCC45\uAC12\uC5D0 \uD3EC\uD568" : window.BGNJ_FMT.won(submittedOrder.shipping))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", paddingTop: 12, borderTop: "1px solid var(--line)", marginTop: 6 } }, /* @__PURE__ */ React.createElement("span", null, "\uACB0\uC81C \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold-2 ko-serif", style: { fontSize: 22 } }, window.BGNJ_FMT.won(submittedOrder.total))), submittedOrder.taxInvoice && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12, paddingTop: 12, borderTop: "1px dashed var(--line)", fontSize: 12, lineHeight: 1.7, wordBreak: "keep-all" } }, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 4, color: "var(--danger)" } }, "TAX INVOICE"), submittedOrder.bizName, " (", ((_b = (_a = window.BGNJ_TaxInvoice) == null ? void 0 : _a.formatBizNo) == null ? void 0 : _b.call(_a, submittedOrder.bizNo)) || submittedOrder.bizNo, ")", /* @__PURE__ */ React.createElement("br", null), "\uC785\uAE08 \uD655\uC778 \uD6C4 ", /* @__PURE__ */ React.createElement("strong", null, submittedOrder.bizEmail), " \uC73C\uB85C \uC804\uC790\uC138\uAE08\uACC4\uC0B0\uC11C\uB97C \uBCF4\uB0B4 \uB4DC\uB9BD\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { marginTop: 14, paddingTop: 12, borderTop: "1px dashed var(--line)", fontSize: 13, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em", marginBottom: 6 } }, "SHIPPING TO"), submittedOrder.recipient, " \xB7 ", submittedOrder.phone, /* @__PURE__ */ React.createElement("br", null), submittedOrder.address, submittedOrder.addressDetail && ` ${submittedOrder.addressDetail}`, submittedOrder.memo && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12, marginTop: 4 } }, "\xB7 ", submittedOrder.memo))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { className: "btn", onClick: () => go("home") }, "\uD648\uC73C\uB85C"), /* @__PURE__ */ React.createElement("button", { className: "btn btn-gold", onClick: () => go("mypage") }, "\uC8FC\uBB38 \uB0B4\uC5ED \uBCF4\uAE30"))));
     }
     const submit = async (e) => {
-      var _a, _b, _c;
+      var _a2, _b2, _c, _d, _e, _f, _g;
       e.preventDefault();
       if (submitting) return;
       setError("");
       if (!recipient.trim()) return setError("\uBC1B\uB294 \uBD84 \uC774\uB984\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
       if (!phone.trim()) return setError("\uC5F0\uB77D\uCC98\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
       if (!address.trim()) return setError("\uAE30\uBCF8 \uC8FC\uC18C\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
+      const taxError = ((_b2 = (_a2 = window.BGNJ_TaxInvoice) == null ? void 0 : _a2.validate) == null ? void 0 : _b2.call(_a2, taxInvoice)) || "";
+      if (taxError) return setError(taxError);
       setSubmitting(true);
       try {
-        const crPrefix = ((_b = (_a = window.BGNJ_CashReceipt) == null ? void 0 : _a.encode) == null ? void 0 : _b.call(_a, cashReceipt)) || "";
+        const crPrefix = ((_d = (_c = window.BGNJ_CashReceipt) == null ? void 0 : _c.encode) == null ? void 0 : _d.call(_c, cashReceipt)) || "";
         const memoCombined = (crPrefix + (memo.trim() || "")).trim();
         const result = await window.BGNJ_BOOK_ORDERS.createOrder({
           userId: user.id,
@@ -11720,7 +11860,12 @@
           phone: phone.trim(),
           address: address.trim(),
           addressDetail: addressDetail.trim(),
-          memo: memoCombined
+          memo: memoCombined,
+          taxInvoice: !!taxInvoice.requested,
+          bizName: taxInvoice.requested ? (taxInvoice.name || "").trim() : "",
+          bizNo: taxInvoice.requested ? ((_f = (_e = window.BGNJ_TaxInvoice) == null ? void 0 : _e.digits) == null ? void 0 : _f.call(_e, taxInvoice.bizNo)) || "" : "",
+          bizCeo: taxInvoice.requested ? (taxInvoice.ceo || "").trim() : "",
+          bizEmail: taxInvoice.requested ? (taxInvoice.email || "").trim() : ""
         });
         if (!(result == null ? void 0 : result.ok)) {
           setSubmitting(false);
@@ -11728,13 +11873,13 @@
         }
         setSubmittedOrder(result.order);
       } catch (err) {
-        setError(((_c = err == null ? void 0 : err.body) == null ? void 0 : _c.error) || (err == null ? void 0 : err.message) || "\uC8FC\uBB38 \uCC98\uB9AC \uC911 \uC624\uB958");
+        setError(((_g = err == null ? void 0 : err.body) == null ? void 0 : _g.error) || (err == null ? void 0 : err.message) || "\uC8FC\uBB38 \uCC98\uB9AC \uC911 \uC624\uB958");
         setSubmitting(false);
       }
     };
     return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, (() => {
-      var _a, _b, _c, _d;
-      const _i = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).bookCheckoutIntro || {};
+      var _a2, _b2, _c, _d;
+      const _i = (((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {}).bookCheckoutIntro || {};
       const eb = _i.eyebrow || "CHECKOUT \xB7 \uACB0\uC81C";
       const tp = (_c = _i.titlePrefix) != null ? _c : "\uC8FC\uBB38 / ";
       const ta = (_d = _i.titleAccent) != null ? _d : "\uACB0\uC81C";
@@ -11749,7 +11894,7 @@
         placeholder: "\uBD80\uC7AC \uC2DC \uACBD\uBE44\uC2E4\uC5D0 \uB9E1\uACA8\uC8FC\uC138\uC694",
         style: { minHeight: 80, resize: "vertical" }
       }
-    )), window.BGNJ_CashReceiptField && /* @__PURE__ */ React.createElement(window.BGNJ_CashReceiptField, { value: cashReceipt, onChange: setCashReceipt }), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 22, marginTop: 24, marginBottom: 14 } }, "\uACB0\uC81C \uC218\uB2E8 \u2014 \uBB34\uD1B5\uC7A5 \uC785\uAE08"), window.BGNJ_BankAccountPicker ? /* @__PURE__ */ React.createElement(window.BGNJ_BankAccountPicker, { value: selectedBankId, onChange: setSelectedBankId }) : /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, padding: "12px 14px", border: "1px solid var(--line)" } }, "\uC6B4\uC601\uC790 \uACC4\uC88C\uAC00 \uB4F1\uB85D\uB418\uC5B4 \uC788\uC5B4\uC57C \uC8FC\uBB38\uC774 \uC9C4\uD589\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginTop: 10, lineHeight: 1.7 } }, "\uC8FC\uBB38 \uC811\uC218 \uD6C4 \uC704 \uACC4\uC88C\uB85C \uC785\uAE08\uD558\uC2DC\uBA74 \uC6B4\uC601\uC790\uAC00 \uD655\uC778\uD558\uC5EC \uBC1C\uC1A1\uC744 \uC2DC\uC791\uD569\uB2C8\uB2E4."), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "12px 16px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 13, marginTop: 20 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginTop: 24 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-block", onClick: () => go("book") }, "\u2190 \uCC45 \uC815\uBCF4"), /* @__PURE__ */ React.createElement(
+    )), window.BGNJ_CashReceiptField && /* @__PURE__ */ React.createElement(window.BGNJ_CashReceiptField, { value: cashReceipt, onChange: setCashReceipt }), window.BGNJ_TaxInvoiceField && /* @__PURE__ */ React.createElement(window.BGNJ_TaxInvoiceField, { value: taxInvoice, onChange: setTaxInvoice }), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 22, marginTop: 24, marginBottom: 14 } }, "\uACB0\uC81C \uC218\uB2E8 \u2014 \uBB34\uD1B5\uC7A5 \uC785\uAE08"), window.BGNJ_BankAccountPicker ? /* @__PURE__ */ React.createElement(window.BGNJ_BankAccountPicker, { value: selectedBankId, onChange: setSelectedBankId }) : /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, padding: "12px 14px", border: "1px solid var(--line)" } }, "\uC6B4\uC601\uC790 \uACC4\uC88C\uAC00 \uB4F1\uB85D\uB418\uC5B4 \uC788\uC5B4\uC57C \uC8FC\uBB38\uC774 \uC9C4\uD589\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginTop: 10, lineHeight: 1.7 } }, "\uC8FC\uBB38 \uC811\uC218 \uD6C4 \uC704 \uACC4\uC88C\uB85C \uC785\uAE08\uD558\uC2DC\uBA74 \uC6B4\uC601\uC790\uAC00 \uD655\uC778\uD558\uC5EC \uBC1C\uC1A1\uC744 \uC2DC\uC791\uD569\uB2C8\uB2E4."), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "12px 16px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 13, marginTop: 20 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginTop: 24 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-block", onClick: () => go("book") }, "\u2190 \uCC45 \uC815\uBCF4"), /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "submit",

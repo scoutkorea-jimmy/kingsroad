@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.295.001",
+  version: "00.295.002",
   build: "2026.08.21",
   channel: "preview",
 };
@@ -2367,6 +2367,12 @@ window.BGNJ_BOOK_ORDERS = {
       addressDetail: r.address_detail,
       zip: r.zip,
       memo: r.memo,
+      // v00.295.002 — 세금계산서. schema-v12 이전 주문은 전부 NULL → 미신청으로 읽힌다.
+      taxInvoice: !!(r.tax_invoice || r.taxInvoice),
+      bizName: r.biz_name || r.bizName || '',
+      bizNo: r.biz_no || r.bizNo || '',
+      bizCeo: r.biz_ceo || r.bizCeo || '',
+      bizEmail: r.biz_email || r.bizEmail || '',
       status: r.status,
       paid: r.status !== 'pending_payment' && r.status !== 'cancelled',
       tracking: r.tracking || r.tracking_no,
@@ -2440,6 +2446,10 @@ window.BGNJ_BOOK_ORDERS = {
         recipient: payload.recipient, phone: payload.phone,
         address: payload.address, addressDetail: payload.addressDetail || '',
         zip: payload.zip || '', memo: payload.memo || '',
+        // v00.295.002 — 세금계산서 발행 요청 (book_orders 정식 컬럼, schema-v12)
+        taxInvoice: !!payload.taxInvoice,
+        bizName: payload.bizName || '', bizNo: payload.bizNo || '',
+        bizCeo: payload.bizCeo || '', bizEmail: payload.bizEmail || '',
       });
       await this.refreshMine();
       const order = this._ordersMine.find((o) => o.id === id);
@@ -2509,6 +2519,9 @@ window.BGNJ_BOOK_ORDERS = {
       '--- 주문 상품 ----------------------------',
       `『${this.getOrderBookTitle(order)}』 ${order.version === 'KR' ? '국문판' : '영문판'} × ${order.qty}    ${formatPrice(order.subtotal)}`,
       `배송비                                ${order.shipping === 0 ? '책값에 포함' : formatPrice(order.shipping)}`,
+      ...(order.taxInvoice
+        ? [`세금계산서                            발행 요청 · ${order.bizName || '상호 미기재'} (${order.bizNo || '번호 미기재'})`]
+        : []),
       '─────────────────────────────────────────',
       `합계                              ${formatPrice(order.total)}`,
       '',

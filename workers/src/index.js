@@ -1729,15 +1729,35 @@ const handleBookOrderCreate = async (req, env) => {
   const body = await req.json().catch(() => ({}));
   const id = randomId("ord");
   const orderNo = "BGNJ-" + Date.now().toString(36).toUpperCase();
-  await env.DB.prepare(
-    `INSERT INTO book_orders (id, order_no, book_id, user_id, version, qty, price, recipient, phone, address, address_detail, zip, memo, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?)`
-  ).bind(
+  // v00.295.002 — 세금계산서 발행 요청. schema-v12 이전 DB 에서는 컬럼이 없으므로
+  //   "no such column" 이면 세금계산서 칸을 뺀 채 한 번 더 시도한다. 주문 자체는 반드시 접수돼야 한다.
+  const taxOn = body.taxInvoice ? 1 : 0;
+  const base = [
     id, orderNo, body.bookId || "kingsroad", user.id,
     body.version || "KR", Number(body.qty || 1), Number(body.price || 0),
     body.recipient || user.name, body.phone || "", body.address || "", body.addressDetail || "",
-    body.zip || "", body.memo || "", nowIso()
-  ).run();
+    body.zip || "", body.memo || "", nowIso(),
+  ];
+  const COLS = "id, order_no, book_id, user_id, version, qty, price, recipient, phone, address, address_detail, zip, memo, status, created_at";
+  try {
+    await env.DB.prepare(
+      `INSERT INTO book_orders (${COLS}, tax_invoice, biz_name, biz_no, biz_ceo, biz_email)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      ...base,
+      taxOn,
+      String(body.bizName || "").slice(0, 120),
+      String(body.bizNo || "").slice(0, 40),
+      String(body.bizCeo || "").slice(0, 80),
+      String(body.bizEmail || "").slice(0, 160),
+    ).run();
+  } catch (err) {
+    if (!String(err?.message || "").toLowerCase().includes("no such column")) throw err;
+    console.warn("[bgnj] book_orders 에 세금계산서 컬럼이 없다 — schema-v12 미적용. 주문은 그대로 접수한다.");
+    await env.DB.prepare(
+      `INSERT INTO book_orders (${COLS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?)`
+    ).bind(...base).run();
+  }
   return { id, orderNo };
 };
 
@@ -2089,6 +2109,15 @@ const handleCategoryPatch = async (req, env, id) => {
         await env.DB.prepare(`UPDATE categories_kv SET ${filtered.join(", ")} WHERE id = ?`).bind(...filteredArgs).run();
       }
     } else { throw err; }
+  }
+  // v00.295.002 — posts.category 는 글 쓸 때 박아 넣는 비정규화 컬럼이다.
+  //   여기서 label 만 바꾸면 이미 올라간 글은 옛 이름을 그대로 달고 있게 된다.
+  //   증상은 글 상세의 게시판 뱃지 · 홈 '최근 기록' 말머리 · 마이페이지 내 글에서 보인다.
+  //   (목록은 id 로 먼저 찾기 때문에 멀쩡해서 더 늦게 발견된다.)
+  //   실제로 v00.294 게시판 개편 때 7편이 어긋난 채 남아 손으로 맞춰야 했다.
+  if ("label" in body) {
+    await env.DB.prepare("UPDATE posts SET category = ? WHERE category_id = ?")
+      .bind(body.label, id).run();
   }
   // v00.189 — 카테고리 변경 audit log.
   await auditWrite(env, admin.email, "category.update", `category:${id}`, body);

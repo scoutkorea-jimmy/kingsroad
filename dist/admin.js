@@ -11712,151 +11712,154 @@
         " ",
         /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, marginLeft: 4 } }, (_a = counts[f.key]) != null ? _a : 0)
       );
-    })), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: handleExportCsv }, "CSV \uB2E4\uC6B4\uB85C\uB4DC")), orders.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, "\uD574\uB2F9 \uC0C1\uD0DC\uC758 \uC8FC\uBB38\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 12 } }, orders.map((o) => /* @__PURE__ */ React.createElement("article", { key: o.id, className: "card", style: { padding: 18 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono gold", style: { fontSize: 12, letterSpacing: "0.16em" } }, o.orderNo), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, window.BGNJ_FMT.kstDateTime(o.createdAt))), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.22em", color: statusTone(o.status) } }, statusLabel(o.status).toUpperCase(), o.paid && o.status === "paid" && " \xB7 \uC785\uAE08 \u2713")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4 } }, "BOOK"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13 } }, "\u300E", window.BGNJ_BOOK_ORDERS.getOrderBookTitle(o), "\u300F \xB7 ", o.version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", " \xD7 ", o.qty)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4 } }, "AMOUNT"), /* @__PURE__ */ React.createElement("div", { className: "gold ko-serif", style: { fontSize: 18 } }, window.BGNJ_FMT.won(o.total)), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uC0C1\uD488 ", window.BGNJ_FMT.currency(o.subtotal), " + \uBC30\uC1A1 ", window.BGNJ_FMT.currency(o.shipping))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4 } }, "RECIPIENT"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, lineHeight: 1.6 } }, o.recipient, " \xB7 ", o.phone)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4 } }, "SHIP TO"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, lineHeight: 1.6 } }, o.address, " ", o.addressDetail), o.memo && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginTop: 2 } }, "\xB7 ", o.memo))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", borderTop: "1px solid var(--line)", paddingTop: 12 } }, /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        onClick: () => window.BGNJ_BOOK_ORDERS.downloadReceipt(o.id)
-      },
-      "\uC601\uC218\uC99D \u2193"
-    ), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        title: "\uC774 \uC8FC\uBB38 \uAE30\uB85D\uC744 \uC601\uAD6C \uC0AD\uC81C\uD569\uB2C8\uB2E4 (\uAC10\uC0AC \uB85C\uADF8 \uB0A8\uC74C)",
-        onClick: async () => {
-          var _a, _b, _c, _d;
-          const ok = await window.BGNJ_CONFIRM(
-            `\uC8FC\uBB38 ${o.orderNo} \uAE30\uB85D\uC744 \uC601\uAD6C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?
+    })), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: handleExportCsv }, "CSV \uB2E4\uC6B4\uB85C\uB4DC")), orders.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, "\uD574\uB2F9 \uC0C1\uD0DC\uC758 \uC8FC\uBB38\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 12 } }, orders.map((o) => {
+      var _a, _b;
+      return /* @__PURE__ */ React.createElement("article", { key: o.id, className: "card", style: { padding: 18 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono gold", style: { fontSize: 12, letterSpacing: "0.16em" } }, o.orderNo), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, window.BGNJ_FMT.kstDateTime(o.createdAt))), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.22em", color: statusTone(o.status) } }, statusLabel(o.status).toUpperCase(), o.paid && o.status === "paid" && " \xB7 \uC785\uAE08 \u2713")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4 } }, "BOOK"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13 } }, "\u300E", window.BGNJ_BOOK_ORDERS.getOrderBookTitle(o), "\u300F \xB7 ", o.version === "KR" ? "\uAD6D\uBB38\uD310" : "\uC601\uBB38\uD310", " \xD7 ", o.qty)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4 } }, "AMOUNT"), /* @__PURE__ */ React.createElement("div", { className: "gold ko-serif", style: { fontSize: 18 } }, window.BGNJ_FMT.won(o.total)), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uC0C1\uD488 ", window.BGNJ_FMT.currency(o.subtotal), " + \uBC30\uC1A1 ", window.BGNJ_FMT.currency(o.shipping))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4 } }, "RECIPIENT"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, lineHeight: 1.6 } }, o.recipient, " \xB7 ", o.phone)), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4 } }, "SHIP TO"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, lineHeight: 1.6 } }, o.address, " ", o.addressDetail), o.memo && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginTop: 2 } }, "\xB7 ", o.memo)), o.taxInvoice && /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 4, color: "var(--danger)" } }, "TAX INVOICE \xB7 \uBC1C\uD589 \uC694\uCCAD"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, lineHeight: 1.7, wordBreak: "keep-all" } }, o.bizName || "\uC0C1\uD638 \uBBF8\uAE30\uC7AC", o.bizCeo ? ` \xB7 ${o.bizCeo}` : "", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { className: "mono" }, ((_b = (_a = window.BGNJ_TaxInvoice) == null ? void 0 : _a.formatBizNo) == null ? void 0 : _b.call(_a, o.bizNo)) || o.bizNo || "\uBC88\uD638 \uBBF8\uAE30\uC7AC"), /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, o.bizEmail || "\uC774\uBA54\uC77C \uBBF8\uAE30\uC7AC")))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", borderTop: "1px solid var(--line)", paddingTop: 12 } }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: () => window.BGNJ_BOOK_ORDERS.downloadReceipt(o.id)
+        },
+        "\uC601\uC218\uC99D \u2193"
+      ), /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          title: "\uC774 \uC8FC\uBB38 \uAE30\uB85D\uC744 \uC601\uAD6C \uC0AD\uC81C\uD569\uB2C8\uB2E4 (\uAC10\uC0AC \uB85C\uADF8 \uB0A8\uC74C)",
+          onClick: async () => {
+            var _a2, _b2, _c, _d;
+            const ok = await window.BGNJ_CONFIRM(
+              `\uC8FC\uBB38 ${o.orderNo} \uAE30\uB85D\uC744 \uC601\uAD6C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?
 
 \uC2E4\uC81C \uACB0\uC81C\xB7\uBC30\uC1A1\uC774 \uC9C4\uD589\uB41C \uAC70\uB798\uB77C\uBA74 \uC0AD\uC81C \uB300\uC2E0 '\uCDE8\uC18C' \uCC98\uB9AC\uB97C \uAD8C\uC7A5\uD569\uB2C8\uB2E4.
 \uC0AD\uC81C\uB294 \uB418\uB3CC\uB9B4 \uC218 \uC5C6\uC73C\uBA70 \uAC10\uC0AC \uB85C\uADF8\uC5D0 \uD754\uC801\uC774 \uB0A8\uC2B5\uB2C8\uB2E4.`,
-            { danger: true, confirmLabel: "\uC601\uAD6C \uC0AD\uC81C" }
-          );
-          if (!ok) return;
-          const res = await window.BGNJ_BOOK_ORDERS.adminDeleteOrder(o.id);
-          if (!(res == null ? void 0 : res.ok)) {
-            try {
-              (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, (res == null ? void 0 : res.message) || "\uC8FC\uBB38 \uC0AD\uC81C \uC2E4\uD328");
-            } catch (_e) {
-              console.warn("[bgnj] AdminCommercePanels.jsx:405 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+              { danger: true, confirmLabel: "\uC601\uAD6C \uC0AD\uC81C" }
+            );
+            if (!ok) return;
+            const res = await window.BGNJ_BOOK_ORDERS.adminDeleteOrder(o.id);
+            if (!(res == null ? void 0 : res.ok)) {
+              try {
+                (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, (res == null ? void 0 : res.message) || "\uC8FC\uBB38 \uC0AD\uC81C \uC2E4\uD328");
+              } catch (_e) {
+                console.warn("[bgnj] AdminCommercePanels.jsx:405 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+              }
+              return;
             }
-            return;
+            try {
+              (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, `\uC8FC\uBB38 ${o.orderNo} \uC0AD\uC81C \uC644\uB8CC`);
+            } catch (_e) {
+              console.warn("[bgnj] AdminCommercePanels.jsx:408 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+            }
+            refresh();
+          },
+          style: { borderColor: "var(--danger)", color: "var(--danger)" }
+        },
+        "\uC0AD\uC81C"
+      ), o.status === "pending_payment" && /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: () => {
+            window.BGNJ_BOOK_ORDERS.confirmPayment(o.id);
+            refresh();
           }
-          try {
-            (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, `\uC8FC\uBB38 ${o.orderNo} \uC0AD\uC81C \uC644\uB8CC`);
-          } catch (_e) {
-            console.warn("[bgnj] AdminCommercePanels.jsx:408 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+        },
+        "\uC785\uAE08 \uD655\uC778 \u2192 \uBC1C\uC1A1 \uC900\uBE44"
+      ), o.status === "paid" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          placeholder: "\uC1A1\uC7A5 \uBC88\uD638 (\uC120\uD0DD)",
+          style: { padding: "6px 10px", maxWidth: 200 },
+          value: trackingDraft[o.id] || "",
+          onChange: (e) => setTrackingDraft({ ...trackingDraft, [o.id]: e.target.value })
+        }
+      ), /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: () => {
+            window.BGNJ_BOOK_ORDERS.markShipped(o.id, trackingDraft[o.id] || "");
+            refresh();
           }
-          refresh();
         },
-        style: { borderColor: "var(--danger)", color: "var(--danger)" }
-      },
-      "\uC0AD\uC81C"
-    ), o.status === "pending_payment" && /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        onClick: () => {
-          window.BGNJ_BOOK_ORDERS.confirmPayment(o.id);
-          refresh();
-        }
-      },
-      "\uC785\uAE08 \uD655\uC778 \u2192 \uBC1C\uC1A1 \uC900\uBE44"
-    ), o.status === "paid" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        className: "field-input",
-        placeholder: "\uC1A1\uC7A5 \uBC88\uD638 (\uC120\uD0DD)",
-        style: { padding: "6px 10px", maxWidth: 200 },
-        value: trackingDraft[o.id] || "",
-        onChange: (e) => setTrackingDraft({ ...trackingDraft, [o.id]: e.target.value })
-      }
-    ), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        onClick: () => {
-          window.BGNJ_BOOK_ORDERS.markShipped(o.id, trackingDraft[o.id] || "");
-          refresh();
-        }
-      },
-      "\uBC1C\uC1A1 \uCC98\uB9AC"
-    ), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        onClick: () => {
-          window.BGNJ_BOOK_ORDERS.unconfirmPayment(o.id);
-          refresh();
-        }
-      },
-      "\uC785\uAE08 \uD655\uC778 \uCDE8\uC18C"
-    )), o.status === "shipped" && /* @__PURE__ */ React.createElement(React.Fragment, null, o.tracking && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\uC1A1\uC7A5 ", o.tracking), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        onClick: () => {
-          window.BGNJ_BOOK_ORDERS.markDelivered(o.id);
-          refresh();
-        }
-      },
-      "\uBC30\uC1A1 \uC644\uB8CC \uCC98\uB9AC"
-    )), o.status === "delivered" && o.tracking && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\uC1A1\uC7A5 ", o.tracking, " \xB7 \uB3C4\uCC29 ", o.deliveredAt ? window.BGNJ_FMT.kstDate(o.deliveredAt) : ""), (o.status === "pending_payment" || o.status === "paid") && /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        onClick: async () => {
-          if (!await window.BGNJ_CONFIRM(`\uC8FC\uBB38 ${o.orderNo}\uC744(\uB97C) \uCDE8\uC18C \uCC98\uB9AC\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
-          window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
-          refresh();
+        "\uBC1C\uC1A1 \uCC98\uB9AC"
+      ), /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: () => {
+            window.BGNJ_BOOK_ORDERS.unconfirmPayment(o.id);
+            refresh();
+          }
         },
-        style: { borderColor: "var(--danger)", color: "var(--danger)", marginLeft: "auto" }
-      },
-      "\uC8FC\uBB38 \uCDE8\uC18C"
-    ), o.status === "refund_requested" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { width: "100%", paddingTop: 8, borderTop: "1px solid var(--line)", marginTop: 4 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", marginBottom: 6 } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, color: "var(--warning)", letterSpacing: "0.2em" } }, "REFUND REQUEST"), /* @__PURE__ */ React.createElement("span", { className: "dim", style: { fontSize: 12 } }, "\uC0AC\uC720: ", o.refundReason || "(\uBBF8\uC785\uB825)")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        onClick: async () => {
-          if (!await window.BGNJ_CONFIRM(`\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC2DC\uACA0\uC5B4\uC694? \uC8FC\uBB38 ${o.orderNo}\uC774 \uCDE8\uC18C\uB429\uB2C8\uB2E4.`, { danger: true })) return;
-          window.BGNJ_BOOK_ORDERS.approveRefund(o.id);
-          refresh();
+        "\uC785\uAE08 \uD655\uC778 \uCDE8\uC18C"
+      )), o.status === "shipped" && /* @__PURE__ */ React.createElement(React.Fragment, null, o.tracking && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\uC1A1\uC7A5 ", o.tracking), /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: () => {
+            window.BGNJ_BOOK_ORDERS.markDelivered(o.id);
+            refresh();
+          }
         },
-        style: { borderColor: "var(--primary)", color: "var(--secondary)" }
-      },
-      "\uD658\uBD88 \uC2B9\uC778"
-    ), /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        className: "field-input",
-        placeholder: "\uBC18\uB824 \uC0AC\uC720 (\uC120\uD0DD)",
-        style: { padding: "5px 8px", fontSize: 12, maxWidth: 200 },
-        value: rejectNotes[o.id] || "",
-        onChange: (e) => setRejectNotes({ ...rejectNotes, [o.id]: e.target.value })
-      }
-    ), /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        className: "btn btn-small",
-        onClick: async () => {
-          if (!await window.BGNJ_CONFIRM(`\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
-          window.BGNJ_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || "");
-          refresh();
+        "\uBC30\uC1A1 \uC644\uB8CC \uCC98\uB9AC"
+      )), o.status === "delivered" && o.tracking && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\uC1A1\uC7A5 ", o.tracking, " \xB7 \uB3C4\uCC29 ", o.deliveredAt ? window.BGNJ_FMT.kstDate(o.deliveredAt) : ""), (o.status === "pending_payment" || o.status === "paid") && /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: async () => {
+            if (!await window.BGNJ_CONFIRM(`\uC8FC\uBB38 ${o.orderNo}\uC744(\uB97C) \uCDE8\uC18C \uCC98\uB9AC\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
+            window.BGNJ_BOOK_ORDERS.cancelOrder(o.id);
+            refresh();
+          },
+          style: { borderColor: "var(--danger)", color: "var(--danger)", marginLeft: "auto" }
         },
-        style: { borderColor: "var(--danger)", color: "var(--danger)" }
-      },
-      "\uD658\uBD88 \uBC18\uB824"
-    )))))))));
+        "\uC8FC\uBB38 \uCDE8\uC18C"
+      ), o.status === "refund_requested" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { width: "100%", paddingTop: 8, borderTop: "1px solid var(--line)", marginTop: 4 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", marginBottom: 6 } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, color: "var(--warning)", letterSpacing: "0.2em" } }, "REFUND REQUEST"), /* @__PURE__ */ React.createElement("span", { className: "dim", style: { fontSize: 12 } }, "\uC0AC\uC720: ", o.refundReason || "(\uBBF8\uC785\uB825)")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: async () => {
+            if (!await window.BGNJ_CONFIRM(`\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC2DC\uACA0\uC5B4\uC694? \uC8FC\uBB38 ${o.orderNo}\uC774 \uCDE8\uC18C\uB429\uB2C8\uB2E4.`, { danger: true })) return;
+            window.BGNJ_BOOK_ORDERS.approveRefund(o.id);
+            refresh();
+          },
+          style: { borderColor: "var(--primary)", color: "var(--secondary)" }
+        },
+        "\uD658\uBD88 \uC2B9\uC778"
+      ), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          placeholder: "\uBC18\uB824 \uC0AC\uC720 (\uC120\uD0DD)",
+          style: { padding: "5px 8px", fontSize: 12, maxWidth: 200 },
+          value: rejectNotes[o.id] || "",
+          onChange: (e) => setRejectNotes({ ...rejectNotes, [o.id]: e.target.value })
+        }
+      ), /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: async () => {
+            if (!await window.BGNJ_CONFIRM(`\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
+            window.BGNJ_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || "");
+            refresh();
+          },
+          style: { borderColor: "var(--danger)", color: "var(--danger)" }
+        },
+        "\uD658\uBD88 \uBC18\uB824"
+      ))))));
+    })));
   };
 
   // pages/admin/AdminEventsPanels.jsx

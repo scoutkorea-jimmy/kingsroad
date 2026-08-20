@@ -337,9 +337,15 @@ const BookGridSection = ({ go, dataTick, text }) => {
               onClick={() => go('book')}>전체 {books.length}권 →</button>
           </div>
           <div className="home-book-grid">
+            {/* v00.295.002 — 어떤 책을 눌렀는지 알려주지 않아 늘 첫 책(왕의 길)이 열렸다.
+                답사·강연·게시글과 같은 방식으로 책 id 를 넘긴다. */}
             {books.map((b) => (
               <article key={b.id} className="home-book"
-                {...clickable(() => go('book'), `책: ${b.title}`)}>
+                {...clickable(() => {
+                  try { sessionStorage.setItem('bgnj_pending_book_id', String(b.id)); }
+                  catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 책 목록으로 갈 뿐 (HomePage.jsx)', _e); }
+                  go('book');
+                }, `책: ${b.title}`)}>
                 {/* v00.293.002 — 필드명 주의: 헬퍼가 cover_key → coverDataUri, price_kr → priceKR 로 매핑한다.
                     priceKr(소문자 r) 이 아니라 priceKR 이다. */}
                 {b.coverDataUri

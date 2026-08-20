@@ -16,6 +16,7 @@ import '../components/Shell.jsx';
 import '../components/TiptapEditor.jsx';
 import '../components/ConfirmDialog.jsx';
 import '../components/CashReceiptField.jsx';
+import '../components/TaxInvoiceField.jsx';
 import '../components/MediaGallery.jsx';
 import '../pages/HomePage.jsx';
 import '../pages/HomeNextPage.jsx';

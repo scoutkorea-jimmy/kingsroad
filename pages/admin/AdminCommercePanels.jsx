@@ -385,6 +385,18 @@ const BookOrderAdminPanel = ({ go }) => {
                   <div style={{fontSize:12, lineHeight:1.6}}>{o.address} {o.addressDetail}</div>
                   {o.memo && <div className="dim-2" style={{fontSize:11, marginTop:2}}>· {o.memo}</div>}
                 </div>
+                {/* v00.295.002 — 세금계산서 발행 요청. 신청한 주문에만 뜬다.
+                    발행에 필요한 것이 한 칸에 다 모여 있어야 홈택스에 그대로 옮겨 적을 수 있다. */}
+                {o.taxInvoice && (
+                  <div>
+                    <div className="mono" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:4, color:'var(--danger)'}}>TAX INVOICE · 발행 요청</div>
+                    <div style={{fontSize:12, lineHeight:1.7, wordBreak:'keep-all'}}>
+                      {o.bizName || '상호 미기재'}{o.bizCeo ? ` · ${o.bizCeo}` : ''}<br/>
+                      <span className="mono">{window.BGNJ_TaxInvoice?.formatBizNo?.(o.bizNo) || o.bizNo || '번호 미기재'}</span><br/>
+                      <span className="dim-2">{o.bizEmail || '이메일 미기재'}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{display:'flex', gap:8, alignItems:'center', flexWrap:'wrap', borderTop:'1px solid var(--line)', paddingTop:12}}>

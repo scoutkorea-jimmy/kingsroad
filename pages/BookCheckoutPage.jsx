@@ -123,7 +123,16 @@ const BookPage = ({ go, cart, setCart, user }) => {
       return (a.order ?? 0) - (b.order ?? 0);
     });
   }, [tick]);
-  const [selectedId, setSelectedId] = React.useState(null);
+  // v00.295.002 — 홈 책 카드가 넘겨준 책 id. 첫 렌더부터 이 값이어야 아래 폴백 effect 에 지지 않는다.
+  const [selectedId, setSelectedId] = React.useState(() => {
+    try { return sessionStorage.getItem('bgnj_pending_book_id') || null; }
+    catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 첫 책으로 (BookCheckoutPage.jsx)', _e); return null; }
+  });
+  // 힌트는 한 번만 쓴다. 남겨 두면 다음에 '전체 목록' 으로 들어와도 그 책이 열린다.
+  React.useEffect(() => {
+    try { sessionStorage.removeItem('bgnj_pending_book_id'); }
+    catch (_e) { console.warn('[bgnj] 저장소 정리 (BookCheckoutPage.jsx)', _e); }
+  }, []);
   // books 변경 시 selectedId 가 유효하지 않으면 첫 권으로 폴백.
   React.useEffect(() => {
     if (books.length === 0) return;
@@ -507,6 +516,8 @@ const CheckoutPage = ({ go, cart, user }) => {
   const [addressDetail, setAddressDetail] = React.useState("");
   const [memo, setMemo] = React.useState("");
   const [cashReceipt, setCashReceipt] = React.useState(() => window.BGNJ_CashReceipt?.empty?.() || { requested: false, type: 'personal', identifier: '' });
+  // v00.295.002 — 세금계산서. 현금영수증과 달리 memo 가 아니라 정식 컬럼으로 저장한다.
+  const [taxInvoice, setTaxInvoice] = React.useState(() => window.BGNJ_TaxInvoice?.empty?.() || { requested: false, name: '', bizNo: '', ceo: '', email: '' });
   const [error, setError] = React.useState("");
   const [submittedOrder, setSubmittedOrder] = React.useState(null);
   // v00.262.002 — 이중 제출 가드(A1). 더블클릭/엔터 중복으로 같은 주문 2건 INSERT 되는 사고 방지.
@@ -611,6 +622,14 @@ const CheckoutPage = ({ go, cart, user }) => {
               <span>결제 금액</span>
               <span className="gold-2 ko-serif" style={{fontSize:22}}>{window.BGNJ_FMT.won(submittedOrder.total)}</span>
             </div>
+            {/* v00.295.002 — 세금계산서를 신청했으면 어디로 갈지 여기서 확인시킨다. */}
+            {submittedOrder.taxInvoice && (
+              <div style={{marginTop:12, paddingTop:12, borderTop:'1px dashed var(--line)', fontSize:12, lineHeight:1.7, wordBreak:'keep-all'}}>
+                <div className="mono" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:4, color:'var(--danger)'}}>TAX INVOICE</div>
+                {submittedOrder.bizName} ({window.BGNJ_TaxInvoice?.formatBizNo?.(submittedOrder.bizNo) || submittedOrder.bizNo})<br/>
+                입금 확인 후 <strong>{submittedOrder.bizEmail}</strong> 으로 전자세금계산서를 보내 드립니다.
+              </div>
+            )}
             <div style={{marginTop:14, paddingTop:12, borderTop:'1px dashed var(--line)', fontSize:13, lineHeight:1.7}}>
               <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:6}}>SHIPPING TO</div>
               {submittedOrder.recipient} · {submittedOrder.phone}<br/>
@@ -635,6 +654,9 @@ const CheckoutPage = ({ go, cart, user }) => {
     if (!recipient.trim()) return setError("받는 분 이름을 입력해 주세요.");
     if (!phone.trim()) return setError("연락처를 입력해 주세요.");
     if (!address.trim()) return setError("기본 주소를 입력해 주세요.");
+    // v00.295.002 — 세금계산서를 신청했는데 칸이 비면 발행을 못 한다. 접수 전에 막는다.
+    const taxError = window.BGNJ_TaxInvoice?.validate?.(taxInvoice) || '';
+    if (taxError) return setError(taxError);
     setSubmitting(true);
     try {
       // v00.218 — 현금영수증 신청 정보를 memo prefix 로 인코딩 (백엔드 스키마 마이그레이션 전).
@@ -651,6 +673,11 @@ const CheckoutPage = ({ go, cart, user }) => {
         address: address.trim(),
         addressDetail: addressDetail.trim(),
         memo: memoCombined,
+        taxInvoice: !!taxInvoice.requested,
+        bizName: taxInvoice.requested ? (taxInvoice.name || '').trim() : '',
+        bizNo: taxInvoice.requested ? (window.BGNJ_TaxInvoice?.digits?.(taxInvoice.bizNo) || '') : '',
+        bizCeo: taxInvoice.requested ? (taxInvoice.ceo || '').trim() : '',
+        bizEmail: taxInvoice.requested ? (taxInvoice.email || '').trim() : '',
       });
       if (!result?.ok) { setSubmitting(false); return setError(result?.message || "주문 처리에 실패했습니다."); }
       setSubmittedOrder(result.order);
@@ -713,6 +740,9 @@ const CheckoutPage = ({ go, cart, user }) => {
             {/* v00.218 — 현금영수증 신청 */}
             {window.BGNJ_CashReceiptField && (
               <window.BGNJ_CashReceiptField value={cashReceipt} onChange={setCashReceipt}/>
+            )}
+            {window.BGNJ_TaxInvoiceField && (
+              <window.BGNJ_TaxInvoiceField value={taxInvoice} onChange={setTaxInvoice}/>
             )}
 
             <h3 className="ko-serif" style={{fontSize:22, marginTop:24, marginBottom:14}}>결제 수단 — 무통장 입금</h3>
