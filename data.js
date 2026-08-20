@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.294.008",
+  version: "00.294.009",
   build: "2026.08.20",
   channel: "preview",
 };
@@ -55,8 +55,11 @@ window.BGNJ_DRAFTS = {
   _read() {
     try { return JSON.parse(localStorage.getItem(this.KEY) || '[]') || []; } catch { return []; }
   },
+  // v00.294.009 — 실패를 삼키면 '임시저장 됐겠지' 하고 창을 닫아 글을 잃는다.
+  // 성공 여부를 돌려주고, 호출부가 사용자에게 알릴 수 있게 한다.
   _write(arr) {
-    try { localStorage.setItem(this.KEY, JSON.stringify(arr)); } catch {}
+    try { localStorage.setItem(this.KEY, JSON.stringify(arr)); return true; }
+    catch (err) { console.warn('[BGNJ_DRAFTS] 임시저장 목록 저장 실패 (저장 공간 부족 가능):', err); return false; }
   },
   // 만료/초과 정리. 호출 시점에 lazy 정리.
   purge() {
@@ -80,14 +83,19 @@ window.BGNJ_DRAFTS = {
     const idx = arr.findIndex((d) => d.id === id);
     if (idx >= 0) arr[idx] = draft; else arr.unshift(draft);
     if (arr.length > this.MAX_COUNT) arr.length = this.MAX_COUNT;
-    this._write(arr);
-    try { window.dispatchEvent(new CustomEvent('bgnj-drafts-change')); } catch {}
+    // v00.294.009 — 저장에 실패하면 던진다. 호출부가 조용히 성공으로 넘기지 못하게.
+    if (!this._write(arr)) {
+      const e = new Error('임시저장 공간이 가득 찼습니다.');
+      e.name = 'QuotaExceededError';
+      throw e;
+    }
+    try { window.dispatchEvent(new CustomEvent('bgnj-drafts-change')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
     return draft;
   },
   remove(id) {
     const arr = this._read().filter((d) => d.id !== id);
     this._write(arr);
-    try { window.dispatchEvent(new CustomEvent('bgnj-drafts-change')); } catch {}
+    try { window.dispatchEvent(new CustomEvent('bgnj-drafts-change')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
   },
   get(id) { return this._read().find((d) => d.id === id) || null; },
 };
@@ -124,7 +132,7 @@ window.BGNJ_THEME = {
       document.documentElement.setAttribute('data-theme', eff);
       document.documentElement.style.colorScheme = eff;
     } catch {}
-    try { window.dispatchEvent(new CustomEvent('bgnj-theme-change', { detail: { mode: this.get(), effective: this.effective() } })); } catch {}
+    try { window.dispatchEvent(new CustomEvent('bgnj-theme-change', { detail: { mode: this.get(), effective: this.effective() } })); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
   },
 };
 try { window.BGNJ_THEME.apply(); } catch {}
@@ -135,7 +143,7 @@ try {
     if (mq.addEventListener) mq.addEventListener('change', onChange);
     else if (mq.addListener) mq.addListener(onChange);
   }
-} catch {}
+} catch {}  // bgnj-allow-silent — 브라우저 기능 감지
 
 // 진단용 헬스체크 헬퍼 — 콘솔에서 BGNJ_DIAG.run() 으로 즉시 실행 가능.
 window.BGNJ_DIAG = {
@@ -189,7 +197,7 @@ window.BGNJ_DIAG = {
       }
     }
     localStorage.setItem('bgnj_migration_v1', 'done');
-  } catch {}
+  } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
 })();
 
 // === v33 정리 — D1 로 이전된 엔티티의 localStorage 잔재 일괄 삭제 ===
@@ -231,7 +239,7 @@ window.BGNJ_DIAG = {
     wsdKeys.forEach((k) => { localStorage.removeItem(k); removed.push(k); });
     localStorage.setItem('bgnj_cleanup_v33', 'done');
     if (removed.length) console.log('[BGNJ] v33 cleanup — removed localStorage keys:', removed);
-  } catch {}
+  } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
 })();
 
 // === BGNJ_SAFE_HTML — XSS 방어 sanitizer (v00.109, v00.112 hardening) =====
@@ -337,8 +345,8 @@ window.BGNJ_BROADCAST = (() => {
     const onStorage = (e) => { if (e.key === 'bgnj_purge_signal' && e.newValue) handler(e); };
     try { window.addEventListener('storage', onStorage); } catch {}
     return () => {
-      try { ch?.removeEventListener?.('message', handler); } catch {}
-      try { window.removeEventListener('storage', onStorage); } catch {}
+      try { ch?.removeEventListener?.('message', handler); } catch {}  // bgnj-allow-silent — 리스너 해제
+      try { window.removeEventListener('storage', onStorage); } catch {}  // bgnj-allow-silent — 리스너 해제
     };
   };
   return { publish, subscribe };
@@ -357,7 +365,7 @@ window.BGNJ_ANALYTICS = (() => {
       sessionId = 'sess-' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
       sessionStorage.setItem(SESSION_KEY, sessionId);
     }
-  } catch {}
+  } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
   let lastTracked = null;
   const track = (route) => {
     // route 가 같으면 dedupe (React StrictMode 또는 setRoute 중복 호출 방지).
@@ -381,7 +389,7 @@ window.BGNJ_ANALYTICS = (() => {
       }
       // 폴백 — fetch (silent, no await).
       window.BGNJ_API?.analytics?.track?.(payload)?.catch?.(() => {});
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
   };
   return { track, sessionId: () => sessionId };
 })();
@@ -473,7 +481,18 @@ const _lsGet = (k, fallback) => {
     return v ? JSON.parse(v) : fallback;
   } catch { return fallback; }
 };
-const _lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+// v00.294.009 — 캐시 저장의 공통 경로. 실패해도 서버가 진실이라 화면은 살지만,
+// 완전히 조용하면 '왜 매번 다시 불러오지' 를 진단할 방법이 없다. 최소 1회 경고.
+let _lsSetWarned = false;
+const _lsSet = (k, v) => {
+  try { localStorage.setItem(k, JSON.stringify(v)); }
+  catch (err) {
+    if (!_lsSetWarned) {
+      _lsSetWarned = true;
+      console.warn(`[BGNJ] 로컬 캐시 저장 실패 (key=${k}) — 저장 공간 부족일 수 있습니다. 서버 데이터는 영향 없음:`, err);
+    }
+  }
+};
 const _asArray = (value, fallback = []) => Array.isArray(value) ? value : fallback;
 const _asRecord = (value, fallback = {}) => (
   value && typeof value === "object" && !Array.isArray(value) ? value : fallback
@@ -507,7 +526,7 @@ try {
     localStorage.removeItem('bgnj_comments');
     localStorage.setItem('bgnj_storage_version', BGNJ_STORAGE_VERSION);
   }
-} catch {}
+} catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
 const hashPassword = (input) => {
   const value = String(input || "");
   let hash = 0;
@@ -1185,7 +1204,7 @@ window.BGNJ_AUTH = {
     try {
       if (user) localStorage.setItem(this._SESSION_KEY, JSON.stringify(this._sanitizeForCache(user)));
       else localStorage.removeItem(this._SESSION_KEY);
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 저장소 정리
   },
   getSessionUser() {
     return this._readCache();
@@ -1261,8 +1280,22 @@ window.BGNJ_AUTH = {
     }
   },
   async signOut() {
-    try { await window.BGNJ_API.logout(); } catch {}
+    // v00.294.009 — 서버 로그아웃 실패를 삼키던 자리. 로컬 세션은 어차피 지우므로
+    // 화면상 로그아웃은 되지만 **서버 세션은 살아 있다** — 공용 PC 라면 그대로 위험이다.
+    // 로컬 정리는 무조건 하되(로그아웃 자체를 막으면 더 나쁘다), 사실은 알린다.
+    let serverOk = true;
+    try {
+      await window.BGNJ_API.logout();
+    } catch (err) {
+      serverOk = false;
+      console.warn('[BGNJ_AUTH.signOut] 서버 로그아웃 실패 — 서버 세션이 남아 있을 수 있음:', err);
+    }
     this._writeCache(null);
+    if (!serverOk) {
+      try {
+        window.BGNJ_TOAST?.error?.('이 기기에서는 로그아웃됐지만 서버 연결에 실패했습니다. 공용 PC 라면 네트워크 연결 후 다시 로그아웃해 주세요.');
+      } catch {} // bgnj-allow-silent — 토스트가 없어도 로그아웃 자체는 끝내야 한다
+    }
     return null;
   },
 
@@ -1272,7 +1305,7 @@ window.BGNJ_AUTH = {
     try {
       const { user } = await window.BGNJ_API.updateProfile(payload);
       this._writeCache(user || null);
-      try { window.dispatchEvent(new CustomEvent('bgnj-session-refresh')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-session-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       return { ok: true, user };
     } catch (err) {
       return this._classifyAuthError(err, '프로필 수정 실패');
@@ -1299,8 +1332,8 @@ window.BGNJ_AUTH = {
         profile: u.profile_json ? (typeof u.profile_json === 'string' ? JSON.parse(u.profile_json) : u.profile_json) : null,
         consents: u.consents_json ? (typeof u.consents_json === 'string' ? JSON.parse(u.consents_json) : u.consents_json) : null,
       }));
-      try { window.dispatchEvent(new CustomEvent('bgnj-users-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-users-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._usersCache.slice();
   },
   async setGrade(userId, gradeId) {
@@ -1479,14 +1512,14 @@ window.BGNJ_COMMUNITY = {
         this._serverPosts = posts.map(_serverPostToUi);
         this._serverLoaded = true;
         this._lastError = null;
-        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
         return this._serverPosts;
       } catch (err) {
         lastErr = err;
       }
     }
     this._lastError = lastErr?.message || 'refresh failed';
-    try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh-error', { detail: { message: this._lastError } })); } catch {}
+    try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh-error', { detail: { message: this._lastError } })); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
     return this._serverPosts;
   },
   savePosts(posts) {
@@ -1580,8 +1613,8 @@ window.BGNJ_COMMUNITY = {
       if (!this._serverPosts.some((p) => String(p.id) === String(postId))) {
         this._serverPosts = [ui, ...this._serverPosts];
       }
-      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
   },
   updatePost(postId, patch) {
     // 서버 캐시 항목이면 서버 업데이트로 위임 (fire-and-forget).
@@ -1605,7 +1638,7 @@ window.BGNJ_COMMUNITY = {
     if (serverPost) {
       this.deletePostRemote(postId).catch(() => {});
       this._serverPosts = this._serverPosts.filter((p) => String(p.id) !== String(postId));
-      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       // v00.150 — auto-trigger 비활성.
       if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
       return;
@@ -1626,7 +1659,7 @@ window.BGNJ_COMMUNITY = {
       const idx = this._serverPosts.findIndex((p) => String(p.id) === String(postId));
       if (idx >= 0 && typeof views === 'number') {
         this._serverPosts[idx] = { ...this._serverPosts[idx], views };
-        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       }
       return views || 0;
     } catch (err) {
@@ -1635,7 +1668,7 @@ window.BGNJ_COMMUNITY = {
       if (idx >= 0) {
         const cur = Number(this._serverPosts[idx].views || 0);
         this._serverPosts[idx] = { ...this._serverPosts[idx], views: cur + 1 };
-        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
         return cur + 1;
       }
       // 로컬 글(_remote=false)일 때만 updatePost 폴백.
@@ -1662,8 +1695,8 @@ window.BGNJ_COMMUNITY = {
         author: c.author,
         createdAt: c.created_at,
       }));
-      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._commentsCache[String(postId)] || [];
   },
   getComments(postId) {
@@ -1690,7 +1723,7 @@ window.BGNJ_COMMUNITY = {
       const arr = this._commentsCache[String(postId)] || [];
       this._commentsCache[String(postId)] = [...arr, optimistic];
       this.addCommentRemote(postId, payload).catch(() => {});
-      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       return this._commentsCache[String(postId)];
     }
     const nextComments = [...this.getComments(postId), payload];
@@ -1711,7 +1744,7 @@ window.BGNJ_COMMUNITY = {
       // 서버 댓글 삭제 API는 아직 없음 — 로컬 캐시에서만 제거(다음 새로고침 시 복원될 수 있음).
       const arr = this._commentsCache[String(postId)] || [];
       this._commentsCache[String(postId)] = arr.filter((c) => String(c.id) !== String(commentId));
-      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       // v00.150 — auto-trigger 비활성.
       if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch {} }
       return this._commentsCache[String(postId)];
@@ -1764,16 +1797,16 @@ window.BGNJ_COMMUNITY = {
     const cur = Array.isArray(post?.likes) ? post.likes : [];
     const optimistic = cur.includes(userId) ? cur.filter((id) => id !== userId) : [...cur, userId];
     this._patchLikesInMemory(postId, optimistic);
-    try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+    try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
     try {
       const res = await window.BGNJ_API.likes.toggle(postId);
       const arr = Array.isArray(res?.likes) ? res.likes : optimistic;
       this._patchLikesInMemory(postId, arr);
-      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       return arr;
     } catch (err) {
       this._patchLikesInMemory(postId, cur);
-      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       throw err;
     }
   },
@@ -1788,7 +1821,7 @@ window.BGNJ_COMMUNITY = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(bookmarks)) { try { console.warn('[BGNJ_COMMUNITY.refreshBookmarks] non-array — cache preserved'); } catch {} return this._bookmarks[userId] || []; }
       this._bookmarks[userId] = bookmarks.map((b) => b.post_id);
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._bookmarks[userId] || [];
   },
   getBookmarks(userId) {
@@ -1815,7 +1848,7 @@ window.BGNJ_COMMUNITY = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(reports)) { try { console.warn('[BGNJ_COMMUNITY.refreshReports] non-array — cache preserved'); } catch {} return this._reports.slice(); }
       this._reports = reports;
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._reports.slice();
   },
   async addReport({ postId, postTitle, reporterId, reporterName, reason }) {
@@ -1854,8 +1887,8 @@ window.BGNJ_COMMUNITY = {
         lectureId: n.lecture_id, tourId: n.tour_id,
         read: !!n.read, createdAt: n.created_at,
       }));
-      try { window.dispatchEvent(new CustomEvent('bgnj-notifications-refresh', { detail: { userId } })); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-notifications-refresh', { detail: { userId } })); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._notifications[userId] || [];
   },
   // 알림 — 서버가 행위 시점(댓글/등록/주문 등) 에 자동 발급해야 함. 클라이언트는 발급 권한 없음.
@@ -1876,14 +1909,14 @@ window.BGNJ_COMMUNITY = {
     if (!userId) return [];
     const list = this._notifications[userId] || [];
     this._notifications[userId] = list.map((n) => (n.id === id ? { ...n, read: true } : n));
-    try { window.BGNJ_API.notifications.markRead(id).catch(() => {}); } catch {}
+    try { window.BGNJ_API.notifications.markRead(id).catch(() => {}); } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._notifications[userId];
   },
   markAllNotificationsRead(userId) {
     if (!userId) return [];
     const list = this._notifications[userId] || [];
     this._notifications[userId] = list.map((n) => ({ ...n, read: true }));
-    try { window.BGNJ_API.notifications.markAllRead().catch(() => {}); } catch {}
+    try { window.BGNJ_API.notifications.markAllRead().catch(() => {}); } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._notifications[userId];
   },
   clearNotifications(userId) {
@@ -1932,8 +1965,8 @@ window.BGNJ_COLUMNS = {
       // v00.231 — 데이터-사라짐 방어 (Array.isArray 가드).
       if (!Array.isArray(columns)) { try { console.warn('[BGNJ_COLUMNS.refresh] non-array — cache preserved'); } catch {} return this._columns.slice(); }
       this._columns = columns.map((c) => this._toColumn(c));
-      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._columns.slice();
   },
   getLikes(id) { return (this._columns.find((c) => String(c.id) === String(id))?.likes) || []; },
@@ -1943,7 +1976,7 @@ window.BGNJ_COLUMNS = {
       const { likes } = await window.BGNJ_API.columns.like(id);
       const target = this._columns.find((c) => String(c.id) === String(id));
       if (target) target.likes = Array.isArray(likes) ? likes : (target.likes || []);
-      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       return target?.likes || [];
     } catch (err) {
       window.BGNJ_API?.errorLog?.report?.({ kind: 'http', code: err?.code || 'COLUMN_LIKE_FAIL', message: err?.message || '칼럼 좋아요 실패', url: err?.url });
@@ -1956,7 +1989,7 @@ window.BGNJ_COLUMNS = {
       const { views } = await window.BGNJ_API.columns.view(id);
       const target = this._columns.find((c) => String(c.id) === String(id));
       if (target && typeof views === 'number') target.views = views;
-      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       return views || 0;
     } catch { return 0; }
   },
@@ -2069,8 +2102,8 @@ window.BGNJ_LECTURES = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(lectures)) { try { console.warn('[BGNJ_LECTURES.refresh] non-array — cache preserved'); } catch {} return this._lectures.slice(); }
       this._lectures = lectures.map((l) => this._toLecture(l));
-      try { window.dispatchEvent(new CustomEvent('bgnj-lectures-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-lectures-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._lectures.slice();
   },
   async refreshMine() {
@@ -2085,7 +2118,7 @@ window.BGNJ_LECTURES = {
         createdAt: r.created_at, paidAt: r.paid_at, cancelledAt: r.cancelled_at,
         lecture: { id: r.lecture_id, title: r.title, topic: r.title, startsAt: r.starts_at, venue: r.venue, price: r.price },
       }));
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._myRegs.slice();
   },
   listAll(opts = {}) {
@@ -2225,7 +2258,7 @@ window.BGNJ_LECTURES = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(reviews)) { try { console.warn('[BGNJ_LECTURES.refreshReviews] non-array — cache preserved for', lectureId); } catch {} return this._reviewsByLecture[String(lectureId)] || []; }
       this._reviewsByLecture[String(lectureId)] = reviews;
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._reviewsByLecture[String(lectureId)] || [];
   },
   listReviews(lectureId) { return (this._reviewsByLecture[String(lectureId)] || []).slice(); },
@@ -2263,8 +2296,8 @@ window.BGNJ_LECTURES = {
       }));
       const def = this._bankAccounts.find((a) => a.isDefault) || this._bankAccounts[0];
       this._bank = def ? { ...def } : null;
-      try { window.dispatchEvent(new CustomEvent('bgnj-bank-accounts-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-bank-accounts-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._bank || {};
   },
   getBankAccount() { return { ...(this._bank || {}) }; },
@@ -2333,7 +2366,7 @@ window.BGNJ_BOOK_ORDERS = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(orders)) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshMine] non-array — cache preserved'); } catch {} return this._ordersMine.slice(); }
       this._ordersMine = orders.map((o) => this._toOrder(o));
-      try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
     } catch (e) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshMine]', e); } catch {} }
     return this._ordersMine.slice();
   },
@@ -2343,7 +2376,7 @@ window.BGNJ_BOOK_ORDERS = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(orders)) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshAll] non-array — cache preserved'); } catch {} return this._ordersAll.slice(); }
       this._ordersAll = orders.map((o) => this._toOrder(o));
-      try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-orders-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
     } catch (e) { try { console.warn('[BGNJ_BOOK_ORDERS.refreshAll]', e); } catch {} }
     return this._ordersAll.slice();
   },
@@ -2432,7 +2465,7 @@ window.BGNJ_BOOK_ORDERS = {
       // 캐시 양쪽에서 즉시 제거 후 refreshAll 로 정합.
       this._ordersAll = this._ordersAll.filter((o) => o.id !== id);
       this._ordersMine = this._ordersMine.filter((o) => o.id !== id);
-      try { window.dispatchEvent(new CustomEvent('bgnj-book-orders-refresh')); } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-book-orders-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
       await this.refreshAll();
       return { ok: true };
     } catch (err) {
@@ -2506,7 +2539,7 @@ window.BGNJ_BOOK_ORDERS = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(reviews)) { try { console.warn('[BGNJ_BOOKS.refreshReviews] non-array — cache preserved'); } catch {} return this._reviews.slice(); }
       this._reviews = reviews;
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._reviews.slice();
   },
   listReviews() { return this._reviews.slice().sort((a, b) => String(b.created_at || b.createdAt).localeCompare(String(a.created_at || a.createdAt))); },
@@ -2574,8 +2607,8 @@ window.BGNJ_TOURS = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(tours)) { try { console.warn('[BGNJ_TOURS.refresh] non-array — cache preserved'); } catch {} return this._tours.slice(); }
       this._tours = tours.map((t) => this._toTour(t));
-      try { window.dispatchEvent(new CustomEvent('bgnj-tours-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-tours-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._tours.slice();
   },
   async refreshMine() {
@@ -2590,7 +2623,7 @@ window.BGNJ_TOURS = {
         createdAt: r.created_at, paidAt: r.paid_at, cancelledAt: r.cancelled_at,
         tour: { id: r.tour_id, title: r.title, startsAt: r.starts_at, location: r.location, price: r.price },
       }));
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._myReservations.slice();
   },
   listAll(opts = {}) {
@@ -2724,7 +2757,7 @@ window.BGNJ_TOURS = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(reviews)) { try { console.warn('[BGNJ_TOURS.refreshReviews] non-array — cache preserved for', tourId); } catch {} return this._reviewsByTour[String(tourId)] || []; }
       this._reviewsByTour[String(tourId)] = reviews;
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._reviewsByTour[String(tourId)] || [];
   },
   listReviews(tourId) { return (this._reviewsByTour[String(tourId)] || []).slice(); },
@@ -2759,8 +2792,8 @@ window.BGNJ_HANGYEON = {
       const { roomTypes } = await window.BGNJ_API.hangyeon.roomTypes({ includeAll: !!includeAll });
       if (!Array.isArray(roomTypes)) { try { console.warn('[BGNJ_HANGYEON.refreshRoomTypes] non-array — cache preserved'); } catch {} return this._roomTypes.slice(); }
       this._roomTypes = roomTypes;
-      try { window.dispatchEvent(new CustomEvent('bgnj-hangyeon-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-hangyeon-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._roomTypes.slice();
   },
   listRoomTypes({ includeAll } = {}) {
@@ -2792,7 +2825,7 @@ window.BGNJ_HANGYEON = {
       const { bookings } = await window.BGNJ_API.hangyeon.mineBookings();
       if (!Array.isArray(bookings)) { try { console.warn('[BGNJ_HANGYEON.refreshMine] non-array — cache preserved'); } catch {} return this._myBookings.slice(); }
       this._myBookings = bookings;
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._myBookings.slice();
   },
   listMine() { return this._myBookings.slice(); },
@@ -2846,7 +2879,7 @@ window.BGNJ_AUDIT = {
     try {
       window.BGNJ_API.admin.audit.create({ action: entry.action, target: entry.target, details: entry.details })
         .catch(() => {});
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return entry;
   },
   async refresh({ limit = 200, search = '' } = {}) {
@@ -2859,7 +2892,7 @@ window.BGNJ_AUDIT = {
         details: e.details ?? (e.details_json ? JSON.parse(e.details_json) : null),
         by: e.actor || 'system', ts: e.ts || e.created_at,
       }));
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this.list({ search, limit });
   },
   list({ search = '', limit = 200 } = {}) {
@@ -2995,7 +3028,7 @@ window.BGNJ_GRADE_PROMO = {
         this._serverCache[userId] = { ...r, fetchedAt: Date.now() };
         return this._serverCache[userId];
       }
-    } catch {}
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return null;
   },
   // v00.262.002 — H1 직렬 N+1 해소. 500명 회원 × ~100ms = 50s+ wall freeze 문제.
@@ -3091,7 +3124,14 @@ window.BGNJ_GRADE_PROMO = {
     const targetId = this.evaluate(userId);
     const targetLv = grades.find((g) => g.id === targetId)?.level ?? 0;
     if (targetLv <= currentLv) return null;
-    try { window.BGNJ_AUTH.setGrade(userId, targetId)?.catch?.(() => {}); } catch {}
+    // v00.294.009 — 등급은 게시판 읽기·쓰기 권한의 기준이다. 서버 반영이 실패하면
+    // 감사 로그에는 '승급/강등함' 이 남는데 실제 권한은 그대로라 기록과 현실이 어긋난다.
+    // 자동 처리라 사용자에게 띄울 자리는 없지만, 최소한 진단은 남긴다.
+    try {
+      window.BGNJ_AUTH.setGrade(userId, targetId)?.catch?.((e) => {
+        console.warn('[BGNJ_GRADE_PROMO] 등급 서버 반영 실패:', userId, targetId, e?.message || e);
+      });
+    } catch (e) { console.warn('[BGNJ_GRADE_PROMO] 등급 변경 호출 실패:', userId, targetId, e?.message || e); }
     window.BGNJ_AUDIT?.log({
       action: 'grade.auto_promote',
       target: `user:${userId}`,
@@ -3117,7 +3157,14 @@ window.BGNJ_GRADE_PROMO = {
     const targetId = this.evaluate(userId);
     const targetLv = grades.find((g) => g.id === targetId)?.level ?? 0;
     if (targetLv >= currentLv) return null;
-    try { window.BGNJ_AUTH.setGrade(userId, targetId)?.catch?.(() => {}); } catch {}
+    // v00.294.009 — 등급은 게시판 읽기·쓰기 권한의 기준이다. 서버 반영이 실패하면
+    // 감사 로그에는 '승급/강등함' 이 남는데 실제 권한은 그대로라 기록과 현실이 어긋난다.
+    // 자동 처리라 사용자에게 띄울 자리는 없지만, 최소한 진단은 남긴다.
+    try {
+      window.BGNJ_AUTH.setGrade(userId, targetId)?.catch?.((e) => {
+        console.warn('[BGNJ_GRADE_PROMO] 등급 서버 반영 실패:', userId, targetId, e?.message || e);
+      });
+    } catch (e) { console.warn('[BGNJ_GRADE_PROMO] 등급 변경 호출 실패:', userId, targetId, e?.message || e); }
     window.BGNJ_AUDIT?.log({
       action: 'grade.auto_demote',
       target: `user:${userId}`,
@@ -3159,8 +3206,8 @@ window.BGNJ_SITE_CONTENT = {
       if (!siteContent || typeof siteContent !== 'object') { try { console.warn('[BGNJ_SITE_CONTENT.refresh] non-object — cache preserved'); } catch {} return this.get(); }
       this._cache = siteContent;
       this.applyHead();
-      try { window.dispatchEvent(new CustomEvent('bgnj-site-content-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-site-content-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this.get();
   },
   get() {
@@ -3250,7 +3297,7 @@ window.BGNJ_SITE_CONTENT = {
       if (sCon.naver) setMeta('meta[name="naver-site-verification"]', 'content', sCon.naver);
       if (sCon.bing) setMeta('meta[name="msvalidate.01"]', 'content', sCon.bing);
       if (sCon.yandex) setMeta('meta[name="yandex-verification"]', 'content', sCon.yandex);
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 문서 제목
   },
 };
 // 페이지 로드 직후 한 번 적용
@@ -3300,8 +3347,8 @@ window.BGNJ_BOOKS = {
       // v00.231 — 데이터-사라짐 방어.
       if (!Array.isArray(books)) { try { console.warn('[BGNJ_BOOKS.refresh] non-array — cache preserved'); } catch {} return this._books.slice(); }
       this._books = books.map((b) => this._toBook(b));
-      try { window.dispatchEvent(new CustomEvent('bgnj-books-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-books-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._books.slice();
   },
   list({ status } = {}) {
@@ -3406,7 +3453,7 @@ window.BGNJ_LEGAL = {
     this._cache[slug] = { ...next, updatedAt: new Date().toISOString() };
     // v00.142 — 다른 탭/창의 LegalPage 자동 갱신.
     try { window.BGNJ_BROADCAST?.publish?.('legal'); } catch {}
-    try { window.dispatchEvent(new CustomEvent('bgnj-legal-refresh', { detail: { slug } })); } catch {}
+    try { window.dispatchEvent(new CustomEvent('bgnj-legal-refresh', { detail: { slug } })); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
     return this._cache[slug];
   },
   listSlugs() { return ['privacy', 'terms']; },
@@ -3429,8 +3476,8 @@ window.BGNJ_FAQ = {
         order: f.display_order ?? 0,
         hidden: !!f.hidden,
       }));
-      try { window.dispatchEvent(new CustomEvent('bgnj-faqs-refresh')); } catch {}
-    } catch {}
+      try { window.dispatchEvent(new CustomEvent('bgnj-faqs-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
+    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
     return this._cache.slice();
   },
   listAll() { return this._cache.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)); },

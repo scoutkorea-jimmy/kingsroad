@@ -185,7 +185,7 @@ const getCurrentUser = async (req, env) => {
       row = await env.DB.prepare(SQL_WITH).bind(token).first();
     } catch (e) {
       __lastLoginColMissing = true;
-      try { console.warn('[getCurrentUser] last_login_at column missing — falling back permanently this worker', e?.message || e); } catch {}
+      try { console.warn('[getCurrentUser] last_login_at column missing — falling back permanently this worker', e?.message || e); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
       row = await env.DB.prepare(SQL_WITHOUT).bind(token).first();
     }
   }
@@ -217,9 +217,9 @@ const getCurrentUser = async (req, env) => {
         // await 없음 — 응답 차단 안 함. 실패해도 다음 요청에서 재시도.
         env.DB.prepare(`UPDATE users SET last_login_at = ? WHERE id = ?`)
           .bind(nowIso(), row.id).run()
-          .catch((e) => { try { console.warn('[last_login_at update]', e?.message || e); } catch {} });
+          .catch((e) => { try { console.warn('[last_login_at update]', e?.message || e); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); } });
       }
-    } catch {}
+    } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   }
   return {
     id: row.id,
@@ -310,7 +310,7 @@ const checkRateLimit = async (env, email, ip) => {
     // 테이블 없음 / 일시 오류 → 통과 (보안 < 가용성).
     // v00.262.003 — J2 silent 였던 path. brute-force 보호가 silent 비활성화되는 사고
     // 감지 위해 WARN. 운영자가 logs 에서 빈번하면 D1 상태 확인 가능.
-    try { console.warn('[checkRateLimit] degraded — brute-force guard skipped:', e?.message || e); } catch {}
+    try { console.warn('[checkRateLimit] degraded — brute-force guard skipped:', e?.message || e); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   }
 };
 
@@ -409,7 +409,7 @@ const handleAuthLogin = async (req, env) => {
       "SELECT id, email, name, password_hash, password_salt, is_admin, grade_id, suspended, suspended_reason FROM users WHERE email = ?"
     ).bind(email).first();
   } catch (e) {
-    try { console.warn('[handleAuthLogin] suspended-cols fallback', e?.message || e); } catch {}
+    try { console.warn('[handleAuthLogin] suspended-cols fallback', e?.message || e); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
     row = await env.DB.prepare(
       "SELECT id, email, name, password_hash, password_salt, is_admin, grade_id FROM users WHERE email = ?"
     ).bind(email).first();
@@ -453,7 +453,7 @@ const handleAuthLogin = async (req, env) => {
         .bind(nowIso(), row.id).run();
     } catch (e) {
       __lastLoginColMissing = true;
-      try { console.warn('[handleAuthLogin] last_login_at column missing — disabling UPDATEs', e?.message || e); } catch {}
+      try { console.warn('[handleAuthLogin] last_login_at column missing — disabling UPDATEs', e?.message || e); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
     }
   }
 
@@ -502,7 +502,7 @@ const handlePostsList = async (req, env) => {
   // v00.141 — allow_read 가 명시 0 인 카테고리의 글은 비관리자에 숨김.
   let isAdmin = false;
   // v00.262.003 — C2 transient D1 에러로 admin 권한 silent 강등 사고 방지. 가시화.
-  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch {} }
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); } }
   if (isAdmin) return { posts: results };
   const { results: blocked } = await env.DB.prepare(
     "SELECT id FROM categories_kv WHERE allow_read IS NOT NULL AND allow_read = 0"
@@ -642,7 +642,7 @@ const handlePostGet = async (req, env, id) => {
   // v00.141 — allow_read 가 명시 0 이면 비관리자 차단.
   let isAdmin = false;
   // v00.262.003 — C2 transient D1 에러로 admin 권한 silent 강등 사고 방지. 가시화.
-  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch {} }
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); } }
   if (!isAdmin && post.category_id) {
     const cat = await env.DB.prepare("SELECT allow_read FROM categories_kv WHERE id = ?").bind(post.category_id).first();
     if (cat && cat.allow_read !== undefined && cat.allow_read !== null && Number(cat.allow_read) === 0) {
@@ -693,7 +693,7 @@ const handleCommentsList = async (req, env, postId) => {
   // 명시 0 이면 비관리자에 빈 배열. NULL/undefined 는 legacy 호환 → 노출.
   let isAdmin = false;
   // v00.262.003 — C2 transient D1 에러로 admin 권한 silent 강등 사고 방지. 가시화.
-  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch {} }
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); } }
   if (!isAdmin) {
     const post = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(postId).first();
     if (post?.category_id) {
@@ -749,7 +749,7 @@ const handleCommentsCreate = async (req, env, postId) => {
         });
       }
     }
-  } catch {}
+  } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   return { id: r.meta.last_row_id };
 };
 
@@ -764,7 +764,7 @@ const handleBooksList = async (req, env) => {
     try {
       const me = await getCurrentUser(req, env);
       if (me?.isAdmin) allowAll = true;
-    } catch {}
+    } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   }
   const sql = allowAll
     ? "SELECT * FROM books ORDER BY sort_order ASC, created_at DESC"
@@ -942,7 +942,7 @@ const handlePageViewTrack = async (req, env) => {
     try {
       const cutoff = new Date(Date.now() - PAGE_VIEWS_RETENTION_MS).toISOString();
       await env.DB.prepare("DELETE FROM page_views WHERE ts < ?").bind(cutoff).run();
-    } catch {}
+    } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   }
   return { ok: true };
 };
@@ -1064,9 +1064,9 @@ const auditWrite = async (env, actor, action, target, details, ip) => {
       try {
         const cutoff = new Date(Date.now() - AUDIT_LOG_RETENTION_MS).toISOString();
         await env.DB.prepare("DELETE FROM audit_log WHERE ts < ?").bind(cutoff).run();
-      } catch {}
+      } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
     }
-  } catch {}
+  } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
 };
 
 // ──────── 관리자: 회원 ─────────────────────────────────────
@@ -1147,9 +1147,9 @@ const handleAdminUserMetrics = async (req, env, userId) => {
   try {
     const { results } = await env.DB.prepare("SELECT likes_json FROM user_columns WHERE author_id = ?").bind(userId).all();
     for (const r of (results || [])) {
-      try { const arr = r.likes_json ? JSON.parse(r.likes_json) : []; if (Array.isArray(arr)) likesColumns += arr.length; } catch {}
+      try { const arr = r.likes_json ? JSON.parse(r.likes_json) : []; if (Array.isArray(arr)) likesColumns += arr.length; } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
     }
-  } catch {} // user_columns 에 author_id 컬럼이 없을 수 있음 — 폴백 0
+  } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); } // user_columns 에 author_id 컬럼이 없을 수 있음 — 폴백 0
   // 본인 글에 들어온 신고 수
   const reportsRow = await env.DB.prepare(
     "SELECT COUNT(*) AS c FROM reports WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)"
@@ -1168,13 +1168,13 @@ const handleAdminUserMetrics = async (req, env, userId) => {
       "SELECT COUNT(*) AS c FROM tour_reservations WHERE user_id = ? AND attended = 1"
     ).bind(userId).first();
     toursAttended = Number(r?.c || 0);
-  } catch {}
+  } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   try {
     const r = await env.DB.prepare(
       "SELECT COUNT(*) AS c FROM lecture_registrations WHERE user_id = ? AND attended = 1"
     ).bind(userId).first();
     lecturesAttended = Number(r?.c || 0);
-  } catch {}
+  } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   return {
     userId,
     posts: Number(postsRow?.c || 0),
@@ -1856,7 +1856,7 @@ const handleSiteContentGet = async (req, env) => {
   const { results } = await env.DB.prepare("SELECT section, data_json FROM site_content_kv").all();
   const out = {};
   for (const r of results || []) {
-    try { out[r.section] = JSON.parse(r.data_json); } catch {}
+    try { out[r.section] = JSON.parse(r.data_json); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   }
   return { siteContent: out };
 };
@@ -2253,7 +2253,7 @@ const handleInternalAlarmSend = async (req, env) => {
         fromName: me?.name || '운영자',
       });
       sent += 1;
-    } catch {}
+    } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   }
   // v00.189 — 내부 알람 발송 audit log. v00.191 — group label 도 기록.
   await auditWrite(env, me?.email || '?', "alarm.send", `alarm:${groupLabel}`, { title, sent, total: userIds.length, group: groupLabel });
@@ -2275,9 +2275,9 @@ const insertNotification = async (env, { userId, type, message, fromName, postId
         await env.DB.prepare(
           "DELETE FROM notifications WHERE read = 1 AND created_at < ?"
         ).bind(cutoff).run();
-      } catch {}
+      } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
     }
-  } catch {}
+  } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
 };
 
 // ── 사용자 칼럼 ──
@@ -2744,7 +2744,7 @@ const hkComputeFixed = async (env, roomTypeId, unit, checkIn, rooms, couponCode,
 const handleHkRoomTypesList = async (req, env) => {
   const url = new URL(req.url);
   const includeAll = url.searchParams.get("includeAll") === "1";
-  let user = null; try { user = await getCurrentUser(req, env); } catch {}
+  let user = null; try { user = await getCurrentUser(req, env); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   const all = includeAll && user?.isAdmin;
   const { results } = await env.DB.prepare(
     `SELECT * FROM hk_room_types ${all ? "" : "WHERE status = 'active'"} ORDER BY sort_order ASC, created_at ASC`
@@ -2829,13 +2829,13 @@ const handleHkDay = async (req, env) => {
 
 const handleHkQuote = async (req, env) => {
   const body = await req.json().catch(() => ({}));
-  let user = null; try { user = await getCurrentUser(req, env); } catch {}
+  let user = null; try { user = await getCurrentUser(req, env); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   return await hkQuoteFor(env, body, !!user);
 };
 
 const handleHkBookingCreate = async (req, env) => {
   const body = await req.json().catch(() => ({}));
-  let user = null; try { user = await getCurrentUser(req, env); } catch {}
+  let user = null; try { user = await getCurrentUser(req, env); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   const name = String(body.name || user?.name || "").trim();
   const email = String(body.email || user?.email || "").trim();
   const phone = String(body.phone || "").trim();
@@ -2886,7 +2886,7 @@ const handleHkBookingCreate = async (req, env) => {
     for (const a of (admins.results || [])) {
       await insertNotification(env, { userId: a.id, type: "hangyeon_new", message: `새 한켠 예약: ${q.roomTypeName} ${isHourly ? q.date + " " + q.slotStart : checkIn + "~" + checkOut}`, fromName: name });
     }
-  } catch {}
+  } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
   return { ok: true, booking: { id, code, status: "pending", total: q.total, nights: q.nights } };
 };
 
@@ -2895,7 +2895,7 @@ const hkLog = async (env, bookingId, action, detail, actor) => {
     await env.DB.prepare(
       "INSERT INTO hk_booking_log (id, booking_id, action, detail, actor) VALUES (?, ?, ?, ?, ?)"
     ).bind(randomId("hkl"), bookingId, action || "", detail || "", actor || "").run();
-  } catch {}
+  } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
 };
 
 const hkMapBooking = (r) => ({
@@ -3106,7 +3106,7 @@ const handleHkBookingPatch = async (req, env, id) => {
     sets.push("checked_out_at = ?"); args.push(nowIso());
     // 방문 횟수 +1
     const gkey = hkGuestKey(before.guest_phone, before.guest_email);
-    if (gkey) { try { await env.DB.prepare("UPDATE hk_guests SET visits = visits + 1, updated_at = ? WHERE id = ?").bind(nowIso(), gkey).run(); } catch {} }
+    if (gkey) { try { await env.DB.prepare("UPDATE hk_guests SET visits = visits + 1, updated_at = ? WHERE id = ?").bind(nowIso(), gkey).run(); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); } }
   }
   if (b.status === "cancelled" && before.status !== "cancelled") { sets.push("cancelled_at = ?"); args.push(nowIso()); }
   sets.push("updated_at = ?"); args.push(nowIso());

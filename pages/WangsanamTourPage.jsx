@@ -116,9 +116,9 @@ const TourPage = ({ go, user }) => {
   // v00.263.000 — past 로 진입하면 게시판 상세 모드로 즉시 표시.
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem('bgnj_pending_tour_id'); } catch {}
+    try { pending = sessionStorage.getItem('bgnj_pending_tour_id'); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
     if (pending) {
-      try { sessionStorage.removeItem('bgnj_pending_tour_id'); } catch {}
+      try { sessionStorage.removeItem('bgnj_pending_tour_id'); } catch {}  // bgnj-allow-silent — 저장소 정리
       const inUpcoming = toursUpcoming.findIndex((t) => String(t.id) === String(pending));
       if (inUpcoming >= 0) { setBucket('upcoming'); setSelectedIdx(inUpcoming); return; }
       const inPast = toursPast.findIndex((t) => String(t.id) === String(pending));
@@ -229,7 +229,7 @@ const TourPage = ({ go, user }) => {
                 const idx = tours.findIndex((t) => String(t.id) === String(id));
                 if (idx >= 0) setSelectedIdx(idx);
                 setPastDetailId(String(id));
-                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
+                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}  // bgnj-allow-silent — 스크롤·포커스
               }}/>
           ) : (
             <div style={{padding:'60px 20px', textAlign:'center'}}>

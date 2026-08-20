@@ -234,7 +234,7 @@ const AdminPage = ({ go }) => {
         const main = document.querySelector('.admin-main');
         if (main && typeof main.scrollTo === 'function') main.scrollTo({ top: 0, behavior: 'smooth' });
         if (typeof window.scrollTo === 'function') window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch {}
+      } catch {}  // bgnj-allow-silent — 스크롤·포커스
     });
   }, []);
   React.useEffect(() => {

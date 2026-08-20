@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.008",
+    version: "00.294.009",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -421,10 +421,15 @@
         return [];
       }
     },
+    // v00.294.009 — 실패를 삼키면 '임시저장 됐겠지' 하고 창을 닫아 글을 잃는다.
+    // 성공 여부를 돌려주고, 호출부가 사용자에게 알릴 수 있게 한다.
     _write(arr) {
       try {
         localStorage.setItem(this.KEY, JSON.stringify(arr));
-      } catch (e) {
+        return true;
+      } catch (err) {
+        console.warn("[BGNJ_DRAFTS] \uC784\uC2DC\uC800\uC7A5 \uBAA9\uB85D \uC800\uC7A5 \uC2E4\uD328 (\uC800\uC7A5 \uACF5\uAC04 \uBD80\uC871 \uAC00\uB2A5):", err);
+        return false;
       }
     },
     // 만료/초과 정리. 호출 시점에 lazy 정리.
@@ -449,7 +454,11 @@
       if (idx >= 0) arr[idx] = draft;
       else arr.unshift(draft);
       if (arr.length > this.MAX_COUNT) arr.length = this.MAX_COUNT;
-      this._write(arr);
+      if (!this._write(arr)) {
+        const e = new Error("\uC784\uC2DC\uC800\uC7A5 \uACF5\uAC04\uC774 \uAC00\uB4DD \uCC3C\uC2B5\uB2C8\uB2E4.");
+        e.name = "QuotaExceededError";
+        throw e;
+      }
       try {
         window.dispatchEvent(new CustomEvent("bgnj-drafts-change"));
       } catch (e) {
@@ -840,6 +849,7 @@
         (_h = (_g = (_f = (_e = (_d = window.BGNJ_API) == null ? void 0 : _d.analytics) == null ? void 0 : _e.track) == null ? void 0 : _f.call(_e, payload)) == null ? void 0 : _g.catch) == null ? void 0 : _h.call(_g, () => {
         });
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
     };
     return { track, sessionId: () => sessionId };
@@ -940,10 +950,15 @@
       return fallback;
     }
   };
+  var _lsSetWarned = false;
   var _lsSet = (k, v) => {
     try {
       localStorage.setItem(k, JSON.stringify(v));
-    } catch (e) {
+    } catch (err) {
+      if (!_lsSetWarned) {
+        _lsSetWarned = true;
+        console.warn(`[BGNJ] \uB85C\uCEEC \uCE90\uC2DC \uC800\uC7A5 \uC2E4\uD328 (key=${k}) \u2014 \uC800\uC7A5 \uACF5\uAC04 \uBD80\uC871\uC77C \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uC11C\uBC84 \uB370\uC774\uD130\uB294 \uC601\uD5A5 \uC5C6\uC74C:`, err);
+      }
     }
   };
   var _asArray = (value, fallback = []) => Array.isArray(value) ? value : fallback;
@@ -1640,11 +1655,21 @@
       }
     },
     async signOut() {
+      var _a, _b;
+      let serverOk = true;
       try {
         await window.BGNJ_API.logout();
-      } catch (e) {
+      } catch (err) {
+        serverOk = false;
+        console.warn("[BGNJ_AUTH.signOut] \uC11C\uBC84 \uB85C\uADF8\uC544\uC6C3 \uC2E4\uD328 \u2014 \uC11C\uBC84 \uC138\uC158\uC774 \uB0A8\uC544 \uC788\uC744 \uC218 \uC788\uC74C:", err);
       }
       this._writeCache(null);
+      if (!serverOk) {
+        try {
+          (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, "\uC774 \uAE30\uAE30\uC5D0\uC11C\uB294 \uB85C\uADF8\uC544\uC6C3\uB410\uC9C0\uB9CC \uC11C\uBC84 \uC5F0\uACB0\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uACF5\uC6A9 PC \uB77C\uBA74 \uB124\uD2B8\uC6CC\uD06C \uC5F0\uACB0 \uD6C4 \uB2E4\uC2DC \uB85C\uADF8\uC544\uC6C3\uD574 \uC8FC\uC138\uC694.");
+        } catch (e) {
+        }
+      }
       return null;
     },
     // v00.131 — 본인 프로필 수정 (마이페이지). 워커 PATCH /api/me 위임.
@@ -1695,6 +1720,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._usersCache.slice();
     },
@@ -1976,6 +2002,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
     },
     updatePost(postId, patch) {
@@ -2079,6 +2106,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._commentsCache[String(postId)] || [];
     },
@@ -2238,6 +2266,7 @@
         }
         this._bookmarks[userId] = bookmarks.map((b) => b.post_id);
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._bookmarks[userId] || [];
     },
@@ -2270,6 +2299,7 @@
         }
         this._reports = reports;
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._reports.slice();
     },
@@ -2324,6 +2354,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._notifications[userId] || [];
     },
@@ -2347,6 +2378,7 @@
         window.BGNJ_API.notifications.markRead(id).catch(() => {
         });
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._notifications[userId];
     },
@@ -2358,6 +2390,7 @@
         window.BGNJ_API.notifications.markAllRead().catch(() => {
         });
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._notifications[userId];
     },
@@ -2416,6 +2449,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._columns.slice();
     },
@@ -2590,6 +2624,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._lectures.slice();
     },
@@ -2620,6 +2655,7 @@
           lecture: { id: r.lecture_id, title: r.title, topic: r.title, startsAt: r.starts_at, venue: r.venue, price: r.price }
         }));
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._myRegs.slice();
     },
@@ -2800,6 +2836,7 @@
         }
         this._reviewsByLecture[String(lectureId)] = reviews;
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._reviewsByLecture[String(lectureId)] || [];
     },
@@ -2860,6 +2897,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._bank || {};
     },
@@ -3175,6 +3213,7 @@
         }
         this._reviews = reviews;
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._reviews.slice();
     },
@@ -3256,6 +3295,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._tours.slice();
     },
@@ -3286,6 +3326,7 @@
           tour: { id: r.tour_id, title: r.title, startsAt: r.starts_at, location: r.location, price: r.price }
         }));
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._myReservations.slice();
     },
@@ -3459,6 +3500,7 @@
         }
         this._reviewsByTour[String(tourId)] = reviews;
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._reviewsByTour[String(tourId)] || [];
     },
@@ -3503,6 +3545,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._roomTypes.slice();
     },
@@ -3565,6 +3608,7 @@
         }
         this._myBookings = bookings;
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._myBookings.slice();
     },
@@ -3695,6 +3739,7 @@
         window.BGNJ_API.admin.audit.create({ action: entry.action, target: entry.target, details: entry.details }).catch(() => {
         });
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return entry;
     },
@@ -3720,6 +3765,7 @@
           };
         });
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this.list({ search, limit });
     },
@@ -3841,6 +3887,7 @@
           return this._serverCache[userId];
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return null;
     },
@@ -3945,9 +3992,11 @@
       const targetLv = (_e = (_d = grades.find((g) => g.id === targetId)) == null ? void 0 : _d.level) != null ? _e : 0;
       if (targetLv <= currentLv) return null;
       try {
-        (_g = (_f = window.BGNJ_AUTH.setGrade(userId, targetId)) == null ? void 0 : _f.catch) == null ? void 0 : _g.call(_f, () => {
+        (_g = (_f = window.BGNJ_AUTH.setGrade(userId, targetId)) == null ? void 0 : _f.catch) == null ? void 0 : _g.call(_f, (e) => {
+          console.warn("[BGNJ_GRADE_PROMO] \uB4F1\uAE09 \uC11C\uBC84 \uBC18\uC601 \uC2E4\uD328:", userId, targetId, (e == null ? void 0 : e.message) || e);
         });
       } catch (e) {
+        console.warn("[BGNJ_GRADE_PROMO] \uB4F1\uAE09 \uBCC0\uACBD \uD638\uCD9C \uC2E4\uD328:", userId, targetId, (e == null ? void 0 : e.message) || e);
       }
       (_h = window.BGNJ_AUDIT) == null ? void 0 : _h.log({
         action: "grade.auto_promote",
@@ -3976,9 +4025,11 @@
       const targetLv = (_e = (_d = grades.find((g) => g.id === targetId)) == null ? void 0 : _d.level) != null ? _e : 0;
       if (targetLv >= currentLv) return null;
       try {
-        (_g = (_f = window.BGNJ_AUTH.setGrade(userId, targetId)) == null ? void 0 : _f.catch) == null ? void 0 : _g.call(_f, () => {
+        (_g = (_f = window.BGNJ_AUTH.setGrade(userId, targetId)) == null ? void 0 : _f.catch) == null ? void 0 : _g.call(_f, (e) => {
+          console.warn("[BGNJ_GRADE_PROMO] \uB4F1\uAE09 \uC11C\uBC84 \uBC18\uC601 \uC2E4\uD328:", userId, targetId, (e == null ? void 0 : e.message) || e);
         });
       } catch (e) {
+        console.warn("[BGNJ_GRADE_PROMO] \uB4F1\uAE09 \uBCC0\uACBD \uD638\uCD9C \uC2E4\uD328:", userId, targetId, (e == null ? void 0 : e.message) || e);
       }
       (_h = window.BGNJ_AUDIT) == null ? void 0 : _h.log({
         action: "grade.auto_demote",
@@ -4028,6 +4079,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this.get();
     },
@@ -4189,6 +4241,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._books.slice();
     },
@@ -4326,6 +4379,7 @@
         } catch (e) {
         }
       } catch (e) {
+        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
       }
       return this._cache.slice();
     },
@@ -10993,10 +11047,11 @@
     const [loadError, setLoadError] = React.useState(false);
     const dirty = !!(payload && (((_a = payload.title) == null ? void 0 : _a.trim()) || ((_b = payload.text) == null ? void 0 : _b.trim())));
     const saveDraft = () => {
-      var _a2, _b2;
+      var _a2, _b2, _c2, _d, _e, _f;
       if (!payload) return;
       try {
-        (_b2 = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.save) == null ? void 0 : _b2.call(_a2, "column", {
+        (_b2 = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.save) == null ? void 0 : _b2.call(_a2, {
+          kind: "column",
           title: payload.title || "",
           category: payload.category || "",
           excerpt: payload.excerpt || "",
@@ -11004,7 +11059,13 @@
           text: payload.text || "",
           publishAt: payload.publishAt || ""
         });
-      } catch (e) {
+        (_d = (_c2 = window.BGNJ_TOAST) == null ? void 0 : _c2.success) == null ? void 0 : _d.call(_c2, "\uC784\uC2DC\uC800\uC7A5\uB410\uC2B5\uB2C8\uB2E4.");
+      } catch (err) {
+        console.warn("[column draft] \uC784\uC2DC\uC800\uC7A5 \uC2E4\uD328:", err);
+        (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(
+          _e,
+          String((err == null ? void 0 : err.name) || "").includes("Quota") ? "\uC784\uC2DC\uC800\uC7A5 \uACF5\uAC04\uC774 \uAC00\uB4DD \uCC3C\uC2B5\uB2C8\uB2E4. \uC9C0\uB09C \uC784\uC2DC\uC800\uC7A5 \uAE00\uC744 \uC9C0\uC6B0\uAC70\uB098 \uBC1C\uD589\uD574 \uC8FC\uC138\uC694." : "\uC784\uC2DC\uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uCC3D\uC744 \uB2EB\uAE30 \uC804\uC5D0 \uBC1C\uD589\uD574 \uC8FC\uC138\uC694."
+        );
       }
     };
     React.useEffect(() => {

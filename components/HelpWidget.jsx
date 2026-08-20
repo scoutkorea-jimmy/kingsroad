@@ -174,7 +174,7 @@ const HelpWidget = ({ go }) => {
   const goTo = (action) => {
     if (!action) return;
     if (action.pendingKey && action.pendingId != null) {
-      try { sessionStorage.setItem(action.pendingKey, String(action.pendingId)); } catch {}
+      try { sessionStorage.setItem(action.pendingKey, String(action.pendingId)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
     }
     setOpen(false);
     go(action.route);

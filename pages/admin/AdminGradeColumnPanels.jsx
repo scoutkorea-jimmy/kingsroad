@@ -157,19 +157,30 @@ const AdminGradePanel = () => {
       // resetGrades() 가 BGNJ_STORES.grades 를 default 로 set → 그 값을 D1 에도 PUT.
       window.BGNJ_SAVE.resetGrades();
       const defaults = (window.BGNJ_STORES?.grades || []).slice();
+      // v00.294.009 — 서버 저장이 전부 실패해도 '복원 완료' 라고 말하던 자리.
+      // 등급은 게시판 읽기·쓰기 권한의 기준이라 반쯤 복원된 상태를 성공으로 보고하면
+      // 운영자가 잘못된 전제로 다음 설정을 만진다. 실패 개수를 세어 그대로 알린다.
+      const failed = [];
       for (const g of defaults) {
         try {
           await window.BGNJ_API?.grades?.upsert?.(g.id, {
             label: g.label, level: Number(g.level || 0), color: g.color || '',
             description: g.desc || '', order: Number(g.order || g.level || 0),
           });
-        } catch {}
+        } catch (err) {
+          console.warn('[grades.reset] upsert 실패:', g.id, err);
+          failed.push(g.label || g.id);
+        }
       }
       await window.BGNJ_SITE_CONTENT?.resetSection?.('gradeRules');
       setGrades(window.BGNJ_STORES.grades.slice());
       setRules(_initialRules());
       setDirty(false);
-      setSaveMsg("기본값 복원 완료 (D1 + localStorage).");
+      if (failed.length) {
+        setSaveMsg(`✗ ${failed.length}개 등급을 서버에 저장하지 못했습니다 (${failed.join(', ')}). 화면만 기본값으로 바뀐 상태이니 새로고침 후 다시 시도해 주세요.`);
+      } else {
+        setSaveMsg("기본값 복원 완료 (D1 + localStorage).");
+      }
       setTimeout(() => setSaveMsg(""), 3000);
     } catch (err) {
       setSaveMsg("✗ 복원 실패: " + (err?.message || '알 수 없는 오류'));
@@ -1041,6 +1052,8 @@ const ColumnsHubPanel = ({ allColumns }) => {
 
 const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
   const [payload, setPayload] = React.useState(null);
+  // v00.294.009 — 임시저장 실패를 화면에 드러낸다(이전엔 catch {} 로 삼켰다).
+  const [draftError, setDraftError] = React.useState('');
   // dirty 판정 — 처음 렌더 후 사용자 입력이 있었는지. 단순히 title/text 가 비어있지 않으면 dirty 처리.
   const dirty = !!(payload && (payload.title?.trim() || payload.text?.trim()));
   const saveDraft = React.useCallback(() => {
@@ -1055,7 +1068,16 @@ const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
         text: payload.text || '',
         publishAt: payload.publishAt || '',
       });
-    } catch {}
+      setDraftError('');
+    } catch (err) {
+      // v00.294.009 — 삼키면 '임시저장됐겠지' 하고 창을 닫아 글을 잃는다.
+      console.warn('[column draft] 임시저장 실패:', err);
+      setDraftError(
+        String(err?.name || '').includes('Quota')
+          ? '임시저장 공간이 가득 차 자동 저장이 멈췄습니다. 지난 임시저장 글을 지우거나 발행해 주세요.'
+          : '자동 임시저장에 실패했습니다. 창을 닫기 전에 발행해 주세요.'
+      );
+    }
   }, [payload]);
   const { onBackdropClick } = window.useModalGuard({
     open: true, dirty, onClose, onSaveDraft: saveDraft, label: '칼럼',
@@ -1071,6 +1093,10 @@ const ColumnEditorModalContent = ({ initialColumn, onClose }) => {
       }}>
         <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
           <h2 className="ko-serif" style={{fontSize:18, margin:0}}>{initialColumn?.id ? '칼럼 편집' : '새 칼럼 작성'}</h2>
+          {draftError && (
+            <span role="alert" style={{fontSize:12, color:'var(--danger)', flex:1, margin:'0 16px',
+              wordBreak:'keep-all', overflowWrap:'break-word'}}>{draftError}</span>
+          )}
           <button type="button" className="btn btn-small" onClick={async () => { /* 명시적 닫기 — useModalGuard 와 동일 prompt 패턴 (v00.262.007) */
             if (!dirty) { onClose?.(); return; }
             const ok = await window.BGNJ_CONFIRM('작성 중인 칼럼이 저장되지 않았습니다. 임시저장 하시겠어요?', {

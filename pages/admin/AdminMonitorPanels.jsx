@@ -18,7 +18,7 @@ const ErrorLogPanel = () => {
     try {
       const { errors: list } = await window.BGNJ_API.errorLog.list({ limit: 500 });
       setErrors(list || []);
-    } catch {} finally { setLoading(false); }
+    } catch {} finally { setLoading(false); }  // bgnj-allow-silent — 오류 보고 자체 — 실패해도 재보고하면 무한루프
   };
   React.useEffect(() => { refresh(); }, []);
 

@@ -216,17 +216,17 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
   const addYoutube = () => {
     const url = window.prompt('YouTube URL', 'https://youtu.be/...');
     if (!url) return;
-    try { ed.chain().focus().setYoutubeVideo({ src: url, width: 640, height: 360 }).run(); } catch {}
+    try { ed.chain().focus().setYoutubeVideo({ src: url, width: 640, height: 360 }).run(); } catch {}  // bgnj-allow-silent — 스크롤·포커스
   };
   // 표 삽입.
   const insertTable = () => {
-    try { ed.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } catch {}
+    try { ed.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(); } catch {}  // bgnj-allow-silent — 스크롤·포커스
   };
   // 텍스트 색상.
   const pickColor = () => {
     const color = window.prompt('텍스트 색상 (hex 또는 CSS 변수)', '#92400E');
     if (!color) return;
-    try { ed.chain().focus().setColor(color).run(); } catch {}
+    try { ed.chain().focus().setColor(color).run(); } catch {}  // bgnj-allow-silent — 스크롤·포커스
   };
 
   const Btn = ({ cmd, label, active, disabled, shortcut }) => (

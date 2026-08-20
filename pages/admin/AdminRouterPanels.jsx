@@ -126,7 +126,7 @@ const CorruptedBodyInspector = ({ go }) => {
                 <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{p.title || '(제목 없음)'}</span>
                 <span className="dim-2 mono" style={{fontSize:10}}>{p.author || '?'} · {p.date || ''}</span>
                 <button type="button" className="btn btn-small" onClick={() => {
-                  try { sessionStorage.setItem('bgnj_pending_post_id', String(p.id)); } catch {}
+                  try { sessionStorage.setItem('bgnj_pending_post_id', String(p.id)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
                   go('community');
                 }}>열기</button>
               </li>

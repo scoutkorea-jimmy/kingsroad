@@ -150,7 +150,7 @@ const Error500Page = ({ go, onRetry, embedded }) => (
       subtitle={(<>서비스 처리 중 일시적인 문제가 발생했어요.<br/>잠시 후 다시 시도해 주세요.</>)}
       imageSrc="/assets/errors/500.png"
       imageAlt="신호를 정리하는 관제탑"
-      primaryAction={{ label: '다시 시도하기', icon: '🔄', onClick: () => { try { onRetry ? onRetry() : window.location.reload(); } catch {} } }}
+      primaryAction={{ label: '다시 시도하기', icon: '🔄', onClick: () => { try { onRetry ? onRetry() : window.location.reload(); } catch {} } }}  // bgnj-allow-silent — 새로고침
       secondaryAction={{ label: '홈으로 돌아가기', icon: '🏠', onClick: () => go?.('home') }}/>
   </ErrorScreen>
 );

@@ -26,7 +26,7 @@ class HomeSectionBoundary extends React.Component {
         hint: `section=${this.props.label || ''}`, url: '',
         pathname: location.pathname, origin: location.origin,
       })?.catch?.(() => {});
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 오류 보고 자체 — 실패해도 재보고하면 무한루프
   }
   render() {
     if (this.state.error) {
@@ -413,7 +413,7 @@ const HomePage = ({ go }) => {
         if (mq.removeEventListener) mq.removeEventListener('change', handler);
         else if (mq.removeListener) mq.removeListener(handler);
       };
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 리스너 해제
   }, []);
   const heroStyle = React.useMemo(
     () => (window.BGNJ_HERO_STYLE?.(isMobile ? 'mobile' : 'desktop') || window.BGNJ_HERO_STYLE_DEFAULT),
@@ -543,7 +543,7 @@ const HomePage = ({ go }) => {
         kind: 'tour', id: t.id, title: t.title, tag: '답사',
         ts: _eventTs(t) || 0, date: fmt(_eventTs(t)),
         onGo: () => {
-          try { sessionStorage.setItem('bgnj_pending_tour_id', String(t.id)); } catch {}
+          try { sessionStorage.setItem('bgnj_pending_tour_id', String(t.id)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
           go('tour');
         },
       })),
@@ -551,7 +551,7 @@ const HomePage = ({ go }) => {
         kind: 'lec', id: l.id, title: l.topic || l.title, tag: '강연',
         ts: _eventTs(l) || 0, date: fmt(_eventTs(l)),
         onGo: () => {
-          try { sessionStorage.setItem('bgnj_pending_lecture_id', String(l.id)); } catch {}
+          try { sessionStorage.setItem('bgnj_pending_lecture_id', String(l.id)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
           go('lectures');
         },
       })),
@@ -703,7 +703,7 @@ const HomePage = ({ go }) => {
               return (
                 <div className="home-split-half home-split-half--ink home-split-half--event"
                   {...clickable(() => {
-                    try { sessionStorage.setItem(pendKey, String(item.id)); } catch {}
+                    try { sessionStorage.setItem(pendKey, String(item.id)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
                     go(route);
                   }, `${label}: ${title}`)}>
                   {/* v00.293.002 — 포스터가 있으면 좌측에 세워 붙인다. 없으면 텍스트만 렌더 —

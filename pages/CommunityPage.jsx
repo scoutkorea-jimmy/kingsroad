@@ -488,7 +488,7 @@ const MentionTextarea = ({ value, onChange, authors, rows = 4, placeholder, styl
         const pos = replaced.length;
         el?.focus();
         el?.setSelectionRange(pos, pos);
-      } catch {}
+      } catch {}  // bgnj-allow-silent — 스크롤·포커스
     }, 0);
   };
 
@@ -569,16 +569,16 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   // 알림 벨 / 외부 진입에서 stash해 둔 postId가 있으면 자동으로 상세로 이동
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem('bgnj_pending_post_id'); } catch {}
+    try { pending = sessionStorage.getItem('bgnj_pending_post_id'); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
     if (pending) {
-      try { sessionStorage.removeItem('bgnj_pending_post_id'); } catch {}
+      try { sessionStorage.removeItem('bgnj_pending_post_id'); } catch {}  // bgnj-allow-silent — 저장소 정리
       setPostId(pending);
     }
     // 내비 메가메뉴에서 들어온 게시판 ID
     let pendingBoard = null;
-    try { pendingBoard = sessionStorage.getItem('bgnj_pending_board_id'); } catch {}
+    try { pendingBoard = sessionStorage.getItem('bgnj_pending_board_id'); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
     if (pendingBoard) {
-      try { sessionStorage.removeItem('bgnj_pending_board_id'); } catch {}
+      try { sessionStorage.removeItem('bgnj_pending_board_id'); } catch {}  // bgnj-allow-silent — 저장소 정리
       setTab(pendingBoard);
     }
   }, []);
@@ -1411,7 +1411,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   }, [draftKey, isEditing, categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText]);
 
   const clearDraft = () => {
-    try { localStorage.removeItem(draftKey); } catch {}
+    try { localStorage.removeItem(draftKey); } catch {}  // bgnj-allow-silent — 저장소 정리
     setSavedAt(null);
     setDraftRestored(false);
   };
@@ -1486,7 +1486,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     const pad = (n) => String(n).padStart(2, '0');
     // 발행 성공 가정으로 임시저장 정리 (실패 시 onPublish 측에서 다시 저장은 안 함).
     if (!isEditing) {
-      try { localStorage.removeItem(draftKey); } catch {}
+      try { localStorage.removeItem(draftKey); } catch {}  // bgnj-allow-silent — 저장소 정리
     }
     // v00.115 — admin 만 createdAt 오버라이드 가능. 다른 사용자 값 전송은 워커가 무시.
     // v00.294.008 — 본문 끝에 <img> 를 끼워 넣던 v00.242 응급 조치를 걷어낸다.
@@ -1786,7 +1786,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
     try {
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
     window.BGNJ_COMMUNITY.incrementViews(post.id);
     onRefresh?.();
   }, [post.id]);

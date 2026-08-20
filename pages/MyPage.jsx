@@ -65,7 +65,7 @@ const MyPage = ({ go, user, cart }) => {
     refund_requested: 'var(--warning)',
   }[s] || 'var(--ink-2)');
   const goToTour = (tourId) => {
-    try { sessionStorage.setItem('bgnj_pending_tour_id', String(tourId)); } catch {}
+    try { sessionStorage.setItem('bgnj_pending_tour_id', String(tourId)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
     go('tour');
   };
   const orderStatusLabel = (s) => ({
@@ -86,11 +86,11 @@ const MyPage = ({ go, user, cart }) => {
   }[s] || 'var(--ink-2)');
 
   const goToPost = (postId) => {
-    try { sessionStorage.setItem('bgnj_pending_post_id', String(postId)); } catch {}
+    try { sessionStorage.setItem('bgnj_pending_post_id', String(postId)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
     go('community');
   };
   const goToLecture = (lectureId) => {
-    try { sessionStorage.setItem('bgnj_pending_lecture_id', String(lectureId)); } catch {}
+    try { sessionStorage.setItem('bgnj_pending_lecture_id', String(lectureId)); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
     go('lectures');
   };
   const lectureStatusLabel = (s) => ({

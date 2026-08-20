@@ -14000,6 +14000,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       try {
         window.BGNJ_SAVE.resetGrades();
         const defaults = (((_a = window.BGNJ_STORES) == null ? void 0 : _a.grades) || []).slice();
+        const failed = [];
         for (const g of defaults) {
           try {
             await ((_d = (_c = (_b = window.BGNJ_API) == null ? void 0 : _b.grades) == null ? void 0 : _c.upsert) == null ? void 0 : _d.call(_c, g.id, {
@@ -14009,14 +14010,20 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
               description: g.desc || "",
               order: Number(g.order || g.level || 0)
             }));
-          } catch (e) {
+          } catch (err) {
+            console.warn("[grades.reset] upsert \uC2E4\uD328:", g.id, err);
+            failed.push(g.label || g.id);
           }
         }
         await ((_f = (_e = window.BGNJ_SITE_CONTENT) == null ? void 0 : _e.resetSection) == null ? void 0 : _f.call(_e, "gradeRules"));
         setGrades(window.BGNJ_STORES.grades.slice());
         setRules(_initialRules());
         setDirty(false);
-        setSaveMsg("\uAE30\uBCF8\uAC12 \uBCF5\uC6D0 \uC644\uB8CC (D1 + localStorage).");
+        if (failed.length) {
+          setSaveMsg(`\u2717 ${failed.length}\uAC1C \uB4F1\uAE09\uC744 \uC11C\uBC84\uC5D0 \uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4 (${failed.join(", ")}). \uD654\uBA74\uB9CC \uAE30\uBCF8\uAC12\uC73C\uB85C \uBC14\uB010 \uC0C1\uD0DC\uC774\uB2C8 \uC0C8\uB85C\uACE0\uCE68 \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.`);
+        } else {
+          setSaveMsg("\uAE30\uBCF8\uAC12 \uBCF5\uC6D0 \uC644\uB8CC (D1 + localStorage).");
+        }
         setTimeout(() => setSaveMsg(""), 3e3);
       } catch (err) {
         setSaveMsg("\u2717 \uBCF5\uC6D0 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
@@ -14825,6 +14832,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
   var ColumnEditorModalContent = ({ initialColumn, onClose }) => {
     var _a, _b;
     const [payload, setPayload] = React.useState(null);
+    const [draftError, setDraftError] = React.useState("");
     const dirty = !!(payload && (((_a = payload.title) == null ? void 0 : _a.trim()) || ((_b = payload.text) == null ? void 0 : _b.trim())));
     const saveDraft = React.useCallback(() => {
       if (!payload) return;
@@ -14838,7 +14846,12 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
           text: payload.text || "",
           publishAt: payload.publishAt || ""
         });
-      } catch (e) {
+        setDraftError("");
+      } catch (err) {
+        console.warn("[column draft] \uC784\uC2DC\uC800\uC7A5 \uC2E4\uD328:", err);
+        setDraftError(
+          String((err == null ? void 0 : err.name) || "").includes("Quota") ? "\uC784\uC2DC\uC800\uC7A5 \uACF5\uAC04\uC774 \uAC00\uB4DD \uCC28 \uC790\uB3D9 \uC800\uC7A5\uC774 \uBA48\uCDC4\uC2B5\uB2C8\uB2E4. \uC9C0\uB09C \uC784\uC2DC\uC800\uC7A5 \uAE00\uC744 \uC9C0\uC6B0\uAC70\uB098 \uBC1C\uD589\uD574 \uC8FC\uC138\uC694." : "\uC790\uB3D9 \uC784\uC2DC\uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uCC3D\uC744 \uB2EB\uAE30 \uC804\uC5D0 \uBC1C\uD589\uD574 \uC8FC\uC138\uC694."
+        );
       }
     }, [payload]);
     const { onBackdropClick } = window.useModalGuard({
@@ -14864,7 +14877,14 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         padding: 24,
         marginTop: 24,
         marginBottom: 48
-      } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, (initialColumn == null ? void 0 : initialColumn.id) ? "\uCE7C\uB7FC \uD3B8\uC9D1" : "\uC0C8 \uCE7C\uB7FC \uC791\uC131"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+      } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, (initialColumn == null ? void 0 : initialColumn.id) ? "\uCE7C\uB7FC \uD3B8\uC9D1" : "\uC0C8 \uCE7C\uB7FC \uC791\uC131"), draftError && /* @__PURE__ */ React.createElement("span", { role: "alert", style: {
+        fontSize: 12,
+        color: "var(--danger)",
+        flex: 1,
+        margin: "0 16px",
+        wordBreak: "keep-all",
+        overflowWrap: "break-word"
+      } }, draftError), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
         if (!dirty) {
           onClose == null ? void 0 : onClose();
           return;

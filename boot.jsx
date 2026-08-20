@@ -30,7 +30,7 @@ class AppErrorBoundary extends React.Component {
         hint: '', url: '',
         pathname: location.pathname, origin: location.origin,
       })?.catch?.(() => {});
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 오류 보고 자체 — 실패해도 재보고하면 무한루프
   }
   render() {
     if (this.state.error) {
@@ -88,7 +88,7 @@ class PageErrorBoundary extends React.Component {
         hint: `route=${this.props.route}`, url: '',
         pathname: location.pathname, origin: location.origin,
       })?.catch?.(() => {});
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 오류 보고 자체 — 실패해도 재보고하면 무한루프
   }
   componentDidUpdate(prevProps) {
     if (prevProps.route !== this.props.route && this.state.error) {
@@ -111,7 +111,7 @@ class PageErrorBoundary extends React.Component {
               style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #cbd5e1', background:'#fff'}}>다시 시도</button>
             <button onClick={() => { try { this.props.go('home'); this.setState({ error: null }); } catch {} }}
               style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #cbd5e1', background:'#fff'}}>홈으로</button>
-            <button onClick={() => { try { window.location.reload(); } catch {} }}
+            <button onClick={() => { try { window.location.reload(); } catch {} }}  // bgnj-allow-silent — 새로고침
               style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #f5d548', background:'#f5d548', color:'#0f172a', fontWeight:600}}>새로고침</button>
           </div>
         </div>
@@ -261,9 +261,9 @@ const VersionUpdateBanner = () => {
         const v = String(j?.version || '');
         // '나중에' 로 닫은 버전은 다시 띄우지 않는다. 더 새 버전이 나오면 다시 뜬다.
         let dismissed = '';
-        try { dismissed = localStorage.getItem(UPDATE_DISMISSED_KEY) || ''; } catch {}
+        try { dismissed = localStorage.getItem(UPDATE_DISMISSED_KEY) || ''; } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
         if (!cancelled && v && v !== current && v !== dismissed) setLatest(j);
-      } catch {}
+      } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
     };
     check(); // 진입 즉시 1회
     const t = setInterval(check, VERSION_POLL_MS);
@@ -379,7 +379,7 @@ const _loadAdminScripts = (attempt = 0) => {
     throw err;
   }).then(() => {
     // v00.210 — 로드 완료 알림. /admin route 외 진입(예: ColumnPage 칼럼 작성 모달) 도 동일 이벤트로 리렌더.
-    try { window.dispatchEvent(new Event('bgnj-admin-scripts-loaded')); } catch {}
+    try { window.dispatchEvent(new Event('bgnj-admin-scripts-loaded')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
   });
   return _adminLoadPromise;
 };
@@ -550,7 +550,7 @@ const App = () => {
           // 부팅 시점의 DEFAULT_CATEGORIES 스냅샷을 계속 쥐고 있었다.
           // 증상: 광장 게시판 탭에 '자유·언론보도·한켠역사문화포럼' 이 아예 안 뜸
           // (DEFAULT 의 minLevel 10 에 걸려 비로그인 사용자에게 숨겨짐).
-          try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}
+          try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
         }
       })?.catch?.(() => {}),
     ]).catch(() => {});
@@ -575,9 +575,9 @@ const App = () => {
         else if (d === 'legal') {
           await window.BGNJ_LEGAL?.refresh?.('terms');
           await window.BGNJ_LEGAL?.refresh?.('privacy');
-          try { window.dispatchEvent(new CustomEvent('bgnj-legal-refresh')); } catch {}
+          try { window.dispatchEvent(new CustomEvent('bgnj-legal-refresh')); } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
         }
-      } catch {}
+      } catch {}  // bgnj-allow-silent — 이벤트 발신 실패는 무시해도 된다
     });
     return unsub;
   }, []);
@@ -592,7 +592,7 @@ const App = () => {
     try {
       if (cart) localStorage.setItem('bgnj_cart', JSON.stringify(cart));
       else localStorage.removeItem('bgnj_cart');
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 저장소 정리
   }, [cart]);
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = React.useState(false);
@@ -600,14 +600,14 @@ const App = () => {
   const go = (r) => {
     setRoute(r);
     setPostId(null);
-    try { localStorage.setItem('bgnj_route', r); } catch {}
+    try { localStorage.setItem('bgnj_route', r); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
     // 브라우저 주소를 동기화 — 같은 경로면 push 생략(불필요한 스택 누적 방지).
     try {
       const target = routeToPath(r);
       if (window.location.pathname !== target) {
         window.history.pushState(null, '', target);
       }
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 히스토리 조작
     window.scrollTo(0, 0);
   };
 
@@ -656,7 +656,7 @@ const App = () => {
     };
     const seg = ROUTE_TITLES[route] || '';
     const title = route === 'home' ? `${brand} — ${tagline}` : `${seg} — ${brand}`;
-    try { document.title = title; } catch {}
+    try { document.title = title; } catch {}  // bgnj-allow-silent — 문서 제목
     // route 변경 시 사이트 콘텐츠 refresh 이벤트도 listen — 브랜드명/태그라인 바뀌면 즉시 반영.
     const onScRefresh = () => {
       const sc2 = window.BGNJ_SITE_CONTENT?.get?.() || {};
@@ -664,7 +664,7 @@ const App = () => {
       const t2 = sc2.og?.title || '뱅기 타고 한국을 느끼다';
       const s = ROUTE_TITLES[route] || '';
       const newTitle = route === 'home' ? `${b2} — ${t2}` : `${s} — ${b2}`;
-      try { document.title = newTitle; } catch {}
+      try { document.title = newTitle; } catch {}  // bgnj-allow-silent — 문서 제목
     };
     window.addEventListener('bgnj-site-content-refresh', onScRefresh);
     return () => window.removeEventListener('bgnj-site-content-refresh', onScRefresh);
@@ -677,7 +677,7 @@ const App = () => {
     setRoute("home");
     try {
       localStorage.setItem('bgnj_route', 'home');
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
     window.scrollTo(0, 0);
   };
 
@@ -709,23 +709,23 @@ const App = () => {
         const raw = decodeURIComponent(colMatch[1]);
         const isNumeric = /^\d+$/.test(raw);
         const resolved = isNumeric ? (window.BGNJ_COLUMNS?.idByNumber?.(raw) || raw) : raw;
-        try { sessionStorage.setItem('bgnj_pending_column_id', resolved); } catch {}
+        try { sessionStorage.setItem('bgnj_pending_column_id', resolved); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
         setRoute('column');
-        try { localStorage.setItem('bgnj_route', 'column'); } catch {}
+        try { localStorage.setItem('bgnj_route', 'column'); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
       } else if (postMatch) {
-        try { sessionStorage.setItem('bgnj_pending_post_id', decodeURIComponent(postMatch[1])); } catch {}
+        try { sessionStorage.setItem('bgnj_pending_post_id', decodeURIComponent(postMatch[1])); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
         setRoute('community');
-        try { localStorage.setItem('bgnj_route', 'community'); } catch {}
+        try { localStorage.setItem('bgnj_route', 'community'); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
       } else if (lectureMatch) {
-        try { sessionStorage.setItem('bgnj_pending_lecture_id', decodeURIComponent(lectureMatch[1])); } catch {}
+        try { sessionStorage.setItem('bgnj_pending_lecture_id', decodeURIComponent(lectureMatch[1])); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
         setRoute('lectures');
-        try { localStorage.setItem('bgnj_route', 'lectures'); } catch {}
+        try { localStorage.setItem('bgnj_route', 'lectures'); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
       } else {
         const tourMatch = h.match(/^#tour-(.+)$/);
         if (tourMatch) {
-          try { sessionStorage.setItem('bgnj_pending_tour_id', decodeURIComponent(tourMatch[1])); } catch {}
+          try { sessionStorage.setItem('bgnj_pending_tour_id', decodeURIComponent(tourMatch[1])); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
           setRoute('tour');
-          try { localStorage.setItem('bgnj_route', 'tour'); } catch {}
+          try { localStorage.setItem('bgnj_route', 'tour'); } catch {}  // bgnj-allow-silent — 화면 이동 힌트 — 실패해도 목록으로 갈 뿐
         }
       }
     };

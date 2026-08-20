@@ -649,7 +649,7 @@ const SankeyFlow = ({ pairs, days, onDaysChange }) => {
 const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
   const [active, setActive] = React.useState(() => {
     if (storageKey) {
-      try { const v = localStorage.getItem(storageKey); if (v && subTabs.some((t) => t.key === v)) return v; } catch {}
+      try { const v = localStorage.getItem(storageKey); if (v && subTabs.some((t) => t.key === v)) return v; } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
     }
     return defaultKey || (subTabs[0] && subTabs[0].key);
   });
@@ -659,7 +659,7 @@ const SubTabsView = ({ subTabs, defaultKey, storageKey }) => {
 
   const [previewMode, setPreviewMode] = React.useState(() => {
     if (storageKey) {
-      try { const v = localStorage.getItem(storageKey + '_pmode'); if (v && ['desktop','tablet','mobile'].includes(v)) return v; } catch {}
+      try { const v = localStorage.getItem(storageKey + '_pmode'); if (v && ['desktop','tablet','mobile'].includes(v)) return v; } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
     }
     return 'desktop';
   });

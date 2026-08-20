@@ -35,9 +35,9 @@ const ColumnPage = ({ go, user }) => {
   // 외부 진입 (해시 / 마이페이지 / 알림 등)으로 들어오는 칼럼 ID
   React.useEffect(() => {
     let pending = null;
-    try { pending = sessionStorage.getItem("bgnj_pending_column_id"); } catch {}
+    try { pending = sessionStorage.getItem("bgnj_pending_column_id"); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
     if (pending) {
-      try { sessionStorage.removeItem("bgnj_pending_column_id"); } catch {}
+      try { sessionStorage.removeItem("bgnj_pending_column_id"); } catch {}  // bgnj-allow-silent — 저장소 정리
       setSelectedId(pending);
     }
   }, []);
@@ -45,9 +45,9 @@ const ColumnPage = ({ go, user }) => {
   // v00.169 — 홈 '＋ 글쓰기' 진입 → 모달 자동 오픈 (admin 전용 플래그).
   React.useEffect(() => {
     let pendingWrite = null;
-    try { pendingWrite = sessionStorage.getItem("bgnj_pending_column_write"); } catch {}
+    try { pendingWrite = sessionStorage.getItem("bgnj_pending_column_write"); } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
     if (pendingWrite) {
-      try { sessionStorage.removeItem("bgnj_pending_column_write"); } catch {}
+      try { sessionStorage.removeItem("bgnj_pending_column_write"); } catch {}  // bgnj-allow-silent — 저장소 정리
       if (user?.isAdmin) setWriterOpen(true);
     }
   }, [user]);
@@ -72,7 +72,7 @@ const ColumnPage = ({ go, user }) => {
         sessionStorage.setItem(key, "1");
         Promise.resolve(window.BGNJ_COLUMNS.incrementViews(selectedId)).then(() => refresh());
       }
-    } catch {}
+    } catch {}  // bgnj-allow-silent — 저장소 읽기 — 실패 시 기본값
   }, [selectedId]);
 
   const requireLogin = async (label) => {
@@ -491,7 +491,13 @@ const ColumnWriterModal = ({ onClose, initialColumn = null }) => {
   const saveDraft = () => {
     if (!payload) return;
     try {
-      window.BGNJ_DRAFTS?.save?.('column', {
+      // v00.294.009 — 두 가지가 겹쳐 있었다.
+      // ① save() 는 인자를 **하나**(객체) 만 받는데 ('column', {...}) 로 두 개를 넘겼다.
+      //    첫 인자인 문자열이 payload 로 들어가 kind 가 비고, 글자들이 흩어져 저장됐다.
+      //    → list('column') 이 kind 로 거르므로 임시저장 목록에 **영영 안 나왔다.**
+      // ② 실패해도 catch {} 로 삼켜서 저장이 안 된 사실 자체를 알 수 없었다.
+      window.BGNJ_DRAFTS?.save?.({
+        kind: 'column',
         title: payload.title || '',
         category: payload.category || '',
         excerpt: payload.excerpt || '',
@@ -499,7 +505,15 @@ const ColumnWriterModal = ({ onClose, initialColumn = null }) => {
         text: payload.text || '',
         publishAt: payload.publishAt || '',
       });
-    } catch {}
+      window.BGNJ_TOAST?.success?.('임시저장됐습니다.');
+    } catch (err) {
+      console.warn('[column draft] 임시저장 실패:', err);
+      window.BGNJ_TOAST?.error?.(
+        String(err?.name || '').includes('Quota')
+          ? '임시저장 공간이 가득 찼습니다. 지난 임시저장 글을 지우거나 발행해 주세요.'
+          : '임시저장에 실패했습니다. 창을 닫기 전에 발행해 주세요.'
+      );
+    }
   };
   // v00.210 — admin 번들 로드 트리거 + 리렌더
   React.useEffect(() => {

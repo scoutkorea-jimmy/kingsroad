@@ -147,7 +147,7 @@ const ActivityLogPanel = () => {
         const errors = (errorRes.status === 'fulfilled' && Array.isArray(errorRes.value?.entries)) ? errorRes.value.entries : [];
         setAuditRows(audits);
         setErrorRows(errors);
-      } catch {} finally { if (!cancelled) setLoading(false); }
+      } catch {} finally { if (!cancelled) setLoading(false); }  // bgnj-allow-silent — 오류 보고 자체 — 실패해도 재보고하면 무한루프
     })();
     return () => { cancelled = true; };
   }, [refreshKey]);
