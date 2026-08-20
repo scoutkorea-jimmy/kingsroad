@@ -104,8 +104,47 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
         handlePaste: (view, event) => {
           const cd = event.clipboardData;
           if (!cd) return false;
+
+          // v00.294.006 — 붙여넣기로 들어오는 이미지를 R2 로 올린다.
+          // v00.138 에서 '본문 이미지' 버튼은 base64 를 버리고 R2 업로드로 바꿨는데,
+          // 붙여넣기 경로는 그대로 남아 있었다. Image 확장이 allowBase64 이고
+          // sanitizer 도 data:image/* 를 허용해서, 스크린샷을 붙여넣으면 수 MB 짜리
+          // base64 가 본문에 박힌다 → ① 1초마다 localStorage 임시저장이 용량 초과로
+          // 조용히 실패하고 ② 발행 시 D1 row 가 통째로 비대해진다.
+          // 파일로 오는 붙여넣기(스크린샷·이미지 복사)가 이 경로의 대부분이다.
+          const pastedFiles = Array.from(cd.files || []).filter((f) => f.type.startsWith('image/'));
+          if (pastedFiles.length > 0) {
+            event.preventDefault();
+            const folder = preset === 'column' ? 'column-images' : 'post-images';
+            (async () => {
+              setUploadingImage(true);
+              for (const f of pastedFiles) {
+                try {
+                  const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
+                  editor.chain().focus().setImage({ src: url, alt: f.name || '붙여넣은 이미지' }).run();
+                } catch (err) {
+                  // 조용한 base64 폴백을 두지 않는다 — 그게 바로 위 ①② 를 부른다.
+                  window.BGNJ_TOAST?.error?.(`이미지 업로드 실패 — '${f.name || '붙여넣은 이미지'}' 는 본문에 넣지 못했습니다. 잠시 후 '🖼 본문 이미지' 버튼으로 다시 시도해 주세요.`);
+                }
+              }
+              setUploadingImage(false);
+            })();
+            return true;
+          }
+
           const html = cd.getData('text/html');
-          if (html) return false; // HTML 이 있으면 default 처리.
+          if (html) {
+            // 외부 문서에서 복사하면 text/html 안에 base64 <img> 가 딸려 오기도 한다.
+            // 파일이 아니라 문자열이라 업로드할 대상이 없다 — 그 이미지만 걷어내고 글은 살린다.
+            if (/<img[^>]+src\s*=\s*["']data:image\//i.test(html)) {
+              event.preventDefault();
+              const stripped = html.replace(/<img[^>]+src\s*=\s*["']data:image\/[^>]*>/gi, '');
+              editor.commands.insertContent(stripped);
+              window.BGNJ_TOAST?.error?.('붙여넣은 글 안의 이미지는 제외했습니다. 용량이 매우 커서 글이 저장되지 않을 수 있어 막았습니다 — 이미지는 \'🖼 본문 이미지\' 버튼으로 올려 주세요.');
+              return true;
+            }
+            return false; // HTML 이 있으면 default 처리.
+          }
           const text = cd.getData('text/plain');
           if (!text || !/\n/.test(text)) return false; // 줄바꿈 없으면 default.
           event.preventDefault();

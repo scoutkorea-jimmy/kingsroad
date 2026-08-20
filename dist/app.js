@@ -365,7 +365,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.005",
+    version: "00.294.006",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -5979,10 +5979,39 @@
           // ProseMirror 기본은 plain text 의 단일 \n 을 무시하고 공백으로 처리. 단일 \n → <br/>,
           // 빈 줄(\n\n) → 새 단락 으로 정상 변환. text/html 페이로드가 있으면 default 처리(예: HTML 보존).
           handlePaste: (view, event) => {
+            var _a, _b;
             const cd = event.clipboardData;
             if (!cd) return false;
+            const pastedFiles = Array.from(cd.files || []).filter((f) => f.type.startsWith("image/"));
+            if (pastedFiles.length > 0) {
+              event.preventDefault();
+              const folder = preset === "column" ? "column-images" : "post-images";
+              (async () => {
+                var _a2, _b2;
+                setUploadingImage(true);
+                for (const f of pastedFiles) {
+                  try {
+                    const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
+                    editor.chain().focus().setImage({ src: url, alt: f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0" }).run();
+                  } catch (err) {
+                    (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, `\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 '${f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0"}' \uB294 \uBCF8\uBB38\uC5D0 \uB123\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 '\u{1F5BC} \uBCF8\uBB38 \uC774\uBBF8\uC9C0' \uBC84\uD2BC\uC73C\uB85C \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.`);
+                  }
+                }
+                setUploadingImage(false);
+              })();
+              return true;
+            }
             const html = cd.getData("text/html");
-            if (html) return false;
+            if (html) {
+              if (/<img[^>]+src\s*=\s*["']data:image\//i.test(html)) {
+                event.preventDefault();
+                const stripped = html.replace(/<img[^>]+src\s*=\s*["']data:image\/[^>]*>/gi, "");
+                editor.commands.insertContent(stripped);
+                (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, "\uBD99\uC5EC\uB123\uC740 \uAE00 \uC548\uC758 \uC774\uBBF8\uC9C0\uB294 \uC81C\uC678\uD588\uC2B5\uB2C8\uB2E4. \uC6A9\uB7C9\uC774 \uB9E4\uC6B0 \uCEE4\uC11C \uAE00\uC774 \uC800\uC7A5\uB418\uC9C0 \uC54A\uC744 \uC218 \uC788\uC5B4 \uB9C9\uC558\uC2B5\uB2C8\uB2E4 \u2014 \uC774\uBBF8\uC9C0\uB294 '\u{1F5BC} \uBCF8\uBB38 \uC774\uBBF8\uC9C0' \uBC84\uD2BC\uC73C\uB85C \uC62C\uB824 \uC8FC\uC138\uC694.");
+                return true;
+              }
+              return false;
+            }
             const text = cd.getData("text/plain");
             if (!text || !/\n/.test(text)) return false;
             event.preventDefault();
@@ -9144,6 +9173,7 @@
     const [error, setError] = React.useState("");
     const [draftRestored, setDraftRestored] = React.useState(!!(initialDraft && (initialDraft.title || initialDraft.bodyText)));
     const [savedAt, setSavedAt] = React.useState((initialDraft == null ? void 0 : initialDraft.savedAt) || null);
+    const [draftError, setDraftError] = React.useState("");
     const prevCategoryIdRef = React.useRef(categoryId);
     React.useEffect(() => {
       if (isEditing) return;
@@ -9151,14 +9181,31 @@
       const t = setTimeout(() => {
         try {
           if (hasContent) {
-            const snapshot = { categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText, savedAt: (/* @__PURE__ */ new Date()).toISOString() };
+            const _noBase64 = (list) => (Array.isArray(list) ? list : []).filter((x) => !String((x == null ? void 0 : x.dataUrl) || "").startsWith("data:"));
+            const snapshot = {
+              categoryId,
+              title,
+              prefix,
+              tags,
+              images: _noBase64(images),
+              attachments: _noBase64(attachments),
+              bodyHtml,
+              bodyText,
+              savedAt: (/* @__PURE__ */ new Date()).toISOString()
+            };
             localStorage.setItem(draftKey, JSON.stringify(snapshot));
             setSavedAt(snapshot.savedAt);
+            setDraftError("");
           } else {
             localStorage.removeItem(draftKey);
             setSavedAt(null);
+            setDraftError("");
           }
-        } catch (e) {
+        } catch (err) {
+          setSavedAt(null);
+          setDraftError(
+            String((err == null ? void 0 : err.name) || "").includes("Quota") ? "\uC784\uC2DC\uC800\uC7A5 \uACF5\uAC04\uC774 \uAC00\uB4DD \uCC28 \uC790\uB3D9 \uC800\uC7A5\uC774 \uBA48\uCDC4\uC2B5\uB2C8\uB2E4. \uAE00\uC744 \uBC1C\uD589\uD558\uAC70\uB098, \uC9C0\uB09C \uC784\uC2DC\uC800\uC7A5 \uAE00\uC744 \uC9C0\uC6CC \uC8FC\uC138\uC694." : "\uC790\uB3D9 \uC784\uC2DC\uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uCC3D\uC744 \uB2EB\uAE30 \uC804\uC5D0 \uAE00\uC744 \uBC1C\uD589\uD574 \uC8FC\uC138\uC694."
+          );
         }
       }, 800);
       return () => clearTimeout(t);
@@ -9285,7 +9332,17 @@
       }
       onPublish(payload);
     };
-    return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 960 } }, /* @__PURE__ */ React.createElement("header", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, "COMPOSE \xB7 \uAE00\uC4F0\uAE30"), /* @__PURE__ */ React.createElement("h1", { className: "section-title", style: { fontSize: 36 } }, isEditing ? "\uAC8C\uC2DC\uAE00 \uC218\uC815" : "\uC0C8 \uAE00 \uC791\uC131"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginTop: 8 } }, "\uC791\uC131\uC790: ", /* @__PURE__ */ React.createElement("span", { className: "gold" }, (user == null ? void 0 : user.name) || "\uC775\uBA85"), !isEditing && savedAt && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { marginLeft: 14, fontSize: 11 } }, "\xB7 \uC784\uC2DC\uC800\uC7A5\uB428 (", new Date(savedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }), ")")), !isEditing && draftRestored && /* @__PURE__ */ React.createElement("div", { role: "status", style: {
+    return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 960 } }, /* @__PURE__ */ React.createElement("header", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true" }, "COMPOSE \xB7 \uAE00\uC4F0\uAE30"), /* @__PURE__ */ React.createElement("h1", { className: "section-title", style: { fontSize: 36 } }, isEditing ? "\uAC8C\uC2DC\uAE00 \uC218\uC815" : "\uC0C8 \uAE00 \uC791\uC131"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginTop: 8 } }, "\uC791\uC131\uC790: ", /* @__PURE__ */ React.createElement("span", { className: "gold" }, (user == null ? void 0 : user.name) || "\uC775\uBA85"), !isEditing && savedAt && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { marginLeft: 14, fontSize: 11 } }, "\xB7 \uC784\uC2DC\uC800\uC7A5\uB428 (", new Date(savedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }), ")")), !isEditing && draftError && /* @__PURE__ */ React.createElement("div", { role: "alert", style: {
+      marginTop: 14,
+      padding: "10px 14px",
+      background: "var(--bg-2)",
+      border: "1px solid var(--danger)",
+      fontSize: 12,
+      color: "var(--danger)",
+      lineHeight: 1.6,
+      wordBreak: "keep-all",
+      overflowWrap: "break-word"
+    } }, draftError), !isEditing && draftRestored && /* @__PURE__ */ React.createElement("div", { role: "status", style: {
       marginTop: 14,
       padding: "10px 14px",
       background: "rgba(245,213,72,0.06)",

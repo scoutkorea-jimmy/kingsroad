@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "pages/CommunityPage.jsx"
+        ],
+        "createdAt": "2026-08-20T02:32:38.747Z",
+        "reason": "주석 속 <img> 설명문과 본문 이미지 추출 정규식을 실제 태그로 오탐 (사용자 확인)"
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "components/TiptapEditor.jsx"
+        ],
+        "createdAt": "2026-08-20T02:34:35.047Z",
+        "reason": "base64 이미지 차단용 정규식 문자열을 실제 태그로 오탐 (사용자 확인)"
+      }
+    ]
+  }
+}

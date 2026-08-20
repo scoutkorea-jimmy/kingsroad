@@ -24,3 +24,6 @@ dist/
 # Superpowers 브레인스토밍 로컬 산출물
 .superpowers/
 .playwright-mcp/
+
+# D1 백업 — 회원 이메일·비밀번호 해시 포함. 절대 커밋 금지 (tools/backup-d1.mjs)
+backups/

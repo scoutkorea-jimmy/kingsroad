@@ -1381,6 +1381,8 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   const [error, setError] = React.useState("");
   const [draftRestored, setDraftRestored] = React.useState(!!(initialDraft && (initialDraft.title || initialDraft.bodyText)));
   const [savedAt, setSavedAt] = React.useState(initialDraft?.savedAt || null);
+  // v00.294.006 — 자동 임시저장 실패를 화면에 드러낸다(이전엔 catch {} 로 삼켰다).
+  const [draftError, setDraftError] = React.useState('');
   const prevCategoryIdRef = React.useRef(categoryId);
 
   // 임시저장 — 수정 모드 제외, 1초 디바운스로 저장.
@@ -1390,14 +1392,37 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     const t = setTimeout(() => {
       try {
         if (hasContent) {
-          const snapshot = { categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText, savedAt: new Date().toISOString() };
+          // v00.294.006 — 임시저장에서 base64(dataURI)를 걷어낸다.
+          // localStorage 는 보통 5MB 다. 이미지 한 장만 base64 로 들어와도 한도를 넘고,
+          // setItem 이 던지는 QuotaExceededError 를 통째로 삼켜 왔다 → 사용자는
+          // '임시저장됨' 을 못 보면서도 왜 안 되는지 알 수 없었다.
+          // R2 URL(https://…)은 짧으니 그대로 두고, base64 만 뺀다.
+          const _noBase64 = (list) => (Array.isArray(list) ? list : [])
+            .filter((x) => !String(x?.dataUrl || '').startsWith('data:'));
+          const snapshot = {
+            categoryId, title, prefix, tags,
+            images: _noBase64(images),
+            attachments: _noBase64(attachments),
+            bodyHtml, bodyText,
+            savedAt: new Date().toISOString(),
+          };
           localStorage.setItem(draftKey, JSON.stringify(snapshot));
           setSavedAt(snapshot.savedAt);
+          setDraftError('');
         } else {
           localStorage.removeItem(draftKey);
           setSavedAt(null);
+          setDraftError('');
         }
-      } catch {}
+      } catch (err) {
+        // 조용히 넘기지 않는다 — 임시저장이 안 되는 줄 모르고 글을 잃는 것이 최악이다.
+        setSavedAt(null);
+        setDraftError(
+          String(err?.name || '').includes('Quota')
+            ? '임시저장 공간이 가득 차 자동 저장이 멈췄습니다. 글을 발행하거나, 지난 임시저장 글을 지워 주세요.'
+            : '자동 임시저장에 실패했습니다. 창을 닫기 전에 글을 발행해 주세요.'
+        );
+      }
     }, 800);
     return () => clearTimeout(t);
   }, [draftKey, isEditing, categoryId, title, prefix, tags, images, attachments, bodyHtml, bodyText]);
@@ -1537,6 +1562,14 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
               </span>
             )}
           </p>
+          {!isEditing && draftError && (
+            <div role="alert" style={{
+              marginTop:14, padding:'10px 14px',
+              background:'var(--bg-2)', border:'1px solid var(--danger)',
+              fontSize:12, color:'var(--danger)', lineHeight:1.6,
+              wordBreak:'keep-all', overflowWrap:'break-word',
+            }}>{draftError}</div>
+          )}
           {!isEditing && draftRestored && (
             <div role="status" style={{
               marginTop:14, padding:'10px 14px', background:'rgba(245,213,72,0.06)',
