@@ -366,7 +366,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.014",
+    version: "00.294.015",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -7488,6 +7488,11 @@
       if (l) return { kind: "lecture", item: l, isPast: lecturesArePast, label: "\uAC15\uC5F0", route: "lectures", pendKey: "bgnj_pending_lecture_id" };
       return null;
     }, [tours, lectures, toursArePast, lecturesArePast]);
+    const FEED_BOARD_IDS = ["walk-independence"];
+    const feedPosts = React.useMemo(() => G2.arr(() => {
+      var _a, _b;
+      return (_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.listPosts) == null ? void 0 : _b.call(_a);
+    }).filter((p) => p && FEED_BOARD_IDS.includes(p.categoryId)), [postsTick]);
     const recentEntries = React.useMemo(() => {
       const fmt = (t) => {
         if (isNaN(t)) return "";
@@ -7541,10 +7546,33 @@
             }
             go("lectures");
           }
-        }))
+        })),
+        ...feedPosts.map((p) => {
+          const t = (() => {
+            const raw = p.createdAt || (p.date ? String(p.date).replace(/\./g, "-") : "");
+            const v = raw ? Date.parse(raw) : NaN;
+            return isNaN(v) ? 0 : v;
+          })();
+          return {
+            kind: "post",
+            id: p.id,
+            title: p.title,
+            tag: p.category || "\uAD11\uC7A5",
+            ts: t,
+            date: fmt(t),
+            onGo: () => {
+              try {
+                sessionStorage.setItem("bgnj_pending_post_id", String(p.id));
+              } catch (_e) {
+                console.warn("[bgnj] \uD654\uBA74 \uC774\uB3D9 \uD78C\uD2B8 \u2014 \uC2E4\uD328\uD574\uB3C4 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (HomePage.jsx)", _e);
+              }
+              go("community");
+            }
+          };
+        })
       ];
       return items.filter((x) => x.title).sort((a, b) => b.ts - a.ts).slice(0, 8);
-    }, [publicColumns, tours, lectures]);
+    }, [publicColumns, tours, lectures, feedPosts]);
     const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
       { label: "\uC5EC\uD589\uC9C0", sub: "\uC8FC\uC694 \uB2F5\uC0AC\uC9C0 \uC6B4\uC601", valueFallback: "\uC804\uAD6D" },
       { label: "\uD22C\uC5B4", sub: "\uC9C1\uC811 \uAE30\uD68D \uD504\uB85C\uADF8\uB7A8", valueFallback: "\uC900\uBE44 \uC911" },

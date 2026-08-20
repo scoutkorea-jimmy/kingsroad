@@ -521,6 +521,15 @@ const HomePage = ({ go }) => {
     return null;
   }, [tours, lectures, toursArePast, lecturesArePast]);
 
+  // v00.294.015 — 사용자 요청: 광장 글도 '최근 기록' 에 올린다.
+  // 다만 전부 올리면 자유 게시판(75편)이 칼럼·답사를 통째로 밀어낸다.
+  // '읽을거리' 성격의 게시판만 골라 넣는다 — 늘리려면 이 배열에 id 한 줄 추가.
+  const FEED_BOARD_IDS = ['walk-independence']; // 걸어서독립운동속으로
+  const feedPosts = React.useMemo(() => (
+    G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.())
+      .filter((p) => p && FEED_BOARD_IDS.includes(p.categoryId))
+  ), [postsTick]);
+
   const recentEntries = React.useMemo(() => {
     const fmt = (t) => {
       if (isNaN(t)) return '';
@@ -555,9 +564,27 @@ const HomePage = ({ go }) => {
           go('lectures');
         },
       })),
+      ...feedPosts.map((p) => {
+        // 게시글은 작성 시각이 진실이다. createdAt(ISO) 우선, 없으면 목록용 date('YYYY.MM.DD').
+        const t = (() => {
+          const raw = p.createdAt || (p.date ? String(p.date).replace(/\./g, '-') : '');
+          const v = raw ? Date.parse(raw) : NaN;
+          return isNaN(v) ? 0 : v;
+        })();
+        return {
+          kind: 'post', id: p.id, title: p.title,
+          tag: p.category || '광장',
+          ts: t, date: fmt(t),
+          onGo: () => {
+            try { sessionStorage.setItem('bgnj_pending_post_id', String(p.id)); }
+            catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (HomePage.jsx)', _e); }
+            go('community');
+          },
+        };
+      }),
     ];
     return items.filter((x) => x.title).sort((a, b) => b.ts - a.ts).slice(0, 8);
-  }, [publicColumns, tours, lectures]);
+  }, [publicColumns, tours, lectures, feedPosts]);
 
   // hero.stats 가 있으면 콘텐츠(label/sub/valueFallback) 를 거기서. 동적 value(투어/커뮤니티 갯수) 는 코드 측 우선.
   const heroStats = Array.isArray(hero.stats) && hero.stats.length === 3 ? hero.stats : [
