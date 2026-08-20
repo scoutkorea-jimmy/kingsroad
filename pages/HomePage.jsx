@@ -348,13 +348,19 @@ const BookGridSection = ({ go, dataTick, text }) => {
                   : <div className="home-book-cover home-book-cover--none"><span className="mono">NO COVER</span></div>}
                 <h4 className="home-book-title">{b.title}</h4>
                 {b.subtitle && <div className="home-book-sub">{b.subtitle}</div>}
-                {/* v00.295 — 세일 중이면 정가 취소선 + 판매가. 아니면 종전대로 한 줄. */}
+                {/* v00.295 — 세일 중이면 정가(취소선) · 판매가 · 할인폭 뱃지. 아니면 종전대로 한 줄. */}
                 {b.priceKR > 0 && (() => {
                   const pr = window.BGNJ_BOOK_PRICE(b, 'KR');
+                  if (!pr.isSale) return <div className="home-book-price mono">{won(pr.sale)}</div>;
+                  // 카드가 좁다(모바일 140px). 한 줄에 셋을 늘어놓으면 줄이 지저분하게 접힌다.
+                  // 정가는 윗줄에 작게, 판매가와 할인 뱃지를 아랫줄에 나란히.
                   return (
                     <div className="home-book-price mono">
-                      {pr.isSale && <span className="dim-2" style={{textDecoration:'line-through', marginRight:6}}>{won(pr.list)}</span>}
-                      {won(pr.sale)}
+                      <div className="price-was" style={{fontSize:'var(--fs-xs)'}}>{won(pr.list)}</div>
+                      <div className="price-line" style={{marginTop:2}}>
+                        <span style={{color:'var(--ink)'}}>{won(pr.sale)}</span>
+                        <span className="price-off">{pr.percent}% 할인</span>
+                      </div>
                     </div>
                   );
                 })()}
@@ -534,6 +540,11 @@ const HomePage = ({ go }) => {
   // 다만 전부 올리면 자유 게시판(75편)이 칼럼·답사를 통째로 밀어낸다.
   // '읽을거리' 성격의 게시판만 골라 넣는다 — 늘리려면 이 배열에 id 한 줄 추가.
   const FEED_BOARD_IDS = ['walk-independence']; // 신지식 청년사관 (id 는 v00.294 신설 당시 그대로)
+  const _boardLabel = React.useCallback((id) => {
+    if (!id) return '';
+    const found = G.arr(() => window.BGNJ_STORES?.categories).find((c) => c && c.id === id);
+    return found?.label || '';
+  }, []);
   const feedPosts = React.useMemo(() => (
     G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.())
       .filter((p) => p && FEED_BOARD_IDS.includes(p.categoryId))
@@ -582,7 +593,9 @@ const HomePage = ({ go }) => {
         })();
         return {
           kind: 'post', id: p.id, title: p.title,
-          tag: p.category || '광장',
+          // v00.295 — p.category 는 '글 쓸 때 박아 넣은 글자'라 게시판 이름이 바뀌면 옛 이름이 남는다.
+          //   게시판의 현재 이름을 먼저 찾고, 못 찾을 때만 저장된 글자를 쓴다.
+          tag: _boardLabel(p.categoryId) || p.category || '광장',
           ts: t, date: fmt(t),
           onGo: () => {
             try { sessionStorage.setItem('bgnj_pending_post_id', String(p.id)); }

@@ -342,13 +342,11 @@ const BookPage = ({ go, cart, setCart, user }) => {
                         }}>
                         <div className="mono" style={{fontSize:10, letterSpacing:'0.2em', color: version === v.k ? 'var(--primary)' : 'var(--ink-3)'}}>{v.sub.toUpperCase()}</div>
                         <div className="ko-serif" style={{fontSize:20, marginTop:4}}>{v.label}</div>
-                        {/* v00.295 — 세일 중이면 정가를 취소선으로 함께 보인다. 아니면 가격 한 줄 그대로. */}
-                        <div style={{marginTop:8, display:'flex', alignItems:'baseline', gap:8, flexWrap:'wrap'}}>
-                          {v.isSale && (
-                            <span className="mono dim-2" style={{fontSize:12, textDecoration:'line-through'}}>{window.BGNJ_FMT.won(v.list)}</span>
-                          )}
+                        {/* v00.295 — 세일 중이면 정가(취소선) · 판매가 · 할인폭 뱃지. 아니면 가격 한 줄 그대로. */}
+                        <div className="price-line" style={{marginTop:8}}>
+                          {v.isSale && <span className="price-was mono" style={{fontSize:13}}>{window.BGNJ_FMT.won(v.list)}</span>}
                           <span className="gold-2 ko-serif" style={{fontSize:20}}>{window.BGNJ_FMT.won(v.sale)}</span>
-                          {v.isSale && <span className="mono" style={{fontSize:11, color:'var(--ink-2)'}}>{v.percent}% OFF</span>}
+                          {v.isSale && <span className="price-off">{v.percent}% 할인</span>}
                         </div>
                       </button>
                     ))}
@@ -373,12 +371,14 @@ const BookPage = ({ go, cart, setCart, user }) => {
                 <span className="mono dim-2" style={{letterSpacing:'0.2em', fontSize:11}}>TOTAL</span>
                 <span className="ko-serif gold-2" style={{fontSize:36}}>{window.BGNJ_FMT.won(price * qty)}</span>
               </div>
-              {/* v00.295 — 택배비를 따로 받지 않는다. 값을 치르기 전에 알아야 하는 정보라 가격 바로 아래 둔다. */}
-              {window.BGNJ_BOOK_SALE().shippingIncluded && (
-                <div className="dim" style={{fontSize:12, marginTop:8, textAlign:'right', wordBreak:'keep-all'}}>
-                  택배비 별도 없음 — 책값에 포함된 금액입니다.
-                </div>
-              )}
+              {/* v00.295 — 값을 치르기 전에 알아야 하는 것들. 가격 바로 아래 둔다. */}
+              <div className="dim" style={{fontSize:12, marginTop:10, textAlign:'right', lineHeight:1.8, wordBreak:'keep-all'}}>
+                {priceInfo.isSale && (
+                  <>정가 <span className="price-was">{window.BGNJ_FMT.won(priceInfo.list * qty)}</span> 에서 {priceInfo.percent}% 할인된 금액<br/></>
+                )}
+                {window.BGNJ_BOOK_SALE().shippingIncluded && <>택배비 별도 없음 — 책값에 포함된 금액입니다<br/></>}
+                대량 구매 시 세금계산서 발행 가능합니다
+              </div>
             </div>
 
             <div style={{display:'flex', gap:12}}>
@@ -758,8 +758,9 @@ const CheckoutPage = ({ go, cart, user }) => {
                   <div className="ko-serif" style={{fontSize:17, marginBottom:4}}>『{book.title}』</div>
                   <div className="dim-2 mono" style={{fontSize:11}}>{version === "KR" ? "국문판" : "영문판"} · {qty}권</div>
                   {unitInfo.isSale && (
-                    <div className="dim-2 mono" style={{fontSize:11, marginTop:6}}>
-                      정가 <span style={{textDecoration:'line-through'}}>{window.BGNJ_FMT.won(unitInfo.list * qty)}</span> · {unitInfo.percent}% 할인
+                    <div className="price-line mono" style={{fontSize:11, marginTop:6}}>
+                      <span className="price-was">{window.BGNJ_FMT.won(unitInfo.list * qty)}</span>
+                      <span className="price-off">{unitInfo.percent}% 할인</span>
                     </div>
                   )}
                   <div className="gold ko-serif" style={{fontSize:16, marginTop:8}}>{window.BGNJ_FMT.won(subtotal)}</div>
@@ -781,8 +782,10 @@ const CheckoutPage = ({ go, cart, user }) => {
 
               <div style={{marginTop:24, padding:'16px', background:'rgba(245,213,72,0.04)', border:'1px dashed var(--primary-dim)'}}>
                 <div className="mono gold" style={{fontSize:10, letterSpacing:'0.2em', marginBottom:8}}>◆ 운영 안내</div>
-                <div className="dim" style={{fontSize:12, lineHeight:1.7}}>
+                <div className="dim" style={{fontSize:12, lineHeight:1.7, wordBreak:'keep-all'}}>
                   · 입금 확인 후 평일 1-2일 내 발송<br/>
+                  · 택배비는 따로 받지 않습니다 (책값에 포함)<br/>
+                  · 대량 구매 시 세금계산서 발행 가능 — 주문 메모에 사업자 정보를 남겨 주세요<br/>
                   · 주문 취소·환불은 마이페이지에서 요청
                 </div>
               </div>

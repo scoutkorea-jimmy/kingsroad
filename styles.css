@@ -3084,6 +3084,18 @@ body.cookie-pending .help-panel { display: none !important; }
 }
 .home-book-sub { font-size: var(--fs-xs); color: var(--ink-3); line-height: 1.6; margin-bottom: var(--s2); }
 .home-book-price { font-size: var(--fs-sm); color: var(--ink-2); }
+
+/* v00.295 — 도서 세일 표기. 홈·책 상세·결제 세 곳이 같은 모양을 쓴다.
+   할인폭은 옐로우(--primary)를 쓰지 않는다 — 옐로우는 인터랙션 상태 전용이다.
+   대신 --danger(라이트 #A33A2E / 다크 #F87171) 로 못 박는다. 두 테마 모두 정의돼 있다. */
+.price-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.price-was  { color: var(--ink-3); text-decoration: line-through; }
+.price-off  {
+  display: inline-block; padding: 1px 6px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em;
+  color: var(--danger); border: 1px solid var(--danger);
+  border-radius: var(--radius); white-space: nowrap; line-height: 1.6;
+}
 @media (max-width: 900px) {
   .home-books { padding: var(--s7) 0; }
   .home-book-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s5) var(--s4); }
