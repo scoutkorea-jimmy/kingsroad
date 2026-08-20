@@ -2785,6 +2785,58 @@ body.cookie-pending .help-panel { display: none !important; }
   background: var(--bg);
   padding: var(--s9) 0 var(--s7);
 }
+/* === v00.294.004 — 히어로 배경 이미지 ==================================
+   v00.293 재디자인이 배경을 걷어내 관리자 업로드 슬롯이 화면에 반영되지 않았다.
+   되살리되, 이 히어로의 핵심은 종이빛 위 대형 명조 타이포다 — 사진이 주인공이
+   되면 글이 죽는다. 그래서 사진 위에 **종이빛 막**을 덮어 질감만 남긴다.
+   (v00.251 때 이미 배운 것: 흰 그라디언트만으로는 부족해 이미지 자체를 눌러야 한다.) */
+.hero-d { position: relative; overflow: hidden; }
+.hero-d > .container { position: relative; z-index: 1; }
+.hero-d-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.hero-d-bg-layer {
+  position: absolute; inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+/* 종이빛 막 — 아래로 갈수록 짙어져 통계·CTA 줄의 대비를 확보한다.
+   위쪽은 옅게 둬서 사진(처마·하늘)이 보이게 한다. */
+.hero-d-scrim {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to bottom,
+      rgba(245,243,239,0.72) 0%,
+      rgba(245,243,239,0.86) 45%,
+      rgba(245,243,239,0.96) 100%);
+}
+/* 제목 좌측이 사진의 밝은 하늘과 겹칠 때를 대비한 가로 방향 보강. */
+.hero-d.has-bg .hero-d-title,
+.hero-d.has-bg .hero-d-num { text-shadow: 0 1px 0 rgba(245,243,239,0.9); }
+/* 외곽선 글자는 사진 위에서 특히 약해진다 — 획을 굵히고 색을 한 단계 진하게. */
+.hero-d.has-bg .hero-d-outline { color: var(--ink-3); }
+@supports (-webkit-text-stroke: 1px black) {
+  .hero-d.has-bg .hero-d-outline { -webkit-text-stroke: 1.6px var(--ink-3); color: transparent; }
+}
+.hero-d.has-bg .hero-d-eyebrow,
+.hero-d.has-bg .hero-d-key { color: var(--ink-2); }
+.hero-d.has-bg .hero-d-sub { color: var(--ink); }
+/* 다크 모드 — 종이빛 막 대신 먹색 막. 밝은 막을 그대로 쓰면 사진만 하얗게 뜬다. */
+:root[data-theme="dark"] .hero-d-scrim {
+  background:
+    linear-gradient(to bottom,
+      rgba(15,23,42,0.70) 0%,
+      rgba(15,23,42,0.86) 45%,
+      rgba(15,23,42,0.96) 100%);
+}
+:root[data-theme="dark"] .hero-d.has-bg .hero-d-title,
+:root[data-theme="dark"] .hero-d.has-bg .hero-d-num { text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+/* PC/모바일 배경 전환 — .hero-bg-desktop/.hero-bg-mobile 은 v00.247 규칙 재사용.
+   다만 v00.248 의 'right center' 는 PC 이미지를 모바일에 폴백할 때의 보정이다.
+   여기는 모바일 전용 이미지를 따로 싣기 때문에 중앙 정렬이 맞다. */
+@media (max-width: 600px) {
+  .hero-d-bg-layer.hero-bg-mobile { background-position: center; }
+}
+
 .hero-d-eyebrow {
   font-size: var(--fs-micro);
   letter-spacing: 0.26em;

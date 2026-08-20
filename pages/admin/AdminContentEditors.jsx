@@ -1204,7 +1204,7 @@ const FooterStyleEditor = () => {
                 maxWidth: eff.description.maxWidth,
                 marginBottom: 24,
               }}>
-                {sc.footer?.description || '뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다.'}
+                {sc.footer?.description || '뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 함께 걷고 느끼며 나누는 여행 광장입니다.'}
               </p>
               <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20}}>
                 {['콘텐츠', '정보'].map((h) => (
@@ -2355,13 +2355,13 @@ const HOME_TEXT_GROUPS = [
     title: '히어로',
     section: 'hero',
     fields: [
-      ['eyebrow', '상단 작은 문구', '먹고 자고 걷고 읽는 한국'],
-      ['title1', '제목 1행', '한국을'],
-      ['title2', '제목 2행', '직접 걷고'],
-      ['title3', '제목 3행', '천천히 읽다'],
-      ['subtitle', '본문 설명', '궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다.'],
-      ['ctaPrimary', '기본 버튼', '커뮤니티 보기'],
-      ['ctaSecondary', '보조 버튼', '답사 일정 보기'],
+      ['eyebrow', '상단 작은 문구', 'BANGINOJA · 먹고 자고 놀자 와 인문학 여행'],
+      ['title1', '제목 1행', '뱅기타고'],
+      ['title2', '제목 2행', '한국을'],
+      ['title3', '제목 3행', '느끼다'],
+      ['subtitle', '본문 설명', '의식주(衣食住) 생활의 3요소에 행문(行文)이 결합되는 여정.'],
+      ['ctaPrimary', '기본 버튼', '광장 참여하기 →'],
+      ['ctaSecondary', '보조 버튼', '투어 프로그램 보기'],
     ],
   },
   {
@@ -2501,7 +2501,7 @@ const HomeTextPreview = ({ hero, text, mode }) => {
               marginBottom:16,
             }}>
               {hero.title1 || '한국을'}<br/>
-              <span style={{color:'var(--secondary)'}}>{hero.title2 || '직접 걷고'}</span><br/>
+              <span style={{color:'var(--secondary)'}}>{hero.title2 || '한국을'}</span><br/>
               {hero.title3 || '천천히 읽다'}
             </h2>
             {/* v00.168 — whiteSpace pre-wrap (textarea 줄바꿈 보존). */}

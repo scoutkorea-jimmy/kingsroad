@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.294.003",
+  version: "00.294.004",
   build: "2026.08.20",
   channel: "preview",
 };
@@ -603,14 +603,18 @@ const DEFAULT_SITE_CONTENT = {
     book: "뱅기노자 도서",
   },
   brand: { name: "뱅기노자", sub: "BANGINOJA" },
+  // v00.294.004 — 코드 기본값을 **운영 중인 실제 문구(D1)** 와 일치시킨다.
+  // 사용자 보고 '아주 짧게 옛 문구가 스쳤다 사라진다'. 서버 응답 전 첫 렌더에
+  // 옛 기본값('한국을 / 직접 걷고 / 천천히 읽다')이 보였다가 교체되던 것.
+  // 값이 같으면 교체가 눈에 띄지 않는다.
   hero: {
-    eyebrow: "먹고 자고 걷고 읽는 한국",
-    title1: "한국을",
-    title2: "직접 걷고",
-    title3: "천천히 읽다",
-    subtitle: "궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다. 뱅기노자는 여행을 기록하고 함께 떠나는 사람들의 작은 모임입니다.",
-    ctaPrimary: "광장 보기",
-    ctaSecondary: "답사 일정 보기",
+    eyebrow: "BANGINOJA · 먹고 자고 놀자 와 인문학 여행",
+    title1: "뱅기타고",
+    title2: "한국을",
+    title3: "느끼다",
+    subtitle: "의식주(衣食住) 생활의 3요소에 행문(行文)이 결합되는 여정.\n먹고·자고·놀고·배우는 한국을, 뱅기노자와 함께 걷고 느낍니다.",
+    ctaPrimary: "광장 참여하기 →",
+    ctaSecondary: "투어 프로그램 보기",
     mapHint: "지도를 클릭해 여행지를 탐색하세요",
     // 히어로 하단 통계 카드 — value 는 동적이지만 label/sub/valueFallback 은 편집 가능.
     stats: [
@@ -620,7 +624,7 @@ const DEFAULT_SITE_CONTENT = {
     ],
   },
   footer: {
-    description: "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행.",
+    description: "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 함께 걷고 느끼며 나누는 여행 광장입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행.",
     signature: "뱅기타고 노자 · DESIGNED IN SEOUL",
     // v00.073 — 푸터 잔존 하드코드 추출. 비면 코드 default.
     copyright: "© 2026 뱅기노자 BANGINOJA — ALL RIGHTS RESERVED",

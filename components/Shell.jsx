@@ -1062,7 +1062,7 @@ const Footer = ({ go }) => {
               color: `var(${fStyle.description.color})`,
               maxWidth: fStyle.description.maxWidth,
             }}>
-              {footer.description || "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 직접 걷고 느끼며 나누는 여행 커뮤니티입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행."}
+              {footer.description || "뱅기타고 노자. 뱅기노자는 한국의 역사·문화·자연을 함께 걷고 느끼며 나누는 여행 광장입니다. 궁궐 답사부터 지역 여행까지, 함께 만들어가는 여행."}
             </p>
           </div>
           <nav aria-label="콘텐츠 바로가기">

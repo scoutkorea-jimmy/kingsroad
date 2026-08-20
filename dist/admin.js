@@ -2104,7 +2104,7 @@
       color: `var(${eff.description.color})`,
       maxWidth: eff.description.maxWidth,
       marginBottom: 24
-    } }, ((_a = sc.footer) == null ? void 0 : _a.description) || "\uBC45\uAE30\uD0C0\uACE0 \uB178\uC790. \uBC45\uAE30\uB178\uC790\uB294 \uD55C\uAD6D\uC758 \uC5ED\uC0AC\xB7\uBB38\uD654\xB7\uC790\uC5F0\uC744 \uC9C1\uC811 \uAC77\uACE0 \uB290\uB07C\uBA70 \uB098\uB204\uB294 \uC5EC\uD589 \uCEE4\uBBA4\uB2C8\uD2F0\uC785\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 } }, ["\uCF58\uD150\uCE20", "\uC815\uBCF4"].map((h) => /* @__PURE__ */ React.createElement("div", { key: h }, /* @__PURE__ */ React.createElement("h4", { style: {
+    } }, ((_a = sc.footer) == null ? void 0 : _a.description) || "\uBC45\uAE30\uD0C0\uACE0 \uB178\uC790. \uBC45\uAE30\uB178\uC790\uB294 \uD55C\uAD6D\uC758 \uC5ED\uC0AC\xB7\uBB38\uD654\xB7\uC790\uC5F0\uC744 \uD568\uAED8 \uAC77\uACE0 \uB290\uB07C\uBA70 \uB098\uB204\uB294 \uC5EC\uD589 \uAD11\uC7A5\uC785\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 } }, ["\uCF58\uD150\uCE20", "\uC815\uBCF4"].map((h) => /* @__PURE__ */ React.createElement("div", { key: h }, /* @__PURE__ */ React.createElement("h4", { style: {
       fontSize: eff.heading.fontSize,
       fontWeight: eff.heading.fontWeight,
       letterSpacing: `${eff.heading.letterSpacing}em`,
@@ -3179,13 +3179,13 @@
       title: "\uD788\uC5B4\uB85C",
       section: "hero",
       fields: [
-        ["eyebrow", "\uC0C1\uB2E8 \uC791\uC740 \uBB38\uAD6C", "\uBA39\uACE0 \uC790\uACE0 \uAC77\uACE0 \uC77D\uB294 \uD55C\uAD6D"],
-        ["title1", "\uC81C\uBAA9 1\uD589", "\uD55C\uAD6D\uC744"],
-        ["title2", "\uC81C\uBAA9 2\uD589", "\uC9C1\uC811 \uAC77\uACE0"],
-        ["title3", "\uC81C\uBAA9 3\uD589", "\uCC9C\uCC9C\uD788 \uC77D\uB2E4"],
-        ["subtitle", "\uBCF8\uBB38 \uC124\uBA85", "\uAD81\uAD90\uACFC \uACE8\uBAA9, \uC2DC\uC7A5\uACFC \uC219\uC18C, \uCC45\uACFC \uAC15\uC5F0\uC744 \uC624\uAC00\uBA70 \uD55C\uAD6D\uC744 \uC870\uAE08 \uB354 \uAC00\uAE4C\uC774 \uBD05\uB2C8\uB2E4."],
-        ["ctaPrimary", "\uAE30\uBCF8 \uBC84\uD2BC", "\uCEE4\uBBA4\uB2C8\uD2F0 \uBCF4\uAE30"],
-        ["ctaSecondary", "\uBCF4\uC870 \uBC84\uD2BC", "\uB2F5\uC0AC \uC77C\uC815 \uBCF4\uAE30"]
+        ["eyebrow", "\uC0C1\uB2E8 \uC791\uC740 \uBB38\uAD6C", "BANGINOJA \xB7 \uBA39\uACE0 \uC790\uACE0 \uB180\uC790 \uC640 \uC778\uBB38\uD559 \uC5EC\uD589"],
+        ["title1", "\uC81C\uBAA9 1\uD589", "\uBC45\uAE30\uD0C0\uACE0"],
+        ["title2", "\uC81C\uBAA9 2\uD589", "\uD55C\uAD6D\uC744"],
+        ["title3", "\uC81C\uBAA9 3\uD589", "\uB290\uB07C\uB2E4"],
+        ["subtitle", "\uBCF8\uBB38 \uC124\uBA85", "\uC758\uC2DD\uC8FC(\u8863\u98DF\u4F4F) \uC0DD\uD65C\uC758 3\uC694\uC18C\uC5D0 \uD589\uBB38(\u884C\u6587)\uC774 \uACB0\uD569\uB418\uB294 \uC5EC\uC815."],
+        ["ctaPrimary", "\uAE30\uBCF8 \uBC84\uD2BC", "\uAD11\uC7A5 \uCC38\uC5EC\uD558\uAE30 \u2192"],
+        ["ctaSecondary", "\uBCF4\uC870 \uBC84\uD2BC", "\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8 \uBCF4\uAE30"]
       ]
     },
     {
@@ -3310,7 +3310,7 @@
       lineHeight: 1.1,
       fontWeight: 800,
       marginBottom: 16
-    } }, hero.title1 || "\uD55C\uAD6D\uC744", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { style: { color: "var(--secondary)" } }, hero.title2 || "\uC9C1\uC811 \uAC77\uACE0"), /* @__PURE__ */ React.createElement("br", null), hero.title3 || "\uCC9C\uCC9C\uD788 \uC77D\uB2E4"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 14, lineHeight: 1.75, color: "var(--ink-2)", maxWidth: 540, marginBottom: 20, whiteSpace: "pre-wrap" } }, hero.subtitle || "\uAD81\uAD90\uACFC \uACE8\uBAA9, \uC2DC\uC7A5\uACFC \uC219\uC18C, \uCC45\uACFC \uAC15\uC5F0\uC744 \uC624\uAC00\uBA70 \uD55C\uAD6D\uC744 \uC870\uAE08 \uB354 \uAC00\uAE4C\uC774 \uBD05\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small" }, hero.ctaPrimary || "\uCEE4\uBBA4\uB2C8\uD2F0 \uBCF4\uAE30"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small" }, hero.ctaSecondary || "\uB2F5\uC0AC \uC77C\uC815 \uBCF4\uAE30"))), /* @__PURE__ */ React.createElement("div", { className: "home-program-stack" }, /* @__PURE__ */ React.createElement("article", { className: "home-program-card" }, /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextLectureLabel), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 8 } }, "\uC655\uC758 \uAE38\uC744 \uC77D\uB294 \uC800\uB141"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12 } }, text.venueFallback)), /* @__PURE__ */ React.createElement("article", { className: "home-program-card" }, /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextTourLabel), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 8 } }, "\uAD81\uAD90 \uB2F5\uC0AC \uC608\uC2DC"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12 } }, "5.12 (\uD654) 10:00"))))), /* @__PURE__ */ React.createElement(
+    } }, hero.title1 || "\uD55C\uAD6D\uC744", /* @__PURE__ */ React.createElement("br", null), /* @__PURE__ */ React.createElement("span", { style: { color: "var(--secondary)" } }, hero.title2 || "\uD55C\uAD6D\uC744"), /* @__PURE__ */ React.createElement("br", null), hero.title3 || "\uCC9C\uCC9C\uD788 \uC77D\uB2E4"), /* @__PURE__ */ React.createElement("p", { style: { fontSize: 14, lineHeight: 1.75, color: "var(--ink-2)", maxWidth: 540, marginBottom: 20, whiteSpace: "pre-wrap" } }, hero.subtitle || "\uAD81\uAD90\uACFC \uACE8\uBAA9, \uC2DC\uC7A5\uACFC \uC219\uC18C, \uCC45\uACFC \uAC15\uC5F0\uC744 \uC624\uAC00\uBA70 \uD55C\uAD6D\uC744 \uC870\uAE08 \uB354 \uAC00\uAE4C\uC774 \uBD05\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small" }, hero.ctaPrimary || "\uCEE4\uBBA4\uB2C8\uD2F0 \uBCF4\uAE30"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small" }, hero.ctaSecondary || "\uB2F5\uC0AC \uC77C\uC815 \uBCF4\uAE30"))), /* @__PURE__ */ React.createElement("div", { className: "home-program-stack" }, /* @__PURE__ */ React.createElement("article", { className: "home-program-card" }, /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextLectureLabel), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 8 } }, "\uC655\uC758 \uAE38\uC744 \uC77D\uB294 \uC800\uB141"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12 } }, text.venueFallback)), /* @__PURE__ */ React.createElement("article", { className: "home-program-card" }, /* @__PURE__ */ React.createElement("div", { className: "home-program-label" }, text.heroNextTourLabel), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 8 } }, "\uAD81\uAD90 \uB2F5\uC0AC \uC608\uC2DC"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 12 } }, "5.12 (\uD654) 10:00"))))), /* @__PURE__ */ React.createElement(
       HomePreviewSection,
       {
         eyebrow: text.recEyebrow,

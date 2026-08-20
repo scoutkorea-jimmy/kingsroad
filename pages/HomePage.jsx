@@ -602,15 +602,29 @@ const HomePage = ({ go }) => {
           heroStyle 트윗(관리자 '히어로' 탭)도 이 구조에선 적용하지 않는다 —
           크기·색이 구조의 일부가 됐기 때문. 문구(title1~3, subtitle, cta*)만 계속 관리자에서 편집된다. */}
       <HomeSectionBoundary label="히어로">
-        <section className="hero-d">
+        <section className={`hero-d${(hero.bgDesktopUrl || hero.bgMobileUrl) ? ' has-bg' : ''}`}>
+          {/* v00.294.004 — 배경 이미지 복구. v00.293 재디자인이 배경을 걷어내면서
+              관리자 '히어로' 탭의 업로드 슬롯이 화면에 반영되지 않는 상태였다.
+              종이빛 타이포 위계를 지키기 위해 이미지 위에 종이빛 막(.hero-d-scrim)을
+              덮는다 — 사진은 질감으로 남고 글자는 --ink 대비를 유지한다.
+              PC/모바일 두 장을 각각 쓰되, 한쪽만 올려도 그 한 장을 양쪽에 쓴다. */}
+          {(hero.bgDesktopUrl || hero.bgMobileUrl) && (
+            <div className="hero-d-bg" aria-hidden="true">
+              <div className="hero-d-bg-layer hero-bg-desktop"
+                style={{backgroundImage: `url("${hero.bgDesktopUrl || hero.bgMobileUrl}")`}}/>
+              <div className="hero-d-bg-layer hero-bg-mobile"
+                style={{backgroundImage: `url("${hero.bgMobileUrl || hero.bgDesktopUrl}")`}}/>
+              <div className="hero-d-scrim"/>
+            </div>
+          )}
           <div className="container">
-            <div className="hero-d-eyebrow mono">{hero.eyebrow || 'BANGINOJA · 한국의 역사 · 문화 · 자연을 걷다'}</div>
+            <div className="hero-d-eyebrow mono">{hero.eyebrow || 'BANGINOJA · 먹고 자고 놀자 와 인문학 여행'}</div>
             <h1 className="hero-d-title">
-              {hero.title1 || '걸어서'}<br/>
-              <span className="hero-d-outline">{hero.title2 || '한국의'}</span> {hero.title3 || '안쪽으로'}
+              {hero.title1 || '뱅기타고'}<br/>
+              <span className="hero-d-outline">{hero.title2 || '한국을'}</span> {hero.title3 || '느끼다'}
             </h1>
             <p className="hero-d-sub bgnj-multiline">
-              {hero.subtitle || '궁궐과 골목, 시장과 숙소, 책과 강연을 오가며 한국을 조금 더 가까이 봅니다. 발로 확인한 것만 기록에 남깁니다.'}
+              {hero.subtitle || '의식주(衣食住) 생활의 3요소에 행문(行文)이 결합되는 여정.\n먹고·자고·놀고·배우는 한국을, 뱅기노자와 함께 걷고 느낍니다.'}
             </p>
             <div className="hero-d-meta">
               {stats.map((stat) => (
