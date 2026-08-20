@@ -741,12 +741,18 @@ const HomePage = ({ go }) => {
                 <button type="button" className="btn-ghost mono" style={{fontSize:11}}
                   onClick={() => go('column')}>전체 {publicColumns.length}편 →</button>
               </div>
+              {/* v00.294.014 — 사용자 요청: 분류를 제목 앞에 대괄호 말머리로.
+                  우측 끝의 작은 태그는 폭이 넓을수록 제목에서 멀어져 눈에 안 들어왔다.
+                  제목 바로 앞에 붙이면 한 줄만 읽어도 무엇에 대한 기록인지 안다.
+                  같은 값을 양쪽에 두면 중복이라 우측 태그는 걷어냈다. */}
               {recentEntries.map((it) => (
                 <div key={`${it.kind}-${it.id}`} className="home-feed-row"
                   {...clickable(it.onGo, `${it.tag}: ${it.title}`)}>
                   <div className="home-feed-date mono">{it.date}</div>
-                  <h4 className="home-feed-title">{it.title}</h4>
-                  <div className="home-feed-tag mono">{it.tag}</div>
+                  <h4 className="home-feed-title">
+                    <span className="home-feed-prefix mono" aria-hidden="true">[{it.tag}]</span>
+                    {it.title}
+                  </h4>
                 </div>
               ))}
             </div>

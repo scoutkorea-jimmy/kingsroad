@@ -366,7 +366,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.294.013",
+    version: "00.294.014",
     build: "2026.08.20",
     channel: "preview"
   };
@@ -7651,8 +7651,7 @@
         ...clickable(it.onGo, `${it.tag}: ${it.title}`)
       },
       /* @__PURE__ */ React.createElement("div", { className: "home-feed-date mono" }, it.date),
-      /* @__PURE__ */ React.createElement("h4", { className: "home-feed-title" }, it.title),
-      /* @__PURE__ */ React.createElement("div", { className: "home-feed-tag mono" }, it.tag)
+      /* @__PURE__ */ React.createElement("h4", { className: "home-feed-title" }, /* @__PURE__ */ React.createElement("span", { className: "home-feed-prefix mono", "aria-hidden": "true" }, "[", it.tag, "]"), it.title)
     ))))), hero.photoTallUrl && /* @__PURE__ */ React.createElement(HomeSectionBoundary, { label: "\uC18C\uAC1C" }, /* @__PURE__ */ React.createElement("section", { className: "home-intro-photo" }, /* @__PURE__ */ React.createElement("div", { className: "container home-intro-photo-grid" }, /* @__PURE__ */ React.createElement(
       "div",
       {
