@@ -12281,6 +12281,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const openDetail = (id) => {
       setDetailId(id);
       setDetailTab("info");
+      const item = allLectures.find((x) => String(x.id) === String(id));
+      if (item) {
+        startEdit(item);
+        startContentEdit(item);
+      }
     };
     const closeDetail = () => {
       setDetailId(null);
@@ -12371,7 +12376,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       });
     };
     const saveEdit = async () => {
-      var _a, _b;
+      var _a, _b, _c, _d;
       if (editingId == null) return;
       const lecture = window.BGNJ_LECTURES.getLecture(editingId);
       if (!lecture) return;
@@ -12396,7 +12401,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         } catch (_e) {
           console.warn("[bgnj] AdminEventsPanels.jsx:235 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
         }
-        setEditingId(null);
+        if (!detailId) setEditingId(null);
+        (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, "\uC800\uC7A5\uD588\uC2B5\uB2C8\uB2E4.");
         refresh();
       } catch (err) {
         window.BGNJ_TOAST.error("\uAC15\uC5F0 \uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
@@ -12561,7 +12567,18 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           value: draft.note,
           onChange: (e) => setDraft({ ...draft, note: e.target.value })
         }
-      )), /* @__PURE__ */ React.createElement("div", { style: { gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setEditingId(null) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5"))) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(l) }, "\u270E \uAC15\uC5F0 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uC2DC\uAC04\xB7\uAC00\uACA9)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(l) }, "\u{1F4CB} \uAC15\uC5F0 \uC9C4\uD589\xB7\uCC38\uACE0\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(l) }, "\u{1F5BC} \uD3EC\uC2A4\uD130\xB7\uD604\uC7A5\uC0AC\uC9C4"), /* @__PURE__ */ React.createElement(
+      )), /* @__PURE__ */ React.createElement("div", { style: { gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: () => {
+            if (detailId) startEdit(l);
+            else setEditingId(null);
+          }
+        },
+        detailId ? "\uBCC0\uACBD \uB418\uB3CC\uB9AC\uAE30" : "\uCDE8\uC18C"
+      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5"))) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(l) }, "\u270E \uAC15\uC5F0 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uC2DC\uAC04\xB7\uAC00\uACA9)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(l) }, "\u{1F4CB} \uAC15\uC5F0 \uC9C4\uD589\xB7\uCC38\uACE0\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(l) }, "\u{1F5BC} \uD3EC\uC2A4\uD130\xB7\uD604\uC7A5\uC0AC\uC9C4"), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -12775,6 +12792,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const openDetail = (id) => {
       setDetailId(id);
       setDetailTab("info");
+      const item = allTours.find((x) => String(x.id) === String(id));
+      if (item) {
+        startEdit(item);
+        startContentEdit(item);
+      }
     };
     const closeDetail = () => {
       setDetailId(null);
@@ -12873,6 +12895,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       });
     };
     const saveEdit = async () => {
+      var _a, _b;
       if (editingId == null) return;
       const tour = window.BGNJ_TOURS.getTour(editingId);
       if (!tour) return;
@@ -12902,7 +12925,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           refundPolicy: draft.refundPolicy
           // v00.106
         });
-        setEditingId(null);
+        if (!detailId) setEditingId(null);
+        (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.success) == null ? void 0 : _b.call(_a, "\uC800\uC7A5\uD588\uC2B5\uB2C8\uB2E4.");
         refresh();
       } catch (err) {
         window.BGNJ_TOAST.error("\uD22C\uC5B4 \uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
@@ -13167,7 +13191,18 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             placeholder: "\uC608: \uCD9C\uBC1C 7\uC77C \uC804\uAE4C\uC9C0 100% \uD658\uBD88 / 3\uC77C \uC804\uAE4C\uC9C0 50% / \uC774\uD6C4 \uD658\uBD88 \uBD88\uAC00",
             onChange: (e) => setDraft({ ...draft, refundPolicy: e.target.value })
           }
-        ), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.5 } }, "\u24D8 \uBE44\uC6B0\uBA74 \uC6B4\uC601\uC124\uC815\uC758 \uAE00\uB85C\uBC8C \uD658\uBD88\uC815\uCC45 \uC0AC\uC6A9 (\uB2E4\uC74C \uC0AC\uC774\uD074 \uB3C4\uC785 \uC608\uC815).")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setEditingId(null) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8, lineHeight: 1.6 } }, "\u203B \uC138\uBD80 \uC77C\uC815 / \uC900\uBE44\uBB3C \uC740 \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), " \uBC84\uD2BC\uC5D0\uC11C \uD3B8\uC9D1 (\uC9C4\uD589 \uD750\uB984 + \uC900\uBE44\uBB3C list + \uCEE4\uBC84 \uC774\uBBF8\uC9C0)."))
+        ), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.5 } }, "\u24D8 \uBE44\uC6B0\uBA74 \uC6B4\uC601\uC124\uC815\uC758 \uAE00\uB85C\uBC8C \uD658\uBD88\uC815\uCC45 \uC0AC\uC6A9 (\uB2E4\uC74C \uC0AC\uC774\uD074 \uB3C4\uC785 \uC608\uC815).")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            className: "btn btn-small",
+            onClick: () => {
+              if (detailId) startEdit(t);
+              else setEditingId(null);
+            }
+          },
+          detailId ? "\uBCC0\uACBD \uB418\uB3CC\uB9AC\uAE30" : "\uCDE8\uC18C"
+        ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8, lineHeight: 1.6 } }, "\u203B \uC138\uBD80 \uC77C\uC815 / \uC900\uBE44\uBB3C \uC740 \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), " \uBC84\uD2BC\uC5D0\uC11C \uD3B8\uC9D1 (\uC9C4\uD589 \uD750\uB984 + \uC900\uBE44\uBB3C list + \uCEE4\uBC84 \uC774\uBBF8\uC9C0)."))
       ) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(t) }, "\u270E \uD22C\uC5B4 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uB09C\uC774\uB3C4\xB7\uC18C\uC694\uC2DC\uAC04\xB7\uAC00\uACA9)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(t) }, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(t) }, "\u{1F5BC} \uC0AC\uC9C4 \uAC24\uB7EC\uB9AC"), /* @__PURE__ */ React.createElement(
         "button",
         {

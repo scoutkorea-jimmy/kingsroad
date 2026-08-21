@@ -308,7 +308,15 @@ const LectureAdminPanel = ({ go }) => {
   // v00.299 — 목록 ↔ 세부 화면. detailId 가 있으면 그 프로그램 하나만 펼친다.
   const [detailId, setDetailId] = React.useState(null);
   const [detailTab, setDetailTab] = React.useState('info');
-  const openDetail = (id) => { setDetailId(id); setDetailTab('info'); };
+  // v00.299.001 — 상세로 들어가면 **바로 고칠 수 있어야** 한다.
+  //   전에는 상세에서 다시 [수정] 을 눌러야 폼이 열렸다 — 단계가 하나 더 생긴 셈이다.
+  //   기본 정보 폼과 답사 일정/준비물/커버 편집을 함께 펼친다.
+  const openDetail = (id) => {
+    setDetailId(id);
+    setDetailTab('info');
+    const item = allLectures.find((x) => String(x.id) === String(id));
+    if (item) { startEdit(item); startContentEdit(item); }
+  };
   const closeDetail = () => { setDetailId(null); setEditingId(null); setContentEditingId(null); };
   const lectures = React.useMemo(() => filterSortEvents(allLectures, {
     search, status: statusFilter, sort: sortKey,
@@ -412,7 +420,10 @@ const LectureAdminPanel = ({ go }) => {
         note: draft.note,
       });
       try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:235 오류(무시하고 진행)', _e); }
-      setEditingId(null);
+      // v00.299.001 — 상세 화면에서는 저장 후에도 폼을 열어 둔다.
+      //   닫아 버리면 이어서 고칠 때 다시 [수정] 을 눌러야 한다.
+      if (!detailId) setEditingId(null);
+      window.BGNJ_TOAST?.success?.('저장했습니다.');
       refresh();
     } catch (err) {
       window.BGNJ_TOAST.error('강연 저장 실패: ' + (err?.message || '알 수 없는 오류'));
@@ -611,7 +622,12 @@ const LectureAdminPanel = ({ go }) => {
                         onChange={(e) => setDraft({ ...draft, note: e.target.value })}/>
                     </div>
                     <div style={{gridColumn:'1 / -1', display:'flex', justifyContent:'flex-end', gap:8}}>
-                      <button type="button" className="btn btn-small" onClick={() => setEditingId(null)}>취소</button>
+                      {/* v00.299.001 — 상세에서는 폼을 닫지 않는다. 닫으면 다시 [수정] 을 눌러야 해
+                          '바로 수정' 이 아니게 된다. 입력값만 원래대로 되돌린다. */}
+                      <button type="button" className="btn btn-small"
+                        onClick={() => { if (detailId) startEdit(l); else setEditingId(null); }}>
+                        {detailId ? '변경 되돌리기' : '취소'}
+                      </button>
                       <button type="button" className="btn btn-gold btn-small" onClick={saveEdit}>저장</button>
                     </div>
                   </div>
@@ -842,7 +858,13 @@ const TourAdminPanel = ({ go }) => {
   // v00.299 — 목록 ↔ 세부 화면. detailId 가 있으면 그 프로그램 하나만 펼친다.
   const [detailId, setDetailId] = React.useState(null);
   const [detailTab, setDetailTab] = React.useState('info');
-  const openDetail = (id) => { setDetailId(id); setDetailTab('info'); };
+  // v00.299.001 — 강연과 같은 이유로 상세 진입 즉시 편집 상태.
+  const openDetail = (id) => {
+    setDetailId(id);
+    setDetailTab('info');
+    const item = allTours.find((x) => String(x.id) === String(id));
+    if (item) { startEdit(item); startContentEdit(item); }
+  };
   const closeDetail = () => { setDetailId(null); setEditingId(null); setContentEditingId(null); };
   const tours = React.useMemo(() => filterSortEvents(allTours, {
     search, status: statusFilter, sort: sortKey,
@@ -960,7 +982,10 @@ const TourAdminPanel = ({ go }) => {
         desc: draft.desc,
         refundPolicy: draft.refundPolicy, // v00.106
       });
-      setEditingId(null);
+      // v00.299.001 — 상세 화면에서는 저장 후에도 폼을 열어 둔다.
+      //   닫아 버리면 이어서 고칠 때 다시 [수정] 을 눌러야 한다.
+      if (!detailId) setEditingId(null);
+      window.BGNJ_TOAST?.success?.('저장했습니다.');
       refresh();
     } catch (err) {
       window.BGNJ_TOAST.error('투어 저장 실패: ' + (err?.message || '알 수 없는 오류'));
@@ -1244,7 +1269,12 @@ const TourAdminPanel = ({ go }) => {
                       </p>
                     </div>
                     <div style={{display:'flex', justifyContent:'flex-end', gap:8}}>
-                      <button type="button" className="btn btn-small" onClick={() => setEditingId(null)}>취소</button>
+                      {/* v00.299.001 — 상세에서는 폼을 닫지 않는다. 닫으면 다시 [수정] 을 눌러야 해
+                          '바로 수정' 이 아니게 된다. 입력값만 원래대로 되돌린다. */}
+                      <button type="button" className="btn btn-small"
+                        onClick={() => { if (detailId) startEdit(t); else setEditingId(null); }}>
+                        {detailId ? '변경 되돌리기' : '취소'}
+                      </button>
                       <button type="button" className="btn btn-gold btn-small" onClick={saveEdit}>저장</button>
                     </div>
                     <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
