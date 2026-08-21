@@ -26,7 +26,7 @@
      · frame-ancestors / X-Frame-Options 는 HTTP 헤더 전용 — GitHub Pages(정적 호스팅)는 헤더 주입 불가라
        <meta> 로는 브라우저가 무시(콘솔 경고만 남김). v00.284.002 에서 제거. 클릭재킹 방어가 필요하면
        Cloudflare(워커/Pages) 같은 헤더 가능한 경유지에서 HTTP 헤더로 설정해야 실효. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-lQWmwWoboXHaJim9A0oULMNdf+6ayIY5Gsgx40rL2Mw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-1EZKrpYOa3x7bOMNQbhcMFQCNuRsxLbn6TxDaMPzlZw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta property="og:title" content="성공은 시작보다 마무리가 중요하다 — 뱅기노자">
 <meta property="og:description" content="우리는 시작의 중요성을 항상 강조해왔다. ‘시작이 반’이라는 말이 있듯이 시작은 결과를 이끌어내는, 위대한 첫걸음이고 찬란한 미래를 가져 올 수 있는 성공의 출발선이다. 미국의 기상학자 에드워드 로렌츠(E. Lorentz)가 말한‘나비 효과(Butterfly effect)’의 원리처럼…">
 <meta property="og:type" content="website">
@@ -47,7 +47,7 @@
 <!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=00.302.000">
+<link rel="stylesheet" href="/styles.css?v=00.303.000">
 
 
 <!-- v00.297.001 — 검색·AI 크롤러용 본문(#seo-main)을 사람 눈에서 감춘다.
@@ -179,6 +179,6 @@
      v00.285 Stage 3 — per-file 22개 <script> → 단일 번들 dist/app.js.
        엔트리 src/entry-main.jsx 가 기존 로드 순서대로 side-effect import. tools/build.mjs --bundle 산출.
        admin(dist/admin.js)은 boot 가 route 진입 시 동적 주입(코드 스플리팅 유지). -->
-<script defer src="/dist/app.js?v=00.302.000"></script>
+<script defer src="/dist/app.js?v=00.303.000"></script>
 </body>
 </html>

@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.302.000",
+    version: "00.303.000",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -1489,7 +1489,13 @@
     //   '걸어서독립운동속으로' → '신지식 청년사관' · 폐쇄했던 정보 자리에 '국민사학자' 신설.
     { id: "walk-independence", label: "\uC2E0\uC9C0\uC2DD \uCCAD\uB144\uC0AC\uAD00", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "\uAC78\uC5B4\uC11C \uB9CC\uB098\uB294 \uB3C5\uB9BD\uC6B4\uB3D9\uC758 \uC790\uCDE8 \u2014 \uC5EC\uD589 \uAC10\uC0C1\uBB38 (\uC77D\uAE30: \uB204\uAD6C\uB098 \xB7 \uC4F0\uAE30: \uB85C\uADF8\uC778 \uD68C\uC6D0)" },
     { id: "national-historian", label: "\uAD6D\uBBFC\uC0AC\uD559\uC790", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "" },
-    { id: "column", label: "\uCE7C\uB7FC", boardType: "column", minLevel: 0, postMinLevel: 100, desc: "\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC (\uC4F0\uAE30: \uAD00\uB9AC\uC790)" }
+    // v00.303 — 서버(D1.categories_kv)와 일치시킨다.
+    //   전에는 `press`(언론보도)·`hangyeon-forum`(한켠역사문화포럼)이 **여기에 없었다.**
+    //   서버가 잠깐이라도 응답하지 않으면 그 두 게시판이 통째로 안 보인다.
+    //   반대로 `column`(칼럼)은 **코드에만 있는 유령**이었다 — 서버에 그런 행이 없고,
+    //   칼럼은 `user_columns` 로 따로 관리된다. 지운다.
+    { id: "press", label: "\uC5B8\uB860\uBCF4\uB3C4", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "" },
+    { id: "hangyeon-forum", label: "\uD55C\uCF20\uC5ED\uC0AC\uBB38\uD654\uD3EC\uB7FC", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "\uD55C\uCF20\uC5D0\uC11C \uC5F4\uB9AC\uB294 \uC5ED\uC0AC\xB7\uBB38\uD654 \uD3EC\uB7FC\uC758 \uAE30\uB85D\uACFC \uB17C\uC758 (\uC77D\uAE30: \uB204\uAD6C\uB098 \xB7 \uC4F0\uAE30: \uB85C\uADF8\uC778 \uD68C\uC6D0)" }
   ];
   var DEFAULT_COMMUNITY_POSTS = [
     { id: 1, categoryId: "free", category: "\uC790\uC720", title: "\uCCAB \uB2F5\uC0AC \uD6C4\uAE30 \u2014 \uCC3D\uB355\uAD81 \uD6C4\uC6D0 \uC57C\uAC04 \uD504\uB85C\uADF8\uB7A8", author: "\uB3CC\uB2F4\uC544\uB798", replies: 24, views: 512, date: "2026.04.17", hot: true },
@@ -8522,6 +8528,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return html.replace(/<div\s+data-bgnj-attached-block="1"[^>]*>[\s\S]*?<\/div>/gi, "");
     }
   };
+  var POST_TITLE_MAX = 120;
+  var POST_BODY_MAX = 2e5;
   var ImageAttacher = ({ images, setImages, max = 10, onBusyChange }) => {
     const inputRef = React.useRef(null);
     const [busy, setBusy] = React.useState(false);
@@ -9929,6 +9937,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       if (attachBusy) return setError("\uC0AC\uC9C4\xB7\uD30C\uC77C\uC744 \uC62C\uB9AC\uB294 \uC911\uC785\uB2C8\uB2E4. \uB05D\uB098\uBA74 \uAC8C\uC2DC\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
       if (!title.trim()) return setError("\uC81C\uBAA9\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.");
       if (!bodyText.trim()) return setError("\uBCF8\uBB38\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.");
+      if (title.trim().length > POST_TITLE_MAX) {
+        return setError(`\uC81C\uBAA9\uC774 \uB108\uBB34 \uAE41\uB2C8\uB2E4 (${title.trim().length}\uC790 / \uCD5C\uB300 ${POST_TITLE_MAX}\uC790).`);
+      }
+      if (bodyHtml.length > POST_BODY_MAX) {
+        return setError(`\uBCF8\uBB38\uC774 \uB108\uBB34 \uAE41\uB2C8\uB2E4 (${bodyHtml.length.toLocaleString()}\uC790 / \uCD5C\uB300 ${POST_BODY_MAX.toLocaleString()}\uC790). \uAE00\uC744 \uB098\uB220 \uC62C\uB824 \uC8FC\uC138\uC694.`);
+      }
       const cat = categories.find((c) => c.id === categoryId);
       const now = /* @__PURE__ */ new Date();
       const pad = (n) => String(n).padStart(2, "0");
@@ -10044,7 +10058,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         value: title,
         onChange: (e) => setTitle(e.target.value),
         required: true,
-        maxLength: 120
+        maxLength: POST_TITLE_MAX
       }
     ))), boardPrefixes.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "field", style: { marginBottom: 20 } }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uB9D0\uBA38\uB9AC"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
       "button",

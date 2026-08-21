@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.302.000",
+  version: "00.303.000",
   build: "2026.08.21",
   channel: "preview",
 };
@@ -579,6 +579,10 @@ const migrateLegacyGradeColors = (grades) => {
 
 // 다양한 책 카탈로그 — 관리자 페이지에서 추가/편집. 표지(PNG)와 본문 미리보기(PDF)는
 // dataURI(base64)로 localStorage에 저장. 책마다 소개/목차/저자/리뷰가 독립적으로 따라간다.
+// v00.303 — 이 시드는 **서버(D1.books)가 비어 있을 때만** 쓰인다.
+//   그런데 여기 적힌 두 권은 **실제로 존재하지 않는 책**이다(서버에는 왕의 길 등 6권).
+//   서버가 잠깐 응답하지 않으면 없는 책이 화면에 뜬다. 화면 뼈대 확인용으로만 남기고,
+//   실제 판매 정보(가격·ISBN)는 절대 여기서 읽지 않는다 — BGNJ_BOOKS 가 서버 값을 덮어쓴다.
 const DEFAULT_BOOKS = [
   {
     id: "wang",
@@ -997,7 +1001,13 @@ const DEFAULT_CATEGORIES = [
   //   '걸어서독립운동속으로' → '신지식 청년사관' · 폐쇄했던 정보 자리에 '국민사학자' 신설.
   { id: "walk-independence",  label: "신지식 청년사관", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "걸어서 만나는 독립운동의 자취 — 여행 감상문 (읽기: 누구나 · 쓰기: 로그인 회원)" },
   { id: "national-historian", label: "국민사학자",      boardType: "community", minLevel: 0, postMinLevel: 10, desc: "" },
-  { id: "column",   label: "칼럼",  boardType: "column",    minLevel: 0,  postMinLevel: 100, desc: "뱅기노자 칼럼 (쓰기: 관리자)" },
+  // v00.303 — 서버(D1.categories_kv)와 일치시킨다.
+  //   전에는 `press`(언론보도)·`hangyeon-forum`(한켠역사문화포럼)이 **여기에 없었다.**
+  //   서버가 잠깐이라도 응답하지 않으면 그 두 게시판이 통째로 안 보인다.
+  //   반대로 `column`(칼럼)은 **코드에만 있는 유령**이었다 — 서버에 그런 행이 없고,
+  //   칼럼은 `user_columns` 로 따로 관리된다. 지운다.
+  { id: "press",          label: "언론보도",        boardType: "community", minLevel: 0, postMinLevel: 10, desc: "" },
+  { id: "hangyeon-forum", label: "한켠역사문화포럼", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "한켠에서 열리는 역사·문화 포럼의 기록과 논의 (읽기: 누구나 · 쓰기: 로그인 회원)" },
 ];
 
 const DEFAULT_COMMUNITY_POSTS = [

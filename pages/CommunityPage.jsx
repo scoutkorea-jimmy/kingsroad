@@ -140,6 +140,14 @@ const _stripAttachedBlock = (html) => {
   }
 };
 
+// v00.303 — 화면 쪽 한도. **서버 한도보다 같거나 엄격해야 한다.**
+//   서버(workers/src/index.js): 제목 200자 · 본문 200,000자.
+//   제목은 화면이 더 엄격하다(120자) — 원래 입력칸에 maxLength={120} 이 박혀 있던 값을
+//   상수로 끌어올린 것이다. 화면이 더 엄격한 건 안전하다(거부당할 일이 없다).
+//   반대로 화면이 느슨하면 '다 쓰고 저장 눌렀더니 거부' 가 된다 — 그게 본문에서 실제로 그랬다.
+const POST_TITLE_MAX = 120;
+const POST_BODY_MAX = 200000;
+
 // === Image picker (editor side) — up to `max` images with thumbnails =====
 const ImageAttacher = ({ images, setImages, max = 10, onBusyChange }) => {
   const inputRef = React.useRef(null);
@@ -1524,6 +1532,15 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
     if (attachBusy) return setError("사진·파일을 올리는 중입니다. 끝나면 게시할 수 있습니다.");
     if (!title.trim()) return setError("제목을 입력해주세요.");
     if (!bodyText.trim()) return setError("본문을 입력해주세요.");
+    // v00.303 — 서버 한도(제목 200자 · 본문 20만자)와 같은 값을 화면에서도 본다.
+    //   전에는 화면에 제한이 없어, 긴 글을 다 쓰고 저장을 누른 뒤에야 거부당했다.
+    //   두 값이 어긋나면 '화면은 통과인데 서버가 거부' 하는 최악이 되므로 함께 고쳐야 한다.
+    if (title.trim().length > POST_TITLE_MAX) {
+      return setError(`제목이 너무 깁니다 (${title.trim().length}자 / 최대 ${POST_TITLE_MAX}자).`);
+    }
+    if (bodyHtml.length > POST_BODY_MAX) {
+      return setError(`본문이 너무 깁니다 (${bodyHtml.length.toLocaleString()}자 / 최대 ${POST_BODY_MAX.toLocaleString()}자). 글을 나눠 올려 주세요.`);
+    }
     const cat = categories.find(c => c.id === categoryId);
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
@@ -1660,7 +1677,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
               <input id="post-title" className="field-input"
                 placeholder="제목을 입력하세요"
                 value={title} onChange={e => setTitle(e.target.value)}
-                required maxLength={120}/>
+                required maxLength={POST_TITLE_MAX}/>
             </div>
           </div>
 

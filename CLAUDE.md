@@ -39,6 +39,10 @@
 
 ## 고치기 전에 반드시 알아야 할 함정
 
+**`DEFAULT_*` 는 서버가 죽었을 때만 쓰이므로 어긋나도 아무도 모른다.** 평소엔 서버 값이 덮어쓴다.
+그러다 서버가 잠깐 느려지는 순간 엉뚱한 값이 뜬다 — 실제로 등급·게시판 둘 다 어긋나 있었다.
+서버 데이터를 손댔으면 **`node tools/check-defaults.mjs`** 로 대조하라.
+
 **서버가 멀쩡하다고 화면이 멀쩡한 게 아니다.** 2026-08-21, 글을 클릭하면 '찾을 수 없습니다' 가
 뜨는 사고가 났는데 API 는 처음부터 끝까지 정상이었다(글 89편이 DB 와 완전 일치).
 버그는 브라우저 안에서만 살았다. → **`node tools/smoke.mjs`** 로 브라우저 코드를 직접 돌려라.
@@ -88,6 +92,7 @@ node tools/check-all.mjs       # ★ 이것 하나면 아래 검사 전부 (손�
 node tools/build.mjs           # esbuild 번들
 node tools/csp-hashes.mjs      # 인라인 script SHA-256 → CSP meta
 node tools/seo-build.mjs       # 검색·AI 용 정적 페이지 + sitemap/RSS/index.json (★ 빌드 맨 마지막)
+node tools/check-defaults.mjs  # 코드의 DEFAULT_* ↔ 서버 실제값 대조 (네트워크 필요 — 배포 전/서버 데이터 손댄 뒤)
 bash tools/install-hooks.sh    # pre-commit 훅 재설치
 ```
 
