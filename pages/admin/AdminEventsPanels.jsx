@@ -283,6 +283,65 @@ const EventDetailHead = ({ title, subtitle, tab, onTab, rosterCount, onBack, bac
   </div>
 );
 
+// v00.299.002 — 정보 탭 맨 위에 **지금 올라가 있는 것**을 먼저 보여준다.
+//   사용자 지적: '기존에 올라간 정보들이나 이미지들은 보여줘야지'.
+//   편집 폼만 띄우면 '무엇이 이미 있는지' 를 알 수 없다 — 고치기 전에 현황부터 보여야 한다.
+const EventCurrentState = ({ item, pageKey }) => {
+  const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+  const ovr = (sc[pageKey] || {})[item.id] || {};
+  const images = Array.isArray(ovr.images) ? ovr.images : [];
+  const photos = Array.isArray(ovr.photos) ? ovr.photos : [];
+  const schedule = Array.isArray(ovr.schedule) ? ovr.schedule : [];
+  const extras = Array.isArray(ovr.notes) ? ovr.notes : (Array.isArray(ovr.prep) ? ovr.prep : []);
+  const cover = item.coverUrl || ovr.cover || '';
+  const url = (x) => (typeof x === 'string' ? x : (x?.url || x?.src || ''));
+  const thumbs = [...images, ...photos].map(url).filter(Boolean).slice(0, 8);
+
+  return (
+    <section className="card" style={{padding:16, marginBottom:14, background:'var(--bg-3)'}}>
+      <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:12}}>지금 등록된 것</div>
+      <div style={{display:'flex', gap:16, flexWrap:'wrap', alignItems:'flex-start'}}>
+        <div style={{width:120, flexShrink:0}}>
+          <div className="mono dim-2" style={{fontSize:10, marginBottom:6}}>대표 이미지</div>
+          {cover
+            ? <img src={cover} alt="대표 이미지" style={{width:'100%', aspectRatio:'4/3', objectFit:'cover', border:'1px solid var(--line)', display:'block'}}/>
+            : <div className="placeholder" style={{width:'100%', aspectRatio:'4/3', fontSize:10}}>없음</div>}
+        </div>
+        <div style={{flex:1, minWidth:220}}>
+          <div style={{display:'flex', gap:18, flexWrap:'wrap', marginBottom:10}}>
+            {[
+              { l: '포스터', n: images.length },
+              { l: '현장 사진', n: photos.length },
+              { l: pageKey === 'tourPages' ? '답사 일정' : '진행 순서', n: schedule.length },
+              { l: pageKey === 'tourPages' ? '준비물' : '참고 사항', n: extras.length },
+            ].map((x) => (
+              <div key={x.l}>
+                <div className="mono dim-2" style={{fontSize:10}}>{x.l}</div>
+                <div className="ko-serif" style={{fontSize:17, color: x.n ? 'var(--ink)' : 'var(--ink-3)'}}>{x.n}</div>
+              </div>
+            ))}
+          </div>
+          {thumbs.length > 0 ? (
+            <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
+              {thumbs.map((u, i) => (
+                <img key={i} src={u} alt={`사진 ${i + 1}`} loading="lazy"
+                  style={{width:56, height:56, objectFit:'cover', border:'1px solid var(--line)', display:'block'}}/>
+              ))}
+              {images.length + photos.length > thumbs.length && (
+                <span className="mono dim-2" style={{fontSize:11, alignSelf:'center'}}>
+                  +{images.length + photos.length - thumbs.length}
+                </span>
+              )}
+            </div>
+          ) : (
+            <p className="dim" style={{fontSize:12, margin:0}}>올라간 사진이 없습니다. 아래 <strong>🖼</strong> 버튼으로 추가할 수 있습니다.</p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const LectureAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const [editingId, setEditingId] = React.useState(null);
@@ -595,8 +654,10 @@ const LectureAdminPanel = ({ go }) => {
                   </div>
                 </header>
                 {detailTab === 'info' && (<>
+                {detailId && <EventCurrentState item={l} pageKey="lecturePages"/>}
 
-                {isEditing ? (
+                {/* v00.299.002 — else 분기(버튼 줄)를 밖으로 뺐으므로 삼항이 아니라 && 다. */}
+                {isEditing && (
                   <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10, padding:'14px 0', borderTop:'1px solid var(--line)'}}>
                     {[
                       { k: 'title',     l: '제목',           type: 'text' },
@@ -631,10 +692,18 @@ const LectureAdminPanel = ({ go }) => {
                       <button type="button" className="btn btn-gold btn-small" onClick={saveEdit}>저장</button>
                     </div>
                   </div>
-                ) : (
-                  <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10, flexWrap:'wrap'}}>
+                )}
+
+                {/* v00.299.002 — 이 줄은 **늘 보인다.**
+                    전에는 '편집 중이 아닐 때' 분기 안에 있어서, 상세를 열면 곧바로 편집 상태가 되는
+                    v00.299.001 이후 갤러리·숨김·삭제 버튼이 통째로 사라져 있었다. */}
+                <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10, flexWrap:'wrap'}}>
+                  {!isEditing && (
                     <button type="button" className="btn btn-small btn-gold" onClick={() => startEdit(l)}>✎ 강연 정보 (제목·정원·시간·가격)</button>
+                  )}
+                  {contentEditingId !== l.id && (
                     <button type="button" className="btn btn-small" onClick={() => startContentEdit(l)}>📋 강연 진행·참고·커버</button>
+                  )}
                     {/* v00.237 — 사진 갤러리 (포스터 + 현장 사진) 통합 편집 진입로. 사용자 요청: 'admin 에서도 손쉽게'. */}
                     <button type="button" className="btn btn-small" onClick={() => setGalleryEditTarget(l)}>🖼 포스터·현장사진</button>
                     <button type="button" className="btn btn-small"
@@ -660,8 +729,7 @@ const LectureAdminPanel = ({ go }) => {
                         }
                       }}
                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
-                  </div>
-                )}
+                </div>
 
                 {/* v00.075 — 강연별 진행/참고/커버 inline 편집 (per-lecture override) */}
                 {contentEditingId === l.id && (
@@ -1182,8 +1250,10 @@ const TourAdminPanel = ({ go }) => {
                   </div>
                 </header>
                 {detailTab === 'info' && (<>
+                {detailId && <EventCurrentState item={t} pageKey="tourPages"/>}
 
-                {isEditing ? (
+                {/* v00.299.002 — else 분기(버튼 줄)를 밖으로 뺐으므로 삼항이 아니라 && 다. */}
+                {isEditing && (
                   // v00.106 — 폼 재구성: 사용자 요청 순서. 표시 일정 문구 + startsAt 통합 (next 자동 derive).
                   <div style={{padding:'14px 0', borderTop:'1px solid var(--line)'}}>
                     {/* 그룹 1: 제목 / 부제 (full-width) */}
@@ -1281,10 +1351,18 @@ const TourAdminPanel = ({ go }) => {
                       ※ 세부 일정 / 준비물 은 아래 <strong>📋 답사 일정·준비물·커버</strong> 버튼에서 편집 (진행 흐름 + 준비물 list + 커버 이미지).
                     </p>
                   </div>
-                ) : (
-                  <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10, flexWrap:'wrap'}}>
+                )}
+
+                {/* v00.299.002 — 이 줄은 **늘 보인다.**
+                    전에는 '편집 중이 아닐 때' 분기 안에 있어서, 상세를 열면 곧바로 편집 상태가 되는
+                    v00.299.001 이후 갤러리·숨김·삭제 버튼이 통째로 사라져 있었다. */}
+                <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:10, flexWrap:'wrap'}}>
+                  {!isEditing && (
                     <button type="button" className="btn btn-small btn-gold" onClick={() => startEdit(t)}>✎ 투어 정보 (제목·정원·난이도·소요시간·가격)</button>
+                  )}
+                  {contentEditingId !== t.id && (
                     <button type="button" className="btn btn-small" onClick={() => startContentEdit(t)}>📋 답사 일정·준비물·커버</button>
+                  )}
                     {/* v00.237 — 사진 갤러리 (포스터) 통합 편집. window.TourQuickAddModal 재사용. */}
                     <button type="button" className="btn btn-small" onClick={() => setGalleryEditTarget(t)}>🖼 사진 갤러리</button>
                     <button type="button" className="btn btn-small"
@@ -1294,8 +1372,7 @@ const TourAdminPanel = ({ go }) => {
                     </button>
                     <button type="button" className="btn btn-small" onClick={() => removeTour(t.id)}
                       style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>
-                  </div>
-                )}
+                </div>
 
                 {/* v00.072 — 투어별 답사 일정·준비물·커버 inline 편집 (per-tour override) */}
                 {contentEditingId === t.id && (

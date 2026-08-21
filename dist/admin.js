@@ -12260,6 +12260,33 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     },
     t.l
   ))));
+  var EventCurrentState = ({ item, pageKey }) => {
+    var _a, _b;
+    const sc = ((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {};
+    const ovr = (sc[pageKey] || {})[item.id] || {};
+    const images = Array.isArray(ovr.images) ? ovr.images : [];
+    const photos = Array.isArray(ovr.photos) ? ovr.photos : [];
+    const schedule = Array.isArray(ovr.schedule) ? ovr.schedule : [];
+    const extras = Array.isArray(ovr.notes) ? ovr.notes : Array.isArray(ovr.prep) ? ovr.prep : [];
+    const cover = item.coverUrl || ovr.cover || "";
+    const url = (x) => typeof x === "string" ? x : (x == null ? void 0 : x.url) || (x == null ? void 0 : x.src) || "";
+    const thumbs = [...images, ...photos].map(url).filter(Boolean).slice(0, 8);
+    return /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 16, marginBottom: 14, background: "var(--bg-3)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 12 } }, "\uC9C0\uAE08 \uB4F1\uB85D\uB41C \uAC83"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 120, flexShrink: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, marginBottom: 6 } }, "\uB300\uD45C \uC774\uBBF8\uC9C0"), cover ? /* @__PURE__ */ React.createElement("img", { src: cover, alt: "\uB300\uD45C \uC774\uBBF8\uC9C0", style: { width: "100%", aspectRatio: "4/3", objectFit: "cover", border: "1px solid var(--line)", display: "block" } }) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: "100%", aspectRatio: "4/3", fontSize: 10 } }, "\uC5C6\uC74C")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 220 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 } }, [
+      { l: "\uD3EC\uC2A4\uD130", n: images.length },
+      { l: "\uD604\uC7A5 \uC0AC\uC9C4", n: photos.length },
+      { l: pageKey === "tourPages" ? "\uB2F5\uC0AC \uC77C\uC815" : "\uC9C4\uD589 \uC21C\uC11C", n: schedule.length },
+      { l: pageKey === "tourPages" ? "\uC900\uBE44\uBB3C" : "\uCC38\uACE0 \uC0AC\uD56D", n: extras.length }
+    ].map((x) => /* @__PURE__ */ React.createElement("div", { key: x.l }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, x.l), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 17, color: x.n ? "var(--ink)" : "var(--ink-3)" } }, x.n)))), thumbs.length > 0 ? /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, thumbs.map((u, i) => /* @__PURE__ */ React.createElement(
+      "img",
+      {
+        key: i,
+        src: u,
+        alt: `\uC0AC\uC9C4 ${i + 1}`,
+        loading: "lazy",
+        style: { width: 56, height: 56, objectFit: "cover", border: "1px solid var(--line)", display: "block" }
+      }
+    )), images.length + photos.length > thumbs.length && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11, alignSelf: "center" } }, "+", images.length + photos.length - thumbs.length)) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, margin: 0 } }, "\uC62C\uB77C\uAC04 \uC0AC\uC9C4\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F5BC}"), " \uBC84\uD2BC\uC73C\uB85C \uCD94\uAC00\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."))));
+  };
   var LectureAdminPanel = ({ go }) => {
     const [tick, setTick] = React.useState(0);
     const [editingId, setEditingId] = React.useState(null);
@@ -12537,7 +12564,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const regs = window.BGNJ_LECTURES.listRegistrations(l.id);
       const active = regs.filter((r) => r.status !== "cancelled");
       const isEditing = editingId === l.id;
-      return /* @__PURE__ */ React.createElement("article", { key: l.id, className: "card", style: { padding: 20, opacity: l.hidden ? 0.55 : 1 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginRight: 8 } }, "#", String(l.id).padStart(2, "0")), l.title, " \u2014 ", l.topic, l.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { marginLeft: 10, fontSize: 10, letterSpacing: "0.18em", color: "var(--danger)", border: "1px solid var(--danger)", padding: "1px 6px", borderRadius: 2 } }, "\uC228\uAE40")), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, marginTop: 4, letterSpacing: "0.12em" } }, l.next, " \xB7 ", l.venue, " \xB7 \uC9C4\uD589 ", l.host)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: seats.remaining <= 0 ? "var(--danger)" : "var(--primary)" } }, "\uC794\uC5EC ", seats.remaining, " / ", seats.capacity), seats.waitlist > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)" } }, "\uB300\uAE30 ", seats.waitlist), l.price > 0 ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uC720\uB8CC ", window.BGNJ_FMT.won(l.price)) : /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--secondary)", border: "1px solid var(--primary-dim)", padding: "1px 6px" } }, "FREE"))), detailTab === "info" && /* @__PURE__ */ React.createElement(React.Fragment, null, isEditing ? /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, padding: "14px 0", borderTop: "1px solid var(--line)" } }, [
+      return /* @__PURE__ */ React.createElement("article", { key: l.id, className: "card", style: { padding: 20, opacity: l.hidden ? 0.55 : 1 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginRight: 8 } }, "#", String(l.id).padStart(2, "0")), l.title, " \u2014 ", l.topic, l.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { marginLeft: 10, fontSize: 10, letterSpacing: "0.18em", color: "var(--danger)", border: "1px solid var(--danger)", padding: "1px 6px", borderRadius: 2 } }, "\uC228\uAE40")), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, marginTop: 4, letterSpacing: "0.12em" } }, l.next, " \xB7 ", l.venue, " \xB7 \uC9C4\uD589 ", l.host)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: seats.remaining <= 0 ? "var(--danger)" : "var(--primary)" } }, "\uC794\uC5EC ", seats.remaining, " / ", seats.capacity), seats.waitlist > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)" } }, "\uB300\uAE30 ", seats.waitlist), l.price > 0 ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, "\uC720\uB8CC ", window.BGNJ_FMT.won(l.price)) : /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--secondary)", border: "1px solid var(--primary-dim)", padding: "1px 6px" } }, "FREE"))), detailTab === "info" && /* @__PURE__ */ React.createElement(React.Fragment, null, detailId && /* @__PURE__ */ React.createElement(EventCurrentState, { item: l, pageKey: "lecturePages" }), isEditing && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, padding: "14px 0", borderTop: "1px solid var(--line)" } }, [
         { k: "title", l: "\uC81C\uBAA9", type: "text" },
         { k: "topic", l: "\uC8FC\uC81C", type: "text" },
         { k: "venue", l: "\uC7A5\uC18C", type: "text" },
@@ -12578,7 +12605,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           }
         },
         detailId ? "\uBCC0\uACBD \uB418\uB3CC\uB9AC\uAE30" : "\uCDE8\uC18C"
-      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5"))) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(l) }, "\u270E \uAC15\uC5F0 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uC2DC\uAC04\xB7\uAC00\uACA9)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(l) }, "\u{1F4CB} \uAC15\uC5F0 \uC9C4\uD589\xB7\uCC38\uACE0\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(l) }, "\u{1F5BC} \uD3EC\uC2A4\uD130\xB7\uD604\uC7A5\uC0AC\uC9C4"), /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5"))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, !isEditing && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(l) }, "\u270E \uAC15\uC5F0 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uC2DC\uAC04\xB7\uAC00\uACA9)"), contentEditingId !== l.id && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(l) }, "\u{1F4CB} \uAC15\uC5F0 \uC9C4\uD589\xB7\uCC38\uACE0\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(l) }, "\u{1F5BC} \uD3EC\uC2A4\uD130\xB7\uD604\uC7A5\uC0AC\uC9C4"), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -13093,117 +13120,115 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const regs = window.BGNJ_TOURS.listReservations(t.id);
       const active = regs.filter((r) => r.status !== "cancelled");
       const isEditing = editingId === t.id;
-      return /* @__PURE__ */ React.createElement("article", { key: t.id, className: "card", style: { padding: 20, opacity: t.hidden ? 0.55 : 1 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginRight: 8 } }, "#", String(t.id).padStart(2, "0")), t.title, t.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { marginLeft: 10, fontSize: 10, letterSpacing: "0.18em", color: "var(--danger)", border: "1px solid var(--danger)", padding: "1px 6px", borderRadius: 2 } }, "\uC228\uAE40")), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, marginTop: 4, letterSpacing: "0.12em" } }, t.next, " \xB7 ", t.duration, " \xB7 ", t.group, " \xB7 ", t.level)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: seats.remaining <= 0 ? "var(--danger)" : "var(--primary)" } }, "\uC794\uC5EC ", seats.remaining, " / ", seats.capacity), seats.waitlist > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)" } }, "\uB300\uAE30 ", seats.waitlist), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, window.BGNJ_FMT.won(t.priceNumber)))), detailTab === "info" && /* @__PURE__ */ React.createElement(React.Fragment, null, isEditing ? (
-        // v00.106 — 폼 재구성: 사용자 요청 순서. 표시 일정 문구 + startsAt 통합 (next 자동 derive).
-        /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 0", borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD22C\uC5B4\uBA85"), /* @__PURE__ */ React.createElement(
-          "input",
-          {
-            className: "field-input",
-            type: "text",
-            value: draft.title || "",
-            onChange: (e) => setDraft({ ...draft, title: e.target.value })
+      return /* @__PURE__ */ React.createElement("article", { key: t.id, className: "card", style: { padding: 20, opacity: t.hidden ? 0.55 : 1 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginRight: 8 } }, "#", String(t.id).padStart(2, "0")), t.title, t.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { marginLeft: 10, fontSize: 10, letterSpacing: "0.18em", color: "var(--danger)", border: "1px solid var(--danger)", padding: "1px 6px", borderRadius: 2 } }, "\uC228\uAE40")), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, marginTop: 4, letterSpacing: "0.12em" } }, t.next, " \xB7 ", t.duration, " \xB7 ", t.group, " \xB7 ", t.level)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: seats.remaining <= 0 ? "var(--danger)" : "var(--primary)" } }, "\uC794\uC5EC ", seats.remaining, " / ", seats.capacity), seats.waitlist > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)" } }, "\uB300\uAE30 ", seats.waitlist), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, window.BGNJ_FMT.won(t.priceNumber)))), detailTab === "info" && /* @__PURE__ */ React.createElement(React.Fragment, null, detailId && /* @__PURE__ */ React.createElement(EventCurrentState, { item: t, pageKey: "tourPages" }), isEditing && // v00.106 — 폼 재구성: 사용자 요청 순서. 표시 일정 문구 + startsAt 통합 (next 자동 derive).
+      /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 0", borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD22C\uC5B4\uBA85"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "text",
+          value: draft.title || "",
+          onChange: (e) => setDraft({ ...draft, title: e.target.value })
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBD80\uC81C"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "text",
+          placeholder: "\uC608: \uC655\uC758 \uBC1C\uC790\uCDE8\uB97C \uB530\uB77C",
+          value: draft.subtitle || "",
+          onChange: (e) => setDraft({ ...draft, subtitle: e.target.value })
+        }
+      ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uB09C\uC774\uB3C4"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "text",
+          placeholder: "\uC785\uBB38 / \uC2EC\uD654",
+          value: draft.level || "",
+          onChange: (e) => setDraft({ ...draft, level: e.target.value })
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "text",
+          placeholder: "3\uC2DC\uAC04",
+          value: draft.duration || "",
+          onChange: (e) => setDraft({ ...draft, duration: e.target.value })
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC815\uC6D0 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "text",
+          placeholder: "12\uC778 \uC774\uD558",
+          value: draft.group || "",
+          onChange: (e) => setDraft({ ...draft, group: e.target.value })
+        }
+      ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC77C\uC815 (\uC2E4\uC81C \uC2DC\uC791 \uC2DC\uAC04 \u2014 \uD45C\uC2DC \uBB38\uAD6C\uB294 \uC790\uB3D9 \uC0DD\uC131)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "datetime-local",
+          value: draft.startsAt || "",
+          onChange: (e) => setDraft({ ...draft, startsAt: e.target.value })
+        }
+      ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 \uC2DC\uAC04 (\uBD84)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "number",
+          placeholder: "180",
+          value: (_a = draft.durationMinutes) != null ? _a : "",
+          onChange: (e) => setDraft({ ...draft, durationMinutes: e.target.value })
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC815\uC6D0 (\uC22B\uC790)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "number",
+          placeholder: "12",
+          value: (_b = draft.capacity) != null ? _b : "",
+          onChange: (e) => setDraft({ ...draft, capacity: e.target.value })
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCC38\uAC00\uBE44 (\uC6D0)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "number",
+          placeholder: "80000",
+          value: (_c = draft.priceNumber) != null ? _c : "",
+          onChange: (e) => setDraft({ ...draft, priceNumber: e.target.value })
+        }
+      ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC124\uBA85"), /* @__PURE__ */ React.createElement(
+        "textarea",
+        {
+          className: "field-input",
+          rows: 3,
+          value: draft.desc || "",
+          onChange: (e) => setDraft({ ...draft, desc: e.target.value })
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD658\uBD88\uC815\uCC45"), /* @__PURE__ */ React.createElement(
+        "textarea",
+        {
+          className: "field-input",
+          rows: 3,
+          value: draft.refundPolicy || "",
+          placeholder: "\uC608: \uCD9C\uBC1C 7\uC77C \uC804\uAE4C\uC9C0 100% \uD658\uBD88 / 3\uC77C \uC804\uAE4C\uC9C0 50% / \uC774\uD6C4 \uD658\uBD88 \uBD88\uAC00",
+          onChange: (e) => setDraft({ ...draft, refundPolicy: e.target.value })
+        }
+      ), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.5 } }, "\u24D8 \uBE44\uC6B0\uBA74 \uC6B4\uC601\uC124\uC815\uC758 \uAE00\uB85C\uBC8C \uD658\uBD88\uC815\uCC45 \uC0AC\uC6A9 (\uB2E4\uC74C \uC0AC\uC774\uD074 \uB3C4\uC785 \uC608\uC815).")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-small",
+          onClick: () => {
+            if (detailId) startEdit(t);
+            else setEditingId(null);
           }
-        )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBD80\uC81C"), /* @__PURE__ */ React.createElement(
-          "input",
-          {
-            className: "field-input",
-            type: "text",
-            placeholder: "\uC608: \uC655\uC758 \uBC1C\uC790\uCDE8\uB97C \uB530\uB77C",
-            value: draft.subtitle || "",
-            onChange: (e) => setDraft({ ...draft, subtitle: e.target.value })
-          }
-        ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uB09C\uC774\uB3C4"), /* @__PURE__ */ React.createElement(
-          "input",
-          {
-            className: "field-input",
-            type: "text",
-            placeholder: "\uC785\uBB38 / \uC2EC\uD654",
-            value: draft.level || "",
-            onChange: (e) => setDraft({ ...draft, level: e.target.value })
-          }
-        )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
-          "input",
-          {
-            className: "field-input",
-            type: "text",
-            placeholder: "3\uC2DC\uAC04",
-            value: draft.duration || "",
-            onChange: (e) => setDraft({ ...draft, duration: e.target.value })
-          }
-        )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC815\uC6D0 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
-          "input",
-          {
-            className: "field-input",
-            type: "text",
-            placeholder: "12\uC778 \uC774\uD558",
-            value: draft.group || "",
-            onChange: (e) => setDraft({ ...draft, group: e.target.value })
-          }
-        ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC77C\uC815 (\uC2E4\uC81C \uC2DC\uC791 \uC2DC\uAC04 \u2014 \uD45C\uC2DC \uBB38\uAD6C\uB294 \uC790\uB3D9 \uC0DD\uC131)"), /* @__PURE__ */ React.createElement(
-          "input",
-          {
-            className: "field-input",
-            type: "datetime-local",
-            value: draft.startsAt || "",
-            onChange: (e) => setDraft({ ...draft, startsAt: e.target.value })
-          }
-        ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 \uC2DC\uAC04 (\uBD84)"), /* @__PURE__ */ React.createElement(
-          "input",
-          {
-            className: "field-input",
-            type: "number",
-            placeholder: "180",
-            value: (_a = draft.durationMinutes) != null ? _a : "",
-            onChange: (e) => setDraft({ ...draft, durationMinutes: e.target.value })
-          }
-        )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC815\uC6D0 (\uC22B\uC790)"), /* @__PURE__ */ React.createElement(
-          "input",
-          {
-            className: "field-input",
-            type: "number",
-            placeholder: "12",
-            value: (_b = draft.capacity) != null ? _b : "",
-            onChange: (e) => setDraft({ ...draft, capacity: e.target.value })
-          }
-        )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCC38\uAC00\uBE44 (\uC6D0)"), /* @__PURE__ */ React.createElement(
-          "input",
-          {
-            className: "field-input",
-            type: "number",
-            placeholder: "80000",
-            value: (_c = draft.priceNumber) != null ? _c : "",
-            onChange: (e) => setDraft({ ...draft, priceNumber: e.target.value })
-          }
-        ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC124\uBA85"), /* @__PURE__ */ React.createElement(
-          "textarea",
-          {
-            className: "field-input",
-            rows: 3,
-            value: draft.desc || "",
-            onChange: (e) => setDraft({ ...draft, desc: e.target.value })
-          }
-        )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD658\uBD88\uC815\uCC45"), /* @__PURE__ */ React.createElement(
-          "textarea",
-          {
-            className: "field-input",
-            rows: 3,
-            value: draft.refundPolicy || "",
-            placeholder: "\uC608: \uCD9C\uBC1C 7\uC77C \uC804\uAE4C\uC9C0 100% \uD658\uBD88 / 3\uC77C \uC804\uAE4C\uC9C0 50% / \uC774\uD6C4 \uD658\uBD88 \uBD88\uAC00",
-            onChange: (e) => setDraft({ ...draft, refundPolicy: e.target.value })
-          }
-        ), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.5 } }, "\u24D8 \uBE44\uC6B0\uBA74 \uC6B4\uC601\uC124\uC815\uC758 \uAE00\uB85C\uBC8C \uD658\uBD88\uC815\uCC45 \uC0AC\uC6A9 (\uB2E4\uC74C \uC0AC\uC774\uD074 \uB3C4\uC785 \uC608\uC815).")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement(
-          "button",
-          {
-            type: "button",
-            className: "btn btn-small",
-            onClick: () => {
-              if (detailId) startEdit(t);
-              else setEditingId(null);
-            }
-          },
-          detailId ? "\uBCC0\uACBD \uB418\uB3CC\uB9AC\uAE30" : "\uCDE8\uC18C"
-        ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8, lineHeight: 1.6 } }, "\u203B \uC138\uBD80 \uC77C\uC815 / \uC900\uBE44\uBB3C \uC740 \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), " \uBC84\uD2BC\uC5D0\uC11C \uD3B8\uC9D1 (\uC9C4\uD589 \uD750\uB984 + \uC900\uBE44\uBB3C list + \uCEE4\uBC84 \uC774\uBBF8\uC9C0)."))
-      ) : /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(t) }, "\u270E \uD22C\uC5B4 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uB09C\uC774\uB3C4\xB7\uC18C\uC694\uC2DC\uAC04\xB7\uAC00\uACA9)"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(t) }, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(t) }, "\u{1F5BC} \uC0AC\uC9C4 \uAC24\uB7EC\uB9AC"), /* @__PURE__ */ React.createElement(
+        },
+        detailId ? "\uBCC0\uACBD \uB418\uB3CC\uB9AC\uAE30" : "\uCDE8\uC18C"
+      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8, lineHeight: 1.6 } }, "\u203B \uC138\uBD80 \uC77C\uC815 / \uC900\uBE44\uBB3C \uC740 \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), " \uBC84\uD2BC\uC5D0\uC11C \uD3B8\uC9D1 (\uC9C4\uD589 \uD750\uB984 + \uC900\uBE44\uBB3C list + \uCEE4\uBC84 \uC774\uBBF8\uC9C0).")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, !isEditing && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(t) }, "\u270E \uD22C\uC5B4 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uB09C\uC774\uB3C4\xB7\uC18C\uC694\uC2DC\uAC04\xB7\uAC00\uACA9)"), contentEditingId !== t.id && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(t) }, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(t) }, "\u{1F5BC} \uC0AC\uC9C4 \uAC24\uB7EC\uB9AC"), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
