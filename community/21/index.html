@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="세상을 보는 안목! 빛과 그림자를 동시에 봐야한다. 홍익한국의 역사에 고구려 백제 신라의 삼국시대 있었으니광활한 대륙 고구려는 지역방어 목숨 거는 조의 정신이다. 농업 중심인 백제에는 둘레둘레 서로 협력하는 두레정신이 삼국통일 위한 호국이념 필요한 신라에는 화랑정신 있었다. 통일신라 …">
+<meta name="naver-site-verification" content="f4ca5d0c2e615c970b73c30963623a4467e8581d" />
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)">
+<!-- 다크 모드 부트스트랩 — React mount 전에 실행되어 FOUC 차단.
+     localStorage(bgnj_theme) ∈ {auto, light, dark}. auto 면 prefers-color-scheme 따름. -->
+<script>(function(){try{var t=localStorage.getItem('bgnj_theme')||'auto';var eff=t;if(t==='auto'){eff=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',eff);document.documentElement.style.colorScheme=eff;}catch(e){}})();</script>
+<!-- HTML 캐시 무력화 — 브라우저가 옛 index.html 을 보존해 새 JS 버전 쿼리를 못 보는 경우를 막는다. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!-- v00.113 / v00.118 — 전체 CSP 정책. 외부 CDN 명시 화이트리스트 + 자체 origin.
+     · script-src — v00.118: 'unsafe-inline' 제거. 인라인 script 3종(theme bootstrap / SW unregister + SPA fallback + force-https / Tiptap importmap) 의
+       SHA-256 해시를 tools/csp-hashes.mjs 가 pre-commit 시 자동 동기.
+       (정적 호스팅 환경 — server-side nonce 주입 불가 → SHA-256 hash 가 표준 해법.)
+     · style-src — Tiptap 의 inline style + Google Fonts CSS.
+     · img-src — data: (인라인 SVG OG/favicon), blob: (업로드 미리보기), https: 전체 (R2 / 외부 이미지).
+     · connect-src — 워커 API + esm.sh (Tiptap 동적 import 의존 그래프) + jsdelivr/unpkg(DOMPurify 소스맵 fetch 허용, 콘솔 잡음 제거).
+     · frame-src — 본문 임베드용 YouTube / Vimeo (DOMPurify hook 와 일관) + 한켠 위치 지도 OpenStreetMap.
+     · object-src 'none' — Flash/legacy 플러그인 차단.
+     · frame-ancestors / X-Frame-Options 는 HTTP 헤더 전용 — GitHub Pages(정적 호스팅)는 헤더 주입 불가라
+       <meta> 로는 브라우저가 무시(콘솔 경고만 남김). v00.284.002 에서 제거. 클릭재킹 방어가 필요하면
+       Cloudflare(워커/Pages) 같은 헤더 가능한 경유지에서 HTTP 헤더로 설정해야 실효. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-K/hYZs+DP7lWTp/8qMKJe4Lve8SjliU4QrNbq+9hTpk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta property="og:title" content="[걸어서 동학속으로] (5)고창 무장봉기 — 뱅기노자">
+<meta property="og:description" content="세상을 보는 안목! 빛과 그림자를 동시에 봐야한다. 홍익한국의 역사에 고구려 백제 신라의 삼국시대 있었으니광활한 대륙 고구려는 지역방어 목숨 거는 조의 정신이다. 농업 중심인 백제에는 둘레둘레 서로 협력하는 두레정신이 삼국통일 위한 호국이념 필요한 신라에는 화랑정신 있었다. 통일신라 …">
+<meta property="og:type" content="website">
+
+<meta property="og:site_name" content="뱅기노자 BANGINOJA">
+<!-- 브랜드 OG 이미지 — 인라인 SVG fallback (1200x630). 가벼운 로고-only 디자인.
+     관리자가 og.imageDataUri 업로드하면 applyHead 가 덮어씀.
+     SVG OG image 는 Twitter/Discord 등에서 인식. Facebook/Kakao 는 PNG 업로드 필요. -->
+<meta property="og:image" content="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 1200 630%22%3E%3Crect width%3D%221200%22 height%3D%22630%22 fill%3D%22%23FFFFFF%22%2F%3E%3Crect x%3D%22540%22 y%3D%22225%22 width%3D%22120%22 height%3D%22120%22 rx%3D%2214%22 fill%3D%22%23F5D548%22%2F%3E%3Ctext x%3D%22600%22 y%3D%22313%22 font-family%3D%22sans-serif%22 font-size%3D%2278%22 font-weight%3D%22900%22 fill%3D%22%23FFFFFF%22 text-anchor%3D%22middle%22%3EB%3C%2Ftext%3E%3Ctext x%3D%22600%22 y%3D%22410%22 font-family%3D%22sans-serif%22 font-size%3D%2236%22 font-weight%3D%22600%22 fill%3D%22%230F172A%22 text-anchor%3D%22middle%22%3E%EB%B1%85%EA%B8%B0%EB%85%B8%EC%9E%90%3C%2Ftext%3E%3Ctext x%3D%22600%22 y%3D%22445%22 font-family%3D%22monospace%22 font-size%3D%2213%22 fill%3D%22%2394A3B8%22 text-anchor%3D%22middle%22 letter-spacing%3D%225%22%3EBANGINOJA%3C%2Ftext%3E%3C%2Fsvg%3E">
+<title>[걸어서 동학속으로] (5)고창 무장봉기 — 뱅기노자</title>
+<!-- v00.120 — JSON-LD 구조화 데이터 (Organization + WebSite). 검색엔진/소셜 카드 풍부화.
+     관리자 사이트 콘텐츠에서 도메인/링크 변경되면 별도 갱신 필요. -->
+<!-- 뱅기노자 브랜드 favicon — 인라인 SVG (별도 파일 호스팅 없음, 자동 /favicon.ico 404 차단).
+     관리자 사이트 콘텐츠에서 업로드된 favicon 이 있으면 data.js applyHead 가 이 link 의 href 를 덮어쓴다. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 64 64%22%3E%3Crect width%3D%2264%22 height%3D%2264%22 rx%3D%229%22 fill%3D%22%23F5D548%22%2F%3E%3Cpath d%3D%22M 9 8 L 9 56 L 32 56 C 42 56 47 51 47 44.5 C 47 39.5 44 36 39.5 35 C 43 33.5 45.5 30.5 45.5 26 C 45.5 18.5 40 14 30 14 L 9 14 Z M 18 19 L 28 19 C 33 19 36 21 36 25 C 36 29 33 31 28 31 L 18 31 Z M 18 36 L 30 36 C 36 36 39 38.5 39 43 C 39 47.5 36 50 30 50 L 18 50 Z%22 fill%3D%22%23FFFFFF%22%2F%3E%3Cpath d%3D%22M 26 22.5 C 27 21.5 28 21.5 28.5 22.5 L 31 27 L 38 25 C 38.8 24.8 39.4 25.2 39.5 26 C 39.6 26.6 39.3 27.1 38.8 27.4 L 32.5 30.7 L 33.5 36.5 L 36 37.8 C 36.4 38 36.5 38.4 36.3 38.7 C 36.2 39 35.9 39.1 35.6 39 L 31.5 38 L 28 39.5 C 27.7 39.6 27.3 39.4 27.2 39 C 27.1 38.7 27.3 38.4 27.6 38.2 L 30 37 L 28.7 32 L 24 33.5 C 23.4 33.7 22.9 33.4 22.8 32.8 C 22.7 32.3 23 31.9 23.5 31.7 L 27.5 30.2 L 26.3 26 L 25.5 24.5 C 25.2 24 25.4 23.3 26 23 Z%22 fill%3D%22%23F5D548%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=00.296.000">
+
+
+<link rel="canonical" href="https://bgnj.net/community/21">
+<meta property="og:url" content="https://bgnj.net/community/21">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"[걸어서 동학속으로] (5)고창 무장봉기","author":{"@type":"Person","name":"김현종"},"datePublished":"2026-05-26T01:54:59.843Z","inLanguage":"ko-KR","image":[],"mainEntityOfPage":"https://bgnj.net/community/21","publisher":{"@id":"https://bgnj.net/#org"}}</script>
+</head>
+<body data-bgnj-post="21">
+<a class="skip-link" href="#main">본문 바로가기</a>
+<noscript><p style="padding:24px;color:#efe9dc;background:#0a0907;">
+이 페이지의 글은 그대로 읽으실 수 있습니다. 다만 검색·댓글·주문 같은 기능은 JavaScript 가 필요합니다. 문의: contact@bgnj.net
+</p></noscript>
+<div id="root">
+<main id="seo-main">
+
+<article>
+  <h1>[걸어서 동학속으로] (5)고창 무장봉기</h1>
+  <p>김현종 · 2026-05-26 · 자유</p>
+  
+  <p>세상을 보는 안목! 빛과 그림자를 동시에 봐야한다.</p>
+<p>홍익한국의 역사에 고구려 백제 신라의 삼국시대 있었으니광활한 대륙 고구려는 지역방어 목숨 거는 조의 정신이다. 
+ 농업 중심인 백제에는 둘레둘레 서로 협력하는 두레정신이 삼국통일 위한 호국이념 필요한 신라에는 화랑정신 있었다. 
+ 통일신라 남북국시대 이어지며 화랑정신으로 통합 되었다.나당 연합군에 의해 660년 백제 멸망하고 668년 고구려가 
+ 멸망하자 당은 삼국에 도독을 설치하고 실효적 지배 했다.신라의 원효는 스스로 국경선이 되어 서원의 깃발을 들어 
+ 민족의얼 씨를 지키고 배달겨레의 씨앗인 절 씨 지키려고 얼씨구 절씨구를 부르며 각설이(覺說伊)로 강토를 누렸다. 
+ 원효가 노구로 쓰러지고 전국 방방곳곳의 젊은이들은 대를 잇겠다며 서로 서당이길 선언했는데 헤아릴 수 없는 서원깃발은 그 수 넘치고
+넘쳐 한 시대 한반도를 펄럭 거렸다. 조정에서 서당을 9주 단위로 묶어 9서당 군으로 결성하고 애국 충절로 내가 국경이 되어 내 가족과 나라를 지켜냈다. 배달민족 정신의 뿌리는 생명존중에 의한 사람중심 문화로 한국인 품격과 그 열매는 충효정신 세속오계 화랑정신이다. 
+ 민족정신 뿌리로서 신용인(信勇仁)의 열매가 열릴 수 있고 천지인 삼합으로 인내천(人乃天) 동학 녹두 꽃 파랑새들은 
+ 평등 세상을 보는 안목으로 빛과 그림자를 동시에 봐야한다.</p>
+<p>▲무장 기포, 동학농민군의 새 물결</p>
+<p>조병갑에 이어 새 군수로 임명된 박원명은 1894년 3월 2일(음) 구폐를 시정할 것을 약속하는 구폐교정절목을 작성하여 농민들을 해산시켰다. 그러나 안핵사 이용태는 고부민란의 주모자를 색출한답시고 동학교도와 일반 백성들을 체포하여 집에 불을 지르거나 부녀자를 능욕하는 등 약탈과 만행을 저질렀다.</p>
+<p>전봉준은 3월 13일(음) 50여 명의 부하를 거느리고 무장의 대접주 손화중을 찾아간다. 전봉준은 손화중을 설득하여 휘하의 동학교도를 총궐기하게 하였다. 3월 20일(음) 무장현 동음치면 당산에 모인 동학교도는 4,000여 명에 달하였다. 이들은 3월 21일(음) 고창, 23일(음) 줄포를 거쳐, 같은 날 오후 8시에 고부관아를 재점령하였고, 25일(음)까지 고부관아에 머물며 폐정개혁을 단행하였다.</p>
+<p>전봉준, 손화중, 김개남 등 남접 동학군들은 3월 26일(음) 모두 부안 백산으로 집결했다. 그때 대장 전봉준, 총관령 손화중, 김개남, 총참모 김덕명, 오시영, 영솔장 최경선, 비서 송희옥, 정백현 등을 선출하면서, 동학농민군의 진용을 갖추게 된다. 드디어 본격적인 동학농민군의 전쟁이 시작된 것이다.</p>
+<p>▲무장기포로 본 연합세력의 등장과 전봉준의 역할</p>
+<p>동학혁명의 시원은 분명 고부봉기다. 그런데 최초의 봉기라 시기상조 등을 이유로 많은 접주들이 참여하지 않았다. 결국 고부봉기는 전봉준과 최경선 그리고 송두호 등이 중심이 되어 1,000여 명의 농민군으로 시작했다.</p>
+<p>봉기 후 전봉준은 농민군을 백산으로 이동하여 사태를 관망하다가 안핵사 이용태의 폭압과 부당한 사후처리로 상황이 악화 되자 재봉기를 준비했다. 무장 구암에 터를 잡고 격문을 돌려 보름 만에 4,000여 명의 농민군을 집결시켰다. 태인대접주 김개남은 1,300여 명을 이끌고 합류했고 무장대접주 손화중, 금구대접주 김덕명 등 인근 동학 접주들이 모두 참여했다.</p>
+<p>이는 전봉준이 직접 대접주들을 찾아가 설득하여 만든 결과였다. 그는 합리적 사고와 뛰어난 설득력으로 대접주들을 설득하였고 나중에 전라감사 김문현을 설득하여 전라도 전지역에 집강소 설치를 합의했고 완강히 거부하는 나주목사도 만나 설득하였다. 그는 무장기포 후 농민군을 이끌고 백산으로 이동하여 전열을 정비할 때 총대장에 올라 3,500여명의 농민군을 동원한 손화중과 김개남은 총관령, 총참모 김덕명·오시영, 영솔장 최경선, 총비서 송희옥·정백현 등으로 농민군의 연합지도부 구성을 주도했다.</p>
+<p>▲무장포고문으로 본 동학의 정신 
+무장포고문은 전봉준, 손화중·김개남등이 1894년 1월 고부 봉기 이후 안핵사 이용태의 횡포가 극심해지자, 무장에서 3월 16일경부터 무기를 제작하고 군사 훈련을 시키는 등 재봉기를 준비하여 3월 20일경 「무장포고문」을 발표하고 재봉기를 선언하였다. 글은 유학적 소양이 있었던 전봉준이나 문장이 탁월하고 전봉준과 친분이 있었던 옹택규(邕宅圭), 또는 전봉준의 비서 역할을 하였던 정백현이 썼다는 설이 있다.</p>
+<p>이 포고문에서는 충의와 효를 바탕으로 한 기존 유교적 윤리를 강조하고 타락한 관리들의 잘못을 바로 잡아 결국에는 임금의 교화를 누리면 천만다행이라하였다. 부패한 양반관료를 중심으로 하는 현 체제에 대하여 비판하고 무장봉기를 행하는 농민군의 정당성을 선포하여 일반 대중에게 전폭적인 지지를 얻고자하였다.</p>
+<p>나라의 근본인 백성을 수탈하고 폭정을 일삼는 포악한 관료들을 무장봉기를 통하여 물리치고 백성을 구하는 ‘제폭구민 (除暴救民)’의 정신과 수많은 백성이 뜻을 모아 지금 의로운 깃발을 들어 나라님을 도와 국정을 보살피고 백성을 편안하게 하는 ‘보국안민 (輔國安民)’의 정신이 잘 나타나 있다, 현재 무장포고문은 세계기록유산으로 등재됐다.</p>
+<p>▲손화중과 선운사 미륵 비기 탈취 사건
+동학봉기 당시 선운사 마애불에 숨겨진 비기를 꺼내면 한양이 망할 것이며 벼락살도 있다는 말에 함부로 꺼내는 자가 없었다. 그러나 동학의 접주 손화중이 이 비기를 꺼냈다는 소문이 파다하게 퍼져나가자 관에서는 동학당에서 역적 모의를 했다 하여 잡아들이기로 하였다. 그럼에도 불구하고 동학의 세력은 더욱 확대되었다. 이 사건은 동학 봉기가 민중의 동원으로 시작되었음을 상징적으로 보여주었고, 손화중의 조직력과 신비성을 배가시키는 계기가 되었다.</p>
+<p>1892년 11월 삼계 동학 교조 신원 운동에서 수많은 민중을 동원하였고 광화문 복합상소에도 호남의 대표자로 참여하면서 그해 말, 동학 조직 개편에서 정읍포 대접주로 임명되었다.</p>
+<p>이 사건은 손화중이 민중들로 하여금 새로운 미래에 대한 희망과 변화를 기대하게 만들었고, 새로운 세상이 온다는 소문으로 변산에 살던 천민들이 선운사 미륵불에 자신의 희망을 투사시킴으로써 미륵불은 혁명의 불이 되어갔다.</p>
+<p>당시 고통스러웠던 암울한 현실을 타파하기 위해 비기를 탈취한 손화중 장군에게 자신들의 희망을 걸어본 것이라 여겨진다</p>
+<p>▲ 누군가가 나서야 한다면 그 누군가가 바로 나일 것이다.</p>
+<p>우리 근대사의 130년은 참으로 파란만장 했다. 
+ 조국의 강토는 외세에 짓밟혀 유린당했고, 세계열강 국들의 전쟁놀이터로 되어버린 한반도는 민족의 얼과 피로 뿌려졌다. 
+ 조선의 아전들아! 개인의 욕망이 국가존망을 흔들어도 좋은가? 
+ 당신들 개인의 탐욕이 조국의 번영과 평화보다 더 좋았는가? 
+ 개인의 명리가 민족중흥보다도 그토록 우선 하였는가? 
+ 테스형! 나라가 왜이래. 대한민국이 왜이래. 나라가 이래서는 아니 된다. 
+ 누군가가 나서서 민족의식을 일깨워야하고 이에 동참해야 한다면 이제 한탄만 하고 있을 수는 없다. 
+ 누군가가 나서야 한다면 그 누군가가 바로 오늘 ‘나’ 일 것이다. 
+ 1894년 3월에 전라도 고창에서 누군가 생을 받쳐 깃발을 들어야만 했다. 
+ 그 누군가가 전봉준, 손화중, 김개남, 최경선, 김덕명이었고 수천 수만의 군중은 바로 우리의 조상님들이었다. 
+ 
+ ▲새 물결에는 불씨가 필요하다</p>
+<p>누란지세(累卵之勢)의 일을 누가 시킨다고 할 일이며 보상을 바라고 할일이겠는가? 
+ 국가가 위기에 처할 때마다 백성들은 조건 없이 자발적인 국가 수비대가 되었고, 손에 잡히는 대로 농기구 죽창 들고 나와 나라의 혼불 끄러온 자들과 맞서 목숨 걸고 강토를 지켜냈다.</p>
+<p>우리 민족은 고비고비 마다 수많은 의병의 역사, 승병의 역사가 있었다.</p>
+<p>일제 강점기를 막으려던 동학농민은 죽창 들고 뛰쳐나왔으나 연합군(관군, 일본군, 민보군)의 총탄 앞에 30만 명이 넘게 쓰러졌고 독립을 위해서 수많은 애국지사들이 사선을 넘나들며 역사지키미가 되었다. 그리고 아침 이슬처럼 사라졌다.</p>
+<p>대한민국은 동족상잔의 분단국가다. 우리의 소원은 통일이라는 역사경영의 목표를 세우고 온 겨레가 평화통일을 지향하고 있으나 작금의 실정은 국력신장에 의한 우위선</p>
+</article>
+<p><a href="/community">목록으로</a> · <a href="/">뱅기노자 홈</a></p>
+</main>
+</div>
+
+<script>
+  // 등록되어 있을 수 있는 모든 Service Worker 즉시 해제 — 옛 캐시가 새 빌드를 가리는 일을 방지.
+  (function () {
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => { try { r.unregister(); } catch {} });
+        }).catch(() => {});
+      }
+      // CacheStorage(=Cache API) 도 마이그레이션 시점에 한 번 비움.
+      if (typeof caches !== 'undefined' && caches.keys) {
+        caches.keys().then((keys) => {
+          keys.forEach((k) => { try { caches.delete(k); } catch {} });
+        }).catch(() => {});
+      }
+    } catch {}
+  })();
+  // SPA fallback 복원 — 404.html이 ?p=/community 같은 형태로 리다이렉트시켰으면
+  // 진짜 경로를 복원해 클라이언트 라우터가 인식하게 한다.
+  (function () {
+    try {
+      var url = new URL(location.href);
+      var p = url.searchParams.get('p');
+      if (p) {
+        history.replaceState(null, '', p);
+      }
+    } catch {}
+  })();
+  // 조건부 HTTPS 강제 (v00.064) — SSL 도입 후 콘솔에서 opt-in:
+  //   localStorage.setItem('bgnj_force_https', '1')
+  // 활성화 시 http:// 진입을 즉시 https:// 로 redirect. SSL 미도입 환경에서 활성화 금지 (사이트 접속 불가).
+  (function () {
+    try {
+      if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        if (localStorage.getItem('bgnj_force_https') === '1') {
+          location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+        }
+      }
+    } catch {}
+  })();
+</script>
+
+<!-- v00.161 — production build (~3MB ↓ vs development). SRI 재계산 (sha384). -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+<!-- v00.109 — DOMPurify (XSS fix). 모든 dangerouslySetInnerHTML 호출이 BGNJ_SAFE_HTML 헬퍼로 sanitize. SRI hash 검증. -->
+<script src="https://unpkg.com/dompurify@3.4.2/dist/purify.min.js" integrity="sha384-AX0sZ/phUL4R6LAFP+mob0mJIWg2c3PX8wPn48ctytOl7XKfRQHbakBt5/QID7uh" crossorigin="anonymous"></script>
+<!-- v00.071 — @babel/standalone 제거. JSX 는 tools/build.mjs (esbuild) 가 사전 컴파일 → *.js. -->
+<!-- 효과: "in-browser Babel transformer" 경고 사라짐, 첫 로드 ~3MB ↓, JSX 컴파일 시간 0. -->
+<!-- 유지보수: pre-commit hook 이 매 커밋마다 자동 빌드. 수동: `node tools/build.mjs`. -->
+<!-- 감시 모드: `node tools/build.mjs --watch` (개발용). -->
+<!-- (빈 슬롯 — 향후 다른 CDN 추가 시 여기에) -->
+
+<!-- Tiptap v3 via ESM — exposes factories to window.BGNJ_TIPTAP. v00.090: Tiptap 3 메이저 마이그레이션. -->
+<!-- v3 변경점: StarterKit 이 Underline / Link / Dropcursor 를 기본 포함 → standalone import 제거. -->
+<!-- Link / Dropcursor 의 config 는 StarterKit.configure({ link: {...}, dropcursor: {...} }) 로 이전. -->
+<script type="module">
+  import { Editor } from 'https://esm.sh/@tiptap/core@3.22.5';
+  import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.22.5';
+  import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@3.22.5';
+  import Image from 'https://esm.sh/@tiptap/extension-image@3.22.5';
+  import Typography from 'https://esm.sh/@tiptap/extension-typography@3.22.5';
+  import Highlight from 'https://esm.sh/@tiptap/extension-highlight@3.22.5';
+  import TextAlign from 'https://esm.sh/@tiptap/extension-text-align@3.22.5';
+  import Subscript from 'https://esm.sh/@tiptap/extension-subscript@3.22.5';
+  import Superscript from 'https://esm.sh/@tiptap/extension-superscript@3.22.5';
+  import TaskList from 'https://esm.sh/@tiptap/extension-task-list@3.22.5';
+  import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@3.22.5';
+  import Color from 'https://esm.sh/@tiptap/extension-color@3.22.5';
+  // v00.105 — Tiptap 3: text-style / table 는 default export 없음 (esm.sh 확인). named import.
+  import { TextStyle } from 'https://esm.sh/@tiptap/extension-text-style@3.22.5';
+  import { Table } from 'https://esm.sh/@tiptap/extension-table@3.22.5';
+  import TableRow from 'https://esm.sh/@tiptap/extension-table-row@3.22.5';
+  import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@3.22.5';
+  import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@3.22.5';
+  import Youtube from 'https://esm.sh/@tiptap/extension-youtube@3.22.5';
+  window.BGNJ_TIPTAP = {
+    Editor, StarterKit, Placeholder, Image, Typography,
+    Highlight, TextAlign, Subscript, Superscript,
+    TaskList, TaskItem, Color, TextStyle,
+    Table, TableRow, TableCell, TableHeader, Youtube,
+  };
+  window.dispatchEvent(new Event('wsd-tiptap-ready'));
+</script>
+<!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
+     단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. check-version 훅이 일치 검증.
+     v00.285 Stage 3 — per-file 22개 <script> → 단일 번들 dist/app.js.
+       엔트리 src/entry-main.jsx 가 기존 로드 순서대로 side-effect import. tools/build.mjs --bundle 산출.
+       admin(dist/admin.js)은 boot 가 route 진입 시 동적 주입(코드 스플리팅 유지). -->
+<script defer src="/dist/app.js?v=00.296.000"></script>
+</body>
+</html>

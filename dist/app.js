@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.295.006",
+    version: "00.296.000",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -15077,6 +15077,16 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       "\xD7"
     ));
   };
+  (function applyPrerenderHint() {
+    var _a;
+    try {
+      const d = ((_a = document.body) == null ? void 0 : _a.dataset) || {};
+      if (d.bgnjPost) sessionStorage.setItem("bgnj_pending_post_id", String(d.bgnjPost));
+      if (d.bgnjColumn) sessionStorage.setItem("bgnj_pending_column_id", String(d.bgnjColumn));
+    } catch (_e) {
+      console.warn("[bgnj] \uC815\uC801 \uD398\uC774\uC9C0 \uD78C\uD2B8 \uC77D\uAE30 \uC2E4\uD328 \u2014 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx)", _e);
+    }
+  })();
   var App = () => {
     const [route, setRoute] = React.useState(() => {
       try {

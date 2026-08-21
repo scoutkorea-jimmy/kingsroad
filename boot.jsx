@@ -527,6 +527,19 @@ const SiteBanner = () => {
   );
 };
 
+// v00.296 — 검색·AI 크롤러용 정적 페이지(/community/98, /column/xxx)로 들어온 경우,
+//   그 글을 바로 열어 준다. 정적 HTML 이 <body data-bgnj-post="98"> 로 알려준다.
+//   경로에서 직접 읽지 않고 속성을 쓰는 이유: 라우터가 첫 세그먼트만 보도록 되어 있어
+//   경로 규칙을 건드리면 기존 라우팅 전체가 영향을 받는다. 속성은 그 자리에서 끝난다.
+//   (인라인 <script> 로 넘기지 않는 이유는 CSP 가 인라인 스크립트 해시를 못 박아 두기 때문이다.)
+(function applyPrerenderHint() {
+  try {
+    const d = document.body?.dataset || {};
+    if (d.bgnjPost)   sessionStorage.setItem('bgnj_pending_post_id', String(d.bgnjPost));
+    if (d.bgnjColumn) sessionStorage.setItem('bgnj_pending_column_id', String(d.bgnjColumn));
+  } catch (_e) { console.warn('[bgnj] 정적 페이지 힌트 읽기 실패 — 목록으로 갈 뿐 (boot.jsx)', _e); }
+})();
+
 const App = () => {
   const [route, setRoute] = React.useState(() => {
     // URL 우선. 폴백으로 localStorage.

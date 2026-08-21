@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="역사를 디자인하는 무학 대사의 꿈 ​역사는 시작과 끝이 물리고 물려 잠시 숨을 쉴 컴마도 없고 미륵의 메시아가 나타나 구원을 마무리하는 마침표도 없다 흘러가는 강물에 쓸려가는 뗏목처럼 제 안위 지키기 바쁘고 쫓고 쫓기며 같은 일을 반복하는 동안 뒤 돌아볼 수도 없다 ​강화도를 사수하기…">
+<meta name="naver-site-verification" content="f4ca5d0c2e615c970b73c30963623a4467e8581d" />
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)">
+<!-- 다크 모드 부트스트랩 — React mount 전에 실행되어 FOUC 차단.
+     localStorage(bgnj_theme) ∈ {auto, light, dark}. auto 면 prefers-color-scheme 따름. -->
+<script>(function(){try{var t=localStorage.getItem('bgnj_theme')||'auto';var eff=t;if(t==='auto'){eff=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',eff);document.documentElement.style.colorScheme=eff;}catch(e){}})();</script>
+<!-- HTML 캐시 무력화 — 브라우저가 옛 index.html 을 보존해 새 JS 버전 쿼리를 못 보는 경우를 막는다. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!-- v00.113 / v00.118 — 전체 CSP 정책. 외부 CDN 명시 화이트리스트 + 자체 origin.
+     · script-src — v00.118: 'unsafe-inline' 제거. 인라인 script 3종(theme bootstrap / SW unregister + SPA fallback + force-https / Tiptap importmap) 의
+       SHA-256 해시를 tools/csp-hashes.mjs 가 pre-commit 시 자동 동기.
+       (정적 호스팅 환경 — server-side nonce 주입 불가 → SHA-256 hash 가 표준 해법.)
+     · style-src — Tiptap 의 inline style + Google Fonts CSS.
+     · img-src — data: (인라인 SVG OG/favicon), blob: (업로드 미리보기), https: 전체 (R2 / 외부 이미지).
+     · connect-src — 워커 API + esm.sh (Tiptap 동적 import 의존 그래프) + jsdelivr/unpkg(DOMPurify 소스맵 fetch 허용, 콘솔 잡음 제거).
+     · frame-src — 본문 임베드용 YouTube / Vimeo (DOMPurify hook 와 일관) + 한켠 위치 지도 OpenStreetMap.
+     · object-src 'none' — Flash/legacy 플러그인 차단.
+     · frame-ancestors / X-Frame-Options 는 HTTP 헤더 전용 — GitHub Pages(정적 호스팅)는 헤더 주입 불가라
+       <meta> 로는 브라우저가 무시(콘솔 경고만 남김). v00.284.002 에서 제거. 클릭재킹 방어가 필요하면
+       Cloudflare(워커/Pages) 같은 헤더 가능한 경유지에서 HTTP 헤더로 설정해야 실효. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-K/hYZs+DP7lWTp/8qMKJe4Lve8SjliU4QrNbq+9hTpk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta property="og:title" content="[걸어서 인물속으로] 08. 자초 무학 대사 - 조선을 디자인하다 — 뱅기노자">
+<meta property="og:description" content="역사를 디자인하는 무학 대사의 꿈 ​역사는 시작과 끝이 물리고 물려 잠시 숨을 쉴 컴마도 없고 미륵의 메시아가 나타나 구원을 마무리하는 마침표도 없다 흘러가는 강물에 쓸려가는 뗏목처럼 제 안위 지키기 바쁘고 쫓고 쫓기며 같은 일을 반복하는 동안 뒤 돌아볼 수도 없다 ​강화도를 사수하기…">
+<meta property="og:type" content="website">
+
+<meta property="og:site_name" content="뱅기노자 BANGINOJA">
+<!-- 브랜드 OG 이미지 — 인라인 SVG fallback (1200x630). 가벼운 로고-only 디자인.
+     관리자가 og.imageDataUri 업로드하면 applyHead 가 덮어씀.
+     SVG OG image 는 Twitter/Discord 등에서 인식. Facebook/Kakao 는 PNG 업로드 필요. -->
+<meta property="og:image" content="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 1200 630%22%3E%3Crect width%3D%221200%22 height%3D%22630%22 fill%3D%22%23FFFFFF%22%2F%3E%3Crect x%3D%22540%22 y%3D%22225%22 width%3D%22120%22 height%3D%22120%22 rx%3D%2214%22 fill%3D%22%23F5D548%22%2F%3E%3Ctext x%3D%22600%22 y%3D%22313%22 font-family%3D%22sans-serif%22 font-size%3D%2278%22 font-weight%3D%22900%22 fill%3D%22%23FFFFFF%22 text-anchor%3D%22middle%22%3EB%3C%2Ftext%3E%3Ctext x%3D%22600%22 y%3D%22410%22 font-family%3D%22sans-serif%22 font-size%3D%2236%22 font-weight%3D%22600%22 fill%3D%22%230F172A%22 text-anchor%3D%22middle%22%3E%EB%B1%85%EA%B8%B0%EB%85%B8%EC%9E%90%3C%2Ftext%3E%3Ctext x%3D%22600%22 y%3D%22445%22 font-family%3D%22monospace%22 font-size%3D%2213%22 fill%3D%22%2394A3B8%22 text-anchor%3D%22middle%22 letter-spacing%3D%225%22%3EBANGINOJA%3C%2Ftext%3E%3C%2Fsvg%3E">
+<title>[걸어서 인물속으로] 08. 자초 무학 대사 - 조선을 디자인하다 — 뱅기노자</title>
+<!-- v00.120 — JSON-LD 구조화 데이터 (Organization + WebSite). 검색엔진/소셜 카드 풍부화.
+     관리자 사이트 콘텐츠에서 도메인/링크 변경되면 별도 갱신 필요. -->
+<!-- 뱅기노자 브랜드 favicon — 인라인 SVG (별도 파일 호스팅 없음, 자동 /favicon.ico 404 차단).
+     관리자 사이트 콘텐츠에서 업로드된 favicon 이 있으면 data.js applyHead 가 이 link 의 href 를 덮어쓴다. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 64 64%22%3E%3Crect width%3D%2264%22 height%3D%2264%22 rx%3D%229%22 fill%3D%22%23F5D548%22%2F%3E%3Cpath d%3D%22M 9 8 L 9 56 L 32 56 C 42 56 47 51 47 44.5 C 47 39.5 44 36 39.5 35 C 43 33.5 45.5 30.5 45.5 26 C 45.5 18.5 40 14 30 14 L 9 14 Z M 18 19 L 28 19 C 33 19 36 21 36 25 C 36 29 33 31 28 31 L 18 31 Z M 18 36 L 30 36 C 36 36 39 38.5 39 43 C 39 47.5 36 50 30 50 L 18 50 Z%22 fill%3D%22%23FFFFFF%22%2F%3E%3Cpath d%3D%22M 26 22.5 C 27 21.5 28 21.5 28.5 22.5 L 31 27 L 38 25 C 38.8 24.8 39.4 25.2 39.5 26 C 39.6 26.6 39.3 27.1 38.8 27.4 L 32.5 30.7 L 33.5 36.5 L 36 37.8 C 36.4 38 36.5 38.4 36.3 38.7 C 36.2 39 35.9 39.1 35.6 39 L 31.5 38 L 28 39.5 C 27.7 39.6 27.3 39.4 27.2 39 C 27.1 38.7 27.3 38.4 27.6 38.2 L 30 37 L 28.7 32 L 24 33.5 C 23.4 33.7 22.9 33.4 22.8 32.8 C 22.7 32.3 23 31.9 23.5 31.7 L 27.5 30.2 L 26.3 26 L 25.5 24.5 C 25.2 24 25.4 23.3 26 23 Z%22 fill%3D%22%23F5D548%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=00.296.000">
+
+
+<link rel="canonical" href="https://bgnj.net/community/75">
+<meta property="og:url" content="https://bgnj.net/community/75">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"[걸어서 인물속으로] 08. 자초 무학 대사 - 조선을 디자인하다","author":{"@type":"Person","name":"김현종"},"datePublished":"2026-05-27T04:44:55.875Z","inLanguage":"ko-KR","image":[],"mainEntityOfPage":"https://bgnj.net/community/75","publisher":{"@id":"https://bgnj.net/#org"}}</script>
+</head>
+<body data-bgnj-post="75">
+<a class="skip-link" href="#main">본문 바로가기</a>
+<noscript><p style="padding:24px;color:#efe9dc;background:#0a0907;">
+이 페이지의 글은 그대로 읽으실 수 있습니다. 다만 검색·댓글·주문 같은 기능은 JavaScript 가 필요합니다. 문의: contact@bgnj.net
+</p></noscript>
+<div id="root">
+<main id="seo-main">
+
+<article>
+  <h1>[걸어서 인물속으로] 08. 자초 무학 대사 - 조선을 디자인하다</h1>
+  <p>김현종 · 2026-05-27 · 자유</p>
+  
+  <p>역사를 디자인하는 무학 대사의 꿈</p>
+<p>​역사는 시작과 끝이 물리고 물려 잠시 숨을 쉴 컴마도 없고 미륵의 메시아가 나타나 구원을 마무리하는 마침표도 없다</p>
+<p>흘러가는 강물에 쓸려가는 뗏목처럼 제 안위 지키기 바쁘고 쫓고 쫓기며 같은 일을 반복하는 동안 뒤 돌아볼 수도 없다</p>
+<p>​강화도를 사수하기 위한 백성들의 숭고한 희생은 이어지고 역사를 지키는 노끈이 되려고 함께 니나노 난실로 들어간다</p>
+<p>신시 문화 민족문화를 살리려는 자들은 내일을 위해 죽었고 팔만대장경 원효의 초개사 황룡사탑은 몽골군에 소실되었다</p>
+<p>​세계사에서 가장 넓은 영토를 정복했던 징기스칸의 몽골과 39년간 7번의 침략으로 28년간 긴 전쟁을 치렀던 고려다</p>
+<p>결국 원나라 부마국으로 7대왕의 수모는 막을 내려야 했고 정감사상의 자초무학 이성계 목자木子시대를 디자인 한다</p>
+<p>​한양천도를 통해 조선 건국의 새 기틀을 세우는 데 일조한 무학 대사 조선을 세운 태조 이성계의 왕사王師 되었다</p>
+<p>왕사는 정신적 최고의 지도자로서 호국 애민정책 가르침과 정치적 사면을 통해 새로운 시대를 여는데 뒷받침을 했다</p>
+<p>​숭유억불崇儒抑佛정책으로 역사상 최고의 불교 탄압시대 무학은 민족종교 명맥을 이어나갈 수 있는 구심점이 된다</p>
+<p>실종된 역사의식을 되살려 국가개혁를 위한 바른 인식으로 백년대계는 생각할 줄도 아는 깨어있는 역사 안목을 갖자</p>
+<p>​​</p>
+<p>▲ 무학 대사</p>
+<p>​무학 대사 경남 합천 출신으로 18세 때 출가 진주 길상사, 묘향산 금강굴 등에서 수도하다 1353년 원나라 연경에 4년간 유학, 혜근惠勤과 인도승 지공으로부터 가르침을 받는다.</p>
+<p>1356년 귀국 왕사된 혜근의 법을 이어받지만 당시 고려의 국운이 쇠퇴하여 쓰러져 가니 고려의 불교를 비판하며 이성계를 만나 그가 왕이 될 것을 예언한다.</p>
+<p>이 말을 들은 이성계는 새로운 나라를 건국할 뜻을 품고 무학과 함께 전국의 명산 사찰을 찾아다니며 산신령의 허락을 받고자 한다.</p>
+<p>이성계와 무학의 발자취를 찾는 한민족 역사문화탐방은 장수 뜬봉샘, 남원 황산대첩비, 임실 상이암, 순창 만일사, 진안 마이산, 전주오목대와 이목대, 그리고 경기도 의정부 회룡사로 이어졌다.</p>
+<p>​​</p>
+<p>▲ 눈 울타리를 뜻하는 설 울</p>
+<p>​ 박창보</p>
+<p>대중에게 널리 알려진 무학이라는 명칭은 법호이고 성은 박 씨다.</p>
+<p>여말 충숙왕 14년(1327)에 삼기군(합천)에서 태어나 18세 되던 해에 출가하였으며 26세 되던 해에 원나라로 유학을 떠난다. 인도승 지공과 나옹을 만나 깨달음을 인정받았고 귀국 후에는 이들과 양주 회암사를 중창하는 인연을 맺는다.</p>
+<p>회암사지는 지금은 터만 남았지만 한때 3천여 명이 선 수행을 할 정도의 엄청난 규모였으며 현재 유네스코에 등재를 서두르고 있다. 무학은 조선의 처음이자 마지막 왕사로서 이곳에 머물며 태조 이성계와 자주 조우했다.</p>
+<p>태조 이성계는 말년에 태상왕으로 물러나자 회암사에 궁실을 짓고 머물렀는데 정치에 대한 회한과 인생의 무상함을 달래려 불교에 귀의하여 살고자 했다. 회암사는 불교식 행궁이었을 것이다. 큰 형님뻘인 무학과의 인연도 무학의 열반으로 인연이 다하고 손수 무학의 다비식을 해준 이성계의 심정이 어땠을까 헤아려 본다.</p>
+<p>무학과 이성계의 인연은 새로운 왕조창업을 암시하는 꿈 해몽으로부터 시작되어 설봉산 석왕사 등 전국의 여러 사찰에서 기도를 하며 이어졌다. 의정부 회룡사 또한 조선 창업이전 무학과 함께 기도를 하였으며 후일 태상왕으로서 이방원의 요청을 받아들여 함흥에서 돌아오는 길에 머물렀던 사찰이기도 하다. 회룡은 왕이 돌아왔다는 의미로 원래 의상이 창건했던 법성사에서 바뀐 명칭이다.</p>
+<p>조선창업 후 신도읍지를 찾아 한양으로 천도하게 하였는데 정도전과의 갈등이 극명하게 나타난 곳이 인왕산 선바위다. 바위를 도성 안으로 할 것인지 도성 밖으로 할 것인지를 놓고 최종적으로 정도전의 의견에 따라 성 밖으로 결정하였다는 것이며. 무학이 이제부터 승도들은 선비들의 책 보따리나 지고 따라다닐 것이라고 한탄하였다는 일화가 전해진다. 선바위 안쪽은 눈이 녹고 바깥쪽은 눈이 녹지 않아 도성이 눈을 경계로 나뉘었다고 한다. 이때 서울의 명칭이 눈 울타리를 뜻하는 설 울에서 비롯되었다는 설화도 재미있다.</p>
+<p>​​</p>
+<p>​ ▲ 왕십리와 조선왕조 한양(남경) 천도</p>
+<p>​ 김주원</p>
+<p>장수 뜬봉샘, 남원 황산대첩비, 임실 상이암, 순창 만일사, 진안 마이산, 전주오목대와 이목대를 돌아보며 이성계의 시대정신을 느끼며 체험했다. 그는 조선 개국을 어떤 방식으로 진행하고 도읍지를 한양(당시 남경)으로 정하게 되었는지 궁금했다.</p>
+<p>1392년 7월, 이성계는 고려의 도읍지 개경에서 즉위식을 한다. 새로운 나라를 세울 때 국호와 도읍지를 정하는 것이 급선무인데 국호도 정하지 않았고 도읍지도 개경에서 시작하였다. 1393년 2월 명나라 태조 주원장이 국호를 ‘조선’으로 결정하였다. 도읍지의 후보로 모악산, 계룡산, 한양, 무악(서울 신촌) 등을 선정하여 신중히 살펴보게 된다.</p>
+<p>​당시 3대 풍수인으로 하륜, 권중화, 자초(무학)가 꼽혔다. 1393년 11월 계룡산 천도를 주장한 권중화의 의견을 존중한 태조 이성계는 궁궐 공사를 진행하였으나, 이방원의 측근인 하륜이 계룡산 천도 반대 상소를 올려 결국 공사를 중단하게 된다.</p>
+<p>무악으로의 천도는 권중화가 반대하였고 결국 무학과 하륜의 의견을 듣고 1394년 10월 한양으로의 천도를 결정하게 된다. 태조 이성계의 하명을 받고 무학은 도읍지를 찾아 지금의 왕십리 일대를 지나던 중 현재 한양대 서울캠퍼스 자리를 도읍지로 정하려 하자 한 노인이 소를 몰고 지나다 버럭 소리를 지른다. “이 무학같이 미련한 소야!”한다. 무학은 노인이 범상치 않음을 알아보고 “혹시 도읍이 될 만한 곳을 아십니까?” 물으니, 노인은 “북서쪽으로 십리를 더 가보시오.”하고 홀연히 사라진다. 무학은 노인의 말대로 북서쪽을 향하여 십리를 가니 가히 명당이 나타났다. 이곳이 조선의 도읍지 한양 경복궁 자리가 된다.</p>
+<p>​홀연히 나타나 왕궁 터를 알려준 노인은 신라 말기 승려 선각국사 도선의 혼령이라고 한다. 도선은 풍수지리에 능한 승려로 고려 태조 왕건의 탄생을 예언한 것으로 유명한데, 조선 왕조의 도읍지를 정하는데 신빙성을 높이기 위해 명성이 높은 도선 국사를 언급한 듯하다. 도선 국사가 무학 봉에서 참선한 연유로 이 부근에 도선사거리, 도선동 등의 지명이 남아있다.</p>
+<p>무학과 관련된 여러 야사들을 살펴볼 때 상당한 수준의 풍수지리가 였을 것으로 여겨진다. 그러나 경복궁을 배치할 때 인왕산을 주산으로 하고 좌로 북악산, 우로 목멱산(남산)을 두고 동쪽 낙산을 바라보도록 주장하였으나 정도전의 주장에 밀려 경복궁은 현재와 같이 남쪽을 향하는 건축물이 되었다.</p>
+<p>​풍수지리에 대한 비판의 소리도 적지 않다. 음양과 오행, 주역을 기반으로 한다는데 이 이론들이 어렵고 현실에 적용하고 풀어나가는 것도 어렵기에, 같은 지형을 두고 이견이 많으며 이를 정치적으로 이용하는 사례도 끊임없이 이어지고 있음을 견제해야겠다.</p>
+<p>​​</p>
+<p>▲ 섬기는 왕이 되도록 하여라</p>
+<p>​ 고개희</p>
+<p>팔도명산의 산신령들은 이성계가 나라를 건국하는 것을 모두 허락하였는데 유독 회문산의 산신령만은 이를 허락하지 않았다. 그래서 이성계는 무학 대사와 함께 회문산 만일사에서 백일제를 지내기로 했다.</p>
+<p>백일제를 지내던 중 백일이 되는 날 밤 꿈에 산신령이 현신하여 나타났다. 산신령은 “네 정성이 갸륵하여 내 허락을 하여 주노라. 그러나 대사를 도모할 천시가 아니니 너는 백성 없는 왕이 될 것이다. 그러니 이 절에 천일향을 시주하고 백성을 다스리는 왕이 되지 말고 섬기는 왕이 되도록 하여라.” 했다.</p>
+<p>​잠에서 깨어난 이성계는 어안이 벙벙했다. 천일향을 시주하는 것은 어렵지 않은 일이지만 천시가 아니라는 말이 도대체 무슨 의미인지, 백성을 다스리지 말고 섬기라는 말이 어떤 것인지 알 수가 없었다.</p>
+<p>걱정스러운 마음에 잠 못 들고 뒤척이고 있는데 무학 대사가 부스럭거리고 일어나더니 등불을 켰다.</p>
+<p>무학 대사도 잠에서 깨어 일어났던 것이다. “장군은 이제 다 끝난 일을 가지고 무얼 그리 걱정</p>
+</article>
+<p><a href="/community">목록으로</a> · <a href="/">뱅기노자 홈</a></p>
+</main>
+</div>
+
+<script>
+  // 등록되어 있을 수 있는 모든 Service Worker 즉시 해제 — 옛 캐시가 새 빌드를 가리는 일을 방지.
+  (function () {
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => { try { r.unregister(); } catch {} });
+        }).catch(() => {});
+      }
+      // CacheStorage(=Cache API) 도 마이그레이션 시점에 한 번 비움.
+      if (typeof caches !== 'undefined' && caches.keys) {
+        caches.keys().then((keys) => {
+          keys.forEach((k) => { try { caches.delete(k); } catch {} });
+        }).catch(() => {});
+      }
+    } catch {}
+  })();
+  // SPA fallback 복원 — 404.html이 ?p=/community 같은 형태로 리다이렉트시켰으면
+  // 진짜 경로를 복원해 클라이언트 라우터가 인식하게 한다.
+  (function () {
+    try {
+      var url = new URL(location.href);
+      var p = url.searchParams.get('p');
+      if (p) {
+        history.replaceState(null, '', p);
+      }
+    } catch {}
+  })();
+  // 조건부 HTTPS 강제 (v00.064) — SSL 도입 후 콘솔에서 opt-in:
+  //   localStorage.setItem('bgnj_force_https', '1')
+  // 활성화 시 http:// 진입을 즉시 https:// 로 redirect. SSL 미도입 환경에서 활성화 금지 (사이트 접속 불가).
+  (function () {
+    try {
+      if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        if (localStorage.getItem('bgnj_force_https') === '1') {
+          location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+        }
+      }
+    } catch {}
+  })();
+</script>
+
+<!-- v00.161 — production build (~3MB ↓ vs development). SRI 재계산 (sha384). -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+<!-- v00.109 — DOMPurify (XSS fix). 모든 dangerouslySetInnerHTML 호출이 BGNJ_SAFE_HTML 헬퍼로 sanitize. SRI hash 검증. -->
+<script src="https://unpkg.com/dompurify@3.4.2/dist/purify.min.js" integrity="sha384-AX0sZ/phUL4R6LAFP+mob0mJIWg2c3PX8wPn48ctytOl7XKfRQHbakBt5/QID7uh" crossorigin="anonymous"></script>
+<!-- v00.071 — @babel/standalone 제거. JSX 는 tools/build.mjs (esbuild) 가 사전 컴파일 → *.js. -->
+<!-- 효과: "in-browser Babel transformer" 경고 사라짐, 첫 로드 ~3MB ↓, JSX 컴파일 시간 0. -->
+<!-- 유지보수: pre-commit hook 이 매 커밋마다 자동 빌드. 수동: `node tools/build.mjs`. -->
+<!-- 감시 모드: `node tools/build.mjs --watch` (개발용). -->
+<!-- (빈 슬롯 — 향후 다른 CDN 추가 시 여기에) -->
+
+<!-- Tiptap v3 via ESM — exposes factories to window.BGNJ_TIPTAP. v00.090: Tiptap 3 메이저 마이그레이션. -->
+<!-- v3 변경점: StarterKit 이 Underline / Link / Dropcursor 를 기본 포함 → standalone import 제거. -->
+<!-- Link / Dropcursor 의 config 는 StarterKit.configure({ link: {...}, dropcursor: {...} }) 로 이전. -->
+<script type="module">
+  import { Editor } from 'https://esm.sh/@tiptap/core@3.22.5';
+  import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.22.5';
+  import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@3.22.5';
+  import Image from 'https://esm.sh/@tiptap/extension-image@3.22.5';
+  import Typography from 'https://esm.sh/@tiptap/extension-typography@3.22.5';
+  import Highlight from 'https://esm.sh/@tiptap/extension-highlight@3.22.5';
+  import TextAlign from 'https://esm.sh/@tiptap/extension-text-align@3.22.5';
+  import Subscript from 'https://esm.sh/@tiptap/extension-subscript@3.22.5';
+  import Superscript from 'https://esm.sh/@tiptap/extension-superscript@3.22.5';
+  import TaskList from 'https://esm.sh/@tiptap/extension-task-list@3.22.5';
+  import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@3.22.5';
+  import Color from 'https://esm.sh/@tiptap/extension-color@3.22.5';
+  // v00.105 — Tiptap 3: text-style / table 는 default export 없음 (esm.sh 확인). named import.
+  import { TextStyle } from 'https://esm.sh/@tiptap/extension-text-style@3.22.5';
+  import { Table } from 'https://esm.sh/@tiptap/extension-table@3.22.5';
+  import TableRow from 'https://esm.sh/@tiptap/extension-table-row@3.22.5';
+  import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@3.22.5';
+  import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@3.22.5';
+  import Youtube from 'https://esm.sh/@tiptap/extension-youtube@3.22.5';
+  window.BGNJ_TIPTAP = {
+    Editor, StarterKit, Placeholder, Image, Typography,
+    Highlight, TextAlign, Subscript, Superscript,
+    TaskList, TaskItem, Color, TextStyle,
+    Table, TableRow, TableCell, TableHeader, Youtube,
+  };
+  window.dispatchEvent(new Event('wsd-tiptap-ready'));
+</script>
+<!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
+     단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. check-version 훅이 일치 검증.
+     v00.285 Stage 3 — per-file 22개 <script> → 단일 번들 dist/app.js.
+       엔트리 src/entry-main.jsx 가 기존 로드 순서대로 side-effect import. tools/build.mjs --bundle 산출.
+       admin(dist/admin.js)은 boot 가 route 진입 시 동적 주입(코드 스플리팅 유지). -->
+<script defer src="/dist/app.js?v=00.296.000"></script>
+</body>
+</html>

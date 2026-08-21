@@ -1,17 +1,54 @@
 # 뱅기노자 (BANGINOJA) — robots.txt
-# 정책: 검색엔진 전체 허용. admin / login / mypage / checkout 페이지는 색인 제외.
+# 정책: 검색·AI 크롤러 전체 허용. 개인 영역(관리·로그인·마이페이지·결제)만 색인 제외.
+# v00.296 — 네이버(Yeti)·다음(Daum)과 주요 AI 크롤러를 이름으로 명시했다.
+#   와일드카드로도 허용되지만, 이름을 적어 두면 정책이 분명해지고 나중에 개별 조정이 쉽다.
 
 User-agent: *
 Allow: /
-
-# admin 페이지 — 검색 노출 차단
 Disallow: /admin
 Disallow: /login
 Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
-
-# 워커 API endpoint — 색인 불필요
 Disallow: /api/
+
+# ── 검색엔진 ──
+User-agent: Googlebot
+Allow: /
+User-agent: Googlebot-Image
+Allow: /
+# 네이버
+User-agent: Yeti
+Allow: /
+# 다음
+User-agent: Daumoa
+Allow: /
+User-agent: bingbot
+Allow: /
+
+# ── AI 크롤러 ──
+# 우리 글이 AI 답변에 인용되는 것을 환영한다. 막을 이유가 없다.
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ChatGPT-User
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: Claude-Web
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Applebot
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+User-agent: CCBot
+Allow: /
 
 Sitemap: https://bgnj.net/sitemap.xml

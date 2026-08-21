@@ -795,3 +795,69 @@ babel AST 로 컴포넌트 함수의 최상위 return 이후 훅 호출을 찾�
 | HEIC/HEIF 를 서버가 안 받는다 | 확장자 화이트리스트에 없다. iOS 는 대개 JPEG 로 변환해 올려 실제 피해는 아직 없다. 받아도 브라우저가 못 그려 오히려 나쁠 수 있다 |
 | 게시판을 지우면 그 글들이 미아가 된다 | `handleCategoryDelete` 가 `posts.category_id` 를 그대로 둔다. 글이 사라지진 않지만 목록에 안 뜬다 |
 | `column-images` 는 관리자 폴더 | 칼럼이 관리자 전용이 됐으니 이제 일관된다 |
+
+---
+
+## 19. 검색·AI 크롤러가 사이트를 읽을 수 있게 (v00.296.000 — 완료·배포됨)
+
+사용자 지시 '모든 것들을 AI 친화적으로. 특히 구글 봇과 네이버 봇이 쉽게 찾을 수 있게'.
+
+### 실측한 출발점 — 검색엔진에게 이 사이트는 빈 페이지였다
+
+| 확인 | 결과 |
+|---|---|
+| `bgnj.net/community` · `/column` · `/book` · `/tour` | **전부 HTTP 404** |
+| 크롤러가 받는 HTML 본문 | **231자** ("JavaScript로 렌더링됩니다" 가 전부) |
+| sitemap.xml 에 적힌 10개 주소 | 그중 9개가 404 |
+| 글 88편 · 칼럼 72편 | 하나도 등록돼 있지 않음 |
+
+GitHub Pages 는 없는 경로에 `404.html` 을 **404 상태로** 준다. SPA 복원용으로 만든 그 파일이
+크롤러에게는 '이 주소는 없다' 는 신호였다. sitemap 은 색인을 돕기는커녕 죽은 링크 목록이었다.
+
+그리고 구글봇은 JS 를 돌려 결국 보지만, **네이버봇(Yeti)과 AI 크롤러(GPTBot·ClaudeBot·PerplexityBot)는
+JS 를 돌리지 않는다.** 그들에게 이 사이트에는 아무 내용도 없었다.
+
+### 고른 방법 — 정적 생성(프리렌더)
+
+Cloudflare 프록시가 꺼져 있어(실측: `server: GitHub.com`, CF 헤더 없음) 워커를 사이트 앞에 끼울 수 없다.
+그래서 빌드 때 **주소마다 진짜 내용이 담긴 `index.html` 을 만든다** — `tools/seo-build.mjs`.
+
+- 내용은 `<div id="root">` **안에** 넣는다. React 가 부팅하며 그대로 덮어쓰므로
+  사람에게는 지금과 똑같은 SPA 이고, 크롤러에게만 읽을 것이 생긴다. **클로킹이 아니다**(같은 내용).
+- 결과: 본문 231자 → 홈 614자 · 광장 목록 3,822자 · 칼럼 목록 8,390자 · 글 상세 1,175자.
+- 170개 주소(정적 10 + 글 88 + 칼럼 72) 생성. sitemap.xml 도 여기서 자동 생성한다.
+- JSON-LD 구조화 데이터 — 홈은 Organization+WebSite, 목록은 CollectionPage, 글은 Article.
+- canonical · og:url 을 주소마다 정확히 박는다.
+
+### 함정 셋 — 다음 사람을 위해
+
+1. **상대경로를 절대경로로 바꿔야 한다.** `/community/98/index.html` 에서 `src="dist/app.js"` 는
+   `/community/98/dist/app.js` 를 찾아 화면이 통째로 안 뜬다. `absolutize()` 가 이걸 한다.
+2. **인라인 `<script>` 를 새로 넣으면 안 된다.** CSP 가 인라인 스크립트 SHA-256 해시를 못 박아 둔다.
+   그래서 글 번호는 `<body data-bgnj-post="98">` 속성으로 넘기고 `boot.jsx` 가 읽는다.
+3. **멱등이어야 한다.** index.html 이 곧 템플릿인데 홈을 그 자리에 덮어쓴다.
+   첫 판은 재실행하면 JSON-LD 가 2→3 으로 쌓이고 `#root` 정규식이 안 맞아 홈이 **조용히 갱신 안 됐다.**
+   `normalize()` 로 먼저 원상복구하게 고쳤고, **3회 연속 실행해 결과가 같은 것을 확인**했다.
+
+### 빌드 순서를 지켜야 한다
+
+```
+node tools/csp-hashes.mjs   →   node tools/build.mjs   →   node tools/seo-build.mjs
+```
+
+`seo-build` 가 **반드시 마지막**이다. 순서를 바꾸면 index.html 만 새 해시를 갖고
+하위 170개는 옛 해시를 물어 CSP 로 통째로 차단된다.
+
+### robots.txt · llms.txt
+
+- 네이버 `Yeti` · 다음 `Daumoa` 를 이름으로 명시. **같은 줄 주석은 뺐다** — 표준상 허용이지만
+  파서에 따라 User-agent 값이 오염될 수 있다.
+- AI 크롤러 11종 명시 허용(GPTBot · ClaudeBot · PerplexityBot · Applebot · CCBot 등).
+- `llms.txt` 신설 — AI 에게 사이트 구조·주요 주제·인용 정책을 한 장으로 알린다.
+
+### 남은 것
+
+- **글을 새로 쓰면 정적 페이지가 자동으로 안 생긴다.** `node tools/seo-build.mjs` 를 다시 돌려
+  커밋해야 한다. GitHub Actions 로 하루 1회 자동화할 수 있다 — **사용자 판단 대기.**
+- 구글 서치콘솔 · 네이버 서치어드바이저에 사이트를 등록하고 sitemap 을 제출해야 실제로 색인이 시작된다.
+  **이건 사람이 계정으로 해야 하는 일이다.**

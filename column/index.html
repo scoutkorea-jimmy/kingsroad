@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="역사와 도시를 읽는 뱅기노자의 칼럼.">
+<meta name="naver-site-verification" content="f4ca5d0c2e615c970b73c30963623a4467e8581d" />
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)">
+<!-- 다크 모드 부트스트랩 — React mount 전에 실행되어 FOUC 차단.
+     localStorage(bgnj_theme) ∈ {auto, light, dark}. auto 면 prefers-color-scheme 따름. -->
+<script>(function(){try{var t=localStorage.getItem('bgnj_theme')||'auto';var eff=t;if(t==='auto'){eff=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',eff);document.documentElement.style.colorScheme=eff;}catch(e){}})();</script>
+<!-- HTML 캐시 무력화 — 브라우저가 옛 index.html 을 보존해 새 JS 버전 쿼리를 못 보는 경우를 막는다. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!-- v00.113 / v00.118 — 전체 CSP 정책. 외부 CDN 명시 화이트리스트 + 자체 origin.
+     · script-src — v00.118: 'unsafe-inline' 제거. 인라인 script 3종(theme bootstrap / SW unregister + SPA fallback + force-https / Tiptap importmap) 의
+       SHA-256 해시를 tools/csp-hashes.mjs 가 pre-commit 시 자동 동기.
+       (정적 호스팅 환경 — server-side nonce 주입 불가 → SHA-256 hash 가 표준 해법.)
+     · style-src — Tiptap 의 inline style + Google Fonts CSS.
+     · img-src — data: (인라인 SVG OG/favicon), blob: (업로드 미리보기), https: 전체 (R2 / 외부 이미지).
+     · connect-src — 워커 API + esm.sh (Tiptap 동적 import 의존 그래프) + jsdelivr/unpkg(DOMPurify 소스맵 fetch 허용, 콘솔 잡음 제거).
+     · frame-src — 본문 임베드용 YouTube / Vimeo (DOMPurify hook 와 일관) + 한켠 위치 지도 OpenStreetMap.
+     · object-src 'none' — Flash/legacy 플러그인 차단.
+     · frame-ancestors / X-Frame-Options 는 HTTP 헤더 전용 — GitHub Pages(정적 호스팅)는 헤더 주입 불가라
+       <meta> 로는 브라우저가 무시(콘솔 경고만 남김). v00.284.002 에서 제거. 클릭재킹 방어가 필요하면
+       Cloudflare(워커/Pages) 같은 헤더 가능한 경유지에서 HTTP 헤더로 설정해야 실효. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-K/hYZs+DP7lWTp/8qMKJe4Lve8SjliU4QrNbq+9hTpk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta property="og:title" content="뱅기노자 칼럼 (72편) — 뱅기노자">
+<meta property="og:description" content="역사와 도시를 읽는 뱅기노자의 칼럼.">
+<meta property="og:type" content="website">
+
+<meta property="og:site_name" content="뱅기노자 BANGINOJA">
+<!-- 브랜드 OG 이미지 — 인라인 SVG fallback (1200x630). 가벼운 로고-only 디자인.
+     관리자가 og.imageDataUri 업로드하면 applyHead 가 덮어씀.
+     SVG OG image 는 Twitter/Discord 등에서 인식. Facebook/Kakao 는 PNG 업로드 필요. -->
+<meta property="og:image" content="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 1200 630%22%3E%3Crect width%3D%221200%22 height%3D%22630%22 fill%3D%22%23FFFFFF%22%2F%3E%3Crect x%3D%22540%22 y%3D%22225%22 width%3D%22120%22 height%3D%22120%22 rx%3D%2214%22 fill%3D%22%23F5D548%22%2F%3E%3Ctext x%3D%22600%22 y%3D%22313%22 font-family%3D%22sans-serif%22 font-size%3D%2278%22 font-weight%3D%22900%22 fill%3D%22%23FFFFFF%22 text-anchor%3D%22middle%22%3EB%3C%2Ftext%3E%3Ctext x%3D%22600%22 y%3D%22410%22 font-family%3D%22sans-serif%22 font-size%3D%2236%22 font-weight%3D%22600%22 fill%3D%22%230F172A%22 text-anchor%3D%22middle%22%3E%EB%B1%85%EA%B8%B0%EB%85%B8%EC%9E%90%3C%2Ftext%3E%3Ctext x%3D%22600%22 y%3D%22445%22 font-family%3D%22monospace%22 font-size%3D%2213%22 fill%3D%22%2394A3B8%22 text-anchor%3D%22middle%22 letter-spacing%3D%225%22%3EBANGINOJA%3C%2Ftext%3E%3C%2Fsvg%3E">
+<title>뱅기노자 칼럼 (72편) — 뱅기노자</title>
+<!-- v00.120 — JSON-LD 구조화 데이터 (Organization + WebSite). 검색엔진/소셜 카드 풍부화.
+     관리자 사이트 콘텐츠에서 도메인/링크 변경되면 별도 갱신 필요. -->
+<!-- 뱅기노자 브랜드 favicon — 인라인 SVG (별도 파일 호스팅 없음, 자동 /favicon.ico 404 차단).
+     관리자 사이트 콘텐츠에서 업로드된 favicon 이 있으면 data.js applyHead 가 이 link 의 href 를 덮어쓴다. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 viewBox%3D%220 0 64 64%22%3E%3Crect width%3D%2264%22 height%3D%2264%22 rx%3D%229%22 fill%3D%22%23F5D548%22%2F%3E%3Cpath d%3D%22M 9 8 L 9 56 L 32 56 C 42 56 47 51 47 44.5 C 47 39.5 44 36 39.5 35 C 43 33.5 45.5 30.5 45.5 26 C 45.5 18.5 40 14 30 14 L 9 14 Z M 18 19 L 28 19 C 33 19 36 21 36 25 C 36 29 33 31 28 31 L 18 31 Z M 18 36 L 30 36 C 36 36 39 38.5 39 43 C 39 47.5 36 50 30 50 L 18 50 Z%22 fill%3D%22%23FFFFFF%22%2F%3E%3Cpath d%3D%22M 26 22.5 C 27 21.5 28 21.5 28.5 22.5 L 31 27 L 38 25 C 38.8 24.8 39.4 25.2 39.5 26 C 39.6 26.6 39.3 27.1 38.8 27.4 L 32.5 30.7 L 33.5 36.5 L 36 37.8 C 36.4 38 36.5 38.4 36.3 38.7 C 36.2 39 35.9 39.1 35.6 39 L 31.5 38 L 28 39.5 C 27.7 39.6 27.3 39.4 27.2 39 C 27.1 38.7 27.3 38.4 27.6 38.2 L 30 37 L 28.7 32 L 24 33.5 C 23.4 33.7 22.9 33.4 22.8 32.8 C 22.7 32.3 23 31.9 23.5 31.7 L 27.5 30.2 L 26.3 26 L 25.5 24.5 C 25.2 24 25.4 23.3 26 23 Z%22 fill%3D%22%23F5D548%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=00.296.000">
+
+
+<link rel="canonical" href="https://bgnj.net/column">
+<meta property="og:url" content="https://bgnj.net/column">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"뱅기노자 칼럼 (72편)","description":"역사와 도시를 읽는 뱅기노자의 칼럼.","url":"https://bgnj.net/column","isPartOf":{"@id":"https://bgnj.net/#site"},"publisher":{"@id":"https://bgnj.net/#org"}}</script>
+</head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<noscript><p style="padding:24px;color:#efe9dc;background:#0a0907;">
+이 페이지의 글은 그대로 읽으실 수 있습니다. 다만 검색·댓글·주문 같은 기능은 JavaScript 가 필요합니다. 문의: contact@bgnj.net
+</p></noscript>
+<div id="root">
+<main id="seo-main">
+
+<h1>뱅기노자 칼럼 (72편)</h1>
+<p>역사와 도시를 읽는 뱅기노자의 칼럼.</p>
+<ul><li><a href="/column/col-3551295acaf9fc7028de1115">도시 디자인과 통풍유수</a> — 인간은 동굴에서의 주거문화를 마감하고 농경시대로 진입하며, 집단체를 이루고 부족끼리 모여살기 시작했다. 마을과 도시는 하천을 끼고 산을 등지며 동서남북 방위에 의한 절대방위의 시</li>
+<li><a href="/column/col-4f0b8380db0fc2f71254987e">전주, 우주가(宇宙家)의 중심 도시를 준비하다</a> — 집우·집주·집가, 2036 전주 하계올림픽 집이란 한 사회가 세계관을 이해해온 방식이 응축된 장소다. 인간이 어디에 터를 잡고 어떻게 공간을 구성해왔는가는 그 지역의 자연관과</li>
+<li><a href="/column/col-b000b9067ac95e4a98e2aea5">한국인의 귀신론(鬼神論)과 건축적 사유</a> — 산세와 물길을 따라 걷다 보면, 우리는 늘 보이지 않는 존재들과 조우한다. 마을 어귀의 당산나무, 굽이진 고갯마루의 돌무더기, 그리고 정갈하게 닦인 어느 집안의 사당까지. 현대인들</li>
+<li><a href="/column/col-9cba1a05fa1dadd573c36ccc">길 위에 서 있는 그대, 나만의 왕의 길 ‘왕도’를 설계하라</a> — 당신은 소비자인가? 개척자인가? 길은 어디에나 있다. 육지에는 자동차와 기차가 달리고, 바다에는 고기잡이배와 화려한 유람선, 거대한 항공모함이 파도를 가르며 나아간다. 하늘에는</li>
+<li><a href="/column/col-60db9674a55b07dd68d60417">무시무종(無始無終)의 우주관과 풍수의 지혜</a> — 시간 있는가? 시간은 인간 문명의 근간을 이루는 철학적 주제다. 대부분의 서구 문명은 시간에 시작과 끝이 있다는 선형적 구조를 전제했다. 이를 시종론(始終論)이라 한다. 기독교의</li>
+<li><a href="/column/col-9c9b1e6d1db5ba5ec6c3bd0c">알면 과학이요, 모르면 미신이다</a> — 천지인 삼합으로 조화로운 홍익 디자인이 필요하다. 천지인(天地人)은 동양의 우주론과 한국풍수학에서 가장 핵심이 되는 개념이다. 이는 하늘(天), 땅(地), 사람(人)의 세 가지</li>
+<li><a href="/column/col-781aabdabf0fe8186b498945">풍수지리와 도시 정체성</a> — 한 시대의 공간은 그 사회가 간직해온 기억을 가장 선명하게 드러낸다. 아사달 문화에서 비롯된 동방 중심의 사유와 조선의 국호에 담긴 아침의 철학은 단순한 전통적 관념이 아니라,</li>
+<li><a href="/column/col-b0af7eb144c474ebf8cec238">전북을 걷다! 아는 만큼 보인다.</a> — 전북은 한국사에서 가장 많은 역사 인물을 배출한 지역 가운데 하나다. 고조선의 마지막 왕 준왕을 시작으로 백제의 무왕, 조선의 건국자 이성계의 뿌리, 웅치. 이치전투의 영웅 황진장</li>
+<li><a href="/column/col-cb936d959707b6c679fbf500">새만금, 이제 ‘국가 속의 국가’로 다시 설계할 때다</a> — 대한민국은 오래전부터 지역균형발전을 국가 도약의 핵심 전략으로 삼아왔다. 최근 대통령 선거에서도 모든 후보는 전국 어디서나 지역 균형발전이 가능한 나라를 만들겠다는 약속을 내세웠고</li>
+<li><a href="/column/col-4bc3d219ef5b00991c18ebd7">시간의 사유, 일월오봉도(日月五峯圖)로 이어지다</a> — 우리는 당연하게 일요일부터 토요일까지, 7일이라는 단위로 시간을 구분하며 살아왔다. 마치 자연의 법칙처럼 여겨지지만, 왜 하필 7일일까? 의문을 제기해 본다. 인류가 시간과 우</li>
+<li><a href="/column/col-88f467544d3f679e283fd133">새만금에 세계 평화의 씨앗을 뿌리자</a> — 새만금은 더 이상 간척지라는 기술적 성취에 머물러 있지 않다. 이곳은 인류 문명의 새로운 가능성을 품은 대지이며, 한민족의 역사와 미래가 공존하는 평화의 상징지로 재탄생할 준비를</li>
+<li><a href="/column/col-43ed3e8719fbc0d101cf728f">엄마의 밥상, 할머니의 주걱 K-푸드로 세계를 치유하다</a> — ‘엄마의 밥상, 할머니의 주걱’은 오래된 기억이나 추억이 아니다. 이는 세대를 잇는 정서이며, 한국인의 몸과 마음을 돌보아온 생활 속 치유와 힐링의 문화다. 오랜 시간 한국인은 따</li>
+<li><a href="/column/col-0d3e7360e4d07f5646889247">치유밥상으로 농촌관광 1억 명 시대를 준비하자</a> — 웰니스 관광과 2036년 하계올림픽 유치 전북특별자치도는 대한민국 농업과 전통문화의 중심지이자, 디지탈노마드시대 웰니스 관광의 거점으로 도약할 잠재력을 지니고 있다. 전 세계가</li>
+<li><a href="/column/col-0cc45662f569b6f9d0d2f9c0">한국 전통무예와 양생술 ‘심신기(心身氣) 삼법 수련’</a> — 한국 전통무예와 양생술을 함께 수련하는 것은 몸과 마음, 그리고 기(氣)를 동시에 건강하게 만드는 방법이다. 필자는 오랜 경험을 통해 심신기(心身氣) 삼법 수련이 한국 전통무예의</li>
+<li><a href="/column/col-61194e758982214c0eeec4e3">동학! 역사의 숨결을 되살리며</a> — 동학 농민운동은 단순한 지역적 사건이 아닌 전국적인 민중의 연대와 저항으로 우리 역사의 흐름을 바꾸어 놓았다. 전라도를 비롯해 충청도, 경상도, 강원도, 황해도, 서울, 경기 등</li>
+<li><a href="/column/col-3d413a16425308f838f3fbc7">저출산 위기, 생명력 있는 국가로 가는 혁신적 해법이 필요하다</a> — 대한민국의 저출산 문제는 단순한 인구 감소가 아닌 국가의 존립과 지속 가능성을 위협하는 심각한 위기다. 결혼 기피와 출산율 하락의 근본 원인은 경제적 불안과 미래에 대한 불확실성에</li>
+<li><a href="/column/col-7eb6840f9f4d50c4ecef5fba">‘자유, 평등, 평화’ 더 나은 세상을 위하여</a> — 지난 3년 동안, 우리는. 전북도민일보에 ‘걸어서 역사 속으로, 인물 속으로, 풍류 속으로 ,동학 속으로’라는 제목으로 역사 탐방 기고문을 작성해왔습니다. 그 여정을 통해 우리 역</li>
+<li><a href="/column/col-7979ec81fc42d1015ace6632">어머니의 이름으로…</a> — 우리가 일상에서 부르는 어머니 호칭은 모친, 엄마, 어미, 맘, 마미 등 다양하고도 많다. 호칭으로서 어머니는 과연 어떤 존재로서의 의미일까? 그리고 어머니의 은혜와 사랑은 무엇인</li>
+<li><a href="/column/col-52d13a700c3de11802c9a3f4">이순신 다음 전라도를 지킨 ‘황진’ 장군</a> — 우연히 전북도민일보 11월 2일자 기획특집 ‘걸어서 인물 속으로’ 기사를 읽었다. 큰 제목이 ‘왜적 맞서 전라도 지킨 영웅-‘임진왜란 명장’황진 장군’이다. 평소 지방신문을 조금은</li>
+<li><a href="/column/col-d5ee6a8bf74059aa0b3e551c">희망의 정치는 존재하는가!</a> — 제20대 총선이 1년 앞으로 다가왔다. 대선을 앞둔 내년 총선은 의회 의석의 과반을 차지하려는 여·야간의 정치적 사활이 걸린 치열한 승부를 벌일 것으로 예상한다. 이번 4월 29</li>
+<li><a href="/column/col-f3e8a143a811df132ed440ea">운(運)을 좋게 하는 삶의 지혜</a> — 을미년(乙未年) 양의 해가 시작되었다. 오행에서 을(乙)은 목(木)에 속하며 청이므로 올해는 파란 양(靑羊)의 해가 된다. 양띠의 사주를 타고 태어난 사람은 인정이 많고, 생각이</li>
+<li><a href="/column/col-aad22bd79033c72c67b88c42">디자인과 기업가 정신</a> — 디자인이란? 시를 쓰고, 작곡을 하고, 화가가 그림을 그리는 것과 건축가가 건축물을 기획하고 실행하는 행위 등을 말한다. 또한, 사랑하는 가족을 위해 반찬을 만들고, 음식을 예쁜</li>
+<li><a href="/column/col-262e23704fb9d7c97c87d651">신 유목민 시대!</a> — 2030년 8월 25일 월요일 아침 6시! 서울 양재동 남부버스터미널은 지방으로 가는 출근버스를 타기 위해 많은 사람들이 모여들고 있다. 주말을 가족과 함께 보낸 탓인지 모두 활기</li>
+<li><a href="/column/col-b753e67d4f1f11c5dae644b5">사회적 난제 해결의 ‘숙의(熟議)적 공론화’</a> — 특권 계층의 왜곡된 행복의 가치는 담론화 과정에서 ‘논의하는 법’을 잊어버리게 하였다. 1990년대 이후 논쟁의 중심에 있었던 안면도 및 굴업도, 부안에 설치하려 했던 방폐장은 국</li>
+<li><a href="/column/col-492fe9e2449f1dae948d6dba">태권도 정신으로 거듭나는 무주!</a> — 21세기 대한민국의 변화는 태권도인의 성지가 될 무주 태권도원에서부터 시작될 것 같다. 무주는 국기인 태권도를 “호국 무도”로서 계승·발전시키기 위하여 수년간의 대규모 공사를 마무</li>
+<li><a href="/column/col-abea642f2d214ddb07ca9f96">안전한 도시 만들기!</a> — 근대화 과정에서 국민의 안전을 도외시한 건설공정은 1994년 성수대교 붕괴를 시작으로 삼풍백화점 붕괴 및 대구 지하철 화재 참사 등 크고 작은 사건들을 발생케 하였다. 이처럼 안전</li>
+<li><a href="/column/col-a4d86f405aca930a4d191cd3">아파트 공화국에 산다는 것</a> — 아파트의 역사는 로마시대로 거슬러 올라간다. 아파트의 시발점이라 할 수 있는 로마시대의 공동주택이었던 인슐라(insula)는 당시 주로 하층 노동자들의 주거수단으로 활용되었다. 하</li>
+<li><a href="/column/col-96ef2948d84da60a20e394c1">덕진경기장 해법은 결국 ‘초고층 아파트’인가?</a> — 현실성 없는 컨벤션사업의 관철을 위한 주택사업(APT)으로의 전환 지난 12월 전주 덕진경기장 부지의 분리개발 사업이 전주시 의회에서 가결되었다. 따라서 종합경기장 총 부지면적 1</li>
+<li><a href="/column/col-b98060f719b9bfe92901c448">철거와 보존의 방식을 넘어서 진화로</a> — 전주종합경기장을 바라보며 우리는 새것과 오래된 것에 대한 희망과 향수가 있다. 새것에 대한 동경은 두근거림과 신선함이라면, 오래된 것은 친숙함과 따뜻한 기억이 아닐까? 오랫동안 우</li>
+<li><a href="/column/col-b0fdfbadbe474dbee501191b">자치행정을 위한 ‘의회와 시민사회’의 역할</a> — 우리나라는 지난 1995년 지방자치단체장과 지방의회 선거를 통해서 실질적인 지방자치 시대를 열었다. 지방자치의 본질이 구현되기 위해서는 두 가지의 기본적인 조건이 충족되어야 하는데</li>
+<li><a href="/column/col-1c2b45735d94054c37c8f202">새로운 곳으로 나를 보내자</a> — 우리는 막연한 현실 속에서 희망과 꿈을 꾼다. 인생 로또를 꿈꾸고, 영화 같은 연인, 환상적인 직장을 희망한다. 어딘가에 나를 위한 참된 삶이 있다고 믿지만, 사실 그곳엔 냉정한</li>
+<li><a href="/column/col-191cb8709831babdf7581128">‘창조적 전주’ 에코시티의 바람직한 방향</a> — 에코시티는 2005년 12월 35사단 부지 활용방안에 대한 공개토론회를 시작으로 2006년 3월 전주시와 민간사업자 협약을 체결하고, 35사단 부지를 포함하는 덕진구 호성동, 송천</li>
+<li><a href="/column/col-2b90781ee59ae71721708d04">‘길’ 잃어버린 재건축·재개발</a> — 재개발 및 재건축의 기본적 의도는 주거환경 개선뿐 아니라 공공성 강화, 자산 증식 등 사회 구성원 모두에게 긍정적인 효과를 가져다 줄 수 있는 취지에서 시작된다. 그러나 현실은 불</li>
+<li><a href="/column/col-dc3dc061ed122c897945f6d2">신뢰는 어디로부터 오는 것일까?</a> — 흔히 농담 삼아 ‘세상에 믿을 놈 하나 없다’라는 말을 자주 한다. ‘믿지 못할 놈’은 누구이고 ‘믿을 놈’은 누구일까? 개개인에게 있어서 믿음은 한 사람의 인격을 평가하는 기준이</li>
+<li><a href="/column/col-0486a18db7695b7f885eef5b">진정한 ‘영화인’을 위한 축제</a> — 연극의 3요소는 작가가 쓴 희곡, 무대에서 연기하는 배우, 그리고 공연을 관람하는 관객으로 구성된다. 이 세 분야의 사람들이 각자의 역할을 다 할 때 성공적인 공연이 되는 반면,</li>
+<li><a href="/column/col-31d9e148400f4264716e9b7a">전주의 근대사‘덕진 종합경기장’역사 속으로…</a> — 전라북도 체육계의 요람이자 전주지역 근대사의 자랑 이었던 ‘덕진 종합경기장’이 이제 그 역할을 충실히 다하고 다음 주인을 기다리고 있다. 아쉽게도 후임 공연자를 위해 역사의 무대</li>
+<li><a href="/column/col-b6e765e486e739f7e77c1343">광화문에 한글 현판을 달자!</a> — 최근 광화문 한자 현판의 균열로 인하여 또 다시 한자 현판 표기를 놓고 뜨거운 논쟁에 빠지고 있다. 광화문 현판이 모습을 드러낸 지 석 달 만에 육안에 보일정도로 균일이 생긴 것은</li>
+<li><a href="/column/col-6b919fbeb11173fd24dbf6b4">한국의 다문화 가정에 대한 제고</a> — 다문화 가정이란 우리나라 국적을 가진 국제결혼 가정은 물론, 우리나라에 장/ 단기 거주하는 외국인 가정과 불법체류자의 가정까지도 모두 포함하여 부르는 말이다. 단일민족으로 자긍심을</li>
+<li><a href="/column/col-79e93db760a054e4c2eaa4c7">‘사람만이 희망이다’</a> — ‘소 읽고 외양간 고친다.’ 는 말을 자주 쓴다. 외양간 수리를 미루다 소를 잃을 수 있다는 말로 예방과 준비를 강조하는 속담이다. 새해 들어 구제역 파동이 전국을 강타하고 있다.</li>
+<li><a href="/column/col-0b0d3fb5591e6ed917a51814">성공은 시작보다 마무리가 중요하다</a> — 우리는 시작의 중요성을 항상 강조해왔다. ‘시작이 반’이라는 말이 있듯이 시작은 결과를 이끌어내는, 위대한 첫걸음이고 찬란한 미래를 가져 올 수 있는 성공의 출발선이다. 미국의 기</li>
+<li><a href="/column/col-f1baf608795e2ccab054b0e9">`한글&#39; 선택의 문제인가?</a> — 최근 광화문 복원과 더불어 한글현판에 대한 논의가 한참이었다. 지난 40년간 걸려 왔던 한글현판에 대한 지속성과, 한자현판에 대한 복원은 많은 논쟁을 부르고 말았다. 이러한 논란은</li>
+<li><a href="/column/col-9b0a37fcbc6a615d82b8e4cd">만성화된 추석 후유증! 가족의 배려가 요구된다</a> — 가을하면 떠오르는 것은 만국기 펄럭이는 가을운동회와 황금빛으로 물든 노란 들녘의 추석 일 것이다. 어릴 때 운동회는 동네 사람들이 어울리는 마을 잔치였다. 어린 학생들과 엄마, 아</li>
+<li><a href="/column/col-ee1a9f48fba038cee39570ea">“나눔” 은 소통의 예술이다</a> — 우리는 흔히 인간을 사회적 동물이라고 한다. 사회적 동물이란 무엇일까? 세상과 더불어 자신의 존재감을 가지고 살아가는 의미이다. 즉 다시 말해서 서로 소통하고, 의지하면서 무엇인가</li>
+<li><a href="/column/col-8c4c244eeb3342aeae40bbae">신구(新舊)의 조화(調和)</a> — 오랜 역사를 품고 있는 도시에는 향기가 나게 마련이다. 그 향기는 독립된 유적지나 단일 장소에서 나오는 것이 아니라 도시전체에서 은은히 베어 나오는 차(茶)향기와 같은 것이다. 사</li>
+<li><a href="/column/col-d48fcc0f9eda93ba5ee663f0">큰 바위 얼굴을 기다리며....</a> — 지역의 발전과 미래를 위한 인재를 가려내는 것은 힘겨운 일이 아닐 수 없다. 역사는 그 시대에 걸 맞는 인재가 등장한다고 말하고 있고 우리는 그들을 기다리고 있다. 이 시대는 우리</li>
+<li><a href="/column/col-1a1f4a098f7e59984e2b5104">역사보존에서 `대중의 역할&#39;</a> — “대중’의 역할” 일반적으로 “역사 보존” 하면 오래된 성곽을 복원하거나, 역사적 사실이 있는 곳에 기와지붕을 만드는 이미지가 연상 된다. 유형문화의 보존에 대한 하나의 고정관념</li>
+<li><a href="/column/col-5395709ce6836983f674c865">‘효(孝)’ 없는 효자비</a> — ‘효(孝)’ 정신문화의 계승 전통문화 유산에는 눈에 보이는 형태의 유형문화재와 보이지 않는 무형문화재가 있다. 무형과 유형의 유산은 우리의 정신문화와 물질문화의 정수이며 대표적</li>
+<li><a href="/column/col-abd270876b0c75d4e9bfcc84">참 된 소유의 행복</a> — 2010년 경인년 새해가 밝아오자?세상이 온통 백호랑이 얘기로 절정을 이루고 있다. 평소 존경하는 선배님께서 올해 새해 인사를 백호출림(白虎出林)으로 시작하셨다. 이는 가장 용맹스</li>
+<li><a href="/column/col-205308bb2e061446268e5073">한국형 주거 커뮤니티 모델</a> — 최근 미국에서의 주택재개발 사업은 “공급자 중심”의 주체에서 수요자인 입주자 주도의 “동호인 주택(Co-housing)”이 도시 내?외곽에서 빠른 속도로 확산되고 있는 실정이다.</li>
+<li><a href="/column/col-71b1c544a47c4aa81c2ae168">도덕적 환경주의</a> — 최근 4대 강 개발 사업에 관한 논쟁이 활발하다. 찬성론과 반대론이 연일 언론의 뜨거운 감자로 부상하고, 옳고 그름에 대한 가치와 논쟁의 기준이 끊임없이 혼동되는 상황이다. 사실</li>
+<li><a href="/column/col-4d3d97325cae7140e2a9eaca">아파트정책 원점에서 다시 생각해야 한다</a> — 지난 2003년 도시 및 주거환경정비법이 발표되고 정부는 무분별한 난개발(難開發)을 방지하고자 50만이상의 시에서는 의무적으로 “도시기본계획”을 수립하게 하였다. 전주시 또한 20</li>
+<li><a href="/column/col-2ad84022538103a2329f8522">고령사회를 위한 우리의 태도와 정책방향</a> — 근대화의반성 근대성(近代性)은 근대화를 경험하면서 겪어가는 자기반성의 합리적 이성이다. 근대화가 우리나라 경제?사회?문화 환경의 외관적 형태의 발전이었다면 근대성은 근대화 환경을</li>
+<li><a href="/column/col-8c2d0220c66c0576b553d649">‘공공의 장’ 과 합리적 의사결정</a> — 우리는 관료적인 산업화 구조 속에서 지도자에 의한 일방적(一方的) 경영방식에 길들여져 왔다. 그 구조 속에서 수많은 갈등과 오해를 불러 왔는데, 그 원인은 민주적 절차에 따른 상호</li>
+<li><a href="/column/col-830ae2dc342b30c5794c5809">전주객사와 풍패지관(豊沛之館)</a> — 올해로 10번째를 맞는 전주 국제영화제는 명실 공히 국제영화제로서 손색이 없는 듯 중앙동과 고사동의 비좁은 문화 거리마다 해외와 전국 각지에서 온 영화예술인 들과 관람객들로 인산인</li>
+<li><a href="/column/col-e068407bc9d616d956087008">용산참사의 희생을 헛되이 하지 말라!</a> — 지난 1월 19일 서울 한복판 용산의 대로변에서 벌어진 참사를 기억할 것이다. 어제까지의 이웃이고, 소주 한 잔에 고단한 삶을 이야기 나누던 이웃들이 돈 이라는 괴물 때문에 이웃도</li>
+<li><a href="/column/col-5f6e6a183982930a44ffba21">시련의 풍남문(豊南門) 전주의 역사다</a> — 전주에는 첫 글자가 “풍”자로 시작하는 단어가 많다. 풍남제(豊南祭), 풍남문(豊南門), 풍남(豊南)초등학교, 객사의 풍패지관(豊沛之館) 등이다. “풍(豊)”자는 풍요로움을 뜻하</li>
+<li><a href="/column/col-f74ba8fe83c41240152ea153">4·29 선거 무분별한 개발공약 남발 말아야</a> — 모든 사람들은 거의 매일 선택에 직면하고 있다. 오늘은 누구를 만나서 어떤 대화를 하고 점심은 어디서 누구와 무엇을 먹을까? 저녁엔 또 누구와 무엇을 할 것인지 고민을 한다. 또한</li>
+<li><a href="/column/col-f3825ecd4854d469a78d8b4b">기본을 중시하는 희망 청사진을 만들어야 한다</a> — 이명박 정부의 출범 초기부터 부동산규제완화에 대한 기대감이 컸었다. 이는 성장과 개발보다는 분배와 사회적 책임에 대한 비중이 높았던 참여정부 시절, 소위 강남으로 표현되는 가진 자</li>
+<li><a href="/column/col-eee940686f57d072adf296ba">주택개발사업은 주민과의 대화에서 이뤄진다</a> — 지난 연말 개발예정지역의 한 사우나에서 있었던 일이다. 필자는 직업상 사업대상 부지를 돌아 보고난 후에는 의도적으로 지역의 사우나를 찾는 습관을 가지고 있다. 탕에 있다 보면 서로</li>
+<li><a href="/column/col-f4244c83e59cabe3a1390660">재개발 ! 구명조끼가 필요한 때다</a> — “수영으로 강을 건너는데 목적지에 도달하지도 못하고 그만 중간 지점에서 힘이 빠져 오도 가도 못하는 상황이 되었다. 그때 애꿎은 비만 내리고 물결은 더욱 거세지기 시작한다.”</li>
+<li><a href="/column/col-d44b55ed923b8894a74ed1e5">영세업자 주거권, 공공이 일정 부분 책임져야</a> — 참여정부시절 부동산투기를 근절하기위한 고 강도 억제 수단으로서 수차례에 걸쳐 재개발, 재건축등의 법령규제를 강화하는 등 여러 분야에서 참으로 많은 규제 강화 정책을 남발하였다.</li>
+<li><a href="/column/col-0577989dcbdf581959a4dfd5">동학! 역사의 숨결을 되살리며</a> — 자주 독립을 위한 강력한 불씨</li>
+<li><a href="/column/col-4083bf2fb656b126253e7683">전주, 우주가(宇宙家)의 중심 도시를 준비하다</a> — 전주는 이 집우(宇)의 철학을 도시 차원에서 가장 온전히 간직해온 공간이다</li>
+<li><a href="/column/col-ead1d5f5861fe84fab2e3998">길 위에 서 있는 그대, 나만의 왕의 길 ‘왕도’를 설계하라</a> — 당신은 소비자인가? 개척자인가?</li>
+<li><a href="/column/col-deb33980c72c7745a10e86a4">무시무종(無始無終)의 우주관과 풍수의 지혜</a> — 시간 있는가?</li>
+<li><a href="/column/col-3270aaa5e06ae7fbcb8ad462">한국인의 귀신론(鬼神論)과 건축적 사유</a> — 산세와 물길을 따라 걷다 보면, 우리는 늘 보이지 않는 존재들과 조우한다. 마을 어귀의 당산나무, 굽이진 고갯마루의 돌무더기, 그리고 정갈하게 닦인 어느 집안의 사당까지. 현대인들</li>
+<li><a href="/column/col-ca8f7fb1ade4198f4c8c7152">도시 디자인과 통풍유수</a> — 풍수는 묘자리나 찾는 기술이 아니다</li>
+<li><a href="/column/col-b3d639707f310b5154c26f82">땅의 숨결 위에 삶의 항로를 그리다</a> — 양택,음택을 알아야 디자인이 보인다.</li>
+<li><a href="/column/col-f96c791d1d41d3f63f5338a2">건축가가 살핀 조선 왕조의 명암…</a> — 신작 ‘왕의 길’ 출간</li>
+<li><a href="/column/col-721237cd8cb2a7d13d015461">[건축사 백승기칼럼] 왕의 길에서 찾은 시대의 문법… “당신이 중심을 잡는 순간, 당신이 곧 왕이다”</a> — 건축가 백승기 박사가 던지는 화두, 500년 조선 설계도에서 배운 ‘중심 잡기의 원리’</li>
+<li><a href="/column/col-c9f703a76ace5f82c50dc65d">누가 검은색을 어둠이라 하는가, BTS가 증명한 지혜의 갈무리</a> — 검은색에 쏟아진 비판, 그 너머의 본질적 진실을 읽다</li>
+<li><a href="/column/col-5c09ff5030526e8d9f241b1c">“국민이 곧 왕”…</a> — ‘왕의 길’ 출판기념식, 시민주권 담론 뜨겁게 조명</li></ul>
+<p><a href="/">뱅기노자 홈</a></p>
+</main>
+</div>
+
+<script>
+  // 등록되어 있을 수 있는 모든 Service Worker 즉시 해제 — 옛 캐시가 새 빌드를 가리는 일을 방지.
+  (function () {
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => { try { r.unregister(); } catch {} });
+        }).catch(() => {});
+      }
+      // CacheStorage(=Cache API) 도 마이그레이션 시점에 한 번 비움.
+      if (typeof caches !== 'undefined' && caches.keys) {
+        caches.keys().then((keys) => {
+          keys.forEach((k) => { try { caches.delete(k); } catch {} });
+        }).catch(() => {});
+      }
+    } catch {}
+  })();
+  // SPA fallback 복원 — 404.html이 ?p=/community 같은 형태로 리다이렉트시켰으면
+  // 진짜 경로를 복원해 클라이언트 라우터가 인식하게 한다.
+  (function () {
+    try {
+      var url = new URL(location.href);
+      var p = url.searchParams.get('p');
+      if (p) {
+        history.replaceState(null, '', p);
+      }
+    } catch {}
+  })();
+  // 조건부 HTTPS 강제 (v00.064) — SSL 도입 후 콘솔에서 opt-in:
+  //   localStorage.setItem('bgnj_force_https', '1')
+  // 활성화 시 http:// 진입을 즉시 https:// 로 redirect. SSL 미도입 환경에서 활성화 금지 (사이트 접속 불가).
+  (function () {
+    try {
+      if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        if (localStorage.getItem('bgnj_force_https') === '1') {
+          location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+        }
+      }
+    } catch {}
+  })();
+</script>
+
+<!-- v00.161 — production build (~3MB ↓ vs development). SRI 재계산 (sha384). -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+<!-- v00.109 — DOMPurify (XSS fix). 모든 dangerouslySetInnerHTML 호출이 BGNJ_SAFE_HTML 헬퍼로 sanitize. SRI hash 검증. -->
+<script src="https://unpkg.com/dompurify@3.4.2/dist/purify.min.js" integrity="sha384-AX0sZ/phUL4R6LAFP+mob0mJIWg2c3PX8wPn48ctytOl7XKfRQHbakBt5/QID7uh" crossorigin="anonymous"></script>
+<!-- v00.071 — @babel/standalone 제거. JSX 는 tools/build.mjs (esbuild) 가 사전 컴파일 → *.js. -->
+<!-- 효과: "in-browser Babel transformer" 경고 사라짐, 첫 로드 ~3MB ↓, JSX 컴파일 시간 0. -->
+<!-- 유지보수: pre-commit hook 이 매 커밋마다 자동 빌드. 수동: `node tools/build.mjs`. -->
+<!-- 감시 모드: `node tools/build.mjs --watch` (개발용). -->
+<!-- (빈 슬롯 — 향후 다른 CDN 추가 시 여기에) -->
+
+<!-- Tiptap v3 via ESM — exposes factories to window.BGNJ_TIPTAP. v00.090: Tiptap 3 메이저 마이그레이션. -->
+<!-- v3 변경점: StarterKit 이 Underline / Link / Dropcursor 를 기본 포함 → standalone import 제거. -->
+<!-- Link / Dropcursor 의 config 는 StarterKit.configure({ link: {...}, dropcursor: {...} }) 로 이전. -->
+<script type="module">
+  import { Editor } from 'https://esm.sh/@tiptap/core@3.22.5';
+  import StarterKit from 'https://esm.sh/@tiptap/starter-kit@3.22.5';
+  import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder@3.22.5';
+  import Image from 'https://esm.sh/@tiptap/extension-image@3.22.5';
+  import Typography from 'https://esm.sh/@tiptap/extension-typography@3.22.5';
+  import Highlight from 'https://esm.sh/@tiptap/extension-highlight@3.22.5';
+  import TextAlign from 'https://esm.sh/@tiptap/extension-text-align@3.22.5';
+  import Subscript from 'https://esm.sh/@tiptap/extension-subscript@3.22.5';
+  import Superscript from 'https://esm.sh/@tiptap/extension-superscript@3.22.5';
+  import TaskList from 'https://esm.sh/@tiptap/extension-task-list@3.22.5';
+  import TaskItem from 'https://esm.sh/@tiptap/extension-task-item@3.22.5';
+  import Color from 'https://esm.sh/@tiptap/extension-color@3.22.5';
+  // v00.105 — Tiptap 3: text-style / table 는 default export 없음 (esm.sh 확인). named import.
+  import { TextStyle } from 'https://esm.sh/@tiptap/extension-text-style@3.22.5';
+  import { Table } from 'https://esm.sh/@tiptap/extension-table@3.22.5';
+  import TableRow from 'https://esm.sh/@tiptap/extension-table-row@3.22.5';
+  import TableCell from 'https://esm.sh/@tiptap/extension-table-cell@3.22.5';
+  import TableHeader from 'https://esm.sh/@tiptap/extension-table-header@3.22.5';
+  import Youtube from 'https://esm.sh/@tiptap/extension-youtube@3.22.5';
+  window.BGNJ_TIPTAP = {
+    Editor, StarterKit, Placeholder, Image, Typography,
+    Highlight, TextAlign, Subscript, Superscript,
+    TaskList, TaskItem, Color, TextStyle,
+    Table, TableRow, TableCell, TableHeader, Youtube,
+  };
+  window.dispatchEvent(new Event('wsd-tiptap-ready'));
+</script>
+<!-- 정적 자산 cache-busting — 새 버전 배포 시 ?v= 값을 갱신해 브라우저가 옛 JS 를 쓰지 않도록.
+     단일 출처: BGNJ_VERSION 과 같은 문자열을 유지. check-version 훅이 일치 검증.
+     v00.285 Stage 3 — per-file 22개 <script> → 단일 번들 dist/app.js.
+       엔트리 src/entry-main.jsx 가 기존 로드 순서대로 side-effect import. tools/build.mjs --bundle 산출.
+       admin(dist/admin.js)은 boot 가 route 진입 시 동적 주입(코드 스플리팅 유지). -->
+<script defer src="/dist/app.js?v=00.296.000"></script>
+</body>
+</html>
