@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.296.000",
+    version: "00.296.001",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -6166,6 +6166,8 @@
     CookieConsent: _MemoCookieConsent,
     PastBoardList
   });
+  window.CoverPlaceholder = CoverPlaceholder;
+  window.PastBoardList = PastBoardList;
 
   // components/TiptapEditor.jsx
   var TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, onBusyChange, placeholder = "\uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694..." }) => {
@@ -7369,6 +7371,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     pickPrimaryImage,
     BGNJ_GALLERY_MAX: MAX_IMAGES
   });
+  window.MediaGalleryEditor = MediaGalleryEditor;
+  window.MediaGalleryView = MediaGalleryView;
 
   // pages/HomePage.jsx
   var HomeSectionBoundary = class extends React.Component {
@@ -11238,6 +11242,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     )), /* @__PURE__ */ React.createElement("p", { style: { fontFamily: "var(--font-reading)", fontSize: 14, lineHeight: 1.8, color: "var(--ink)", whiteSpace: "pre-wrap" } }, r.text)))));
   };
   Object.assign(window, { TourQuickAddModal });
+  window.TourQuickAddModal = TourQuickAddModal;
 
   // pages/ColumnPage.jsx
   var ColumnPage = ({ go, user }) => {
@@ -13413,6 +13418,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     )), /* @__PURE__ */ React.createElement("p", { style: { fontFamily: "var(--font-reading)", fontSize: 14, lineHeight: 1.8, color: "var(--ink)", whiteSpace: "pre-wrap" } }, r.text)))));
   };
   Object.assign(window, { LectureQuickAddModal });
+  window.LectureQuickAddModal = LectureQuickAddModal;
 
   // pages/LegalFaqPages.jsx
   var G = window.BGNJ_GUARD || {

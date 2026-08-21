@@ -26,7 +26,7 @@
      · frame-ancestors / X-Frame-Options 는 HTTP 헤더 전용 — GitHub Pages(정적 호스팅)는 헤더 주입 불가라
        <meta> 로는 브라우저가 무시(콘솔 경고만 남김). v00.284.002 에서 제거. 클릭재킹 방어가 필요하면
        Cloudflare(워커/Pages) 같은 헤더 가능한 경유지에서 HTTP 헤더로 설정해야 실효. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-K/hYZs+DP7lWTp/8qMKJe4Lve8SjliU4QrNbq+9hTpk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-FmcsoIJQqDMHit+0EhXTiYGf7NmIYm31HAS8SQyq18M='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta property="og:title" content="[2박3일 전북을 걷다] 02. 부안군 — 뱅기노자">
 <meta property="og:description" content="갯벌에서 생명의 밭 일궈 수천년간 켜켜이 쌓인 조상의 발자취-패총 삼면이 바다인 우리 강토는 담수와 해수가 동거했다. 하늘의 조화로 민물과 짠물이 어우러진 생명의 밭에서 밀물과 썰물이 드나들던 달 빛 그림자 갯벌을 보았는가? 조상님들 신단수 마을마다 단골네 생명문화 일으켰다. 수렵 어…">
 <meta property="og:type" content="website">
@@ -47,7 +47,7 @@
 <!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=00.296.000">
+<link rel="stylesheet" href="/styles.css?v=00.296.001">
 
 
 <link rel="canonical" href="https://bgnj.net/community/38">
@@ -198,6 +198,6 @@
      v00.285 Stage 3 — per-file 22개 <script> → 단일 번들 dist/app.js.
        엔트리 src/entry-main.jsx 가 기존 로드 순서대로 side-effect import. tools/build.mjs --bundle 산출.
        admin(dist/admin.js)은 boot 가 route 진입 시 동적 주입(코드 스플리팅 유지). -->
-<script defer src="/dist/app.js?v=00.296.000"></script>
+<script defer src="/dist/app.js?v=00.296.001"></script>
 </body>
 </html>

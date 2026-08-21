@@ -1158,6 +1158,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }
     return { counts, labels };
   };
+  window.HeatmapGrid = HeatmapGrid;
 
   // pages/admin/AdminContentEditors.jsx
   var RecommendationsAdminPanel = () => {
@@ -3850,6 +3851,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     BannerEditorPanel
     // v00.257
   });
+  window.KindPagePanel = KindPagePanel;
+  window.LecturePageEditorPanel = LecturePageEditorPanel;
+  window.TourPageEditorPanel = TourPageEditorPanel;
 
   // pages/admin/AdminDesignHub.jsx
   var ADMIN_VERSION_HISTORY = [
@@ -8820,6 +8824,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       name
     ))), /* @__PURE__ */ React.createElement(Active, null));
   };
+  window.HangyeonAdminPanel = HangyeonAdminPanel;
 
   // pages/admin/AdminLogin.jsx
   var LegalModal = ({ slug, onClose }) => {

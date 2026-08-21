@@ -861,3 +861,67 @@ node tools/csp-hashes.mjs   →   node tools/build.mjs   →   node tools/seo-bu
   커밋해야 한다. GitHub Actions 로 하루 1회 자동화할 수 있다 — **사용자 판단 대기.**
 - 구글 서치콘솔 · 네이버 서치어드바이저에 사이트를 등록하고 sitemap 을 제출해야 실제로 색인이 시작된다.
   **이건 사람이 계정으로 해야 하는 일이다.**
+
+---
+
+## 20. `<window.X/>` 로 쓰는 컴포넌트 11개가 등록돼 있지 않았다 (v00.296.001 — 완료·배포됨)
+
+사용자 보고: 관리자 '한켠 예약' 탭에서 `Minified React error #130`.
+
+### React #130 = '그리려는 컴포넌트가 undefined'
+
+`AuthAdminPage.jsx:1190`
+
+```jsx
+{tab === "한켠 예약" && HangyeonAdminPanel && <window.HangyeonAdminPanel/>}
+//                     ↑ import 한 것(정의됨)     ↑ window(undefined)
+```
+
+**가드는 import 를 보고 렌더는 window 를 본다.** 그래서 가드를 통과한 뒤 undefined 를 렌더한다.
+
+### 뿌리 — v00.287 ESM 전환의 잔재
+
+각 파일이 `window.X = X` 로 등록하던 것을 ESM export 로 바꾸면서 **등록만 사라지고
+사용처는 `<window.X/>` 그대로 남았다.** `MediaGallery.jsx` 는 주석에 "window 병행" 이라고
+적혀 있는데 실제 코드가 없었다 — 주석이 거짓말을 하고 있었다.
+
+전수 조사: `<window.X/>` 로 쓰는 컴포넌트 **14개 중 11개가 미등록.**
+
+| 미등록 | 정의 위치 |
+|---|---|
+| CoverPlaceholder · PastBoardList | `components/Shell.jsx` |
+| MediaGalleryEditor · MediaGalleryView | `components/MediaGallery.jsx` |
+| HangyeonAdminPanel | `pages/admin/HangyeonAdminPanel.jsx` |
+| HeatmapGrid | `pages/admin/AdminShared.jsx` |
+| KindPagePanel · LecturePageEditorPanel · TourPageEditorPanel | `pages/admin/AdminContentEditors.jsx` |
+| LectureQuickAddModal | `pages/LecturesPage.jsx` |
+| TourQuickAddModal | `pages/WangsanamTourPage.jsx` |
+
+### 증상이 두 갈래라 더 늦게 발견됐다
+
+| 가드가 보는 것 | 결과 |
+|---|---|
+| `{window.X && <window.X/>}` | **조용히 렌더 안 됨.** 오류도 없이 기능만 사라진다 — 관리자 한켠 탭의 사진 편집이 그렇게 없어져 있었다 |
+| `{X && <window.X/>}` | **undefined 렌더 → React #130, 화면 전체 crash** — 한켠 예약 · 자고 놀자 · 강연/투어 페이지 편집 |
+
+즉 **관리자 탭 여러 개가 깨져 있거나 기능이 비어 있었다.** 한켠 예약만의 문제가 아니었다.
+
+### 고친 방법
+
+사용처를 건드리지 않고 **정의 파일 끝에 `window.X = X` 를 복원**했다. 회귀 위험이 가장 작고,
+각 파일이 주석으로 이미 약속하던 상태로 되돌리는 것이다. ESM export 는 그대로 둔다.
+
+### 재발 차단 — `tools/check-globals.mjs`
+
+`<window.X/>` 를 쓰는데 등록이 없으면 커밋을 막는다. `Object.assign(window, {...})` 형태도 등록으로 인정한다(AdminShared 가 그 방식).
+
+- 만들고 나서 **일부러 위반 파일을 넣어 잡히는 것을 확인**하고 지웠다.
+- pre-commit 훅에 `check-globals` · `check-hooks` 둘 다 추가했다.
+  **둘 다 '오류 없이 화면만 깨지는' 종류**라 사람 눈으로는 늦게 발견된다 —
+  실제로 각각 운영에서 터진 뒤에야 만들었다.
+
+### 확인 못 한 것
+
+**화면을 눈으로 보지 못했다.** 번들에 등록 코드가 실린 것은 확인했다
+(`dist/admin.js` 에 `window.HangyeonAdminPanel=`, `dist/app.js` 에 `window.MediaGalleryEditor=`).
+관리자 각 탭이 실제로 뜨는지는 사용자 확인이 필요하다.

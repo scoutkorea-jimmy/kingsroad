@@ -41,6 +41,13 @@ git -C "$ROOT" add -u 'pages/admin/AdminDesignHub.jsx' 'index.html' 2>/dev/null 
 node "$ROOT/tools/build.mjs"
 # 6) 신택스 + 룰 검증.
 node "$ROOT/tools/check-syntax.mjs"
+
+# v00.296.001 — 두 가지를 더 막는다. 둘 다 '오류 없이 화면만 깨지는' 종류라
+#   사람 눈으로는 늦게 발견된다(실제로 각각 운영에서 터진 뒤에 만들었다).
+#   6) check-globals — <window.X/> 로 쓰는데 window 에 등록 안 된 컴포넌트 (React #130)
+#   7) check-hooks   — early return 뒤에 놓인 훅 (React #300/#310)
+node "$ROOT/tools/check-globals.mjs"
+node "$ROOT/tools/check-hooks.mjs"
 EOF
 chmod +x "$HOOK_FILE"
 

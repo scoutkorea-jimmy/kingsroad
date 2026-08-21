@@ -732,3 +732,11 @@ const HangyeonAdminPanel = () => {
 // (window 노출 제거 — ESM 전환 완료)
 
 export { HangyeonAdminPanel };
+
+// v00.296.001 — window 등록 복원.
+//   v00.287 ESM 전환 때 `window.X = X` 가 사라졌는데, 사용처는 `<window.X/>` 로 남아 있었다.
+//   가드가 window 를 보면 조용히 기능이 사라지고, import 를 보면 undefined 를 렌더해
+//   React #130 으로 화면이 통째로 깨진다(관리자 '한켠 예약' 탭에서 실제로 발생).
+//   사용처를 건드리는 대신 여기서 등록한다 — 회귀 위험이 가장 작다.
+//   tools/check-globals.mjs 가 이 짝이 어긋나면 커밋을 막는다.
+window.HangyeonAdminPanel = HangyeonAdminPanel;
