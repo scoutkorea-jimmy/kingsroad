@@ -186,6 +186,33 @@ const filterSortEvents = (items, { search = '', status = 'all', sort = EVENT_SOR
   return list;
 };
 
+// v00.301 — 목록을 '진행 중 / 마감' 으로 나눠 본다.
+//   사용자 요청: '투어프로그램에서는 진행중이랑 마감이랑 섹션을 구분해서 나눠서 관리하게'.
+//   판정은 filterSortEvents 를 그대로 재사용한다 — 위 필터 드롭다운과 기준이 어긋나면
+//   '예정' 으로 걸렀을 때와 '진행 중' 섹션의 내용이 달라져 신뢰를 잃는다.
+//   상태 필터를 이미 고른 경우(예정만/지난만)에는 나누지 않는다 — 한 덩어리가 답이다.
+const groupEventsByPeriod = (items, opts = {}) => {
+  const base = { ...opts, search: '' };   // 검색은 호출부에서 이미 적용된 목록이 들어온다
+  const groups = [
+    { key: 'upcoming', label: '진행 중', items: filterSortEvents(items, { ...base, status: 'upcoming' }) },
+    { key: 'past',     label: '마감',    items: filterSortEvents(items, { ...base, status: 'past' }) },
+  ];
+  // 일정이 안 잡힌 것은 위 두 곳 어디에도 안 들어간다(눈앞에서 사라지면 안 된다).
+  const undated = (Array.isArray(items) ? items : []).filter((x) => eventTimestamp(x) === 0);
+  if (undated.length) groups.push({ key: 'undated', label: '일정 미정', items: filterSortEvents(undated, base) });
+  return groups.filter((g) => g.items.length > 0);
+};
+
+const EventGroupHead = ({ label, count, tone }) => (
+  <div style={{
+    display:'flex', alignItems:'baseline', gap:10, marginTop:18, marginBottom:8,
+    paddingBottom:6, borderBottom:'1px solid var(--line)',
+  }}>
+    <span className="ko-serif" style={{fontSize:15, color: tone === 'past' ? 'var(--ink-3)' : 'var(--ink)'}}>{label}</span>
+    <span className="mono dim-2" style={{fontSize:11}}>{count}건</span>
+  </div>
+);
+
 const EventListToolbar = ({ search, onSearch, status, onStatus, sort, onSort, shown, total, placeholder }) => (
   <div className="card" style={{padding:'12px 14px', marginBottom:16, display:'flex', gap:10, alignItems:'center', flexWrap:'wrap'}}>
     <input className="field-input" style={{flex:1, minWidth:200}}
@@ -673,13 +700,28 @@ const LectureAdminPanel = ({ go }) => {
             {allLectures.length === 0 ? '관리할 강연이 없습니다.' : '조건에 맞는 강연이 없습니다. 필터를 바꿔 보세요.'}
           </div>
         ) : (
-          <div style={{display:'grid', gap:8}}>
-            {lectures.map((l) => (
-              <EventListRow key={l.id} item={l}
-                subtitle={`${l.topic || ''}${l.next ? ` · ${l.next}` : ''}${l.venue ? ` · ${l.venue}` : ''}`}
-                seats={window.BGNJ_LECTURES.getSeats(l.id)}
-                regCount={window.BGNJ_LECTURES.listRegistrations(l.id).filter((r) => r.status !== 'cancelled').length}
-                onOpen={() => openDetail(l.id)}/>
+          <div>
+            {/* v00.301 — 상태 필터를 이미 고른 경우에는 나누지 않는다. 한 덩어리가 답이다. */}
+            {(statusFilter !== 'all'
+              ? [{ key: 'all', label: null, items: lectures }]
+              : groupEventsByPeriod(lectures, {
+                  sort: sortKey,
+                  countOf: (l) => window.BGNJ_LECTURES.listRegistrations(l.id).filter((r) => r.status !== 'cancelled').length,
+                  seatsOf: (l) => window.BGNJ_LECTURES.getSeats(l.id).remaining,
+                })
+            ).map((g) => (
+              <section key={g.key}>
+                {g.label && <EventGroupHead label={g.label} count={g.items.length} tone={g.key}/>}
+                <div style={{display:'grid', gap:8}}>
+                  {g.items.map((l) => (
+                    <EventListRow key={l.id} item={l}
+                      subtitle={`${l.topic || ''}${l.next ? ` · ${l.next}` : ''}${l.venue ? ` · ${l.venue}` : ''}`}
+                      seats={window.BGNJ_LECTURES.getSeats(l.id)}
+                      regCount={window.BGNJ_LECTURES.listRegistrations(l.id).filter((r) => r.status !== 'cancelled').length}
+                      onOpen={() => openDetail(l.id)}/>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )
@@ -1277,13 +1319,28 @@ const TourAdminPanel = ({ go }) => {
             {allTours.length === 0 ? '관리할 투어가 없습니다.' : '조건에 맞는 투어가 없습니다. 필터를 바꿔 보세요.'}
           </div>
         ) : (
-          <div style={{display:'grid', gap:8}}>
-            {tours.map((t) => (
-              <EventListRow key={t.id} item={t}
-                subtitle={`${t.subtitle || ''}${t.next ? ` · ${t.next}` : ''}${t.level ? ` · ${t.level}` : ''}`}
-                seats={window.BGNJ_TOURS.getSeats(t.id)}
-                regCount={window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== 'cancelled').length}
-                onOpen={() => openDetail(t.id)}/>
+          <div>
+            {/* v00.301 — 진행 중 / 마감 을 나눠 본다. 필터를 고른 경우에는 나누지 않는다. */}
+            {(statusFilter !== 'all'
+              ? [{ key: 'all', label: null, items: tours }]
+              : groupEventsByPeriod(tours, {
+                  sort: sortKey,
+                  countOf: (t) => window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== 'cancelled').length,
+                  seatsOf: (t) => window.BGNJ_TOURS.getSeats(t.id).remaining,
+                })
+            ).map((g) => (
+              <section key={g.key}>
+                {g.label && <EventGroupHead label={g.label} count={g.items.length} tone={g.key}/>}
+                <div style={{display:'grid', gap:8}}>
+                  {g.items.map((t) => (
+                    <EventListRow key={t.id} item={t}
+                      subtitle={`${t.subtitle || ''}${t.next ? ` · ${t.next}` : ''}${t.level ? ` · ${t.level}` : ''}`}
+                      seats={window.BGNJ_TOURS.getSeats(t.id)}
+                      regCount={window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== 'cancelled').length}
+                      onOpen={() => openDetail(t.id)}/>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )

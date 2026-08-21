@@ -156,10 +156,10 @@ const run = async () => {
     // v00.298.001 — AdminShared 에서 AdminEventsPanels 로 옮겼다(window 경유 제거).
     const shared = readFileSync(path.join(ROOT, "pages/admin/AdminEventsPanels.jsx"), "utf8");
     const a = shared.indexOf("const eventTimestamp = (item) => {");
-    const b = shared.indexOf("const EventListToolbar =");
+    const b = shared.indexOf("const EventGroupHead =");   // 여기부터는 JSX 라 Node 가 못 읽는다
     if (a < 0 || b < 0) throw new Error("정렬/필터 코드를 찾지 못했다 — 위치가 바뀌었는지 확인하라");
-    const { filterSortEvents, eventTimestamp } = vm.runInNewContext(
-      shared.slice(a, b) + "\n({ filterSortEvents, eventTimestamp, EVENT_SORT_DEFAULT })",
+    const { filterSortEvents, eventTimestamp, groupEventsByPeriod } = vm.runInNewContext(
+      shared.slice(a, b) + "\n({ filterSortEvents, eventTimestamp, EVENT_SORT_DEFAULT, groupEventsByPeriod })",
       { Date, Number, String, Array, isNaN }
     );
     const now = Date.now();
@@ -185,6 +185,20 @@ const run = async () => {
     check("일정 미정도 목록에서 안 사라진다", filterSortEvents(items, {}).length === 4);
     // 사용자 요청: 아무것도 안 고르면 가장 최신이 맨 위여야 한다.
     check("기본 정렬은 최신이 맨 위", filterSortEvents(items, {})[0].id === 2, `맨 위 id=${filterSortEvents(items, {})[0].id}`);
+
+    // v00.301 — 진행 중 / 마감 섹션 분리
+    const groups = groupEventsByPeriod(items, {});
+    const byKey = Object.fromEntries(groups.map((g) => [g.key, g.items.map((x) => x.id)]));
+    check("진행 중 섹션", JSON.stringify(byKey.upcoming) === JSON.stringify([2, 3]), JSON.stringify(byKey.upcoming));
+    check("마감 섹션", JSON.stringify(byKey.past) === JSON.stringify([1]), JSON.stringify(byKey.past));
+    check("일정 미정도 따로 남는다", JSON.stringify(byKey.undated) === JSON.stringify([4]), JSON.stringify(byKey.undated));
+    check("어느 항목도 사라지지 않는다",
+      groups.reduce((n, g) => n + g.items.length, 0) === items.length,
+      `묶음 합계 ${groups.reduce((n, g) => n + g.items.length, 0)} / 원본 ${items.length}`);
+    check("빈 섹션은 나오지 않는다", groupEventsByPeriod([items[0]], {}).length === 1);
+    // 필터·섹션 기준이 어긋나면 '예정' 으로 걸렀을 때와 '진행 중' 섹션 내용이 달라진다.
+    check("필터와 섹션의 기준이 같다",
+      JSON.stringify(filterSortEvents(items, { status: 'upcoming' }).map((x) => x.id)) === JSON.stringify(byKey.upcoming));
   }
 
   console.log("\n── 8. 참가 신청 상태 (신청 → 입금 완료 → 참가 확정) ──");

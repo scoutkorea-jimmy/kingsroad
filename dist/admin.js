@@ -12150,6 +12150,25 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     else list.sort((a, b) => byDate(a, b, "desc"));
     return list;
   };
+  var groupEventsByPeriod = (items, opts = {}) => {
+    const base = { ...opts, search: "" };
+    const groups = [
+      { key: "upcoming", label: "\uC9C4\uD589 \uC911", items: filterSortEvents(items, { ...base, status: "upcoming" }) },
+      { key: "past", label: "\uB9C8\uAC10", items: filterSortEvents(items, { ...base, status: "past" }) }
+    ];
+    const undated = (Array.isArray(items) ? items : []).filter((x) => eventTimestamp(x) === 0);
+    if (undated.length) groups.push({ key: "undated", label: "\uC77C\uC815 \uBBF8\uC815", items: filterSortEvents(undated, base) });
+    return groups.filter((g) => g.items.length > 0);
+  };
+  var EventGroupHead = ({ label, count, tone }) => /* @__PURE__ */ React.createElement("div", { style: {
+    display: "flex",
+    alignItems: "baseline",
+    gap: 10,
+    marginTop: 18,
+    marginBottom: 8,
+    paddingBottom: 6,
+    borderBottom: "1px solid var(--line)"
+  } }, /* @__PURE__ */ React.createElement("span", { className: "ko-serif", style: { fontSize: 15, color: tone === "past" ? "var(--ink-3)" : "var(--ink)" } }, label), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, count, "\uAC74"));
   var EventListToolbar = ({ search, onSearch, status, onStatus, sort, onSort, shown, total, placeholder }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "12px 14px", marginBottom: 16, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
     "input",
     {
@@ -12612,7 +12631,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           backLabel: "\uAC15\uC5F0 \uBAA9\uB85D\uC73C\uB85C"
         }
       );
-    })(), !detailId && (lectures.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, allLectures.length === 0 ? "\uAD00\uB9AC\uD560 \uAC15\uC5F0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC15\uC5F0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uD544\uD130\uB97C \uBC14\uAFD4 \uBCF4\uC138\uC694.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, lectures.map((l) => /* @__PURE__ */ React.createElement(
+    })(), !detailId && (lectures.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, allLectures.length === 0 ? "\uAD00\uB9AC\uD560 \uAC15\uC5F0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC15\uC5F0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uD544\uD130\uB97C \uBC14\uAFD4 \uBCF4\uC138\uC694.") : /* @__PURE__ */ React.createElement("div", null, (statusFilter !== "all" ? [{ key: "all", label: null, items: lectures }] : groupEventsByPeriod(lectures, {
+      sort: sortKey,
+      countOf: (l) => window.BGNJ_LECTURES.listRegistrations(l.id).filter((r) => r.status !== "cancelled").length,
+      seatsOf: (l) => window.BGNJ_LECTURES.getSeats(l.id).remaining
+    })).map((g) => /* @__PURE__ */ React.createElement("section", { key: g.key }, g.label && /* @__PURE__ */ React.createElement(EventGroupHead, { label: g.label, count: g.items.length, tone: g.key }), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, g.items.map((l) => /* @__PURE__ */ React.createElement(
       EventListRow,
       {
         key: l.id,
@@ -12622,7 +12645,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         regCount: window.BGNJ_LECTURES.listRegistrations(l.id).filter((r) => r.status !== "cancelled").length,
         onOpen: () => openDetail(l.id)
       }
-    )))), detailId && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, allLectures.filter((x) => String(x.id) === String(detailId)).map((l) => {
+    ))))))), detailId && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, allLectures.filter((x) => String(x.id) === String(detailId)).map((l) => {
       const seats = window.BGNJ_LECTURES.getSeats(l.id);
       const regs = window.BGNJ_LECTURES.listRegistrations(l.id);
       const active = regs.filter((r) => r.status !== "cancelled");
@@ -13175,7 +13198,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           backLabel: "\uD22C\uC5B4 \uBAA9\uB85D\uC73C\uB85C"
         }
       );
-    })(), !detailId && (tours.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, allTours.length === 0 ? "\uAD00\uB9AC\uD560 \uD22C\uC5B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uD22C\uC5B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uD544\uD130\uB97C \uBC14\uAFD4 \uBCF4\uC138\uC694.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, tours.map((t) => /* @__PURE__ */ React.createElement(
+    })(), !detailId && (tours.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, allTours.length === 0 ? "\uAD00\uB9AC\uD560 \uD22C\uC5B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uD22C\uC5B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uD544\uD130\uB97C \uBC14\uAFD4 \uBCF4\uC138\uC694.") : /* @__PURE__ */ React.createElement("div", null, (statusFilter !== "all" ? [{ key: "all", label: null, items: tours }] : groupEventsByPeriod(tours, {
+      sort: sortKey,
+      countOf: (t) => window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== "cancelled").length,
+      seatsOf: (t) => window.BGNJ_TOURS.getSeats(t.id).remaining
+    })).map((g) => /* @__PURE__ */ React.createElement("section", { key: g.key }, g.label && /* @__PURE__ */ React.createElement(EventGroupHead, { label: g.label, count: g.items.length, tone: g.key }), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 8 } }, g.items.map((t) => /* @__PURE__ */ React.createElement(
       EventListRow,
       {
         key: t.id,
@@ -13185,7 +13212,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         regCount: window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== "cancelled").length,
         onOpen: () => openDetail(t.id)
       }
-    )))), detailId && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, allTours.filter((x) => String(x.id) === String(detailId)).map((t) => {
+    ))))))), detailId && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, allTours.filter((x) => String(x.id) === String(detailId)).map((t) => {
       var _a, _b, _c;
       const seats = window.BGNJ_TOURS.getSeats(t.id);
       const regs = window.BGNJ_TOURS.listReservations(t.id);
