@@ -5,13 +5,16 @@
 //
 // 사용: <TiptapEditor preset="simple" content="..." onUpdate={(html, json, text) => ...} />
 
-const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, placeholder = "내용을 입력하세요..." }) => {
+const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, onBusyChange, placeholder = "내용을 입력하세요..." }) => {
   const host = React.useRef(null);
   const editorRef = React.useRef(null);
   const [ready, setReady] = React.useState(Boolean(window.BGNJ_TIPTAP));
   const [, forceRender] = React.useReducer(x => x + 1, 0);
   // v00.138 — 본문 이미지 R2 업로드 상태. early return 이전에 선언 (Rules of Hooks).
   const [uploadingImage, setUploadingImage] = React.useState(false);
+  // v00.295.005 — 본문 이미지도 업로드가 끝나야 본문에 들어간다. 그 전에 게시하면 사진이 빠진다.
+  //   첨부 이미지 칸과 같은 결함이라 같은 방식으로 부모에 알린다.
+  React.useEffect(() => { onBusyChange?.(uploadingImage); }, [uploadingImage, onBusyChange]);
 
   React.useEffect(() => {
     if (ready) return;

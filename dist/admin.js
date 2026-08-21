@@ -9239,12 +9239,15 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   window.LoginPage = LoginPage;
 
   // components/TiptapEditor.jsx
-  var TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, placeholder = "\uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694..." }) => {
+  var TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, onBusyChange, placeholder = "\uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694..." }) => {
     const host = React.useRef(null);
     const editorRef = React.useRef(null);
     const [ready, setReady] = React.useState(Boolean(window.BGNJ_TIPTAP));
     const [, forceRender] = React.useReducer((x) => x + 1, 0);
     const [uploadingImage, setUploadingImage] = React.useState(false);
+    React.useEffect(() => {
+      onBusyChange == null ? void 0 : onBusyChange(uploadingImage);
+    }, [uploadingImage, onBusyChange]);
     React.useEffect(() => {
       if (ready) return;
       const h = () => setReady(true);

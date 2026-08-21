@@ -400,7 +400,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.295.004",
+    version: "00.295.005",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -6167,12 +6167,15 @@
   });
 
   // components/TiptapEditor.jsx
-  var TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, placeholder = "\uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694..." }) => {
+  var TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, onBusyChange, placeholder = "\uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694..." }) => {
     const host = React.useRef(null);
     const editorRef = React.useRef(null);
     const [ready, setReady] = React.useState(Boolean(window.BGNJ_TIPTAP));
     const [, forceRender] = React.useReducer((x) => x + 1, 0);
     const [uploadingImage, setUploadingImage] = React.useState(false);
+    React.useEffect(() => {
+      onBusyChange == null ? void 0 : onBusyChange(uploadingImage);
+    }, [uploadingImage, onBusyChange]);
     React.useEffect(() => {
       if (ready) return;
       const h = () => setReady(true);
@@ -8474,30 +8477,39 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return html.replace(/<div\s+data-bgnj-attached-block="1"[^>]*>[\s\S]*?<\/div>/gi, "");
     }
   };
-  var ImageAttacher = ({ images, setImages, max = 10 }) => {
+  var ImageAttacher = ({ images, setImages, max = 10, onBusyChange }) => {
     const inputRef = React.useRef(null);
+    const [busy, setBusy] = React.useState(false);
+    React.useEffect(() => {
+      onBusyChange == null ? void 0 : onBusyChange(busy);
+    }, [busy, onBusyChange]);
     const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
     const handleFiles = async (fileList) => {
       const files = Array.from(fileList || []);
       const remaining = max - images.length;
       if (remaining <= 0) return;
-      const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
-        files.slice(0, remaining),
-        { limitBytes: MAX_IMAGE_BYTES }
-      );
-      const toAdd = prepared;
-      if (toAdd.length === 0) return;
-      const results = await Promise.all(toAdd.map(async (f) => {
-        const meta = { name: f.name, size: f.size, alt: f.name.replace(/\.[^.]+$/, "") };
-        try {
-          const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: "post-images", maxBytes: MAX_IMAGE_BYTES });
-          return { ...meta, dataUrl: url };
-        } catch (err) {
-          window.BGNJ_TOAST.error(`'${f.name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694. (${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"})`);
-          return null;
-        }
-      }));
-      setImages([...images, ...results.filter(Boolean)]);
+      setBusy(true);
+      try {
+        const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
+          files.slice(0, remaining),
+          { limitBytes: MAX_IMAGE_BYTES }
+        );
+        const toAdd = prepared;
+        if (toAdd.length === 0) return;
+        const results = await Promise.all(toAdd.map(async (f) => {
+          const meta = { name: f.name, size: f.size, alt: f.name.replace(/\.[^.]+$/, "") };
+          try {
+            const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: "post-images", maxBytes: MAX_IMAGE_BYTES });
+            return { ...meta, dataUrl: url };
+          } catch (err) {
+            window.BGNJ_TOAST.error(`'${f.name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694. (${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"})`);
+            return null;
+          }
+        }));
+        setImages([...images, ...results.filter(Boolean)]);
+      } finally {
+        setBusy(false);
+      }
     };
     const remove = (i) => setImages(images.filter((_, j) => j !== i));
     const move = (i, dir) => {
@@ -8507,18 +8519,18 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       [next[i], next[j]] = [next[j], next[i]];
       setImages(next);
     };
-    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uCCA8\uBD80 \uC774\uBBF8\uC9C0 ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "(", images.length, "/", max, ")")), /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uCCA8\uBD80 \uC774\uBBF8\uC9C0 ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "(", images.length, "/", max, ")"), busy && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { marginLeft: 8, fontSize: 11, color: "var(--secondary)" } }, "\uC0AC\uC9C4 \uC900\uBE44 \uC911\u2026")), /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
         className: "btn btn-small",
-        disabled: images.length >= max,
+        disabled: busy || images.length >= max,
         onClick: () => {
           var _a;
           return (_a = inputRef.current) == null ? void 0 : _a.click();
         }
       },
-      "+ \uC774\uBBF8\uC9C0 \uC120\uD0DD"
+      busy ? "\uC900\uBE44 \uC911\u2026" : "+ \uC774\uBBF8\uC9C0 \uC120\uD0DD"
     )), /* @__PURE__ */ React.createElement(
       "input",
       {
@@ -8572,9 +8584,13 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
     return `${(n / 1024 / 1024).toFixed(1)} MB`;
   };
-  var FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MAX_SIZE, maxTotal = FILE_MAX_TOTAL }) => {
+  var FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MAX_SIZE, maxTotal = FILE_MAX_TOTAL, onBusyChange }) => {
     const inputRef = React.useRef(null);
     const [error, setError] = React.useState("");
+    const [busy, setBusy] = React.useState(false);
+    React.useEffect(() => {
+      onBusyChange == null ? void 0 : onBusyChange(busy);
+    }, [busy, onBusyChange]);
     const usedBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
     const handleFiles = async (fileList) => {
       setError("");
@@ -8598,17 +8614,23 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         running += f.size;
         accepted.push(f);
       }
-      const results = await Promise.all(accepted.map(async (f) => {
-        const meta = { name: f.name, type: f.type || "", size: f.size };
-        try {
-          const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: "post-attachments", maxBytes: maxSize });
-          return { ...meta, dataUrl: url };
-        } catch (err) {
-          setError(`'${f.name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694. (${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"})`);
-          return null;
-        }
-      }));
-      setFiles([...files, ...results.filter(Boolean)]);
+      if (accepted.length === 0) return;
+      setBusy(true);
+      try {
+        const results = await Promise.all(accepted.map(async (f) => {
+          const meta = { name: f.name, type: f.type || "", size: f.size };
+          try {
+            const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: "post-attachments", maxBytes: maxSize });
+            return { ...meta, dataUrl: url };
+          } catch (err) {
+            setError(`'${f.name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694. (${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"})`);
+            return null;
+          }
+        }));
+        setFiles([...files, ...results.filter(Boolean)]);
+      } finally {
+        setBusy(false);
+      }
     };
     const remove = (i) => setFiles(files.filter((_, j) => j !== i));
     return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uCCA8\uBD80 \uD30C\uC77C ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "(", files.length, "/", max, " \xB7 \uD569\uACC4 ", _fmtSize(usedBytes), " / ", _fmtSize(maxTotal), ")")), /* @__PURE__ */ React.createElement(
@@ -9737,6 +9759,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [draftRestored, setDraftRestored] = React.useState(!!(initialDraft && (initialDraft.title || initialDraft.bodyText)));
     const [savedAt, setSavedAt] = React.useState((initialDraft == null ? void 0 : initialDraft.savedAt) || null);
     const [draftError, setDraftError] = React.useState("");
+    const [imagesBusy, setImagesBusy] = React.useState(false);
+    const [filesBusy, setFilesBusy] = React.useState(false);
+    const [bodyBusy, setBodyBusy] = React.useState(false);
+    const attachBusy = imagesBusy || filesBusy || bodyBusy;
     const prevCategoryIdRef = React.useRef(categoryId);
     React.useEffect(() => {
       if (isEditing) return;
@@ -9852,6 +9878,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const submit = () => {
       var _a2, _b2;
       setError("");
+      if (attachBusy) return setError("\uC0AC\uC9C4\xB7\uD30C\uC77C\uC744 \uC62C\uB9AC\uB294 \uC911\uC785\uB2C8\uB2E4. \uB05D\uB098\uBA74 \uAC8C\uC2DC\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
       if (!title.trim()) return setError("\uC81C\uBAA9\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.");
       if (!bodyText.trim()) return setError("\uBCF8\uBB38\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694.");
       const cat = categories.find((c) => c.id === categoryId);
@@ -9998,9 +10025,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           setBodyHtml(html);
           setBodyText(text);
         },
+        onBusyChange: setBodyBusy,
         placeholder: "\uBCF8\uBB38\uC744 \uC785\uB825\uD558\uC138\uC694..."
       }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement(ImageAttacher, { images, setImages, max: 10 })), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement(FileAttacher, { files: attachments, setFiles: setAttachments })), (user == null ? void 0 : user.isAdmin) && /* @__PURE__ */ React.createElement("div", { className: "field", style: { padding: "12px 14px", background: "rgba(245,213,72,0.04)", border: "1px dashed var(--primary-dim)", marginTop: 12 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "post-created-at", style: { display: "block", marginBottom: 6 } }, "\uC5C5\uB85C\uB4DC \uC2DC\uAC04 (\uAD00\uB9AC\uC790 \uC804\uC6A9 \xB7 \uBE44\uC6CC\uB450\uBA74 \uD604\uC7AC \uC2DC\uAC04)"), /* @__PURE__ */ React.createElement(
+    )), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement(ImageAttacher, { images, setImages, max: 10, onBusyChange: setImagesBusy })), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement(FileAttacher, { files: attachments, setFiles: setAttachments, onBusyChange: setFilesBusy })), (user == null ? void 0 : user.isAdmin) && /* @__PURE__ */ React.createElement("div", { className: "field", style: { padding: "12px 14px", background: "rgba(245,213,72,0.04)", border: "1px dashed var(--primary-dim)", marginTop: 12 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "post-created-at", style: { display: "block", marginBottom: 6 } }, "\uC5C5\uB85C\uB4DC \uC2DC\uAC04 (\uAD00\uB9AC\uC790 \uC804\uC6A9 \xB7 \uBE44\uC6CC\uB450\uBA74 \uD604\uC7AC \uC2DC\uAC04)"), /* @__PURE__ */ React.createElement(
       "input",
       {
         id: "post-created-at",
@@ -10042,7 +10070,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         }
       },
       "\u{1F4BE} \uC784\uC2DC\uC800\uC7A5"
-    ), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold" }, isEditing ? "\uC218\uC815 \uC800\uC7A5 \u2192" : "\uAC8C\uC2DC\uD558\uAE30 \u2192")))));
+    ), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: attachBusy }, attachBusy ? "\uC0AC\uC9C4 \uC62C\uB9AC\uB294 \uC911\u2026" : isEditing ? "\uC218\uC815 \uC800\uC7A5 \u2192" : "\uAC8C\uC2DC\uD558\uAE30 \u2192")))));
   };
   var PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) => {
     var _a, _b, _c;

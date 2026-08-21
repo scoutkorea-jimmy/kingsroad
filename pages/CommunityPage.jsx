@@ -141,14 +141,22 @@ const _stripAttachedBlock = (html) => {
 };
 
 // === Image picker (editor side) — up to `max` images with thumbnails =====
-const ImageAttacher = ({ images, setImages, max = 10 }) => {
+const ImageAttacher = ({ images, setImages, max = 10, onBusyChange }) => {
   const inputRef = React.useRef(null);
+  // v00.295.005 — 사진은 '고르는 순간' 이 아니라 '축소 확인 + 업로드가 끝난 뒤' 에야 목록에 들어간다.
+  //   그 사이에 게시하기를 누르면 사진이 통째로 빠진 채 저장된다(실제로 그렇게 저장된 글이 나왔다).
+  //   축소 확인창은 사람 대답을 기다리므로 이 틈이 몇 초가 아니라 얼마든지 길어진다.
+  //   처리 중임을 부모에 알려 그동안 게시를 막는다.
+  const [busy, setBusy] = React.useState(false);
+  React.useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
 
   const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
   const handleFiles = async (fileList) => {
     const files = Array.from(fileList || []);
     const remaining = max - images.length;
     if (remaining <= 0) return;
+    setBusy(true);
+    try {
     // v00.295.004 — 큰 사진은 올리기 전에 줄일지 물어본다. 한도를 넘는데 원본을 고집하면
     //   여기서 걸러지고 사용자에게 이유가 전달된다(예전엔 업로드 단계에서 그냥 실패했다).
     const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
@@ -170,6 +178,9 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
       }
     }));
     setImages([...images, ...results.filter(Boolean)]);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const remove = (i) => setImages(images.filter((_, j) => j !== i));
@@ -184,11 +195,14 @@ const ImageAttacher = ({ images, setImages, max = 10 }) => {
   return (
     <div>
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
-        <div className="field-label">첨부 이미지 <span className="dim-2">({images.length}/{max})</span></div>
+        <div className="field-label">
+          첨부 이미지 <span className="dim-2">({images.length}/{max})</span>
+          {busy && <span className="mono" style={{marginLeft:8, fontSize:11, color:'var(--secondary)'}}>사진 준비 중…</span>}
+        </div>
         <button type="button" className="btn btn-small"
-          disabled={images.length >= max}
+          disabled={busy || images.length >= max}
           onClick={() => inputRef.current?.click()}>
-          + 이미지 선택
+          {busy ? '준비 중…' : '+ 이미지 선택'}
         </button>
       </div>
       <input ref={inputRef} type="file" accept="image/*" multiple
@@ -237,9 +251,12 @@ const _fmtSize = (n) => {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 };
-const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MAX_SIZE, maxTotal = FILE_MAX_TOTAL }) => {
+const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MAX_SIZE, maxTotal = FILE_MAX_TOTAL, onBusyChange }) => {
   const inputRef = React.useRef(null);
   const [error, setError] = React.useState('');
+  // v00.295.005 — 이미지와 같은 이유로 업로드가 끝나기 전 게시를 막는다.
+  const [busy, setBusy] = React.useState(false);
+  React.useEffect(() => { onBusyChange?.(busy); }, [busy, onBusyChange]);
   const usedBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
 
   const handleFiles = async (fileList) => {
@@ -261,6 +278,9 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
     }
     // v00.294.008 — dataURI(base64) 폴백 제거. 서버가 base64 첨부를 거부한다
     // (한 글이 수 MB 가 되어 목록 조회까지 느려진다). 실패는 조용히 우회하지 않고 알린다.
+    if (accepted.length === 0) return;
+    setBusy(true);
+    try {
     const results = await Promise.all(accepted.map(async (f) => {
       const meta = { name: f.name, type: f.type || '', size: f.size };
       try {
@@ -272,6 +292,9 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
       }
     }));
     setFiles([...files, ...results.filter(Boolean)]);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const remove = (i) => setFiles(files.filter((_, j) => j !== i));
@@ -1373,6 +1396,12 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   const [savedAt, setSavedAt] = React.useState(initialDraft?.savedAt || null);
   // v00.294.006 — 자동 임시저장 실패를 화면에 드러낸다(이전엔 catch {} 로 삼켰다).
   const [draftError, setDraftError] = React.useState('');
+  // v00.295.005 — 사진·파일이 아직 올라가는 중이면 게시를 막는다.
+  //   안 막으면 첨부가 통째로 빠진 글이 저장되고, 사용자는 '올렸는데 안 보인다' 만 겪는다.
+  const [imagesBusy, setImagesBusy] = React.useState(false);
+  const [filesBusy, setFilesBusy] = React.useState(false);
+  const [bodyBusy, setBodyBusy] = React.useState(false);
+  const attachBusy = imagesBusy || filesBusy || bodyBusy;
   const prevCategoryIdRef = React.useRef(categoryId);
 
   // 임시저장 — 수정 모드 제외, 1초 디바운스로 저장.
@@ -1486,6 +1515,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
 
   const submit = () => {
     setError("");
+    if (attachBusy) return setError("사진·파일을 올리는 중입니다. 끝나면 게시할 수 있습니다.");
     if (!title.trim()) return setError("제목을 입력해주세요.");
     if (!bodyText.trim()) return setError("본문을 입력해주세요.");
     const cat = categories.find(c => c.id === categoryId);
@@ -1664,17 +1694,18 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
                 preset="rich"
                 content={bodyHtml}
                 onUpdate={(html, _json, text) => { setBodyHtml(html); setBodyText(text); }}
+                onBusyChange={setBodyBusy}
                 placeholder="본문을 입력하세요..."/>
             </div>
 
           {/* Image attachments */}
           <div className="field">
-            <ImageAttacher images={images} setImages={setImages} max={10}/>
+            <ImageAttacher images={images} setImages={setImages} max={10} onBusyChange={setImagesBusy}/>
           </div>
 
           {/* File attachments (v00.069) */}
           <div className="field">
-            <FileAttacher files={attachments} setFiles={setAttachments}/>
+            <FileAttacher files={attachments} setFiles={setAttachments} onBusyChange={setFilesBusy}/>
           </div>
 
           {/* v00.115 — admin 만 표시: 업로드 시점 시간(표시용) 오버라이드. 비우면 현재 시간. */}
@@ -1723,7 +1754,9 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
                 💾 임시저장
               </button>
             )}
-            <button type="submit" className="btn btn-gold">{isEditing ? "수정 저장 →" : "게시하기 →"}</button>
+            <button type="submit" className="btn btn-gold" disabled={attachBusy}>
+              {attachBusy ? "사진 올리는 중…" : (isEditing ? "수정 저장 →" : "게시하기 →")}
+            </button>
           </div>
         </form>
       </div>
