@@ -2340,7 +2340,12 @@ const handleColumnGet = async (req, env, id) => {
 };
 
 const handleColumnCreate = async (req, env) => {
-  const user = await requireUser(req, env);
+  // v00.295.006 — requireUser → requireAdmin.
+  //   칼럼은 사이트 대표 콘텐츠고 UI 도 관리자에게만 글쓰기 버튼을 보인다(ColumnPage 는 isAdmin 게이트).
+  //   그런데 서버는 로그인만 확인해서, API 를 직접 치면 아무 회원이나 칼럼을 만들어
+  //   곧바로 published 로 홈·칼럼 목록에 띄울 수 있었다. 화면과 서버의 판정이 어긋나 있었다.
+  //   실제 칼럼 72편은 전부 관리자가 쓴 것을 확인하고 바꿨다 — 막혀서 곤란해질 사람이 없다.
+  const user = await requireAdmin(req, env);
   const body = await req.json().catch(() => ({}));
   const id = randomId("col");
   const createdAt = resolveCreatedAt(user, body);

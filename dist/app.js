@@ -85,7 +85,8 @@
         parseFailed = true;
       }
       if (!resp.ok) {
-        if (resp.status === 401) writeToken("");
+        const _isCredentialCheck = /^\/(auth\/login|auth\/signup|me\/password)(\?|$)/.test(path);
+        if (resp.status === 401 && !_isCredentialCheck) writeToken("");
         const err = new Error((data == null ? void 0 : data.error) || `HTTP ${resp.status}`);
         err.kind = "http";
         err.status = resp.status;
@@ -400,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.295.005",
+    version: "00.295.006",
     build: "2026.08.21",
     channel: "preview"
   };

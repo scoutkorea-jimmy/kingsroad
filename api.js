@@ -115,8 +115,13 @@
     catch { data = { raw: text }; parseFailed = true; }
     if (!resp.ok) {
       // 401 = 이 토큰으로는 누구도 아니다. 들고 있어 봐야 계속 튕기므로 버린다.
-      // 로그인 요청 자체의 401(비밀번호 틀림)은 원래 토큰이 없으니 지울 것도 없다.
-      if (resp.status === 401) writeToken("");
+      // 단, 아래 경로의 401 은 뜻이 다르다 — '네 세션이 죽었다' 가 아니라 '입력한 비밀번호가 틀렸다' 다.
+      //   /auth/login · /auth/signup : 자격 증명 검증
+      //   /me/password              : 현재 비밀번호 확인 (로그인된 상태에서 호출된다)
+      // 여기서 토큰을 지우면 비밀번호를 한 번 잘못 치는 것만으로 로그아웃된다.
+      // 쿠키가 되는 브라우저는 쿠키로 버티지만, Safari 는 그대로 튕겨 나간다.
+      const _isCredentialCheck = /^\/(auth\/login|auth\/signup|me\/password)(\?|$)/.test(path);
+      if (resp.status === 401 && !_isCredentialCheck) writeToken("");
       const err = new Error(data?.error || `HTTP ${resp.status}`);
       err.kind = "http";
       err.status = resp.status;
