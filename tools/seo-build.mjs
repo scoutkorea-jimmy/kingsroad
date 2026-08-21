@@ -63,6 +63,34 @@ const getJson = async (url) => {
   return res.json();
 };
 
+// v00.296.004 — 목록 API 는 이제 본문을 주지 않는다(v00.296.002/003 에서 전송량을 줄였다).
+//   그래서 목록만 보고 정적 페이지를 만들면 **본문 없는 껍데기**가 된다.
+//   실제로 그렇게 만들어져 있었다 — 글 상세 정적 페이지가 1,195자에서 69자로 쪼그라들었다.
+//   크롤러에게 보일 것이 사라졌으니 SEO 작업이 통째로 무력해진 셈이다.
+//   글마다 상세 API 를 불러 본문을 받아온다. 빌드 때 한 번이라 느려도 상관없다.
+const fetchBodies = async (items, urlOf, pick, label) => {
+  const CONCURRENCY = 8;   // 워커를 몰아붙이지 않는 선
+  let done = 0;
+  const out = new Map();
+  const queue = [...items];
+  const worker = async () => {
+    while (queue.length) {
+      const it = queue.shift();
+      try {
+        const res = await getJson(urlOf(it));
+        const body = pick(res);
+        if (body) out.set(String(it.id), body);
+      } catch (e) {
+        console.warn(`  ⚠ ${label} ${it.id} 본문 조회 실패 — 제목만 넣는다:`, e.message);
+      }
+      done += 1;
+      if (done % 20 === 0) console.log(`    ${label} 본문 ${done}/${items.length}`);
+    }
+  };
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  return out;
+};
+
 // ── 템플릿 ────────────────────────────────────────────────────────────
 // index.html 이 곧 템플릿이고, 홈은 그 자리에 덮어쓴다. 그래서 **먼저 원래 상태로 되돌린다.**
 //   되돌리지 않으면 두 번째 실행부터 JSON-LD 가 겹겹이 쌓이고,
@@ -252,19 +280,31 @@ const detail = async ({ base, id, title, author, date, html, images, extra, attr
   addUrl(`${SITE}${pathname}`, String(date || "").slice(0, 10) || new Date().toISOString().slice(0, 10), "monthly", "0.7");
 };
 
+console.log("  글 본문을 받는 중… (목록 API 는 본문을 주지 않는다)");
+const postBodies = await fetchBodies(
+  posts, (p) => `${API}/posts/${p.id}`,
+  (r) => { const x = r?.post || r; return (x?.body && x.body.html) || x?.body || ""; }, "글"
+);
 for (const p of posts) {
   await detail({
     base: "/community", id: p.id, title: p.title, author: p.author,
-    date: p.created_at || p.createdAt, html: (p.body && p.body.html) || p.body || "",
+    date: p.created_at || p.createdAt,
+    html: postBodies.get(String(p.id)) || p.excerpt || "",
     images: p.images, extra: p.category, attr: `data-bgnj-post="${esc(p.id)}"`,
   });
 }
 console.log(`  ✓ /community/* (${posts.length}건)`);
 
+console.log("  칼럼 본문을 받는 중…");
+const colBodies = await fetchBodies(
+  columns, (c) => `${API}/columns/${c.id}`,
+  (r) => { const x = r?.column || r; return x?.body || ""; }, "칼럼"
+);
 for (const c of columns) {
   await detail({
     base: "/column", id: c.id, title: c.title, author: c.author_name || c.authorName,
-    date: c.created_at || c.createdAt, html: c.body || c.excerpt || "",
+    date: c.created_at || c.createdAt,
+    html: colBodies.get(String(c.id)) || c.excerpt || "",
     images: c.cover_url ? [{ dataUrl: c.cover_url, alt: c.title }] : [],
     extra: c.category, attr: `data-bgnj-column="${esc(c.id)}"`,
   });
