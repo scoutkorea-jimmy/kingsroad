@@ -12286,17 +12286,20 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }
   };
   var EventCurrentState = ({ item, pageKey }) => {
-    var _a, _b;
+    var _a, _b, _c;
     const sc = ((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {};
     const ovr = (sc[pageKey] || {})[item.id] || {};
     const images = Array.isArray(ovr.images) ? ovr.images : [];
     const photos = Array.isArray(ovr.photos) ? ovr.photos : [];
     const schedule = Array.isArray(ovr.schedule) ? ovr.schedule : [];
     const extras = Array.isArray(ovr.notes) ? ovr.notes : Array.isArray(ovr.prep) ? ovr.prep : [];
-    const cover = item.coverUrl || ovr.cover || "";
+    const galleryPrimary = ((_c = window.pickPrimaryImage) == null ? void 0 : _c.call(window, images)) || null;
+    const cover = (galleryPrimary == null ? void 0 : galleryPrimary.url) || item.coverUrl || ovr.coverDataUri || "";
+    const coverFrom = galleryPrimary ? galleryPrimary.isPrimary ? "\uD3EC\uC2A4\uD130 \xB7 \uB300\uD45C \uC9C0\uC815" : "\uD3EC\uC2A4\uD130 1\uBC88" : item.coverUrl ? "\uD22C\uC5B4 \uC815\uBCF4\uC758 \uCEE4\uBC84" : ovr.coverDataUri ? "\uC61B \uCEE4\uBC84" : "";
     const url = (x) => typeof x === "string" ? x : (x == null ? void 0 : x.url) || (x == null ? void 0 : x.src) || "";
+    const primaryUrl = (galleryPrimary == null ? void 0 : galleryPrimary.url) || "";
     const thumbs = [...images, ...photos].map(url).filter(Boolean).slice(0, 8);
-    return /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 16, marginBottom: 14, background: "var(--bg-3)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 12 } }, "\uC9C0\uAE08 \uB4F1\uB85D\uB41C \uAC83"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 18, flexWrap: "wrap", alignItems: "flex-start" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 360, maxWidth: "100%", flexShrink: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, marginBottom: 6 } }, "\uB300\uD45C \uC774\uBBF8\uC9C0"), cover ? /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 16, marginBottom: 14, background: "var(--bg-3)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 12 } }, "\uC9C0\uAE08 \uB4F1\uB85D\uB41C \uAC83"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 18, flexWrap: "wrap", alignItems: "flex-start" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 360, maxWidth: "100%", flexShrink: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, marginBottom: 6 } }, "\uB300\uD45C \uC774\uBBF8\uC9C0", coverFrom && /* @__PURE__ */ React.createElement("span", { style: { marginLeft: 6, color: "var(--secondary)" } }, "\xB7 ", coverFrom)), cover ? /* @__PURE__ */ React.createElement(
       "img",
       {
         src: cover,
@@ -12310,21 +12313,34 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           display: "block"
         }
       }
-    ) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: "100%", aspectRatio: "16/10", fontSize: 11 } }, "\uB300\uD45C \uC774\uBBF8\uC9C0 \uC5C6\uC74C")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 240 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 } }, [
+    ) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: "100%", aspectRatio: "16/10", fontSize: 11 } }, "\uB300\uD45C \uC774\uBBF8\uC9C0 \uC5C6\uC74C"), !cover && images.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 6, lineHeight: 1.6 } }, "\u{1F5BC} \uBC84\uD2BC\uC73C\uB85C \uD3EC\uC2A4\uD130\uB97C \uC62C\uB9AC\uBA74 ", /* @__PURE__ */ React.createElement("strong", null, "\uCCAB \uC7A5\uC774 \uB300\uD45C \uC774\uBBF8\uC9C0"), "\uAC00 \uB429\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 240 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 } }, [
       { l: "\uD3EC\uC2A4\uD130", n: images.length },
-      { l: "\uD604\uC7A5 \uC0AC\uC9C4", n: photos.length },
+      { l: pageKey === "tourPages" ? "\uD6C4\uAE30 \uC0AC\uC9C4" : "\uD604\uC7A5 \uC0AC\uC9C4", n: photos.length },
       { l: pageKey === "tourPages" ? "\uB2F5\uC0AC \uC77C\uC815" : "\uC9C4\uD589 \uC21C\uC11C", n: schedule.length },
       { l: pageKey === "tourPages" ? "\uC900\uBE44\uBB3C" : "\uCC38\uACE0 \uC0AC\uD56D", n: extras.length }
-    ].map((x) => /* @__PURE__ */ React.createElement("div", { key: x.l }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, x.l), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 17, color: x.n ? "var(--ink)" : "var(--ink-3)" } }, x.n)))), thumbs.length > 0 ? /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, thumbs.map((u, i) => /* @__PURE__ */ React.createElement(
+    ].map((x) => /* @__PURE__ */ React.createElement("div", { key: x.l }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10 } }, x.l), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 17, color: x.n ? "var(--ink)" : "var(--ink-3)" } }, x.n)))), thumbs.length > 0 ? /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, thumbs.map((u, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: { position: "relative" } }, /* @__PURE__ */ React.createElement(
       "img",
       {
-        key: i,
         src: u,
         alt: `\uC0AC\uC9C4 ${i + 1}`,
         loading: "lazy",
-        style: { width: 72, height: 72, objectFit: "cover", border: "1px solid var(--line)", display: "block" }
+        style: {
+          width: 72,
+          height: 72,
+          objectFit: "cover",
+          display: "block",
+          border: u === primaryUrl ? "2px solid var(--secondary)" : "1px solid var(--line)"
+        }
       }
-    )), images.length + photos.length > thumbs.length && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11, alignSelf: "center" } }, "+", images.length + photos.length - thumbs.length)) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, margin: 0 } }, "\uC62C\uB77C\uAC04 \uC0AC\uC9C4\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F5BC}"), " \uBC84\uD2BC\uC73C\uB85C \uCD94\uAC00\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."))));
+    ), u === primaryUrl && /* @__PURE__ */ React.createElement("span", { className: "mono", style: {
+      position: "absolute",
+      left: 0,
+      bottom: 0,
+      fontSize: 9,
+      background: "var(--secondary)",
+      color: "var(--bg)",
+      padding: "1px 4px"
+    } }, "\uB300\uD45C"))), images.length + photos.length > thumbs.length && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11, alignSelf: "center" } }, "+", images.length + photos.length - thumbs.length)) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, margin: 0 } }, "\uC62C\uB77C\uAC04 \uC0AC\uC9C4\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F5BC}"), " \uBC84\uD2BC\uC73C\uB85C \uCD94\uAC00\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."))));
   };
   var LectureAdminPanel = ({ go }) => {
     const [tick, setTick] = React.useState(0);

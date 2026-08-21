@@ -316,8 +316,20 @@ const EventCurrentState = ({ item, pageKey }) => {
   const photos = Array.isArray(ovr.photos) ? ovr.photos : [];
   const schedule = Array.isArray(ovr.schedule) ? ovr.schedule : [];
   const extras = Array.isArray(ovr.notes) ? ovr.notes : (Array.isArray(ovr.prep) ? ovr.prep : []);
-  const cover = item.coverUrl || ovr.cover || '';
+  // v00.300.001 — 대표 이미지는 **실제 사이트와 똑같은 규칙**으로 고른다.
+  //   LecturesPage / WangsanamTourPage 의 순서:
+  //     ① 갤러리 대표 사진 (pickPrimaryImage — isPrimary 표시가 있으면 그것, 없으면 포스터 1번)
+  //     ② D1 의 cover_url (투어만 있다)
+  //     ③ legacy coverDataUri
+  //   전에는 ①을 통째로 빼먹어서, 관리자에게 보이는 대표 이미지가 실제 화면과 달랐다.
+  //   관리자 화면이 실제와 다른 것을 보여주면 확인하는 의미가 없다.
+  const galleryPrimary = window.pickPrimaryImage?.(images) || null;
+  const cover = galleryPrimary?.url || item.coverUrl || ovr.coverDataUri || '';
+  const coverFrom = galleryPrimary
+    ? (galleryPrimary.isPrimary ? '포스터 · 대표 지정' : '포스터 1번')
+    : (item.coverUrl ? '투어 정보의 커버' : (ovr.coverDataUri ? '옛 커버' : ''));
   const url = (x) => (typeof x === 'string' ? x : (x?.url || x?.src || ''));
+  const primaryUrl = galleryPrimary?.url || '';
   const thumbs = [...images, ...photos].map(url).filter(Boolean).slice(0, 8);
 
   return (
@@ -327,18 +339,25 @@ const EventCurrentState = ({ item, pageKey }) => {
         {/* v00.300 — 대표 이미지는 크게. 이게 이 프로그램의 얼굴이라 작게 보면 확인이 안 된다.
             원본 비율을 유지하고(잘라내지 않는다) 화면이 좁으면 전폭으로 내려온다. */}
         <div style={{width:360, maxWidth:'100%', flexShrink:0}}>
-          <div className="mono dim-2" style={{fontSize:10, marginBottom:6}}>대표 이미지</div>
+          <div className="mono dim-2" style={{fontSize:10, marginBottom:6}}>
+            대표 이미지{coverFrom && <span style={{marginLeft:6, color:'var(--secondary)'}}>· {coverFrom}</span>}
+          </div>
           {cover
             ? <img src={cover} alt="대표 이미지"
                 style={{width:'100%', maxHeight:280, objectFit:'contain', background:'var(--bg-2)',
                         border:'1px solid var(--line)', display:'block'}}/>
             : <div className="placeholder" style={{width:'100%', aspectRatio:'16/10', fontSize:11}}>대표 이미지 없음</div>}
+          {!cover && images.length === 0 && (
+            <p className="dim-2" style={{fontSize:11, marginTop:6, lineHeight:1.6}}>
+              🖼 버튼으로 포스터를 올리면 <strong>첫 장이 대표 이미지</strong>가 됩니다.
+            </p>
+          )}
         </div>
         <div style={{flex:1, minWidth:240}}>
           <div style={{display:'flex', gap:18, flexWrap:'wrap', marginBottom:10}}>
             {[
               { l: '포스터', n: images.length },
-              { l: '현장 사진', n: photos.length },
+              { l: pageKey === 'tourPages' ? '후기 사진' : '현장 사진', n: photos.length },
               { l: pageKey === 'tourPages' ? '답사 일정' : '진행 순서', n: schedule.length },
               { l: pageKey === 'tourPages' ? '준비물' : '참고 사항', n: extras.length },
             ].map((x) => (
@@ -351,8 +370,15 @@ const EventCurrentState = ({ item, pageKey }) => {
           {thumbs.length > 0 ? (
             <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
               {thumbs.map((u, i) => (
-                <img key={i} src={u} alt={`사진 ${i + 1}`} loading="lazy"
-                  style={{width:72, height:72, objectFit:'cover', border:'1px solid var(--line)', display:'block'}}/>
+                <div key={i} style={{position:'relative'}}>
+                  <img src={u} alt={`사진 ${i + 1}`} loading="lazy"
+                    style={{width:72, height:72, objectFit:'cover', display:'block',
+                            border: u === primaryUrl ? '2px solid var(--secondary)' : '1px solid var(--line)'}}/>
+                  {u === primaryUrl && (
+                    <span className="mono" style={{position:'absolute', left:0, bottom:0, fontSize:9,
+                      background:'var(--secondary)', color:'var(--bg)', padding:'1px 4px'}}>대표</span>
+                  )}
+                </div>
               ))}
               {images.length + photos.length > thumbs.length && (
                 <span className="mono dim-2" style={{fontSize:11, alignSelf:'center'}}>

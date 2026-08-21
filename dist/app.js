@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.300.000",
+    version: "00.300.001",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -10719,7 +10719,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       var _a2, _b2, _c2, _d2;
       const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
       const imgs = (_d2 = (_c2 = sc.tourPages) == null ? void 0 : _c2[tour.id]) == null ? void 0 : _d2.images;
-      return /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images: imgs, title: tour.title });
+      return /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images: imgs, title: tour.title, sectionLabel: "\uD3EC\uC2A4\uD130" });
+    })(), MediaGalleryView && _isPast(tour) && (() => {
+      var _a2, _b2, _c2, _d2;
+      const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
+      const photos = (_d2 = (_c2 = sc.tourPages) == null ? void 0 : _c2[tour.id]) == null ? void 0 : _d2.photos;
+      return /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images: photos, title: tour.title, sectionLabel: "\uB2F5\uC0AC \uD6C4\uAE30 \uC0AC\uC9C4", withCover: false });
     })(), (() => {
       var _a2, _b2;
       const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
@@ -10791,10 +10796,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         return [];
       }
     });
+    const [photos, setPhotos] = React.useState(() => {
+      var _a2, _b2, _c2, _d;
+      if (!(initialTour == null ? void 0 : initialTour.id)) return [];
+      try {
+        const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
+        const arr = (_d = (_c2 = sc.tourPages) == null ? void 0 : _c2[initialTour.id]) == null ? void 0 : _d.photos;
+        return Array.isArray(arr) ? arr : [];
+      } catch (e) {
+        return [];
+      }
+    });
     const [hidden, setHidden] = React.useState(!!(initialTour == null ? void 0 : initialTour.hidden));
     const [error, setError] = React.useState("");
     const [saving, setSaving] = React.useState(false);
-    const dirty = !!(title.trim() || subtitle.trim() || desc.trim() || images.length > 0);
+    const dirty = !!(title.trim() || subtitle.trim() || desc.trim() || images.length > 0 || photos.length > 0);
     const guard = ((_c = window.useModalGuard) == null ? void 0 : _c.call(window, { open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? "\uD22C\uC5B4 \uC218\uC815" : "\uD22C\uC5B4 \uCD94\uAC00" })) || {};
     const submit = async (e) => {
       var _a2, _b2, _c2, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
@@ -10832,11 +10848,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           hidden: !!hidden
           // v00.236
         });
-        if (images.length > 0 || isEdit) {
+        if (images.length > 0 || photos.length > 0 || isEdit) {
           try {
             const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
             const existing = sc.tourPages && typeof sc.tourPages === "object" && sc.tourPages[id] || {};
-            await window.BGNJ_SITE_CONTENT.saveSection("tourPages", { [id]: { ...existing, images } });
+            await window.BGNJ_SITE_CONTENT.saveSection("tourPages", { [id]: { ...existing, images, photos } });
             try {
               (_d = (_c2 = window.BGNJ_BROADCAST) == null ? void 0 : _c2.publish) == null ? void 0 : _d.call(_c2, "site-content");
             } catch (_e2) {
@@ -10972,7 +10988,25 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           onChange: (e) => setDesc(e.target.value),
           placeholder: "\uB2F5\uC0AC \uC548\uB0B4 (\uC774\uD6C4 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uBCF4\uAC15 \uAC00\uB2A5)"
         }
-      )), MediaGalleryEditor && /* @__PURE__ */ React.createElement(window.MediaGalleryEditor, { value: images, onChange: setImages, folder: "tour-gallery" }), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "center", padding: "8px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6, fontSize: 12, color: "var(--ink-2)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
+      )), MediaGalleryEditor && /* @__PURE__ */ React.createElement(
+        window.MediaGalleryEditor,
+        {
+          value: images,
+          onChange: setImages,
+          folder: "tour-gallery",
+          label: "\uD3EC\uC2A4\uD130 \xB7 \uAC24\uB7EC\uB9AC",
+          helpText: "\uCCAB \uC7A5\uC774 \uB300\uD45C \uC774\uBBF8\uC9C0\uAC00 \uB429\uB2C8\uB2E4."
+        }
+      ), MediaGalleryEditor && /* @__PURE__ */ React.createElement(
+        window.MediaGalleryEditor,
+        {
+          value: photos,
+          onChange: setPhotos,
+          folder: "tour-photos",
+          label: "\uB2F5\uC0AC \uD6C4\uAE30 \uC0AC\uC9C4",
+          helpText: "\uB2F5\uC0AC\uAC00 \uB05D\uB09C \uB4A4 \uC62C\uB9AC\uBA74 \uC0C1\uC138 \uD654\uBA74\uC5D0 '\uB2F5\uC0AC \uD6C4\uAE30 \uC0AC\uC9C4' \uC73C\uB85C \uD45C\uC2DC\uB429\uB2C8\uB2E4."
+        }
+      ), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "center", padding: "8px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6, fontSize: 12, color: "var(--ink-2)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "checkbox",

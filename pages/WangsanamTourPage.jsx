@@ -351,7 +351,15 @@ const TourPage = ({ go, user }) => {
             {MediaGalleryView && (() => {
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
               const imgs = sc.tourPages?.[tour.id]?.images;
-              return <window.MediaGalleryView images={imgs} title={tour.title}/>;
+              return <window.MediaGalleryView images={imgs} title={tour.title} sectionLabel="포스터"/>;
+            })()}
+            {/* v00.300.002 — 지난 답사에는 후기(현장) 사진을 보여준다.
+                강연은 v00.237 부터 하고 있었는데 투어에만 빠져 있었다.
+                아직 안 다녀온 답사에 현장 사진이 뜨면 이상하므로 _isPast 일 때만. */}
+            {MediaGalleryView && _isPast(tour) && (() => {
+              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
+              const photos = sc.tourPages?.[tour.id]?.photos;
+              return <window.MediaGalleryView images={photos} title={tour.title} sectionLabel="답사 후기 사진" withCover={false}/>;
             })()}
 
             {(() => {
@@ -485,11 +493,22 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
       return Array.isArray(arr) ? arr : [];
     } catch { return []; }
   });
+  // v00.300.002 — 지난 답사의 후기 사진. 강연에는 v00.237 부터 있었는데 투어에만 없었다.
+  //   사용자 요청: '지난 답사에도 사진이 올라가 있으면 그 사진들을 후기 사진으로 보여줘야지'.
+  //   저장 위치도 강연과 같게 tourPages[id].photos.
+  const [photos, setPhotos] = React.useState(() => {
+    if (!initialTour?.id) return [];
+    try {
+      const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
+      const arr = sc.tourPages?.[initialTour.id]?.photos;
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
   // v00.236 — hidden 토글.
   const [hidden, setHidden] = React.useState(!!initialTour?.hidden);
   const [error, setError] = React.useState('');
   const [saving, setSaving] = React.useState(false);
-  const dirty = !!(title.trim() || subtitle.trim() || desc.trim() || images.length > 0);
+  const dirty = !!(title.trim() || subtitle.trim() || desc.trim() || images.length > 0 || photos.length > 0);
   const guard = window.useModalGuard?.({ open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? '투어 수정' : '투어 추가' }) || {};
 
   const submit = async (e) => {
@@ -522,11 +541,11 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
         hidden: !!hidden, // v00.236
       });
       // v00.235 — 갤러리 저장 (site_content_kv.tourPages[id]). 기존 schedule/prep/coverDataUri 보존.
-      if (images.length > 0 || isEdit) {
+      if (images.length > 0 || photos.length > 0 || isEdit) {
         try {
           const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
           const existing = (sc.tourPages && typeof sc.tourPages === 'object' && sc.tourPages[id]) || {};
-          await window.BGNJ_SITE_CONTENT.saveSection('tourPages', { [id]: { ...existing, images } });
+          await window.BGNJ_SITE_CONTENT.saveSection('tourPages', { [id]: { ...existing, images, photos } });
           try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch (_e) { console.warn('[bgnj] WangsanamTourPage.jsx:530 오류(무시하고 진행)', _e); }
         } catch (galleryErr) {
           try { console.warn('[TourQuickAddModal] 갤러리 저장 실패:', galleryErr); } catch (_e) { console.warn('[bgnj] WangsanamTourPage.jsx:532 오류(무시하고 진행)', _e); }
@@ -618,9 +637,15 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
               value={desc} onChange={(e) => setDesc(e.target.value)}
               placeholder="답사 안내 (이후 관리자 패널에서 보강 가능)"/>
           </div>
-          {/* v00.235 — 사진 갤러리 편집기. */}
+          {/* v00.235 — 사진 갤러리 편집기(포스터·대표 이미지). */}
           {MediaGalleryEditor && (
-            <window.MediaGalleryEditor value={images} onChange={setImages} folder="tour-gallery"/>
+            <window.MediaGalleryEditor value={images} onChange={setImages} folder="tour-gallery"
+              label="포스터 · 갤러리" helpText="첫 장이 대표 이미지가 됩니다."/>
+          )}
+          {/* v00.300.002 — 후기(현장) 사진. 답사가 끝난 뒤 올리면 투어 상세에 후기 사진으로 나온다. */}
+          {MediaGalleryEditor && (
+            <window.MediaGalleryEditor value={photos} onChange={setPhotos} folder="tour-photos"
+              label="답사 후기 사진" helpText="답사가 끝난 뒤 올리면 상세 화면에 '답사 후기 사진' 으로 표시됩니다."/>
           )}
           {/* v00.236 — hidden 토글. */}
           <label style={{display:'flex', gap:8, alignItems:'center', padding:'8px 12px', background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:6, fontSize:12, color:'var(--ink-2)', cursor:'pointer'}}>
