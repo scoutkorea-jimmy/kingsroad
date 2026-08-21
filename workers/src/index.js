@@ -541,6 +541,70 @@ const handlePostsList = async (req, env) => {
 //
 // 첨부 한도는 클라이언트에도 있지만 그건 편의일 뿐이다. 요청은 조작될 수 있으므로
 // 서버가 최종 판정한다. (개당이 아니라 **합계** 기준 — 사용자 규칙)
+// === v00.296.005 — 글 크기 상한 · 도배 제한 · 저장 단계 방어 =============
+//
+// 내구 점검(2026-08-21)에서 셋 다 무방비인 것이 확인됐다.
+//   · 5MB 짜리 글이 그대로 저장됐다(HTTP 201).
+//   · 5회 연속 글쓰기가 전부 통과했다.
+//   · <script> 가 든 본문이 그대로 저장됐다.
+// 로그인만 하면 누구나 DB 를 부풀리거나 도배할 수 있는 상태였다.
+
+const POST_TITLE_MAX = 200;
+const POST_BODY_MAX = 200_000;    // 약 20만 자. 아주 긴 답사기도 넉넉히 들어간다.
+const COMMENT_MAX = 5_000;
+
+// 최근 N분에 M건까지. 사람의 글쓰기 속도로는 절대 안 걸리는 선으로 잡는다.
+const WRITE_LIMITS = [
+  { minutes: 1,   max: 3,  label: "1분" },
+  { minutes: 60,  max: 20, label: "1시간" },
+];
+
+const assertLength = (value, max, label) => {
+  const v = String(value || "");
+  if (v.length > max) {
+    throw new HttpError(413, `${label}이(가) 너무 깁니다 (${v.length.toLocaleString()}자 / 최대 ${max.toLocaleString()}자).`);
+  }
+  return v;
+};
+
+// 같은 사람이 짧은 시간에 몰아 쓰는 것을 막는다. 관리자는 제외 —
+// 공지·자료를 연달아 올리는 것이 정상 업무다.
+const assertWriteRate = async (env, user, table, column = "author_id") => {
+  if (user?.isAdmin) return;
+  for (const lim of WRITE_LIMITS) {
+    const since = new Date(Date.now() - lim.minutes * 60_000).toISOString();
+    try {
+      const row = await env.DB.prepare(
+        `SELECT COUNT(*) AS c FROM ${table} WHERE ${column} = ? AND created_at > ?`
+      ).bind(user.id, since).first();
+      if (Number(row?.c || 0) >= lim.max) {
+        throw new HttpError(429, `${lim.label} 안에 ${lim.max}건까지 작성할 수 있습니다. 잠시 후 다시 시도해 주세요.`);
+      }
+    } catch (e) {
+      if (e instanceof HttpError) throw e;
+      // 세는 데 실패했다고 글쓰기를 막지는 않는다. 도배 방지가 서비스 중단보다 중요하진 않다.
+      console.warn("[bgnj] 작성 빈도 확인 실패 — 통과시킨다", e?.message || e);
+      return;
+    }
+  }
+};
+
+// 저장 단계 방어. 화면에 뿌릴 때 DOMPurify 가 막지만, 막는 곳이 한 겹뿐이면
+// 그 한 겹이 뚫리는 날 그대로 실행된다. 여기서 한 겹 더 걷어낸다.
+// ⚠ 이것이 주 방어선은 아니다 — 정규식으로 HTML 을 완전히 정화할 수는 없다.
+//   주 방어선은 여전히 표시 단계의 DOMPurify(fail-closed)다.
+const stripDangerousHtml = (html) => String(html || "")
+  .replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, "")
+  .replace(/<\s*script[^>]*>/gi, "")
+  .replace(/<\s*(object|embed|applet|base|form)[^>]*>/gi, "")
+  .replace(/<\s*\/\s*(object|embed|applet|form)\s*>/gi, "")
+  // on* 이벤트 속성 (onerror=, onclick= …)
+  .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, "")
+  .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, "")
+  .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
+  // javascript: / vbscript: / data:text/html URL
+  .replace(/(href|src|action)\s*=\s*("|')\s*(javascript|vbscript|data:text\/html)[^"']*\2/gi, '$1="#"');
+
 const POST_ATTACH_MAX_COUNT = 3;
 const POST_ATTACH_MAX_TOTAL = 10 * 1024 * 1024; // 3개를 합쳐 10MB
 const POST_IMAGE_MAX_COUNT = 10;
@@ -625,9 +689,17 @@ const handlePostsCreate = async (req, env) => {
   const user = await requireUser(req, env);
   const body = await req.json().catch(() => ({}));
   const categoryId = String(body.categoryId || "free");
-  const title = String(body.title || "").trim();
-  const text = String(body.body || "");
+  // v00.296.005 — 길이 상한 · 도배 제한 · 저장 단계 방어. 셋 다 없던 것들이다.
+  const title = assertLength(String(body.title || "").trim(), POST_TITLE_MAX, "제목");
+  // 클라이언트는 본문을 HTML 문자열로 보낸다. 그런데 { html, text } 객체가 오면
+  //   String() 이 "[object Object]" 를 만들어 **본문이 통째로 날아간 채 저장된다.**
+  //   오류도 안 난다. 내구 점검에서 실제로 그렇게 저장되는 것을 확인했다. 여기서 막는다.
+  const rawBody = (body && typeof body.body === "object" && body.body !== null)
+    ? String(body.body.html ?? body.body.text ?? "")
+    : String(body.body ?? "");
+  const text = stripDangerousHtml(assertLength(rawBody, POST_BODY_MAX, "본문"));
   if (!title) throw new HttpError(400, "제목을 입력해 주세요.");
+  await assertWriteRate(env, user, "posts", "author_id");
   // v00.146 — 공지 게시판은 어떠한 경우에도 관리자만 작성. allow_write 체크박스 / postMinLevel 설정과 무관.
   if (categoryId === 'notice' && !user.isAdmin) {
     throw new HttpError(403, "공지 게시판은 관리자만 작성할 수 있습니다.");
@@ -742,8 +814,9 @@ const handleCommentsList = async (req, env, postId) => {
 const handleCommentsCreate = async (req, env, postId) => {
   const user = await requireUser(req, env);
   const body = await req.json().catch(() => ({}));
-  const text = String(body.body || "").trim();
+  const text = assertLength(String(body.body || "").trim(), COMMENT_MAX, "댓글");
   if (!text) throw new HttpError(400, "내용을 입력해 주세요.");
+  await assertWriteRate(env, user, "comments", "author_id");
   // v00.141 — 댓글 작성 권한 (allow_comment_write).
   if (!user.isAdmin) {
     const post = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(postId).first();
@@ -1307,21 +1380,32 @@ const handleLectureRegister = async (req, env, lectureId) => {
   const body = await req.json().catch(() => ({}));
   const lec = await env.DB.prepare("SELECT capacity, price FROM lectures WHERE id = ?").bind(lectureId).first();
   if (!lec) throw new HttpError(404, "강연을 찾을 수 없습니다.");
-  const existRow = await env.DB.prepare(
-    "SELECT id FROM lecture_registrations WHERE lecture_id = ? AND user_id = ? AND status != 'cancelled'"
-  ).bind(lectureId, user.id).first();
-  if (existRow) throw new HttpError(409, "이미 신청한 강연입니다.");
-  const countRow = await env.DB.prepare(
-    "SELECT COUNT(*) AS c FROM lecture_registrations WHERE lecture_id = ? AND status IN ('pending_payment','confirmed')"
-  ).bind(lectureId).first();
-  const active = Number(countRow?.c || 0);
-  const status = active >= Number(lec.capacity || 0) ? "waitlist" : (Number(lec.price || 0) === 0 ? "confirmed" : "pending_payment");
+  // v00.296.005 — 정원 판정과 저장을 **한 문장 안에서** 한다.
+  //   전에는 COUNT 를 읽고, 판단하고, INSERT 했다. 그 사이에 다른 신청이 들어오면
+  //   둘 다 같은 숫자를 읽어 **정원을 넘겨 확정**된다(오버부킹).
+  //   정원 10석 마지막 1자리에 5명이 동시에 누르면 5명 모두 confirmed 가 될 수 있었다.
+  //   SQLite 는 단일 문장을 원자적으로 처리하므로, 세는 일과 넣는 일을 한 문장에 묶으면 끝난다.
+  //   중복 신청도 같은 문장의 NOT EXISTS 로 막는다 — 이것도 따로 하면 같은 경쟁이 생긴다.
   const regId = randomId("reg");
-  await env.DB.prepare(
+  const okStatus = Number(lec.price || 0) === 0 ? "confirmed" : "pending_payment";
+  const res = await env.DB.prepare(
     `INSERT INTO lecture_registrations (id, lecture_id, user_id, user_name, user_email, user_phone, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).bind(regId, lectureId, user.id, user.name, user.email, body.phone || null, status).run();
-  return { id: regId, status };
+     SELECT ?, ?, ?, ?, ?, ?,
+       CASE WHEN (SELECT COUNT(*) FROM lecture_registrations
+                  WHERE lecture_id = ? AND status IN ('pending_payment','confirmed')) >= ?
+            THEN 'waitlist' ELSE ? END
+     WHERE NOT EXISTS (SELECT 1 FROM lecture_registrations
+                       WHERE lecture_id = ? AND user_id = ? AND status != 'cancelled')`
+  ).bind(
+    regId, lectureId, user.id, user.name, user.email, body.phone || null,
+    lectureId, Number(lec.capacity || 0), okStatus,
+    lectureId, user.id
+  ).run();
+  // 한 행도 안 들어갔다 = NOT EXISTS 에 걸렸다 = 이미 신청한 사람이다.
+  if (!res?.meta?.changes) throw new HttpError(409, "이미 신청한 강연입니다.");
+  // 확정인지 대기인지는 DB 가 정했다. 우리가 짐작하지 않고 읽어서 알려준다.
+  const saved = await env.DB.prepare("SELECT status FROM lecture_registrations WHERE id = ?").bind(regId).first();
+  return { id: regId, status: saved?.status || okStatus };
 };
 
 // ──────── 투어 ────────────────────────────────────────────
@@ -1655,17 +1739,26 @@ const handleTourReserve = async (req, env, tourId) => {
   const body = await req.json().catch(() => ({}));
   const tour = await env.DB.prepare("SELECT id, capacity FROM tours WHERE id = ?").bind(tourId).first();
   if (!tour) throw new HttpError(404, "투어를 찾을 수 없습니다.");
-  const cnt = await env.DB.prepare(
-    "SELECT COUNT(*) AS c FROM tour_reservations WHERE tour_id = ? AND status IN ('confirmed','paid')"
-  ).bind(tourId).first();
-  const isFull = Number(cnt?.c || 0) >= Number(tour.capacity || 0);
-  const status = isFull ? "waitlist" : "pending_payment";
+  // v00.296.005 — 강연과 같은 이유로 정원 판정과 저장을 한 문장에 묶는다(오버부킹 차단).
+  //   투어에는 원래 중복 예약 검사조차 없었다 — 같은 사람이 같은 투어를 몇 번이든 잡을 수 있었다.
+  //   함께 막는다.
   const id = randomId("tres");
-  await env.DB.prepare(
+  const res = await env.DB.prepare(
     `INSERT INTO tour_reservations (id, tour_id, user_id, user_name, user_email, user_phone, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, tourId, user.id, user.name, user.email, body.phone || "", status).run();
-  return { id, status };
+     SELECT ?, ?, ?, ?, ?, ?,
+       CASE WHEN (SELECT COUNT(*) FROM tour_reservations
+                  WHERE tour_id = ? AND status IN ('confirmed','paid','pending_payment')) >= ?
+            THEN 'waitlist' ELSE 'pending_payment' END
+     WHERE NOT EXISTS (SELECT 1 FROM tour_reservations
+                       WHERE tour_id = ? AND user_id = ? AND status != 'cancelled')`
+  ).bind(
+    id, tourId, user.id, user.name, user.email, body.phone || "",
+    tourId, Number(tour.capacity || 0),
+    tourId, user.id
+  ).run();
+  if (!res?.meta?.changes) throw new HttpError(409, "이미 신청한 투어입니다.");
+  const saved = await env.DB.prepare("SELECT status FROM tour_reservations WHERE id = ?").bind(id).first();
+  return { id, status: saved?.status || "pending_payment" };
 };
 
 const handleMyTours = async (req, env) => {
@@ -1757,6 +1850,23 @@ const handleTourReviewDelete = async (req, env, reviewId) => {
 const handleBookOrderCreate = async (req, env) => {
   const user = await requireUser(req, env);
   const body = await req.json().catch(() => ({}));
+  // v00.296.005 — 중복 주문 방어.
+  //   지금까지 막는 곳은 결제 화면의 '이중 제출 가드' 하나뿐이었고, 그건 브라우저 안에서만 산다.
+  //   네트워크가 느려 응답이 늦을 때 새로고침하거나 뒤로 갔다 다시 누르면 같은 주문이 두 번 들어간다.
+  //   같은 사람이 같은 책을 같은 수량으로 **1분 안에** 또 주문하면, 새로 만들지 않고 앞의 주문을 돌려준다.
+  //   진짜로 두 권을 따로 주문하려는 사람은 수량을 늘리거나 1분 뒤에 하면 된다.
+  //   ⚠ 먼저 찾아보고 없으면 넣는 방식으로는 부족했다 — 두 요청이 같은 순간에 오면
+  //     둘 다 '없다' 를 보고 둘 다 넣는다(정원 초과와 똑같은 경쟁). 실측으로 확인했다.
+  //     그래서 아래 INSERT 자체에 NOT EXISTS 를 붙여 한 문장으로 만든다.
+  const dupSince = new Date(Date.now() - 60_000).toISOString();
+  const dupWhere = `NOT EXISTS (SELECT 1 FROM book_orders
+       WHERE user_id = ? AND book_id = ? AND qty = ? AND status = 'pending_payment' AND created_at > ?)`;
+  const dupArgs = [user.id, body.bookId || "kingsroad", Number(body.qty || 1), dupSince];
+  const findDup = async () => env.DB.prepare(
+    `SELECT id, order_no FROM book_orders
+     WHERE user_id = ? AND book_id = ? AND qty = ? AND status = 'pending_payment' AND created_at > ?
+     ORDER BY created_at DESC LIMIT 1`
+  ).bind(...dupArgs).first().catch(() => null);
   const id = randomId("ord");
   const orderNo = "BGNJ-" + Date.now().toString(36).toUpperCase();
   // v00.295.002 — 세금계산서 발행 요청. schema-v12 이전 DB 에서는 컬럼이 없으므로
@@ -1769,24 +1879,36 @@ const handleBookOrderCreate = async (req, env) => {
     body.zip || "", body.memo || "", nowIso(),
   ];
   const COLS = "id, order_no, book_id, user_id, version, qty, price, recipient, phone, address, address_detail, zip, memo, status, created_at";
+  const tax = [
+    taxOn,
+    String(body.bizName || "").slice(0, 120),
+    String(body.bizNo || "").slice(0, 40),
+    String(body.bizCeo || "").slice(0, 80),
+    String(body.bizEmail || "").slice(0, 160),
+  ];
+  let res;
   try {
-    await env.DB.prepare(
+    res = await env.DB.prepare(
       `INSERT INTO book_orders (${COLS}, tax_invoice, biz_name, biz_no, biz_ceo, biz_email)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?)`
-    ).bind(
-      ...base,
-      taxOn,
-      String(body.bizName || "").slice(0, 120),
-      String(body.bizNo || "").slice(0, 40),
-      String(body.bizCeo || "").slice(0, 80),
-      String(body.bizEmail || "").slice(0, 160),
-    ).run();
+       SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?, ?, ?
+       WHERE ${dupWhere}`
+    ).bind(...base, ...tax, ...dupArgs).run();
   } catch (err) {
     if (!String(err?.message || "").toLowerCase().includes("no such column")) throw err;
     console.warn("[bgnj] book_orders 에 세금계산서 컬럼이 없다 — schema-v12 미적용. 주문은 그대로 접수한다.");
-    await env.DB.prepare(
-      `INSERT INTO book_orders (${COLS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?)`
-    ).bind(...base).run();
+    res = await env.DB.prepare(
+      `INSERT INTO book_orders (${COLS})
+       SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?
+       WHERE ${dupWhere}`
+    ).bind(...base, ...dupArgs).run();
+  }
+  // 한 행도 안 들어갔다 = 1분 안에 같은 주문이 이미 있다. 새로 만들지 않고 그것을 돌려준다.
+  if (!res?.meta?.changes) {
+    const dup = await findDup();
+    if (dup) {
+      console.warn(`[bgnj] 1분 내 같은 주문 재요청 — 기존 주문 ${dup.order_no} 을 돌려준다`);
+      return { id: dup.id, orderNo: dup.order_no, deduped: true };
+    }
   }
   return { id, orderNo };
 };
@@ -2395,7 +2517,9 @@ const handleColumnCreate = async (req, env) => {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, user.id, user.name,
-    body.title || '', body.excerpt || '', body.body || '',
+    assertLength(body.title || '', POST_TITLE_MAX, '제목'),
+    assertLength(body.excerpt || '', 2000, '요약'),
+    stripDangerousHtml(assertLength(body.body || '', POST_BODY_MAX, '본문')),
     body.category || '', body.coverUrl || '',
     body.status || 'published', body.scheduledAt || null,
     Number(body.readMinutes || 3), createdAt,
