@@ -153,11 +153,14 @@ const run = async () => {
   console.log("\n── 7. 관리자 목록 정렬·필터 ──");
   // AdminShared 는 JSX 를 쓰므로 통째로는 못 돌린다. 판정 로직만 떼어내 실제 코드로 시험한다.
   {
-    const shared = readFileSync(path.join(ROOT, "pages/admin/AdminShared.jsx"), "utf8");
+    // v00.298.001 — AdminShared 에서 AdminEventsPanels 로 옮겼다(window 경유 제거).
+    const shared = readFileSync(path.join(ROOT, "pages/admin/AdminEventsPanels.jsx"), "utf8");
     const a = shared.indexOf("const eventTimestamp = (item) => {");
     const b = shared.indexOf("const EventListToolbar =");
+    if (a < 0 || b < 0) throw new Error("정렬/필터 코드를 찾지 못했다 — 위치가 바뀌었는지 확인하라");
     const { filterSortEvents, eventTimestamp } = vm.runInNewContext(
-      shared.slice(a, b) + "\n({ filterSortEvents, eventTimestamp })", { Date, Number, String, Array, isNaN }
+      shared.slice(a, b) + "\n({ filterSortEvents, eventTimestamp, EVENT_SORT_DEFAULT })",
+      { Date, Number, String, Array, isNaN }
     );
     const now = Date.now();
     const day = 86400000;
@@ -180,6 +183,8 @@ const run = async () => {
     check("신청 많은순", ids(filterSortEvents(items, { sort: "regs-desc", countOf: (x) => x.id })) === "4,3,2,1");
     check("잔여 적은순", ids(filterSortEvents(items, { sort: "seats-asc", seatsOf: (x) => x.id })) === "1,2,3,4");
     check("일정 미정도 목록에서 안 사라진다", filterSortEvents(items, {}).length === 4);
+    // 사용자 요청: 아무것도 안 고르면 가장 최신이 맨 위여야 한다.
+    check("기본 정렬은 최신이 맨 위", filterSortEvents(items, {})[0].id === 2, `맨 위 id=${filterSortEvents(items, {})[0].id}`);
   }
 
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);

@@ -1159,113 +1159,6 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     return { counts, labels };
   };
   window.HeatmapGrid = HeatmapGrid;
-  var eventTimestamp = (item) => {
-    const iso = (item == null ? void 0 : item.startsAt) || (item == null ? void 0 : item.starts_at);
-    if (iso) {
-      const t = Date.parse(iso);
-      if (!isNaN(t)) return t;
-    }
-    const m = String((item == null ? void 0 : item.next) || "").match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
-    if (m) {
-      const t = Date.parse(`${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}T00:00:00+09:00`);
-      if (!isNaN(t)) return t;
-    }
-    return 0;
-  };
-  var EVENT_FILTERS = [
-    { key: "all", label: "\uC804\uCCB4" },
-    { key: "upcoming", label: "\uC608\uC815" },
-    { key: "past", label: "\uC9C0\uB09C" },
-    { key: "open", label: "\uACF5\uAC1C" },
-    { key: "hidden", label: "\uC228\uAE40" }
-  ];
-  var EVENT_SORTS = [
-    { key: "date-desc", label: "\uC77C\uC815 \uB2A6\uC740\uC21C" },
-    { key: "date-asc", label: "\uC77C\uC815 \uBE60\uB978\uC21C" },
-    { key: "regs-desc", label: "\uC2E0\uCCAD \uB9CE\uC740\uC21C" },
-    { key: "seats-asc", label: "\uC794\uC5EC \uC801\uC740\uC21C" },
-    { key: "title", label: "\uC81C\uBAA9\uC21C" }
-  ];
-  var filterSortEvents = (items, { search = "", status = "all", sort = "date-desc", countOf, seatsOf } = {}) => {
-    const now = Date.now();
-    let list = (Array.isArray(items) ? items : []).slice();
-    if (status === "upcoming") list = list.filter((x) => eventTimestamp(x) >= now);
-    else if (status === "past") list = list.filter((x) => {
-      const t = eventTimestamp(x);
-      return t > 0 && t < now;
-    });
-    else if (status === "open") list = list.filter((x) => !x.hidden);
-    else if (status === "hidden") list = list.filter((x) => !!x.hidden);
-    const q = String(search || "").trim().toLowerCase();
-    if (q) {
-      list = list.filter((x) => [x.title, x.topic, x.subtitle, x.venue, x.host, x.level, x.desc].some((v) => String(v || "").toLowerCase().includes(q)));
-    }
-    const num = (fn, x) => {
-      var _a;
-      try {
-        return Number((_a = fn == null ? void 0 : fn(x)) != null ? _a : 0) || 0;
-      } catch (e) {
-        return 0;
-      }
-    };
-    const byDate = (a, b, dir) => {
-      const ta = eventTimestamp(a), tb = eventTimestamp(b);
-      if (ta === 0 && tb === 0) return 0;
-      if (ta === 0) return 1;
-      if (tb === 0) return -1;
-      return dir === "asc" ? ta - tb : tb - ta;
-    };
-    if (sort === "date-asc") list.sort((a, b) => byDate(a, b, "asc"));
-    else if (sort === "regs-desc") list.sort((a, b) => num(countOf, b) - num(countOf, a));
-    else if (sort === "seats-asc") list.sort((a, b) => num(seatsOf, a) - num(seatsOf, b));
-    else if (sort === "title") list.sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "ko"));
-    else list.sort((a, b) => byDate(a, b, "desc"));
-    return list;
-  };
-  var EventListToolbar = ({ search, onSearch, status, onStatus, sort, onSort, shown, total, placeholder }) => /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 16, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
-    "input",
-    {
-      className: "field-input",
-      style: { flex: 1, minWidth: 200 },
-      placeholder: placeholder || "\uC81C\uBAA9\xB7\uC7A5\uC18C \uAC80\uC0C9\u2026",
-      value: search,
-      onChange: (e) => onSearch(e.target.value)
-    }
-  ), /* @__PURE__ */ React.createElement(
-    "select",
-    {
-      className: "field-input",
-      style: { maxWidth: 130 },
-      value: status,
-      onChange: (e) => onStatus(e.target.value),
-      "aria-label": "\uC0C1\uD0DC \uD544\uD130"
-    },
-    EVENT_FILTERS.map((f) => /* @__PURE__ */ React.createElement("option", { key: f.key, value: f.key }, f.label))
-  ), /* @__PURE__ */ React.createElement(
-    "select",
-    {
-      className: "field-input",
-      style: { maxWidth: 160 },
-      value: sort,
-      onChange: (e) => onSort(e.target.value),
-      "aria-label": "\uC815\uB82C \uAE30\uC900"
-    },
-    EVENT_SORTS.map((f) => /* @__PURE__ */ React.createElement("option", { key: f.key, value: f.key }, f.label))
-  ), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11, whiteSpace: "nowrap" } }, shown === total ? `${total}\uAC74` : `${shown} / ${total}\uAC74`), (search || status !== "all") && /* @__PURE__ */ React.createElement(
-    "button",
-    {
-      type: "button",
-      className: "btn btn-small",
-      onClick: () => {
-        onSearch("");
-        onStatus("all");
-      }
-    },
-    "\uCD08\uAE30\uD654"
-  ));
-  window.eventTimestamp = eventTimestamp;
-  window.filterSortEvents = filterSortEvents;
-  window.EventListToolbar = EventListToolbar;
 
   // pages/admin/AdminContentEditors.jsx
   var RecommendationsAdminPanel = () => {
@@ -12193,6 +12086,111 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }
     ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: submit, disabled: busy }, busy ? "\uB4F1\uB85D \uC911\u2026" : "\uC77C\uAD04 \uB4F1\uB85D \uC2E4\uD589")), result && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 12, padding: 12, border: "1px solid var(--line)", fontSize: 12, lineHeight: 1.7 } }, /* @__PURE__ */ React.createElement("div", { className: "gold mono", style: { marginBottom: 6 } }, "\uACB0\uACFC"), /* @__PURE__ */ React.createElement("div", null, "\u2705 \uC131\uACF5: ", /* @__PURE__ */ React.createElement("strong", null, result.ok), "\uAC74"), result.fail.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { marginTop: 6 } }, "\u274C \uC2E4\uD328: ", /* @__PURE__ */ React.createElement("strong", { style: { color: "var(--danger)" } }, result.fail.length), "\uAC74"), /* @__PURE__ */ React.createElement("ul", { style: { margin: "6px 0 0", paddingLeft: 18 } }, result.fail.map((f, i) => /* @__PURE__ */ React.createElement("li", { key: i, style: { color: "var(--danger)" } }, f.line, "\uD589 \u2014 ", f.err))))));
   };
+  var eventTimestamp = (item) => {
+    const iso = (item == null ? void 0 : item.startsAt) || (item == null ? void 0 : item.starts_at);
+    if (iso) {
+      const t = Date.parse(iso);
+      if (!isNaN(t)) return t;
+    }
+    const m = String((item == null ? void 0 : item.next) || "").match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+    if (m) {
+      const t = Date.parse(`${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}T00:00:00+09:00`);
+      if (!isNaN(t)) return t;
+    }
+    return 0;
+  };
+  var EVENT_FILTERS = [
+    { key: "all", label: "\uC804\uCCB4" },
+    { key: "upcoming", label: "\uC608\uC815" },
+    { key: "past", label: "\uC9C0\uB09C" },
+    { key: "open", label: "\uACF5\uAC1C" },
+    { key: "hidden", label: "\uC228\uAE40" }
+  ];
+  var EVENT_SORTS = [
+    { key: "date-desc", label: "\uCD5C\uC2E0\uC21C" },
+    { key: "date-asc", label: "\uC624\uB798\uB41C\uC21C" },
+    { key: "regs-desc", label: "\uC2E0\uCCAD \uB9CE\uC740\uC21C" },
+    { key: "seats-asc", label: "\uC794\uC5EC \uC801\uC740\uC21C" },
+    { key: "title", label: "\uC81C\uBAA9\uC21C" }
+  ];
+  var EVENT_SORT_DEFAULT = "date-desc";
+  var filterSortEvents = (items, { search = "", status = "all", sort = EVENT_SORT_DEFAULT, countOf, seatsOf } = {}) => {
+    const now = Date.now();
+    let list = (Array.isArray(items) ? items : []).slice();
+    if (status === "upcoming") list = list.filter((x) => eventTimestamp(x) >= now);
+    else if (status === "past") list = list.filter((x) => {
+      const t = eventTimestamp(x);
+      return t > 0 && t < now;
+    });
+    else if (status === "open") list = list.filter((x) => !x.hidden);
+    else if (status === "hidden") list = list.filter((x) => !!x.hidden);
+    const q = String(search || "").trim().toLowerCase();
+    if (q) {
+      list = list.filter((x) => [x.title, x.topic, x.subtitle, x.venue, x.host, x.level, x.desc].some((v) => String(v || "").toLowerCase().includes(q)));
+    }
+    const num = (fn, x) => {
+      var _a;
+      try {
+        return Number((_a = fn == null ? void 0 : fn(x)) != null ? _a : 0) || 0;
+      } catch (e) {
+        return 0;
+      }
+    };
+    const byDate = (a, b, dir) => {
+      const ta = eventTimestamp(a), tb = eventTimestamp(b);
+      if (ta === 0 && tb === 0) return 0;
+      if (ta === 0) return 1;
+      if (tb === 0) return -1;
+      return dir === "asc" ? ta - tb : tb - ta;
+    };
+    if (sort === "date-asc") list.sort((a, b) => byDate(a, b, "asc"));
+    else if (sort === "regs-desc") list.sort((a, b) => num(countOf, b) - num(countOf, a));
+    else if (sort === "seats-asc") list.sort((a, b) => num(seatsOf, a) - num(seatsOf, b));
+    else if (sort === "title") list.sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "ko"));
+    else list.sort((a, b) => byDate(a, b, "desc"));
+    return list;
+  };
+  var EventListToolbar = ({ search, onSearch, status, onStatus, sort, onSort, shown, total, placeholder }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: "12px 14px", marginBottom: 16, display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      className: "field-input",
+      style: { flex: 1, minWidth: 200 },
+      placeholder: placeholder || "\uC81C\uBAA9\xB7\uC7A5\uC18C \uAC80\uC0C9\u2026",
+      value: search,
+      onChange: (e) => onSearch(e.target.value)
+    }
+  ), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      className: "field-input",
+      style: { maxWidth: 130 },
+      value: status,
+      onChange: (e) => onStatus(e.target.value),
+      "aria-label": "\uC0C1\uD0DC \uD544\uD130"
+    },
+    EVENT_FILTERS.map((f) => /* @__PURE__ */ React.createElement("option", { key: f.key, value: f.key }, f.label))
+  ), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      className: "field-input",
+      style: { maxWidth: 150 },
+      value: sort,
+      onChange: (e) => onSort(e.target.value),
+      "aria-label": "\uC815\uB82C \uAE30\uC900"
+    },
+    EVENT_SORTS.map((f) => /* @__PURE__ */ React.createElement("option", { key: f.key, value: f.key }, f.label))
+  ), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11, whiteSpace: "nowrap" } }, shown === total ? `${total}\uAC74` : `${shown} / ${total}\uAC74`), (search || status !== "all") && /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: () => {
+        onSearch("");
+        onStatus("all");
+      }
+    },
+    "\uCD08\uAE30\uD654"
+  ));
   var LectureAdminPanel = ({ go }) => {
     const [tick, setTick] = React.useState(0);
     const [editingId, setEditingId] = React.useState(null);
@@ -12208,8 +12206,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const allLectures = React.useMemo(() => window.BGNJ_LECTURES.listAll({ includeHidden: true }), [tick]);
     const [search, setSearch] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("all");
-    const [sortKey, setSortKey] = React.useState("date-desc");
-    const lectures = React.useMemo(() => window.filterSortEvents(allLectures, {
+    const [sortKey, setSortKey] = React.useState(EVENT_SORT_DEFAULT);
+    const lectures = React.useMemo(() => filterSortEvents(allLectures, {
       search,
       status: statusFilter,
       sort: sortKey,
@@ -12409,8 +12407,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       } catch (_e) {
         console.warn("[bgnj] AdminEventsPanels.jsx:332 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
-    } }), allLectures.length > 0 && window.EventListToolbar && /* @__PURE__ */ React.createElement(
-      window.EventListToolbar,
+    } }), allLectures.length > 0 && /* @__PURE__ */ React.createElement(
+      EventListToolbar,
       {
         search,
         onSearch: setSearch,
@@ -12621,8 +12619,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const allTours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
     const [search, setSearch] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("all");
-    const [sortKey, setSortKey] = React.useState("date-desc");
-    const tours = React.useMemo(() => window.filterSortEvents(allTours, {
+    const [sortKey, setSortKey] = React.useState(EVENT_SORT_DEFAULT);
+    const tours = React.useMemo(() => filterSortEvents(allTours, {
       search,
       status: statusFilter,
       sort: sortKey,
@@ -12865,8 +12863,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         });
       }
       refresh();
-    } }, "\uC0D8\uD50C \uB370\uC774\uD130 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: addNewTour }, "\uFF0B \uC0C8 \uD22C\uC5B4 \uCD94\uAC00"))), allTours.length > 0 && window.EventListToolbar && /* @__PURE__ */ React.createElement(
-      window.EventListToolbar,
+    } }, "\uC0D8\uD50C \uB370\uC774\uD130 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: addNewTour }, "\uFF0B \uC0C8 \uD22C\uC5B4 \uCD94\uAC00"))), allTours.length > 0 && /* @__PURE__ */ React.createElement(
+      EventListToolbar,
       {
         search,
         onSearch: setSearch,
