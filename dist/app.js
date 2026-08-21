@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.296.005",
+    version: "00.296.006",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -2084,9 +2084,11 @@
       try {
         const cached = this._serverPosts.find((p) => String(p.id) === String(postId));
         if (cached && cached.body && (cached.body.html || cached.body.text)) return;
-        const fullPost = await window.BGNJ_API.posts.get(postId);
-        if (!fullPost) return;
-        const ui = _serverPostToUi(fullPost);
+        const res = await window.BGNJ_API.posts.get(postId);
+        const row = (res == null ? void 0 : res.post) || res;
+        if (!row || row.id == null) return;
+        const ui = _serverPostToUi(row);
+        if (ui.id == null) return;
         this._serverPosts = this._serverPosts.map(
           (p) => String(p.id) === String(postId) ? ui : p
         );

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.296.005",
+  version: "00.296.006",
   build: "2026.08.21",
   channel: "preview",
 };
@@ -1625,9 +1625,16 @@ window.BGNJ_COMMUNITY = {
       const cached = this._serverPosts.find((p) => String(p.id) === String(postId));
       // 이미 body 가 있으면 skip — 새 워커는 list 에서 body 옴.
       if (cached && cached.body && (cached.body.html || cached.body.text)) return;
-      const fullPost = await window.BGNJ_API.posts.get(postId);
-      if (!fullPost) return;
-      const ui = _serverPostToUi(fullPost);
+      // v00.296.006 — 서버는 { post: {...} } 로 감싸서 준다. 그걸 통째로 글 객체로 취급하면
+      //   id 가 undefined 인 껍데기가 만들어지고, 아래 map 이 **목록의 그 글을 그 껍데기로 갈아치운다.**
+      //   그러면 글을 클릭했을 때 find 가 실패해 '해당 게시글을 찾을 수 없습니다' 가 뜬다.
+      //   이 결함은 v00.170 부터 있었지만 목록에 body 가 실려 있어 위 early-return 에 늘 걸렸다.
+      //   v00.296.002 에서 목록에서 body 를 빼면서 잠자던 버그가 깨어났다.
+      const res = await window.BGNJ_API.posts.get(postId);
+      const row = res?.post || res;
+      if (!row || row.id == null) return;   // 못 받았으면 캐시를 건드리지 않는다. 지우는 것보다 낫다.
+      const ui = _serverPostToUi(row);
+      if (ui.id == null) return;
       this._serverPosts = this._serverPosts.map((p) =>
         String(p.id) === String(postId) ? ui : p
       );
