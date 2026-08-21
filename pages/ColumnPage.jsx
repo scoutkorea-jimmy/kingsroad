@@ -63,6 +63,18 @@ const ColumnPage = ({ go, user }) => {
     return () => window.removeEventListener('bgnj-columns-refresh', onR);
   }, []);
 
+  // v00.296.003 — 상세 진입 시 본문 받아오기.
+  //   목록 응답에는 발췌만 온다(463KB → 대폭 감소). 본문은 여기서 채운다.
+  //   이 effect 가 없으면 칼럼을 열었을 때 본문이 빈 채로 보인다.
+  React.useEffect(() => {
+    if (!selectedId) return;
+    let cancelled = false;
+    Promise.resolve(window.BGNJ_COLUMNS?._hydrateColumnBody?.(selectedId))
+      .then(() => { if (!cancelled) refresh(); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [selectedId]);
+
   // 상세 진입 시 조회수 증가 (세션당 1회)
   React.useEffect(() => {
     if (!selectedId) return;
@@ -147,9 +159,11 @@ const ColumnPage = ({ go, user }) => {
     const liked = !!user && likes.includes(user.id);
     const views = G.num(() => window.BGNJ_COLUMNS?.getViews?.(c.id), 0);
     const comments = G.arr(() => window.BGNJ_COLUMNS?.listComments?.(c.id));
+    // v00.296.003 — 목록에 본문이 없을 수 있다. 기존 폴백 c.readTime 은 _toColumn 에 없는
+    //   필드라 늘 undefined 였다 — 본문이 사라지면 읽는 시간도 조용히 사라졌을 것이다.
     const readTime = c.body?.text
       ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text)
-      : c.readTime;
+      : (c.readMinutes ? `${c.readMinutes}분` : (c.excerpt ? window.BGNJ_COLUMNS.estimateReadTime(c.excerpt) : ''));
 
     return (
       <div className="section">
@@ -418,7 +432,7 @@ const ColumnPage = ({ go, user }) => {
               const views = G.num(() => window.BGNJ_COLUMNS?.getViews?.(c.id), 0);
               const readTime = c.body?.text
                 ? G.call(() => window.BGNJ_COLUMNS?.estimateReadTime?.(c.body.text), c.readTime)
-                : c.readTime;
+                : (c.readMinutes ? `${c.readMinutes}분` : '');
               return (
                 <div key={c.id}
                   onClick={() => setSelectedId(c.id)}

@@ -234,6 +234,18 @@ const getCurrentUser = async (req, env) => {
   };
 };
 
+// v00.296.003 — '숨은 것까지 보기' 는 관리자만.
+//   지금까지 includeAll / includeHidden 은 **권한 검사 없이** 받아들여졌다.
+//   지금은 비공개 콘텐츠가 없어 실제로 샌 것은 없지만(실측), 구조가 열려 있었다.
+//   성능 문제도 겹친다 — 이 옵션이 붙으면 _publicCacheable 이 false 라 CDN 캐시를 못 탄다.
+//   그런데 부팅 코드가 모든 방문자에게 이 옵션을 붙이고 있었다(boot.jsx).
+const wantsHidden = async (req, env, param) => {
+  const url = new URL(req.url);
+  if (url.searchParams.get(param) !== "1") return false;
+  try { return !!(await getCurrentUser(req, env))?.isAdmin; }
+  catch (e) { console.warn("[bgnj] 권한 확인 실패 — 공개분만 보여준다", e?.message || e); return false; }
+};
+
 const requireUser = async (req, env) => {
   const user = await getCurrentUser(req, env);
   if (!user) throw new HttpError(401, "로그인이 필요합니다.");
@@ -1229,7 +1241,7 @@ const lectureRow = (l) => l && ({
 
 const handleLecturesList = async (req, env) => {
   const url = new URL(req.url);
-  const includeHidden = url.searchParams.get("includeHidden") === "1";
+  const includeHidden = await wantsHidden(req, env, "includeHidden");
   const where = includeHidden ? "1=1" : "hidden = 0";
   const { results } = await env.DB.prepare(`SELECT * FROM lectures WHERE ${where} ORDER BY starts_at ASC`).all();
   return { lectures: results.map(lectureRow) };
@@ -1326,7 +1338,7 @@ const tourRow = (t) => t && ({
 
 const handleToursList = async (req, env) => {
   const url = new URL(req.url);
-  const includeHidden = url.searchParams.get("includeHidden") === "1";
+  const includeHidden = await wantsHidden(req, env, "includeHidden");
   const where = includeHidden ? "1=1" : "hidden = 0";
   const { results } = await env.DB.prepare(`SELECT * FROM tours WHERE ${where} ORDER BY starts_at ASC`).all();
   return { tours: results.map(tourRow) };
@@ -2330,7 +2342,7 @@ const insertNotification = async (env, { userId, type, message, fromName, postId
 // ── 사용자 칼럼 ──
 const handleColumnsList = async (req, env) => {
   const url = new URL(req.url);
-  const includeAll = url.searchParams.get("includeAll") === "1";
+  const includeAll = await wantsHidden(req, env, "includeAll");
   const status = includeAll ? null : 'published';
   // v00.201 — q + includeBody 검색 옵션 (P1 #4). 칼럼 본문은 body_text 또는 body_json 안에 .text 필드.
   const q = (url.searchParams.get("q") || "").trim();
@@ -2349,7 +2361,16 @@ const handleColumnsList = async (req, env) => {
   const { results } = await env.DB.prepare(
     `SELECT * FROM user_columns WHERE ${where} ORDER BY created_at DESC LIMIT 200`
   ).bind(...args).all();
-  return { columns: results || [] };
+  // v00.296.003 — 글 목록과 같은 이유로 본문을 뺀다(목록 463KB 의 대부분이 body 였다).
+  //   excerpt 컬럼이 원래 있지만 비어 있는 칼럼이 많아, 비면 본문 앞부분에서 만들어 채운다.
+  //   검색(searchPublic)이 title·excerpt·body 를 함께 보므로 발췌만 있어도 검색이 살아 있다.
+  //   상세로 들어가면 BGNJ_COLUMNS._hydrateColumnBody 가 /api/columns/{id} 로 전문을 받는다.
+  const columns = (results || []).map((r) => {
+    const { body, ...rest } = r;
+    const ex = String(r.excerpt || "").trim();
+    return { ...rest, excerpt: ex || postExcerpt(body) };
+  });
+  return { columns };
 };
 
 const handleColumnGet = async (req, env, id) => {

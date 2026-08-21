@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.296.002",
+    version: "00.296.003",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -2549,6 +2549,28 @@
       const len = String(text || "").length;
       const minutes = Math.max(3, Math.ceil(len / 600));
       return `${minutes}\uBD84`;
+    },
+    // v00.296.003 — 목록 응답에는 본문이 오지 않는다(발췌만). 상세를 열 때 전문을 받아 캐시에 채운다.
+    //   게시글의 _hydratePostBody 와 같은 장치다. 없으면 칼럼 본문이 빈 채로 보인다.
+    async _hydrateColumnBody(id) {
+      try {
+        const cached = (this._columns || []).find((c) => String(c.id) === String(id));
+        if (cached && cached.body && (cached.body.html || cached.body.text)) return cached;
+        const res = await window.BGNJ_API.columns.get(id);
+        const row = (res == null ? void 0 : res.column) || res;
+        if (!row) return cached || null;
+        const ui = this._toColumn(row);
+        this._columns = (this._columns || []).some((c) => String(c.id) === String(id)) ? this._columns.map((c) => String(c.id) === String(id) ? ui : c) : [ui, ...this._columns || []];
+        try {
+          window.dispatchEvent(new CustomEvent("bgnj-columns-refresh"));
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js)", _e);
+        }
+        return ui;
+      } catch (e) {
+        console.warn("[BGNJ] \uCE7C\uB7FC \uBCF8\uBB38 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
+        return null;
+      }
     },
     async refresh({ admin } = {}) {
       try {
@@ -11330,6 +11352,18 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return () => window.removeEventListener("bgnj-columns-refresh", onR);
     }, []);
     React.useEffect(() => {
+      var _a2, _b2;
+      if (!selectedId) return;
+      let cancelled = false;
+      Promise.resolve((_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2._hydrateColumnBody) == null ? void 0 : _b2.call(_a2, selectedId)).then(() => {
+        if (!cancelled) refresh();
+      }).catch(() => {
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [selectedId]);
+    React.useEffect(() => {
       if (!selectedId) return;
       const key = `bgnj_viewed_col_${selectedId}`;
       try {
@@ -11408,7 +11442,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         var _a2, _b2;
         return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listComments) == null ? void 0 : _b2.call(_a2, c.id);
       });
-      const readTime = ((_a = c.body) == null ? void 0 : _a.text) ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text) : c.readTime;
+      const readTime = ((_a = c.body) == null ? void 0 : _a.text) ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text) : c.readMinutes ? `${c.readMinutes}\uBD84` : c.excerpt ? window.BGNJ_COLUMNS.estimateReadTime(c.excerpt) : "";
       return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement(
         "button",
         {
@@ -11586,7 +11620,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const readTime = ((_a2 = c.body) == null ? void 0 : _a2.text) ? G2.call(() => {
         var _a3, _b2;
         return (_b2 = (_a3 = window.BGNJ_COLUMNS) == null ? void 0 : _a3.estimateReadTime) == null ? void 0 : _b2.call(_a3, c.body.text);
-      }, c.readTime) : c.readTime;
+      }, c.readTime) : c.readMinutes ? `${c.readMinutes}\uBD84` : "";
       return /* @__PURE__ */ React.createElement(
         "div",
         {
@@ -15116,7 +15150,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _A, _B, _C, _D, _E, _F, _G2, _H, _I, _J;
       let cancelled = false;
       (_b = (_a = window.BGNJ_AUTH).refreshSession) == null ? void 0 : _b.call(_a).then((u) => {
-        var _a2, _b2, _c2, _d2, _e2, _f2, _g2, _h2, _i2, _j2, _k2, _l2;
+        var _a2, _b2, _c2, _d2, _e2, _f2, _g2, _h2, _i2, _j2, _k2, _l2, _m2, _n2, _o2, _p2, _q2, _r2;
         if (!cancelled) setUser(u || null);
         if (u == null ? void 0 : u.id) {
           try {
@@ -15127,9 +15161,16 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           Promise.allSettled([
             (_d2 = (_c2 = window.BGNJ_LECTURES) == null ? void 0 : _c2.refreshMine) == null ? void 0 : _d2.call(_c2),
             (_f2 = (_e2 = window.BGNJ_TOURS) == null ? void 0 : _e2.refreshMine) == null ? void 0 : _f2.call(_e2),
-            (_h2 = (_g2 = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _g2.refreshMine) == null ? void 0 : _h2.call(_g2),
-            (_j2 = (_i2 = window.BGNJ_COMMUNITY) == null ? void 0 : _i2.refreshBookmarks) == null ? void 0 : _j2.call(_i2, u.id),
-            (_l2 = (_k2 = window.BGNJ_COMMUNITY) == null ? void 0 : _k2.refreshNotifications) == null ? void 0 : _l2.call(_k2, u.id)
+            // v00.296.003 — 관리자로 확인된 뒤에만 '숨은 것까지' 다시 받는다.
+            //   일반 방문자(대다수)는 공개분만 받고 CDN 캐시를 탄다.
+            ...u.isAdmin ? [
+              (_h2 = (_g2 = window.BGNJ_LECTURES) == null ? void 0 : _g2.refresh) == null ? void 0 : _h2.call(_g2, { includeHidden: true }),
+              (_j2 = (_i2 = window.BGNJ_TOURS) == null ? void 0 : _i2.refresh) == null ? void 0 : _j2.call(_i2, { includeHidden: true }),
+              (_l2 = (_k2 = window.BGNJ_COLUMNS) == null ? void 0 : _k2.refresh) == null ? void 0 : _l2.call(_k2, { admin: true })
+            ] : [],
+            (_n2 = (_m2 = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _m2.refreshMine) == null ? void 0 : _n2.call(_m2),
+            (_p2 = (_o2 = window.BGNJ_COMMUNITY) == null ? void 0 : _o2.refreshBookmarks) == null ? void 0 : _p2.call(_o2, u.id),
+            (_r2 = (_q2 = window.BGNJ_COMMUNITY) == null ? void 0 : _q2.refreshNotifications) == null ? void 0 : _r2.call(_q2, u.id)
           ]).catch(() => {
           });
         }
@@ -15139,11 +15180,18 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         (_f = (_e = window.BGNJ_FAQ) == null ? void 0 : _e.refresh) == null ? void 0 : _f.call(_e),
         (_h = (_g = window.BGNJ_LEGAL) == null ? void 0 : _g.refresh) == null ? void 0 : _h.call(_g, "terms"),
         (_j = (_i = window.BGNJ_LEGAL) == null ? void 0 : _i.refresh) == null ? void 0 : _j.call(_i, "privacy"),
-        (_l = (_k = window.BGNJ_LECTURES) == null ? void 0 : _k.refresh) == null ? void 0 : _l.call(_k, { includeHidden: true }),
-        (_n = (_m = window.BGNJ_TOURS) == null ? void 0 : _m.refresh) == null ? void 0 : _n.call(_m, { includeHidden: true }),
+        // v00.296.003 — 부팅 때는 **공개분만** 받는다.
+        //   전에는 모든 방문자에게 includeHidden/admin 을 붙여 보냈다. 그러면
+        //   ① 워커의 _publicCacheable 이 false 가 되어 **CDN 캐시를 통째로 못 탄다**
+        //      (방문자 한 명 한 명이 워커+D1 까지 간다),
+        //   ② 감춰 둔 콘텐츠가 내려갈 소지가 있다(지금은 비공개분이 없어 실제 유출은 없었다).
+        //   관리자에게 필요한 '숨은 것까지' 는 아래 refreshSession 뒤에 따로 받는다.
+        //   서버도 이제 관리자가 아니면 그 옵션을 무시한다(wantsHidden).
+        (_l = (_k = window.BGNJ_LECTURES) == null ? void 0 : _k.refresh) == null ? void 0 : _l.call(_k),
+        (_n = (_m = window.BGNJ_TOURS) == null ? void 0 : _m.refresh) == null ? void 0 : _n.call(_m),
         (_p = (_o = window.BGNJ_BOOKS) == null ? void 0 : _o.refresh) == null ? void 0 : _p.call(_o),
         (_r = (_q = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _q.refreshBankAccount) == null ? void 0 : _r.call(_q),
-        (_t = (_s = window.BGNJ_COLUMNS) == null ? void 0 : _s.refresh) == null ? void 0 : _t.call(_s, { admin: true }),
+        (_t = (_s = window.BGNJ_COLUMNS) == null ? void 0 : _s.refresh) == null ? void 0 : _t.call(_s),
         (_v = (_u = window.BGNJ_COMMUNITY) == null ? void 0 : _u.refreshPosts) == null ? void 0 : _v.call(_u),
         // 등급/카테고리 — D1 에서 서버 정의를 받아 BGNJ_STORES seed 를 덮어씀.
         // 서버에 정의가 비어 있으면 seed 가 그대로 유지(첫 진입자용 폴백).

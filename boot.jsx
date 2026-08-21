@@ -563,6 +563,13 @@ const App = () => {
         Promise.allSettled([
           window.BGNJ_LECTURES?.refreshMine?.(),
           window.BGNJ_TOURS?.refreshMine?.(),
+          // v00.296.003 — 관리자로 확인된 뒤에만 '숨은 것까지' 다시 받는다.
+          //   일반 방문자(대다수)는 공개분만 받고 CDN 캐시를 탄다.
+          ...(u.isAdmin ? [
+            window.BGNJ_LECTURES?.refresh?.({ includeHidden: true }),
+            window.BGNJ_TOURS?.refresh?.({ includeHidden: true }),
+            window.BGNJ_COLUMNS?.refresh?.({ admin: true }),
+          ] : []),
           window.BGNJ_BOOK_ORDERS?.refreshMine?.(),
           window.BGNJ_COMMUNITY?.refreshBookmarks?.(u.id),
           window.BGNJ_COMMUNITY?.refreshNotifications?.(u.id),
@@ -576,11 +583,18 @@ const App = () => {
       window.BGNJ_FAQ?.refresh?.(),
       window.BGNJ_LEGAL?.refresh?.('terms'),
       window.BGNJ_LEGAL?.refresh?.('privacy'),
-      window.BGNJ_LECTURES?.refresh?.({ includeHidden: true }),
-      window.BGNJ_TOURS?.refresh?.({ includeHidden: true }),
+      // v00.296.003 — 부팅 때는 **공개분만** 받는다.
+      //   전에는 모든 방문자에게 includeHidden/admin 을 붙여 보냈다. 그러면
+      //   ① 워커의 _publicCacheable 이 false 가 되어 **CDN 캐시를 통째로 못 탄다**
+      //      (방문자 한 명 한 명이 워커+D1 까지 간다),
+      //   ② 감춰 둔 콘텐츠가 내려갈 소지가 있다(지금은 비공개분이 없어 실제 유출은 없었다).
+      //   관리자에게 필요한 '숨은 것까지' 는 아래 refreshSession 뒤에 따로 받는다.
+      //   서버도 이제 관리자가 아니면 그 옵션을 무시한다(wantsHidden).
+      window.BGNJ_LECTURES?.refresh?.(),
+      window.BGNJ_TOURS?.refresh?.(),
       window.BGNJ_BOOKS?.refresh?.(),
       window.BGNJ_BOOK_ORDERS?.refreshBankAccount?.(),
-      window.BGNJ_COLUMNS?.refresh?.({ admin: true }),
+      window.BGNJ_COLUMNS?.refresh?.(),
       window.BGNJ_COMMUNITY?.refreshPosts?.(),
       // 등급/카테고리 — D1 에서 서버 정의를 받아 BGNJ_STORES seed 를 덮어씀.
       // 서버에 정의가 비어 있으면 seed 가 그대로 유지(첫 진입자용 폴백).

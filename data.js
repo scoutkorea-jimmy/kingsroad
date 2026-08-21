@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.296.002",
+  version: "00.296.003",
   build: "2026.08.21",
   channel: "preview",
 };
@@ -1980,6 +1980,27 @@ window.BGNJ_COLUMNS = {
     const len = String(text || '').length;
     const minutes = Math.max(3, Math.ceil(len / 600));
     return `${minutes}분`;
+  },
+  // v00.296.003 — 목록 응답에는 본문이 오지 않는다(발췌만). 상세를 열 때 전문을 받아 캐시에 채운다.
+  //   게시글의 _hydratePostBody 와 같은 장치다. 없으면 칼럼 본문이 빈 채로 보인다.
+  async _hydrateColumnBody(id) {
+    try {
+      const cached = (this._columns || []).find((c) => String(c.id) === String(id));
+      if (cached && cached.body && (cached.body.html || cached.body.text)) return cached;
+      const res = await window.BGNJ_API.columns.get(id);
+      const row = res?.column || res;
+      if (!row) return cached || null;
+      const ui = this._toColumn(row);
+      this._columns = (this._columns || []).some((c) => String(c.id) === String(id))
+        ? this._columns.map((c) => (String(c.id) === String(id) ? ui : c))
+        : [ui, ...(this._columns || [])];
+      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); }
+      catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js)', _e); }
+      return ui;
+    } catch (e) {
+      console.warn('[BGNJ] 칼럼 본문 조회 실패 — 기존 캐시 유지:', e?.message || e);
+      return null;
+    }
   },
   async refresh({ admin } = {}) {
     try {
