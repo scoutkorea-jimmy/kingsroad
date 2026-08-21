@@ -283,6 +283,29 @@ const EventDetailHead = ({ title, subtitle, tab, onTab, rosterCount, onBack, bac
   </div>
 );
 
+// v00.300 — 관리자 주소(#admin=탭|상세id|하위탭)의 뒤 두 칸을 다루는 헬퍼.
+//   탭(첫 칸)은 AuthAdminPage 가 관리하고, 여기서는 건드리지 않는다.
+const readAdminHashDetail = () => {
+  try {
+    const m = (window.location.hash || '').match(/^#admin=([^|]*)\|?([^|]*)\|?(.*)$/);
+    if (!m) return { id: '', sub: '' };
+    return { id: decodeURIComponent(m[2] || ''), sub: decodeURIComponent(m[3] || '') };
+  } catch (_e) {
+    console.warn('[bgnj] 관리자 주소 읽기 실패 — 목록에서 시작한다 (AdminEventsPanels)', _e);
+    return { id: '', sub: '' };
+  }
+};
+const writeAdminHashDetail = (id, sub) => {
+  try {
+    const cur = window.location.hash || '';
+    const tabPart = cur.startsWith('#admin=') ? cur.slice(7).split('|')[0] : '';
+    const parts = [tabPart];
+    if (id) { parts.push(encodeURIComponent(id)); if (sub) parts.push(encodeURIComponent(sub)); }
+    const next = `#admin=${parts.join('|')}`;
+    if (cur !== next) window.history.replaceState(null, '', next);
+  } catch (_e) { console.warn('[bgnj] 관리자 주소 갱신 실패 — 화면은 정상 (AdminEventsPanels)', _e); }
+};
+
 // v00.299.002 — 정보 탭 맨 위에 **지금 올라가 있는 것**을 먼저 보여준다.
 //   사용자 지적: '기존에 올라간 정보들이나 이미지들은 보여줘야지'.
 //   편집 폼만 띄우면 '무엇이 이미 있는지' 를 알 수 없다 — 고치기 전에 현황부터 보여야 한다.
@@ -300,14 +323,18 @@ const EventCurrentState = ({ item, pageKey }) => {
   return (
     <section className="card" style={{padding:16, marginBottom:14, background:'var(--bg-3)'}}>
       <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:12}}>지금 등록된 것</div>
-      <div style={{display:'flex', gap:16, flexWrap:'wrap', alignItems:'flex-start'}}>
-        <div style={{width:120, flexShrink:0}}>
+      <div style={{display:'flex', gap:18, flexWrap:'wrap', alignItems:'flex-start'}}>
+        {/* v00.300 — 대표 이미지는 크게. 이게 이 프로그램의 얼굴이라 작게 보면 확인이 안 된다.
+            원본 비율을 유지하고(잘라내지 않는다) 화면이 좁으면 전폭으로 내려온다. */}
+        <div style={{width:360, maxWidth:'100%', flexShrink:0}}>
           <div className="mono dim-2" style={{fontSize:10, marginBottom:6}}>대표 이미지</div>
           {cover
-            ? <img src={cover} alt="대표 이미지" style={{width:'100%', aspectRatio:'4/3', objectFit:'cover', border:'1px solid var(--line)', display:'block'}}/>
-            : <div className="placeholder" style={{width:'100%', aspectRatio:'4/3', fontSize:10}}>없음</div>}
+            ? <img src={cover} alt="대표 이미지"
+                style={{width:'100%', maxHeight:280, objectFit:'contain', background:'var(--bg-2)',
+                        border:'1px solid var(--line)', display:'block'}}/>
+            : <div className="placeholder" style={{width:'100%', aspectRatio:'16/10', fontSize:11}}>대표 이미지 없음</div>}
         </div>
-        <div style={{flex:1, minWidth:220}}>
+        <div style={{flex:1, minWidth:240}}>
           <div style={{display:'flex', gap:18, flexWrap:'wrap', marginBottom:10}}>
             {[
               { l: '포스터', n: images.length },
@@ -325,7 +352,7 @@ const EventCurrentState = ({ item, pageKey }) => {
             <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
               {thumbs.map((u, i) => (
                 <img key={i} src={u} alt={`사진 ${i + 1}`} loading="lazy"
-                  style={{width:56, height:56, objectFit:'cover', border:'1px solid var(--line)', display:'block'}}/>
+                  style={{width:72, height:72, objectFit:'cover', border:'1px solid var(--line)', display:'block'}}/>
               ))}
               {images.length + photos.length > thumbs.length && (
                 <span className="mono dim-2" style={{fontSize:11, alignSelf:'center'}}>
@@ -365,8 +392,17 @@ const LectureAdminPanel = ({ go }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [sortKey, setSortKey] = React.useState(EVENT_SORT_DEFAULT);
   // v00.299 — 목록 ↔ 세부 화면. detailId 가 있으면 그 프로그램 하나만 펼친다.
-  const [detailId, setDetailId] = React.useState(null);
-  const [detailTab, setDetailTab] = React.useState('info');
+  const [detailId, setDetailId] = React.useState(() => readAdminHashDetail().id || null);
+  const [detailTab, setDetailTab] = React.useState(() => readAdminHashDetail().sub || 'info');
+  // 상세 위치가 바뀔 때마다 주소에 남긴다 — 새로고침해도 이 자리로 돌아온다.
+  React.useEffect(() => { writeAdminHashDetail(detailId || '', detailId ? detailTab : ''); }, [detailId, detailTab]);
+  // 주소에 남은 상세 id 가 이 목록에 없을 수 있다(다른 탭에서 넘어왔거나 삭제됨).
+  //   그대로 두면 상세도 목록도 안 나와 **화면이 빈다.** 조용히 목록으로 돌려보낸다.
+  React.useEffect(() => {
+    if (!detailId) return;
+    if (allLectures.length === 0) return;           // 아직 로딩 중일 수 있다
+    if (!allLectures.some((x) => String(x.id) === String(detailId))) setDetailId(null);
+  }, [detailId, allLectures]);
   // v00.299.001 — 상세로 들어가면 **바로 고칠 수 있어야** 한다.
   //   전에는 상세에서 다시 [수정] 을 눌러야 폼이 열렸다 — 단계가 하나 더 생긴 셈이다.
   //   기본 정보 폼과 답사 일정/준비물/커버 편집을 함께 펼친다.
@@ -924,8 +960,16 @@ const TourAdminPanel = ({ go }) => {
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [sortKey, setSortKey] = React.useState(EVENT_SORT_DEFAULT);
   // v00.299 — 목록 ↔ 세부 화면. detailId 가 있으면 그 프로그램 하나만 펼친다.
-  const [detailId, setDetailId] = React.useState(null);
-  const [detailTab, setDetailTab] = React.useState('info');
+  const [detailId, setDetailId] = React.useState(() => readAdminHashDetail().id || null);
+  const [detailTab, setDetailTab] = React.useState(() => readAdminHashDetail().sub || 'info');
+  // 상세 위치가 바뀔 때마다 주소에 남긴다 — 새로고침해도 이 자리로 돌아온다.
+  React.useEffect(() => { writeAdminHashDetail(detailId || '', detailId ? detailTab : ''); }, [detailId, detailTab]);
+  // 강연과 같은 이유의 가드.
+  React.useEffect(() => {
+    if (!detailId) return;
+    if (allTours.length === 0) return;
+    if (!allTours.some((x) => String(x.id) === String(detailId))) setDetailId(null);
+  }, [detailId, allTours]);
   // v00.299.001 — 강연과 같은 이유로 상세 진입 즉시 편집 상태.
   const openDetail = (id) => {
     setDetailId(id);

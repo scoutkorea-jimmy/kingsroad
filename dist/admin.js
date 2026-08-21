@@ -12260,6 +12260,31 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     },
     t.l
   ))));
+  var readAdminHashDetail = () => {
+    try {
+      const m = (window.location.hash || "").match(/^#admin=([^|]*)\|?([^|]*)\|?(.*)$/);
+      if (!m) return { id: "", sub: "" };
+      return { id: decodeURIComponent(m[2] || ""), sub: decodeURIComponent(m[3] || "") };
+    } catch (_e) {
+      console.warn("[bgnj] \uAD00\uB9AC\uC790 \uC8FC\uC18C \uC77D\uAE30 \uC2E4\uD328 \u2014 \uBAA9\uB85D\uC5D0\uC11C \uC2DC\uC791\uD55C\uB2E4 (AdminEventsPanels)", _e);
+      return { id: "", sub: "" };
+    }
+  };
+  var writeAdminHashDetail = (id, sub) => {
+    try {
+      const cur = window.location.hash || "";
+      const tabPart = cur.startsWith("#admin=") ? cur.slice(7).split("|")[0] : "";
+      const parts = [tabPart];
+      if (id) {
+        parts.push(encodeURIComponent(id));
+        if (sub) parts.push(encodeURIComponent(sub));
+      }
+      const next = `#admin=${parts.join("|")}`;
+      if (cur !== next) window.history.replaceState(null, "", next);
+    } catch (_e) {
+      console.warn("[bgnj] \uAD00\uB9AC\uC790 \uC8FC\uC18C \uAC31\uC2E0 \uC2E4\uD328 \u2014 \uD654\uBA74\uC740 \uC815\uC0C1 (AdminEventsPanels)", _e);
+    }
+  };
   var EventCurrentState = ({ item, pageKey }) => {
     var _a, _b;
     const sc = ((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {};
@@ -12271,7 +12296,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const cover = item.coverUrl || ovr.cover || "";
     const url = (x) => typeof x === "string" ? x : (x == null ? void 0 : x.url) || (x == null ? void 0 : x.src) || "";
     const thumbs = [...images, ...photos].map(url).filter(Boolean).slice(0, 8);
-    return /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 16, marginBottom: 14, background: "var(--bg-3)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 12 } }, "\uC9C0\uAE08 \uB4F1\uB85D\uB41C \uAC83"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 120, flexShrink: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, marginBottom: 6 } }, "\uB300\uD45C \uC774\uBBF8\uC9C0"), cover ? /* @__PURE__ */ React.createElement("img", { src: cover, alt: "\uB300\uD45C \uC774\uBBF8\uC9C0", style: { width: "100%", aspectRatio: "4/3", objectFit: "cover", border: "1px solid var(--line)", display: "block" } }) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: "100%", aspectRatio: "4/3", fontSize: 10 } }, "\uC5C6\uC74C")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 220 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 } }, [
+    return /* @__PURE__ */ React.createElement("section", { className: "card", style: { padding: 16, marginBottom: 14, background: "var(--bg-3)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 12 } }, "\uC9C0\uAE08 \uB4F1\uB85D\uB41C \uAC83"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 18, flexWrap: "wrap", alignItems: "flex-start" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 360, maxWidth: "100%", flexShrink: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, marginBottom: 6 } }, "\uB300\uD45C \uC774\uBBF8\uC9C0"), cover ? /* @__PURE__ */ React.createElement(
+      "img",
+      {
+        src: cover,
+        alt: "\uB300\uD45C \uC774\uBBF8\uC9C0",
+        style: {
+          width: "100%",
+          maxHeight: 280,
+          objectFit: "contain",
+          background: "var(--bg-2)",
+          border: "1px solid var(--line)",
+          display: "block"
+        }
+      }
+    ) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { width: "100%", aspectRatio: "16/10", fontSize: 11 } }, "\uB300\uD45C \uC774\uBBF8\uC9C0 \uC5C6\uC74C")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 240 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 10 } }, [
       { l: "\uD3EC\uC2A4\uD130", n: images.length },
       { l: "\uD604\uC7A5 \uC0AC\uC9C4", n: photos.length },
       { l: pageKey === "tourPages" ? "\uB2F5\uC0AC \uC77C\uC815" : "\uC9C4\uD589 \uC21C\uC11C", n: schedule.length },
@@ -12283,7 +12322,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         src: u,
         alt: `\uC0AC\uC9C4 ${i + 1}`,
         loading: "lazy",
-        style: { width: 56, height: 56, objectFit: "cover", border: "1px solid var(--line)", display: "block" }
+        style: { width: 72, height: 72, objectFit: "cover", border: "1px solid var(--line)", display: "block" }
       }
     )), images.length + photos.length > thumbs.length && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11, alignSelf: "center" } }, "+", images.length + photos.length - thumbs.length)) : /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, margin: 0 } }, "\uC62C\uB77C\uAC04 \uC0AC\uC9C4\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F5BC}"), " \uBC84\uD2BC\uC73C\uB85C \uCD94\uAC00\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."))));
   };
@@ -12303,8 +12342,16 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [search, setSearch] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("all");
     const [sortKey, setSortKey] = React.useState(EVENT_SORT_DEFAULT);
-    const [detailId, setDetailId] = React.useState(null);
-    const [detailTab, setDetailTab] = React.useState("info");
+    const [detailId, setDetailId] = React.useState(() => readAdminHashDetail().id || null);
+    const [detailTab, setDetailTab] = React.useState(() => readAdminHashDetail().sub || "info");
+    React.useEffect(() => {
+      writeAdminHashDetail(detailId || "", detailId ? detailTab : "");
+    }, [detailId, detailTab]);
+    React.useEffect(() => {
+      if (!detailId) return;
+      if (allLectures.length === 0) return;
+      if (!allLectures.some((x) => String(x.id) === String(detailId))) setDetailId(null);
+    }, [detailId, allLectures]);
     const openDetail = (id) => {
       setDetailId(id);
       setDetailTab("info");
@@ -12814,8 +12861,16 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [search, setSearch] = React.useState("");
     const [statusFilter, setStatusFilter] = React.useState("all");
     const [sortKey, setSortKey] = React.useState(EVENT_SORT_DEFAULT);
-    const [detailId, setDetailId] = React.useState(null);
-    const [detailTab, setDetailTab] = React.useState("info");
+    const [detailId, setDetailId] = React.useState(() => readAdminHashDetail().id || null);
+    const [detailTab, setDetailTab] = React.useState(() => readAdminHashDetail().sub || "info");
+    React.useEffect(() => {
+      writeAdminHashDetail(detailId || "", detailId ? detailTab : "");
+    }, [detailId, detailTab]);
+    React.useEffect(() => {
+      if (!detailId) return;
+      if (allTours.length === 0) return;
+      if (!allTours.some((x) => String(x.id) === String(detailId))) setDetailId(null);
+    }, [detailId, allTours]);
     const openDetail = (id) => {
       setDetailId(id);
       setDetailTab("info");
@@ -16254,10 +16309,42 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
   var AdminPage = ({ go }) => {
     var _a, _b;
     const G = window.BGNJ_GUARD;
-    const [tab, setTab] = React.useState("\uB300\uC2DC\uBCF4\uB4DC");
+    const [tab, setTab] = React.useState(() => {
+      try {
+        const m = (window.location.hash || "").match(/^#admin=([^|]*)/);
+        if (m && m[1]) return decodeURIComponent(m[1]);
+      } catch (_e) {
+        console.warn("[bgnj] \uAD00\uB9AC\uC790 \uD0ED \uBCF5\uC6D0 \uC2E4\uD328 \u2014 \uB300\uC2DC\uBCF4\uB4DC\uB85C (AuthAdminPage)", _e);
+      }
+      return "\uB300\uC2DC\uBCF4\uB4DC";
+    });
+    React.useEffect(() => {
+      try {
+        const cur = window.location.hash || "";
+        const rest = cur.startsWith("#admin=") ? cur.slice(7).split("|").slice(1).join("|") : "";
+        const next = `#admin=${encodeURIComponent(tab)}${rest ? "|" + rest : ""}`;
+        if (cur !== next) window.history.replaceState(null, "", next);
+      } catch (_e) {
+        console.warn("[bgnj] \uAD00\uB9AC\uC790 \uC8FC\uC18C \uAC31\uC2E0 \uC2E4\uD328 \u2014 \uD654\uBA74\uC740 \uC815\uC0C1 (AuthAdminPage)", _e);
+      }
+    }, [tab]);
     const [kmsTab, setKmsTab] = React.useState("\uAE30\uB2A5\uC815\uC758\uC11C");
     const [postRefreshKey, setPostRefreshKey] = React.useState(0);
     const [versionPage, setVersionPage] = React.useState(1);
+    React.useEffect(() => {
+      const meta = document.createElement("meta");
+      meta.name = "robots";
+      meta.content = "noindex, nofollow, noarchive, nosnippet, noimageindex";
+      meta.setAttribute("data-bgnj-admin-noindex", "1");
+      document.head.appendChild(meta);
+      return () => {
+        try {
+          meta.remove();
+        } catch (_e) {
+          console.warn("[bgnj] noindex \uBA54\uD0C0 \uC815\uB9AC \uC2E4\uD328 (AuthAdminPage)", _e);
+        }
+      };
+    }, []);
     React.useEffect(() => {
       var _a2, _b2;
       (_b2 = (_a2 = window.BGNJ_AUTH) == null ? void 0 : _a2.refreshUsers) == null ? void 0 : _b2.call(_a2);

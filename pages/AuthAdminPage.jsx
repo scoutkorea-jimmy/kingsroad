@@ -39,7 +39,27 @@ import { CommunityPostsAdminPanel } from './admin/AdminRouterPanels.jsx';
 // 데이터 원칙: 모든 콘텐츠는 BGNJ_* 헬퍼 경유 (D1 source-of-truth). BANGINOJA_DATA 직접 참조 금지.
 const AdminPage = ({ go }) => {
   const G = window.BGNJ_GUARD;
-  const [tab, setTab] = React.useState("대시보드");
+  // v00.300 — 새로고침해도 보던 자리로 돌아온다.
+  //   주소에 `#admin=탭|상세id|하위탭` 형태로 남긴다. 관리자 화면은 URL 이 늘 /admin 이라
+  //   새로고침하면 무조건 첫 화면(대시보드)으로 튕겼다.
+  //   해시를 쓰는 이유: 서버 라우팅이 필요 없고, 뒤로가기도 그대로 동작한다.
+  //   기존 딥링크(#col- / #post- / #lecture- / #tour-)와 접두사가 겹치지 않는다.
+  const [tab, setTab] = React.useState(() => {
+    try {
+      const m = (window.location.hash || '').match(/^#admin=([^|]*)/);
+      if (m && m[1]) return decodeURIComponent(m[1]);
+    } catch (_e) { console.warn('[bgnj] 관리자 탭 복원 실패 — 대시보드로 (AuthAdminPage)', _e); }
+    return "대시보드";
+  });
+  // 탭이 바뀌면 주소도 따라간다. 상세 부분은 각 패널이 이어 붙인다(BGNJ_ADMIN_HASH).
+  React.useEffect(() => {
+    try {
+      const cur = window.location.hash || '';
+      const rest = cur.startsWith('#admin=') ? cur.slice(7).split('|').slice(1).join('|') : '';
+      const next = `#admin=${encodeURIComponent(tab)}${rest ? '|' + rest : ''}`;
+      if (cur !== next) window.history.replaceState(null, '', next);
+    } catch (_e) { console.warn('[bgnj] 관리자 주소 갱신 실패 — 화면은 정상 (AuthAdminPage)', _e); }
+  }, [tab]);
   const [kmsTab, setKmsTab] = React.useState("기능정의서");
   // v00.180 — postSearch/postFilter/selectedPostIds/viewingPostId/bulkTargetCat/bulkTargetPrefix
   // 모두 CommunityPostsAdminPanel 내부 state 로 이전.
@@ -50,6 +70,19 @@ const AdminPage = ({ go }) => {
   // root cause: allUsers memo 가 postRefreshKey 만 의존 → BGNJ_AUTH.refreshUsers 가 발화하는
   // 'bgnj-users-refresh' 이벤트는 postRefreshKey 증가 안 시킴 → memo 가 빈 _usersCache 로 영구 stuck.
   // 해결: AdminPage 마운트 시 refreshUsers 직접 호출 + 모든 store 변경 이벤트를 postRefreshKey 로 통합.
+  // v00.300 — 관리자 화면은 어떤 경우에도 색인되면 안 된다.
+  //   1차 방어선은 robots.txt(모든 크롤러 그룹에 Disallow 명시) 이고,
+  //   2차로 JS 를 실행하는 크롤러를 위해 화면에 들어온 동안 noindex 메타를 심는다.
+  //   3차는 GitHub Pages 자체 — /admin 정적 파일이 없어 크롤러는 404 를 받는다.
+  React.useEffect(() => {
+    const meta = document.createElement('meta');
+    meta.name = 'robots';
+    meta.content = 'noindex, nofollow, noarchive, nosnippet, noimageindex';
+    meta.setAttribute('data-bgnj-admin-noindex', '1');
+    document.head.appendChild(meta);
+    return () => { try { meta.remove(); } catch (_e) { console.warn('[bgnj] noindex 메타 정리 실패 (AuthAdminPage)', _e); } };
+  }, []);
+
   React.useEffect(() => {
     window.BGNJ_AUTH?.refreshUsers?.();
     const bump = () => setPostRefreshKey((v) => v + 1);

@@ -209,6 +209,36 @@ const run = async () => {
       "빠지면 입금한 사람이 자리를 안 차지한 것으로 세어 초과 접수된다");
   }
 
+  console.log("\n── 9. 관리자 주소 복원 (#admin=탭|상세id|하위탭) ──");
+  {
+    const panels = readFileSync(path.join(ROOT, "pages/admin/AdminEventsPanels.jsx"), "utf8");
+    const a = panels.indexOf("const readAdminHashDetail = () => {");
+    const b = panels.indexOf("// v00.299.002 — 정보 탭 맨 위에");
+    if (a < 0 || b < 0) throw new Error("관리자 주소 헬퍼를 찾지 못했다");
+    let hash = "";
+    const ctx = {
+      console: { warn() {} },
+      window: {
+        get location() { return { hash }; },
+        history: { replaceState: (_a, _b, next) => { hash = next; } },
+      },
+      decodeURIComponent, encodeURIComponent,
+    };
+    const { readAdminHashDetail, writeAdminHashDetail } = vm.runInNewContext(
+      panels.slice(a, b) + "\n({ readAdminHashDetail, writeAdminHashDetail })", ctx
+    );
+    hash = "#admin=%EA%B0%95%EC%97%B0";                        // '강연' 탭만
+    check("탭만 있을 때 상세는 비어 있다", readAdminHashDetail().id === "" && readAdminHashDetail().sub === "");
+    hash = "#admin=%EA%B0%95%EC%97%B0|lec-123|roster";
+    check("상세 id 를 읽는다", readAdminHashDetail().id === "lec-123", readAdminHashDetail().id);
+    check("하위 탭을 읽는다", readAdminHashDetail().sub === "roster", readAdminHashDetail().sub);
+    writeAdminHashDetail("tour-9", "info");
+    check("주소에 상세를 쓴다", hash === "#admin=%EA%B0%95%EC%97%B0|tour-9|info", hash);
+    check("탭 부분은 건드리지 않는다", hash.startsWith("#admin=%EA%B0%95%EC%97%B0|"));
+    writeAdminHashDetail("", "");
+    check("목록으로 나오면 상세가 지워진다", hash === "#admin=%EA%B0%95%EC%97%B0", hash);
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

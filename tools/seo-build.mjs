@@ -424,6 +424,15 @@ ${urls.map((u) => `  <url>
   </url>`).join("\n")}
 </urlset>
 `;
+// v00.300 — 관리자·개인 영역이 실수로 sitemap 이나 정적 페이지에 섞이면 크롤러를 그리로 초대하는 셈이다.
+//   목록을 손댈 때 실수할 수 있으므로 여기서 막는다. 걸리면 빌드를 세운다.
+const FORBIDDEN = ["/admin", "/login", "/signup", "/mypage", "/checkout", "/api"];
+const leaked = urls.filter((u) => FORBIDDEN.some((f) => u.loc.startsWith(SITE + f)));
+if (leaked.length) {
+  console.error("❌ 색인되면 안 되는 주소가 sitemap 에 들어갔다:", leaked.map((u) => u.loc));
+  process.exit(1);
+}
+
 await fs.writeFile(path.join(ROOT, "sitemap.xml"), sitemap, "utf8");
 console.log(`  ✓ sitemap.xml (${urls.length}개 주소)`);
 
