@@ -18,6 +18,23 @@
       }
       return err;
     };
+    const TOKEN_KEY = "bgnj_session_token";
+    const readToken = () => {
+      try {
+        return localStorage.getItem(TOKEN_KEY) || "";
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uD1A0\uD070 \uC5C6\uC774 \uC9C4\uD589 (api.js)", _e);
+        return "";
+      }
+    };
+    const writeToken = (token) => {
+      try {
+        if (token) localStorage.setItem(TOKEN_KEY, token);
+        else localStorage.removeItem(TOKEN_KEY);
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC4F0\uAE30 \uC2E4\uD328 \u2014 \uCFE0\uD0A4\uB85C\uB9CC \uC9C4\uD589 (api.js)", _e);
+      }
+    };
     const REQUEST_TIMEOUT_MS = 15e3;
     const UPLOAD_TIMEOUT_MS = 6e4;
     const request = async (method, path, body) => {
@@ -32,6 +49,8 @@
         headers: { Accept: "application/json" },
         signal: ctrl.signal
       };
+      const _token = readToken();
+      if (_token) init.headers.Authorization = `Bearer ${_token}`;
       if (body !== void 0) {
         if (isUpload) {
           init.body = body;
@@ -66,6 +85,7 @@
         parseFailed = true;
       }
       if (!resp.ok) {
+        if (resp.status === 401) writeToken("");
         const err = new Error((data == null ? void 0 : data.error) || `HTTP ${resp.status}`);
         err.kind = "http";
         err.status = resp.status;
@@ -88,9 +108,23 @@
       base: BASE,
       health: () => request("GET", "/health"),
       // ── 인증 ──
-      signup: ({ email, name, password, profile, consents }) => request("POST", "/auth/signup", { email, name, password, profile, consents }),
-      login: ({ email, password }) => request("POST", "/auth/login", { email, password }),
-      logout: () => request("POST", "/auth/logout"),
+      signup: async ({ email, name, password, profile, consents }) => {
+        const res = await request("POST", "/auth/signup", { email, name, password, profile, consents });
+        if (res == null ? void 0 : res.token) writeToken(res.token);
+        return res;
+      },
+      login: async ({ email, password }) => {
+        const res = await request("POST", "/auth/login", { email, password });
+        if (res == null ? void 0 : res.token) writeToken(res.token);
+        return res;
+      },
+      logout: async () => {
+        try {
+          return await request("POST", "/auth/logout");
+        } finally {
+          writeToken("");
+        }
+      },
       me: () => request("GET", "/auth/me"),
       updateProfile: ({ name, profile }) => request("PATCH", "/me", { name, profile }),
       // v00.201 — 본인 비밀번호 변경 (P1 #3).
@@ -366,7 +400,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.295.002",
+    version: "00.295.003",
     build: "2026.08.21",
     channel: "preview"
   };

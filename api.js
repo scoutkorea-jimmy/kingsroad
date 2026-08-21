@@ -36,6 +36,27 @@
     return err;
   };
 
+  // === 세션 토큰 (v00.295.003) =========================================
+  // 왜 쿠키만으로는 안 되는가:
+  //   사이트는 bgnj.net, 이 API 는 banginoja-api.scoutkorea.workers.dev 다. 서로 다른 사이트다.
+  //   그래서 세션 쿠키는 third-party 쿠키가 되고, Safari 는 13.1 부터 이를 전면 차단한다.
+  //   2026-08-21 실제로 Safari 사용자가 네 번 로그인하고도 사진 업로드가 모두 401 로 튕겼다.
+  //   로그인 응답 본문의 token 을 보관해 Authorization: Bearer 로 함께 보낸다.
+  //   서버 readSessionToken 은 Bearer 를 쿠키보다 먼저 본다.
+  // 한계: localStorage 라 httpOnly 쿠키보다 XSS 에 약하다. 근본 해결은 API 를 api.bgnj.net 같은
+  //   같은 사이트 도메인에 두어 쿠키가 살아나게 하는 것이다. 그때도 이 경로는 방어선으로 남겨 둔다.
+  const TOKEN_KEY = "bgnj_session_token";
+  const readToken = () => {
+    try { return localStorage.getItem(TOKEN_KEY) || ""; }
+    catch (_e) { console.warn('[bgnj] 저장소 읽기 — 토큰 없이 진행 (api.js)', _e); return ""; }
+  };
+  const writeToken = (token) => {
+    try {
+      if (token) localStorage.setItem(TOKEN_KEY, token);
+      else localStorage.removeItem(TOKEN_KEY);
+    } catch (_e) { console.warn('[bgnj] 저장소 쓰기 실패 — 쿠키로만 진행 (api.js)', _e); }
+  };
+
   // v00.262.003 — E2 stall hang 차단. 모든 fetch 에 15s timeout 적용.
   // 업로드(FormData) 는 더 큰 cap(60s) 필요할 수 있으니 별도 처리.
   const REQUEST_TIMEOUT_MS = 15_000;
@@ -53,6 +74,9 @@
       headers: { Accept: "application/json" },
       signal: ctrl.signal,
     };
+    // 쿠키가 막힌 브라우저(Safari 등)를 위한 두 번째 경로. CORS 는 Authorization 을 이미 허용한다(실측).
+    const _token = readToken();
+    if (_token) init.headers.Authorization = `Bearer ${_token}`;
     if (body !== undefined) {
       if (isUpload) {
         init.body = body;
@@ -85,6 +109,9 @@
     try { data = text ? JSON.parse(text) : null; }
     catch { data = { raw: text }; parseFailed = true; }
     if (!resp.ok) {
+      // 401 = 이 토큰으로는 누구도 아니다. 들고 있어 봐야 계속 튕기므로 버린다.
+      // 로그인 요청 자체의 401(비밀번호 틀림)은 원래 토큰이 없으니 지울 것도 없다.
+      if (resp.status === 401) writeToken("");
       const err = new Error(data?.error || `HTTP ${resp.status}`);
       err.kind = "http";
       err.status = resp.status;
@@ -109,11 +136,21 @@
     health: () => request("GET", "/health"),
 
     // ── 인증 ──
-    signup: ({ email, name, password, profile, consents }) =>
-      request("POST", "/auth/signup", { email, name, password, profile, consents }),
-    login: ({ email, password }) =>
-      request("POST", "/auth/login", { email, password }),
-    logout: () => request("POST", "/auth/logout"),
+    signup: async ({ email, name, password, profile, consents }) => {
+      const res = await request("POST", "/auth/signup", { email, name, password, profile, consents });
+      if (res?.token) writeToken(res.token);
+      return res;
+    },
+    login: async ({ email, password }) => {
+      const res = await request("POST", "/auth/login", { email, password });
+      if (res?.token) writeToken(res.token);
+      return res;
+    },
+    logout: async () => {
+      // 서버 세션 삭제가 실패하더라도 내 손의 토큰은 반드시 버린다.
+      try { return await request("POST", "/auth/logout"); }
+      finally { writeToken(""); }
+    },
     me: () => request("GET", "/auth/me"),
     updateProfile: ({ name, profile }) => request("PATCH", "/me", { name, profile }),
     // v00.201 — 본인 비밀번호 변경 (P1 #3).

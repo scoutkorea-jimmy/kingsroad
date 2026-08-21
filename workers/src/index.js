@@ -3252,14 +3252,20 @@ const route = async (req, env) => {
 
   if (p === "/api/health") return json({ ok: true, ts: nowIso() });
 
+  // v00.295.003 — 응답 본문에도 token 을 실어 보낸다.
+  //   왜: 지금까지 세션 토큰은 Set-Cookie 로만 나갔다. 그런데 사이트(bgnj.net)와 이 API(workers.dev)는
+  //   서로 다른 사이트라 그 쿠키는 third-party 쿠키다. Safari 는 13.1 부터 이를 전면 차단하므로
+  //   Safari 사용자는 로그인이 되어도 이후 모든 요청이 401 이었다(2026-08-21 실제 장애).
+  //   readSessionToken 은 원래부터 Authorization: Bearer 를 먼저 보므로 서버는 이미 준비돼 있었다.
+  //   쿠키는 그대로 함께 내려보낸다 — 쿠키가 되는 브라우저에서는 종전대로 동작한다.
   if (req.method === "POST" && p === "/api/auth/signup") {
     const data = await handleAuthSignup(req, env);
-    let resp = json({ user: data.user });
+    let resp = json({ user: data.user, token: data.token, ttl: data.ttl });
     return setSessionCookie(resp, data.token, data.ttl);
   }
   if (req.method === "POST" && p === "/api/auth/login") {
     const data = await handleAuthLogin(req, env);
-    let resp = json({ user: data.user });
+    let resp = json({ user: data.user, token: data.token, ttl: data.ttl });
     return setSessionCookie(resp, data.token, data.ttl);
   }
   if (req.method === "POST" && p === "/api/auth/logout") {
