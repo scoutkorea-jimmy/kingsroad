@@ -187,6 +187,28 @@ const run = async () => {
     check("기본 정렬은 최신이 맨 위", filterSortEvents(items, {})[0].id === 2, `맨 위 id=${filterSortEvents(items, {})[0].id}`);
   }
 
+  console.log("\n── 8. 참가 신청 상태 (신청 → 입금 완료 → 참가 확정) ──");
+  {
+    const panels = readFileSync(path.join(ROOT, "pages/admin/AdminEventsPanels.jsx"), "utf8");
+    const a = panels.indexOf("const STATUS_LABEL = {");
+    const b = panels.indexOf("const StatusChip =");
+    if (a < 0 || b < 0) throw new Error("상태 라벨을 찾지 못했다 — 위치가 바뀌었는지 확인하라");
+    const { STATUS_LABEL, STATUS_COLOR } = vm.runInNewContext(
+      panels.slice(a, b) + "\n({ STATUS_LABEL, STATUS_COLOR })", {}
+    );
+    check("신청 단계", STATUS_LABEL.pending_payment === "신청");
+    check("입금 완료 단계", STATUS_LABEL.paid === "입금 완료");
+    check("참가 확정 단계", STATUS_LABEL.confirmed === "참가 확정");
+    check("모든 상태에 이름이 있다",
+      ["pending_payment", "paid", "confirmed", "waitlist", "refund_requested", "cancelled"]
+        .every((k) => STATUS_LABEL[k] && STATUS_COLOR[k]));
+    // 정원은 '자리를 차지한 사람' 을 세야 한다. 입금 완료가 빠지면 초과 접수된다.
+    const worker = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+    check("정원 계산에 입금 완료가 포함된다",
+      worker.includes("status IN ('pending_payment','paid','confirmed')"),
+      "빠지면 입금한 사람이 자리를 안 차지한 것으로 세어 초과 접수된다");
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

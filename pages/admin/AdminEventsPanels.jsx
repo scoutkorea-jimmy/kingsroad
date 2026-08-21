@@ -209,6 +209,80 @@ const EventListToolbar = ({ search, onSearch, status, onStatus, sort, onSort, sh
   </div>
 );
 
+// v00.299 — 목록은 이름만, 클릭하면 세부 화면(정보 / 참가 신청 두 탭).
+//   사용자 요청: '목록에서는 프로그램 명만 보이게 하고, 클릭하면 세부 페이지 한 단계를 더'.
+//   기존에는 카드 하나에 편집·콘텐츠·명단이 전부 펼쳐져 있어 프로그램이 몇 개만 돼도 화면이 길었다.
+
+const STATUS_LABEL = {
+  pending_payment: '신청',
+  paid: '입금 완료',
+  confirmed: '참가 확정',
+  waitlist: '대기자',
+  refund_requested: '환불 신청',
+  cancelled: '취소',
+};
+const STATUS_COLOR = {
+  pending_payment: 'var(--ink-2)',
+  paid: 'var(--info)',
+  confirmed: 'var(--success)',
+  waitlist: 'var(--ink-3)',
+  refund_requested: 'var(--warning)',
+  cancelled: 'var(--danger)',
+};
+const StatusChip = ({ status }) => (
+  <span className="mono" style={{
+    fontSize:10, letterSpacing:'0.14em', whiteSpace:'nowrap',
+    color: STATUS_COLOR[status] || 'var(--ink-2)',
+    border: `1px solid ${STATUS_COLOR[status] || 'var(--line-2)'}`,
+    borderRadius:'var(--radius)', padding:'2px 7px',
+  }}>{STATUS_LABEL[status] || status}</span>
+);
+
+// 목록 한 줄 — 이름이 주인공이고 나머지는 곁들이다.
+const EventListRow = ({ item, subtitle, seats, regCount, onOpen }) => (
+  <button type="button" onClick={onOpen}
+    className="card"
+    style={{
+      display:'flex', alignItems:'center', gap:14, width:'100%', textAlign:'left',
+      padding:'14px 18px', cursor:'pointer', opacity: item.hidden ? 0.55 : 1,
+      background:'var(--bg-2)', border:'1px solid var(--line)',
+    }}>
+    <div style={{flex:1, minWidth:0}}>
+      <div className="ko-serif" style={{fontSize:16, wordBreak:'keep-all'}}>
+        {item.title}
+        {item.hidden && <span className="mono" style={{marginLeft:8, fontSize:9, letterSpacing:'0.18em', color:'var(--danger)', border:'1px solid var(--danger)', padding:'1px 5px'}}>숨김</span>}
+      </div>
+      {subtitle && <div className="mono dim-2" style={{fontSize:11, marginTop:3, letterSpacing:'0.1em', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{subtitle}</div>}
+    </div>
+    <div className="mono dim-2" style={{fontSize:11, whiteSpace:'nowrap'}}>신청 {regCount}</div>
+    <div className="mono" style={{fontSize:11, whiteSpace:'nowrap', color: seats.remaining <= 0 ? 'var(--danger)' : 'var(--ink-2)'}}>
+      잔여 {seats.remaining}/{seats.capacity}
+    </div>
+    <span className="dim-2" aria-hidden="true">›</span>
+  </button>
+);
+
+// 세부 화면 머리 — 목록으로 돌아가는 길 + 두 탭.
+const EventDetailHead = ({ title, subtitle, tab, onTab, rosterCount, onBack, backLabel }) => (
+  <div style={{marginBottom:18}}>
+    <button type="button" className="btn btn-small" onClick={onBack} style={{marginBottom:12}}>← {backLabel}</button>
+    <h3 className="ko-serif" style={{fontSize:20, wordBreak:'keep-all'}}>{title}</h3>
+    {subtitle && <div className="mono dim-2" style={{fontSize:11, marginTop:4, letterSpacing:'0.1em'}}>{subtitle}</div>}
+    <div style={{display:'flex', gap:0, borderBottom:'1px solid var(--line)', marginTop:14}}>
+      {[{ k:'info', l:'정보 · 콘텐츠' }, { k:'roster', l:`참가 신청 (${rosterCount})` }].map((t) => (
+        <button key={t.k} type="button" onClick={() => onTab(t.k)}
+          style={{
+            padding:'10px 20px', fontSize:14, background:'none', border:'none',
+            fontFamily:'var(--font-serif)',
+            color: tab === t.k ? 'var(--ink)' : 'var(--ink-3)',
+            borderBottom: tab === t.k ? '2px solid var(--primary)' : '2px solid transparent',
+            marginBottom:-1, cursor:'pointer',
+          }}>{t.l}</button>
+      ))}
+    </div>
+  </div>
+);
+
 const LectureAdminPanel = ({ go }) => {
   const [tick, setTick] = React.useState(0);
   const [editingId, setEditingId] = React.useState(null);
@@ -231,6 +305,11 @@ const LectureAdminPanel = ({ go }) => {
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [sortKey, setSortKey] = React.useState(EVENT_SORT_DEFAULT);
+  // v00.299 — 목록 ↔ 세부 화면. detailId 가 있으면 그 프로그램 하나만 펼친다.
+  const [detailId, setDetailId] = React.useState(null);
+  const [detailTab, setDetailTab] = React.useState('info');
+  const openDetail = (id) => { setDetailId(id); setDetailTab('info'); };
+  const closeDetail = () => { setDetailId(null); setEditingId(null); setContentEditingId(null); };
   const lectures = React.useMemo(() => filterSortEvents(allLectures, {
     search, status: statusFilter, sort: sortKey,
     countOf: (l) => window.BGNJ_LECTURES.listRegistrations(l.id).filter((r) => r.status !== 'cancelled').length,
@@ -434,7 +513,7 @@ const LectureAdminPanel = ({ go }) => {
         <BulkLectureImport onClose={() => setShowBulk(false)} onDone={() => { setShowBulk(false); refresh(); try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:332 오류(무시하고 진행)', _e); } }}/>
       )}
 
-      {allLectures.length > 0 && (
+      {!detailId && allLectures.length > 0 && (
         <EventListToolbar
           search={search} onSearch={setSearch}
           status={statusFilter} onStatus={setStatusFilter}
@@ -443,13 +522,40 @@ const LectureAdminPanel = ({ go }) => {
           placeholder="제목·주제·장소·진행자 검색…"/>
       )}
 
-      {lectures.length === 0 ? (
-        <div className="card dim" style={{padding:32, textAlign:'center'}}>
-          {allLectures.length === 0 ? '관리할 강연이 없습니다.' : '조건에 맞는 강연이 없습니다. 필터를 바꿔 보세요.'}
-        </div>
-      ) : (
+      {detailId && (() => {
+        const l = allLectures.find((x) => String(x.id) === String(detailId));
+        if (!l) return null;   // 목록에서 사라진 경우(삭제 등) — 목록으로 돌려보낸다
+        const regs = window.BGNJ_LECTURES.listRegistrations(l.id);
+        return (
+          <EventDetailHead
+            title={l.title} subtitle={`${l.topic || ''}${l.next ? ` · ${l.next}` : ''}${l.venue ? ` · ${l.venue}` : ''}`}
+            tab={detailTab} onTab={setDetailTab}
+            rosterCount={regs.filter((r) => r.status !== 'cancelled').length}
+            onBack={closeDetail} backLabel="강연 목록으로"/>
+        );
+      })()}
+
+      {!detailId && (
+        lectures.length === 0 ? (
+          <div className="card dim" style={{padding:32, textAlign:'center'}}>
+            {allLectures.length === 0 ? '관리할 강연이 없습니다.' : '조건에 맞는 강연이 없습니다. 필터를 바꿔 보세요.'}
+          </div>
+        ) : (
+          <div style={{display:'grid', gap:8}}>
+            {lectures.map((l) => (
+              <EventListRow key={l.id} item={l}
+                subtitle={`${l.topic || ''}${l.next ? ` · ${l.next}` : ''}${l.venue ? ` · ${l.venue}` : ''}`}
+                seats={window.BGNJ_LECTURES.getSeats(l.id)}
+                regCount={window.BGNJ_LECTURES.listRegistrations(l.id).filter((r) => r.status !== 'cancelled').length}
+                onOpen={() => openDetail(l.id)}/>
+            ))}
+          </div>
+        )
+      )}
+
+      {detailId && (
         <div style={{display:'grid', gap:14}}>
-          {lectures.map((l) => {
+          {allLectures.filter((x) => String(x.id) === String(detailId)).map((l) => {
             const seats = window.BGNJ_LECTURES.getSeats(l.id);
             const regs = window.BGNJ_LECTURES.listRegistrations(l.id);
             const active = regs.filter((r) => r.status !== 'cancelled');
@@ -477,6 +583,7 @@ const LectureAdminPanel = ({ go }) => {
                       : <span className="mono" style={{fontSize:10, letterSpacing:'0.2em', color:'var(--secondary)', border:'1px solid var(--primary-dim)', padding:'1px 6px'}}>FREE</span>}
                   </div>
                 </header>
+                {detailTab === 'info' && (<>
 
                 {isEditing ? (
                   <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10, padding:'14px 0', borderTop:'1px solid var(--line)'}}>
@@ -591,6 +698,8 @@ const LectureAdminPanel = ({ go }) => {
                   </section>
                 )}
 
+                  </>)}
+                {detailTab === 'roster' && (<>
                 {/* Roster */}
                 <section style={{marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>참가자 명단 · {active.length}명</div>
@@ -615,27 +724,48 @@ const LectureAdminPanel = ({ go }) => {
                             <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.email}</td>
                             <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.phone || '-'}</td>
                             <td className="mono" style={{padding:10, textAlign:'right'}}>{r.count}</td>
-                            <td className="mono" style={{padding:10, fontSize:10, letterSpacing:'0.18em', color:
-                              r.status === 'confirmed' ? 'var(--primary)' :
-                              r.status === 'waitlist' ? 'var(--ink-2)' :
-                              r.status === 'pending_payment' ? 'var(--ink-2)' : 'var(--danger)'}}>
-                              {r.status === 'pending_payment' ? '입금 대기' :
-                                r.status === 'confirmed' ? '참가 확정' :
-                                r.status === 'waitlist' ? '대기자' : r.status}
-                              {r.paid && r.status === 'confirmed' && <span className="dim-2 mono" style={{marginLeft:6, fontSize:9}}>입금 ✓</span>}
+                            <td style={{padding:10}}>
+                              {/* v00.299 — 신청 → 입금 완료 → 참가 확정 세 단계를 눈에 보이게. */}
+                              <StatusChip status={r.status}/>
                             </td>
                             <td style={{padding:10, textAlign:'right'}}>
                               <div style={{display:'flex', justifyContent:'flex-end', gap:6, flexWrap:'wrap'}}>
+                                {/* v00.299 — 한 번에 확정하지 않고 '입금 완료' 를 사이에 둔다.
+                                    돈은 들어왔지만 아직 확정 전인 사람을 구분해서 볼 수 있어야 한다. */}
                                 {r.status === 'pending_payment' && (
+                                  <>
+                                    <button type="button" className="btn btn-small"
+                                      onClick={() => { window.BGNJ_LECTURES.markPaid(l.id, r.id); refresh(); }}>
+                                      입금 확인
+                                    </button>
+                                    <button type="button" className="btn btn-gold btn-small"
+                                      onClick={() => { window.BGNJ_LECTURES.confirmPayment(l.id, r.id); refresh(); }}>
+                                      바로 확정
+                                    </button>
+                                  </>
+                                )}
+                                {r.status === 'paid' && (
+                                  <>
+                                    <button type="button" className="btn btn-gold btn-small"
+                                      onClick={() => { window.BGNJ_LECTURES.confirmPayment(l.id, r.id); refresh(); }}>
+                                      참가 확정
+                                    </button>
+                                    <button type="button" className="btn btn-small"
+                                      onClick={() => { window.BGNJ_LECTURES.unconfirmPayment(l.id, r.id); refresh(); }}>
+                                      되돌리기
+                                    </button>
+                                  </>
+                                )}
+                                {r.status === 'confirmed' && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => { window.BGNJ_LECTURES.confirmPayment(l.id, r.id); refresh(); }}>
-                                    입금 확인 → 확정
+                                    onClick={() => { window.BGNJ_LECTURES.markPaid(l.id, r.id); refresh(); }}>
+                                    확정 해제
                                   </button>
                                 )}
-                                {r.status === 'confirmed' && r.price > 0 && (
+                                {r.status === 'waitlist' && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => { window.BGNJ_LECTURES.unconfirmPayment(l.id, r.id); refresh(); }}>
-                                    확정 취소
+                                    onClick={() => { window.BGNJ_LECTURES.markPaid(l.id, r.id); refresh(); }}>
+                                    자리 배정
                                   </button>
                                 )}
                                 {r.status !== 'refund_requested' && (
@@ -671,6 +801,7 @@ const LectureAdminPanel = ({ go }) => {
                     </table>
                   )}
                 </section>
+                </>)}
               </article>
             );
           })}
@@ -708,6 +839,11 @@ const TourAdminPanel = ({ go }) => {
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [sortKey, setSortKey] = React.useState(EVENT_SORT_DEFAULT);
+  // v00.299 — 목록 ↔ 세부 화면. detailId 가 있으면 그 프로그램 하나만 펼친다.
+  const [detailId, setDetailId] = React.useState(null);
+  const [detailTab, setDetailTab] = React.useState('info');
+  const openDetail = (id) => { setDetailId(id); setDetailTab('info'); };
+  const closeDetail = () => { setDetailId(null); setEditingId(null); setContentEditingId(null); };
   const tours = React.useMemo(() => filterSortEvents(allTours, {
     search, status: statusFilter, sort: sortKey,
     countOf: (t) => window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== 'cancelled').length,
@@ -950,7 +1086,7 @@ const TourAdminPanel = ({ go }) => {
         </div>
       </div>
 
-      {allTours.length > 0 && (
+      {!detailId && allTours.length > 0 && (
         <EventListToolbar
           search={search} onSearch={setSearch}
           status={statusFilter} onStatus={setStatusFilter}
@@ -959,13 +1095,40 @@ const TourAdminPanel = ({ go }) => {
           placeholder="제목·부제·난이도 검색…"/>
       )}
 
-      {tours.length === 0 ? (
-        <div className="card dim" style={{padding:32, textAlign:'center'}}>
-          {allTours.length === 0 ? '관리할 투어가 없습니다.' : '조건에 맞는 투어가 없습니다. 필터를 바꿔 보세요.'}
-        </div>
-      ) : (
+      {detailId && (() => {
+        const t = allTours.find((x) => String(x.id) === String(detailId));
+        if (!t) return null;
+        const regs = window.BGNJ_TOURS.listReservations(t.id);
+        return (
+          <EventDetailHead
+            title={t.title} subtitle={`${t.subtitle || ''}${t.next ? ` · ${t.next}` : ''}${t.level ? ` · ${t.level}` : ''}`}
+            tab={detailTab} onTab={setDetailTab}
+            rosterCount={regs.filter((r) => r.status !== 'cancelled').length}
+            onBack={closeDetail} backLabel="투어 목록으로"/>
+        );
+      })()}
+
+      {!detailId && (
+        tours.length === 0 ? (
+          <div className="card dim" style={{padding:32, textAlign:'center'}}>
+            {allTours.length === 0 ? '관리할 투어가 없습니다.' : '조건에 맞는 투어가 없습니다. 필터를 바꿔 보세요.'}
+          </div>
+        ) : (
+          <div style={{display:'grid', gap:8}}>
+            {tours.map((t) => (
+              <EventListRow key={t.id} item={t}
+                subtitle={`${t.subtitle || ''}${t.next ? ` · ${t.next}` : ''}${t.level ? ` · ${t.level}` : ''}`}
+                seats={window.BGNJ_TOURS.getSeats(t.id)}
+                regCount={window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== 'cancelled').length}
+                onOpen={() => openDetail(t.id)}/>
+            ))}
+          </div>
+        )
+      )}
+
+      {detailId && (
         <div style={{display:'grid', gap:14}}>
-          {tours.map((t) => {
+          {allTours.filter((x) => String(x.id) === String(detailId)).map((t) => {
             const seats = window.BGNJ_TOURS.getSeats(t.id);
             const regs = window.BGNJ_TOURS.listReservations(t.id);
             const active = regs.filter((r) => r.status !== 'cancelled');
@@ -993,6 +1156,7 @@ const TourAdminPanel = ({ go }) => {
                     </span>
                   </div>
                 </header>
+                {detailTab === 'info' && (<>
 
                 {isEditing ? (
                   // v00.106 — 폼 재구성: 사용자 요청 순서. 표시 일정 문구 + startsAt 통합 (next 자동 derive).
@@ -1153,6 +1317,8 @@ const TourAdminPanel = ({ go }) => {
                   </section>
                 )}
 
+                  </>)}
+                {detailTab === 'roster' && (<>
                 {/* Roster */}
                 <section style={{marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
                   <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:10}}>참가자 명단 · {active.length}명</div>
@@ -1177,27 +1343,47 @@ const TourAdminPanel = ({ go }) => {
                             <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.email}</td>
                             <td className="mono dim-2" style={{padding:10, fontSize:11}}>{r.phone || '-'}</td>
                             <td className="mono" style={{padding:10, textAlign:'right'}}>{r.count}</td>
-                            <td className="mono" style={{padding:10, fontSize:10, letterSpacing:'0.18em', color:
-                              r.status === 'confirmed' ? 'var(--primary)' :
-                              r.status === 'waitlist' ? 'var(--ink-2)' :
-                              r.status === 'pending_payment' ? 'var(--ink-2)' : 'var(--danger)'}}>
-                              {r.status === 'pending_payment' ? '입금 대기' :
-                                r.status === 'confirmed' ? '참가 확정' :
-                                r.status === 'waitlist' ? '대기자' : r.status}
-                              {r.paid && r.status === 'confirmed' && <span className="dim-2 mono" style={{marginLeft:6, fontSize:9}}>입금 ✓</span>}
+                            <td style={{padding:10}}>
+                              {/* v00.299 — 신청 → 입금 완료 → 참가 확정 세 단계를 눈에 보이게. */}
+                              <StatusChip status={r.status}/>
                             </td>
                             <td style={{padding:10, textAlign:'right'}}>
                               <div style={{display:'flex', justifyContent:'flex-end', gap:6, flexWrap:'wrap'}}>
+                                {/* v00.299 — 강연과 같은 세 단계. */}
                                 {r.status === 'pending_payment' && (
+                                  <>
+                                    <button type="button" className="btn btn-small"
+                                      onClick={() => { window.BGNJ_TOURS.markPaid(t.id, r.id); refresh(); }}>
+                                      입금 확인
+                                    </button>
+                                    <button type="button" className="btn btn-gold btn-small"
+                                      onClick={() => { window.BGNJ_TOURS.confirmPayment(t.id, r.id); refresh(); }}>
+                                      바로 확정
+                                    </button>
+                                  </>
+                                )}
+                                {r.status === 'paid' && (
+                                  <>
+                                    <button type="button" className="btn btn-gold btn-small"
+                                      onClick={() => { window.BGNJ_TOURS.confirmPayment(t.id, r.id); refresh(); }}>
+                                      참가 확정
+                                    </button>
+                                    <button type="button" className="btn btn-small"
+                                      onClick={() => { window.BGNJ_TOURS.unconfirmPayment(t.id, r.id); refresh(); }}>
+                                      되돌리기
+                                    </button>
+                                  </>
+                                )}
+                                {r.status === 'confirmed' && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => { window.BGNJ_TOURS.confirmPayment(t.id, r.id); refresh(); }}>
-                                    입금 확인 → 확정
+                                    onClick={() => { window.BGNJ_TOURS.markPaid(t.id, r.id); refresh(); }}>
+                                    확정 해제
                                   </button>
                                 )}
-                                {r.status === 'confirmed' && r.price > 0 && (
+                                {r.status === 'waitlist' && (
                                   <button type="button" className="btn btn-small"
-                                    onClick={() => { window.BGNJ_TOURS.unconfirmPayment(t.id, r.id); refresh(); }}>
-                                    확정 취소
+                                    onClick={() => { window.BGNJ_TOURS.markPaid(t.id, r.id); refresh(); }}>
+                                    자리 배정
                                   </button>
                                 )}
                                 {r.status !== 'refund_requested' && (
@@ -1233,6 +1419,7 @@ const TourAdminPanel = ({ go }) => {
                     </table>
                   )}
                 </section>
+                </>)}
               </article>
             );
           })}

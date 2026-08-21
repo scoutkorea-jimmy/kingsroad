@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.298.001",
+    version: "00.299.000",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -2899,6 +2899,13 @@
       await this.refreshMine();
       return null;
     },
+    // v00.299 — '입금 완료' 를 확정과 분리. 돈은 들어왔지만 아직 확정 전인 사람을 구분한다.
+    //   확정 해제 / 대기자 자리 배정도 이 상태로 보낸다.
+    async markPaid(_lectureId, registrationId) {
+      await window.BGNJ_API.lectures.patchRegistration(registrationId, { status: "paid" });
+      await this.refreshMine();
+      return null;
+    },
     async confirmPayment(_lectureId, registrationId) {
       await window.BGNJ_API.lectures.patchRegistration(registrationId, { status: "confirmed" });
       await this.refreshMine();
@@ -3591,6 +3598,11 @@
     },
     async cancelReservation(_tourId, reservationId) {
       await window.BGNJ_API.tours.cancelReservation(reservationId);
+      await this.refreshMine();
+    },
+    // v00.299 — 강연과 같은 세 단계.
+    async markPaid(_tourId, reservationId) {
+      await window.BGNJ_API.tours.patchReservation(reservationId, { status: "paid" });
       await this.refreshMine();
     },
     async confirmPayment(_tourId, reservationId) {

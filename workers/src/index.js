@@ -1397,7 +1397,7 @@ const handleLectureRegister = async (req, env, lectureId) => {
     `INSERT INTO lecture_registrations (id, lecture_id, user_id, user_name, user_email, user_phone, status)
      SELECT ?, ?, ?, ?, ?, ?,
        CASE WHEN (SELECT COUNT(*) FROM lecture_registrations
-                  WHERE lecture_id = ? AND status IN ('pending_payment','confirmed')) >= ?
+                  WHERE lecture_id = ? AND status IN ('pending_payment','paid','confirmed')) >= ?
             THEN 'waitlist' ELSE ? END
      WHERE NOT EXISTS (SELECT 1 FROM lecture_registrations
                        WHERE lecture_id = ? AND user_id = ? AND status != 'cancelled')`
@@ -1679,7 +1679,8 @@ const handleLectureRegistrationPatch = async (req, env, regId) => {
   ).bind(regId).first();
   const sets = []; const args = [];
   if (body.status) { sets.push("status = ?"); args.push(body.status); }
-  if (body.status === 'confirmed') { sets.push("paid_at = ?"); args.push(nowIso()); }
+  // v00.299 — 입금 완료(paid)도 입금 시각을 남긴다. 확정과 분리했기 때문이다.
+  if (body.status === 'confirmed' || body.status === 'paid') { sets.push("paid_at = ?"); args.push(nowIso()); }
   // v00.136 — attended (NULL/1/0) 마킹. body.attended 가 명시되면 적용.
   if ('attended' in body) {
     const v = body.attended === null ? null : (body.attended ? 1 : 0);
@@ -1691,7 +1692,9 @@ const handleLectureRegistrationPatch = async (req, env, regId) => {
   // 상태 변화 알림 — 입금확인/취소/환불 등.
   if (before?.user_id && body.status && body.status !== before.status) {
     const map = {
-      confirmed: '강연 입금이 확인되어 참가가 확정되었습니다.',
+      // v00.299 — 입금 완료와 참가 확정을 나눴다.
+      paid: '강연 입금이 확인되었습니다. 참가 확정을 기다려 주세요.',
+      confirmed: '강연 참가가 확정되었습니다.',
       cancelled: '강연 신청이 취소되었습니다.',
       refund_requested: '환불 신청이 접수되었습니다.',
       pending_payment: '강연 신청이 입금 대기 상태로 전환되었습니다.',
@@ -1793,7 +1796,8 @@ const handleTourReservationPatch = async (req, env, regId) => {
   ).bind(regId).first();
   const sets = []; const args = [];
   if (body.status) { sets.push("status = ?"); args.push(body.status); }
-  if (body.status === 'confirmed') { sets.push("paid_at = ?"); args.push(nowIso()); }
+  // v00.299 — 입금 완료(paid)도 입금 시각을 남긴다. 확정과 분리했기 때문이다.
+  if (body.status === 'confirmed' || body.status === 'paid') { sets.push("paid_at = ?"); args.push(nowIso()); }
   // v00.136 — attended (NULL/1/0) 마킹.
   if ('attended' in body) {
     const v = body.attended === null ? null : (body.attended ? 1 : 0);
@@ -1804,7 +1808,9 @@ const handleTourReservationPatch = async (req, env, regId) => {
   await env.DB.prepare(`UPDATE tour_reservations SET ${sets.join(", ")} WHERE id = ?`).bind(...args).run();
   if (before?.user_id && body.status && body.status !== before.status) {
     const map = {
-      confirmed: '투어 입금이 확인되어 참가가 확정되었습니다.',
+      // v00.299 — 입금 완료와 참가 확정을 나눴다.
+      paid: '투어 입금이 확인되었습니다. 참가 확정을 기다려 주세요.',
+      confirmed: '투어 참가가 확정되었습니다.',
       cancelled: '투어 예약이 취소되었습니다.',
       refund_requested: '환불 신청이 접수되었습니다.',
       pending_payment: '투어 예약이 입금 대기 상태로 전환되었습니다.',
