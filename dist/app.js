@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.301.000",
+    version: "00.302.000",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -1048,12 +1048,12 @@
     return `bgnj_${Math.abs(hash).toString(16)}`;
   };
   var DEFAULT_GRADES = [
-    { id: "guest", label: "\uBC29\uBB38\uAC1D", level: 0, color: "#A8A29E", desc: "\uBE44\uB85C\uADF8\uC778 / \uAC8C\uC2A4\uD2B8" },
-    { id: "member", label: "\uC785\uBB38", level: 10, color: "#FCD34D", desc: "\uD68C\uC6D0\uAC00\uC785 \uC644\uB8CC" },
-    { id: "reader", label: "\uB3C5\uC790", level: 30, color: "#F5D548", desc: "\uD65C\uB3D9 \uD68C\uC6D0 (\uB313\uAE00 10+)" },
-    { id: "scholar", label: "\uC0AC\uAD00", level: 60, color: "#F59E0B", desc: "\uC5F4\uC131 \uD68C\uC6D0 (\uCE7C\uB7FC \uAE30\uACE0 \uAC00\uB2A5)" },
-    { id: "wangsanam", label: "\uC655\uC0AC\uB0A8", level: 90, color: "#D97706", desc: "\uC6B4\uC601\uC9C4" },
-    { id: "admin", label: "\uAD00\uB9AC\uC790", level: 100, color: "#92400E", desc: "\uCD5C\uACE0 \uAD00\uB9AC\uC790" }
+    { id: "guest", label: "\uAE38\uC190", level: 0, color: "#A8A29E", desc: "\uC544\uC9C1 \uBA38\uBB34\uB974\uC9C0 \uC54A\uC740 \uCC44 \uC2A4\uCCD0 \uC9C0\uB098\uAC00\uC9C0\uB9CC, \uB0AF\uC120 \uBC29\uD5A5\uC5D0 \uC7A0\uC2DC \uC2DC\uC120\uC744 \uB450\uB294 \uC0AC\uB78C." },
+    { id: "member", label: "\uB3D9\uD589", level: 10, color: "#FCD34D", desc: "\uC55E\uC11C \uAC77\uB294 \uC774\uB97C \uB530\uB77C \uD568\uAED8 \uAE38\uC5D0 \uC624\uB978 \uC0AC\uB78C. \uC544\uC9C1 \uC801\uC9C0\uB294 \uC54A\uC9C0\uB9CC, \uACC1\uC5D0\uC11C \uBCF8\uB2E4." },
+    { id: "reader", label: "\uC0AC\uCD08\uC9C0\uAE30", level: 30, color: "#F5D548", desc: "\uBCF8 \uAC83\uC744 \uC78A\uC9C0 \uC54A\uC73C\uB824 \uC801\uC5B4 \uB450\uAE30 \uC2DC\uC791\uD55C \uC0AC\uB78C. \uC0AC\uCD08(\u53F2\u8349)\uB294 \uB2E4\uB4EC\uAE30 \uC804\uC758 \uB0A0\uAC83 \uADF8\uB300\uB85C\uC758 \uAE30\uB85D\uC774\uB2E4." },
+    { id: "scholar", label: "\uAE30\uC0AC\uAD00", level: 60, color: "#F59E0B", desc: "\uADF8 \uC790\uB9AC\uC5D0 \uC788\uC5C8\uB358 \uC77C\uC744 \uB9E1\uC544 \uB0A8\uAE30\uB294 \uC0AC\uB78C. \uB0A8\uAE34 \uAE30\uB85D\uC774 \uB2E4\uC74C \uC0AC\uB78C\uC758 \uCD9C\uBC1C\uC810\uC774 \uB41C\uB2E4." },
+    { id: "wangsanam", label: "\uD3B8\uC218\uAD00", level: 90, color: "#D97706", desc: "\uD769\uC5B4\uC9C4 \uAE30\uB85D\uC744 \uBAA8\uC544 \uC5EE\uB294 \uC0AC\uB78C. \uD55C \uC0AC\uB78C\uC758 \uAE30\uB85D\uC774 \uC5EC\uB7FF\uC758 \uC5ED\uC0AC\uAC00 \uB418\uB294 \uC790\uB9AC." },
+    { id: "admin", label: "\uBC45\uAE30\uB178\uC790 \uAD00\uB9AC\uD300", level: 100, color: "#92400E", desc: "\uBC45\uAE30\uB178\uC790 \uAD00\uB9AC\uD300" }
   ];
   var LEGACY_GRADE_COLORS = {
     guest: ["#78716a", "#64748B"],

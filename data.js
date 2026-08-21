@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.301.000",
+  version: "00.302.000",
   build: "2026.08.21",
   channel: "preview",
 };
@@ -539,13 +539,18 @@ const hashPassword = (input) => {
 
 // 회원 등급 — 번호가 낮을수록 권한 낮음. admin > …
 // 색상은 사이트 Sunny Gold 팔레트(--gold ~ --gold-ink)와 일관성 있게 단계적으로 진해진다.
+// v00.302 — 등급 이름을 사관(史官) 체계로. 사용자 요청.
+//   이 배열은 **서버(D1.grades_kv)가 비어 있을 때만** 쓰이는 폴백이다.
+//   서버 값과 어긋나 있으면 첫 진입자에게만 옛 이름이 잠깐 보인다 — 실제로 어긋나 있었다
+//   (여기는 '방문객·입문·독자·사관·왕사남', 서버는 '길손·여정자·개척자·길잡이·기록자').
+//   서버를 바꿀 때 여기도 함께 맞춘다.
 const DEFAULT_GRADES = [
-  { id: "guest",    label: "방문객", level: 0, color: "#A8A29E", desc: "비로그인 / 게스트" },
-  { id: "member",   label: "입문", level: 10, color: "#FCD34D", desc: "회원가입 완료" },
-  { id: "reader",   label: "독자", level: 30, color: "#F5D548", desc: "활동 회원 (댓글 10+)" },
-  { id: "scholar",  label: "사관", level: 60, color: "#F59E0B", desc: "열성 회원 (칼럼 기고 가능)" },
-  { id: "wangsanam",label: "왕사남", level: 90, color: "#D97706", desc: "운영진" },
-  { id: "admin",    label: "관리자", level: 100, color: "#92400E", desc: "최고 관리자" },
+  { id: "guest",    label: "길손",     level: 0,  color: "#A8A29E", desc: "아직 머무르지 않은 채 스쳐 지나가지만, 낯선 방향에 잠시 시선을 두는 사람." },
+  { id: "member",   label: "동행",     level: 10, color: "#FCD34D", desc: "앞서 걷는 이를 따라 함께 길에 오른 사람. 아직 적지는 않지만, 곁에서 본다." },
+  { id: "reader",   label: "사초지기", level: 30, color: "#F5D548", desc: "본 것을 잊지 않으려 적어 두기 시작한 사람. 사초(史草)는 다듬기 전의 날것 그대로의 기록이다." },
+  { id: "scholar",  label: "기사관",   level: 60, color: "#F59E0B", desc: "그 자리에 있었던 일을 맡아 남기는 사람. 남긴 기록이 다음 사람의 출발점이 된다." },
+  { id: "wangsanam",label: "편수관",   level: 90, color: "#D97706", desc: "흩어진 기록을 모아 엮는 사람. 한 사람의 기록이 여럿의 역사가 되는 자리." },
+  { id: "admin",    label: "뱅기노자 관리팀", level: 100, color: "#92400E", desc: "뱅기노자 관리팀" },
 ];
 
 // 기존 localStorage에 남아있는 (legacy) 등급 색상을 새 Sunny Gold 팔레트로 마이그레이션.

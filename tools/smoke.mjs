@@ -223,6 +223,20 @@ const run = async () => {
       "빠지면 입금한 사람이 자리를 안 차지한 것으로 세어 초과 접수된다");
   }
 
+  console.log("\n── 8.5 회원 등급 기본값 ──");
+  {
+    // 이 배열은 서버(D1.grades_kv)가 비어 있을 때만 쓰이는 폴백이다.
+    // 실제로 서버와 어긋나 있어서 첫 진입자에게 옛 이름이 보일 수 있었다(v00.302 에서 맞춤).
+    const grades = w.BGNJ_STORES?.grades || [];
+    check("등급이 6단계다", grades.length === 6, `${grades.length}개`);
+    check("레벨이 오름차순이다", grades.every((g, i) => i === 0 || g.level > grades[i - 1].level));
+    check("모든 등급에 이름과 설명이 있다",
+      grades.every((g) => String(g.label || '').trim() && String(g.desc || '').trim()));
+    check("사관 체계 이름이다",
+      ['길손', '동행', '사초지기', '기사관', '편수관'].every((n) => grades.some((g) => g.label === n)),
+      grades.map((g) => g.label).join(' · '));
+  }
+
   console.log("\n── 9. 관리자 주소 복원 (#admin=탭|상세id|하위탭) ──");
   {
     const panels = readFileSync(path.join(ROOT, "pages/admin/AdminEventsPanels.jsx"), "utf8");
