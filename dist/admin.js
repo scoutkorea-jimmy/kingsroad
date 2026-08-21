@@ -1159,6 +1159,113 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     return { counts, labels };
   };
   window.HeatmapGrid = HeatmapGrid;
+  var eventTimestamp = (item) => {
+    const iso = (item == null ? void 0 : item.startsAt) || (item == null ? void 0 : item.starts_at);
+    if (iso) {
+      const t = Date.parse(iso);
+      if (!isNaN(t)) return t;
+    }
+    const m = String((item == null ? void 0 : item.next) || "").match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+    if (m) {
+      const t = Date.parse(`${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}T00:00:00+09:00`);
+      if (!isNaN(t)) return t;
+    }
+    return 0;
+  };
+  var EVENT_FILTERS = [
+    { key: "all", label: "\uC804\uCCB4" },
+    { key: "upcoming", label: "\uC608\uC815" },
+    { key: "past", label: "\uC9C0\uB09C" },
+    { key: "open", label: "\uACF5\uAC1C" },
+    { key: "hidden", label: "\uC228\uAE40" }
+  ];
+  var EVENT_SORTS = [
+    { key: "date-desc", label: "\uC77C\uC815 \uB2A6\uC740\uC21C" },
+    { key: "date-asc", label: "\uC77C\uC815 \uBE60\uB978\uC21C" },
+    { key: "regs-desc", label: "\uC2E0\uCCAD \uB9CE\uC740\uC21C" },
+    { key: "seats-asc", label: "\uC794\uC5EC \uC801\uC740\uC21C" },
+    { key: "title", label: "\uC81C\uBAA9\uC21C" }
+  ];
+  var filterSortEvents = (items, { search = "", status = "all", sort = "date-desc", countOf, seatsOf } = {}) => {
+    const now = Date.now();
+    let list = (Array.isArray(items) ? items : []).slice();
+    if (status === "upcoming") list = list.filter((x) => eventTimestamp(x) >= now);
+    else if (status === "past") list = list.filter((x) => {
+      const t = eventTimestamp(x);
+      return t > 0 && t < now;
+    });
+    else if (status === "open") list = list.filter((x) => !x.hidden);
+    else if (status === "hidden") list = list.filter((x) => !!x.hidden);
+    const q = String(search || "").trim().toLowerCase();
+    if (q) {
+      list = list.filter((x) => [x.title, x.topic, x.subtitle, x.venue, x.host, x.level, x.desc].some((v) => String(v || "").toLowerCase().includes(q)));
+    }
+    const num = (fn, x) => {
+      var _a;
+      try {
+        return Number((_a = fn == null ? void 0 : fn(x)) != null ? _a : 0) || 0;
+      } catch (e) {
+        return 0;
+      }
+    };
+    const byDate = (a, b, dir) => {
+      const ta = eventTimestamp(a), tb = eventTimestamp(b);
+      if (ta === 0 && tb === 0) return 0;
+      if (ta === 0) return 1;
+      if (tb === 0) return -1;
+      return dir === "asc" ? ta - tb : tb - ta;
+    };
+    if (sort === "date-asc") list.sort((a, b) => byDate(a, b, "asc"));
+    else if (sort === "regs-desc") list.sort((a, b) => num(countOf, b) - num(countOf, a));
+    else if (sort === "seats-asc") list.sort((a, b) => num(seatsOf, a) - num(seatsOf, b));
+    else if (sort === "title") list.sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "ko"));
+    else list.sort((a, b) => byDate(a, b, "desc"));
+    return list;
+  };
+  var EventListToolbar = ({ search, onSearch, status, onStatus, sort, onSort, shown, total, placeholder }) => /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, marginBottom: 16, alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      className: "field-input",
+      style: { flex: 1, minWidth: 200 },
+      placeholder: placeholder || "\uC81C\uBAA9\xB7\uC7A5\uC18C \uAC80\uC0C9\u2026",
+      value: search,
+      onChange: (e) => onSearch(e.target.value)
+    }
+  ), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      className: "field-input",
+      style: { maxWidth: 130 },
+      value: status,
+      onChange: (e) => onStatus(e.target.value),
+      "aria-label": "\uC0C1\uD0DC \uD544\uD130"
+    },
+    EVENT_FILTERS.map((f) => /* @__PURE__ */ React.createElement("option", { key: f.key, value: f.key }, f.label))
+  ), /* @__PURE__ */ React.createElement(
+    "select",
+    {
+      className: "field-input",
+      style: { maxWidth: 160 },
+      value: sort,
+      onChange: (e) => onSort(e.target.value),
+      "aria-label": "\uC815\uB82C \uAE30\uC900"
+    },
+    EVENT_SORTS.map((f) => /* @__PURE__ */ React.createElement("option", { key: f.key, value: f.key }, f.label))
+  ), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11, whiteSpace: "nowrap" } }, shown === total ? `${total}\uAC74` : `${shown} / ${total}\uAC74`), (search || status !== "all") && /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      type: "button",
+      className: "btn btn-small",
+      onClick: () => {
+        onSearch("");
+        onStatus("all");
+      }
+    },
+    "\uCD08\uAE30\uD654"
+  ));
+  window.eventTimestamp = eventTimestamp;
+  window.filterSortEvents = filterSortEvents;
+  window.EventListToolbar = EventListToolbar;
 
   // pages/admin/AdminContentEditors.jsx
   var RecommendationsAdminPanel = () => {
@@ -12098,7 +12205,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [contentNotes, setContentNotes] = React.useState([]);
     const [contentCover, setContentCover] = React.useState("");
     const [contentMsg, setContentMsg] = React.useState("");
-    const lectures = React.useMemo(() => window.BGNJ_LECTURES.listAll({ includeHidden: true }), [tick]);
+    const allLectures = React.useMemo(() => window.BGNJ_LECTURES.listAll({ includeHidden: true }), [tick]);
+    const [search, setSearch] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [sortKey, setSortKey] = React.useState("date-desc");
+    const lectures = React.useMemo(() => window.filterSortEvents(allLectures, {
+      search,
+      status: statusFilter,
+      sort: sortKey,
+      countOf: (l) => window.BGNJ_LECTURES.listRegistrations(l.id).filter((r) => r.status !== "cancelled").length,
+      seatsOf: (l) => window.BGNJ_LECTURES.getSeats(l.id).remaining
+    }), [allLectures, search, statusFilter, sortKey]);
     const refresh = () => setTick((v) => v + 1);
     const startContentEdit = (l) => {
       var _a, _b;
@@ -12153,7 +12270,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return () => {
         cancelled = true;
       };
-    }, [lectures.length]);
+    }, [allLectures.length]);
     const startEdit = (l) => {
       const startsAtLocal = (() => {
         if (!l.startsAt) return "";
@@ -12268,7 +12385,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       },
       /* @__PURE__ */ React.createElement("span", null, "\u{1F4CB} \uAC15\uC5F0 \uD398\uC774\uC9C0 \uCF58\uD150\uCE20 \u2014 \uAE00\uB85C\uBC8C \uC9C4\uD589\xB7\uCC38\uACE0 / \uD15C\uD50C\uB9BF / \uAC15\uC5F0\uBCC4 override"),
       /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, showPageEditor ? "\u25B2 \uB2EB\uAE30" : "\u25BC \uD3BC\uCE58\uAE30")
-    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, LecturePageEditorPanel ? /* @__PURE__ */ React.createElement(window.LecturePageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uAC15\uC5F0 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4. \uACC4\uC88C\uBC88\uD638\uB294 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC2DC\uC2A4\uD15C \u2192 \uC124\uC815"), " \uD0ED\uC5D0\uC11C \uB4F1\uB85D\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, lectures.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, LecturePageEditorPanel ? /* @__PURE__ */ React.createElement(window.LecturePageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uAC15\uC5F0 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4. \uACC4\uC88C\uBC88\uD638\uB294 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC2DC\uC2A4\uD15C \u2192 \uC124\uC815"), " \uD0ED\uC5D0\uC11C \uB4F1\uB85D\uD569\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, allLectures.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
       if (!await window.BGNJ_CONFIRM("\uC0D8\uD50C \uAC15\uC5F0 3\uAC1C\uB97C \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
       const samples = [
         { title: "\uC655\uC758 \uAE38", topic: "\uC870\uC120 \uC655\uC2E4\uC758 \uC77C\uC0C1\uACFC \uC758\uB840", venue: "\uACBD\uBCF5\uAD81 \uC218\uC815\uC804", host: "\uBC45\uAE30\uB178\uC790", durationMinutes: 90, capacity: 30, price: 0, note: "\uACBD\uBCF5\uAD81 \uB2F5\uC0AC\uC640 \uD568\uAED8\uD558\uB294 \uC778\uBB38\uD559 \uAC15\uC5F0." },
@@ -12292,7 +12409,20 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       } catch (_e) {
         console.warn("[bgnj] AdminEventsPanels.jsx:332 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
-    } }), lectures.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, "\uAD00\uB9AC\uD560 \uAC15\uC5F0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, lectures.map((l) => {
+    } }), allLectures.length > 0 && window.EventListToolbar && /* @__PURE__ */ React.createElement(
+      window.EventListToolbar,
+      {
+        search,
+        onSearch: setSearch,
+        status: statusFilter,
+        onStatus: setStatusFilter,
+        sort: sortKey,
+        onSort: setSortKey,
+        shown: lectures.length,
+        total: allLectures.length,
+        placeholder: "\uC81C\uBAA9\xB7\uC8FC\uC81C\xB7\uC7A5\uC18C\xB7\uC9C4\uD589\uC790 \uAC80\uC0C9\u2026"
+      }
+    ), lectures.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, allLectures.length === 0 ? "\uAD00\uB9AC\uD560 \uAC15\uC5F0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC15\uC5F0\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uD544\uD130\uB97C \uBC14\uAFD4 \uBCF4\uC138\uC694.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, lectures.map((l) => {
       const seats = window.BGNJ_LECTURES.getSeats(l.id);
       const regs = window.BGNJ_LECTURES.listRegistrations(l.id);
       const active = regs.filter((r) => r.status !== "cancelled");
@@ -12488,7 +12618,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [contentCover, setContentCover] = React.useState("");
     const [contentMsg, setContentMsg] = React.useState("");
     const refresh = () => setTick((v) => v + 1);
-    const tours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
+    const allTours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
+    const [search, setSearch] = React.useState("");
+    const [statusFilter, setStatusFilter] = React.useState("all");
+    const [sortKey, setSortKey] = React.useState("date-desc");
+    const tours = React.useMemo(() => window.filterSortEvents(allTours, {
+      search,
+      status: statusFilter,
+      sort: sortKey,
+      countOf: (t) => window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== "cancelled").length,
+      seatsOf: (t) => window.BGNJ_TOURS.getSeats(t.id).remaining
+    }), [allTours, search, statusFilter, sortKey]);
     const startContentEdit = (t) => {
       var _a, _b;
       if (!t) return;
@@ -12546,7 +12686,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return () => {
         cancelled = true;
       };
-    }, [tours.length]);
+    }, [allTours.length]);
     const startEdit = (t) => {
       if (!t) return;
       const startsAtLocal = (() => {
@@ -12694,7 +12834,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       },
       /* @__PURE__ */ React.createElement("span", null, "\u{1F4CB} \uD22C\uC5B4 \uD398\uC774\uC9C0 \uCF58\uD150\uCE20 \u2014 \uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C / \uD15C\uD50C\uB9BF / \uD22C\uC5B4\uBCC4 override"),
       /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, showPageEditor ? "\u25B2 \uB2EB\uAE30" : "\u25BC \uD3BC\uCE58\uAE30")
-    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, TourPageEditorPanel ? /* @__PURE__ */ React.createElement(window.TourPageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uD22C\uC5B4 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4(\uAC15\uC5F0\uACFC \uAC19\uC740 \uACC4\uC88C \uC0AC\uC6A9)."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, tours.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, TourPageEditorPanel ? /* @__PURE__ */ React.createElement(window.TourPageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uD22C\uC5B4 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4(\uAC15\uC5F0\uACFC \uAC19\uC740 \uACC4\uC88C \uC0AC\uC6A9)."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, allTours.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
       if (!await window.BGNJ_CONFIRM("\uC0D8\uD50C \uB2F5\uC0AC 3\uAC1C\uB97C \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
       const samples = [
         { title: "\uACBD\uBCF5\uAD81 \u2014 \uC655\uC758 \uC77C\uC0C1", location: "\uACBD\uBCF5\uAD81 \uC77C\uB300", host: "\uBC45\uAE30\uB178\uC790", durationMinutes: 180, capacity: 15, price: 3e4, desc: "\uACBD\uBCF5\uAD81 \uC678\uC804\xB7\uB0B4\uC804\uC744 \uB530\uB77C \uC655\uC758 \uD558\uB8E8\uB97C \uC887\uB294 \uB2F5\uC0AC." },
@@ -12725,7 +12865,20 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         });
       }
       refresh();
-    } }, "\uC0D8\uD50C \uB370\uC774\uD130 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: addNewTour }, "\uFF0B \uC0C8 \uD22C\uC5B4 \uCD94\uAC00"))), tours.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, "\uAD00\uB9AC\uD560 \uD22C\uC5B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, tours.map((t) => {
+    } }, "\uC0D8\uD50C \uB370\uC774\uD130 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: addNewTour }, "\uFF0B \uC0C8 \uD22C\uC5B4 \uCD94\uAC00"))), allTours.length > 0 && window.EventListToolbar && /* @__PURE__ */ React.createElement(
+      window.EventListToolbar,
+      {
+        search,
+        onSearch: setSearch,
+        status: statusFilter,
+        onStatus: setStatusFilter,
+        sort: sortKey,
+        onSort: setSortKey,
+        shown: tours.length,
+        total: allTours.length,
+        placeholder: "\uC81C\uBAA9\xB7\uBD80\uC81C\xB7\uB09C\uC774\uB3C4 \uAC80\uC0C9\u2026"
+      }
+    ), tours.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "card dim", style: { padding: 32, textAlign: "center" } }, allTours.length === 0 ? "\uAD00\uB9AC\uD560 \uD22C\uC5B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4." : "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uD22C\uC5B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uD544\uD130\uB97C \uBC14\uAFD4 \uBCF4\uC138\uC694.") : /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 14 } }, tours.map((t) => {
       var _a, _b, _c;
       const seats = window.BGNJ_TOURS.getSeats(t.id);
       const regs = window.BGNJ_TOURS.listReservations(t.id);

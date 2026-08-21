@@ -137,7 +137,16 @@ const LectureAdminPanel = ({ go }) => {
   const [contentCover, setContentCover] = React.useState('');
   const [contentMsg, setContentMsg] = React.useState('');
 
-  const lectures = React.useMemo(() => window.BGNJ_LECTURES.listAll({ includeHidden: true }), [tick]);
+  const allLectures = React.useMemo(() => window.BGNJ_LECTURES.listAll({ includeHidden: true }), [tick]);
+  // v00.298 — 목록 정렬/필터. 판정 로직은 AdminShared 의 filterSortEvents 가 공유한다.
+  const [search, setSearch] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState('all');
+  const [sortKey, setSortKey] = React.useState('date-desc');
+  const lectures = React.useMemo(() => window.filterSortEvents(allLectures, {
+    search, status: statusFilter, sort: sortKey,
+    countOf: (l) => window.BGNJ_LECTURES.listRegistrations(l.id).filter((r) => r.status !== 'cancelled').length,
+    seatsOf: (l) => window.BGNJ_LECTURES.getSeats(l.id).remaining,
+  }), [allLectures, search, statusFilter, sortKey]);
 
   const refresh = () => setTick((v) => v + 1);
 
@@ -187,7 +196,9 @@ const LectureAdminPanel = ({ go }) => {
       if (!cancelled) refresh();
     })();
     return () => { cancelled = true; };
-  }, [lectures.length]);
+    // v00.298 — 필터 결과가 아니라 전체 개수를 본다.
+    //   필터를 만질 때마다 길이가 바뀌면 그때마다 신청 정보를 통째로 다시 받게 된다.
+  }, [allLectures.length]);
 
   const startEdit = (l) => {
     const startsAtLocal = (() => {
@@ -304,7 +315,9 @@ const LectureAdminPanel = ({ go }) => {
           계좌번호는 <strong className="gold">시스템 → 설정</strong> 탭에서 등록합니다.
         </p>
         <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-          {lectures.length === 0 && (
+          {/* v00.298 — 필터로 0건이 된 것과 '정말 하나도 없는 것' 은 다르다.
+              lectures(필터 결과)가 아니라 allLectures 를 봐야 한다. */}
+          {allLectures.length === 0 && (
             <button type="button" className="btn btn-small" onClick={async () => {
               if (!(await window.BGNJ_CONFIRM('샘플 강연 3개를 추가합니다. 진행할까요?', { danger: true }))) return;
               const samples = [
@@ -332,8 +345,19 @@ const LectureAdminPanel = ({ go }) => {
         <BulkLectureImport onClose={() => setShowBulk(false)} onDone={() => { setShowBulk(false); refresh(); try { window.BGNJ_BROADCAST?.publish?.('lectures'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:332 오류(무시하고 진행)', _e); } }}/>
       )}
 
+      {allLectures.length > 0 && window.EventListToolbar && (
+        <window.EventListToolbar
+          search={search} onSearch={setSearch}
+          status={statusFilter} onStatus={setStatusFilter}
+          sort={sortKey} onSort={setSortKey}
+          shown={lectures.length} total={allLectures.length}
+          placeholder="제목·주제·장소·진행자 검색…"/>
+      )}
+
       {lectures.length === 0 ? (
-        <div className="card dim" style={{padding:32, textAlign:'center'}}>관리할 강연이 없습니다.</div>
+        <div className="card dim" style={{padding:32, textAlign:'center'}}>
+          {allLectures.length === 0 ? '관리할 강연이 없습니다.' : '조건에 맞는 강연이 없습니다. 필터를 바꿔 보세요.'}
+        </div>
       ) : (
         <div style={{display:'grid', gap:14}}>
           {lectures.map((l) => {
@@ -590,7 +614,16 @@ const TourAdminPanel = ({ go }) => {
   const [contentCover, setContentCover] = React.useState('');
   const [contentMsg, setContentMsg] = React.useState('');
   const refresh = () => setTick((v) => v + 1);
-  const tours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
+  const allTours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
+  // v00.298 — 강연 패널과 같은 정렬/필터.
+  const [search, setSearch] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState('all');
+  const [sortKey, setSortKey] = React.useState('date-desc');
+  const tours = React.useMemo(() => window.filterSortEvents(allTours, {
+    search, status: statusFilter, sort: sortKey,
+    countOf: (t) => window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== 'cancelled').length,
+    seatsOf: (t) => window.BGNJ_TOURS.getSeats(t.id).remaining,
+  }), [allTours, search, statusFilter, sortKey]);
 
   const startContentEdit = (t) => {
     if (!t) return;
@@ -645,7 +678,8 @@ const TourAdminPanel = ({ go }) => {
       if (!cancelled) refresh();
     })();
     return () => { cancelled = true; };
-  }, [tours.length]);
+    // v00.298 — 강연과 같은 이유로 전체 개수를 본다.
+  }, [allTours.length]);
 
   const startEdit = (t) => {
     if (!t) return; // 생성 실패/null 방어
@@ -796,7 +830,8 @@ const TourAdminPanel = ({ go }) => {
           결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다(강연과 같은 계좌 사용).
         </p>
         <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-          {tours.length === 0 && (
+          {/* v00.298 — 강연과 같은 이유로 allTours 를 본다. */}
+          {allTours.length === 0 && (
             <button type="button" className="btn btn-small" onClick={async () => {
               if (!(await window.BGNJ_CONFIRM('샘플 답사 3개를 추가합니다. 진행할까요?', { danger: true }))) return;
               const samples = [
@@ -826,8 +861,19 @@ const TourAdminPanel = ({ go }) => {
         </div>
       </div>
 
+      {allTours.length > 0 && window.EventListToolbar && (
+        <window.EventListToolbar
+          search={search} onSearch={setSearch}
+          status={statusFilter} onStatus={setStatusFilter}
+          sort={sortKey} onSort={setSortKey}
+          shown={tours.length} total={allTours.length}
+          placeholder="제목·부제·난이도 검색…"/>
+      )}
+
       {tours.length === 0 ? (
-        <div className="card dim" style={{padding:32, textAlign:'center'}}>관리할 투어가 없습니다.</div>
+        <div className="card dim" style={{padding:32, textAlign:'center'}}>
+          {allTours.length === 0 ? '관리할 투어가 없습니다.' : '조건에 맞는 투어가 없습니다. 필터를 바꿔 보세요.'}
+        </div>
       ) : (
         <div style={{display:'grid', gap:14}}>
           {tours.map((t) => {

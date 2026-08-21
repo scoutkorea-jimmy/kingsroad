@@ -150,6 +150,38 @@ const run = async () => {
   const bigGif = await S.maybeShrinkAll([{ name: "b.gif", type: "image/gif", size: 12 * MB }], { limitBytes: 10 * MB });
   check("줄일 수 없는데 한도를 넘으면 막는다", bigGif.files.length === 0 && bigGif.cancelled.length === 1);
 
+  console.log("\n── 7. 관리자 목록 정렬·필터 ──");
+  // AdminShared 는 JSX 를 쓰므로 통째로는 못 돌린다. 판정 로직만 떼어내 실제 코드로 시험한다.
+  {
+    const shared = readFileSync(path.join(ROOT, "pages/admin/AdminShared.jsx"), "utf8");
+    const a = shared.indexOf("const eventTimestamp = (item) => {");
+    const b = shared.indexOf("const EventListToolbar =");
+    const { filterSortEvents, eventTimestamp } = vm.runInNewContext(
+      shared.slice(a, b) + "\n({ filterSortEvents, eventTimestamp })", { Date, Number, String, Array, isNaN }
+    );
+    const now = Date.now();
+    const day = 86400000;
+    const items = [
+      { id: 1, title: "지난 강연",  startsAt: new Date(now - 10 * day).toISOString(), hidden: false },
+      { id: 2, title: "예정 강연",  startsAt: new Date(now + 10 * day).toISOString(), hidden: false },
+      { id: 3, title: "숨긴 강연",  startsAt: new Date(now + 3 * day).toISOString(),  hidden: true  },
+      { id: 4, title: "일정 미정",  startsAt: "",                                      hidden: false },
+    ];
+    const ids = (l) => l.map((x) => x.id).join(",");
+    check("예정만 고르기", ids(filterSortEvents(items, { status: "upcoming" })) === "2,3" || ids(filterSortEvents(items, { status: "upcoming", sort: "date-asc" })) === "3,2",
+      ids(filterSortEvents(items, { status: "upcoming" })));
+    check("지난 것만 고르기", ids(filterSortEvents(items, { status: "past" })) === "1");
+    check("숨김만 고르기", ids(filterSortEvents(items, { status: "hidden" })) === "3");
+    check("공개만 고르기", ids(filterSortEvents(items, { status: "open" })) === "2,1,4" || filterSortEvents(items, { status: "open" }).every((x) => !x.hidden));
+    check("일정 빠른순", ids(filterSortEvents(items, { sort: "date-asc" })) === "1,3,2,4", ids(filterSortEvents(items, { sort: "date-asc" })));
+    check("일정 미정은 늘 맨 뒤", filterSortEvents(items, { sort: "date-desc" }).slice(-1)[0].id === 4
+      && filterSortEvents(items, { sort: "date-asc" }).slice(-1)[0].id === 4);
+    check("검색이 제목을 찾는다", ids(filterSortEvents(items, { search: "숨긴" })) === "3");
+    check("신청 많은순", ids(filterSortEvents(items, { sort: "regs-desc", countOf: (x) => x.id })) === "4,3,2,1");
+    check("잔여 적은순", ids(filterSortEvents(items, { sort: "seats-asc", seatsOf: (x) => x.id })) === "1,2,3,4");
+    check("일정 미정도 목록에서 안 사라진다", filterSortEvents(items, {}).length === 4);
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };
