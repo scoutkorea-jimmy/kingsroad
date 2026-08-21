@@ -643,3 +643,59 @@ UA: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) ... Version/15.5 Safari/605.
 - **별건으로 눈에 띈 것** — `/tour` 에서 관리자 커버 이미지 업로드가 5건 실패해 있다
   (`이미지가 너무 큽니다(6.0MB). R2 실패 + 1.5MB 폴백 한도 초과`, 2026-08-20 Windows).
   이번 401 과는 다른 건이다. 손대지 않았다.
+
+---
+
+## 16. api.bgnj.net 전환 + 큰 사진 줄이기 (v00.295.004 — 완료·배포됨)
+
+사용자 지시 2건. 15번의 후속.
+
+### ① API 를 api.bgnj.net 으로 — 쿠키를 되살린다
+
+`workers.dev` 는 `bgnj.net` 과 **다른 사이트**라 세션 쿠키가 third-party 가 됐다(15번 장애의 뿌리).
+`api.bgnj.net` 이면 same-site 라 Safari 도 first-party 로 취급한다.
+
+- `wrangler.toml` 에 `[[routes]] pattern = "api.bgnj.net" / custom_domain = true`
+- CSP `connect-src` 에 새 주소 추가. **이걸 빼면 모든 호출이 차단된다** — 바꾸기 전에 반드시 같이 연다.
+- CORS 는 손댈 것 없음. preflight 실측으로 `Authorization` 허용 확인.
+- **옛 주소도 살려 둔다.** 이미 올라간 이미지 URL 이 workers.dev 로 DB 에 박혀 있고,
+  옛 코드를 문 브라우저도 남아 있다.
+- Bearer 토큰(v00.295.003) 덕분에 **주소가 바뀌어도 재로그인이 필요 없다** — 토큰은 localStorage 에 있고
+  `sessions` 는 그대로다.
+
+### ⚠ 사고 — 배포 직후 약 1~2분 사이트가 끊겼다
+
+`wrangler.toml` 에 **`workers_dev` 를 명시하지 않으면 wrangler 가 workers.dev 를 꺼 버린다.**
+경고로만 알려주고 그대로 진행한다. 배포 직후 옛 주소가 404 가 됐고, 그때 사이트가 쓰던 주소가 그거였다.
+
+```
+▲ WARNING  Because 'workers_dev' is not in your Wrangler file, it will be disabled for this deployment
+```
+
+- 배포 직후 **양쪽 주소를 curl 로 찍어 보고 바로 발견**해 `workers_dev = true` 를 넣고 재배포했다.
+- 복구 후에도 옛 주소가 두어 번은 404 였다 — 전파에 몇 초 걸린다. 한 번 찍고 판단하면 안 된다.
+- `wrangler.toml` 에 이 줄을 지우면 안 되는 이유를 주석으로 박아 뒀다.
+
+### ② 큰 사진 줄이기 — 물어보고 줄인다 (사용자 선택)
+
+`components/ImageShrink.jsx` 신설. 붙인 곳 셋 — 광장 첨부 이미지 · 본문 에디터(붙여넣기/버튼) · 관리자 커버.
+
+- **먼저 줄여 본 뒤 물어본다.** '5.8MB → 0.9MB 로 줄여서 올릴까요?' 예측이 아니라 실제 결과라 판단이 된다.
+- **여러 장이면 한 번만 묻는다.** 열 장 고르고 열 번 확인창이 뜨면 그게 더 나쁘다.
+- **EXIF 방향** — 캔버스로 다시 그리면 회전 정보가 날아가 사진이 눕는다.
+  `<img>` 를 거치면 브라우저가 EXIF 를 적용해 렌더하므로 바로 선 상태로 그려진다.
+  `createImageBitmap` 의 `imageOrientation` 은 Safari 지원이 늦어 안 쓴다.
+- **GIF 는 안 건드린다** — 다시 그리면 움직임이 죽는다.
+- **PNG 는 흰 바탕을 깔고 JPG 로** — 투명이 검게 나오는 것을 막는다. 확인창에 이 사실을 알린다.
+- 줄인 게 원본보다 크면 버린다(이미 잘 압축된 작은 사진).
+- **못 올리는 이유를 두 갈래로 안내한다** — 줄일 수 있었는데 원본을 고른 경우와,
+  GIF·HEIC 처럼 아예 줄일 수 없는 형식인 경우. 처음엔 뭉뚱그려 썼다가 시험에서 부정확한 걸 잡았다.
+
+이것으로 2026-08-20 관리자 커버 5연속 실패(`6.0MB`)도 해결된다 — 원인은 401 이 아니라 5MB 한도였다.
+
+### 검증
+
+- 새 주소: preflight 204 + `Authorization` 허용, GET 200 + CORS 헤더 실측.
+- 축소 판단 로직: 실제 파일 텍스트를 떼어 Node 에서 실행.
+  작은 사진은 묻지 않고 통과 ✅ / 큰 GIF 는 안 건드리고 통과 ✅ / 한도 넘는 GIF 는 차단 + 형식별 안내 ✅
+- **캔버스 축소 자체는 브라우저에서만 돌아간다 — 눈으로 확인 못 했다.** 사용자 확인 필요.

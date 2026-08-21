@@ -3,6 +3,20 @@ main = "src/index.js"
 compatibility_date = "2025-01-01"
 account_id = "b8cc5609b10c4df5b8e31aec570937b8"
 
+# v00.295.004 — 커스텀 도메인. 사이트(bgnj.net)와 같은 사이트로 만들기 위한 것이다.
+# workers.dev 는 bgnj.net 과 다른 사이트라 세션 쿠키가 third-party 쿠키가 되고,
+# Safari 는 그걸 전면 차단한다(2026-08-21 실제 장애 — handoff 15번).
+# api.bgnj.net 이면 same-site 라 쿠키가 정상 동작한다.
+# workers.dev 주소도 계속 살아 있다 — 옛 코드를 문 브라우저가 갑자기 끊기지 않게.
+# ⚠ workers_dev 를 명시하지 않으면 wrangler 가 workers.dev 주소를 꺼 버린다.
+# 실제로 이 줄이 없어서 배포 직후 옛 주소가 404 가 되며 사이트가 끊겼다(2026-08-21, 약 1분).
+# 옛 주소를 문 브라우저가 남아 있는 한 절대 지우면 안 된다.
+workers_dev = true
+
+[[routes]]
+pattern = "api.bgnj.net"
+custom_domain = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "banginoja-db"

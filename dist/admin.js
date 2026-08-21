@@ -1,4 +1,124 @@
 (() => {
+  // components/ImageShrink.jsx
+  var _MB = 1024 * 1024;
+  var _fmtMB = (bytes) => `${(Number(bytes || 0) / _MB).toFixed(1)}MB`;
+  var _isShrinkable = (file) => {
+    const t = String((file == null ? void 0 : file.type) || "").toLowerCase();
+    return t === "image/jpeg" || t === "image/jpg" || t === "image/png" || t === "image/webp";
+  };
+  var _loadImage = (file) => new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => resolve({ img, revoke: () => URL.revokeObjectURL(url) });
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("\uC774\uBBF8\uC9C0\uB97C \uC77D\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."));
+    };
+    img.src = url;
+  });
+  var shrinkImage = async (file, { maxEdge = 2e3, quality = 0.85 } = {}) => {
+    var _a;
+    if (!_isShrinkable(file)) return null;
+    let handle = null;
+    try {
+      handle = await _loadImage(file);
+      const { img } = handle;
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      if (!w || !h) return null;
+      const scale = Math.min(1, maxEdge / Math.max(w, h));
+      const outW = Math.max(1, Math.round(w * scale));
+      const outH = Math.max(1, Math.round(h * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = outW;
+      canvas.height = outH;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, outW, outH);
+      ctx.drawImage(img, 0, 0, outW, outH);
+      const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", quality));
+      if (!blob) return null;
+      if (blob.size >= file.size) return null;
+      const baseName = String(file.name || "image").replace(/\.[^.]+$/, "");
+      return new File([blob], `${baseName}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
+    } catch (_e) {
+      console.warn("[bgnj] \uC0AC\uC9C4 \uCD95\uC18C \uC2E4\uD328 \u2014 \uC6D0\uBCF8\uC73C\uB85C \uC9C4\uD589\uD55C\uB2E4 (ImageShrink.jsx)", _e);
+      return null;
+    } finally {
+      try {
+        (_a = handle == null ? void 0 : handle.revoke) == null ? void 0 : _a.call(handle);
+      } catch (_e) {
+        console.warn("[bgnj] \uC784\uC2DC URL \uC815\uB9AC (ImageShrink.jsx)", _e);
+      }
+    }
+  };
+  var maybeShrinkAll = async (fileList, {
+    limitBytes,
+    // 이 크기를 넘으면 업로드 자체가 불가능하다
+    askOverBytes = 2 * _MB,
+    // 이 크기를 넘으면 줄일지 물어본다
+    maxEdge = 2e3,
+    quality = 0.85
+  } = {}) => {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return { files: [], cancelled: [] };
+    const targets = files.filter((f) => f && f.size > askOverBytes);
+    if (targets.length === 0) return { files, cancelled: [] };
+    const shrunkMap = /* @__PURE__ */ new Map();
+    await Promise.all(targets.map(async (f) => {
+      const out2 = await shrinkImage(f, { maxEdge, quality });
+      if (out2) shrunkMap.set(f, out2);
+    }));
+    let accepted = false;
+    if (shrunkMap.size > 0) {
+      const before = [...shrunkMap.keys()].reduce((a, f) => a + f.size, 0);
+      const after = [...shrunkMap.values()].reduce((a, f) => a + f.size, 0);
+      const one = shrunkMap.size === 1;
+      const head = one ? `\uC0AC\uC9C4\uC774 ${_fmtMB(before)} \uB85C \uD07D\uB2C8\uB2E4.` : `\uC0AC\uC9C4 ${shrunkMap.size}\uC7A5\uC774 \uD07D\uB2C8\uB2E4 (\uD569\uACC4 ${_fmtMB(before)}).`;
+      const hasPng = [...shrunkMap.keys()].some((f) => String(f.type).toLowerCase() === "image/png");
+      accepted = await window.BGNJ_CONFIRM(
+        `${head}
+\uC904\uC774\uBA74 ${_fmtMB(after)} \uAC00 \uB429\uB2C8\uB2E4. \uC904\uC5EC\uC11C \uC62C\uB9B4\uAE4C\uC694?
+
+\uD654\uBA74\uC5D0\uC11C \uBCF4\uAE30\uC5D0\uB294 \uCDA9\uBD84\uD55C \uD654\uC9C8\uC785\uB2C8\uB2E4 (\uAE34 \uCABD ${maxEdge}px).` + (hasPng ? `
+PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
+        { confirmLabel: "\uC904\uC5EC\uC11C \uC62C\uB9AC\uAE30", cancelLabel: "\uC6D0\uBCF8 \uADF8\uB300\uB85C" }
+      );
+    }
+    const out = [];
+    const cancelled = [];
+    files.forEach((f) => {
+      const picked = accepted && shrunkMap.get(f) || f;
+      if (limitBytes && picked.size > limitBytes) {
+        cancelled.push(picked);
+        return;
+      }
+      out.push(picked);
+    });
+    if (cancelled.length > 0) {
+      const shrinkable = cancelled.filter((f) => _isShrinkable(f));
+      const notShrinkable = cancelled.filter((f) => !_isShrinkable(f));
+      const names = (list) => list.map((f) => `'${f.name}'`).join(", ");
+      if (shrinkable.length > 0) {
+        window.BGNJ_TOAST.error(
+          `${names(shrinkable)} \uC740(\uB294) \uD55C\uB3C4(${_fmtMB(limitBytes)})\uB97C \uB118\uC5B4 \uC62C\uB9B4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC120\uD0DD\uD55C \uB4A4 '\uC904\uC5EC\uC11C \uC62C\uB9AC\uAE30' \uB97C \uB20C\uB7EC \uC8FC\uC138\uC694.`
+        );
+      }
+      if (notShrinkable.length > 0) {
+        window.BGNJ_TOAST.error(
+          `${names(notShrinkable)} \uC740(\uB294) \uD55C\uB3C4(${_fmtMB(limitBytes)})\uB97C \uB118\uC2B5\uB2C8\uB2E4. \uC774 \uD615\uC2DD\uC740 \uC790\uB3D9\uC73C\uB85C \uC904\uC77C \uC218 \uC5C6\uC73C\uB2C8, \uC0AC\uC9C4 \uC571\uC5D0\uC11C \uD06C\uAE30\uB97C \uC904\uC774\uAC70\uB098 JPG \uB85C \uC800\uC7A5\uD574 \uC62C\uB824 \uC8FC\uC138\uC694.`
+        );
+      }
+    }
+    return { files: out, cancelled };
+  };
+  var maybeShrinkOne = async (file, opts = {}) => {
+    const { files } = await maybeShrinkAll([file], opts);
+    return files[0] || null;
+  };
+  window.BGNJ_IMAGE_SHRINK = { shrinkImage, maybeShrinkAll, maybeShrinkOne, formatMB: _fmtMB };
+
   // pages/admin/AdminShared.jsx
   var downloadBlob = (filename, content, mime = "text/plain;charset=utf-8") => {
     try {
@@ -19,8 +139,13 @@
   var downloadJson = (filename, obj) => downloadBlob(filename, JSON.stringify(obj, null, 2), "application/json");
   var pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, fallbackMaxBytes = 1.5 * 1024 * 1024 } = {}) => {
     var _a;
-    const file = (_a = e.target.files) == null ? void 0 : _a[0];
-    if (!file) return null;
+    const raw = (_a = e.target.files) == null ? void 0 : _a[0];
+    if (!raw) return null;
+    const file = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: maxBytes });
+    if (!file) {
+      e.target.value = "";
+      return null;
+    }
     try {
       const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder, maxBytes });
       e.target.value = "";
@@ -9209,7 +9334,11 @@
               (async () => {
                 var _a2, _b2;
                 setUploadingImage(true);
-                for (const f of pastedFiles) {
+                const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
+                  pastedFiles,
+                  { limitBytes: 10 * 1024 * 1024 }
+                );
+                for (const f of prepared) {
                   try {
                     const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
                     editor.chain().focus().setImage({ src: url, alt: f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0" }).run();
@@ -9272,9 +9401,11 @@
       input.accept = "image/*";
       input.onchange = async () => {
         var _a;
-        const f = (_a = input.files) == null ? void 0 : _a[0];
-        if (!f) return;
+        const raw = (_a = input.files) == null ? void 0 : _a[0];
+        if (!raw) return;
         const folder = preset === "column" ? "column-images" : "post-images";
+        const f = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 10 * 1024 * 1024 });
+        if (!f) return;
         try {
           setUploadingImage(true);
           const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });

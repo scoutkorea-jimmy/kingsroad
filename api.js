@@ -11,7 +11,12 @@
 // 이 어댑터로 위임하도록 마이그레이션. 우선은 어댑터만 노출.
 
 (function () {
-  const BASE = "https://banginoja-api.scoutkorea.workers.dev/api";
+  // v00.295.004 — workers.dev → api.bgnj.net.
+  //   사이트(bgnj.net)와 같은 사이트가 되어야 세션 쿠키가 third-party 쿠키를 면한다.
+  //   workers.dev 는 다른 사이트였고, Safari 는 그 쿠키를 전면 차단했다(handoff 15번 장애).
+  //   옛 주소도 계속 살아 있다 — 옛 코드를 문 브라우저가 갑자기 끊기지 않게 하기 위해서다.
+  //   ⚠ 이 값을 바꾸면 index.html 의 CSP connect-src 도 같이 열어야 한다. 안 그러면 전부 차단된다.
+  const BASE = "https://api.bgnj.net/api";
   // v00.148 — BGNJ_ANALYTICS sendBeacon 용 base url 노출.
   try { window.BGNJ_API_BASE = BASE; } catch (_e) { console.warn('[bgnj] api.js:16 오류(무시하고 진행)', _e); }
 

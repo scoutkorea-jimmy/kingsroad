@@ -144,18 +144,25 @@ const _stripAttachedBlock = (html) => {
 const ImageAttacher = ({ images, setImages, max = 10 }) => {
   const inputRef = React.useRef(null);
 
+  const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
   const handleFiles = async (fileList) => {
     const files = Array.from(fileList || []);
     const remaining = max - images.length;
     if (remaining <= 0) return;
-    const toAdd = files.slice(0, remaining);
+    // v00.295.004 — 큰 사진은 올리기 전에 줄일지 물어본다. 한도를 넘는데 원본을 고집하면
+    //   여기서 걸러지고 사용자에게 이유가 전달된다(예전엔 업로드 단계에서 그냥 실패했다).
+    const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
+      files.slice(0, remaining), { limitBytes: MAX_IMAGE_BYTES }
+    );
+    const toAdd = prepared;
+    if (toAdd.length === 0) return;
     // v00.294.008 — dataURI(base64) 폴백 제거. schema-v11 로 이미지가 정식 컬럼에
     // 저장되기 시작했고, 서버는 base64 를 거부한다(글 하나가 수 MB 가 되어 목록 조회까지
     // 느려지기 때문). 업로드가 실패하면 조용히 우회하지 말고 그대로 알린다.
     const results = await Promise.all(toAdd.map(async (f) => {
       const meta = { name: f.name, size: f.size, alt: f.name.replace(/\.[^.]+$/, '') };
       try {
-        const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-images', maxBytes: 10 * 1024 * 1024 });
+        const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-images', maxBytes: MAX_IMAGE_BYTES });
         return { ...meta, dataUrl: url };
       } catch (err) {
         window.BGNJ_TOAST.error(`'${f.name}' 업로드 실패 — 잠시 후 다시 시도해 주세요. (${err?.message || '알 수 없는 오류'})`);

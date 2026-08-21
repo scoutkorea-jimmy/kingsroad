@@ -118,7 +118,11 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
             const folder = preset === 'column' ? 'column-images' : 'post-images';
             (async () => {
               setUploadingImage(true);
-              for (const f of pastedFiles) {
+              // v00.295.004 — 붙여넣은 사진도 크면 줄일지 물어본다. 여러 장이면 한 번만 묻는다.
+              const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
+                pastedFiles, { limitBytes: 10 * 1024 * 1024 }
+              );
+              for (const f of prepared) {
                 try {
                   const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
                   editor.chain().focus().setImage({ src: url, alt: f.name || '붙여넣은 이미지' }).run();
@@ -188,9 +192,12 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, plac
     input.type = 'file';
     input.accept = 'image/*';
     input.onchange = async () => {
-      const f = input.files?.[0];
-      if (!f) return;
+      const raw = input.files?.[0];
+      if (!raw) return;
       const folder = preset === 'column' ? 'column-images' : 'post-images';
+      // v00.295.004 — 큰 사진은 올리기 전에 줄일지 물어본다. null 이면 한도를 넘어 못 올리는 것.
+      const f = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 10 * 1024 * 1024 });
+      if (!f) return;
       try {
         setUploadingImage(true);
         const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });

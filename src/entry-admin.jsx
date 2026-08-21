@@ -6,6 +6,7 @@
 //
 // ⚠️ AuthAdminPage 는 AdminShared/ContentEditors/DesignHub 의 window globals 를 참조 → 순서 고정.
 
+import '../components/ImageShrink.jsx';
 import '../pages/admin/AdminShared.jsx';
 import '../pages/admin/AdminContentEditors.jsx';
 import '../pages/admin/AdminDesignHub.jsx';

@@ -38,8 +38,13 @@ const downloadJson = (filename, obj) => downloadBlob(filename, JSON.stringify(ob
 // v00.184 — DRY: 이미지 업로드 공통 helper.
 // R2 업로드 시도 → 실패 시 FileReader dataURI 폴백. lecture-covers / tour-covers / book-covers / 등 4+ 패널 동일 로직.
 const pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, fallbackMaxBytes = 1.5 * 1024 * 1024 } = {}) => {
-  const file = e.target.files?.[0];
-  if (!file) return null;
+  const raw = e.target.files?.[0];
+  if (!raw) return null;
+  // v00.295.004 — 큰 사진은 올리기 전에 줄일지 물어본다.
+  //   2026-08-20 에 6.0MB 커버가 5MB 한도에 걸려 5번 연속 실패했다. 그때는 방법이 없었다.
+  //   null 이면 한도를 넘는데 원본을 고집한 경우 — 사용자에겐 이미 안내가 갔다.
+  const file = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: maxBytes });
+  if (!file) { e.target.value = ''; return null; }
   try {
     const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder, maxBytes });
     e.target.value = '';
