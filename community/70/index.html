@@ -26,7 +26,7 @@
      · frame-ancestors / X-Frame-Options 는 HTTP 헤더 전용 — GitHub Pages(정적 호스팅)는 헤더 주입 불가라
        <meta> 로는 브라우저가 무시(콘솔 경고만 남김). v00.284.002 에서 제거. 클릭재킹 방어가 필요하면
        Cloudflare(워커/Pages) 같은 헤더 가능한 경유지에서 HTTP 헤더로 설정해야 실효. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-wgEFixqY95PtTDmIjogpm0g/VqRPr3NOsS1trWIj89o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-nref0yzgT5JmYppNDtvLoVUj2DFivFRU57YEqt1npX0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta property="og:title" content="[걸어서 인물속으로] 03. 원효대사 - 개암사에서 정진 수행 — 뱅기노자">
 <meta property="og:description" content="각설이(覺說伊)로 꺼져가는 민족혼을 깨우다 ​​ 찬란했던 배달민족 백제 고구려는 역사 무대에서 내려오고 대조영 발해는 고구려를 계승하며 698년에 나라를 세웠다 당의 안동 웅진 계림도독부 설치로 진정한 통일은 없었고 남쪽에는 신라 북쪽엔 발해가 있는 남북국 시대만 있었다 ​당은 고구려…">
 <meta property="og:type" content="website">
@@ -47,9 +47,20 @@
 <!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=00.297.000">
+<link rel="stylesheet" href="/styles.css?v=00.297.001">
 
 
+<!-- v00.297.001 — 검색·AI 크롤러용 본문(#seo-main)을 사람 눈에서 감춘다.
+     왜: 브라우저가 HTML 을 먼저 그리고 React 가 부팅해 덮어쓰기까지의 짧은 순간,
+         크롤러에게 보여주려고 넣어 둔 줄글이 사용자에게 그대로 보였다(사용자 보고).
+     어떻게: 기본은 숨기고, JavaScript 가 없는 환경에서는 다시 보이게 한다.
+         · 사람(JS 켜짐)      → 숨김. 잠깐 보이던 글이 사라진다.
+         · 구글봇             → JS 를 돌려 React 가 그린 진짜 화면을 본다. 영향 없다.
+         · 네이버봇·AI 크롤러 → JS 를 돌리지 않으므로 noscript 규칙이 적용돼 그대로 읽는다.
+                                CSS 를 아예 불러오지 않는 크롤러도 마찬가지로 읽는다.
+     숨기는 내용과 보여주는 내용이 같고 JS 없는 사용자에게는 그대로 보이므로 클로킹이 아니다. -->
+<style>#seo-main{display:none}</style>
+<noscript><style>#seo-main{display:block}</style></noscript>
 <link rel="canonical" href="https://bgnj.net/community/70">
 <meta property="og:url" content="https://bgnj.net/community/70">
 <link rel="alternate" type="application/rss+xml" title="뱅기노자" href="https://bgnj.net/feed.xml">
@@ -216,6 +227,6 @@
      v00.285 Stage 3 — per-file 22개 <script> → 단일 번들 dist/app.js.
        엔트리 src/entry-main.jsx 가 기존 로드 순서대로 side-effect import. tools/build.mjs --bundle 산출.
        admin(dist/admin.js)은 boot 가 route 진입 시 동적 주입(코드 스플리팅 유지). -->
-<script defer src="/dist/app.js?v=00.297.000"></script>
+<script defer src="/dist/app.js?v=00.297.001"></script>
 </body>
 </html>
