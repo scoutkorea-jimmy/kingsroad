@@ -656,7 +656,13 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
       const cat = categories.find(c => c.id === p.categoryId) || categories.find(c => c.label === p.category);
       if (cat && userLevel < (cat.minLevel ?? 0)) return false;
       if (tab !== "all" && (p.categoryId !== tab && cat?.id !== tab)) return false;
-      if (q && !p.title.toLowerCase().includes(q) && !String(p.body?.text || '').toLowerCase().includes(q)) return false;
+      // v00.296.002 — 목록에는 본문이 오지 않는다(발췌만). 이미 상세를 열어 본문이 채워진
+      //   글은 전문으로, 아직 안 연 글은 발췌로 찾는다. 둘 다 보는 이유는
+      //   목록 검색이 조용히 제목 검색으로 쪼그라들지 않게 하기 위해서다.
+      if (q) {
+        const hay = `${p.title || ''} ${p.body?.text || ''} ${p.excerpt || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       if (activePrefix && p.prefix !== activePrefix) return false;
       return true;
     });

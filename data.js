@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.296.001",
+  version: "00.296.002",
   build: "2026.08.21",
   channel: "preview",
 };
@@ -1485,6 +1485,10 @@ const _serverPostToUi = (p) => ({
   images: Array.isArray(p.images) ? p.images : [],
   attachments: Array.isArray(p.attachments) ? p.attachments : [],
   tags: Array.isArray(p.tags) ? p.tags : [],
+  // v00.296.002 — 목록 응답은 본문 대신 발췌만 온다(전송량 1,365KB → 약 60KB).
+  //   상세로 들어가면 _hydratePostBody 가 /api/posts/{id} 로 전문을 채운다.
+  //   발췌는 목록 검색이 조용히 제목 검색으로 쪼그라들지 않게 하려고 남긴다.
+  excerpt: typeof p.excerpt === 'string' ? p.excerpt : '',
   _remote: true,
 });
 

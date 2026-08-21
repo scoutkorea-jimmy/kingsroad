@@ -498,7 +498,18 @@ const handlePostsList = async (req, env) => {
                       images_json, attachments_json, tags_json
                FROM posts WHERE ${where} ORDER BY created_at DESC LIMIT ?`;
   const { results: rawResults } = await env.DB.prepare(sql).bind(...args, limit).all();
-  const results = (rawResults || []).map(decoratePostRow);
+  // v00.296.002 — 목록 응답에서 본문을 빼고 발췌만 보낸다.
+  //   실측: 목록 1,365KB 중 body 가 1,334KB — **전체의 98%** 였다. images 는 2KB 로 무시할 수준.
+  //   목록 화면은 본문을 쓰지 않는다. 쓰는 곳은 검색(제목+본문 포함 필터) 하나뿐이라
+  //   발췌 400자를 대신 보낸다. 상세로 들어가면 클라이언트가 /api/posts/{id} 로 전문을 받는다
+  //   (BGNJ_COMMUNITY._hydratePostBody — v00.170 부터 있던 장치).
+  //   D1 에서 읽는 양은 그대로지만 네트워크 전송이 1,365KB → 약 60KB 로 줄어든다.
+  //   느린 것은 전송이었다.
+  const results = (rawResults || []).map((row) => {
+    const d = decoratePostRow(row);
+    const { body, ...rest } = d;
+    return { ...rest, excerpt: postExcerpt(body) };
+  });
   // v00.141 — allow_read 가 명시 0 인 카테고리의 글은 비관리자에 숨김.
   let isAdmin = false;
   // v00.262.003 — C2 transient D1 에러로 admin 권한 silent 강등 사고 방지. 가시화.
@@ -579,6 +590,13 @@ const normalizePostTags = (raw) => {
 };
 
 // 저장된 JSON 컬럼 → 클라이언트가 쓰는 배열. NULL(마이그레이션 이전 글)은 빈 배열.
+// 목록용 발췌 — HTML 태그를 걷어낸 본문 앞부분. 검색과 미리보기에 쓴다.
+const postExcerpt = (html, limit = 400) => String(html || "")
+  .replace(/<\s*(script|style)[^>]*>[\s\S]*?<\/\s*\1\s*>/gi, " ")
+  .replace(/<[^>]+>/g, " ")
+  .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/\s+/g, " ").trim().slice(0, limit);
+
 const decoratePostRow = (row) => {
   if (!row) return row;
   // 원본 *_json 컬럼은 응답에서 뺀다 — 파싱한 배열과 중복이라 목록 응답이 두 배가 된다.

@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.296.001",
+    version: "00.296.002",
     build: "2026.08.21",
     channel: "preview"
   };
@@ -1939,6 +1939,10 @@
     images: Array.isArray(p.images) ? p.images : [],
     attachments: Array.isArray(p.attachments) ? p.attachments : [],
     tags: Array.isArray(p.tags) ? p.tags : [],
+    // v00.296.002 — 목록 응답은 본문 대신 발췌만 온다(전송량 1,365KB → 약 60KB).
+    //   상세로 들어가면 _hydratePostBody 가 /api/posts/{id} 로 전문을 채운다.
+    //   발췌는 목록 검색이 조용히 제목 검색으로 쪼그라들지 않게 하려고 남긴다.
+    excerpt: typeof p.excerpt === "string" ? p.excerpt : "",
     _remote: true
   });
   window.BGNJ_COMMUNITY = {
@@ -9023,7 +9027,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         const cat = categories.find((c) => c.id === p.categoryId) || categories.find((c) => c.label === p.category);
         if (cat && userLevel < ((_a = cat.minLevel) != null ? _a : 0)) return false;
         if (tab !== "all" && (p.categoryId !== tab && (cat == null ? void 0 : cat.id) !== tab)) return false;
-        if (q && !p.title.toLowerCase().includes(q) && !String(((_b = p.body) == null ? void 0 : _b.text) || "").toLowerCase().includes(q)) return false;
+        if (q) {
+          const hay = `${p.title || ""} ${((_b = p.body) == null ? void 0 : _b.text) || ""} ${p.excerpt || ""}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
         if (activePrefix && p.prefix !== activePrefix) return false;
         return true;
       });
