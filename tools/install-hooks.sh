@@ -48,6 +48,10 @@ node "$ROOT/tools/check-syntax.mjs"
 #   7) check-hooks   — early return 뒤에 놓인 훅 (React #300/#310)
 node "$ROOT/tools/check-globals.mjs"
 node "$ROOT/tools/check-hooks.mjs"
+#  8) check-patterns — 응답 껍데기 · 세고-나서-넣기 · LIKE 와일드카드
+#  9) smoke          — 브라우저 코드를 Node 에서 실제로 실행 (API 만 봐서는 안 잡히는 것들)
+node "$ROOT/tools/check-patterns.mjs"
+node "$ROOT/tools/smoke.mjs"
 EOF
 chmod +x "$HOOK_FILE"
 

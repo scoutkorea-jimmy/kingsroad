@@ -378,6 +378,11 @@ const handleAuthSignup = async (req, env) => {
   const bootstrapEmail = String(env.ADMIN_BOOTSTRAP_EMAIL || "").trim().toLowerCase();
   let isAdmin = 0;
   if (bootstrapEmail && email === bootstrapEmail) {
+    // bgnj-lint-ignore-next-line count-then-insert
+    //   사유: 여기서 세는 대상은 '정원' 이 아니라 '관리자가 이미 있는가' 다. 그리고 이 분기는
+    //   ADMIN_BOOTSTRAP_EMAIL 이라는 **단 하나의 이메일**로 가입할 때만 탄다.
+    //   같은 이메일 두 건은 UNIQUE 제약으로 하나만 성공하므로 경쟁이 성립하지 않는다.
+    //   (이미 관리자가 등록돼 있어 이 부트스트랩 자체가 비활성 상태이기도 하다.)
     const adminCountRow = await env.DB.prepare("SELECT COUNT(*) AS c FROM users WHERE is_admin = 1").first();
     if (!adminCountRow || Number(adminCountRow.c || 0) === 0) {
       isAdmin = 1;

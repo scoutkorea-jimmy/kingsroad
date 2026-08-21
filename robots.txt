@@ -52,3 +52,9 @@ User-agent: CCBot
 Allow: /
 
 Sitemap: https://bgnj.net/sitemap.xml
+
+# 기계가 읽기 좋은 창구 (AI·수집기용)
+#   https://bgnj.net/llms.txt       — 사이트 안내
+#   https://bgnj.net/llms-full.txt  — 본문까지 담은 전체 콘텐츠
+#   https://bgnj.net/index.json     — 전체 글 목록(JSON)
+#   https://bgnj.net/feed.xml       — RSS

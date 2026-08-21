@@ -26,7 +26,7 @@
      · frame-ancestors / X-Frame-Options 는 HTTP 헤더 전용 — GitHub Pages(정적 호스팅)는 헤더 주입 불가라
        <meta> 로는 브라우저가 무시(콘솔 경고만 남김). v00.284.002 에서 제거. 클릭재킹 방어가 필요하면
        Cloudflare(워커/Pages) 같은 헤더 가능한 경유지에서 HTTP 헤더로 설정해야 실효. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-rAyma+GMIF2xebcDtTsaCaK2hFUW3HufyeJsOzIldnA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-wgEFixqY95PtTDmIjogpm0g/VqRPr3NOsS1trWIj89o='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta property="og:title" content="광화문에 한글 현판을 달자! — 뱅기노자">
 <meta property="og:description" content="최근 광화문 한자 현판의 균열로 인하여 또 다시 한자 현판 표기를 놓고 뜨거운 논쟁에 빠지고 있다. 광화문 현판이 모습을 드러낸 지 석 달 만에 육안에 보일정도로 균일이 생긴 것은 매우 불길한 사안이다. 광화문 현판은 전통건축에서 어떤 의미 일까? 현판(懸板)은 ‘글이나 그림을 달아 …">
 <meta property="og:type" content="website">
@@ -47,12 +47,14 @@
 <!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=00.296.005">
+<link rel="stylesheet" href="/styles.css?v=00.297.000">
 
 
 <link rel="canonical" href="https://bgnj.net/column/col-b6e765e486e739f7e77c1343">
 <meta property="og:url" content="https://bgnj.net/column/col-b6e765e486e739f7e77c1343">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"광화문에 한글 현판을 달자!","author":{"@type":"Person","name":"김현종"},"datePublished":"2026-05-28T13:23:00+09:00","inLanguage":"ko-KR","image":["https://banginoja-api.scoutkorea.workers.dev/api/media/column-covers/de1c25732199c55dd9a69493.jpg"],"mainEntityOfPage":"https://bgnj.net/column/col-b6e765e486e739f7e77c1343","publisher":{"@id":"https://bgnj.net/#org"}}</script>
+<link rel="alternate" type="application/rss+xml" title="뱅기노자" href="https://bgnj.net/feed.xml">
+<link rel="alternate" type="application/json" title="뱅기노자 콘텐츠 목록" href="https://bgnj.net/index.json">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"광화문에 한글 현판을 달자!","author":{"@type":"Person","name":"김현종","url":"https://bgnj.net/"},"datePublished":"2026-05-28T13:23:00+09:00","dateModified":"2026-05-28T13:23:00+09:00","inLanguage":"ko-KR","isPartOf":{"@id":"https://bgnj.net/#site"},"articleSection":"칼럼","image":["https://banginoja-api.scoutkorea.workers.dev/api/media/column-covers/de1c25732199c55dd9a69493.jpg"],"mainEntityOfPage":"https://bgnj.net/column/col-b6e765e486e739f7e77c1343","publisher":{"@id":"https://bgnj.net/#org"}}</script>
 </head>
 <body data-bgnj-column="col-b6e765e486e739f7e77c1343">
 <a class="skip-link" href="#main">본문 바로가기</a>
@@ -166,6 +168,6 @@
      v00.285 Stage 3 — per-file 22개 <script> → 단일 번들 dist/app.js.
        엔트리 src/entry-main.jsx 가 기존 로드 순서대로 side-effect import. tools/build.mjs --bundle 산출.
        admin(dist/admin.js)은 boot 가 route 진입 시 동적 주입(코드 스플리팅 유지). -->
-<script defer src="/dist/app.js?v=00.296.005"></script>
+<script defer src="/dist/app.js?v=00.297.000"></script>
 </body>
 </html>

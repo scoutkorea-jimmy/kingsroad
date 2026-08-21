@@ -37,6 +37,25 @@
 
 ---
 
+## 고치기 전에 반드시 알아야 할 함정
+
+**서버가 멀쩡하다고 화면이 멀쩡한 게 아니다.** 2026-08-21, 글을 클릭하면 '찾을 수 없습니다' 가
+뜨는 사고가 났는데 API 는 처음부터 끝까지 정상이었다(글 89편이 DB 와 완전 일치).
+버그는 브라우저 안에서만 살았다. → **`node tools/smoke.mjs`** 로 브라우저 코드를 직접 돌려라.
+
+**데이터를 줄이면 그 데이터에 가려져 있던 버그가 깨어난다.** 목록 응답에서 `body` 를 뺐더니
+'본문이 있으면 건너뛴다' 가드에 걸려 한 번도 실행된 적 없던 코드가 매번 실행되기 시작했다.
+→ 전송량을 줄일 땐 **그 데이터를 쓰는 소비자를 전부 찾아라.** 화면만 보지 말고 빌드 도구까지.
+
+**단일 조회 응답은 껍데기에 싸여 온다.** `{ post: {...} }` · `{ column: {...} }` · `{ book: {...} }`.
+벗기지 않고 매핑하면 id 없는 껍데기가 목록의 진짜 항목을 갈아치운다.
+
+**SQLite 의 `LIKE` 안에서 `_` 는 와일드카드다.** `'__%시험%'` 는 의도보다 훨씬 넓게 지운다.
+지울 때는 **정확한 id 로** 지워라.
+
+**세고 나서 넣으면 동시 요청이 같은 숫자를 본다.** 정원·중복 판정은 한 문장으로 원자화한다
+(`INSERT ... SELECT ... WHERE NOT EXISTS`).
+
 ## 절대 금지 (pre-commit 훅이 차단)
 
 1. `window.BANGINOJA_DATA` 직접 참조 — `BGNJ_*` 헬퍼를 경유한다 (`data.js` 만 예외)
@@ -65,12 +84,26 @@
 ## 검증 명령
 
 ```bash
-node tools/check-syntax.mjs    # 파싱 + 차단 룰
+node tools/check-all.mjs       # ★ 이것 하나면 아래 검사 전부 (손대고 나서 항상)
 node tools/build.mjs           # esbuild 번들
-node tools/check-version.mjs   # BGNJ_VERSION ↔ ?v= 일관성
 node tools/csp-hashes.mjs      # 인라인 script SHA-256 → CSP meta
+node tools/seo-build.mjs       # 검색·AI 용 정적 페이지 + sitemap/RSS/index.json (★ 빌드 맨 마지막)
 bash tools/install-hooks.sh    # pre-commit 훅 재설치
 ```
+
+`check-all` 이 묶는 것 — **전부 운영에서 한 번씩 터진 뒤에 생겼다. 목록이 곧 사고 기록이다.**
+
+| 검사 | 무엇을 막나 | 왜 생겼나 |
+|---|---|---|
+| check-syntax | 문법 + 금지 패턴 | 기본 |
+| check-version | `BGNJ_VERSION` ↔ `?v=` 불일치 | 옛 코드가 배포됨 |
+| check-globals | `<window.X/>` 인데 등록 안 된 컴포넌트 | 관리자 한켠 탭 전체가 깨짐 |
+| check-hooks | early return 뒤의 훅 | React #300/#310 75건 |
+| check-patterns | 응답 껍데기 · 세고-나서-넣기 · LIKE 와일드카드 | 게시글 못 찾음 · 오버부킹 · 위험한 DELETE |
+| **smoke** | **브라우저 코드를 Node 에서 실제로 실행** | **API 는 멀쩡한데 화면만 깨진 사고** |
+
+**배포 순서를 지킬 것** — `csp-hashes` → `build` → `seo-build`.
+`seo-build` 가 마지막이 아니면 하위 172개 정적 페이지가 옛 CSP 해시를 물어 통째로 차단된다.
 
 빌드가 `You installed esbuild for another platform` 으로 죽으면 → [rules/60-environment.md](rules/60-environment.md).
 

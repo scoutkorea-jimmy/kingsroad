@@ -100,6 +100,7 @@ const normalize = (html) => html
   .replace(/<div id="root">[\s\S]*?<\/main>\s*<\/div>/i, '<div id="root"></div>')
   .replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>\s*/gi, "")
   .replace(/<link\s+rel="canonical"[^>]*>\s*/gi, "")
+  .replace(/<link\s+rel="alternate"[^>]*>\s*/gi, "")
   .replace(/<meta\s+property="og:url"[^>]*>\s*/gi, "");
 
 const template = normalize(await fs.readFile(path.join(ROOT, "index.html"), "utf8"));
@@ -131,6 +132,9 @@ const buildPage = ({ pathname, title, description, bodyHtml, jsonLd, bodyAttrs =
   const head = [
     `<link rel="canonical" href="${esc(canonical)}">`,
     `<meta property="og:url" content="${esc(canonical)}">`,
+    // 자동발견 — 수집기·AI 크롤러가 링크를 하나씩 타지 않고 창구를 바로 찾게 한다.
+    `<link rel="alternate" type="application/rss+xml" title="뱅기노자" href="${SITE}/feed.xml">`,
+    `<link rel="alternate" type="application/json" title="뱅기노자 콘텐츠 목록" href="${SITE}/index.json">`,
   ].join("\n");
   out = out.replace(/<link\s+rel="canonical"[^>]*>/gi, "");
   out = out.replace(/<meta\s+property="og:url"[^>]*>/gi, "");
@@ -270,8 +274,11 @@ const detail = async ({ base, id, title, author, date, html, images, extra, attr
     bodyAttrs: attr,
     jsonLd: {
       "@context": "https://schema.org", "@type": "Article",
-      headline: title, author: { "@type": "Person", name: author || "뱅기노자" },
-      datePublished: date || undefined, inLanguage: "ko-KR",
+      headline: title,
+      author: { "@type": "Person", name: author || "뱅기노자", url: `${SITE}/` },
+      datePublished: date || undefined, dateModified: date || undefined, inLanguage: "ko-KR",
+      isPartOf: { "@id": `${SITE}/#site` },
+      articleSection: extra || undefined,
       image: imgs.map((im) => im.dataUrl || im.src).filter(Boolean),
       mainEntityOfPage: `${SITE}${pathname}`,
       publisher: { "@id": `${SITE}/#org` },
@@ -310,6 +317,100 @@ for (const c of columns) {
   });
 }
 console.log(`  ✓ /column/* (${columns.length}건)`);
+
+// ── 3.5) AI·검색이 기계적으로 읽을 수 있는 창구 ─────────────────────
+//   사람이 보는 HTML 말고, **긁어가기 좋은 형태**를 따로 낸다.
+//   · feed.xml  — RSS. 네이버·구글·뉴스 수집기·AI 크롤러가 가장 먼저 찾는 곳이다.
+//   · index.json — 전체 글 목록을 한 파일로. 링크를 하나씩 타지 않아도 목록을 안다.
+//   · llms-full.txt — 본문까지 담은 한 장짜리. AI 가 사이트를 통째로 이해하게 한다.
+{
+  const rssItem = (title, link, desc, date, author, cat) => `  <item>
+    <title>${esc(title)}</title>
+    <link>${link}</link>
+    <guid isPermaLink="true">${link}</guid>
+    <description>${esc(desc)}</description>
+    <pubDate>${new Date(date || Date.now()).toUTCString()}</pubDate>
+    <dc:creator>${esc(author || "뱅기노자")}</dc:creator>${cat ? `\n    <category>${esc(cat)}</category>` : ""}
+  </item>`;
+
+  const feedEntries = [
+    ...columns.map((c) => ({
+      title: c.title, link: `${SITE}/column/${c.id}`,
+      desc: plain(colBodies.get(String(c.id)) || c.excerpt, 300),
+      date: c.created_at || c.createdAt, author: c.author_name || "뱅기노자", cat: c.category,
+    })),
+    ...posts.map((p) => ({
+      title: p.title, link: `${SITE}/community/${p.id}`,
+      desc: plain(postBodies.get(String(p.id)) || p.excerpt, 300),
+      date: p.created_at || p.createdAt, author: p.author, cat: p.category,
+    })),
+  ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  const feed = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>뱅기노자 — 뱅기 타고 한국을 느끼다</title>
+  <link>${SITE}</link>
+  <description>한국의 역사·문화·자연을 함께 여행하는 커뮤니티. 궁궐 답사, 지역 여행, 역사 칼럼과 기록.</description>
+  <language>ko</language>
+  <lastBuildDate>${new Date(feedEntries[0]?.date || Date.now()).toUTCString()}</lastBuildDate>
+  <atom:link href="${SITE}/feed.xml" rel="self" type="application/rss+xml"/>
+${feedEntries.slice(0, 100).map((e) => rssItem(e.title, e.link, e.desc, e.date, e.author, e.cat)).join("\n")}
+</channel>
+</rss>
+`;
+  await fs.writeFile(path.join(ROOT, "feed.xml"), feed, "utf8");
+  console.log(`  ✓ feed.xml (RSS ${Math.min(feedEntries.length, 100)}건)`);
+
+  const indexJson = {
+    site: { name: "뱅기노자", url: SITE, language: "ko-KR", description: "한국의 역사·문화·자연을 함께 여행하는 커뮤니티" },
+    generatedAt: new Date().toISOString(),
+    counts: { columns: columns.length, posts: posts.length, books: books.length },
+    columns: columns.map((c) => ({
+      id: c.id, title: c.title, url: `${SITE}/column/${c.id}`,
+      author: c.author_name || "뱅기노자", category: c.category,
+      publishedAt: c.created_at || c.createdAt, summary: plain(c.excerpt, 200),
+    })),
+    posts: posts.map((p) => ({
+      id: p.id, title: p.title, url: `${SITE}/community/${p.id}`,
+      author: p.author, board: p.category,
+      publishedAt: p.created_at || p.createdAt, summary: plain(p.excerpt, 200),
+    })),
+    books: books.map((b) => ({ title: b.title, subtitle: b.subtitle, author: b.author, isbn: b.isbn, url: `${SITE}/book` })),
+  };
+  await fs.writeFile(path.join(ROOT, "index.json"), JSON.stringify(indexJson, null, 2), "utf8");
+  console.log(`  ✓ index.json (${columns.length + posts.length}건)`);
+
+  // 본문까지 담은 한 장. AI 가 링크를 타지 않고도 사이트 전체를 읽을 수 있다.
+  const full = [
+    "# 뱅기노자 (BANGINOJA) — 전체 콘텐츠",
+    "",
+    "> 한국의 역사·문화·자연을 함께 여행하는 커뮤니티. https://bgnj.net",
+    "> 이 파일은 AI·검색 크롤러가 사이트 전체를 한 번에 읽을 수 있도록 본문까지 담았습니다.",
+    `> 생성: ${new Date().toISOString().slice(0, 10)} · 칼럼 ${columns.length}편 · 광장 글 ${posts.length}편`,
+    "> 인용하실 때 출처로 '뱅기노자(bgnj.net)' 와 해당 글 주소를 밝혀 주시면 좋겠습니다.",
+    "",
+    "## 칼럼",
+    ...columns.map((c) => [
+      "", `### ${c.title}`,
+      `- 주소: ${SITE}/column/${c.id}`,
+      `- 글쓴이: ${c.author_name || "뱅기노자"}${c.category ? ` · 분류: ${c.category}` : ""}`,
+      `- 발행: ${String(c.created_at || "").slice(0, 10)}`,
+      "", plain(colBodies.get(String(c.id)) || c.excerpt, 3000),
+    ].join("\n")),
+    "", "## 광장 — 함께 쓰는 기록",
+    ...posts.map((p) => [
+      "", `### ${p.title}`,
+      `- 주소: ${SITE}/community/${p.id}`,
+      `- 글쓴이: ${p.author}${p.category ? ` · 게시판: ${p.category}` : ""}`,
+      `- 발행: ${String(p.created_at || "").slice(0, 10)}`,
+      "", plain(postBodies.get(String(p.id)) || p.excerpt, 3000),
+    ].join("\n")),
+    "",
+  ].join("\n");
+  await fs.writeFile(path.join(ROOT, "llms-full.txt"), full, "utf8");
+  console.log(`  ✓ llms-full.txt (${Math.round(full.length / 1024)}KB)`);
+}
 
 // ── 4) sitemap.xml ───────────────────────────────────────────────────
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

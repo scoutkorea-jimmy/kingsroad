@@ -26,6 +26,14 @@
 크롤링과 인용을 환영합니다. 인용하실 때 출처로 '뱅기노자(bgnj.net)' 와
 해당 글의 주소를 함께 밝혀 주시면 좋겠습니다.
 
+## 기계가 읽기 좋은 창구
+
+링크를 하나씩 타지 않아도 됩니다. 아래 세 곳이면 사이트 전체를 알 수 있습니다.
+
+- [llms-full.txt](https://bgnj.net/llms-full.txt): **본문까지 담은 한 장.** 칼럼·광장 글 전문이 들어 있습니다.
+- [index.json](https://bgnj.net/index.json): 전체 글 목록(제목·글쓴이·발행일·요약·주소)을 JSON 으로.
+- [feed.xml](https://bgnj.net/feed.xml): RSS. 새 글을 이어서 받아보실 때.
+
 ## 참고
 
 - [sitemap.xml](https://bgnj.net/sitemap.xml): 전체 주소 목록
