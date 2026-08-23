@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.305.000",
+    version: "00.305.001",
     build: "2026.08.23",
     channel: "preview"
   };
@@ -1975,6 +1975,41 @@
       }
     }
     return out;
+  };
+  window.BGNJ_PREFIX_MATCH = (defs, input) => {
+    const norm = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "");
+    const q = norm(input);
+    if (!q || !Array.isArray(defs) || !defs.length) return null;
+    const longestCommon = (a, b) => {
+      let best = 0;
+      for (let i = 0; i < a.length; i++) {
+        for (let j = 0; j < b.length; j++) {
+          let k = 0;
+          while (i + k < a.length && j + k < b.length && a[i + k] === b[j + k]) k++;
+          if (k > best) best = k;
+        }
+      }
+      return best;
+    };
+    let winner = null, winnerScore = 0;
+    for (const def of defs) {
+      const c = norm(def == null ? void 0 : def.name);
+      if (!c) continue;
+      let score = 0;
+      if (c === q) score = 1e3;
+      else if (c.startsWith(q)) score = 800 + q.length / c.length * 100;
+      else if (q.length >= 2 && c.includes(q)) score = 600 + q.length / c.length * 100;
+      else if (c.length >= 2 && q.includes(c)) score = 500 + c.length / q.length * 100;
+      else {
+        const lcs = longestCommon(c, q);
+        if (lcs >= 2) score = 200 + lcs / Math.max(c.length, q.length) * 100;
+      }
+      if (score > winnerScore) {
+        winnerScore = score;
+        winner = def;
+      }
+    }
+    return winnerScore >= 200 ? winner : null;
   };
   window.BGNJ_PREFIX_TAGS = (board, prefixName) => {
     var _a;
@@ -10037,6 +10072,70 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b2.call(_a2);
       })
     );
+    const isAdmin = !!(user == null ? void 0 : user.isAdmin);
+    const [prefixInput, setPrefixInput] = React.useState("");
+    const prefixMatch = React.useMemo(
+      () => window.BGNJ_PREFIX_MATCH(boardPrefixes, prefixInput),
+      [boardPrefixes, prefixInput]
+    );
+    const choosePrefix = React.useCallback((def) => {
+      var _a2;
+      if (!def) return;
+      setPrefix(def.name);
+      if ((_a2 = def.tags) == null ? void 0 : _a2.length) {
+        setTags((prev) => {
+          const next = Array.isArray(prev) ? prev.slice() : [];
+          for (const t of def.tags) if (t && !next.includes(t)) next.push(t);
+          return next.slice(0, 10);
+        });
+      }
+    }, []);
+    const createPrefix = async (rawName) => {
+      var _a2, _b2, _c2, _d2, _e2, _f, _g;
+      const name = String(rawName || "").trim();
+      if (!name || !selectedCat) return;
+      const defs = window.BGNJ_PREFIX_DEFS(selectedCat);
+      if (defs.some((d) => d.name === name)) {
+        choosePrefix(defs.find((d) => d.name === name));
+        return;
+      }
+      const nextDefs = [...defs, { name, tags: [] }];
+      const nextCats = window.BGNJ_STORES.categories.map((c) => c.id === selectedCat.id ? { ...c, prefixes: nextDefs } : c);
+      window.BGNJ_STORES.categories = nextCats;
+      try {
+        window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
+      } catch (_e3) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (CommunityPage)", _e3);
+      }
+      try {
+        (_b2 = (_a2 = window.BGNJ_SAVE) == null ? void 0 : _a2.categories) == null ? void 0 : _b2.call(_a2);
+      } catch (_e3) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uAE30\uB85D \uC2E4\uD328 \u2014 \uC11C\uBC84\uAC00 \uC815\uBCF8\uC774\uB2E4 (CommunityPage)", _e3);
+      }
+      choosePrefix({ name, tags: [] });
+      setPrefixInput("");
+      try {
+        await ((_e2 = (_d2 = (_c2 = window.BGNJ_API) == null ? void 0 : _c2.categories) == null ? void 0 : _d2.update) == null ? void 0 : _e2.call(_d2, selectedCat.id, { prefixes: nextDefs }));
+        (_g = (_f = window.BGNJ_TOAST).success) == null ? void 0 : _g.call(_f, `'${name}' \uB9D0\uBA38\uB9AC\uB97C ${selectedCat.label} \uAC8C\uC2DC\uD310\uC5D0 \uB4F1\uB85D\uD588\uC2B5\uB2C8\uB2E4.`);
+      } catch (err) {
+        console.warn("[CommunityPage] \uB9D0\uBA38\uB9AC \uB4F1\uB85D \uC2E4\uD328:", err == null ? void 0 : err.message);
+        window.BGNJ_TOAST.error("\uB9D0\uBA38\uB9AC\uB97C \uC11C\uBC84\uC5D0 \uB4F1\uB85D\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC0C8\uB85C\uACE0\uCE68\uD558\uBA74 \uC0AC\uB77C\uC9D1\uB2C8\uB2E4.");
+      }
+    };
+    const commitPrefixInput = () => {
+      const raw = prefixInput.trim();
+      if (!raw) return;
+      if (prefixMatch) {
+        choosePrefix(prefixMatch);
+        setPrefixInput("");
+        return;
+      }
+      if (isAdmin) {
+        createPrefix(raw);
+        return;
+      }
+      window.BGNJ_TOAST.error("\uB4F1\uB85D\uB41C \uB9D0\uBA38\uB9AC\uAC00 \uC544\uB2D9\uB2C8\uB2E4. \uC704 \uBC84\uD2BC\uC5D0\uC11C \uACE8\uB77C \uC8FC\uC138\uC694.");
+    };
     React.useEffect(() => {
       if (prevCategoryIdRef.current === categoryId) return;
       prevCategoryIdRef.current = categoryId;
@@ -10173,7 +10272,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         required: true,
         maxLength: POST_TITLE_MAX
       }
-    ))), boardPrefixes.length > 0 && /* @__PURE__ */ React.createElement("div", { className: "field", style: { marginBottom: 20 } }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uB9D0\uBA38\uB9AC"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+    ))), (boardPrefixes.length > 0 || isAdmin) && /* @__PURE__ */ React.createElement("div", { className: "field", style: { marginBottom: 20 } }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uB9D0\uBA38\uB9AC"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -10188,24 +10287,40 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         {
           key: p.name,
           type: "button",
-          onClick: () => {
-            var _a3;
-            setPrefix(p.name);
-            if ((_a3 = p.tags) == null ? void 0 : _a3.length) {
-              setTags((prev) => {
-                const next = Array.isArray(prev) ? prev.slice() : [];
-                for (const t of p.tags) if (t && !next.includes(t)) next.push(t);
-                return next.slice(0, 10);
-              });
-            }
-          },
+          onClick: () => choosePrefix(p),
           title: ((_a2 = p.tags) == null ? void 0 : _a2.length) ? `\uACE0\uB974\uBA74 \uD0DC\uADF8\uAC00 \uD568\uAED8 \uBD99\uC2B5\uB2C8\uB2E4 \u2014 ${p.tags.map((t) => `#${t}`).join(" ")}` : void 0,
           style: { padding: "4px 14px", border: "1px solid", borderColor: prefix === p.name ? "var(--primary)" : "var(--line)", color: prefix === p.name ? "var(--primary)" : "var(--ink-2)", background: prefix === p.name ? "rgba(245,213,72,0.08)" : "none", cursor: "pointer", fontSize: 13, letterSpacing: "0.05em" }
         },
         p.name,
         ((_b2 = p.tags) == null ? void 0 : _b2.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { marginLeft: 6, fontSize: 10 } }, "+", p.tags.length)
       );
-    }))), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uD574\uC2DC\uD0DC\uADF8 / \uBA54\uD0C0\uD0DC\uADF8"), /* @__PURE__ */ React.createElement(HashtagInput, { tags, setTags })), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uBCF8\uBB38 ", /* @__PURE__ */ React.createElement("span", { className: "gold", "aria-hidden": "true" }, "*")), /* @__PURE__ */ React.createElement(
+    })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center", marginTop: 10, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(
+      "input",
+      {
+        className: "field-input",
+        style: { padding: "4px 10px", maxWidth: 240, fontSize: 13 },
+        value: prefixInput,
+        placeholder: isAdmin ? "\uCCD0\uC11C \uCC3E\uAE30 \xB7 \uC5C6\uC73C\uBA74 \uC0C8\uB85C \uB4F1\uB85D" : "\uCCD0\uC11C \uCC3E\uAE30...",
+        "aria-label": "\uB9D0\uBA38\uB9AC \uAC80\uC0C9",
+        onChange: (e) => setPrefixInput(e.target.value),
+        onKeyDown: (e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          commitPrefixInput();
+        },
+        onBlur: commitPrefixInput
+      }
+    ), prefixInput.trim() && (prefixMatch ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 11, color: "var(--secondary)" } }, "\u2192 ", prefixMatch.name, /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { marginLeft: 6 } }, "Enter \uB85C \uC120\uD0DD")) : isAdmin ? /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "btn btn-small btn-gold",
+        onClick: () => createPrefix(prefixInput)
+      },
+      "\uFF0B '",
+      prefixInput.trim(),
+      "' \uC0C8 \uB9D0\uBA38\uB9AC\uB85C \uB4F1\uB85D"
+    ) : /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 11 } }, "\uB9DE\uB294 \uB9D0\uBA38\uB9AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4 \u2014 \uC704\uC5D0\uC11C \uACE8\uB77C \uC8FC\uC138\uC694"))), !isAdmin && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 10.5, marginTop: 6 } }, "\uC0C8 \uB9D0\uBA38\uB9AC\uB294 \uC6B4\uC601\uC790\uB9CC \uB9CC\uB4E4 \uC218 \uC788\uC2B5\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uD574\uC2DC\uD0DC\uADF8 / \uBA54\uD0C0\uD0DC\uADF8"), /* @__PURE__ */ React.createElement(HashtagInput, { tags, setTags })), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uBCF8\uBB38 ", /* @__PURE__ */ React.createElement("span", { className: "gold", "aria-hidden": "true" }, "*")), /* @__PURE__ */ React.createElement(
       TiptapEditor,
       {
         key: (initialPost == null ? void 0 : initialPost.id) || "new",

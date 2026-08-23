@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.305.000",
+  version: "00.305.001",
   build: "2026.08.23",
   channel: "preview",
 };
@@ -1536,6 +1536,51 @@ window.BGNJ_PREFIX_DEFS = (board) => {
   }
   return out;
 };
+// 입력한 글자와 가장 잘 맞는 말머리를 고른다 (v00.305.001).
+//   글쓰기 화면에서 말머리를 직접 칠 수 있게 하되, **없는 말머리가 새로 생기지는 않게** 하려는 장치다.
+//   회원은 이 함수가 찾아 준 것 중에서만 고를 수 있고, 새로 만드는 건 관리자만 한다.
+//
+//   점수는 '얼마나 확실한 단서인가' 순이다. 억지로 끼워 맞추지 않는다 —
+//   임계값에 못 미치면 null 을 돌려주고, 화면은 "맞는 말머리가 없다" 고 말한다.
+//   (아무거나 골라 주면 엉뚱한 말머리가 조용히 붙는다. 그게 더 나쁘다.)
+window.BGNJ_PREFIX_MATCH = (defs, input) => {
+  const norm = (v) => String(v || '').trim().toLowerCase().replace(/\s+/g, '');
+  const q = norm(input);
+  if (!q || !Array.isArray(defs) || !defs.length) return null;
+  // 가장 긴 공통 연속 구간 — '독립운동' 처럼 가운데 토막만 쳤을 때를 잡는다.
+  const longestCommon = (a, b) => {
+    let best = 0;
+    for (let i = 0; i < a.length; i++) {
+      for (let j = 0; j < b.length; j++) {
+        let k = 0;
+        while (i + k < a.length && j + k < b.length && a[i + k] === b[j + k]) k++;
+        if (k > best) best = k;
+      }
+    }
+    return best;
+  };
+  let winner = null, winnerScore = 0;
+  for (const def of defs) {
+    const c = norm(def?.name);
+    if (!c) continue;
+    let score = 0;
+    if (c === q) score = 1000;
+    // 앞글자 검색은 한 글자도 받는다 — '걸' → '걸어서…' 는 사람이 기대하는 동작이다.
+    else if (c.startsWith(q)) score = 800 + (q.length / c.length) * 100;
+    // 가운데가 걸리는 건 두 글자부터. 한국어에서 한 글자는 우연히 자주 겹친다
+    // ('서' 하나로 '걸어서 독립운동 속으로' 가 잡히면 안 된다).
+    else if (q.length >= 2 && c.includes(q)) score = 600 + (q.length / c.length) * 100;
+    else if (c.length >= 2 && q.includes(c)) score = 500 + (c.length / q.length) * 100;
+    else {
+      const lcs = longestCommon(c, q);
+      // 한 글자만 겹치는 건 단서가 아니다 — 한국어에서 조사·어미가 흔히 겹친다.
+      if (lcs >= 2) score = 200 + (lcs / Math.max(c.length, q.length)) * 100;
+    }
+    if (score > winnerScore) { winnerScore = score; winner = def; }
+  }
+  return winnerScore >= 200 ? winner : null;
+};
+
 // 말머리 이름 → 딸린 태그. 못 찾으면 빈 배열.
 window.BGNJ_PREFIX_TAGS = (board, prefixName) => {
   const name = String(prefixName || '').trim();

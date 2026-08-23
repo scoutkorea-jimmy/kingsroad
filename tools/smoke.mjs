@@ -260,6 +260,20 @@ const run = async () => {
       w.BGNJ_PREFIX_TAGS({ prefixes: [{ name: '가', tags: ['t1'] }] }, '가').join() === 't1');
     check("없는 이름이면 빈 배열", w.BGNJ_PREFIX_TAGS({ prefixes: ['가'] }, '없다').length === 0);
 
+    // v00.305.001 — 쳐서 찾기. 억지 매칭은 엉뚱한 말머리를 조용히 붙이므로 없느니만 못하다.
+    const D = [{ name: '걸어서 독립운동 속으로', tags: [] }, { name: '한켠 포럼', tags: [] }];
+    const m = (q) => w.BGNJ_PREFIX_MATCH(D, q)?.name || null;
+    check("정확히 치면 그것", m('걸어서 독립운동 속으로') === '걸어서 독립운동 속으로');
+    check("앞부분만 쳐도 찾는다", m('걸어서') === '걸어서 독립운동 속으로');
+    check("공백을 빼고 쳐도 찾는다", m('걸어서독립') === '걸어서 독립운동 속으로');
+    check("가운데 토막만 쳐도 찾는다", m('독립운동') === '걸어서 독립운동 속으로');
+    check("여럿 중 맞는 쪽을 고른다", m('한켠') === '한켠 포럼', m('한켠'));
+    check("가운데 한 글자만 겹치는 건 매칭하지 않는다", m('서') === null, m('서'));
+    check("앞글자 한 글자는 찾아 준다", m('걸') === '걸어서 독립운동 속으로', m('걸'));
+    check("전혀 다르면 null", m('책 주문') === null, m('책 주문'));
+    check("빈 입력은 null", m('') === null && m('   ') === null);
+    check("말머리가 없으면 null", w.BGNJ_PREFIX_MATCH([], '걸어서') === null);
+
     // 수정 횟수는 '내용이 정말 달라졌을 때' 만 세야 한다 — 관리자 일괄 작업은 세지 않는다.
     const worker = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
     check("수정 횟수는 제목·본문이 바뀔 때만 오른다",

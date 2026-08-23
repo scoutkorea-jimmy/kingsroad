@@ -14042,6 +14042,158 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   };
 
   // pages/admin/AdminCommunityConfigPanels.jsx
+  var PrefixTagsPanel = () => {
+    const [cats, setCats] = React.useState(() => window.BGNJ_STORES.categories.slice());
+    const [prefixDrafts, setPrefixDrafts] = React.useState({});
+    const [tagDrafts, setTagDrafts] = React.useState({});
+    const [applying, setApplying] = React.useState("");
+    React.useEffect(() => {
+      const onCats = () => setCats(window.BGNJ_STORES.categories.slice());
+      window.addEventListener("bgnj-categories-refresh", onCats);
+      return () => window.removeEventListener("bgnj-categories-refresh", onCats);
+    }, []);
+    const save = (next) => {
+      window.BGNJ_STORES.categories = next;
+      try {
+        window.dispatchEvent(new CustomEvent("bgnj-categories-refresh"));
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (PrefixTagsPanel)", _e);
+      }
+      window.BGNJ_SAVE.categories();
+      setCats(next);
+    };
+    const update = (i, key, val) => {
+      const next = cats.slice();
+      next[i] = { ...next[i], [key]: val };
+      save(next);
+      (async () => {
+        var _a, _b, _c;
+        try {
+          await ((_c = (_b = (_a = window.BGNJ_API) == null ? void 0 : _a.categories) == null ? void 0 : _b.update) == null ? void 0 : _c.call(_b, next[i].id, { [key]: val }));
+        } catch (err) {
+          console.warn("[PrefixTagsPanel] PATCH \uC2E4\uD328:", err == null ? void 0 : err.message);
+          window.BGNJ_TOAST.error("\uC11C\uBC84\uC5D0 \uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC0C8\uB85C\uACE0\uCE68\uD558\uBA74 \uB418\uB3CC\uC544\uAC11\uB2C8\uB2E4.");
+        }
+      })();
+    };
+    const communityCats = cats.filter((c) => (c.boardType || "community") === "community");
+    const postsOf = (catId, prefixName) => {
+      var _a, _b;
+      try {
+        return (((_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.listPosts) == null ? void 0 : _b.call(_a)) || []).filter((p) => p.categoryId === catId && String(p.prefix || "").trim() === prefixName).length;
+      } catch (e) {
+        return 0;
+      }
+    };
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+      AdminPanelHeader,
+      {
+        eyebrow: "THREAD PREFIXES \xB7 \uB9D0\uBA38\uB9AC",
+        title: "\uB9D0\uBA38\uB9AC \xB7 \uC790\uB3D9 \uD0DC\uADF8",
+        description: "\uAC8C\uC2DC\uD310\uB9C8\uB2E4 \uAE00 \uC791\uC131 \uC2DC \uACE0\uB97C \uC218 \uC788\uB294 \uB9D0\uBA38\uB9AC\uB97C \uC815\uD558\uACE0, \uB9D0\uBA38\uB9AC\uBCC4\uB85C \uB530\uB77C\uBD99\uC744 \uD0DC\uADF8\uB97C \uAD00\uB9AC\uD569\uB2C8\uB2E4. \uB9D0\uBA38\uB9AC\uB97C \uB4F1\uB85D\uD558\uBA74 \uAE00\uC4F0\uAE30 \uD654\uBA74\uC758 \uC120\uD0DD \uBC84\uD2BC\uACFC \uCEE4\uBBA4\uB2C8\uD2F0 \uBAA9\uB85D \uD544\uD130\uC5D0 \uBC14\uB85C \uB098\uC635\uB2C8\uB2E4."
+      }
+    ), /* @__PURE__ */ React.createElement("article", { className: "card", style: { padding: 20 } }, communityCats.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 13 } }, "\uCEE4\uBBA4\uB2C8\uD2F0 \uAC8C\uC2DC\uD310\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), communityCats.map((c) => {
+      const catIdx = cats.findIndex((x) => x.id === c.id);
+      const defs = window.BGNJ_PREFIX_DEFS(c);
+      const draftVal = prefixDrafts[c.id] || "";
+      const writeDefs = (next) => update(catIdx, "prefixes", next);
+      const addTag = async (name, raw) => {
+        var _a, _b;
+        const tag = String(raw || "").trim().replace(/^#+/, "").replace(/\s+/g, "");
+        if (!tag) return;
+        const target = defs.find((d) => d.name === name);
+        if (!target || target.tags.includes(tag)) return;
+        if (target.tags.length >= 10) {
+          window.BGNJ_TOAST.error("\uB9D0\uBA38\uB9AC \uD558\uB098\uC5D0 \uD0DC\uADF8\uB294 10\uAC1C\uAE4C\uC9C0\uC785\uB2C8\uB2E4.");
+          return;
+        }
+        const nextTags = [...target.tags, tag];
+        writeDefs(defs.map((d) => d.name === name ? { ...d, tags: nextTags } : d));
+        setTagDrafts((prev) => ({ ...prev, [`${c.id}::${name}`]: "" }));
+        setApplying(`${c.id}::${name}`);
+        try {
+          const r = await window.BGNJ_COMMUNITY.applyPrefixTags(c.id, name, [tag]);
+          if (r.changed) (_b = (_a = window.BGNJ_TOAST).success) == null ? void 0 : _b.call(_a, `'${name}' \uAE00 ${r.changed}\uD3B8\uC5D0 #${tag} \uB97C \uBD99\uC600\uC2B5\uB2C8\uB2E4.`);
+          if (r.failed) window.BGNJ_TOAST.error(`${r.failed}\uD3B8\uC740 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4 \u2014 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.`);
+        } catch (e) {
+          window.BGNJ_TOAST.error("\uAE30\uC874 \uAE00\uC5D0 \uD0DC\uADF8\uB97C \uBD99\uC774\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB9D0\uBA38\uB9AC \uC124\uC815\uC740 \uC800\uC7A5\uB410\uC2B5\uB2C8\uB2E4.");
+          console.warn("[AdminCategoryPanel] applyPrefixTags \uC2E4\uD328:", (e == null ? void 0 : e.message) || e);
+        } finally {
+          setApplying("");
+        }
+      };
+      const removeTag = (name, tag) => {
+        writeDefs(defs.map((d) => d.name === name ? { ...d, tags: d.tags.filter((t) => t !== tag) } : d));
+      };
+      const addPrefix = () => {
+        const val = draftVal.trim();
+        if (val && !defs.some((d) => d.name === val)) writeDefs([...defs, { name: val, tags: [] }]);
+        setPrefixDrafts((prev) => ({ ...prev, [c.id]: "" }));
+      };
+      return /* @__PURE__ */ React.createElement("div", { key: c.id, style: { marginBottom: 16, padding: "14px 16px", background: "var(--bg-2)", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("span", { className: "ko-serif", style: { fontSize: 15 } }, c.label), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, "#", c.id), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, marginLeft: 4 } }, "\uB9D0\uBA38\uB9AC ", defs.length, "\uAC1C")), defs.length === 0 && /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11, marginBottom: 10 } }, "\uB9D0\uBA38\uB9AC \uC5C6\uC74C \u2014 \uCD94\uAC00\uD558\uBA74 \uAE00\uC4F0\uAE30 \uD654\uBA74\uC758 \uC120\uD0DD \uBC84\uD2BC\uACFC \uBAA9\uB85D \uD544\uD130\uC5D0 \uBC14\uB85C \uB098\uC635\uB2C8\uB2E4"), defs.map((d) => {
+        const tagKey = `${c.id}::${d.name}`;
+        const tagDraft = tagDrafts[tagKey] || "";
+        const busy = applying === tagKey;
+        return /* @__PURE__ */ React.createElement("div", { key: d.name, style: { padding: "10px 12px", marginBottom: 8, background: "var(--bg-3)", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "gold", style: { fontSize: 13 } }, d.name), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, "\uAE00 ", postsOf(c.id, d.name), "\uD3B8"), /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => writeDefs(defs.filter((x) => x.name !== d.name)),
+            style: { background: "none", border: "none", cursor: "pointer", color: "var(--danger)", fontSize: 15, lineHeight: 1, padding: 0 },
+            "aria-label": `${d.name} \uB9D0\uBA38\uB9AC \uC0AD\uC81C`
+          },
+          "\xD7"
+        )), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.14em" } }, "\uC790\uB3D9 \uD0DC\uADF8"), d.tags.length === 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 11 } }, "\uC5C6\uC74C"), d.tags.map((t) => /* @__PURE__ */ React.createElement("span", { key: t, className: "tag-chip", style: { display: "inline-flex", alignItems: "center", gap: 4 } }, "#", t, /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            onClick: () => removeTag(d.name, t),
+            style: { background: "none", border: "none", cursor: "pointer", color: "var(--danger)", fontSize: 13, lineHeight: 1, padding: 0 },
+            "aria-label": `${t} \uD0DC\uADF8 \uC81C\uAC70`
+          },
+          "\xD7"
+        ))), /* @__PURE__ */ React.createElement(
+          "input",
+          {
+            className: "field-input",
+            style: { padding: "3px 8px", maxWidth: 150, fontSize: 12 },
+            value: tagDraft,
+            disabled: busy,
+            placeholder: busy ? "\uC801\uC6A9 \uC911\u2026" : "\uD0DC\uADF8 \uC785\uB825 \uD6C4 Enter",
+            onChange: (e) => setTagDrafts((prev) => ({ ...prev, [tagKey]: e.target.value })),
+            onKeyDown: (e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              addTag(d.name, tagDraft);
+            }
+          }
+        ), /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            type: "button",
+            className: "btn btn-small",
+            disabled: busy,
+            onClick: () => addTag(d.name, tagDraft)
+          },
+          "\uCD94\uAC00"
+        )), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 10.5, marginTop: 6, lineHeight: 1.6 } }, "\uD0DC\uADF8\uB97C \uCD94\uAC00\uD558\uBA74 ", /* @__PURE__ */ React.createElement("b", null, "\uC774 \uB9D0\uBA38\uB9AC\uB85C \uC774\uBBF8 \uC62C\uB77C\uC628 \uAE00\uC5D0\uB3C4 \uBC14\uB85C \uBD99\uC2B5\uB2C8\uB2E4."), " \uB354\uD558\uAE30\uB9CC \uD558\uBBC0\uB85C \uC791\uC131\uC790\uAC00 \uC801\uC5B4 \uB454 \uD0DC\uADF8\uB294 \uC9C0\uC6CC\uC9C0\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uC5EC\uAE30\uC11C \uD0DC\uADF8\uB97C \uBE7C\uB3C4 \uC774\uBBF8 \uBD99\uC740 \uAE00\uC5D0\uC11C\uB294 \uC0AC\uB77C\uC9C0\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."));
+      }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          style: { padding: "4px 8px", maxWidth: 220 },
+          value: draftVal,
+          placeholder: "\uB9D0\uBA38\uB9AC \uC785\uB825 \uD6C4 Enter \uB610\uB294 \uCD94\uAC00...",
+          onChange: (e) => setPrefixDrafts((prev) => ({ ...prev, [c.id]: e.target.value })),
+          onKeyDown: (e) => {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            addPrefix();
+          }
+        }
+      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: addPrefix }, "\uB9D0\uBA38\uB9AC \uCD94\uAC00")));
+    })));
+  };
   var CommunityBoardsPanel = () => {
     const [tick, setTick] = React.useState(0);
     const grades = React.useMemo(
@@ -16910,6 +17062,9 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
             }
           ) },
           { key: "boards", label: "\uAC8C\uC2DC\uD310", render: () => /* @__PURE__ */ React.createElement(CommunityBoardsPanel, null) },
+          // v00.305.001 — 말머리 전용 탭. 그전까지 말머리를 등록할 자리가
+          //   화면에 아예 없었다(AdminCategoryPanel 이 렌더되지 않았다).
+          { key: "prefixes", label: "\uB9D0\uBA38\uB9AC", render: () => /* @__PURE__ */ React.createElement(PrefixTagsPanel, null) },
           { key: "reports", label: "\uC2E0\uACE0", render: () => /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(CorruptedBodyInspector, { go }), /* @__PURE__ */ React.createElement(ReportQueuePanel, { onRefresh: () => setPostRefreshKey((v) => v + 1), go })) }
         ]
       }

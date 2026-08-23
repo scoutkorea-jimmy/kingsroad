@@ -1585,6 +1585,61 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   const boardPrefixes = mergeBoardPrefixes(
     selectedCat, window.BGNJ_GUARD.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()));
 
+  // ── 말머리 직접 입력 (v00.305.001) ───────────────────────────────────
+  //   버튼으로만 고르게 하면 말머리가 늘어날수록 화면이 버튼밭이 된다.
+  //   쳐서 찾을 수 있게 하되, **없는 말머리가 아무나에 의해 새로 생기지는 않게** 한다.
+  //   회원은 있는 것 중에서만, 새로 만드는 건 관리자만.
+  const isAdmin = !!user?.isAdmin;
+  const [prefixInput, setPrefixInput] = React.useState("");
+  const prefixMatch = React.useMemo(
+    () => window.BGNJ_PREFIX_MATCH(boardPrefixes, prefixInput), [boardPrefixes, prefixInput]);
+
+  // 말머리를 고른다 — 딸린 태그를 태그 칸에 더해 준다(더하기만 한다).
+  const choosePrefix = React.useCallback((def) => {
+    if (!def) return;
+    setPrefix(def.name);
+    if (def.tags?.length) {
+      setTags((prev) => {
+        const next = Array.isArray(prev) ? prev.slice() : [];
+        for (const t of def.tags) if (t && !next.includes(t)) next.push(t);
+        return next.slice(0, 10);
+      });
+    }
+  }, []);
+
+  // 관리자만 — 새 말머리를 게시판에 등록하고 바로 고른다.
+  const createPrefix = async (rawName) => {
+    const name = String(rawName || '').trim();
+    if (!name || !selectedCat) return;
+    const defs = window.BGNJ_PREFIX_DEFS(selectedCat);
+    if (defs.some((d) => d.name === name)) { choosePrefix(defs.find((d) => d.name === name)); return; }
+    const nextDefs = [...defs, { name, tags: [] }];
+    const nextCats = window.BGNJ_STORES.categories.map((c) =>
+      c.id === selectedCat.id ? { ...c, prefixes: nextDefs } : c);
+    window.BGNJ_STORES.categories = nextCats;
+    try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (CommunityPage)', _e); }
+    try { window.BGNJ_SAVE?.categories?.(); } catch (_e) { console.warn('[bgnj] 저장소 기록 실패 — 서버가 정본이다 (CommunityPage)', _e); }
+    choosePrefix({ name, tags: [] });
+    setPrefixInput("");
+    // 서버가 정본이다. 이걸 빠뜨리면 새로고침하는 순간 사라진다.
+    try {
+      await window.BGNJ_API?.categories?.update?.(selectedCat.id, { prefixes: nextDefs });
+      window.BGNJ_TOAST.success?.(`'${name}' 말머리를 ${selectedCat.label} 게시판에 등록했습니다.`);
+    } catch (err) {
+      console.warn('[CommunityPage] 말머리 등록 실패:', err?.message);
+      window.BGNJ_TOAST.error('말머리를 서버에 등록하지 못했습니다. 새로고침하면 사라집니다.');
+    }
+  };
+
+  // 입력칸에서 Enter 를 치거나 칸을 벗어났을 때 확정.
+  const commitPrefixInput = () => {
+    const raw = prefixInput.trim();
+    if (!raw) return;
+    if (prefixMatch) { choosePrefix(prefixMatch); setPrefixInput(""); return; }
+    if (isAdmin) { createPrefix(raw); return; }
+    window.BGNJ_TOAST.error('등록된 말머리가 아닙니다. 위 버튼에서 골라 주세요.');
+  };
+
   React.useEffect(() => {
     if (prevCategoryIdRef.current === categoryId) return;
     prevCategoryIdRef.current = categoryId;
@@ -1748,7 +1803,9 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
           </div>
 
           {/* 말머리 선택 — 선택된 게시판에 말머리가 있을 때만 표시 */}
-          {boardPrefixes.length > 0 && (
+          {/* v00.305.001 — 말머리가 하나도 없는 게시판이라도 관리자에게는 보여야 한다.
+              그래야 첫 말머리를 만들 수 있다. 회원에게는 고를 게 없으니 숨긴다. */}
+          {(boardPrefixes.length > 0 || isAdmin) && (
             <div className="field" style={{marginBottom:20}}>
               <div className="field-label">말머리</div>
               <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
@@ -1759,19 +1816,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
                 </button>
                 {boardPrefixes.map((p) => (
                   <button key={p.name} type="button"
-                    onClick={() => {
-                      setPrefix(p.name);
-                      // v00.305 — 말머리에 딸린 태그를 태그 칸에 채워 준다.
-                      //   **더하기만 한다** — 이미 적어 둔 태그를 지우지 않는다.
-                      //   채워진 뒤에는 여느 태그와 똑같아서, 빼고 싶으면 ✕ 로 지우면 된다.
-                      if (p.tags?.length) {
-                        setTags((prev) => {
-                          const next = Array.isArray(prev) ? prev.slice() : [];
-                          for (const t of p.tags) if (t && !next.includes(t)) next.push(t);
-                          return next.slice(0, 10);
-                        });
-                      }
-                    }}
+                    onClick={() => choosePrefix(p)}
                     title={p.tags?.length ? `고르면 태그가 함께 붙습니다 — ${p.tags.map((t) => `#${t}`).join(' ')}` : undefined}
                     style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === p.name ? 'var(--primary)' : 'var(--line)', color: prefix === p.name ? 'var(--primary)' : 'var(--ink-2)', background: prefix === p.name ? 'rgba(245,213,72,0.08)' : 'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
                     {p.name}
@@ -1781,6 +1826,37 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
                   </button>
                 ))}
               </div>
+
+              {/* 직접 입력 — 쳐서 찾는다. 없는 말머리를 새로 만드는 건 관리자만. */}
+              <div style={{display:'flex', gap:8, alignItems:'center', marginTop:10, flexWrap:'wrap'}}>
+                <input className="field-input" style={{padding:'4px 10px', maxWidth:240, fontSize:13}}
+                  value={prefixInput}
+                  placeholder={isAdmin ? '쳐서 찾기 · 없으면 새로 등록' : '쳐서 찾기...'}
+                  aria-label="말머리 검색"
+                  onChange={(e) => setPrefixInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key !== 'Enter') return; e.preventDefault(); commitPrefixInput(); }}
+                  onBlur={commitPrefixInput}/>
+                {prefixInput.trim() && (
+                  prefixMatch ? (
+                    <span className="mono" style={{fontSize:11, color:'var(--secondary)'}}>
+                      → {prefixMatch.name}
+                      <span className="dim-2" style={{marginLeft:6}}>Enter 로 선택</span>
+                    </span>
+                  ) : isAdmin ? (
+                    <button type="button" className="btn btn-small btn-gold"
+                      onClick={() => createPrefix(prefixInput)}>
+                      ＋ '{prefixInput.trim()}' 새 말머리로 등록
+                    </button>
+                  ) : (
+                    <span className="dim-2" style={{fontSize:11}}>맞는 말머리가 없습니다 — 위에서 골라 주세요</span>
+                  )
+                )}
+              </div>
+              {!isAdmin && (
+                <p className="dim-2" style={{fontSize:10.5, marginTop:6}}>
+                  새 말머리는 운영자만 만들 수 있습니다.
+                </p>
+              )}
             </div>
           )}
 

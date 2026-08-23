@@ -943,6 +943,9 @@ const AdminPage = ({ go }) => {
                   onChange={() => setPostRefreshKey((v) => v + 1)}/>
               )},
               { key: "boards", label: "게시판", render: () => <CommunityBoardsPanel/> },
+              // v00.305.001 — 말머리 전용 탭. 그전까지 말머리를 등록할 자리가
+              //   화면에 아예 없었다(AdminCategoryPanel 이 렌더되지 않았다).
+              { key: "prefixes", label: "말머리", render: () => <PrefixTagsPanel/> },
               { key: "reports", label: "신고", render: () => (
                 <>
                   <CorruptedBodyInspector go={go}/>
@@ -1291,7 +1294,7 @@ const AdminPage = ({ go }) => {
 };
 
 // AdminCategoryPanel · PromoChip · CommunityBoardsPanel 은 admin/AdminCommunityConfigPanels.jsx 로 분리 (v00.285).
-import { AdminCategoryPanel } from './admin/AdminCommunityConfigPanels.jsx';
+import { AdminCategoryPanel, PrefixTagsPanel } from './admin/AdminCommunityConfigPanels.jsx';
 import { CommunityBoardsPanel } from './admin/AdminCommunityConfigPanels.jsx';
 
 

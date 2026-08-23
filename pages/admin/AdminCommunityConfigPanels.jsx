@@ -12,10 +12,7 @@ const AdminCategoryPanel = () => {
   const [cats, setCats] = React.useState(() => window.BGNJ_STORES.categories.slice());
   const [draft, setDraft] = React.useState({ id:"", label:"", boardType:"community", minLevel:0, postMinLevel:0, desc:"", allowRead:true, allowWrite:true, allowCommentRead:true, allowCommentWrite:true });
   const [error, setError] = React.useState("");
-  const [prefixDrafts, setPrefixDrafts] = React.useState({});
-  // v00.305 — 말머리별 태그. 키는 `${catId}::${말머리}` — 게시판이 달라도 안 섞이게.
-  const [tagDrafts, setTagDrafts] = React.useState({});
-  const [applying, setApplying] = React.useState("");
+
 
   const save = (next) => {
     window.BGNJ_STORES.categories = next;
@@ -303,14 +300,74 @@ const AdminCategoryPanel = () => {
         </div>
       </article>
 
-      {/* 말머리(Prefix) 관리 */}
-      <article className="card" style={{padding:20, marginTop:32}}>
-        <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>THREAD PREFIXES · 말머리</div>
-        <h3 className="ko-serif" style={{fontSize:18, marginBottom:8}}>게시판별 말머리 설정</h3>
-        <p className="dim" style={{fontSize:12, lineHeight:1.7, marginBottom:20}}>
-          게시판마다 글 작성 시 선택할 수 있는 말머리(분류 태그)를 설정합니다.
-          말머리가 등록된 게시판에서는 커뮤니티 상단에 필터 탭으로도 노출됩니다.
-        </p>
+      {/* v00.305.001 — 말머리 편집은 PrefixTagsPanel(관리자 → 커뮤니티 → 말머리 탭)로 옮겼다.
+          여기 있던 UI 는 **화면에 렌더된 적이 없다** — AdminCategoryPanel 은 v00.175 에서
+          '카테고리' 탭이 폐기되면서 import 만 남고 어디서도 그려지지 않았다.
+          그것도 모르고 "게시판 탭에서 말머리를 등록하세요" 라고 안내했었다. 두 곳에 두지 않는다. */}
+    </>
+  );
+};
+
+
+// === Admin: 말머리 · 자동 태그 ==========================================
+// v00.305.001 — 독립 탭(관리자 → 커뮤니티 → 말머리).
+//
+// 왜 옮겼나: 이 UI 는 원래 AdminCategoryPanel 안에 있었는데, 그 패널은 v00.175 에서
+//   '카테고리' 탭이 폐기되면서 **import 만 남고 어디서도 렌더되지 않았다.**
+//   말머리를 등록할 자리가 화면에 존재하지 않았던 셈이다(그래서 글에만 말머리가 달리고
+//   게시판 설정은 계속 비어 있었다 — v00.305 에서 그 어긋남을 코드로 흡수해야 했던 이유).
+//
+// 자기완결적이다 — 자체 상태 + 서버 PATCH. 스토어가 바뀌면 이벤트로 따라간다.
+const PrefixTagsPanel = () => {
+  const [cats, setCats] = React.useState(() => window.BGNJ_STORES.categories.slice());
+  const [prefixDrafts, setPrefixDrafts] = React.useState({});
+  // 키는 `${catId}::${말머리}` — 게시판이 달라도 같은 말머리 이름이 안 섞이게.
+  const [tagDrafts, setTagDrafts] = React.useState({});
+  const [applying, setApplying] = React.useState("");
+
+  // 다른 화면(게시판 설정 등)에서 스토어를 갈아끼우면 따라간다.
+  React.useEffect(() => {
+    const onCats = () => setCats(window.BGNJ_STORES.categories.slice());
+    window.addEventListener('bgnj-categories-refresh', onCats);
+    return () => window.removeEventListener('bgnj-categories-refresh', onCats);
+  }, []);
+
+  const save = (next) => {
+    window.BGNJ_STORES.categories = next;
+    try { window.dispatchEvent(new CustomEvent('bgnj-categories-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (PrefixTagsPanel)', _e); }
+    window.BGNJ_SAVE.categories();
+    setCats(next);
+  };
+  const update = (i, key, val) => {
+    const next = cats.slice();
+    next[i] = { ...next[i], [key]: val };
+    save(next);
+    // 서버가 정본이다. localStorage 는 첫 페인트용 캐시일 뿐이라 PATCH 를 빠뜨리면
+    // 새로고침하는 순간 되돌아간다.
+    (async () => {
+      try { await window.BGNJ_API?.categories?.update?.(next[i].id, { [key]: val }); }
+      catch (err) {
+        console.warn('[PrefixTagsPanel] PATCH 실패:', err?.message);
+        window.BGNJ_TOAST.error('서버에 저장하지 못했습니다. 새로고침하면 되돌아갑니다.');
+      }
+    })();
+  };
+
+  const communityCats = cats.filter((c) => (c.boardType || 'community') === 'community');
+  const postsOf = (catId, prefixName) => {
+    try {
+      return (window.BGNJ_COMMUNITY?.listPosts?.() || [])
+        .filter((p) => p.categoryId === catId && String(p.prefix || '').trim() === prefixName).length;
+    } catch { return 0; }
+  };
+
+  return (
+    <>
+      <AdminPanelHeader
+        eyebrow="THREAD PREFIXES · 말머리"
+        title="말머리 · 자동 태그"
+        description="게시판마다 글 작성 시 고를 수 있는 말머리를 정하고, 말머리별로 따라붙을 태그를 관리합니다. 말머리를 등록하면 글쓰기 화면의 선택 버튼과 커뮤니티 목록 필터에 바로 나옵니다."/>
+      <article className="card" style={{padding:20}}>
         {communityCats.length === 0 && (
           <div className="dim" style={{fontSize:13}}>커뮤니티 게시판이 없습니다.</div>
         )}
@@ -373,6 +430,7 @@ const AdminCategoryPanel = () => {
                   <div key={d.name} style={{padding:'10px 12px', marginBottom:8, background:'var(--bg-3)', border:'1px solid var(--line)'}}>
                     <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8, flexWrap:'wrap'}}>
                       <span className="gold" style={{fontSize:13}}>{d.name}</span>
+                      <span className="mono dim-2" style={{fontSize:10}}>글 {postsOf(c.id, d.name)}편</span>
                       <button type="button"
                         onClick={() => writeDefs(defs.filter((x) => x.name !== d.name))}
                         style={{background:'none', border:'none', cursor:'pointer', color:'var(--danger)', fontSize:15, lineHeight:1, padding:0}}
@@ -937,4 +995,4 @@ const CommunityBoardsPanel = () => {
 
 // ─────────────────────────────────────────────────────────────────
 
-export { AdminCategoryPanel, CommunityBoardsPanel };
+export { AdminCategoryPanel, CommunityBoardsPanel, PrefixTagsPanel };
