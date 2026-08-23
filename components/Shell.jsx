@@ -255,6 +255,8 @@ const AuthorGradeBadge = ({ authorId, author, authorEmail, size = "sm" }) => {
         borderRadius: 2,
         textTransform: 'uppercase',
         verticalAlign: 'middle',
+        // v00.304.001 — '뱅기노자 관리팀' 처럼 긴 등급이 좁은 칸에서 어절 중간에 끊겼다.
+        whiteSpace: 'nowrap',
       }}>
       {grade.label}
     </span>

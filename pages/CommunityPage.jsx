@@ -6,6 +6,23 @@
 import { AuthorGradeBadge } from '../components/Shell.jsx';
 import { TiptapEditor } from '../components/TiptapEditor.jsx';
 
+// v00.304.001 — 게시판의 말머리 목록.
+//   설정에 등록된 것(declared)과 **글에 실제로 달린 것**을 합친다.
+//   운영에서 글에는 말머리를 일괄 적용해 놓고 게시판 설정에는 등록하지 않은 상태가 나왔다.
+//   그때 설정만 보면 말머리가 멀쩡히 붙은 글이 14편인데 필터도 선택지도 하나 안 뜬다.
+//   순서는 설정을 먼저 따른다 — 운영자가 정한 차례가 화면 순서가 되도록.
+const mergeBoardPrefixes = (board, allPosts) => {
+  if (!board) return [];
+  const declared = Array.isArray(board.prefixes) ? board.prefixes : [];
+  const used = [];
+  for (const p of (Array.isArray(allPosts) ? allPosts : [])) {
+    if (p.categoryId !== board.id) continue;
+    const pfx = String(p.prefix || '').trim();
+    if (pfx && !used.includes(pfx)) used.push(pfx);
+  }
+  return [...declared.filter((x) => used.includes(x)), ...used.filter((x) => !declared.includes(x))];
+};
+
 const useUserLevel = (user) => React.useMemo(() => window.BGNJ_USER_LEVEL(user), [user]);
 const getCategoriesForBoard = (boardType) =>
   window.BGNJ_STORES.categories.filter(c => c.boardType === boardType);
@@ -662,7 +679,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   // ─── 모든 hook은 early return 전에 선언 ───────────────────────────────
   const visibleCats = categories.filter(c => userLevel >= (c.minLevel ?? 0));
   const currentBoard = categories.find(c => c.id === tab);
-  const boardPrefixes = currentBoard?.prefixes || [];
+  const boardPrefixes = React.useMemo(
+    () => mergeBoardPrefixes(currentBoard, allPosts), [currentBoard, allPosts]);
   const canReadPost = React.useCallback((post) => {
     if (!post) return false;
     const cat = categories.find(c => c.id === post.categoryId) || categories.find(c => c.label === post.category);
@@ -1203,9 +1221,11 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           <thead>
             <tr style={{fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:'0.2em', color:'var(--ink-3)', textTransform:'uppercase'}}>
               <th scope="col" className="col-num" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width: canRenumber ? 90 : 60}}>번호</th>
-              <th scope="col" className="col-cat" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:90}}>분류</th>
+              {/* v00.304.001 — 90 → 132. '신지식 청년사관' 이 안 들어가 두 줄로 접혔다. */}
+              <th scope="col" className="col-cat" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:132}}>분류</th>
               <th scope="col" className="col-title" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)'}}>제목</th>
-              <th scope="col" className="col-author" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:120}}>작성자</th>
+              {/* v00.304.001 — 120 → 172. 이름 + 등급 배지('뱅기노자 관리팀')가 한 줄에 들어가게. */}
+              <th scope="col" className="col-author" style={{padding:'16px 8px', textAlign:'left', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:172}}>작성자</th>
               <th scope="col" className="col-views" style={{padding:'16px 8px', textAlign:'right', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:70}}>조회</th>
               <th scope="col" className="col-date" style={{padding:'16px 8px', textAlign:'right', borderTop:'1px solid var(--line-2)', borderBottom:'1px solid var(--line)', width:100}}>날짜</th>
             </tr>
@@ -1324,7 +1344,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                       </span>
                     </button>
                   </td>
-                  <td className="col-author mono dim" style={{padding:'18px 8px', fontSize:12}}>
+                  <td className="col-author mono dim" style={{padding:'18px 8px', fontSize:12, whiteSpace:'nowrap'}}>
                     {p.author}
                     <AuthorGradeBadge authorId={p.authorId} author={p.author} authorEmail={p.authorEmail}/>
                   </td>
@@ -1554,7 +1574,9 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
   }, [initialPost, defaultCategoryId]);
 
   const selectedCat = categories.find(c => c.id === categoryId);
-  const boardPrefixes = selectedCat?.prefixes || [];
+  // 이미 그 게시판에서 쓰이고 있는 말머리는 새 글에서도 고를 수 있어야 한다.
+  const boardPrefixes = mergeBoardPrefixes(
+    selectedCat, window.BGNJ_GUARD.arr(() => window.BGNJ_COMMUNITY?.listPosts?.()));
 
   React.useEffect(() => {
     if (prevCategoryIdRef.current === categoryId) return;

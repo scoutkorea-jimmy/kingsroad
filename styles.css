@@ -1326,6 +1326,9 @@ main time, main .section-eyebrow {
   border: 1px solid var(--line-2);
   color: var(--ink-2);
   text-transform: uppercase;
+  /* v00.304.001 — 배지가 좁은 칸에서 '신지식 청 / 년사관' 처럼 어절 중간에서 끊겼다.
+     배지는 짧은 라벨이므로 어디서든 한 줄로 둔다. 칸이 좁으면 칸을 넓히는 게 맞다. */
+  white-space: nowrap;
 }
 .badge-gold {
   /* v00.230 — 테두리는 옐로우 유지(브랜드 시그너처) / 텍스트는 가독성 위해 secondary. */

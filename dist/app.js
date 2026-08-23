@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.304.000",
+    version: "00.304.001",
     build: "2026.08.23",
     channel: "preview"
   };
@@ -5018,7 +5018,9 @@
           border: `1px solid ${grade.color || "var(--primary-dim)"}`,
           borderRadius: 2,
           textTransform: "uppercase",
-          verticalAlign: "middle"
+          verticalAlign: "middle",
+          // v00.304.001 — '뱅기노자 관리팀' 처럼 긴 등급이 좁은 칸에서 어절 중간에 끊겼다.
+          whiteSpace: "nowrap"
         }
       },
       grade.label
@@ -8418,6 +8420,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   };
 
   // pages/CommunityPage.jsx
+  var mergeBoardPrefixes = (board, allPosts) => {
+    if (!board) return [];
+    const declared = Array.isArray(board.prefixes) ? board.prefixes : [];
+    const used = [];
+    for (const p of Array.isArray(allPosts) ? allPosts : []) {
+      if (p.categoryId !== board.id) continue;
+      const pfx = String(p.prefix || "").trim();
+      if (pfx && !used.includes(pfx)) used.push(pfx);
+    }
+    return [...declared.filter((x) => used.includes(x)), ...used.filter((x) => !declared.includes(x))];
+  };
   var useUserLevel = (user) => React.useMemo(() => window.BGNJ_USER_LEVEL(user), [user]);
   var getCategoriesForBoard = (boardType) => window.BGNJ_STORES.categories.filter((c) => c.boardType === boardType);
   var HashtagInput = ({ tags, setTags, max = 10 }) => {
@@ -9073,7 +9086,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return userLevel >= ((_a = c.minLevel) != null ? _a : 0);
     });
     const currentBoard = categories.find((c) => c.id === tab);
-    const boardPrefixes = (currentBoard == null ? void 0 : currentBoard.prefixes) || [];
+    const boardPrefixes = React.useMemo(
+      () => mergeBoardPrefixes(currentBoard, allPosts),
+      [currentBoard, allPosts]
+    );
     const canReadPost = React.useCallback((post) => {
       var _a;
       if (!post) return false;
@@ -9615,7 +9631,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         title: "\uD604\uC7AC \uD398\uC774\uC9C0\uC758 \uAC8C\uC2DC\uAE00\uC744 \uB4DC\uB798\uADF8\uC564\uB4DC\uB86D\uC73C\uB85C \uC77C\uAD04 \uC7AC\uBC30\uCE58"
       },
       "\u270E \uC21C\uC11C \uD3B8\uC9D1"
-    ))), /* @__PURE__ */ React.createElement("table", { className: "community-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("caption", { className: "sr-only" }, "\uAC8C\uC2DC\uAE00 \uBAA9\uB85D"), /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-num", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: canRenumber ? 90 : 60 } }, "\uBC88\uD638"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-cat", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 90 } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-title", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-author", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 120 } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-views", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 70 } }, "\uC870\uD68C"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-date", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 100 } }, "\uB0A0\uC9DC"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, style: { padding: 48, textAlign: "center" }, className: "dim" }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.")) : displayPagePosts.map((p, i) => {
+    ))), /* @__PURE__ */ React.createElement("table", { className: "community-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("caption", { className: "sr-only" }, "\uAC8C\uC2DC\uAE00 \uBAA9\uB85D"), /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-num", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: canRenumber ? 90 : 60 } }, "\uBC88\uD638"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-cat", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 132 } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-title", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-author", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 172 } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-views", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 70 } }, "\uC870\uD68C"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-date", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 100 } }, "\uB0A0\uC9DC"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, style: { padding: 48, textAlign: "center" }, className: "dim" }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.")) : displayPagePosts.map((p, i) => {
       var _a, _b, _c, _d, _e;
       const cat = categories.find((c) => c.id === p.categoryId) || categories.find((c) => c.label === p.category) || { label: p.category };
       const likesCount = Array.isArray(p.likes) ? p.likes.length : 0;
@@ -9730,7 +9746,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           /* @__PURE__ */ React.createElement("span", { className: "row-title-text" }, bookmarked && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginRight: 6, fontSize: 11 }, "aria-label": "\uBD81\uB9C8\uD06C" }, "\u2605"), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "post-prefix" }, "[", p.prefix, "]"), p.title, ((_a = p.images) == null ? void 0 : _a.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uC774\uBBF8\uC9C0 \uCCA8\uBD80" }, "\u{1F4F7}", p.images.length), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uACF5\uAC10 \uC218" }, "\u2665", likesCount), ((_b = p.tags) == null ? void 0 : _b.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono row-title-inline", style: { marginLeft: 8, fontSize: 10 } }, p.tags.slice(0, 3).map((t) => `#${t}`).join(" ")), p.hot && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "HOT"), p._new && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "NEW")),
           /* @__PURE__ */ React.createElement("span", { className: "row-mobile-meta", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, cat.label), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "badge" }, p.prefix), /* @__PURE__ */ React.createElement("span", null, p.author), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("time", { dateTime: (p.date || "").replace(/\./g, "-") }, p.date || ""), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_c = p.views) != null ? _c : 0), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u2665 ", likesCount), ((_d = p.images) == null ? void 0 : _d.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u{1F4F7} ", p.images.length))
         )),
-        /* @__PURE__ */ React.createElement("td", { className: "col-author mono dim", style: { padding: "18px 8px", fontSize: 12 } }, p.author, /* @__PURE__ */ React.createElement(AuthorGradeBadge, { authorId: p.authorId, author: p.author, authorEmail: p.authorEmail })),
+        /* @__PURE__ */ React.createElement("td", { className: "col-author mono dim", style: { padding: "18px 8px", fontSize: 12, whiteSpace: "nowrap" } }, p.author, /* @__PURE__ */ React.createElement(AuthorGradeBadge, { authorId: p.authorId, author: p.author, authorEmail: p.authorEmail })),
         /* @__PURE__ */ React.createElement("td", { className: "col-views mono dim-2", style: { padding: "18px 8px", fontSize: 12, textAlign: "right" } }, (_e = p.views) != null ? _e : 0),
         /* @__PURE__ */ React.createElement("td", { className: "col-date mono dim-2", style: { padding: "18px 8px", fontSize: 11, textAlign: "right" } }, /* @__PURE__ */ React.createElement("time", { dateTime: (p.date || "").replace(/\./g, "-") }, p.date || ""))
       );
@@ -9954,7 +9970,13 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       prevCategoryIdRef.current = _validCatId(initialPost == null ? void 0 : initialPost.categoryId) || defaultCategoryId;
     }, [initialPost, defaultCategoryId]);
     const selectedCat = categories.find((c) => c.id === categoryId);
-    const boardPrefixes = (selectedCat == null ? void 0 : selectedCat.prefixes) || [];
+    const boardPrefixes = mergeBoardPrefixes(
+      selectedCat,
+      window.BGNJ_GUARD.arr(() => {
+        var _a2, _b2;
+        return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b2.call(_a2);
+      })
+    );
     React.useEffect(() => {
       if (prevCategoryIdRef.current === categoryId) return;
       prevCategoryIdRef.current = categoryId;

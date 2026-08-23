@@ -5,14 +5,21 @@
     "language": "ko-KR",
     "description": "한국의 역사·문화·자연을 함께 여행하는 커뮤니티"
   },
-  "generatedAt": "2026-08-23T10:49:46.621Z",
+  "generatedAt": "2026-08-23T11:20:34.715Z",
   "counts": {
     "columns": 72,
-    "posts": 99,
+    "posts": 100,
     "books": 6,
-    "series": 0
+    "series": 1
   },
-  "series": [],
+  "series": [
+    {
+      "name": "걸어서 독립운동 속으로",
+      "board": "신지식 청년사관",
+      "url": "https://bgnj.net/community/series-walk-independence",
+      "count": 14
+    }
+  ],
   "columns": [
     {
       "id": "col-3551295acaf9fc7028de1115",
@@ -665,11 +672,24 @@
   ],
   "posts": [
     {
+      "id": 129,
+      "title": "1회차_안중근의사기념관_이서은",
+      "url": "https://bgnj.net/community/129",
+      "author": "이서은",
+      "board": "자유",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
+      "publishedAt": "2026-08-23T10:54:29.020Z",
+      "summary": "[신지식장학회 – 걸어서 독립운동 속으로 1회차 안중근의사기념관] 중앙대학교 간호학과 이서은 짧은 비예보가 있던 금요일 광복절 하루 전, 남산 자락에 자리한 안중근의사기념관을 찾았다. 전시를 둘러보는 내내 마음이 무거웠던 것 같다. 서른 정도 삶을 나라를 위해서 온전히 내던진 한 사람의 흔적이, 전시실을 지날때마다 나에게 무겁게 다가왔다. 전시 마지막에는…"
+    },
+    {
       "id": 128,
       "title": "2회차_서대문형무소_윤서원",
       "url": "https://bgnj.net/community/128",
       "author": "윤서원",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-23T09:56:24.675Z",
       "summary": "“대한민국은 내 목숨이다” 우석대학교 약학과 윤서원 붉은 벽돌의 서대문형무소는 부패한 관료층이 나라를 팔아넘길 때 스스로 일어나 목숨을 바친 깨어난 민중들의 피가 서려 있는 곳이다. 독립문역 3호선에 위치한 서대문독립공원의 3.1독립선언기념탑 앞에는 승병일 지사의 풋프린팅 조형물이 놓여 있었다. 그 조형물에는 “대한민국은 내 목숨이다”라는 절규가 새겨져 …"
     },
@@ -679,6 +699,8 @@
       "url": "https://bgnj.net/community/127",
       "author": "김유미",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-23T08:38:06.640Z",
       "summary": "걷고 나서야 보인 것들 1차 탐방 · 안중근의사기념관 중앙대학교 영어교육과 김유미 지난 8월 14일, ‘걸어서 독립운동 속으로’의 첫걸음으로 안중근의사기념관에 다녀왔다. 가장 인상 깊었던 것은 안중근 의사가 남긴 ‘천여불수 반수기앙이’라는 유묵이었다. 하늘이 주는 것을 받지 않으면 도리어 벌을 받는다는 뜻이다. 안중근 의사는 이토 히로부미가 스스로 하얼빈…"
     },
@@ -688,6 +710,8 @@
       "url": "https://bgnj.net/community/126",
       "author": "송가연",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-23T08:01:41.646Z",
       "summary": "얕은 비가 내리는 오후에 방문한 서대문 형무소. 처음 방문하는 것이었지만 일제강점기 시절 선조들이 울었던 건물의 바닥을 이 시대에 사는 내가 밟을 수 있다는 사실을 느낄 수 있었다. 정갈하게 벽 하나를 가득 채운 독립운동가들의 인상착의들과 검고 깔끔하게 페인트 칠이 되어있는 편지 작성소를 보며 이 시대에 사람들이 그 정신을 이어가게 하기 위해 얼마나 세세…"
     },
@@ -697,6 +721,8 @@
       "url": "https://bgnj.net/community/125",
       "author": "이시형",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-23T02:12:37.464Z",
       "summary": "억압을 넘어 자유와 평화로: 서대문형무소에서 마주한 80년의 기록 단국대학교 치의학과 이시형 1908년 '경성감옥'이라는 이름으로 문을 연 서대문형무소는 일제가 의병 투쟁과 항일 독립운동을 탄압하기 위해 세운 한국 최초의 근대식 감옥이다. 해방 이후에는 독재정권과 군사정권에 맞선 민주화 운동가들의 아픔까지 품으며, 대한민국 근현대사의 굴곡진 80년을 고스…"
     },
@@ -706,6 +732,8 @@
       "url": "https://bgnj.net/community/124",
       "author": "조현희",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-22T13:48:32.629Z",
       "summary": "나의 가족, 나의 친구 동국대 조현희 자라나는 새싹의 꿈과 희망은 텁텁하게 밀려 나오는 문틈 사이로 가느다랗게 새어 나오고 있었다. 빛은 언제나 가장 좁은 틈을 골라 찾아오기에, 나는 그 빛을 따라 걸음을 옮겼다. 붉은 벽돌 담장 앞에 서서 잠시 숨을 골랐다. 백 년 남짓한 시간. 그 시간 속에 몇 생애를 합친 것보다 많은 눈물이 스며 있었다. 담장을 넘…"
     },
@@ -715,6 +743,8 @@
       "url": "https://bgnj.net/community/122",
       "author": "최지한",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-22T04:40:12.937Z",
       "summary": "전북대 사학과 최지한 2026년 8월 22일 여름의 소나기가 지나가는 날에 서대문 형무소와 독립문을 방문했다. 서대문 형무소 정문 입구를 향해 걸어가면서 서대문 형무소의 벽은 유난히 답답하게 느껴졌다. 들어가기 전에 본 형무소의 붉은 벽돌은 이곳에서 고문 당해 죽거나 후유증을 얻은 사람들의 피처럼 보였기 때문이다. 본격적인 답사 시작 전, 자연스럽게 마음…"
     },
@@ -724,6 +754,8 @@
       "url": "https://bgnj.net/community/118",
       "author": "정세현",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-22T02:21:46.112Z",
       "summary": "매년 광복절이 되면 언론과 각종 행사를 통해 독립운동가들의 희생을 접하면서도, 정작 그 발자취를 직접 찾아 나서고 그들의 정신을 몸소 되새기는 실천은 오랫동안 미뤄 왔다. 안중근의사기념관에서 내가 마주할 수 있었던 건 안중근 의사 개인의 삶을 넘어선 대한민국이라는 거대한 국가의 삶이었다. 오늘날 세계 10위권의 경제력을 지닌 주권국가의, 국권을 강탈당하고…"
     },
@@ -733,6 +765,8 @@
       "url": "https://bgnj.net/community/117",
       "author": "조현희",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-21T05:03:12.423Z",
       "summary": "존경이라는 말 앞에서 동국대 조현희 내가 감히 그를 존경한다고 말할 수 있을까. 안중근의사기념관을 돌아보는 내내, 그 질문이 발치에서 떠나지 않았다. 나는 그를 몰랐다. 교과서에서 이름 석 자를 보았고, 1909년 하얼빈이라는 사건의 좌표를 외웠을 뿐이다. 하지만 활자로 아는 것과 한 사람의 삶을 온전히 이해하는 것 사이에는 아득한 거리가 있었다. 그가 …"
     },
@@ -742,6 +776,8 @@
       "url": "https://bgnj.net/community/115",
       "author": "송가연",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-21T05:01:33.381Z",
       "summary": "2026. 08. 14 안중근 의사 기념관 동국대학교 송가연 '오늘날 우리가 더운 피로써 청천백일지에 멩세하노니 자금위시하여 아무쪼록 이전 허물을 고치고 일심단체하여 마음을 변치 말고 목적에 도달한 후에 태평동락을 만만세로 누리옵시다.' -동의단지회 설립 시 안중근 의사의 발언 중 광복절을 맞아 방문하게 된 안중근의사 기념관. 위 글귀를 보고 문득 안중근…"
     },
@@ -751,6 +787,8 @@
       "url": "https://bgnj.net/community/114",
       "author": "안윤형",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-21T04:19:07.765Z",
       "summary": "안중근의사기념관을 다녀오며 한성대학교 경제학과 안윤형 위국헌신 군인본분(爲國獻身 軍人本分 ), 안중근 의사가 뤼순 감옥에 수감되어 있을 적에 일본인 간수 지바 도시치에게 적어준 묵서이다. 대한민국 국군의 대표적인 슬로건이라 할 수 있고, 내가 군복무를 할 적에 정문에 들어가면 곧장 보였던 것으로 가장 좋아하던 말이자 항상 가슴속에 새기던 말이었다. 이번 …"
     },
@@ -760,6 +798,8 @@
       "url": "https://bgnj.net/community/102",
       "author": "정민혁",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-21T03:36:53.412Z",
       "summary": "첫 번째 길, 안중근 의사 기념관 신지식 장학회 가천대학교 경영학전공 정민혁 서울에 올라온 지 벌써 4년이 되었습니다. 그런데 생각해 보니 그동안 안중근의사기념관을 한 번도 가볼 생각을 하지 못했던 것 같습니다. 멀리 있는 것도 아니고 마음만 먹으면 갈 수 있는 곳인데, 그냥 생각조차 못 하고 지냈습니다. 광복절을 하루 앞둔 8월 14일, 좋은 기회가 생…"
     },
@@ -769,6 +809,8 @@
       "url": "https://bgnj.net/community/99",
       "author": "홍준기",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-21T00:20:05.343Z",
       "summary": "안중근의사기념관 소감문 경희대학교 회계학과 홍준기 사람은 중요한 기억조차 시간이 흐르면 잊곤 한다. 그렇기 때문에 과거의 선택과 결과를 담고 있는 역사를 계속해서 되돌아볼 필요가 있다. 시대와 상황은 달라져도 인간의 욕망과 두려움이 빚어내는 선택은 닮은 모습으로 나타나기 때문이다. 이번 안중근의사기념관 탐방은 역사를 기억하는 일이 오늘을 살아가는 나에게 …"
     },
@@ -778,6 +820,8 @@
       "url": "https://bgnj.net/community/98",
       "author": "백승기",
       "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
       "publishedAt": "2026-08-20T23:03:00+09:00",
       "summary": "사단법인 신지식장학회(이사장 김홍규)가 주관하는 역사문화 아카데미 2기 ‘제26차 신지식 장학생 선발’ 프로그램이 지난 14일 오후 서울 중구 안중근의사기념관에서 1차 탐방을 진행했다. ‘걸어서 독립운동 속으로’라는 이름으로 진행되는 이번 프로그램은 오는 10월 30일까지 매주 금요일 총 10회에 걸쳐 이어지는 대장정이다. 서울에서 8회, 전북에서 2회가…"
     },

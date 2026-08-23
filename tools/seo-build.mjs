@@ -182,9 +182,24 @@ const seriesSlug = (categoryId, indexInBoard) =>
 // 빈 페이지를 만들면 크롤러에게 내용 없는 주소를 쥐여 주는 셈이다.
 const seriesList = [];
 for (const cat of categories) {
-  const prefixes = Array.isArray(cat.prefixes) ? cat.prefixes : [];
+  const declared = Array.isArray(cat.prefixes) ? cat.prefixes : [];
+  // v00.304.001 — 게시판 설정에 등록된 말머리만 보면 안 된다.
+  //   실제로 운영에서는 글에 말머리를 일괄 적용해 놓고 게시판 설정에는 등록하지 않은 상태가 나왔다.
+  //   그 상태에서 설정만 보면 시리즈가 0개로 잡혀, 말머리가 멀쩡히 달린 글 14편이 통째로 묶이지 않는다.
+  //   기준은 '글에 실제로 달린 말머리' 다. 설정은 순서(=주소 순번)를 정하는 데만 쓴다.
+  const used = [];
+  for (const x of posts) {
+    if ((x.category_id || x.categoryId) !== cat.id) continue;
+    const pfx = String(x.prefix || "").trim();
+    if (pfx && !used.includes(pfx)) used.push(pfx);
+  }
+  const prefixes = [
+    ...declared.filter((x) => used.includes(x)),
+    ...used.filter((x) => !declared.includes(x)),
+  ];
   prefixes.forEach((pfx, i) => {
-    const items = posts.filter((x) => x.prefix === pfx && (x.category_id || x.categoryId) === cat.id);
+    const items = posts.filter((x) =>
+      String(x.prefix || "").trim() === pfx && (x.category_id || x.categoryId) === cat.id);
     if (!items.length) return;
     seriesList.push({
       prefix: pfx, categoryId: cat.id, boardLabel: cat.label || "",

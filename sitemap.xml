@@ -62,6 +62,12 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://bgnj.net/community/129</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://bgnj.net/community/128</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
@@ -654,6 +660,12 @@
     <lastmod>2026-05-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://bgnj.net/community/series-walk-independence</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://bgnj.net/column/col-3551295acaf9fc7028de1115</loc>
