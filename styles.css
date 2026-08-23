@@ -1649,6 +1649,9 @@ main time, main .section-eyebrow {
   }
   /* 인라인 카운트 배지(이미지/좋아요/태그)는 메타 라인으로 옮겨가므로 제목 줄에서 숨김 */
   .community-table .row-title-text .row-title-inline { display: none; }
+  /* v00.304 — 말머리도 같은 이유로 제목 줄에서 뺀다. 제목이 한 줄로 잘리는 폭이라
+     말머리를 앞에 두면 정작 제목이 사라진다. 메타 라인에 배지로 다시 나온다. */
+  .community-table .row-title-text .post-prefix { display: none; }
   .community-table .row-mobile-meta {
     display: flex;
     flex-wrap: wrap;
@@ -1881,6 +1884,24 @@ main time, main .section-eyebrow {
 .row:hover { background: rgba(245,213,72,0.03); }
 .row-num { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); letter-spacing: 0.1em; }
 .row-title { font-family: var(--font-serif); font-size: 17px; color: var(--ink); }
+/* ── 말머리 (v00.304) ──
+   글 목록의 제목 앞에 붙는 시리즈 표시. 제목보다 한 단계 작고 연하게 두어 제목을 가리지 않는다
+   (홈 피드의 .home-feed-prefix 와 같은 결). 옐로우는 쓰지 않는다 — 상태 표시가 아니라 분류다. */
+.post-prefix {
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: 0.06em;
+  color: var(--ink-4); margin-right: 8px;
+  white-space: nowrap;
+}
+/* 글 상세의 말머리 — 누르면 같은 시리즈만 모아 보므로 버튼이다.
+   .badge 를 그대로 입되 버튼 기본 스타일만 눌러 둔다. */
+.post-prefix-badge {
+  background: none; cursor: pointer;
+  letter-spacing: 0.14em;
+  transition: border-color .18s, color .18s;
+}
+.post-prefix-badge:hover,
+.post-prefix-badge:focus-visible { border-color: var(--primary); color: var(--secondary); }
 /* v00.222 — 게시글 목록 모바일 메타 라인은 데스크톱에서 숨김 (모바일 ≤900px 에서만 노출) */
 .community-table .row-mobile-meta { display: none; }
 .row-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); letter-spacing: 0.1em; }

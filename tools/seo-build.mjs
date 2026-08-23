@@ -167,6 +167,42 @@ const tours = toursRes.tours || [];
 const lectures = lecsRes.lectures || [];
 console.log(`  글 ${posts.length} · 칼럼 ${columns.length} · 책 ${books.length} · 게시판 ${categories.length}`);
 
+// ── 말머리(시리즈) ────────────────────────────────────────────────────
+// v00.304 — 게시판 말머리는 지금까지 DB 에만 있었다. 크롤러가 읽는 정적 페이지에는
+//   한 글자도 실리지 않아, '걸어서 독립운동 속으로' 로 검색해도 받아 줄 것이 없었다.
+//   여기서 말머리를 주소가 있는 시리즈로 승격시킨다.
+//
+// 주소를 게시판 id 로 짓는 이유: 말머리는 한글이라 그대로 주소에 넣으면 퍼센트 인코딩으로
+//   길어지고, 말머리 문구를 손보는 순간 주소가 바뀌어 색인이 끊긴다.
+//   게시판 id 는 바뀌지 않는다(data.js 주석: "id 는 그대로 둔다 — 글·첨부 참조가 전부 따라와야").
+const seriesSlug = (categoryId, indexInBoard) =>
+  `series-${categoryId}${indexInBoard > 0 ? `-${indexInBoard + 1}` : ""}`;
+
+// 실제로 글이 달려 있는 말머리만 모은다. 등록만 해두고 쓰지 않는 말머리로
+// 빈 페이지를 만들면 크롤러에게 내용 없는 주소를 쥐여 주는 셈이다.
+const seriesList = [];
+for (const cat of categories) {
+  const prefixes = Array.isArray(cat.prefixes) ? cat.prefixes : [];
+  prefixes.forEach((pfx, i) => {
+    const items = posts.filter((x) => x.prefix === pfx && (x.category_id || x.categoryId) === cat.id);
+    if (!items.length) return;
+    seriesList.push({
+      prefix: pfx, categoryId: cat.id, boardLabel: cat.label || "",
+      desc: cat.description || "",
+      path: `/community/${seriesSlug(cat.id, i)}`,
+      items,
+    });
+  });
+}
+// 글에 달린 말머리로 되찾기 — 상세 페이지가 "내가 속한 시리즈"를 알아야 한다.
+const seriesOf = (post) => seriesList.find(
+  (s) => s.prefix === post.prefix && s.categoryId === (post.category_id || post.categoryId));
+if (seriesList.length) {
+  console.log(`  시리즈 ${seriesList.length}개 — ${seriesList.map((s) => `${s.prefix}(${s.items.length}편)`).join(" · ")}`);
+} else {
+  console.log("  시리즈 0개 — 말머리가 달린 글이 아직 없다(게시판 설정에서 말머리를 등록하면 잡힌다).");
+}
+
 const ORG = {
   "@type": "Organization",
   name: "뱅기노자",
@@ -220,7 +256,9 @@ const listPages = [
   { p: "/column", title: `뱅기노자 칼럼 (${columns.length}편)`, desc: "역사와 도시를 읽는 뱅기노자의 칼럼.",
     items: columns.map((c) => ({ href: `/column/${c.id}`, title: c.title, sub: plain(c.excerpt || c.body, 100) })) },
   { p: "/community", title: `광장 — 함께 쓰는 기록 (${posts.length}편)`, desc: "회원들이 함께 남기는 답사기·감상문·소식.",
-    items: posts.map((x) => ({ href: `/community/${x.id}`, title: x.title, sub: `${x.category || ""} · ${x.author || ""}` })) },
+    items: posts.map((x) => ({ href: `/community/${x.id}`, title: x.title,
+      // v00.304 — 말머리를 맨 앞에. 목록 페이지 하나로도 시리즈가 몇 편인지 읽힌다.
+      sub: [x.prefix, x.category, x.author].filter(Boolean).join(" · ") })) },
   { p: "/book", title: `뱅기노자 도서 (${books.length}권)`, desc: "뱅기노자가 짓고 엮은 책.",
     items: books.map((b) => ({ href: "/book", title: b.title, sub: b.subtitle || b.intro || "" })) },
   { p: "/tour", title: "투어 프로그램", desc: "뱅기노자와 함께 걷는 답사 프로그램.",
@@ -255,20 +293,26 @@ ${lp.items.length ? `<ul>${lp.items.map((i) =>
 }
 
 // ── 3) 글·칼럼 상세 ───────────────────────────────────────────────────
-const detail = async ({ base, id, title, author, date, html, images, extra, attr }) => {
+const detail = async ({ base, id, title, author, date, html, images, extra, attr, series }) => {
   const pathname = `${base}/${id}`;
   const imgs = (Array.isArray(images) ? images : []).slice(0, 5);
+  // v00.304 — 말머리(시리즈). 제목 앞에 붙이는 이유는 글 제목만으로는 무엇의 몇 번째인지
+  //   알 수 없기 때문이다. 예: '2회차_서대문형무소_윤서원' 은 그 자체로는 검색어와 안 물린다.
+  const pageTitle = series ? `[${series.prefix}] ${title}` : title;
   const body = `
 <article>
+  ${series ? `<p><a href="${esc(series.path)}">${esc(series.prefix)}</a> 시리즈</p>` : ""}
   <h1>${esc(title)}</h1>
   <p>${esc(author || "뱅기노자")}${date ? ` · ${esc(String(date).slice(0, 10))}` : ""}${extra ? ` · ${esc(extra)}` : ""}</p>
   ${imgs.map((im) => `<img src="${esc(im.dataUrl || im.src || "")}" alt="${esc(im.alt || im.name || title)}" loading="lazy">`).join("\n")}
   ${htmlToParagraphs(html)}
 </article>
-<p><a href="${esc(base)}">목록으로</a> · <a href="/">뱅기노자 홈</a></p>`;
+<p>${series ? `<a href="${esc(series.path)}">${esc(series.prefix)} 전체 보기</a> · ` : ""}<a href="${esc(base)}">목록으로</a> · <a href="/">뱅기노자 홈</a></p>`;
   await write(pathname, buildPage({
-    pathname, title: `${title} — 뱅기노자`,
-    description: plain(html, 160) || title,
+    pathname, title: `${pageTitle} — 뱅기노자`,
+    description: series
+      ? `${series.prefix} · ${plain(html, 130) || title}`
+      : plain(html, 160) || title,
     image: imgs[0]?.dataUrl || imgs[0]?.src,
     bodyHtml: body,
     bodyAttrs: attr,
@@ -277,8 +321,13 @@ const detail = async ({ base, id, title, author, date, html, images, extra, attr
       headline: title,
       author: { "@type": "Person", name: author || "뱅기노자", url: `${SITE}/` },
       datePublished: date || undefined, dateModified: date || undefined, inLanguage: "ko-KR",
-      isPartOf: { "@id": `${SITE}/#site` },
-      articleSection: extra || undefined,
+      // v00.304 — 시리즈를 CreativeWorkSeries 로 명시한다. 이게 있어야 검색엔진이
+      //   흩어진 글들을 '한 묶음의 연재' 로 인식한다. 사이트 연결(#site)은 그대로 둔 채 덧붙인다.
+      isPartOf: series
+        ? [{ "@id": `${SITE}/#site` },
+           { "@type": "CreativeWorkSeries", name: series.prefix, url: `${SITE}${series.path}` }]
+        : { "@id": `${SITE}/#site` },
+      articleSection: series ? series.prefix : (extra || undefined),
       image: imgs.map((im) => im.dataUrl || im.src).filter(Boolean),
       mainEntityOfPage: `${SITE}${pathname}`,
       publisher: { "@id": `${SITE}/#org` },
@@ -298,9 +347,66 @@ for (const p of posts) {
     date: p.created_at || p.createdAt,
     html: postBodies.get(String(p.id)) || p.excerpt || "",
     images: p.images, extra: p.category, attr: `data-bgnj-post="${esc(p.id)}"`,
+    series: seriesOf(p),
   });
 }
 console.log(`  ✓ /community/* (${posts.length}건)`);
+
+// ── 3.2) 시리즈 모음 페이지 ───────────────────────────────────────────
+//   '걸어서 독립운동 속으로' 로 검색했을 때 받아 줄 페이지가 없었다. 글 하나하나는 색인돼도
+//   연재 전체를 가리키는 주소가 없으면 검색 결과에서 흩어진다.
+//
+//   라우팅은 건드리지 않는다 — 주소 첫 칸이 `community` 라서 사람이 들어오면 평소의 광장이 열린다.
+//   그 위에 <body data-bgnj-board/data-bgnj-prefix> 로 "이 게시판의 이 말머리만 보여 달라"고
+//   귀띔한다(boot.jsx 의 applyPrerenderHint). 인라인 <script> 를 쓰지 않는 이유는
+//   index.html 의 CSP 가 인라인 스크립트 해시를 못 박아 두기 때문이다.
+for (const sr of seriesList) {
+  const sorted = [...sr.items].sort((a, b) =>
+    new Date(a.created_at || a.createdAt || 0) - new Date(b.created_at || b.createdAt || 0));
+  const latest = sorted[sorted.length - 1];
+  const heading = `${sr.prefix} (${sorted.length}편)`;
+  // 게시판 설명을 그대로 쓰면 '(읽기: 누구나 · 쓰기: 로그인 회원)' 같은 권한 안내까지
+  // 검색 결과 요약문에 실린다. 사람에게 보이는 문장만 남긴다.
+  const boardDesc = plain(String(sr.desc || "").replace(/\((?:읽기|쓰기)[^)]*\)/g, "").trim(), 110);
+  const summary = boardDesc
+    ? `${sr.prefix} — ${boardDesc} 연재 ${sorted.length}편.`
+    : `${sr.prefix} 연재 ${sorted.length}편을 모았습니다.`;
+  const body = `
+<h1>${esc(heading)}</h1>
+<p>${esc(summary)}</p>
+<p><a href="/community">${esc(sr.boardLabel || "광장")}</a> 게시판의 연재입니다.</p>
+<ul>${sorted.map((x) => `<li><a href="/community/${esc(x.id)}">${esc(x.title)}</a>${
+    x.author ? ` — ${esc(x.author)}` : ""}${
+    (x.created_at || x.createdAt) ? ` · ${esc(String(x.created_at || x.createdAt).slice(0, 10))}` : ""}</li>`).join("\n")}</ul>
+<p><a href="/community">광장 전체 보기</a> · <a href="/">뱅기노자 홈</a></p>`;
+  await write(sr.path, buildPage({
+    pathname: sr.path,
+    title: `${heading} — 뱅기노자`,
+    description: summary,
+    bodyHtml: body,
+    bodyAttrs: `data-bgnj-board="${esc(sr.categoryId)}" data-bgnj-prefix="${esc(sr.prefix)}"`,
+    jsonLd: {
+      "@context": "https://schema.org", "@type": "CollectionPage",
+      name: heading, description: summary, url: `${SITE}${sr.path}`,
+      inLanguage: "ko-KR",
+      isPartOf: { "@id": `${SITE}/#site` }, publisher: { "@id": `${SITE}/#org` },
+      mainEntity: {
+        "@type": "CreativeWorkSeries",
+        name: sr.prefix, url: `${SITE}${sr.path}`, inLanguage: "ko-KR",
+        numberOfItems: sorted.length,
+        hasPart: sorted.map((x) => ({
+          "@type": "Article", headline: x.title, url: `${SITE}/community/${x.id}`,
+          author: { "@type": "Person", name: x.author || "뱅기노자" },
+          datePublished: x.created_at || x.createdAt || undefined,
+        })),
+      },
+    },
+  }));
+  addUrl(`${SITE}${sr.path}`,
+    String(latest?.created_at || latest?.createdAt || "").slice(0, 10) || new Date().toISOString().slice(0, 10),
+    "weekly", "0.8");
+  console.log(`  ✓ ${sr.path} (${sr.prefix} · ${sorted.length}편)`);
+}
 
 console.log("  칼럼 본문을 받는 중…");
 const colBodies = await fetchBodies(
@@ -340,9 +446,12 @@ console.log(`  ✓ /column/* (${columns.length}건)`);
       date: c.created_at || c.createdAt, author: c.author_name || "뱅기노자", cat: c.category,
     })),
     ...posts.map((p) => ({
-      title: p.title, link: `${SITE}/community/${p.id}`,
+      // v00.304 — RSS 제목에도 말머리를 붙인다. 수집기·AI 크롤러가 가장 먼저 보는 곳이라
+      //   여기서 시리즈가 드러나지 않으면 글이 낱개로 흩어져 들어간다.
+      title: p.prefix ? `[${p.prefix}] ${p.title}` : p.title,
+      link: `${SITE}/community/${p.id}`,
       desc: plain(postBodies.get(String(p.id)) || p.excerpt, 300),
-      date: p.created_at || p.createdAt, author: p.author, cat: p.category,
+      date: p.created_at || p.createdAt, author: p.author, cat: p.prefix || p.category,
     })),
   ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
@@ -365,17 +474,26 @@ ${feedEntries.slice(0, 100).map((e) => rssItem(e.title, e.link, e.desc, e.date, 
   const indexJson = {
     site: { name: "뱅기노자", url: SITE, language: "ko-KR", description: "한국의 역사·문화·자연을 함께 여행하는 커뮤니티" },
     generatedAt: new Date().toISOString(),
-    counts: { columns: columns.length, posts: posts.length, books: books.length },
+    counts: { columns: columns.length, posts: posts.length, books: books.length, series: seriesList.length },
+    series: seriesList.map((sr) => ({
+      name: sr.prefix, board: sr.boardLabel, url: `${SITE}${sr.path}`, count: sr.items.length,
+    })),
     columns: columns.map((c) => ({
       id: c.id, title: c.title, url: `${SITE}/column/${c.id}`,
       author: c.author_name || "뱅기노자", category: c.category,
       publishedAt: c.created_at || c.createdAt, summary: plain(c.excerpt, 200),
     })),
-    posts: posts.map((p) => ({
-      id: p.id, title: p.title, url: `${SITE}/community/${p.id}`,
-      author: p.author, board: p.category,
-      publishedAt: p.created_at || p.createdAt, summary: plain(p.excerpt, 200),
-    })),
+    posts: posts.map((p) => {
+      const sr = seriesOf(p);
+      return {
+        id: p.id, title: p.title, url: `${SITE}/community/${p.id}`,
+        author: p.author, board: p.category,
+        // v00.304 — 말머리와 그 시리즈 주소. 목록만 받아 가는 쪽이 연재를 묶을 수 있게.
+        series: p.prefix || undefined,
+        seriesUrl: sr ? `${SITE}${sr.path}` : undefined,
+        publishedAt: p.created_at || p.createdAt, summary: plain(p.excerpt, 200),
+      };
+    }),
     books: books.map((b) => ({ title: b.title, subtitle: b.subtitle, author: b.author, isbn: b.isbn, url: `${SITE}/book` })),
   };
   await fs.writeFile(path.join(ROOT, "index.json"), JSON.stringify(indexJson, null, 2), "utf8");
@@ -399,13 +517,18 @@ ${feedEntries.slice(0, 100).map((e) => rssItem(e.title, e.link, e.desc, e.date, 
       "", plain(colBodies.get(String(c.id)) || c.excerpt, 3000),
     ].join("\n")),
     "", "## 광장 — 함께 쓰는 기록",
-    ...posts.map((p) => [
-      "", `### ${p.title}`,
-      `- 주소: ${SITE}/community/${p.id}`,
-      `- 글쓴이: ${p.author}${p.category ? ` · 게시판: ${p.category}` : ""}`,
-      `- 발행: ${String(p.created_at || "").slice(0, 10)}`,
-      "", plain(postBodies.get(String(p.id)) || p.excerpt, 3000),
-    ].join("\n")),
+    ...posts.map((p) => {
+      const sr = seriesOf(p);
+      return [
+        "", `### ${p.prefix ? `[${p.prefix}] ` : ""}${p.title}`,
+        `- 주소: ${SITE}/community/${p.id}`,
+        `- 글쓴이: ${p.author}${p.category ? ` · 게시판: ${p.category}` : ""}`,
+        // v00.304 — 시리즈를 명시. AI 가 낱개 글이 아니라 연재로 읽게 한다.
+        ...(sr ? [`- 연재: ${sr.prefix} (${sr.items.length}편 · ${SITE}${sr.path})`] : []),
+        `- 발행: ${String(p.created_at || "").slice(0, 10)}`,
+        "", plain(postBodies.get(String(p.id)) || p.excerpt, 3000),
+      ].join("\n");
+    }),
     "",
   ].join("\n");
   await fs.writeFile(path.join(ROOT, "llms-full.txt"), full, "utf8");

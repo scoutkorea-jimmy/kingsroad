@@ -401,8 +401,8 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.303.000",
-    build: "2026.08.21",
+    version: "00.304.000",
+    build: "2026.08.23",
     channel: "preview"
   };
   try {
@@ -1487,7 +1487,10 @@
     // v00.294 — 질문(0건) → 여행 감상문 게시판으로 교체, 정보(0건) 폐쇄.
     // v00.295 — 사용자 요청으로 이름 정리. id 는 그대로 둔다(글·첨부 참조가 전부 따라와야 하므로).
     //   '걸어서독립운동속으로' → '신지식 청년사관' · 폐쇄했던 정보 자리에 '국민사학자' 신설.
-    { id: "walk-independence", label: "\uC2E0\uC9C0\uC2DD \uCCAD\uB144\uC0AC\uAD00", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "\uAC78\uC5B4\uC11C \uB9CC\uB098\uB294 \uB3C5\uB9BD\uC6B4\uB3D9\uC758 \uC790\uCDE8 \u2014 \uC5EC\uD589 \uAC10\uC0C1\uBB38 (\uC77D\uAE30: \uB204\uAD6C\uB098 \xB7 \uC4F0\uAE30: \uB85C\uADF8\uC778 \uD68C\uC6D0)" },
+    // v00.304 — 말머리(prefixes) 기본값. 서버(categories_kv.prefixes_json)와 같은 값을 둔다.
+    //   여기가 비어 있으면 서버가 잠깐 느린 사이 글쓰기 화면의 말머리 칸이 통째로 사라진다
+    //   (boardPrefixes.length > 0 일 때만 그리므로). 서버 말머리를 고치면 여기도 함께 고칠 것.
+    { id: "walk-independence", label: "\uC2E0\uC9C0\uC2DD \uCCAD\uB144\uC0AC\uAD00", boardType: "community", minLevel: 0, postMinLevel: 10, prefixes: ["\uAC78\uC5B4\uC11C \uB3C5\uB9BD\uC6B4\uB3D9 \uC18D\uC73C\uB85C"], desc: "\uAC78\uC5B4\uC11C \uB9CC\uB098\uB294 \uB3C5\uB9BD\uC6B4\uB3D9\uC758 \uC790\uCDE8 \u2014 \uC5EC\uD589 \uAC10\uC0C1\uBB38 (\uC77D\uAE30: \uB204\uAD6C\uB098 \xB7 \uC4F0\uAE30: \uB85C\uADF8\uC778 \uD68C\uC6D0)" },
     { id: "national-historian", label: "\uAD6D\uBBFC\uC0AC\uD559\uC790", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "" },
     // v00.303 — 서버(D1.categories_kv)와 일치시킨다.
     //   전에는 `press`(언론보도)·`hangyeon-forum`(한켠역사문화포럼)이 **여기에 없었다.**
@@ -8967,6 +8970,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [refreshKey, setRefreshKey] = React.useState(0);
     const [tab, setTab] = React.useState("all");
     const [activePrefix, setActivePrefix] = React.useState("");
+    const pendingPrefixRef = React.useRef(null);
     const [search, setSearch] = React.useState("");
     const [sort, setSort] = React.useState("latest");
     const [writing, setWriting] = React.useState(null);
@@ -9017,6 +9021,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         }
         setTab(pendingBoard);
       }
+      let pendingPrefix = null;
+      try {
+        pendingPrefix = sessionStorage.getItem("bgnj_pending_prefix");
+      } catch (_e) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uC804\uCCB4 \uBAA9\uB85D (CommunityPage.jsx)", _e);
+      }
+      if (pendingPrefix) {
+        try {
+          sessionStorage.removeItem("bgnj_pending_prefix");
+        } catch (_e) {
+          console.warn("[bgnj] \uC800\uC7A5\uC18C \uC815\uB9AC (CommunityPage.jsx)", _e);
+        }
+        pendingPrefixRef.current = pendingPrefix;
+        setActivePrefix(pendingPrefix);
+      }
     }, []);
     const [loadError, setLoadError] = React.useState(null);
     React.useEffect(() => {
@@ -9062,6 +9081,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return !cat || userLevel >= ((_a = cat.minLevel) != null ? _a : 0);
     }, [categories, userLevel]);
     React.useEffect(() => {
+      if (pendingPrefixRef.current) {
+        setActivePrefix(pendingPrefixRef.current);
+        pendingPrefixRef.current = null;
+        return;
+      }
       setActivePrefix("");
     }, [tab]);
     const filtered = React.useMemo(() => {
@@ -9390,7 +9414,14 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           setPostId,
           user,
           onRefresh: () => setRefreshKey((value) => value + 1),
-          onEdit: (nextPost) => setWriting(nextPost)
+          onEdit: (nextPost) => setWriting(nextPost),
+          onPrefixClick: (pfx) => {
+            pendingPrefixRef.current = pfx;
+            setActivePrefix(pfx);
+            if (post.categoryId) setTab(post.categoryId);
+            setPostId(null);
+            window.scrollTo(0, 0);
+          }
         }
       ), writing && /* @__PURE__ */ React.createElement(PostComposeModal, { onClose: () => setWriting(null) }));
     }
@@ -9696,8 +9727,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             className: "row-title-button",
             style: { all: "unset", cursor: reorderMode ? "move" : "pointer", textAlign: "left", display: "block", width: "100%" }
           },
-          /* @__PURE__ */ React.createElement("span", { className: "row-title-text" }, bookmarked && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginRight: 6, fontSize: 11 }, "aria-label": "\uBD81\uB9C8\uD06C" }, "\u2605"), p.title, ((_a = p.images) == null ? void 0 : _a.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uC774\uBBF8\uC9C0 \uCCA8\uBD80" }, "\u{1F4F7}", p.images.length), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uACF5\uAC10 \uC218" }, "\u2665", likesCount), ((_b = p.tags) == null ? void 0 : _b.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono row-title-inline", style: { marginLeft: 8, fontSize: 10 } }, p.tags.slice(0, 3).map((t) => `#${t}`).join(" ")), p.hot && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "HOT"), p._new && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "NEW")),
-          /* @__PURE__ */ React.createElement("span", { className: "row-mobile-meta", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, cat.label), /* @__PURE__ */ React.createElement("span", null, p.author), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("time", { dateTime: (p.date || "").replace(/\./g, "-") }, p.date || ""), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_c = p.views) != null ? _c : 0), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u2665 ", likesCount), ((_d = p.images) == null ? void 0 : _d.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u{1F4F7} ", p.images.length))
+          /* @__PURE__ */ React.createElement("span", { className: "row-title-text" }, bookmarked && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginRight: 6, fontSize: 11 }, "aria-label": "\uBD81\uB9C8\uD06C" }, "\u2605"), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "post-prefix" }, "[", p.prefix, "]"), p.title, ((_a = p.images) == null ? void 0 : _a.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uC774\uBBF8\uC9C0 \uCCA8\uBD80" }, "\u{1F4F7}", p.images.length), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uACF5\uAC10 \uC218" }, "\u2665", likesCount), ((_b = p.tags) == null ? void 0 : _b.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono row-title-inline", style: { marginLeft: 8, fontSize: 10 } }, p.tags.slice(0, 3).map((t) => `#${t}`).join(" ")), p.hot && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "HOT"), p._new && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "NEW")),
+          /* @__PURE__ */ React.createElement("span", { className: "row-mobile-meta", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, cat.label), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "badge" }, p.prefix), /* @__PURE__ */ React.createElement("span", null, p.author), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("time", { dateTime: (p.date || "").replace(/\./g, "-") }, p.date || ""), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_c = p.views) != null ? _c : 0), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u2665 ", likesCount), ((_d = p.images) == null ? void 0 : _d.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u{1F4F7} ", p.images.length))
         )),
         /* @__PURE__ */ React.createElement("td", { className: "col-author mono dim", style: { padding: "18px 8px", fontSize: 12 } }, p.author, /* @__PURE__ */ React.createElement(AuthorGradeBadge, { authorId: p.authorId, author: p.author, authorEmail: p.authorEmail })),
         /* @__PURE__ */ React.createElement("td", { className: "col-views mono dim-2", style: { padding: "18px 8px", fontSize: 12, textAlign: "right" } }, (_e = p.views) != null ? _e : 0),
@@ -10134,7 +10165,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       "\u{1F4BE} \uC784\uC2DC\uC800\uC7A5"
     ), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: attachBusy }, attachBusy ? "\uC0AC\uC9C4 \uC62C\uB9AC\uB294 \uC911\u2026" : isEditing ? "\uC218\uC815 \uC800\uC7A5 \u2192" : "\uAC8C\uC2DC\uD558\uAE30 \u2192")))));
   };
-  var PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) => {
+  var PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, onPrefixClick }) => {
     var _a, _b, _c;
     const G2 = window.BGNJ_GUARD;
     const sibList = Array.isArray(siblings) ? siblings : [];
@@ -10298,7 +10329,16 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setCommentsList(next);
       onRefresh == null ? void 0 : onRefresh();
     };
-    return /* @__PURE__ */ React.createElement("article", { className: "section post-read" }, /* @__PURE__ */ React.createElement("div", { className: "container post-read-container" }, /* @__PURE__ */ React.createElement("div", { className: "post-back-bar" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn post-back-btn", onClick: () => setPostId(null) }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 16, lineHeight: 1 } }, "\u2190"), /* @__PURE__ */ React.createElement("span", null, "\uBAA9\uB85D\uC73C\uB85C"), post.category && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2 post-back-board" }, post.category))), /* @__PURE__ */ React.createElement("header", { style: { borderBottom: "1px solid var(--line-2)", paddingBottom: 32, marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, post.category), post.hot && /* @__PURE__ */ React.createElement("span", { className: "badge" }, "HOT"), post._userCreated && /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, "\uC0C8 \uAE00")), /* @__PURE__ */ React.createElement("h1", { className: "post-title", style: {
+    return /* @__PURE__ */ React.createElement("article", { className: "section post-read" }, /* @__PURE__ */ React.createElement("div", { className: "container post-read-container" }, /* @__PURE__ */ React.createElement("div", { className: "post-back-bar" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn post-back-btn", onClick: () => setPostId(null) }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 16, lineHeight: 1 } }, "\u2190"), /* @__PURE__ */ React.createElement("span", null, "\uBAA9\uB85D\uC73C\uB85C"), post.category && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2 post-back-board" }, post.category))), /* @__PURE__ */ React.createElement("header", { style: { borderBottom: "1px solid var(--line-2)", paddingBottom: 32, marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, post.category), post.prefix && /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: "badge post-prefix-badge",
+        onClick: () => onPrefixClick == null ? void 0 : onPrefixClick(post.prefix),
+        title: `'${post.prefix}' \uAE00 \uBAA8\uC544 \uBCF4\uAE30`
+      },
+      post.prefix
+    ), post.hot && /* @__PURE__ */ React.createElement("span", { className: "badge" }, "HOT"), post._userCreated && /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, "\uC0C8 \uAE00")), /* @__PURE__ */ React.createElement("h1", { className: "post-title", style: {
       fontFamily: "var(--font-display)",
       // v00.244 — PC 44 → 26 (~60% 사용자 요청). 모바일 도 28→22 동반 축소.
       // 게시글 본문(17px) 와 위계 균형: 제목 26 ÷ 본문 17 ≈ 1.5x.
@@ -15192,6 +15232,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const d = ((_a = document.body) == null ? void 0 : _a.dataset) || {};
       if (d.bgnjPost) sessionStorage.setItem("bgnj_pending_post_id", String(d.bgnjPost));
       if (d.bgnjColumn) sessionStorage.setItem("bgnj_pending_column_id", String(d.bgnjColumn));
+      if (d.bgnjBoard) sessionStorage.setItem("bgnj_pending_board_id", String(d.bgnjBoard));
+      if (d.bgnjPrefix) sessionStorage.setItem("bgnj_pending_prefix", String(d.bgnjPrefix));
     } catch (_e) {
       console.warn("[bgnj] \uC815\uC801 \uD398\uC774\uC9C0 \uD78C\uD2B8 \uC77D\uAE30 \uC2E4\uD328 \u2014 \uBAA9\uB85D\uC73C\uB85C \uAC08 \uBFD0 (boot.jsx)", _e);
     }

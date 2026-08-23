@@ -537,6 +537,11 @@ const SiteBanner = () => {
     const d = document.body?.dataset || {};
     if (d.bgnjPost)   sessionStorage.setItem('bgnj_pending_post_id', String(d.bgnjPost));
     if (d.bgnjColumn) sessionStorage.setItem('bgnj_pending_column_id', String(d.bgnjColumn));
+    // v00.304 — 시리즈 모음 정적 페이지(/community/series-*)로 들어온 경우.
+    //   글 하나가 아니라 '그 말머리로 걸러진 목록' 을 열어 줘야 한다.
+    //   경로를 파싱하지 않는 이유는 위와 같다 — 라우터는 첫 세그먼트만 본다.
+    if (d.bgnjBoard)  sessionStorage.setItem('bgnj_pending_board_id', String(d.bgnjBoard));
+    if (d.bgnjPrefix) sessionStorage.setItem('bgnj_pending_prefix', String(d.bgnjPrefix));
   } catch (_e) { console.warn('[bgnj] 정적 페이지 힌트 읽기 실패 — 목록으로 갈 뿐 (boot.jsx)', _e); }
 })();
 

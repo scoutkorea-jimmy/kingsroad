@@ -15879,6 +15879,23 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         console.warn("[bgnj] AdminRouterPanels.jsx:367 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     }, [postId]);
+    React.useEffect(() => {
+      let alive = true;
+      (async () => {
+        var _a2, _b2, _c2, _d2;
+        try {
+          await ((_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2._hydratePostBody) == null ? void 0 : _b2.call(_a2, postId));
+          if (!alive) return;
+          const fresh = (_d2 = (_c2 = window.BGNJ_COMMUNITY) == null ? void 0 : _c2.getPost) == null ? void 0 : _d2.call(_c2, postId);
+          if (fresh) setPost(fresh);
+        } catch (e) {
+          console.warn("[bgnj] \uBCF8\uBB38 \uBCF4\uAC15 \uC2E4\uD328 \u2014 \uBAA9\uB85D \uCE90\uC2DC \uADF8\uB300\uB85C (AdminRouterPanels.jsx)", (e == null ? void 0 : e.message) || e);
+        }
+      })();
+      return () => {
+        alive = false;
+      };
+    }, [postId]);
     if (!post) {
       return /* @__PURE__ */ React.createElement(
         "div",
@@ -15953,17 +15970,28 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
           lineHeight: 1.85,
           color: "var(--ink)"
         } }, ((_c = post.body) == null ? void 0 : _c.html) ? /* @__PURE__ */ React.createElement("div", { dangerouslySetInnerHTML: { __html: window.BGNJ_SAFE_HTML(post.body.html) } }) : ((_d = post.body) == null ? void 0 : _d.text) ? /* @__PURE__ */ React.createElement("div", { style: { whiteSpace: "pre-wrap" } }, post.body.text) : /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontStyle: "italic" } }, "(\uBCF8\uBB38 \uC5C6\uC74C)")),
-        Array.isArray(post.images) && post.images.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 18 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 10 } }, "ATTACHMENTS \xB7 ", post.images.length), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 } }, post.images.map((src, i) => /* @__PURE__ */ React.createElement(
-          "a",
-          {
-            key: i,
-            href: src,
-            target: "_blank",
-            rel: "noreferrer",
-            style: { border: "1px solid var(--line)", display: "block" }
-          },
-          /* @__PURE__ */ React.createElement("img", { src, alt: "", style: { display: "block", width: "100%", height: 120, objectFit: "cover" } })
-        )))),
+        Array.isArray(post.images) && post.images.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 18 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 10 } }, "ATTACHMENTS \xB7 ", post.images.length), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 } }, post.images.map((img, i) => {
+          const url = typeof img === "string" ? img : (img == null ? void 0 : img.dataUrl) || (img == null ? void 0 : img.src) || (img == null ? void 0 : img.url) || "";
+          if (!url) return null;
+          return /* @__PURE__ */ React.createElement(
+            "a",
+            {
+              key: i,
+              href: url,
+              target: "_blank",
+              rel: "noreferrer",
+              style: { border: "1px solid var(--line)", display: "block" }
+            },
+            /* @__PURE__ */ React.createElement(
+              "img",
+              {
+                src: url,
+                alt: typeof img === "object" && (img.alt || img.name) || `\uCCA8\uBD80 ${i + 1}`,
+                style: { display: "block", width: "100%", height: 120, objectFit: "cover" }
+              }
+            )
+          );
+        }))),
         /* @__PURE__ */ React.createElement("div", { style: { marginTop: 24, paddingTop: 18, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 10 } }, "COMMENTS \xB7 ", comments.length), comments.length === 0 ? /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 13 } }, "\uC544\uC9C1 \uB313\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 } }, comments.map((c) => /* @__PURE__ */ React.createElement("li", { key: c.id, style: { padding: "10px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", fontSize: 13 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { className: "gold mono", style: { fontSize: 11, letterSpacing: "0.1em" } }, c.parentId ? "\u21B3 " : "", c.author || "-"), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, c.date || (c.createdAt ? window.BGNJ_FMT.kstDateTime(c.createdAt) : ""))), /* @__PURE__ */ React.createElement("div", { style: { lineHeight: 1.7, whiteSpace: "pre-wrap" } }, c.text || c.body || "-")))))
       )
     );

@@ -588,6 +588,10 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [tab, setTab] = React.useState("all");
   const [activePrefix, setActivePrefix] = React.useState("");
+  // v00.304 — 시리즈 모음 정적 페이지에서 넘어온 말머리를 잠시 들고 있는 자리.
+  //   게시판(tab)이 바뀌면 말머리 필터를 지우게 돼 있어서(아래 useEffect), 그냥 두 값을
+  //   함께 세팅하면 게시판이 바뀌는 순간 말머리가 조용히 사라진다. ref 로 한 박자 넘긴다.
+  const pendingPrefixRef = React.useRef(null);
   const [search, setSearch] = React.useState("");
   const [sort, setSort] = React.useState("latest");
   const [writing, setWriting] = React.useState(null);
@@ -618,6 +622,15 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     if (pendingBoard) {
       try { sessionStorage.removeItem('bgnj_pending_board_id'); } catch (_e) { console.warn('[bgnj] 저장소 정리 (CommunityPage.jsx:581)', _e); }
       setTab(pendingBoard);
+    }
+    // v00.304 — 시리즈 모음 정적 페이지에서 들어온 말머리. setTab 뒤에 놓아야
+    //   tab 변경 → 말머리 초기화 순서에 먹히지 않는다.
+    let pendingPrefix = null;
+    try { pendingPrefix = sessionStorage.getItem('bgnj_pending_prefix'); } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 전체 목록 (CommunityPage.jsx)', _e); }
+    if (pendingPrefix) {
+      try { sessionStorage.removeItem('bgnj_pending_prefix'); } catch (_e) { console.warn('[bgnj] 저장소 정리 (CommunityPage.jsx)', _e); }
+      pendingPrefixRef.current = pendingPrefix;
+      setActivePrefix(pendingPrefix);
     }
   }, []);
 
@@ -656,7 +669,16 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
     return !cat || userLevel >= (cat.minLevel ?? 0);
   }, [categories, userLevel]);
 
-  React.useEffect(() => { setActivePrefix(""); }, [tab]);
+  React.useEffect(() => {
+    // v00.304 — 게시판을 바꾸면 말머리 필터를 지운다(게시판마다 말머리가 다르므로).
+    //   단, 시리즈 모음 페이지에서 막 들어온 경우는 그 말머리를 지키고 한 번만 통과시킨다.
+    if (pendingPrefixRef.current) {
+      setActivePrefix(pendingPrefixRef.current);
+      pendingPrefixRef.current = null;
+      return;
+    }
+    setActivePrefix("");
+  }, [tab]);
 
   const filtered = React.useMemo(() => {
     const q = search.toLowerCase();
@@ -1003,6 +1025,15 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
           user={user}
           onRefresh={() => setRefreshKey((value) => value + 1)}
           onEdit={(nextPost) => setWriting(nextPost)}
+          onPrefixClick={(pfx) => {
+            // v00.304 — 같은 시리즈 글만 모아 본다. 게시판이 'all' 이었다면 그 글의 게시판으로 옮기고,
+            //   이미 그 게시판이면 tab 이 안 바뀌어 아래 ref 없이도 말머리가 그대로 남는다.
+            pendingPrefixRef.current = pfx;
+            setActivePrefix(pfx);
+            if (post.categoryId) setTab(post.categoryId);
+            setPostId(null);
+            window.scrollTo(0, 0);
+          }}
         />
         {writing && <PostComposeModal onClose={() => setWriting(null)}/>}
       </>
@@ -1268,6 +1299,9 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                       style={{all:'unset', cursor: reorderMode ? 'move' : 'pointer', textAlign:'left', display:'block', width:'100%'}}>
                       <span className="row-title-text">
                         {bookmarked && <span className="gold" style={{marginRight:6, fontSize:11}} aria-label="북마크">★</span>}
+                        {/* v00.304 — 말머리. 제목보다 한 단계 작고 연하게 두어 제목을 가리지 않는다
+                            (홈 피드의 .home-feed-prefix 와 같은 결). 말머리가 없으면 아무것도 그리지 않는다. */}
+                        {p.prefix && <span className="post-prefix">[{p.prefix}]</span>}
                         {p.title}
                         {p.images?.length > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label="이미지 첨부">📷{p.images.length}</span>}
                         {likesCount > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label="공감 수">♥{likesCount}</span>}
@@ -1277,6 +1311,9 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                       </span>
                       <span className="row-mobile-meta" aria-hidden="true">
                         <span className="badge">{cat.label}</span>
+                        {/* v00.304 — 모바일 제목 줄은 한 줄로 잘리므로(nowrap+ellipsis), 말머리를
+                            제목 앞에 그대로 두면 정작 제목이 안 보인다. 여기로 내려 보낸다. */}
+                        {p.prefix && <span className="badge">{p.prefix}</span>}
                         <span>{p.author}</span>
                         <span className="dot">·</span>
                         <time dateTime={(p.date || '').replace(/\./g,'-')}>{p.date || ''}</time>
@@ -1788,7 +1825,7 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
 };
 
 // === Post Detail =========================================================
-const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) => {
+const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, onPrefixClick }) => {
   const G = window.BGNJ_GUARD;
   // v00.294 — 사용자 보고 '글을 보고 나면 돌아올 방법이 없다'.
   // 상단 '← 목록으로' 하나뿐이라 긴 글에서는 화면 밖으로 밀려 보이지 않았다.
@@ -1965,6 +2002,14 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit }) 
         <header style={{borderBottom:'1px solid var(--line-2)', paddingBottom:32, marginBottom:48}}>
           <div style={{display:'flex', gap:12, marginBottom:20, flexWrap:'wrap'}}>
             <span className="badge badge-gold">{post.category}</span>
+            {/* v00.304 — 말머리. 누르면 같은 시리즈 글만 모아 본다. */}
+            {post.prefix && (
+              <button type="button" className="badge post-prefix-badge"
+                onClick={() => onPrefixClick?.(post.prefix)}
+                title={`'${post.prefix}' 글 모아 보기`}>
+                {post.prefix}
+              </button>
+            )}
             {post.hot && <span className="badge">HOT</span>}
             {post._userCreated && <span className="badge badge-gold">새 글</span>}
           </div>

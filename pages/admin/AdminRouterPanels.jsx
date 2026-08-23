@@ -367,6 +367,23 @@ const PostViewerModal = ({ postId, onClose }) => {
     }); } catch (_e) { console.warn('[bgnj] AdminRouterPanels.jsx:367 오류(무시하고 진행)', _e); }
   }, [postId]);
 
+  // v00.304 — 열면 '(본문 없음)' 이 뜨던 문제.
+  //   목록 API 는 v00.296.002 부터 본문을 주지 않는다(전송량을 줄였다). 이 모달은 그 목록
+  //   캐시만 보고 있어서, 서버에는 멀쩡히 있는 본문이 화면에서만 사라져 있었다.
+  //   사용자 화면(CommunityPage)은 같은 이유로 이미 _hydratePostBody 를 부르고 있다 — 같은 길을 쓴다.
+  React.useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        await window.BGNJ_COMMUNITY?._hydratePostBody?.(postId);
+        if (!alive) return;
+        const fresh = window.BGNJ_COMMUNITY?.getPost?.(postId);
+        if (fresh) setPost(fresh);
+      } catch (e) { console.warn('[bgnj] 본문 보강 실패 — 목록 캐시 그대로 (AdminRouterPanels.jsx)', e?.message || e); }
+    })();
+    return () => { alive = false; };
+  }, [postId]);
+
   if (!post) {
     return (
       <div role="dialog" aria-modal="true" onClick={onClose}
@@ -454,12 +471,22 @@ const PostViewerModal = ({ postId, onClose }) => {
           <div style={{marginTop:18}}>
             <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.18em', marginBottom:10}}>ATTACHMENTS · {post.images.length}</div>
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))', gap:10}}>
-              {post.images.map((src, i) => (
-                <a key={i} href={src} target="_blank" rel="noreferrer"
-                  style={{border:'1px solid var(--line)', display:'block'}}>
-                  <img src={src} alt="" style={{display:'block', width:'100%', height:120, objectFit:'cover'}}/>
-                </a>
-              ))}
+              {post.images.map((img, i) => {
+                // v00.304 — 첨부가 전부 엑스박스로 뜨던 문제.
+                //   서버가 주는 images 는 문자열이 아니라 { name, alt, size, dataUrl } 객체다.
+                //   그걸 그대로 src 에 넣고 있었으니 '[object Object]' 를 주소로 삼은 셈.
+                //   사용자 화면(CommunityPage 의 ImageSlider)은 처음부터 dataUrl 을 꺼내 쓰고 있었다.
+                //   옛 데이터가 문자열일 수 있어 둘 다 받는다.
+                const url = typeof img === 'string' ? img : (img?.dataUrl || img?.src || img?.url || '');
+                if (!url) return null;
+                return (
+                  <a key={i} href={url} target="_blank" rel="noreferrer"
+                    style={{border:'1px solid var(--line)', display:'block'}}>
+                    <img src={url} alt={(typeof img === 'object' && (img.alt || img.name)) || `첨부 ${i + 1}`}
+                      style={{display:'block', width:'100%', height:120, objectFit:'cover'}}/>
+                  </a>
+                );
+              })}
             </div>
           </div>
         )}

@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.303.000",
-  build: "2026.08.21",
+  version: "00.304.000",
+  build: "2026.08.23",
   channel: "preview",
 };
 
@@ -999,7 +999,10 @@ const DEFAULT_CATEGORIES = [
   // v00.294 — 질문(0건) → 여행 감상문 게시판으로 교체, 정보(0건) 폐쇄.
   // v00.295 — 사용자 요청으로 이름 정리. id 는 그대로 둔다(글·첨부 참조가 전부 따라와야 하므로).
   //   '걸어서독립운동속으로' → '신지식 청년사관' · 폐쇄했던 정보 자리에 '국민사학자' 신설.
-  { id: "walk-independence",  label: "신지식 청년사관", boardType: "community", minLevel: 0, postMinLevel: 10, desc: "걸어서 만나는 독립운동의 자취 — 여행 감상문 (읽기: 누구나 · 쓰기: 로그인 회원)" },
+  // v00.304 — 말머리(prefixes) 기본값. 서버(categories_kv.prefixes_json)와 같은 값을 둔다.
+  //   여기가 비어 있으면 서버가 잠깐 느린 사이 글쓰기 화면의 말머리 칸이 통째로 사라진다
+  //   (boardPrefixes.length > 0 일 때만 그리므로). 서버 말머리를 고치면 여기도 함께 고칠 것.
+  { id: "walk-independence",  label: "신지식 청년사관", boardType: "community", minLevel: 0, postMinLevel: 10, prefixes: ["걸어서 독립운동 속으로"], desc: "걸어서 만나는 독립운동의 자취 — 여행 감상문 (읽기: 누구나 · 쓰기: 로그인 회원)" },
   { id: "national-historian", label: "국민사학자",      boardType: "community", minLevel: 0, postMinLevel: 10, desc: "" },
   // v00.303 — 서버(D1.categories_kv)와 일치시킨다.
   //   전에는 `press`(언론보도)·`hangyeon-forum`(한켠역사문화포럼)이 **여기에 없었다.**
