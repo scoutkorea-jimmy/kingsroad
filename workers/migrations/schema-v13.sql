@@ -1,0 +1,31 @@
+-- schema-v13.sql — v00.305.000
+-- 게시글이 몇 번 고쳐졌는지 세는 칸을 만든다.
+--
+-- 왜 필요한가:
+--   관리자 화면에서 글을 열면 '언제 올라왔는지' 만 보이고 '그 뒤에 손댔는지' 는 알 길이 없었다.
+--   posts 에 updated_at 은 있었지만 **목록 응답에 실리지 않아** 화면까지 오지도 못했고,
+--   수정 '횟수' 는 애초에 담을 칸이 없었다. 한 번 고친 글과 다섯 번 고친 글이 똑같아 보였다.
+--
+--   운영 판단에 필요한 정보다 — 감상문 게시판에서 여러 번 고쳐진 글은
+--   내용이 크게 달라졌을 수 있어 다시 볼 이유가 된다.
+--
+-- 무엇을 세는가:
+--   **제목이나 본문이 실제로 달라졌을 때만** 1 씩 오른다.
+--   관리자의 말머리·태그·분류 일괄 작업은 세지 않는다 — 그건 운영 정리이지 글 수정이 아니다.
+--   (워커 handlePostPatch 가 기존 값과 비교해서 판단한다.)
+--
+-- 적용(remote 운영 DB):
+--   cd workers && npx wrangler d1 execute banginoja-db --remote --command="ALTER TABLE posts ADD COLUMN edit_count INTEGER NOT NULL DEFAULT 0;"
+--   확인:
+--   cd workers && npx wrangler d1 execute banginoja-db --remote --command="PRAGMA table_info(posts);"
+--
+-- ⚠ 함정 (v12 에서 실측) — --file 은 remote 대상일 때 확인 프롬프트를 띄우는데,
+--    사람이 없는 환경에서는 답을 못 해 "Resource location: remote" 만 찍고 **조용히 아무것도 안 한다.**
+--    오류도 안 난다. 그래서 위에 --command 형태를 먼저 적어 두었다.
+--    반드시 PRAGMA table_info(posts) 로 컬럼이 실제로 생겼는지 눈으로 확인할 것.
+--
+-- ALTER TABLE ADD COLUMN 은 비파괴적이다. 기존 글은 전부 0 회로 시작한다
+-- (지금까지 몇 번 고쳤는지는 기록이 없어 알 수 없다 — 앞으로부터 센다).
+-- 재실행 시 "duplicate column name" 이면 이미 적용된 것이다.
+
+ALTER TABLE posts ADD COLUMN edit_count INTEGER NOT NULL DEFAULT 0;

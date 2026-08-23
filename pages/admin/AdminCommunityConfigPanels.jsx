@@ -13,6 +13,9 @@ const AdminCategoryPanel = () => {
   const [draft, setDraft] = React.useState({ id:"", label:"", boardType:"community", minLevel:0, postMinLevel:0, desc:"", allowRead:true, allowWrite:true, allowCommentRead:true, allowCommentWrite:true });
   const [error, setError] = React.useState("");
   const [prefixDrafts, setPrefixDrafts] = React.useState({});
+  // v00.305 — 말머리별 태그. 키는 `${catId}::${말머리}` — 게시판이 달라도 안 섞이게.
+  const [tagDrafts, setTagDrafts] = React.useState({});
+  const [applying, setApplying] = React.useState("");
 
   const save = (next) => {
     window.BGNJ_STORES.categories = next;
@@ -313,44 +316,105 @@ const AdminCategoryPanel = () => {
         )}
         {communityCats.map((c) => {
           const catIdx = cats.findIndex((x) => x.id === c.id);
-          const prefixes = c.prefixes || [];
+          // v00.305 — 말머리는 { name, tags } 정의다. 옛 문자열 형태도 여기서 흡수된다.
+          const defs = window.BGNJ_PREFIX_DEFS(c);
           const draftVal = prefixDrafts[c.id] || "";
+          const writeDefs = (next) => update(catIdx, 'prefixes', next);
+          const addTag = async (name, raw) => {
+            const tag = String(raw || '').trim().replace(/^#+/, '').replace(/\s+/g, '');
+            if (!tag) return;
+            const target = defs.find((d) => d.name === name);
+            if (!target || target.tags.includes(tag)) return;
+            if (target.tags.length >= 10) { window.BGNJ_TOAST.error('말머리 하나에 태그는 10개까지입니다.'); return; }
+            const nextTags = [...target.tags, tag];
+            writeDefs(defs.map((d) => (d.name === name ? { ...d, tags: nextTags } : d)));
+            setTagDrafts((prev) => ({ ...prev, [`${c.id}::${name}`]: "" }));
+            // 사용자 선택(2026-08-23): 저장하면 그 말머리 글에 **바로** 붙인다.
+            //   더하기만 하므로 작성자가 적어 둔 태그는 그대로 남는다.
+            setApplying(`${c.id}::${name}`);
+            try {
+              const r = await window.BGNJ_COMMUNITY.applyPrefixTags(c.id, name, [tag]);
+              if (r.changed) window.BGNJ_TOAST.success?.(`'${name}' 글 ${r.changed}편에 #${tag} 를 붙였습니다.`);
+              if (r.failed) window.BGNJ_TOAST.error(`${r.failed}편은 실패했습니다 — 잠시 후 다시 시도해 주세요.`);
+            } catch (e) {
+              window.BGNJ_TOAST.error('기존 글에 태그를 붙이지 못했습니다. 말머리 설정은 저장됐습니다.');
+              console.warn('[AdminCategoryPanel] applyPrefixTags 실패:', e?.message || e);
+            } finally { setApplying(""); }
+          };
+          const removeTag = (name, tag) => {
+            // 설정에서만 뺀다. 이미 글에 붙은 태그는 건드리지 않는다 — 지우는 건 사람이 판단할 일이다.
+            writeDefs(defs.map((d) => (d.name === name ? { ...d, tags: d.tags.filter((t) => t !== tag) } : d)));
+          };
+          const addPrefix = () => {
+            const val = draftVal.trim();
+            if (val && !defs.some((d) => d.name === val)) writeDefs([...defs, { name: val, tags: [] }]);
+            setPrefixDrafts((prev) => ({ ...prev, [c.id]: "" }));
+          };
           return (
             <div key={c.id} style={{marginBottom:16, padding:'14px 16px', background:'var(--bg-2)', border:'1px solid var(--line)'}}>
               <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:10}}>
                 <span className="ko-serif" style={{fontSize:15}}>{c.label}</span>
                 <span className="mono dim-2" style={{fontSize:10}}>#{c.id}</span>
-                <span className="mono dim-2" style={{fontSize:10, marginLeft:4}}>{prefixes.length}개</span>
+                <span className="mono dim-2" style={{fontSize:10, marginLeft:4}}>말머리 {defs.length}개</span>
               </div>
-              <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:10, minHeight:28}}>
-                {prefixes.length === 0 && <span className="dim-2 mono" style={{fontSize:11}}>말머리 없음 — 추가하면 커뮤니티 필터로 자동 노출됩니다</span>}
-                {prefixes.map((p) => (
-                  <span key={p} style={{display:'inline-flex', alignItems:'center', gap:4, padding:'2px 10px', border:'1px solid var(--primary-dim)', fontSize:12}}>
-                    <span className="gold">{p}</span>
-                    <button type="button"
-                      onClick={() => update(catIdx, 'prefixes', prefixes.filter((x) => x !== p))}
-                      style={{background:'none', border:'none', cursor:'pointer', color:'var(--danger)', fontSize:15, lineHeight:1, padding:0}}
-                      aria-label={`${p} 삭제`}>×</button>
-                  </span>
-                ))}
-              </div>
+
+              {defs.length === 0 && (
+                <div className="dim-2 mono" style={{fontSize:11, marginBottom:10}}>
+                  말머리 없음 — 추가하면 글쓰기 화면의 선택 버튼과 목록 필터에 바로 나옵니다
+                </div>
+              )}
+
+              {/* 말머리마다 한 칸 — 이름 + 그 말머리에 딸린 태그 */}
+              {defs.map((d) => {
+                const tagKey = `${c.id}::${d.name}`;
+                const tagDraft = tagDrafts[tagKey] || "";
+                const busy = applying === tagKey;
+                return (
+                  <div key={d.name} style={{padding:'10px 12px', marginBottom:8, background:'var(--bg-3)', border:'1px solid var(--line)'}}>
+                    <div style={{display:'flex', alignItems:'center', gap:8, marginBottom:8, flexWrap:'wrap'}}>
+                      <span className="gold" style={{fontSize:13}}>{d.name}</span>
+                      <button type="button"
+                        onClick={() => writeDefs(defs.filter((x) => x.name !== d.name))}
+                        style={{background:'none', border:'none', cursor:'pointer', color:'var(--danger)', fontSize:15, lineHeight:1, padding:0}}
+                        aria-label={`${d.name} 말머리 삭제`}>×</button>
+                    </div>
+                    <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center'}}>
+                      <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em'}}>자동 태그</span>
+                      {d.tags.length === 0 && <span className="dim-2" style={{fontSize:11}}>없음</span>}
+                      {d.tags.map((t) => (
+                        <span key={t} className="tag-chip" style={{display:'inline-flex', alignItems:'center', gap:4}}>
+                          #{t}
+                          <button type="button" onClick={() => removeTag(d.name, t)}
+                            style={{background:'none', border:'none', cursor:'pointer', color:'var(--danger)', fontSize:13, lineHeight:1, padding:0}}
+                            aria-label={`${t} 태그 제거`}>×</button>
+                        </span>
+                      ))}
+                      <input className="field-input" style={{padding:'3px 8px', maxWidth:150, fontSize:12}}
+                        value={tagDraft} disabled={busy}
+                        placeholder={busy ? '적용 중…' : '태그 입력 후 Enter'}
+                        onChange={(e) => setTagDrafts((prev) => ({ ...prev, [tagKey]: e.target.value }))}
+                        onKeyDown={(e) => {
+                          if (e.key !== 'Enter') return;
+                          e.preventDefault();
+                          addTag(d.name, tagDraft);
+                        }}/>
+                      <button type="button" className="btn btn-small" disabled={busy}
+                        onClick={() => addTag(d.name, tagDraft)}>추가</button>
+                    </div>
+                    <p className="dim-2" style={{fontSize:10.5, marginTop:6, lineHeight:1.6}}>
+                      태그를 추가하면 <b>이 말머리로 이미 올라온 글에도 바로 붙습니다.</b> 더하기만 하므로 작성자가
+                      적어 둔 태그는 지워지지 않습니다. 여기서 태그를 빼도 이미 붙은 글에서는 사라지지 않습니다.
+                    </p>
+                  </div>
+                );
+              })}
+
               <div style={{display:'flex', gap:8}}>
                 <input className="field-input" style={{padding:'4px 8px', maxWidth:220}} value={draftVal}
                   placeholder="말머리 입력 후 Enter 또는 추가..."
                   onChange={(e) => setPrefixDrafts((prev) => ({ ...prev, [c.id]: e.target.value }))}
-                  onKeyDown={(e) => {
-                    if (e.key !== 'Enter') return;
-                    e.preventDefault();
-                    const val = draftVal.trim();
-                    if (val && !prefixes.includes(val)) update(catIdx, 'prefixes', [...prefixes, val]);
-                    setPrefixDrafts((prev) => ({ ...prev, [c.id]: "" }));
-                  }}/>
-                <button type="button" className="btn btn-small btn-gold"
-                  onClick={() => {
-                    const val = draftVal.trim();
-                    if (val && !prefixes.includes(val)) update(catIdx, 'prefixes', [...prefixes, val]);
-                    setPrefixDrafts((prev) => ({ ...prev, [c.id]: "" }));
-                  }}>추가</button>
+                  onKeyDown={(e) => { if (e.key !== 'Enter') return; e.preventDefault(); addPrefix(); }}/>
+                <button type="button" className="btn btn-small btn-gold" onClick={addPrefix}>말머리 추가</button>
               </div>
             </div>
           );

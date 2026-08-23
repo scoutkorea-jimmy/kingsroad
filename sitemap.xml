@@ -62,6 +62,12 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://bgnj.net/community/130</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://bgnj.net/community/129</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>

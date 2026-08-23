@@ -182,7 +182,12 @@ const seriesSlug = (categoryId, indexInBoard) =>
 // 빈 페이지를 만들면 크롤러에게 내용 없는 주소를 쥐여 주는 셈이다.
 const seriesList = [];
 for (const cat of categories) {
-  const declared = Array.isArray(cat.prefixes) ? cat.prefixes : [];
+  // v00.305 — 말머리 정의는 문자열({옛}) 또는 { name, tags }({새}) 둘 다 온다.
+  //   이름만 뽑지 않으면 아래 includes 비교가 전부 어긋나 설정 순서가 무시된다.
+  const declared = (Array.isArray(cat.prefixes) ? cat.prefixes : [])
+    .map((x) => (typeof x === 'string' ? x : (x && x.name ? String(x.name) : '')))
+    .map((x) => x.trim())
+    .filter(Boolean);
   // v00.304.001 — 게시판 설정에 등록된 말머리만 보면 안 된다.
   //   실제로 운영에서는 글에 말머리를 일괄 적용해 놓고 게시판 설정에는 등록하지 않은 상태가 나왔다.
   //   그 상태에서 설정만 보면 시리즈가 0개로 잡혀, 말머리가 멀쩡히 달린 글 14편이 통째로 묶이지 않는다.

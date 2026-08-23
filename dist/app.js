@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.304.001",
+    version: "00.305.000",
     build: "2026.08.23",
     channel: "preview"
   };
@@ -1930,30 +1930,58 @@
     }
     return { html: s, text: s };
   };
-  var _serverPostToUi = (p) => ({
-    id: p.id,
-    categoryId: p.category_id || p.categoryId,
-    category: p.category,
-    prefix: p.prefix || null,
-    title: p.title,
-    body: _normalizePostBody(p.body),
-    author: p.author,
-    authorId: p.author_id || p.authorId,
-    views: Number(p.views || 0),
-    replies: Number(p.replies || 0),
-    date: (p.created_at || p.createdAt || "").slice(0, 10).replace(/-/g, "."),
-    createdAt: p.created_at || p.createdAt,
-    // v00.294.008 — 첨부·이미지·태그. 서버(schema-v11)가 정식 컬럼으로 돌려주기 전에는
-    // 아예 오지 않던 값이라 새로고침하면 사라졌다. 구버전 응답 호환으로 Array.isArray 가드.
-    images: Array.isArray(p.images) ? p.images : [],
-    attachments: Array.isArray(p.attachments) ? p.attachments : [],
-    tags: Array.isArray(p.tags) ? p.tags : [],
-    // v00.296.002 — 목록 응답은 본문 대신 발췌만 온다(전송량 1,365KB → 약 60KB).
-    //   상세로 들어가면 _hydratePostBody 가 /api/posts/{id} 로 전문을 채운다.
-    //   발췌는 목록 검색이 조용히 제목 검색으로 쪼그라들지 않게 하려고 남긴다.
-    excerpt: typeof p.excerpt === "string" ? p.excerpt : "",
-    _remote: true
-  });
+  var _serverPostToUi = (p) => {
+    var _a, _b;
+    return {
+      id: p.id,
+      categoryId: p.category_id || p.categoryId,
+      category: p.category,
+      prefix: p.prefix || null,
+      title: p.title,
+      body: _normalizePostBody(p.body),
+      author: p.author,
+      authorId: p.author_id || p.authorId,
+      views: Number(p.views || 0),
+      replies: Number(p.replies || 0),
+      date: (p.created_at || p.createdAt || "").slice(0, 10).replace(/-/g, "."),
+      createdAt: p.created_at || p.createdAt,
+      // v00.305 — 수정 시각·횟수. 지금까지 아예 안 받고 있었다(목록 SELECT 에도 없었다).
+      //   관리자 화면이 '언제 몇 번 고쳤는지' 를 볼 수 있어야 해서 끝단까지 연결한다.
+      //   구버전 워커 응답에는 없으므로 폴백을 둔다 — 없으면 0 회로 보인다.
+      updatedAt: p.updated_at || p.updatedAt || null,
+      editCount: Number((_b = (_a = p.edit_count) != null ? _a : p.editCount) != null ? _b : 0) || 0,
+      // v00.294.008 — 첨부·이미지·태그. 서버(schema-v11)가 정식 컬럼으로 돌려주기 전에는
+      // 아예 오지 않던 값이라 새로고침하면 사라졌다. 구버전 응답 호환으로 Array.isArray 가드.
+      images: Array.isArray(p.images) ? p.images : [],
+      attachments: Array.isArray(p.attachments) ? p.attachments : [],
+      tags: Array.isArray(p.tags) ? p.tags : [],
+      // v00.296.002 — 목록 응답은 본문 대신 발췌만 온다(전송량 1,365KB → 약 60KB).
+      //   상세로 들어가면 _hydratePostBody 가 /api/posts/{id} 로 전문을 채운다.
+      //   발췌는 목록 검색이 조용히 제목 검색으로 쪼그라들지 않게 하려고 남긴다.
+      excerpt: typeof p.excerpt === "string" ? p.excerpt : "",
+      _remote: true
+    };
+  };
+  window.BGNJ_PREFIX_DEFS = (board) => {
+    const raw = Array.isArray(board == null ? void 0 : board.prefixes) ? board.prefixes : [];
+    const out = [];
+    for (const item of raw) {
+      if (typeof item === "string") {
+        const name = item.trim();
+        if (name) out.push({ name, tags: [] });
+      } else if (item && typeof item === "object" && item.name) {
+        const name = String(item.name).trim();
+        if (name) out.push({ name, tags: Array.isArray(item.tags) ? item.tags.filter(Boolean).map(String) : [] });
+      }
+    }
+    return out;
+  };
+  window.BGNJ_PREFIX_TAGS = (board, prefixName) => {
+    var _a;
+    const name = String(prefixName || "").trim();
+    if (!name) return [];
+    return ((_a = window.BGNJ_PREFIX_DEFS(board).find((d) => d.name === name)) == null ? void 0 : _a.tags) || [];
+  };
   window.BGNJ_COMMUNITY = {
     // 서버에서 받은 게시글 캐시. refreshPosts()가 채운다.
     // v00.046: 서버 미로드 시 로컬 시드 폴백 폐지 — 빈 배열 반환. 'D1 source-of-truth' 정책 정합.
@@ -2068,6 +2096,33 @@
       await this.refreshPosts();
       await this._hydratePostBody(id);
       return this.getPost(id);
+    },
+    // v00.305 — 말머리에 딸린 태그를 그 말머리 글에 붙인다.
+    //   **더하기만 한다.** 작성자가 직접 넣은 태그를 지우지 않기 위해서다
+    //   (관리자가 태그 목록에서 뺀다고 이미 붙은 글에서 사라지지도 않는다 — 지우는 건 사람이 판단할 일).
+    //   순차로 도는 이유: updatePost 를 14번 동시에 부르면 각자 목록을 다시 받아
+    //   늦게 끝난 응답이 먼저 끝난 갱신을 덮어쓴다. 느려도 한 건씩 보낸다.
+    async applyPrefixTags(categoryId, prefixName, tags) {
+      const name = String(prefixName || "").trim();
+      const add = (Array.isArray(tags) ? tags : []).map((t) => String(t || "").trim()).filter(Boolean);
+      if (!name || !add.length) return { total: 0, changed: 0, failed: 0 };
+      const targets = this.listPosts().filter((p) => p.categoryId === categoryId && String(p.prefix || "").trim() === name);
+      let changed = 0, failed = 0;
+      for (const post of targets) {
+        const cur = Array.isArray(post.tags) ? post.tags : [];
+        const next = cur.slice();
+        for (const t of add) if (!next.includes(t)) next.push(t);
+        if (next.length === cur.length) continue;
+        try {
+          await window.BGNJ_API.posts.update(post.id, { tags: next });
+          changed += 1;
+        } catch (e) {
+          failed += 1;
+          console.warn("[BGNJ_COMMUNITY.applyPrefixTags] \uC2E4\uD328:", post.id, (e == null ? void 0 : e.message) || e);
+        }
+      }
+      if (changed) await this.refreshPosts();
+      return { total: targets.length, changed, failed };
     },
     async deletePostRemote(postId) {
       await window.BGNJ_API.posts.remove(postId);
@@ -8422,14 +8477,19 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   // pages/CommunityPage.jsx
   var mergeBoardPrefixes = (board, allPosts) => {
     if (!board) return [];
-    const declared = Array.isArray(board.prefixes) ? board.prefixes : [];
+    const declared = window.BGNJ_PREFIX_DEFS(board);
+    const declaredNames = declared.map((d) => d.name);
     const used = [];
     for (const p of Array.isArray(allPosts) ? allPosts : []) {
       if (p.categoryId !== board.id) continue;
       const pfx = String(p.prefix || "").trim();
       if (pfx && !used.includes(pfx)) used.push(pfx);
     }
-    return [...declared.filter((x) => used.includes(x)), ...used.filter((x) => !declared.includes(x))];
+    return [
+      ...declared.filter((d) => used.includes(d.name)),
+      // 설정에 없는데 글에만 달린 말머리 — 이름만 있고 딸린 태그는 없다.
+      ...used.filter((n) => !declaredNames.includes(n)).map((name) => ({ name, tags: [] }))
+    ];
   };
   var useUserLevel = (user) => React.useMemo(() => window.BGNJ_USER_LEVEL(user), [user]);
   var getCategoriesForBoard = (boardType) => window.BGNJ_STORES.categories.filter((c) => c.boardType === boardType);
@@ -9579,21 +9639,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     ), boardPrefixes.map((p) => /* @__PURE__ */ React.createElement(
       "button",
       {
-        key: p,
+        key: p.name,
         type: "button",
-        onClick: () => setActivePrefix(activePrefix === p ? "" : p),
+        onClick: () => setActivePrefix(activePrefix === p.name ? "" : p.name),
         style: {
           padding: "4px 16px",
           border: "1px solid",
-          borderColor: activePrefix === p ? "var(--primary)" : "var(--line-2)",
-          color: activePrefix === p ? "var(--primary)" : "var(--ink-2)",
-          background: activePrefix === p ? "rgba(158,104,24,0.06)" : "none",
+          borderColor: activePrefix === p.name ? "var(--primary)" : "var(--line-2)",
+          color: activePrefix === p.name ? "var(--primary)" : "var(--ink-2)",
+          background: activePrefix === p.name ? "rgba(158,104,24,0.06)" : "none",
           cursor: "pointer",
           fontSize: 13,
           letterSpacing: "0.05em"
         }
       },
-      p
+      p.name
     ))), canRenumber && /* @__PURE__ */ React.createElement("div", { style: {
       display: "flex",
       alignItems: "center",
@@ -10121,16 +10181,31 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         style: { padding: "4px 14px", border: "1px solid", borderColor: prefix === "" ? "var(--primary)" : "var(--line)", color: prefix === "" ? "var(--primary)" : "var(--ink-2)", background: "none", cursor: "pointer", fontSize: 13, letterSpacing: "0.05em" }
       },
       "\uC5C6\uC74C"
-    ), boardPrefixes.map((p) => /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        key: p,
-        type: "button",
-        onClick: () => setPrefix(p),
-        style: { padding: "4px 14px", border: "1px solid", borderColor: prefix === p ? "var(--primary)" : "var(--line)", color: prefix === p ? "var(--primary)" : "var(--ink-2)", background: prefix === p ? "rgba(245,213,72,0.08)" : "none", cursor: "pointer", fontSize: 13, letterSpacing: "0.05em" }
-      },
-      p
-    )))), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uD574\uC2DC\uD0DC\uADF8 / \uBA54\uD0C0\uD0DC\uADF8"), /* @__PURE__ */ React.createElement(HashtagInput, { tags, setTags })), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uBCF8\uBB38 ", /* @__PURE__ */ React.createElement("span", { className: "gold", "aria-hidden": "true" }, "*")), /* @__PURE__ */ React.createElement(
+    ), boardPrefixes.map((p) => {
+      var _a2, _b2;
+      return /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          key: p.name,
+          type: "button",
+          onClick: () => {
+            var _a3;
+            setPrefix(p.name);
+            if ((_a3 = p.tags) == null ? void 0 : _a3.length) {
+              setTags((prev) => {
+                const next = Array.isArray(prev) ? prev.slice() : [];
+                for (const t of p.tags) if (t && !next.includes(t)) next.push(t);
+                return next.slice(0, 10);
+              });
+            }
+          },
+          title: ((_a2 = p.tags) == null ? void 0 : _a2.length) ? `\uACE0\uB974\uBA74 \uD0DC\uADF8\uAC00 \uD568\uAED8 \uBD99\uC2B5\uB2C8\uB2E4 \u2014 ${p.tags.map((t) => `#${t}`).join(" ")}` : void 0,
+          style: { padding: "4px 14px", border: "1px solid", borderColor: prefix === p.name ? "var(--primary)" : "var(--line)", color: prefix === p.name ? "var(--primary)" : "var(--ink-2)", background: prefix === p.name ? "rgba(245,213,72,0.08)" : "none", cursor: "pointer", fontSize: 13, letterSpacing: "0.05em" }
+        },
+        p.name,
+        ((_b2 = p.tags) == null ? void 0 : _b2.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { marginLeft: 6, fontSize: 10 } }, "+", p.tags.length)
+      );
+    }))), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uD574\uC2DC\uD0DC\uADF8 / \uBA54\uD0C0\uD0DC\uADF8"), /* @__PURE__ */ React.createElement(HashtagInput, { tags, setTags })), /* @__PURE__ */ React.createElement("div", { className: "field" }, /* @__PURE__ */ React.createElement("div", { className: "field-label" }, "\uBCF8\uBB38 ", /* @__PURE__ */ React.createElement("span", { className: "gold", "aria-hidden": "true" }, "*")), /* @__PURE__ */ React.createElement(
       TiptapEditor,
       {
         key: (initialPost == null ? void 0 : initialPost.id) || "new",

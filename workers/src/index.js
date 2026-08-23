@@ -511,7 +511,10 @@ const handlePostsList = async (req, env) => {
   }
   // v00.170 — body 컬럼 포함. 사용자 보고: '글 작성 후 본문 사라짐'. 클라이언트가 list 캐시에서 detail 을 읽어 본문이 빈 상태로 표시되던 버그.
   // v00.294.008 — images/attachments/tags 컬럼 동반 조회. 없으면 목록에서 📎 표시가 안 산다.
+  // v00.305 — updated_at / edit_count 동반 조회. 관리자 목록이 '언제 몇 번 고쳤는지' 를
+  //   보여주려면 목록에 실려야 한다. updated_at 은 칸이 있는데도 지금껏 안 보내고 있었다.
   const sql = `SELECT id, category_id, category, prefix, title, body, author_id, author, views, replies, created_at,
+                      updated_at, edit_count,
                       images_json, attachments_json, tags_json
                FROM posts WHERE ${where} ORDER BY created_at DESC LIMIT ?`;
   const { results: rawResults } = await env.DB.prepare(sql).bind(...args, limit).all();
@@ -762,7 +765,8 @@ const handlePostGet = async (req, env, id) => {
 
 const handlePostPatch = async (req, env, id) => {
   const user = await requireUser(req, env);
-  const post = await env.DB.prepare("SELECT author_id FROM posts WHERE id = ?").bind(id).first();
+  // v00.305 — title/body 도 함께 읽는다. 수정 횟수를 세려면 '정말 달라졌는지' 를 알아야 한다.
+  const post = await env.DB.prepare("SELECT author_id, title, body FROM posts WHERE id = ?").bind(id).first();
   if (!post) throw new HttpError(404, "게시글을 찾을 수 없습니다.");
   if (post.author_id !== user.id && !user.isAdmin) throw new HttpError(403, "본인의 글만 수정할 수 있습니다.");
   const body = await req.json().catch(() => ({}));
@@ -771,6 +775,14 @@ const handlePostPatch = async (req, env, id) => {
   for (const k of ["title", "body", "prefix", "category_id"]) {
     if (k in body) { fields.push(`${k} = ?`); args.push(body[k]); }
   }
+  // v00.305 — 글이 몇 번 고쳐졌는지.
+  //   **제목이나 본문이 실제로 달라졌을 때만** 센다. 값이 같은데 보낸 경우는 세지 않는다
+  //   (편집 화면을 열었다 그대로 저장하는 일이 흔하다).
+  //   말머리·태그·분류 이동 같은 관리자 일괄 작업도 세지 않는다 — 운영 정리이지 글 수정이 아니다.
+  const contentChanged =
+    ("title" in body && String(body.title ?? "") !== String(post.title ?? "")) ||
+    ("body"  in body && String(body.body  ?? "") !== String(post.body  ?? ""));
+  if (contentChanged) fields.push("edit_count = COALESCE(edit_count, 0) + 1");
   // v00.294.008 — 수정 시에도 첨부·이미지·태그를 반영. 보내온 경우에만 건드린다
   // (안 보냈는데 빈 배열로 덮으면 기존 첨부가 사라진다).
   if ("images" in body)      { fields.push("images_json = ?");      args.push(JSON.stringify(normalizePostImages(body.images))); }

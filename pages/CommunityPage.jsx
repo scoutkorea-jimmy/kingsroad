@@ -11,16 +11,23 @@ import { TiptapEditor } from '../components/TiptapEditor.jsx';
 //   운영에서 글에는 말머리를 일괄 적용해 놓고 게시판 설정에는 등록하지 않은 상태가 나왔다.
 //   그때 설정만 보면 말머리가 멀쩡히 붙은 글이 14편인데 필터도 선택지도 하나 안 뜬다.
 //   순서는 설정을 먼저 따른다 — 운영자가 정한 차례가 화면 순서가 되도록.
+//   v00.305 — 말머리는 이제 { name, tags } 정의다. 이름만 필요한 자리도 있고
+//   태그까지 필요한 자리도 있어, 여기서는 정의를 통째로 돌려준다.
 const mergeBoardPrefixes = (board, allPosts) => {
   if (!board) return [];
-  const declared = Array.isArray(board.prefixes) ? board.prefixes : [];
+  const declared = window.BGNJ_PREFIX_DEFS(board);
+  const declaredNames = declared.map((d) => d.name);
   const used = [];
   for (const p of (Array.isArray(allPosts) ? allPosts : [])) {
     if (p.categoryId !== board.id) continue;
     const pfx = String(p.prefix || '').trim();
     if (pfx && !used.includes(pfx)) used.push(pfx);
   }
-  return [...declared.filter((x) => used.includes(x)), ...used.filter((x) => !declared.includes(x))];
+  return [
+    ...declared.filter((d) => used.includes(d.name)),
+    // 설정에 없는데 글에만 달린 말머리 — 이름만 있고 딸린 태그는 없다.
+    ...used.filter((n) => !declaredNames.includes(n)).map((name) => ({ name, tags: [] })),
+  ];
 };
 
 const useUserLevel = (user) => React.useMemo(() => window.BGNJ_USER_LEVEL(user), [user]);
@@ -1169,15 +1176,15 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                 cursor:'pointer', fontSize:13, letterSpacing:'0.05em',
               }}>전체</button>
             {boardPrefixes.map(p => (
-              <button key={p} type="button"
-                onClick={() => setActivePrefix(activePrefix === p ? "" : p)}
+              <button key={p.name} type="button"
+                onClick={() => setActivePrefix(activePrefix === p.name ? "" : p.name)}
                 style={{
                   padding:'4px 16px', border:'1px solid',
-                  borderColor: activePrefix === p ? 'var(--primary)' : 'var(--line-2)',
-                  color: activePrefix === p ? 'var(--primary)' : 'var(--ink-2)',
-                  background: activePrefix === p ? 'rgba(158,104,24,0.06)' : 'none',
+                  borderColor: activePrefix === p.name ? 'var(--primary)' : 'var(--line-2)',
+                  color: activePrefix === p.name ? 'var(--primary)' : 'var(--ink-2)',
+                  background: activePrefix === p.name ? 'rgba(158,104,24,0.06)' : 'none',
                   cursor:'pointer', fontSize:13, letterSpacing:'0.05em',
-                }}>{p}</button>
+                }}>{p.name}</button>
             ))}
           </div>
         )}
@@ -1751,10 +1758,26 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
                   없음
                 </button>
                 {boardPrefixes.map((p) => (
-                  <button key={p} type="button"
-                    onClick={() => setPrefix(p)}
-                    style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === p ? 'var(--primary)' : 'var(--line)', color: prefix === p ? 'var(--primary)' : 'var(--ink-2)', background: prefix === p ? 'rgba(245,213,72,0.08)' : 'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
-                    {p}
+                  <button key={p.name} type="button"
+                    onClick={() => {
+                      setPrefix(p.name);
+                      // v00.305 — 말머리에 딸린 태그를 태그 칸에 채워 준다.
+                      //   **더하기만 한다** — 이미 적어 둔 태그를 지우지 않는다.
+                      //   채워진 뒤에는 여느 태그와 똑같아서, 빼고 싶으면 ✕ 로 지우면 된다.
+                      if (p.tags?.length) {
+                        setTags((prev) => {
+                          const next = Array.isArray(prev) ? prev.slice() : [];
+                          for (const t of p.tags) if (t && !next.includes(t)) next.push(t);
+                          return next.slice(0, 10);
+                        });
+                      }
+                    }}
+                    title={p.tags?.length ? `고르면 태그가 함께 붙습니다 — ${p.tags.map((t) => `#${t}`).join(' ')}` : undefined}
+                    style={{padding:'4px 14px', border:'1px solid', borderColor: prefix === p.name ? 'var(--primary)' : 'var(--line)', color: prefix === p.name ? 'var(--primary)' : 'var(--ink-2)', background: prefix === p.name ? 'rgba(245,213,72,0.08)' : 'none', cursor:'pointer', fontSize:13, letterSpacing:'0.05em'}}>
+                    {p.name}
+                    {p.tags?.length > 0 && (
+                      <span className="dim-2 mono" style={{marginLeft:6, fontSize:10}}>+{p.tags.length}</span>
+                    )}
                   </button>
                 ))}
               </div>

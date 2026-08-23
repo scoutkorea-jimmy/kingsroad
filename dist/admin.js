@@ -15948,7 +15948,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         tagList.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 } }, tagList.map((t) => /* @__PURE__ */ React.createElement("span", { key: t, className: "tag-chip" }, "#", t))),
         /* @__PURE__ */ React.createElement("div", { style: {
           display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
+          gridTemplateColumns: "repeat(6, 1fr)",
           gap: 12,
           padding: "12px 14px",
           background: "var(--bg-2)",
@@ -15957,7 +15957,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
           fontSize: 12
         } }, [
           ["\uC791\uC131\uC790", post.author || "-"],
-          ["\uC791\uC131\uC77C", post.date || (post.createdAt ? window.BGNJ_FMT.kstDateTime(post.createdAt) : "-")],
+          ["\uC791\uC131\uC77C\uC2DC", post.createdAt ? window.BGNJ_FMT.kstDateTime(post.createdAt) : post.date || "-"],
+          ["\uC218\uC815", post.editCount > 0 ? `${post.editCount}\uD68C${post.updatedAt ? ` \xB7 ${window.BGNJ_FMT.kstShort(post.updatedAt)}` : ""}` : "\uC5C6\uC74C"],
           ["\uC870\uD68C", (_b = post.views) != null ? _b : 0],
           ["\uACF5\uAC10", likes],
           ["\uB313\uAE00", comments.length]
@@ -16315,7 +16316,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         },
         "aria-label": "\uD604\uC7AC \uD398\uC774\uC9C0 \uC804\uCCB4 \uC120\uD0DD"
       }
-    )), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB9D0\uBA38\uB9AC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB0A0\uC9DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, pagePosts.map((p) => /* @__PURE__ */ React.createElement("tr", { key: p.id, style: { borderBottom: "1px solid var(--line)", background: selectedIds2.has(p.id) ? "rgba(245,213,72,0.04)" : void 0 } }, /* @__PURE__ */ React.createElement("td", { style: { padding: "14px 8px", textAlign: "center" } }, /* @__PURE__ */ React.createElement(
+    )), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "ID"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uB9D0\uBA38\uB9AC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC791\uC131\uC77C\uC2DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "left" } }, "\uC218\uC815"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 12, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, pagePosts.map((p) => /* @__PURE__ */ React.createElement("tr", { key: p.id, style: { borderBottom: "1px solid var(--line)", background: selectedIds2.has(p.id) ? "rgba(245,213,72,0.04)" : void 0 } }, /* @__PURE__ */ React.createElement("td", { style: { padding: "14px 8px", textAlign: "center" } }, /* @__PURE__ */ React.createElement(
       "input",
       {
         type: "checkbox",
@@ -16330,7 +16331,16 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         },
         "aria-label": `"${p.title}" \uC120\uD0DD`
       }
-    )), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, "#", String(p.id).padStart(4, "0")), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge", style: { fontSize: 9 } }, p.category)), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, p.prefix ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, padding: "1px 6px", border: "1px solid var(--primary-dim)", color: "var(--secondary)" } }, p.prefix) : /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 10 } }, "\u2014")), /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: 14, fontSize: 14 } }, p.title), /* @__PURE__ */ React.createElement("td", { className: "dim mono", style: { padding: 14 } }, p.author), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, p.date), /* @__PURE__ */ React.createElement("td", { style: { padding: 14, textAlign: "right", display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setViewingId(p.id) }, "\uC5F4\uAE30"), /* @__PURE__ */ React.createElement(
+    )), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14 } }, "#", String(p.id).padStart(4, "0")), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, /* @__PURE__ */ React.createElement("span", { className: "badge", style: { fontSize: 9 } }, p.category)), /* @__PURE__ */ React.createElement("td", { style: { padding: 14 } }, p.prefix ? /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, padding: "1px 6px", border: "1px solid var(--primary-dim)", color: "var(--secondary)" } }, p.prefix) : /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 10 } }, "\u2014")), /* @__PURE__ */ React.createElement("td", { className: "ko-serif", style: { padding: 14, fontSize: 14 } }, p.title), /* @__PURE__ */ React.createElement("td", { className: "dim mono", style: { padding: 14 } }, p.author), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14, whiteSpace: "nowrap" } }, p.createdAt ? window.BGNJ_FMT.kstShort(p.createdAt) : p.date || "\u2014"), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 14, whiteSpace: "nowrap" } }, p.editCount > 0 ? /* @__PURE__ */ React.createElement(
+      "span",
+      {
+        title: p.updatedAt ? `\uB9C8\uC9C0\uB9C9 \uC218\uC815 ${window.BGNJ_FMT.kstShort(p.updatedAt)}` : void 0,
+        style: { color: "var(--secondary)" }
+      },
+      p.editCount,
+      "\uD68C",
+      p.updatedAt && /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { marginLeft: 6 } }, window.BGNJ_FMT.kstShort(p.updatedAt))
+    ) : /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\u2014")), /* @__PURE__ */ React.createElement("td", { style: { padding: 14, textAlign: "right", display: "flex", justifyContent: "flex-end", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setViewingId(p.id) }, "\uC5F4\uAE30"), /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",

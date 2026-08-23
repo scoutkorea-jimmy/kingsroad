@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.304.001",
+  version: "00.305.000",
   build: "2026.08.23",
   channel: "preview",
 };
@@ -1498,6 +1498,11 @@ const _serverPostToUi = (p) => ({
   replies: Number(p.replies || 0),
   date: (p.created_at || p.createdAt || '').slice(0, 10).replace(/-/g, '.'),
   createdAt: p.created_at || p.createdAt,
+  // v00.305 — 수정 시각·횟수. 지금까지 아예 안 받고 있었다(목록 SELECT 에도 없었다).
+  //   관리자 화면이 '언제 몇 번 고쳤는지' 를 볼 수 있어야 해서 끝단까지 연결한다.
+  //   구버전 워커 응답에는 없으므로 폴백을 둔다 — 없으면 0 회로 보인다.
+  updatedAt: p.updated_at || p.updatedAt || null,
+  editCount: Number(p.edit_count ?? p.editCount ?? 0) || 0,
   // v00.294.008 — 첨부·이미지·태그. 서버(schema-v11)가 정식 컬럼으로 돌려주기 전에는
   // 아예 오지 않던 값이라 새로고침하면 사라졌다. 구버전 응답 호환으로 Array.isArray 가드.
   images: Array.isArray(p.images) ? p.images : [],
@@ -1509,6 +1514,34 @@ const _serverPostToUi = (p) => ({
   excerpt: typeof p.excerpt === 'string' ? p.excerpt : '',
   _remote: true,
 });
+
+// === 말머리 정의 (v00.305) ==============================================
+// 게시판의 `prefixes` 는 두 가지 모양을 오간다.
+//   옛 형태: ["걸어서 독립운동 속으로"]                      (v00.304 까지)
+//   새 형태: [{ name: "걸어서 독립운동 속으로", tags: [...] }]  (v00.305 —)
+// 워커는 prefixes_json 을 그대로 stringify/parse 만 하므로 서버 코드를 고칠 필요가 없다.
+// 대신 **읽는 쪽이 반드시 이 함수를 거쳐야 한다** — 안 그러면 옛 데이터에서 이름 자리에
+// 객체가 들어가 화면에 [object Object] 가 뜬다.
+window.BGNJ_PREFIX_DEFS = (board) => {
+  const raw = Array.isArray(board?.prefixes) ? board.prefixes : [];
+  const out = [];
+  for (const item of raw) {
+    if (typeof item === 'string') {
+      const name = item.trim();
+      if (name) out.push({ name, tags: [] });
+    } else if (item && typeof item === 'object' && item.name) {
+      const name = String(item.name).trim();
+      if (name) out.push({ name, tags: Array.isArray(item.tags) ? item.tags.filter(Boolean).map(String) : [] });
+    }
+  }
+  return out;
+};
+// 말머리 이름 → 딸린 태그. 못 찾으면 빈 배열.
+window.BGNJ_PREFIX_TAGS = (board, prefixName) => {
+  const name = String(prefixName || '').trim();
+  if (!name) return [];
+  return window.BGNJ_PREFIX_DEFS(board).find((d) => d.name === name)?.tags || [];
+};
 
 window.BGNJ_COMMUNITY = {
   // 서버에서 받은 게시글 캐시. refreshPosts()가 채운다.
@@ -1614,6 +1647,34 @@ window.BGNJ_COMMUNITY = {
     // 단일 post 조회로 body 를 받아 캐시 항목 덮어쓰기 → 작성 직후 detail 점프 시 본문 정상 표시.
     await this._hydratePostBody(id);
     return this.getPost(id);
+  },
+  // v00.305 — 말머리에 딸린 태그를 그 말머리 글에 붙인다.
+  //   **더하기만 한다.** 작성자가 직접 넣은 태그를 지우지 않기 위해서다
+  //   (관리자가 태그 목록에서 뺀다고 이미 붙은 글에서 사라지지도 않는다 — 지우는 건 사람이 판단할 일).
+  //   순차로 도는 이유: updatePost 를 14번 동시에 부르면 각자 목록을 다시 받아
+  //   늦게 끝난 응답이 먼저 끝난 갱신을 덮어쓴다. 느려도 한 건씩 보낸다.
+  async applyPrefixTags(categoryId, prefixName, tags) {
+    const name = String(prefixName || '').trim();
+    const add = (Array.isArray(tags) ? tags : []).map((t) => String(t || '').trim()).filter(Boolean);
+    if (!name || !add.length) return { total: 0, changed: 0, failed: 0 };
+    const targets = this.listPosts().filter((p) =>
+      p.categoryId === categoryId && String(p.prefix || '').trim() === name);
+    let changed = 0, failed = 0;
+    for (const post of targets) {
+      const cur = Array.isArray(post.tags) ? post.tags : [];
+      const next = cur.slice();
+      for (const t of add) if (!next.includes(t)) next.push(t);
+      if (next.length === cur.length) continue;   // 이미 다 붙어 있으면 건드리지 않는다
+      try {
+        await window.BGNJ_API.posts.update(post.id, { tags: next });
+        changed += 1;
+      } catch (e) {
+        failed += 1;
+        console.warn('[BGNJ_COMMUNITY.applyPrefixTags] 실패:', post.id, e?.message || e);
+      }
+    }
+    if (changed) await this.refreshPosts();
+    return { total: targets.length, changed, failed };
   },
   async deletePostRemote(postId) {
     await window.BGNJ_API.posts.remove(postId);

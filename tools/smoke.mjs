@@ -237,6 +237,39 @@ const run = async () => {
       grades.map((g) => g.label).join(' · '));
   }
 
+  console.log("\n── 8.6 말머리 정의 (문자열 옛 형태 ↔ { name, tags } 새 형태) ──");
+  {
+    // v00.305 — 말머리에 태그를 달면서 prefixes 원소가 문자열에서 객체로 바뀌었다.
+    //   서버(prefixes_json)에는 두 형태가 섞여 남는다. 읽는 쪽이 하나라도 이 정규화를
+    //   건너뛰면 이름 자리에 객체가 들어가 화면에 [object Object] 가 뜬다.
+    const defs = w.BGNJ_PREFIX_DEFS;
+    check("옛 문자열 형태를 이름으로 읽는다",
+      defs({ prefixes: ['걸어서 독립운동 속으로'] })[0]?.name === '걸어서 독립운동 속으로');
+    check("옛 형태는 태그가 빈 배열이다",
+      Array.isArray(defs({ prefixes: ['가'] })[0]?.tags) && defs({ prefixes: ['가'] })[0].tags.length === 0);
+    check("새 객체 형태를 읽는다",
+      defs({ prefixes: [{ name: '가', tags: ['나', '다'] }] })[0]?.tags.join() === '나,다');
+    check("두 형태가 섞여 있어도 둘 다 읽는다",
+      defs({ prefixes: ['가', { name: '나', tags: ['t'] }] }).map((d) => d.name).join() === '가,나');
+    check("빈 이름·이름 없는 객체·null 은 버린다",
+      defs({ prefixes: ['', '   ', null, 42, { tags: ['t'] }, { name: '살아남음' }] })
+        .map((d) => d.name).join() === '살아남음');
+    check("prefixes 가 없거나 배열이 아니면 빈 배열",
+      defs({}).length === 0 && defs({ prefixes: 'x' }).length === 0 && defs(null).length === 0);
+    check("이름으로 태그를 찾는다",
+      w.BGNJ_PREFIX_TAGS({ prefixes: [{ name: '가', tags: ['t1'] }] }, '가').join() === 't1');
+    check("없는 이름이면 빈 배열", w.BGNJ_PREFIX_TAGS({ prefixes: ['가'] }, '없다').length === 0);
+
+    // 수정 횟수는 '내용이 정말 달라졌을 때' 만 세야 한다 — 관리자 일괄 작업은 세지 않는다.
+    const worker = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+    check("수정 횟수는 제목·본문이 바뀔 때만 오른다",
+      worker.includes("const contentChanged =") && worker.includes('if (contentChanged) fields.push("edit_count'),
+      "빠지면 말머리·태그 일괄 적용까지 '수정' 으로 세어 횟수가 부풀려진다");
+    check("목록 응답이 수정 시각·횟수를 싣는다",
+      worker.includes("updated_at, edit_count"),
+      "빠지면 관리자 목록에 늘 '수정 없음' 으로 보인다");
+  }
+
   console.log("\n── 9. 관리자 주소 복원 (#admin=탭|상세id|하위탭) ──");
   {
     const panels = readFileSync(path.join(ROOT, "pages/admin/AdminEventsPanels.jsx"), "utf8");

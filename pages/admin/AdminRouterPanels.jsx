@@ -434,13 +434,16 @@ const PostViewerModal = ({ postId, onClose }) => {
 
         {/* 작성자/일시/조회/공감/댓글 */}
         <div style={{
-          display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:12,
+          display:'grid', gridTemplateColumns:'repeat(6, 1fr)', gap:12,
           padding:'12px 14px', background:'var(--bg-2)', border:'1px solid var(--line)',
           marginBottom:18, fontSize:12,
         }}>
           {[
             ['작성자', post.author || '-'],
-            ['작성일', post.date || (post.createdAt ? window.BGNJ_FMT.kstDateTime(post.createdAt) : '-')],
+            ['작성일시', post.createdAt ? window.BGNJ_FMT.kstDateTime(post.createdAt) : (post.date || '-')],
+            ['수정', post.editCount > 0
+              ? `${post.editCount}회${post.updatedAt ? ` · ${window.BGNJ_FMT.kstShort(post.updatedAt)}` : ''}`
+              : '없음'],
             ['조회', post.views ?? 0],
             ['공감', likes],
             ['댓글', comments.length],
@@ -873,7 +876,8 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
             <th scope="col" style={{padding:12, textAlign:'left'}}>말머리</th>
             <th scope="col" style={{padding:12, textAlign:'left'}}>제목</th>
             <th scope="col" style={{padding:12, textAlign:'left'}}>작성자</th>
-            <th scope="col" style={{padding:12, textAlign:'left'}}>날짜</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>작성일시</th>
+            <th scope="col" style={{padding:12, textAlign:'left'}}>수정</th>
             <th scope="col" style={{padding:12, textAlign:'right'}}>액션</th>
           </tr>
         </thead>
@@ -898,7 +902,19 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
               </td>
               <td className="ko-serif" style={{padding:14, fontSize:14}}>{p.title}</td>
               <td className="dim mono" style={{padding:14}}>{p.author}</td>
-              <td className="mono dim-2" style={{padding:14}}>{p.date}</td>
+              {/* v00.305 — 날짜만으로는 같은 날 올라온 글의 선후를 알 수 없었다. 분까지 보여준다. */}
+              <td className="mono dim-2" style={{padding:14, whiteSpace:'nowrap'}}>
+                {p.createdAt ? window.BGNJ_FMT.kstShort(p.createdAt) : (p.date || '—')}
+              </td>
+              <td className="mono dim-2" style={{padding:14, whiteSpace:'nowrap'}}>
+                {p.editCount > 0 ? (
+                  <span title={p.updatedAt ? `마지막 수정 ${window.BGNJ_FMT.kstShort(p.updatedAt)}` : undefined}
+                    style={{color:'var(--secondary)'}}>
+                    {p.editCount}회
+                    {p.updatedAt && <span className="dim-2" style={{marginLeft:6}}>{window.BGNJ_FMT.kstShort(p.updatedAt)}</span>}
+                  </span>
+                ) : <span className="dim-2">—</span>}
+              </td>
               <td style={{padding:14, textAlign:'right', display:'flex', justifyContent:'flex-end', gap:8}}>
                 <button type="button" className="btn btn-small" onClick={() => setViewingId(p.id)}>열기</button>
                 <button type="button" className="btn btn-small" onClick={() => removeOne(p)}
