@@ -434,7 +434,16 @@ UPDATE posts SET category = '신지식 청년사관' WHERE id IN (129,132,136) A
 
 smoke 8.7 에 회귀 시험 16건(게시판 이름 5 · 태그 제안 8 · 워커 1 · 일괄 2).
 
+### 말머리 이관 (사용자 선택: '신지식 청년사관 으로 옮기기')
+
+```
+categories_kv  national-historian.prefixes_json → walk-independence 로 이동 (국민사학자는 [] 로)
+posts          walk-independence · prefix='걸어서 독립운동 속으로' 23편에 자동 태그 6개 부여
+               조건에 COALESCE(tags_json,'[]')='[]' 를 걸었다 — 작성자가 적어 둔 태그를 덮지 않기 위해.
+               실사 결과 23편 전부 비어 있었다. changes: 23
+검증           GET /api/categories · /api/posts 로 재확인 · check-defaults 통과 · seo-build 재생성
+```
+
 ### 남은 것 — 사용자 판단 필요
 
-- **`국민사학자` 에 등록된 말머리를 `신지식 청년사관` 으로 옮길지** — 옮겨야 14편에 태그가 붙는다.
 - **김유미 등급 정정** — 관리자 → 회원 → `동행`. 원인은 §11.
