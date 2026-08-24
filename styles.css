@@ -769,6 +769,47 @@ main time, main .section-eyebrow {
   padding: 4px 0;
 }
 
+/* === 태그 제안 목록 (v00.306) ===========================================
+   기존 태그를 쳐서 찾아 고르는 목록. 입력칸 바로 아래에 겹쳐 뜬다.
+   옐로우(--primary)는 '지금 고른 것' 한 줄에만 — 목록 전체에 깔지 않는다. */
+.tag-suggest {
+  position: absolute;
+  z-index: 30;
+  left: 0; right: 0;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  list-style: none;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+.tag-suggest li { margin: 0; }
+.tag-suggest button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: var(--ink-2);
+  /* 한글은 어절 단위로 끊는다 */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.tag-suggest button:hover,
+.tag-suggest button.is-hover {
+  background: rgba(158,104,24,0.08);
+  color: var(--primary);
+}
+.tag-suggest button .mono { font-size: 10px; flex: none; }
+
 /* === Image slider (community post attachments) ==========================
    v00.260 — 사용자 보고 '이미지 비율을 임의로 잘라버리면 어떻게'. 16:9 고정 박스를
    버리고 활성 슬라이드의 자연 비율을 컨테이너 높이로 사용. 모든 슬라이드를 같은

@@ -546,11 +546,6 @@ const HomePage = ({ go }) => {
   // 다만 전부 올리면 자유 게시판(75편)이 칼럼·답사를 통째로 밀어낸다.
   // '읽을거리' 성격의 게시판만 골라 넣는다 — 늘리려면 이 배열에 id 한 줄 추가.
   const FEED_BOARD_IDS = ['walk-independence']; // 신지식 청년사관 (id 는 v00.294 신설 당시 그대로)
-  const _boardLabel = React.useCallback((id) => {
-    if (!id) return '';
-    const found = G.arr(() => window.BGNJ_STORES?.categories).find((c) => c && c.id === id);
-    return found?.label || '';
-  }, []);
   const feedPosts = React.useMemo(() => (
     G.arr(() => window.BGNJ_COMMUNITY?.listPosts?.())
       .filter((p) => p && FEED_BOARD_IDS.includes(p.categoryId))
@@ -601,7 +596,7 @@ const HomePage = ({ go }) => {
           kind: 'post', id: p.id, title: p.title,
           // v00.295 — p.category 는 '글 쓸 때 박아 넣은 글자'라 게시판 이름이 바뀌면 옛 이름이 남는다.
           //   게시판의 현재 이름을 먼저 찾고, 못 찾을 때만 저장된 글자를 쓴다.
-          tag: _boardLabel(p.categoryId) || p.category || '광장',
+          tag: window.BGNJ_BOARD_LABEL(p) || '광장',
           ts: t, date: fmt(t),
           onGo: () => {
             try { sessionStorage.setItem('bgnj_pending_post_id', String(p.id)); }

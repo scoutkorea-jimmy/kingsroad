@@ -365,3 +365,76 @@ smoke 8.6 이 정규화 8건 + 매칭 9건 + 워커 2건을 지킨다.
 ### 남은 것
 
 - **김유미 등급 정정** — 관리자 → 회원 → `동행`. 관리자 인증이 없어 내가 못 한다. 원인은 §11.
+
+
+---
+
+## 14. v00.306.000 — 게시판 이동이 '안 되는 것처럼' 보인 이유 · 태그 쳐서 찾기 (2026-08-24)
+
+### 지시 (사용자 원문)
+
+> 로그를 보면 알겠지만 내가 게시판 이동을 시켰는데 왜 안되지?
+> 그리고 태그도 있으면 기존꺼 검색되어서 보게 하라고햇지 왜 안되는거야?
+
+### 보고 1 — 이동은 **되어 있었다.** 화면이 옛 이름을 그렸다
+
+서버 실측(`GET /api/posts`)에서 바로 드러났다.
+
+```
+#136 → category_id: walk-independence (이동됨) / category: "자유" (옛 이름)
+#132 → 같음 · #129 → 같음
+```
+
+`posts` 는 게시판을 **두 벌**로 들고 있다 — `category_id`(진짜)와 `category`(글 쓸 때 박아 넣은 이름).
+워커 `handlePostPatch` 는 이동 시 **id 만** 고쳤고, 관리자 목록은 **이름**을 그리고 있었다.
+그래서 DB 는 옮겨졌는데 화면만 안 옮겨진 것처럼 보였다.
+
+같은 결함을 v00.295 에 홈에서 한 번 만났고(게시판 이름을 바꾸면 옛 이름이 남는다),
+그때는 **홈 한 곳만** `_boardLabel(categoryId) || p.category` 로 고쳤다.
+나머지 여섯 곳은 그대로였다 — 그래서 이번에 관리자에서 다시 터졌다.
+
+**교훈 — 파생값을 한 곳에서만 고치면 나머지가 반드시 다시 터진다.**
+공통 헬퍼로 올리고 호출부를 전수로 바꿔야 끝난다.
+
+### 보고 2 — 태그가 안 붙은 진짜 이유는 **말머리가 엉뚱한 게시판에 등록돼 있었다**
+
+```
+national-historian | 국민사학자    | prefixes: [{ name: "걸어서 독립운동 속으로", tags: [6개] }]
+walk-independence  | 신지식 청년사관 | prefixes: []       ← 글 14편은 전부 여기
+```
+
+`applyPrefixTags(categoryId, ...)` 는 그 게시판 글만 고른다 → 대상 0편 → 아무 일도 안 일어났다.
+**그리고 '기존 태그를 쳐서 찾는' 기능은 아예 만든 적이 없었다 — 내 누락이다.**
+
+### 바뀐 것
+
+| 무엇 | 어디 |
+|---|---|
+| `window.BGNJ_BOARD_LABEL(post\|id)` — id 로 현재 이름, 못 찾으면 저장된 이름 | `data.js` |
+| 게시판 이름 소비처 전수 교체 (관리자 목록·상세·대시보드·커뮤니티 상세·마이페이지·홈) | `pages/**` 6곳 |
+| **워커** — `category_id` 가 오면 `categories_kv.label` 을 찾아 `category` 도 함께 UPDATE | `workers/src/index.js` |
+| `window.BGNJ_TAG_INDEX()` · `BGNJ_TAG_SUGGEST(q, {exclude, limit})` | `data.js` |
+| 글쓰기 태그 칸 — 후보 목록 · ↑↓ · Enter · 클릭 (`.tag-suggest`) | `pages/CommunityPage.jsx` · `styles.css` |
+| 관리자 말머리 탭 태그 칸 — 이미 쓰는 태그를 눌러 붙이기 | `pages/admin/AdminCommunityConfigPanels.jsx` |
+| `BGNJ_COMMUNITY.bulkUpdatePosts()` — 일괄 작업을 **한 건씩 보내고 결과를 센다** | `data.js` · `AdminRouterPanels.jsx` |
+
+**일괄 작업도 같이 고쳤다.** 전에는 `selectedIds.forEach(updatePost)` 였다 —
+`updatePost` 는 fire-and-forget 이라 실패해도 조용하고, 건마다 목록을 다시 받아
+늦게 돌아온 응답이 먼저 끝난 갱신을 덮었다(`applyPrefixTags` 에서 이미 겪은 것).
+이제 순차 전송 + `n편 완료 / n편 실패` 를 알린다.
+
+### 서버 데이터 정정 (내가 직접)
+
+```
+UPDATE posts SET category = '신지식 청년사관' WHERE id IN (129,132,136) AND category_id = 'walk-independence';
+→ changes: 3 · 재확인 mismatched: 0
+```
+
+워커 배포: `npx -y wrangler@4.124.0 deploy` (4.97.0 은 여전히 조용히 죽는다 — `DEPLOY.md`).
+
+smoke 8.7 에 회귀 시험 16건(게시판 이름 5 · 태그 제안 8 · 워커 1 · 일괄 2).
+
+### 남은 것 — 사용자 판단 필요
+
+- **`국민사학자` 에 등록된 말머리를 `신지식 청년사관` 으로 옮길지** — 옮겨야 14편에 태그가 붙는다.
+- **김유미 등급 정정** — 관리자 → 회원 → `동행`. 원인은 §11.

@@ -122,7 +122,7 @@ const CorruptedBodyInspector = ({ go }) => {
           <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
             {corrupted.slice(0, 30).map((p) => (
               <li key={p.id} style={{display:'flex', alignItems:'center', gap:10, padding:'8px 10px', border:'1px solid var(--line)', fontSize:12}}>
-                <span className="pill" style={{fontSize:10}}>{p.category || '?'}</span>
+                <span className="pill" style={{fontSize:10}}>{window.BGNJ_BOARD_LABEL(p) || '?'}</span>
                 <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{p.title || '(제목 없음)'}</span>
                 <span className="dim-2 mono" style={{fontSize:10}}>{p.author || '?'} · {p.date || ''}</span>
                 <button type="button" className="btn btn-small" onClick={() => {
@@ -420,7 +420,7 @@ const PostViewerModal = ({ postId, onClose }) => {
 
         {/* 제목 + 배지 */}
         <div style={{display:'flex', gap:10, marginBottom:14, flexWrap:'wrap'}}>
-          <span className="badge badge-gold">{post.category}</span>
+          <span className="badge badge-gold">{window.BGNJ_BOARD_LABEL(post)}</span>
           {post.prefix && <span className="badge">{post.prefix}</span>}
           {post.hot && <span className="badge">HOT</span>}
         </div>
@@ -770,24 +770,37 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
     onChange?.();
   };
 
+  // v00.306 — 일괄 작업은 **한 건씩 보내고 결과를 센다.**
+  //   전에는 forEach 로 한꺼번에 쏘고 아무도 결과를 안 봤다. 실패해도 조용했고,
+  //   건마다 목록을 다시 받느라 늦은 응답이 이른 갱신을 덮었다.
+  const [bulkBusy, setBulkBusy] = React.useState(false);
+  const runBulk = async (patch, label) => {
+    if (selectedIds.size === 0 || bulkBusy) return;
+    setBulkBusy(true);
+    try {
+      const r = await window.BGNJ_COMMUNITY.bulkUpdatePosts(Array.from(selectedIds), patch);
+      if (r.changed) window.BGNJ_TOAST.success?.(`${r.changed}편 ${label} 완료.`);
+      if (r.failed) window.BGNJ_TOAST.error(`${r.failed}편은 실패했습니다 — 잠시 후 다시 시도해 주세요.`);
+      if (!r.changed && !r.failed) window.BGNJ_TOAST.error('바뀐 글이 없습니다.');
+      setSelectedIds(new Set());
+      onChange?.();
+    } finally { setBulkBusy(false); }
+  };
+
   const bulkMove = () => {
     if (selectedIds.size === 0) return;
     if (!bulkCat) { window.BGNJ_TOAST.error('이동할 게시판을 선택하세요.'); return; }
     const cat = window.BGNJ_STORES.categories.find((c) => c.id === bulkCat);
     if (!cat) return;
-    selectedIds.forEach((id) => window.BGNJ_COMMUNITY.updatePost(id, { categoryId: cat.id, category: cat.label }));
-    setSelectedIds(new Set());
-    setBulkCat('');
-    onChange?.();
+    // category(이름)는 보내지 않는다 — 워커가 category_id 로 현재 이름을 채운다.
+    runBulk({ categoryId: cat.id }, `'${cat.label}' 로 이동`).then(() => setBulkCat(''));
   };
 
   const bulkApplyPrefix = () => {
     if (selectedIds.size === 0) return;
     const next = bulkPrefix.trim();
-    selectedIds.forEach((id) => window.BGNJ_COMMUNITY.updatePost(id, { prefix: next || null }));
-    setSelectedIds(new Set());
-    setBulkPrefix('');
-    onChange?.();
+    runBulk({ prefix: next || null }, next ? `말머리 '${next}' 적용` : '말머리 제거')
+      .then(() => setBulkPrefix(''));
   };
 
   return (
@@ -847,10 +860,10 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
               <option key={c.id} value={c.id}>{c.label}</option>
             ))}
           </select>
-          <button type="button" className="btn btn-small btn-gold" onClick={bulkMove}>이동</button>
+          <button type="button" className="btn btn-small btn-gold" onClick={bulkMove} disabled={bulkBusy}>{bulkBusy ? '처리 중…' : '이동'}</button>
           <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
           <input type="text" className="field-input" style={{maxWidth:140, padding:'4px 8px'}} placeholder="말머리 (비우면 제거)" value={bulkPrefix} onChange={(e) => setBulkPrefix(e.target.value)} aria-label="일괄 적용할 말머리"/>
-          <button type="button" className="btn btn-small btn-gold" onClick={bulkApplyPrefix}>말머리 적용</button>
+          <button type="button" className="btn btn-small btn-gold" onClick={bulkApplyPrefix} disabled={bulkBusy}>말머리 적용</button>
           <button type="button" className="btn btn-small" style={{marginLeft:'auto'}} onClick={() => setSelectedIds(new Set())}>선택 해제</button>
         </div>
       )}
@@ -896,7 +909,9 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
                   aria-label={`"${p.title}" 선택`}/>
               </td>
               <td className="mono dim-2" style={{padding:14}}>#{String(p.id).padStart(4,'0')}</td>
-              <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{p.category}</span></td>
+              {/* v00.306 — 저장된 이름이 아니라 **게시판 id 로 찾은 현재 이름**.
+                  이동시켜도 옛 이름이 남아 '이동이 안 된 것처럼' 보였다(2026-08-24). */}
+              <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{window.BGNJ_BOARD_LABEL(p)}</span></td>
               <td style={{padding:14}}>
                 {p.prefix ? <span className="mono" style={{fontSize:9, padding:'1px 6px', border:'1px solid var(--primary-dim)', color:'var(--secondary)'}}>{p.prefix}</span> : <span className="dim-2" style={{fontSize:10}}>—</span>}
               </td>

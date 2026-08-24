@@ -293,7 +293,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
           {latestCommunityPost ? (
             <>
               <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:10}}>
-                <span className="badge badge-gold">{latestCommunityPost.category}</span>
+                <span className="badge badge-gold">{window.BGNJ_BOARD_LABEL(latestCommunityPost)}</span>
                 <span className="mono dim-2" style={{fontSize:11}}>{latestCommunityPost.date}</span>
               </div>
               <p style={{fontSize:16, marginBottom:10}}>{latestCommunityPost.title}</p>

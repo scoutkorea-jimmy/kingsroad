@@ -459,6 +459,29 @@ const PrefixTagsPanel = () => {
                       <button type="button" className="btn btn-small" disabled={busy}
                         onClick={() => addTag(d.name, tagDraft)}>추가</button>
                     </div>
+                    {/* v00.306 — 이미 쓰이고 있는 태그를 눌러서 붙인다.
+                        새로 쳐 넣는 것도 그대로 되지만, 같은 뜻의 태그가 표기만 달리 갈리는 걸 막는다. */}
+                    {(() => {
+                      const sugg = window.BGNJ_TAG_SUGGEST(tagDraft, { exclude: d.tags, limit: 8 });
+                      if (!sugg.length) return null;
+                      return (
+                        <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'center', marginTop:6}}>
+                          <span className="mono dim-2" style={{fontSize:10, letterSpacing:'0.14em'}}>
+                            {tagDraft.trim() ? '찾은 태그' : '이미 쓰는 태그'}
+                          </span>
+                          {sugg.map((sg) => (
+                            <button key={sg.name} type="button" disabled={busy}
+                              onClick={() => addTag(d.name, sg.name)}
+                              className="mono"
+                              style={{fontSize:10.5, padding:'2px 8px', border:'1px dashed var(--line-2)',
+                                background:'none', color:'var(--ink-2)', cursor: busy ? 'default' : 'pointer'}}
+                              title={`${sg.uses}편에 쓰이는 중`}>
+                              #{sg.name} <span className="dim-2">{sg.uses}</span>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <p className="dim-2" style={{fontSize:10.5, marginTop:6, lineHeight:1.6}}>
                       태그를 추가하면 <b>이 말머리로 이미 올라온 글에도 바로 붙습니다.</b> 더하기만 하므로 작성자가
                       적어 둔 태그는 지워지지 않습니다. 여기서 태그를 빼도 이미 붙은 글에서는 사라지지 않습니다.

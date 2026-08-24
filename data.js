@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.305.001",
-  build: "2026.08.23",
+  version: "00.306.000",
+  build: "2026.08.24",
   channel: "preview",
 };
 
@@ -1588,6 +1588,78 @@ window.BGNJ_PREFIX_TAGS = (board, prefixName) => {
   return window.BGNJ_PREFIX_DEFS(board).find((d) => d.name === name)?.tags || [];
 };
 
+// === 게시판 이름 (v00.306) ===============================================
+// 글 행에는 게시판이 **두 벌**로 저장된다 — `categoryId`(진짜)와 `category`(글 쓸 때 박아 넣은 이름).
+// 이름 쪽은 파생값이라 늘 뒤처진다:
+//   · 게시판 이름을 바꾸면 옛 글에 옛 이름이 남는다 (v00.295 에 홈에서 한 번 겪었다)
+//   · **게시판을 이동시켜도 이름은 그대로 남는다** — 워커 PATCH 가 category_id 만 고쳤다.
+//     그래서 관리자 목록에서 "이동이 안 된 것처럼" 보였다 (2026-08-24 사용자 보고).
+// 화면은 언제나 id 로 현재 이름을 찾고, 못 찾을 때만 저장된 이름으로 떨어진다.
+window.BGNJ_BOARD_LABEL = (postOrId, fallback) => {
+  const id = (postOrId && typeof postOrId === 'object') ? postOrId.categoryId : postOrId;
+  const saved = (postOrId && typeof postOrId === 'object') ? postOrId.category : fallback;
+  if (id) {
+    const cats = Array.isArray(window.BGNJ_STORES?.categories) ? window.BGNJ_STORES.categories : [];
+    const found = cats.find((c) => c && c.id === id);
+    if (found?.label) return found.label;
+  }
+  return saved || fallback || '';
+};
+
+// === 태그 제안 (v00.306) =================================================
+// 태그를 자유 입력으로만 두면 같은 뜻이 '독립운동' · '독립운동사' · '독립 운동' 으로 갈린다.
+// 이미 쓰이는 태그를 **쳐서 찾아 고를 수 있게** 한다. 말머리 쳐서 찾기(BGNJ_PREFIX_MATCH)와
+// 같은 결이지만, 여기서는 하나만 고르는 게 아니라 **후보 목록**을 준다.
+//
+// 후보의 출처 둘 — 실제 글에 붙은 태그 + 말머리에 등록된 자동 태그.
+// 정렬은 쓰인 횟수 내림차순 → 이름순. 많이 쓰인 것이 위로 와야 표기가 모인다.
+window.BGNJ_TAG_INDEX = () => {
+  const count = new Map();
+  const bump = (raw) => {
+    const t = String(raw || '').trim().replace(/^#+/, '');
+    if (!t) return;
+    count.set(t, (count.get(t) || 0) + 1);
+  };
+  try {
+    for (const p of (window.BGNJ_COMMUNITY?.listPosts?.() || [])) {
+      if (Array.isArray(p?.tags)) for (const t of p.tags) bump(t);
+    }
+  } catch (e) { console.warn('[BGNJ_TAG_INDEX] 글 태그 수집 실패 — 말머리 태그만 쓴다:', e?.message || e); }
+  try {
+    const cats = Array.isArray(window.BGNJ_STORES?.categories) ? window.BGNJ_STORES.categories : [];
+    for (const c of cats) {
+      for (const d of window.BGNJ_PREFIX_DEFS(c)) for (const t of d.tags) bump(t);
+    }
+  } catch (e) { console.warn('[BGNJ_TAG_INDEX] 말머리 태그 수집 실패:', e?.message || e); }
+  return Array.from(count, ([name, uses]) => ({ name, uses }))
+    .sort((a, b) => (b.uses - a.uses) || a.name.localeCompare(b.name, 'ko'));
+};
+
+// 쿼리로 걸러 준다. 빈 쿼리면 **많이 쓰인 순서 그대로** — 뭘 쳐야 할지 모르는 사람에게 필요한 건
+// 검색이 아니라 목록이다. `exclude` 는 이미 고른 태그(다시 보여줄 이유가 없다).
+window.BGNJ_TAG_SUGGEST = (query, opts) => {
+  const o = opts || {};
+  const limit = Number.isFinite(o.limit) ? o.limit : 8;
+  const skip = new Set((Array.isArray(o.exclude) ? o.exclude : []).map((t) => String(t || '').trim()));
+  const q = String(query || '').trim().replace(/^#+/, '').replace(/\s+/g, '').toLowerCase();
+  const all = window.BGNJ_TAG_INDEX().filter((t) => !skip.has(t.name));
+  if (!q) return all.slice(0, limit);
+  const scored = [];
+  for (const t of all) {
+    const flat = t.name.replace(/\s+/g, '').toLowerCase();
+    // 앞글자 일치가 가운데 토막보다 늘 위. 한 글자도 앞글자면 받는다(말머리 규칙과 같다).
+    let score = 0;
+    if (flat === q) score = 300;
+    else if (flat.startsWith(q)) score = 200;
+    else if (q.length >= 2 && flat.includes(q)) score = 100;
+    if (score) scored.push({ ...t, _s: score });
+  }
+  return scored
+    .sort((a, b) => (b._s - a._s) || (b.uses - a.uses) || a.name.localeCompare(b.name, 'ko'))
+    .slice(0, limit)
+    .map(({ _s, ...rest }) => rest);
+};
+
 window.BGNJ_COMMUNITY = {
   // 서버에서 받은 게시글 캐시. refreshPosts()가 채운다.
   // v00.046: 서버 미로드 시 로컬 시드 폴백 폐지 — 빈 배열 반환. 'D1 source-of-truth' 정책 정합.
@@ -1720,6 +1792,34 @@ window.BGNJ_COMMUNITY = {
     }
     if (changed) await this.refreshPosts();
     return { total: targets.length, changed, failed };
+  },
+  // v00.306 — 관리자 일괄 작업(게시판 이동 · 말머리 적용) 전용.
+  //   전에는 `selectedIds.forEach(updatePost)` 로 **한꺼번에 쏘고 결과를 안 봤다.**
+  //   updatePost 는 fire-and-forget 이라 실패해도 조용하고, 각 건이 끝나면서 저마다
+  //   refreshPosts() 를 부르기 때문에 늦게 돌아온 응답이 먼저 끝난 갱신을 덮어쓴다
+  //   (applyPrefixTags 에서 이미 겪은 것과 같은 문제 — v00.305 주석 참조).
+  //   한 건씩 보내고, 몇 건이 됐는지 돌려준다. 느린 대신 **거짓말을 하지 않는다.**
+  async bulkUpdatePosts(ids, patch) {
+    const list = Array.from(ids || []);
+    // 목록 새로고침은 **맨 끝에 한 번**. 건마다 부르면 그 자체가 위 경합을 만든다.
+    const apiPatch = {};
+    if ('categoryId' in patch) apiPatch.category_id = patch.categoryId;
+    if ('prefix' in patch) apiPatch.prefix = patch.prefix;
+    if ('tags' in patch) apiPatch.tags = Array.isArray(patch.tags) ? patch.tags : [];
+    let changed = 0, failed = 0;
+    for (const id of list) {
+      const isRemote = this._serverPosts.some((p) => String(p.id) === String(id));
+      try {
+        if (isRemote) await window.BGNJ_API.posts.update(id, apiPatch);
+        else this.updatePost(id, patch);   // 아직 서버에 못 올린 로컬 글
+        changed += 1;
+      } catch (e) {
+        failed += 1;
+        console.warn('[BGNJ_COMMUNITY.bulkUpdatePosts] 실패:', id, e?.message || e);
+      }
+    }
+    if (changed) await this.refreshPosts();
+    return { total: list.length, changed, failed };
   },
   async deletePostRemote(postId) {
     await window.BGNJ_API.posts.remove(postId);

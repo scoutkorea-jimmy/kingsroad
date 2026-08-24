@@ -401,8 +401,8 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.305.001",
-    build: "2026.08.23",
+    version: "00.306.000",
+    build: "2026.08.24",
     channel: "preview"
   };
   try {
@@ -2017,6 +2017,60 @@
     if (!name) return [];
     return ((_a = window.BGNJ_PREFIX_DEFS(board).find((d) => d.name === name)) == null ? void 0 : _a.tags) || [];
   };
+  window.BGNJ_BOARD_LABEL = (postOrId, fallback) => {
+    var _a;
+    const id = postOrId && typeof postOrId === "object" ? postOrId.categoryId : postOrId;
+    const saved = postOrId && typeof postOrId === "object" ? postOrId.category : fallback;
+    if (id) {
+      const cats = Array.isArray((_a = window.BGNJ_STORES) == null ? void 0 : _a.categories) ? window.BGNJ_STORES.categories : [];
+      const found = cats.find((c) => c && c.id === id);
+      if (found == null ? void 0 : found.label) return found.label;
+    }
+    return saved || fallback || "";
+  };
+  window.BGNJ_TAG_INDEX = () => {
+    var _a, _b, _c;
+    const count = /* @__PURE__ */ new Map();
+    const bump = (raw) => {
+      const t = String(raw || "").trim().replace(/^#+/, "");
+      if (!t) return;
+      count.set(t, (count.get(t) || 0) + 1);
+    };
+    try {
+      for (const p of ((_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.listPosts) == null ? void 0 : _b.call(_a)) || []) {
+        if (Array.isArray(p == null ? void 0 : p.tags)) for (const t of p.tags) bump(t);
+      }
+    } catch (e) {
+      console.warn("[BGNJ_TAG_INDEX] \uAE00 \uD0DC\uADF8 \uC218\uC9D1 \uC2E4\uD328 \u2014 \uB9D0\uBA38\uB9AC \uD0DC\uADF8\uB9CC \uC4F4\uB2E4:", (e == null ? void 0 : e.message) || e);
+    }
+    try {
+      const cats = Array.isArray((_c = window.BGNJ_STORES) == null ? void 0 : _c.categories) ? window.BGNJ_STORES.categories : [];
+      for (const c of cats) {
+        for (const d of window.BGNJ_PREFIX_DEFS(c)) for (const t of d.tags) bump(t);
+      }
+    } catch (e) {
+      console.warn("[BGNJ_TAG_INDEX] \uB9D0\uBA38\uB9AC \uD0DC\uADF8 \uC218\uC9D1 \uC2E4\uD328:", (e == null ? void 0 : e.message) || e);
+    }
+    return Array.from(count, ([name, uses]) => ({ name, uses })).sort((a, b) => b.uses - a.uses || a.name.localeCompare(b.name, "ko"));
+  };
+  window.BGNJ_TAG_SUGGEST = (query, opts) => {
+    const o = opts || {};
+    const limit = Number.isFinite(o.limit) ? o.limit : 8;
+    const skip = new Set((Array.isArray(o.exclude) ? o.exclude : []).map((t) => String(t || "").trim()));
+    const q = String(query || "").trim().replace(/^#+/, "").replace(/\s+/g, "").toLowerCase();
+    const all = window.BGNJ_TAG_INDEX().filter((t) => !skip.has(t.name));
+    if (!q) return all.slice(0, limit);
+    const scored = [];
+    for (const t of all) {
+      const flat = t.name.replace(/\s+/g, "").toLowerCase();
+      let score = 0;
+      if (flat === q) score = 300;
+      else if (flat.startsWith(q)) score = 200;
+      else if (q.length >= 2 && flat.includes(q)) score = 100;
+      if (score) scored.push({ ...t, _s: score });
+    }
+    return scored.sort((a, b) => b._s - a._s || b.uses - a.uses || a.name.localeCompare(b.name, "ko")).slice(0, limit).map(({ _s, ...rest }) => rest);
+  };
   window.BGNJ_COMMUNITY = {
     // 서버에서 받은 게시글 캐시. refreshPosts()가 채운다.
     // v00.046: 서버 미로드 시 로컬 시드 폴백 폐지 — 빈 배열 반환. 'D1 source-of-truth' 정책 정합.
@@ -2158,6 +2212,33 @@
       }
       if (changed) await this.refreshPosts();
       return { total: targets.length, changed, failed };
+    },
+    // v00.306 — 관리자 일괄 작업(게시판 이동 · 말머리 적용) 전용.
+    //   전에는 `selectedIds.forEach(updatePost)` 로 **한꺼번에 쏘고 결과를 안 봤다.**
+    //   updatePost 는 fire-and-forget 이라 실패해도 조용하고, 각 건이 끝나면서 저마다
+    //   refreshPosts() 를 부르기 때문에 늦게 돌아온 응답이 먼저 끝난 갱신을 덮어쓴다
+    //   (applyPrefixTags 에서 이미 겪은 것과 같은 문제 — v00.305 주석 참조).
+    //   한 건씩 보내고, 몇 건이 됐는지 돌려준다. 느린 대신 **거짓말을 하지 않는다.**
+    async bulkUpdatePosts(ids, patch) {
+      const list = Array.from(ids || []);
+      const apiPatch = {};
+      if ("categoryId" in patch) apiPatch.category_id = patch.categoryId;
+      if ("prefix" in patch) apiPatch.prefix = patch.prefix;
+      if ("tags" in patch) apiPatch.tags = Array.isArray(patch.tags) ? patch.tags : [];
+      let changed = 0, failed = 0;
+      for (const id of list) {
+        const isRemote = this._serverPosts.some((p) => String(p.id) === String(id));
+        try {
+          if (isRemote) await window.BGNJ_API.posts.update(id, apiPatch);
+          else this.updatePost(id, patch);
+          changed += 1;
+        } catch (e) {
+          failed += 1;
+          console.warn("[BGNJ_COMMUNITY.bulkUpdatePosts] \uC2E4\uD328:", id, (e == null ? void 0 : e.message) || e);
+        }
+      }
+      if (changed) await this.refreshPosts();
+      return { total: list.length, changed, failed };
     },
     async deletePostRemote(postId) {
       await window.BGNJ_API.posts.remove(postId);
@@ -7966,14 +8047,6 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return null;
     }, [tours, lectures, toursArePast, lecturesArePast]);
     const FEED_BOARD_IDS = ["walk-independence"];
-    const _boardLabel = React.useCallback((id) => {
-      if (!id) return "";
-      const found = G2.arr(() => {
-        var _a;
-        return (_a = window.BGNJ_STORES) == null ? void 0 : _a.categories;
-      }).find((c) => c && c.id === id);
-      return (found == null ? void 0 : found.label) || "";
-    }, []);
     const feedPosts = React.useMemo(() => G2.arr(() => {
       var _a, _b;
       return (_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.listPosts) == null ? void 0 : _b.call(_a);
@@ -8044,7 +8117,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             title: p.title,
             // v00.295 — p.category 는 '글 쓸 때 박아 넣은 글자'라 게시판 이름이 바뀌면 옛 이름이 남는다.
             //   게시판의 현재 이름을 먼저 찾고, 못 찾을 때만 저장된 글자를 쓴다.
-            tag: _boardLabel(p.categoryId) || p.category || "\uAD11\uC7A5",
+            tag: window.BGNJ_BOARD_LABEL(p) || "\uAD11\uC7A5",
             ts: t,
             date: fmt(t),
             onGo: () => {
@@ -8530,27 +8603,66 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   var getCategoriesForBoard = (boardType) => window.BGNJ_STORES.categories.filter((c) => c.boardType === boardType);
   var HashtagInput = ({ tags, setTags, max = 10 }) => {
     const [input, setInput] = React.useState("");
+    const [open, setOpen] = React.useState(false);
+    const [hover, setHover] = React.useState(-1);
     const inputRef = React.useRef(null);
+    const blurTimer = React.useRef(null);
+    React.useEffect(() => () => {
+      if (blurTimer.current) clearTimeout(blurTimer.current);
+    }, []);
+    const suggestions = React.useMemo(
+      () => window.BGNJ_TAG_SUGGEST ? window.BGNJ_TAG_SUGGEST(input, { exclude: tags, limit: 8 }) : [],
+      [input, tags]
+    );
     const commit = (raw) => {
-      const t = raw.trim().replace(/^#+/, "").replace(/\s+/g, "");
+      var _a, _b;
+      const t = String(raw || "").trim().replace(/^#+/, "").replace(/\s+/g, "");
       if (!t) return;
       if (tags.includes(t)) return;
-      if (tags.length >= max) return;
+      if (tags.length >= max) {
+        (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, `\uD0DC\uADF8\uB294 ${max}\uAC1C\uAE4C\uC9C0\uC785\uB2C8\uB2E4.`);
+        return;
+      }
       setTags([...tags, t]);
     };
+    const pick = (name) => {
+      var _a;
+      commit(name);
+      setInput("");
+      setHover(-1);
+      (_a = inputRef.current) == null ? void 0 : _a.focus();
+    };
     const handleKey = (e) => {
+      if (open && suggestions.length && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+        e.preventDefault();
+        setHover((h) => {
+          const n = suggestions.length;
+          return e.key === "ArrowDown" ? (h + 1) % n : h <= 0 ? n - 1 : h - 1;
+        });
+        return;
+      }
+      if (e.key === "Escape") {
+        setOpen(false);
+        setHover(-1);
+        return;
+      }
       if (e.key === " " || e.key === "Enter" || e.key === ",") {
         e.preventDefault();
+        if (e.key === "Enter" && hover >= 0 && suggestions[hover]) {
+          pick(suggestions[hover].name);
+          return;
+        }
         commit(input);
         setInput("");
+        setHover(-1);
       } else if (e.key === "Backspace" && !input && tags.length) {
         setTags(tags.slice(0, -1));
       }
     };
-    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "tag-input-wrap", onClick: () => {
+    return /* @__PURE__ */ React.createElement("div", { style: { position: "relative" } }, /* @__PURE__ */ React.createElement("div", { className: "tag-input-wrap", onClick: () => {
       var _a;
       return (_a = inputRef.current) == null ? void 0 : _a.focus();
-    } }, tags.map((t, i) => /* @__PURE__ */ React.createElement("span", { key: t, className: "tag-chip" }, "#", t, /* @__PURE__ */ React.createElement(
+    } }, tags.map((t) => /* @__PURE__ */ React.createElement("span", { key: t, className: "tag-chip" }, "#", t, /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -8563,18 +8675,41 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       {
         ref: inputRef,
         value: input,
-        onChange: (e) => setInput(e.target.value),
+        onChange: (e) => {
+          setInput(e.target.value);
+          setOpen(true);
+          setHover(-1);
+        },
+        onFocus: () => setOpen(true),
         onKeyDown: handleKey,
         onBlur: () => {
-          if (input.trim()) {
-            commit(input);
-            setInput("");
-          }
+          blurTimer.current = setTimeout(() => {
+            if (input.trim()) {
+              commit(input);
+              setInput("");
+            }
+            setOpen(false);
+            setHover(-1);
+          }, 120);
         },
         placeholder: tags.length ? "" : "\uD0DC\uADF8 \uC785\uB825 \uD6C4 \uC2A4\uD398\uC774\uC2A4\uBC14 (\uCD5C\uB300 10\uAC1C)",
+        role: "combobox",
+        "aria-expanded": open && suggestions.length > 0,
+        "aria-autocomplete": "list",
         "aria-label": "\uD574\uC2DC\uD0DC\uADF8 \uC785\uB825"
       }
-    )), /* @__PURE__ */ React.createElement("div", { className: "field-hint", style: { marginTop: 6 } }, "\uC2A4\uD398\uC774\uC2A4\uBC14 \xB7 Enter \xB7 \uC27C\uD45C\uB85C \uD0DC\uADF8 \uAD6C\uBD84 \xB7 Backspace\uB85C \uB9C8\uC9C0\uB9C9 \uD0DC\uADF8 \uC0AD\uC81C \xB7 ", tags.length, "/", max));
+    )), open && suggestions.length > 0 && /* @__PURE__ */ React.createElement("ul", { className: "tag-suggest", role: "listbox", "aria-label": "\uC774\uBBF8 \uC4F0\uC774\uACE0 \uC788\uB294 \uD0DC\uADF8" }, suggestions.map((sg, i) => /* @__PURE__ */ React.createElement("li", { key: sg.name, role: "option", "aria-selected": i === hover }, /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        type: "button",
+        className: i === hover ? "is-hover" : void 0,
+        onMouseEnter: () => setHover(i),
+        onMouseDown: (e) => e.preventDefault(),
+        onClick: () => pick(sg.name)
+      },
+      /* @__PURE__ */ React.createElement("span", null, "#", sg.name),
+      /* @__PURE__ */ React.createElement("span", { className: "mono dim-2" }, sg.uses, "\uD3B8")
+    )))), /* @__PURE__ */ React.createElement("div", { className: "field-hint", style: { marginTop: 6 } }, "\uC2A4\uD398\uC774\uC2A4\uBC14 \xB7 Enter \xB7 \uC27C\uD45C\uB85C \uD0DC\uADF8 \uAD6C\uBD84 \xB7 Backspace\uB85C \uB9C8\uC9C0\uB9C9 \uD0DC\uADF8 \uC0AD\uC81C \xB7 ", tags.length, "/", max, suggestions.length > 0 && /* @__PURE__ */ React.createElement(React.Fragment, null, " \xB7 ", /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC774\uBBF8 \uC4F0\uC774\uB294 \uD0DC\uADF8\uB294 \uC544\uB798 \uBAA9\uB85D\uC5D0\uC11C \uACE0\uB974\uC138\uC694"))));
   };
   var ImageSlider = ({ images, autoplayMs = 4e3 }) => {
     var _a;
@@ -10541,7 +10676,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setCommentsList(next);
       onRefresh == null ? void 0 : onRefresh();
     };
-    return /* @__PURE__ */ React.createElement("article", { className: "section post-read" }, /* @__PURE__ */ React.createElement("div", { className: "container post-read-container" }, /* @__PURE__ */ React.createElement("div", { className: "post-back-bar" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn post-back-btn", onClick: () => setPostId(null) }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 16, lineHeight: 1 } }, "\u2190"), /* @__PURE__ */ React.createElement("span", null, "\uBAA9\uB85D\uC73C\uB85C"), post.category && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2 post-back-board" }, post.category))), /* @__PURE__ */ React.createElement("header", { style: { borderBottom: "1px solid var(--line-2)", paddingBottom: 32, marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, post.category), post.prefix && /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("article", { className: "section post-read" }, /* @__PURE__ */ React.createElement("div", { className: "container post-read-container" }, /* @__PURE__ */ React.createElement("div", { className: "post-back-bar" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn post-back-btn", onClick: () => setPostId(null) }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 16, lineHeight: 1 } }, "\u2190"), /* @__PURE__ */ React.createElement("span", null, "\uBAA9\uB85D\uC73C\uB85C"), post.category && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2 post-back-board" }, window.BGNJ_BOARD_LABEL(post)))), /* @__PURE__ */ React.createElement("header", { style: { borderBottom: "1px solid var(--line-2)", paddingBottom: 32, marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, window.BGNJ_BOARD_LABEL(post)), post.prefix && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -14266,7 +14401,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           background: "rgba(245,213,72,0.04)"
         }
       },
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { className: "pill", style: { fontSize: 9 } }, post.category), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, post.date)),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { className: "pill", style: { fontSize: 9 } }, window.BGNJ_BOARD_LABEL(post)), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, post.date)),
       /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, lineHeight: 1.5, marginBottom: 4 } }, post.title),
       /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uB313\uAE00 ", post.replies, "\uAC1C \xB7 \uC870\uD68C ", post.views, "\uD68C")
     ))))), tab === "profile" && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 18 } }, /* @__PURE__ */ React.createElement(ProfileEditor, { user, onSaved: () => {

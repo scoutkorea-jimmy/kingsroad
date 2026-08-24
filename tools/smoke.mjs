@@ -284,6 +284,71 @@ const run = async () => {
       "빠지면 관리자 목록에 늘 '수정 없음' 으로 보인다");
   }
 
+  console.log("\n── 8.7 게시판 이름 · 태그 제안 (v00.306) ──");
+  {
+    // 2026-08-24 사고 — 관리자에서 게시판을 옮겼는데 '이동이 안 된다' 는 보고가 왔다.
+    //   실제로는 옮겨져 있었다(category_id = walk-independence). 화면이 그린 것은
+    //   글 행에 **박제된 옛 이름**(category = '자유') 이었다. 파생값을 믿은 대가다.
+    const label = w.BGNJ_BOARD_LABEL;
+    const catsBackup = w.BGNJ_STORES.categories;
+    w.BGNJ_STORES.categories = [
+      { id: 'free', label: '자유' },
+      { id: 'walk-independence', label: '신지식 청년사관' },
+    ];
+    check("게시판 id 로 현재 이름을 찾는다",
+      label({ categoryId: 'walk-independence', category: '자유' }) === '신지식 청년사관',
+      "박제된 옛 이름을 그리면 이동이 안 된 것처럼 보인다");
+    check("id 로 못 찾으면 저장된 이름으로 떨어진다",
+      label({ categoryId: 'gone', category: '없어진 게시판' }) === '없어진 게시판');
+    check("id 가 없어도 저장된 이름을 쓴다", label({ category: '자유' }) === '자유');
+    check("둘 다 없으면 빈 문자열", label({}) === '' && label(null) === '');
+    check("id 문자열만 넘겨도 된다", label('free') === '자유');
+
+    // 태그 제안 — 같은 뜻의 태그가 표기만 달리 갈리는 걸 막으려고 만들었다.
+    const postsBackup = w.BGNJ_COMMUNITY._serverPosts;
+    const loadedBackup = w.BGNJ_COMMUNITY._serverLoaded;
+    w.BGNJ_COMMUNITY._serverPosts = [
+      { id: 1, categoryId: 'free', tags: ['독립운동', '뱅기노자'] },
+      { id: 2, categoryId: 'free', tags: ['독립운동', '역사문화탐방'] },
+      { id: 3, categoryId: 'free', tags: ['독립운동'] },
+    ];
+    w.BGNJ_COMMUNITY._serverLoaded = true;
+    const names = (q, o) => w.BGNJ_TAG_SUGGEST(q, o).map((t) => t.name);
+    check("빈 쿼리는 많이 쓰인 순서",
+      names('')[0] === '독립운동', names('').join(' · '));
+    check("쓰인 횟수를 함께 준다",
+      w.BGNJ_TAG_SUGGEST('독립운동')[0]?.uses === 3);
+    check("앞글자로 찾는다", names('독립').includes('독립운동'));
+    check("공백을 빼고 쳐도 찾는다", names('역사문화').includes('역사문화탐방'));
+    check("이미 고른 태그는 후보에서 뺀다",
+      !names('', { exclude: ['독립운동'] }).includes('독립운동'));
+    check("전혀 다르면 빈 목록", names('책 주문').length === 0, names('책 주문').join());
+    check("limit 을 지킨다", names('', { limit: 2 }).length === 2);
+    check("말머리 자동 태그도 후보에 든다", (() => {
+      w.BGNJ_STORES.categories = [{ id: 'free', label: '자유',
+        prefixes: [{ name: '걸어서 독립운동 속으로', tags: ['한국근현대사여행'] }] }];
+      return names('한국').includes('한국근현대사여행');
+    })());
+    w.BGNJ_COMMUNITY._serverPosts = postsBackup;
+    w.BGNJ_COMMUNITY._serverLoaded = loadedBackup;
+    w.BGNJ_STORES.categories = catsBackup;
+
+    // 워커 — 이동시켰으면 이름도 같이 옮겨야 한다. 화면만 고치면 CSV·정적 페이지가 또 속는다.
+    const worker2 = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+    check("게시판 이동 시 category 이름도 함께 갱신한다",
+      worker2.includes('SELECT label FROM categories_kv WHERE id = ?') &&
+      worker2.includes('fields.push("category = ?")'),
+      "빠지면 DB 에 옛 게시판 이름이 남아 id 를 모르는 소비자가 속는다");
+
+    // 일괄 작업은 결과를 세야 한다 — forEach fire-and-forget 은 실패를 조용히 삼킨다.
+    const adminPanels = readFileSync(path.join(ROOT, "pages/admin/AdminRouterPanels.jsx"), "utf8");
+    check("일괄 작업이 bulkUpdatePosts 를 쓴다",
+      adminPanels.includes('BGNJ_COMMUNITY.bulkUpdatePosts'),
+      "forEach 로 한꺼번에 쏘면 늦은 응답이 이른 갱신을 덮고 실패가 조용히 사라진다");
+    check("일괄 작업 결과가 사용자에게 보인다",
+      /r\.failed/.test(adminPanels) && /r\.changed/.test(adminPanels));
+  }
+
   console.log("\n── 9. 관리자 주소 복원 (#admin=탭|상세id|하위탭) ──");
   {
     const panels = readFileSync(path.join(ROOT, "pages/admin/AdminEventsPanels.jsx"), "utf8");

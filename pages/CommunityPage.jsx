@@ -35,32 +35,61 @@ const getCategoriesForBoard = (boardType) =>
   window.BGNJ_STORES.categories.filter(c => c.boardType === boardType);
 
 // === Hashtag chip input =================================================
+// v00.306 — 기존 태그를 **쳐서 찾아 고를 수 있게** 했다.
+//   자유 입력만 두면 같은 뜻이 '독립운동' · '독립운동사' · '독립 운동' 으로 갈려
+//   태그로 묶어 보는 일이 성립하지 않는다. 후보는 window.BGNJ_TAG_SUGGEST 가 만든다
+//   (실제 글에 붙은 태그 + 말머리 자동 태그, 많이 쓰인 순).
+//   새 태그를 막지는 않는다 — 목록에 없으면 그냥 새로 만들어진다.
 const HashtagInput = ({ tags, setTags, max = 10 }) => {
   const [input, setInput] = React.useState("");
+  const [open, setOpen] = React.useState(false);
+  const [hover, setHover] = React.useState(-1);
   const inputRef = React.useRef(null);
+  const blurTimer = React.useRef(null);
+
+  React.useEffect(() => () => { if (blurTimer.current) clearTimeout(blurTimer.current); }, []);
+
+  const suggestions = React.useMemo(
+    () => (window.BGNJ_TAG_SUGGEST ? window.BGNJ_TAG_SUGGEST(input, { exclude: tags, limit: 8 }) : []),
+    [input, tags]);
 
   const commit = (raw) => {
-    const t = raw.trim().replace(/^#+/, '').replace(/\s+/g, '');
+    const t = String(raw || '').trim().replace(/^#+/, '').replace(/\s+/g, '');
     if (!t) return;
     if (tags.includes(t)) return;
-    if (tags.length >= max) return;
+    if (tags.length >= max) { window.BGNJ_TOAST?.error?.(`태그는 ${max}개까지입니다.`); return; }
     setTags([...tags, t]);
   };
 
+  const pick = (name) => { commit(name); setInput(''); setHover(-1); inputRef.current?.focus(); };
+
   const handleKey = (e) => {
+    // 목록이 열려 있으면 ↑↓ 로 고르고 Enter 로 확정. 아무것도 안 고른 상태의 Enter 는
+    // 예전처럼 '친 그대로' 를 넣는다 — 익숙한 손을 뺏지 않는다.
+    if (open && suggestions.length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      setHover((h) => {
+        const n = suggestions.length;
+        return e.key === 'ArrowDown' ? (h + 1) % n : (h <= 0 ? n - 1 : h - 1);
+      });
+      return;
+    }
+    if (e.key === 'Escape') { setOpen(false); setHover(-1); return; }
     if (e.key === ' ' || e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
+      if (e.key === 'Enter' && hover >= 0 && suggestions[hover]) { pick(suggestions[hover].name); return; }
       commit(input);
       setInput('');
+      setHover(-1);
     } else if (e.key === 'Backspace' && !input && tags.length) {
       setTags(tags.slice(0, -1));
     }
   };
 
   return (
-    <div>
+    <div style={{position:'relative'}}>
       <div className="tag-input-wrap" onClick={() => inputRef.current?.focus()}>
-        {tags.map((t, i) => (
+        {tags.map((t) => (
           <span key={t} className="tag-chip">
             #{t}
             <button type="button" onClick={() => setTags(tags.filter(x => x !== t))}
@@ -70,14 +99,39 @@ const HashtagInput = ({ tags, setTags, max = 10 }) => {
         <input
           ref={inputRef}
           value={input}
-          onChange={e => setInput(e.target.value)}
+          onChange={e => { setInput(e.target.value); setOpen(true); setHover(-1); }}
+          onFocus={() => setOpen(true)}
           onKeyDown={handleKey}
-          onBlur={() => { if (input.trim()) { commit(input); setInput(''); } }}
+          onBlur={() => {
+            // 후보를 누르는 동작이 blur 보다 먼저 죽지 않도록 한 박자 늦춘다.
+            blurTimer.current = setTimeout(() => {
+              if (input.trim()) { commit(input); setInput(''); }
+              setOpen(false); setHover(-1);
+            }, 120);
+          }}
           placeholder={tags.length ? "" : "태그 입력 후 스페이스바 (최대 10개)"}
+          role="combobox" aria-expanded={open && suggestions.length > 0} aria-autocomplete="list"
           aria-label="해시태그 입력"/>
       </div>
+      {open && suggestions.length > 0 && (
+        <ul className="tag-suggest" role="listbox" aria-label="이미 쓰이고 있는 태그">
+          {suggestions.map((sg, i) => (
+            <li key={sg.name} role="option" aria-selected={i === hover}>
+              <button type="button"
+                className={i === hover ? 'is-hover' : undefined}
+                onMouseEnter={() => setHover(i)}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pick(sg.name)}>
+                <span>#{sg.name}</span>
+                <span className="mono dim-2">{sg.uses}편</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <div className="field-hint" style={{marginTop:6}}>
         스페이스바 · Enter · 쉼표로 태그 구분 · Backspace로 마지막 태그 삭제 · {tags.length}/{max}
+        {suggestions.length > 0 && <> · <span className="dim-2">이미 쓰이는 태그는 아래 목록에서 고르세요</span></>}
       </div>
     </div>
   );
@@ -2115,14 +2169,14 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
             <span aria-hidden="true" style={{fontSize:16, lineHeight:1}}>←</span>
             <span>목록으로</span>
             {post.category && (
-              <span className="mono dim-2 post-back-board">{post.category}</span>
+              <span className="mono dim-2 post-back-board">{window.BGNJ_BOARD_LABEL(post)}</span>
             )}
           </button>
         </div>
 
         <header style={{borderBottom:'1px solid var(--line-2)', paddingBottom:32, marginBottom:48}}>
           <div style={{display:'flex', gap:12, marginBottom:20, flexWrap:'wrap'}}>
-            <span className="badge badge-gold">{post.category}</span>
+            <span className="badge badge-gold">{window.BGNJ_BOARD_LABEL(post)}</span>
             {/* v00.304 — 말머리. 누르면 같은 시리즈 글만 모아 본다. */}
             {post.prefix && (
               <button type="button" className="badge post-prefix-badge"

@@ -775,6 +775,16 @@ const handlePostPatch = async (req, env, id) => {
   for (const k of ["title", "body", "prefix", "category_id"]) {
     if (k in body) { fields.push(`${k} = ?`); args.push(body[k]); }
   }
+  // v00.306 — 게시판을 옮기면 **이름도 같이 옮긴다.**
+  //   posts 는 게시판을 id(category_id)와 이름(category) 두 벌로 들고 있는데,
+  //   지금까지 이동은 id 만 고쳤다. 그래서 DB 상으로는 옮겨졌는데 화면에 옛 게시판 이름이
+  //   그대로 떠서 "이동이 안 된다" 는 보고가 나왔다(2026-08-24, #132·#136).
+  //   화면 쪽도 id 로 이름을 찾도록 고쳤지만, 저장된 이름이 계속 거짓말을 하고 있으면
+  //   CSV·감사로그·검색용 정적 페이지처럼 id 를 모르는 소비자가 또 속는다. 여기서 맞춘다.
+  if ("category_id" in body && body.category_id) {
+    const cat = await env.DB.prepare("SELECT label FROM categories_kv WHERE id = ?").bind(body.category_id).first();
+    if (cat?.label) { fields.push("category = ?"); args.push(cat.label); }
+  }
   // v00.305 — 글이 몇 번 고쳐졌는지.
   //   **제목이나 본문이 실제로 달라졌을 때만** 센다. 값이 같은데 보낸 경우는 세지 않는다
   //   (편집 화면을 열었다 그대로 저장하는 일이 흔하다).
