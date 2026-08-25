@@ -14082,8 +14082,37 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return /* @__PURE__ */ React.createElement("li", { key: r.key, style: { marginBottom: i === rows.length - 1 ? 0 : 18 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em" } }, i + 1, ". ", r.label), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13 } }, /* @__PURE__ */ React.createElement("strong", { className: "ko-serif", style: { fontSize: 20 } }, r.value.toLocaleString("ko-KR")), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 11 } }, "\uBA85"), rate === null ? null : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginLeft: 8 } }, "\uC55E \uB2E8\uACC4\uC758 ", rate, "%"))), /* @__PURE__ */ React.createElement("div", { style: { height: 10, background: "var(--line)", overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: { width: `${share}%`, height: "100%", background: "var(--ink)" } })), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginTop: 6, wordBreak: "keep-all", overflowWrap: "break-word" } }, r.desc));
     })), ((_b = rows[3]) == null ? void 0 : _b.value) === 0 && top > 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 14, wordBreak: "keep-all", overflowWrap: "break-word" } }, "\u203B \uB85C\uADF8\uC778 \uB2E8\uACC4\uAC00 0\uC778 \uC774\uC720 \u2014 \uB204\uAC00 \uB85C\uADF8\uC778\uD588\uB294\uC9C0 \uAE30\uB85D\uD558\uB294 \uCF54\uB4DC\uC5D0 \uC5C6\uB294 \uD568\uC218 \uC774\uB984\uC774 \uC801\uD600 \uC788\uC5B4 v00.308.000 \uC774\uC804 \uBC29\uBB38\uC5D0\uB294 \uC774 \uAC12\uC774 \uBE44\uC5B4 \uC788\uC2B5\uB2C8\uB2E4. \uC9C0\uAE08\uBD80\uD130 \uC313\uC785\uB2C8\uB2E4."), worst && worst.lost > 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--line)", color: "var(--ink-2)", wordBreak: "keep-all", overflowWrap: "break-word" } }, "\uAC00\uC7A5 \uB9CE\uC774 \uBE60\uC9C0\uB294 \uACF3 \u2014 ", /* @__PURE__ */ React.createElement("strong", null, worst.from, " \u2192 ", worst.to), " \uC5D0\uC11C ", worst.lost.toLocaleString("ko-KR"), "\uBA85\uC774 \uB5A0\uB0AC\uC2B5\uB2C8\uB2E4."));
   };
+  var ROUTE_LABEL = {
+    home: "\uD648",
+    community: "\uAD11\uC7A5",
+    column: "\uCE7C\uB7FC",
+    tour: "\uB2F5\uC0AC",
+    lectures: "\uBC30\uC6C0",
+    book: "\uB3C4\uC11C",
+    sleep: "\uD55C\uCF20",
+    eat: "\uBA39\uAC70\uB9AC",
+    login: "\uB85C\uADF8\uC778",
+    signup: "\uD68C\uC6D0\uAC00\uC785",
+    mypage: "\uB9C8\uC774\uD398\uC774\uC9C0",
+    checkout: "\uACB0\uC81C",
+    admin: "\uAD00\uB9AC\uC790",
+    unknown: "\uC54C \uC218 \uC5C6\uC74C"
+  };
+  var routeLabel = (r) => ROUTE_LABEL[r] || r;
+  var JourneyPaths = ({ journeys, total }) => {
+    const rows = Array.isArray(journeys) ? journeys : [];
+    if (!rows.length) {
+      return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13 } }, "\uC544\uC9C1 \uC9D1\uACC4\uB41C \uACBD\uB85C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4."));
+    }
+    const top = rows[0].count || 1;
+    const shown = rows.reduce((s, r) => s + r.count, 0);
+    return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24 } }, /* @__PURE__ */ React.createElement("ol", { style: { listStyle: "none", padding: 0, margin: 0 } }, rows.map((r, i) => {
+      const share = total ? Math.round(r.count / total * 100) : null;
+      return /* @__PURE__ */ React.createElement("li", { key: i, style: { marginBottom: i === rows.length - 1 ? 0 : 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 5 } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13, wordBreak: "keep-all", overflowWrap: "break-word" } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11, marginRight: 8 } }, i + 1), /* @__PURE__ */ React.createElement("span", { className: "gold" }, r.source), r.steps.map((s, j) => /* @__PURE__ */ React.createElement(React.Fragment, { key: j }, /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { margin: "0 6px" } }, "\u203A"), /* @__PURE__ */ React.createElement("span", null, routeLabel(s)))), r.more && /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { marginLeft: 6, fontSize: 11 } }, "\u203A \uACC4\uC18D")), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 12, whiteSpace: "nowrap" } }, r.count.toLocaleString("ko-KR"), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 11 } }, "\uC138\uC158", share !== null ? ` \xB7 ${share}%` : ""))), /* @__PURE__ */ React.createElement("div", { style: { height: 6, background: "var(--line)", overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: { width: `${Math.max(2, Math.round(r.count / top * 100))}%`, height: "100%", background: "var(--ink)" } })));
+    })), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 18, paddingTop: 14, borderTop: "1px solid var(--line)", wordBreak: "keep-all", overflowWrap: "break-word" } }, "\uC0C1\uC704 ", rows.length, "\uAC1C \uACBD\uB85C = ", shown.toLocaleString("ko-KR"), "\uC138\uC158", total ? ` (\uC804\uCCB4 ${total.toLocaleString("ko-KR")}\uC138\uC158\uC758 ${Math.round(shown / total * 100)}%)` : "", ". \xB7 \uC138 \uBC88\uC9F8 \uD654\uBA74\uAE4C\uC9C0\uB9CC \uC801\uACE0 \uADF8 \uB4A4\uB294 '\uACC4\uC18D' \uC73C\uB85C \uC904\uC785\uB2C8\uB2E4."));
+  };
   var UserJourneyPanel = () => {
-    const [flowPairs, setFlowPairs] = React.useState([]);
+    const [journeys, setJourneys] = React.useState([]);
     const [funnel, setFunnel] = React.useState(null);
     const [flowDays, setFlowDays] = React.useState(30);
     React.useEffect(() => {
@@ -14093,11 +14122,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         try {
           const data = await ((_c = (_b = (_a = window.BGNJ_API) == null ? void 0 : _a.analytics) == null ? void 0 : _b.summary) == null ? void 0 : _c.call(_b, { days: flowDays }));
           if (cancelled) return;
-          setFlowPairs(Array.isArray(data == null ? void 0 : data.flowPairs) ? data.flowPairs : []);
+          setJourneys(Array.isArray(data == null ? void 0 : data.journeys) ? data.journeys : []);
           setFunnel((data == null ? void 0 : data.funnel) || null);
         } catch (e) {
           if (cancelled) return;
-          setFlowPairs([]);
+          setJourneys([]);
           setFunnel(null);
         }
       })();
@@ -14110,9 +14139,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       {
         eyebrow: "JOURNEY \xB7 \uC0AC\uC6A9\uC790 \uC5EC\uC815",
         title: "\uACE0\uAC1D \uC5EC\uC815 \uD750\uB984",
-        description: "\uB4E4\uC5B4\uC640\uC11C \uC5B4\uB514\uAE4C\uC9C0 \uAC14\uB294\uC9C0\uB97C \uB124 \uB2E8\uACC4\uB85C \uB098\uB220 \uBD05\uB2C8\uB2E4. \uC544\uB798 Sankey \uB294 \uC720\uC785 \uCC44\uB110 \u2192 \uB3C4\uCC29 \uD398\uC774\uC9C0\uC758 \uC138\uBD80 \uD750\uB984\uC785\uB2C8\uB2E4. \uC6B0\uC0C1\uB2E8 [\uAE30\uAC04] \uC73C\uB85C \uCF54\uD638\uD2B8 \uBCC0\uACBD."
+        description: "\uB4E4\uC5B4\uC640\uC11C \uC5B4\uB514\uAE4C\uC9C0 \uAC14\uB294\uC9C0\uB97C \uB124 \uB2E8\uACC4\uB85C \uB098\uB220 \uBCF4\uACE0, \uC2E4\uC81C\uB85C \uC5B4\uB5A4 \uAE38\uB85C \uB2E4\uB154\uB294\uC9C0\uB97C \uC21C\uC704\uB85C \uBD05\uB2C8\uB2E4. \uC6B0\uC0C1\uB2E8 [\uAE30\uAC04] \uC73C\uB85C \uCF54\uD638\uD2B8 \uBCC0\uACBD."
       }
-    ), /* @__PURE__ */ React.createElement("div", { className: "admin-section__title" }, "\uC5EC\uC815 4\uB2E8\uACC4 (\uCD5C\uADFC ", (funnel == null ? void 0 : funnel.days) || flowDays, "\uC77C)"), /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 18 } }, /* @__PURE__ */ React.createElement(JourneyFunnel, { funnel })), /* @__PURE__ */ React.createElement("div", { className: "admin-section__title" }, "\uC720\uC785 \u2192 \uB3C4\uCC29 \uC138\uBD80 \uD750\uB984"), /* @__PURE__ */ React.createElement(SankeyFlow, { pairs: flowPairs, days: flowDays, onDaysChange: setFlowDays }));
+    ), /* @__PURE__ */ React.createElement("div", { className: "admin-section__title", style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", null, "\uC5EC\uC815 4\uB2E8\uACC4 (\uCD5C\uADFC ", (funnel == null ? void 0 : funnel.days) || flowDays, "\uC77C)"), /* @__PURE__ */ React.createElement(CohortSelector, { value: flowDays, onChange: setFlowDays })), /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 18 } }, /* @__PURE__ */ React.createElement(JourneyFunnel, { funnel })), /* @__PURE__ */ React.createElement("div", { className: "admin-section__title" }, "\uB9CE\uC774 \uB2E4\uB2CC \uAE38 (\uC720\uC785 \u203A \uCCAB \uD654\uBA74 \u203A \uB2E4\uC74C \u203A \uADF8\uB2E4\uC74C)"), /* @__PURE__ */ React.createElement(JourneyPaths, { journeys, total: (funnel == null ? void 0 : funnel.visits) || 0 }));
   };
 
   // pages/admin/AdminCommunityConfigPanels.jsx

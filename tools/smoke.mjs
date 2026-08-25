@@ -792,6 +792,20 @@ const run = async () => {
     check("어디서 가장 많이 빠지는지 짚어 준다", /가장 많이 빠지는 곳/.test(dash),
       "숫자만 늘어놓으면 아무도 안 읽는다");
 
+    // 경로 순위표 — 옛 Sankey 는 (유입, 도착) **쌍**이라 순서를 몰랐다. 세션을 한 줄로 펴야 길이 보인다.
+    check("세션을 한 줄로 펴서 순서를 안다",
+      /ROW_NUMBER\(\) OVER \(PARTITION BY session_id ORDER BY ts, id\)/.test(wk3)
+        && /summary\.journeys = /.test(wk3),
+      "쌍으로 세면 홈→광장→홈 이 따로따로 세어져 '다음에 어디로 갔나' 를 알 수 없다");
+    check("유입 채널은 첫 페이지 기준이다", /MAX\(CASE WHEN rn = 1 THEN\s*\n?\s*CASE WHEN rh IS NULL/.test(wk3),
+      "세션 전체에서 고르면 내부 이동(bgnj.net)이 유입 채널로 둔갑한다");
+    check("내부 이동을 '직접 방문' 으로 접는다", /rh LIKE '%bgnj\.net'\s*\n?\s*THEN '직접 방문'/.test(wk3));
+    check("화면 이름을 사람 말로 적는다",
+      /community: '광장'/.test(dash) && /const routeLabel = /.test(dash),
+      "운영자는 'community' 가 아니라 '광장' 이라고 부른다");
+    check("Sankey 를 더 그리지 않는다", !/<SankeyFlow/.test(dash),
+      "사용자 보고 — '너무 뭉쳐져있고 보는 의미가 없다'");
+
     // ⚠ 방문 기록이 부르는 함수가 **실제로 있는지** 실행해서 확인한다.
     //   `currentUser()` 는 존재한 적이 없는 이름이었고, 옵셔널 체이닝이 오류를 '값 없음' 으로 바꿔
     //   1,789건 전부 user_id 가 빈 채로 쌓였다. 글자 검사로는 절대 못 잡는다.

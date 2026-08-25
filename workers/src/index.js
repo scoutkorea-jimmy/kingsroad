@@ -1326,6 +1326,39 @@ const handleAnalyticsSummary = async (req, env) => {
       browsed: Number(funnelRow?.browsed || 0),
       logged: Number(funnelRow?.logged || 0),
     };
+    // v00.309.000 — 실제 이동 경로 상위 N개.
+    //   ⚠ 옛 Sankey(flowPairs)는 '유입 → 도착' 두 칸을 200쌍이나 겹쳐 그려 **뭉쳐서 안 읽혔다.**
+    //     쌍(pair)은 순서를 모른다 — 같은 세션이 홈→광장→홈 으로 움직여도 따로따로 세어졌다.
+    //   여기서는 **세션 하나를 한 줄로** 편다: 유입 채널 → 첫 화면 → 다음 → 그다음.
+    //   유입 채널은 **첫 페이지의 referrer 만** 본다. 세션 전체에서 고르면 내부 이동(bgnj.net)이 섞인다.
+    const journeys = await env.DB.prepare(
+      `WITH o AS (
+         SELECT session_id, route, referrer_host AS rh,
+                ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY ts, id) AS rn,
+                COUNT(*)     OVER (PARTITION BY session_id) AS n
+         FROM page_views
+         WHERE ts >= ? AND session_id IS NOT NULL AND session_id <> ''
+       ),
+       p AS (
+         SELECT session_id, MAX(n) AS n,
+                MAX(CASE WHEN rn = 1 THEN
+                  CASE WHEN rh IS NULL OR rh = '' OR rh = 'self' OR rh LIKE '%bgnj.net'
+                       THEN '직접 방문' ELSE rh END
+                END) AS src,
+                MAX(CASE WHEN rn = 1 THEN route END) AS p1,
+                MAX(CASE WHEN rn = 2 THEN route END) AS p2,
+                MAX(CASE WHEN rn = 3 THEN route END) AS p3
+         FROM o GROUP BY session_id
+       )
+       SELECT src, p1, p2, p3, CASE WHEN n > 3 THEN 1 ELSE 0 END AS more, COUNT(*) AS c
+       FROM p GROUP BY src, p1, p2, p3, more ORDER BY c DESC LIMIT 15`
+    ).bind(isoCutoff(seriesDays)).all();
+    summary.journeys = (journeys.results || []).map((r) => ({
+      source: r.src || '직접 방문',
+      steps: [r.p1, r.p2, r.p3].filter(Boolean),
+      more: Number(r.more) === 1,
+      count: Number(r.c || 0),
+    }));
     // v00.194 — 사용자 요청 '대시보드에 접속 시간에 따른 히트맵'.
     // 24h × 7요일 그리드. ts 는 UTC ISO 이지만 KST(+9) 기준으로 보여주기 위해 +9h 시프트 후 strftime.
     // SQLite: strftime('%w', datetime(ts, '+9 hours')) 으로 KST 요일 (0=일~6=토), '%H' 로 KST 시간(00~23).

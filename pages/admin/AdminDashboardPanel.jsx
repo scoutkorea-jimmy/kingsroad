@@ -1,6 +1,6 @@
 // 뱅기노자 — 대시보드/고객여정 패널 (v00.285 — AuthAdminPage.jsx 에서 분리)
 //
-// DashboardPanel(page-view analytics 요약) · UserJourneyPanel(유입→도착 Sankey 흐름).
+// DashboardPanel(오늘 지표 + page-view 요약) · UserJourneyPanel(여정 4단계 + 경로 순위).
 // 자기완결적 — 의존은 모두 window 전역(BGNJ_API/GUARD/FMT, SankeyFlow 등 AdminShared 글로벌).
 // entry-admin 에서 AuthAdminPage 앞에 로드. DashboardPanel·UserJourneyPanel window 노출.
 
@@ -387,13 +387,15 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   );
 };
 
-// v00.187 — Sankey 흐름도 + 헬퍼 모두 AdminShared.jsx 로 이동. SankeyFlow 만 외부 사용.
-import { SankeyFlow } from './AdminShared.jsx';
-
-// === User Journey Panel (v00.178 단순화) ===========================
-// v00.146 시작 (회원별 타임라인) → v00.174 Sankey 추가 → v00.176 사용자 보고 '회원 단위 X, 전체적으로만'
-// → v00.178 회원 목록/타임라인 + 관련 state/effect/memo 모두 삭제. SankeyFlow 만 노출.
-// 데이터: analytics summary 의 flowPairs (referrer × route 집계).
+// === User Journey Panel ============================================
+// v00.146 회원별 타임라인 → v00.174 Sankey → v00.178 전체 집계만 → v00.308 4단계 깔때기
+// → v00.309 Sankey 폐기, 실제 이동 경로 순위표로 교체.
+//
+// ⚠ Sankey 를 뺀 이유 — 사용자 보고 '너무 뭉쳐져있기도 하고 이렇게 되면 보는 의미가 없어서'.
+//   근본 문제는 그림이 아니라 **데이터 모양**이었다. flowPairs 는 (유입, 도착) 쌍이라
+//   **순서를 모른다** — 같은 사람이 홈→광장→홈 으로 움직여도 별개의 쌍으로 세어졌다.
+//   'A 다음에 B 로 갔다' 를 볼 수 없으니 몇 칸을 그리든 인사이트가 안 나온다.
+//   → 서버가 세션을 한 줄로 펴서(journeys) 준다. SankeyFlow 는 AdminShared 에 그대로 남아 있다.
 // v00.308.000 — 사용자 여정 4단계 깔때기.
 //   ⚠ 서버가 네 단계를 **포함 관계로** 센다(뒤 단계는 앞 단계의 부분집합). 그래서 막대는 절대 늘어나지 않는다.
 //     이 성질이 깨지면 '몇 %가 다음으로 넘어갔나' 라는 말 자체가 성립하지 않는다.
@@ -469,8 +471,71 @@ const JourneyFunnel = ({ funnel }) => {
   );
 };
 
+// v00.309.000 — 화면 이름을 사람 말로. 운영자는 'community' 가 아니라 '광장' 이라고 부른다.
+const ROUTE_LABEL = {
+  home: '홈', community: '광장', column: '칼럼', tour: '답사', lectures: '배움',
+  book: '도서', sleep: '한켠', eat: '먹거리', login: '로그인', signup: '회원가입',
+  mypage: '마이페이지', checkout: '결제', admin: '관리자', unknown: '알 수 없음',
+};
+const routeLabel = (r) => ROUTE_LABEL[r] || r;
+
+// v00.309.000 — 실제 이동 경로 순위표.
+//   옛 Sankey 는 '유입 → 도착' 쌍 200개를 한 그림에 겹쳐 그려 뭉쳐 보였고, 무엇보다
+//   **쌍은 순서를 모른다** — 같은 사람이 홈→광장→홈 으로 움직여도 따로 세어졌다.
+//   여기서는 세션 하나가 한 줄이다. 어느 경로로 몇 명이 다녔는지 그대로 읽힌다.
+const JourneyPaths = ({ journeys, total }) => {
+  const rows = Array.isArray(journeys) ? journeys : [];
+  if (!rows.length) {
+    return (
+      <div className="card" style={{padding:24}}>
+        <p className="dim" style={{fontSize:13}}>아직 집계된 경로가 없습니다.</p>
+      </div>
+    );
+  }
+  const top = rows[0].count || 1;
+  const shown = rows.reduce((s, r) => s + r.count, 0);
+  return (
+    <div className="card" style={{padding:24}}>
+      <ol style={{listStyle:'none', padding:0, margin:0}}>
+        {rows.map((r, i) => {
+          const share = total ? Math.round((r.count / total) * 100) : null;
+          return (
+            <li key={i} style={{marginBottom: i === rows.length - 1 ? 0 : 14}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:12, flexWrap:'wrap', marginBottom:5}}>
+                <span style={{fontSize:13, wordBreak:'keep-all', overflowWrap:'break-word'}}>
+                  <span className="mono dim-2" style={{fontSize:11, marginRight:8}}>{i + 1}</span>
+                  <span className="gold">{r.source}</span>
+                  {r.steps.map((s, j) => (
+                    <React.Fragment key={j}>
+                      <span className="dim-2" style={{margin:'0 6px'}}>›</span>
+                      <span>{routeLabel(s)}</span>
+                    </React.Fragment>
+                  ))}
+                  {r.more && <span className="dim-2" style={{marginLeft:6, fontSize:11}}>› 계속</span>}
+                </span>
+                <span className="mono" style={{fontSize:12, whiteSpace:'nowrap'}}>
+                  {r.count.toLocaleString('ko-KR')}
+                  <span className="dim-2" style={{fontSize:11}}>세션{share !== null ? ` · ${share}%` : ''}</span>
+                </span>
+              </div>
+              <div style={{height:6, background:'var(--line)', overflow:'hidden'}}>
+                <div style={{width:`${Math.max(2, Math.round((r.count / top) * 100))}%`, height:'100%', background:'var(--ink)'}}/>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="dim-2" style={{fontSize:11, marginTop:18, paddingTop:14, borderTop:'1px solid var(--line)', wordBreak:'keep-all', overflowWrap:'break-word'}}>
+        상위 {rows.length}개 경로 = {shown.toLocaleString('ko-KR')}세션
+        {total ? ` (전체 ${total.toLocaleString('ko-KR')}세션의 ${Math.round((shown / total) * 100)}%)` : ''}.
+        · 세 번째 화면까지만 적고 그 뒤는 '계속' 으로 줄입니다.
+      </p>
+    </div>
+  );
+};
+
 const UserJourneyPanel = () => {
-  const [flowPairs, setFlowPairs] = React.useState([]);
+  const [journeys, setJourneys] = React.useState([]);
   const [funnel, setFunnel] = React.useState(null);
   const [flowDays, setFlowDays] = React.useState(30);
   React.useEffect(() => {
@@ -479,11 +544,11 @@ const UserJourneyPanel = () => {
       try {
         const data = await window.BGNJ_API?.analytics?.summary?.({ days: flowDays });
         if (cancelled) return;
-        setFlowPairs(Array.isArray(data?.flowPairs) ? data.flowPairs : []);
+        setJourneys(Array.isArray(data?.journeys) ? data.journeys : []);
         setFunnel(data?.funnel || null);
       } catch {
         if (cancelled) return;
-        setFlowPairs([]);
+        setJourneys([]);
         setFunnel(null);
       }
     })();
@@ -495,13 +560,18 @@ const UserJourneyPanel = () => {
       <AdminPanelHeader
         eyebrow="JOURNEY · 사용자 여정"
         title="고객 여정 흐름"
-        description="들어와서 어디까지 갔는지를 네 단계로 나눠 봅니다. 아래 Sankey 는 유입 채널 → 도착 페이지의 세부 흐름입니다. 우상단 [기간] 으로 코호트 변경."/>
-      <div className="admin-section__title">여정 4단계 (최근 {funnel?.days || flowDays}일)</div>
+        description="들어와서 어디까지 갔는지를 네 단계로 나눠 보고, 실제로 어떤 길로 다녔는지를 순위로 봅니다. 우상단 [기간] 으로 코호트 변경."/>
+
+      <div className="admin-section__title" style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap'}}>
+        <span>여정 4단계 (최근 {funnel?.days || flowDays}일)</span>
+        <CohortSelector value={flowDays} onChange={setFlowDays}/>
+      </div>
       <div style={{marginBottom:18}}>
         <JourneyFunnel funnel={funnel}/>
       </div>
-      <div className="admin-section__title">유입 → 도착 세부 흐름</div>
-      <SankeyFlow pairs={flowPairs} days={flowDays} onDaysChange={setFlowDays}/>
+
+      <div className="admin-section__title">많이 다닌 길 (유입 › 첫 화면 › 다음 › 그다음)</div>
+      <JourneyPaths journeys={journeys} total={funnel?.visits || 0}/>
     </>
   );
 };
