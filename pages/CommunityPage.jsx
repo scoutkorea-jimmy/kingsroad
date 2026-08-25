@@ -526,9 +526,43 @@ const renderCommentText = (text) => {
   });
 };
 
-const CommentTree = ({ comments, user, onDelete, onReply }) => {
-  const topLevel = (comments || []).filter((c) => !c.parentId);
-  const repliesOf = (parentId) => (comments || []).filter((c) => c.parentId === parentId);
+// v00.307.000 — 정렬. 기본은 **최신순**(맨 위가 가장 새 댓글). '등록순' 으로 뒤집을 수 있다.
+//   최상위와 답글에 **같은 규칙**을 쓴다 — 사용자 선택(2026-08-26): 답글도 최신이 위로.
+//   서버는 여전히 created_at ASC 로 주고, 뒤집는 일은 여기서만 한다(서버 캐시·번들 모두 안전).
+const sortComments = (list, sort) => {
+  const t = (c) => { const n = Date.parse(c?.createdAt || ''); return Number.isFinite(n) ? n : 0; };
+  return [...list].sort((a, b) => {
+    const d = t(a) - t(b);
+    if (d !== 0) return sort === 'old' ? d : -d;
+    // 같은 시각이면 등록 순서(id)로 가른다 — 초가 겹쳐도 순서가 흔들리지 않게.
+    const ia = Number(a?.id), ib = Number(b?.id);
+    if (Number.isFinite(ia) && Number.isFinite(ib)) return sort === 'old' ? ia - ib : ib - ia;
+    return 0;
+  });
+};
+
+// v00.307.000 — 댓글 정렬 전환 버튼. 게시글·칼럼 양쪽이 같은 것을 쓴다.
+const CommentSortToggle = ({ value, onChange }) => (
+  <span style={{display:'inline-flex', gap:4, alignItems:'center', marginLeft:12, verticalAlign:'middle'}}>
+    {[{ k:'new', label:'최신순' }, { k:'old', label:'등록순' }].map((o) => (
+      <button key={o.k} type="button" className="btn-ghost mono"
+        onClick={() => onChange?.(o.k)}
+        aria-pressed={value === o.k}
+        style={{
+          fontSize:11, padding:'3px 9px', letterSpacing:'0.08em',
+          color: value === o.k ? 'var(--primary)' : 'var(--ink-3)',
+          border: `1px solid ${value === o.k ? 'var(--primary-dim)' : 'var(--line)'}`,
+        }}>
+        {o.label}
+      </button>
+    ))}
+  </span>
+);
+
+const CommentTree = ({ comments, user, onDelete, onReply, onLike, sort = 'new' }) => {
+  const all = Array.isArray(comments) ? comments : [];
+  const topLevel = sortComments(all.filter((c) => !c.parentId), sort);
+  const repliesOf = (parentId) => sortComments(all.filter((c) => c.parentId === parentId), sort);
   const [openReplyTo, setOpenReplyTo] = React.useState(null);
   const [draft, setDraft] = React.useState('');
 
@@ -565,6 +599,26 @@ const CommentTree = ({ comments, user, onDelete, onReply }) => {
             <time className="mono dim-2" style={{fontSize:11}}>{c.date}</time>
           </div>
           <div style={{display:'flex', gap:6, alignItems:'center'}}>
+            {/* v00.307.000 — 공감. 로그인해야 누를 수 있고, 비로그인에게는 숫자만 보인다. */}
+            {user ? (
+              <button type="button" className="btn-ghost"
+                onClick={() => onLike?.(c.id)}
+                aria-pressed={!!c.liked}
+                aria-label={c.liked ? '공감 취소' : '공감'}
+                style={{
+                  fontSize:11, display:'inline-flex', alignItems:'center', gap:4,
+                  color: c.liked ? 'var(--primary)' : 'var(--ink-2)',
+                }}>
+                <span aria-hidden="true">{c.liked ? '♥' : '♡'}</span>
+                공감{Number(c.likeCount) > 0 ? ` ${c.likeCount}` : ''}
+              </button>
+            ) : (
+              Number(c.likeCount) > 0 && (
+                <span className="dim-2" style={{fontSize:11, display:'inline-flex', alignItems:'center', gap:4}}>
+                  <span aria-hidden="true">♡</span>공감 {c.likeCount}
+                </span>
+              )
+            )}
             {canReply && (
               <button type="button" className="btn-ghost"
                 onClick={() => {
@@ -2144,6 +2198,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
   }, [sibList, sibIndex, inList]);
   const [comment, setComment] = React.useState("");
   const [commentsList, setCommentsList] = React.useState(() => G.arr(() => window.BGNJ_COMMENTS?.list?.('post', post.id)));
+  const [commentSort, setCommentSort] = React.useState('new');   // v00.307.000 — 기본 최신순
   const [reportOpen, setReportOpen] = React.useState(false);
   const [reportReason, setReportReason] = React.useState("");
   const [reportSubmitted, setReportSubmitted] = React.useState(false);
@@ -2468,8 +2523,9 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
 
         {/* Comments */}
         <section aria-labelledby="comments-heading">
-          <h2 id="comments-heading" className="ko-serif" style={{fontSize:22, marginBottom:24}}>
-            댓글 <span className="gold">{commentsList.length}</span>
+          <h2 id="comments-heading" className="ko-serif" style={{fontSize:22, marginBottom:24, display:'flex', alignItems:'center', flexWrap:'wrap', gap:4}}>
+            <span>댓글 <span className="gold">{commentsList.length}</span></span>
+            <CommentSortToggle value={commentSort} onChange={setCommentSort}/>
           </h2>
 
           {user ? (
@@ -2502,6 +2558,11 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
           <CommentTree
             comments={commentsList}
             user={user}
+            sort={commentSort}
+            onLike={(commentId) => {
+              if (!user) return;
+              setCommentsList(window.BGNJ_COMMENTS.toggleLike('post', post.id, commentId));
+            }}
             onDelete={deleteComment}
             onReply={(parentId, text) => {
               if (!user || !text.trim()) return;
@@ -2603,7 +2664,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
 // (window 노출 제거 — ESM 전환)
 
 // v00.287 ESM (main) — 모듈 export (window 병행).
-export { CommentTree, ContentLoadNotice };
+export { CommentTree, CommentSortToggle, ContentLoadNotice };
 
 // v00.287 ESM (main) — 라우터용 export (window 병행).
 export { CommunityPage };

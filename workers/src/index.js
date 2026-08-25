@@ -14,6 +14,7 @@
 //   DELETE /api/posts/:id                 (auth: author or admin)
 //   GET  /api/posts/:id/comments
 //   POST /api/posts/:id/comments          (auth)
+//   POST /api/comments/:id/like           (auth) — 공감 토글
 //   GET  /api/books
 //   GET  /api/books/:id
 //   POST /api/books                       (admin)
@@ -882,11 +883,37 @@ const countComments = async (env, targetType, targetId) => {
   return Number(row?.n || 0);
 };
 
+// v00.307.000 — 댓글 공감. 목록에 붙일 { 댓글id → 공감수 } 와 '내가 누른 것' 을 모아 온다.
+//   ⚠ 여기서 실패해도 **댓글 본문은 반드시 보여야 한다.** 공감은 부가 정보다.
+//      comment_likes 표가 아직 없는 순간(마이그레이션 전 배포)에도 화면이 통째로 비지 않게 한다.
+const loadCommentLikes = async (env, ids, userId) => {
+  const counts = new Map();
+  const mine = new Set();
+  if (!ids.length) return { counts, mine };
+  const ph = ids.map(() => "?").join(",");
+  try {
+    const { results } = await env.DB.prepare(
+      `SELECT comment_id, COUNT(*) AS n FROM comment_likes WHERE comment_id IN (${ph}) GROUP BY comment_id`
+    ).bind(...ids).all();
+    (results || []).forEach((r) => counts.set(Number(r.comment_id), Number(r.n || 0)));
+    if (userId) {
+      const { results: m } = await env.DB.prepare(
+        `SELECT comment_id FROM comment_likes WHERE user_id = ? AND comment_id IN (${ph})`
+      ).bind(userId, ...ids).all();
+      (m || []).forEach((r) => mine.add(Number(r.comment_id)));
+    }
+  } catch (e) {
+    console.warn("[bgnj:comment-likes]", e?.message || e);
+  }
+  return { counts, mine };
+};
+
 const handleCommentsList = async (req, env, targetType, targetId) => {
   assertCommentTarget(targetType);
   let isAdmin = false;
+  let meId = null;
   // v00.262.003 — transient D1 에러로 admin 이 조용히 강등되던 사고 방지. 가시화한다.
-  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; }
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; meId = me?.id || null; }
   catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch (e2) { console.warn("[bgnj:best-effort]", e2?.message || e2); } }
   if (!isAdmin && targetType === 'post') {
     const target = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(targetId).first();
@@ -898,7 +925,15 @@ const handleCommentsList = async (req, env, targetType, targetId) => {
     `SELECT id, target_type, target_id, parent_id, body, author_id, author, created_at
      FROM content_comments WHERE target_type = ? AND target_id = ? ORDER BY created_at ASC`
   ).bind(String(targetType), String(targetId)).all();
-  return { comments: results || [] };
+  const rows = results || [];
+  const { counts, mine } = await loadCommentLikes(env, rows.map((r) => Number(r.id)), meId);
+  return {
+    comments: rows.map((r) => ({
+      ...r,
+      like_count: counts.get(Number(r.id)) || 0,
+      liked: mine.has(Number(r.id)) ? 1 : 0,
+    })),
+  };
 };
 
 const handleCommentsCreate = async (req, env, targetType, targetId) => {
@@ -962,13 +997,56 @@ const handleCommentDelete = async (req, env, commentId) => {
   ).bind(commentId).first();
   if (!row) throw new HttpError(404, "댓글을 찾을 수 없습니다.");
   if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403, "본인 또는 관리자만 삭제할 수 있습니다.");
+  // v00.307.000 — 공감을 **먼저** 지운다. 댓글이 사라진 뒤엔 어떤 답글이 딸려 있었는지 알 수 없다.
+  try {
+    await env.DB.prepare(
+      "DELETE FROM comment_likes WHERE comment_id = ? OR comment_id IN (SELECT id FROM content_comments WHERE parent_id = ?)"
+    ).bind(commentId, commentId).run();
+  } catch (e) { console.warn("[bgnj:comment-like-cleanup]", e?.message || e); }
   // 답글이 매달려 있으면 함께 지운다(자기 참조 FK 의 CASCADE 를 못 믿는 환경 대비 명시).
   await env.DB.prepare("DELETE FROM content_comments WHERE id = ? OR parent_id = ?").bind(commentId, commentId).run();
   return { ok: true, replies: await countComments(env, row.target_type, row.target_id) };
 };
 
+// v00.307.000 — 댓글 공감 토글.
+//   ⚠ 세고 나서 넣지 않는다. INSERT OR IGNORE 한 문장의 changes 로 판정한다 —
+//     빠르게 두 번 누르면 두 요청이 같은 숫자를 보고 둘 다 '처음 누른 것' 이 된다.
+//     (comment_id, user_id) 복합 PK 가 이 판정을 보장한다.
+const handleCommentLike = async (req, env, commentId) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare(
+    "SELECT id, target_type, target_id FROM content_comments WHERE id = ?"
+  ).bind(commentId).first();
+  if (!row) throw new HttpError(404, "댓글을 찾을 수 없습니다.");
+  // 댓글을 읽을 수 없는 게시판이면 공감도 누를 수 없다.
+  if (!user.isAdmin && row.target_type === 'post') {
+    const target = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(row.target_id).first();
+    if (target?.category_id && !(await commentPermission(env, target.category_id, 'allow_comment_read'))) {
+      throw new HttpError(403, "이 게시판의 댓글에는 공감할 수 없습니다.");
+    }
+  }
+  const ins = await env.DB.prepare(
+    "INSERT OR IGNORE INTO comment_likes (comment_id, user_id, created_at) VALUES (?, ?, ?)"
+  ).bind(row.id, user.id, nowIso()).run();
+  const liked = Number(ins.meta?.changes || 0) > 0;
+  if (!liked) {
+    await env.DB.prepare("DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?")
+      .bind(row.id, user.id).run();
+  }
+  const c = await env.DB.prepare("SELECT COUNT(*) AS n FROM comment_likes WHERE comment_id = ?")
+    .bind(row.id).first();
+  return { liked, count: Number(c?.n || 0) };
+};
+
 // 대상이 사라지면 그 댓글도 사라져야 한다. FK CASCADE 를 못 쓰므로 부르는 쪽에서 지운다.
 const deleteCommentsFor = async (env, targetType, targetId) => {
+  try {
+    // v00.307.000 — 공감이 먼저다. 댓글을 지운 뒤엔 대상을 찾을 방법이 없어 고아가 쌓인다.
+    await env.DB.prepare(
+      `DELETE FROM comment_likes WHERE comment_id IN
+         (SELECT id FROM content_comments WHERE target_type = ? AND target_id = ?)`
+    ).bind(String(targetType), String(targetId)).run();
+  } catch (e) { console.warn("[bgnj:comment-like-cleanup]", e?.message || e); }
   try {
     await env.DB.prepare("DELETE FROM content_comments WHERE target_type = ? AND target_id = ?")
       .bind(String(targetType), String(targetId)).run();
@@ -3654,6 +3732,10 @@ const route = async (req, env) => {
       if (!b.targetId) throw new HttpError(400, "대상을 지정해 주세요.");
       return json(await handleCommentsCreate(req, env, b.targetType || "", String(b.targetId)), { status: 201 });
     }
+  }
+  // v00.307.000 — 댓글 공감 토글. ⚠ 아래 삭제 라우트보다 **먼저** 와야 한다.
+  if ((g = m(/^\/api\/comments\/([\w-]+)\/like$/))) {
+    if (req.method === "POST") return json(await handleCommentLike(req, env, g[1]));
   }
   if ((g = m(/^\/api\/comments\/([\w-]+)$/))) {
     if (req.method === "DELETE") return json(await handleCommentDelete(req, env, g[1]));

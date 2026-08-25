@@ -772,6 +772,92 @@ const run = async () => {
       "목록 맨 위가 현재 버전이 아니면 '쓰다 만 화면' 으로 보인다");
   }
 
+  console.log("\n── 17. 댓글 최신순 + 공감 ──");
+  {
+    const wk4 = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+    const cp2 = readFileSync(path.join(ROOT, "pages/CommunityPage.jsx"), "utf8");
+
+    // ── 정렬 — 규칙을 **실제로 실행**해서 순서를 본다. 눈으로 읽는 검사는 뒤집힌 것을 못 잡는다.
+    const src = cp2.slice(cp2.indexOf("const sortComments = "));
+    const sortSrc = src.slice(0, src.indexOf("\n};") + 2);
+    const sortComments = vm.runInNewContext(`(${sortSrc.replace(/^const sortComments = /, "")})`, { Date, Number });
+    const sample = [
+      { id: 1, createdAt: "2026-08-25T11:05:52.327Z" },
+      { id: 2, createdAt: "2026-08-25T13:44:08.320Z" },
+      { id: 3, createdAt: "2026-08-25T16:19:51.950Z" },
+    ];
+    check("최신 댓글이 맨 위로 온다",
+      sortComments(sample, "new").map((c) => c.id).join(",") === "3,2,1",
+      `실제: ${sortComments(sample, "new").map((c) => c.id).join(",")}`);
+    check("'등록순' 을 고르면 옛것이 위로 간다",
+      sortComments(sample, "old").map((c) => c.id).join(",") === "1,2,3");
+    check("시각이 같으면 등록 순서로 가른다",
+      sortComments([{ id: 7, createdAt: "2026-08-26T01:00:00.000Z" },
+                    { id: 9, createdAt: "2026-08-26T01:00:00.000Z" }], "new")
+        .map((c) => c.id).join(",") === "9,7",
+      "초 단위가 겹치면 순서가 흔들려 새로고침마다 자리가 바뀐다");
+    check("원본 배열을 건드리지 않는다",
+      (sortComments(sample, "new"), sample.map((c) => c.id).join(",") === "1,2,3"),
+      "제자리 정렬이면 부모가 쥔 목록까지 바뀐다");
+    check("답글에도 같은 규칙을 쓴다",
+      /const repliesOf = \(parentId\) => sortComments\(/.test(cp2),
+      "사용자 선택(2026-08-26) — 답글도 최신이 위로");
+
+    // ── 공감 — 낙관적 반영이 **실패했을 때 걷어내는지**가 핵심이다.
+    //    안 걷어내면 화면만 '눌린 척' 을 한다(2026-08-25 사고의 두 번째 얼굴과 같은 모양).
+    const seed = () => {
+      w.BGNJ_COMMENTS._cache["post:1"] = [
+        { id: 11, targetType: "post", targetId: "1", parentId: null, text: "가", likeCount: 2, liked: false },
+      ];
+    };
+    const one = () => w.BGNJ_COMMENTS.list("post", 1)[0];
+
+    seed();
+    w.BGNJ_API = { comments: { like: async () => ({ liked: true, count: 3 }) } };
+    w.BGNJ_COMMENTS.toggleLike("post", 1, 11);
+    check("누르는 즉시 숫자가 올라간다", one().liked === true && one().likeCount === 3,
+      `실제: liked=${one().liked} count=${one().likeCount}`);
+    await new Promise((r) => setTimeout(r, 0));
+
+    seed();
+    w.BGNJ_API = { comments: { like: async () => ({ liked: true, count: 9 }) } };
+    w.BGNJ_COMMENTS.toggleLike("post", 1, 11);
+    await new Promise((r) => setTimeout(r, 0));
+    check("서버가 센 값이 낙관적 숫자를 이긴다", one().likeCount === 9,
+      `실제: ${one().likeCount} — 남이 누른 사이 숫자가 벌어져 있을 수 있다`);
+
+    seed();
+    w.BGNJ_API = { comments: { like: async () => { throw new Error("끊김"); } } };
+    w.BGNJ_COMMENTS.toggleLike("post", 1, 11);
+    await new Promise((r) => setTimeout(r, 0));
+    check("실패하면 시작 시점 값으로 되돌린다", one().liked === false && one().likeCount === 2,
+      `실제: liked=${one().liked} count=${one().likeCount} — 안 걷어내면 '눌린 척' 을 한다`);
+
+    w.BGNJ_COMMENTS._cache["post:1"] = [{ id: "tmp-1", likeCount: 0, liked: false }];
+    let called = false;
+    w.BGNJ_API = { comments: { like: async () => { called = true; return {}; } } };
+    w.BGNJ_COMMENTS.toggleLike("post", 1, "tmp-1");
+    check("아직 저장 안 된 댓글에는 안 누른다", called === false,
+      "서버에 없는 id 로 부르면 404 가 난다");
+
+    // ── 워커 ──
+    check("공감 판정을 한 문장으로 한다", /INSERT OR IGNORE INTO comment_likes/.test(wk4),
+      "세고 나서 넣으면 빠르게 두 번 누를 때 둘 다 '처음' 이 된다");
+    check("공감을 댓글보다 먼저 지운다",
+      wk4.indexOf("DELETE FROM comment_likes WHERE comment_id = ? OR comment_id IN")
+        < wk4.indexOf("DELETE FROM content_comments WHERE id = ? OR parent_id = ?"),
+      "댓글이 사라진 뒤엔 어떤 답글이 딸려 있었는지 알 수 없다");
+    check("대상이 지워질 때 공감도 함께 지운다",
+      /DELETE FROM comment_likes WHERE comment_id IN\s*\n?\s*\(SELECT id FROM content_comments WHERE target_type/.test(wk4),
+      "안 지우면 주인 없는 공감이 조용히 쌓인다");
+    check("공감 조회가 실패해도 댓글 본문은 보인다",
+      /catch \(e\) \{\s*console\.warn\("\[bgnj:comment-likes\]"/.test(wk4),
+      "표가 아직 없는 순간에 화면이 통째로 비면 안 된다");
+    check("공감 창구가 삭제 창구보다 먼저 걸린다",
+      wk4.indexOf("\\/api\\/comments\\/([\\w-]+)\\/like$") < wk4.indexOf("\\/api\\/comments\\/([\\w-]+)$"),
+      "뒤에 두면 like 가 삭제 규칙에 먼저 걸릴 수 있다");
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

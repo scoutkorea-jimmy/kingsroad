@@ -197,6 +197,8 @@
       create: (targetType, targetId, { body, parentId }) =>
         request("POST", `/comments`, { targetType, targetId, body, parentId }),
       remove: (commentId) => request("DELETE", `/comments/${encodeURIComponent(commentId)}`),
+      // v00.307.000 — 댓글 공감 토글. 응답 { liked, count }.
+      like: (commentId) => request("POST", `/comments/${encodeURIComponent(commentId)}/like`),
     },
 
     // ── 책 ──

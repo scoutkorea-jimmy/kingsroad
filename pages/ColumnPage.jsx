@@ -1,6 +1,6 @@
 // 뱅기노자 칼럼 아카이브
 // v00.287 ESM (main) — cross-module import (전역 결합 제거).
-import { CommentTree, ContentLoadNotice } from './CommunityPage.jsx';
+import { CommentTree, CommentSortToggle, ContentLoadNotice } from './CommunityPage.jsx';
 
 const ColumnPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
@@ -13,6 +13,7 @@ const ColumnPage = ({ go, user }) => {
   const [writerOpen, setWriterOpen] = React.useState(false);
   // v00.234 — admin 전용 칼럼 수정 (선택된 칼럼 객체 → 모달).
   const [editColumn, setEditColumn] = React.useState(null);
+  const [commentSort, setCommentSort] = React.useState('new');   // v00.307.000 — 기본 최신순
   const isAdmin = !!user?.isAdmin;
 
   const refresh = () => setTick((v) => v + 1);
@@ -324,8 +325,9 @@ const ColumnPage = ({ go, user }) => {
 
           {/* 댓글 */}
           <section aria-labelledby="col-comments" style={{marginTop:32}}>
-            <h2 id="col-comments" className="ko-serif" style={{fontSize:22, marginBottom:24}}>
-              댓글 <span className="gold">{comments.length}</span>
+            <h2 id="col-comments" className="ko-serif" style={{fontSize:22, marginBottom:24, display:'flex', alignItems:'center', flexWrap:'wrap', gap:4}}>
+              <span>댓글 <span className="gold">{comments.length}</span></span>
+              <CommentSortToggle value={commentSort} onChange={setCommentSort}/>
             </h2>
 
             {user ? (
@@ -355,6 +357,11 @@ const ColumnPage = ({ go, user }) => {
             <CommentTree
               comments={comments}
               user={user}
+              sort={commentSort}
+              onLike={(commentId) => {
+                if (!user) return;
+                window.BGNJ_COMMENTS.toggleLike('column', c.id, commentId);
+              }}
               onDelete={removeComment}
               onReply={(parentId, text) => {
                 if (!user || !text.trim()) return;

@@ -155,7 +155,9 @@
       comments: {
         list: (targetType, targetId) => request("GET", `/comments?targetType=${encodeURIComponent(targetType)}&targetId=${encodeURIComponent(targetId)}`),
         create: (targetType, targetId, { body, parentId }) => request("POST", `/comments`, { targetType, targetId, body, parentId }),
-        remove: (commentId) => request("DELETE", `/comments/${encodeURIComponent(commentId)}`)
+        remove: (commentId) => request("DELETE", `/comments/${encodeURIComponent(commentId)}`),
+        // v00.307.000 — 댓글 공감 토글. 응답 { liked, count }.
+        like: (commentId) => request("POST", `/comments/${encodeURIComponent(commentId)}/like`)
       },
       // ── 책 ──
       books: {
@@ -406,8 +408,8 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.306.009",
-    build: "2026.08.25",
+    version: "00.307.000",
+    build: "2026.08.26",
     channel: "preview"
   };
   try {
@@ -2093,7 +2095,10 @@
         author: row.author,
         authorId: row.author_id,
         createdAt: row.created_at,
-        date: window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(row.created_at) : String(row.created_at || "")
+        date: window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(row.created_at) : String(row.created_at || ""),
+        // v00.307.000 — 공감. 옛 워커(필드 없음)를 물고 있어도 0 / false 로 떨어져 화면은 멀쩡하다.
+        likeCount: Number(row.like_count || 0),
+        liked: !!row.liked
       };
     },
     _emit(type, id) {
@@ -2138,6 +2143,8 @@
         authorId: payload.authorId,
         createdAt: (/* @__PURE__ */ new Date()).toISOString(),
         date: payload.date || (window.BGNJ_FMT ? window.BGNJ_FMT.kstShort((/* @__PURE__ */ new Date()).toISOString()) : ""),
+        likeCount: 0,
+        liked: false,
         _pending: true
       };
       this._cache[key] = [...this._cache[key] || [], optimistic];
@@ -2175,6 +2182,47 @@
           this._emit(type, id);
         });
       }
+      return this.list(type, id);
+    },
+    // v00.307.000 — 댓글 공감 토글.
+    //   낙관적으로 먼저 그리고, 서버가 돌려준 진짜 숫자로 덮는다. 실패하면 **시작 시점 값으로 원복**한다
+    //   (`''`·0 이 아니라 원래 값 — 그냥 두면 화면이 '눌린 척' 을 한다).
+    toggleLike(type, id, commentId) {
+      var _a, _b;
+      const key = this._key(type, id);
+      const before = this._cache[key] || [];
+      const target = before.find((c) => String(c.id) === String(commentId));
+      if (!target) return this.list(type, id);
+      if (String(commentId).startsWith("tmp-")) {
+        try {
+          (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, "\uC800\uC7A5 \uC911\uC778 \uB313\uAE00\uC5D0\uB294 \uC7A0\uC2DC \uB4A4\uC5D0 \uACF5\uAC10\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
+        } catch (_e) {
+          console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
+        }
+        return this.list(type, id);
+      }
+      const nextLiked = !target.liked;
+      const patch = (c) => ({
+        ...c,
+        liked: nextLiked,
+        likeCount: Math.max(0, Number(c.likeCount || 0) + (nextLiked ? 1 : -1))
+      });
+      this._cache[key] = before.map((c) => String(c.id) === String(commentId) ? patch(c) : c);
+      this._emit(type, id);
+      window.BGNJ_API.comments.like(commentId).then((r) => {
+        const cur = this._cache[key] || [];
+        this._cache[key] = cur.map((c) => String(c.id) === String(commentId) ? { ...c, liked: !!(r == null ? void 0 : r.liked), likeCount: Number((r == null ? void 0 : r.count) || 0) } : c);
+        this._emit(type, id);
+      }).catch((e) => {
+        var _a2, _b2;
+        this._cache[key] = before;
+        try {
+          (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, `\uACF5\uAC10 \uC2E4\uD328: ${(e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+        } catch (_e) {
+          console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
+        }
+        this._emit(type, id);
+      });
       return this.list(type, id);
     },
     // 관리자 대시보드용 — 화면에 실린 캐시가 아니라 서버가 센 값을 쓴다.
@@ -9080,9 +9128,41 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return /* @__PURE__ */ React.createElement(React.Fragment, { key: i }, part);
     });
   };
-  var CommentTree = ({ comments, user, onDelete, onReply }) => {
-    const topLevel = (comments || []).filter((c) => !c.parentId);
-    const repliesOf = (parentId) => (comments || []).filter((c) => c.parentId === parentId);
+  var sortComments = (list, sort) => {
+    const t = (c) => {
+      const n = Date.parse((c == null ? void 0 : c.createdAt) || "");
+      return Number.isFinite(n) ? n : 0;
+    };
+    return [...list].sort((a, b) => {
+      const d = t(a) - t(b);
+      if (d !== 0) return sort === "old" ? d : -d;
+      const ia = Number(a == null ? void 0 : a.id), ib = Number(b == null ? void 0 : b.id);
+      if (Number.isFinite(ia) && Number.isFinite(ib)) return sort === "old" ? ia - ib : ib - ia;
+      return 0;
+    });
+  };
+  var CommentSortToggle = ({ value, onChange }) => /* @__PURE__ */ React.createElement("span", { style: { display: "inline-flex", gap: 4, alignItems: "center", marginLeft: 12, verticalAlign: "middle" } }, [{ k: "new", label: "\uCD5C\uC2E0\uC21C" }, { k: "old", label: "\uB4F1\uB85D\uC21C" }].map((o) => /* @__PURE__ */ React.createElement(
+    "button",
+    {
+      key: o.k,
+      type: "button",
+      className: "btn-ghost mono",
+      onClick: () => onChange == null ? void 0 : onChange(o.k),
+      "aria-pressed": value === o.k,
+      style: {
+        fontSize: 11,
+        padding: "3px 9px",
+        letterSpacing: "0.08em",
+        color: value === o.k ? "var(--primary)" : "var(--ink-3)",
+        border: `1px solid ${value === o.k ? "var(--primary-dim)" : "var(--line)"}`
+      }
+    },
+    o.label
+  )));
+  var CommentTree = ({ comments, user, onDelete, onReply, onLike, sort = "new" }) => {
+    const all = Array.isArray(comments) ? comments : [];
+    const topLevel = sortComments(all.filter((c) => !c.parentId), sort);
+    const repliesOf = (parentId) => sortComments(all.filter((c) => c.parentId === parentId), sort);
     const [openReplyTo, setOpenReplyTo] = React.useState(null);
     const [draft, setDraft] = React.useState("");
     const allAuthors = React.useMemo(() => {
@@ -9100,7 +9180,26 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const canReply = !!user;
       const visualDepth = Math.min(depth, MAX_VISIBLE_DEPTH);
       const isDeepCollapsed = depth >= MAX_VISIBLE_DEPTH && !expanded[c.id] && children.length > 0;
-      return /* @__PURE__ */ React.createElement("li", { key: c.id, style: { padding: "18px 0", borderBottom: depth === 0 ? "1px solid var(--line)" : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, alignItems: "center", justifyContent: "space-between", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" } }, depth > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11 } }, "\u21B3"), /* @__PURE__ */ React.createElement("span", { className: "gold mono", style: { fontSize: 12, letterSpacing: "0.1em", display: "inline-flex", alignItems: "center" } }, c.author, /* @__PURE__ */ React.createElement(AuthorGradeBadge, { authorId: c.authorId, author: c.author, authorEmail: c.authorEmail })), /* @__PURE__ */ React.createElement("time", { className: "mono dim-2", style: { fontSize: 11 } }, c.date)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } }, canReply && /* @__PURE__ */ React.createElement(
+      return /* @__PURE__ */ React.createElement("li", { key: c.id, style: { padding: "18px 0", borderBottom: depth === 0 ? "1px solid var(--line)" : "none" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 16, alignItems: "center", justifyContent: "space-between", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" } }, depth > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11 } }, "\u21B3"), /* @__PURE__ */ React.createElement("span", { className: "gold mono", style: { fontSize: 12, letterSpacing: "0.1em", display: "inline-flex", alignItems: "center" } }, c.author, /* @__PURE__ */ React.createElement(AuthorGradeBadge, { authorId: c.authorId, author: c.author, authorEmail: c.authorEmail })), /* @__PURE__ */ React.createElement("time", { className: "mono dim-2", style: { fontSize: 11 } }, c.date)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } }, user ? /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn-ghost",
+          onClick: () => onLike == null ? void 0 : onLike(c.id),
+          "aria-pressed": !!c.liked,
+          "aria-label": c.liked ? "\uACF5\uAC10 \uCDE8\uC18C" : "\uACF5\uAC10",
+          style: {
+            fontSize: 11,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            color: c.liked ? "var(--primary)" : "var(--ink-2)"
+          }
+        },
+        /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true" }, c.liked ? "\u2665" : "\u2661"),
+        "\uACF5\uAC10",
+        Number(c.likeCount) > 0 ? ` ${c.likeCount}` : ""
+      ) : Number(c.likeCount) > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 11, display: "inline-flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true" }, "\u2661"), "\uACF5\uAC10 ", c.likeCount), canReply && /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -10675,6 +10774,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       var _a2, _b2;
       return (_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.list) == null ? void 0 : _b2.call(_a2, "post", post.id);
     }));
+    const [commentSort, setCommentSort] = React.useState("new");
     const [reportOpen, setReportOpen] = React.useState(false);
     const [reportReason, setReportReason] = React.useState("");
     const [reportSubmitted, setReportSubmitted] = React.useState(false);
@@ -10934,7 +11034,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         },
         "\uC2E0\uACE0 \uC811\uC218"
       )))
-    )), /* @__PURE__ */ React.createElement("section", { "aria-labelledby": "comments-heading" }, /* @__PURE__ */ React.createElement("h2", { id: "comments-heading", className: "ko-serif", style: { fontSize: 22, marginBottom: 24 } }, "\uB313\uAE00 ", /* @__PURE__ */ React.createElement("span", { className: "gold" }, commentsList.length)), user ? /* @__PURE__ */ React.createElement("form", { onSubmit: submitComment, style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("label", { htmlFor: "comment-input", className: "sr-only" }, "\uB313\uAE00 \uC785\uB825"), /* @__PURE__ */ React.createElement(
+    )), /* @__PURE__ */ React.createElement("section", { "aria-labelledby": "comments-heading" }, /* @__PURE__ */ React.createElement("h2", { id: "comments-heading", className: "ko-serif", style: { fontSize: 22, marginBottom: 24, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 } }, /* @__PURE__ */ React.createElement("span", null, "\uB313\uAE00 ", /* @__PURE__ */ React.createElement("span", { className: "gold" }, commentsList.length)), /* @__PURE__ */ React.createElement(CommentSortToggle, { value: commentSort, onChange: setCommentSort })), user ? /* @__PURE__ */ React.createElement("form", { onSubmit: submitComment, style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("label", { htmlFor: "comment-input", className: "sr-only" }, "\uB313\uAE00 \uC785\uB825"), /* @__PURE__ */ React.createElement(
       MentionTextarea,
       {
         value: comment,
@@ -10949,6 +11049,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       {
         comments: commentsList,
         user,
+        sort: commentSort,
+        onLike: (commentId) => {
+          if (!user) return;
+          setCommentsList(window.BGNJ_COMMENTS.toggleLike("post", post.id, commentId));
+        },
         onDelete: deleteComment,
         onReply: (parentId, text) => {
           if (!user || !text.trim()) return;
@@ -11873,6 +11978,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [shareMsg, setShareMsg] = React.useState("");
     const [writerOpen, setWriterOpen] = React.useState(false);
     const [editColumn, setEditColumn] = React.useState(null);
+    const [commentSort, setCommentSort] = React.useState("new");
     const isAdmin = !!(user == null ? void 0 : user.isAdmin);
     const refresh = () => setTick((v) => v + 1);
     const _arr2 = (fn) => {
@@ -12130,7 +12236,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true" }, "\u2665"),
         " \uACF5\uAC10 ",
         /* @__PURE__ */ React.createElement("span", { "aria-live": "polite" }, likes.length)
-      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: handleShare }, "\uACF5\uC720 (\uB9C1\uD06C \uBCF5\uC0AC)")), shareMsg && /* @__PURE__ */ React.createElement("div", { role: "status", className: "mono gold", style: { fontSize: 12, textAlign: "center", marginBottom: 32, letterSpacing: "0.1em" } }, shareMsg), /* @__PURE__ */ React.createElement("section", { "aria-labelledby": "col-comments", style: { marginTop: 32 } }, /* @__PURE__ */ React.createElement("h2", { id: "col-comments", className: "ko-serif", style: { fontSize: 22, marginBottom: 24 } }, "\uB313\uAE00 ", /* @__PURE__ */ React.createElement("span", { className: "gold" }, comments.length)), user ? /* @__PURE__ */ React.createElement("form", { onSubmit: submitComment, style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("label", { htmlFor: "col-comment-input", className: "sr-only" }, "\uB313\uAE00 \uC785\uB825"), /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: handleShare }, "\uACF5\uC720 (\uB9C1\uD06C \uBCF5\uC0AC)")), shareMsg && /* @__PURE__ */ React.createElement("div", { role: "status", className: "mono gold", style: { fontSize: 12, textAlign: "center", marginBottom: 32, letterSpacing: "0.1em" } }, shareMsg), /* @__PURE__ */ React.createElement("section", { "aria-labelledby": "col-comments", style: { marginTop: 32 } }, /* @__PURE__ */ React.createElement("h2", { id: "col-comments", className: "ko-serif", style: { fontSize: 22, marginBottom: 24, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4 } }, /* @__PURE__ */ React.createElement("span", null, "\uB313\uAE00 ", /* @__PURE__ */ React.createElement("span", { className: "gold" }, comments.length)), /* @__PURE__ */ React.createElement(CommentSortToggle, { value: commentSort, onChange: setCommentSort })), user ? /* @__PURE__ */ React.createElement("form", { onSubmit: submitComment, style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement("label", { htmlFor: "col-comment-input", className: "sr-only" }, "\uB313\uAE00 \uC785\uB825"), /* @__PURE__ */ React.createElement(
         "textarea",
         {
           id: "col-comment-input",
@@ -12145,6 +12251,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         {
           comments,
           user,
+          sort: commentSort,
+          onLike: (commentId) => {
+            if (!user) return;
+            window.BGNJ_COMMENTS.toggleLike("column", c.id, commentId);
+          },
           onDelete: removeComment,
           onReply: (parentId, text) => {
             if (!user || !text.trim()) return;

@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.306.009",
-  build: "2026.08.25",
+  version: "00.307.000",
+  build: "2026.08.26",
   channel: "preview",
 };
 
@@ -1687,6 +1687,9 @@ window.BGNJ_COMMENTS = {
       authorId: row.author_id,
       createdAt: row.created_at,
       date: window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(row.created_at) : String(row.created_at || ''),
+      // v00.307.000 — 공감. 옛 워커(필드 없음)를 물고 있어도 0 / false 로 떨어져 화면은 멀쩡하다.
+      likeCount: Number(row.like_count || 0),
+      liked: !!row.liked,
     };
   },
 
@@ -1728,6 +1731,8 @@ window.BGNJ_COMMENTS = {
       author: payload.author, authorId: payload.authorId,
       createdAt: new Date().toISOString(),
       date: payload.date || (window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(new Date().toISOString()) : ''),
+      likeCount: 0,
+      liked: false,
       _pending: true,
     };
     this._cache[key] = [...(this._cache[key] || []), optimistic];
@@ -1762,6 +1767,47 @@ window.BGNJ_COMMENTS = {
           this._emit(type, id);
         });
     }
+    return this.list(type, id);
+  },
+
+  // v00.307.000 — 댓글 공감 토글.
+  //   낙관적으로 먼저 그리고, 서버가 돌려준 진짜 숫자로 덮는다. 실패하면 **시작 시점 값으로 원복**한다
+  //   (`''`·0 이 아니라 원래 값 — 그냥 두면 화면이 '눌린 척' 을 한다).
+  toggleLike(type, id, commentId) {
+    const key = this._key(type, id);
+    const before = this._cache[key] || [];
+    const target = before.find((c) => String(c.id) === String(commentId));
+    if (!target) return this.list(type, id);
+    // 아직 서버에 안 올라간 댓글에는 누를 수 없다 — 붙일 곳이 없다.
+    if (String(commentId).startsWith('tmp-')) {
+      try { window.BGNJ_TOAST?.error?.('저장 중인 댓글에는 잠시 뒤에 공감할 수 있습니다.'); }
+      catch (_e) { console.warn('[bgnj] 알림 표시 실패', _e); }
+      return this.list(type, id);
+    }
+    const nextLiked = !target.liked;
+    const patch = (c) => ({
+      ...c,
+      liked: nextLiked,
+      likeCount: Math.max(0, Number(c.likeCount || 0) + (nextLiked ? 1 : -1)),
+    });
+    this._cache[key] = before.map((c) => (String(c.id) === String(commentId) ? patch(c) : c));
+    this._emit(type, id);
+
+    window.BGNJ_API.comments.like(commentId)
+      .then((r) => {
+        // 서버가 센 값이 진실이다 — 낙관적 숫자를 덮어쓴다.
+        const cur = this._cache[key] || [];
+        this._cache[key] = cur.map((c) => (String(c.id) === String(commentId)
+          ? { ...c, liked: !!r?.liked, likeCount: Number(r?.count || 0) }
+          : c));
+        this._emit(type, id);
+      })
+      .catch((e) => {
+        this._cache[key] = before;   // 원복 — 시작 시점 값으로
+        try { window.BGNJ_TOAST?.error?.(`공감 실패: ${e?.message || '알 수 없는 오류'}`); }
+        catch (_e) { console.warn('[bgnj] 알림 표시 실패', _e); }
+        this._emit(type, id);
+      });
     return this.list(type, id);
   },
 
