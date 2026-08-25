@@ -669,7 +669,9 @@ const App = () => {
       window.BGNJ_LECTURES?.refresh?.(),
       window.BGNJ_TOURS?.refresh?.(),
       window.BGNJ_BOOKS?.refresh?.(),
-      window.BGNJ_BOOK_ORDERS?.refreshBankAccount?.(),
+      // v00.310.000 — `BGNJ_BOOK_ORDERS` 에는 이 함수가 **없다.** 진짜 주인은 BGNJ_LECTURES 다.
+      //   옵셔널 체이닝이라 오류 없이 조용히 건너뛰어, 부팅 때 계좌를 한 번도 안 받아왔다.
+      window.BGNJ_LECTURES?.refreshBankAccount?.(),
       window.BGNJ_COLUMNS?.refresh?.(),
       window.BGNJ_COMMUNITY?.refreshPosts?.(),
       // 등급/카테고리 — D1 에서 서버 정의를 받아 BGNJ_STORES seed 를 덮어씀.

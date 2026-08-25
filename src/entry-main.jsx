@@ -19,6 +19,7 @@ import '../components/ImageShrink.jsx';
 import '../components/CashReceiptField.jsx';
 import '../components/TaxInvoiceField.jsx';
 import '../components/MediaGallery.jsx';
+import '../components/BankAccountPicker.jsx';
 import '../pages/HomePage.jsx';
 import '../pages/HomeNextPage.jsx';
 import '../pages/CommunityPage.jsx';

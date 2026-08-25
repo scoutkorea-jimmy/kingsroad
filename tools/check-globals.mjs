@@ -32,26 +32,67 @@ for (const d of DIRS) {
 const sources = new Map();
 for (const f of files) sources.set(f, await fs.readFile(f, "utf8"));
 
-// 어디선가 window 에 붙였는가.
+// v00.310.000 — **번들 경계를 함께 본다.**
+//   등록만 확인하면 부족하다. 메인 번들에서 쓰는 전역을 관리자 파일에서만 등록하면
+//   일반 방문자에게는 undefined 다 — 사이트는 안 죽고 **기능만 조용히 사라진다.**
+//   실제로 입금 계좌 안내(BGNJ_BankAccountPicker)가 그렇게 없어져 있었다(v00.310.000 에서 발견).
+//   admin.js 는 boot 가 ['admin','login','signup'] 경로에서만 주입하므로,
+//   세션이 살아 있는 손님이 곧바로 결제 화면에 들어가면 안 실린다.
+const entryFiles = async (entry) => {
+  const seen = new Set();
+  const walk = async (file) => {
+    if (seen.has(file)) return;
+    seen.add(file);
+    let src = "";
+    try { src = await fs.readFile(file, "utf8"); } catch { return; }
+    for (const m of src.matchAll(/^\s*import\s+(?:[^'"]*from\s*)?['"](\.[^'"]+)['"]/gm)) {
+      await walk(path.resolve(path.dirname(file), m[1]));
+    }
+  };
+  await walk(path.join(ROOT, "src", entry));
+  return seen;
+};
+const mainFiles = await entryFiles("entry-main.jsx");
+const adminFiles = await entryFiles("entry-admin.jsx");
+// 관리자 번들은 메인 뒤에 실리므로 메인이 등록한 것을 그대로 쓸 수 있다. 반대는 아니다.
+const inMain = (f) => mainFiles.has(f);
+
+// 어디선가 window 에 붙였는가 (+ 어느 번들에서 붙였는가).
 const registered = new Set();
-for (const src of sources.values()) {
-  for (const m of src.matchAll(/window\.([A-Za-z_$][\w$]*)\s*=/g)) registered.add(m[1]);
+const registeredInMain = new Set();
+const noteReg = (name, f) => { registered.add(name); if (inMain(f)) registeredInMain.add(name); };
+for (const [f, src] of sources) {
+  for (const m of src.matchAll(/window\.([A-Za-z_$][\w$]*)\s*=/g)) noteReg(m[1], f);
   // Object.assign(window, { A, B, C }) 형태도 등록으로 인정한다 — AdminShared 가 이 방식을 쓴다.
   for (const m of src.matchAll(/Object\.assign\(\s*window\s*,\s*\{([\s\S]*?)\}\s*\)/g)) {
-    for (const k of m[1].matchAll(/([A-Za-z_$][\w$]*)\s*(?::|,|\})/g)) registered.add(k[1]);
+    for (const k of m[1].matchAll(/([A-Za-z_$][\w$]*)\s*(?::|,|\})/g)) noteReg(k[1], f);
   }
 }
 
 const missing = [];
+const crossBundle = [];
 for (const [f, src] of sources) {
   const lines = src.split("\n");
   lines.forEach((line, i) => {
     for (const m of line.matchAll(/<window\.([A-Za-z_$][\w$]*)/g)) {
-      if (registered.has(m[1])) continue;
       if (line.trim().startsWith("//")) continue; // 주석 안의 예시는 제외
-      missing.push({ file: path.relative(ROOT, f), line: i + 1, name: m[1], text: line.trim().slice(0, 100) });
+      const hit = { file: path.relative(ROOT, f), line: i + 1, name: m[1], text: line.trim().slice(0, 100) };
+      if (!registered.has(m[1])) { missing.push(hit); continue; }
+      // 메인 번들 파일이 쓰는데 등록은 관리자 번들에서만 했다 → 일반 방문자에게 조용히 사라진다.
+      if (inMain(f) && !registeredInMain.has(m[1])) crossBundle.push(hit);
     }
   });
+}
+
+if (crossBundle.length) {
+  console.log(`⚠ 메인 번들이 쓰는데 **관리자 번들에서만** 등록된 컴포넌트 ${crossBundle.length}건`);
+  console.log(`   — 화면이 죽지는 않고 그 부분만 조용히 사라진다. 가장 늦게 발견되는 종류다.\n`);
+  crossBundle.forEach((m) => {
+    console.log(`  • ${m.file}:${m.line}  window.${m.name}`);
+    console.log(`      ${m.text}`);
+  });
+  console.log(`\n고치는 법: 그 컴포넌트를 components/ 로 옮기고 src/entry-main.jsx 에서 import 한다.`);
+  process.exit(1);
 }
 
 if (missing.length === 0) {

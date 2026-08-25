@@ -56,7 +56,9 @@ const HomeNextPage = ({ go }) => {
   const sc = React.useMemo(() => (window.BGNJ_SITE_CONTENT?.get?.() || {}), [scTick]);
   const hero = sc.hero || {};
   const hn = sc.homeNext || {};
-  const isAdmin = !!window.BGNJ_AUTH?.currentUser?.()?.isAdmin;
+  // v00.310.000 — `currentUser()` 는 존재한 적 없는 이름이다. 늘 undefined 라 isAdmin 이 항상 false 였고,
+  //   **관리자에게도 이 화면의 편집 버튼이 뜬 적이 없다.** 진짜 이름은 getSessionUser().
+  const isAdmin = !!window.BGNJ_AUTH?.getSessionUser?.()?.isAdmin;
   const [adminOpen, setAdminOpen] = React.useState(false);
 
   const saveHn = async (patch) => {

@@ -408,7 +408,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.309.000",
+    version: "00.310.000",
     build: "2026.08.26",
     channel: "preview"
   };
@@ -7703,6 +7703,52 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   window.MediaGalleryEditor = MediaGalleryEditor;
   window.MediaGalleryView = MediaGalleryView;
 
+  // components/BankAccountPicker.jsx
+  window.BGNJ_BankAccountPicker = ({ value, onChange, accounts, refreshOnMount = true }) => {
+    var _a, _b;
+    const [tick, setTick] = React.useState(0);
+    React.useEffect(() => {
+      var _a2, _b2;
+      if (refreshOnMount) {
+        (_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.refreshBankAccount) == null ? void 0 : _b2.call(_a2).then(() => setTick((v) => v + 1));
+      }
+      const onR = () => setTick((v) => v + 1);
+      window.addEventListener("bgnj-bank-accounts-refresh", onR);
+      return () => window.removeEventListener("bgnj-bank-accounts-refresh", onR);
+    }, []);
+    const multi = accounts && accounts.length ? accounts : ((_b = (_a = window.BGNJ_LECTURES) == null ? void 0 : _a.listBankAccounts) == null ? void 0 : _b.call(_a)) || [];
+    const list = multi.length ? multi : (() => {
+      var _a2, _b2;
+      const single = ((_b2 = (_a2 = window.BGNJ_LECTURES) == null ? void 0 : _a2.getBankAccount) == null ? void 0 : _b2.call(_a2)) || {};
+      return single.accountNumber ? [{
+        id: "default",
+        label: "\uAE30\uBCF8 \uACC4\uC88C",
+        isDefault: true,
+        bankName: single.bankName,
+        accountNumber: single.accountNumber,
+        holder: single.holder,
+        memo: single.memo
+      }] : [];
+    })();
+    if (!list.length) {
+      return /* @__PURE__ */ React.createElement("div", { style: { padding: "12px 14px", border: "1px solid var(--danger)", background: "rgba(194,74,61,0.05)", color: "var(--danger)", fontSize: 12, lineHeight: 1.6 } }, "\u26A0 \uB4F1\uB85D\uB41C \uC785\uAE08 \uACC4\uC88C\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4. \uC6B4\uC601\uC790\uC5D0\uAC8C \uBB38\uC758\uD574 \uC8FC\uC138\uC694.");
+    }
+    const selected = list.find((a) => a.id === value) || list.find((a) => a.isDefault) || list[0];
+    React.useEffect(() => {
+      if (selected && selected.id !== value && onChange) onChange(selected.id);
+    }, [list.length]);
+    return /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 16px", border: "1px solid var(--primary-dim)", background: "rgba(245,213,72,0.04)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 8 } }, "BANK ACCOUNT \xB7 \uC785\uAE08 \uACC4\uC88C"), list.length > 1 && /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 12 } }, /* @__PURE__ */ React.createElement("label", { className: "dim-2 mono", style: { fontSize: 11, display: "block", marginBottom: 6 } }, "\uC785\uAE08\uD560 \uACC4\uC88C \uC120\uD0DD"), /* @__PURE__ */ React.createElement(
+      "select",
+      {
+        className: "field-input",
+        style: { fontSize: 13 },
+        value: (selected == null ? void 0 : selected.id) || "",
+        onChange: (e) => onChange == null ? void 0 : onChange(e.target.value)
+      },
+      list.map((a) => /* @__PURE__ */ React.createElement("option", { key: a.id, value: a.id }, a.label, a.isDefault ? " (\uAE30\uBCF8)" : ""))
+    )), selected && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "90px 1fr", gap: "6px 14px", fontSize: 13, lineHeight: 1.6 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uC740\uD589"), /* @__PURE__ */ React.createElement("div", null, selected.bankName || "-"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uACC4\uC88C\uBC88\uD638"), /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontWeight: 500 } }, selected.accountNumber || "-"), /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uC608\uAE08\uC8FC"), /* @__PURE__ */ React.createElement("div", null, selected.holder || "-"), selected.memo && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 11 } }, "\uC548\uB0B4"), /* @__PURE__ */ React.createElement("div", null, selected.memo))));
+  };
+
   // pages/HomePage.jsx
   var HomeSectionBoundary = class extends React.Component {
     constructor(props) {
@@ -8507,7 +8553,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, [scTick]);
     const hero = sc.hero || {};
     const hn = sc.homeNext || {};
-    const isAdmin = !!((_c = (_b = (_a = window.BGNJ_AUTH) == null ? void 0 : _a.currentUser) == null ? void 0 : _b.call(_a)) == null ? void 0 : _c.isAdmin);
+    const isAdmin = !!((_c = (_b = (_a = window.BGNJ_AUTH) == null ? void 0 : _a.getSessionUser) == null ? void 0 : _b.call(_a)) == null ? void 0 : _c.isAdmin);
     const [adminOpen, setAdminOpen] = React.useState(false);
     const saveHn = async (patch) => {
       var _a2, _b2, _c2, _d;
@@ -16010,7 +16056,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         (_l = (_k = window.BGNJ_LECTURES) == null ? void 0 : _k.refresh) == null ? void 0 : _l.call(_k),
         (_n = (_m = window.BGNJ_TOURS) == null ? void 0 : _m.refresh) == null ? void 0 : _n.call(_m),
         (_p = (_o = window.BGNJ_BOOKS) == null ? void 0 : _o.refresh) == null ? void 0 : _p.call(_o),
-        (_r = (_q = window.BGNJ_BOOK_ORDERS) == null ? void 0 : _q.refreshBankAccount) == null ? void 0 : _r.call(_q),
+        // v00.310.000 — `BGNJ_BOOK_ORDERS` 에는 이 함수가 **없다.** 진짜 주인은 BGNJ_LECTURES 다.
+        //   옵셔널 체이닝이라 오류 없이 조용히 건너뛰어, 부팅 때 계좌를 한 번도 안 받아왔다.
+        (_r = (_q = window.BGNJ_LECTURES) == null ? void 0 : _q.refreshBankAccount) == null ? void 0 : _r.call(_q),
         (_t = (_s = window.BGNJ_COLUMNS) == null ? void 0 : _s.refresh) == null ? void 0 : _t.call(_s),
         (_v = (_u = window.BGNJ_COMMUNITY) == null ? void 0 : _u.refreshPosts) == null ? void 0 : _v.call(_u),
         // 등급/카테고리 — D1 에서 서버 정의를 받아 BGNJ_STORES seed 를 덮어씀.

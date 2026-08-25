@@ -15,8 +15,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CHECKS = [
   { file: "check-syntax.mjs",   what: "문법 + 금지 패턴", born: "기본" },
   { file: "check-version.mjs",  what: "BGNJ_VERSION ↔ index.html ?v= 일치", born: "옛 코드가 배포되는 사고" },
-  { file: "check-globals.mjs",  what: "<window.X/> 로 쓰는데 등록 안 된 컴포넌트", born: "한켠 예약 탭 전체가 깨짐 (React #130)" },
+  { file: "check-globals.mjs",  what: "<window.X/> 미등록 + 번들 경계", born: "한켠 예약 탭 깨짐 · 결제 화면 입금 계좌 실종" },
   { file: "check-hooks.mjs",    what: "early return 뒤에 놓인 훅", born: "React #300/#310 75건" },
+  { file: "check-ghosts.mjs",   what: "없는 함수를 부르는 곳 (?. 가 감춘 오타)", born: "방문 기록 1,789건이 빈 칸으로 쌓임" },
   { file: "check-patterns.mjs", what: "응답 껍데기 · 세고-나서-넣기 · LIKE 와일드카드", born: "게시글 못 찾음 · 오버부킹 · 위험한 DELETE" },
   { file: "smoke.mjs",          what: "브라우저 코드를 Node 에서 실제로 실행", born: "API 는 멀쩡한데 화면만 깨진 사고" },
 ];

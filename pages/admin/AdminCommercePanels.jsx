@@ -1,9 +1,12 @@
 // 뱅기노자 — 결제/주문 관리 패널 (v00.285 — AuthAdminPage.jsx 에서 분리)
 //
-// BankAccountPanel(무통장 입금 계좌 CRUD) · BGNJ_BankAccountPicker(결제 화면 셀렉터) ·
+// BankAccountPanel(무통장 입금 계좌 CRUD) ·
 // BookOrderAdminPanel(책 주문 관리).
 // 자기완결적 — 의존은 모두 window 전역(BGNJ_API/LECTURES/CONFIRM/TOAST/FMT 등).
-// ⚠️ BGNJ_BankAccountPicker 는 공개 결제 페이지가 window guard 로 소비 — 현 동작상 admin 번들 한정(기존 동작 보존).
+// ⚠️ v00.310.000 — 이 자리에 "BGNJ_BankAccountPicker 는 현 동작상 admin 번들 한정(기존 동작 보존)" 이라고
+//    적혀 있었다. **그게 버그였다.** 공개 결제 페이지가 쓰는데 정의가 관리자 번들에만 있어
+//    일반 구매자에게는 입금 계좌가 한 줄도 안 떴다. 지금은 components/BankAccountPicker.jsx 에 있다.
+//    → 관찰한 동작을 '보존할 사양' 으로 적지 말 것. 왜 그런지 확인하고 적어야 한다.
 // entry-admin 에서 AuthAdminPage 앞에 로드. BankAccountPanel·BookOrderAdminPanel window 노출.
 
 // === Bank Account Settings Panel ==================================
@@ -198,71 +201,9 @@ const BankAccountPanel = () => {
 
 // 결제 화면용 — 멀티 계좌 셀렉터 + 안내 박스. 모든 결제 흐름(강연/투어/책) 에서 재사용.
 // 멀티 계좌가 없으면 단일 getBankAccount 폴백을 단일 옵션으로 노출. 둘 다 없으면 안내 메시지.
-window.BGNJ_BankAccountPicker = ({ value, onChange, accounts, refreshOnMount = true }) => {
-  const [tick, setTick] = React.useState(0);
-  React.useEffect(() => {
-    if (refreshOnMount) {
-      window.BGNJ_LECTURES?.refreshBankAccount?.().then(() => setTick((v) => v + 1));
-    }
-    const onR = () => setTick((v) => v + 1);
-    window.addEventListener('bgnj-bank-accounts-refresh', onR);
-    return () => window.removeEventListener('bgnj-bank-accounts-refresh', onR);
-  }, []);
-  const multi = (accounts && accounts.length) ? accounts : (window.BGNJ_LECTURES?.listBankAccounts?.() || []);
-  const list = multi.length
-    ? multi
-    : (() => {
-      const single = window.BGNJ_LECTURES?.getBankAccount?.() || {};
-      return single.accountNumber
-        ? [{ id: 'default', label: '기본 계좌', isDefault: true,
-            bankName: single.bankName, accountNumber: single.accountNumber,
-            holder: single.holder, memo: single.memo }]
-        : [];
-    })();
-  if (!list.length) {
-    return (
-      <div style={{padding:'12px 14px', border:'1px solid var(--danger)', background:'rgba(194,74,61,0.05)', color:'var(--danger)', fontSize:12, lineHeight:1.6}}>
-        ⚠ 등록된 입금 계좌가 없습니다. 운영자에게 문의해 주세요.
-      </div>
-    );
-  }
-  const selected = list.find((a) => a.id === value) || list.find((a) => a.isDefault) || list[0];
-  // 첫 마운트 시 부모에 기본 선택 알림.
-  React.useEffect(() => {
-    if (selected && selected.id !== value && onChange) onChange(selected.id);
-  }, [list.length]);
-  return (
-    <div style={{padding:'14px 16px', border:'1px solid var(--primary-dim)', background:'rgba(245,213,72,0.04)'}}>
-      <div className="mono gold" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:8}}>BANK ACCOUNT · 입금 계좌</div>
-      {list.length > 1 && (
-        <div style={{marginBottom:12}}>
-          <label className="dim-2 mono" style={{fontSize:11, display:'block', marginBottom:6}}>입금할 계좌 선택</label>
-          <select className="field-input" style={{fontSize:13}}
-            value={selected?.id || ''}
-            onChange={(e) => onChange?.(e.target.value)}>
-            {list.map((a) => (
-              <option key={a.id} value={a.id}>{a.label}{a.isDefault ? ' (기본)' : ''}</option>
-            ))}
-          </select>
-        </div>
-      )}
-      {selected && (
-        <div style={{display:'grid', gridTemplateColumns:'90px 1fr', gap:'6px 14px', fontSize:13, lineHeight:1.6}}>
-          <div className="dim-2 mono" style={{fontSize:11}}>은행</div>
-          <div>{selected.bankName || '-'}</div>
-          <div className="dim-2 mono" style={{fontSize:11}}>계좌번호</div>
-          <div className="mono gold" style={{fontWeight:500}}>{selected.accountNumber || '-'}</div>
-          <div className="dim-2 mono" style={{fontSize:11}}>예금주</div>
-          <div>{selected.holder || '-'}</div>
-          {selected.memo && (<>
-            <div className="dim-2 mono" style={{fontSize:11}}>안내</div>
-            <div>{selected.memo}</div>
-          </>)}
-        </div>
-      )}
-    </div>
-  );
-};
+// v00.310.000 — BGNJ_BankAccountPicker 는 `components/BankAccountPicker.jsx` 로 옮겼다.
+//   메인 번들(결제·강연·답사)이 쓰는데 여기(관리자 번들)에만 있어 일반 구매자에게는 안 보였다.
+//   관리자 화면은 admin.js 가 app.js 뒤에 실리므로 window 전역으로 그대로 쓸 수 있다.
 
 // === Book Orders Admin Panel ======================================
 const BookOrderAdminPanel = ({ go }) => {

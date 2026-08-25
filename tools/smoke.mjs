@@ -13,7 +13,7 @@
 //
 // 실행: node tools/smoke.mjs
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
@@ -923,6 +923,65 @@ const run = async () => {
     check("공감 창구가 삭제 창구보다 먼저 걸린다",
       wk4.indexOf("\\/api\\/comments\\/([\\w-]+)\\/like$") < wk4.indexOf("\\/api\\/comments\\/([\\w-]+)$"),
       "뒤에 두면 like 가 삭제 규칙에 먼저 걸릴 수 있다");
+  }
+
+  console.log("\n── 18. 조용히 사라진 것들 (2026-08-26 안정성 재검토) ──");
+  {
+    const boot = readFileSync(path.join(ROOT, "boot.jsx"), "utf8");
+    const entryMain = readFileSync(path.join(ROOT, "src/entry-main.jsx"), "utf8");
+    const checkout = readFileSync(path.join(ROOT, "pages/BookCheckoutPage.jsx"), "utf8");
+    const homeNext = readFileSync(path.join(ROOT, "pages/HomeNextPage.jsx"), "utf8");
+
+    // ⚠ 입금 계좌 — 서버엔 있는데 손님 화면엔 한 줄도 안 떴다. 두 군데가 동시에 고장나 있었다.
+    //   ① 부팅이 엉뚱한 객체에서 갱신 함수를 찾았다(BGNJ_BOOK_ORDERS ← 주인은 BGNJ_LECTURES)
+    //   ② 안내 컴포넌트 정의가 관리자 번들에만 있었다(손님은 그 번들을 안 받는다)
+    check("부팅이 계좌 갱신을 올바른 객체에서 부른다",
+      /window\.BGNJ_LECTURES\?\.refreshBankAccount\?\.\(\)/.test(boot)
+        && !/BGNJ_BOOK_ORDERS\?\.refreshBankAccount/.test(boot),
+      "BGNJ_BOOK_ORDERS 에는 그 함수가 없어 조용히 건너뛰었다");
+    check("그 갱신 함수가 실제로 있다",
+      typeof w.BGNJ_LECTURES?.refreshBankAccount === 'function');
+    check("입금 계좌 안내가 메인 번들에 실린다",
+      /components\/BankAccountPicker\.jsx/.test(entryMain),
+      "관리자 번들에만 있으면 손님 결제 화면에서 통째로 사라진다");
+    check("결제 화면이 그 안내를 부른다", /<window\.BGNJ_BankAccountPicker/.test(checkout));
+
+    // 계좌를 실제로 받아 채우는지 — 서버 응답 모양(snake_case)까지 맞는지 돌려서 본다.
+    check("서버 응답을 화면이 읽는 모양으로 바꾼다", await (async () => {
+      w.BGNJ_API = { bankAccounts: { list: async () => ({ accounts: [
+        { id: 'ba-1', label: '법인계좌', bank_name: '국민은행', account_number: '48263701023015',
+          holder: '(주)뱅기노자', memo: '', is_default: 1, display_order: 0 },
+      ] }) } };
+      await w.BGNJ_LECTURES.refreshBankAccount();
+      const one = w.BGNJ_LECTURES.getBankAccount();
+      return one.bankName === '국민은행' && one.accountNumber === '48263701023015';
+    })(), "snake_case 를 안 벗기면 화면에 '-' 만 뜬다");
+    check("빈 응답이 기존 계좌를 지우지 않는다", await (async () => {
+      const before = w.BGNJ_LECTURES.getBankAccount();
+      w.BGNJ_API = { bankAccounts: { list: async () => ({ accounts: null }) } };
+      await w.BGNJ_LECTURES.refreshBankAccount();
+      return w.BGNJ_LECTURES.getBankAccount().accountNumber === before.accountNumber;
+    })(), "비-배열로 캐시를 덮으면 결제 직전에 계좌가 사라진다");
+
+    // ⚠ 관리자 판정 — 없는 함수라 관리자에게도 편집 버튼이 뜬 적이 없었다.
+    check("홈넥스트 관리자 판정이 진짜 함수를 쓴다",
+      /getSessionUser\?\.\(\)\?\.isAdmin/.test(homeNext) && !/currentUser\?\.\(\)/.test(homeNext));
+    check("아무도 currentUser() 를 부르지 않는다", (() => {
+      const dirs = ['pages', 'components'];
+      const hit = [];
+      const walk = (d) => {
+        for (const f of readdirSync(path.join(ROOT, d), { withFileTypes: true })) {
+          const rel = path.join(d, f.name);
+          if (f.isDirectory()) walk(rel);
+          else if (/\.jsx?$/.test(f.name)
+            && /BGNJ_AUTH\?\.currentUser/.test(readFileSync(path.join(ROOT, rel), "utf8"))) hit.push(rel);
+        }
+      };
+      dirs.forEach(walk);
+      if (/BGNJ_AUTH\?\.currentUser/.test(readFileSync(path.join(ROOT, "data.js"), "utf8"))) hit.push('data.js');
+      if (/BGNJ_AUTH\?\.currentUser/.test(boot)) hit.push('boot.jsx');
+      return hit.length === 0;
+    })(), "존재한 적 없는 이름이다 — 진짜는 getSessionUser()");
   }
 
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
