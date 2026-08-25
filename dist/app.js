@@ -408,7 +408,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.307.000",
+    version: "00.308.000",
     build: "2026.08.26",
     channel: "preview"
   };
@@ -895,7 +895,7 @@
       var _a, _b, _c, _d, _e, _f, _g, _h;
       if (route === lastTracked) return;
       lastTracked = route;
-      const userId = ((_c = (_b = (_a = window.BGNJ_AUTH) == null ? void 0 : _a.currentUser) == null ? void 0 : _b.call(_a)) == null ? void 0 : _c.id) || null;
+      const userId = ((_c = (_b = (_a = window.BGNJ_AUTH) == null ? void 0 : _a.getSessionUser) == null ? void 0 : _b.call(_a)) == null ? void 0 : _c.id) || null;
       const payload = {
         route: String(route || "unknown"),
         sessionId,

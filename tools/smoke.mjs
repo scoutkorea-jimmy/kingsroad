@@ -751,10 +751,63 @@ const run = async () => {
     check("오늘 창구는 관리자 전용이다", /const handleAdminToday = async \(req, env\) => \{\s*await requireAdmin/.test(wk3));
     check("어제와 견줄 값도 함께 준다", /yesterday: \{ posts: pPosts/.test(wk3),
       "숫자만 있으면 많은 건지 적은 건지 알 수 없다");
-    check("네 지표를 화면에 건다",
-      ['새 글', '새 댓글', '공감', '방문자'].every((l) => admin.includes(`label="${l}"`)),
-      "지시받은 셋 + 방문자");
-    check("집계 실패를 화면이 말한다", /불러오지 못했습니다/.test(admin) && /todayError/.test(admin),
+    // v00.308.000 — ⚠ 여기서 `admin`(AuthAdminPage.jsx) 을 뒤지던 검사가 **죽은 코드를 통과시켰다.**
+    //   v00.306.009 는 '오늘' 카드를 `{false && …}` 껍데기 안에 넣었고, 글자만 찾는 이 검사는 ✅ 를 냈다.
+    //   화면엔 한 번도 안 떴다. → 진짜 그리는 파일(AdminDashboardPanel.jsx)에서 찾고,
+    //   껍데기 자체가 다시 생기지 않게 아래에서 `{false &&` 를 금지한다.
+    const dash = readFileSync(path.join(ROOT, "pages/admin/AdminDashboardPanel.jsx"), "utf8");
+    check("네 지표를 진짜 대시보드에 건다",
+      ['오늘 작성된 글', '오늘 작성된 댓글', '오늘 받은 공감', '손볼 것']
+        .every((l) => dash.includes(`label="${l}"`)),
+      "AuthAdminPage 가 아니라 AdminDashboardPanel 이 대시보드를 그린다");
+    check("오늘 카드가 방문자·가입 줄보다 위에 있다",
+      dash.indexOf('label="오늘 작성된 글"') < dash.indexOf('방문자 · 가입'),
+      "사용자 지시 — 방문자/가입 위에 둘 것");
+    check("숫자를 카드에 적는다 (호버해야 보이는 게 아니라)",
+      /const TodayCard = /.test(dash) && /value\.toLocaleString\('ko-KR'\)/.test(dash),
+      "사용자 지시 — '카드로 아예 뽑아달라는 거였어. 호버했을 때 보이는게 아니라'");
+    // 주석이 아니라 **실제 JSX 분기**만 잡는다 — 줄머리 들여쓰기 + `(() =>` 가 지문이다.
+    const deadBranch = /^\s*\{false && \(\(\) =>/m;
+    check("꺼진 채로 들어간 화면 코드가 없다",
+      !deadBranch.test(admin) && !deadBranch.test(dash),
+      "`{false && …}` 껍데기를 남기면 다음 사람도 거기에 기능을 넣는다");
+    check("받아오는 곳과 그리는 곳이 같은 파일에 있다",
+      /admin\?\.today\?\.\(\)/.test(dash) && !/todayStats/.test(admin),
+      "갈라져 있으면 한쪽만 살아 있어도 아무도 모른다");
+    check("공감이 댓글 공감까지 센다",
+      /FROM comment_likes WHERE/.test(wk3) && /const likes = postLikes \+ cmtLikes/.test(wk3),
+      "댓글 공감을 빼면 카드 숫자가 실제보다 적다");
+    check("'손볼 것' 은 아직 처리 안 된 것을 센다",
+      /FROM reports WHERE status = 'open'/.test(wk3)
+        && /FROM book_orders WHERE status = 'pending_payment'/.test(wk3),
+      "오늘 생긴 것만 세면 어제 들어온 신고가 사라진다");
+
+    // 사용자 여정 4단계 — 깔때기는 **뒤 단계가 앞 단계의 부분집합**이어야 말이 된다.
+    check("여정 4단계를 센다",
+      /summary\.funnel = \{/.test(wk3) && /visits:/.test(wk3) && /reached:/.test(wk3)
+        && /browsed:/.test(wk3) && /logged:/.test(wk3));
+    check("뒤 단계가 앞 단계의 부분집합이다",
+      /WHEN content = 1 AND views >= 2 AND logged = 1/.test(wk3),
+      "안 그러면 3단계가 2단계보다 커져 '깔때기' 가 거짓말이 된다");
+    check("어디서 가장 많이 빠지는지 짚어 준다", /가장 많이 빠지는 곳/.test(dash),
+      "숫자만 늘어놓으면 아무도 안 읽는다");
+
+    // ⚠ 방문 기록이 부르는 함수가 **실제로 있는지** 실행해서 확인한다.
+    //   `currentUser()` 는 존재한 적이 없는 이름이었고, 옵셔널 체이닝이 오류를 '값 없음' 으로 바꿔
+    //   1,789건 전부 user_id 가 빈 채로 쌓였다. 글자 검사로는 절대 못 잡는다.
+    const tracker = (readFileSync(path.join(ROOT, "data.js"), "utf8")
+      .match(/const userId = \(window\.BGNJ_AUTH\?\.(\w+)\?\.\(\)/) || [])[1];
+    check("방문 기록이 부르는 사용자 조회 함수가 실제로 있다",
+      !!tracker && typeof w.BGNJ_AUTH?.[tracker] === 'function',
+      `data.js 가 BGNJ_AUTH.${tracker}() 를 부르는데 그런 함수가 없다`);
+    check("로그인한 사람의 id 를 실제로 집어낸다", (() => {
+      const before = w.BGNJ_AUTH.getSessionUser;
+      w.BGNJ_AUTH.getSessionUser = () => ({ id: 'u-test-1' });
+      const got = w.BGNJ_AUTH?.[tracker]?.()?.id;
+      w.BGNJ_AUTH.getSessionUser = before;
+      return got === 'u-test-1';
+    })(), "이름만 맞고 값이 안 나오면 여전히 빈 칸이 쌓인다");
+    check("집계 실패를 화면이 말한다", /불러오지 못했습니다/.test(dash) && /todayError/.test(dash),
       "조용히 0 을 띄우면 '오늘 아무 일도 없었다' 로 읽힌다");
 
     // 버전 기록 — 손으로 적어야 하는 구조라 v00.288.002(6월 7일)에서 멈춰 있었다.

@@ -13767,6 +13767,28 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [refDays, setRefDays] = React.useState(30);
     const [routeDays, setRouteDays] = React.useState(7);
     const [heatmapDays, setHeatmapDays] = React.useState(30);
+    const [todayStats, setTodayStats] = React.useState(null);
+    const [todayError, setTodayError] = React.useState(null);
+    React.useEffect(() => {
+      let cancelled = false;
+      const load = () => {
+        var _a2, _b2, _c2;
+        return (_c2 = (_b2 = (_a2 = window.BGNJ_API) == null ? void 0 : _a2.admin) == null ? void 0 : _b2.today) == null ? void 0 : _c2.call(_b2).then((j) => {
+          if (!cancelled) {
+            setTodayStats(j);
+            setTodayError(null);
+          }
+        }).catch((e) => {
+          if (!cancelled) setTodayError((e == null ? void 0 : e.message) || "\uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4");
+        });
+      };
+      load();
+      const t = setInterval(load, 5 * 60 * 1e3);
+      return () => {
+        cancelled = true;
+        clearInterval(t);
+      };
+    }, []);
     const loadSummary = React.useCallback(async () => {
       var _a2, _b2, _c2;
       setLoadingSummary(true);
@@ -13857,7 +13879,30 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     })();
     const refs = pv.referrers || [];
     const refTotal = refs.reduce((s, r) => s + r.count, 0) || 1;
-    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "grid grid-4", style: { marginBottom: 18 } }, dashboardStats.map((s, i) => /* @__PURE__ */ React.createElement(StatTile, { key: i, stat: s }))), /* @__PURE__ */ React.createElement("div", { className: "admin-section__title" }, "\uBC29\uBB38\uC790 \xB7 \uAC00\uC785 ", summaryError ? "\u26A0 \uBD84\uC11D \uB370\uC774\uD130 \uBBF8\uC218\uC2E0 (schema-v9 \uBBF8\uC801\uC6A9 \uB610\uB294 \uC6CC\uCEE4 \uBBF8\uBC30\uD3EC)" : loadingSummary ? "\xB7 \u23F3 \uBD88\uB7EC\uC624\uB294 \uC911\u2026" : ""), /* @__PURE__ */ React.createElement("div", { className: "grid grid-4", style: { marginBottom: 18 } }, /* @__PURE__ */ React.createElement(
+    const TodayCard = ({ label, value, prev, sub, warn }) => {
+      const \uC900\uBE44\uC911 = value === null || value === void 0;
+      const diff = \uC900\uBE44\uC911 || prev === null || prev === void 0 ? null : value - prev;
+      const \uC190\uBCFC\uAC8C\uC788\uB2E4 = warn && !\uC900\uBE44\uC911 && value > 0;
+      return /* @__PURE__ */ React.createElement("div", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.25em", marginBottom: 12 } }, label), /* @__PURE__ */ React.createElement("div", { className: "ko-serif", style: { fontSize: 32, color: \uC190\uBCFC\uAC8C\uC788\uB2E4 ? "var(--danger)" : "var(--ink)" } }, \uC900\uBE44\uC911 ? /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 18 } }, "\u2014") : value.toLocaleString("ko-KR")), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, marginTop: 8, color: "var(--ink-2)", wordBreak: "keep-all", overflowWrap: "break-word" } }, \uC900\uBE44\uC911 ? todayError ? "\uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4" : "\uC9D1\uACC4\uD558\uB294 \uC911\u2026" : /* @__PURE__ */ React.createElement(React.Fragment, null, diff === null ? "" : diff === 0 ? "\uC5B4\uC81C\uC640 \uAC19\uC74C" : diff > 0 ? /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\uC5B4\uC81C\uBCF4\uB2E4 +", diff) : /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC5B4\uC81C\uBCF4\uB2E4 ", diff), sub ? /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, diff === null ? "" : " \xB7 ", sub) : null)));
+    };
+    const T = (todayStats == null ? void 0 : todayStats.today) || {};
+    const Y = (todayStats == null ? void 0 : todayStats.yesterday) || {};
+    const TB = (todayStats == null ? void 0 : todayStats.todoBreakdown) || {};
+    const LB = (todayStats == null ? void 0 : todayStats.likeBreakdown) || {};
+    const todoSub = [
+      TB.reports ? `\uC2E0\uACE0 ${TB.reports}` : null,
+      TB.orders ? `\uC785\uAE08\uB300\uAE30 ${TB.orders}` : null,
+      TB.errors ? `\uC624\uB958 ${TB.errors}` : null
+    ].filter(Boolean).join(" \xB7 ") || "\uCC98\uB9AC\uD560 \uAC83 \uC5C6\uC74C";
+    return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "admin-section__title" }, "\uC624\uB298 (\uD55C\uAD6D \uC2DC\uAC04 \uC790\uC815 \uAE30\uC900 \xB7 5\uBD84\uB9C8\uB2E4 \uAC31\uC2E0)", todayError ? " \u26A0 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4" : ""), /* @__PURE__ */ React.createElement("div", { className: "grid grid-4", style: { marginBottom: 18 } }, /* @__PURE__ */ React.createElement(TodayCard, { label: "\uC624\uB298 \uC791\uC131\uB41C \uAE00", value: todayStats ? T.posts : null, prev: Y.posts }), /* @__PURE__ */ React.createElement(TodayCard, { label: "\uC624\uB298 \uC791\uC131\uB41C \uB313\uAE00", value: todayStats ? T.comments : null, prev: Y.comments }), /* @__PURE__ */ React.createElement(
+      TodayCard,
+      {
+        label: "\uC624\uB298 \uBC1B\uC740 \uACF5\uAC10",
+        value: todayStats ? T.likes : null,
+        prev: Y.likes,
+        sub: todayStats ? `\uAE00 ${Number(LB.posts || 0)} \xB7 \uB313\uAE00 ${Number(LB.comments || 0)}` : ""
+      }
+    ), /* @__PURE__ */ React.createElement(TodayCard, { label: "\uC190\uBCFC \uAC83", warn: true, value: todayStats ? T.todo : null, prev: null, sub: todoSub })), /* @__PURE__ */ React.createElement("div", { className: "grid grid-4", style: { marginBottom: 18 } }, dashboardStats.map((s, i) => /* @__PURE__ */ React.createElement(StatTile, { key: i, stat: s }))), /* @__PURE__ */ React.createElement("div", { className: "admin-section__title" }, "\uBC29\uBB38\uC790 \xB7 \uAC00\uC785 ", summaryError ? "\u26A0 \uBD84\uC11D \uB370\uC774\uD130 \uBBF8\uC218\uC2E0 (schema-v9 \uBBF8\uC801\uC6A9 \uB610\uB294 \uC6CC\uCEE4 \uBBF8\uBC30\uD3EC)" : loadingSummary ? "\xB7 \u23F3 \uBD88\uB7EC\uC624\uB294 \uC911\u2026" : ""), /* @__PURE__ */ React.createElement("div", { className: "grid grid-4", style: { marginBottom: 18 } }, /* @__PURE__ */ React.createElement(
       MetricCard,
       {
         icon: "\u{1F4C5}",
@@ -14011,8 +14056,35 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return (_b2 = (_a2 = window.BGNJ_TOURS) == null ? void 0 : _a2.listAll) == null ? void 0 : _b2.call(_a2);
     }).filter((t) => t && !t.hidden)[0]) == null ? void 0 : _i.next) || "\uC5C6\uC74C"))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setTab("\uBC45\uAE30\uB178\uC790 \uCE7C\uB7FC") }, "\uCE7C\uB7FC \uAD00\uB9AC"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setTab("\uD22C\uC5B4 \uD504\uB85C\uADF8\uB7A8") }, "\uD22C\uC5B4 \uAD00\uB9AC")))));
   };
+  var FUNNEL_STAGES = [
+    { key: "visits", label: "\uBC29\uBB38", desc: "\uC0AC\uC774\uD2B8\uC5D0 \uB4E4\uC5B4\uC628 \uC0AC\uB78C(\uC138\uC158)" },
+    { key: "reached", label: "\uCF58\uD150\uCE20 \uC5F4\uB78C", desc: "\uAD11\uC7A5\xB7\uCE7C\uB7FC\xB7\uB2F5\uC0AC\xB7\uBC30\uC6C0\xB7\uB3C4\uC11C\xB7\uD55C\uCF20 \uC911 \uD558\uB098\uB97C \uC5F0 \uC0AC\uB78C" },
+    { key: "browsed", label: "\uC5EC\uB7EC \uCABD \uD0D0\uC0C9", desc: "\uADF8\uC911 \uB450 \uCABD \uC774\uC0C1 \uBCF8 \uC0AC\uB78C" },
+    { key: "logged", label: "\uB85C\uADF8\uC778", desc: "\uADF8\uC911 \uB85C\uADF8\uC778\uD55C \uC0AC\uB78C" }
+  ];
+  var JourneyFunnel = ({ funnel }) => {
+    var _a, _b;
+    const f = funnel || {};
+    const rows = FUNNEL_STAGES.map((s) => ({ ...s, value: Number(f[s.key] || 0) }));
+    const top = ((_a = rows[0]) == null ? void 0 : _a.value) || 0;
+    let worst = null;
+    for (let i = 1; i < rows.length; i++) {
+      const lost = rows[i - 1].value - rows[i].value;
+      if (!worst || lost > worst.lost) worst = { lost, from: rows[i - 1].label, to: rows[i].label };
+    }
+    if (!top) {
+      return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13 } }, "\uC544\uC9C1 \uC9D1\uACC4\uB41C \uBC29\uBB38\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
+    }
+    return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 24 } }, /* @__PURE__ */ React.createElement("ol", { style: { listStyle: "none", padding: 0, margin: 0 } }, rows.map((r, i) => {
+      const prev = i === 0 ? null : rows[i - 1].value;
+      const rate = prev ? Math.round(r.value / prev * 100) : null;
+      const share = Math.max(2, Math.round(r.value / top * 100));
+      return /* @__PURE__ */ React.createElement("li", { key: r.key, style: { marginBottom: i === rows.length - 1 ? 0 : 18 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.2em" } }, i + 1, ". ", r.label), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 13 } }, /* @__PURE__ */ React.createElement("strong", { className: "ko-serif", style: { fontSize: 20 } }, r.value.toLocaleString("ko-KR")), /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 11 } }, "\uBA85"), rate === null ? null : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginLeft: 8 } }, "\uC55E \uB2E8\uACC4\uC758 ", rate, "%"))), /* @__PURE__ */ React.createElement("div", { style: { height: 10, background: "var(--line)", overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: { width: `${share}%`, height: "100%", background: "var(--ink)" } })), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginTop: 6, wordBreak: "keep-all", overflowWrap: "break-word" } }, r.desc));
+    })), ((_b = rows[3]) == null ? void 0 : _b.value) === 0 && top > 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 14, wordBreak: "keep-all", overflowWrap: "break-word" } }, "\u203B \uB85C\uADF8\uC778 \uB2E8\uACC4\uAC00 0\uC778 \uC774\uC720 \u2014 \uB204\uAC00 \uB85C\uADF8\uC778\uD588\uB294\uC9C0 \uAE30\uB85D\uD558\uB294 \uCF54\uB4DC\uC5D0 \uC5C6\uB294 \uD568\uC218 \uC774\uB984\uC774 \uC801\uD600 \uC788\uC5B4 v00.308.000 \uC774\uC804 \uBC29\uBB38\uC5D0\uB294 \uC774 \uAC12\uC774 \uBE44\uC5B4 \uC788\uC2B5\uB2C8\uB2E4. \uC9C0\uAE08\uBD80\uD130 \uC313\uC785\uB2C8\uB2E4."), worst && worst.lost > 0 && /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--line)", color: "var(--ink-2)", wordBreak: "keep-all", overflowWrap: "break-word" } }, "\uAC00\uC7A5 \uB9CE\uC774 \uBE60\uC9C0\uB294 \uACF3 \u2014 ", /* @__PURE__ */ React.createElement("strong", null, worst.from, " \u2192 ", worst.to), " \uC5D0\uC11C ", worst.lost.toLocaleString("ko-KR"), "\uBA85\uC774 \uB5A0\uB0AC\uC2B5\uB2C8\uB2E4."));
+  };
   var UserJourneyPanel = () => {
     const [flowPairs, setFlowPairs] = React.useState([]);
+    const [funnel, setFunnel] = React.useState(null);
     const [flowDays, setFlowDays] = React.useState(30);
     React.useEffect(() => {
       let cancelled = false;
@@ -14022,9 +14094,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           const data = await ((_c = (_b = (_a = window.BGNJ_API) == null ? void 0 : _a.analytics) == null ? void 0 : _b.summary) == null ? void 0 : _c.call(_b, { days: flowDays }));
           if (cancelled) return;
           setFlowPairs(Array.isArray(data == null ? void 0 : data.flowPairs) ? data.flowPairs : []);
+          setFunnel((data == null ? void 0 : data.funnel) || null);
         } catch (e) {
           if (cancelled) return;
           setFlowPairs([]);
+          setFunnel(null);
         }
       })();
       return () => {
@@ -14036,9 +14110,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       {
         eyebrow: "JOURNEY \xB7 \uC0AC\uC6A9\uC790 \uC5EC\uC815",
         title: "\uACE0\uAC1D \uC5EC\uC815 \uD750\uB984",
-        description: "\uC720\uC785 \uCC44\uB110 \u2192 \uB2E8\uACC4 \u2192 \uB3C4\uCC29 \uD398\uC774\uC9C0\uC758 \uC9D1\uACC4 Sankey \uD750\uB984. \uB178\uB4DC/\uACE1\uC120 \uD638\uBC84 \uC2DC \uC5F0\uACB0 \uD750\uB984 \uAC15\uC870. \uC6B0\uC0C1\uB2E8 [\uAE30\uAC04] \uC73C\uB85C \uCF54\uD638\uD2B8 \uBCC0\uACBD."
+        description: "\uB4E4\uC5B4\uC640\uC11C \uC5B4\uB514\uAE4C\uC9C0 \uAC14\uB294\uC9C0\uB97C \uB124 \uB2E8\uACC4\uB85C \uB098\uB220 \uBD05\uB2C8\uB2E4. \uC544\uB798 Sankey \uB294 \uC720\uC785 \uCC44\uB110 \u2192 \uB3C4\uCC29 \uD398\uC774\uC9C0\uC758 \uC138\uBD80 \uD750\uB984\uC785\uB2C8\uB2E4. \uC6B0\uC0C1\uB2E8 [\uAE30\uAC04] \uC73C\uB85C \uCF54\uD638\uD2B8 \uBCC0\uACBD."
       }
-    ), /* @__PURE__ */ React.createElement(SankeyFlow, { pairs: flowPairs, days: flowDays, onDaysChange: setFlowDays }));
+    ), /* @__PURE__ */ React.createElement("div", { className: "admin-section__title" }, "\uC5EC\uC815 4\uB2E8\uACC4 (\uCD5C\uADFC ", (funnel == null ? void 0 : funnel.days) || flowDays, "\uC77C)"), /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 18 } }, /* @__PURE__ */ React.createElement(JourneyFunnel, { funnel })), /* @__PURE__ */ React.createElement("div", { className: "admin-section__title" }, "\uC720\uC785 \u2192 \uB3C4\uCC29 \uC138\uBD80 \uD750\uB984"), /* @__PURE__ */ React.createElement(SankeyFlow, { pairs: flowPairs, days: flowDays, onDaysChange: setFlowDays }));
   };
 
   // pages/admin/AdminCommunityConfigPanels.jsx
@@ -16606,28 +16680,6 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
     const [kmsTab, setKmsTab] = React.useState("\uAE30\uB2A5\uC815\uC758\uC11C");
     const [postRefreshKey, setPostRefreshKey] = React.useState(0);
     const [versionPage, setVersionPage] = React.useState(1);
-    const [todayStats, setTodayStats] = React.useState(null);
-    const [todayError, setTodayError] = React.useState(null);
-    React.useEffect(() => {
-      let cancelled = false;
-      const load = () => {
-        var _a2, _b2, _c;
-        return (_c = (_b2 = (_a2 = window.BGNJ_API) == null ? void 0 : _a2.admin) == null ? void 0 : _b2.today) == null ? void 0 : _c.call(_b2).then((j) => {
-          if (!cancelled) {
-            setTodayStats(j);
-            setTodayError(null);
-          }
-        }).catch((e) => {
-          if (!cancelled) setTodayError((e == null ? void 0 : e.message) || "\uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4");
-        });
-      };
-      load();
-      const t = setInterval(load, 5 * 60 * 1e3);
-      return () => {
-        cancelled = true;
-        clearInterval(t);
-      };
-    }, []);
     const [autoVersions, setAutoVersions] = React.useState(null);
     React.useEffect(() => {
       var _a2;
@@ -16974,7 +17026,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         setTab,
         G
       }
-    ), false, tab === "\uC0AC\uC6A9\uC790 \uC5EC\uC815" && /* @__PURE__ */ React.createElement(UserJourneyPanel, null), tab === "\uBC84\uC804 \uAE30\uB85D" && (() => {
+    ), tab === "\uC0AC\uC6A9\uC790 \uC5EC\uC815" && /* @__PURE__ */ React.createElement(UserJourneyPanel, null), tab === "\uBC84\uC804 \uAE30\uB85D" && (() => {
       var _a2, _b2, _c, _d;
       const VERSIONS_PER_PAGE = 10;
       const total = mergedVersionHistory.length;

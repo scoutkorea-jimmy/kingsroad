@@ -70,20 +70,8 @@ const AdminPage = ({ go }) => {
   //   원인은 **배포할 때마다 손으로 적어야 하는 구조**였다 — 손으로 하는 일은 언젠가 멈춘다.
   //   이제 tools/version-history.mjs 가 git 커밋에서 만들어 둔 것을 읽는다. 커밋은 매번 남으므로 멈출 수 없다.
   //   손으로 쓴 옛 기록(213건)은 훨씬 자세하므로 버리지 않고 **같은 버전이면 그쪽을 쓴다.**
-  // v00.306.009 — '오늘' 지표. 댓글·공감·방문은 화면에 안 실려 있어 서버가 센 값을 받는다.
-  //   한국 시간 자정 기준이다 — UTC 로 자르면 아침 9시 이전 활동이 통째로 어제로 빠진다.
-  const [todayStats, setTodayStats] = React.useState(null);
-  const [todayError, setTodayError] = React.useState(null);
-  React.useEffect(() => {
-    let cancelled = false;
-    const load = () => window.BGNJ_API?.admin?.today?.()
-      .then((j) => { if (!cancelled) { setTodayStats(j); setTodayError(null); } })
-      .catch((e) => { if (!cancelled) setTodayError(e?.message || '불러오지 못했습니다'); });
-    load();
-    // 하루를 지켜보는 숫자다. 5분마다 갱신하면 관리자가 새로고침하지 않아도 최신이다.
-    const t = setInterval(load, 5 * 60 * 1000);
-    return () => { cancelled = true; clearInterval(t); };
-  }, []);
+  // v00.308.000 — '오늘' 지표를 받아오는 코드는 AdminDashboardPanel.jsx 로 옮겼다.
+  //   그리는 곳과 받아오는 곳이 갈라져 있으면 한쪽만 살아 있어도 아무도 모른다 (v00.306.009 가 그랬다).
 
   const [autoVersions, setAutoVersions] = React.useState(null);
   React.useEffect(() => {
@@ -466,154 +454,10 @@ const AdminPage = ({ go }) => {
           setTab={setTab}
           G={G}/>}
 
-        {false && (() => {
-          const dailySignups = _countSince(allUsers, 'createdAt', 1);
-          const weeklySignups = _countSince(allUsers, 'createdAt', 7);
-          const monthlySignups = _countSince(allUsers, 'createdAt', 30);
-          const dailyPosts = _countSince(allCommunityPosts, 'date', 1);
-          const weeklyPosts = _countSince(allCommunityPosts, 'date', 7);
-          const monthlyPosts = _countSince(allCommunityPosts, 'date', 30);
-          const signupSeries = _dailySeries(allUsers, 'createdAt', 14);
-          const postSeries = _dailySeries(allCommunityPosts, 'date', 14);
-          const referrerData = [
-            { src: '직접 방문', pct: 42 },
-          ];
-          // v00.306.009 — 오늘 지표 카드. 어제와 견줘 늘었는지 줄었는지까지 보인다.
-          //   숫자만 있으면 그게 많은 건지 적은 건지 알 수 없다.
-          const TodayCard = ({ label, value, prev, sub }) => {
-            const 준비중 = value === null || value === undefined;
-            const diff = 준비중 || prev === null || prev === undefined ? null : value - prev;
-            return (
-              <div className="card">
-                <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{label}</div>
-                <div className="ko-serif" style={{fontSize:32, color:'var(--ink)'}}>
-                  {준비중 ? <span className="dim-2" style={{fontSize:18}}>—</span> : value.toLocaleString('ko-KR')}
-                </div>
-                <div style={{fontSize:11, marginTop:8, color:'var(--ink-2)'}}>
-                  {준비중 ? (todayError ? '불러오지 못했습니다' : '집계하는 중…') : (
-                    <>
-                      {diff === null ? '' : diff === 0 ? '어제와 같음'
-                        : diff > 0 ? <span className="gold">어제보다 +{diff}</span>
-                        : <span className="dim-2">어제보다 {diff}</span>}
-                      {sub ? <span className="dim-2"> · {sub}</span> : null}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          };
-          const T = todayStats?.today || {};
-          const Y = todayStats?.yesterday || {};
-          return (
-          <>
-            {/* v00.306.009 — 0줄: 오늘 하루. 운영자가 가장 먼저 보고 싶은 숫자를 맨 위에 둔다. */}
-            <div className="admin-section__title">오늘 (한국 시간 자정 기준 · 5분마다 갱신)</div>
-            <div className="grid grid-4" style={{marginBottom:18}}>
-              <TodayCard label="새 글"   value={todayStats ? T.posts : null}    prev={Y.posts}/>
-              <TodayCard label="새 댓글" value={todayStats ? T.comments : null} prev={Y.comments}/>
-              <TodayCard label="공감"    value={todayStats ? T.likes : null}    prev={Y.likes}/>
-              <TodayCard label="방문자"  value={todayStats ? T.visitors : null} prev={Y.visitors}
-                sub={todayStats ? `조회 ${Number(T.views || 0).toLocaleString('ko-KR')}회` : ''}/>
-            </div>
-
-            {/* 1줄: 기존 4종 (전체 회원 / 게시글 / 칼럼 / 책 주문) */}
-            <div className="grid grid-4" style={{marginBottom:18}}>
-              {dashboardStats.map((s, i) => (
-                <div key={i} className="card">
-                  <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{s.l}</div>
-                  <div className="ko-serif" style={{fontSize:32, color:'var(--ink)'}}>{s.v}<span style={{fontSize:14, marginLeft:4}} className="dim-2">{s.unit||''}</span></div>
-                  <div style={{fontSize:11, color: s.p ? 'var(--primary)' : 'var(--danger)', marginTop:8}}>{s.d}</div>
-                </div>
-              ))}
-            </div>
-            {/* 2줄: 일/주/월 방문자 (현재는 작성 활동 proxy) + 일일 가입자 */}
-            <div className="admin-section__title">활동 · 방문 (활동량 proxy — 정확한 page-view tracking 은 v0.147+)</div>
-            <div className="grid grid-4" style={{marginBottom:18}}>
-              <MetricCard icon="📅" label="일일 활동자" value={dailyPosts}
-                accent="var(--primary)" sub={`최근 24시간 게시글 ${dailyPosts}건`}/>
-              <MetricCard icon="📊" label="주간 활동자" value={weeklyPosts}
-                accent="var(--primary-hover)" sub={`최근 7일 게시글 ${weeklyPosts}건`}/>
-              <MetricCard icon="📈" label="월간 활동자" value={monthlyPosts}
-                accent="var(--gold-3, var(--primary-hover))" sub={`최근 30일 게시글 ${monthlyPosts}건`}/>
-              <MetricCard icon="✨" label="오늘 신규 가입" value={dailySignups}
-                accent="var(--secondary, #1F7A8C)"
-                sub={`주간 ${weeklySignups}명 · 월간 ${monthlySignups}명`}/>
-            </div>
-            {/* 3줄: 추이 차트 */}
-            <div className="grid grid-2" style={{marginBottom:18}}>
-              <article className="card">
-                <MiniBarChart label="📊 14일 가입 추이" series={signupSeries.counts} labels={signupSeries.labels} color="var(--secondary, #1F7A8C)" height={140}/>
-                <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
-                  최근 14일간 일별 신규 가입자 수. 막대에 마우스 hover 로 정확한 값 확인.
-                </p>
-              </article>
-              <article className="card">
-                <MiniBarChart label="📊 14일 게시글 추이" series={postSeries.counts} labels={postSeries.labels} color="var(--primary)" height={140}/>
-                <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
-                  최근 14일간 일별 신규 게시글 수. 활동량의 일별 변동 파악용.
-                </p>
-              </article>
-            </div>
-            {/* 4줄: 유입 경로 */}
-            <div className="admin-section__title">유입 경로 (추정값 — referrer tracking infrastructure v0.147+ 예정)</div>
-            <article className="card" style={{marginBottom:24}}>
-              <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.22em', marginBottom:14}}>TRAFFIC SOURCES</div>
-              <div style={{display:'grid', gap:10}}>
-                {referrerData.map((r, i) => (
-                  <div key={i} style={{display:'flex', alignItems:'center', gap:12}}>
-                    <div style={{minWidth:160, fontSize:13, color:'var(--ink)'}}>{r.src}</div>
-                    <div style={{flex:1, height:8, background:'var(--bg-2)', borderRadius:4, overflow:'hidden', position:'relative'}}>
-                      <div style={{position:'absolute', left:0, top:0, bottom:0, width:`${r.pct}%`, background:'var(--primary)', borderRadius:4}}/>
-                    </div>
-                    <div className="mono" style={{minWidth:40, textAlign:'right', fontSize:12, color:'var(--ink)', fontWeight:600}}>{r.pct}%</div>
-                  </div>
-                ))}
-              </div>
-              <p className="dim-2" style={{fontSize:11, marginTop:14, lineHeight:1.6}}>
-                ⓘ 현재는 추정값. 실제 referrer 트래킹은 다음 사이클에 page-view 엔드포인트 + D1 page_views 테이블 추가 시 정확한 값 표시 예정.
-              </p>
-            </article>
-            {/* 5줄: 기존 latest community + ops snapshot */}
-            <div className="grid grid-2">
-              <article className="card card-gold">
-                <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>LATEST COMMUNITY</div>
-                <h2 className="ko-serif" style={{fontSize:20, marginBottom:12}}>가장 최근 커뮤니티 글</h2>
-                {latestCommunityPost ? (
-                  <>
-                    <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:10}}>
-                      <span className="badge badge-gold">{window.BGNJ_BOARD_LABEL?.(latestCommunityPost)}</span>
-                      <span className="mono dim-2" style={{fontSize:11}}>{latestCommunityPost.date}</span>
-                    </div>
-                    <p style={{fontSize:16, marginBottom:10}}>{latestCommunityPost.title}</p>
-                    <p className="dim" style={{fontSize:13, lineHeight:1.8, marginBottom:16}}>
-                      작성자 {latestCommunityPost.author} · 조회 {latestCommunityPost.views} · 댓글 {latestCommunityPost.replies}
-                    </p>
-                  </>
-                ) : (
-                  <p className="dim">등록된 게시글이 없습니다.</p>
-                )}
-                <button type="button" className="btn btn-small" onClick={() => setTab("커뮤니티")}>커뮤니티 관리로 이동</button>
-              </article>
-
-              <article className="card">
-                <div className="mono gold" style={{fontSize:10, letterSpacing:'0.24em', marginBottom:8}}>OPERATIONS SNAPSHOT</div>
-                <h2 className="ko-serif" style={{fontSize:20, marginBottom:12}}>운영 요약</h2>
-                <div style={{display:'grid', gap:12, marginBottom:18}}>
-                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">최근 칼럼</span><span>{latestColumn?.title || "없음"}</span></div>
-                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 강연</span><span>{G.arr(() => window.BGNJ_LECTURES?.listAll?.()).filter((l) => l && !l.hidden)[0]?.next || "없음"}</span></div>
-                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">다음 투어</span><span>{G.arr(() => window.BGNJ_TOURS?.listAll?.()).filter((t) => t && !t.hidden)[0]?.next || "없음"}</span></div>
-                  <div style={{display:'flex', justifyContent:'space-between', gap:12}}><span className="dim">DSR 대기</span><span>{PRIVACY_DATA.dsrRequests.filter(r => r.status !== 'done').length}건</span></div>
-                </div>
-                <div style={{display:'flex', gap:12, flexWrap:'wrap'}}>
-                  <button type="button" className="btn btn-small" onClick={() => setTab("뱅기노자 칼럼")}>칼럼 관리</button>
-                  <button type="button" className="btn btn-small" onClick={() => setTab("투어 프로그램")}>투어 관리</button>
-                  <button type="button" className="btn btn-small" onClick={() => setTab("정보주체 권리")}>권리 요청 처리</button>
-                </div>
-              </article>
-            </div>
-          </>
-          );
-        })()}
+        {/* v00.308.000 — 여기 있던 옛 인라인 대시보드(148줄)를 지웠다.
+            v00.285 에서 대시보드가 AdminDashboardPanel.jsx 로 옮겨간 뒤 `{false && …}` 로 꺼 둔 껍데기였는데,
+            v00.306.009 가 '오늘' 지표 카드를 **그 껍데기 안에** 넣어 화면에 한 번도 뜨지 않았다.
+            껍데기를 남겨 두면 다음 사람도 같은 자리에 넣는다. 그래서 지운다. */}
 
         {tab === "사용자 여정" && <UserJourneyPanel/>}
 

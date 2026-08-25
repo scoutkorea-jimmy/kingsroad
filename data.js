@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.307.000",
+  version: "00.308.000",
   build: "2026.08.26",
   channel: "preview",
 };
@@ -371,7 +371,11 @@ window.BGNJ_ANALYTICS = (() => {
     // route 가 같으면 dedupe (React StrictMode 또는 setRoute 중복 호출 방지).
     if (route === lastTracked) return;
     lastTracked = route;
-    const userId = (window.BGNJ_AUTH?.currentUser?.()?.id) || null;
+    // v00.308.000 — `currentUser()` 는 **존재한 적이 없는 함수**였다. 코드 전체에서 여기 한 줄뿐이었고,
+    //   옵셔널 체이닝이라 조용히 undefined 로 떨어져 1,789건 전부 user_id 가 비어 있었다.
+    //   → 로그인한 사람이 누군지 한 번도 기록되지 않았다. 진짜 이름은 getSessionUser() 다.
+    //   ⚠ 옵셔널 체이닝은 오타를 오류가 아니라 '값 없음' 으로 바꾼다. 이름은 실제로 있는지 확인하고 쓸 것.
+    const userId = (window.BGNJ_AUTH?.getSessionUser?.()?.id) || null;
     const payload = {
       route: String(route || 'unknown'),
       sessionId,

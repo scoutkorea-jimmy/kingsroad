@@ -1297,6 +1297,35 @@ const handleAnalyticsSummary = async (req, env) => {
       "SELECT COALESCE(referrer_host, '직접 방문') AS host, route, COUNT(*) AS c FROM page_views WHERE ts >= ? GROUP BY host, route ORDER BY c DESC LIMIT 200"
     ).bind(isoCutoff(seriesDays)).all();
     summary.flowPairs = (pairs.results || []).map((p) => ({ referrer: p.host, route: p.route, count: Number(p.c) }));
+    // v00.308.000 — 사용자 여정 4단계 깔때기.
+    //   ⚠ 네 단계를 **포함 관계로** 짰다. 뒤 단계는 반드시 앞 단계의 부분집합이다.
+    //     그러지 않으면 3단계가 2단계보다 커지는 순간이 생겨(광장에 바로 착지한 한 쪽짜리 방문)
+    //     '깔때기' 라는 말이 거짓이 된다.
+    //   단계: 방문(세션 전부) → 콘텐츠 열람 → 그중 2쪽 이상 → 그중 로그인.
+    const CONTENT_ROUTES = "('community','column','tour','lectures','book','sleep','eat')";
+    const funnelRow = await env.DB.prepare(
+      `WITH s AS (
+         SELECT session_id,
+                COUNT(*) AS views,
+                MAX(CASE WHEN route IN ${CONTENT_ROUTES} THEN 1 ELSE 0 END) AS content,
+                MAX(CASE WHEN user_id IS NOT NULL AND user_id <> '' THEN 1 ELSE 0 END) AS logged
+         FROM page_views
+         WHERE ts >= ? AND session_id IS NOT NULL AND session_id <> ''
+         GROUP BY session_id
+       )
+       SELECT COUNT(*) AS visits,
+              SUM(CASE WHEN content = 1 THEN 1 ELSE 0 END) AS reached,
+              SUM(CASE WHEN content = 1 AND views >= 2 THEN 1 ELSE 0 END) AS browsed,
+              SUM(CASE WHEN content = 1 AND views >= 2 AND logged = 1 THEN 1 ELSE 0 END) AS logged
+       FROM s`
+    ).bind(isoCutoff(seriesDays)).first();
+    summary.funnel = {
+      days: seriesDays,
+      visits: Number(funnelRow?.visits || 0),
+      reached: Number(funnelRow?.reached || 0),
+      browsed: Number(funnelRow?.browsed || 0),
+      logged: Number(funnelRow?.logged || 0),
+    };
     // v00.194 — 사용자 요청 '대시보드에 접속 시간에 따른 히트맵'.
     // 24h × 7요일 그리드. ts 는 UTC ISO 이지만 KST(+9) 기준으로 보여주기 위해 +9h 시프트 후 strftime.
     // SQLite: strftime('%w', datetime(ts, '+9 hours')) 으로 KST 요일 (0=일~6=토), '%H' 로 KST 시간(00~23).
@@ -1860,21 +1889,36 @@ const handleAdminToday = async (req, env) => {
     catch (e) { console.warn("[bgnj:today]", e?.message || e); return 0; }
   };
   const T = (col) => `replace(${col}, 'T', ' ')`;
-  const [posts, comments, likes, visitors, views,
-         pPosts, pComments, pLikes, pVisitors] = await Promise.all([
+  const [posts, comments, postLikes, cmtLikes, visitors, views,
+         pPosts, pComments, pPostLikes, pCmtLikes, pVisitors,
+         openReports, pendingOrders, todayErrors] = await Promise.all([
     one(`SELECT COUNT(*) AS n FROM posts WHERE ${T("created_at")} >= ?`, today),
     one(`SELECT COUNT(*) AS n FROM content_comments WHERE ${T("created_at")} >= ?`, today),
     one(`SELECT COUNT(*) AS n FROM post_likes WHERE ${T("created_at")} >= ?`, today),
+    // v00.308.000 — 댓글 공감이 생겼다. 안 더하면 '공감' 카드가 실제보다 적게 나온다.
+    one(`SELECT COUNT(*) AS n FROM comment_likes WHERE ${T("created_at")} >= ?`, today),
     one(`SELECT COUNT(DISTINCT session_id) AS n FROM page_views WHERE ${T("ts")} >= ?`, today),
     one(`SELECT COUNT(*) AS n FROM page_views WHERE ${T("ts")} >= ?`, today),
     one(`SELECT COUNT(*) AS n FROM posts WHERE ${T("created_at")} >= ? AND ${T("created_at")} < ?`, yesterday, today),
     one(`SELECT COUNT(*) AS n FROM content_comments WHERE ${T("created_at")} >= ? AND ${T("created_at")} < ?`, yesterday, today),
     one(`SELECT COUNT(*) AS n FROM post_likes WHERE ${T("created_at")} >= ? AND ${T("created_at")} < ?`, yesterday, today),
+    one(`SELECT COUNT(*) AS n FROM comment_likes WHERE ${T("created_at")} >= ? AND ${T("created_at")} < ?`, yesterday, today),
     one(`SELECT COUNT(DISTINCT session_id) AS n FROM page_views WHERE ${T("ts")} >= ? AND ${T("ts")} < ?`, yesterday, today),
+    // v00.308.000 — '손볼 것'. 오늘 생긴 것이 아니라 **아직 처리 안 된 것**이다.
+    //   숫자가 0 이 아니면 운영자가 손을 대야 한다는 뜻이라 하루가 지나도 사라지지 않는다.
+    one(`SELECT COUNT(*) AS n FROM reports WHERE status = 'open'`),
+    one(`SELECT COUNT(*) AS n FROM book_orders WHERE status = 'pending_payment'`),
+    one(`SELECT COUNT(*) AS n FROM error_log WHERE ${T("ts")} >= ?`, today),
   ]);
+  const likes = postLikes + cmtLikes;
+  const pLikes = pPostLikes + pCmtLikes;
+  const todo = openReports + pendingOrders + todayErrors;
   return {
-    today: { posts, comments, likes, visitors, views },
+    today: { posts, comments, likes, visitors, views, todo },
     yesterday: { posts: pPosts, comments: pComments, likes: pLikes, visitors: pVisitors },
+    // 카드 아랫줄에 무엇 때문에 손봐야 하는지 그대로 적는다 — 숫자만 있으면 어디를 봐야 할지 모른다.
+    todoBreakdown: { reports: openReports, orders: pendingOrders, errors: todayErrors },
+    likeBreakdown: { posts: postLikes, comments: cmtLikes },
     since: today,
   };
 };
