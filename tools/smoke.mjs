@@ -586,6 +586,58 @@ const run = async () => {
       !/row-title-inline[^\n]*#\$\{t\}/.test(cp), "말머리로 걸러 온 목록은 같은 태그가 반복돼 제목을 가린다");
   }
 
+  console.log("\n── 12. 새 버전이 나오면 옛 화면을 끊는가 (2026-08-25 '과거 버전이 보인다') ──");
+  {
+    const html = readFileSync(path.join(ROOT, "index.html"), "utf8");
+    const boot = readFileSync(path.join(ROOT, "boot.jsx"), "utf8");
+
+    // GitHub Pages 는 index.html 에도 max-age=600 을 준다(헤더를 못 바꾼다).
+    // 번들 안의 검사는 React 가 다 뜬 뒤라 늦다 — 번들보다 먼저 도는 검사가 있어야 한다.
+    const appTag = html.indexOf('src="/dist/app.js');
+    const checkPos = html.indexOf("'/version.json?_='");
+    check("번들보다 먼저 도는 버전 검사가 있다", appTag > 0 && checkPos > appTag,
+      "React 가 다 뜬 뒤에 검사하면 사용자는 옛 화면을 이미 본 뒤다");
+    check("app.js 는 defer 라 검사가 먼저 돈다", /<script defer src="\/dist\/app\.js/.test(html));
+
+    // ★ 사이트를 통째로 못 쓰게 만드는 단 하나의 위험: 무한 새로고침.
+    check("기록을 못 남기면 새로고침하지 않는다",
+      /if \(!write\(\{ v: v, n: n \+ 1 \}\)\) return;/.test(html),
+      "시크릿 모드처럼 저장소가 막히면 멈출 방법이 없어진다 — 사이트가 통째로 죽는다");
+    check("같은 버전으로 도는 횟수에 상한이 있다",
+      /var MAX = \d+;/.test(html) && /if \(n >= MAX\) return;/.test(html));
+    check("서버가 더 옛 버전이면 건드리지 않는다",
+      /if \(rank\(v\) <= rank\(cur\)\) return;/.test(html),
+      "되돌린 배포(롤백) 때 헛되이 새로고침한다");
+    check("boot.jsx 도 기록 못 남기면 새로고침하지 않는다",
+      /if \(recorded\) \{ _purgeAndReload\(\); return; \}/.test(boot));
+
+    // 주소에 ?_v= 를 붙이는 방식은 **원래 주소의 옛 캐시를 그대로 남긴다** — 다음 방문에 또 옛 화면.
+    check("주소를 더럽히지 않는다 (?_v= 폐기)",
+      !/_v['"]?\s*,/.test(boot) && !/searchParams\.set\('_v'/.test(boot),
+      "?_v= 로 이동하면 원래 주소의 캐시는 안 바뀌어 다음 방문에 또 옛 화면이 나온다");
+    check("이 주소의 캐시 항목 자체를 덮어쓴다",
+      /cache: 'reload'/.test(html) && /cache: 'reload'/.test(boot));
+    check("Cache API 와 서비스워커도 비운다",
+      /caches\.delete/.test(html) && /unregister/.test(html)
+      && /caches\.delete/.test(boot) && /unregister/.test(boot));
+    check("두 곳이 같은 길을 쓴다 (_purgeAndReload)",
+      (boot.match(/_purgeAndReload\(\)/g) || []).length >= 2,
+      "자동 새로고침과 배너가 다르게 동작하면 무슨 일이 났는지 진단할 수 없다");
+
+    // 정적 페이지 193개는 index.html 을 베껴 만든다 — 검사도 같이 실려야 한다.
+    try {
+      const stat = readFileSync(path.join(ROOT, "community/140/index.html"), "utf8");
+      check("정적 페이지에도 검사가 실린다", stat.includes("'/version.json?_='"),
+        "검색으로 들어온 사람은 정적 페이지를 먼저 본다");
+      const hash = (html.match(/'sha256-[^']+'/g) || []).length;
+      const statHash = (stat.match(/'sha256-[^']+'/g) || []).length;
+      check("정적 페이지의 CSP 해시 개수가 같다", hash === statHash && hash > 0,
+        `index ${hash}개 · 정적 ${statHash}개 — 다르면 스크립트가 통째로 차단된다`);
+    } catch (_e) {
+      check("정적 페이지 확인", false, "community/140/index.html 을 못 읽었다 — seo-build 를 돌렸는가");
+    }
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

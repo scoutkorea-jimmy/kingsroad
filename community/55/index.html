@@ -26,7 +26,7 @@
      · frame-ancestors / X-Frame-Options 는 HTTP 헤더 전용 — GitHub Pages(정적 호스팅)는 헤더 주입 불가라
        <meta> 로는 브라우저가 무시(콘솔 경고만 남김). v00.284.002 에서 제거. 클릭재킹 방어가 필요하면
        Cloudflare(워커/Pages) 같은 헤더 가능한 경유지에서 HTTP 헤더로 설정해야 실효. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-gRhtnBHHNsWQhjkqdHj/NXaxn4oPh46hFMwZC1wKCLA='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://esm.sh https://*.esm.sh 'sha256-HyVQ076O+1YFrXmVCXXT2c5MDKO6WdFMzsueHo+OjmM=' 'sha256-Wt0lQOMRbOUurp8q3owcOzN3VhmQuSJ2oAQbioYYOp4=' 'sha256-qTHhgCKyyQT2uW/eEm9F68kSqDMAThzdFNnYQljt5EA=' 'sha256-WhKXGA5pyf34+BDEcJxJK1ymQRPSero+zHdnQcpkOk4=' 'sha256-VHv+1jm2cmEjQW9w2Cowpwx3rQ0KC3+2vv7JxHCOQHs=' 'sha256-MRmy3gksGSGYjlZzUbJ6QixGJuifgIaFcbOMjSoD3RE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.bgnj.net https://banginoja-api.scoutkorea.workers.dev https://esm.sh https://*.esm.sh https://cdn.jsdelivr.net https://unpkg.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://youtube.com https://youtu.be https://player.vimeo.com https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta property="og:title" content="[걸어서 역사속으로] (4)동구릉 탐방기 — 뱅기노자">
 <meta property="og:description" content="조선의 혼을 찾아서 태조는 조선 건국의 명을 천지에 고하며 역사를 열었고 하륜은 장풍득수 명당을 찾아 산과 물의 형세를 짚었다 동구릉 능역에 바람과 물의 숨결을 품어 왕조 터 세우며 역사의 품에 정치와 철학의 기틀을 굳건히 심어 놓았다 북에서 내려온 장대한 산맥은 왕조 기운 크게 안아…">
 <meta property="og:type" content="website">
@@ -47,7 +47,7 @@
 <!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=00.306.004">
+<link rel="stylesheet" href="/styles.css?v=00.306.005">
 
 
 <!-- v00.297.001 — 검색·AI 크롤러용 본문(#seo-main)을 사람 눈에서 감춘다.
@@ -214,6 +214,77 @@
      v00.285 Stage 3 — per-file 22개 <script> → 단일 번들 dist/app.js.
        엔트리 src/entry-main.jsx 가 기존 로드 순서대로 side-effect import. tools/build.mjs --bundle 산출.
        admin(dist/admin.js)은 boot 가 route 진입 시 동적 주입(코드 스플리팅 유지). -->
-<script defer src="/dist/app.js?v=00.306.004"></script>
+<script defer src="/dist/app.js?v=00.306.005"></script>
+<script>
+  // v00.306.005 — 배포했는데 옛 화면이 보이던 것.
+  //
+  // GitHub Pages 는 index.html 에도 `Cache-Control: max-age=600` 을 준다 — 응답 헤더를 바꿀 방법이 없다.
+  // 자산은 ?v= 로 끊고 있지만 **그 ?v= 를 적어 둔 HTML 자체가 캐시되므로** 옛 HTML → 옛 번들이 된다.
+  // 번들 안(boot.jsx)에도 검사가 있었지만 React 가 다 뜬 뒤에야 돌아, 사용자는 이미 옛 화면을 본 뒤였다.
+  // 그래서 **번들이 실행되기 전인 여기서** 끊는다. 이 스크립트는 파싱 중에 바로 돌고,
+  // 위의 app.js 는 defer 라 아직 실행되지 않았다.
+  //
+  // ⚠ 이 코드의 가장 큰 위험은 무한 새로고침이다. 사이트가 통째로 못 쓰게 된다.
+  //   그래서 **기록을 남기지 못하면 새로고침도 하지 않는다**(시크릿 모드 등에서 저장소가 막힐 수 있다).
+  //   기록 없이 새로고침하면 멈출 방법이 없다.
+  (function () {
+    var KEY = 'bgnj_purge';
+    var MAX = 2;   // 같은 버전으로 두 번까지. 그래도 안 되면 포기하고 배너에 맡긴다.
+    try {
+      var tag = document.querySelector('script[src*="/dist/app.js"]');
+      var cur = tag ? (String(tag.getAttribute('src')).split('v=')[1] || '') : '';
+      if (!cur) return;   // 버전을 모르면 아무것도 하지 않는다.
+
+      // '00.306.004' → 비교 가능한 숫자열. 되돌린 배포(롤백) 때 헛되이 새로고침하지 않기 위해.
+      var rank = function (x) {
+        var a = String(x).split('.');
+        return (Number(a[0]) || 0) * 1e8 + (Number(a[1]) || 0) * 1e4 + (Number(a[2]) || 0);
+      };
+      var write = function (o) {
+        try { sessionStorage.setItem(KEY, JSON.stringify(o)); return sessionStorage.getItem(KEY) !== null; }
+        catch (e) { return false; }
+      };
+
+      fetch('/version.json?_=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          var v = j && j.version ? String(j.version) : '';
+          if (!v) return;
+          if (v === cur) { try { sessionStorage.removeItem(KEY); } catch (e) {} return; }
+          if (rank(v) <= rank(cur)) return;   // 서버가 더 옛것이다 — 건드리지 않는다.
+
+          var st = null;
+          try { st = JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) { st = null; }
+          var n = (st && st.v === v) ? (Number(st.n) || 0) : 0;
+          if (n >= MAX) return;
+          if (!write({ v: v, n: n + 1 })) return;   // ★ 기록 실패 = 새로고침 금지
+
+          var chores = [];
+          try {
+            if (typeof caches !== 'undefined' && caches.keys) {
+              chores.push(caches.keys().then(function (ks) {
+                return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+              }));
+            }
+          } catch (e) {}
+          try {
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+              chores.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+                return Promise.all(rs.map(function (r) { return r.unregister(); }));
+              }));
+            }
+          } catch (e) {}
+          // ⚠ 이 주소의 HTTP 캐시 항목 자체를 새것으로 덮어쓴다.
+          //   ?_v= 를 붙여 이동하는 방식은 주소만 지저분해지고 **원래 주소의 옛 캐시는 그대로 남아**
+          //   다음 방문에 또 옛 화면이 나온다. 덮어써야 다음 방문도 새것이다.
+          chores.push(fetch(location.href, { cache: 'reload' }));
+
+          Promise.all(chores.map(function (pr) { return pr.catch(function () {}); }))
+            .then(function () { location.reload(); });
+        })
+        .catch(function () {});
+    } catch (e) {}
+  })();
+</script>
 </body>
 </html>

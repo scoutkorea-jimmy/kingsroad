@@ -280,6 +280,28 @@ const _safeToAutoReload = () => {
 // 이유: 데스크톱에선 히어로를, 모바일에선 로고를 덮고 있었다(첫 화면의 절반이 안내문).
 // 우하단은 이미 오류 토스트(bottom:16/right:16)와 scroll-top FAB(bottom:28/right:24)가 쓰고 있어 좌하단으로.
 // z-index 는 쿠키 배너(80)보다 낮은 70 — 첫 방문 동의가 항상 우선.
+// v00.306.005 — 새로고침 전에 저장된 캐시를 실제로 비운다.
+//   예전엔 주소에 ?_v= 를 붙여 이동했는데, 그러면 **원래 주소의 옛 캐시는 그대로 남아**
+//   다음 방문에 또 옛 화면이 나왔다(주소만 지저분해졌다).
+//   지금은 이 주소의 HTTP 캐시 항목 자체를 새것으로 덮어쓴 뒤 제자리에서 새로고침한다.
+//   index.html 의 이른 검사와 같은 방식이다 — 두 곳이 다르게 동작하면 진단이 불가능해진다.
+const _purgeAndReload = () => {
+  const chores = [];
+  try {
+    if (typeof caches !== 'undefined' && caches.keys) {
+      chores.push(caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))));
+    }
+  } catch (_e) { console.warn('[bgnj] 캐시 비우기 실패는 무시한다', _e); }
+  try {
+    if (navigator.serviceWorker?.getRegistrations) {
+      chores.push(navigator.serviceWorker.getRegistrations().then((rs) => Promise.all(rs.map((r) => r.unregister()))));
+    }
+  } catch (_e) { console.warn('[bgnj] 서비스워커 해제 실패는 무시한다', _e); }
+  // bgnj-lint-ignore-next-line direct_fetch
+  chores.push(fetch(window.location.href, { cache: 'reload' }));
+  Promise.all(chores.map((pr) => pr.catch(() => {}))).then(() => window.location.reload());
+};
+
 const UPDATE_DISMISSED_KEY = 'bgnj_update_dismissed_version';
 const VersionUpdateBanner = () => {
   const [latest, setLatest] = React.useState(null);
@@ -305,12 +327,11 @@ const VersionUpdateBanner = () => {
         try { autoDone = sessionStorage.getItem(AUTO_RELOAD_KEY) || ''; }
         catch (_e) { console.warn('[bgnj] 자동 새로고침 기록 읽기 실패 (boot.jsx)', _e); }
         if (autoDone !== v && _safeToAutoReload()) {
-          try { sessionStorage.setItem(AUTO_RELOAD_KEY, v); }
-          catch (_e) { console.warn('[bgnj] 자동 새로고침 기록 저장 실패 (boot.jsx)', _e); }
-          const u = new URL(window.location.href);
-          u.searchParams.set('_v', v);
-          window.location.replace(u.toString());
-          return;
+          // v00.306.005 — 기록을 못 남기면 새로고침도 하지 않는다. 무한 반복을 멈출 길이 없어진다.
+          let recorded = false;
+          try { sessionStorage.setItem(AUTO_RELOAD_KEY, v); recorded = sessionStorage.getItem(AUTO_RELOAD_KEY) === v; }
+          catch (_e) { console.warn('[bgnj] 자동 새로고침 기록 저장 실패 — 새로고침하지 않는다', _e); }
+          if (recorded) { _purgeAndReload(); return; }
         }
         setLatest(j);
       } catch (_e) { console.warn('[bgnj] 저장소 읽기 — 실패 시 기본값 (boot.jsx:266)', _e); }
@@ -323,9 +344,7 @@ const VersionUpdateBanner = () => {
   }, [current]);
   const reload = () => {
     try {
-      const url = new URL(window.location.href);
-      url.searchParams.set('_v', latest?.version || Date.now().toString());
-      window.location.replace(url.toString());
+      _purgeAndReload();
     } catch {
       window.location.reload();
     }

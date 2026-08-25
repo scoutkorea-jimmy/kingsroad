@@ -404,7 +404,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.306.004",
+    version: "00.306.005",
     build: "2026.08.25",
     channel: "preview"
   };
@@ -15445,6 +15445,27 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return false;
     }
   };
+  var _purgeAndReload = () => {
+    var _a;
+    const chores = [];
+    try {
+      if (typeof caches !== "undefined" && caches.keys) {
+        chores.push(caches.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))));
+      }
+    } catch (_e) {
+      console.warn("[bgnj] \uCE90\uC2DC \uBE44\uC6B0\uAE30 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD55C\uB2E4", _e);
+    }
+    try {
+      if ((_a = navigator.serviceWorker) == null ? void 0 : _a.getRegistrations) {
+        chores.push(navigator.serviceWorker.getRegistrations().then((rs) => Promise.all(rs.map((r) => r.unregister()))));
+      }
+    } catch (_e) {
+      console.warn("[bgnj] \uC11C\uBE44\uC2A4\uC6CC\uCEE4 \uD574\uC81C \uC2E4\uD328\uB294 \uBB34\uC2DC\uD55C\uB2E4", _e);
+    }
+    chores.push(fetch(window.location.href, { cache: "reload" }));
+    Promise.all(chores.map((pr) => pr.catch(() => {
+    }))).then(() => window.location.reload());
+  };
   var UPDATE_DISMISSED_KEY = "bgnj_update_dismissed_version";
   var VersionUpdateBanner = () => {
     var _a;
@@ -15474,15 +15495,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             console.warn("[bgnj] \uC790\uB3D9 \uC0C8\uB85C\uACE0\uCE68 \uAE30\uB85D \uC77D\uAE30 \uC2E4\uD328 (boot.jsx)", _e);
           }
           if (autoDone !== v && _safeToAutoReload()) {
+            let recorded = false;
             try {
               sessionStorage.setItem(AUTO_RELOAD_KEY, v);
+              recorded = sessionStorage.getItem(AUTO_RELOAD_KEY) === v;
             } catch (_e) {
-              console.warn("[bgnj] \uC790\uB3D9 \uC0C8\uB85C\uACE0\uCE68 \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328 (boot.jsx)", _e);
+              console.warn("[bgnj] \uC790\uB3D9 \uC0C8\uB85C\uACE0\uCE68 \uAE30\uB85D \uC800\uC7A5 \uC2E4\uD328 \u2014 \uC0C8\uB85C\uACE0\uCE68\uD558\uC9C0 \uC54A\uB294\uB2E4", _e);
             }
-            const u = new URL(window.location.href);
-            u.searchParams.set("_v", v);
-            window.location.replace(u.toString());
-            return;
+            if (recorded) {
+              _purgeAndReload();
+              return;
+            }
           }
           setLatest(j);
         } catch (_e) {
@@ -15503,9 +15526,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, [current]);
     const reload = () => {
       try {
-        const url = new URL(window.location.href);
-        url.searchParams.set("_v", (latest == null ? void 0 : latest.version) || Date.now().toString());
-        window.location.replace(url.toString());
+        _purgeAndReload();
       } catch (e) {
         window.location.reload();
       }
