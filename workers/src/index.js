@@ -517,7 +517,11 @@ const handlePostsList = async (req, env) => {
   //   댓글을 달 때 +1 은 하는데 지울 때 -1 이 없어서 실측으로 이미 어긋나 있었다
   //   (140번 글: 카운터 4 · 실제 2). 목록의 '댓글 n' 과 '댓글순' 정렬이 함께 틀어진다.
   //   세어서 보내면 어긋날 수가 없다 — idx_comments_post 가 있어 비용도 무시할 수준이다.
-  const sql = `SELECT p.id, p.category_id, p.category, p.prefix, p.title, p.body, p.author_id, p.author,
+  // v00.306.007 — **본문(body)을 더 이상 읽지 않는다.**
+  //   지금까지는 400자 발췌를 만들려고 글 110편의 본문 783KB 를 전부 읽고 나서 버렸다.
+  //   저장해 둔 발췌(44KB)만 읽으면 **읽는 양이 95% 줄어든다** — 목록이 느렸던 진짜 이유다.
+  //   ⚠ 본문 검색(includeBody=1)은 여전히 body 를 봐야 하므로 그때만 조건에 넣는다(옵션이다).
+  const sql = `SELECT p.id, p.category_id, p.category, p.prefix, p.title, p.excerpt, p.author_id, p.author,
                       p.views, p.created_at, p.updated_at, p.edit_count,
                       p.images_json, p.attachments_json, p.tags_json,
                       (SELECT COUNT(*) FROM content_comments c WHERE c.target_type = 'post' AND c.target_id = CAST(p.id AS TEXT)) AS replies
@@ -532,8 +536,9 @@ const handlePostsList = async (req, env) => {
   //   느린 것은 전송이었다.
   const results = (rawResults || []).map((row) => {
     const d = decoratePostRow(row);
-    const { body, ...rest } = d;
-    return { ...rest, excerpt: postExcerpt(body) };
+    // 옛 글에 발췌가 비어 있을 수 있다(백필 이전에 쓰인 글). 그때만 빈 문자열로 둔다 —
+    // 여기서 본문을 다시 읽어 오면 애써 줄인 것이 무의미해진다.
+    return { ...d, excerpt: typeof d.excerpt === 'string' ? d.excerpt : '' };
   });
   // v00.141 — allow_read 가 명시 0 인 카테고리의 글은 비관리자에 숨김.
   let isAdmin = false;
@@ -741,11 +746,12 @@ const handlePostsCreate = async (req, env) => {
   const attachments = normalizePostAttachments(body.attachments);
   const tags = normalizePostTags(body.tags);
   const r = await env.DB.prepare(
-    `INSERT INTO posts (category_id, category, prefix, title, body, author_id, author, created_at,
+    `INSERT INTO posts (category_id, category, prefix, title, body, excerpt, author_id, author, created_at,
                         images_json, attachments_json, tags_json)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
-    categoryId, cat?.label || categoryId, body.prefix || null, title, text, user.id, user.name, createdAt,
+    categoryId, cat?.label || categoryId, body.prefix || null, title, text, postExcerpt(text),
+    user.id, user.name, createdAt,
     JSON.stringify(images), JSON.stringify(attachments), JSON.stringify(tags),
   ).run();
   return { id: r.meta.last_row_id };
@@ -783,6 +789,9 @@ const handlePostPatch = async (req, env, id) => {
   const args = [];
   for (const k of ["title", "body", "prefix", "category_id"]) {
     if (k in body) { fields.push(`${k} = ?`); args.push(body[k]); }
+    // v00.306.007 — 본문이 바뀌면 발췌도 **같은 문장에서** 다시 만든다.
+    //   따로 갱신하면 언젠가 한쪽만 바뀌어 목록과 본문이 다른 말을 하게 된다.
+    if (k === "body" && k in body) { fields.push("excerpt = ?"); args.push(postExcerpt(String(body.body ?? ""))); }
   }
   // v00.306 — 게시판을 옮기면 **이름도 같이 옮긴다.**
   //   posts 는 게시판을 id(category_id)와 이름(category) 두 벌로 들고 있는데,

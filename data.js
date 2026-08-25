@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.306.006",
+  version: "00.306.007",
   build: "2026.08.25",
   channel: "preview",
 };
@@ -1799,7 +1799,23 @@ window.BGNJ_COMMUNITY = {
   // root cause: 빈 catch 로 인한 silent fail + 재시도 없음 + 워커 cold-start race.
   // 1회 자동 재시도 (exponential backoff) + 실패 시 _lastError 노출 + 'bgnj-posts-refresh-error' 이벤트.
   _lastError: null,
-  async refreshPosts(opts = {}) {
+  // v00.306.007 — 실측: 광장에 들어가면 `/api/posts?limit=1000` 이 **두 번** 나갔다
+  //   (boot 의 일괄 동기화 + CommunityPage 의 진입 동기화). 가장 느린 요청을 두 번 하고 있었다.
+  //   호출부 하나를 고치는 대신 **여기서 합친다** — 그래야 다음에 누가 또 불러도 같은 낭비가 안 난다.
+  //   같은 옵션으로 이미 날아간 요청이 있으면 그 약속을 그대로 돌려준다.
+  _inFlight: null,
+  _inFlightKey: '',
+  refreshPosts(opts = {}) {
+    const key = JSON.stringify(opts || {});
+    if (this._inFlight && this._inFlightKey === key) return this._inFlight;
+    this._inFlightKey = key;
+    this._inFlight = this._refreshPostsOnce(opts).finally(() => {
+      this._inFlight = null;
+      this._inFlightKey = '';
+    });
+    return this._inFlight;
+  },
+  async _refreshPostsOnce(opts = {}) {
     const maxAttempts = 2;
     let lastErr = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
