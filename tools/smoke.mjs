@@ -279,8 +279,11 @@ const run = async () => {
     check("수정 횟수는 제목·본문이 바뀔 때만 오른다",
       worker.includes("const contentChanged =") && worker.includes('if (contentChanged) fields.push("edit_count'),
       "빠지면 말머리·태그 일괄 적용까지 '수정' 으로 세어 횟수가 부풀려진다");
+    // v00.306.002 — 별칭(p.) 이 붙어도 통과하도록 뜻으로 판정한다. 글자 모양으로 보면
+    //   SELECT 를 손볼 때마다 멀쩡한 코드가 오탐으로 걸린다.
     check("목록 응답이 수정 시각·횟수를 싣는다",
-      worker.includes("updated_at, edit_count"),
+      /FROM posts p? ?WHERE/.test(worker) &&
+      /(^|[\s,(])(p\.)?updated_at/m.test(worker) && /(^|[\s,(])(p\.)?edit_count/m.test(worker),
       "빠지면 관리자 목록에 늘 '수정 없음' 으로 보인다");
   }
 
@@ -444,6 +447,93 @@ const run = async () => {
     const src = readFileSync(path.join(ROOT, "data.js"), "utf8");
     check("댓글 삭제가 서버 API 를 부른다", /comments\.remove\(/.test(src),
       "로컬 캐시만 지우면 새로고침 때 되살아난다");
+  }
+
+  console.log("\n── 11. 못 불러온 것 ≠ 없는 것 (2026-08-25 '게시글을 찾을 수 없습니다' 민원) ──");
+  {
+    const C3 = w.BGNJ_COMMUNITY;
+    const events = [];
+    w.dispatchEvent = (e) => { events.push(e.type); return true; };
+
+    // 아직 안 불러온 상태 — 목록은 비어 있지만 그건 '글이 없다' 는 뜻이 아니다.
+    C3._serverLoaded = false;
+    C3._serverPosts = [];
+    C3._lastError = null;
+    check("안 불러온 상태를 화면이 구분할 수 있다", C3._serverLoaded === false,
+      "_serverLoaded 가 없으면 화면은 '없는 글' 이라고 단정한다");
+
+    // 서버가 이상한 모양을 돌려줘도 '조용한 로딩 중' 으로 남으면 안 된다.
+    w.BGNJ_API = { posts: { list: async () => ({ posts: { nope: true } }) } };
+    await C3.refreshPosts();
+    check("비-배열 응답도 실패로 알린다", !!C3._lastError, `_lastError=${JSON.stringify(C3._lastError)}`);
+    check("비-배열 응답에 오류 이벤트가 나간다", events.includes('bgnj-posts-refresh-error'), events.join(','));
+    check("비-배열 응답이 캐시를 지우지 않는다", Array.isArray(C3._serverPosts) && C3._serverPosts.length === 0);
+
+    // 진짜 실패
+    events.length = 0;
+    w.BGNJ_API = { posts: { list: async () => { throw new Error("서버 장애"); } } };
+    await C3.refreshPosts();
+    check("조회 실패가 _lastError 에 남는다", /서버 장애/.test(String(C3._lastError)), String(C3._lastError));
+    check("조회 실패는 여전히 안 불러온 상태다", C3._serverLoaded === false);
+
+    // 성공하면 두 값이 함께 돌아온다
+    events.length = 0;
+    w.BGNJ_API = { posts: { list: async () => ({ posts: [{ id: 7, title: "돌아온 글", category_id: "free" }] }) } };
+    await C3.refreshPosts();
+    check("성공하면 불러온 상태가 된다", C3._serverLoaded === true);
+    check("성공하면 오류가 지워진다", C3._lastError === null, String(C3._lastError));
+    check("성공하면 갱신 이벤트가 나간다", events.includes('bgnj-posts-refresh'), events.join(','));
+
+    // 칼럼도 같은 장치를 갖는다
+    const COL2 = w.BGNJ_COLUMNS;
+    events.length = 0;
+    COL2._loaded = false; COL2._lastError = null; COL2._columns = [];
+    w.BGNJ_API = { columns: { list: async () => { throw new Error("칼럼 서버 장애"); } } };
+    await COL2.refresh();
+    check("칼럼도 실패를 남긴다", /칼럼 서버 장애/.test(String(COL2._lastError)), String(COL2._lastError));
+    check("칼럼 실패는 안 불러온 상태다", COL2._loaded === false);
+    check("칼럼 오류 이벤트가 나간다", events.includes('bgnj-columns-refresh-error'), events.join(','));
+    w.BGNJ_API = { columns: { list: async () => ({ columns: [{ id: "col-9", title: "칼럼" }] }) } };
+    await COL2.refresh();
+    check("칼럼도 성공하면 불러온 상태가 된다", COL2._loaded === true && COL2._lastError === null);
+
+    // 화면이 실제로 그 값을 보고 갈라지는가 — JSX 는 Node 가 못 읽으므로 원문으로 확인한다.
+    const cp = readFileSync(path.join(ROOT, "pages/CommunityPage.jsx"), "utf8");
+    const colp = readFileSync(path.join(ROOT, "pages/ColumnPage.jsx"), "utf8");
+    // 순서로 판정한다 — '없는 글' 문구보다 '못 불러옴' 검사가 반드시 앞에 있어야 한다.
+    const orderOk = (src, guard, deadEnd) => {
+      const g = src.lastIndexOf(guard, src.indexOf(deadEnd));
+      const d = src.indexOf(deadEnd);
+      return g > 0 && d > 0 && g < d;
+    };
+    check("글 상세가 '못 불러옴' 을 먼저 본다",
+      orderOk(cp, "_serverLoaded", ">해당 게시글을 찾을 수 없습니다.</p>"),
+      "이 순서가 뒤집히면 다시 '없는 글' 이라고 말한다");
+    check("칼럼 상세가 '못 불러옴' 을 먼저 본다",
+      orderOk(colp, "_loaded", ">해당 칼럼을 찾을 수 없습니다.</p>"));
+    check("다시 시도할 길이 있다", /다시 시도/.test(cp) && /ContentLoadNotice/.test(cp) && /ContentLoadNotice/.test(colp));
+
+    // 댓글 삭제는 확인을 거친다 (alert·confirm 금지 — BGNJ_CONFIRM)
+    check("게시글 댓글 삭제가 확인 모달을 띄운다",
+      /deleteComment = async[\s\S]{0,600}BGNJ_CONFIRM/.test(cp), "손이 미끄러지면 되돌릴 수 없다");
+    check("칼럼 댓글 삭제가 확인 모달을 띄운다",
+      /removeComment = async[\s\S]{0,600}BGNJ_CONFIRM/.test(colp));
+
+    // 목록에 댓글 수 — 서버가 세어서 보낸 값을 그대로 쓴다.
+    check("목록이 댓글 수를 보여준다", /p\.replies/.test(cp), "목록에서 몇 개 달렸는지 알 길이 없었다");
+    const worker3 = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+    check("목록 replies 를 그 자리에서 센다",
+      /SELECT COUNT\(\*\) FROM comments c WHERE c\.post_id = p\.id\) AS replies[\s\S]{0,200}FROM posts p WHERE/.test(worker3),
+      "저장된 카운터는 지울 때 안 줄어 이미 어긋나 있었다");
+    check("상세 replies 도 같은 방식으로 센다",
+      /SELECT p\.\*, \(SELECT COUNT\(\*\) FROM comments c WHERE c\.post_id = p\.id\) AS replies/.test(worker3),
+      "목록과 상세가 서로 다른 숫자를 말하면 안 된다");
+    check("틀린 카운터를 더 이상 쌓지 않는다",
+      !/UPDATE posts SET replies = replies \+ 1/.test(worker3));
+
+    // 목록에서 태그는 빼기로 했다 (제목이 두 줄로 밀렸다)
+    check("목록 제목 줄에 태그를 붙이지 않는다",
+      !/row-title-inline[^\n]*#\$\{t\}/.test(cp), "말머리로 걸러 온 목록은 같은 태그가 반복돼 제목을 가린다");
   }
 
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);

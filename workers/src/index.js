@@ -513,10 +513,15 @@ const handlePostsList = async (req, env) => {
   // v00.294.008 — images/attachments/tags 컬럼 동반 조회. 없으면 목록에서 📎 표시가 안 산다.
   // v00.305 — updated_at / edit_count 동반 조회. 관리자 목록이 '언제 몇 번 고쳤는지' 를
   //   보여주려면 목록에 실려야 한다. updated_at 은 칸이 있는데도 지금껏 안 보내고 있었다.
-  const sql = `SELECT id, category_id, category, prefix, title, body, author_id, author, views, replies, created_at,
-                      updated_at, edit_count,
-                      images_json, attachments_json, tags_json
-               FROM posts WHERE ${where} ORDER BY created_at DESC LIMIT ?`;
+  // v00.306.002 — replies 는 저장된 카운터를 믿지 않고 **그 자리에서 센다.**
+  //   댓글을 달 때 +1 은 하는데 지울 때 -1 이 없어서 실측으로 이미 어긋나 있었다
+  //   (140번 글: 카운터 4 · 실제 2). 목록의 '댓글 n' 과 '댓글순' 정렬이 함께 틀어진다.
+  //   세어서 보내면 어긋날 수가 없다 — idx_comments_post 가 있어 비용도 무시할 수준이다.
+  const sql = `SELECT p.id, p.category_id, p.category, p.prefix, p.title, p.body, p.author_id, p.author,
+                      p.views, p.created_at, p.updated_at, p.edit_count,
+                      p.images_json, p.attachments_json, p.tags_json,
+                      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS replies
+               FROM posts p WHERE ${where} ORDER BY p.created_at DESC LIMIT ?`;
   const { results: rawResults } = await env.DB.prepare(sql).bind(...args, limit).all();
   // v00.296.002 — 목록 응답에서 본문을 빼고 발췌만 보낸다.
   //   실측: 목록 1,365KB 중 body 가 1,334KB — **전체의 98%** 였다. images 는 2KB 로 무시할 수준.
@@ -747,7 +752,11 @@ const handlePostsCreate = async (req, env) => {
 };
 
 const handlePostGet = async (req, env, id) => {
-  const post = await env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(id).first();
+  // v00.306.002 — replies 를 목록과 같은 방식(그 자리에서 세기)으로 맞춘다.
+  //   한쪽만 고치면 목록의 '댓글 2' 와 상세의 '댓글 4' 가 서로 다른 말을 한다.
+  const post = await env.DB.prepare(
+    "SELECT p.*, (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS replies FROM posts p WHERE p.id = ?"
+  ).bind(id).first();
   if (!post) throw new HttpError(404, "게시글을 찾을 수 없습니다.");
   // v00.141 — allow_read 가 명시 0 이면 비관리자 차단.
   let isAdmin = false;
@@ -857,7 +866,9 @@ const handleCommentsCreate = async (req, env, postId) => {
   const r = await env.DB.prepare(
     "INSERT INTO comments (post_id, parent_id, body, author_id, author, created_at) VALUES (?, ?, ?, ?, ?, ?)"
   ).bind(postId, body.parentId || null, text, user.id, user.name, nowIso()).run();
-  await env.DB.prepare("UPDATE posts SET replies = replies + 1 WHERE id = ?").bind(postId).run();
+  // v00.306.002 — posts.replies 카운터 갱신을 걷어냈다. 읽는 자리(목록·상세)가 전부
+  //   그 자리에서 세도록 바뀌었으므로, 여기서 올려 봐야 **아무도 안 읽는 틀린 값**만 쌓인다.
+  //   (지울 때 -1 이 없어 이미 어긋나 있었다 — 140번 글 카운터 4 · 실제 2.)
   // 알림 자동 발급 — 게시글 작성자에게 (본인 댓글은 제외).
   try {
     const post = await env.DB.prepare("SELECT author_id, title FROM posts WHERE id = ?").bind(postId).first();

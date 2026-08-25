@@ -423,6 +423,48 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
   );
 };
 
+// === 목록을 못 불러온 것 ≠ 그런 글이 없는 것 =============================
+// 2026-08-25, 사용자가 '해당 게시글을 찾을 수 없습니다' 화면을 보고 연락해 왔다.
+// 글은 멀쩡히 있었다. listPosts() 가 **아직 못 불러왔을 때도 빈 배열**을 돌려주는 바람에
+// 화면이 두 사건을 구분하지 못하고 '없는 글' 로 단정했던 것이다.
+//
+// 없는 글이라고 말해 버리면 사용자는 다시 시도할 생각을 못 한다 — 그래서 연락이 온다.
+// 못 불러온 것이면 못 불러왔다고 말하고, 다시 시도할 길을 준다.
+const ContentLoadNotice = ({ status, label = '게시글', message, onRetry, onBack, backLabel = '목록으로' }) => {
+  const [busy, setBusy] = React.useState(false);
+  const loading = status === 'loading';
+  const retry = () => {
+    if (busy) return;
+    setBusy(true);
+    try { onRetry?.(); } catch (e) { console.warn('[bgnj] 다시 불러오기 실패', e); }
+    // 응답이 오면 상위가 다시 그린다. 버튼이 영원히 잠기지 않도록 풀어 준다.
+    setTimeout(() => setBusy(false), 4000);
+  };
+  return (
+    <div className="section">
+      <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
+        <p className="dim" style={{fontSize:14, marginBottom:8}}>
+          {loading ? `${label} 목록을 불러오는 중입니다…` : `${label}을 불러오지 못했습니다.`}
+        </p>
+        <p className="dim-2" style={{fontSize:13, lineHeight:1.8, marginBottom:20}}>
+          {loading
+            ? '잠시만 기다려 주세요. 오래 걸리면 아래 버튼을 눌러 주세요.'
+            : '글이 삭제된 것이 아니라, 연결이 잠시 끊긴 것입니다. 다시 시도해 주세요.'}
+        </p>
+        {!loading && message && (
+          <p className="dim-2 mono" style={{fontSize:11, marginBottom:20, wordBreak:'break-all'}}>{message}</p>
+        )}
+        <div style={{display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap'}}>
+          <button type="button" className="btn btn-gold btn-small" onClick={retry} disabled={busy}>
+            {busy ? '불러오는 중…' : '다시 시도'}
+          </button>
+          <button type="button" className="btn btn-small" onClick={onBack}>{backLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // === Comment tree (다단계 답글, 최대 깊이 MAX_DEPTH) ======================
 // @멘션은 본문에 @이름 토큰을 골드 chip 으로 렌더링.
 // 답글 트리 — 시각적 들여쓰기 기본 캡(3). 그 이상은 자동 펼침/접기 토글로 노출.
@@ -1074,10 +1116,24 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
   if (postId) {
     const post = allPosts.find(p => String(p.id) === String(postId)) || null;
     if (!post) {
+      // v00.306.002 — 목록을 못 불러온 상태와 '그 글이 없는' 상태를 갈라 놓는다.
+      //   _serverLoaded 가 false 면 목록이 아직/끝내 안 온 것이다. 이때 '없는 글' 이라고
+      //   말해 버리면 사용자는 다시 시도할 생각을 못 하고 연락을 한다(2026-08-25 민원).
+      if (!window.BGNJ_COMMUNITY?._serverLoaded) {
+        return (
+          <ContentLoadNotice
+            status={loadError ? 'error' : 'loading'}
+            label="게시글"
+            message={loadError}
+            onRetry={() => { setLoadError(null); window.BGNJ_COMMUNITY.refreshPosts?.(); }}
+            onBack={() => setPostId(null)}/>
+        );
+      }
       return (
         <div className="section">
           <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
             <p className="dim" style={{fontSize:14, marginBottom:16}}>해당 게시글을 찾을 수 없습니다.</p>
+            <p className="dim-2" style={{fontSize:13, marginBottom:20}}>삭제되었거나 주소가 잘못된 글입니다.</p>
             <button type="button" className="btn" onClick={() => setPostId(null)}>목록으로</button>
           </div>
         </div>
@@ -1386,7 +1442,12 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                         {p.title}
                         {p.images?.length > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label="이미지 첨부">📷{p.images.length}</span>}
                         {likesCount > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label="공감 수">♥{likesCount}</span>}
-                        {p.tags?.length > 0 && <span className="dim-2 mono row-title-inline" style={{marginLeft:8, fontSize:10}}>{p.tags.slice(0,3).map(t => `#${t}`).join(' ')}</span>}
+                        {/* v00.306.002 — 목록에서 태그를 뺐다. 말머리로 걸러 온 목록은 세 편에 같은 태그가
+                            반복돼 정보가 되지 않는데, 제목을 밀어 두 줄로 접히게 만들고 있었다.
+                            태그는 글 상세(.tag-chip)와 검색이 제 몫을 한다 — 데이터는 그대로 둔다. */}
+                        {/* v00.306.002 — 댓글 수. 서버가 그 자리에서 센 값이라 지워도 바로 줄어든다.
+                            0 이면 그리지 않는다 — 대부분의 글이 0 이라 다 그리면 잡음만 는다. */}
+                        {(p.replies ?? 0) > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label={`댓글 ${p.replies}개`}>💬{p.replies}</span>}
                         {p.hot && <span className="gold" style={{marginLeft:8, fontSize:10}}>HOT</span>}
                         {p._new && <span className="gold" style={{marginLeft:8, fontSize:10}}>NEW</span>}
                       </span>
@@ -1402,6 +1463,7 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                         <span>조회 {p.views ?? 0}</span>
                         {likesCount > 0 && <span className="gold">♥ {likesCount}</span>}
                         {p.images?.length > 0 && <span className="gold">📷 {p.images.length}</span>}
+                        {(p.replies ?? 0) > 0 && <span className="gold">💬 {p.replies}</span>}
                       </span>
                     </button>
                   </td>
@@ -2152,7 +2214,12 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
     setPostId(null);
   };
 
-  const deleteComment = (commentId) => {
+  // v00.306.002 — 삭제는 되돌릴 수 없다. 손이 미끄러진 것과 지우겠다는 뜻을 갈라 놓는다.
+  const deleteComment = async (commentId) => {
+    const target = (Array.isArray(commentsList) ? commentsList : []).find((c) => String(c.id) === String(commentId));
+    const peek = String(target?.text || '').trim().replace(/\s+/g, ' ').slice(0, 30);
+    const msg = peek ? `"${peek}${peek.length >= 30 ? '…' : ''}" 댓글을 삭제하시겠어요?` : '이 댓글을 삭제하시겠어요?';
+    if (!(await window.BGNJ_CONFIRM(msg, { danger: true }))) return;
     const next = window.BGNJ_COMMUNITY.deleteComment(post.id, commentId);
     setCommentsList(next);
     onRefresh?.();
@@ -2476,7 +2543,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
 // (window 노출 제거 — ESM 전환)
 
 // v00.287 ESM (main) — 모듈 export (window 병행).
-export { CommentTree };
+export { CommentTree, ContentLoadNotice };
 
 // v00.287 ESM (main) — 라우터용 export (window 병행).
 export { CommunityPage };

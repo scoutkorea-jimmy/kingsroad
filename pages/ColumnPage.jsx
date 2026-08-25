@@ -1,6 +1,6 @@
 // 뱅기노자 칼럼 아카이브
 // v00.287 ESM (main) — cross-module import (전역 결합 제거).
-import { CommentTree } from './CommunityPage.jsx';
+import { CommentTree, ContentLoadNotice } from './CommunityPage.jsx';
 
 const ColumnPage = ({ go, user }) => {
   const [tick, setTick] = React.useState(0);
@@ -55,12 +55,19 @@ const ColumnPage = ({ go, user }) => {
   // v00.134 — 칼럼 데이터 동기화. boot.jsx Promise.allSettled 가 비동기 완료
   // 또는 admin 탭에서 BGNJ_BROADCAST 발화 → 자동 새로고침. 사용자 보고
   // '칼럼도 있는데 자꾸 사라지네' — listener 누락이 원인.
+  const [loadError, setLoadError] = React.useState(null);
   React.useEffect(() => {
     // 진입 시 1회 강제 동기.
     Promise.resolve(window.BGNJ_COLUMNS?.refresh?.()).finally(() => refresh());
-    const onR = () => refresh();
+    const onR = () => { setLoadError(null); refresh(); };
+    // v00.306.002 — 못 불러온 것을 '없는 칼럼' 이라고 말하지 않기 위해 오류도 듣는다.
+    const onErr = (e) => setLoadError(e?.detail?.message || '칼럼을 불러오지 못했습니다.');
     window.addEventListener('bgnj-columns-refresh', onR);
-    return () => window.removeEventListener('bgnj-columns-refresh', onR);
+    window.addEventListener('bgnj-columns-refresh-error', onErr);
+    return () => {
+      window.removeEventListener('bgnj-columns-refresh', onR);
+      window.removeEventListener('bgnj-columns-refresh-error', onErr);
+    };
   }, []);
 
   // v00.296.003 — 상세 진입 시 본문 받아오기.
@@ -132,7 +139,13 @@ const ColumnPage = ({ go, user }) => {
     refresh();
   };
 
-  const removeComment = (commentId) => {
+  // v00.306.002 — 게시글 댓글과 같은 확인 절차. 지운 댓글은 되돌릴 수 없다.
+  const removeComment = async (commentId) => {
+    const list = window.BGNJ_GUARD.arr(() => window.BGNJ_COLUMNS?.listComments?.(selectedId));
+    const target = list.find((c) => String(c.id) === String(commentId));
+    const peek = String(target?.text || '').trim().replace(/\s+/g, ' ').slice(0, 30);
+    const msg = peek ? `"${peek}${peek.length >= 30 ? '…' : ''}" 댓글을 삭제하시겠어요?` : '이 댓글을 삭제하시겠어요?';
+    if (!(await window.BGNJ_CONFIRM(msg, { danger: true }))) return;
     window.BGNJ_COLUMNS.deleteComment(selectedId, commentId);
     refresh();
   };
@@ -141,10 +154,23 @@ const ColumnPage = ({ go, user }) => {
   if (selectedId !== null) {
     const c = window.BGNJ_COLUMNS.getColumn(selectedId);
     if (!c) {
+      // v00.306.002 — 게시글과 같은 갈래. 목록을 못 받은 것을 '없는 칼럼' 이라고 하지 않는다.
+      if (!window.BGNJ_COLUMNS?._loaded) {
+        return (
+          <ContentLoadNotice
+            status={loadError ? 'error' : 'loading'}
+            label="칼럼"
+            message={loadError}
+            onRetry={() => { setLoadError(null); window.BGNJ_COLUMNS.refresh?.(); }}
+            onBack={() => setSelectedId(null)}
+            backLabel="아카이브로"/>
+        );
+      }
       return (
         <div className="section">
           <div className="container" style={{maxWidth:760, textAlign:'center', padding:'80px 20px'}}>
             <p className="dim" style={{fontSize:14, marginBottom:16}}>해당 칼럼을 찾을 수 없습니다.</p>
+            <p className="dim-2" style={{fontSize:13, marginBottom:20}}>삭제되었거나 주소가 잘못된 칼럼입니다.</p>
             <button type="button" className="btn" onClick={() => setSelectedId(null)}>아카이브로</button>
           </div>
         </div>

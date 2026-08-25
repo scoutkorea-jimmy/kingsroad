@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.306.001",
+    version: "00.306.002",
     build: "2026.08.25",
     channel: "preview"
   };
@@ -2106,7 +2106,8 @@
             } catch (_e) {
               console.warn("[bgnj] data.js:1511 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
             }
-            return this._serverPosts;
+            lastErr = new Error("\uC11C\uBC84 \uC751\uB2F5 \uD615\uC2DD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
+            continue;
           }
           this._serverPosts = posts.map(_serverPostToUi);
           this._serverLoaded = true;
@@ -2787,18 +2788,19 @@
         return null;
       }
     },
+    // v00.306.002 — 게시글과 같은 이유로 '아직 못 불러왔다' 를 화면이 알 수 있어야 한다.
+    //   이 둘이 없으면 칼럼도 '해당 칼럼을 찾을 수 없습니다' 로 단정해 버린다.
+    _loaded: false,
+    _lastError: null,
     async refresh({ admin } = {}) {
       try {
         const { columns } = await window.BGNJ_API.columns.list({ includeAll: !!admin });
         if (!Array.isArray(columns)) {
-          try {
-            console.warn("[BGNJ_COLUMNS.refresh] non-array \u2014 cache preserved");
-          } catch (_e) {
-            console.warn("[bgnj] data.js:1966 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
-          }
-          return this._columns.slice();
+          throw new Error("\uC11C\uBC84 \uC751\uB2F5 \uD615\uC2DD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
         }
         this._columns = columns.map((c) => this._toColumn(c));
+        this._loaded = true;
+        this._lastError = null;
         try {
           window.dispatchEvent(new CustomEvent("bgnj-columns-refresh"));
         } catch (_e) {
@@ -2806,6 +2808,12 @@
         }
       } catch (e) {
         console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
+        this._lastError = (e == null ? void 0 : e.message) || "\uCE7C\uB7FC\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.";
+        try {
+          window.dispatchEvent(new CustomEvent("bgnj-columns-refresh-error", { detail: { message: this._lastError } }));
+        } catch (_e) {
+          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js)", _e);
+        }
       }
       return this._columns.slice();
     },
@@ -9000,6 +9008,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       "\u2715"
     )))) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "8/1", fontSize: 10 } }, "PDF \xB7 DOCX \xB7 \uC774\uBBF8\uC9C0 \uC678 \uC790\uB8CC\uB97C \uCD5C\uB300 ", max, "\uAC1C, \uC804\uBD80 \uD569\uCCD0 ", _fmtSize(maxTotal), " \uAE4C\uC9C0 \uCCA8\uBD80 (\uAC8C\uC2DC\uAE00 \uBCF8\uBB38 \uD558\uB2E8\uC5D0 \uB2E4\uC6B4\uB85C\uB4DC \uB9C1\uD06C\uB85C \uD45C\uC2DC)"));
   };
+  var ContentLoadNotice = ({ status, label = "\uAC8C\uC2DC\uAE00", message, onRetry, onBack, backLabel = "\uBAA9\uB85D\uC73C\uB85C" }) => {
+    const [busy, setBusy] = React.useState(false);
+    const loading = status === "loading";
+    const retry = () => {
+      if (busy) return;
+      setBusy(true);
+      try {
+        onRetry == null ? void 0 : onRetry();
+      } catch (e) {
+        console.warn("[bgnj] \uB2E4\uC2DC \uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328", e);
+      }
+      setTimeout(() => setBusy(false), 4e3);
+    };
+    return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14, marginBottom: 8 } }, loading ? `${label} \uBAA9\uB85D\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4\u2026` : `${label}\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.`), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 20 } }, loading ? "\uC7A0\uC2DC\uB9CC \uAE30\uB2E4\uB824 \uC8FC\uC138\uC694. \uC624\uB798 \uAC78\uB9AC\uBA74 \uC544\uB798 \uBC84\uD2BC\uC744 \uB20C\uB7EC \uC8FC\uC138\uC694." : "\uAE00\uC774 \uC0AD\uC81C\uB41C \uAC83\uC774 \uC544\uB2C8\uB77C, \uC5F0\uACB0\uC774 \uC7A0\uC2DC \uB04A\uAE34 \uAC83\uC785\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."), !loading && message && /* @__PURE__ */ React.createElement("p", { className: "dim-2 mono", style: { fontSize: 11, marginBottom: 20, wordBreak: "break-all" } }, message), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: retry, disabled: busy }, busy ? "\uBD88\uB7EC\uC624\uB294 \uC911\u2026" : "\uB2E4\uC2DC \uC2DC\uB3C4"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onBack }, backLabel))));
+  };
   var MAX_VISIBLE_DEPTH = 3;
   var renderCommentText = (text) => {
     if (!text) return null;
@@ -9235,6 +9258,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   var POSTS_PER_PAGE_LS_KEY = "bgnj_community_posts_per_page";
   var POSTS_PER_PAGE_DEFAULT = 10;
   var CommunityPage = ({ go, postId, setPostId, user }) => {
+    var _a;
     const userLevel = useUserLevel(user);
     const [catVersion, setCatVersion] = React.useState(0);
     React.useEffect(() => {
@@ -9315,20 +9339,20 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, []);
     const [loadError, setLoadError] = React.useState(null);
     React.useEffect(() => {
-      var _a, _b;
-      (_b = (_a = window.BGNJ_COMMUNITY).refreshPosts) == null ? void 0 : _b.call(_a);
+      var _a2, _b;
+      (_b = (_a2 = window.BGNJ_COMMUNITY).refreshPosts) == null ? void 0 : _b.call(_a2);
       const onRefresh = () => {
         setLoadError(null);
         setRefreshKey((v) => v + 1);
       };
       const onError = (e) => {
-        var _a2;
-        return setLoadError(((_a2 = e == null ? void 0 : e.detail) == null ? void 0 : _a2.message) || "\uC11C\uBC84\uC5D0\uC11C \uAC8C\uC2DC\uAE00\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
+        var _a3;
+        return setLoadError(((_a3 = e == null ? void 0 : e.detail) == null ? void 0 : _a3.message) || "\uC11C\uBC84\uC5D0\uC11C \uAC8C\uC2DC\uAE00\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
       };
       const onVisibility = () => {
-        var _a2, _b2;
+        var _a3, _b2;
         if (document.visibilityState !== "visible") return;
-        if (!window.BGNJ_COMMUNITY._serverLoaded) (_b2 = (_a2 = window.BGNJ_COMMUNITY).refreshPosts) == null ? void 0 : _b2.call(_a2);
+        if (!window.BGNJ_COMMUNITY._serverLoaded) (_b2 = (_a3 = window.BGNJ_COMMUNITY).refreshPosts) == null ? void 0 : _b2.call(_a3);
       };
       window.addEventListener("bgnj-posts-refresh", onRefresh);
       window.addEventListener("bgnj-posts-refresh-error", onError);
@@ -9341,12 +9365,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, []);
     const G2 = window.BGNJ_GUARD;
     const allPosts = React.useMemo(() => G2.arr(() => {
-      var _a, _b;
-      return (_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a.listPosts) == null ? void 0 : _b.call(_a);
+      var _a2, _b;
+      return (_b = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.listPosts) == null ? void 0 : _b.call(_a2);
     }), [refreshKey]);
     const visibleCats = categories.filter((c) => {
-      var _a;
-      return userLevel >= ((_a = c.minLevel) != null ? _a : 0);
+      var _a2;
+      return userLevel >= ((_a2 = c.minLevel) != null ? _a2 : 0);
     });
     const currentBoard = categories.find((c) => c.id === tab);
     const boardPrefixes = React.useMemo(
@@ -9354,10 +9378,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       [currentBoard, allPosts]
     );
     const canReadPost = React.useCallback((post) => {
-      var _a;
+      var _a2;
       if (!post) return false;
       const cat = categories.find((c) => c.id === post.categoryId) || categories.find((c) => c.label === post.category);
-      return !cat || userLevel >= ((_a = cat.minLevel) != null ? _a : 0);
+      return !cat || userLevel >= ((_a2 = cat.minLevel) != null ? _a2 : 0);
     }, [categories, userLevel]);
     React.useEffect(() => {
       if (pendingPrefixRef.current) {
@@ -9370,9 +9394,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const filtered = React.useMemo(() => {
       const q = search.toLowerCase();
       const base = allPosts.filter((p) => {
-        var _a, _b;
+        var _a2, _b;
         const cat = categories.find((c) => c.id === p.categoryId) || categories.find((c) => c.label === p.category);
-        if (cat && userLevel < ((_a = cat.minLevel) != null ? _a : 0)) return false;
+        if (cat && userLevel < ((_a2 = cat.minLevel) != null ? _a2 : 0)) return false;
         if (tab !== "all" && (p.categoryId !== tab && (cat == null ? void 0 : cat.id) !== tab)) return false;
         if (q) {
           const hay = `${p.title || ""} ${((_b = p.body) == null ? void 0 : _b.text) || ""} ${p.excerpt || ""}`.toLowerCase();
@@ -9382,12 +9406,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         return true;
       });
       if (sort === "views") return [...base].sort((a, b) => {
-        var _a, _b;
-        return ((_a = b.views) != null ? _a : 0) - ((_b = a.views) != null ? _b : 0);
+        var _a2, _b;
+        return ((_a2 = b.views) != null ? _a2 : 0) - ((_b = a.views) != null ? _b : 0);
       });
       if (sort === "replies") return [...base].sort((a, b) => {
-        var _a, _b;
-        return ((_a = b.replies) != null ? _a : 0) - ((_b = a.replies) != null ? _b : 0);
+        var _a2, _b;
+        return ((_a2 = b.replies) != null ? _a2 : 0) - ((_b = a.replies) != null ? _b : 0);
       });
       if (sort === "likes") return [...base].sort((a, b) => (Array.isArray(b.likes) ? b.likes.length : 0) - (Array.isArray(a.likes) ? a.likes.length : 0));
       return base;
@@ -9402,9 +9426,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       if (post.body && (post.body.html || post.body.text)) return;
       let alive = true;
       (async () => {
-        var _a, _b;
+        var _a2, _b;
         try {
-          await ((_b = (_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a._hydratePostBody) == null ? void 0 : _b.call(_a, postId));
+          await ((_b = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2._hydratePostBody) == null ? void 0 : _b.call(_a2, postId));
           if (alive) setRefreshKey((v) => v + 1);
         } catch (_e) {
           console.warn("[bgnj] CommunityPage.jsx:653 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
@@ -9415,18 +9439,18 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       };
     }, [postId]);
     const PostComposeModal = ({ onClose }) => {
-      var _a;
+      var _a2;
       const [draftPayload, setDraftPayload] = React.useState(null);
       const draftIdRef = React.useRef(null);
-      const guard = ((_a = window.useModalGuard) == null ? void 0 : _a.call(window, {
+      const guard = ((_a2 = window.useModalGuard) == null ? void 0 : _a2.call(window, {
         open: true,
         dirty: true,
         onClose,
         onSaveDraft: () => {
-          var _a2, _b, _c, _d, _e, _f;
+          var _a3, _b, _c, _d, _e, _f;
           if (!draftPayload) return;
           try {
-            const saved = (_b = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.save) == null ? void 0 : _b.call(_a2, {
+            const saved = (_b = (_a3 = window.BGNJ_DRAFTS) == null ? void 0 : _a3.save) == null ? void 0 : _b.call(_a3, {
               id: draftIdRef.current || void 0,
               kind: "post",
               title: draftPayload.title || "",
@@ -9475,9 +9499,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             onCancel: onClose,
             onPayloadChange: setDraftPayload,
             onPublish: async (payload) => {
-              var _a2, _b;
+              var _a3, _b;
               try {
-                if (draftIdRef.current) (_b = (_a2 = window.BGNJ_DRAFTS) == null ? void 0 : _a2.remove) == null ? void 0 : _b.call(_a2, draftIdRef.current);
+                if (draftIdRef.current) (_b = (_a3 = window.BGNJ_DRAFTS) == null ? void 0 : _a3.remove) == null ? void 0 : _b.call(_a3, draftIdRef.current);
               } catch (_e) {
                 console.warn("[bgnj] CommunityPage.jsx:709 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
               }
@@ -9505,7 +9529,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const canRenumber = isAdminUser && sort === "latest";
     const [movingPostId, setMovingPostId] = React.useState(null);
     const handleMovePost = React.useCallback(async (post, direction) => {
-      var _a, _b;
+      var _a2, _b;
       if (movingPostId) return;
       const idx = filtered.findIndex((p) => String(p.id) === String(post.id));
       if (idx < 0) return;
@@ -9539,7 +9563,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         await window.BGNJ_COMMUNITY.updatePostRemote(post.id, { createdAt: iso });
         setRefreshKey((v) => v + 1);
       } catch (err) {
-        (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, `\uC21C\uC11C \uBCC0\uACBD \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+        (_b = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b.call(_a2, `\uC21C\uC11C \uBCC0\uACBD \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
       } finally {
         setMovingPostId(null);
       }
@@ -9561,8 +9585,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     };
     const exitReorderMode = async () => {
       const changed = localOrderIds.some((id, i) => {
-        var _a;
-        return String((_a = pagePosts[i]) == null ? void 0 : _a.id) !== String(id);
+        var _a2;
+        return String((_a2 = pagePosts[i]) == null ? void 0 : _a2.id) !== String(id);
       });
       if (changed) {
         const ok = await window.BGNJ_CONFIRM("\uC800\uC7A5\uD558\uC9C0 \uC54A\uC740 \uC21C\uC11C \uBCC0\uACBD\uC774 \uC788\uC2B5\uB2C8\uB2E4. \uCDE8\uC18C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true, confirmLabel: "\uCDE8\uC18C" });
@@ -9589,16 +9613,16 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       });
     };
     const orderChangedCount = React.useMemo(() => {
-      var _a;
+      var _a2;
       if (!reorderMode) return 0;
       let n = 0;
       for (let i = 0; i < localOrderIds.length; i++) {
-        if (String((_a = pagePosts[i]) == null ? void 0 : _a.id) !== String(localOrderIds[i])) n++;
+        if (String((_a2 = pagePosts[i]) == null ? void 0 : _a2.id) !== String(localOrderIds[i])) n++;
       }
       return n;
     }, [reorderMode, localOrderIds, pagePosts]);
     const saveReorder = async () => {
-      var _a, _b, _c, _d, _e, _f;
+      var _a2, _b, _c, _d, _e, _f;
       if (savingOrder) return;
       if (orderChangedCount === 0) {
         setReorderMode(false);
@@ -9619,7 +9643,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const botMs = Number.isFinite(lowerAnchor) ? lowerAnchor : Number.isFinite(origBottom) ? origBottom - (N + 1) * 1e3 : Date.now() - (N + 1) * 1e3;
       const span = topMs - botMs;
       if (!(span > 0)) {
-        (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, "\uC774\uC804/\uC774\uD6C4 \uAC8C\uC2DC\uAE00\uACFC \uC2DC\uAC04 \uAC04\uACA9\uC774 \uB108\uBB34 \uC881\uC544 \uC790\uB3D9 \uBD84\uBC30\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+        (_b = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b.call(_a2, "\uC774\uC804/\uC774\uD6C4 \uAC8C\uC2DC\uAE00\uACFC \uC2DC\uAC04 \uAC04\uACA9\uC774 \uB108\uBB34 \uC881\uC544 \uC790\uB3D9 \uBD84\uBC30\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
         return;
       }
       const step = span / (N + 1);
@@ -9665,10 +9689,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }
       const isAdmin = !!((user == null ? void 0 : user.isAdmin) || (user == null ? void 0 : user.gradeId) === "admin");
       const writable = categories.filter((c) => {
-        var _a, _b;
+        var _a2, _b;
         if (c.id === "notice" && !isAdmin) return false;
         if (c.allowWrite === false && !isAdmin) return false;
-        return userLevel >= ((_b = (_a = c.postMinLevel) != null ? _a : c.minLevel) != null ? _b : 0);
+        return userLevel >= ((_b = (_a2 = c.postMinLevel) != null ? _a2 : c.minLevel) != null ? _b : 0);
       });
       if (writable.length === 0) {
         window.BGNJ_TOAST.error("\uD604\uC7AC \uB4F1\uAE09\uC73C\uB85C\uB294 \uAE00\uC744 \uC791\uC131\uD560 \uC218 \uC788\uB294 \uAC8C\uC2DC\uD310\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.");
@@ -9679,7 +9703,23 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     if (postId) {
       const post = allPosts.find((p) => String(p.id) === String(postId)) || null;
       if (!post) {
-        return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14, marginBottom: 16 } }, "\uD574\uB2F9 \uAC8C\uC2DC\uAE00\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: () => setPostId(null) }, "\uBAA9\uB85D\uC73C\uB85C")));
+        if (!((_a = window.BGNJ_COMMUNITY) == null ? void 0 : _a._serverLoaded)) {
+          return /* @__PURE__ */ React.createElement(
+            ContentLoadNotice,
+            {
+              status: loadError ? "error" : "loading",
+              label: "\uAC8C\uC2DC\uAE00",
+              message: loadError,
+              onRetry: () => {
+                var _a2, _b;
+                setLoadError(null);
+                (_b = (_a2 = window.BGNJ_COMMUNITY).refreshPosts) == null ? void 0 : _b.call(_a2);
+              },
+              onBack: () => setPostId(null)
+            }
+          );
+        }
+        return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14, marginBottom: 16 } }, "\uD574\uB2F9 \uAC8C\uC2DC\uAE00\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 20 } }, "\uC0AD\uC81C\uB418\uC5C8\uAC70\uB098 \uC8FC\uC18C\uAC00 \uC798\uBABB\uB41C \uAE00\uC785\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: () => setPostId(null) }, "\uBAA9\uB85D\uC73C\uB85C")));
       }
       if (!canReadPost(post)) {
         return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14, marginBottom: 16 } }, "\uD604\uC7AC \uB4F1\uAE09\uC73C\uB85C\uB294 \uC774 \uAC8C\uC2DC\uAE00\uC744 \uBCFC \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: () => setPostId(null) }, "\uBAA9\uB85D\uC73C\uB85C")));
@@ -9705,8 +9745,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       ), writing && /* @__PURE__ */ React.createElement(PostComposeModal, { onClose: () => setWriting(null) }));
     }
     return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("header", { style: { marginBottom: 24 } }, (() => {
-      var _a, _b, _c, _d;
-      const _i = (((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {}).communityIntro || {};
+      var _a2, _b, _c, _d;
+      const _i = (((_b = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b.call(_a2)) || {}).communityIntro || {};
       const eb = _i.eyebrow || "COMMUNITY \xB7 \uAD11\uC7A5";
       const tp = (_c = _i.titlePrefix) != null ? _c : "\uB2E4\uC12F \uBD09\uC6B0\uB9AC ";
       const ta = (_d = _i.titleAccent) != null ? _d : "\uAD11\uC7A5";
@@ -9728,9 +9768,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         type: "button",
         className: "btn btn-small",
         onClick: () => {
-          var _a, _b;
+          var _a2, _b;
           setLoadError(null);
-          (_b = (_a = window.BGNJ_COMMUNITY).refreshPosts) == null ? void 0 : _b.call(_a);
+          (_b = (_a2 = window.BGNJ_COMMUNITY).refreshPosts) == null ? void 0 : _b.call(_a2);
         }
       },
       "\uB2E4\uC2DC \uBD88\uB7EC\uC624\uAE30"
@@ -9895,12 +9935,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       },
       "\u270E \uC21C\uC11C \uD3B8\uC9D1"
     ))), /* @__PURE__ */ React.createElement("table", { className: "community-table", style: { width: "100%", borderCollapse: "collapse" } }, /* @__PURE__ */ React.createElement("caption", { className: "sr-only" }, "\uAC8C\uC2DC\uAE00 \uBAA9\uB85D"), /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-num", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: canRenumber ? 90 : 60 } }, "\uBC88\uD638"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-cat", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 132 } }, "\uBD84\uB958"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-title", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)" } }, "\uC81C\uBAA9"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-author", style: { padding: "16px 8px", textAlign: "left", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 172 } }, "\uC791\uC131\uC790"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-views", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 70 } }, "\uC870\uD68C"), /* @__PURE__ */ React.createElement("th", { scope: "col", className: "col-date", style: { padding: "16px 8px", textAlign: "right", borderTop: "1px solid var(--line-2)", borderBottom: "1px solid var(--line)", width: 100 } }, "\uB0A0\uC9DC"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, style: { padding: 48, textAlign: "center" }, className: "dim" }, "\uC870\uAC74\uC5D0 \uB9DE\uB294 \uAC8C\uC2DC\uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.")) : displayPagePosts.map((p, i) => {
-      var _a, _b, _c, _d, _e;
+      var _a2, _b, _c, _d, _e, _f;
       const cat = categories.find((c) => c.id === p.categoryId) || categories.find((c) => c.label === p.category) || { label: p.category };
       const likesCount = Array.isArray(p.likes) ? p.likes.length : 0;
       const bookmarked = user && G2.call(() => {
-        var _a2, _b2;
-        return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.isBookmarked) == null ? void 0 : _b2.call(_a2, user.id, p.id);
+        var _a3, _b2;
+        return (_b2 = (_a3 = window.BGNJ_COMMUNITY) == null ? void 0 : _a3.isBookmarked) == null ? void 0 : _b2.call(_a3, user.id, p.id);
       }, false);
       const rowNum = String(filtered.length - (pageStart + i)).padStart(3, "0");
       const isDragging = reorderMode && String(draggingId) === String(p.id);
@@ -10006,11 +10046,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             className: "row-title-button",
             style: { all: "unset", cursor: reorderMode ? "move" : "pointer", textAlign: "left", display: "block", width: "100%" }
           },
-          /* @__PURE__ */ React.createElement("span", { className: "row-title-text" }, bookmarked && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginRight: 6, fontSize: 11 }, "aria-label": "\uBD81\uB9C8\uD06C" }, "\u2605"), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "post-prefix" }, "[", p.prefix, "]"), p.title, ((_a = p.images) == null ? void 0 : _a.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uC774\uBBF8\uC9C0 \uCCA8\uBD80" }, "\u{1F4F7}", p.images.length), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uACF5\uAC10 \uC218" }, "\u2665", likesCount), ((_b = p.tags) == null ? void 0 : _b.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono row-title-inline", style: { marginLeft: 8, fontSize: 10 } }, p.tags.slice(0, 3).map((t) => `#${t}`).join(" ")), p.hot && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "HOT"), p._new && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "NEW")),
-          /* @__PURE__ */ React.createElement("span", { className: "row-mobile-meta", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, cat.label), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "badge" }, p.prefix), /* @__PURE__ */ React.createElement("span", null, p.author), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("time", { dateTime: (p.date || "").replace(/\./g, "-") }, p.date || ""), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_c = p.views) != null ? _c : 0), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u2665 ", likesCount), ((_d = p.images) == null ? void 0 : _d.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u{1F4F7} ", p.images.length))
+          /* @__PURE__ */ React.createElement("span", { className: "row-title-text" }, bookmarked && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginRight: 6, fontSize: 11 }, "aria-label": "\uBD81\uB9C8\uD06C" }, "\u2605"), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "post-prefix" }, "[", p.prefix, "]"), p.title, ((_a2 = p.images) == null ? void 0 : _a2.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uC774\uBBF8\uC9C0 \uCCA8\uBD80" }, "\u{1F4F7}", p.images.length), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uACF5\uAC10 \uC218" }, "\u2665", likesCount), ((_b = p.replies) != null ? _b : 0) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": `\uB313\uAE00 ${p.replies}\uAC1C` }, "\u{1F4AC}", p.replies), p.hot && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "HOT"), p._new && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "NEW")),
+          /* @__PURE__ */ React.createElement("span", { className: "row-mobile-meta", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, cat.label), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "badge" }, p.prefix), /* @__PURE__ */ React.createElement("span", null, p.author), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("time", { dateTime: (p.date || "").replace(/\./g, "-") }, p.date || ""), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_c = p.views) != null ? _c : 0), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u2665 ", likesCount), ((_d = p.images) == null ? void 0 : _d.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u{1F4F7} ", p.images.length), ((_e = p.replies) != null ? _e : 0) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u{1F4AC} ", p.replies))
         )),
         /* @__PURE__ */ React.createElement("td", { className: "col-author mono dim", style: { padding: "18px 8px", fontSize: 12, whiteSpace: "nowrap" } }, p.author, /* @__PURE__ */ React.createElement(AuthorGradeBadge, { authorId: p.authorId, author: p.author, authorEmail: p.authorEmail })),
-        /* @__PURE__ */ React.createElement("td", { className: "col-views mono dim-2", style: { padding: "18px 8px", fontSize: 12, textAlign: "right" } }, (_e = p.views) != null ? _e : 0),
+        /* @__PURE__ */ React.createElement("td", { className: "col-views mono dim-2", style: { padding: "18px 8px", fontSize: 12, textAlign: "right" } }, (_f = p.views) != null ? _f : 0),
         /* @__PURE__ */ React.createElement("td", { className: "col-date mono dim-2", style: { padding: "18px 8px", fontSize: 11, textAlign: "right" } }, /* @__PURE__ */ React.createElement("time", { dateTime: (p.date || "").replace(/\./g, "-") }, p.date || ""))
       );
     }))), filtered.length > 0 && totalPages > 1 && /* @__PURE__ */ React.createElement("nav", { "aria-label": "\uAC8C\uC2DC\uAE00 \uD398\uC774\uC9C0 \uC774\uB3D9", style: { display: "flex", justifyContent: "center", alignItems: "center", gap: 6, marginTop: 32, flexWrap: "wrap", opacity: reorderMode ? 0.4 : 1 } }, /* @__PURE__ */ React.createElement(
@@ -10704,7 +10744,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       onRefresh == null ? void 0 : onRefresh();
       setPostId(null);
     };
-    const deleteComment = (commentId) => {
+    const deleteComment = async (commentId) => {
+      const target = (Array.isArray(commentsList) ? commentsList : []).find((c) => String(c.id) === String(commentId));
+      const peek = String((target == null ? void 0 : target.text) || "").trim().replace(/\s+/g, " ").slice(0, 30);
+      const msg = peek ? `"${peek}${peek.length >= 30 ? "\u2026" : ""}" \uB313\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?` : "\uC774 \uB313\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?";
+      if (!await window.BGNJ_CONFIRM(msg, { danger: true })) return;
       const next = window.BGNJ_COMMUNITY.deleteComment(post.id, commentId);
       setCommentsList(next);
       onRefresh == null ? void 0 : onRefresh();
@@ -11757,7 +11801,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
 
   // pages/ColumnPage.jsx
   var ColumnPage = ({ go, user }) => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const [tick, setTick] = React.useState(0);
     const [selectedId, setSelectedId] = React.useState(null);
     const [search, setSearch] = React.useState("");
@@ -11826,12 +11870,24 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         if (user == null ? void 0 : user.isAdmin) setWriterOpen(true);
       }
     }, [user]);
+    const [loadError, setLoadError] = React.useState(null);
     React.useEffect(() => {
       var _a2, _b2;
       Promise.resolve((_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.refresh) == null ? void 0 : _b2.call(_a2)).finally(() => refresh());
-      const onR = () => refresh();
+      const onR = () => {
+        setLoadError(null);
+        refresh();
+      };
+      const onErr = (e) => {
+        var _a3;
+        return setLoadError(((_a3 = e == null ? void 0 : e.detail) == null ? void 0 : _a3.message) || "\uCE7C\uB7FC\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
+      };
       window.addEventListener("bgnj-columns-refresh", onR);
-      return () => window.removeEventListener("bgnj-columns-refresh", onR);
+      window.addEventListener("bgnj-columns-refresh-error", onErr);
+      return () => {
+        window.removeEventListener("bgnj-columns-refresh", onR);
+        window.removeEventListener("bgnj-columns-refresh-error", onErr);
+      };
     }, []);
     React.useEffect(() => {
       var _a2, _b2;
@@ -11898,14 +11954,39 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setComment("");
       refresh();
     };
-    const removeComment = (commentId) => {
+    const removeComment = async (commentId) => {
+      const list = window.BGNJ_GUARD.arr(() => {
+        var _a2, _b2;
+        return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listComments) == null ? void 0 : _b2.call(_a2, selectedId);
+      });
+      const target = list.find((c) => String(c.id) === String(commentId));
+      const peek = String((target == null ? void 0 : target.text) || "").trim().replace(/\s+/g, " ").slice(0, 30);
+      const msg = peek ? `"${peek}${peek.length >= 30 ? "\u2026" : ""}" \uB313\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?` : "\uC774 \uB313\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?";
+      if (!await window.BGNJ_CONFIRM(msg, { danger: true })) return;
       window.BGNJ_COLUMNS.deleteComment(selectedId, commentId);
       refresh();
     };
     if (selectedId !== null) {
       const c = window.BGNJ_COLUMNS.getColumn(selectedId);
       if (!c) {
-        return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14, marginBottom: 16 } }, "\uD574\uB2F9 \uCE7C\uB7FC\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: () => setSelectedId(null) }, "\uC544\uCE74\uC774\uBE0C\uB85C")));
+        if (!((_a = window.BGNJ_COLUMNS) == null ? void 0 : _a._loaded)) {
+          return /* @__PURE__ */ React.createElement(
+            ContentLoadNotice,
+            {
+              status: loadError ? "error" : "loading",
+              label: "\uCE7C\uB7FC",
+              message: loadError,
+              onRetry: () => {
+                var _a2, _b2;
+                setLoadError(null);
+                (_b2 = (_a2 = window.BGNJ_COLUMNS).refresh) == null ? void 0 : _b2.call(_a2);
+              },
+              onBack: () => setSelectedId(null),
+              backLabel: "\uC544\uCE74\uC774\uBE0C\uB85C"
+            }
+          );
+        }
+        return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760, textAlign: "center", padding: "80px 20px" } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 14, marginBottom: 16 } }, "\uD574\uB2F9 \uCE7C\uB7FC\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 13, marginBottom: 20 } }, "\uC0AD\uC81C\uB418\uC5C8\uAC70\uB098 \uC8FC\uC18C\uAC00 \uC798\uBABB\uB41C \uCE7C\uB7FC\uC785\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: () => setSelectedId(null) }, "\uC544\uCE74\uC774\uBE0C\uB85C")));
       }
       const idx = publicColumns.findIndex((x) => String(x.id) === String(c.id));
       const prevCol = idx > 0 ? publicColumns[idx - 1] : null;
@@ -11924,7 +12005,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         var _a2, _b2;
         return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listComments) == null ? void 0 : _b2.call(_a2, c.id);
       });
-      const readTime = ((_a = c.body) == null ? void 0 : _a.text) ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text) : c.readMinutes ? `${c.readMinutes}\uBD84` : c.excerpt ? window.BGNJ_COLUMNS.estimateReadTime(c.excerpt) : "";
+      const readTime = ((_b = c.body) == null ? void 0 : _b.text) ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text) : c.readMinutes ? `${c.readMinutes}\uBD84` : c.excerpt ? window.BGNJ_COLUMNS.estimateReadTime(c.excerpt) : "";
       return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement(
         "button",
         {
@@ -11953,7 +12034,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           alt: c.title || "\uCE7C\uB7FC \uB300\uD45C \uC774\uBBF8\uC9C0",
           style: { width: "100%", display: "block", objectFit: "cover" }
         }
-      ), c.coverCredit && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, textAlign: "right", marginTop: 6, letterSpacing: "0.08em" } }, "\xA9 ", c.coverCredit)), !c.coverUrl && !((_b = c.body) == null ? void 0 : _b.html) && /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "16/9", marginBottom: 40, fontSize: 11 } }, "COLUMN HERO IMAGE \xB7 1600\xD7900"), /* @__PURE__ */ React.createElement("article", { style: { fontFamily: "var(--font-serif)", fontSize: 18, lineHeight: 2, color: "var(--ink)", fontWeight: 300 } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 22, lineHeight: 1.7, color: "var(--secondary)", marginBottom: 32, fontStyle: "italic", fontWeight: 300 } }, c.excerpt), ((_c = c.body) == null ? void 0 : _c.html) ? /* @__PURE__ */ React.createElement("div", { dangerouslySetInnerHTML: { __html: window.BGNJ_SAFE_HTML(c.body.html) } }) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { style: { marginBottom: 28 } }, "\uC870\uC120\uC758 \uC655\uB4E4\uC740 \uB9E4\uC77C \uC544\uCE68 \uAC19\uC740 \uD48D\uACBD\uC744 \uB9C8\uC8FC\uD588\uB2E4. \uC5B4\uC88C\uC5D0 \uC624\uB974\uBA74 \uB4F1 \uB4A4\uC5D0\uB294 \uC5B8\uC81C\uB098 \uB2E4\uC12F \uBD09\uC6B0\uB9AC\uAC00 \uD3BC\uCCD0\uC838 \uC788\uC5C8\uACE0, \uD574\uC640 \uB2EC\uC774 \uB3D9\uC2DC\uC5D0 \uB5A0 \uC788\uC5C8\uB2E4. \uC790\uC5F0\uC5D0\uC11C\uB294 \uBD88\uAC00\uB2A5\uD55C \uC77C\uC774 \uC655\uC758 \uC790\uB9AC\uC5D0\uC11C\uB294 \uB9E4\uC77C \uC77C\uC5B4\uB0AC\uB2E4."), /* @__PURE__ */ React.createElement("p", { style: { marginBottom: 28 } }, "\uC5B4\uC88C \uB4A4 \uB2E4\uC12F \uBD09\uC6B0\uB9AC \uBCD1\uD48D\uC740 \uB2E8\uC21C\uD55C \uC7A5\uC2DD\uC774 \uC544\uB2C8\uB2E4. \uADF8\uAC83\uC740 \uC7A5\uCE58\uB2E4. \uC655\uC73C\uB85C \uD558\uC5EC\uAE08 \uB9E4\uC77C \uC6B0\uC8FC\uB97C \uB5A0\uC62C\uB9AC\uAC8C \uD558\uB294 \uC7A5\uCE58, \uC790\uC2E0\uC774 \uB204\uAD6C\uB97C \uC704\uD574 \uC549\uC544 \uC788\uB294\uC9C0\uB97C \uC78A\uC9C0 \uBABB\uD558\uAC8C \uD558\uB294 \uC7A5\uCE58\uC600\uB2E4."), /* @__PURE__ */ React.createElement("h3", { style: { fontSize: 24, fontWeight: 500, margin: "48px 0 20px", color: "var(--primary-hover)" } }, "\uB2E4\uC12F \uBD09\uC6B0\uB9AC\uC758 \uC758\uBBF8"), /* @__PURE__ */ React.createElement("p", { style: { marginBottom: 28 } }, "\uB2E4\uC12F\uC774\uB77C\uB294 \uC22B\uC790\uC5D0\uB294 \uC774\uC720\uAC00 \uC788\uB2E4. \uC624\uD589(\u4E94\u884C) \u2014 \uBAA9\uD654\uD1A0\uAE08\uC218. \uD55C \uC655\uC870\uAC00 \uC6B0\uC8FC\uC758 \uC9C8\uC11C\uC640 \uC77C\uCE58\uD55C\uB2E4\uB294 \uC120\uC5B8\uC774\uC790, \uB3D9\uC2DC\uC5D0 \uADF8 \uC9C8\uC11C\uB97C \uD754\uB4E4\uBA74 \uC815\uD1B5\uC131\uC744 \uC783\uB294\uB2E4\uB294 \uACBD\uACE0\uC774\uAE30\uB3C4 \uD588\uB2E4."), /* @__PURE__ */ React.createElement("blockquote", { style: { borderLeft: "3px solid var(--primary)", paddingLeft: 32, margin: "40px 0", fontStyle: "italic", color: "var(--secondary)" } }, "\uC655\uC774\uB77C\uB294 \uC790\uB9AC\uB294 \uC800\uC808\uB85C \uC11C \uC788\uB294 \uAC83\uC774 \uC544\uB2C8\uB2E4.", /* @__PURE__ */ React.createElement("br", null), "\uB2E4\uC12F \uBD09\uC6B0\uB9AC\uAC00 \uB9E4\uC77C \uADF8\uB97C \uC77C\uC73C\uCF1C \uC138\uC6E0\uB2E4."), /* @__PURE__ */ React.createElement("p", { style: { marginBottom: 28 } }, "\uC624\uB298\uC744 \uC0AC\uB294 \uC6B0\uB9AC\uC5D0\uAC8C \uADF8 \uBCD1\uD48D\uC740 \uB354 \uC774\uC0C1 \uBC30\uACBD\uC774 \uC544\uB2C8\uB2E4. \uADF8\uAC83\uC740 \uD558\uB098\uC758 \uC9C8\uBB38\uC774\uB2E4 \u2014 \uB2F9\uC2E0\uC758 \uC790\uB9AC \uB4A4\uC5D0\uB294 \uBB34\uC5C7\uC774 \uC788\uB294\uAC00."))), (c.sourceCredit || c.sourceUrl) && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 48, paddingTop: 24, borderTop: "1px solid var(--line)", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.24em", marginBottom: 8 } }, "SOURCE \xB7 \uCD9C\uCC98"), c.sourceUrl ? /* @__PURE__ */ React.createElement(
+      ), c.coverCredit && /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, textAlign: "right", marginTop: 6, letterSpacing: "0.08em" } }, "\xA9 ", c.coverCredit)), !c.coverUrl && !((_c = c.body) == null ? void 0 : _c.html) && /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "16/9", marginBottom: 40, fontSize: 11 } }, "COLUMN HERO IMAGE \xB7 1600\xD7900"), /* @__PURE__ */ React.createElement("article", { style: { fontFamily: "var(--font-serif)", fontSize: 18, lineHeight: 2, color: "var(--ink)", fontWeight: 300 } }, /* @__PURE__ */ React.createElement("p", { style: { fontSize: 22, lineHeight: 1.7, color: "var(--secondary)", marginBottom: 32, fontStyle: "italic", fontWeight: 300 } }, c.excerpt), ((_d = c.body) == null ? void 0 : _d.html) ? /* @__PURE__ */ React.createElement("div", { dangerouslySetInnerHTML: { __html: window.BGNJ_SAFE_HTML(c.body.html) } }) : /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { style: { marginBottom: 28 } }, "\uC870\uC120\uC758 \uC655\uB4E4\uC740 \uB9E4\uC77C \uC544\uCE68 \uAC19\uC740 \uD48D\uACBD\uC744 \uB9C8\uC8FC\uD588\uB2E4. \uC5B4\uC88C\uC5D0 \uC624\uB974\uBA74 \uB4F1 \uB4A4\uC5D0\uB294 \uC5B8\uC81C\uB098 \uB2E4\uC12F \uBD09\uC6B0\uB9AC\uAC00 \uD3BC\uCCD0\uC838 \uC788\uC5C8\uACE0, \uD574\uC640 \uB2EC\uC774 \uB3D9\uC2DC\uC5D0 \uB5A0 \uC788\uC5C8\uB2E4. \uC790\uC5F0\uC5D0\uC11C\uB294 \uBD88\uAC00\uB2A5\uD55C \uC77C\uC774 \uC655\uC758 \uC790\uB9AC\uC5D0\uC11C\uB294 \uB9E4\uC77C \uC77C\uC5B4\uB0AC\uB2E4."), /* @__PURE__ */ React.createElement("p", { style: { marginBottom: 28 } }, "\uC5B4\uC88C \uB4A4 \uB2E4\uC12F \uBD09\uC6B0\uB9AC \uBCD1\uD48D\uC740 \uB2E8\uC21C\uD55C \uC7A5\uC2DD\uC774 \uC544\uB2C8\uB2E4. \uADF8\uAC83\uC740 \uC7A5\uCE58\uB2E4. \uC655\uC73C\uB85C \uD558\uC5EC\uAE08 \uB9E4\uC77C \uC6B0\uC8FC\uB97C \uB5A0\uC62C\uB9AC\uAC8C \uD558\uB294 \uC7A5\uCE58, \uC790\uC2E0\uC774 \uB204\uAD6C\uB97C \uC704\uD574 \uC549\uC544 \uC788\uB294\uC9C0\uB97C \uC78A\uC9C0 \uBABB\uD558\uAC8C \uD558\uB294 \uC7A5\uCE58\uC600\uB2E4."), /* @__PURE__ */ React.createElement("h3", { style: { fontSize: 24, fontWeight: 500, margin: "48px 0 20px", color: "var(--primary-hover)" } }, "\uB2E4\uC12F \uBD09\uC6B0\uB9AC\uC758 \uC758\uBBF8"), /* @__PURE__ */ React.createElement("p", { style: { marginBottom: 28 } }, "\uB2E4\uC12F\uC774\uB77C\uB294 \uC22B\uC790\uC5D0\uB294 \uC774\uC720\uAC00 \uC788\uB2E4. \uC624\uD589(\u4E94\u884C) \u2014 \uBAA9\uD654\uD1A0\uAE08\uC218. \uD55C \uC655\uC870\uAC00 \uC6B0\uC8FC\uC758 \uC9C8\uC11C\uC640 \uC77C\uCE58\uD55C\uB2E4\uB294 \uC120\uC5B8\uC774\uC790, \uB3D9\uC2DC\uC5D0 \uADF8 \uC9C8\uC11C\uB97C \uD754\uB4E4\uBA74 \uC815\uD1B5\uC131\uC744 \uC783\uB294\uB2E4\uB294 \uACBD\uACE0\uC774\uAE30\uB3C4 \uD588\uB2E4."), /* @__PURE__ */ React.createElement("blockquote", { style: { borderLeft: "3px solid var(--primary)", paddingLeft: 32, margin: "40px 0", fontStyle: "italic", color: "var(--secondary)" } }, "\uC655\uC774\uB77C\uB294 \uC790\uB9AC\uB294 \uC800\uC808\uB85C \uC11C \uC788\uB294 \uAC83\uC774 \uC544\uB2C8\uB2E4.", /* @__PURE__ */ React.createElement("br", null), "\uB2E4\uC12F \uBD09\uC6B0\uB9AC\uAC00 \uB9E4\uC77C \uADF8\uB97C \uC77C\uC73C\uCF1C \uC138\uC6E0\uB2E4."), /* @__PURE__ */ React.createElement("p", { style: { marginBottom: 28 } }, "\uC624\uB298\uC744 \uC0AC\uB294 \uC6B0\uB9AC\uC5D0\uAC8C \uADF8 \uBCD1\uD48D\uC740 \uB354 \uC774\uC0C1 \uBC30\uACBD\uC774 \uC544\uB2C8\uB2E4. \uADF8\uAC83\uC740 \uD558\uB098\uC758 \uC9C8\uBB38\uC774\uB2E4 \u2014 \uB2F9\uC2E0\uC758 \uC790\uB9AC \uB4A4\uC5D0\uB294 \uBB34\uC5C7\uC774 \uC788\uB294\uAC00."))), (c.sourceCredit || c.sourceUrl) && /* @__PURE__ */ React.createElement("div", { style: { marginTop: 48, paddingTop: 24, borderTop: "1px solid var(--line)", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.24em", marginBottom: 8 } }, "SOURCE \xB7 \uCD9C\uCC98"), c.sourceUrl ? /* @__PURE__ */ React.createElement(
         "a",
         {
           href: c.sourceUrl,
@@ -12045,11 +12126,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       ))), editColumn && isAdmin && /* @__PURE__ */ React.createElement(ColumnWriterModal, { onClose: () => setEditColumn(null), initialColumn: editColumn }));
     }
     return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container" }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", marginBottom: 48 } }, (() => {
-      var _a2, _b2, _c2, _d, _e;
+      var _a2, _b2, _c2, _d2, _e;
       const _i = (((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {}).columnIntro || {};
       const eb = _i.eyebrow || "COLUMN \xB7 \uBC45\uAE30\uB178\uC790\uC758 \uAE00";
       const tp = (_c2 = _i.titlePrefix) != null ? _c2 : "";
-      const ta = (_d = _i.titleAccent) != null ? _d : "\uBC45\uAE30\uB178\uC790";
+      const ta = (_d2 = _i.titleAccent) != null ? _d2 : "\uBC45\uAE30\uB178\uC790";
       const ts = (_e = _i.titleSuffix) != null ? _e : "\uAC00 \uC4F0\uB2E4";
       const sb = _i.subtitle || "\uCEE4\uBBA4\uB2C8\uD2F0\uC7A5 \uBC45\uAE30\uB178\uC790\uC758 \uC815\uAE30 \uCE7C\uB7FC. \uC870\uC120\uC758 \uC655\uB4E4\uC744 \uACBD\uC720\uD574 \uC624\uB298\uC744 \uBB3B\uB294\uB2E4.";
       return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", style: { justifyContent: "center" } }, eb), /* @__PURE__ */ React.createElement("h1", { className: "section-title" }, tp, /* @__PURE__ */ React.createElement("span", { className: "accent" }, ta), ts), /* @__PURE__ */ React.createElement("p", { className: "section-subtitle", style: { margin: "16px auto 0" } }, sb));

@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.306.001",
+  version: "00.306.002",
   build: "2026.08.25",
   channel: "preview",
 };
@@ -1698,7 +1698,13 @@ window.BGNJ_COMMUNITY = {
         // '삭제된 것처럼' 안 보이던 버그. 넉넉히 요청 (opts 가 명시하면 그쪽 우선).
         const { posts } = await window.BGNJ_API.posts.list({ limit: 1000, ...opts });
         // v00.231 — 비-배열 응답으로 캐시가 빈 배열 덮어쓰던 데이터-사라짐 버그 방어.
-        if (!Array.isArray(posts)) { try { console.warn('[BGNJ_COMMUNITY.refreshPosts] non-array — cache preserved'); } catch (_e) { console.warn('[bgnj] data.js:1511 오류(무시하고 진행)', _e); } return this._serverPosts; }
+        if (!Array.isArray(posts)) {
+          // v00.306.002 — 여기서 그냥 돌아가면 _serverLoaded 가 false 인 채로 남아
+          //   화면은 영원히 '불러오는 중' 이고 오류도 안 뜬다. 실패로 취급해 알린다.
+          try { console.warn('[BGNJ_COMMUNITY.refreshPosts] non-array — cache preserved'); } catch (_e) { console.warn('[bgnj] data.js:1511 오류(무시하고 진행)', _e); }
+          lastErr = new Error('서버 응답 형식이 올바르지 않습니다.');
+          continue;
+        }
         this._serverPosts = posts.map(_serverPostToUi);
         this._serverLoaded = true;
         this._lastError = null;
@@ -2258,14 +2264,24 @@ window.BGNJ_COLUMNS = {
       return null;
     }
   },
+  // v00.306.002 — 게시글과 같은 이유로 '아직 못 불러왔다' 를 화면이 알 수 있어야 한다.
+  //   이 둘이 없으면 칼럼도 '해당 칼럼을 찾을 수 없습니다' 로 단정해 버린다.
+  _loaded: false,
+  _lastError: null,
   async refresh({ admin } = {}) {
     try {
       const { columns } = await window.BGNJ_API.columns.list({ includeAll: !!admin });
       // v00.231 — 데이터-사라짐 방어 (Array.isArray 가드).
-      if (!Array.isArray(columns)) { try { console.warn('[BGNJ_COLUMNS.refresh] non-array — cache preserved'); } catch (_e) { console.warn('[bgnj] data.js:1966 오류(무시하고 진행)', _e); } return this._columns.slice(); }
+      if (!Array.isArray(columns)) { throw new Error('서버 응답 형식이 올바르지 않습니다.'); }
       this._columns = columns.map((c) => this._toColumn(c));
+      this._loaded = true;
+      this._lastError = null;
       try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js:1968)', _e); }
-    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
+    } catch (e) {
+      console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e);
+      this._lastError = e?.message || '칼럼을 불러오지 못했습니다.';
+      try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh-error', { detail: { message: this._lastError } })); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js)', _e); }
+    }
     return this._columns.slice();
   },
   getLikes(id) { return (this._columns.find((c) => String(c.id) === String(id))?.likes) || []; },
