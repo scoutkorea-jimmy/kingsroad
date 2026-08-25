@@ -531,6 +531,16 @@ const run = async () => {
     check("틀린 카운터를 더 이상 쌓지 않는다",
       !/UPDATE posts SET replies = replies \+ 1/.test(worker3));
 
+    // 표기는 이모지가 아니라 선·글자로 — 이모지는 기기가 제 색으로 칠해 버린다.
+    check("댓글 수는 제목 뒤 (n) 으로 적는다", /\(\{p\.replies\}\)/.test(cp),
+      "말풍선 이모지는 기기마다 색·모양이 달라 화면의 결과 따로 논다");
+    check("목록·상세에 이모지 표기가 남아 있지 않다",
+      !/[\u{1F300}-\u{1FAFF}]/u.test(cp.split('\n').filter((l) => !l.trim().startsWith('//')).join('\n')),
+      "잉크와 선으로만 이루어진 화면에서 이모지만 혼자 색을 갖는다");
+    check("사진·첨부는 선 아이콘으로 그린다",
+      /PhotoMark/.test(cp) && /ClipMark/.test(cp) && /currentColor/.test(cp),
+      "currentColor 라야 다크 모드에서도 글자색을 따라간다");
+
     // 목록에서 태그는 빼기로 했다 (제목이 두 줄로 밀렸다)
     check("목록 제목 줄에 태그를 붙이지 않는다",
       !/row-title-inline[^\n]*#\$\{t\}/.test(cp), "말머리로 걸러 온 목록은 같은 태그가 반복돼 제목을 가린다");

@@ -230,7 +230,15 @@ const HelpWidget = ({ go }) => {
         aria-expanded={open}
         aria-label={open ? '도움말 닫기' : '도움말 열기'}
         title="무엇을 도와드릴까요?">
-        {open ? '×' : '💬'}
+        {/* v00.306.003 — 말풍선 이모지는 기기가 제 색으로 칠해 버려서 잉크·선으로만 된
+            이 화면에서 혼자 튀었다. 같은 선 굵기로 다시 그린다(currentColor). */}
+        {open ? '×' : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+            stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.5 11.6a7.9 7.9 0 0 1-8.5 7.9 9 9 0 0 1-2.6-.4L4.2 20.5l1.5-4.6a7.7 7.7 0 0 1-1.2-4.3A7.9 7.9 0 0 1 12.5 3.7a7.9 7.9 0 0 1 8 7.9Z"/>
+            <path d="M9.2 11.6h.01M12.5 11.6h.01M15.8 11.6h.01"/>
+          </svg>
+        )}
       </button>
     </>
   );

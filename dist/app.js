@@ -401,7 +401,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.306.002",
+    version: "00.306.003",
     build: "2026.08.25",
     channel: "preview"
   };
@@ -8997,7 +8997,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           e.target.value = "";
         }
       }
-    ), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { fontSize: 11, color: "var(--danger)", marginBottom: 8 } }, error), files.length > 0 ? /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 } }, files.map((f, i) => /* @__PURE__ */ React.createElement("li", { key: i, style: { display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", border: "1px solid var(--line)", background: "var(--bg-2)", fontSize: 12 } }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true" }, "\u{1F4CE}"), /* @__PURE__ */ React.createElement("span", { style: { flex: 1, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, f.name), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, _fmtSize(f.size)), /* @__PURE__ */ React.createElement(
+    ), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { fontSize: 11, color: "var(--danger)", marginBottom: 8 } }, error), files.length > 0 ? /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 } }, files.map((f, i) => /* @__PURE__ */ React.createElement("li", { key: i, style: { display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", border: "1px solid var(--line)", background: "var(--bg-2)", fontSize: 12 } }, /* @__PURE__ */ React.createElement(ClipMark, { size: 13 }), /* @__PURE__ */ React.createElement("span", { style: { flex: 1, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, f.name), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, _fmtSize(f.size)), /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -9008,6 +9008,26 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       "\u2715"
     )))) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "8/1", fontSize: 10 } }, "PDF \xB7 DOCX \xB7 \uC774\uBBF8\uC9C0 \uC678 \uC790\uB8CC\uB97C \uCD5C\uB300 ", max, "\uAC1C, \uC804\uBD80 \uD569\uCCD0 ", _fmtSize(maxTotal), " \uAE4C\uC9C0 \uCCA8\uBD80 (\uAC8C\uC2DC\uAE00 \uBCF8\uBB38 \uD558\uB2E8\uC5D0 \uB2E4\uC6B4\uB85C\uB4DC \uB9C1\uD06C\uB85C \uD45C\uC2DC)"));
   };
+  var InlineMark = ({ d, size = 12, label }) => /* @__PURE__ */ React.createElement(
+    "svg",
+    {
+      width: size,
+      height: size,
+      viewBox: "0 0 16 16",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "1.2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      "aria-hidden": label ? void 0 : "true",
+      role: label ? "img" : void 0,
+      style: { verticalAlign: "-2px", flexShrink: 0 }
+    },
+    label && /* @__PURE__ */ React.createElement("title", null, label),
+    d
+  );
+  var PhotoMark = (props) => /* @__PURE__ */ React.createElement(InlineMark, { ...props, d: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("rect", { x: "1.6", y: "3", width: "12.8", height: "10", rx: "1.4" }), /* @__PURE__ */ React.createElement("circle", { cx: "5.6", cy: "6.6", r: "1.1" }), /* @__PURE__ */ React.createElement("path", { d: "M2.2 11.4 L6 8.2 L9 10.6 L11.4 8.8 L13.8 10.8" })) });
+  var ClipMark = (props) => /* @__PURE__ */ React.createElement(InlineMark, { ...props, d: /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("path", { d: "M10.6 4.2 L5.4 9.4a2.1 2.1 0 0 0 3 3l5.4-5.4a3.6 3.6 0 0 0-5.1-5.1L3.2 7.4a5 5 0 0 0 7 7l4.2-4.2" })) });
   var ContentLoadNotice = ({ status, label = "\uAC8C\uC2DC\uAE00", message, onRetry, onBack, backLabel = "\uBAA9\uB85D\uC73C\uB85C" }) => {
     const [busy, setBusy] = React.useState(false);
     const loading = status === "loading";
@@ -10046,8 +10066,27 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             className: "row-title-button",
             style: { all: "unset", cursor: reorderMode ? "move" : "pointer", textAlign: "left", display: "block", width: "100%" }
           },
-          /* @__PURE__ */ React.createElement("span", { className: "row-title-text" }, bookmarked && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginRight: 6, fontSize: 11 }, "aria-label": "\uBD81\uB9C8\uD06C" }, "\u2605"), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "post-prefix" }, "[", p.prefix, "]"), p.title, ((_a2 = p.images) == null ? void 0 : _a2.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uC774\uBBF8\uC9C0 \uCCA8\uBD80" }, "\u{1F4F7}", p.images.length), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uACF5\uAC10 \uC218" }, "\u2665", likesCount), ((_b = p.replies) != null ? _b : 0) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": `\uB313\uAE00 ${p.replies}\uAC1C` }, "\u{1F4AC}", p.replies), p.hot && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "HOT"), p._new && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "NEW")),
-          /* @__PURE__ */ React.createElement("span", { className: "row-mobile-meta", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, cat.label), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "badge" }, p.prefix), /* @__PURE__ */ React.createElement("span", null, p.author), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("time", { dateTime: (p.date || "").replace(/\./g, "-") }, p.date || ""), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_c = p.views) != null ? _c : 0), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u2665 ", likesCount), ((_d = p.images) == null ? void 0 : _d.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u{1F4F7} ", p.images.length), ((_e = p.replies) != null ? _e : 0) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u{1F4AC} ", p.replies))
+          /* @__PURE__ */ React.createElement("span", { className: "row-title-text" }, bookmarked && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginRight: 6, fontSize: 11 }, "aria-label": "\uBD81\uB9C8\uD06C" }, "\u2605"), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "post-prefix" }, "[", p.prefix, "]"), p.title, ((_a2 = p.replies) != null ? _a2 : 0) > 0 && /* @__PURE__ */ React.createElement(
+            "span",
+            {
+              className: "gold mono row-title-inline",
+              style: { marginLeft: 6, fontSize: 12 },
+              "aria-label": `\uB313\uAE00 ${p.replies}\uAC1C`
+            },
+            "(",
+            p.replies,
+            ")"
+          ), ((_b = p.images) == null ? void 0 : _b.length) > 0 && /* @__PURE__ */ React.createElement(
+            "span",
+            {
+              className: "mono row-title-inline",
+              style: { marginLeft: 8, fontSize: 10, color: "var(--ink-3)", display: "inline-flex", alignItems: "center", gap: 3 },
+              "aria-label": `\uC0AC\uC9C4 ${p.images.length}\uC7A5`
+            },
+            /* @__PURE__ */ React.createElement(PhotoMark, { size: 11 }),
+            p.images.length
+          ), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold mono row-title-inline", style: { marginLeft: 8, fontSize: 10 }, "aria-label": "\uACF5\uAC10 \uC218" }, "\u2665", likesCount), p.hot && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "HOT"), p._new && /* @__PURE__ */ React.createElement("span", { className: "gold", style: { marginLeft: 8, fontSize: 10 } }, "NEW")),
+          /* @__PURE__ */ React.createElement("span", { className: "row-mobile-meta", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, cat.label), p.prefix && /* @__PURE__ */ React.createElement("span", { className: "badge" }, p.prefix), /* @__PURE__ */ React.createElement("span", null, p.author), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("time", { dateTime: (p.date || "").replace(/\./g, "-") }, p.date || ""), /* @__PURE__ */ React.createElement("span", { className: "dot" }, "\xB7"), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_c = p.views) != null ? _c : 0), likesCount > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\u2665 ", likesCount), ((_d = p.images) == null ? void 0 : _d.length) > 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2" }, "\uC0AC\uC9C4 ", p.images.length), ((_e = p.replies) != null ? _e : 0) > 0 && /* @__PURE__ */ React.createElement("span", { className: "gold" }, "\uB313\uAE00 ", p.replies))
         )),
         /* @__PURE__ */ React.createElement("td", { className: "col-author mono dim", style: { padding: "18px 8px", fontSize: 12, whiteSpace: "nowrap" } }, p.author, /* @__PURE__ */ React.createElement(AuthorGradeBadge, { authorId: p.authorId, author: p.author, authorEmail: p.authorEmail })),
         /* @__PURE__ */ React.createElement("td", { className: "col-views mono dim-2", style: { padding: "18px 8px", fontSize: 12, textAlign: "right" } }, (_f = p.views) != null ? _f : 0),
@@ -10582,7 +10621,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           }
         }
       },
-      "\u{1F4BE} \uC784\uC2DC\uC800\uC7A5"
+      "\uC784\uC2DC\uC800\uC7A5"
     ), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: attachBusy }, attachBusy ? "\uC0AC\uC9C4 \uC62C\uB9AC\uB294 \uC911\u2026" : isEditing ? "\uC218\uC815 \uC800\uC7A5 \u2192" : "\uAC8C\uC2DC\uD558\uAE30 \u2192")))));
   };
   var PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, onPrefixClick }) => {
@@ -10792,7 +10831,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }
       const slideImages = Array.isArray(post.images) && post.images.length > 0 ? post.images : extractedImages;
       return /* @__PURE__ */ React.createElement(React.Fragment, null, slideImages.length > 0 && /* @__PURE__ */ React.createElement("section", { "aria-label": "\uCCA8\uBD80 \uC774\uBBF8\uC9C0", style: { margin: "24px 0 32px" } }, /* @__PURE__ */ React.createElement(ImageSlider, { images: slideImages })), cleanHtml ? /* @__PURE__ */ React.createElement("div", { className: "post-body", dangerouslySetInnerHTML: { __html: window.BGNJ_SAFE_HTML(cleanHtml) } }) : ((_b2 = post.body) == null ? void 0 : _b2.text) ? /* @__PURE__ */ React.createElement("div", { className: "post-body", style: { whiteSpace: "pre-wrap" } }, post.body.text) : /* @__PURE__ */ React.createElement("div", { className: "post-body dim-2", style: { fontStyle: "italic" } }, "\uBCF8\uBB38\uC774 \uBE44\uC5B4\uC788\uC2B5\uB2C8\uB2E4."));
-    })(), ((_c = post.attachments) == null ? void 0 : _c.length) > 0 && /* @__PURE__ */ React.createElement("section", { "aria-label": "\uCCA8\uBD80 \uD30C\uC77C", style: { margin: "40px 0" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true", style: { marginBottom: 14 } }, "FILES \xB7 \uCCA8\uBD80 \uD30C\uC77C (", post.attachments.length, ")"), /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 } }, post.attachments.map((a, i) => /* @__PURE__ */ React.createElement("li", { key: i, style: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "1px solid var(--line)", background: "var(--bg-2)", fontSize: 13 } }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true" }, "\u{1F4CE}"), /* @__PURE__ */ React.createElement("span", { style: { flex: 1, color: "var(--ink)" } }, a.name), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, _fmtSize(a.size)), /* @__PURE__ */ React.createElement(
+    })(), ((_c = post.attachments) == null ? void 0 : _c.length) > 0 && /* @__PURE__ */ React.createElement("section", { "aria-label": "\uCCA8\uBD80 \uD30C\uC77C", style: { margin: "40px 0" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true", style: { marginBottom: 14 } }, "FILES \xB7 \uCCA8\uBD80 \uD30C\uC77C (", post.attachments.length, ")"), /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 } }, post.attachments.map((a, i) => /* @__PURE__ */ React.createElement("li", { key: i, style: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "1px solid var(--line)", background: "var(--bg-2)", fontSize: 13 } }, /* @__PURE__ */ React.createElement(ClipMark, { size: 13 }), /* @__PURE__ */ React.createElement("span", { style: { flex: 1, color: "var(--ink)" } }, a.name), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, _fmtSize(a.size)), /* @__PURE__ */ React.createElement(
       "a",
       {
         href: a.dataUrl,
@@ -15147,7 +15186,22 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         "aria-label": open ? "\uB3C4\uC6C0\uB9D0 \uB2EB\uAE30" : "\uB3C4\uC6C0\uB9D0 \uC5F4\uAE30",
         title: "\uBB34\uC5C7\uC744 \uB3C4\uC640\uB4DC\uB9B4\uAE4C\uC694?"
       },
-      open ? "\xD7" : "\u{1F4AC}"
+      open ? "\xD7" : /* @__PURE__ */ React.createElement(
+        "svg",
+        {
+          width: "22",
+          height: "22",
+          viewBox: "0 0 24 24",
+          fill: "none",
+          "aria-hidden": "true",
+          stroke: "currentColor",
+          strokeWidth: "1.5",
+          strokeLinecap: "round",
+          strokeLinejoin: "round"
+        },
+        /* @__PURE__ */ React.createElement("path", { d: "M20.5 11.6a7.9 7.9 0 0 1-8.5 7.9 9 9 0 0 1-2.6-.4L4.2 20.5l1.5-4.6a7.7 7.7 0 0 1-1.2-4.3A7.9 7.9 0 0 1 12.5 3.7a7.9 7.9 0 0 1 8 7.9Z" }),
+        /* @__PURE__ */ React.createElement("path", { d: "M9.2 11.6h.01M12.5 11.6h.01M15.8 11.6h.01" })
+      )
     ));
   };
 

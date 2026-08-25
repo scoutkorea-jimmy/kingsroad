@@ -405,7 +405,7 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
         <ul style={{listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:6}}>
           {files.map((f, i) => (
             <li key={i} style={{display:'flex', alignItems:'center', gap:10, padding:'8px 10px', border:'1px solid var(--line)', background:'var(--bg-2)', fontSize:12}}>
-              <span aria-hidden="true">📎</span>
+              <ClipMark size={13} />
               <span style={{flex:1, color:'var(--ink)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{f.name}</span>
               <span className="mono dim-2" style={{fontSize:10}}>{_fmtSize(f.size)}</span>
               <button type="button" onClick={() => remove(i)} aria-label={`${f.name} 제거`}
@@ -422,6 +422,39 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
     </div>
   );
 };
+
+// === 표기 아이콘 ========================================================
+// v00.306.003 — 사진·첨부를 이모지(📷 📎)로 그리고 있었다. 이모지는 **기기가 제 색으로
+// 칠해 버리는 그림**이라, 잉크와 선으로만 이루어진 이 화면에서 혼자 색을 갖고 튀었다.
+// 안드로이드·윈도우·맥이 서로 다른 그림을 그리는 것도 문제였다(모양을 우리가 못 정한다).
+//
+// 그래서 선으로 다시 그린다 — 1px 획, currentColor. 옆의 ★ ♥ 와 같은 무게로 앉고,
+// 어느 기기에서나 같은 모양이 나오며, 다크 모드에서도 글자색을 그대로 따라간다.
+const InlineMark = ({ d, size = 12, label }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none"
+    stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"
+    aria-hidden={label ? undefined : "true"} role={label ? "img" : undefined}
+    style={{verticalAlign:'-2px', flexShrink:0}}>
+    {label && <title>{label}</title>}
+    {d}
+  </svg>
+);
+
+// 사진 — 틀 + 지평선 + 해. 사진 한 장을 가장 적은 획으로 줄인 모양.
+const PhotoMark = (props) => (
+  <InlineMark {...props} d={<>
+    <rect x="1.6" y="3" width="12.8" height="10" rx="1.4"/>
+    <circle cx="5.6" cy="6.6" r="1.1"/>
+    <path d="M2.2 11.4 L6 8.2 L9 10.6 L11.4 8.8 L13.8 10.8"/>
+  </>}/>
+);
+
+// 첨부 — 클립. 고리 하나만 남긴다.
+const ClipMark = (props) => (
+  <InlineMark {...props} d={<>
+    <path d="M10.6 4.2 L5.4 9.4a2.1 2.1 0 0 0 3 3l5.4-5.4a3.6 3.6 0 0 0-5.1-5.1L3.2 7.4a5 5 0 0 0 7 7l4.2-4.2"/>
+  </>}/>
+);
 
 // === 목록을 못 불러온 것 ≠ 그런 글이 없는 것 =============================
 // 2026-08-25, 사용자가 '해당 게시글을 찾을 수 없습니다' 화면을 보고 연락해 왔다.
@@ -1440,14 +1473,23 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                             (홈 피드의 .home-feed-prefix 와 같은 결). 말머리가 없으면 아무것도 그리지 않는다. */}
                         {p.prefix && <span className="post-prefix">[{p.prefix}]</span>}
                         {p.title}
-                        {p.images?.length > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label="이미지 첨부">📷{p.images.length}</span>}
+                        {/* v00.306.003 — 댓글 수는 게시판의 오랜 관습대로 제목 바로 뒤에 (n).
+                            말풍선 이모지는 기기마다 색·모양이 달라 이 화면의 결과 따로 놀았다. */}
+                        {(p.replies ?? 0) > 0 && (
+                          <span className="gold mono row-title-inline" style={{marginLeft:6, fontSize:12}}
+                            aria-label={`댓글 ${p.replies}개`}>({p.replies})</span>
+                        )}
+                        {p.images?.length > 0 && (
+                          <span className="mono row-title-inline"
+                            style={{marginLeft:8, fontSize:10, color:'var(--ink-3)', display:'inline-flex', alignItems:'center', gap:3}}
+                            aria-label={`사진 ${p.images.length}장`}>
+                            <PhotoMark size={11}/>{p.images.length}
+                          </span>
+                        )}
                         {likesCount > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label="공감 수">♥{likesCount}</span>}
                         {/* v00.306.002 — 목록에서 태그를 뺐다. 말머리로 걸러 온 목록은 세 편에 같은 태그가
                             반복돼 정보가 되지 않는데, 제목을 밀어 두 줄로 접히게 만들고 있었다.
                             태그는 글 상세(.tag-chip)와 검색이 제 몫을 한다 — 데이터는 그대로 둔다. */}
-                        {/* v00.306.002 — 댓글 수. 서버가 그 자리에서 센 값이라 지워도 바로 줄어든다.
-                            0 이면 그리지 않는다 — 대부분의 글이 0 이라 다 그리면 잡음만 는다. */}
-                        {(p.replies ?? 0) > 0 && <span className="gold mono row-title-inline" style={{marginLeft:8, fontSize:10}} aria-label={`댓글 ${p.replies}개`}>💬{p.replies}</span>}
                         {p.hot && <span className="gold" style={{marginLeft:8, fontSize:10}}>HOT</span>}
                         {p._new && <span className="gold" style={{marginLeft:8, fontSize:10}}>NEW</span>}
                       </span>
@@ -1462,8 +1504,8 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                         <span className="dot">·</span>
                         <span>조회 {p.views ?? 0}</span>
                         {likesCount > 0 && <span className="gold">♥ {likesCount}</span>}
-                        {p.images?.length > 0 && <span className="gold">📷 {p.images.length}</span>}
-                        {(p.replies ?? 0) > 0 && <span className="gold">💬 {p.replies}</span>}
+                        {p.images?.length > 0 && <span className="dim-2">사진 {p.images.length}</span>}
+                        {(p.replies ?? 0) > 0 && <span className="gold">댓글 {p.replies}</span>}
                       </span>
                     </button>
                   </td>
@@ -2048,7 +2090,8 @@ const PostCompose = ({ user, initialPost, onCancel, onPublish, categories, userL
                     window.BGNJ_TOAST?.error?.('임시저장 실패: ' + (err?.message || err));
                   }
                 }}>
-                💾 임시저장
+                {/* v00.306.003 — 다른 버튼은 전부 글자만 쓴다. 여기만 이모지가 붙어 있었다. */}
+                임시저장
               </button>
             )}
             <button type="submit" className="btn btn-gold" disabled={attachBusy}>
@@ -2337,7 +2380,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
             <ul style={{listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:8}}>
               {post.attachments.map((a, i) => (
                 <li key={i} style={{display:'flex', alignItems:'center', gap:12, padding:'10px 14px', border:'1px solid var(--line)', background:'var(--bg-2)', fontSize:13}}>
-                  <span aria-hidden="true">📎</span>
+                  <ClipMark size={13} />
                   <span style={{flex:1, color:'var(--ink)'}}>{a.name}</span>
                   <span className="mono dim-2" style={{fontSize:11}}>{_fmtSize(a.size)}</span>
                   <a href={a.dataUrl} download={a.name}
