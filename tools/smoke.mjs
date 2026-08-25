@@ -703,6 +703,41 @@ const run = async () => {
       "아이폰 HEIC 업로드 실패가 실제로 5건 쌓여 있었다");
   }
 
+  console.log("\n── 15. 목록이 빨리 오는가 ──");
+  {
+    const html = readFileSync(path.join(ROOT, "index.html"), "utf8");
+    const apiSrc2 = readFileSync(path.join(ROOT, "api.js"), "utf8");
+    const d2 = readFileSync(path.join(ROOT, "data.js"), "utf8");
+    const wk2 = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+
+    check("목록을 번들보다 먼저 물어본다", /__BGNJ_PRELOAD/.test(html),
+      "1MB 번들을 받고 React 가 뜬 뒤에 묻느라 1.26초를 그냥 흘려보냈다");
+    // ⚠ 주소가 두 벌이다. 어긋나면 미리 받기가 조용히 실패하고 아무도 모른다.
+    const baseInApi = (apiSrc2.match(/const BASE = "([^"]+)"/) || [])[1] || '';
+    const baseInHtml = (html.match(/fetch\('([^']+)\/posts\?limit=1000'/) || [])[1] || '';
+    check("미리 받기 주소가 api.js 와 같다", !!baseInApi && baseInApi === baseInHtml,
+      `api.js="${baseInApi}" · index.html="${baseInHtml}"`);
+    check("인증을 api.js 와 같은 방식으로 보낸다",
+      /credentials: 'include'/.test(html) && /bgnj_session_token/.test(html) && /Bearer/.test(html),
+      "안 맞추면 관리자가 못 보는 글이 생긴다");
+    check("글 목록을 쓰는 화면에서만 미리 받는다", /path\.indexOf\('\/community\/'\)/.test(html),
+      "칼럼·도서 페이지에서까지 부르면 그냥 낭비다");
+    check("미리 받은 것은 한 번만 쓴다", /window\.__BGNJ_PRELOAD = null;/.test(d2),
+      "두 번째 호출은 '지금' 을 물어야 한다");
+    check("오래된 것은 버린다", /Date\.now\(\) - Number\(pre\.at \|\| 0\)\) < 30_000/.test(d2));
+    check("겹친 목록 요청을 합친다", /_inFlight/.test(d2),
+      "실측: 광장 진입 시 같은 요청이 두 번 나갔다");
+
+    // 서버가 목록을 만들 때 본문을 읽으면 안 된다 — 400자 발췌 때문에 783KB 를 읽고 버렸다.
+    const listSql = wk2.slice(wk2.indexOf('const sql = `SELECT p.id'), wk2.indexOf('ORDER BY p.created_at DESC LIMIT ?'));
+    check("목록 SELECT 가 본문을 읽지 않는다", !/p\.body/.test(listSql) && /p\.excerpt/.test(listSql),
+      "발췌 400자를 만들려고 본문 783KB 를 읽고 버리고 있었다");
+    check("새 글에 발췌를 함께 저장한다", /postExcerpt\(text\)/.test(wk2));
+    check("본문을 고치면 발췌도 같은 문장에서 고친다",
+      /if \(k === "body" && k in body\) \{ fields\.push\("excerpt = \?"\)/.test(wk2),
+      "따로 갱신하면 언젠가 한쪽만 바뀌어 목록과 본문이 다른 말을 한다");
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

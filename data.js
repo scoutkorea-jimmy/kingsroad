@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.306.007",
+  version: "00.306.008",
   build: "2026.08.25",
   channel: "preview",
 };
@@ -1816,6 +1816,25 @@ window.BGNJ_COMMUNITY = {
     return this._inFlight;
   },
   async _refreshPostsOnce(opts = {}) {
+    // v00.306.008 — index.html 이 번들보다 먼저 던져 둔 목록이 있으면 그것을 쓴다.
+    //   한 번만 쓰고 버린다 — 두 번째 호출은 '지금' 을 물어야 한다(오래된 답을 재활용하면 안 된다).
+    const pre = window.__BGNJ_PRELOAD;
+    if (pre && pre.posts && !Object.keys(opts || {}).length) {
+      window.__BGNJ_PRELOAD = null;
+      try {
+        // 너무 오래된 것은 버린다. 탭을 열어 두고 한참 뒤에 들어온 경우.
+        const fresh = (Date.now() - Number(pre.at || 0)) < 30_000;
+        const data = await pre.posts;
+        const posts = fresh && data && Array.isArray(data.posts) ? data.posts : null;
+        if (posts) {
+          this._serverPosts = posts.map(_serverPostToUi);
+          this._serverLoaded = true;
+          this._lastError = null;
+          try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다', _e); }
+          return this._serverPosts;
+        }
+      } catch (_e) { console.warn('[bgnj] 미리 받아 둔 목록을 못 썼다 — 다시 묻는다', _e); }
+    }
     const maxAttempts = 2;
     let lastErr = null;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {

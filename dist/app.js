@@ -404,7 +404,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.306.007",
+    version: "00.306.008",
     build: "2026.08.25",
     channel: "preview"
   };
@@ -2219,6 +2219,28 @@
       return this._inFlight;
     },
     async _refreshPostsOnce(opts = {}) {
+      const pre = window.__BGNJ_PRELOAD;
+      if (pre && pre.posts && !Object.keys(opts || {}).length) {
+        window.__BGNJ_PRELOAD = null;
+        try {
+          const fresh = Date.now() - Number(pre.at || 0) < 3e4;
+          const data = await pre.posts;
+          const posts = fresh && data && Array.isArray(data.posts) ? data.posts : null;
+          if (posts) {
+            this._serverPosts = posts.map(_serverPostToUi);
+            this._serverLoaded = true;
+            this._lastError = null;
+            try {
+              window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
+            } catch (_e) {
+              console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4", _e);
+            }
+            return this._serverPosts;
+          }
+        } catch (_e) {
+          console.warn("[bgnj] \uBBF8\uB9AC \uBC1B\uC544 \uB454 \uBAA9\uB85D\uC744 \uBABB \uC37C\uB2E4 \u2014 \uB2E4\uC2DC \uBB3B\uB294\uB2E4", _e);
+        }
+      }
       const maxAttempts = 2;
       let lastErr = null;
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
