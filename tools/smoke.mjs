@@ -638,6 +638,71 @@ const run = async () => {
     }
   }
 
+  console.log("\n── 13. 관리자 화면은 검색되지 않는가 ──");
+  {
+    const bootSrc = readFileSync(path.join(ROOT, "boot.jsx"), "utf8");
+    const robots = readFileSync(path.join(ROOT, "robots.txt"), "utf8");
+    const nf = readFileSync(path.join(ROOT, "404.html"), "utf8");
+
+    check("개인 화면에 noindex 를 붙인다",
+      /content', 'noindex, nofollow, noarchive, nosnippet'/.test(bootSrc),
+      "robots.txt 는 '부탁' 일 뿐 크롤러가 지킬 의무가 없다");
+    check("관리자만이 아니라 개인 영역 전부를 막는다",
+      /PRIVATE_ROUTES = new Set\(\['admin', 'login', 'signup', 'mypage', 'checkout'\]\)/.test(bootSrc),
+      "관리자 하나만 막으면 나머지로 같은 사고가 난다");
+    check("공개 화면으로 돌아오면 걷어낸다", /tag\.remove\(\)/.test(bootSrc),
+      "안 걷어내면 관리자에 들렀던 세션의 공개 글이 전부 색인에서 빠진다");
+    check("SPA 폴백 우회로(?p=)도 막는다", /Disallow: \/\*\?p=\/admin/.test(robots),
+      "/admin 은 404 라 404.html 이 `/?p=/admin` 으로 돌린다 — 그 주소는 경로가 `/` 라 안 걸린다");
+    check("개인 영역 다섯 곳 모두 ?p= 로도 막힌다",
+      ['admin','login','signup','mypage','checkout'].every((r) => robots.includes(`Disallow: /*?p=/${r}`)));
+    check("404.html 자체가 noindex", /name="robots" content="noindex/.test(nf),
+      "GitHub Pages 가 /admin 요청에 이 파일을 준다");
+    // robots.txt 는 이름을 적은 그룹에 * 규칙이 상속되지 않는다 — 그룹마다 다시 적어야 한다.
+    const groups = (robots.match(/^User-agent:/gm) || []).length;
+    const blocked = (robots.match(/^Disallow: \/admin$/gm) || []).length;
+    check("모든 크롤러 그룹에 금지가 적혀 있다", groups === blocked && groups > 1,
+      `그룹 ${groups}개 · 금지 ${blocked}개 — robots.txt 는 가장 잘 맞는 그룹 하나만 적용된다`);
+  }
+
+  console.log("\n── 14. 조용히 실패하지 않는가 (운영 오류 로그 검토) ──");
+  {
+    const d = readFileSync(path.join(ROOT, "data.js"), "utf8");
+    const cp = readFileSync(path.join(ROOT, "pages/CommunityPage.jsx"), "utf8");
+    const bootSrc = readFileSync(path.join(ROOT, "boot.jsx"), "utf8");
+    const wk = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+
+    check("글 수정 실패를 삼키지 않는다",
+      /updatePostRemote\(postId, patch\)\.catch\(\(e\) =>/.test(d) && /수정 저장 실패/.test(d),
+      "화면은 고쳐진 것처럼 보이고 새로고침하면 원래대로 — 오늘 아침 댓글 사고와 같은 모양");
+    check("글 삭제 실패를 삼키지 않는다",
+      /deletePostRemote\(postId\)\.catch\(\(e\) =>/.test(d) && /삭제 실패/.test(d));
+    check("삭제 실패 시 글을 되돌려 놓는다", /this\._serverPosts = \[serverPost, \.\.\.this\._serverPosts\]/.test(d),
+      "지운 척한 글이 화면에서만 사라지면 사용자는 지운 줄 안다");
+    check("수정 저장 실패 시 창을 닫지 않는다", /창을 닫지 않았습니다/.test(cp),
+      "닫으면 쓴 글을 잃는다");
+
+    // 운영 오류 로그 실측 — 2026-08-25 11:01 `/admin` render/TypeError
+    check("관리자 번들 로드 전에 버전을 확인한다", /관리자 번들 로드 중단/.test(bootSrc),
+      "?v= 는 캐시 키일 뿐 서버는 늘 최신 파일을 준다 — 두 번들이 어긋날 수 있다");
+    check("이름표 하나로 화면이 죽지 않는다",
+      !/window\.BGNJ_BOARD_LABEL\(/.test(readFileSync(path.join(ROOT, "pages/admin/AdminRouterPanels.jsx"), "utf8")),
+      "BGNJ_BOARD_LABEL is not a function 으로 관리자 화면이 통째로 죽었다");
+
+    // 예상 못 한 오류가 DB 내부를 노출하면 안 된다
+    check("서버 오류가 내부 구조를 노출하지 않는다",
+      /const known = err instanceof HttpError;/.test(wk) && /서버에서 오류가 발생했습니다/.test(wk),
+      "D1 메시지가 그대로 나가면 테이블·컬럼 이름이 바깥으로 샌다");
+    check("예상 못 한 오류는 로그로 남긴다", /\[bgnj:500\]/.test(wk));
+
+    // 오류는 '다음에 할 행동' 까지 말해야 한다 (rules/40-security.md §6)
+    check("세션이 끊긴 업로드에 올바른 행동을 안내한다",
+      /다시 로그인한 뒤 올려 주세요/.test(cp),
+      "'잠시 후 다시 시도' 는 아무리 기다려도 안 되는 안내였다");
+    check("올릴 수 없는 형식에 해결 방법을 준다", /높은 호환성/.test(cp),
+      "아이폰 HEIC 업로드 실패가 실제로 5건 쌓여 있었다");
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

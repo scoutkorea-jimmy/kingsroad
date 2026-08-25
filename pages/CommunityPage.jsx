@@ -259,7 +259,7 @@ const ImageAttacher = ({ images, setImages, max = 10, onBusyChange }) => {
         const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-images', maxBytes: MAX_IMAGE_BYTES });
         return { ...meta, dataUrl: url };
       } catch (err) {
-        window.BGNJ_TOAST.error(`'${f.name}' 업로드 실패 — 잠시 후 다시 시도해 주세요. (${err?.message || '알 수 없는 오류'})`);
+        window.BGNJ_TOAST.error(uploadFailMessage(f.name, err));
         return null;
       }
     }));
@@ -373,7 +373,7 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
         const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-attachments', maxBytes: maxSize });
         return { ...meta, dataUrl: url };
       } catch (err) {
-        setError(`'${f.name}' 업로드 실패 — 잠시 후 다시 시도해 주세요. (${err?.message || '알 수 없는 오류'})`);
+        setError(uploadFailMessage(f.name, err));
         return null;
       }
     }));
@@ -421,6 +421,17 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
       )}
     </div>
   );
+};
+
+// v00.306.006 — 운영 오류 로그 실측: 세션이 끊긴 채 사진을 올리다 실패한 사람에게
+//   '잠시 후 다시 시도해 주세요' 라고 안내하고 있었다(2026-08-21 4건). 아무리 기다려도 안 된다.
+//   규칙 40-security §6 — 오류는 **사용자가 다음에 할 행동**까지 말해야 한다.
+const uploadFailMessage = (name, err) => {
+  const raw = String(err?.message || '알 수 없는 오류');
+  if (/로그인|인증|401/.test(raw)) return `'${name}' 업로드 실패 — 로그인이 풀렸습니다. 다시 로그인한 뒤 올려 주세요.`;
+  if (/\.heic|heif|지원하지 않는 파일/i.test(raw)) return `'${name}' 은(는) 올릴 수 없는 형식입니다. (${raw}) 아이폰 사진이라면 설정 › 카메라 › 포맷을 '높은 호환성' 으로 바꾸거나, 공유할 때 JPEG 로 저장해 올려 주세요.`;
+  if (/용량|크기|too large|413/i.test(raw)) return `'${name}' 이(가) 너무 큽니다. (${raw}) 사진을 줄여서 올려 주세요.`;
+  return `'${name}' 업로드 실패 — 잠시 후 다시 시도해 주세요. (${raw})`;
 };
 
 // === 표기 아이콘 ========================================================
@@ -933,10 +944,17 @@ const CommunityPage = ({ go, postId, setPostId, user }) => {
                   ? await window.BGNJ_COMMUNITY.createPostRemote(payload)
                   : await window.BGNJ_COMMUNITY.updatePostRemote(writing.id, payload);
               } catch (err) {
-                // 서버 실패 시 로컬 폴백.
-                savedPost = writing === true
-                  ? window.BGNJ_COMMUNITY.createPost(payload)
-                  : window.BGNJ_COMMUNITY.updatePost(writing.id, payload);
+                // v00.306.006 — 예전엔 조용히 로컬 폴백만 하고 창을 닫았다.
+                //   새 글은 로컬에 남아 다시 올릴 길이 있지만, **이미 서버에 있는 글의 수정**은
+                //   로컬 폴백이 아무 의미가 없다 — 저장 안 된 채 '저장됨' 으로 보였다.
+                //   글을 잃지 않도록 창을 닫지 않고, 무슨 일이 났는지 알린다.
+                if (writing === true) {
+                  savedPost = window.BGNJ_COMMUNITY.createPost(payload);
+                  window.BGNJ_TOAST?.error?.(`서버 저장 실패 — 이 기기에만 임시 보관했습니다: ${err?.message || '알 수 없는 오류'}`);
+                } else {
+                  window.BGNJ_TOAST?.error?.(`수정 저장 실패: ${err?.message || '알 수 없는 오류'} — 창을 닫지 않았습니다. 다시 시도해 주세요.`);
+                  return;
+                }
               }
               onClose();
               setRefreshKey((value) => value + 1);
@@ -2279,14 +2297,14 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
             <span aria-hidden="true" style={{fontSize:16, lineHeight:1}}>←</span>
             <span>목록으로</span>
             {post.category && (
-              <span className="mono dim-2 post-back-board">{window.BGNJ_BOARD_LABEL(post)}</span>
+              <span className="mono dim-2 post-back-board">{window.BGNJ_BOARD_LABEL?.(post)}</span>
             )}
           </button>
         </div>
 
         <header style={{borderBottom:'1px solid var(--line-2)', paddingBottom:32, marginBottom:48}}>
           <div style={{display:'flex', gap:12, marginBottom:20, flexWrap:'wrap'}}>
-            <span className="badge badge-gold">{window.BGNJ_BOARD_LABEL(post)}</span>
+            <span className="badge badge-gold">{window.BGNJ_BOARD_LABEL?.(post)}</span>
             {/* v00.304 — 말머리. 누르면 같은 시리즈 글만 모아 본다. */}
             {post.prefix && (
               <button type="button" className="badge post-prefix-badge"

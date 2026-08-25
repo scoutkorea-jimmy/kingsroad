@@ -122,7 +122,7 @@ const CorruptedBodyInspector = ({ go }) => {
           <ul style={{listStyle:'none', margin:0, padding:0, display:'grid', gap:6}}>
             {corrupted.slice(0, 30).map((p) => (
               <li key={p.id} style={{display:'flex', alignItems:'center', gap:10, padding:'8px 10px', border:'1px solid var(--line)', fontSize:12}}>
-                <span className="pill" style={{fontSize:10}}>{window.BGNJ_BOARD_LABEL(p) || '?'}</span>
+                <span className="pill" style={{fontSize:10}}>{window.BGNJ_BOARD_LABEL?.(p) || '?'}</span>
                 <span style={{flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{p.title || '(제목 없음)'}</span>
                 <span className="dim-2 mono" style={{fontSize:10}}>{p.author || '?'} · {p.date || ''}</span>
                 <button type="button" className="btn btn-small" onClick={() => {
@@ -420,7 +420,7 @@ const PostViewerModal = ({ postId, onClose }) => {
 
         {/* 제목 + 배지 */}
         <div style={{display:'flex', gap:10, marginBottom:14, flexWrap:'wrap'}}>
-          <span className="badge badge-gold">{window.BGNJ_BOARD_LABEL(post)}</span>
+          <span className="badge badge-gold">{window.BGNJ_BOARD_LABEL?.(post)}</span>
           {post.prefix && <span className="badge">{post.prefix}</span>}
           {post.hot && <span className="badge">HOT</span>}
         </div>
@@ -911,7 +911,7 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
               <td className="mono dim-2" style={{padding:14}}>#{String(p.id).padStart(4,'0')}</td>
               {/* v00.306 — 저장된 이름이 아니라 **게시판 id 로 찾은 현재 이름**.
                   이동시켜도 옛 이름이 남아 '이동이 안 된 것처럼' 보였다(2026-08-24). */}
-              <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{window.BGNJ_BOARD_LABEL(p)}</span></td>
+              <td style={{padding:14}}><span className="badge" style={{fontSize:9}}>{window.BGNJ_BOARD_LABEL?.(p)}</span></td>
               <td style={{padding:14}}>
                 {p.prefix ? <span className="mono" style={{fontSize:9, padding:'1px 6px', border:'1px solid var(--primary-dim)', color:'var(--secondary)'}}>{p.prefix}</span> : <span className="dim-2" style={{fontSize:10}}>—</span>}
               </td>

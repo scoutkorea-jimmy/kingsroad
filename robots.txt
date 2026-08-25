@@ -2,6 +2,12 @@
 # 정책: 검색·AI 크롤러 전체 허용. 개인 영역(관리·로그인·마이페이지·결제)만 색인 제외.
 # v00.296 — 네이버(Yeti)·다음(Daum)과 주요 AI 크롤러를 이름으로 명시했다.
 #   와일드카드로도 허용되지만, 이름을 적어 두면 정책이 분명해지고 나중에 개별 조정이 쉽다.
+#
+# v00.306.006 — `/*?p=/admin` 형태를 각 그룹에 함께 적는다.
+#   GitHub Pages 는 /admin 에 404.html 을 주고, 그 파일이 `/?p=/admin` 으로 돌린다.
+#   그 주소는 **경로가 `/` 라 `Disallow: /admin` 에 걸리지 않는다** — 직접 집으면 200 이 나온다.
+#   robots.txt 는 어차피 '부탁' 이므로, 화면 자체도 <meta name="robots" content="noindex"> 를
+#   달게 했다(boot.jsx applyRobotsMeta). 둘 다 있어야 한다.
 
 User-agent: *
 Allow: /
@@ -14,6 +20,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 
 # ── 검색엔진 ──
 User-agent: Googlebot
@@ -25,6 +36,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: Googlebot-Image
 Allow: /
 Disallow: /admin
@@ -34,6 +50,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 # 네이버
 User-agent: Yeti
 Allow: /
@@ -44,6 +65,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 # 다음
 User-agent: Daumoa
 Allow: /
@@ -54,6 +80,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: bingbot
 Allow: /
 Disallow: /admin
@@ -63,6 +94,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 
 # ── AI 크롤러 ──
 # 우리 글이 AI 답변에 인용되는 것을 환영한다. 막을 이유가 없다.
@@ -78,6 +114,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: OAI-SearchBot
 Allow: /
 Disallow: /admin
@@ -87,6 +128,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: ChatGPT-User
 Allow: /
 Disallow: /admin
@@ -96,6 +142,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: ClaudeBot
 Allow: /
 Disallow: /admin
@@ -105,6 +156,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: Claude-Web
 Allow: /
 Disallow: /admin
@@ -114,6 +170,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: anthropic-ai
 Allow: /
 Disallow: /admin
@@ -123,6 +184,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: PerplexityBot
 Allow: /
 Disallow: /admin
@@ -132,6 +198,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: Google-Extended
 Allow: /
 Disallow: /admin
@@ -141,6 +212,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: Applebot
 Allow: /
 Disallow: /admin
@@ -150,6 +226,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: Applebot-Extended
 Allow: /
 Disallow: /admin
@@ -159,6 +240,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 User-agent: CCBot
 Allow: /
 Disallow: /admin
@@ -168,6 +254,11 @@ Disallow: /signup
 Disallow: /mypage
 Disallow: /checkout
 Disallow: /api/
+Disallow: /*?p=/admin
+Disallow: /*?p=/login
+Disallow: /*?p=/signup
+Disallow: /*?p=/mypage
+Disallow: /*?p=/checkout
 
 Sitemap: https://bgnj.net/sitemap.xml
 

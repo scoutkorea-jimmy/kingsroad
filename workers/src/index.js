@@ -3893,8 +3893,20 @@ export default {
       const resp = await route(req, env);
       return withCors(resp, origin, env);
     } catch (err) {
-      const status = err instanceof HttpError ? err.status : 500;
-      const message = err.message || "Internal error";
+      // v00.306.006 — 예전엔 어떤 오류든 err.message 를 그대로 돌려줬다.
+      //   HttpError 는 우리가 쓴 문장이라 안전하지만, 예상 못 한 오류는 D1 내부 메시지가
+      //   그대로 나간다 — "no such column: post_id" · "UNIQUE constraint failed: users.email" 처럼
+      //   **테이블·컬럼 구조가 바깥으로 새고**, 사용자에게는 아무 뜻도 없는 문장이 뜬다.
+      //   우리 문장만 내보내고, 진짜 원인은 로그로 남긴다.
+      const known = err instanceof HttpError;
+      const status = known ? err.status : 500;
+      const message = known
+        ? (err.message || "요청을 처리하지 못했습니다.")
+        : "서버에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.";
+      if (!known) {
+        try { console.error("[bgnj:500]", req.method, new URL(req.url).pathname, err?.message || err); }
+        catch (e) { console.error("[bgnj:500]", err?.message || err); }
+      }
       return withCors(json({ error: message }, { status }), origin, env);
     }
   },

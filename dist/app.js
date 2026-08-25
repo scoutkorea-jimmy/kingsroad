@@ -404,7 +404,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.306.005",
+    version: "00.306.006",
     build: "2026.08.25",
     channel: "preview"
   };
@@ -2397,7 +2397,15 @@
     updatePost(postId, patch) {
       const serverPost = this._serverPosts.find((p) => String(p.id) === String(postId));
       if (serverPost) {
-        this.updatePostRemote(postId, patch).catch(() => {
+        this.updatePostRemote(postId, patch).catch((e) => {
+          var _a, _b;
+          try {
+            (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, `\uC218\uC815 \uC800\uC7A5 \uC2E4\uD328: ${(e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+          } catch (_e) {
+            console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
+          }
+          this.refreshPosts().catch(() => {
+          });
         });
         return { ...serverPost, ...patch };
       }
@@ -2411,7 +2419,23 @@
       const authorId = (targetPost == null ? void 0 : targetPost.authorId) || null;
       const serverPost = this._serverPosts.find((p) => String(p.id) === String(postId));
       if (serverPost) {
-        this.deletePostRemote(postId).catch(() => {
+        this.deletePostRemote(postId).catch((e) => {
+          var _a2, _b2;
+          try {
+            (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, `\uC0AD\uC81C \uC2E4\uD328: ${(e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+          } catch (_e) {
+            console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
+          }
+          if (!this._serverPosts.some((p) => String(p.id) === String(postId))) {
+            this._serverPosts = [serverPost, ...this._serverPosts];
+          }
+          try {
+            window.dispatchEvent(new CustomEvent("bgnj-posts-refresh"));
+          } catch (_e) {
+            console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4", _e);
+          }
+          this.refreshPosts().catch(() => {
+          });
         });
         this._serverPosts = this._serverPosts.filter((p) => String(p.id) !== String(postId));
         try {
@@ -8101,6 +8125,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           }
         })),
         ...feedPosts.map((p) => {
+          var _a;
           const t = (() => {
             const raw = p.createdAt || (p.date ? String(p.date).replace(/\./g, "-") : "");
             const v = raw ? Date.parse(raw) : NaN;
@@ -8112,7 +8137,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             title: p.title,
             // v00.295 — p.category 는 '글 쓸 때 박아 넣은 글자'라 게시판 이름이 바뀌면 옛 이름이 남는다.
             //   게시판의 현재 이름을 먼저 찾고, 못 찾을 때만 저장된 글자를 쓴다.
-            tag: window.BGNJ_BOARD_LABEL(p) || "\uAD11\uC7A5",
+            tag: ((_a = window.BGNJ_BOARD_LABEL) == null ? void 0 : _a.call(window, p)) || "\uAD11\uC7A5",
             ts: t,
             date: fmt(t),
             onGo: () => {
@@ -8796,7 +8821,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: "post-images", maxBytes: MAX_IMAGE_BYTES });
             return { ...meta, dataUrl: url };
           } catch (err) {
-            window.BGNJ_TOAST.error(`'${f.name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694. (${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"})`);
+            window.BGNJ_TOAST.error(uploadFailMessage(f.name, err));
             return null;
           }
         }));
@@ -8917,7 +8942,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: "post-attachments", maxBytes: maxSize });
             return { ...meta, dataUrl: url };
           } catch (err) {
-            setError(`'${f.name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694. (${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"})`);
+            setError(uploadFailMessage(f.name, err));
             return null;
           }
         }));
@@ -8961,6 +8986,13 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       },
       "\u2715"
     )))) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "8/1", fontSize: 10 } }, "PDF \xB7 DOCX \xB7 \uC774\uBBF8\uC9C0 \uC678 \uC790\uB8CC\uB97C \uCD5C\uB300 ", max, "\uAC1C, \uC804\uBD80 \uD569\uCCD0 ", _fmtSize(maxTotal), " \uAE4C\uC9C0 \uCCA8\uBD80 (\uAC8C\uC2DC\uAE00 \uBCF8\uBB38 \uD558\uB2E8\uC5D0 \uB2E4\uC6B4\uB85C\uB4DC \uB9C1\uD06C\uB85C \uD45C\uC2DC)"));
+  };
+  var uploadFailMessage = (name, err) => {
+    const raw = String((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958");
+    if (/로그인|인증|401/.test(raw)) return `'${name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uB85C\uADF8\uC778\uC774 \uD480\uB838\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD55C \uB4A4 \uC62C\uB824 \uC8FC\uC138\uC694.`;
+    if (/\.heic|heif|지원하지 않는 파일/i.test(raw)) return `'${name}' \uC740(\uB294) \uC62C\uB9B4 \uC218 \uC5C6\uB294 \uD615\uC2DD\uC785\uB2C8\uB2E4. (${raw}) \uC544\uC774\uD3F0 \uC0AC\uC9C4\uC774\uB77C\uBA74 \uC124\uC815 \u203A \uCE74\uBA54\uB77C \u203A \uD3EC\uB9F7\uC744 '\uB192\uC740 \uD638\uD658\uC131' \uC73C\uB85C \uBC14\uAFB8\uAC70\uB098, \uACF5\uC720\uD560 \uB54C JPEG \uB85C \uC800\uC7A5\uD574 \uC62C\uB824 \uC8FC\uC138\uC694.`;
+    if (/용량|크기|too large|413/i.test(raw)) return `'${name}' \uC774(\uAC00) \uB108\uBB34 \uD07D\uB2C8\uB2E4. (${raw}) \uC0AC\uC9C4\uC744 \uC904\uC5EC\uC11C \uC62C\uB824 \uC8FC\uC138\uC694.`;
+    return `'${name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694. (${raw})`;
   };
   var InlineMark = ({ d, size = 12, label }) => /* @__PURE__ */ React.createElement(
     "svg",
@@ -9473,17 +9505,23 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             onCancel: onClose,
             onPayloadChange: setDraftPayload,
             onPublish: async (payload) => {
-              var _a3, _b;
+              var _a3, _b, _c, _d, _e, _f;
               try {
                 if (draftIdRef.current) (_b = (_a3 = window.BGNJ_DRAFTS) == null ? void 0 : _a3.remove) == null ? void 0 : _b.call(_a3, draftIdRef.current);
-              } catch (_e) {
-                console.warn("[bgnj] CommunityPage.jsx:709 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+              } catch (_e2) {
+                console.warn("[bgnj] CommunityPage.jsx:709 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
               }
               let savedPost;
               try {
                 savedPost = writing === true ? await window.BGNJ_COMMUNITY.createPostRemote(payload) : await window.BGNJ_COMMUNITY.updatePostRemote(writing.id, payload);
               } catch (err) {
-                savedPost = writing === true ? window.BGNJ_COMMUNITY.createPost(payload) : window.BGNJ_COMMUNITY.updatePost(writing.id, payload);
+                if (writing === true) {
+                  savedPost = window.BGNJ_COMMUNITY.createPost(payload);
+                  (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.error) == null ? void 0 : _d.call(_c, `\uC11C\uBC84 \uC800\uC7A5 \uC2E4\uD328 \u2014 \uC774 \uAE30\uAE30\uC5D0\uB9CC \uC784\uC2DC \uBCF4\uAD00\uD588\uC2B5\uB2C8\uB2E4: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+                } else {
+                  (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, `\uC218\uC815 \uC800\uC7A5 \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"} \u2014 \uCC3D\uC744 \uB2EB\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.`);
+                  return;
+                }
               }
               onClose();
               setRefreshKey((value) => value + 1);
@@ -10579,7 +10617,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     ), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold", disabled: attachBusy }, attachBusy ? "\uC0AC\uC9C4 \uC62C\uB9AC\uB294 \uC911\u2026" : isEditing ? "\uC218\uC815 \uC800\uC7A5 \u2192" : "\uAC8C\uC2DC\uD558\uAE30 \u2192")))));
   };
   var PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, onPrefixClick }) => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e;
     const G2 = window.BGNJ_GUARD;
     const sibList = Array.isArray(siblings) ? siblings : [];
     const sibIndex = sibList.findIndex((p) => String(p.id) === String(post.id));
@@ -10609,12 +10647,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.isBookmarked) == null ? void 0 : _b2.call(_a2, user.id, post.id);
     }, false);
     React.useEffect(() => {
-      var _a2, _b2, _c2, _d, _e, _f;
+      var _a2, _b2, _c2, _d2, _e2, _f;
       setCommentsList(G2.arr(() => {
         var _a3, _b3;
         return (_b3 = (_a3 = window.BGNJ_COMMENTS) == null ? void 0 : _a3.list) == null ? void 0 : _b3.call(_a3, "post", post.id);
       }));
-      (_f = (_e = (_d = (_c2 = (_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.refresh) == null ? void 0 : _b2.call(_a2, "post", post.id)) == null ? void 0 : _c2.then) == null ? void 0 : _d.call(_c2, (next) => setCommentsList(Array.isArray(next) ? next : []))) == null ? void 0 : _e.catch) == null ? void 0 : _f.call(_e, () => {
+      (_f = (_e2 = (_d2 = (_c2 = (_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.refresh) == null ? void 0 : _b2.call(_a2, "post", post.id)) == null ? void 0 : _c2.then) == null ? void 0 : _d2.call(_c2, (next) => setCommentsList(Array.isArray(next) ? next : []))) == null ? void 0 : _e2.catch) == null ? void 0 : _f.call(_e2, () => {
       });
       const onRefreshComments = (e) => {
         const d = e.detail || {};
@@ -10637,8 +10675,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       try {
         if (sessionStorage.getItem(key)) return;
         sessionStorage.setItem(key, "1");
-      } catch (_e) {
-        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (CommunityPage.jsx:1789)", _e);
+      } catch (_e2) {
+        console.warn("[bgnj] \uC800\uC7A5\uC18C \uC77D\uAE30 \u2014 \uC2E4\uD328 \uC2DC \uAE30\uBCF8\uAC12 (CommunityPage.jsx:1789)", _e2);
       }
       window.BGNJ_COMMUNITY.incrementViews(post.id);
       onRefresh == null ? void 0 : onRefresh();
@@ -10739,7 +10777,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setCommentsList(next);
       onRefresh == null ? void 0 : onRefresh();
     };
-    return /* @__PURE__ */ React.createElement("article", { className: "section post-read" }, /* @__PURE__ */ React.createElement("div", { className: "container post-read-container" }, /* @__PURE__ */ React.createElement("div", { className: "post-back-bar" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn post-back-btn", onClick: () => setPostId(null) }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 16, lineHeight: 1 } }, "\u2190"), /* @__PURE__ */ React.createElement("span", null, "\uBAA9\uB85D\uC73C\uB85C"), post.category && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2 post-back-board" }, window.BGNJ_BOARD_LABEL(post)))), /* @__PURE__ */ React.createElement("header", { style: { borderBottom: "1px solid var(--line-2)", paddingBottom: 32, marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, window.BGNJ_BOARD_LABEL(post)), post.prefix && /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("article", { className: "section post-read" }, /* @__PURE__ */ React.createElement("div", { className: "container post-read-container" }, /* @__PURE__ */ React.createElement("div", { className: "post-back-bar" }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn post-back-btn", onClick: () => setPostId(null) }, /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { fontSize: 16, lineHeight: 1 } }, "\u2190"), /* @__PURE__ */ React.createElement("span", null, "\uBAA9\uB85D\uC73C\uB85C"), post.category && /* @__PURE__ */ React.createElement("span", { className: "mono dim-2 post-back-board" }, (_a = window.BGNJ_BOARD_LABEL) == null ? void 0 : _a.call(window, post)))), /* @__PURE__ */ React.createElement("header", { style: { borderBottom: "1px solid var(--line-2)", paddingBottom: 32, marginBottom: 48 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge badge-gold" }, (_b = window.BGNJ_BOARD_LABEL) == null ? void 0 : _b.call(window, post)), post.prefix && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -10758,7 +10796,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       letterSpacing: "-0.01em",
       marginBottom: 24,
       textWrap: "balance"
-    } }, post.title), ((_a = post.tags) == null ? void 0 : _a.length) > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 } }, post.tags.map((t) => /* @__PURE__ */ React.createElement("span", { key: t, className: "tag-chip" }, "#", t))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 24, alignItems: "center", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ink-3)", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "gold", style: { display: "inline-flex", alignItems: "center" } }, post.author, /* @__PURE__ */ React.createElement(AuthorGradeBadge, { authorId: post.authorId, author: post.author, authorEmail: post.authorEmail })), /* @__PURE__ */ React.createElement("time", { dateTime: (post.createdAt || post.date || "").toString() }, post.createdAt ? window.BGNJ_FMT.kstShort(post.createdAt) : post.date), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_b = post.views) != null ? _b : 0), /* @__PURE__ */ React.createElement("span", null, "\uB313\uAE00 ", commentsList.length), /* @__PURE__ */ React.createElement("span", null, "\uACF5\uAC10 ", likesCount))), (() => {
+    } }, post.title), ((_c = post.tags) == null ? void 0 : _c.length) > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 } }, post.tags.map((t) => /* @__PURE__ */ React.createElement("span", { key: t, className: "tag-chip" }, "#", t))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 24, alignItems: "center", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ink-3)", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "gold", style: { display: "inline-flex", alignItems: "center" } }, post.author, /* @__PURE__ */ React.createElement(AuthorGradeBadge, { authorId: post.authorId, author: post.author, authorEmail: post.authorEmail })), /* @__PURE__ */ React.createElement("time", { dateTime: (post.createdAt || post.date || "").toString() }, post.createdAt ? window.BGNJ_FMT.kstShort(post.createdAt) : post.date), /* @__PURE__ */ React.createElement("span", null, "\uC870\uD68C ", (_d = post.views) != null ? _d : 0), /* @__PURE__ */ React.createElement("span", null, "\uB313\uAE00 ", commentsList.length), /* @__PURE__ */ React.createElement("span", null, "\uACF5\uAC10 ", likesCount))), (() => {
       var _a2, _b2;
       const html = ((_a2 = post.body) == null ? void 0 : _a2.html) || "";
       let cleanHtml = html;
@@ -10773,12 +10811,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           }
           return "";
         });
-      } catch (_e) {
-        console.warn("[bgnj] CommunityPage.jsx:1958 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+      } catch (_e2) {
+        console.warn("[bgnj] CommunityPage.jsx:1958 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
       }
       const slideImages = Array.isArray(post.images) && post.images.length > 0 ? post.images : extractedImages;
       return /* @__PURE__ */ React.createElement(React.Fragment, null, slideImages.length > 0 && /* @__PURE__ */ React.createElement("section", { "aria-label": "\uCCA8\uBD80 \uC774\uBBF8\uC9C0", style: { margin: "24px 0 32px" } }, /* @__PURE__ */ React.createElement(ImageSlider, { images: slideImages })), cleanHtml ? /* @__PURE__ */ React.createElement("div", { className: "post-body", dangerouslySetInnerHTML: { __html: window.BGNJ_SAFE_HTML(cleanHtml) } }) : ((_b2 = post.body) == null ? void 0 : _b2.text) ? /* @__PURE__ */ React.createElement("div", { className: "post-body", style: { whiteSpace: "pre-wrap" } }, post.body.text) : /* @__PURE__ */ React.createElement("div", { className: "post-body dim-2", style: { fontStyle: "italic" } }, "\uBCF8\uBB38\uC774 \uBE44\uC5B4\uC788\uC2B5\uB2C8\uB2E4."));
-    })(), ((_c = post.attachments) == null ? void 0 : _c.length) > 0 && /* @__PURE__ */ React.createElement("section", { "aria-label": "\uCCA8\uBD80 \uD30C\uC77C", style: { margin: "40px 0" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true", style: { marginBottom: 14 } }, "FILES \xB7 \uCCA8\uBD80 \uD30C\uC77C (", post.attachments.length, ")"), /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 } }, post.attachments.map((a, i) => /* @__PURE__ */ React.createElement("li", { key: i, style: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "1px solid var(--line)", background: "var(--bg-2)", fontSize: 13 } }, /* @__PURE__ */ React.createElement(ClipMark, { size: 13 }), /* @__PURE__ */ React.createElement("span", { style: { flex: 1, color: "var(--ink)" } }, a.name), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, _fmtSize(a.size)), /* @__PURE__ */ React.createElement(
+    })(), ((_e = post.attachments) == null ? void 0 : _e.length) > 0 && /* @__PURE__ */ React.createElement("section", { "aria-label": "\uCCA8\uBD80 \uD30C\uC77C", style: { margin: "40px 0" } }, /* @__PURE__ */ React.createElement("div", { className: "section-eyebrow", "aria-hidden": "true", style: { marginBottom: 14 } }, "FILES \xB7 \uCCA8\uBD80 \uD30C\uC77C (", post.attachments.length, ")"), /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 } }, post.attachments.map((a, i) => /* @__PURE__ */ React.createElement("li", { key: i, style: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "1px solid var(--line)", background: "var(--bg-2)", fontSize: 13 } }, /* @__PURE__ */ React.createElement(ClipMark, { size: 13 }), /* @__PURE__ */ React.createElement("span", { style: { flex: 1, color: "var(--ink)" } }, a.name), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, _fmtSize(a.size)), /* @__PURE__ */ React.createElement(
       "a",
       {
         href: a.dataUrl,
@@ -14495,24 +14533,27 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, lineHeight: 1.5, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { className: "gold" }, n.fromName), /* @__PURE__ */ React.createElement("span", { className: "dim" }, " \xB7 ", n.message || "\uC0C8 \uC54C\uB9BC")),
       n.postTitle && /* @__PURE__ */ React.createElement("div", { className: "dim", style: { fontSize: 12, lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, "\u25B8 ", n.postTitle),
       /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, marginTop: 4, letterSpacing: "0.1em" } }, window.BGNJ_FMT.kstDateTime(n.createdAt))
-    ))))), tab === "community" && /* @__PURE__ */ React.createElement("article", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 } }, "MY COMMUNITY"), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 22, marginBottom: 12 } }, "\uB0B4\uAC00 \uC791\uC131\uD55C \uAE00 ", /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 12 } }, myCommunityPosts.length, "\uAC74")), myCommunityPosts.length === 0 ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 14 } }, "\uC544\uC9C1 \uC791\uC131\uD55C \uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => go("community") }, "\uCEE4\uBBA4\uB2C8\uD2F0\uB85C \uC774\uB3D9")) : /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 } }, myCommunityPosts.map((post) => /* @__PURE__ */ React.createElement("li", { key: post.id }, /* @__PURE__ */ React.createElement(
-      "button",
-      {
-        type: "button",
-        onClick: () => goToPost(post.id),
-        style: {
-          all: "unset",
-          cursor: "pointer",
-          width: "100%",
-          padding: "10px 12px",
-          borderLeft: "2px solid var(--primary-dim)",
-          background: "rgba(245,213,72,0.04)"
-        }
-      },
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { className: "pill", style: { fontSize: 9 } }, window.BGNJ_BOARD_LABEL(post)), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, post.date)),
-      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, lineHeight: 1.5, marginBottom: 4 } }, post.title),
-      /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uB313\uAE00 ", post.replies, "\uAC1C \xB7 \uC870\uD68C ", post.views, "\uD68C")
-    ))))), tab === "profile" && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 18 } }, /* @__PURE__ */ React.createElement(ProfileEditor, { user, onSaved: () => {
+    ))))), tab === "community" && /* @__PURE__ */ React.createElement("article", { className: "card" }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 } }, "MY COMMUNITY"), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 22, marginBottom: 12 } }, "\uB0B4\uAC00 \uC791\uC131\uD55C \uAE00 ", /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 12 } }, myCommunityPosts.length, "\uAC74")), myCommunityPosts.length === 0 ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, marginBottom: 14 } }, "\uC544\uC9C1 \uC791\uC131\uD55C \uAE00\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => go("community") }, "\uCEE4\uBBA4\uB2C8\uD2F0\uB85C \uC774\uB3D9")) : /* @__PURE__ */ React.createElement("ul", { style: { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 10 } }, myCommunityPosts.map((post) => {
+      var _a2;
+      return /* @__PURE__ */ React.createElement("li", { key: post.id }, /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: () => goToPost(post.id),
+          style: {
+            all: "unset",
+            cursor: "pointer",
+            width: "100%",
+            padding: "10px 12px",
+            borderLeft: "2px solid var(--primary-dim)",
+            background: "rgba(245,213,72,0.04)"
+          }
+        },
+        /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, alignItems: "center", marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { className: "pill", style: { fontSize: 9 } }, (_a2 = window.BGNJ_BOARD_LABEL) == null ? void 0 : _a2.call(window, post)), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 10 } }, post.date)),
+        /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, lineHeight: 1.5, marginBottom: 4 } }, post.title),
+        /* @__PURE__ */ React.createElement("div", { className: "dim-2 mono", style: { fontSize: 10 } }, "\uB313\uAE00 ", post.replies, "\uAC1C \xB7 \uC870\uD68C ", post.views, "\uD68C")
+      ));
+    }))), tab === "profile" && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 18 } }, /* @__PURE__ */ React.createElement(ProfileEditor, { user, onSaved: () => {
     } }), /* @__PURE__ */ React.createElement(PasswordChangeForm, null))));
   };
   var ProfileEditor = ({ user, onSaved }) => {
@@ -15559,6 +15600,26 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     return VALID_ROUTES.includes(seg) ? seg : "home";
   };
   var routeToPath = (r) => r === "home" ? "/" : "/" + r;
+  var PRIVATE_ROUTES = /* @__PURE__ */ new Set(["admin", "login", "signup", "mypage", "checkout"]);
+  var applyRobotsMeta = (route) => {
+    try {
+      const priv = PRIVATE_ROUTES.has(route);
+      let tag = document.querySelector('meta[name="robots"]');
+      if (priv) {
+        if (!tag) {
+          tag = document.createElement("meta");
+          tag.setAttribute("name", "robots");
+          document.head.appendChild(tag);
+        }
+        tag.setAttribute("content", "noindex, nofollow, noarchive, nosnippet");
+        tag.setAttribute("data-bgnj-private", "1");
+      } else if (tag && tag.getAttribute("data-bgnj-private") === "1") {
+        tag.remove();
+      }
+    } catch (_e) {
+      console.warn("[bgnj] robots \uBA54\uD0C0 \uCC98\uB9AC \uC2E4\uD328", _e);
+    }
+  };
   var ADMIN_SCRIPTS = [
     "dist/admin.js"
   ];
@@ -15575,7 +15636,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     _adminLoadPromise = new Promise((resolve, reject) => {
       let remaining = ADMIN_SCRIPTS.length;
       let failed = false;
-      ADMIN_SCRIPTS.forEach((src) => {
+      const inject = () => ADMIN_SCRIPTS.forEach((src) => {
         const fullSrc = src + qs;
         const existing = document.querySelector(`script[data-bgnj-admin][src="${fullSrc}"]`);
         if (existing) {
@@ -15608,6 +15669,19 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         };
         document.head.appendChild(s);
       });
+      if (!v) {
+        inject();
+        return;
+      }
+      fetch("/version.json?_=" + Date.now(), { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((j) => {
+        const latest = j && j.version ? String(j.version) : "";
+        if (latest && latest !== v) {
+          console.warn("[bgnj] \uAD00\uB9AC\uC790 \uBC88\uB4E4 \uB85C\uB4DC \uC911\uB2E8 \u2014 \uD654\uBA74 \uBC84\uC804(" + v + ")\uC774 \uC11C\uBC84(" + latest + ")\uC640 \uB2E4\uB974\uB2E4. \uC0C8\uB85C\uACE0\uCE68\uD55C\uB2E4.");
+          _purgeAndReload();
+          return;
+        }
+        inject();
+      }).catch(() => inject());
     }).catch((err) => {
       _adminLoadPromise = null;
       if (attempt < 1) {
@@ -15953,6 +16027,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       } catch (_e) {
         console.warn("[bgnj] \uBB38\uC11C \uC81C\uBAA9 (boot.jsx:659)", _e);
       }
+      applyRobotsMeta(route);
       const onScRefresh = () => {
         var _a2, _b2, _c2, _d2;
         const sc2 = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};

@@ -596,7 +596,7 @@ const HomePage = ({ go }) => {
           kind: 'post', id: p.id, title: p.title,
           // v00.295 — p.category 는 '글 쓸 때 박아 넣은 글자'라 게시판 이름이 바뀌면 옛 이름이 남는다.
           //   게시판의 현재 이름을 먼저 찾고, 못 찾을 때만 저장된 글자를 쓴다.
-          tag: window.BGNJ_BOARD_LABEL(p) || '광장',
+          tag: window.BGNJ_BOARD_LABEL?.(p) || '광장',
           ts: t, date: fmt(t),
           onGo: () => {
             try { sessionStorage.setItem('bgnj_pending_post_id', String(p.id)); }

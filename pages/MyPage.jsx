@@ -498,7 +498,7 @@ const MyPage = ({ go, user, cart }) => {
                       background: 'rgba(245,213,72,0.04)',
                     }}>
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 4 }}>
-                      <span className="pill" style={{ fontSize: 9 }}>{window.BGNJ_BOARD_LABEL(post)}</span>
+                      <span className="pill" style={{ fontSize: 9 }}>{window.BGNJ_BOARD_LABEL?.(post)}</span>
                       <span className="mono dim-2" style={{ fontSize: 10 }}>{post.date}</span>
                     </div>
                     <div style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 4 }}>{post.title}</div>

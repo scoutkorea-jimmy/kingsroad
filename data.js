@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.306.005",
+  version: "00.306.006",
   build: "2026.08.25",
   channel: "preview",
 };
@@ -1987,10 +1987,17 @@ window.BGNJ_COMMUNITY = {
     } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
   },
   updatePost(postId, patch) {
-    // 서버 캐시 항목이면 서버 업데이트로 위임 (fire-and-forget).
+    // v00.306.006 — 예전엔 .catch(() => {}) 였다. 저장이 실패해도 화면은
+    //   `{...serverPost, ...patch}` 를 돌려줘 **고쳐진 것처럼** 보였고, 새로고침하면 원래대로였다.
+    //   오늘 아침 댓글 사고와 **똑같은 모양**이다 — 조용한 실패는 사용자에게 거짓말을 한다.
     const serverPost = this._serverPosts.find((p) => String(p.id) === String(postId));
     if (serverPost) {
-      this.updatePostRemote(postId, patch).catch(() => {});
+      this.updatePostRemote(postId, patch).catch((e) => {
+        try { window.BGNJ_TOAST?.error?.(`수정 저장 실패: ${e?.message || '알 수 없는 오류'}`); }
+        catch (_e) { console.warn('[bgnj] 알림 표시 실패', _e); }
+        // 서버에서 다시 읽어 화면을 **사실** 로 되돌린다.
+        this.refreshPosts().catch(() => {});
+      });
       return { ...serverPost, ...patch };
     }
     const posts = this.listPosts().map((post) => (
@@ -2006,7 +2013,18 @@ window.BGNJ_COMMUNITY = {
     const authorId = targetPost?.authorId || null;
     const serverPost = this._serverPosts.find((p) => String(p.id) === String(postId));
     if (serverPost) {
-      this.deletePostRemote(postId).catch(() => {});
+      // v00.306.006 — 삭제가 실패해도 화면에서는 지워진 것처럼 보였다.
+      //   새로고침하면 글이 되살아난다 — 지운 줄 알았던 사람에게는 사고다.
+      this.deletePostRemote(postId).catch((e) => {
+        try { window.BGNJ_TOAST?.error?.(`삭제 실패: ${e?.message || '알 수 없는 오류'}`); }
+        catch (_e) { console.warn('[bgnj] 알림 표시 실패', _e); }
+        // 지운 척했던 글을 되돌려 놓는다.
+        if (!this._serverPosts.some((p) => String(p.id) === String(postId))) {
+          this._serverPosts = [serverPost, ...this._serverPosts];
+        }
+        try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다', _e); }
+        this.refreshPosts().catch(() => {});
+      });
       this._serverPosts = this._serverPosts.filter((p) => String(p.id) !== String(postId));
       try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js:1641)', _e); }
       // v00.150 — auto-trigger 비활성.

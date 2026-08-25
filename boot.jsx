@@ -384,6 +384,31 @@ const pathToRoute = (pathname) => {
 };
 const routeToPath = (r) => r === 'home' ? '/' : '/' + r;
 
+// v00.306.006 — 검색에 나오면 안 되는 화면들.
+//   관리자만이 아니라 **로그인·가입·마이페이지·결제**까지 같이 막는다.
+//   관리자 하나만 막으면 나머지로 같은 사고가 난다 — 성질로 막아야 한다.
+const PRIVATE_ROUTES = new Set(['admin', 'login', 'signup', 'mypage', 'checkout']);
+const applyRobotsMeta = (route) => {
+  try {
+    const priv = PRIVATE_ROUTES.has(route);
+    let tag = document.querySelector('meta[name="robots"]');
+    if (priv) {
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('name', 'robots');
+        document.head.appendChild(tag);
+      }
+      // noindex: 색인 금지 · nofollow: 링크 따라가지 말 것 · noarchive: 저장본 금지
+      tag.setAttribute('content', 'noindex, nofollow, noarchive, nosnippet');
+      tag.setAttribute('data-bgnj-private', '1');
+    } else if (tag && tag.getAttribute('data-bgnj-private') === '1') {
+      // 공개 화면으로 돌아오면 **반드시 걷어낸다.** 안 걷어내면 SPA 특성상
+      // 관리자에 한 번 들렀던 세션의 모든 공개 글이 색인에서 빠진다.
+      tag.remove();
+    }
+  } catch (_e) { console.warn('[bgnj] robots 메타 처리 실패', _e); }
+};
+
 // v00.198 — admin lazy-load.
 // 사용자 우선순위 '홈페이지 반응성 + 기능 회귀 0 + 속도감'.
 // 이전엔 4개 admin 스크립트 (총 ~3.85MB raw / ~360KB gz) 가 모든 방문자에게 강제 defer 로드 →
@@ -405,10 +430,20 @@ const _loadAdminScripts = (attempt = 0) => {
   }
   const v = (window.BGNJ_VERSION?.version || '').toString();
   const qs = v ? `?v=${v}` : '';
+  // v00.306.006 — 운영 오류 로그 실측: 2026-08-25 11:01 `/admin` 에서
+  //   `window.BGNJ_BOARD_LABEL is not a function` (render/TypeError) 로 화면이 죽었다.
+  //
+  //   원인은 **두 번들의 버전이 어긋난 것**이다. `?v=` 는 브라우저 캐시 키일 뿐이고,
+  //   서버는 그 값과 무관하게 **늘 현재 파일**을 준다. 그래서 이런 조합이 생긴다:
+  //     옛 index.html(캐시) → 옛 app.js(캐시, 그 함수가 없음)
+  //     → 관리자 진입 → admin.js 는 캐시에 없어 **새 파일**을 받음 → 없는 함수를 부름 → 크래시
+  //
+  //   관리자 번들을 받기 전에 지금 돌고 있는 버전이 최신인지 먼저 묻는다.
+  //   어긋나 있으면 섞어 쓰지 않고 새로고침한다 — 섞인 채로 도는 것이 가장 나쁘다.
   _adminLoadPromise = new Promise((resolve, reject) => {
     let remaining = ADMIN_SCRIPTS.length;
     let failed = false;
-    ADMIN_SCRIPTS.forEach((src) => {
+    const inject = () => ADMIN_SCRIPTS.forEach((src) => {
       const fullSrc = src + qs;
       const existing = document.querySelector(`script[data-bgnj-admin][src="${fullSrc}"]`);
       if (existing) {
@@ -439,6 +474,23 @@ const _loadAdminScripts = (attempt = 0) => {
       };
       document.head.appendChild(s);
     });
+
+    // 버전이 맞는지 먼저 묻고, 맞을 때만 관리자 번들을 받는다.
+    // 확인 자체가 실패하면(오프라인 등) 예전처럼 그냥 받는다 — 확인 못 한다고 막으면 관리자가 일을 못 한다.
+    if (!v) { inject(); return; }
+    // bgnj-lint-ignore-next-line direct_fetch
+    fetch('/version.json?_=' + Date.now(), { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const latest = j && j.version ? String(j.version) : '';
+        if (latest && latest !== v) {
+          console.warn('[bgnj] 관리자 번들 로드 중단 — 화면 버전(' + v + ')이 서버(' + latest + ')와 다르다. 새로고침한다.');
+          _purgeAndReload();
+          return;   // resolve/reject 하지 않는다. 곧 새로고침되므로 이 약속은 의미가 없다.
+        }
+        inject();
+      })
+      .catch(() => inject());
   }).catch((err) => {
     _adminLoadPromise = null; // 실패 시 다음 호출이 retry 가능하게.
     if (attempt < 1) {
@@ -758,6 +810,13 @@ const App = () => {
     const seg = ROUTE_TITLES[route] || '';
     const title = route === 'home' ? `${brand} — ${tagline}` : `${seg} — ${brand}`;
     try { document.title = title; } catch (_e) { console.warn('[bgnj] 문서 제목 (boot.jsx:659)', _e); }
+    // v00.306.006 — 관리자·개인 영역은 **검색에 절대 나오면 안 된다.**
+    //   robots.txt 는 '부탁' 이고 크롤러가 지킬 의무가 없다. 게다가 SPA 라
+    //   /admin 은 GitHub Pages 가 404 를 주고 404.html 이 `/?p=/admin` 으로 돌린다 —
+    //   그 주소는 robots.txt 의 `Disallow: /admin` 에 **걸리지 않는다**(경로가 `/` 다).
+    //   그래서 페이지 스스로 '색인하지 말라' 고 말하게 한다. 이건 렌더링 뒤에 읽히므로
+    //   robots.txt 를 무시하고 들어온 크롤러에도 통한다.
+    applyRobotsMeta(route);
     // route 변경 시 사이트 콘텐츠 refresh 이벤트도 listen — 브랜드명/태그라인 바뀌면 즉시 반영.
     const onScRefresh = () => {
       const sc2 = window.BGNJ_SITE_CONTENT?.get?.() || {};
