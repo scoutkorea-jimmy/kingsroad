@@ -379,6 +379,73 @@ const run = async () => {
     check("목록으로 나오면 상세가 지워진다", hash === "#admin=%EA%B0%95%EC%97%B0", hash);
   }
 
+  console.log("\n── 10. 댓글이 서버에 남는가 (2026-08-25 '댓글이 안 보인다' 민원) ──");
+  {
+    const C2 = w.BGNJ_COMMUNITY;
+    C2._serverLoaded = true;
+    C2._serverPosts = [{ id: 500, title: "댓글 달 글", categoryId: "free", _remote: true }];
+    C2._commentsCache = {};
+
+    let sent = null;
+    let serverRows = [];
+    const toasts = [];
+    w.BGNJ_TOAST = { error: (m) => toasts.push(String(m)), success() {}, info() {} };
+    w.BGNJ_API = {
+      posts: {
+        comments: {
+          list: async () => ({ comments: serverRows }),
+          create: async (postId, payload) => {
+            sent = { postId, ...payload };
+            const text = String(payload.body || "").trim();
+            if (!text) throw new Error("내용을 입력해 주세요.");   // 워커와 동일한 판정
+            serverRows = [...serverRows, {
+              id: 1, post_id: Number(postId), parent_id: payload.parentId || null,
+              body: text, author_id: "u-1", author: "글쓴이",
+              created_at: "2026-08-25T01:02:03Z",
+            }];
+            return { id: 1 };
+          },
+          remove: async () => { serverRows = []; return { ok: true }; },
+        },
+      },
+    };
+
+    // 화면(CommunityPage.submitComment)이 실제로 넘기는 모양 그대로.
+    C2.addComment(500, {
+      id: "comment-1", author: "글쓴이", authorId: "u-1",
+      date: "2026.08.25 10:02", text: "댓글 본문입니다",
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
+
+    check("댓글 본문이 서버로 전달된다", !!sent && String(sent.body || "").trim() === "댓글 본문입니다",
+      sent ? `보낸 body=${JSON.stringify(sent.body)}` : "create 가 호출조차 안 됐다");
+    check("서버에 댓글이 남는다", serverRows.length === 1, `서버 행 ${serverRows.length}개`);
+
+    // 새로고침 = 캐시를 버리고 서버에서 다시 읽는 상황.
+    C2._commentsCache = {};
+    await C2.refreshComments(500);
+    const list = C2.getComments(500);
+    check("새로고침 뒤에도 댓글이 남는다", list.length === 1, `${list.length}개`);
+    check("댓글 본문이 화면 필드(text)로 온다", !!(list[0] && list[0].text), JSON.stringify(list[0] || {}).slice(0, 120));
+    check("댓글 작성 시각이 화면 필드(date)로 온다", !!(list[0] && list[0].date), JSON.stringify(list[0] || {}).slice(0, 120));
+
+    // 저장이 실패하면 — 화면에만 남아 '있는 척' 하면 안 된다.
+    serverRows = [];
+    C2._commentsCache = {};
+    w.BGNJ_API.posts.comments.create = async () => { throw new Error("서버 장애"); };
+    C2.addComment(500, { id: "comment-2", author: "글쓴이", authorId: "u-1", date: "x", text: "실패할 댓글" });
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
+    check("저장 실패를 사용자에게 알린다", toasts.length > 0, "조용히 삼키면 사용자는 저장된 줄 안다");
+    check("실패한 댓글은 화면에 남지 않는다", C2.getComments(500).length === 0, `${C2.getComments(500).length}개 남음`);
+
+    // 삭제도 서버까지 가야 한다 — 로컬에서만 지우면 새로고침에 되살아난다.
+    const src = readFileSync(path.join(ROOT, "data.js"), "utf8");
+    check("댓글 삭제가 서버 API 를 부른다", /comments\.remove\(/.test(src),
+      "로컬 캐시만 지우면 새로고침 때 되살아난다");
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

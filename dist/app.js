@@ -401,8 +401,8 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.306.000",
-    build: "2026.08.24",
+    version: "00.306.001",
+    build: "2026.08.25",
     channel: "preview"
   };
   try {
@@ -2382,9 +2382,11 @@
           postId: c.post_id,
           parentId: c.parent_id,
           body: c.body,
+          text: c.body,
           authorId: c.author_id,
           author: c.author,
-          createdAt: c.created_at
+          createdAt: c.created_at,
+          date: window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(c.created_at) : String(c.created_at || "")
         }));
         try {
           window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
@@ -2404,13 +2406,15 @@
     saveComments(_postId, _comments) {
     },
     async addCommentRemote(postId, payload) {
-      var _a;
-      await window.BGNJ_API.posts.comments.create(postId, { body: payload.body, parentId: payload.parentId });
+      var _a, _b, _c;
+      const text = String((_b = (_a = payload.body) != null ? _a : payload.text) != null ? _b : "").trim();
+      if (!text) throw new Error("\uB313\uAE00 \uB0B4\uC6A9\uC774 \uBE44\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.");
+      await window.BGNJ_API.posts.comments.create(postId, { body: text, parentId: payload.parentId });
       await this.refreshComments(postId);
       if (payload.authorId) {
         if (!window.BGNJ_AUTO_GRADE_DISABLED) {
           try {
-            (_a = window.BGNJ_GRADE_PROMO) == null ? void 0 : _a.maybePromote(payload.authorId);
+            (_c = window.BGNJ_GRADE_PROMO) == null ? void 0 : _c.maybePromote(payload.authorId);
           } catch (_e) {
             console.warn("[bgnj] data.js:1714 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
@@ -2425,7 +2429,20 @@
         const optimistic = { ...payload, id: `tmp-${Date.now()}`, createdAt: (/* @__PURE__ */ new Date()).toISOString() };
         const arr = this._commentsCache[String(postId)] || [];
         this._commentsCache[String(postId)] = [...arr, optimistic];
-        this.addCommentRemote(postId, payload).catch(() => {
+        this.addCommentRemote(postId, payload).catch((e) => {
+          var _a2, _b;
+          const cur = this._commentsCache[String(postId)] || [];
+          this._commentsCache[String(postId)] = cur.filter((c) => String(c.id) !== String(optimistic.id));
+          try {
+            (_b = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b.call(_a2, `\uB313\uAE00 \uC800\uC7A5 \uC2E4\uD328: ${(e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+          } catch (_e) {
+            console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
+          }
+          try {
+            window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
+          } catch (_e) {
+            console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4", _e);
+          }
         });
         try {
           window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
@@ -2456,6 +2473,22 @@
       if (post && post._remote) {
         const arr = this._commentsCache[String(postId)] || [];
         this._commentsCache[String(postId)] = arr.filter((c) => String(c.id) !== String(commentId));
+        if (!String(commentId).startsWith("tmp-")) {
+          window.BGNJ_API.posts.comments.remove(postId, commentId).then(() => this.refreshComments(postId)).catch((e) => {
+            var _a2, _b2;
+            this._commentsCache[String(postId)] = arr;
+            try {
+              (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, `\uB313\uAE00 \uC0AD\uC81C \uC2E4\uD328: ${(e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+            } catch (_e) {
+              console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
+            }
+            try {
+              window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
+            } catch (_e) {
+              console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4", _e);
+            }
+          });
+        }
         try {
           window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
         } catch (_e) {

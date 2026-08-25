@@ -447,3 +447,45 @@ posts          walk-independence · prefix='걸어서 독립운동 속으로' 23
 ### 남은 것 — 사용자 판단 필요
 
 - **김유미 등급 정정** — 관리자 → 회원 → `동행`. 원인은 §11.
+
+---
+
+## 12. 추가 건 — "작성한 댓글들이 안 보인다" 민원 (2026-08-25 · v00.306.001)
+
+### 지시 내역 (사용자 원문)
+
+> 작성한 댓글들이 안보인다는 민원 발생. 댓글이 왜 안뜨는지 원인 분석하고 문제 해결좀
+
+### 실측 — 서버에는 댓글이 **한 건도 없었다**
+
+`GET /api/posts?limit=300` · 110편 **전부 `replies=0`** · 표본 7편 `GET /posts/:id/comments` → 전부 `{"comments":[]}`.
+게시판 6개 `allow_comment_read` · `allow_comment_write` 는 전부 `1` — 권한 문제가 아니다.
+
+### 근본 원인 — 필드 이름이 어긋났고, 그 오류를 빈 catch 가 삼켰다
+
+| 자리 | 있던 것 |
+|---|---|
+| `CommunityPage.submitComment` | `{ text: trimmed }` 로 넘긴다 |
+| `data.js addCommentRemote` | `{ body: payload.body }` 로 읽는다 → **`undefined`** |
+| `workers handleCommentsCreate` | 빈 본문 → `400 내용을 입력해 주세요.` |
+| `data.js addComment` | `.catch(() => {})` — **오류를 통째로 삼켰다** |
+
+낙관적 표시가 화면에 먼저 뜨므로 **쓴 사람 눈에는 등록된 것처럼 보였고**, 새로고침하면 사라졌다.
+백엔드 이관(`44b0537`) 이후 서버 게시글 댓글은 **한 번도 저장된 적이 없다.** 과거 댓글은 복구 불가.
+
+두 번째 어긋남 — `refreshComments` 는 `body`·`createdAt` 로 매핑하는데 `CommentTree` 는 `c.text`·`c.date` 를 읽는다.
+첫 번째만 고쳤으면 **작성자와 빈 줄만** 보였을 것이다.
+
+### 고친 것 (`data.js` 만 — 워커 배포 불필요)
+
+- `addCommentRemote` — `payload.body ?? payload.text`, 빈 본문은 보내기 전에 막는다
+- `refreshComments` — `text` · `date`(`BGNJ_FMT.kstShort`) 동시 매핑
+- `addComment` — 실패 시 임시 댓글 회수 + `BGNJ_TOAST.error`
+- `deleteComment` — v00.141 부터 있던 `DELETE /posts/:id/comments/:cid` 를 실제로 호출(실패 시 원복)
+- `tools/smoke.mjs` §10 — 회귀 시험 8건
+
+### 남은 것 — 칼럼 댓글은 별개 문제
+
+`BGNJ_COLUMNS.addComment` 는 `col-{id}` 키로 `BGNJ_COMMUNITY` 를 재사용하는데 `getPost('col-5')` 가 `null` 이라
+서버 경로를 아예 타지 않는다(`saveComments` 는 no-op). **워커에 칼럼 댓글 endpoint 자체가 없다.**
+고치려면 스키마 + 워커 + `wrangler deploy` 가 필요하다 — 사용자 판단 대기.

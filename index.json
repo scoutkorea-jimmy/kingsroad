@@ -5,10 +5,10 @@
     "language": "ko-KR",
     "description": "한국의 역사·문화·자연을 함께 여행하는 커뮤니티"
   },
-  "generatedAt": "2026-08-24T09:46:41.126Z",
+  "generatedAt": "2026-08-25T10:53:33.440Z",
   "counts": {
     "columns": 72,
-    "posts": 109,
+    "posts": 110,
     "books": 6,
     "series": 1
   },
@@ -17,7 +17,7 @@
       "name": "걸어서 독립운동 속으로",
       "board": "신지식 청년사관",
       "url": "https://bgnj.net/community/series-walk-independence",
-      "count": 23
+      "count": 24
     }
   ],
   "columns": [
@@ -671,6 +671,17 @@
     }
   ],
   "posts": [
+    {
+      "id": 140,
+      "title": "서대문형무소_김원녕",
+      "url": "https://bgnj.net/community/140",
+      "author": "김원녕",
+      "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
+      "publishedAt": "2026-08-25T06:12:40.645Z",
+      "summary": "서대문형무소를 직접 방문한 뒤, 교과서 속에서 배웠던 일제강점기의 역사가 단순한 과거의 사건이 아니라 실제 사람들의 삶과 고통이 축적된 역사라는 사실을 더욱 생생하게 느낄 수 있었다. 특히 서대문형무소의 좁고 어두운 감방과 고문실, 그리고 당시의 수감 환경을 살펴보면서 일제의 식민 통치가 단순히 영토를 지배하는 것에 그치지 않고 인간의 존엄성과 자유까지 …"
+    },
     {
       "id": 139,
       "title": "서대문형무소를 다녀오며",
