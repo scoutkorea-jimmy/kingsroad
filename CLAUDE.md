@@ -90,6 +90,7 @@
 ```bash
 node tools/check-all.mjs       # ★ 이것 하나면 아래 검사 전부 (손대고 나서 항상)
 node tools/build.mjs           # esbuild 번들
+node tools/version-history.mjs # git 커밋 → 관리자 '버전 기록' (손으로 적지 않는다)
 node tools/csp-hashes.mjs      # 인라인 script SHA-256 → CSP meta
 node tools/seo-build.mjs       # 검색·AI 용 정적 페이지 + sitemap/RSS/index.json (★ 빌드 맨 마지막)
 node tools/check-defaults.mjs  # 코드의 DEFAULT_* ↔ 서버 실제값 대조 (네트워크 필요 — 배포 전/서버 데이터 손댄 뒤)
@@ -107,7 +108,7 @@ bash tools/install-hooks.sh    # pre-commit 훅 재설치
 | check-patterns | 응답 껍데기 · 세고-나서-넣기 · LIKE 와일드카드 | 게시글 못 찾음 · 오버부킹 · 위험한 DELETE |
 | **smoke** | **브라우저 코드를 Node 에서 실제로 실행** | **API 는 멀쩡한데 화면만 깨진 사고** |
 
-**배포 순서를 지킬 것** — `csp-hashes` → `build` → `seo-build`.
+**배포 순서를 지킬 것** — `version-history` → `csp-hashes` → `build` → `seo-build`.
 `seo-build` 가 마지막이 아니면 하위 172개 정적 페이지가 옛 CSP 해시를 물어 통째로 차단된다.
 
 빌드가 `You installed esbuild for another platform` 으로 죽으면 → [rules/60-environment.md](rules/60-environment.md).

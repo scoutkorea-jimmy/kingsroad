@@ -65,6 +65,42 @@ const AdminPage = ({ go }) => {
   // 모두 CommunityPostsAdminPanel 내부 state 로 이전.
   const [postRefreshKey, setPostRefreshKey] = React.useState(0);
   const [versionPage, setVersionPage] = React.useState(1);
+  // v00.306.009 — 버전 기록이 v00.288.002(2026-06-07)에서 멈춰 있었다. 그 사이 18개 버전이 나갔고,
+  //   열어 본 운영자에게는 '쓰다 만 화면' 으로 보였다.
+  //   원인은 **배포할 때마다 손으로 적어야 하는 구조**였다 — 손으로 하는 일은 언젠가 멈춘다.
+  //   이제 tools/version-history.mjs 가 git 커밋에서 만들어 둔 것을 읽는다. 커밋은 매번 남으므로 멈출 수 없다.
+  //   손으로 쓴 옛 기록(213건)은 훨씬 자세하므로 버리지 않고 **같은 버전이면 그쪽을 쓴다.**
+  // v00.306.009 — '오늘' 지표. 댓글·공감·방문은 화면에 안 실려 있어 서버가 센 값을 받는다.
+  //   한국 시간 자정 기준이다 — UTC 로 자르면 아침 9시 이전 활동이 통째로 어제로 빠진다.
+  const [todayStats, setTodayStats] = React.useState(null);
+  const [todayError, setTodayError] = React.useState(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    const load = () => window.BGNJ_API?.admin?.today?.()
+      .then((j) => { if (!cancelled) { setTodayStats(j); setTodayError(null); } })
+      .catch((e) => { if (!cancelled) setTodayError(e?.message || '불러오지 못했습니다'); });
+    load();
+    // 하루를 지켜보는 숫자다. 5분마다 갱신하면 관리자가 새로고침하지 않아도 최신이다.
+    const t = setInterval(load, 5 * 60 * 1000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, []);
+
+  const [autoVersions, setAutoVersions] = React.useState(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    // bgnj-lint-ignore-next-line direct_fetch
+    fetch(`/version-history.json?v=${window.BGNJ_VERSION?.version || ''}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (!cancelled && j && Array.isArray(j.entries)) setAutoVersions(j.entries); })
+      .catch((e) => console.warn('[bgnj] 버전 기록을 못 읽었다 — 손으로 쓴 기록만 보인다', e));
+    return () => { cancelled = true; };
+  }, []);
+  const mergedVersionHistory = React.useMemo(() => {
+    const byVersion = new Map();
+    for (const e of (autoVersions || [])) byVersion.set(e.version, e);
+    for (const e of ADMIN_VERSION_HISTORY) byVersion.set(e.version, e);   // 손으로 쓴 쪽이 이긴다
+    return [...byVersion.values()].sort((a, b) => (a.version < b.version ? 1 : a.version > b.version ? -1 : 0));
+  }, [autoVersions]);
 
   // v00.195 — 사용자 보고 '가입자 2명인데 추이 차트 0'.
   // root cause: allUsers memo 가 postRefreshKey 만 의존 → BGNJ_AUTH.refreshUsers 가 발화하는
@@ -442,8 +478,44 @@ const AdminPage = ({ go }) => {
           const referrerData = [
             { src: '직접 방문', pct: 42 },
           ];
+          // v00.306.009 — 오늘 지표 카드. 어제와 견줘 늘었는지 줄었는지까지 보인다.
+          //   숫자만 있으면 그게 많은 건지 적은 건지 알 수 없다.
+          const TodayCard = ({ label, value, prev, sub }) => {
+            const 준비중 = value === null || value === undefined;
+            const diff = 준비중 || prev === null || prev === undefined ? null : value - prev;
+            return (
+              <div className="card">
+                <div className="mono dim-2" style={{fontSize:10, letterSpacing:'0.25em', marginBottom:12}}>{label}</div>
+                <div className="ko-serif" style={{fontSize:32, color:'var(--ink)'}}>
+                  {준비중 ? <span className="dim-2" style={{fontSize:18}}>—</span> : value.toLocaleString('ko-KR')}
+                </div>
+                <div style={{fontSize:11, marginTop:8, color:'var(--ink-2)'}}>
+                  {준비중 ? (todayError ? '불러오지 못했습니다' : '집계하는 중…') : (
+                    <>
+                      {diff === null ? '' : diff === 0 ? '어제와 같음'
+                        : diff > 0 ? <span className="gold">어제보다 +{diff}</span>
+                        : <span className="dim-2">어제보다 {diff}</span>}
+                      {sub ? <span className="dim-2"> · {sub}</span> : null}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          };
+          const T = todayStats?.today || {};
+          const Y = todayStats?.yesterday || {};
           return (
           <>
+            {/* v00.306.009 — 0줄: 오늘 하루. 운영자가 가장 먼저 보고 싶은 숫자를 맨 위에 둔다. */}
+            <div className="admin-section__title">오늘 (한국 시간 자정 기준 · 5분마다 갱신)</div>
+            <div className="grid grid-4" style={{marginBottom:18}}>
+              <TodayCard label="새 글"   value={todayStats ? T.posts : null}    prev={Y.posts}/>
+              <TodayCard label="새 댓글" value={todayStats ? T.comments : null} prev={Y.comments}/>
+              <TodayCard label="공감"    value={todayStats ? T.likes : null}    prev={Y.likes}/>
+              <TodayCard label="방문자"  value={todayStats ? T.visitors : null} prev={Y.visitors}
+                sub={todayStats ? `조회 ${Number(T.views || 0).toLocaleString('ko-KR')}회` : ''}/>
+            </div>
+
             {/* 1줄: 기존 4종 (전체 회원 / 게시글 / 칼럼 / 책 주문) */}
             <div className="grid grid-4" style={{marginBottom:18}}>
               {dashboardStats.map((s, i) => (
@@ -547,12 +619,12 @@ const AdminPage = ({ go }) => {
 
         {tab === "버전 기록" && (() => {
           const VERSIONS_PER_PAGE = 10;
-          const total = ADMIN_VERSION_HISTORY.length;
+          const total = mergedVersionHistory.length;
           const totalPages = Math.max(1, Math.ceil(total / VERSIONS_PER_PAGE));
           const safePage = Math.min(versionPage, totalPages);
           const start = (safePage - 1) * VERSIONS_PER_PAGE;
-          const slice = ADMIN_VERSION_HISTORY.slice(start, start + VERSIONS_PER_PAGE);
-          const latest = ADMIN_VERSION_HISTORY[0];
+          const slice = mergedVersionHistory.slice(start, start + VERSIONS_PER_PAGE);
+          const latest = mergedVersionHistory[0];
           return (
             <div style={{display:'grid', gap:16}}>
               <div className="card" style={{padding:18, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16, flexWrap:'wrap'}}>
@@ -563,6 +635,15 @@ const AdminPage = ({ go }) => {
                     {latest && <span className="dim-2 mono" style={{fontSize:11, marginLeft:10}}>
                       최신 {latest.version} · {latest.datetime ? (window.BGNJ_FMT?.kstDateTime?.(latest.datetime) || latest.date) : latest.date}
                     </span>}
+                    {/* v00.306.009 — 지금 돌고 있는 버전을 함께 보인다. 목록 맨 위와 다르면
+                        (=이번 배포가 아직 기록에 안 들어왔으면) 그 사실을 대놓고 말한다. */}
+                    <div className="mono dim-2" style={{fontSize:11, marginTop:6}}>
+                      지금 운영 중 <span className="gold">v{window.BGNJ_VERSION?.version}</span>
+                      {latest && latest.version !== window.BGNJ_VERSION?.version && (
+                        <span> · 이번 배포는 다음 기록 때 목록에 들어옵니다</span>
+                      )}
+                      {autoVersions === null && <span> · 자동 기록을 불러오는 중…</span>}
+                    </div>
                   </div>
                 </div>
                 <div style={{display:'flex', alignItems:'center', gap:14, flexWrap:'wrap'}}>
@@ -570,7 +651,7 @@ const AdminPage = ({ go }) => {
                     // v00.107 — CSV 다운로드. version, datetime(KST), date, summary, details(joined), context.
                     const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
                     const rows = [['version', 'datetime_kst', 'date', 'summary', 'details', 'context']];
-                    for (const e of ADMIN_VERSION_HISTORY) {
+                    for (const e of mergedVersionHistory) {
                       rows.push([
                         e.version || '',
                         e.datetime ? (window.BGNJ_FMT?.kstDateTime?.(e.datetime) || '') : '',

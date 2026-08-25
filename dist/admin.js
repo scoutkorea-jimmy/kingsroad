@@ -16606,6 +16606,45 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
     const [kmsTab, setKmsTab] = React.useState("\uAE30\uB2A5\uC815\uC758\uC11C");
     const [postRefreshKey, setPostRefreshKey] = React.useState(0);
     const [versionPage, setVersionPage] = React.useState(1);
+    const [todayStats, setTodayStats] = React.useState(null);
+    const [todayError, setTodayError] = React.useState(null);
+    React.useEffect(() => {
+      let cancelled = false;
+      const load = () => {
+        var _a2, _b2, _c;
+        return (_c = (_b2 = (_a2 = window.BGNJ_API) == null ? void 0 : _a2.admin) == null ? void 0 : _b2.today) == null ? void 0 : _c.call(_b2).then((j) => {
+          if (!cancelled) {
+            setTodayStats(j);
+            setTodayError(null);
+          }
+        }).catch((e) => {
+          if (!cancelled) setTodayError((e == null ? void 0 : e.message) || "\uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4");
+        });
+      };
+      load();
+      const t = setInterval(load, 5 * 60 * 1e3);
+      return () => {
+        cancelled = true;
+        clearInterval(t);
+      };
+    }, []);
+    const [autoVersions, setAutoVersions] = React.useState(null);
+    React.useEffect(() => {
+      var _a2;
+      let cancelled = false;
+      fetch(`/version-history.json?v=${((_a2 = window.BGNJ_VERSION) == null ? void 0 : _a2.version) || ""}`).then((r) => r.ok ? r.json() : null).then((j) => {
+        if (!cancelled && j && Array.isArray(j.entries)) setAutoVersions(j.entries);
+      }).catch((e) => console.warn("[bgnj] \uBC84\uC804 \uAE30\uB85D\uC744 \uBABB \uC77D\uC5C8\uB2E4 \u2014 \uC190\uC73C\uB85C \uC4F4 \uAE30\uB85D\uB9CC \uBCF4\uC778\uB2E4", e));
+      return () => {
+        cancelled = true;
+      };
+    }, []);
+    const mergedVersionHistory = React.useMemo(() => {
+      const byVersion = /* @__PURE__ */ new Map();
+      for (const e of autoVersions || []) byVersion.set(e.version, e);
+      for (const e of ADMIN_VERSION_HISTORY) byVersion.set(e.version, e);
+      return [...byVersion.values()].sort((a, b) => a.version < b.version ? 1 : a.version > b.version ? -1 : 0);
+    }, [autoVersions]);
     React.useEffect(() => {
       const meta = document.createElement("meta");
       meta.name = "robots";
@@ -16936,19 +16975,19 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         G
       }
     ), false, tab === "\uC0AC\uC6A9\uC790 \uC5EC\uC815" && /* @__PURE__ */ React.createElement(UserJourneyPanel, null), tab === "\uBC84\uC804 \uAE30\uB85D" && (() => {
-      var _a2, _b2;
+      var _a2, _b2, _c, _d;
       const VERSIONS_PER_PAGE = 10;
-      const total = ADMIN_VERSION_HISTORY.length;
+      const total = mergedVersionHistory.length;
       const totalPages = Math.max(1, Math.ceil(total / VERSIONS_PER_PAGE));
       const safePage = Math.min(versionPage, totalPages);
       const start = (safePage - 1) * VERSIONS_PER_PAGE;
-      const slice = ADMIN_VERSION_HISTORY.slice(start, start + VERSIONS_PER_PAGE);
-      const latest = ADMIN_VERSION_HISTORY[0];
-      return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 16 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 6 } }, "VERSION HISTORY"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, lineHeight: 1.6 } }, "\uCD1D ", /* @__PURE__ */ React.createElement("span", { className: "ko-serif gold-2", style: { fontSize: 20 } }, total), "\uAC1C \uBC84\uC804 \uAE30\uB85D", latest && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginLeft: 10 } }, "\uCD5C\uC2E0 ", latest.version, " \xB7 ", latest.datetime ? ((_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.kstDateTime) == null ? void 0 : _b2.call(_a2, latest.datetime)) || latest.date : latest.date))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => {
+      const slice = mergedVersionHistory.slice(start, start + VERSIONS_PER_PAGE);
+      const latest = mergedVersionHistory[0];
+      return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 16 } }, /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 6 } }, "VERSION HISTORY"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, lineHeight: 1.6 } }, "\uCD1D ", /* @__PURE__ */ React.createElement("span", { className: "ko-serif gold-2", style: { fontSize: 20 } }, total), "\uAC1C \uBC84\uC804 \uAE30\uB85D", latest && /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginLeft: 10 } }, "\uCD5C\uC2E0 ", latest.version, " \xB7 ", latest.datetime ? ((_b2 = (_a2 = window.BGNJ_FMT) == null ? void 0 : _a2.kstDateTime) == null ? void 0 : _b2.call(_a2, latest.datetime)) || latest.date : latest.date), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, marginTop: 6 } }, "\uC9C0\uAE08 \uC6B4\uC601 \uC911 ", /* @__PURE__ */ React.createElement("span", { className: "gold" }, "v", (_c = window.BGNJ_VERSION) == null ? void 0 : _c.version), latest && latest.version !== ((_d = window.BGNJ_VERSION) == null ? void 0 : _d.version) && /* @__PURE__ */ React.createElement("span", null, " \xB7 \uC774\uBC88 \uBC30\uD3EC\uB294 \uB2E4\uC74C \uAE30\uB85D \uB54C \uBAA9\uB85D\uC5D0 \uB4E4\uC5B4\uC635\uB2C8\uB2E4"), autoVersions === null && /* @__PURE__ */ React.createElement("span", null, " \xB7 \uC790\uB3D9 \uAE30\uB85D\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\u2026")))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => {
         var _a3, _b3;
         const esc = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
         const rows = [["version", "datetime_kst", "date", "summary", "details", "context"]];
-        for (const e of ADMIN_VERSION_HISTORY) {
+        for (const e of mergedVersionHistory) {
           rows.push([
             e.version || "",
             e.datetime ? ((_b3 = (_a3 = window.BGNJ_FMT) == null ? void 0 : _a3.kstDateTime) == null ? void 0 : _b3.call(_a3, e.datetime)) || "" : "",

@@ -17,6 +17,23 @@ AI 는 버전을 임의로 크게 올리지 않습니다. 기능 추가·삭제�
 
 ---
 
+## 1.5 버전 기록은 손으로 적지 않는다 (v00.306.009 —)
+
+`node tools/version-history.mjs` 가 **git 커밋 제목의 `(v00.306.008)` 을 읽어** 만든다.
+`csp-hashes` 앞에 넣어 배포 순서에 포함한다.
+
+> **왜 자동인가** — 예전엔 `AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY` 를 배포마다 손으로 고쳤다.
+> 그래서 **v00.288.002(2026-06-07)에서 멈췄고**, 두 달 반 뒤 운영자가 "쓰다 만 것 같다" 고 말했다.
+> 손으로 해야 하는 일은 언젠가 반드시 멈춘다. 커밋은 어차피 매번 남는다.
+
+손으로 쓴 옛 기록 213건은 **그대로 둔다** — 훨씬 자세하다. 화면이 둘을 합치고 같은 버전이면 손으로 쓴 쪽을 쓴다.
+따라서 **`ADMIN_VERSION_HISTORY` 는 이제 건드리지 않아도 된다.**
+
+⚠ 이번 커밋의 버전은 아직 git 에 없으므로 **다음 실행 때** 목록에 들어온다.
+   화면은 그동안 '지금 운영 중 vX · 이번 배포는 다음 기록 때 목록에 들어옵니다' 로 알린다.
+
+---
+
 ## 2. 3종 동기 — 코드가 바뀌는 커밋마다
 
 1. **`data.js`** — `window.BGNJ_VERSION.version` + `build` 갱신
@@ -24,8 +41,8 @@ AI 는 버전을 임의로 크게 올리지 않습니다. 기능 추가·삭제�
    불일치하면 `check-version.mjs` 가 커밋을 차단합니다
 3. **`rules/handoff/`** — 진행 기록 갱신
 
-`pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY` 는 **v00.202 이후 상시 미수정 패턴**입니다.
-커밋 메시지와 handoff 문서가 그 역할을 대신합니다.
+`pages/admin/AdminDesignHub.jsx` 의 `ADMIN_VERSION_HISTORY` 는 **더 이상 손대지 않습니다** (v00.306.009 —).
+`tools/version-history.mjs` 가 git 에서 만들어 채웁니다 — §1.5 참조.
 
 ### 왜 캐시버스터가 중요한가
 

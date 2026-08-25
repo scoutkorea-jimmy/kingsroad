@@ -738,6 +738,40 @@ const run = async () => {
       "따로 갱신하면 언젠가 한쪽만 바뀌어 목록과 본문이 다른 말을 한다");
   }
 
+  console.log("\n── 16. 관리자 대시보드 '오늘' + 버전 기록 ──");
+  {
+    const wk3 = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+    const admin = readFileSync(path.join(ROOT, "pages/AuthAdminPage.jsx"), "utf8");
+
+    // '오늘' 은 한국 시간 기준이어야 한다. UTC 로 자르면 아침 9시 이전 활동이 통째로 어제로 빠진다.
+    check("오늘 기준이 한국 시간이다", /kstDayStartUtc/.test(wk3) && /9 \* 3600 \* 1000/.test(wk3),
+      "UTC 날짜로 자르면 아침 9시 이전에 쓴 글이 전부 '어제' 가 된다");
+    check("시각 형식 두 가지를 맞춰서 비교한다", /replace\(\$\{col\}, 'T', ' '\)/.test(wk3),
+      "post_likes 만 '2026-08-21 04:29:27' 이고 나머지는 'T...Z' 다 — 문자열 비교가 깨진다");
+    check("오늘 창구는 관리자 전용이다", /const handleAdminToday = async \(req, env\) => \{\s*await requireAdmin/.test(wk3));
+    check("어제와 견줄 값도 함께 준다", /yesterday: \{ posts: pPosts/.test(wk3),
+      "숫자만 있으면 많은 건지 적은 건지 알 수 없다");
+    check("네 지표를 화면에 건다",
+      ['새 글', '새 댓글', '공감', '방문자'].every((l) => admin.includes(`label="${l}"`)),
+      "지시받은 셋 + 방문자");
+    check("집계 실패를 화면이 말한다", /불러오지 못했습니다/.test(admin) && /todayError/.test(admin),
+      "조용히 0 을 띄우면 '오늘 아무 일도 없었다' 로 읽힌다");
+
+    // 버전 기록 — 손으로 적어야 하는 구조라 v00.288.002(6월 7일)에서 멈춰 있었다.
+    const vh = JSON.parse(readFileSync(path.join(ROOT, "version-history.json"), "utf8"));
+    check("버전 기록을 git 에서 자동으로 만든다", Array.isArray(vh.entries) && vh.entries.length > 300,
+      `${vh.entries?.length}건 — 손으로 적던 213건보다 많아야 한다`);
+    check("자동 기록이 최근까지 온다",
+      vh.entries[0] && vh.entries[0].version > '00.288.002',
+      `최신 ${vh.entries?.[0]?.version} — 손으로 적던 기록은 00.288.002 에서 멈췄다`);
+    check("화면이 손으로 쓴 것과 자동을 합친다", /mergedVersionHistory/.test(admin),
+      "옛 기록 213건이 훨씬 자세하다 — 버리면 안 된다");
+    check("같은 버전이면 손으로 쓴 쪽을 쓴다",
+      /for \(const e of ADMIN_VERSION_HISTORY\) byVersion\.set\(e\.version, e\);/.test(admin));
+    check("지금 운영 중인 버전을 함께 보인다", /지금 운영 중/.test(admin),
+      "목록 맨 위가 현재 버전이 아니면 '쓰다 만 화면' 으로 보인다");
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

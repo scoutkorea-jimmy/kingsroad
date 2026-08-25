@@ -306,6 +306,8 @@
 
     // ── 관리자 ──
     admin: {
+      // v00.306.009 — 관리자 대시보드 '오늘' 한 줄. 한국 시간 자정 기준으로 서버가 센다.
+      today: () => request("GET", "/admin/today"),
       users: {
         list: ({ q } = {}) => request("GET", `/admin/users${q ? `?q=${encodeURIComponent(q)}` : ""}`),
         update: (id, patch) => request("PATCH", `/admin/users/${id}`, patch),

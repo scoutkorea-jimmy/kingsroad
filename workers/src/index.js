@@ -1755,6 +1755,52 @@ const handleMePassword = async (req, env) => {
 };
 
 // 댓글 삭제 — 작성자 본인 또는 관리자.
+// ── 관리자 대시보드: 오늘 지표 ──────────────────────────────────────
+// v00.306.009 — 운영자가 "오늘 무슨 일이 있었나" 를 한 줄로 본다.
+//
+// ⚠ 함정 둘.
+//   ① **'오늘' 은 한국 시간 기준이다.** DB 는 전부 UTC 로 저장한다.
+//      한국의 오늘 00:00 은 UTC 로 어제 15:00 이다. UTC 날짜로 자르면
+//      아침 9시 이전에 쓴 글이 통째로 '어제' 로 빠진다.
+//   ② **시각 형식이 두 가지다.** posts·content_comments·users·page_views 는
+//      '2026-08-25T06:12:40.645Z' 인데 post_likes 만 '2026-08-21 04:29:27' 이다.
+//      'T' 자리가 달라 문자열 비교가 깨진다 → replace 로 맞춰 놓고 비교한다.
+const kstDayStartUtc = (offsetDays = 0) => {
+  const nowKst = new Date(Date.now() + 9 * 3600 * 1000);
+  const startKst = Date.UTC(nowKst.getUTCFullYear(), nowKst.getUTCMonth(), nowKst.getUTCDate() + offsetDays);
+  // 한국 자정 → 그 순간의 UTC 문자열 'YYYY-MM-DD HH:MM:SS'
+  return new Date(startKst - 9 * 3600 * 1000).toISOString().slice(0, 19).replace("T", " ");
+};
+
+const handleAdminToday = async (req, env) => {
+  await requireAdmin(req, env);
+  const today = kstDayStartUtc(0);
+  const yesterday = kstDayStartUtc(-1);
+  // 어제 같은 시간대까지가 아니라 '어제 하루 전체' 와 비교한다 — 운영자가 보는 숫자는 하루 단위다.
+  const one = async (sql, ...args) => {
+    try { const r = await env.DB.prepare(sql).bind(...args).first(); return Number(r?.n || 0); }
+    catch (e) { console.warn("[bgnj:today]", e?.message || e); return 0; }
+  };
+  const T = (col) => `replace(${col}, 'T', ' ')`;
+  const [posts, comments, likes, visitors, views,
+         pPosts, pComments, pLikes, pVisitors] = await Promise.all([
+    one(`SELECT COUNT(*) AS n FROM posts WHERE ${T("created_at")} >= ?`, today),
+    one(`SELECT COUNT(*) AS n FROM content_comments WHERE ${T("created_at")} >= ?`, today),
+    one(`SELECT COUNT(*) AS n FROM post_likes WHERE ${T("created_at")} >= ?`, today),
+    one(`SELECT COUNT(DISTINCT session_id) AS n FROM page_views WHERE ${T("ts")} >= ?`, today),
+    one(`SELECT COUNT(*) AS n FROM page_views WHERE ${T("ts")} >= ?`, today),
+    one(`SELECT COUNT(*) AS n FROM posts WHERE ${T("created_at")} >= ? AND ${T("created_at")} < ?`, yesterday, today),
+    one(`SELECT COUNT(*) AS n FROM content_comments WHERE ${T("created_at")} >= ? AND ${T("created_at")} < ?`, yesterday, today),
+    one(`SELECT COUNT(*) AS n FROM post_likes WHERE ${T("created_at")} >= ? AND ${T("created_at")} < ?`, yesterday, today),
+    one(`SELECT COUNT(DISTINCT session_id) AS n FROM page_views WHERE ${T("ts")} >= ? AND ${T("ts")} < ?`, yesterday, today),
+  ]);
+  return {
+    today: { posts, comments, likes, visitors, views },
+    yesterday: { posts: pPosts, comments: pComments, likes: pLikes, visitors: pVisitors },
+    since: today,
+  };
+};
+
 // ── 강연 등록 흐름 ──
 const handleMyLectures = async (req, env) => {
   const user = await requireUser(req, env);
@@ -3644,6 +3690,7 @@ const route = async (req, env) => {
     if (req.method === "PATCH") return json(await handleAdminUserPatch(req, env, g[1]));
     if (req.method === "DELETE") return json(await handleAdminUserDelete(req, env, g[1]));
   }
+  if (req.method === "GET" && p === "/api/admin/today") return json(await handleAdminToday(req, env));
   if (req.method === "GET" && p === "/api/admin/audit") return json(await handleAdminAuditList(req, env));
   // 관리자: 회원 metrics (v00.062) — D1 정확 계산. BGNJ_GRADE_PROMO 가 grade 자격 평가에 사용.
   if ((g = m(/^\/api\/admin\/users\/([\w-]+)\/metrics$/))) {
