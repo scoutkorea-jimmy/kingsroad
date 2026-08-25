@@ -147,12 +147,15 @@
         update: (id, patch) => request("PATCH", `/posts/${id}`, patch),
         remove: (id) => request("DELETE", `/posts/${id}`),
         // v00.244 — 조회수 server persistence (칼럼 패턴 미러). 비로그인도 카운트, sessionStorage 가드는 클라이언트.
-        view: (id) => request("POST", `/posts/${id}/view`),
-        comments: {
-          list: (postId) => request("GET", `/posts/${postId}/comments`),
-          create: (postId, { body, parentId }) => request("POST", `/posts/${postId}/comments`, { body, parentId }),
-          remove: (postId, commentId) => request("DELETE", `/posts/${postId}/comments/${commentId}`)
-        }
+        view: (id) => request("POST", `/posts/${id}/view`)
+      },
+      // v00.306.004 — 댓글 창구는 하나다. 글이든 칼럼이든 (targetType, targetId) 로 가리킨다.
+      //   옛 /posts/:id/comments 는 서버에 껍데기로 남아 있지만(옛 캐시 보호용)
+      //   **클라이언트는 새 주소만 쓴다** — 두 길을 다 쓰면 어느 쪽이 진짜인지 알 수 없게 된다.
+      comments: {
+        list: (targetType, targetId) => request("GET", `/comments?targetType=${encodeURIComponent(targetType)}&targetId=${encodeURIComponent(targetId)}`),
+        create: (targetType, targetId, { body, parentId }) => request("POST", `/comments`, { targetType, targetId, body, parentId }),
+        remove: (commentId) => request("DELETE", `/comments/${encodeURIComponent(commentId)}`)
       },
       // ── 책 ──
       books: {
@@ -401,7 +404,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.306.003",
+    version: "00.306.004",
     build: "2026.08.25",
     channel: "preview"
   };
@@ -1566,7 +1569,7 @@
     categories: _asArray(_lsGet("bgnj_categories", DEFAULT_CATEGORIES), DEFAULT_CATEGORIES.slice()),
     communityPosts: ensureCommunityPostsSeeded(_lsGet("bgnj_community_posts", []), _lsGet("bgnj_user_posts", [])),
     userPosts: _asArray(_lsGet("bgnj_user_posts", [])),
-    // v00.079: comments 키 제거. BGNJ_COMMUNITY._commentsCache(서버 fetch) 가 단독 source. D1.comments 가 진실.
+    // v00.079: comments 키 제거. BGNJ_COMMENTS._cache(서버 fetch) 가 단독 source. D1 이 진실.
     userColumns: _asArray(_lsGet("bgnj_user_columns", [])),
     users: ensureUsersSeeded(_lsGet("bgnj_users", [])),
     session: _asRecord(_lsGet("bgnj_session", null), null),
@@ -1605,7 +1608,7 @@
     categories: () => _lsSet("bgnj_categories", window.BGNJ_STORES.categories),
     communityPosts: () => _lsSet("bgnj_community_posts", window.BGNJ_STORES.communityPosts),
     userPosts: () => _lsSet("bgnj_user_posts", window.BGNJ_STORES.userPosts),
-    // v00.079: comments save 핸들러 제거 — BGNJ_COMMUNITY._commentsCache(서버 fetch) 가 source.
+    // v00.079: comments save 핸들러 제거 — BGNJ_COMMENTS._cache(서버 fetch) 가 source.
     userColumns: () => _lsSet("bgnj_user_columns", window.BGNJ_STORES.userColumns),
     users: () => _lsSet("bgnj_users", window.BGNJ_STORES.users),
     session: () => _lsSet("bgnj_session", window.BGNJ_STORES.session),
@@ -2071,6 +2074,112 @@
     }
     return scored.sort((a, b) => b._s - a._s || b.uses - a.uses || a.name.localeCompare(b.name, "ko")).slice(0, limit).map(({ _s, ...rest }) => rest);
   };
+  window.BGNJ_COMMENTS = {
+    _cache: {},
+    // 'post:128' | 'column:col-xxxx' → 배열
+    _key(type, id) {
+      return `${type}:${id}`;
+    },
+    // 서버 행 → 화면이 읽는 모양. 이 함수 하나만 서버 필드 이름을 안다.
+    _toUi(row) {
+      return {
+        id: row.id,
+        targetType: row.target_type,
+        targetId: row.target_id,
+        parentId: row.parent_id,
+        text: row.body,
+        author: row.author,
+        authorId: row.author_id,
+        createdAt: row.created_at,
+        date: window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(row.created_at) : String(row.created_at || "")
+      };
+    },
+    _emit(type, id) {
+      try {
+        window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { targetType: type, targetId: id } }));
+      } catch (_e) {
+        console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (BGNJ_COMMENTS)", _e);
+      }
+    },
+    list(type, id) {
+      return (this._cache[this._key(type, id)] || []).slice();
+    },
+    async refresh(type, id) {
+      const key = this._key(type, id);
+      try {
+        const { comments } = await window.BGNJ_API.comments.list(type, id);
+        if (!Array.isArray(comments)) {
+          console.warn("[BGNJ_COMMENTS.refresh] non-array \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0", key);
+          return this.list(type, id);
+        }
+        this._cache[key] = comments.map((c) => this._toUi(c));
+        this._emit(type, id);
+      } catch (e) {
+        console.warn("[BGNJ_COMMENTS] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
+      }
+      return this.list(type, id);
+    },
+    // 낙관적 표시 — 서버 응답을 기다리지 않고 먼저 그린다. 실패하면 **반드시 걷어낸다**.
+    //   그냥 두면 화면에만 남아 '저장된 척' 을 한다(2026-08-25 사고의 두 번째 얼굴).
+    add(type, id, payload) {
+      var _a, _b, _c;
+      const key = this._key(type, id);
+      const text = String((_b = (_a = payload == null ? void 0 : payload.text) != null ? _a : payload == null ? void 0 : payload.body) != null ? _b : "").trim();
+      if (!text) return this.list(type, id);
+      const optimistic = {
+        id: `tmp-${Date.now()}`,
+        targetType: type,
+        targetId: String(id),
+        parentId: (_c = payload.parentId) != null ? _c : null,
+        text,
+        author: payload.author,
+        authorId: payload.authorId,
+        createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+        date: payload.date || (window.BGNJ_FMT ? window.BGNJ_FMT.kstShort((/* @__PURE__ */ new Date()).toISOString()) : ""),
+        _pending: true
+      };
+      this._cache[key] = [...this._cache[key] || [], optimistic];
+      this._emit(type, id);
+      window.BGNJ_API.comments.create(type, String(id), { body: text, parentId: payload.parentId || null }).then(() => this.refresh(type, id)).catch((e) => {
+        var _a2, _b2;
+        const cur = this._cache[key] || [];
+        this._cache[key] = cur.filter((c) => String(c.id) !== String(optimistic.id));
+        try {
+          (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, `\uB313\uAE00 \uC800\uC7A5 \uC2E4\uD328: ${(e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+        } catch (_e) {
+          console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
+        }
+        this._emit(type, id);
+      });
+      return this.list(type, id);
+    },
+    remove(type, id, commentId) {
+      const key = this._key(type, id);
+      const before = this._cache[key] || [];
+      this._cache[key] = before.filter((c) => {
+        var _a;
+        return String(c.id) !== String(commentId) && String((_a = c.parentId) != null ? _a : "") !== String(commentId);
+      });
+      this._emit(type, id);
+      if (!String(commentId).startsWith("tmp-")) {
+        window.BGNJ_API.comments.remove(commentId).then(() => this.refresh(type, id)).catch((e) => {
+          var _a, _b;
+          this._cache[key] = before;
+          try {
+            (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, `\uB313\uAE00 \uC0AD\uC81C \uC2E4\uD328: ${(e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
+          } catch (_e) {
+            console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
+          }
+          this._emit(type, id);
+        });
+      }
+      return this.list(type, id);
+    },
+    // 관리자 대시보드용 — 화면에 실린 캐시가 아니라 서버가 센 값을 쓴다.
+    total() {
+      return Object.values(this._cache).reduce((n, l) => n + (Array.isArray(l) ? l.length : 0), 0);
+    }
+  };
   window.BGNJ_COMMUNITY = {
     // 서버에서 받은 게시글 캐시. refreshPosts()가 채운다.
     // v00.046: 서버 미로드 시 로컬 시드 폴백 폐지 — 빈 배열 반환. 'D1 source-of-truth' 정책 정합.
@@ -2365,156 +2474,6 @@
         return 0;
       }
     },
-    // 서버 댓글 캐시 (postId → 배열). refreshComments가 채운다.
-    _commentsCache: {},
-    async refreshComments(postId) {
-      try {
-        const { comments } = await window.BGNJ_API.posts.comments.list(postId);
-        if (!Array.isArray(comments)) {
-          try {
-            console.warn("[BGNJ_COMMUNITY.refreshComments] non-array \u2014 cache preserved for post", postId);
-          } catch (_e) {
-            console.warn("[bgnj] data.js:1688 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
-          }
-          return this._commentsCache[String(postId)] || [];
-        }
-        this._commentsCache[String(postId)] = comments.map((c) => ({
-          id: c.id,
-          postId: c.post_id,
-          parentId: c.parent_id,
-          body: c.body,
-          text: c.body,
-          authorId: c.author_id,
-          author: c.author,
-          createdAt: c.created_at,
-          date: window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(c.created_at) : String(c.created_at || "")
-        }));
-        try {
-          window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
-        } catch (_e) {
-          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1698)", _e);
-        }
-      } catch (e) {
-        console.warn("[BGNJ] \uC11C\uBC84 \uC870\uD68C \uC2E4\uD328 \u2014 \uAE30\uC874 \uCE90\uC2DC \uC720\uC9C0:", (e == null ? void 0 : e.message) || e);
-      }
-      return this._commentsCache[String(postId)] || [];
-    },
-    getComments(postId) {
-      return (this._commentsCache[String(postId)] || []).slice();
-    },
-    // v00.079 — saveComments 는 deprecated. 새 댓글은 addCommentRemote 로 D1 에 직접 저장.
-    // 기존 호출자가 있으면 no-op (서버 fetch 결과만 권위).
-    saveComments(_postId, _comments) {
-    },
-    async addCommentRemote(postId, payload) {
-      var _a, _b, _c;
-      const text = String((_b = (_a = payload.body) != null ? _a : payload.text) != null ? _b : "").trim();
-      if (!text) throw new Error("\uB313\uAE00 \uB0B4\uC6A9\uC774 \uBE44\uC5B4 \uC788\uC2B5\uB2C8\uB2E4.");
-      await window.BGNJ_API.posts.comments.create(postId, { body: text, parentId: payload.parentId });
-      await this.refreshComments(postId);
-      if (payload.authorId) {
-        if (!window.BGNJ_AUTO_GRADE_DISABLED) {
-          try {
-            (_c = window.BGNJ_GRADE_PROMO) == null ? void 0 : _c.maybePromote(payload.authorId);
-          } catch (_e) {
-            console.warn("[bgnj] data.js:1714 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
-          }
-        }
-      }
-      return this._commentsCache[String(postId)] || [];
-    },
-    addComment(postId, payload) {
-      var _a;
-      const post = this.getPost(postId);
-      if (post && post._remote) {
-        const optimistic = { ...payload, id: `tmp-${Date.now()}`, createdAt: (/* @__PURE__ */ new Date()).toISOString() };
-        const arr = this._commentsCache[String(postId)] || [];
-        this._commentsCache[String(postId)] = [...arr, optimistic];
-        this.addCommentRemote(postId, payload).catch((e) => {
-          var _a2, _b;
-          const cur = this._commentsCache[String(postId)] || [];
-          this._commentsCache[String(postId)] = cur.filter((c) => String(c.id) !== String(optimistic.id));
-          try {
-            (_b = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b.call(_a2, `\uB313\uAE00 \uC800\uC7A5 \uC2E4\uD328: ${(e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
-          } catch (_e) {
-            console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
-          }
-          try {
-            window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
-          } catch (_e) {
-            console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4", _e);
-          }
-        });
-        try {
-          window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
-        } catch (_e) {
-          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1726)", _e);
-        }
-        return this._commentsCache[String(postId)];
-      }
-      const nextComments = [...this.getComments(postId), payload];
-      this.saveComments(postId, nextComments);
-      if (payload.authorId) {
-        if (!window.BGNJ_AUTO_GRADE_DISABLED) {
-          try {
-            (_a = window.BGNJ_GRADE_PROMO) == null ? void 0 : _a.maybePromote(payload.authorId);
-          } catch (_e) {
-            console.warn("[bgnj] data.js:1733 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
-          }
-        }
-      }
-      return nextComments;
-    },
-    deleteComment(postId, commentId) {
-      var _a, _b;
-      const post = this.getPost(postId);
-      const allComments = this.getComments(postId);
-      const removed = allComments.find((c) => String(c.id) === String(commentId));
-      const authorId = (removed == null ? void 0 : removed.authorId) || null;
-      if (post && post._remote) {
-        const arr = this._commentsCache[String(postId)] || [];
-        this._commentsCache[String(postId)] = arr.filter((c) => String(c.id) !== String(commentId));
-        if (!String(commentId).startsWith("tmp-")) {
-          window.BGNJ_API.posts.comments.remove(postId, commentId).then(() => this.refreshComments(postId)).catch((e) => {
-            var _a2, _b2;
-            this._commentsCache[String(postId)] = arr;
-            try {
-              (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, `\uB313\uAE00 \uC0AD\uC81C \uC2E4\uD328: ${(e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"}`);
-            } catch (_e) {
-              console.warn("[bgnj] \uC54C\uB9BC \uD45C\uC2DC \uC2E4\uD328", _e);
-            }
-            try {
-              window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
-            } catch (_e) {
-              console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4", _e);
-            }
-          });
-        }
-        try {
-          window.dispatchEvent(new CustomEvent("bgnj-comments-refresh", { detail: { postId } }));
-        } catch (_e) {
-          console.warn("[bgnj] \uC774\uBCA4\uD2B8 \uBC1C\uC2E0 \uC2E4\uD328\uB294 \uBB34\uC2DC\uD574\uB3C4 \uB41C\uB2E4 (data.js:1747)", _e);
-        }
-        if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) {
-          try {
-            (_a = window.BGNJ_GRADE_PROMO) == null ? void 0 : _a.maybeDemote(authorId);
-          } catch (_e) {
-            console.warn("[bgnj] data.js:1749 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
-          }
-        }
-        return this._commentsCache[String(postId)];
-      }
-      const nextComments = allComments.filter((comment) => String(comment.id) !== String(commentId));
-      this.saveComments(postId, nextComments);
-      if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) {
-        try {
-          (_b = window.BGNJ_GRADE_PROMO) == null ? void 0 : _b.maybeDemote(authorId);
-        } catch (_e) {
-          console.warn("[bgnj] data.js:1755 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
-        }
-      }
-      return nextComments;
-    },
     exportCsv() {
       const header = ["id", "category", "title", "author", "date", "views", "replies", "likes"];
       const rows = this.listPosts().map((post) => [
@@ -2736,6 +2695,7 @@
   window.BGNJ_COLUMNS = {
     _columns: [],
     _toColumn(r) {
+      var _a;
       return {
         id: r.id,
         authorId: r.author_id,
@@ -2758,7 +2718,10 @@
         sourceCredit: r.source_credit || "",
         sourceUrl: r.source_url || "",
         // v00.136 — 대표이미지 출처 (schema-v7 ALTER TABLE).
-        coverCredit: r.cover_credit || ""
+        coverCredit: r.cover_credit || "",
+        // v00.306.004 — 서버가 센 댓글 수. 아카이브 카드의 '댓글 0' 이 늘 0 이던 것을 고친다
+        //   (지금까지는 열어 본 칼럼의 캐시만 셌다). 구버전 응답 호환으로 0 폴백.
+        commentCount: Number((_a = r.comment_count) != null ? _a : 0) || 0
       };
     },
     estimateReadTime(text) {
@@ -2937,17 +2900,8 @@
         const inBodyText = String(((_a = c.body) == null ? void 0 : _a.text) || c.body || "").toLowerCase().includes(q);
         return inTitle || inExcerpt || inBodyText;
       });
-    },
-    // 댓글은 BGNJ_COMMUNITY 저장소 재사용 (`col-{id}` 키)
-    listComments(id) {
-      return window.BGNJ_COMMUNITY.getComments(`col-${id}`);
-    },
-    addComment(id, payload) {
-      return window.BGNJ_COMMUNITY.addComment(`col-${id}`, payload);
-    },
-    deleteComment(id, commentId) {
-      return window.BGNJ_COMMUNITY.deleteComment(`col-${id}`, commentId);
     }
+    // 댓글은 BGNJ_COMMUNITY 저장소 재사용 (`col-{id}` 키)
   };
   window.BGNJ_LECTURES = {
     _lectures: [],
@@ -10641,7 +10595,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [comment, setComment] = React.useState("");
     const [commentsList, setCommentsList] = React.useState(() => G2.arr(() => {
       var _a2, _b2;
-      return (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.getComments) == null ? void 0 : _b2.call(_a2, post.id);
+      return (_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.list) == null ? void 0 : _b2.call(_a2, "post", post.id);
     }));
     const [reportOpen, setReportOpen] = React.useState(false);
     const [reportReason, setReportReason] = React.useState("");
@@ -10658,20 +10612,14 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       var _a2, _b2, _c2, _d, _e, _f;
       setCommentsList(G2.arr(() => {
         var _a3, _b3;
-        return (_b3 = (_a3 = window.BGNJ_COMMUNITY) == null ? void 0 : _a3.getComments) == null ? void 0 : _b3.call(_a3, post.id);
+        return (_b3 = (_a3 = window.BGNJ_COMMENTS) == null ? void 0 : _a3.list) == null ? void 0 : _b3.call(_a3, "post", post.id);
       }));
-      if (post._remote) {
-        (_f = (_e = (_d = (_c2 = (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.refreshComments) == null ? void 0 : _b2.call(_a2, post.id)) == null ? void 0 : _c2.then) == null ? void 0 : _d.call(_c2, () => {
-          setCommentsList(G2.arr(() => {
-            var _a3, _b3;
-            return (_b3 = (_a3 = window.BGNJ_COMMUNITY) == null ? void 0 : _a3.getComments) == null ? void 0 : _b3.call(_a3, post.id);
-          }));
-        })) == null ? void 0 : _e.catch) == null ? void 0 : _f.call(_e, () => {
-        });
-      }
+      (_f = (_e = (_d = (_c2 = (_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.refresh) == null ? void 0 : _b2.call(_a2, "post", post.id)) == null ? void 0 : _c2.then) == null ? void 0 : _d.call(_c2, (next) => setCommentsList(Array.isArray(next) ? next : []))) == null ? void 0 : _e.catch) == null ? void 0 : _f.call(_e, () => {
+      });
       const onRefreshComments = (e) => {
-        if (e.detail && String(e.detail.postId) === String(post.id)) {
-          setCommentsList(window.BGNJ_COMMUNITY.getComments(post.id));
+        const d = e.detail || {};
+        if (d.targetType === "post" && String(d.targetId) === String(post.id)) {
+          setCommentsList(window.BGNJ_COMMENTS.list("post", post.id));
         }
       };
       window.addEventListener("bgnj-comments-refresh", onRefreshComments);
@@ -10755,8 +10703,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       if (!trimmed) return;
       const now = /* @__PURE__ */ new Date();
       const pad = (n) => String(n).padStart(2, "0");
-      const next = window.BGNJ_COMMUNITY.addComment(post.id, {
-        id: `comment-${Date.now()}`,
+      const next = window.BGNJ_COMMENTS.add("post", post.id, {
         author: user.name,
         authorId: user.id,
         authorEmail: user.email,
@@ -10788,7 +10735,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const peek = String((target == null ? void 0 : target.text) || "").trim().replace(/\s+/g, " ").slice(0, 30);
       const msg = peek ? `"${peek}${peek.length >= 30 ? "\u2026" : ""}" \uB313\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?` : "\uC774 \uB313\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?";
       if (!await window.BGNJ_CONFIRM(msg, { danger: true })) return;
-      const next = window.BGNJ_COMMUNITY.deleteComment(post.id, commentId);
+      const next = window.BGNJ_COMMENTS.remove("post", post.id, commentId);
       setCommentsList(next);
       onRefresh == null ? void 0 : onRefresh();
     };
@@ -10929,8 +10876,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           if (!user || !text.trim()) return;
           const now = /* @__PURE__ */ new Date();
           const pad = (n) => String(n).padStart(2, "0");
-          const next = window.BGNJ_COMMUNITY.addComment(post.id, {
-            id: `comment-${Date.now()}-${Math.random().toString(36).slice(2, 4)}`,
+          const next = window.BGNJ_COMMENTS.add("post", post.id, {
             author: user.name,
             authorId: user.id,
             authorEmail: user.email,
@@ -11931,6 +11877,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     React.useEffect(() => {
       var _a2, _b2;
       if (!selectedId) return;
+      (_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.refresh) == null ? void 0 : _b2.call(_a2, "column", selectedId);
+      const onC = (e) => {
+        const d = e.detail || {};
+        if (d.targetType === "column" && String(d.targetId) === String(selectedId)) refresh();
+      };
+      window.addEventListener("bgnj-comments-refresh", onC);
+      return () => window.removeEventListener("bgnj-comments-refresh", onC);
+    }, [selectedId]);
+    React.useEffect(() => {
+      var _a2, _b2;
+      if (!selectedId) return;
       let cancelled = false;
       Promise.resolve((_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2._hydrateColumnBody) == null ? void 0 : _b2.call(_a2, selectedId)).then(() => {
         if (!cancelled) refresh();
@@ -11982,8 +11939,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       if (!trimmed) return;
       const now = /* @__PURE__ */ new Date();
       const pad = (n) => String(n).padStart(2, "0");
-      window.BGNJ_COLUMNS.addComment(selectedId, {
-        id: `comment-${Date.now()}`,
+      window.BGNJ_COMMENTS.add("column", selectedId, {
         author: user.name,
         authorId: user.id,
         authorEmail: user.email,
@@ -11996,13 +11952,13 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const removeComment = async (commentId) => {
       const list = window.BGNJ_GUARD.arr(() => {
         var _a2, _b2;
-        return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listComments) == null ? void 0 : _b2.call(_a2, selectedId);
+        return (_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.list) == null ? void 0 : _b2.call(_a2, "column", selectedId);
       });
       const target = list.find((c) => String(c.id) === String(commentId));
       const peek = String((target == null ? void 0 : target.text) || "").trim().replace(/\s+/g, " ").slice(0, 30);
       const msg = peek ? `"${peek}${peek.length >= 30 ? "\u2026" : ""}" \uB313\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?` : "\uC774 \uB313\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?";
       if (!await window.BGNJ_CONFIRM(msg, { danger: true })) return;
-      window.BGNJ_COLUMNS.deleteComment(selectedId, commentId);
+      window.BGNJ_COMMENTS.remove("column", selectedId, commentId);
       refresh();
     };
     if (selectedId !== null) {
@@ -12042,7 +11998,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }, 0);
       const comments = G2.arr(() => {
         var _a2, _b2;
-        return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listComments) == null ? void 0 : _b2.call(_a2, c.id);
+        return (_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.list) == null ? void 0 : _b2.call(_a2, "column", c.id);
       });
       const readTime = ((_b = c.body) == null ? void 0 : _b.text) ? window.BGNJ_COLUMNS.estimateReadTime(c.body.text) : c.readMinutes ? `${c.readMinutes}\uBD84` : c.excerpt ? window.BGNJ_COLUMNS.estimateReadTime(c.excerpt) : "";
       return /* @__PURE__ */ React.createElement("div", { className: "section" }, /* @__PURE__ */ React.createElement("div", { className: "container", style: { maxWidth: 760 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement(
@@ -12116,8 +12072,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             if (!user || !text.trim()) return;
             const now = /* @__PURE__ */ new Date();
             const pad = (n) => String(n).padStart(2, "0");
-            window.BGNJ_COLUMNS.addComment(c.id, {
-              id: `comment-${Date.now()}-${Math.random().toString(36).slice(2, 4)}`,
+            window.BGNJ_COMMENTS.add("column", c.id, {
               author: user.name,
               authorId: user.id,
               authorEmail: user.email,

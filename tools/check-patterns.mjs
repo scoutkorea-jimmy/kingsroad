@@ -68,7 +68,14 @@ for (const f of files) {
     //    한 문장(INSERT ... SELECT ... WHERE NOT EXISTS)으로 묶어야 한다.
     if (/SELECT\s+COUNT\(\*\)/i.test(line) && rel.startsWith("workers/")) {
       const after = lines.slice(i, i + 25).join("\n");
-      if (/INSERT\s+INTO/i.test(after) && !/INSERT[\s\S]{0,400}SELECT/i.test(after)) {
+      // v00.306.004 — 규칙을 하나 더 읽게 한다. 여기서 문턱을 낮추면(25줄 → 10줄 따위)
+      //   진짜 '세고 나서 넣기' 까지 같이 놓친다. 대신 **세는 자리의 성격**을 본다.
+      //   상관 서브쿼리 `(SELECT COUNT(*) ... ) AS 별칭` 은 목록에 수를 실어 보내는 읽기다.
+      //   정원·중복 판정과 달리 아무것도 쓰지 않으므로 동시 요청 문제가 없다.
+      //   실제 오탐: handlePostsList · handleColumnsList 의 댓글 수(v00.306.002~004).
+      const isCorrelatedRead = /\(\s*SELECT\s+COUNT\(\*\)/i.test(line)
+        && /\)\s*AS\s+\w+/i.test(lines.slice(i - 1, i + 3).join("\n"));
+      if (!isCorrelatedRead && /INSERT\s+INTO/i.test(after) && !/INSERT[\s\S]{0,400}SELECT/i.test(after)) {
         add(rel, n, "count-then-insert", line,
           "세고 나서 넣는다. 동시 요청이 같은 숫자를 본다 — 한 문장으로 원자화하라.");
       }

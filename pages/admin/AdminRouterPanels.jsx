@@ -357,14 +357,14 @@ const ErrorPagesPreviewPanel = ({ go }) => {
 // 게시글 뷰어 모달 — 관리자 패널에서 페이지 이동 없이 본문/메타/댓글을 한눈에.
 const PostViewerModal = ({ postId, onClose }) => {
   const [post, setPost] = React.useState(() => window.BGNJ_COMMUNITY?.getPost?.(postId) || null);
-  const [comments, setComments] = React.useState(() => window.BGNJ_COMMUNITY?.getComments?.(postId) || []);
+  const [comments, setComments] = React.useState(() => window.BGNJ_COMMENTS?.list?.('post', postId) || []);
   // v00.077 — useModalGuard 통일 (ESC + body lock + popstate). 읽기 전용 → dirty=false.
   window.useModalGuard?.({ open: true, dirty: false, onClose, onSaveDraft: null, label: '게시글 보기' });
   React.useEffect(() => {
-    // 서버 게시글이면 댓글 동기화 시도.
-    try { window.BGNJ_COMMUNITY?.refreshComments?.(postId).then(() => {
-      setComments(window.BGNJ_COMMUNITY.getComments(postId));
-    }); } catch (_e) { console.warn('[bgnj] AdminRouterPanels.jsx:367 오류(무시하고 진행)', _e); }
+    // v00.306.004 — 댓글 창구 통합. 대상은 ('post', 글번호).
+    try { window.BGNJ_COMMENTS?.refresh?.('post', postId).then((next) => {
+      setComments(Array.isArray(next) ? next : []);
+    }); } catch (_e) { console.warn('[bgnj] AdminRouterPanels.jsx 댓글 조회 실패(무시하고 진행)', _e); }
   }, [postId]);
 
   // v00.304 — 열면 '(본문 없음)' 이 뜨던 문제.

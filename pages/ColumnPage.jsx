@@ -70,6 +70,19 @@ const ColumnPage = ({ go, user }) => {
     };
   }, []);
 
+  // v00.306.004 — 상세 진입 시 댓글을 서버에서 받아온다. 지금까지 이런 코드가 아예 없었다
+  //   (칼럼 댓글이 서버에 저장된 적이 없으니 받아올 것도 없었다).
+  React.useEffect(() => {
+    if (!selectedId) return;
+    window.BGNJ_COMMENTS?.refresh?.('column', selectedId);
+    const onC = (e) => {
+      const d = e.detail || {};
+      if (d.targetType === 'column' && String(d.targetId) === String(selectedId)) refresh();
+    };
+    window.addEventListener('bgnj-comments-refresh', onC);
+    return () => window.removeEventListener('bgnj-comments-refresh', onC);
+  }, [selectedId]);
+
   // v00.296.003 — 상세 진입 시 본문 받아오기.
   //   목록 응답에는 발췌만 온다(463KB → 대폭 감소). 본문은 여기서 채운다.
   //   이 effect 가 없으면 칼럼을 열었을 때 본문이 빈 채로 보인다.
@@ -127,8 +140,8 @@ const ColumnPage = ({ go, user }) => {
     if (!trimmed) return;
     const now = new Date();
     const pad = (n) => String(n).padStart(2, "0");
-    window.BGNJ_COLUMNS.addComment(selectedId, {
-      id: `comment-${Date.now()}`,
+    // v00.306.004 — 지금까지 이 호출은 서버로 가는 길이 없었다(로컬 no-op → 그 자리에서 사라짐).
+    window.BGNJ_COMMENTS.add('column', selectedId, {
       author: user.name,
       authorId: user.id,
       authorEmail: user.email,
@@ -141,12 +154,12 @@ const ColumnPage = ({ go, user }) => {
 
   // v00.306.002 — 게시글 댓글과 같은 확인 절차. 지운 댓글은 되돌릴 수 없다.
   const removeComment = async (commentId) => {
-    const list = window.BGNJ_GUARD.arr(() => window.BGNJ_COLUMNS?.listComments?.(selectedId));
+    const list = window.BGNJ_GUARD.arr(() => window.BGNJ_COMMENTS?.list?.('column', selectedId));
     const target = list.find((c) => String(c.id) === String(commentId));
     const peek = String(target?.text || '').trim().replace(/\s+/g, ' ').slice(0, 30);
     const msg = peek ? `"${peek}${peek.length >= 30 ? '…' : ''}" 댓글을 삭제하시겠어요?` : '이 댓글을 삭제하시겠어요?';
     if (!(await window.BGNJ_CONFIRM(msg, { danger: true }))) return;
-    window.BGNJ_COLUMNS.deleteComment(selectedId, commentId);
+    window.BGNJ_COMMENTS.remove('column', selectedId, commentId);
     refresh();
   };
 
@@ -184,7 +197,7 @@ const ColumnPage = ({ go, user }) => {
     const likes = G.arr(() => window.BGNJ_COLUMNS?.getLikes?.(c.id));
     const liked = !!user && likes.includes(user.id);
     const views = G.num(() => window.BGNJ_COLUMNS?.getViews?.(c.id), 0);
-    const comments = G.arr(() => window.BGNJ_COLUMNS?.listComments?.(c.id));
+    const comments = G.arr(() => window.BGNJ_COMMENTS?.list?.('column', c.id));
     // v00.296.003 — 목록에 본문이 없을 수 있다. 기존 폴백 c.readTime 은 _toColumn 에 없는
     //   필드라 늘 undefined 였다 — 본문이 사라지면 읽는 시간도 조용히 사라졌을 것이다.
     const readTime = c.body?.text
@@ -347,8 +360,7 @@ const ColumnPage = ({ go, user }) => {
                 if (!user || !text.trim()) return;
                 const now = new Date();
                 const pad = (n) => String(n).padStart(2, '0');
-                window.BGNJ_COLUMNS.addComment(c.id, {
-                  id: `comment-${Date.now()}-${Math.random().toString(36).slice(2,4)}`,
+                window.BGNJ_COMMENTS.add('column', c.id, {
                   author: user.name,
                   authorId: user.id,
                   authorEmail: user.email,

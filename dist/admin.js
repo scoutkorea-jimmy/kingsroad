@@ -16044,17 +16044,17 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
     });
     const [comments, setComments] = React.useState(() => {
       var _a2, _b2;
-      return ((_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.getComments) == null ? void 0 : _b2.call(_a2, postId)) || [];
+      return ((_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.list) == null ? void 0 : _b2.call(_a2, "post", postId)) || [];
     });
     (_a = window.useModalGuard) == null ? void 0 : _a.call(window, { open: true, dirty: false, onClose, onSaveDraft: null, label: "\uAC8C\uC2DC\uAE00 \uBCF4\uAE30" });
     React.useEffect(() => {
       var _a2, _b2;
       try {
-        (_b2 = (_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2.refreshComments) == null ? void 0 : _b2.call(_a2, postId).then(() => {
-          setComments(window.BGNJ_COMMUNITY.getComments(postId));
+        (_b2 = (_a2 = window.BGNJ_COMMENTS) == null ? void 0 : _a2.refresh) == null ? void 0 : _b2.call(_a2, "post", postId).then((next) => {
+          setComments(Array.isArray(next) ? next : []);
         });
       } catch (_e) {
-        console.warn("[bgnj] AdminRouterPanels.jsx:367 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+        console.warn("[bgnj] AdminRouterPanels.jsx \uB313\uAE00 \uC870\uD68C \uC2E4\uD328(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
       }
     }, [postId]);
     React.useEffect(() => {
@@ -16635,11 +16635,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       return (_b2 = (_a2 = window.BGNJ_COLUMNS) == null ? void 0 : _a2.listPublic) == null ? void 0 : _b2.call(_a2);
     }), [postRefreshKey]);
     const totalComments = React.useMemo(
-      () => {
-        var _a2;
-        return Object.values(((_a2 = window.BGNJ_COMMUNITY) == null ? void 0 : _a2._commentsCache) || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0);
-      },
-      [postRefreshKey]
+      () => allCommunityPosts.reduce((sum, p) => sum + (Number(p.replies) || 0), 0) + allColumns.reduce((sum, c) => sum + (Number(c.commentCount) || 0), 0),
+      [allCommunityPosts, allColumns]
     );
     const allBookOrders = React.useMemo(() => {
       var _a2, _b2;

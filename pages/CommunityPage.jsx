@@ -2125,7 +2125,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
     return sibList.slice(start, start + 5);
   }, [sibList, sibIndex, inList]);
   const [comment, setComment] = React.useState("");
-  const [commentsList, setCommentsList] = React.useState(() => G.arr(() => window.BGNJ_COMMUNITY?.getComments?.(post.id)));
+  const [commentsList, setCommentsList] = React.useState(() => G.arr(() => window.BGNJ_COMMENTS?.list?.('post', post.id)));
   const [reportOpen, setReportOpen] = React.useState(false);
   const [reportReason, setReportReason] = React.useState("");
   const [reportSubmitted, setReportSubmitted] = React.useState(false);
@@ -2137,17 +2137,18 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
   const likesCount = likes.length;
   const bookmarked = !!user && G.call(() => window.BGNJ_COMMUNITY?.isBookmarked?.(user.id, post.id), false);
 
+  // v00.306.004 — 댓글은 BGNJ_COMMENTS 한 창구로. 대상은 ('post', 글번호).
+  //   _remote 조건을 뗐다 — 서버에 없는 글에 댓글을 달 길은 어차피 없고,
+  //   그 조건이 칼럼 댓글을 통째로 막고 있던 장본인이었다.
   React.useEffect(() => {
-    setCommentsList(G.arr(() => window.BGNJ_COMMUNITY?.getComments?.(post.id)));
-    // 서버 게시글이면 서버에서 댓글 동기화
-    if (post._remote) {
-      window.BGNJ_COMMUNITY?.refreshComments?.(post.id)?.then?.(() => {
-        setCommentsList(G.arr(() => window.BGNJ_COMMUNITY?.getComments?.(post.id)));
-      })?.catch?.(() => {});
-    }
+    setCommentsList(G.arr(() => window.BGNJ_COMMENTS?.list?.('post', post.id)));
+    window.BGNJ_COMMENTS?.refresh?.('post', post.id)
+      ?.then?.((next) => setCommentsList(Array.isArray(next) ? next : []))
+      ?.catch?.(() => {});
     const onRefreshComments = (e) => {
-      if (e.detail && String(e.detail.postId) === String(post.id)) {
-        setCommentsList(window.BGNJ_COMMUNITY.getComments(post.id));
+      const d = e.detail || {};
+      if (d.targetType === 'post' && String(d.targetId) === String(post.id)) {
+        setCommentsList(window.BGNJ_COMMENTS.list('post', post.id));
       }
     };
     window.addEventListener('bgnj-comments-refresh', onRefreshComments);
@@ -2224,8 +2225,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
     if (!trimmed) return;
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const next = window.BGNJ_COMMUNITY.addComment(post.id, {
-      id: `comment-${Date.now()}`,
+    const next = window.BGNJ_COMMENTS.add('post', post.id, {
       author: user.name,
       authorId: user.id,
       authorEmail: user.email,
@@ -2263,7 +2263,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
     const peek = String(target?.text || '').trim().replace(/\s+/g, ' ').slice(0, 30);
     const msg = peek ? `"${peek}${peek.length >= 30 ? '…' : ''}" 댓글을 삭제하시겠어요?` : '이 댓글을 삭제하시겠어요?';
     if (!(await window.BGNJ_CONFIRM(msg, { danger: true }))) return;
-    const next = window.BGNJ_COMMUNITY.deleteComment(post.id, commentId);
+    const next = window.BGNJ_COMMENTS.remove('post', post.id, commentId);
     setCommentsList(next);
     onRefresh?.();
   };
@@ -2489,8 +2489,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
               if (!user || !text.trim()) return;
               const now = new Date();
               const pad = (n) => String(n).padStart(2, '0');
-              const next = window.BGNJ_COMMUNITY.addComment(post.id, {
-                id: `comment-${Date.now()}-${Math.random().toString(36).slice(2,4)}`,
+              const next = window.BGNJ_COMMENTS.add('post', post.id, {
                 author: user.name,
                 authorId: user.id,
                 authorEmail: user.email,

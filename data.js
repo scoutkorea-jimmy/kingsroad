@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.306.003",
+  version: "00.306.004",
   build: "2026.08.25",
   channel: "preview",
 };
@@ -505,7 +505,8 @@ const BGNJ_STORAGE_VERSION = "v6-comments-dead";
 //   v3-no-overrides (v00.049): dead 4 키(lectureOverrides/lectureRegistrations/tourOverrides/tourReservations) + bgnj_users 시드 정리.
 //   v4-bookmarks-dead (v00.051): bgnj_bookmarks 정리 — BGNJ_COMMUNITY._bookmarks 서버 캐시만 사용.
 //   v5-reports-dead (v00.063): bgnj_reports 정리 — BGNJ_COMMUNITY._reports(서버 fetch) + 서버 metrics endpoint 가 source.
-//   v6-comments-dead (v00.079): bgnj_comments 정리 — D1.comments 가 source. _commentsCache 만 사용.
+//   v6-comments-dead (v00.079): bgnj_comments 정리 — 댓글은 서버가 source.
+//     (v00.306.004 — 캐시는 window.BGNJ_COMMENTS._cache 로 옮겼다.)
 //     모든 케이스에서 사용자 임시 글(bgnj_user_posts)은 보존.
 try {
   const prevVer = localStorage.getItem('bgnj_storage_version');
@@ -522,7 +523,7 @@ try {
     localStorage.removeItem('bgnj_bookmarks');
     // v5 — reports 캐시는 BGNJ_COMMUNITY._reports (서버 fetch) 만 사용. localStorage 잔재 정리.
     localStorage.removeItem('bgnj_reports');
-    // v6 — comments 캐시는 BGNJ_COMMUNITY._commentsCache (서버 fetch) 만 사용. localStorage 잔재 정리.
+    // v6 — 댓글 캐시는 BGNJ_COMMENTS._cache (서버 fetch) 만 사용. localStorage 잔재 정리.
     localStorage.removeItem('bgnj_comments');
     localStorage.setItem('bgnj_storage_version', BGNJ_STORAGE_VERSION);
   }
@@ -1080,7 +1081,7 @@ const ensureCommunityPostsSeeded = (posts, legacyUserPosts) => {
 //   categories            🌐 server-backed (App init 에서 BGNJ_API.categories.list 로 덮어씀)
 //   communityPosts        ⚠ legacy — listPosts 가 _serverPosts merge 시 localOnly 필터로만 사용. v00.046 시드 주입 폐지
 //   userPosts             💾 local intentional — 사용자 작성 임시본 (서버 동기화 전)
-//   (v00.079 제거: comments — D1.comments 가 source. BGNJ_COMMUNITY._commentsCache 만 사용)
+//   (v00.079 제거: comments — 서버가 source. v00.306.004 부터 BGNJ_COMMENTS._cache)
 //   userColumns           ⚠ legacy — BGNJ_COLUMNS._columns 가 서버 source. 호환 잔재
 //   users                 ⚠ legacy — 인증은 BGNJ_AUTH/D1.users 가 진실. 시드(DEFAULT_USERS) 잔재
 //   session               💾 local intentional — 세션 토큰 캐시 (서버 검증 후 보관)
@@ -1113,7 +1114,7 @@ window.BGNJ_STORES = {
   categories: _asArray(_lsGet('bgnj_categories', DEFAULT_CATEGORIES), DEFAULT_CATEGORIES.slice()),
   communityPosts: ensureCommunityPostsSeeded(_lsGet('bgnj_community_posts', []), _lsGet('bgnj_user_posts', [])),
   userPosts: _asArray(_lsGet('bgnj_user_posts', [])),
-  // v00.079: comments 키 제거. BGNJ_COMMUNITY._commentsCache(서버 fetch) 가 단독 source. D1.comments 가 진실.
+  // v00.079: comments 키 제거. BGNJ_COMMENTS._cache(서버 fetch) 가 단독 source. D1 이 진실.
   userColumns: _asArray(_lsGet('bgnj_user_columns', [])),
   users: ensureUsersSeeded(_lsGet('bgnj_users', [])),
   session: _asRecord(_lsGet('bgnj_session', null), null),
@@ -1187,7 +1188,7 @@ window.BGNJ_SAVE = {
   categories: () => _lsSet('bgnj_categories', window.BGNJ_STORES.categories),
   communityPosts: () => _lsSet('bgnj_community_posts', window.BGNJ_STORES.communityPosts),
   userPosts: () => _lsSet('bgnj_user_posts', window.BGNJ_STORES.userPosts),
-  // v00.079: comments save 핸들러 제거 — BGNJ_COMMUNITY._commentsCache(서버 fetch) 가 source.
+  // v00.079: comments save 핸들러 제거 — BGNJ_COMMENTS._cache(서버 fetch) 가 source.
   userColumns: () => _lsSet('bgnj_user_columns', window.BGNJ_STORES.userColumns),
   users: () => _lsSet('bgnj_users', window.BGNJ_STORES.users),
   session: () => _lsSet('bgnj_session', window.BGNJ_STORES.session),
@@ -1660,6 +1661,116 @@ window.BGNJ_TAG_SUGGEST = (query, opts) => {
     .map(({ _s, ...rest }) => rest);
 };
 
+// === 댓글 — 창구 하나 =====================================================
+// v00.306.004 — 댓글 코드가 두 벌이었다. 게시글 쪽은 BGNJ_COMMUNITY 안에,
+//   칼럼 쪽은 그것을 `col-{id}` 키로 재사용하는 껍데기였는데 — **서버로 가는 길이 없었다.**
+//   `getPost('col-5')` 가 null 이라 원격 분기를 타지 못하고, 그 자리에서 사라졌다.
+//
+// 이제 대상을 (type, id) 로 가리키고 한 벌만 쓴다. 글이든 칼럼이든 같은 코드다.
+//
+// ⚠ 이름을 한 벌로 못 박는다 — 2026-08-25 사고의 원인이 `text` ↔ `body` 어긋남이었다.
+//   **화면이 읽는 모양은 여기서 정해진다**: { id, targetType, targetId, parentId,
+//   text, author, authorId, createdAt, date }. `body` 는 서버와 말하는 순간에만 쓴다.
+window.BGNJ_COMMENTS = {
+  _cache: {},          // 'post:128' | 'column:col-xxxx' → 배열
+  _key(type, id) { return `${type}:${id}`; },
+
+  // 서버 행 → 화면이 읽는 모양. 이 함수 하나만 서버 필드 이름을 안다.
+  _toUi(row) {
+    return {
+      id: row.id,
+      targetType: row.target_type,
+      targetId: row.target_id,
+      parentId: row.parent_id,
+      text: row.body,
+      author: row.author,
+      authorId: row.author_id,
+      createdAt: row.created_at,
+      date: window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(row.created_at) : String(row.created_at || ''),
+    };
+  },
+
+  _emit(type, id) {
+    try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { targetType: type, targetId: id } })); }
+    catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (BGNJ_COMMENTS)', _e); }
+  },
+
+  list(type, id) { return (this._cache[this._key(type, id)] || []).slice(); },
+
+  async refresh(type, id) {
+    const key = this._key(type, id);
+    try {
+      const { comments } = await window.BGNJ_API.comments.list(type, id);
+      // v00.231 — 비-배열 응답으로 캐시를 덮어쓰던 데이터-사라짐 사고 방어.
+      if (!Array.isArray(comments)) {
+        console.warn('[BGNJ_COMMENTS.refresh] non-array — 기존 캐시 유지', key);
+        return this.list(type, id);
+      }
+      this._cache[key] = comments.map((c) => this._toUi(c));
+      this._emit(type, id);
+    } catch (e) {
+      console.warn('[BGNJ_COMMENTS] 서버 조회 실패 — 기존 캐시 유지:', e?.message || e);
+    }
+    return this.list(type, id);
+  },
+
+  // 낙관적 표시 — 서버 응답을 기다리지 않고 먼저 그린다. 실패하면 **반드시 걷어낸다**.
+  //   그냥 두면 화면에만 남아 '저장된 척' 을 한다(2026-08-25 사고의 두 번째 얼굴).
+  add(type, id, payload) {
+    const key = this._key(type, id);
+    const text = String(payload?.text ?? payload?.body ?? '').trim();
+    if (!text) return this.list(type, id);
+    const optimistic = {
+      id: `tmp-${Date.now()}`,
+      targetType: type, targetId: String(id),
+      parentId: payload.parentId ?? null,
+      text,
+      author: payload.author, authorId: payload.authorId,
+      createdAt: new Date().toISOString(),
+      date: payload.date || (window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(new Date().toISOString()) : ''),
+      _pending: true,
+    };
+    this._cache[key] = [...(this._cache[key] || []), optimistic];
+    this._emit(type, id);
+
+    window.BGNJ_API.comments.create(type, String(id), { body: text, parentId: payload.parentId || null })
+      .then(() => this.refresh(type, id))
+      .catch((e) => {
+        const cur = this._cache[key] || [];
+        this._cache[key] = cur.filter((c) => String(c.id) !== String(optimistic.id));
+        try { window.BGNJ_TOAST?.error?.(`댓글 저장 실패: ${e?.message || '알 수 없는 오류'}`); }
+        catch (_e) { console.warn('[bgnj] 알림 표시 실패', _e); }
+        this._emit(type, id);
+      });
+    return this.list(type, id);
+  },
+
+  remove(type, id, commentId) {
+    const key = this._key(type, id);
+    const before = this._cache[key] || [];
+    // 답글도 함께 사라진다 — 서버가 그렇게 지우므로 화면도 같은 모양이어야 한다.
+    this._cache[key] = before.filter((c) =>
+      String(c.id) !== String(commentId) && String(c.parentId ?? '') !== String(commentId));
+    this._emit(type, id);
+    if (!String(commentId).startsWith('tmp-')) {
+      window.BGNJ_API.comments.remove(commentId)
+        .then(() => this.refresh(type, id))
+        .catch((e) => {
+          this._cache[key] = before;   // 원복 — 시작 시점 값으로
+          try { window.BGNJ_TOAST?.error?.(`댓글 삭제 실패: ${e?.message || '알 수 없는 오류'}`); }
+          catch (_e) { console.warn('[bgnj] 알림 표시 실패', _e); }
+          this._emit(type, id);
+        });
+    }
+    return this.list(type, id);
+  },
+
+  // 관리자 대시보드용 — 화면에 실린 캐시가 아니라 서버가 센 값을 쓴다.
+  total() {
+    return Object.values(this._cache).reduce((n, l) => n + (Array.isArray(l) ? l.length : 0), 0);
+  },
+};
+
 window.BGNJ_COMMUNITY = {
   // 서버에서 받은 게시글 캐시. refreshPosts()가 채운다.
   // v00.046: 서버 미로드 시 로컬 시드 폴백 폐지 — 빈 배열 반환. 'D1 source-of-truth' 정책 정합.
@@ -1938,107 +2049,6 @@ window.BGNJ_COMMUNITY = {
       return 0;
     }
   },
-  // 서버 댓글 캐시 (postId → 배열). refreshComments가 채운다.
-  _commentsCache: {},
-  async refreshComments(postId) {
-    try {
-      const { comments } = await window.BGNJ_API.posts.comments.list(postId);
-      // v00.231 — 데이터-사라짐 방어 (per-postId 키 캐시).
-      if (!Array.isArray(comments)) { try { console.warn('[BGNJ_COMMUNITY.refreshComments] non-array — cache preserved for post', postId); } catch (_e) { console.warn('[bgnj] data.js:1688 오류(무시하고 진행)', _e); } return this._commentsCache[String(postId)] || []; }
-      // v00.306.001 — 화면(CommentTree)은 c.text / c.date 를 읽는다. body/createdAt 만 채우면
-      //   댓글은 있는데 **작성자와 빈 줄만** 보인다. 서버 필드와 화면 필드를 한 자리에서 잇는다.
-      this._commentsCache[String(postId)] = comments.map((c) => ({
-        id: c.id,
-        postId: c.post_id,
-        parentId: c.parent_id,
-        body: c.body,
-        text: c.body,
-        authorId: c.author_id,
-        author: c.author,
-        createdAt: c.created_at,
-        date: window.BGNJ_FMT ? window.BGNJ_FMT.kstShort(c.created_at) : String(c.created_at || ''),
-      }));
-      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js:1698)', _e); }
-    } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
-    return this._commentsCache[String(postId)] || [];
-  },
-  getComments(postId) {
-    // v00.079 — D1.comments 가 단독 source. _commentsCache 만 사용. 로컬 게시글의 임시 댓글은 더 이상 지원 X.
-    return (this._commentsCache[String(postId)] || []).slice();
-  },
-  // v00.079 — saveComments 는 deprecated. 새 댓글은 addCommentRemote 로 D1 에 직접 저장.
-  // 기존 호출자가 있으면 no-op (서버 fetch 결과만 권위).
-  saveComments(_postId, _comments) { /* no-op (v00.079) */ },
-  async addCommentRemote(postId, payload) {
-    // v00.306.001 — 화면은 { text } 로 넘기는데 여기서 payload.body 만 읽어 **빈 본문**이 나갔다.
-    //   워커는 빈 본문을 400 으로 되돌리고, 호출부의 빈 catch 가 그 오류를 삼켰다.
-    //   → 화면에는 뜨는데 D1 에는 한 건도 안 남던 것이 '댓글이 안 보인다' 민원의 원인이다.
-    const text = String(payload.body ?? payload.text ?? '').trim();
-    if (!text) throw new Error('댓글 내용이 비어 있습니다.');
-    await window.BGNJ_API.posts.comments.create(postId, { body: text, parentId: payload.parentId });
-    await this.refreshComments(postId);
-    if (payload.authorId) {
-      // v00.150 — auto-trigger 비활성. 등급 변경은 admin 의 [재산정] 버튼만.
-      if (!window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch (_e) { console.warn('[bgnj] data.js:1714 오류(무시하고 진행)', _e); } }
-    }
-    return this._commentsCache[String(postId)] || [];
-  },
-  addComment(postId, payload) {
-    const post = this.getPost(postId);
-    if (post && post._remote) {
-      // 서버 게시글 — 비동기로 위임 (UI에서 await 가능). 동기 호출자는 즉시 캐시에 prepend로 임시 표시.
-      const optimistic = { ...payload, id: `tmp-${Date.now()}`, createdAt: new Date().toISOString() };
-      const arr = this._commentsCache[String(postId)] || [];
-      this._commentsCache[String(postId)] = [...arr, optimistic];
-      // v00.306.001 — 실패를 삼키면 화면에만 남아 '저장된 척' 한다. 임시 댓글을 걷어내고 알린다.
-      this.addCommentRemote(postId, payload).catch((e) => {
-        const cur = this._commentsCache[String(postId)] || [];
-        this._commentsCache[String(postId)] = cur.filter((c) => String(c.id) !== String(optimistic.id));
-        try { window.BGNJ_TOAST?.error?.(`댓글 저장 실패: ${e?.message || '알 수 없는 오류'}`); } catch (_e) { console.warn('[bgnj] 알림 표시 실패', _e); }
-        try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다', _e); }
-      });
-      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js:1726)', _e); }
-      return this._commentsCache[String(postId)];
-    }
-    const nextComments = [...this.getComments(postId), payload];
-    this.saveComments(postId, nextComments);
-    if (payload.authorId) {
-      // v00.150 — auto-trigger 비활성. 등급 변경은 admin 의 [재산정] 버튼만.
-      if (!window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybePromote(payload.authorId); } catch (_e) { console.warn('[bgnj] data.js:1733 오류(무시하고 진행)', _e); } }
-    }
-    return nextComments;
-  },
-  deleteComment(postId, commentId) {
-    const post = this.getPost(postId);
-    // 댓글 작성자 추적 — 강등 판단용.
-    const allComments = this.getComments(postId);
-    const removed = allComments.find((c) => String(c.id) === String(commentId));
-    const authorId = removed?.authorId || null;
-    if (post && post._remote) {
-      // v00.306.001 — 삭제 endpoint(DELETE /posts/:id/comments/:cid)는 v00.141 부터 있었는데
-      //   로컬 캐시만 지우고 있었다. 새로고침하면 지운 댓글이 되살아난다.
-      const arr = this._commentsCache[String(postId)] || [];
-      this._commentsCache[String(postId)] = arr.filter((c) => String(c.id) !== String(commentId));
-      if (!String(commentId).startsWith('tmp-')) {
-        window.BGNJ_API.posts.comments.remove(postId, commentId)
-          .then(() => this.refreshComments(postId))
-          .catch((e) => {
-            this._commentsCache[String(postId)] = arr;   // 원복 — 시작 시점 값으로
-            try { window.BGNJ_TOAST?.error?.(`댓글 삭제 실패: ${e?.message || '알 수 없는 오류'}`); } catch (_e) { console.warn('[bgnj] 알림 표시 실패', _e); }
-            try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다', _e); }
-          });
-      }
-      try { window.dispatchEvent(new CustomEvent('bgnj-comments-refresh', { detail: { postId } })); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js:1747)', _e); }
-      // v00.150 — auto-trigger 비활성.
-      if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch (_e) { console.warn('[bgnj] data.js:1749 오류(무시하고 진행)', _e); } }
-      return this._commentsCache[String(postId)];
-    }
-    const nextComments = allComments.filter((comment) => String(comment.id) !== String(commentId));
-    this.saveComments(postId, nextComments);
-    // v00.150 — auto-trigger 비활성.
-    if (authorId && !window.BGNJ_AUTO_GRADE_DISABLED) { try { window.BGNJ_GRADE_PROMO?.maybeDemote(authorId); } catch (_e) { console.warn('[bgnj] data.js:1755 오류(무시하고 진행)', _e); } }
-    return nextComments;
-  },
   exportCsv() {
     const header = ["id", "category", "title", "author", "date", "views", "replies", "likes"];
     const rows = this.listPosts().map((post) => [
@@ -2236,6 +2246,9 @@ window.BGNJ_COLUMNS = {
       sourceCredit: r.source_credit || '', sourceUrl: r.source_url || '',
       // v00.136 — 대표이미지 출처 (schema-v7 ALTER TABLE).
       coverCredit: r.cover_credit || '',
+      // v00.306.004 — 서버가 센 댓글 수. 아카이브 카드의 '댓글 0' 이 늘 0 이던 것을 고친다
+      //   (지금까지는 열어 본 칼럼의 캐시만 셌다). 구버전 응답 호환으로 0 폴백.
+      commentCount: Number(r.comment_count ?? 0) || 0,
     };
   },
   estimateReadTime(text) {
@@ -2384,9 +2397,6 @@ window.BGNJ_COLUMNS = {
     });
   },
   // 댓글은 BGNJ_COMMUNITY 저장소 재사용 (`col-{id}` 키)
-  listComments(id) { return window.BGNJ_COMMUNITY.getComments(`col-${id}`); },
-  addComment(id, payload) { return window.BGNJ_COMMUNITY.addComment(`col-${id}`, payload); },
-  deleteComment(id, commentId) { return window.BGNJ_COMMUNITY.deleteComment(`col-${id}`, commentId); },
 };
 
 // === 강연(BGNJ_LECTURES) helper — 서버(D1.lectures + lecture_registrations) source of truth ===

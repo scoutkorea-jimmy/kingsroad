@@ -186,12 +186,17 @@
       remove: (id) => request("DELETE", `/posts/${id}`),
       // v00.244 — 조회수 server persistence (칼럼 패턴 미러). 비로그인도 카운트, sessionStorage 가드는 클라이언트.
       view: (id) => request("POST", `/posts/${id}/view`),
-      comments: {
-        list: (postId) => request("GET", `/posts/${postId}/comments`),
-        create: (postId, { body, parentId }) =>
-          request("POST", `/posts/${postId}/comments`, { body, parentId }),
-        remove: (postId, commentId) => request("DELETE", `/posts/${postId}/comments/${commentId}`),
-      },
+    },
+
+    // v00.306.004 — 댓글 창구는 하나다. 글이든 칼럼이든 (targetType, targetId) 로 가리킨다.
+    //   옛 /posts/:id/comments 는 서버에 껍데기로 남아 있지만(옛 캐시 보호용)
+    //   **클라이언트는 새 주소만 쓴다** — 두 길을 다 쓰면 어느 쪽이 진짜인지 알 수 없게 된다.
+    comments: {
+      list: (targetType, targetId) =>
+        request("GET", `/comments?targetType=${encodeURIComponent(targetType)}&targetId=${encodeURIComponent(targetId)}`),
+      create: (targetType, targetId, { body, parentId }) =>
+        request("POST", `/comments`, { targetType, targetId, body, parentId }),
+      remove: (commentId) => request("DELETE", `/comments/${encodeURIComponent(commentId)}`),
     },
 
     // ── 책 ──

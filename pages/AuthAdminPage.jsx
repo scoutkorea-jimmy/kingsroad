@@ -100,11 +100,12 @@ const AdminPage = ({ go }) => {
   const allCommunityPosts = React.useMemo(() => window.BGNJ_COMMUNITY.listPosts(), [postRefreshKey]);
   const allUsers = React.useMemo(() => window.BGNJ_AUTH.listUsers(), [postRefreshKey]);
   const allColumns = React.useMemo(() => G.arr(() => window.BGNJ_COLUMNS?.listPublic?.()), [postRefreshKey]);
-  // v00.079 — D1.comments 가 단독 source. 서버 fetch 결과(BGNJ_COMMUNITY._commentsCache) 합산.
-  // _commentsCache 는 게시글 본문 모달 열 때 채워지므로 대시보드에선 0 일 수 있음 — 정확한 카운트는 서버 metrics 사용 권장.
+  // v00.306.004 — 지금까지 '열어 본 글의 캐시' 만 세어서 대시보드 총 댓글은 거의 늘 0 이었다.
+  //   이제 서버가 목록에 실어 보내는 수(글 replies · 칼럼 commentCount)를 합한다 — 열어 보지 않아도 맞는다.
   const totalComments = React.useMemo(
-    () => Object.values(window.BGNJ_COMMUNITY?._commentsCache || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0),
-    [postRefreshKey]
+    () => allCommunityPosts.reduce((sum, p) => sum + (Number(p.replies) || 0), 0)
+        + allColumns.reduce((sum, c) => sum + (Number(c.commentCount) || 0), 0),
+    [allCommunityPosts, allColumns]
   );
   const allBookOrders = React.useMemo(() => window.BGNJ_BOOK_ORDERS?.listAll?.() || [], [postRefreshKey]);
   const pendingBookOrders = allBookOrders.filter((o) => o.status === 'pending_payment').length;

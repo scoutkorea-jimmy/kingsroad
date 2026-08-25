@@ -520,7 +520,7 @@ const handlePostsList = async (req, env) => {
   const sql = `SELECT p.id, p.category_id, p.category, p.prefix, p.title, p.body, p.author_id, p.author,
                       p.views, p.created_at, p.updated_at, p.edit_count,
                       p.images_json, p.attachments_json, p.tags_json,
-                      (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS replies
+                      (SELECT COUNT(*) FROM content_comments c WHERE c.target_type = 'post' AND c.target_id = CAST(p.id AS TEXT)) AS replies
                FROM posts p WHERE ${where} ORDER BY p.created_at DESC LIMIT ?`;
   const { results: rawResults } = await env.DB.prepare(sql).bind(...args, limit).all();
   // v00.296.002 — 목록 응답에서 본문을 빼고 발췌만 보낸다.
@@ -755,7 +755,7 @@ const handlePostGet = async (req, env, id) => {
   // v00.306.002 — replies 를 목록과 같은 방식(그 자리에서 세기)으로 맞춘다.
   //   한쪽만 고치면 목록의 '댓글 2' 와 상세의 '댓글 4' 가 서로 다른 말을 한다.
   const post = await env.DB.prepare(
-    "SELECT p.*, (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS replies FROM posts p WHERE p.id = ?"
+    "SELECT p.*, (SELECT COUNT(*) FROM content_comments c WHERE c.target_type = 'post' AND c.target_id = CAST(p.id AS TEXT)) AS replies FROM posts p WHERE p.id = ?"
   ).bind(id).first();
   if (!post) throw new HttpError(404, "게시글을 찾을 수 없습니다.");
   // v00.141 — allow_read 가 명시 0 이면 비관리자 차단.
@@ -823,75 +823,147 @@ const handlePostDelete = async (req, env, id) => {
   if (!post) throw new HttpError(404, "게시글을 찾을 수 없습니다.");
   if (post.author_id !== user.id && !user.isAdmin) throw new HttpError(403, "본인의 글만 삭제할 수 있습니다.");
   await env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(id).run();
+  // v00.306.004 — 댓글은 이제 FK 로 따라 지워지지 않는다(대상이 두 종류라 FK 를 못 건다).
+  await deleteCommentsFor(env, 'post', id);
   return { ok: true };
 };
 
-const handleCommentsList = async (req, env, postId) => {
-  // v00.141 — 댓글 보기 권한 (allow_comment_read). 게시글의 카테고리 → categories_kv 조회.
-  // 명시 0 이면 비관리자에 빈 배열. NULL/undefined 는 legacy 호환 → 노출.
+// ── 댓글 ────────────────────────────────────────────────────────────
+// v00.306.004 — 댓글이 붙는 대상을 '글 번호' 에서 '무엇의 무엇' 으로 넓혔다.
+//   옛 comments 는 post_id INTEGER + posts FK 라 칼럼 아이디('col-xxxx')를 담을 수 없었다.
+//   그래서 칼럼 댓글은 화면만 있고 서버로 가는 길이 아예 없었다(등록하면 그 자리에서 사라졌다).
+//   새 content_comments 는 (target_type, target_id TEXT) 를 쓴다.
+//
+//   ⚠ FK 로 따라오던 ON DELETE CASCADE 가 사라진다. 대상이 두 종류라 한 테이블을 못 가리킨다.
+//     → 글·칼럼을 지울 때 **여기서 명시적으로 지운다**. 빠뜨리면 주인 없는 댓글이 쌓인다.
+const COMMENT_TARGETS = {
+  post:   { table: 'posts',        idCol: 'id', catCol: 'category_id' },
+  column: { table: 'user_columns', idCol: 'id', catCol: null },
+};
+
+const assertCommentTarget = (targetType) => {
+  const t = COMMENT_TARGETS[String(targetType || '')];
+  if (!t) throw new HttpError(400, "댓글을 달 수 없는 대상입니다.");
+  return t;
+};
+
+// 대상이 실제로 있는지 + (글이면) 게시판 권한. 없는 대상에 댓글이 붙으면 영영 안 보인다.
+const loadCommentTarget = async (env, targetType, targetId) => {
+  const t = assertCommentTarget(targetType);
+  const cols = t.catCol ? `${t.idCol} AS id, ${t.catCol} AS category_id` : `${t.idCol} AS id, NULL AS category_id`;
+  const row = await env.DB.prepare(`SELECT ${cols} FROM ${t.table} WHERE ${t.idCol} = ?`).bind(targetId).first();
+  if (!row) throw new HttpError(404, "대상을 찾을 수 없습니다.");
+  return row;
+};
+
+// 게시판 댓글 권한 (allow_comment_read / allow_comment_write). 칼럼은 게시판이 없어 늘 통과.
+const commentPermission = async (env, categoryId, col) => {
+  if (!categoryId) return true;
+  const cat = await env.DB.prepare(`SELECT ${col} FROM categories_kv WHERE id = ?`).bind(categoryId).first();
+  if (!cat) return true;
+  const v = cat[col];
+  // 명시 0 만 막는다. NULL/undefined 는 legacy 호환 → 통과.
+  return !(v !== undefined && v !== null && Number(v) === 0);
+};
+
+const countComments = async (env, targetType, targetId) => {
+  const row = await env.DB.prepare(
+    "SELECT COUNT(*) AS n FROM content_comments WHERE target_type = ? AND target_id = ?"
+  ).bind(String(targetType), String(targetId)).first();
+  return Number(row?.n || 0);
+};
+
+const handleCommentsList = async (req, env, targetType, targetId) => {
+  assertCommentTarget(targetType);
   let isAdmin = false;
-  // v00.262.003 — C2 transient D1 에러로 admin 권한 silent 강등 사고 방지. 가시화.
-  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; } catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); } }
-  if (!isAdmin) {
-    const post = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(postId).first();
-    if (post?.category_id) {
-      const cat = await env.DB.prepare("SELECT allow_comment_read FROM categories_kv WHERE id = ?").bind(post.category_id).first();
-      if (cat && cat.allow_comment_read !== undefined && cat.allow_comment_read !== null && Number(cat.allow_comment_read) === 0) {
-        return { comments: [], blocked: true };
-      }
+  // v00.262.003 — transient D1 에러로 admin 이 조용히 강등되던 사고 방지. 가시화한다.
+  try { const me = await getCurrentUser(req, env); isAdmin = !!me?.isAdmin; }
+  catch (e) { try { console.warn("[auth-soft]", e?.message || e); } catch (e2) { console.warn("[bgnj:best-effort]", e2?.message || e2); } }
+  if (!isAdmin && targetType === 'post') {
+    const target = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(targetId).first();
+    if (target?.category_id && !(await commentPermission(env, target.category_id, 'allow_comment_read'))) {
+      return { comments: [], blocked: true };
     }
   }
   const { results } = await env.DB.prepare(
-    "SELECT id, post_id, parent_id, body, author_id, author, created_at FROM comments WHERE post_id = ? ORDER BY created_at ASC"
-  ).bind(postId).all();
-  return { comments: results };
+    `SELECT id, target_type, target_id, parent_id, body, author_id, author, created_at
+     FROM content_comments WHERE target_type = ? AND target_id = ? ORDER BY created_at ASC`
+  ).bind(String(targetType), String(targetId)).all();
+  return { comments: results || [] };
 };
 
-const handleCommentsCreate = async (req, env, postId) => {
+const handleCommentsCreate = async (req, env, targetType, targetId) => {
   const user = await requireUser(req, env);
   const body = await req.json().catch(() => ({}));
   const text = assertLength(String(body.body || "").trim(), COMMENT_MAX, "댓글");
   if (!text) throw new HttpError(400, "내용을 입력해 주세요.");
-  await assertWriteRate(env, user, "comments", "author_id");
-  // v00.141 — 댓글 작성 권한 (allow_comment_write).
-  if (!user.isAdmin) {
-    const post = await env.DB.prepare("SELECT category_id FROM posts WHERE id = ?").bind(postId).first();
-    if (post?.category_id) {
-      const cat = await env.DB.prepare("SELECT allow_comment_write FROM categories_kv WHERE id = ?").bind(post.category_id).first();
-      if (cat && cat.allow_comment_write !== undefined && cat.allow_comment_write !== null && Number(cat.allow_comment_write) === 0) {
-        throw new HttpError(403, "이 게시판은 현재 댓글 작성이 비활성화되어 있습니다.");
-      }
-    }
+  await assertWriteRate(env, user, "content_comments", "author_id");
+  const target = await loadCommentTarget(env, targetType, targetId);
+  if (!user.isAdmin && !(await commentPermission(env, target.category_id, 'allow_comment_write'))) {
+    throw new HttpError(403, "이 게시판은 현재 댓글 작성이 비활성화되어 있습니다.");
+  }
+  // 답글이면 부모가 같은 대상의 댓글인지 확인한다 — 남의 글 댓글에 매달리면 어디에도 안 보인다.
+  let parentId = null;
+  if (body.parentId !== undefined && body.parentId !== null && String(body.parentId) !== '') {
+    const parent = await env.DB.prepare(
+      "SELECT id, author_id FROM content_comments WHERE id = ? AND target_type = ? AND target_id = ?"
+    ).bind(body.parentId, String(targetType), String(targetId)).first();
+    if (!parent) throw new HttpError(400, "답글을 달 댓글을 찾을 수 없습니다.");
+    parentId = parent.id;
   }
   const r = await env.DB.prepare(
-    "INSERT INTO comments (post_id, parent_id, body, author_id, author, created_at) VALUES (?, ?, ?, ?, ?, ?)"
-  ).bind(postId, body.parentId || null, text, user.id, user.name, nowIso()).run();
-  // v00.306.002 — posts.replies 카운터 갱신을 걷어냈다. 읽는 자리(목록·상세)가 전부
-  //   그 자리에서 세도록 바뀌었으므로, 여기서 올려 봐야 **아무도 안 읽는 틀린 값**만 쌓인다.
-  //   (지울 때 -1 이 없어 이미 어긋나 있었다 — 140번 글 카운터 4 · 실제 2.)
-  // 알림 자동 발급 — 게시글 작성자에게 (본인 댓글은 제외).
+    `INSERT INTO content_comments (target_type, target_id, parent_id, body, author_id, author, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
+  ).bind(String(targetType), String(targetId), parentId, text, user.id, user.name, nowIso()).run();
+  // 알림 — 글/칼럼 작성자에게 (본인 댓글 제외).
   try {
-    const post = await env.DB.prepare("SELECT author_id, title FROM posts WHERE id = ?").bind(postId).first();
-    if (post?.author_id && post.author_id !== user.id) {
+    const t = COMMENT_TARGETS[targetType];
+    const owner = await env.DB.prepare(
+      `SELECT author_id, title FROM ${t.table} WHERE ${t.idCol} = ?`
+    ).bind(targetId).first();
+    if (owner?.author_id && owner.author_id !== user.id) {
       await insertNotification(env, {
-        userId: post.author_id, type: 'comment',
-        message: '내 글에 새 댓글이 달렸습니다.',
-        fromName: user.name, postId, postTitle: post.title,
+        userId: owner.author_id, type: 'comment',
+        message: targetType === 'column' ? '내 칼럼에 새 댓글이 달렸습니다.' : '내 글에 새 댓글이 달렸습니다.',
+        fromName: user.name,
+        postId: targetType === 'post' ? Number(targetId) : null,
+        postTitle: owner.title,
       });
     }
-    // 답글이면 부모 댓글 작성자에게도.
-    if (body.parentId) {
-      const parent = await env.DB.prepare("SELECT author_id FROM comments WHERE id = ?").bind(body.parentId).first();
-      if (parent?.author_id && parent.author_id !== user.id && parent.author_id !== post?.author_id) {
+    if (parentId) {
+      const parent = await env.DB.prepare("SELECT author_id FROM content_comments WHERE id = ?").bind(parentId).first();
+      if (parent?.author_id && parent.author_id !== user.id && parent.author_id !== owner?.author_id) {
         await insertNotification(env, {
           userId: parent.author_id, type: 'reply',
           message: '내 댓글에 답글이 달렸습니다.',
-          fromName: user.name, postId, postTitle: post?.title || '',
+          fromName: user.name,
+          postId: targetType === 'post' ? Number(targetId) : null,
+          postTitle: owner?.title || '',
         });
       }
     }
   } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
-  return { id: r.meta.last_row_id };
+  return { id: r.meta.last_row_id, replies: await countComments(env, targetType, targetId) };
+};
+
+const handleCommentDelete = async (req, env, commentId) => {
+  const user = await requireUser(req, env);
+  const row = await env.DB.prepare(
+    "SELECT id, target_type, target_id, author_id FROM content_comments WHERE id = ?"
+  ).bind(commentId).first();
+  if (!row) throw new HttpError(404, "댓글을 찾을 수 없습니다.");
+  if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403, "본인 또는 관리자만 삭제할 수 있습니다.");
+  // 답글이 매달려 있으면 함께 지운다(자기 참조 FK 의 CASCADE 를 못 믿는 환경 대비 명시).
+  await env.DB.prepare("DELETE FROM content_comments WHERE id = ? OR parent_id = ?").bind(commentId, commentId).run();
+  return { ok: true, replies: await countComments(env, row.target_type, row.target_id) };
+};
+
+// 대상이 사라지면 그 댓글도 사라져야 한다. FK CASCADE 를 못 쓰므로 부르는 쪽에서 지운다.
+const deleteCommentsFor = async (env, targetType, targetId) => {
+  try {
+    await env.DB.prepare("DELETE FROM content_comments WHERE target_type = ? AND target_id = ?")
+      .bind(String(targetType), String(targetId)).run();
+  } catch (e) { console.warn("[bgnj:comment-cleanup]", e?.message || e); }
 };
 
 const handleBooksList = async (req, env) => {
@@ -1172,8 +1244,8 @@ const handleUserJourney = async (req, env, userId) => {
   const posts = await safe("SELECT id, title, category, created_at FROM posts WHERE author_id = ? ORDER BY created_at DESC LIMIT 100", [userId]);
   posts.forEach((p) => events.push({ kind: 'post', ts: p.created_at, label: '게시글 작성', detail: `[${p.category}] ${p.title}`, target: `post:${p.id}` }));
   // 댓글.
-  const comments = await safe("SELECT id, post_id, body, created_at FROM comments WHERE author_id = ? ORDER BY created_at DESC LIMIT 200", [userId]);
-  comments.forEach((c) => events.push({ kind: 'comment', ts: c.created_at, label: '댓글 작성', detail: String(c.body || '').slice(0, 60), target: `post:${c.post_id}` }));
+  const comments = await safe("SELECT id, target_type, target_id, body, created_at FROM content_comments WHERE author_id = ? ORDER BY created_at DESC LIMIT 200", [userId]);
+  comments.forEach((c) => events.push({ kind: 'comment', ts: c.created_at, label: '댓글 작성', detail: String(c.body || '').slice(0, 60), target: `${c.target_type}:${c.target_id}` }));
   // 강연 신청.
   const lectureRegs = await safe(
     "SELECT lr.id, lr.lecture_id, lr.status, lr.created_at, l.title FROM lecture_registrations lr LEFT JOIN lectures l ON l.id = lr.lecture_id WHERE lr.user_id = ? ORDER BY lr.created_at DESC LIMIT 100", [userId]);
@@ -1279,7 +1351,7 @@ const handleAdminUserMetrics = async (req, env, userId) => {
   if (!userId) throw new HttpError(400, "userId required");
   // 사용자 자신의 글/댓글 수
   const postsRow = await env.DB.prepare("SELECT COUNT(*) AS c FROM posts WHERE author_id = ?").bind(userId).first();
-  const commentsRow = await env.DB.prepare("SELECT COUNT(*) AS c FROM comments WHERE author_id = ?").bind(userId).first();
+  const commentsRow = await env.DB.prepare("SELECT COUNT(*) AS c FROM content_comments WHERE author_id = ?").bind(userId).first();
   // 받은 좋아요 — 본인 글에 들어온 post_likes 합 + 본인 칼럼의 likes_json 길이 합
   const likesPostsRow = await env.DB.prepare(
     "SELECT COUNT(*) AS c FROM post_likes WHERE post_id IN (SELECT id FROM posts WHERE author_id = ?)"
@@ -1674,15 +1746,6 @@ const handleMePassword = async (req, env) => {
 };
 
 // 댓글 삭제 — 작성자 본인 또는 관리자.
-const handleCommentDelete = async (req, env, postId, commentId) => {
-  const user = await requireUser(req, env);
-  const row = await env.DB.prepare("SELECT id, author_id FROM comments WHERE id = ? AND post_id = ?").bind(commentId, postId).first();
-  if (!row) throw new HttpError(404, "댓글을 찾을 수 없습니다.");
-  if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403, "본인 또는 관리자만 삭제할 수 있습니다.");
-  await env.DB.prepare("DELETE FROM comments WHERE id = ?").bind(commentId).run();
-  return { ok: true };
-};
-
 // ── 강연 등록 흐름 ──
 const handleMyLectures = async (req, env) => {
   const user = await requireUser(req, env);
@@ -2364,7 +2427,7 @@ const handleUserActivity = async (req, env, userId) => {
   };
   const [postCount, commentCount, bookmarkCount, orderCount, lectureCount, tourCount, notificationCount] = await Promise.all([
     safe("SELECT COUNT(*) AS c FROM posts WHERE author_id = ?", [userId]),
-    safe("SELECT COUNT(*) AS c FROM comments WHERE author_id = ?", [userId]),
+    safe("SELECT COUNT(*) AS c FROM content_comments WHERE author_id = ?", [userId]),
     safe("SELECT COUNT(*) AS c FROM bookmarks WHERE user_id = ?", [userId]),
     safe("SELECT COUNT(*) AS c FROM book_orders WHERE user_id = ?", [userId]),
     safe("SELECT COUNT(*) AS c FROM lecture_registrations WHERE user_id = ?", [userId]),
@@ -2524,8 +2587,13 @@ const handleColumnsList = async (req, env) => {
       args.push(`%${q}%`, `%${q}%`);
     }
   }
+  // v00.306.004 — 칼럼 목록도 댓글 수를 싣는다. 지금까지 아카이브 카드의 '댓글 0' 은
+  //   열어 본 칼럼 말고는 늘 0 이었다(캐시에만 있는 수를 셌다). 글 목록과 같은 방식으로 센다.
   const { results } = await env.DB.prepare(
-    `SELECT * FROM user_columns WHERE ${where} ORDER BY created_at DESC LIMIT 200`
+    `SELECT uc.*, (SELECT COUNT(*) FROM content_comments c
+                   WHERE c.target_type = 'column' AND c.target_id = uc.id) AS comment_count
+     FROM user_columns uc WHERE ${where.replace(/\b(status|title|excerpt|body)\b/g, 'uc.$1')}
+     ORDER BY uc.created_at DESC LIMIT 200`
   ).bind(...args).all();
   // v00.296.003 — 글 목록과 같은 이유로 본문을 뺀다(목록 463KB 의 대부분이 body 였다).
   //   excerpt 컬럼이 원래 있지만 비어 있는 칼럼이 많아, 비면 본문 앞부분에서 만들어 채운다.
@@ -2540,7 +2608,11 @@ const handleColumnsList = async (req, env) => {
 };
 
 const handleColumnGet = async (req, env, id) => {
-  const row = await env.DB.prepare("SELECT * FROM user_columns WHERE id = ?").bind(id).first();
+  const row = await env.DB.prepare(
+    `SELECT uc.*, (SELECT COUNT(*) FROM content_comments c
+                   WHERE c.target_type = 'column' AND c.target_id = uc.id) AS comment_count
+     FROM user_columns uc WHERE uc.id = ?`
+  ).bind(id).first();
   return { column: row || null };
 };
 
@@ -2601,6 +2673,7 @@ const handleColumnDelete = async (req, env, id) => {
   if (!row) throw new HttpError(404);
   if (!user.isAdmin && row.author_id !== user.id) throw new HttpError(403);
   await env.DB.prepare("DELETE FROM user_columns WHERE id = ?").bind(id).run();
+  await deleteCommentsFor(env, 'column', id);
   return { ok: true };
 };
 
@@ -3501,15 +3574,34 @@ const route = async (req, env) => {
   if ((g = m(/^\/api\/posts\/(\d+)\/view$/))) {
     if (req.method === "POST") return json(await handlePostView(req, env, g[1]));
   }
+  // v00.306.004 — 댓글 창구는 /api/comments 하나다.
+  //   아래 /api/posts/:id/comments 는 **옛 코드를 캐시한 브라우저**를 위한 껍데기다.
+  //   배포 직후 옛 JS 를 쥐고 있는 사람이 댓글을 못 쓰게 되면 안 된다. 넘겨주기만 한다.
   if ((g = m(/^\/api\/posts\/(\d+)\/comments$/))) {
-    const id = Number(g[1]);
-    if (req.method === "GET") return json(await handleCommentsList(req, env, id));
-    if (req.method === "POST") return json(await handleCommentsCreate(req, env, id), { status: 201 });
+    const id = String(Number(g[1]));
+    if (req.method === "GET") return json(await handleCommentsList(req, env, 'post', id));
+    if (req.method === "POST") return json(await handleCommentsCreate(req, env, 'post', id), { status: 201 });
   }
   if ((g = m(/^\/api\/posts\/(\d+)\/comments\/([\w-]+)$/))) {
-    const postId = Number(g[1]);
-    const cid = g[2];
-    if (req.method === "DELETE") return json(await handleCommentDelete(req, env, postId, cid));
+    if (req.method === "DELETE") return json(await handleCommentDelete(req, env, g[2]));
+  }
+
+  // 새 창구 — 글이든 칼럼이든 여기 하나로.
+  if (p === "/api/comments") {
+    if (req.method === "GET") {
+      const targetType = url.searchParams.get("targetType") || "";
+      const targetId = url.searchParams.get("targetId") || "";
+      if (!targetId) throw new HttpError(400, "대상을 지정해 주세요.");
+      return json(await handleCommentsList(req, env, targetType, targetId));
+    }
+    if (req.method === "POST") {
+      const b = await req.clone().json().catch(() => ({}));
+      if (!b.targetId) throw new HttpError(400, "대상을 지정해 주세요.");
+      return json(await handleCommentsCreate(req, env, b.targetType || "", String(b.targetId)), { status: 201 });
+    }
+  }
+  if ((g = m(/^\/api\/comments\/([\w-]+)$/))) {
+    if (req.method === "DELETE") return json(await handleCommentDelete(req, env, g[1]));
   }
 
   if (req.method === "GET" && p === "/api/books") {

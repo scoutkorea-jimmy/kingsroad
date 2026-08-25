@@ -382,71 +382,112 @@ const run = async () => {
     check("목록으로 나오면 상세가 지워진다", hash === "#admin=%EA%B0%95%EC%97%B0", hash);
   }
 
-  console.log("\n── 10. 댓글이 서버에 남는가 (2026-08-25 '댓글이 안 보인다' 민원) ──");
+  console.log("\n── 10. 댓글 — 글·칼럼 한 창구 (2026-08-25 민원 2건) ──");
   {
-    const C2 = w.BGNJ_COMMUNITY;
-    C2._serverLoaded = true;
-    C2._serverPosts = [{ id: 500, title: "댓글 달 글", categoryId: "free", _remote: true }];
-    C2._commentsCache = {};
-
+    const CM = w.BGNJ_COMMENTS;
+    let rows = [];          // 서버 흉내 (content_comments)
+    let nextId = 1;
     let sent = null;
-    let serverRows = [];
     const toasts = [];
     w.BGNJ_TOAST = { error: (m) => toasts.push(String(m)), success() {}, info() {} };
     w.BGNJ_API = {
-      posts: {
-        comments: {
-          list: async () => ({ comments: serverRows }),
-          create: async (postId, payload) => {
-            sent = { postId, ...payload };
-            const text = String(payload.body || "").trim();
-            if (!text) throw new Error("내용을 입력해 주세요.");   // 워커와 동일한 판정
-            serverRows = [...serverRows, {
-              id: 1, post_id: Number(postId), parent_id: payload.parentId || null,
-              body: text, author_id: "u-1", author: "글쓴이",
-              created_at: "2026-08-25T01:02:03Z",
-            }];
-            return { id: 1 };
-          },
-          remove: async () => { serverRows = []; return { ok: true }; },
+      comments: {
+        list: async (type, id) => ({ comments: rows.filter((r) => r.target_type === type && r.target_id === String(id)) }),
+        create: async (type, id, payload) => {
+          sent = { type, id, ...payload };
+          const text = String(payload.body || "").trim();
+          if (!text) throw new Error("내용을 입력해 주세요.");   // 워커와 같은 판정
+          const row = {
+            id: nextId++, target_type: type, target_id: String(id),
+            parent_id: payload.parentId || null, body: text,
+            author_id: "u-1", author: "글쓴이", created_at: "2026-08-25T01:02:03Z",
+          };
+          rows.push(row);
+          return { id: row.id };
+        },
+        remove: async (commentId) => {
+          rows = rows.filter((r) => String(r.id) !== String(commentId) && String(r.parent_id ?? '') !== String(commentId));
+          return { ok: true };
         },
       },
     };
+    const settle = async () => { for (let i = 0; i < 4; i++) await new Promise((r) => setTimeout(r, 0)); };
 
-    // 화면(CommunityPage.submitComment)이 실제로 넘기는 모양 그대로.
-    C2.addComment(500, {
-      id: "comment-1", author: "글쓴이", authorId: "u-1",
-      date: "2026.08.25 10:02", text: "댓글 본문입니다",
-    });
-    await new Promise((r) => setTimeout(r, 0));
-    await new Promise((r) => setTimeout(r, 0));
+    // 화면이 실제로 넘기는 모양 그대로 (text · date). body 로 읽으면 빈 본문이 나간다.
+    for (const [type, id, label] of [['post', 500, '게시글'], ['column', 'col-9', '칼럼']]) {
+      CM._cache = {};
+      toasts.length = 0;
+      CM.add(type, id, { author: "글쓴이", authorId: "u-1", date: "2026.08.25 10:02", text: `${label} 댓글입니다` });
+      await settle();
+      check(`${label} — 본문이 서버로 전달된다`, !!sent && String(sent.body || "").trim() === `${label} 댓글입니다`,
+        sent ? `보낸 body=${JSON.stringify(sent.body)}` : "create 가 호출조차 안 됐다");
+      check(`${label} — 서버에 남는다`, rows.some((r) => r.target_type === type && r.target_id === String(id)));
 
-    check("댓글 본문이 서버로 전달된다", !!sent && String(sent.body || "").trim() === "댓글 본문입니다",
-      sent ? `보낸 body=${JSON.stringify(sent.body)}` : "create 가 호출조차 안 됐다");
-    check("서버에 댓글이 남는다", serverRows.length === 1, `서버 행 ${serverRows.length}개`);
+      // 새로고침 = 캐시를 버리고 서버에서 다시 읽는 상황
+      CM._cache = {};
+      const list = await CM.refresh(type, id);
+      check(`${label} — 새로고침 뒤에도 남는다`, list.length === 1, `${list.length}개`);
+      check(`${label} — 화면 필드(text·date)로 온다`, !!(list[0]?.text && list[0]?.date),
+        JSON.stringify(list[0] || {}).slice(0, 120));
 
-    // 새로고침 = 캐시를 버리고 서버에서 다시 읽는 상황.
-    C2._commentsCache = {};
-    await C2.refreshComments(500);
-    const list = C2.getComments(500);
-    check("새로고침 뒤에도 댓글이 남는다", list.length === 1, `${list.length}개`);
-    check("댓글 본문이 화면 필드(text)로 온다", !!(list[0] && list[0].text), JSON.stringify(list[0] || {}).slice(0, 120));
-    check("댓글 작성 시각이 화면 필드(date)로 온다", !!(list[0] && list[0].date), JSON.stringify(list[0] || {}).slice(0, 120));
+      // 답글
+      CM.add(type, id, { author: "다른 사람", authorId: "u-2", text: "답글입니다", parentId: list[0].id });
+      await settle();
+      const withReply = CM.list(type, id);
+      check(`${label} — 답글이 부모에 매달린다`,
+        withReply.length === 2 && String(withReply[1].parentId) === String(list[0].id),
+        JSON.stringify(withReply.map((c) => [c.id, c.parentId])));
 
-    // 저장이 실패하면 — 화면에만 남아 '있는 척' 하면 안 된다.
-    serverRows = [];
-    C2._commentsCache = {};
-    w.BGNJ_API.posts.comments.create = async () => { throw new Error("서버 장애"); };
-    C2.addComment(500, { id: "comment-2", author: "글쓴이", authorId: "u-1", date: "x", text: "실패할 댓글" });
-    await new Promise((r) => setTimeout(r, 0));
-    await new Promise((r) => setTimeout(r, 0));
+      // 삭제 — 답글도 함께
+      CM.remove(type, id, list[0].id);
+      await settle();
+      check(`${label} — 지우면 답글까지 사라진다`, CM.list(type, id).length === 0, `${CM.list(type, id).length}개 남음`);
+      check(`${label} — 서버에서도 사라진다`, !rows.some((r) => r.target_type === type && r.target_id === String(id)));
+    }
+
+    // 대상이 섞이지 않는다 — 글 500 의 댓글이 칼럼에 보이면 안 된다.
+    CM._cache = {}; rows = []; nextId = 1;
+    CM.add('post', 500, { author: "가", authorId: "u-1", text: "글 쪽" });
+    CM.add('column', 'col-9', { author: "나", authorId: "u-2", text: "칼럼 쪽" });
+    await settle();
+    check("글과 칼럼의 댓글이 섞이지 않는다",
+      CM.list('post', 500).length === 1 && CM.list('column', 'col-9').length === 1 &&
+      CM.list('post', 500)[0].text === "글 쪽",
+      `글 ${CM.list('post', 500).length} · 칼럼 ${CM.list('column', 'col-9').length}`);
+
+    // 저장이 실패하면 화면에만 남아 '있는 척' 하면 안 된다.
+    CM._cache = {}; rows = []; toasts.length = 0;
+    w.BGNJ_API.comments.create = async () => { throw new Error("서버 장애"); };
+    CM.add('post', 500, { author: "글쓴이", authorId: "u-1", text: "실패할 댓글" });
+    await settle();
     check("저장 실패를 사용자에게 알린다", toasts.length > 0, "조용히 삼키면 사용자는 저장된 줄 안다");
-    check("실패한 댓글은 화면에 남지 않는다", C2.getComments(500).length === 0, `${C2.getComments(500).length}개 남음`);
+    check("실패한 댓글은 화면에 남지 않는다", CM.list('post', 500).length === 0, `${CM.list('post', 500).length}개 남음`);
 
-    // 삭제도 서버까지 가야 한다 — 로컬에서만 지우면 새로고침에 되살아난다.
-    const src = readFileSync(path.join(ROOT, "data.js"), "utf8");
-    check("댓글 삭제가 서버 API 를 부른다", /comments\.remove\(/.test(src),
-      "로컬 캐시만 지우면 새로고침 때 되살아난다");
+    // 빈 본문은 보내기 전에 막는다 (워커까지 가서 400 을 받을 이유가 없다)
+    sent = null;
+    CM.add('post', 500, { author: "글쓴이", authorId: "u-1", text: "   " });
+    await settle();
+    check("빈 댓글은 서버로 가지 않는다", sent === null);
+
+    // 워커 — 대상 중립 창구인가
+    const wk = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+    check("워커가 target_type · target_id 로 저장한다",
+      /INSERT INTO content_comments \(target_type, target_id/.test(wk));
+    check("옛 주소(/posts/:id/comments)를 껍데기로 남겨 뒀다",
+      wk.includes("/comments$/") && wk.includes("handleCommentsList(req, env, 'post'"),
+      "배포 직후 옛 JS 를 쥔 브라우저가 댓글을 못 쓰게 된다");
+    check("글을 지우면 그 댓글도 지운다", /deleteCommentsFor\(env, 'post'/.test(wk),
+      "FK CASCADE 가 사라졌다 — 명시적으로 안 지우면 주인 없는 댓글이 쌓인다");
+    check("칼럼을 지우면 그 댓글도 지운다", /deleteCommentsFor\(env, 'column'/.test(wk));
+    check("답글의 부모가 같은 대상인지 확인한다",
+      /FROM content_comments WHERE id = \? AND target_type = \? AND target_id = \?/.test(wk),
+      "남의 글 댓글에 매달리면 어디에도 안 보인다");
+    check("칼럼 목록도 댓글 수를 싣는다", /AS comment_count/.test(wk));
+
+    // 클라이언트가 옛 주소를 쓰지 않는다 — 두 길을 다 쓰면 어느 쪽이 진짜인지 알 수 없다.
+    const apiSrc = readFileSync(path.join(ROOT, "api.js"), "utf8");
+    check("클라이언트는 새 창구만 쓴다",
+      !/posts\/\$\{postId\}\/comments/.test(apiSrc) && /comments\?targetType=/.test(apiSrc));
   }
 
   console.log("\n── 11. 못 불러온 것 ≠ 없는 것 (2026-08-25 '게시글을 찾을 수 없습니다' 민원) ──");
@@ -522,12 +563,11 @@ const run = async () => {
     // 목록에 댓글 수 — 서버가 세어서 보낸 값을 그대로 쓴다.
     check("목록이 댓글 수를 보여준다", /p\.replies/.test(cp), "목록에서 몇 개 달렸는지 알 길이 없었다");
     const worker3 = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
-    check("목록 replies 를 그 자리에서 센다",
-      /SELECT COUNT\(\*\) FROM comments c WHERE c\.post_id = p\.id\) AS replies[\s\S]{0,200}FROM posts p WHERE/.test(worker3),
-      "저장된 카운터는 지울 때 안 줄어 이미 어긋나 있었다");
-    check("상세 replies 도 같은 방식으로 센다",
-      /SELECT p\.\*, \(SELECT COUNT\(\*\) FROM comments c WHERE c\.post_id = p\.id\) AS replies/.test(worker3),
-      "목록과 상세가 서로 다른 숫자를 말하면 안 된다");
+    // v00.306.004 — 대상 중립 테이블로 옮겼다. 세는 자리가 목록·상세 **둘 다** 있어야 한다.
+    const countSql = /SELECT COUNT\(\*\) FROM content_comments c\s+WHERE c\.target_type = 'post' AND c\.target_id = CAST\(p\.id AS TEXT\)\) AS replies/g;
+    check("목록·상세 replies 를 그 자리에서 센다",
+      (worker3.match(countSql) || []).length === 2,
+      `세는 자리 ${(worker3.match(countSql) || []).length}곳 — 한쪽만 있으면 목록과 상세가 다른 숫자를 말한다`);
     check("틀린 카운터를 더 이상 쌓지 않는다",
       !/UPDATE posts SET replies = replies \+ 1/.test(worker3));
 
