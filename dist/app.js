@@ -408,7 +408,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.315.000",
+    version: "00.316.000",
     build: "2026.08.28",
     channel: "preview"
   };
@@ -15472,21 +15472,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         const e = this.state.error;
         const code = (e == null ? void 0 : e.code) || ((e == null ? void 0 : e.status) ? `HTTP_${e.status}` : (e == null ? void 0 : e.name) || "RENDER_ERROR");
         const reason = (e == null ? void 0 : e.message) || String(e);
-        return /* @__PURE__ */ React.createElement("div", { style: { padding: 40, fontFamily: "monospace", color: "#1f2937", background: "#f8fafc", minHeight: "100vh" } }, /* @__PURE__ */ React.createElement("h2", { style: { color: "#dc2626", marginBottom: 12 } }, "\u26A0 \uD398\uC774\uC9C0 \uB80C\uB354\uB9C1 \uC624\uB958"), /* @__PURE__ */ React.createElement("div", { style: {
-          background: "#fff",
+        return /* @__PURE__ */ React.createElement("div", { style: { padding: 40, fontFamily: "monospace", color: "var(--ink, #1f2937)", background: "var(--bg, #f8fafc)", minHeight: "100vh" } }, /* @__PURE__ */ React.createElement("h2", { style: { color: "var(--danger, #dc2626)", marginBottom: 12 } }, "\u26A0 \uD398\uC774\uC9C0 \uB80C\uB354\uB9C1 \uC624\uB958"), /* @__PURE__ */ React.createElement("div", { style: {
+          background: "var(--bg-2, #fff)",
           padding: "14px 16px",
-          border: "1px solid #fecaca",
+          border: "1px solid var(--danger, #fecaca)",
           marginBottom: 12,
           fontSize: 13,
           lineHeight: 1.7,
-          color: "#1f2937"
-        } }, /* @__PURE__ */ React.createElement("div", { style: { color: "#dc2626", fontSize: 11, letterSpacing: "0.18em", marginBottom: 6 } }, "CODE \xB7 ", code), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: 8 } }, reason), (e == null ? void 0 : e.stack) && /* @__PURE__ */ React.createElement("details", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { style: { cursor: "pointer", fontSize: 11, color: "#475569" } }, "\uC2A4\uD0DD \uCD94\uC801 (\uAC1C\uBC1C\uC790\uC6A9)"), /* @__PURE__ */ React.createElement("pre", { style: { whiteSpace: "pre-wrap", fontSize: 11, color: "#475569", marginTop: 8 } }, e.stack)), ((_a = this.state.info) == null ? void 0 : _a.componentStack) && /* @__PURE__ */ React.createElement("details", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { style: { cursor: "pointer", fontSize: 11, color: "#475569" } }, "\uCEF4\uD3EC\uB10C\uD2B8 \uC2A4\uD0DD (\uAC1C\uBC1C\uC790\uC6A9)"), /* @__PURE__ */ React.createElement("pre", { style: { whiteSpace: "pre-wrap", fontSize: 11, color: "#475569", marginTop: 8 } }, this.state.info.componentStack))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { onClick: () => this.setState({ error: null, info: null }), style: { padding: "8px 16px", cursor: "pointer" } }, "\uB2E4\uC2DC \uC2DC\uB3C4"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+          color: "var(--ink, #1f2937)"
+        } }, /* @__PURE__ */ React.createElement("div", { style: { color: "var(--danger, #dc2626)", fontSize: 11, letterSpacing: "0.18em", marginBottom: 6 } }, "CODE \xB7 ", code), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: 8 } }, reason), (e == null ? void 0 : e.stack) && /* @__PURE__ */ React.createElement("details", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { style: { cursor: "pointer", fontSize: 11, color: "var(--ink-2, #475569)" } }, "\uC2A4\uD0DD \uCD94\uC801 (\uAC1C\uBC1C\uC790\uC6A9)"), /* @__PURE__ */ React.createElement("pre", { style: { whiteSpace: "pre-wrap", fontSize: 11, color: "var(--ink-2, #475569)", marginTop: 8 } }, e.stack)), ((_a = this.state.info) == null ? void 0 : _a.componentStack) && /* @__PURE__ */ React.createElement("details", { style: { marginTop: 8 } }, /* @__PURE__ */ React.createElement("summary", { style: { cursor: "pointer", fontSize: 11, color: "var(--ink-2, #475569)" } }, "\uCEF4\uD3EC\uB10C\uD2B8 \uC2A4\uD0DD (\uAC1C\uBC1C\uC790\uC6A9)"), /* @__PURE__ */ React.createElement("pre", { style: { whiteSpace: "pre-wrap", fontSize: 11, color: "var(--ink-2, #475569)", marginTop: 8 } }, this.state.info.componentStack))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { onClick: () => this.setState({ error: null, info: null }), style: { padding: "8px 16px", cursor: "pointer" } }, "\uB2E4\uC2DC \uC2DC\uB3C4"), /* @__PURE__ */ React.createElement("button", { onClick: () => {
           try {
             window.location.reload();
           } catch (_e) {
             console.warn("[bgnj] boot.jsx:66 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
-        }, style: { padding: "8px 16px", cursor: "pointer" } }, "\uD398\uC774\uC9C0 \uC0C8\uB85C\uACE0\uCE68")), /* @__PURE__ */ React.createElement("p", { style: { marginTop: 12, fontSize: 11, color: "#64748b" } }, "\u24D8 \uCD94\uAC00 \uC815\uBCF4\uB294 \uBE0C\uB77C\uC6B0\uC800 \uAC1C\uBC1C\uC790 \uB3C4\uAD6C(F12) \uCF58\uC194\uC5D0\uC11C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."));
+        }, style: { padding: "8px 16px", cursor: "pointer" } }, "\uD398\uC774\uC9C0 \uC0C8\uB85C\uACE0\uCE68")), /* @__PURE__ */ React.createElement("p", { style: { marginTop: 12, fontSize: 11, color: "var(--ink-3, #64748b)" } }, "\u24D8 \uCD94\uAC00 \uC815\uBCF4\uB294 \uBE0C\uB77C\uC6B0\uC800 \uAC1C\uBC1C\uC790 \uB3C4\uAD6C(F12) \uCF58\uC194\uC5D0\uC11C \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."));
       }
       return this.props.children;
     }
@@ -15531,11 +15531,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       if (this.state.error) {
         const e = this.state.error;
         const code = (e == null ? void 0 : e.code) || ((e == null ? void 0 : e.status) ? `HTTP_${e.status}` : (e == null ? void 0 : e.name) || "PAGE_RENDER_ERROR");
-        return /* @__PURE__ */ React.createElement("div", { style: { padding: 48, fontFamily: "sans-serif", minHeight: "60vh", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 11, color: "#dc2626", letterSpacing: "0.18em", marginBottom: 8 } }, code), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 18, color: "#0f172a", marginBottom: 8, fontWeight: 600 } }, "\uC774 \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uB358 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: "#475569", marginBottom: 18, maxWidth: 520, margin: "0 auto 18px", lineHeight: 1.7 } }, (e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"), /* @__PURE__ */ React.createElement("div", { style: { display: "inline-flex", gap: 8 } }, /* @__PURE__ */ React.createElement(
+        return /* @__PURE__ */ React.createElement("div", { style: { padding: 48, fontFamily: "sans-serif", minHeight: "60vh", textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 11, color: "var(--danger, #dc2626)", letterSpacing: "0.18em", marginBottom: 8 } }, code), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 18, color: "var(--ink, #0f172a)", marginBottom: 8, fontWeight: 600 } }, "\uC774 \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uB358 \uC911 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: "var(--ink-2, #475569)", marginBottom: 18, maxWidth: 520, margin: "0 auto 18px", lineHeight: 1.7 } }, (e == null ? void 0 : e.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"), /* @__PURE__ */ React.createElement("div", { style: { display: "inline-flex", gap: 8 } }, /* @__PURE__ */ React.createElement(
           "button",
           {
             onClick: () => this.setState({ error: null }),
-            style: { padding: "10px 18px", cursor: "pointer", border: "1px solid #cbd5e1", background: "#fff" }
+            style: { padding: "10px 18px", cursor: "pointer", border: "1px solid var(--line, #cbd5e1)", background: "var(--bg-2, #fff)" }
           },
           "\uB2E4\uC2DC \uC2DC\uB3C4"
         ), /* @__PURE__ */ React.createElement(
@@ -15549,7 +15549,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
                 console.warn("[bgnj] boot.jsx:112 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
               }
             },
-            style: { padding: "10px 18px", cursor: "pointer", border: "1px solid #cbd5e1", background: "#fff" }
+            style: { padding: "10px 18px", cursor: "pointer", border: "1px solid var(--line, #cbd5e1)", background: "var(--bg-2, #fff)" }
           },
           "\uD648\uC73C\uB85C"
         ), /* @__PURE__ */ React.createElement(
@@ -15562,7 +15562,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
                 console.warn("[bgnj] boot.jsx:114 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
               }
             },
-            style: { padding: "10px 18px", cursor: "pointer", border: "1px solid #f5d548", background: "#f5d548", color: "#0f172a", fontWeight: 600 }
+            style: { padding: "10px 18px", cursor: "pointer", border: "1px solid #f5d548", background: "#f5d548", color: "var(--ink, #0f172a)", fontWeight: 600 }
           },
           "\uC0C8\uB85C\uACE0\uCE68"
         )));
@@ -15663,7 +15663,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, []);
     const dismiss = (id) => setToasts((prev) => prev.filter((e) => e.id !== id));
     if (!toasts.length) return null;
-    const colorOf = (k) => k === "success" ? "#C99E1A" : k === "info" ? "#475569" : "#c24a3d";
+    const colorOf = (k) => k === "success" ? "var(--secondary, #C99E1A)" : k === "info" ? "var(--ink-2, #475569)" : "var(--danger, #c24a3d)";
     return /* @__PURE__ */ React.createElement("div", { "aria-live": "polite", style: {
       position: "fixed",
       right: 16,
@@ -15676,23 +15676,23 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     } }, toasts.map((e) => {
       const accent = colorOf(e.kind);
       return /* @__PURE__ */ React.createElement("div", { key: e.id, role: e.kind === "success" ? "status" : "alert", style: {
-        background: e.kind === "success" ? "rgba(245,213,72,0.08)" : "#fff",
+        background: e.kind === "success" ? "rgba(245,213,72,0.08)" : "var(--bg-2, #fff)",
         border: `1px solid ${accent}`,
         boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
         padding: "12px 14px",
         fontSize: 13,
         lineHeight: 1.7,
-        color: "#1e293b"
+        color: "var(--ink, #1e293b)"
       } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "monospace", fontSize: 10, letterSpacing: "0.14em", color: accent } }, e.code), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
           onClick: () => dismiss(e.id),
-          style: { background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 14 },
+          style: { background: "none", border: "none", cursor: "pointer", color: "var(--ink-3, #94a3b8)", fontSize: 14 },
           "aria-label": "\uB2EB\uAE30"
         },
         "\xD7"
-      )), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: e.hint ? 4 : 0 } }, e.message), e.hint && /* @__PURE__ */ React.createElement("div", { style: { color: "#475569", fontSize: 12 } }, e.hint), e.url && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 10, color: "#94a3b8", marginTop: 6, wordBreak: "break-all" } }, e.url));
+      )), /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 600, marginBottom: e.hint ? 4 : 0 } }, e.message), e.hint && /* @__PURE__ */ React.createElement("div", { style: { color: "var(--ink-2, #475569)", fontSize: 12 } }, e.hint), e.url && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 10, color: "var(--ink-3, #94a3b8)", marginTop: 6, wordBreak: "break-all" } }, e.url));
     }));
   };
   var VERSION_POLL_MS = 5 * 60 * 1e3;
@@ -16403,7 +16403,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, [route, adminLoaded, adminLoadAttempt]);
     const renderPage = () => {
       const W = window;
-      const fallback = (label) => () => /* @__PURE__ */ React.createElement("div", { style: { padding: 48, textAlign: "center", color: "#1f2937" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 11, color: "#dc2626", letterSpacing: "0.18em", marginBottom: 8 } }, "PAGE_NOT_LOADED"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "serif", fontSize: 18, marginBottom: 6 } }, label, " \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: "#64748b", marginBottom: 18 } }, "\uC0C8\uB85C\uACE0\uCE68 \uD6C4\uC5D0\uB3C4 \uAC19\uC740 \uD654\uBA74\uC774 \uBCF4\uC778\uB2E4\uBA74 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."), /* @__PURE__ */ React.createElement("button", { onClick: () => {
+      const fallback = (label) => () => /* @__PURE__ */ React.createElement("div", { style: { padding: 48, textAlign: "center", color: "var(--ink, #1f2937)" } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "monospace", fontSize: 11, color: "var(--danger, #dc2626)", letterSpacing: "0.18em", marginBottom: 8 } }, "PAGE_NOT_LOADED"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "serif", fontSize: 18, marginBottom: 6 } }, label, " \uD398\uC774\uC9C0\uB97C \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: "var(--ink-3, #64748b)", marginBottom: 18 } }, "\uC0C8\uB85C\uACE0\uCE68 \uD6C4\uC5D0\uB3C4 \uAC19\uC740 \uD654\uBA74\uC774 \uBCF4\uC778\uB2E4\uBA74 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694."), /* @__PURE__ */ React.createElement("button", { onClick: () => {
         try {
           window.location.reload();
         } catch (_e) {

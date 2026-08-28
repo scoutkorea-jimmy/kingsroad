@@ -1154,6 +1154,29 @@ const run = async () => {
       /handleCommentsCreate[\s\S]{0,3000}insertNotification/.test(wk6));
   }
 
+  console.log("\n── 22. 다크모드에서 흰 화면이 튀지 않는가 (2026-08-28) ──");
+  {
+    const bootSrc = readFileSync(path.join(ROOT, "boot.jsx"), "utf8");
+    // 토스트·오류 화면은 **어느 페이지 위에도** 뜬다. 색을 고정하면 다크에서 흰 판이 튄다.
+    // ⚠ 그렇다고 맨 var() 로 바꾸면 안 된다 — styles.css 가 안 실린 상황이 바로
+    //   오류 화면이 필요한 상황이다. 반드시 var(--토큰, 원래색) 꼴이어야 한다.
+    const bare = bootSrc.split("\n").filter((l) =>
+      /(background|backgroundColor|color|borderColor|border)\s*:\s*['"`][^'"`]*#[0-9a-fA-F]{3,8}/.test(l)
+      && !/var\(--/.test(l));
+    check("boot.jsx 의 색이 전부 토큰을 거친다", bare.length === 0, bare.slice(0, 3).join(" | "));
+    check("토큰이 없을 때 떨어질 원래 색을 남겨 뒀다",
+      /var\(--bg, #f8fafc\)/.test(bootSrc) && /var\(--ink, #1f2937\)/.test(bootSrc),
+      "CSS 가 안 실린 상황이 바로 오류 화면이 필요한 상황이다");
+    check("토스트 바탕도 테마를 탄다",
+      /background: e\.kind === 'success' \? 'rgba\(245,213,72,0\.08\)' : 'var\(--bg-2, #fff\)'/.test(bootSrc));
+    check("두 테마 모두 그 토큰을 정의한다", (() => {
+      const css = readFileSync(path.join(ROOT, "styles.css"), "utf8");
+      const dark = css.slice(css.indexOf('data-theme="dark"'));
+      return ["--bg:", "--bg-2:", "--ink:", "--ink-2:", "--ink-3:", "--line:", "--danger:", "--secondary:"]
+        .every((t) => css.includes(t) && dark.includes(t));
+    })(), "한쪽에만 있으면 그 테마에서 색이 통째로 사라진다");
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

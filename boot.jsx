@@ -38,26 +38,26 @@ class AppErrorBoundary extends React.Component {
       const code = e?.code || (e?.status ? `HTTP_${e.status}` : (e?.name || 'RENDER_ERROR'));
       const reason = e?.message || String(e);
       return (
-        <div style={{padding:40, fontFamily:'monospace', color:'#1f2937', background:'#f8fafc', minHeight:'100vh'}}>
-          <h2 style={{color:'#dc2626', marginBottom:12}}>⚠ 페이지 렌더링 오류</h2>
+        <div style={{padding:40, fontFamily:'monospace', color:'var(--ink, #1f2937)', background:'var(--bg, #f8fafc)', minHeight:'100vh'}}>
+          <h2 style={{color:'var(--danger, #dc2626)', marginBottom:12}}>⚠ 페이지 렌더링 오류</h2>
           <div style={{
-            background:'#fff', padding:'14px 16px', border:'1px solid #fecaca',
-            marginBottom:12, fontSize:13, lineHeight:1.7, color:'#1f2937',
+            background:'var(--bg-2, #fff)', padding:'14px 16px', border:'1px solid var(--danger, #fecaca)',
+            marginBottom:12, fontSize:13, lineHeight:1.7, color:'var(--ink, #1f2937)',
           }}>
-            <div style={{color:'#dc2626', fontSize:11, letterSpacing:'0.18em', marginBottom:6}}>
+            <div style={{color:'var(--danger, #dc2626)', fontSize:11, letterSpacing:'0.18em', marginBottom:6}}>
               CODE · {code}
             </div>
             <div style={{fontWeight:600, marginBottom:8}}>{reason}</div>
             {e?.stack && (
               <details style={{marginTop:8}}>
-                <summary style={{cursor:'pointer', fontSize:11, color:'#475569'}}>스택 추적 (개발자용)</summary>
-                <pre style={{whiteSpace:'pre-wrap', fontSize:11, color:'#475569', marginTop:8}}>{e.stack}</pre>
+                <summary style={{cursor:'pointer', fontSize:11, color:'var(--ink-2, #475569)'}}>스택 추적 (개발자용)</summary>
+                <pre style={{whiteSpace:'pre-wrap', fontSize:11, color:'var(--ink-2, #475569)', marginTop:8}}>{e.stack}</pre>
               </details>
             )}
             {this.state.info?.componentStack && (
               <details style={{marginTop:8}}>
-                <summary style={{cursor:'pointer', fontSize:11, color:'#475569'}}>컴포넌트 스택 (개발자용)</summary>
-                <pre style={{whiteSpace:'pre-wrap', fontSize:11, color:'#475569', marginTop:8}}>{this.state.info.componentStack}</pre>
+                <summary style={{cursor:'pointer', fontSize:11, color:'var(--ink-2, #475569)'}}>컴포넌트 스택 (개발자용)</summary>
+                <pre style={{whiteSpace:'pre-wrap', fontSize:11, color:'var(--ink-2, #475569)', marginTop:8}}>{this.state.info.componentStack}</pre>
               </details>
             )}
           </div>
@@ -65,7 +65,7 @@ class AppErrorBoundary extends React.Component {
             <button onClick={() => this.setState({error:null, info:null})} style={{padding:'8px 16px', cursor:'pointer'}}>다시 시도</button>
             <button onClick={() => { try { window.location.reload(); } catch (_e) { console.warn('[bgnj] boot.jsx:66 오류(무시하고 진행)', _e); } }} style={{padding:'8px 16px', cursor:'pointer'}}>페이지 새로고침</button>
           </div>
-          <p style={{marginTop:12, fontSize:11, color:'#64748b'}}>ⓘ 추가 정보는 브라우저 개발자 도구(F12) 콘솔에서 확인할 수 있습니다.</p>
+          <p style={{marginTop:12, fontSize:11, color:'var(--ink-3, #64748b)'}}>ⓘ 추가 정보는 브라우저 개발자 도구(F12) 콘솔에서 확인할 수 있습니다.</p>
         </div>
       );
     }
@@ -101,18 +101,18 @@ class PageErrorBoundary extends React.Component {
       const code = e?.code || (e?.status ? `HTTP_${e.status}` : (e?.name || 'PAGE_RENDER_ERROR'));
       return (
         <div style={{padding:48, fontFamily:'sans-serif', minHeight:'60vh', textAlign:'center'}}>
-          <div style={{fontFamily:'monospace', fontSize:11, color:'#dc2626', letterSpacing:'0.18em', marginBottom:8}}>{code}</div>
-          <div style={{fontSize:18, color:'#0f172a', marginBottom:8, fontWeight:600}}>이 페이지를 불러오던 중 오류가 발생했습니다</div>
-          <div style={{fontSize:13, color:'#475569', marginBottom:18, maxWidth:520, margin:'0 auto 18px', lineHeight:1.7}}>
+          <div style={{fontFamily:'monospace', fontSize:11, color:'var(--danger, #dc2626)', letterSpacing:'0.18em', marginBottom:8}}>{code}</div>
+          <div style={{fontSize:18, color:'var(--ink, #0f172a)', marginBottom:8, fontWeight:600}}>이 페이지를 불러오던 중 오류가 발생했습니다</div>
+          <div style={{fontSize:13, color:'var(--ink-2, #475569)', marginBottom:18, maxWidth:520, margin:'0 auto 18px', lineHeight:1.7}}>
             {e?.message || '알 수 없는 오류'}
           </div>
           <div style={{display:'inline-flex', gap:8}}>
             <button onClick={() => this.setState({ error: null })}
-              style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #cbd5e1', background:'#fff'}}>다시 시도</button>
+              style={{padding:'10px 18px', cursor:'pointer', border:'1px solid var(--line, #cbd5e1)', background:'var(--bg-2, #fff)'}}>다시 시도</button>
             <button onClick={() => { try { this.props.go('home'); this.setState({ error: null }); } catch (_e) { console.warn('[bgnj] boot.jsx:112 오류(무시하고 진행)', _e); } }}
-              style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #cbd5e1', background:'#fff'}}>홈으로</button>
+              style={{padding:'10px 18px', cursor:'pointer', border:'1px solid var(--line, #cbd5e1)', background:'var(--bg-2, #fff)'}}>홈으로</button>
             <button onClick={() => { try { window.location.reload(); } catch (_e) { console.warn('[bgnj] boot.jsx:114 오류(무시하고 진행)', _e); } }}
-              style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #f5d548', background:'#f5d548', color:'#0f172a', fontWeight:600}}>새로고침</button>
+              style={{padding:'10px 18px', cursor:'pointer', border:'1px solid #f5d548', background:'#f5d548', color:'var(--ink, #0f172a)', fontWeight:600}}>새로고침</button>
           </div>
         </div>
       );
@@ -203,7 +203,7 @@ const GlobalErrorToast = () => {
   const dismiss = (id) => setToasts((prev) => prev.filter((e) => e.id !== id));
   if (!toasts.length) return null;
   // kind 별 색상 토큰 분기 — error: danger, success: primary, info: tertiary
-  const colorOf = (k) => k === 'success' ? '#C99E1A' : (k === 'info' ? '#475569' : '#c24a3d');
+  const colorOf = (k) => k === 'success' ? 'var(--secondary, #C99E1A)' : (k === 'info' ? 'var(--ink-2, #475569)' : 'var(--danger, #c24a3d)');
   return (
     <div aria-live="polite" style={{
       position:'fixed', right:16, bottom:16, zIndex:2000,
@@ -213,21 +213,21 @@ const GlobalErrorToast = () => {
         const accent = colorOf(e.kind);
         return (
           <div key={e.id} role={e.kind === 'success' ? 'status' : 'alert'} style={{
-            background: e.kind === 'success' ? 'rgba(245,213,72,0.08)' : '#fff',
+            background: e.kind === 'success' ? 'rgba(245,213,72,0.08)' : 'var(--bg-2, #fff)',
             border:`1px solid ${accent}`, boxShadow:'0 8px 24px rgba(0,0,0,0.14)',
-            padding:'12px 14px', fontSize:13, lineHeight:1.7, color:'#1e293b',
+            padding:'12px 14px', fontSize:13, lineHeight:1.7, color:'var(--ink, #1e293b)',
           }}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, marginBottom:4}}>
               <span style={{fontFamily:'monospace', fontSize:10, letterSpacing:'0.14em', color:accent}}>
                 {e.code}
               </span>
               <button type="button" onClick={() => dismiss(e.id)}
-                style={{background:'none', border:'none', cursor:'pointer', color:'#94a3b8', fontSize:14}}
+                style={{background:'none', border:'none', cursor:'pointer', color:'var(--ink-3, #94a3b8)', fontSize:14}}
                 aria-label="닫기">×</button>
             </div>
             <div style={{fontWeight:600, marginBottom:e.hint ? 4 : 0}}>{e.message}</div>
-            {e.hint && <div style={{color:'#475569', fontSize:12}}>{e.hint}</div>}
-            {e.url && <div style={{fontFamily:'monospace', fontSize:10, color:'#94a3b8', marginTop:6, wordBreak:'break-all'}}>{e.url}</div>}
+            {e.hint && <div style={{color:'var(--ink-2, #475569)', fontSize:12}}>{e.hint}</div>}
+            {e.url && <div style={{fontFamily:'monospace', fontSize:10, color:'var(--ink-3, #94a3b8)', marginTop:6, wordBreak:'break-all'}}>{e.url}</div>}
           </div>
         );
       })}
@@ -930,10 +930,10 @@ const App = () => {
   const renderPage = () => {
     const W = window;
     const fallback = (label) => () => (
-      <div style={{padding:48, textAlign:'center', color:'#1f2937'}}>
-        <div style={{fontFamily:'monospace', fontSize:11, color:'#dc2626', letterSpacing:'0.18em', marginBottom:8}}>PAGE_NOT_LOADED</div>
+      <div style={{padding:48, textAlign:'center', color:'var(--ink, #1f2937)'}}>
+        <div style={{fontFamily:'monospace', fontSize:11, color:'var(--danger, #dc2626)', letterSpacing:'0.18em', marginBottom:8}}>PAGE_NOT_LOADED</div>
         <div style={{fontFamily:'serif', fontSize:18, marginBottom:6}}>{label} 페이지를 불러오지 못했습니다</div>
-        <div style={{fontSize:12, color:'#64748b', marginBottom:18}}>새로고침 후에도 같은 화면이 보인다면 잠시 후 다시 시도해 주세요.</div>
+        <div style={{fontSize:12, color:'var(--ink-3, #64748b)', marginBottom:18}}>새로고침 후에도 같은 화면이 보인다면 잠시 후 다시 시도해 주세요.</div>
         <button onClick={() => { try { window.location.reload(); } catch (_e) { console.warn('[bgnj] boot.jsx:775 오류(무시하고 진행)', _e); } }} style={{padding:'8px 16px', cursor:'pointer'}}>페이지 새로고침</button>
       </div>
     );
