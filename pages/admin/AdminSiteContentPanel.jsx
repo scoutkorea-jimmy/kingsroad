@@ -30,18 +30,22 @@ const SiteContentAdminPanel = () => {
   const SectionForm = ({ section, fields, onAfterSave }) => {
     const [draft, setDraft] = React.useState(() => ({ ...(sc[section] || {}) }));
     const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
-    const save = (e) => {
+    // v00.313 — 서버가 받아 준 뒤에만 '저장되었습니다' 를 말한다.
+    //   전에는 응답을 안 기다렸다 — 거절돼도 초록 문구가 먼저 떴다.
+    const save = async (e) => {
       e.preventDefault();
-      window.BGNJ_SITE_CONTENT.saveSection(section, draft);
+      const okDone = await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_SITE_CONTENT.saveSection(section, draft));
       setTick((v) => v + 1);
+      if (!okDone) return;
       flash('저장되었습니다.');
       if (onAfterSave) onAfterSave();
     };
     const reset = async () => {
       if (!(await window.BGNJ_CONFIRM('이 섹션을 기본값으로 되돌릴까요?', { danger: true }))) return;
-      window.BGNJ_SITE_CONTENT.resetSection(section);
+      const okDone = await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_SITE_CONTENT.resetSection(section),
+        { fail: '기본값으로 되돌리지 못했습니다.' });
       setTick((v) => v + 1);
-      flash('기본값으로 복원되었습니다.');
+      if (okDone) flash('기본값으로 복원되었습니다.');
     };
     return (
       <form onSubmit={save} className="card" style={{padding:20, marginBottom:20}}>
@@ -74,16 +78,18 @@ const SiteContentAdminPanel = () => {
       const r2Folder = folder || section;
       const result = await pickImageWithR2Fallback(e, { folder: r2Folder });
       if (result) {
-        window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: result });
+        const okDone = await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: result }),
+          { fail: `${label} 을(를) 저장하지 못했습니다.` });
         setTick((v) => v + 1);
-        flash(`${label} 업로드 완료`);
+        if (okDone) flash(`${label} 업로드 완료`);
       }
     };
     const clear = async () => {
       if (!(await window.BGNJ_CONFIRM(`${label}을(를) 비울까요? (기본 마크로 되돌아갑니다)`, { danger: true }))) return;
-      window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: '' });
+      const okDone = await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: '' }),
+        { fail: `${label} 을(를) 비우지 못했습니다.` });
       setTick((v) => v + 1);
-      flash(`${label} 제거됨`);
+      if (okDone) flash(`${label} 제거됨`);
     };
     return (
       <div className="card" style={{padding:16, display:'flex', gap:14, alignItems:'center', marginBottom:12}}>

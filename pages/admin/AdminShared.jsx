@@ -1085,10 +1085,32 @@ const _dailySeries = (items, dateField, days = 14) => {
 };
 
 
+// v00.313 — 관리자 저장의 공통 관문.
+//   왜: 관리자 패널 다수가 서버 저장을 **기다리지 않고** 곧바로 '저장되었습니다' 를 띄웠다.
+//   저장 함수는 전부 async 인데 await 도 .catch 도 없으니, 서버가 거절해도 화면은
+//   성공이라고 말한 뒤 목록만 다시 그린다. 운영자는 저장된 줄 알고 창을 닫는다.
+//   (전역 unhandledrejection 이 토스트를 띄우긴 하지만 **'저장됨' 다음에** 뜬다 —
+//    두 개가 동시에 뜨면 사람은 앞의 초록을 믿는다.)
+//   → 끝난 뒤에만 성공을 말하고, 실패는 사람의 말로 알린다. 성공 여부를 돌려준다.
+const adminSave = async (work, { ok, fail = '저장하지 못했습니다. 잠시 후 다시 시도해 주세요.', onOk } = {}) => {
+  try {
+    const r = typeof work === 'function' ? await work() : await work;
+    if (ok) window.BGNJ_TOAST?.success?.(ok);
+    onOk?.(r);
+    return true;
+  } catch (err) {
+    console.error('[adminSave]', err);
+    window.BGNJ_TOAST?.error?.(`${fail}${err?.message ? ` (${err.message})` : ''}`);
+    return false;
+  }
+};
+
 // v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
 export { AdminEmpty, AdminPanelHeader, AdminSaveBar, CohortSelector, MetricCard, MiniBarChart, RankedBarList, StatTile, SubTabsView, downloadCsv, downloadJson, pickImageWithR2Fallback };
 
 export { AdminFilterChips, SankeyFlow, _countSince, _dailySeries, _hourlySeries, formatTimeLeft };
+
+export { adminSave };
 
 // v00.296.001 — window 등록 복원.
 //   v00.287 ESM 전환 때 `window.X = X` 가 사라졌는데, 사용처는 `<window.X/>` 로 남아 있었다.
@@ -1097,3 +1119,4 @@ export { AdminFilterChips, SankeyFlow, _countSince, _dailySeries, _hourlySeries,
 //   사용처를 건드리는 대신 여기서 등록한다 — 회귀 위험이 가장 작다.
 //   tools/check-globals.mjs 가 이 짝이 어긋나면 커밋을 막는다.
 window.HeatmapGrid = HeatmapGrid;
+window.BGNJ_ADMIN_SAVE = adminSave;

@@ -1072,6 +1072,46 @@ const run = async () => {
       "세고 나서 넣으면 연타에 '손볼 것' 숫자가 부풀어 오른다");
   }
 
+  console.log("\n── 20. 저장됐다고 말하기 전에 서버가 받았는가 (2026-08-28) ──");
+  {
+    const shared = readFileSync(path.join(ROOT, "pages/admin/AdminShared.jsx"), "utf8");
+    check("공통 관문이 있고 window 에 걸려 있다",
+      /const adminSave = async/.test(shared) && /window\.BGNJ_ADMIN_SAVE = adminSave/.test(shared));
+    check("성공은 끝난 뒤에만 말한다",
+      /await[\s\S]{0,80}if \(ok\) window\.BGNJ_TOAST\?\.success/.test(shared),
+      "먼저 말하면 실패해도 초록 문구가 남는다");
+    check("실패를 사람의 말로 알린다",
+      /catch \(err\)[\s\S]{0,200}BGNJ_TOAST\?\.error/.test(shared));
+
+    // 관리자 패널에서 서버 저장을 '던져 놓고 잊는' 자리가 남아 있는가 —
+    // 전역 unhandledrejection 이 토스트를 띄우긴 하지만 '저장됨' **다음에** 뜬다.
+    const WRITE = /\b(save|update|create|delete|remove|patch|approve|reject|setHidden|removeReview)\w*\s*\(/i;
+    const leftovers = [];
+    for (const f of readdirSync(path.join(ROOT, "pages/admin"))) {
+      if (!/\.jsx$/.test(f)) continue;
+      readFileSync(path.join(ROOT, "pages/admin", f), "utf8").split("\n").forEach((l, i) => {
+        const t = l.trim();
+        if (!/^window\.BGNJ_[A-Z_]+[\w.?]*\s*[.(]/.test(t)) return;
+        if (!WRITE.test(t)) return;
+        if (/await|\.then|\.catch|\.finally|return |BGNJ_(TOAST|CONFIRM|DRAFTS|ADMIN_SAVE|AUDIT|SAVE|STORES)/.test(t)) return;
+        leftovers.push(`${f}:${i + 1}`);
+      });
+    }
+    check("관리자 패널에 던져 놓고 잊는 저장이 없다", leftovers.length === 0, leftovers.join(", "));
+
+    // 환불은 돈이 걸린 자리 — 확인하고 나서 목록을 다시 그리는지.
+    const commerce = readFileSync(path.join(ROOT, "pages/admin/AdminCommercePanels.jsx"), "utf8");
+    check("환불 승인·반려가 서버 응답을 기다린다",
+      /BGNJ_ADMIN_SAVE\(\(\) => window\.BGNJ_BOOK_ORDERS\.approveRefund/.test(commerce)
+        && /BGNJ_ADMIN_SAVE\(\(\) => window\.BGNJ_BOOK_ORDERS\.rejectRefund/.test(commerce));
+
+    // 신고 — 글 삭제가 실패했는데 신고만 닫으면 신고 글이 그대로 남는다.
+    const router = readFileSync(path.join(ROOT, "pages/admin/AdminRouterPanels.jsx"), "utf8");
+    check("글 삭제가 실패하면 신고를 닫지 않는다",
+      /const removed = await window\.BGNJ_ADMIN_SAVE[\s\S]{0,300}if \(removed\)[\s\S]{0,200}updateReportStatus/.test(router),
+      "닫아 버리면 신고 글이 남은 채로 목록에서 사라진다");
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

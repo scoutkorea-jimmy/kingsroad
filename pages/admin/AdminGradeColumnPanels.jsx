@@ -633,7 +633,9 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
     if (!(await window.BGNJ_CONFIRM("이 칼럼을 발행 취소(임시 저장으로 되돌림)하시겠어요?", { danger: true }))) return;
     const col = window.BGNJ_COLUMNS.getColumn(id);
     if (!col) return;
-    window.BGNJ_COLUMNS.saveColumn({ ...col, status: 'draft', publishAt: null, publishedAt: null });
+    // v00.313 — 발행 취소가 서버에서 실패해도 화면은 임시저장으로 보였다.
+    await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_COLUMNS.saveColumn({ ...col, status: 'draft', publishAt: null, publishedAt: null }),
+      { fail: '발행을 취소하지 못했습니다. 칼럼은 그대로 발행 상태입니다.' });
     setTick((v) => v + 1);
   };
 

@@ -139,11 +139,18 @@ const FaqAdminPanel = () => {
     refresh();
   };
 
-  const update = (id, patch) => { window.BGNJ_FAQ.update(id, patch); refresh(); };
-  const move = (id, dir) => { window.BGNJ_FAQ.reorder(id, dir); refresh(); };
+  // v00.313 — FAQ 세 동작 모두 서버 저장을 안 기다리고 있었다.
+  const update = async (id, patch) => {
+    await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_FAQ.update(id, patch), { fail: 'FAQ 를 저장하지 못했습니다.' });
+    refresh();
+  };
+  const move = async (id, dir) => {
+    await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_FAQ.reorder(id, dir), { fail: '순서를 바꾸지 못했습니다.' });
+    refresh();
+  };
   const remove = async (id) => {
     if (!(await window.BGNJ_CONFIRM('이 FAQ를 삭제하시겠어요?', { danger: true }))) return;
-    window.BGNJ_FAQ.remove(id);
+    await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_FAQ.remove(id), { fail: 'FAQ 를 삭제하지 못했습니다.' });
     refresh();
   };
 

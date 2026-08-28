@@ -153,16 +153,24 @@ const ReportQueuePanel = ({ onRefresh, go }) => {
     all: window.BGNJ_COMMUNITY.listReports('all').length,
   }), [tick]);
 
-  const setStatus = (id, status) => {
-    window.BGNJ_COMMUNITY.updateReportStatus(id, status);
+  // v00.313 — 상태 변경이 서버에서 실패해도 화면만 바뀌던 자리.
+  //   신고는 '처리했다' 가 곧 기록이라, 화면과 서버가 어긋나면 같은 신고를 두 번 본다.
+  const setStatus = async (id, status) => {
+    await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_COMMUNITY.updateReportStatus(id, status),
+      { fail: '신고 상태를 바꾸지 못했습니다.' });
     setTick((v) => v + 1);
   };
 
   const removePostFromReport = async (report) => {
     if (!report.postId) return;
     if (!(await window.BGNJ_CONFIRM(`"${report.postTitle}" 게시글을 삭제하고 신고를 처리 완료로 표시하시겠어요?`, { danger: true }))) return;
-    window.BGNJ_COMMUNITY.deletePost(report.postId);
-    window.BGNJ_COMMUNITY.updateReportStatus(report.id, 'resolved');
+    // 글 삭제가 실패했는데 신고만 '처리 완료' 로 닫으면 신고 글이 그대로 남는다 — 순서와 성공 여부를 지킨다.
+    const removed = await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_COMMUNITY.deletePost(report.postId),
+      { fail: '게시글을 삭제하지 못했습니다. 신고는 그대로 둡니다.' });
+    if (removed) {
+      await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_COMMUNITY.updateReportStatus(report.id, 'resolved'),
+        { fail: '글은 삭제했지만 신고 상태를 바꾸지 못했습니다.' });
+    }
     setTick((v) => v + 1);
     onRefresh?.();
   };
@@ -757,7 +765,8 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
 
   const removeOne = async (post) => {
     if (!(await window.BGNJ_CONFIRM(`"${post.title}" 게시글을 삭제하시겠어요?`, { danger: true }))) return;
-    window.BGNJ_COMMUNITY.deletePost(post.id);
+    await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_COMMUNITY.deletePost(post.id),
+      { fail: '게시글을 삭제하지 못했습니다.' });
     setSelectedIds((prev) => { const next = new Set(prev); next.delete(post.id); return next; });
     onChange?.();
   };

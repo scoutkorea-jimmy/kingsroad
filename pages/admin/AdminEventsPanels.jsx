@@ -811,9 +811,11 @@ const LectureAdminPanel = ({ go }) => {
                     {/* v00.237 — 사진 갤러리 (포스터 + 현장 사진) 통합 편집 진입로. 사용자 요청: 'admin 에서도 손쉽게'. */}
                     <button type="button" className="btn btn-small" onClick={() => setGalleryEditTarget(l)}>🖼 포스터·현장사진</button>
                     <button type="button" className="btn btn-small"
-                      onClick={() => {
-                        window.BGNJ_LECTURES.setHidden(l.id, !l.hidden);
-                        window.BGNJ_AUDIT?.log({ action: l.hidden ? 'lecture.unhide' : 'lecture.hide', target: `lecture:${l.id}` });
+                      onClick={async () => {
+                        // v00.313 — 숨김이 서버에서 실패했는데 감사기록만 남으면 기록이 거짓말을 한다.
+                        const done = await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_LECTURES.setHidden(l.id, !l.hidden),
+                          { fail: l.hidden ? '표시를 복원하지 못했습니다.' : '숨김 처리하지 못했습니다.' });
+                        if (done) window.BGNJ_AUDIT?.log({ action: l.hidden ? 'lecture.unhide' : 'lecture.hide', target: `lecture:${l.id}` });
                         refresh();
                       }}
                       style={{marginLeft:'auto'}}>

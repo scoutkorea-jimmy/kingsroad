@@ -1158,7 +1158,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }
     return { counts, labels };
   };
+  var adminSave = async (work, { ok, fail = "\uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.", onOk } = {}) => {
+    var _a, _b, _c, _d;
+    try {
+      const r = typeof work === "function" ? await work() : await work;
+      if (ok) (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.success) == null ? void 0 : _b.call(_a, ok);
+      onOk == null ? void 0 : onOk(r);
+      return true;
+    } catch (err) {
+      console.error("[adminSave]", err);
+      (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.error) == null ? void 0 : _d.call(_c, `${fail}${(err == null ? void 0 : err.message) ? ` (${err.message})` : ""}`);
+      return false;
+    }
+  };
   window.HeatmapGrid = HeatmapGrid;
+  window.BGNJ_ADMIN_SAVE = adminSave;
 
   // pages/admin/AdminContentEditors.jsx
   var RecommendationsAdminPanel = () => {
@@ -9783,17 +9797,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setDraft({ question: "", answer: "", category: draft.category || "\uC77C\uBC18" });
       refresh();
     };
-    const update = (id, patch) => {
-      window.BGNJ_FAQ.update(id, patch);
+    const update = async (id, patch) => {
+      await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_FAQ.update(id, patch), { fail: "FAQ \uB97C \uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." });
       refresh();
     };
-    const move = (id, dir) => {
-      window.BGNJ_FAQ.reorder(id, dir);
+    const move = async (id, dir) => {
+      await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_FAQ.reorder(id, dir), { fail: "\uC21C\uC11C\uB97C \uBC14\uAFB8\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." });
       refresh();
     };
     const remove = async (id) => {
       if (!await window.BGNJ_CONFIRM("\uC774 FAQ\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
-      window.BGNJ_FAQ.remove(id);
+      await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_FAQ.remove(id), { fail: "FAQ \uB97C \uC0AD\uC81C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." });
       refresh();
     };
     return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, marginBottom: 18, lineHeight: 1.8 } }, "\uC790\uC8FC \uBB3B\uB294 \uC9C8\uBB38(FAQ)\uC744 \uCD94\uAC00\xB7\uC218\uC815\xB7\uC815\uB82C\uD569\uB2C8\uB2E4. \uD478\uD130\uC758 ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uC790\uC8FC \uBB3B\uB294 \uC9C8\uBB38"), "\uC5D0 \uCE74\uD14C\uACE0\uB9AC\uBCC4\uB85C \uBB36\uC5EC \uB178\uCD9C\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("article", { className: "card", style: { padding: 18, marginBottom: 20 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 } }, "NEW FAQ"), /* @__PURE__ */ React.createElement("form", { onSubmit: add, style: { display: "grid", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 200px", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC9C8\uBB38 ", /* @__PURE__ */ React.createElement("span", { className: "gold", "aria-hidden": "true" }, "*")), /* @__PURE__ */ React.createElement(
@@ -11013,9 +11027,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setEditing((cur) => cur ? { ...cur, [key]: val } : cur);
       setDirty(true);
     };
-    const patchImmediate = (changes) => {
+    const patchImmediate = async (changes) => {
       if (!selectedId) return;
-      window.BGNJ_BOOKS.update(selectedId, changes);
+      await window.BGNJ_ADMIN_SAVE(
+        () => window.BGNJ_BOOKS.update(selectedId, changes),
+        { fail: "\uCC45 \uC815\uBCF4\uB97C \uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+      );
       setEditing((cur) => cur ? { ...cur, ...changes } : cur);
       refresh();
     };
@@ -11141,9 +11158,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         window.BGNJ_TOAST.error("\uCC45 \uC0AD\uC81C \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
       }
     };
-    const patch = (changes) => {
+    const patch = async (changes) => {
       if (!selectedId) return;
-      window.BGNJ_BOOKS.update(selectedId, changes);
+      await window.BGNJ_ADMIN_SAVE(
+        () => window.BGNJ_BOOKS.update(selectedId, changes),
+        { fail: "\uCC45 \uC815\uBCF4\uB97C \uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+      );
       refresh();
     };
     const onUploadCover = async (e) => {
@@ -11536,7 +11556,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         className: "btn btn-small",
         onClick: async () => {
           if (!await window.BGNJ_CONFIRM("\uC774 \uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD560\uAE4C\uC694?", { danger: true })) return;
-          window.BGNJ_BOOKS.removeReview(selected.id, r.id);
+          await window.BGNJ_ADMIN_SAVE(
+            () => window.BGNJ_BOOKS.removeReview(selected.id, r.id),
+            { fail: "\uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+          );
           refresh();
         },
         style: { borderColor: "var(--danger)", color: "var(--danger)" }
@@ -11925,7 +11948,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           className: "btn btn-small",
           onClick: async () => {
             if (!await window.BGNJ_CONFIRM(`\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC2DC\uACA0\uC5B4\uC694? \uC8FC\uBB38 ${o.orderNo}\uC774 \uCDE8\uC18C\uB429\uB2C8\uB2E4.`, { danger: true })) return;
-            window.BGNJ_BOOK_ORDERS.approveRefund(o.id);
+            await window.BGNJ_ADMIN_SAVE(
+              () => window.BGNJ_BOOK_ORDERS.approveRefund(o.id),
+              { ok: "\uD658\uBD88\uC744 \uC2B9\uC778\uD588\uC2B5\uB2C8\uB2E4.", fail: "\uD658\uBD88\uC744 \uC2B9\uC778\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC8FC\uBB38 \uC0C1\uD0DC\uB294 \uADF8\uB300\uB85C\uC785\uB2C8\uB2E4." }
+            );
             refresh();
           },
           style: { borderColor: "var(--primary)", color: "var(--secondary)" }
@@ -11947,7 +11973,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           className: "btn btn-small",
           onClick: async () => {
             if (!await window.BGNJ_CONFIRM(`\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
-            window.BGNJ_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || "");
+            await window.BGNJ_ADMIN_SAVE(
+              () => window.BGNJ_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || ""),
+              { ok: "\uD658\uBD88 \uC2E0\uCCAD\uC744 \uBC18\uB824\uD588\uC2B5\uB2C8\uB2E4.", fail: "\uBC18\uB824 \uCC98\uB9AC\uB97C \uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+            );
             refresh();
           },
           style: { borderColor: "var(--danger)", color: "var(--danger)" }
@@ -12652,10 +12681,13 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         {
           type: "button",
           className: "btn btn-small",
-          onClick: () => {
+          onClick: async () => {
             var _a;
-            window.BGNJ_LECTURES.setHidden(l.id, !l.hidden);
-            (_a = window.BGNJ_AUDIT) == null ? void 0 : _a.log({ action: l.hidden ? "lecture.unhide" : "lecture.hide", target: `lecture:${l.id}` });
+            const done = await window.BGNJ_ADMIN_SAVE(
+              () => window.BGNJ_LECTURES.setHidden(l.id, !l.hidden),
+              { fail: l.hidden ? "\uD45C\uC2DC\uB97C \uBCF5\uC6D0\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." : "\uC228\uAE40 \uCC98\uB9AC\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+            );
+            if (done) (_a = window.BGNJ_AUDIT) == null ? void 0 : _a.log({ action: l.hidden ? "lecture.unhide" : "lecture.hide", target: `lecture:${l.id}` });
             refresh();
           },
           style: { marginLeft: "auto" }
@@ -13478,18 +13510,22 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const SectionForm = ({ section, fields, onAfterSave }) => {
       const [draft, setDraft] = React.useState(() => ({ ...sc[section] || {} }));
       const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
-      const save = (e) => {
+      const save = async (e) => {
         e.preventDefault();
-        window.BGNJ_SITE_CONTENT.saveSection(section, draft);
+        const okDone = await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_SITE_CONTENT.saveSection(section, draft));
         setTick((v) => v + 1);
+        if (!okDone) return;
         flash("\uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
         if (onAfterSave) onAfterSave();
       };
       const reset = async () => {
         if (!await window.BGNJ_CONFIRM("\uC774 \uC139\uC158\uC744 \uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB9B4\uAE4C\uC694?", { danger: true })) return;
-        window.BGNJ_SITE_CONTENT.resetSection(section);
+        const okDone = await window.BGNJ_ADMIN_SAVE(
+          () => window.BGNJ_SITE_CONTENT.resetSection(section),
+          { fail: "\uAE30\uBCF8\uAC12\uC73C\uB85C \uB418\uB3CC\uB9AC\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+        );
         setTick((v) => v + 1);
-        flash("\uAE30\uBCF8\uAC12\uC73C\uB85C \uBCF5\uC6D0\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+        if (okDone) flash("\uAE30\uBCF8\uAC12\uC73C\uB85C \uBCF5\uC6D0\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
       };
       return /* @__PURE__ */ React.createElement("form", { onSubmit: save, className: "card", style: { padding: 20, marginBottom: 20 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14 } }, fields.map((f) => {
         var _a, _b;
@@ -13520,16 +13556,22 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         const r2Folder = folder || section;
         const result = await pickImageWithR2Fallback(e, { folder: r2Folder });
         if (result) {
-          window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: result });
+          const okDone = await window.BGNJ_ADMIN_SAVE(
+            () => window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: result }),
+            { fail: `${label} \uC744(\uB97C) \uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.` }
+          );
           setTick((v) => v + 1);
-          flash(`${label} \uC5C5\uB85C\uB4DC \uC644\uB8CC`);
+          if (okDone) flash(`${label} \uC5C5\uB85C\uB4DC \uC644\uB8CC`);
         }
       };
       const clear = async () => {
         if (!await window.BGNJ_CONFIRM(`${label}\uC744(\uB97C) \uBE44\uC6B8\uAE4C\uC694? (\uAE30\uBCF8 \uB9C8\uD06C\uB85C \uB418\uB3CC\uC544\uAC11\uB2C8\uB2E4)`, { danger: true })) return;
-        window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: "" });
+        const okDone = await window.BGNJ_ADMIN_SAVE(
+          () => window.BGNJ_SITE_CONTENT.saveSection(section, { [field]: "" }),
+          { fail: `${label} \uC744(\uB97C) \uBE44\uC6B0\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.` }
+        );
         setTick((v) => v + 1);
-        flash(`${label} \uC81C\uAC70\uB428`);
+        if (okDone) flash(`${label} \uC81C\uAC70\uB428`);
       };
       return /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 16, display: "flex", gap: 14, alignItems: "center", marginBottom: 12 } }, /* @__PURE__ */ React.createElement("div", { style: {
         width: previewSize,
@@ -15443,7 +15485,10 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       if (!await window.BGNJ_CONFIRM("\uC774 \uCE7C\uB7FC\uC744 \uBC1C\uD589 \uCDE8\uC18C(\uC784\uC2DC \uC800\uC7A5\uC73C\uB85C \uB418\uB3CC\uB9BC)\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
       const col = window.BGNJ_COLUMNS.getColumn(id);
       if (!col) return;
-      window.BGNJ_COLUMNS.saveColumn({ ...col, status: "draft", publishAt: null, publishedAt: null });
+      await window.BGNJ_ADMIN_SAVE(
+        () => window.BGNJ_COLUMNS.saveColumn({ ...col, status: "draft", publishAt: null, publishedAt: null }),
+        { fail: "\uBC1C\uD589\uC744 \uCDE8\uC18C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uCE7C\uB7FC\uC740 \uADF8\uB300\uB85C \uBC1C\uD589 \uC0C1\uD0DC\uC785\uB2C8\uB2E4." }
+      );
       setTick((v) => v + 1);
     };
     const statusBadge = (s) => {
@@ -15980,15 +16025,26 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       dismissed: window.BGNJ_COMMUNITY.listReports("dismissed").length,
       all: window.BGNJ_COMMUNITY.listReports("all").length
     }), [tick]);
-    const setStatus = (id, status) => {
-      window.BGNJ_COMMUNITY.updateReportStatus(id, status);
+    const setStatus = async (id, status) => {
+      await window.BGNJ_ADMIN_SAVE(
+        () => window.BGNJ_COMMUNITY.updateReportStatus(id, status),
+        { fail: "\uC2E0\uACE0 \uC0C1\uD0DC\uB97C \uBC14\uAFB8\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+      );
       setTick((v) => v + 1);
     };
     const removePostFromReport = async (report) => {
       if (!report.postId) return;
       if (!await window.BGNJ_CONFIRM(`"${report.postTitle}" \uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD558\uACE0 \uC2E0\uACE0\uB97C \uCC98\uB9AC \uC644\uB8CC\uB85C \uD45C\uC2DC\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
-      window.BGNJ_COMMUNITY.deletePost(report.postId);
-      window.BGNJ_COMMUNITY.updateReportStatus(report.id, "resolved");
+      const removed = await window.BGNJ_ADMIN_SAVE(
+        () => window.BGNJ_COMMUNITY.deletePost(report.postId),
+        { fail: "\uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC2E0\uACE0\uB294 \uADF8\uB300\uB85C \uB461\uB2C8\uB2E4." }
+      );
+      if (removed) {
+        await window.BGNJ_ADMIN_SAVE(
+          () => window.BGNJ_COMMUNITY.updateReportStatus(report.id, "resolved"),
+          { fail: "\uAE00\uC740 \uC0AD\uC81C\uD588\uC9C0\uB9CC \uC2E0\uACE0 \uC0C1\uD0DC\uB97C \uBC14\uAFB8\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+        );
+      }
       setTick((v) => v + 1);
       onRefresh == null ? void 0 : onRefresh();
     };
@@ -16454,7 +16510,10 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
     };
     const removeOne = async (post) => {
       if (!await window.BGNJ_CONFIRM(`"${post.title}" \uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?`, { danger: true })) return;
-      window.BGNJ_COMMUNITY.deletePost(post.id);
+      await window.BGNJ_ADMIN_SAVE(
+        () => window.BGNJ_COMMUNITY.deletePost(post.id),
+        { fail: "\uAC8C\uC2DC\uAE00\uC744 \uC0AD\uC81C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+      );
       setSelectedIds((prev) => {
         const next = new Set(prev);
         next.delete(post.id);

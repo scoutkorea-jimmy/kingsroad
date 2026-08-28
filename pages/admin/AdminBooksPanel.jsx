@@ -83,9 +83,11 @@ const BooksAdminPanel = () => {
     setDirty(true);
   };
   // 즉시 저장 (cover/pdf 업로드 + primary toggle 등 즉시 반영해야 하는 액션) — local 도 같이 동기화.
-  const patchImmediate = (changes) => {
+  // v00.313 — 서버 저장을 기다리지 않아, 실패해도 화면만 바뀌던 자리.
+  const patchImmediate = async (changes) => {
     if (!selectedId) return;
-    window.BGNJ_BOOKS.update(selectedId, changes);
+    await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_BOOKS.update(selectedId, changes),
+      { fail: '책 정보를 저장하지 못했습니다.' });
     setEditing((cur) => cur ? { ...cur, ...changes } : cur);
     refresh();
   };
@@ -189,9 +191,10 @@ const BooksAdminPanel = () => {
     }
   };
 
-  const patch = (changes) => {
+  const patch = async (changes) => {
     if (!selectedId) return;
-    window.BGNJ_BOOKS.update(selectedId, changes);
+    await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_BOOKS.update(selectedId, changes),
+      { fail: '책 정보를 저장하지 못했습니다.' });
     refresh();
   };
 
@@ -702,7 +705,8 @@ const BooksAdminPanel = () => {
                         <button type="button" className="btn btn-small"
                           onClick={async () => {
                             if (!(await window.BGNJ_CONFIRM('이 리뷰를 삭제할까요?', { danger: true }))) return;
-                            window.BGNJ_BOOKS.removeReview(selected.id, r.id);
+                            await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_BOOKS.removeReview(selected.id, r.id),
+                              { fail: '리뷰를 삭제하지 못했습니다.' });
                             refresh();
                           }}
                           style={{borderColor:'var(--danger)', color:'var(--danger)'}}>삭제</button>

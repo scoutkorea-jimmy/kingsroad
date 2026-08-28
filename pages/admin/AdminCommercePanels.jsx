@@ -425,7 +425,9 @@ const BookOrderAdminPanel = ({ go }) => {
                         <button type="button" className="btn btn-small"
                           onClick={async () => {
                             if (!(await window.BGNJ_CONFIRM(`환불을 승인하시겠어요? 주문 ${o.orderNo}이 취소됩니다.`, { danger: true }))) return;
-                            window.BGNJ_BOOK_ORDERS.approveRefund(o.id);
+                            // v00.313 — 돈이 걸린 자리다. 서버가 받아 준 것을 확인하고 나서 목록을 다시 그린다.
+                            await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_BOOK_ORDERS.approveRefund(o.id),
+                              { ok: '환불을 승인했습니다.', fail: '환불을 승인하지 못했습니다. 주문 상태는 그대로입니다.' });
                             refresh();
                           }}
                           style={{borderColor:'var(--primary)', color:'var(--secondary)'}}>
@@ -439,7 +441,8 @@ const BookOrderAdminPanel = ({ go }) => {
                         <button type="button" className="btn btn-small"
                           onClick={async () => {
                             if (!(await window.BGNJ_CONFIRM(`환불 신청을 반려하시겠어요?`, { danger: true }))) return;
-                            window.BGNJ_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || '');
+                            await window.BGNJ_ADMIN_SAVE(() => window.BGNJ_BOOK_ORDERS.rejectRefund(o.id, rejectNotes[o.id] || ''),
+                              { ok: '환불 신청을 반려했습니다.', fail: '반려 처리를 저장하지 못했습니다.' });
                             refresh();
                           }}
                           style={{borderColor:'var(--danger)', color:'var(--danger)'}}>
