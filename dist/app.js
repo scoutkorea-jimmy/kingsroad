@@ -408,7 +408,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.313.000",
+    version: "00.314.000",
     build: "2026.08.28",
     channel: "preview"
   };
@@ -1015,6 +1015,19 @@
     } catch (_e) {
       console.warn("[bgnj:_safeJson]", ctx, "\uAE68\uC9C4 JSON \u2014 \uAE30\uBCF8\uAC12\uC73C\uB85C \uB118\uC5B4\uAC04\uB2E4:", String(raw).slice(0, 120));
       return fallback;
+    }
+  };
+  window.BGNJ_SAVE_GUARD = async (work, { ok, fail = "\uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.", onOk } = {}) => {
+    var _a, _b, _c, _d;
+    try {
+      const r = typeof work === "function" ? await work() : await work;
+      if (ok) (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.success) == null ? void 0 : _b.call(_a, ok);
+      onOk == null ? void 0 : onOk(r);
+      return true;
+    } catch (err) {
+      console.error("[BGNJ_SAVE_GUARD]", err);
+      (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.error) == null ? void 0 : _d.call(_c, `${fail}${(err == null ? void 0 : err.message) ? ` (${err.message})` : ""}`);
+      return false;
     }
   };
   var _lsGet = (k, fallback) => {
@@ -4500,7 +4513,7 @@
     // 사용자 행동 후 호출 — 새 등급이 더 높을 때만 승격. async setGrade 는 fire-and-forget.
     // 승급 발생 시 본인에게 알림 발송 (강등에도 동일).
     maybePromote(userId) {
-      var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
+      var _a, _b, _c, _d, _e, _f, _g, _h;
       const users = ((_a = window.BGNJ_AUTH) == null ? void 0 : _a._usersCache) || [];
       const user = users.find((u) => u.id === userId);
       if (!user) return null;
@@ -4523,17 +4536,10 @@
         target: `user:${userId}`,
         details: { from: user.gradeId, to: targetId }
       });
-      const newLabel = ((_i = grades.find((g) => g.id === targetId)) == null ? void 0 : _i.label) || targetId;
-      (_k = (_j = window.BGNJ_COMMUNITY) == null ? void 0 : _j.addNotification) == null ? void 0 : _k.call(_j, userId, {
-        type: "grade_promoted",
-        postTitle: "\uD68C\uC6D0 \uB4F1\uAE09 \uC2B9\uAE09",
-        fromName: "\uC6B4\uC601\uC790",
-        message: `\uCD95\uD558\uD569\uB2C8\uB2E4 \u2014 \uD65C\uB3D9\uB7C9\uC744 \uAE30\uC900\uC73C\uB85C \uB4F1\uAE09\uC774 ${newLabel}(\uC73C)\uB85C \uC2B9\uAE09\uB418\uC5C8\uC2B5\uB2C8\uB2E4.`
-      });
       return targetId;
     },
     maybeDemote(userId) {
-      var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
+      var _a, _b, _c, _d, _e, _f, _g, _h;
       const users = ((_a = window.BGNJ_AUTH) == null ? void 0 : _a._usersCache) || [];
       const user = users.find((u) => u.id === userId);
       if (!user) return null;
@@ -4556,12 +4562,6 @@
         target: `user:${userId}`,
         details: { from: user.gradeId, to: targetId },
         by: "system"
-      });
-      (_j = window.BGNJ_COMMUNITY) == null ? void 0 : _j.addNotification(userId, {
-        type: "grade_demoted",
-        postTitle: "\uD68C\uC6D0 \uB4F1\uAE09 \uC548\uB0B4",
-        fromName: "\uC6B4\uC601\uC790",
-        message: `\uD65C\uB3D9\uB7C9 \uBCC0\uB3D9\uC73C\uB85C \uB4F1\uAE09\uC774 ${((_i = grades.find((g) => g.id === targetId)) == null ? void 0 : _i.label) || targetId}(\uC73C)\uB85C \uC870\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4.`
       });
       return targetId;
     },
@@ -10971,16 +10971,6 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         text: trimmed
       });
       setCommentsList(next);
-      const isMyOwnPost = post.authorId === user.id || post.author === user.name;
-      if (!isMyOwnPost && post.authorId) {
-        window.BGNJ_COMMUNITY.addNotification(post.authorId, {
-          type: "comment",
-          postId: post.id,
-          postTitle: post.title,
-          fromName: user.name,
-          message: "\uB0B4 \uAE00\uC5D0 \uC0C8 \uB313\uAE00\uC774 \uB2EC\uB838\uC2B5\uB2C8\uB2E4."
-        });
-      }
       onRefresh == null ? void 0 : onRefresh();
       setComment("");
     };
@@ -11150,16 +11140,6 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             parentId
           });
           setCommentsList(next);
-          const isMyOwnPost = post.authorId === user.id || post.author === user.name;
-          if (!isMyOwnPost && post.authorId) {
-            window.BGNJ_COMMUNITY.addNotification(post.authorId, {
-              type: "comment",
-              postId: post.id,
-              postTitle: post.title,
-              fromName: user.name,
-              message: "\uB0B4 \uAE00\uC5D0 \uC0C8 \uB2F5\uAE00\uC774 \uB2EC\uB838\uC2B5\uB2C8\uB2E4."
-            });
-          }
           onRefresh == null ? void 0 : onRefresh();
         }
       }
@@ -11991,19 +11971,27 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         setError("\uD6C4\uAE30 \uB0B4\uC6A9\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
         return;
       }
-      window.BGNJ_TOURS.addReview(tour.id, {
+      const r = await window.BGNJ_TOURS.addReview(tour.id, {
         userId: user.id,
         author: user.name,
         rating,
         text: text.trim()
       });
+      if (!(r == null ? void 0 : r.ok)) {
+        setError((r == null ? void 0 : r.message) || "\uD6C4\uAE30\uB97C \uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.");
+        return;
+      }
+      setError("");
       setText("");
       setRating(5);
       onRefresh == null ? void 0 : onRefresh();
     };
     const remove = async (id) => {
       if (!await window.BGNJ_CONFIRM("\uC774 \uD6C4\uAE30\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
-      window.BGNJ_TOURS.deleteReview(tour.id, id);
+      await window.BGNJ_SAVE_GUARD(
+        () => window.BGNJ_TOURS.deleteReview(tour.id, id),
+        { fail: "\uD6C4\uAE30\uB97C \uC0AD\uC81C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+      );
       onRefresh == null ? void 0 : onRefresh();
     };
     const avgRating = reviews.length === 0 ? 0 : reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length;
@@ -12610,7 +12598,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     };
     const remove = async (reviewId) => {
       if (!await window.BGNJ_CONFIRM("\uC774 \uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?", { danger: true })) return;
-      window.BGNJ_BOOK_ORDERS.deleteReview(reviewId);
+      await window.BGNJ_SAVE_GUARD(
+        () => window.BGNJ_BOOK_ORDERS.deleteReview(reviewId),
+        { fail: "\uB9AC\uBDF0\uB97C \uC0AD\uC81C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+      );
       setReviews(window.BGNJ_BOOK_ORDERS.listReviews());
     };
     const isAdmin = user == null ? void 0 : user.isAdmin;
@@ -14231,19 +14222,27 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         setError("\uD6C4\uAE30 \uB0B4\uC6A9\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
         return;
       }
-      window.BGNJ_LECTURES.addReview(lecture.id, {
+      const r = await window.BGNJ_LECTURES.addReview(lecture.id, {
         userId: user.id,
         author: user.name,
         rating,
         text: text.trim()
       });
+      if (!(r == null ? void 0 : r.ok)) {
+        setError((r == null ? void 0 : r.message) || "\uD6C4\uAE30\uB97C \uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.");
+        return;
+      }
+      setError("");
       setText("");
       setRating(5);
       onRefresh == null ? void 0 : onRefresh();
     };
     const remove = async (id) => {
       if (!await window.BGNJ_CONFIRM("\uC774 \uD6C4\uAE30\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
-      window.BGNJ_LECTURES.deleteReview(lecture.id, id);
+      await window.BGNJ_SAVE_GUARD(
+        () => window.BGNJ_LECTURES.deleteReview(lecture.id, id),
+        { fail: "\uD6C4\uAE30\uB97C \uC0AD\uC81C\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4." }
+      );
       onRefresh == null ? void 0 : onRefresh();
     };
     const avgRating = reviews.length === 0 ? 0 : reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length;

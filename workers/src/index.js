@@ -1498,8 +1498,26 @@ const handleAdminUserPatch = async (req, env, id) => {
   }
   if ("name" in body && typeof body.name === "string") { fields.push("name = ?"); args.push(body.name.trim()); }
   if (!fields.length) return { ok: true };
+  // v00.314 — 등급이 실제로 바뀔 때만 알린다. 바꾸기 **전에** 읽어야 이전 값을 안다.
+  //   왜 여기냐: 화면 쪽 addNotification 은 v00.30x 부터 아무 일도 안 하는 no-op 이었다.
+  //   그래서 등급이 오르내려도 회원은 아무 말도 못 들었다 — 버전 기록은 '알림 발송' 이라 적혀 있었다.
+  //   알림은 그 일이 일어난 자리(서버)에서 만든다. 화면은 만들 수 없다.
+  const beforeGrade = "gradeId" in body
+    ? (await env.DB.prepare("SELECT grade_id FROM users WHERE id = ?").bind(id).first())?.grade_id
+    : null;
   args.push(id);
   await env.DB.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).bind(...args).run();
+  if ("gradeId" in body && body.gradeId && body.gradeId !== beforeGrade) {
+    // ⚠ grades_kv 는 label/level/color 를 **정식 컬럼**으로 갖는다(data_json 이 아니다).
+    //   이름을 잘못 짚으면 'no such column' 으로 등급 변경 자체가 500 이 된다.
+    const label = (await env.DB.prepare("SELECT label FROM grades_kv WHERE id = ?").bind(body.gradeId).first())?.label
+      || body.gradeId;
+    await insertNotification(env, {
+      userId: id, type: "grade_changed", fromName: "운영자",
+      postTitle: "회원 등급 변경",
+      message: `회원 등급이 ${label}(으)로 변경되었습니다.`,
+    });
+  }
   await auditWrite(env, admin.email, "admin.user_update", `user:${id}`, { changes: body });
   return { ok: true };
 };

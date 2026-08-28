@@ -2307,17 +2307,9 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
     });
     setCommentsList(next);
 
-    // 본인 글이 아니면 작성자에게 알림. authorId가 있어야 푸시 가능.
-    const isMyOwnPost = post.authorId === user.id || post.author === user.name;
-    if (!isMyOwnPost && post.authorId) {
-      window.BGNJ_COMMUNITY.addNotification(post.authorId, {
-        type: 'comment',
-        postId: post.id,
-        postTitle: post.title,
-        fromName: user.name,
-        message: '내 글에 새 댓글이 달렸습니다.',
-      });
-    }
+    // v00.314 — 여기 있던 addNotification 호출을 걷어냈다. **아무 일도 안 하는 함수였다**(no-op).
+    //   알림은 댓글이 실제로 저장되는 자리, 즉 워커의 handleCommentCreate 가 만든다 —
+    //   저장에 실패하면 알림도 안 간다. 화면에서 만들면 '저장은 실패했는데 알림은 갔다' 가 생긴다.
 
     onRefresh?.();
     setComment("");
@@ -2577,16 +2569,7 @@ const PostDetail = ({ post, siblings, go, setPostId, user, onRefresh, onEdit, on
                 parentId,
               });
               setCommentsList(next);
-              const isMyOwnPost = post.authorId === user.id || post.author === user.name;
-              if (!isMyOwnPost && post.authorId) {
-                window.BGNJ_COMMUNITY.addNotification(post.authorId, {
-                  type: 'comment',
-                  postId: post.id,
-                  postTitle: post.title,
-                  fromName: user.name,
-                  message: '내 글에 새 답글이 달렸습니다.',
-                });
-              }
+              // v00.314 — 답글 알림도 워커가 만든다(부모 댓글 작성자에게도 간다). 화면 호출은 no-op 이었다.
               onRefresh?.();
             }}
           />

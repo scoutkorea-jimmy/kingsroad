@@ -1158,19 +1158,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }
     return { counts, labels };
   };
-  var adminSave = async (work, { ok, fail = "\uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.", onOk } = {}) => {
-    var _a, _b, _c, _d;
-    try {
-      const r = typeof work === "function" ? await work() : await work;
-      if (ok) (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.success) == null ? void 0 : _b.call(_a, ok);
-      onOk == null ? void 0 : onOk(r);
-      return true;
-    } catch (err) {
-      console.error("[adminSave]", err);
-      (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.error) == null ? void 0 : _d.call(_c, `${fail}${(err == null ? void 0 : err.message) ? ` (${err.message})` : ""}`);
-      return false;
-    }
-  };
+  var adminSave = (work, opts) => window.BGNJ_SAVE_GUARD(work, opts);
   window.HeatmapGrid = HeatmapGrid;
   window.BGNJ_ADMIN_SAVE = adminSave;
 

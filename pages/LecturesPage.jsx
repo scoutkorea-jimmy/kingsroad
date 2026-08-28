@@ -950,19 +950,25 @@ const LectureReviewsSection = ({ lecture, user, go, onRefresh }) => {
     }
     if (!canReview) { setError("참가 확정된 분만 후기를 작성할 수 있습니다."); return; }
     if (!text.trim()) { setError("후기 내용을 입력해 주세요."); return; }
-    window.BGNJ_LECTURES.addReview(lecture.id, {
+    // v00.314 — addReview 는 실패를 **돌려주기만** 한다({ ok:false }). 아무도 안 봤다.
+    //   그래서 저장이 실패해도 입력칸이 비워졌다 — 쓴 후기가 통째로 사라지고 아무 말도 없었다.
+    //   전역 오류 토스트도 안 뜬다(약속이 거절이 아니라 성공으로 끝나기 때문에).
+    const r = await window.BGNJ_LECTURES.addReview(lecture.id, {
       userId: user.id,
       author: user.name,
       rating,
       text: text.trim(),
     });
+    if (!r?.ok) { setError(r?.message || "후기를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요."); return; }
+    setError("");
     setText(""); setRating(5);
     onRefresh?.();
   };
 
   const remove = async (id) => {
     if (!(await window.BGNJ_CONFIRM("이 후기를 삭제하시겠어요?", { danger: true }))) return;
-    window.BGNJ_LECTURES.deleteReview(lecture.id, id);
+    await window.BGNJ_SAVE_GUARD(() => window.BGNJ_LECTURES.deleteReview(lecture.id, id),
+      { fail: '후기를 삭제하지 못했습니다.' });
     onRefresh?.();
   };
 

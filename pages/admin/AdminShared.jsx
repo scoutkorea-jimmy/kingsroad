@@ -1092,18 +1092,9 @@ const _dailySeries = (items, dateField, days = 14) => {
 //   (전역 unhandledrejection 이 토스트를 띄우긴 하지만 **'저장됨' 다음에** 뜬다 —
 //    두 개가 동시에 뜨면 사람은 앞의 초록을 믿는다.)
 //   → 끝난 뒤에만 성공을 말하고, 실패는 사람의 말로 알린다. 성공 여부를 돌려준다.
-const adminSave = async (work, { ok, fail = '저장하지 못했습니다. 잠시 후 다시 시도해 주세요.', onOk } = {}) => {
-  try {
-    const r = typeof work === 'function' ? await work() : await work;
-    if (ok) window.BGNJ_TOAST?.success?.(ok);
-    onOk?.(r);
-    return true;
-  } catch (err) {
-    console.error('[adminSave]', err);
-    window.BGNJ_TOAST?.error?.(`${fail}${err?.message ? ` (${err.message})` : ''}`);
-    return false;
-  }
-};
+//   v00.314 — 구현은 data.js 의 BGNJ_SAVE_GUARD 하나로 합쳤다(사용자 화면도 같은 것을 쓴다).
+//   여기 이름은 관리자 호출부 13곳을 그대로 두기 위해 남긴다.
+const adminSave = (work, opts) => window.BGNJ_SAVE_GUARD(work, opts);
 
 // v00.286 ESM — 모듈 export (window 노출과 병행, 점진 전환).
 export { AdminEmpty, AdminPanelHeader, AdminSaveBar, CohortSelector, MetricCard, MiniBarChart, RankedBarList, StatTile, SubTabsView, downloadCsv, downloadJson, pickImageWithR2Fallback };

@@ -36,7 +36,9 @@ const BookReviewSection = ({ user, bookTitle }) => {
 
   const remove = async (reviewId) => {
     if (!(await window.BGNJ_CONFIRM('이 리뷰를 삭제하시겠습니까?', { danger: true }))) return;
-    window.BGNJ_BOOK_ORDERS.deleteReview(reviewId);
+    // v00.314 — 삭제가 실패해도 목록만 다시 그렸다. 화면에서 사라진 줄 알고 넘어간다.
+    await window.BGNJ_SAVE_GUARD(() => window.BGNJ_BOOK_ORDERS.deleteReview(reviewId),
+      { fail: '리뷰를 삭제하지 못했습니다.' });
     setReviews(window.BGNJ_BOOK_ORDERS.listReviews());
   };
 

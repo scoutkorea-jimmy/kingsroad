@@ -1075,13 +1075,33 @@ const run = async () => {
   console.log("\n── 20. 저장됐다고 말하기 전에 서버가 받았는가 (2026-08-28) ──");
   {
     const shared = readFileSync(path.join(ROOT, "pages/admin/AdminShared.jsx"), "utf8");
-    check("공통 관문이 있고 window 에 걸려 있다",
-      /const adminSave = async/.test(shared) && /window\.BGNJ_ADMIN_SAVE = adminSave/.test(shared));
+    const dataSrc2 = readFileSync(path.join(ROOT, "data.js"), "utf8");
+    // v00.314 — 구현은 data.js 한 곳(두 번들이 함께 읽는 유일한 자리). 관리자 이름은 위임.
+    check("공통 관문이 두 번들이 함께 읽는 자리에 있다",
+      /window\.BGNJ_SAVE_GUARD = async/.test(dataSrc2), "AdminShared 는 관리자 번들에만 실린다");
+    check("관리자 이름은 같은 구현으로 위임한다",
+      /const adminSave = \(work, opts\) => window\.BGNJ_SAVE_GUARD/.test(shared)
+        && /window\.BGNJ_ADMIN_SAVE = adminSave/.test(shared),
+      "두 벌을 두면 반드시 한쪽이 낡는다");
     check("성공은 끝난 뒤에만 말한다",
-      /await[\s\S]{0,80}if \(ok\) window\.BGNJ_TOAST\?\.success/.test(shared),
+      /await[\s\S]{0,80}if \(ok\) window\.BGNJ_TOAST\?\.success/.test(dataSrc2),
       "먼저 말하면 실패해도 초록 문구가 남는다");
     check("실패를 사람의 말로 알린다",
-      /catch \(err\)[\s\S]{0,200}BGNJ_TOAST\?\.error/.test(shared));
+      /catch \(err\)[\s\S]{0,200}BGNJ_TOAST\?\.error/.test(dataSrc2));
+
+    // ── 후기: 실패를 '돌려주기만' 하고 아무도 안 보던 자리 ──
+    const lect = readFileSync(path.join(ROOT, "pages/LecturesPage.jsx"), "utf8");
+    const tour = readFileSync(path.join(ROOT, "pages/WangsanamTourPage.jsx"), "utf8");
+    for (const [name, src] of [["강연", lect], ["투어", tour]]) {
+      check(`${name} 후기 저장이 결과를 확인한다`,
+        /const r = await window\.BGNJ_(LECTURES|TOURS)\.addReview/.test(src) && /if \(!r\?\.ok\)/.test(src),
+        "실패를 안 보면 입력칸만 비워지고 쓴 후기가 사라진다");
+      check(`${name} 후기는 실패하면 입력칸을 비우지 않는다`,
+        /if \(!r\?\.ok\) \{[\s\S]{0,160}return; \}/.test(src),
+        "지우고 나면 되돌릴 방법이 없다");
+      check(`${name} 후기 삭제가 실패를 알린다`,
+        /BGNJ_SAVE_GUARD\(\(\) => window\.BGNJ_(LECTURES|TOURS)\.deleteReview/.test(src));
+    }
 
     // 관리자 패널에서 서버 저장을 '던져 놓고 잊는' 자리가 남아 있는가 —
     // 전역 unhandledrejection 이 토스트를 띄우긴 하지만 '저장됨' **다음에** 뜬다.
@@ -1110,6 +1130,28 @@ const run = async () => {
     check("글 삭제가 실패하면 신고를 닫지 않는다",
       /const removed = await window\.BGNJ_ADMIN_SAVE[\s\S]{0,300}if \(removed\)[\s\S]{0,200}updateReportStatus/.test(router),
       "닫아 버리면 신고 글이 남은 채로 목록에서 사라진다");
+  }
+
+  console.log("\n── 21. 알림은 그 일이 일어난 자리에서 만든다 (2026-08-28) ──");
+  {
+    const wk6 = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+    const comm = readFileSync(path.join(ROOT, "pages/CommunityPage.jsx"), "utf8");
+    const dataSrc3 = readFileSync(path.join(ROOT, "data.js"), "utf8");
+    check("화면에서 알림을 만들려 하지 않는다",
+      !/BGNJ_COMMUNITY\??\.?addNotification\??\.?\(/.test(comm)
+        && !/BGNJ_COMMUNITY\?\.addNotification/.test(dataSrc3),
+      "no-op 을 부르면 '알림을 보냈다' 고 착각한다");
+    check("등급이 바뀌면 서버가 알린다",
+      /grade_changed/.test(wk6) && /"gradeId" in body && body\.gradeId && body\.gradeId !== beforeGrade/.test(wk6),
+      "지금까지 양쪽 어디도 안 만들고 있었다");
+    check("바꾸기 전에 이전 등급을 읽는다",
+      wk6.indexOf("const beforeGrade") < wk6.indexOf("UPDATE users SET ${fields.join"),
+      "뒤에 읽으면 늘 같은 값이라 알림이 영영 안 나간다");
+    check("등급 이름을 있는 컬럼에서 읽는다",
+      /SELECT label FROM grades_kv/.test(wk6) && !/data_json FROM grades_kv/.test(wk6),
+      "grades_kv 에 data_json 은 없다 — 등급 변경이 통째로 500 이 된다");
+    check("댓글 알림은 저장이 끝난 자리에서 만든다",
+      /handleCommentsCreate[\s\S]{0,3000}insertNotification/.test(wk6));
   }
 
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);

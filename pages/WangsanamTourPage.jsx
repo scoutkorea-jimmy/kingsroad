@@ -1007,12 +1007,16 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
       return;
     }
     if (!text.trim()) { setError("후기 내용을 입력해 주세요."); return; }
-    window.BGNJ_TOURS.addReview(tour.id, {
+    // v00.314 — 강연 후기와 같은 자리. 실패를 돌려주기만 하고 아무도 안 봐서
+    //   저장 실패 때 입력칸만 비워지고 쓴 후기가 사라졌다.
+    const r = await window.BGNJ_TOURS.addReview(tour.id, {
       userId: user.id,
       author: user.name,
       rating,
       text: text.trim(),
     });
+    if (!r?.ok) { setError(r?.message || "후기를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요."); return; }
+    setError("");
     setText("");
     setRating(5);
     onRefresh?.();
@@ -1020,7 +1024,8 @@ const TourReviewsSection = ({ tour, user, go, onRefresh }) => {
 
   const remove = async (id) => {
     if (!(await window.BGNJ_CONFIRM("이 후기를 삭제하시겠어요?", { danger: true }))) return;
-    window.BGNJ_TOURS.deleteReview(tour.id, id);
+    await window.BGNJ_SAVE_GUARD(() => window.BGNJ_TOURS.deleteReview(tour.id, id),
+      { fail: '후기를 삭제하지 못했습니다.' });
     onRefresh?.();
   };
 

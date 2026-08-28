@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.313.000",
+  version: "00.314.000",
   build: "2026.08.28",
   channel: "preview",
 };
@@ -492,6 +492,24 @@ const _safeJson = (raw, fallback, ctx = '') => {
   } catch (_e) {
     console.warn('[bgnj:_safeJson]', ctx, '깨진 JSON — 기본값으로 넘어간다:', String(raw).slice(0, 120));
     return fallback;
+  }
+};
+
+// v00.314 — 서버에 쓰는 동작의 공통 관문. **관리자와 사용자 화면이 같은 것을 쓴다.**
+//   v00.313 에서 관리자 쪽만 고쳤는데, 사용자 화면에도 같은 모양이 13곳 남아 있었다.
+//   구현을 두 벌 두면 반드시 한쪽이 낡는다 — 여기 하나만 둔다(AdminShared 는 이걸 부른다).
+//   하는 일: 끝날 때까지 기다리고 · 성공은 끝난 뒤에만 말하고 · 실패는 사람의 말로 알리고
+//   · 성공 여부를 돌려준다(호출부가 화면을 되돌릴 수 있게).
+window.BGNJ_SAVE_GUARD = async (work, { ok, fail = '저장하지 못했습니다. 잠시 후 다시 시도해 주세요.', onOk } = {}) => {
+  try {
+    const r = typeof work === 'function' ? await work() : await work;
+    if (ok) window.BGNJ_TOAST?.success?.(ok);
+    onOk?.(r);
+    return true;
+  } catch (err) {
+    console.error('[BGNJ_SAVE_GUARD]', err);
+    window.BGNJ_TOAST?.error?.(`${fail}${err?.message ? ` (${err.message})` : ''}`);
+    return false;
   }
 };
 
@@ -3629,13 +3647,9 @@ window.BGNJ_GRADE_PROMO = {
       target: `user:${userId}`,
       details: { from: user.gradeId, to: targetId },
     });
-    const newLabel = grades.find((g) => g.id === targetId)?.label || targetId;
-    window.BGNJ_COMMUNITY?.addNotification?.(userId, {
-      type: 'grade_promoted',
-      postTitle: '회원 등급 승급',
-      fromName: '운영자',
-      message: `축하합니다 — 활동량을 기준으로 등급이 ${newLabel}(으)로 승급되었습니다.`,
-    });
+    // v00.314 — 화면에서 알림을 만들 수 없다(addNotification 은 no-op 이었다).
+    //   등급 변경 알림은 워커의 handleAdminUserPatch 가 등급이 실제로 바뀔 때 만든다.
+    //   ⚠ 지금까지는 양쪽 어디도 안 만들고 있었다 — 버전 기록만 '알림 발송' 이라 적혀 있었다.
     return targetId;
   },
   maybeDemote(userId) {
@@ -3663,12 +3677,7 @@ window.BGNJ_GRADE_PROMO = {
       details: { from: user.gradeId, to: targetId },
       by: 'system',
     });
-    window.BGNJ_COMMUNITY?.addNotification(userId, {
-      type: 'grade_demoted',
-      postTitle: '회원 등급 안내',
-      fromName: '운영자',
-      message: `활동량 변동으로 등급이 ${grades.find((g) => g.id === targetId)?.label || targetId}(으)로 조정되었습니다.`,
-    });
+    // v00.314 — 강등 알림도 워커가 만든다(등급이 실제로 바뀐 자리에서).
     return targetId;
   },
   // 모든 회원에 대해 활동 기반 등급 재산정 — 관리자 패널 일괄 작업용.
