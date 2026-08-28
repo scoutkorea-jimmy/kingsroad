@@ -8452,6 +8452,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   var HKA_STATUS = { pending: "\uC608\uC57D\uB300\uAE30", confirmed: "\uC608\uC57D\uD655\uC815", checked_in: "\uCCB4\uD06C\uC778", checked_out: "\uCCB4\uD06C\uC544\uC6C3", cancelled: "\uCDE8\uC18C", no_show: "\uB178\uC1FC" };
   var HKA_STATUS_COLOR = { pending: "#D97706", confirmed: "#16A34A", checked_in: "#2563EB", checked_out: "#475569", cancelled: "#DC2626", no_show: "#9333EA" };
   var HKA_PAY = { unpaid: "\uBBF8\uACB0\uC81C", partial: "\uBD80\uBD84\uACB0\uC81C", paid: "\uACB0\uC81C\uC644\uB8CC", refunded: "\uD658\uBD88\uC644\uB8CC" };
+  var HKA_BOOKING_UNIT = { nightly: "\uC219\uBC15", hourly: "\uC2DC\uAC04\uC81C", weekly: "\uC8FC\uAC04", monthly: "\uC6D4\uAC04", daily: "\uB300\uC2E4" };
   var hkaFlash = (msg, ok) => {
     var _a, _b, _c, _d;
     return ok === false ? (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, msg) : (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, msg);
@@ -8709,7 +8710,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       /* @__PURE__ */ React.createElement("td", { style: { ...td, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)" } }, b.code),
       /* @__PURE__ */ React.createElement("td", { style: td }, /* @__PURE__ */ React.createElement("strong", null, b.name), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11 } }, b.phone)),
       /* @__PURE__ */ React.createElement("td", { style: td }, b.roomTypeName),
-      /* @__PURE__ */ React.createElement("td", { style: { ...td, whiteSpace: "nowrap" } }, b.bookingUnit === "hourly" ? `${hkaDate(b.checkIn)} ${b.slotStart || ""}` : `${hkaDate(b.checkIn)}~${hkaDate(b.checkOut)} (${b.nights}\uBC15)`),
+      /* @__PURE__ */ React.createElement("td", { style: { ...td, whiteSpace: "nowrap" } }, /* @__PURE__ */ React.createElement("span", { className: "badge", style: { borderColor: "var(--line)", marginRight: 6, fontSize: 10 } }, HKA_BOOKING_UNIT[b.bookingUnit] || "\uC219\uBC15"), b.bookingUnit === "hourly" ? `${hkaDate(b.checkIn)} ${b.slotStart || ""}` : `${hkaDate(b.checkIn)}~${hkaDate(b.checkOut)} (${b.nights}\uBC15)`),
       /* @__PURE__ */ React.createElement("td", { style: { ...td, textAlign: "center" } }, b.guests),
       /* @__PURE__ */ React.createElement("td", { style: { ...td, textAlign: "right", fontWeight: 600 } }, hkaWon(b.totalPrice)),
       /* @__PURE__ */ React.createElement("td", { style: { ...td, textAlign: "center" } }, /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, color: "#fff", background: HKA_STATUS_COLOR[b.status] || "var(--ink-3)" } }, HKA_STATUS[b.status] || b.status)),

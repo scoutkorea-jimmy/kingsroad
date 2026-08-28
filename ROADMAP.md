@@ -3,8 +3,8 @@
 > **목적:** 향후 작업 단위(사이클)의 단일 백로그. 사이클 시작 시 이 문서에서 다음 항목을 가져오고, 완료 시 status 갱신.
 > **연관 문서:** 규칙은 [rules/](rules/), 작업 기록은 [rules/handoff/](rules/handoff/).
 > 과거 사이클 히스토리는 [rules/handoff/done/archive-cycle-history.md](rules/handoff/done/archive-cycle-history.md).
-> **마지막 갱신:** 2026-07-29 (문서 재편 — project-priority-table.md 흡수, CONTEXT.md §7.5 이관)
-> **직전 갱신:** 2026-06-06 (v00.284 — 현행화 sweep: 완료 항목 정리 + 한켠 PMS 후속 백로그 재작성. 직전 갱신 v00.241/2026-05-09 이후 43버전 누적분 반영)
+> **마지막 갱신:** 2026-08-28 (v00.315 — 큐 1 실측 현행화: 끝난 항목 3건 삭제, 남은 것에 근거 첨부)
+> **직전 갱신:** 2026-07-29 (문서 재편) · 그 전 2026-06-06 (v00.284 — 현행화 sweep: 완료 항목 정리 + 한켠 PMS 후속 백로그 재작성. 직전 갱신 v00.241/2026-05-09 이후 43버전 누적분 반영)
 
 ---
 
@@ -55,42 +55,66 @@
 
 ### 권장 순서 (Recommended Order)
 
-1. **Cloudflare 마이그레이션** — Workers + D1 + KV + R2 통합 설계
-2. **PG 결제 스켈레톤** — UI 먼저, 실결제는 비활성화
-3. **강연/투어 환불 신청 흐름** — 책과 동일한 requestRefund 패턴
-4. **이메일 알림 인프라** — 비활성화 상태로 hook 먼저 추가
-5. **마이페이지 프로필 수정 / 비밀번호 변경** — Cloudflare 인증 후 의미 있어짐
+> 2026-08-28 실측 — 다섯 중 셋이 이미 끝나 있었다. 남은 둘만 적는다.
+> 끝난 것: Cloudflare 마이그레이션(Workers+D1+R2 가동 중) · 강연/투어 환불 흐름(위 표 P5 ✅) ·
+> 마이페이지 비밀번호 변경(`PATCH /api/me/password`).
+
+1. **이메일 알림 인프라** — 비활성화 상태로 hook 먼저. 제공사 미결정.
+2. **PG 결제 스켈레톤** — UI 먼저, 실결제는 계약 후 활성화.
 
 ---
 
 ## 큐 1 — 다음 사이클
 
-### A. 한켠(자고 놀자) 예약 PMS 후속 — v00.267~284 빌드 파생
+> **2026-08-28 실측 현행화.** 직전 갱신은 2026-07-29 였고 그 사이 30버전이 지났다.
+> 아래는 **코드를 열어 확인한** 상태다. 끝난 항목은 지웠다 — 남아 있으면 매 세션이 헛돈다.
+>
+> 지운 것: `AuthAdminPage.jsx 9,273줄 분할`(**지금 1,252줄** — 분할이 이미 끝났다) ·
+> `anchor scroll-margin-top`(**`styles.css:264` 에 `scroll-padding-top: 88px` 로 이미 있다**) ·
+> `fire-and-forget admin save sweep`(**v00.313~314 완료** — 공통 관문 `BGNJ_SAVE_GUARD`).
 
-- **OSM 지도 정확 핀** — v00.283 위치/교통에 OpenStreetMap 임베드 추가. 현재 좌표 미설정 시 팔달로 도로 중심 기본값(35.8313, 127.1386). 관리자 숙소정보 lat/lng 입력 UX 개선 또는 주소 자동 지오코딩(Nominatim — connect-src 화이트리스트 추가 필요). **건물 단위 정밀 핀 미달성.**
-- **객실 '기준 인원' 설정 필드** — 현재 카드 기준인원은 `min(2, 최대인원)` 자동 보정(v00.284.003). 객실별 기준 인원 + 초과 1인당 추가요금을 admin 에서 설정하려면 `hk_room_types` 컬럼 추가. **사용자 의도 확인 필요.**
-- **관리자 예약목록 주간/월간 배지** — [pages/admin/HangyeonAdminPanel.jsx:520](pages/admin/HangyeonAdminPanel.jsx#L520) 비-hourly 는 "체크인~체크아웃 (N박)" 로만 표시. weekly/monthly 단위 배지 표기 작은 개선.
-- **handleHkDay 성능** — [workers/src/index.js](workers/src/index.js) day 쿼리가 객실당 최대 4종 가용성(stay/hourly/weekly/monthly, 월간=30박 루프) 계산. 객실/조회 늘면 지연. rate-rule 캐싱·쿼리 배치 최적화 후보.
+### A. 한켠(자고 놀자) 예약 PMS 후속
 
-### B. 코드측 이월 (유효, carry-over)
+- **OSM 지도 정확 핀** — 관리자 위도/경도 입력칸은 **있다**([HangyeonAdminPanel.jsx:703](pages/admin/HangyeonAdminPanel.jsx#L703)).
+  남은 것은 **주소 자동 지오코딩**(Nominatim — `connect-src` 화이트리스트 추가 필요)뿐.
+  지금은 좌표를 손으로 넣어야 하고, 안 넣으면 팔달로 도로 중심(35.8313, 127.1386)으로 떨어진다.
+- **객실 '기준 인원' 설정 필드** — 카드 기준인원이 `min(2, 최대인원)` 자동 보정이다.
+  객실별 기준 인원 + 초과 1인당 추가요금을 admin 에서 정하려면 `hk_room_types` 컬럼 추가.
+  **사용자 의도 확인 필요** — 화면 문구는 이미 "기준인원 초과 시 추가요금" 이라고 말하는데
+  실제로 받는 로직이 없다. 문구를 지우든 기능을 만들든 둘 중 하나는 해야 한다.
+- **handleHkDay 성능** — day 쿼리가 객실당 최대 4종 가용성(숙박/시간제/주간/월간, 월간=30박 루프)을 센다.
+  객실·조회가 늘면 지연. rate-rule 캐싱·쿼리 배치 후보. **아직 느리다는 신고는 없다.**
 
-- **책별 리뷰 분리** — `BGNJ_BOOK_ORDERS.refreshReviews/addReview` 가 [data.js:2487](data.js#L2487), [data.js:2507](data.js#L2507) 에서 `'kingsroad'` 책 ID 하드코드. 1권 가정 잔재. **사용자 의도 확인 필요** (단일 글로벌 vs 책별 탭).
-- **AuthAdminPage.jsx 9,273줄 분할** — `large_file` INFO 누적(매 커밋 경고). v00.187 AdminShared 분리(-759) 이후에도 유지. 다음 분할 후보: AdminMemberPanel / AdminCommunityPanel / AdminBookOrdersPanel.
-- **(별도 audit) fire-and-forget admin save sweep** — 일괄 await + try/catch + toast 정합 점검.
-- **챕터 깊은 들여쓰기** (`-- ` 2단계+) — v00.155 의 1단계 sub-item 만 처리. 사용자 신호 시 추가.
-- **다크모드 sweep 잔재** — 인라인 hex (`#1e293b` 등 boot.jsx 토스트, ConfirmDialog 등) 잔존. 토큰화 필요.
-- **anchor scroll-margin-top** — sticky nav(64/72px) 아래 native anchor(`#col-comments` 등) 점프 시 도착점 가림 가능. scroll-margin-top 권장.
-- **scroll-to-top FAB UX** — 폼 영역 진입 시 자동 hide 검토 (별도 사용자 민원 시).
+### B. 코드측 이월
+
+- **책별 리뷰 분리** — [data.js:3041](data.js#L3041) · [data.js:3061](data.js#L3061) 이 `'kingsroad'` 를 하드코드한다.
+  1권 가정의 잔재다. 책이 둘이 되는 순간 리뷰가 섞인다. **사용자 의도 확인 필요**(단일 vs 책별 탭).
+- **인라인 hex 색 210곳** — 다크모드는 `data-theme="dark"` 로 살아 있는데
+  `#1e293b` 같은 고정 색이 화면 코드에 210곳 남아 있다. 다크에서 그 자리만 밝게 뜬다.
+  ⚠ 전부가 잘못은 아니다 — 차트 색처럼 의도적인 것도 섞여 있다. **세고 나서 고를 것.**
+- **챕터 깊은 들여쓰기**(`-- ` 2단계+) — v00.155 의 1단계만 처리. 사용자 신호 시 추가.
+- **scroll-to-top FAB** — 폼 영역 진입 시 자동 hide 검토. 민원이 오면.
 
 ### C. 외부 의존 (별 사이클)
 
-- **PG 결제** — 현재 무통장 입금/현장 결제 임시. 외부 PG 연동 + 비용 발생. 별도 사이클.
+- **PG 결제** — 무통장 입금/현장 결제 임시. 외부 연동 + 비용 발생. 별도 사이클.
 
 ---
 
 ## 큐 2 — 워커 배포 의존 (★ wrangler deploy 필요)
 
-(현재 비어있음 — v00.284 세션에서 워커 재배포 완료. 직전 `v00.154 영수증 mail subject 동적화` 는 본 배포로 반영됨.)
+⚠ **2026-08-28 현재 넷이 대기 중이다.** 코드는 들어갔지만 `wrangler deploy` 전까지 서버에 없다.
+
+| 무엇 | 왜 | 버전 |
+|---|---|---|
+| 깨진 JSON 한 줄이 엔드포인트를 죽이지 않게 | 한 행이 깨지면 목록 전체가 500 | v00.312 |
+| `error_log` 30일 자동 청소 | 없으면 무한히 커져 D1 이 찬다 | v00.312 |
+| 같은 사람의 같은 글 신고는 하나만 | 연타하면 '손볼 것' 숫자가 부푼다 | v00.312 |
+| 등급이 바뀌면 알림을 만든다 | 지금까지 양쪽 어디도 안 만들고 있었다 | v00.314 |
+
+```bash
+cd workers && npx wrangler deploy
+```
 
 > 참고: 한켠 weekly/monthly 스키마(`hk_room_types` 4컬럼)는 v00.284 에서 `migrate-weekly-monthly.sql` 로 remote D1 적용 완료.
 

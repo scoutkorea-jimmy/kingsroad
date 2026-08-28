@@ -10,6 +10,10 @@ const hkaDate = (str) => { if (!str) return '-'; const d = new Date(str + 'T00:0
 const HKA_STATUS = { pending: '예약대기', confirmed: '예약확정', checked_in: '체크인', checked_out: '체크아웃', cancelled: '취소', no_show: '노쇼' };
 const HKA_STATUS_COLOR = { pending: '#D97706', confirmed: '#16A34A', checked_in: '#2563EB', checked_out: '#475569', cancelled: '#DC2626', no_show: '#9333EA' };
 const HKA_PAY = { unpaid: '미결제', partial: '부분결제', paid: '결제완료', refunded: '환불완료' };
+// v00.315 — 예약 단위 배지. 지금까지 비-시간제는 전부 '체크인~체크아웃 (N박)' 로만 보였다.
+//   주간(7박)·월간(30박)은 정액 상품이라 숙박과 값 계산이 다른데 표에서 구분이 안 됐다.
+//   ⚠ 옛 예약은 booking_unit 이 비어 있다(워커가 slot_start 유무로 nightly/hourly 를 채운다).
+const HKA_BOOKING_UNIT = { nightly: '숙박', hourly: '시간제', weekly: '주간', monthly: '월간', daily: '대실' };
 const hkaFlash = (msg, ok) => (ok === false ? window.BGNJ_TOAST?.error?.(msg) : window.BGNJ_TOAST?.success?.(msg));
 
 // ── 1) 객실 관리 ───────────────────────────────────────────────────────────
@@ -517,7 +521,14 @@ const HkaBookings = () => {
                 <td style={{ ...td, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--ink-3)' }}>{b.code}</td>
                 <td style={td}><strong>{b.name}</strong><div className="dim-2" style={{ fontSize: 11 }}>{b.phone}</div></td>
                 <td style={td}>{b.roomTypeName}</td>
-                <td style={{ ...td, whiteSpace: 'nowrap' }}>{b.bookingUnit === 'hourly' ? `${hkaDate(b.checkIn)} ${b.slotStart || ''}` : `${hkaDate(b.checkIn)}~${hkaDate(b.checkOut)} (${b.nights}박)`}</td>
+                <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                  <span className="badge" style={{ borderColor: 'var(--line)', marginRight: 6, fontSize: 10 }}>
+                    {HKA_BOOKING_UNIT[b.bookingUnit] || '숙박'}
+                  </span>
+                  {b.bookingUnit === 'hourly'
+                    ? `${hkaDate(b.checkIn)} ${b.slotStart || ''}`
+                    : `${hkaDate(b.checkIn)}~${hkaDate(b.checkOut)} (${b.nights}박)`}
+                </td>
                 <td style={{ ...td, textAlign: 'center' }}>{b.guests}</td>
                 <td style={{ ...td, textAlign: 'right', fontWeight: 600 }}>{hkaWon(b.totalPrice)}</td>
                 <td style={{ ...td, textAlign: 'center' }}>
