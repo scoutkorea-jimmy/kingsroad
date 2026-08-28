@@ -16495,9 +16495,30 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
       if (!cat) return;
       runBulk({ categoryId: cat.id }, `'${cat.label}' \uB85C \uC774\uB3D9`).then(() => setBulkCat(""));
     };
+    const bulkPrefixOptions = React.useMemo(() => {
+      if (selectedIds2.size === 0) return [];
+      const catIds = /* @__PURE__ */ new Set();
+      posts.forEach((p) => {
+        if (selectedIds2.has(p.id)) catIds.add(p.categoryId);
+      });
+      let common = null;
+      catIds.forEach((cid) => {
+        const cat = window.BGNJ_STORES.categories.find((c) => c.id === cid);
+        const names = window.BGNJ_PREFIX_DEFS(cat).map((d) => d.name);
+        common = common === null ? names : common.filter((n) => names.includes(n));
+      });
+      return common || [];
+    }, [posts, selectedIds2]);
+    React.useEffect(() => {
+      if (bulkPrefix && !bulkPrefixOptions.includes(bulkPrefix)) setBulkPrefix("");
+    }, [bulkPrefixOptions, bulkPrefix]);
     const bulkApplyPrefix = () => {
       if (selectedIds2.size === 0) return;
       const next = bulkPrefix.trim();
+      if (next && !bulkPrefixOptions.includes(next)) {
+        window.BGNJ_TOAST.error("\uB4F1\uB85D\uB41C \uB9D0\uBA38\uB9AC\uB9CC \uC801\uC6A9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.");
+        return;
+      }
       runBulk({ prefix: next || null }, next ? `\uB9D0\uBA38\uB9AC '${next}' \uC801\uC6A9` : "\uB9D0\uBA38\uB9AC \uC81C\uAC70").then(() => setBulkPrefix(""));
     };
     return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }, role: "tablist", "aria-label": "\uAC8C\uC2DC\uD310 \uD544\uD130" }, [{ id: "all", label: "\uC804\uCCB4", count: posts.length }].concat(window.BGNJ_STORES.categories.filter((item) => item.boardType === "community").map((c) => ({ id: c.id, label: c.label, count: posts.filter((p) => p.categoryId === c.id).length }))).map((chip) => {
@@ -16551,7 +16572,18 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         title: "\uD55C \uD398\uC774\uC9C0\uC5D0 \uD45C\uC2DC\uD560 \uAC8C\uC2DC\uAE00 \uAC2F\uC218"
       },
       ADMIN_POSTS_PER_PAGE_OPTIONS.map((n) => /* @__PURE__ */ React.createElement("option", { key: n, value: n }, n, "\uAC1C"))
-    ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: exportCsv }, "CSV \uB2E4\uC6B4\uB85C\uB4DC")), selectedIds2.size > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "rgba(59,130,246,0.07)", border: "1px solid var(--primary-dim)", marginBottom: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono gold", style: { fontSize: 11 } }, selectedIds2.size, "\uAC1C \uC120\uD0DD\uB428"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { borderColor: "var(--danger)", color: "var(--danger)" }, onClick: bulkRemove }, "\uC120\uD0DD \uC0AD\uC81C"), /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { width: 1, alignSelf: "stretch", background: "var(--line)" } }), /* @__PURE__ */ React.createElement("select", { className: "field-input", style: { maxWidth: 160, padding: "4px 8px" }, value: bulkCat, onChange: (e) => setBulkCat(e.target.value) }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\uAC8C\uC2DC\uD310 \uC120\uD0DD..."), window.BGNJ_STORES.categories.filter((c) => c.boardType === "community").map((c) => /* @__PURE__ */ React.createElement("option", { key: c.id, value: c.id }, c.label))), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: bulkMove, disabled: bulkBusy }, bulkBusy ? "\uCC98\uB9AC \uC911\u2026" : "\uC774\uB3D9"), /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { width: 1, alignSelf: "stretch", background: "var(--line)" } }), /* @__PURE__ */ React.createElement("input", { type: "text", className: "field-input", style: { maxWidth: 140, padding: "4px 8px" }, placeholder: "\uB9D0\uBA38\uB9AC (\uBE44\uC6B0\uBA74 \uC81C\uAC70)", value: bulkPrefix, onChange: (e) => setBulkPrefix(e.target.value), "aria-label": "\uC77C\uAD04 \uC801\uC6A9\uD560 \uB9D0\uBA38\uB9AC" }), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: bulkApplyPrefix, disabled: bulkBusy }, "\uB9D0\uBA38\uB9AC \uC801\uC6A9"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { marginLeft: "auto" }, onClick: () => setSelectedIds(/* @__PURE__ */ new Set()) }, "\uC120\uD0DD \uD574\uC81C")), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 8px", textAlign: "center", width: 36 } }, /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: exportCsv }, "CSV \uB2E4\uC6B4\uB85C\uB4DC")), selectedIds2.size > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "rgba(59,130,246,0.07)", border: "1px solid var(--primary-dim)", marginBottom: 12, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono gold", style: { fontSize: 11 } }, selectedIds2.size, "\uAC1C \uC120\uD0DD\uB428"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { borderColor: "var(--danger)", color: "var(--danger)" }, onClick: bulkRemove }, "\uC120\uD0DD \uC0AD\uC81C"), /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { width: 1, alignSelf: "stretch", background: "var(--line)" } }), /* @__PURE__ */ React.createElement("select", { className: "field-input", style: { maxWidth: 160, padding: "4px 8px" }, value: bulkCat, onChange: (e) => setBulkCat(e.target.value) }, /* @__PURE__ */ React.createElement("option", { value: "" }, "\uAC8C\uC2DC\uD310 \uC120\uD0DD..."), window.BGNJ_STORES.categories.filter((c) => c.boardType === "community").map((c) => /* @__PURE__ */ React.createElement("option", { key: c.id, value: c.id }, c.label))), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: bulkMove, disabled: bulkBusy }, bulkBusy ? "\uCC98\uB9AC \uC911\u2026" : "\uC774\uB3D9"), /* @__PURE__ */ React.createElement("span", { "aria-hidden": "true", style: { width: 1, alignSelf: "stretch", background: "var(--line)" } }), /* @__PURE__ */ React.createElement(
+      "select",
+      {
+        className: "field-input",
+        style: { maxWidth: 200, padding: "4px 8px" },
+        value: bulkPrefix,
+        onChange: (e) => setBulkPrefix(e.target.value),
+        "aria-label": "\uC77C\uAD04 \uC801\uC6A9\uD560 \uB9D0\uBA38\uB9AC"
+      },
+      /* @__PURE__ */ React.createElement("option", { value: "" }, "\uB9D0\uBA38\uB9AC \uC5C6\uC74C(\uC81C\uAC70)"),
+      bulkPrefixOptions.map((name) => /* @__PURE__ */ React.createElement("option", { key: name, value: name }, name))
+    ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: bulkApplyPrefix, disabled: bulkBusy }, "\uB9D0\uBA38\uB9AC \uC801\uC6A9"), bulkPrefixOptions.length === 0 && /* @__PURE__ */ React.createElement("span", { className: "dim-2", style: { fontSize: 10, wordBreak: "keep-all" } }, "\uC120\uD0DD\uD55C \uAE00\uC758 \uAC8C\uC2DC\uD310\uC5D0 \uD568\uAED8 \uC4F8 \uC218 \uC788\uB294 \uB9D0\uBA38\uB9AC\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4 \u2014 \uCEE4\uBBA4\uB2C8\uD2F0 \u2192 \uB9D0\uBA38\uB9AC \uD0ED\uC5D0\uC11C \uB4F1\uB85D\uD558\uC138\uC694"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { marginLeft: "auto" }, onClick: () => setSelectedIds(/* @__PURE__ */ new Set()) }, "\uC120\uD0DD \uD574\uC81C")), /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "12px 8px", textAlign: "center", width: 36 } }, /* @__PURE__ */ React.createElement(
       "input",
       {
         type: "checkbox",

@@ -20,7 +20,7 @@
 
 | 시작 | 건 | 문서 |
 |---|---|---|
-| 2026-07-29 | 챗봇·Top 위젯 + 메뉴 재편 + 홈 재구성 | [ACTIVE.md](ACTIVE.md) |
+| 2026-08-28 | 관리자 일괄 말머리를 '고르는' 것으로 | [ACTIVE.md](ACTIVE.md) |
 
 ---
 
@@ -31,6 +31,7 @@
 
 | 버전 | 내용 | 문서 |
 |---|---|---|
+| v00.310 | 댓글 최신순·공감 + 관리자 대시보드·여정 + 안정성 재검토 | [2026-08-26-comments-dashboard-journey.md](done/2026-08-26-comments-dashboard-journey.md) |
 | v00.289 | 문서 구조 재편(CLAUDE.md+rules/+handoff+design/) + 홈 UI 1차 개편 | [2026-07-29-restructure-and-ui.md](done/2026-07-29-restructure-and-ui.md) |
 | v00.288 | v00.288 — 전주한켠: 객실 선택 → 기간 살아보기 상품 + 문의 | [v00.288-hangyeon-stay-packages.md](done/v00.288-hangyeon-stay-packages.md) |
 | v00.288 | v00.288.003 — 홈 커뮤니티 섹션 제거 | [v00.288.003.md](done/v00.288.003.md) |

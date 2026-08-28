@@ -5,10 +5,10 @@
     "language": "ko-KR",
     "description": "한국의 역사·문화·자연을 함께 여행하는 커뮤니티"
   },
-  "generatedAt": "2026-08-25T17:52:46.535Z",
+  "generatedAt": "2026-08-28T03:27:31.259Z",
   "counts": {
     "columns": 72,
-    "posts": 111,
+    "posts": 114,
     "books": 6,
     "series": 1
   },
@@ -17,7 +17,7 @@
       "name": "걸어서 독립운동 속으로",
       "board": "신지식 청년사관",
       "url": "https://bgnj.net/community/series-walk-independence",
-      "count": 25
+      "count": 28
     }
   ],
   "columns": [
@@ -671,6 +671,39 @@
     }
   ],
   "posts": [
+    {
+      "id": 144,
+      "title": "서대문 형무소 답사기_박지원",
+      "url": "https://bgnj.net/community/144",
+      "author": "박지원",
+      "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
+      "publishedAt": "2026-08-27T06:19:10.932Z",
+      "summary": "서대문 형무소 탐방기 숙명여자대학교 사회심리학과 박지원 서대문 형무소라는 장소는 이름만 봐도 알 수 있다시피 감옥이기 때문에, 경복궁같은 잘 꾸며놓은 궁궐이나 종묘 등의 역사유적에 비해 비교적 덜 대중친화적이다. 하지만 외국인뿐만 아니라 군인들, 일반 시민들이 꽤 많이 온 것을 보며 서대문 형무소가 그 장벽을 깨고자 노력을 많이 했구나 하고 생각했다. 개…"
+    },
+    {
+      "id": 143,
+      "title": "2회차_서대문형무소_안서연",
+      "url": "https://bgnj.net/community/143",
+      "author": "안서연",
+      "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
+      "publishedAt": "2026-08-27T06:11:00.363Z",
+      "summary": "비가 살짝 내리는 8월의 금요일 오후, 서대문형무소로 발길을 옮겼다. 한국사능력검정시험을 준비하며 방문했던 역사적인 장소 중 한 곳이기었기에 어딘지 모를 익숙한 마음으로 걸음을 내딛었다. 국권 피탈 이후 광복까지의 연대기를 보여주는 전시실을 지나 전혀 익숙해질 수 없을 것만 같은 잔혹한 고문실을 보았다. 조국독립에 대한 의지를 짚밟기 위해 행해진 견디기 …"
+    },
+    {
+      "id": 142,
+      "title": "1회차_안중근의사기념관_안나연",
+      "url": "https://bgnj.net/community/142",
+      "author": "안나연",
+      "board": "신지식 청년사관",
+      "series": "걸어서 독립운동 속으로",
+      "seriesUrl": "https://bgnj.net/community/series-walk-independence",
+      "publishedAt": "2026-08-27T05:35:44.905Z",
+      "summary": "見利思義 , 見危授命 (견리사의 견위수명) 이익을 앞에 두고도 의로움을 먼저 생각하며 , 나라가 위기에 처하면 자신의 목숨까지 바친다. 경술년 3월, 여순감옥에서, 대한국인 안중근 씀 신지식 장학회 독립의 길의 첫번째 걸음인 안중근의사 기념관에서 그동안 각종 매체에서 다뤄졌던 안중근 의사의 성장과 일련의 큰 거사과정들 그 이상의 것을 직접 보고 마음 숙히…"
+    },
     {
       "id": 141,
       "title": "행정으로 본 서대문형무소",

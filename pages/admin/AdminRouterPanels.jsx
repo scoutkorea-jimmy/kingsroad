@@ -796,9 +796,36 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
     runBulk({ categoryId: cat.id }, `'${cat.label}' 로 이동`).then(() => setBulkCat(''));
   };
 
+  // v00.311 — 일괄 말머리는 **등록된 것 중에서만** 고른다.
+  //   전에는 자유 입력이었다. 오타 한 번이면(`걸어세`) 등록된 적 없는 말머리가 생겨
+  //   커뮤니티 목록 필터에 따로 뜨고 글 하나가 무리에서 떨어져 나갔다.
+  //   선택한 글이 여러 게시판에 걸쳐 있으면 **모든 게시판에 다 있는 말머리만** 남긴다 —
+  //   한 게시판에만 있는 말머리를 다른 게시판 글에 붙이면 그 글은 필터에서 사라진다.
+  const bulkPrefixOptions = React.useMemo(() => {
+    if (selectedIds.size === 0) return [];
+    const catIds = new Set();
+    posts.forEach((p) => { if (selectedIds.has(p.id)) catIds.add(p.categoryId); });
+    let common = null;
+    catIds.forEach((cid) => {
+      const cat = window.BGNJ_STORES.categories.find((c) => c.id === cid);
+      const names = window.BGNJ_PREFIX_DEFS(cat).map((d) => d.name);
+      common = common === null ? names : common.filter((n) => names.includes(n));
+    });
+    return common || [];
+  }, [posts, selectedIds]);
+
+  // 선택이 바뀌어 고른 말머리가 후보에서 빠지면 비운다 — 화면엔 안 보이는데 값만 남는 일을 막는다.
+  React.useEffect(() => {
+    if (bulkPrefix && !bulkPrefixOptions.includes(bulkPrefix)) setBulkPrefix('');
+  }, [bulkPrefixOptions, bulkPrefix]);
+
   const bulkApplyPrefix = () => {
     if (selectedIds.size === 0) return;
     const next = bulkPrefix.trim();
+    if (next && !bulkPrefixOptions.includes(next)) {
+      window.BGNJ_TOAST.error('등록된 말머리만 적용할 수 있습니다.');
+      return;
+    }
     runBulk({ prefix: next || null }, next ? `말머리 '${next}' 적용` : '말머리 제거')
       .then(() => setBulkPrefix(''));
   };
@@ -862,8 +889,18 @@ const CommunityPostsAdminPanel = ({ posts, onChange }) => {
           </select>
           <button type="button" className="btn btn-small btn-gold" onClick={bulkMove} disabled={bulkBusy}>{bulkBusy ? '처리 중…' : '이동'}</button>
           <span aria-hidden="true" style={{width:1, alignSelf:'stretch', background:'var(--line)'}}/>
-          <input type="text" className="field-input" style={{maxWidth:140, padding:'4px 8px'}} placeholder="말머리 (비우면 제거)" value={bulkPrefix} onChange={(e) => setBulkPrefix(e.target.value)} aria-label="일괄 적용할 말머리"/>
+          <select className="field-input" style={{maxWidth:200, padding:'4px 8px'}} value={bulkPrefix}
+            onChange={(e) => setBulkPrefix(e.target.value)} aria-label="일괄 적용할 말머리">
+            {/* 후보가 없어도 끄지 않는다 — '제거'는 언제든 할 수 있어야 한다. */}
+            <option value="">말머리 없음(제거)</option>
+            {bulkPrefixOptions.map((name) => (<option key={name} value={name}>{name}</option>))}
+          </select>
           <button type="button" className="btn btn-small btn-gold" onClick={bulkApplyPrefix} disabled={bulkBusy}>말머리 적용</button>
+          {bulkPrefixOptions.length === 0 && (
+            <span className="dim-2" style={{fontSize:10, wordBreak:'keep-all'}}>
+              선택한 글의 게시판에 함께 쓸 수 있는 말머리가 없습니다 — 커뮤니티 → 말머리 탭에서 등록하세요
+            </span>
+          )}
           <button type="button" className="btn btn-small" style={{marginLeft:'auto'}} onClick={() => setSelectedIds(new Set())}>선택 해제</button>
         </div>
       )}
