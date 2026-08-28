@@ -984,6 +984,94 @@ const run = async () => {
     })(), "존재한 적 없는 이름이다 — 진짜는 getSessionUser()");
   }
 
+  console.log("\n── 19. 늦게 온 답이 새 답을 덮는가 (2026-08-28 안정성 재검토) ──");
+  {
+    const wk5 = readFileSync(path.join(ROOT, "workers/src/index.js"), "utf8");
+    const dataSrc = readFileSync(path.join(ROOT, "data.js"), "utf8");
+    const later = (ms, v) => new Promise((r) => setTimeout(() => r(v), ms));
+
+    // ── 게시글 목록 경쟁 ──
+    // 먼저 떠난 요청이 나중에 도착한다. 옛 목록이 새 목록을 이기면 '방금 쓴 글이 사라진다'.
+    const C2 = w.BGNJ_COMMUNITY;
+    C2._serverPosts = []; C2._serverLoaded = false; C2._lastError = null; C2._applySeq = 0;
+    w.__BGNJ_PRELOAD = null;
+    w.BGNJ_API = { posts: { list: async (opts) => (
+      opts.mark === "old" ? later(80, { posts: [{ id: 1, title: "옛 목록", category_id: "free" }] })
+                          : later(5,  { posts: [{ id: 2, title: "새 목록", category_id: "free" }] })
+    ) } };
+    const pOld = C2.refreshPosts({ mark: "old" });
+    const pNew = C2.refreshPosts({ mark: "new" });
+    await Promise.all([pOld, pNew]);
+    check("먼저 떠나 늦게 온 목록이 새 목록을 덮지 않는다",
+      C2._serverPosts.length === 1 && C2._serverPosts[0].id === 2,
+      `실제: ${C2._serverPosts.map((p) => p.title).join(",") || "빈 목록"} — 덮이면 방금 쓴 글이 사라진 것처럼 보인다`);
+
+    // 낡은 요청의 '실패' 도 새 요청의 성공을 지우면 안 된다.
+    C2._serverPosts = []; C2._lastError = null; C2._applySeq = 0;
+    w.BGNJ_API = { posts: { list: async (opts) => (
+      opts.mark === "old" ? later(80).then(() => { throw new Error("옛 요청 실패"); })
+                          : later(5, { posts: [{ id: 3, title: "새 목록", category_id: "free" }] })
+    ) } };
+    const fOld = C2.refreshPosts({ mark: "old" });
+    const fNew = C2.refreshPosts({ mark: "new" });
+    await Promise.all([fOld, fNew]);
+    check("낡은 요청의 실패가 새 요청의 성공을 지우지 않는다",
+      C2._lastError === null && C2._serverPosts.length === 1,
+      `실제: err=${C2._lastError} 글=${C2._serverPosts.length}건 — 지우면 멀쩡한 화면에 유령 오류가 뜬다`);
+
+    // ── 칼럼 목록 경쟁 (관리자 includeAll ↔ 공개) ──
+    const K = w.BGNJ_COLUMNS;
+    K._columns = []; K._applySeq = 0;
+    w.BGNJ_API = { columns: { list: async ({ includeAll }) => (
+      includeAll ? later(80, { columns: [{ id: "c1", title: "관리자 목록" }] })
+                 : later(5,  { columns: [{ id: "c2", title: "공개 목록" }] })
+    ) } };
+    const kAdmin = K.refresh({ admin: true });
+    const kPublic = K.refresh({ admin: false });
+    await Promise.all([kAdmin, kPublic]);
+    check("칼럼도 늦게 온 답이 새 답을 덮지 않는다",
+      K._columns.length === 1 && K._columns[0].id === "c2",
+      `실제: ${K._columns.map((c) => c.id).join(",") || "빈 목록"}`);
+
+    // ── 깨진 JSON 한 줄이 목록 전체를 죽이는가 ──
+    const A = w.BGNJ_AUTH;
+    A._usersCache = [];
+    w.BGNJ_API = { admin: { users: { list: async () => ({ users: [
+      { id: "u1", email: "a@b.c", name: "정상", profile_json: '{"phone":"010"}' },
+      { id: "u2", email: "d@e.f", name: "깨진 행", profile_json: '{"phone":' },
+    ] }) } } };
+    const users = await A.refreshUsers();
+    check("회원 한 명의 깨진 JSON 이 회원 목록 전체를 지우지 않는다",
+      users.length === 2 && users[1].profile === null,
+      `실제: ${users.length}명 — 0명이면 관리자 화면에 회원이 한 명도 안 뜬다`);
+    check("정상 행의 값은 그대로 읽는다",
+      users[0]?.profile?.phone === "010", `실제: ${JSON.stringify(users[0]?.profile)}`);
+
+    // ── 맨몸 JSON.parse 가 남아 있지 않은가 ──
+    // (헬퍼 자신과 try 로 감싼 localStorage 접근은 예외)
+    const bareWorker = wk5.split("\n").filter((l) =>
+      /JSON\.parse\(/.test(l) && !/safeJson|JSON\.parse\(raw\)/.test(l) && !/^\s*\/\//.test(l));
+    check("워커가 서버 행을 맨몸 JSON.parse 로 읽지 않는다", bareWorker.length === 0,
+      bareWorker.join(" | ") || "");
+    check("워커 헬퍼가 못 읽은 값을 로그로 남긴다",
+      /\[bgnj:safeJson\]/.test(wk5), "조용히 넘어가면 왜 비었는지 아무도 모른다");
+    check("클라이언트도 같은 헬퍼를 쓴다",
+      /const _safeJson =/.test(dataSrc) && /_safeJson\(u\.profile_json/.test(dataSrc));
+
+    // ── 무한히 커지는 표 ──
+    check("오류 기록에 자동 청소가 있다",
+      /ERROR_LOG_RETENTION_MS/.test(wk5) && /DELETE FROM error_log WHERE replace\(ts/.test(wk5),
+      "없으면 오류 루프 하나로 D1 이 차고 사이트 전체가 멈춘다");
+    check("오류 기록 청소가 실제로 있는 컬럼을 본다",
+      !/DELETE FROM error_log WHERE created_at/.test(wk5),
+      "created_at 은 이 표에 없다 — 조용히 아무것도 안 지우고 통과한다");
+
+    // ── 신고 중복 ──
+    check("같은 사람의 같은 글 신고는 하나만 남는다",
+      /INSERT INTO reports[\s\S]{0,400}WHERE NOT EXISTS/.test(wk5),
+      "세고 나서 넣으면 연타에 '손볼 것' 숫자가 부풀어 오른다");
+  }
+
   console.log(`\n${fails.length === 0 ? "✅" : "❌"} 통과 ${pass} · 실패 ${fails.length}`);
   if (fails.length) { fails.forEach((f) => console.log(`   · ${f}`)); process.exit(1); }
 };

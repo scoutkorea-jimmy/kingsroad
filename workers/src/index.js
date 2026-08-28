@@ -93,6 +93,25 @@ const randomId = (prefix = "") => {
 
 const nowIso = () => new Date().toISOString();
 
+// v00.312 — D1 의 *_json 컬럼을 읽을 때는 반드시 이걸 거친다.
+//   왜: JSON.parse 를 맨몸으로 쓰면 **행 하나가 깨졌을 때 엔드포인트 전체가 500** 이 된다.
+//   목록 SELECT 는 수백 행을 한 번에 매핑하므로, 한 사람의 profile_json 이 깨지면
+//   회원 목록 전체가 안 나온다. 그 한 행만 버리고 나머지는 살린다.
+//   ⚠ 값을 못 읽은 것을 조용히 넘기면 원인을 못 찾는다 — 반드시 로그를 남긴다.
+const safeJson = (raw, fallback, ctx = "") => {
+  if (raw === null || raw === undefined || raw === "") return fallback;
+  if (typeof raw !== "string") return raw;
+  try {
+    const v = JSON.parse(raw);
+    // 파싱은 됐지만 값이 null 인 경우도 기본값으로 — 호출부는 배열/객체를 기대한다.
+    return v == null ? fallback : v;
+  } catch (e) {
+    try { console.warn("[bgnj:safeJson]", ctx, "깨진 JSON — 기본값으로 넘어간다:", String(raw).slice(0, 120)); }
+    catch (_e) { /* 로그조차 못 남기는 환경 */ }
+    return fallback;
+  }
+};
+
 const toBase64 = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
 const fromBase64 = (str) => Uint8Array.from(atob(str), (c) => c.charCodeAt(0));
 
@@ -228,8 +247,8 @@ const getCurrentUser = async (req, env) => {
     name: row.name,
     isAdmin,
     gradeId,
-    profile: row.profile_json ? JSON.parse(row.profile_json) : null,
-    consents: row.consents_json ? JSON.parse(row.consents_json) : null,
+    profile: safeJson(row.profile_json, null, "users.profile_json"),
+    consents: safeJson(row.consents_json, null, "users.consents_json"),
     createdAt: row.created_at,
     lastLoginAt: row.last_login_at,
   };
@@ -1070,7 +1089,7 @@ const handleBooksList = async (req, env) => {
     ? "SELECT * FROM books ORDER BY sort_order ASC, created_at DESC"
     : "SELECT * FROM books WHERE status = 'published' ORDER BY sort_order ASC, created_at DESC";
   const { results } = await env.DB.prepare(sql).all();
-  return { books: results.map((b) => ({ ...b, chapters: b.chapters_json ? JSON.parse(b.chapters_json) : [] })) };
+  return { books: results.map((b) => ({ ...b, chapters: safeJson(b.chapters_json, [], "books.chapters_json") })) };
 };
 
 const handleBookGet = async (req, env, id) => {
@@ -1079,7 +1098,7 @@ const handleBookGet = async (req, env, id) => {
   const { results: reviews } = await env.DB.prepare(
     "SELECT id, user_name, rating, text, created_at FROM book_reviews WHERE book_id = ? ORDER BY created_at DESC"
   ).bind(id).all();
-  return { book: { ...book, chapters: book.chapters_json ? JSON.parse(book.chapters_json) : [] }, reviews };
+  return { book: { ...book, chapters: safeJson(book.chapters_json, [], "books.chapters_json") }, reviews };
 };
 
 const handleBookCreate = async (req, env) => {
@@ -1509,7 +1528,8 @@ const handleAdminUserMetrics = async (req, env, userId) => {
   try {
     const { results } = await env.DB.prepare("SELECT likes_json FROM user_columns WHERE author_id = ?").bind(userId).all();
     for (const r of (results || [])) {
-      try { const arr = r.likes_json ? JSON.parse(r.likes_json) : []; if (Array.isArray(arr)) likesColumns += arr.length; } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
+      const arr = safeJson(r.likes_json, [], "user_columns.likes_json");
+      if (Array.isArray(arr)) likesColumns += arr.length;
     }
   } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); } // user_columns 에 author_id 컬럼이 없을 수 있음 — 폴백 0
   // 본인 글에 들어온 신고 수
@@ -1558,7 +1578,7 @@ const handleAdminAuditList = async (req, env) => {
     "SELECT id, ts, actor, action, target, details_json, ip FROM audit_log ORDER BY ts DESC LIMIT ?"
   ).bind(limit).all();
   return {
-    log: results.map((e) => ({ ...e, details: e.details_json ? JSON.parse(e.details_json) : null })),
+    log: results.map((e) => ({ ...e, details: safeJson(e.details_json, null, "audit_log.details_json") })),
   };
 };
 
@@ -1822,11 +1842,28 @@ const handleReportCreate = async (req, env) => {
   const user = await getCurrentUser(req, env);
   const body = await req.json().catch(() => ({}));
   const id = randomId("rpt");
-  await env.DB.prepare(
-    `INSERT INTO reports (id, post_id, post_title, reporter_id, reporter_name, reason, status)
-     VALUES (?, ?, ?, ?, ?, ?, 'open')`
-  ).bind(id, body.postId || null, body.postTitle || "", user?.id || null, user?.name || body.reporterName || "익명", body.reason || "").run();
-  return { id };
+  // v00.312 — 같은 사람이 같은 글을 여러 번 신고해도 **처리 안 된 신고는 하나만** 남는다.
+  //   왜: 관리자 '오늘' 카드의 '손볼 것' 은 status='open' 을 세는데, 버튼을 연타하면
+  //   그 숫자가 부풀어 실제로 볼 것이 없는데도 빨간 숫자가 뜬다.
+  //   ⚠ 세고 나서 넣으면 동시 요청이 같은 숫자를 본다 — 한 문장으로 원자화한다(CLAUDE.md).
+  //   로그인 안 한 신고(reporter_id = null)는 같은 사람인지 알 길이 없으므로 그대로 넣는다.
+  const reporterId = user?.id || null;
+  const postId = body.postId || null;
+  const res = reporterId && postId
+    ? await env.DB.prepare(
+        `INSERT INTO reports (id, post_id, post_title, reporter_id, reporter_name, reason, status)
+         SELECT ?, ?, ?, ?, ?, ?, 'open'
+         WHERE NOT EXISTS (
+           SELECT 1 FROM reports WHERE post_id = ? AND reporter_id = ? AND status = 'open'
+         )`
+      ).bind(id, postId, body.postTitle || "", reporterId, user?.name || "익명", body.reason || "", postId, reporterId).run()
+    : await env.DB.prepare(
+        `INSERT INTO reports (id, post_id, post_title, reporter_id, reporter_name, reason, status)
+         VALUES (?, ?, ?, ?, ?, ?, 'open')`
+      ).bind(id, postId, body.postTitle || "", reporterId, user?.name || body.reporterName || "익명", body.reason || "").run();
+  // 이미 접수된 신고가 있어 안 들어간 경우도 사용자에겐 '접수됨' 이다 — 실패가 아니다.
+  const inserted = Number(res?.meta?.changes ?? 1) > 0;
+  return { id, duplicate: !inserted };
 };
 
 const handleReportsList = async (req, env) => {
@@ -2345,7 +2382,8 @@ const handleSiteContentGet = async (req, env) => {
   const { results } = await env.DB.prepare("SELECT section, data_json FROM site_content_kv").all();
   const out = {};
   for (const r of results || []) {
-    try { out[r.section] = JSON.parse(r.data_json); } catch (e) { console.warn("[bgnj:best-effort]", e?.message || e); }
+    out[r.section] = safeJson(r.data_json, null, `site_content.${r.section}`);
+    if (out[r.section] === null) delete out[r.section];
   }
   return { siteContent: out };
 };
@@ -2517,7 +2555,7 @@ const handleBankAccountDelete = async (req, env, id) => {
 // ── 카테고리 ──
 const handleCategoriesList = async (req, env) => {
   const { results } = await env.DB.prepare("SELECT * FROM categories_kv ORDER BY display_order").all();
-  return { categories: (results || []).map((r) => ({ ...r, prefixes: r.prefixes_json ? JSON.parse(r.prefixes_json) : [] })) };
+  return { categories: (results || []).map((r) => ({ ...r, prefixes: safeJson(r.prefixes_json, [], "categories_kv.prefixes_json") })) };
 };
 
 const handleCategoryCreate = async (req, env) => {
@@ -2668,8 +2706,8 @@ const handleColumnLike = async (req, env, id) => {
   const user = await requireUser(req, env);
   const row = await env.DB.prepare("SELECT likes_json FROM user_columns WHERE id = ?").bind(id).first();
   if (!row) throw new HttpError(404, "칼럼을 찾을 수 없습니다.");
-  let likes = [];
-  try { likes = row.likes_json ? JSON.parse(row.likes_json) : []; } catch { likes = []; }
+  let likes = safeJson(row.likes_json, [], "user_columns.likes_json");
+  if (!Array.isArray(likes)) likes = [];
   const next = likes.includes(user.id) ? likes.filter((x) => x !== user.id) : [...likes, user.id];
   await env.DB.prepare("UPDATE user_columns SET likes_json = ? WHERE id = ?").bind(JSON.stringify(next), id).run();
   return { liked: !likes.includes(user.id), likes: next, count: next.length };
@@ -2890,6 +2928,13 @@ const handleColumnDelete = async (req, env, id) => {
 // ── 에러 로그 ──
 // 클라이언트가 잡은 모든 오류(인증 외 비동기 실패, 렌더링 오류, 미처리 promise 등) 를 D1 에 기록.
 // 인증 없이도 기록 가능 (익명 사용자 오류도 잡기 위해).
+// v00.312 — 오류 기록은 **로그인 없이 누구나** 넣을 수 있는 자리다(그래야 로그인 자체가
+//   깨졌을 때도 기록이 남는다). 그런데 지금까지 자동 청소가 없었다 — 관리자가 손으로
+//   '전체 삭제' 를 누르기 전까지 무한히 쌓인다. 브라우저 쪽 오류 루프 하나면
+//   하루에 수만 행이 들어오고, 그러면 D1 용량이 차서 **사이트 전체가 멈춘다.**
+//   page_views·audit_log·login_attempts 는 이미 같은 장치를 갖고 있었다. 여기만 빠져 있었다.
+const ERROR_LOG_RETENTION_MS = 30 * 24 * 3600 * 1000;
+
 const handleErrorLogCreate = async (req, env) => {
   const body = await req.json().catch(() => ({}));
   const id = randomId("err");
@@ -2906,6 +2951,17 @@ const handleErrorLogCreate = async (req, env) => {
     String(body.pathname || '').slice(0, 300),
     String(body.origin || req.headers.get('origin') || '').slice(0, 200)
   ).run();
+  // GC: 1/20 확률로 30일 이전 행 삭제. created_at 이 없는 옛 스키마면 조용히 건너뛴다.
+  if (Math.random() < 0.05) {
+    try {
+      // ⚠ ts 는 컬럼 기본값(CURRENT_TIMESTAMP)이라 'YYYY-MM-DD HH:MM:SS' 이고,
+      //   코드가 넣은 값은 ISO('...T...') 다. 두 모양이 섞여 있으므로 조회 쪽(T())과
+      //   **같은 방식으로 정규화해서** 비교한다. created_at 으로 지웠다면 컬럼이 없어
+      //   조용히 아무것도 안 지우고 통과했을 것이다.
+      const cutoff = new Date(Date.now() - ERROR_LOG_RETENTION_MS).toISOString().replace('T', ' ');
+      await env.DB.prepare("DELETE FROM error_log WHERE replace(ts, 'T', ' ') < ?").bind(cutoff).run();
+    } catch (e) { console.warn("[bgnj:error_log GC]", e?.message || e); }
+  }
   return { id };
 };
 
@@ -3022,7 +3078,7 @@ const hkHourRemaining = async (env, room, date) => {
 
 // 날짜 + n일 (YYYY-MM-DD)
 const hkAddDays = (str, n) => new Date(new Date(str + "T00:00:00Z").getTime() + n * 86400000).toISOString().slice(0, 10);
-const safeJson = (s, fb) => { try { const v = JSON.parse(s); return v == null ? fb : v; } catch { return fb; } };
+// safeJson 은 파일 맨 위(공용 헬퍼)로 옮겼다 — v00.312. 여기 있던 정의는 로그를 안 남겼다.
 
 // 한 객실타입의 [from,to) 날짜별 잔여 재고 계산 (오버부킹 방지의 핵심).
 // 월 캘린더 집계용 — 날짜별 잔여(유닛 − 종일 점유). 시간제 부분점유는 dot 에 미반영(개요).
@@ -3096,7 +3152,7 @@ const hkMemberDiscount = async (env) => {
   try {
     const row = await env.DB.prepare("SELECT data_json FROM site_content_kv WHERE section = 'hangyeon'").first();
     if (!row) return 0;
-    const v = Number(JSON.parse(row.data_json || "{}").memberDiscount);
+    const v = Number(safeJson(row.data_json, {}, "site_content.memberDiscount").memberDiscount);
     return isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
   } catch { return 0; }
 };

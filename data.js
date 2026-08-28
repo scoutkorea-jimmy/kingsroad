@@ -2,7 +2,7 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.311.000",
+  version: "00.312.000",
   build: "2026.08.28",
   channel: "preview",
 };
@@ -476,6 +476,23 @@ window.BGNJ_FMT = {
     if (n === 0 || n == null) return '무료';
     return this.won(n);
   },
+};
+
+// v00.312 — 서버 행의 *_json 을 읽을 때는 반드시 이걸 거친다.
+//   왜: 목록 응답을 `rows.map(...)` 로 훑는 도중 JSON.parse 가 터지면 **목록 전체**가
+//   실패로 떨어진다. 회원 한 사람의 profile_json 이 깨졌을 뿐인데 관리자 화면에는
+//   회원이 한 명도 안 보이고, catch 는 "기존 캐시 유지" 라고만 적는다 —
+//   운영자는 왜 안 보이는지 알 길이 없다. 깨진 행 하나만 버리고 나머지는 살린다.
+const _safeJson = (raw, fallback, ctx = '') => {
+  if (raw === null || raw === undefined || raw === '') return fallback;
+  if (typeof raw !== 'string') return raw;
+  try {
+    const v = JSON.parse(raw);
+    return v == null ? fallback : v;
+  } catch (_e) {
+    console.warn('[bgnj:_safeJson]', ctx, '깨진 JSON — 기본값으로 넘어간다:', String(raw).slice(0, 120));
+    return fallback;
+  }
 };
 
 // === 회원 등급/카테고리/해시태그 저장소 (localStorage 연동) ===
@@ -1370,8 +1387,8 @@ window.BGNJ_AUTH = {
         joinedAt: u.created_at,
         // v00.261 — 마지막 접속일 (관리자 회원 탭). schema-v10 미적용 시 null.
         lastLoginAt: u.last_login_at || null,
-        profile: u.profile_json ? (typeof u.profile_json === 'string' ? JSON.parse(u.profile_json) : u.profile_json) : null,
-        consents: u.consents_json ? (typeof u.consents_json === 'string' ? JSON.parse(u.consents_json) : u.consents_json) : null,
+        profile: _safeJson(u.profile_json, null, 'users.profile_json'),
+        consents: _safeJson(u.consents_json, null, 'users.consents_json'),
       }));
       try { window.dispatchEvent(new CustomEvent('bgnj-users-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js:1335)', _e); }
     } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
@@ -1855,17 +1872,27 @@ window.BGNJ_COMMUNITY = {
   //   같은 옵션으로 이미 날아간 요청이 있으면 그 약속을 그대로 돌려준다.
   _inFlight: null,
   _inFlightKey: '',
+  // v00.312 — 옵션이 다르면 요청이 겹칠 수 있다(합쳐지는 건 '같은 옵션' 뿐이다).
+  //   그때 **먼저 떠난 요청이 나중에 도착하면** 옛 목록이 새 목록을 덮어쓴다.
+  //   재시도가 600ms 씩 기다렸다 다시 묻기 때문에 실제로 자주 뒤집힌다.
+  //   글을 쓰고 목록을 새로 받는 순간 이게 걸리면 **방금 쓴 글이 사라진 것처럼 보인다.**
+  //   → 요청마다 번호를 매기고, 적용 직전에 '내가 아직 가장 최신인가' 를 묻는다.
+  _applySeq: 0,
+  _nextSeq() { this._applySeq += 1; return this._applySeq; },
   refreshPosts(opts = {}) {
     const key = JSON.stringify(opts || {});
     if (this._inFlight && this._inFlightKey === key) return this._inFlight;
     this._inFlightKey = key;
-    this._inFlight = this._refreshPostsOnce(opts).finally(() => {
+    const seq = this._nextSeq();
+    this._inFlight = this._refreshPostsOnce(opts, seq).finally(() => {
       this._inFlight = null;
       this._inFlightKey = '';
     });
     return this._inFlight;
   },
-  async _refreshPostsOnce(opts = {}) {
+  // seq 가 없으면(직접 호출) 늘 최신으로 친다 — 옛 호출부를 깨뜨리지 않는다.
+  _isStale(seq) { return typeof seq === 'number' && seq < this._applySeq; },
+  async _refreshPostsOnce(opts = {}, seq) {
     // v00.306.008 — index.html 이 번들보다 먼저 던져 둔 목록이 있으면 그것을 쓴다.
     //   한 번만 쓰고 버린다 — 두 번째 호출은 '지금' 을 물어야 한다(오래된 답을 재활용하면 안 된다).
     const pre = window.__BGNJ_PRELOAD;
@@ -1876,6 +1903,7 @@ window.BGNJ_COMMUNITY = {
         const fresh = (Date.now() - Number(pre.at || 0)) < 30_000;
         const data = await pre.posts;
         const posts = fresh && data && Array.isArray(data.posts) ? data.posts : null;
+        if (posts && this._isStale(seq)) return this._serverPosts;
         if (posts) {
           this._serverPosts = posts.map(_serverPostToUi);
           this._serverLoaded = true;
@@ -1901,6 +1929,8 @@ window.BGNJ_COMMUNITY = {
           lastErr = new Error('서버 응답 형식이 올바르지 않습니다.');
           continue;
         }
+        // 나보다 나중에 떠난 요청이 이미 있다면 내 결과는 낡은 것이다 — 덮어쓰지 않는다.
+        if (this._isStale(seq)) return this._serverPosts;
         this._serverPosts = posts.map(_serverPostToUi);
         this._serverLoaded = true;
         this._lastError = null;
@@ -1910,6 +1940,8 @@ window.BGNJ_COMMUNITY = {
         lastErr = err;
       }
     }
+    // 낡은 요청의 실패로 새 요청의 성공을 지우지 않는다 — 화면에 유령 오류가 뜬다.
+    if (this._isStale(seq)) return this._serverPosts;
     this._lastError = lastErr?.message || 'refresh failed';
     try { window.dispatchEvent(new CustomEvent('bgnj-posts-refresh-error', { detail: { message: this._lastError } })); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js:1522)', _e); }
     return this._serverPosts;
@@ -2343,7 +2375,7 @@ window.BGNJ_COLUMNS = {
       scheduledAt: r.scheduled_at, publishAt: r.scheduled_at,
       readMinutes: r.read_minutes,
       views: r.views || 0,
-      likes: r.likes_json ? (typeof r.likes_json === 'string' ? JSON.parse(r.likes_json) : r.likes_json) : [],
+      likes: _safeJson(r.likes_json, [], 'user_columns.likes_json'),
       createdAt: r.created_at, updatedAt: r.updated_at,
       // v00.127 — 외부 기고처 + 원문 링크 (schema-v6 ALTER TABLE).
       sourceCredit: r.source_credit || '', sourceUrl: r.source_url || '',
@@ -2384,17 +2416,24 @@ window.BGNJ_COLUMNS = {
   //   이 둘이 없으면 칼럼도 '해당 칼럼을 찾을 수 없습니다' 로 단정해 버린다.
   _loaded: false,
   _lastError: null,
+  // v00.312 — 게시글과 같은 이유의 경쟁 조건. 관리자 화면은 includeAll:true 로,
+  //   공개 화면은 false 로 같은 저장소를 채운다. 둘이 겹치면 늦게 온 쪽이 이긴다 —
+  //   관리자가 보던 미공개 칼럼이 눈앞에서 사라지거나 그 반대가 된다.
+  _applySeq: 0,
   async refresh({ admin } = {}) {
+    const seq = (this._applySeq += 1);
     try {
       const { columns } = await window.BGNJ_API.columns.list({ includeAll: !!admin });
       // v00.231 — 데이터-사라짐 방어 (Array.isArray 가드).
       if (!Array.isArray(columns)) { throw new Error('서버 응답 형식이 올바르지 않습니다.'); }
+      if (seq < this._applySeq) return this._columns.slice();
       this._columns = columns.map((c) => this._toColumn(c));
       this._loaded = true;
       this._lastError = null;
       try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh')); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js:1968)', _e); }
     } catch (e) {
       console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e);
+      if (seq < this._applySeq) return this._columns.slice();
       this._lastError = e?.message || '칼럼을 불러오지 못했습니다.';
       try { window.dispatchEvent(new CustomEvent('bgnj-columns-refresh-error', { detail: { message: this._lastError } })); } catch (_e) { console.warn('[bgnj] 이벤트 발신 실패는 무시해도 된다 (data.js)', _e); }
     }
@@ -3342,7 +3381,7 @@ window.BGNJ_AUDIT = {
       if (!Array.isArray(log)) { try { console.warn('[BGNJ_AUDIT.refresh] non-array — cache preserved'); } catch (_e) { console.warn('[bgnj] data.js:2889 오류(무시하고 진행)', _e); } return this.list({ search, limit }); }
       this._cache = log.map((e) => ({
         id: e.id, action: e.action, target: e.target,
-        details: e.details ?? (e.details_json ? JSON.parse(e.details_json) : null),
+        details: e.details ?? _safeJson(e.details_json, null, 'audit_log.details_json'),
         by: e.actor || 'system', ts: e.ts || e.created_at,
       }));
     } catch (e) { console.warn("[BGNJ] 서버 조회 실패 — 기존 캐시 유지:", e?.message || e); }
@@ -3808,11 +3847,11 @@ window.BGNJ_BOOKS = {
       author: r.author, publisher: r.publisher, pages: r.pages, isbn: r.isbn,
       priceKR: r.price_kr || r.priceKR || 0, priceEN: r.price_en || r.priceEN || 0,
       desc: r.description || r.desc, intro: r.intro,
-      chapters: typeof r.chapters_json === 'string' ? (JSON.parse(r.chapters_json || '[]')) : (r.chapters || []),
+      chapters: typeof r.chapters_json === 'string' ? _safeJson(r.chapters_json, [], 'books.chapters_json') : (r.chapters || []),
       authorBio: r.author_bio || r.authorBio,
       coverDataUri: r.cover_key || r.cover_url || r.coverDataUri || '',
       pdfPreviewDataUri: r.pdf_key || r.pdf_preview_url || r.pdfPreviewDataUri || '',
-      badges: typeof r.badges_json === 'string' ? (JSON.parse(r.badges_json || '[]')) : (r.badges || []),
+      badges: typeof r.badges_json === 'string' ? _safeJson(r.badges_json, [], 'books.badges_json') : (r.badges || []),
       status: r.status || 'published',
       publishedAt: r.published_at || r.publishedAt,
       primary: !!(r.is_primary || r.primary),
