@@ -748,7 +748,7 @@ const AdminColumnEditor = ({ initialColumn, onPayloadChange, onAfterSave } = {})
                 onClick={async () => {
                   const input = document.createElement('input');
                   input.type = 'file';
-                  input.accept = 'image/*';
+                  input.accept = 'image/*,.heic,.heif';
                   input.onchange = async () => {
                     const f = input.files?.[0];
                     if (!f) return;

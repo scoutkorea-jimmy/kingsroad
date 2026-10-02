@@ -36,6 +36,9 @@ jobs:
         working-directory: tools
         run: npm ci || npm install
 
+      - name: Regression checks
+        run: node tools/check-all.mjs
+
       - name: Build bundles
         working-directory: tools
         run: npm run build:bundle
@@ -44,6 +47,10 @@ jobs:
         run: |
           test -f dist/app.js   || { echo "dist/app.js 누락 — 배포 중단"; exit 1; }
           test -f dist/admin.js || { echo "dist/admin.js 누락 — 배포 중단"; exit 1; }
+          test -f dist/heic.js  || { echo "dist/heic.js 누락 — 배포 중단"; exit 1; }
+          test -f dist/heic-worker.js || { echo "dist/heic-worker.js 누락 — 배포 중단"; exit 1; }
+
+          test -f dist/heic.LICENSE.txt || { echo "HEIC 라이선스 누락 — 배포 중단"; exit 1; }
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

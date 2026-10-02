@@ -1,3 +1,4 @@
+import { pageViewSeries } from './analyticsSeries.mjs';
 // 뱅기노자 — 대시보드/고객여정 패널 (v00.285 — AuthAdminPage.jsx 에서 분리)
 //
 // DashboardPanel(오늘 지표 + page-view 요약) · UserJourneyPanel(여정 4단계 + 경로 순위).
@@ -98,45 +99,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
   const monthUnique = pv.monthUnique ?? null;
 
   // v00.173 — pvDays 코호트로 series 길이 동적. v00.176 — 1일이면 24시간 hourly.
-  const pvSeries = (() => {
-    if (pvDays === 1) {
-      // 시간 단위 (워커 hourlySeries 응답).
-      const hours = 24;
-      const counts = new Array(hours).fill(0);
-      const labels = new Array(hours).fill('');
-      const now = new Date(); now.setMinutes(0, 0, 0);
-      const baseTs = now.getTime() - (hours - 1) * 3600000;
-      (pv.hourlySeries || []).forEach(({ hour, views }) => {
-        // hour 형식: 'YYYY-MM-DDTHH' (ISO prefix). 직접 파싱.
-        const t = Date.parse((hour || '') + ':00:00+09:00');
-        if (isNaN(t)) return;
-        const idx = Math.floor((t - baseTs) / 3600000);
-        if (idx >= 0 && idx < hours) counts[idx] = Number(views) || 0;
-      });
-      // v00.192 — 사용자 보고 '시간 라벨 중간에 생략하지 말고 매시'. 24시간 모두 라벨.
-      for (let i = 0; i < hours; i++) {
-        const dt = new Date(baseTs + i * 3600000);
-        labels[i] = (i === hours - 1) ? '지금' : `${dt.getHours()}시`;
-      }
-      return { counts, labels };
-    }
-    const days = pvDays;
-    const counts = new Array(days).fill(0);
-    const labels = new Array(days).fill('');
-    const todayMid = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
-    (pv.dailySeries || []).forEach(({ day, views }) => {
-      const t = Date.parse(day + 'T00:00:00+09:00');
-      if (isNaN(t)) return;
-      const idx = Math.floor((t - todayMid) / 86400000) + (days - 1);
-      if (idx >= 0 && idx < days) counts[idx] = Number(views) || 0;
-    });
-    // v00.195 — 사용자 보고 '임의로 중간에 값들을 축약하지마'. 모든 일자에 라벨 (이전엔 days 길이별 매 N일마다).
-    for (let i = 0; i < days; i++) {
-      const dt = new Date(todayMid + (i - (days - 1)) * 86400000);
-      labels[i] = (i === days - 1) ? '오늘' : `${dt.getMonth()+1}/${dt.getDate()}`;
-    }
-    return { counts, labels };
-  })();
+  const pvSeries = pageViewSeries(pv, pvDays);
 
   // 유입 경로 — 서버 referrers 가 있으면 사용, 없으면 추정 폴백.
   const refs = pv.referrers || [];
@@ -252,7 +215,7 @@ const DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCom
             formatTooltip={(v, l) => `${l || ''} · 페이지뷰 ${v}회`}
             headerRight={<CohortSelector value={pvDays} onChange={setPvDays}/>}/>
           <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
-            {summaryError ? '서버 분석 데이터 없음 — schema-v9 + 워커 deploy 필요.' : (pvDays === 1 ? '최근 24시간 시간별 페이지뷰. 막대 호버 시 정확한 값.' : '실제 측정된 일별 페이지뷰 (page_views D1). 막대에 호버하면 정확한 값.')}
+            {summaryError ? '서버 분석 데이터 없음 — schema-v9 + 워커 deploy 필요.' : (pvDays === 1 ? '최근 24시간 페이지뷰 · 시간 표시는 한국 시간. 막대 호버 시 정확한 값.' : '실제 측정된 일별 페이지뷰 · 서버 집계일은 UTC 기준. 막대에 호버하면 정확한 값.')}
           </p>
         </article>
         <article className="card">

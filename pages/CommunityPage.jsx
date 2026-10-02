@@ -238,6 +238,7 @@ const ImageAttacher = ({ images, setImages, max = 10, onBusyChange }) => {
 
   const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
   const handleFiles = async (fileList) => {
+    if (busy) return;
     const files = Array.from(fileList || []);
     const remaining = max - images.length;
     if (remaining <= 0) return;
@@ -263,7 +264,7 @@ const ImageAttacher = ({ images, setImages, max = 10, onBusyChange }) => {
         return null;
       }
     }));
-    setImages([...images, ...results.filter(Boolean)]);
+    setImages((prev) => [...prev, ...results.filter(Boolean)].slice(0, max));
     } finally {
       setBusy(false);
     }
@@ -291,7 +292,7 @@ const ImageAttacher = ({ images, setImages, max = 10, onBusyChange }) => {
           {busy ? '준비 중…' : '+ 이미지 선택'}
         </button>
       </div>
-      <input ref={inputRef} type="file" accept="image/*" multiple
+      <input ref={inputRef} type="file" accept="image/*,.heic,.heif" multiple
         style={{display:'none'}}
         onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}/>
       {images.length > 0 ? (
@@ -346,41 +347,41 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
   const usedBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
 
   const handleFiles = async (fileList) => {
+    if (busy) return;
     setError('');
     const incoming = Array.from(fileList || []);
     const remaining = max - files.length;
     if (remaining <= 0) { setError(`첨부는 최대 ${max}개까지 가능합니다.`); return; }
-    const accepted = [];
-    // v00.294 — 총량 기준. 이미 담긴 용량 + 이번에 고른 파일들의 누적을 함께 본다.
-    let running = usedBytes;
-    for (const f of incoming.slice(0, remaining)) {
-      if (f.size > maxSize) { setError(`'${f.name}' 은(는) ${_fmtSize(maxSize)} 초과 — 첨부 불가.`); continue; }
-      if (running + f.size > maxTotal) {
-        setError(`첨부 파일은 전부 합쳐 ${_fmtSize(maxTotal)} 이하여야 합니다 — '${f.name}' 은(는) 제외했습니다. (현재 ${_fmtSize(running)})`);
-        continue;
-      }
-      running += f.size;
-      accepted.push(f);
-    }
-    // v00.294.008 — dataURI(base64) 폴백 제거. 서버가 base64 첨부를 거부한다
-    // (한 글이 수 MB 가 되어 목록 조회까지 느려진다). 실패는 조용히 우회하지 않고 알린다.
-    if (accepted.length === 0) return;
     setBusy(true);
     try {
-    const results = await Promise.all(accepted.map(async (f) => {
-      const meta = { name: f.name, type: f.type || '', size: f.size };
-      try {
-        const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-attachments', maxBytes: maxSize });
-        return { ...meta, dataUrl: url };
-      } catch (err) {
-        setError(uploadFailMessage(f.name, err));
-        return null;
+      const accepted = [];
+      let running = usedBytes;
+      for (const raw of incoming.slice(0, remaining)) {
+        let f;
+        if (running >= maxTotal) { setError(`첨부 파일은 합쳐 ${_fmtSize(maxTotal)}까지 가능합니다.`); break; }
+        try {
+          f = window.BGNJ_IMAGE_SHRINK.isImageFile(raw)
+            ? await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: Math.min(maxSize, maxTotal - running) })
+            : await window.BGNJ_IMAGE_SHRINK.prepareFile(raw);
+          if (!f) { setError(`'${raw.name}'을(를) 첨부 가능한 크기로 준비하지 못했습니다.`); continue; }
+        }
+        catch (err) { setError(err.message); continue; }
+        if (f.size > maxSize) { setError(`'${f.name}' 은(는) ${_fmtSize(maxSize)} 초과 — 첨부 불가.`); continue; }
+        if (running + f.size > maxTotal) {
+          setError(`첨부 파일은 전부 합쳐 ${_fmtSize(maxTotal)} 이하여야 합니다 — '${f.name}' 은(는) 제외했습니다. (현재 ${_fmtSize(running)})`);
+          continue;
+        }
+        running += f.size;
+        accepted.push(f);
       }
-    }));
-    setFiles([...files, ...results.filter(Boolean)]);
-    } finally {
-      setBusy(false);
-    }
+      const results = await Promise.all(accepted.map(async (f) => {
+        try {
+          const { url, file } = await window.BGNJ_MEDIA.uploadFile(f, { folder: 'post-attachments', maxBytes: maxSize });
+          return { name: file.name, type: file.type || '', size: file.size, dataUrl: url };
+        } catch (err) { setError(uploadFailMessage(f.name, err)); return null; }
+      }));
+      setFiles((prev) => [...prev, ...results.filter(Boolean)].slice(0, max));
+    } finally { setBusy(false); }
   };
 
   const remove = (i) => setFiles(files.filter((_, j) => j !== i));
@@ -426,13 +427,7 @@ const FileAttacher = ({ files, setFiles, max = FILE_MAX_COUNT, maxSize = FILE_MA
 // v00.306.006 — 운영 오류 로그 실측: 세션이 끊긴 채 사진을 올리다 실패한 사람에게
 //   '잠시 후 다시 시도해 주세요' 라고 안내하고 있었다(2026-08-21 4건). 아무리 기다려도 안 된다.
 //   규칙 40-security §6 — 오류는 **사용자가 다음에 할 행동**까지 말해야 한다.
-const uploadFailMessage = (name, err) => {
-  const raw = String(err?.message || '알 수 없는 오류');
-  if (/로그인|인증|401/.test(raw)) return `'${name}' 업로드 실패 — 로그인이 풀렸습니다. 다시 로그인한 뒤 올려 주세요.`;
-  if (/\.heic|heif|지원하지 않는 파일/i.test(raw)) return `'${name}' 은(는) 올릴 수 없는 형식입니다. (${raw}) 아이폰 사진이라면 설정 › 카메라 › 포맷을 '높은 호환성' 으로 바꾸거나, 공유할 때 JPEG 로 저장해 올려 주세요.`;
-  if (/용량|크기|too large|413/i.test(raw)) return `'${name}' 이(가) 너무 큽니다. (${raw}) 사진을 줄여서 올려 주세요.`;
-  return `'${name}' 업로드 실패 — 잠시 후 다시 시도해 주세요. (${raw})`;
-};
+const uploadFailMessage = (name, err) => window.BGNJ_MEDIA.errorMessage(name, err);
 
 // === 표기 아이콘 ========================================================
 // v00.306.003 — 사진·첨부를 이모지(📷 📎)로 그리고 있었다. 이모지는 **기기가 제 색으로

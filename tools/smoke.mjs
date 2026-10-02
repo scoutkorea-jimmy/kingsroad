@@ -697,10 +697,11 @@ const run = async () => {
 
     // 오류는 '다음에 할 행동' 까지 말해야 한다 (rules/40-security.md §6)
     check("세션이 끊긴 업로드에 올바른 행동을 안내한다",
-      /다시 로그인한 뒤 올려 주세요/.test(cp),
+      /다시 로그인한 뒤/.test(w.BGNJ_MEDIA.errorMessage("photo.jpg", { status: 401 })),
       "'잠시 후 다시 시도' 는 아무리 기다려도 안 되는 안내였다");
-    check("올릴 수 없는 형식에 해결 방법을 준다", /높은 호환성/.test(cp),
-      "아이폰 HEIC 업로드 실패가 실제로 5건 쌓여 있었다");
+    check("업로드 실패 시 입력 보존과 재로그인을 안내한다",
+      /작성한 내용/.test(w.BGNJ_MEDIA.errorMessage("photo.jpg", { status: 401 })),
+      "세션 만료 뒤 원본 사진을 저장 성공처럼 처리하면 안 된다");
   }
 
   console.log("\n── 15. 목록이 빨리 오는가 ──");

@@ -55,7 +55,7 @@ const _withPrimaryFirst = (images) => {
 let _galleryUid = 0;
 const _nextUid = () => `bgnj-gallery-${++_galleryUid}`;
 
-// v00.237 — 다중 파일 순차 업로드. R2 우선, 실패 시 dataURI 폴백 (admin shared helper).
+// v00.237 — 다중 파일 순차 업로드. HEIC 변환·축소 후 R2 저장. 실패는 안내하고 기존 이미지를 보존.
 // 진행률 누적 (0/N → N/N) 으로 사용자 피드백.
 const _uploadFiles = async (files, folder, onProgress) => {
   if (typeof window.pickImageWithR2Fallback !== 'function') {
@@ -65,7 +65,7 @@ const _uploadFiles = async (files, folder, onProgress) => {
   const urls = [];
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    if (!file || !file.type?.startsWith?.('image/')) continue;
+    if (!file || !window.BGNJ_IMAGE_SHRINK.isImageFile(file)) continue;
     const fakeEvent = { target: { files: [file], value: '' } };
     try {
       const url = await window.pickImageWithR2Fallback(fakeEvent, { folder });
@@ -88,6 +88,8 @@ const MediaGalleryEditor = ({
   max = MAX_IMAGES,
 }) => {
   const images = _normalizeImages(value, { showPrimary });
+  const latestImages = React.useRef(images);
+  latestImages.current = images;
   const [busy, setBusy] = React.useState(false);
   const [progress, setProgress] = React.useState({ done: 0, total: 0 });
   const [dragOver, setDragOver] = React.useState(false);
@@ -108,13 +110,13 @@ const MediaGalleryEditor = ({
 
   // v00.237 — 다중 파일 + drag & drop 모두 처리하는 공통 핸들러.
   const handleFiles = async (fileList) => {
-    if (!fileList || fileList.length === 0) return;
+    if (busy || !fileList || fileList.length === 0) return;
     const remaining = limit - images.length;
     if (remaining <= 0) {
       window.BGNJ_TOAST?.error?.(`사진은 최대 ${limit}장까지 추가할 수 있습니다.`);
       return;
     }
-    const accepted = Array.from(fileList).filter((f) => f && f.type?.startsWith?.('image/')).slice(0, remaining);
+    const accepted = Array.from(fileList).filter((f) => f && window.BGNJ_IMAGE_SHRINK.isImageFile(f)).slice(0, remaining);
     if (accepted.length === 0) return;
     if (fileList.length > accepted.length) {
       window.BGNJ_TOAST?.error?.(`최대 ${limit}장 — ${accepted.length}장만 추가됩니다.`);
@@ -127,7 +129,7 @@ const MediaGalleryEditor = ({
         window.BGNJ_TOAST?.error?.('업로드 실패 — 이미지를 다시 확인해 주세요.');
         return;
       }
-      const next = images.slice();
+      const next = latestImages.current.slice();
       urls.forEach((url) => {
         // showPrimary 갤러리에서 첫 사진이면 자동 대표.
         next.push({ url, credit: '', isPrimary: showPrimary && next.length === 0 });
@@ -233,7 +235,7 @@ const MediaGalleryEditor = ({
       <label
         onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave} onDragEnd={onDragLeave}
         style={dropZoneStyle}>
-        <input type="file" accept="image/*" multiple onChange={onPick}
+        <input type="file" accept="image/*,.heic,.heif" multiple onChange={onPick}
           disabled={busy || isFull}
           style={{ display: 'none' }}/>
         {busy ? (

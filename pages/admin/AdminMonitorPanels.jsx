@@ -1,3 +1,4 @@
+import { pickImageWithR2Fallback } from './AdminShared.jsx';
 // 뱅기노자 — 사이트 모니터링/SEO 관리 패널 (v00.285 — AuthAdminPage.jsx 에서 분리)
 //
 // ErrorLogPanel (D1.error_log 클라이언트 오류 조회) · SEOAdminPanel (OG/Hero/브랜드 메타) ·
@@ -12,13 +13,16 @@ const ErrorLogPanel = () => {
   const [search, setSearch] = React.useState('');
   const [codeFilter, setCodeFilter] = React.useState('all');
   const [loading, setLoading] = React.useState(false);
+  const [loadError, setLoadError] = React.useState('');
 
   const refresh = async () => {
     setLoading(true);
     try {
       const { errors: list } = await window.BGNJ_API.errorLog.list({ limit: 500 });
-      setErrors(list || []);
-    } catch (_e) { console.warn('[bgnj] AdminMonitorPanels.jsx:21 오류(무시하고 진행)', _e); } finally { setLoading(false); }
+      if (!Array.isArray(list)) throw new Error('오류 기록 응답이 올바르지 않습니다.');
+      setErrors(list);
+      setLoadError('');
+    } catch (err) { setLoadError(err?.message || '오류 기록을 불러오지 못했습니다.'); } finally { setLoading(false); }
   };
   React.useEffect(() => { refresh(); }, []);
 
@@ -65,6 +69,7 @@ const ErrorLogPanel = () => {
           style={{borderColor:'var(--danger)', color:'var(--danger)'}}>전체 삭제</button>
         <span className="mono dim-2" style={{fontSize:11}}>총 {errors.length}건 · 표시 {filtered.length}건</span>
       </div>
+      {loadError && <p role="alert" style={{color:'var(--danger)'}}>{loadError}</p>}
       <div style={{overflowX:'auto', border:'1px solid var(--line)'}}>
         <table style={{width:'100%', borderCollapse:'collapse', fontSize:12, minWidth:980}}>
           <thead>
@@ -79,7 +84,7 @@ const ErrorLogPanel = () => {
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={6} className="dim" style={{padding:32, textAlign:'center'}}>{loading ? '불러오는 중...' : '오류 로그가 없습니다.'}</td></tr>
+              <tr><td colSpan={6} className="dim" style={{padding:32, textAlign:'center'}}>{loading ? '불러오는 중...' : loadError ? '조회 실패 — 새로고침해 주세요.' : '오류 로그가 없습니다.'}</td></tr>
             ) : filtered.map((e) => (
               <tr key={e.id} style={{borderTop:'1px solid var(--line)'}}>
                 <td className="mono dim-2" style={{padding:'10px 12px', fontSize:11, verticalAlign:'top'}}>
@@ -137,17 +142,8 @@ const SEOAdminPanel = () => {
   };
 
   const onPickImage = async (e, section, field) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 1.5 * 1024 * 1024) {
-      flash('✗ 이미지가 너무 큽니다 (1.5MB 이하 권장).'); e.target.value = ''; return;
-    }
-    const dataUri = await new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = () => resolve(String(r.result || ''));
-      r.onerror = reject;
-      r.readAsDataURL(file);
-    });
+    const dataUri = await pickImageWithR2Fallback(e, { folder: 'og', maxBytes: 1.5 * 1024 * 1024 });
+    if (!dataUri) return;
     if (section === 'og') {
       const next = { ...og, [field]: dataUri };
       setOg(next);
@@ -193,7 +189,7 @@ const SEOAdminPanel = () => {
             <img src={og.imageDataUri} alt="OG preview"
               style={{display:'block', maxWidth:240, maxHeight:126, marginBottom:8, border:'1px solid var(--line)'}}/>
           )}
-          <input type="file" accept="image/png,image/jpeg" onChange={(e) => onPickImage(e, 'og', 'imageDataUri')}/>
+          <input type="file" accept="image/png,image/jpeg,.heic,.heif" onChange={(e) => onPickImage(e, 'og', 'imageDataUri')}/>
           {og.imageDataUri && (
             <button type="button" className="btn-ghost" style={{fontSize:11, color:'var(--danger)', marginTop:6}}
               onClick={() => save('og', { ...og, imageDataUri: '' })}>이미지 제거</button>

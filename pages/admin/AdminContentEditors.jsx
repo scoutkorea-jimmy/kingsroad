@@ -1,3 +1,4 @@
+import { pickImageWithR2Fallback } from './AdminShared.jsx';
 // === pages/admin/AdminContentEditors.jsx =================================
 // v00.078 — AuthAdminPage.jsx 2차 분할. 콘텐츠 편집 패널 묶음 (~1300 줄 이동).
 // 포함:
@@ -23,14 +24,6 @@ const RecommendationsAdminPanel = () => {
   const [msg, setMsg] = React.useState('');
   const flash = (text) => { setMsg(text); setTimeout(() => setMsg(''), 2000); };
 
-  const fileToDataUri = (file) => new Promise((resolve, reject) => {
-    if (!file) { resolve(''); return; }
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
   const setItem = (idx, patch) => setDraft((arr) => arr.map((it, i) => i === idx ? { ...it, ...patch } : it));
   const addItem = () => setDraft((arr) => [...arr, {
     id: `rec-${Date.now()}`,
@@ -50,24 +43,9 @@ const RecommendationsAdminPanel = () => {
       return next;
     });
   };
-  // v00.084 — R2 우선 (5MB) + dataURI 폴백 (1.5MB).
   const onPickImage = async (idx, e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    try {
-      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'recommendations', maxBytes: 5 * 1024 * 1024 });
-      setItem(idx, { imageDataUri: url });
-      return;
-    } catch (err) {
-      console.warn('[v00.084] R2 추천 이미지 업로드 실패 — dataURI 폴백:', err);
-    }
-    if (file.size > 1.5 * 1024 * 1024) {
-      window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
-      return;
-    }
-    const dataUri = await fileToDataUri(file);
-    setItem(idx, { imageDataUri: dataUri });
+    const url = await pickImageWithR2Fallback(e, { folder: 'recommendations' });
+    if (url) setItem(idx, { imageDataUri: url });
   };
 
   const save = async () => {
@@ -121,7 +99,7 @@ const RecommendationsAdminPanel = () => {
                   {!it.imageDataUri && <span className="mono" style={{fontSize:9, color:'var(--ink-3)', letterSpacing:'0.18em'}}>NO IMAGE</span>}
                 </div>
                 <label className="btn btn-small" style={{cursor:'pointer', textAlign:'center'}}>
-                  업로드<input type="file" accept="image/*" style={{display:'none'}} onChange={(e) => onPickImage(idx, e)}/>
+                  업로드<input type="file" accept="image/*,.heic,.heif" style={{display:'none'}} onChange={(e) => onPickImage(idx, e)}/>
                 </label>
                 {it.imageDataUri && (
                   <button type="button" className="btn-ghost" style={{fontSize:11, color:'var(--danger)'}} onClick={() => setItem(idx, { imageDataUri: '' })}>이미지 제거</button>
@@ -434,22 +412,9 @@ const TourPageEditorPanel = () => {
       flash(`'${activeTourId}' 투어 override 저장됨.`);
     } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
-  // v00.070 — 커버 이미지 업로드 헬퍼. 1.5MB 이하 dataURI.
   const onPickCover = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 1.5 * 1024 * 1024) {
-      window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). 1.5MB 이하로 압축해 주세요.`);
-      e.target.value = ''; return;
-    }
-    const dataUri = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    setPCover(dataUri);
-    e.target.value = '';
+    const url = await pickImageWithR2Fallback(e, { folder: 'tour-covers' });
+    if (url) setPCover(url);
   };
   const clearPerTour = async () => {
     if (!activeTourId) return;
@@ -618,7 +583,7 @@ const TourPageEditorPanel = () => {
                       <div style={{display:'flex', gap:8}}>
                         <label className="btn btn-small" style={{cursor:'pointer'}}>
                           업로드
-                          <input type="file" accept="image/*" onChange={onPickCover} style={{display:'none'}}/>
+                          <input type="file" accept="image/*,.heic,.heif" onChange={onPickCover} style={{display:'none'}}/>
                         </label>
                         {pCover && (
                           <button type="button" className="btn btn-small" onClick={() => setPCover('')}
@@ -820,30 +785,9 @@ const LecturePageEditorPanel = () => {
       flash(`'${activeLectureId}' 강연 override 저장됨.`);
     } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
   };
-  // v00.083 — 커버 이미지 업로드. R2 우선 (5MB) + dataURI 폴백 (1.5MB).
   const onPickCover = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'lecture-covers', maxBytes: 5 * 1024 * 1024 });
-      setPCover(url);
-      e.target.value = '';
-      return;
-    } catch (err) {
-      console.warn('[v00.083] R2 업로드 실패 — dataURI 폴백:', err);
-    }
-    if (file.size > 1.5 * 1024 * 1024) {
-      window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
-      e.target.value = ''; return;
-    }
-    const dataUri = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    setPCover(dataUri);
-    e.target.value = '';
+    const url = await pickImageWithR2Fallback(e, { folder: 'lecture-covers' });
+    if (url) setPCover(url);
   };
   const clearPerLecture = async () => {
     if (!activeLectureId) return;
@@ -1006,13 +950,13 @@ const LecturePageEditorPanel = () => {
                       </div>
                       <div style={{flex:1}}>
                         <div className="dim-2" style={{fontSize:11, lineHeight:1.5}}>
-                          1600×1000 권장 · R2 5MB / dataURI 폴백 1.5MB · 비우면 placeholder.
+                          1600×1000 권장 · JPG/PNG/HEIC · 최대 5MB · 비우면 placeholder.
                         </div>
                       </div>
                       <div style={{display:'flex', gap:6}}>
                         <label className="btn btn-small" style={{cursor:'pointer'}}>
                           업로드
-                          <input type="file" accept="image/*" onChange={onPickCover} style={{display:'none'}}/>
+                          <input type="file" accept="image/*,.heic,.heif" onChange={onPickCover} style={{display:'none'}}/>
                         </label>
                         {pCover && (
                           <button type="button" className="btn btn-small" onClick={() => setPCover('')}
@@ -1297,7 +1241,7 @@ const HeroBgSlot = ({ label, url, aspect, preview, onPick, onClear }) => (
       <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
         <label className="btn btn-small" style={{cursor:'pointer'}}>
           {url ? '교체' : '업로드'}
-          <input type="file" accept="image/*" style={{display:'none'}} onChange={onPick}/>
+          <input type="file" accept="image/*,.heic,.heif" style={{display:'none'}} onChange={onPick}/>
         </label>
         {url && (
           <button type="button" className="btn btn-small" onClick={onClear}
@@ -1355,7 +1299,7 @@ const PhotoSlot = ({ label, hint, url, aspect, minWidth, onPick, onClear }) => {
       <div style={{display:'flex', gap:6, flexWrap:'wrap'}}>
         <label className="btn btn-small" style={{cursor:'pointer'}}>
           {url ? '교체' : '업로드'}
-          <input type="file" accept="image/*" style={{display:'none'}} onChange={onPick}/>
+          <input type="file" accept="image/*,.heic,.heif" style={{display:'none'}} onChange={onPick}/>
         </label>
         {url && (
           <button type="button" className="btn btn-small" onClick={onClear}
@@ -2152,26 +2096,8 @@ const KindPagePanel = ({ kind = 'eat' }) => {
     });
   };
   const onPickItemImage = async (i, e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    try {
-      const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: `${kind}-items`, maxBytes: 5 * 1024 * 1024 });
-      updateItem(i, { imageUrl: url });
-      return;
-    } catch (err) {
-      console.warn('[v00.106] R2 놀자 아이템 이미지 업로드 실패 — dataURI 폴백:', err);
-    }
-    if (file.size > 1.5 * 1024 * 1024) {
-      window.BGNJ_TOAST.error(`이미지가 너무 큽니다(${(file.size/1024/1024).toFixed(1)}MB). R2 실패 + 1.5MB 폴백 한도 초과.`);
-      return;
-    }
-    const dataUri = await new Promise((resolve) => {
-      const r = new FileReader();
-      r.onload = () => resolve(r.result);
-      r.readAsDataURL(file);
-    });
-    updateItem(i, { imageUrl: dataUri });
+    const url = await pickImageWithR2Fallback(e, { folder: `${kind}-items` });
+    if (url) updateItem(i, { imageUrl: url });
   };
   const saveItems = async () => {
     try {
@@ -2284,7 +2210,7 @@ const KindPagePanel = ({ kind = 'eat' }) => {
                 </div>
                 <label className="btn btn-small" style={{cursor:'pointer', width:'100%', textAlign:'center', display:'block'}}>
                   이미지 업로드
-                  <input type="file" accept="image/*" onChange={(e) => onPickItemImage(i, e)} style={{display:'none'}}/>
+                  <input type="file" accept="image/*,.heic,.heif" onChange={(e) => onPickItemImage(i, e)} style={{display:'none'}}/>
                 </label>
                 {it.imageUrl && (
                   <button type="button" className="btn btn-small" onClick={() => updateItem(i, { imageUrl: '' })}

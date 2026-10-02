@@ -2,8 +2,8 @@
 
 // === 사이트 버전 (수정 시 footer에 노출) ===
 window.BGNJ_VERSION = {
-  version: "00.316.000",
-  build: "2026.08.28",
+  version: "00.317.000",
+  build: "2026.10.03",
   channel: "preview",
 };
 
@@ -3955,14 +3955,31 @@ window.BGNJ_BOOKS = {
 //   og / logos / auth / tour-covers / lecture-covers / book-covers / book-pdfs
 // 폴백: 업로드 실패(권한/크기/네트워크) 시 throw → 호출자가 dataURI fallback 또는 사용자 메시지로 처리.
 window.BGNJ_MEDIA = {
+  errorMessage(name, err) {
+    if (err?.status === 401) return `'${name}'을(를) 올리기 전에 로그인이 만료되었습니다. 작성한 내용은 그대로 두고 다시 로그인한 뒤 사진을 선택해 주세요.`;
+    if (err?.status === 403) return `'${name}'을(를) 올릴 권한이 없습니다. 계정과 게시판 권한을 확인해 주세요.`;
+    if (err?.kind === 'timeout' || err?.kind === 'network') return `'${name}' 업로드가 완료되지 않았습니다. 인터넷 연결을 확인하고 다시 선택해 주세요. 작성한 내용은 유지됩니다.`;
+    return `'${name}' 업로드 실패: ${err?.message || '파일을 확인하고 다시 선택해 주세요.'}`;
+  },
   async uploadFile(file, { folder = 'uploads', maxBytes = 5 * 1024 * 1024 } = {}) {
     if (!file) throw new Error('파일이 없습니다.');
+    // 직접 uploadFile을 쓰는 이미지 슬롯도 같은 변환 관문을 통과한다.
+    const wasHeic = window.BGNJ_IMAGE_SHRINK.isHeicFile(file);
+    file = await window.BGNJ_IMAGE_SHRINK.prepareFile(file);
+    if (wasHeic || (window.BGNJ_IMAGE_SHRINK.isImageFile(file) && file.size > maxBytes)) {
+      file = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(file, { limitBytes: maxBytes });
+      if (!file) throw new Error('선택한 사진을 업로드 한도 안으로 줄이지 못했습니다. 크기를 줄여 다시 선택해 주세요.');
+    }
+    const ext = String(file.name || '').split('.').pop().toLowerCase();
+    if (!/^(jpe?g|png|gif|webp|svg|avif|pdf|txt|csv|docx?|xlsx?|pptx?|hwpx?|mp4|webm|mp3|wav|m4a|zip)$/.test(ext)) {
+      throw new Error(`지원하지 않는 파일 형식입니다 (.${ext || '?'}). JPG·PNG 또는 지원되는 문서 파일을 선택해 주세요.`);
+    }
     if (file.size > maxBytes) {
       throw new Error(`파일이 너무 큽니다 (${(file.size / 1024 / 1024).toFixed(1)}MB > ${(maxBytes / 1024 / 1024).toFixed(1)}MB).`);
     }
     const res = await window.BGNJ_API.media.upload(file, { folder });
     if (!res?.url) throw new Error('업로드 응답 형식이 올바르지 않습니다.');
-    return res; // { key, url }
+    return { ...res, file }; // 변환된 이름·MIME·용량을 첨부 메타데이터에도 사용한다.
   },
   // 키만 저장된 옛 데이터를 라이브 URL 로 변환. dataURI / 절대 URL 은 그대로 통과.
   resolveUrl(keyOrUrlOrDataUri) {

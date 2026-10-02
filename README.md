@@ -9,7 +9,7 @@
 ## 빠른 시작 (개발자용)
 
 ### 사전 요구
-- **Node.js 18+** (esbuild / tools)
+- **Node.js 20+** (CI 기준; 로컬 Node 26에서도 검증) (esbuild / tools)
 - **Git** (pre-commit 훅 자동화)
 - (선택) **Cloudflare Wrangler CLI** (`npm i -g wrangler`) — 워커/D1 관리용
 
@@ -17,9 +17,9 @@
 ```bash
 git clone https://github.com/scoutkorea-jimmy/kingsroad.git
 cd kingsroad
-cd tools && npm install && cd ..  # esbuild 등 (tools/node_modules 는 gitignore)
+cd tools && npm ci && cd ..  # esbuild 등 (tools/node_modules 는 gitignore)
 bash tools/install-hooks.sh    # pre-commit 자동화 설치
-node tools/build.mjs            # 단일 엔트리 번들 → dist/{app,admin}.js (esbuild bundle, v00.285~)
+node tools/build.mjs            # 단일 엔트리 번들 → dist/{app,admin,heic}.js + heic-worker.js + 라이선스
 ```
 
 ### 로컬 미리보기
@@ -203,3 +203,29 @@ window.BGNJ_DIAG.run()
 ## 라이선스
 
 내부 운영 프로젝트. 외부 사용 / 포크 시 별도 협의.
+
+
+## HEIC 업로드 및 오류 예방 (v00.317.000)
+
+- 모든 이미지 업로드는 `BGNJ_IMAGE_SHRINK`와 `BGNJ_MEDIA.uploadFile`을 사용합니다. HEIC/HEIF는 JPG로 변환한 뒤 업로드하고 첨부 이름·MIME·크기도 변환 결과를 저장합니다.
+- 기존 ICO 파비콘 입력은 투명 PNG로 변환해 R2에 저장합니다.
+- 변환기는 HEIC 선택 때만 로드하며, 사진별 Web Worker를 종료해 메모리를 정리합니다. HEIC 입력은 50MB 이하, 출력은 각 슬롯의 기존 한도를 따릅니다. GIF는 애니메이션을 보존하며 자동 축소하지 않습니다.
+- 한도 초과 사진은 자동 축소합니다. 한도 안의 큰 사진은 사용자에게 선택권을 줍니다. 손상 파일·변환 불가·인증/연결 실패는 안내하고 기존 내용을 보존합니다.
+- `heic-to@1.6.5` CSP 빌드에서 Worker를 추출합니다. `dist/heic.LICENSE.txt`를 함께 배포합니다. 브라우저 코덱은 완전한 사진 메타데이터 보존을 목표로 하지 않으며 JPG 변환 시 EXIF 정보가 제외됩니다.
+- 관리자 활동 로그는 `BGNJ_API.errorLog.list`의 `errors` 배열을 읽습니다. 방문 차트 서버 키는 UTC이며 시간별 표시는 KST, 일별 집계는 UTC입니다.
+- 자동 회귀 검사: `node tools/check-all.mjs` (8종). 배포 CI도 이를 실행하며 실패하면 배포를 중단합니다.
+
+### 실제 브라우저 변환 검증 (운영 업로드 없음)
+
+```bash
+mkdir -p /tmp/kingsroad-validation
+curl -fL https://raw.githubusercontent.com/strukturag/libheif/master/examples/example.heic -o /tmp/kingsroad-validation/example.heic
+node tools/build.mjs
+HEIC_FIXTURE=/tmp/kingsroad-validation/example.heic node tools/test-upload-browser.mjs
+# Safari/Chrome에서 http://localhost:19035/ 열기
+# 결과: /tmp/kingsroad-validation/results.json
+```
+
+사진은 localhost 모의 업로드로만 전송됩니다. 일반 로컬 홈페이지는 운영 API를 사용하므로, 업로드 검증에는 위 검증 페이지를 사용하세요.
+
+현재 점검 결과와 다음 작업은 `PROJECT_CONTEXT.md`, `rules/handoff/ACTIVE.md`에 있습니다. 커밋은 상위 `../AGENTS.md` 규칙에 따라 사용자 승인 뒤 수행합니다.

@@ -408,8 +408,8 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.316.000",
-    build: "2026.08.28",
+    version: "00.317.000",
+    build: "2026.10.03",
     channel: "preview"
   };
   try {
@@ -4851,14 +4851,30 @@
     }
   };
   window.BGNJ_MEDIA = {
+    errorMessage(name, err) {
+      if ((err == null ? void 0 : err.status) === 401) return `'${name}'\uC744(\uB97C) \uC62C\uB9AC\uAE30 \uC804\uC5D0 \uB85C\uADF8\uC778\uC774 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC791\uC131\uD55C \uB0B4\uC6A9\uC740 \uADF8\uB300\uB85C \uB450\uACE0 \uB2E4\uC2DC \uB85C\uADF8\uC778\uD55C \uB4A4 \uC0AC\uC9C4\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.`;
+      if ((err == null ? void 0 : err.status) === 403) return `'${name}'\uC744(\uB97C) \uC62C\uB9B4 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4. \uACC4\uC815\uACFC \uAC8C\uC2DC\uD310 \uAD8C\uD55C\uC744 \uD655\uC778\uD574 \uC8FC\uC138\uC694.`;
+      if ((err == null ? void 0 : err.kind) === "timeout" || (err == null ? void 0 : err.kind) === "network") return `'${name}' \uC5C5\uB85C\uB4DC\uAC00 \uC644\uB8CC\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uC778\uD130\uB137 \uC5F0\uACB0\uC744 \uD655\uC778\uD558\uACE0 \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694. \uC791\uC131\uD55C \uB0B4\uC6A9\uC740 \uC720\uC9C0\uB429\uB2C8\uB2E4.`;
+      return `'${name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328: ${(err == null ? void 0 : err.message) || "\uD30C\uC77C\uC744 \uD655\uC778\uD558\uACE0 \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694."}`;
+    },
     async uploadFile(file, { folder = "uploads", maxBytes = 5 * 1024 * 1024 } = {}) {
       if (!file) throw new Error("\uD30C\uC77C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.");
+      const wasHeic = window.BGNJ_IMAGE_SHRINK.isHeicFile(file);
+      file = await window.BGNJ_IMAGE_SHRINK.prepareFile(file);
+      if (wasHeic || window.BGNJ_IMAGE_SHRINK.isImageFile(file) && file.size > maxBytes) {
+        file = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(file, { limitBytes: maxBytes });
+        if (!file) throw new Error("\uC120\uD0DD\uD55C \uC0AC\uC9C4\uC744 \uC5C5\uB85C\uB4DC \uD55C\uB3C4 \uC548\uC73C\uB85C \uC904\uC774\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uD06C\uAE30\uB97C \uC904\uC5EC \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
+      }
+      const ext = String(file.name || "").split(".").pop().toLowerCase();
+      if (!/^(jpe?g|png|gif|webp|svg|avif|pdf|txt|csv|docx?|xlsx?|pptx?|hwpx?|mp4|webm|mp3|wav|m4a|zip)$/.test(ext)) {
+        throw new Error(`\uC9C0\uC6D0\uD558\uC9C0 \uC54A\uB294 \uD30C\uC77C \uD615\uC2DD\uC785\uB2C8\uB2E4 (.${ext || "?"}). JPG\xB7PNG \uB610\uB294 \uC9C0\uC6D0\uB418\uB294 \uBB38\uC11C \uD30C\uC77C\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.`);
+      }
       if (file.size > maxBytes) {
         throw new Error(`\uD30C\uC77C\uC774 \uB108\uBB34 \uD07D\uB2C8\uB2E4 (${(file.size / 1024 / 1024).toFixed(1)}MB > ${(maxBytes / 1024 / 1024).toFixed(1)}MB).`);
       }
       const res = await window.BGNJ_API.media.upload(file, { folder });
       if (!(res == null ? void 0 : res.url)) throw new Error("\uC5C5\uB85C\uB4DC \uC751\uB2F5 \uD615\uC2DD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
-      return res;
+      return { ...res, file };
     },
     // 키만 저장된 옛 데이터를 라이브 URL 로 변환. dataURI / 절대 URL 은 그대로 통과.
     resolveUrl(keyOrUrlOrDataUri) {
@@ -6541,6 +6557,15 @@
     const [ready, setReady] = React.useState(Boolean(window.BGNJ_TIPTAP));
     const [, forceRender] = React.useReducer((x) => x + 1, 0);
     const [uploadingImage, setUploadingImage] = React.useState(false);
+    const uploadsInFlight = React.useRef(0);
+    const beginImageUpload = () => {
+      uploadsInFlight.current += 1;
+      setUploadingImage(true);
+    };
+    const finishImageUpload = () => {
+      uploadsInFlight.current = Math.max(0, uploadsInFlight.current - 1);
+      setUploadingImage(uploadsInFlight.current > 0);
+    };
     React.useEffect(() => {
       onBusyChange == null ? void 0 : onBusyChange(uploadingImage);
     }, [uploadingImage, onBusyChange]);
@@ -6626,26 +6651,31 @@
             var _a, _b;
             const cd = event.clipboardData;
             if (!cd) return false;
-            const pastedFiles = Array.from(cd.files || []).filter((f) => f.type.startsWith("image/"));
+            const pastedFiles = Array.from(cd.files || []).filter((f) => window.BGNJ_IMAGE_SHRINK.isImageFile(f));
             if (pastedFiles.length > 0) {
               event.preventDefault();
               const folder = preset === "column" ? "column-images" : "post-images";
               (async () => {
-                var _a2, _b2;
-                setUploadingImage(true);
-                const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
-                  pastedFiles,
-                  { limitBytes: 10 * 1024 * 1024 }
-                );
-                for (const f of prepared) {
-                  try {
-                    const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
-                    editor.chain().focus().setImage({ src: url, alt: f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0" }).run();
-                  } catch (err) {
-                    (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, `\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 '${f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0"}' \uB294 \uBCF8\uBB38\uC5D0 \uB123\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 '\u{1F5BC} \uBCF8\uBB38 \uC774\uBBF8\uC9C0' \uBC84\uD2BC\uC73C\uB85C \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.`);
+                var _a2, _b2, _c, _d;
+                beginImageUpload();
+                try {
+                  const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
+                    pastedFiles,
+                    { limitBytes: 10 * 1024 * 1024 }
+                  );
+                  for (const f of prepared) {
+                    try {
+                      const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
+                      if (!editor.isDestroyed) editor.chain().focus().setImage({ src: url, alt: f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0" }).run();
+                    } catch (err) {
+                      (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, window.BGNJ_MEDIA.errorMessage(f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0", err));
+                    }
                   }
+                } catch (err) {
+                  (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.error) == null ? void 0 : _d.call(_c, window.BGNJ_MEDIA.errorMessage("\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0", err));
+                } finally {
+                  finishImageUpload();
                 }
-                setUploadingImage(false);
               })();
               return true;
             }
@@ -6697,26 +6727,26 @@
     const insertInlineImage = () => {
       const input = document.createElement("input");
       input.type = "file";
-      input.accept = "image/*";
+      input.accept = "image/*,.heic,.heif";
       input.onchange = async () => {
         var _a;
         const raw = (_a = input.files) == null ? void 0 : _a[0];
         if (!raw) return;
         const folder = preset === "column" ? "column-images" : "post-images";
-        const f = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 10 * 1024 * 1024 });
-        if (!f) return;
+        beginImageUpload();
         try {
-          setUploadingImage(true);
+          const f = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 10 * 1024 * 1024 });
+          if (!f) return;
           const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
-          ed.chain().focus().setImage({ src: url, alt: f.name }).run();
+          if (!ed.isDestroyed) ed.chain().focus().setImage({ src: url, alt: f.name }).run();
         } catch (err) {
           try {
-            window.BGNJ_TOAST.error("\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
+            window.BGNJ_TOAST.error(window.BGNJ_MEDIA.errorMessage(raw.name, err));
           } catch (_e) {
             console.warn("[bgnj] TiptapEditor.jsx:199 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         } finally {
-          setUploadingImage(false);
+          finishImageUpload();
         }
       };
       input.click();
@@ -7130,24 +7160,145 @@
   // components/ImageShrink.jsx
   var _MB = 1024 * 1024;
   var _fmtMB = (bytes) => `${(Number(bytes || 0) / _MB).toFixed(1)}MB`;
+  var isHeicFile = (file) => /\.(heic|heif)$/i.test((file == null ? void 0 : file.name) || "") || /^image\/(heic|heif)(-sequence)?$/i.test((file == null ? void 0 : file.type) || "");
+  var isImageFile = (file) => String((file == null ? void 0 : file.type) || "").startsWith("image/") || /\.(jpe?g|png|gif|webp|svg|avif|ico|heic|heif)$/i.test((file == null ? void 0 : file.name) || "");
+  var decoderLoad = null;
+  var loadHeicDecoder = () => {
+    var _a;
+    if ((_a = window.BGNJ_HEIC_DECODER) == null ? void 0 : _a.convert) return Promise.resolve(window.BGNJ_HEIC_DECODER);
+    if (decoderLoad) return decoderLoad;
+    decoderLoad = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      const appScript = document.querySelector('script[src*="dist/app.js"]');
+      const src = new URL((appScript == null ? void 0 : appScript.src) || "/dist/app.js", location.href);
+      src.pathname = src.pathname.replace(/app\.js$/, "heic.js");
+      script.src = src.href;
+      script.async = true;
+      const fail = () => {
+        clearTimeout(timer);
+        script.remove();
+        decoderLoad = null;
+        reject(new Error("\uC0AC\uC9C4 \uBCC0\uD658 \uAE30\uB2A5\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC778\uD130\uB137 \uC5F0\uACB0\uC744 \uD655\uC778\uD558\uACE0 \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694."));
+      };
+      const timer = setTimeout(fail, 3e4);
+      script.onerror = fail;
+      script.onload = () => {
+        var _a2;
+        clearTimeout(timer);
+        if (!((_a2 = window.BGNJ_HEIC_DECODER) == null ? void 0 : _a2.convert)) {
+          fail();
+          return;
+        }
+        resolve(window.BGNJ_HEIC_DECODER);
+      };
+      document.head.appendChild(script);
+    });
+    return decoderLoad;
+  };
+  var preparedFiles = /* @__PURE__ */ new WeakMap();
+  var conversionQueue = Promise.resolve();
+  var prepareFile = (file) => {
+    if (!file) return Promise.reject(new Error("\uD30C\uC77C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
+    const icon = /\.ico$/i.test((file == null ? void 0 : file.name) || "") || /^image\/(x-icon|vnd.microsoft.icon)$/i.test((file == null ? void 0 : file.type) || "");
+    if (!isHeicFile(file) && !icon) return Promise.resolve(file);
+    if (preparedFiles.has(file)) return preparedFiles.get(file);
+    const pending = conversionQueue.then(async () => {
+      var _a, _b;
+      if (file.size > 50 * _MB) throw new Error("\uBCC0\uD658\uD560 \uC774\uBBF8\uC9C0\uB294 \uD55C \uC7A5\uC5D0 \uCD5C\uB300 50MB\uAE4C\uC9C0 \uAC00\uB2A5\uD569\uB2C8\uB2E4.");
+      if (icon) {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const view = new DataView(bytes.buffer);
+        const pngs = [];
+        if (bytes.length >= 6 && view.getUint16(0, true) === 0 && view.getUint16(2, true) === 1) {
+          const count = Math.min(view.getUint16(4, true), 256);
+          for (let i = 0; i < count; i++) {
+            const entry = 6 + i * 16;
+            if (entry + 16 > bytes.length) break;
+            const length = view.getUint32(entry + 8, true);
+            const offset = view.getUint32(entry + 12, true);
+            if (length >= 8 && offset >= 6 + count * 16 && offset + length <= bytes.length && [137, 80, 78, 71, 13, 10, 26, 10].every((value, index) => bytes[offset + index] === value)) {
+              pngs.push({ offset, length, edge: bytes[entry] || 256 });
+            }
+          }
+        }
+        if (pngs.length) {
+          const png = pngs.sort((a, b) => b.edge - a.edge)[0];
+          return new File([bytes.slice(png.offset, png.offset + png.length)], `${String(file.name || "favicon").replace(/\.[^.]+$/, "")}.png`, { type: "image/png", lastModified: file.lastModified });
+        }
+        const { img, revoke } = await _loadImage(file);
+        const canvas = document.createElement("canvas");
+        try {
+          const scale = Math.min(1, 512 / Math.max(img.naturalWidth, img.naturalHeight));
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          const ctx = canvas.getContext("2d");
+          if (!ctx) throw new Error("\uD30C\uBE44\uCF58\uC744 \uBCC0\uD658\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. PNG\uB85C \uC800\uC7A5\uD574 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          if (!(blob == null ? void 0 : blob.size)) throw new Error("\uD30C\uBE44\uCF58\uC744 \uBCC0\uD658\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. PNG\uB85C \uC800\uC7A5\uD574 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
+          return new File([blob], `${String(file.name || "favicon").replace(/\.[^.]+$/, "")}.png`, { type: "image/png", lastModified: file.lastModified });
+        } finally {
+          revoke();
+          canvas.width = 1;
+          canvas.height = 1;
+        }
+      }
+      const signature = new Uint8Array(await file.slice(0, 3).arrayBuffer());
+      if (signature[0] === 255 && signature[1] === 216 && signature[2] === 255) {
+        const name = String(file.name || "image").replace(/\.[^.]+$/, "");
+        return new File([file], `${name}.jpg`, { type: "image/jpeg", lastModified: file.lastModified });
+      }
+      (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.info) == null ? void 0 : _b.call(_a, "\uC544\uC774\uD3F0 \uC0AC\uC9C4\uC744 JPG\uB85C \uBCC0\uD658\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4.");
+      try {
+        const decoder = await loadHeicDecoder();
+        let timer;
+        const blob = await Promise.race([
+          decoder.convert({ blob: file, type: "image/jpeg", quality: 0.9 }),
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error("\uC0AC\uC9C4 \uBCC0\uD658 \uC2DC\uAC04\uC774 \uCD08\uACFC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.")), 9e4);
+          })
+        ]).finally(() => clearTimeout(timer));
+        if (!(blob == null ? void 0 : blob.size) || blob.type !== "image/jpeg") throw new Error("JPG \uBCC0\uD658 \uACB0\uACFC\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
+        const name = String(file.name || "image").replace(/\.[^.]+$/, "");
+        return new File([blob], `${name}.jpg`, { type: "image/jpeg", lastModified: file.lastModified || Date.now() });
+      } catch (cause) {
+        const err = new Error(`'${file.name || "\uC0AC\uC9C4"}'\uC744(\uB97C) JPG\uB85C \uBCC0\uD658\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC0AC\uC9C4 \uC571\uC5D0\uC11C JPG\uB85C \uB0B4\uBCF4\uB0B4 \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.`);
+        err.code = "HEIC_CONVERSION_FAILED";
+        err.cause = cause;
+        throw err;
+      }
+    });
+    preparedFiles.set(file, pending);
+    conversionQueue = pending.catch(() => {
+      preparedFiles.delete(file);
+    });
+    return pending;
+  };
   var _isShrinkable = (file) => {
     const t = String((file == null ? void 0 : file.type) || "").toLowerCase();
-    return t === "image/jpeg" || t === "image/jpg" || t === "image/png" || t === "image/webp";
+    return /^(image\/(jpeg|jpg|png|webp))$/.test(t) || /\.(jpe?g|png|webp)$/i.test((file == null ? void 0 : file.name) || "");
   };
   var _loadImage = (file) => new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => resolve({ img, revoke: () => URL.revokeObjectURL(url) });
-    img.onerror = () => {
+    const fail = () => {
+      clearTimeout(timer);
       URL.revokeObjectURL(url);
       reject(new Error("\uC774\uBBF8\uC9C0\uB97C \uC77D\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."));
     };
+    const timer = setTimeout(fail, 3e4);
+    img.onload = () => {
+      clearTimeout(timer);
+      resolve({ img, revoke: () => URL.revokeObjectURL(url) });
+    };
+    img.onerror = fail;
     img.src = url;
   });
   var shrinkImage = async (file, { maxEdge = 2e3, quality = 0.85 } = {}) => {
     var _a;
     if (!_isShrinkable(file)) return null;
     let handle = null;
+    let canvas = null;
     try {
       handle = await _loadImage(file);
       const { img } = handle;
@@ -7157,7 +7308,7 @@
       const scale = Math.min(1, maxEdge / Math.max(w, h));
       const outW = Math.max(1, Math.round(w * scale));
       const outH = Math.max(1, Math.round(h * scale));
-      const canvas = document.createElement("canvas");
+      canvas = document.createElement("canvas");
       canvas.width = outW;
       canvas.height = outH;
       const ctx = canvas.getContext("2d");
@@ -7174,6 +7325,10 @@
       console.warn("[bgnj] \uC0AC\uC9C4 \uCD95\uC18C \uC2E4\uD328 \u2014 \uC6D0\uBCF8\uC73C\uB85C \uC9C4\uD589\uD55C\uB2E4 (ImageShrink.jsx)", _e);
       return null;
     } finally {
+      if (canvas) {
+        canvas.width = 1;
+        canvas.height = 1;
+      }
       try {
         (_a = handle == null ? void 0 : handle.revoke) == null ? void 0 : _a.call(handle);
       } catch (_e) {
@@ -7189,22 +7344,41 @@
     maxEdge = 2e3,
     quality = 0.85
   } = {}) => {
-    const files = Array.from(fileList || []);
-    if (files.length === 0) return { files: [], cancelled: [] };
-    const targets = files.filter((f) => f && f.size > askOverBytes);
-    if (targets.length === 0) return { files, cancelled: [] };
+    var _a, _b, _c, _d;
+    const files = [];
+    const cancelled = [];
+    for (const file of Array.from(fileList || [])) {
+      try {
+        files.push(await prepareFile(file));
+      } catch (err) {
+        cancelled.push(file);
+        (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, err.message, { code: err.code || "IMAGE_PREPARE_FAILED" });
+      }
+    }
+    if (files.length === 0) return { files: [], cancelled };
+    const targets = files.filter((f) => f && (f.size > askOverBytes || limitBytes && f.size > limitBytes));
     const shrunkMap = /* @__PURE__ */ new Map();
-    await Promise.all(targets.map(async (f) => {
-      const out2 = await shrinkImage(f, { maxEdge, quality });
+    for (const f of targets) {
+      let out2 = await shrinkImage(f, { maxEdge, quality });
+      if (limitBytes && f.size > limitBytes && (!out2 || out2.size > limitBytes)) {
+        for (const [edge, q] of [[1600, 0.75], [1280, 0.65], [960, 0.55], [640, 0.5]]) {
+          const candidate = await shrinkImage(f, { maxEdge: Math.min(maxEdge, edge), quality: Math.min(quality, q) });
+          if (candidate && (!out2 || candidate.size < out2.size)) out2 = candidate;
+          if (out2 && out2.size <= limitBytes) break;
+        }
+      }
       if (out2) shrunkMap.set(f, out2);
-    }));
+    }
+    const automatic = new Map([...shrunkMap].filter(([f, out2]) => limitBytes && f.size > limitBytes && out2.size <= limitBytes));
+    const optional = new Map([...shrunkMap].filter(([f]) => !limitBytes || f.size <= limitBytes));
+    if (automatic.size) (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.info) == null ? void 0 : _d.call(_c, `\uC0AC\uC9C4 ${automatic.size}\uC7A5\uC744 \uC5C5\uB85C\uB4DC \uAC00\uB2A5\uD55C \uD06C\uAE30\uB85C \uC790\uB3D9 \uCD95\uC18C\uD588\uC2B5\uB2C8\uB2E4.`);
     let accepted = false;
-    if (shrunkMap.size > 0) {
-      const before = [...shrunkMap.keys()].reduce((a, f) => a + f.size, 0);
-      const after = [...shrunkMap.values()].reduce((a, f) => a + f.size, 0);
-      const one = shrunkMap.size === 1;
-      const head = one ? `\uC0AC\uC9C4\uC774 ${_fmtMB(before)} \uB85C \uD07D\uB2C8\uB2E4.` : `\uC0AC\uC9C4 ${shrunkMap.size}\uC7A5\uC774 \uD07D\uB2C8\uB2E4 (\uD569\uACC4 ${_fmtMB(before)}).`;
-      const hasPng = [...shrunkMap.keys()].some((f) => String(f.type).toLowerCase() === "image/png");
+    if (optional.size > 0) {
+      const before = [...optional.keys()].reduce((a, f) => a + f.size, 0);
+      const after = [...optional.values()].reduce((a, f) => a + f.size, 0);
+      const one = optional.size === 1;
+      const head = one ? `\uC0AC\uC9C4\uC774 ${_fmtMB(before)} \uB85C \uD07D\uB2C8\uB2E4.` : `\uC0AC\uC9C4 ${optional.size}\uC7A5\uC774 \uD07D\uB2C8\uB2E4 (\uD569\uACC4 ${_fmtMB(before)}).`;
+      const hasPng = [...optional.keys()].some((f) => String(f.type).toLowerCase() === "image/png");
       accepted = await window.BGNJ_CONFIRM(
         `${head}
 \uC904\uC774\uBA74 ${_fmtMB(after)} \uAC00 \uB429\uB2C8\uB2E4. \uC904\uC5EC\uC11C \uC62C\uB9B4\uAE4C\uC694?
@@ -7215,22 +7389,23 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       );
     }
     const out = [];
-    const cancelled = [];
+    const oversized = [];
     files.forEach((f) => {
-      const picked = accepted && shrunkMap.get(f) || f;
+      const picked = automatic.get(f) || accepted && optional.get(f) || f;
       if (limitBytes && picked.size > limitBytes) {
         cancelled.push(picked);
+        oversized.push(picked);
         return;
       }
       out.push(picked);
     });
-    if (cancelled.length > 0) {
-      const shrinkable = cancelled.filter((f) => _isShrinkable(f));
-      const notShrinkable = cancelled.filter((f) => !_isShrinkable(f));
+    if (oversized.length > 0) {
+      const shrinkable = oversized.filter((f) => _isShrinkable(f));
+      const notShrinkable = oversized.filter((f) => !_isShrinkable(f));
       const names = (list) => list.map((f) => `'${f.name}'`).join(", ");
       if (shrinkable.length > 0) {
         window.BGNJ_TOAST.error(
-          `${names(shrinkable)} \uC740(\uB294) \uD55C\uB3C4(${_fmtMB(limitBytes)})\uB97C \uB118\uC5B4 \uC62C\uB9B4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC120\uD0DD\uD55C \uB4A4 '\uC904\uC5EC\uC11C \uC62C\uB9AC\uAE30' \uB97C \uB20C\uB7EC \uC8FC\uC138\uC694.`
+          `${names(shrinkable)} \uC740(\uB294) \uD55C\uB3C4(${_fmtMB(limitBytes)})\uB97C \uB118\uC5B4 \uC62C\uB9B4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uC0AC\uC9C4 \uC571\uC5D0\uC11C \uD06C\uAE30\uB97C \uB354 \uC904\uC774\uAC70\uB098 \uB2E4\uB978 \uC0AC\uC9C4\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.`
         );
       }
       if (notShrinkable.length > 0) {
@@ -7245,7 +7420,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const { files } = await maybeShrinkAll([file], opts);
     return files[0] || null;
   };
-  window.BGNJ_IMAGE_SHRINK = { shrinkImage, maybeShrinkAll, maybeShrinkOne, formatMB: _fmtMB };
+  window.BGNJ_IMAGE_SHRINK = { shrinkImage, maybeShrinkAll, maybeShrinkOne, prepareFile, isHeicFile, isImageFile, formatMB: _fmtMB };
 
   // components/CashReceiptField.jsx
   var _emptyCashReceipt = () => ({ requested: false, type: "personal", identifier: "" });
@@ -7464,14 +7639,13 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   var _galleryUid = 0;
   var _nextUid = () => `bgnj-gallery-${++_galleryUid}`;
   var _uploadFiles = async (files, folder, onProgress) => {
-    var _a, _b;
     if (typeof window.pickImageWithR2Fallback !== "function") {
       throw new Error("\uC5C5\uB85C\uB4DC \uD5EC\uD37C\uAC00 \uC900\uBE44\uB418\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.");
     }
     const urls = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      if (!file || !((_b = (_a = file.type) == null ? void 0 : _a.startsWith) == null ? void 0 : _b.call(_a, "image/"))) continue;
+      if (!file || !window.BGNJ_IMAGE_SHRINK.isImageFile(file)) continue;
       const fakeEvent = { target: { files: [file], value: "" } };
       try {
         const url = await window.pickImageWithR2Fallback(fakeEvent, { folder });
@@ -7497,6 +7671,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     max = MAX_IMAGES
   }) => {
     const images = _normalizeImages(value, { showPrimary });
+    const latestImages = React.useRef(images);
+    latestImages.current = images;
     const [busy, setBusy] = React.useState(false);
     const [progress, setProgress] = React.useState({ done: 0, total: 0 });
     const [dragOver, setDragOver] = React.useState(false);
@@ -7515,16 +7691,13 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, []);
     const handleFiles = async (fileList) => {
       var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
-      if (!fileList || fileList.length === 0) return;
+      if (busy || !fileList || fileList.length === 0) return;
       const remaining = limit - images.length;
       if (remaining <= 0) {
         (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, `\uC0AC\uC9C4\uC740 \uCD5C\uB300 ${limit}\uC7A5\uAE4C\uC9C0 \uCD94\uAC00\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.`);
         return;
       }
-      const accepted = Array.from(fileList).filter((f) => {
-        var _a2, _b2;
-        return f && ((_b2 = (_a2 = f.type) == null ? void 0 : _a2.startsWith) == null ? void 0 : _b2.call(_a2, "image/"));
-      }).slice(0, remaining);
+      const accepted = Array.from(fileList).filter((f) => f && window.BGNJ_IMAGE_SHRINK.isImageFile(f)).slice(0, remaining);
       if (accepted.length === 0) return;
       if (fileList.length > accepted.length) {
         (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.error) == null ? void 0 : _d.call(_c, `\uCD5C\uB300 ${limit}\uC7A5 \u2014 ${accepted.length}\uC7A5\uB9CC \uCD94\uAC00\uB429\uB2C8\uB2E4.`);
@@ -7537,7 +7710,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, "\uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uC774\uBBF8\uC9C0\uB97C \uB2E4\uC2DC \uD655\uC778\uD574 \uC8FC\uC138\uC694.");
           return;
         }
-        const next = images.slice();
+        const next = latestImages.current.slice();
         urls.forEach((url) => {
           next.push({ url, credit: "", isPrimary: showPrimary && next.length === 0 });
         });
@@ -7625,7 +7798,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         "input",
         {
           type: "file",
-          accept: "image/*",
+          accept: "image/*,.heic,.heif",
           multiple: true,
           onChange: onPick,
           disabled: busy || isFull,
@@ -8502,35 +8675,27 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   // pages/HomeNextPage.jsx
   var HnImageSlot = ({ url, label, onUpload, onRemove, wide }) => {
     const ref = React.useRef(null);
+    const [busy, setBusy] = React.useState(false);
     const handleFile = async (e) => {
-      var _a, _b, _c, _d, _e;
-      const file = (_a = e.target.files) == null ? void 0 : _a[0];
-      if (!file) return;
+      var _a, _b, _c;
+      const raw = (_a = e.target.files) == null ? void 0 : _a[0];
+      if (!raw || busy) return;
+      setBusy(true);
       try {
+        const file = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 5 * 1024 * 1024 });
+        if (!file) return;
         const { url: uploaded } = await window.BGNJ_MEDIA.uploadFile(file, { folder: "home-next", maxBytes: 5 * 1024 * 1024 });
-        onUpload(uploaded);
-      } catch (e2) {
-        try {
-          if (file.size > 1.5 * 1024 * 1024) {
-            (_c = (_b = window.BGNJ_TOAST) == null ? void 0 : _b.error) == null ? void 0 : _c.call(_b, "\uD30C\uC77C\uC774 1.5MB \uCD08\uACFC");
-            return;
-          }
-          const dataUri = await new Promise((res, rej) => {
-            const r = new FileReader();
-            r.onload = () => res(String(r.result || ""));
-            r.onerror = rej;
-            r.readAsDataURL(file);
-          });
-          onUpload(dataUri);
-        } catch (err2) {
-          (_e = (_d = window.BGNJ_TOAST) == null ? void 0 : _d.error) == null ? void 0 : _e.call(_d, "\uC774\uBBF8\uC9C0 \uC77D\uAE30 \uC2E4\uD328");
-        }
+        await onUpload(uploaded);
+      } catch (err) {
+        (_c = (_b = window.BGNJ_TOAST) == null ? void 0 : _b.error) == null ? void 0 : _c.call(_b, window.BGNJ_MEDIA.errorMessage(raw.name, err));
+      } finally {
+        setBusy(false);
+        if (ref.current) ref.current.value = "";
       }
-      if (ref.current) ref.current.value = "";
     };
     return /* @__PURE__ */ React.createElement("div", { style: { position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 9, color: "#78350F", fontWeight: 500, textAlign: "center", maxWidth: wide ? 120 : 72, lineHeight: 1.3 } }, label), /* @__PURE__ */ React.createElement("div", { onClick: () => {
       var _a;
-      return (_a = ref.current) == null ? void 0 : _a.click();
+      if (!busy) (_a = ref.current) == null ? void 0 : _a.click();
     }, style: {
       width: wide ? 120 : 64,
       height: 64,
@@ -8541,7 +8706,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       cursor: "pointer",
       overflow: "hidden",
       background: "#FFF"
-    } }, url ? /* @__PURE__ */ React.createElement("img", { src: url, alt: label, style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, color: "var(--ink-3)" } }, "\uC5C5\uB85C\uB4DC")), /* @__PURE__ */ React.createElement("input", { ref, type: "file", accept: "image/*", style: { display: "none" }, onChange: handleFile }), url && /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onRemove, style: {
+    } }, url ? /* @__PURE__ */ React.createElement("img", { src: url, alt: label, style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, color: "var(--ink-3)" } }, "\uC5C5\uB85C\uB4DC")), /* @__PURE__ */ React.createElement("input", { ref, type: "file", accept: "image/*,.heic,.heif", disabled: busy, style: { display: "none" }, onChange: handleFile }), url && /* @__PURE__ */ React.createElement("button", { type: "button", disabled: busy, onClick: onRemove, style: {
       position: "absolute",
       top: 14,
       right: -3,
@@ -8603,7 +8768,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const updateImage = (key, index, url) => {
       const arr = [...hn[key] || []];
       arr[index] = url || "";
-      saveHn({ [key]: arr });
+      return saveHn({ [key]: arr });
     };
     const [postsTick, setPostsTick] = React.useState(0);
     const [toursTick, setToursTick] = React.useState(0);
@@ -8974,6 +9139,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, [busy, onBusyChange]);
     const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
     const handleFiles = async (fileList) => {
+      if (busy) return;
       const files = Array.from(fileList || []);
       const remaining = max - images.length;
       if (remaining <= 0) return;
@@ -8995,7 +9161,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             return null;
           }
         }));
-        setImages([...images, ...results.filter(Boolean)]);
+        setImages((prev) => [...prev, ...results.filter(Boolean)].slice(0, max));
       } finally {
         setBusy(false);
       }
@@ -9025,7 +9191,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       {
         ref: inputRef,
         type: "file",
-        accept: "image/*",
+        accept: "image/*,.heic,.heif",
         multiple: true,
         style: { display: "none" },
         onChange: (e) => {
@@ -9082,6 +9248,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, [busy, onBusyChange]);
     const usedBytes = files.reduce((sum, f) => sum + (Number(f.size) || 0), 0);
     const handleFiles = async (fileList) => {
+      if (busy) return;
       setError("");
       const incoming = Array.from(fileList || []);
       const remaining = max - files.length;
@@ -9089,34 +9256,47 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         setError(`\uCCA8\uBD80\uB294 \uCD5C\uB300 ${max}\uAC1C\uAE4C\uC9C0 \uAC00\uB2A5\uD569\uB2C8\uB2E4.`);
         return;
       }
-      const accepted = [];
-      let running = usedBytes;
-      for (const f of incoming.slice(0, remaining)) {
-        if (f.size > maxSize) {
-          setError(`'${f.name}' \uC740(\uB294) ${_fmtSize(maxSize)} \uCD08\uACFC \u2014 \uCCA8\uBD80 \uBD88\uAC00.`);
-          continue;
-        }
-        if (running + f.size > maxTotal) {
-          setError(`\uCCA8\uBD80 \uD30C\uC77C\uC740 \uC804\uBD80 \uD569\uCCD0 ${_fmtSize(maxTotal)} \uC774\uD558\uC5EC\uC57C \uD569\uB2C8\uB2E4 \u2014 '${f.name}' \uC740(\uB294) \uC81C\uC678\uD588\uC2B5\uB2C8\uB2E4. (\uD604\uC7AC ${_fmtSize(running)})`);
-          continue;
-        }
-        running += f.size;
-        accepted.push(f);
-      }
-      if (accepted.length === 0) return;
       setBusy(true);
       try {
-        const results = await Promise.all(accepted.map(async (f) => {
-          const meta = { name: f.name, type: f.type || "", size: f.size };
+        const accepted = [];
+        let running = usedBytes;
+        for (const raw of incoming.slice(0, remaining)) {
+          let f;
+          if (running >= maxTotal) {
+            setError(`\uCCA8\uBD80 \uD30C\uC77C\uC740 \uD569\uCCD0 ${_fmtSize(maxTotal)}\uAE4C\uC9C0 \uAC00\uB2A5\uD569\uB2C8\uB2E4.`);
+            break;
+          }
           try {
-            const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder: "post-attachments", maxBytes: maxSize });
-            return { ...meta, dataUrl: url };
+            f = window.BGNJ_IMAGE_SHRINK.isImageFile(raw) ? await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: Math.min(maxSize, maxTotal - running) }) : await window.BGNJ_IMAGE_SHRINK.prepareFile(raw);
+            if (!f) {
+              setError(`'${raw.name}'\uC744(\uB97C) \uCCA8\uBD80 \uAC00\uB2A5\uD55C \uD06C\uAE30\uB85C \uC900\uBE44\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.`);
+              continue;
+            }
+          } catch (err) {
+            setError(err.message);
+            continue;
+          }
+          if (f.size > maxSize) {
+            setError(`'${f.name}' \uC740(\uB294) ${_fmtSize(maxSize)} \uCD08\uACFC \u2014 \uCCA8\uBD80 \uBD88\uAC00.`);
+            continue;
+          }
+          if (running + f.size > maxTotal) {
+            setError(`\uCCA8\uBD80 \uD30C\uC77C\uC740 \uC804\uBD80 \uD569\uCCD0 ${_fmtSize(maxTotal)} \uC774\uD558\uC5EC\uC57C \uD569\uB2C8\uB2E4 \u2014 '${f.name}' \uC740(\uB294) \uC81C\uC678\uD588\uC2B5\uB2C8\uB2E4. (\uD604\uC7AC ${_fmtSize(running)})`);
+            continue;
+          }
+          running += f.size;
+          accepted.push(f);
+        }
+        const results = await Promise.all(accepted.map(async (f) => {
+          try {
+            const { url, file } = await window.BGNJ_MEDIA.uploadFile(f, { folder: "post-attachments", maxBytes: maxSize });
+            return { name: file.name, type: file.type || "", size: file.size, dataUrl: url };
           } catch (err) {
             setError(uploadFailMessage(f.name, err));
             return null;
           }
         }));
-        setFiles([...files, ...results.filter(Boolean)]);
+        setFiles((prev) => [...prev, ...results.filter(Boolean)].slice(0, max));
       } finally {
         setBusy(false);
       }
@@ -9157,13 +9337,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       "\u2715"
     )))) : /* @__PURE__ */ React.createElement("div", { className: "placeholder", style: { aspectRatio: "8/1", fontSize: 10 } }, "PDF \xB7 DOCX \xB7 \uC774\uBBF8\uC9C0 \uC678 \uC790\uB8CC\uB97C \uCD5C\uB300 ", max, "\uAC1C, \uC804\uBD80 \uD569\uCCD0 ", _fmtSize(maxTotal), " \uAE4C\uC9C0 \uCCA8\uBD80 (\uAC8C\uC2DC\uAE00 \uBCF8\uBB38 \uD558\uB2E8\uC5D0 \uB2E4\uC6B4\uB85C\uB4DC \uB9C1\uD06C\uB85C \uD45C\uC2DC)"));
   };
-  var uploadFailMessage = (name, err) => {
-    const raw = String((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958");
-    if (/로그인|인증|401/.test(raw)) return `'${name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uB85C\uADF8\uC778\uC774 \uD480\uB838\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD55C \uB4A4 \uC62C\uB824 \uC8FC\uC138\uC694.`;
-    if (/\.heic|heif|지원하지 않는 파일/i.test(raw)) return `'${name}' \uC740(\uB294) \uC62C\uB9B4 \uC218 \uC5C6\uB294 \uD615\uC2DD\uC785\uB2C8\uB2E4. (${raw}) \uC544\uC774\uD3F0 \uC0AC\uC9C4\uC774\uB77C\uBA74 \uC124\uC815 \u203A \uCE74\uBA54\uB77C \u203A \uD3EC\uB9F7\uC744 '\uB192\uC740 \uD638\uD658\uC131' \uC73C\uB85C \uBC14\uAFB8\uAC70\uB098, \uACF5\uC720\uD560 \uB54C JPEG \uB85C \uC800\uC7A5\uD574 \uC62C\uB824 \uC8FC\uC138\uC694.`;
-    if (/용량|크기|too large|413/i.test(raw)) return `'${name}' \uC774(\uAC00) \uB108\uBB34 \uD07D\uB2C8\uB2E4. (${raw}) \uC0AC\uC9C4\uC744 \uC904\uC5EC\uC11C \uC62C\uB824 \uC8FC\uC138\uC694.`;
-    return `'${name}' \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694. (${raw})`;
-  };
+  var uploadFailMessage = (name, err) => window.BGNJ_MEDIA.errorMessage(name, err);
   var InlineMark = ({ d, size = 12, label }) => /* @__PURE__ */ React.createElement(
     "svg",
     {

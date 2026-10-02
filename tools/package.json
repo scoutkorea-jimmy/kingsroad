@@ -15,6 +15,7 @@
     "@babel/parser": "^7.25.0"
   },
   "devDependencies": {
-    "esbuild": "^0.28.0"
+    "esbuild": "^0.28.0",
+    "heic-to": "1.6.5"
   }
 }

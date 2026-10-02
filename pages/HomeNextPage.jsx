@@ -4,35 +4,35 @@
 // ── 관리자 이미지 업로드 슬롯 ──
 const HnImageSlot = ({ url, label, onUpload, onRemove, wide }) => {
   const ref = React.useRef(null);
+  const [busy, setBusy] = React.useState(false);
   const handleFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const raw = e.target.files?.[0];
+    if (!raw || busy) return;
+    setBusy(true);
     try {
+      const file = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 5 * 1024 * 1024 });
+      if (!file) return;
       const { url: uploaded } = await window.BGNJ_MEDIA.uploadFile(file, { folder: 'home-next', maxBytes: 5 * 1024 * 1024 });
-      onUpload(uploaded);
-    } catch {
-      try {
-        if (file.size > 1.5 * 1024 * 1024) { window.BGNJ_TOAST?.error?.('파일이 1.5MB 초과'); return; }
-        const dataUri = await new Promise((res, rej) => {
-          const r = new FileReader(); r.onload = () => res(String(r.result || '')); r.onerror = rej; r.readAsDataURL(file);
-        });
-        onUpload(dataUri);
-      } catch (err2) { window.BGNJ_TOAST?.error?.('이미지 읽기 실패'); }
+      await onUpload(uploaded);
+    } catch (err) {
+      window.BGNJ_TOAST?.error?.(window.BGNJ_MEDIA.errorMessage(raw.name, err));
+    } finally {
+      setBusy(false);
+      if (ref.current) ref.current.value = '';
     }
-    if (ref.current) ref.current.value = '';
   };
   return (
     <div style={{position:'relative', display:'flex', flexDirection:'column', alignItems:'center', gap:3}}>
       <div style={{fontSize:9, color:'#78350F', fontWeight:500, textAlign:'center', maxWidth:wide?120:72, lineHeight:1.3}}>{label}</div>
-      <div onClick={() => ref.current?.click()} style={{
+      <div onClick={() => { if (!busy) ref.current?.click(); }} style={{
         width: wide ? 120 : 64, height: 64, border:'2px dashed #D6D3D1', borderRadius:6,
         display:'grid', placeItems:'center', cursor:'pointer', overflow:'hidden', background:'#FFF',
       }}>
         {url ? <img src={url} alt={label} style={{width:'100%',height:'100%',objectFit:'cover'}}/> :
           <span style={{fontSize:10, color:'var(--ink-3)'}}>업로드</span>}
       </div>
-      <input ref={ref} type="file" accept="image/*" style={{display:'none'}} onChange={handleFile}/>
-      {url && <button type="button" onClick={onRemove} style={{
+      <input ref={ref} type="file" accept="image/*,.heic,.heif" disabled={busy} style={{display:'none'}} onChange={handleFile}/>
+      {url && <button type="button" disabled={busy} onClick={onRemove} style={{
         position:'absolute', top:14, right:-3, width:16, height:16, borderRadius:'50%',
         border:'none', background:'#EF4444', color:'#FFF', fontSize:9, cursor:'pointer',
         display:'grid', placeItems:'center',
@@ -70,7 +70,7 @@ const HomeNextPage = ({ go }) => {
   const updateImage = (key, index, url) => {
     const arr = [...(hn[key] || [])];
     arr[index] = url || '';
-    saveHn({ [key]: arr });
+    return saveHn({ [key]: arr });
   };
 
   // ── 동적 통계 ──

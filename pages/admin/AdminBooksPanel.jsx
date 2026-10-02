@@ -142,14 +142,6 @@ const BooksAdminPanel = () => {
     setSelectedId(fallback);
   };
 
-  const fileToDataUri = (file) => new Promise((resolve, reject) => {
-    if (!file) { resolve(''); return; }
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
   // v00.193 — 사용자 보고 '새 책 prompt 제거 + 임시 draft 생성 → 저장 시 D1 반영'.
   // 이전엔 prompt 로 제목 받고 즉시 D1 create. 이제는 클라이언트에 _newDraft 만 만들고 D1 안 함.
   // 사용자가 우측 form 에서 편집 후 [💾 저장] 누르면 commit() 분기에서 BGNJ_BOOKS.create 호출.
@@ -198,7 +190,7 @@ const BooksAdminPanel = () => {
     refresh();
   };
 
-  // v00.084 — R2 우선 (5MB 표지 / 20MB PDF) + dataURI 폴백 (1.5MB / 3MB). v00.147 busy state + 즉시 patch.
+  // v00.084 — R2 저장 (5MB 표지 / 20MB PDF). v00.147 busy state + 즉시 patch.
   // v00.185 — pickImageWithR2Fallback 헬퍼로 통합. 25 lines × 2 → 8 lines × 2.
   const onUploadCover = async (e) => {
     setUploadingCover(true);
@@ -594,7 +586,7 @@ const BooksAdminPanel = () => {
                       <label className={`btn btn-small ${uploadingCover ? 'disabled' : ''}`}
                         style={{cursor: uploadingCover ? 'not-allowed' : 'pointer', opacity: uploadingCover ? 0.6 : 1}}>
                         {uploadingCover ? '⏳ 업로드 중…' : '업로드'}
-                        <input type="file" accept="image/png,image/jpeg" onChange={onUploadCover} disabled={uploadingCover} style={{display:'none'}}/>
+                        <input type="file" accept="image/png,image/jpeg,.heic,.heif" onChange={onUploadCover} disabled={uploadingCover} style={{display:'none'}}/>
                       </label>
                       {editing.coverDataUri && !uploadingCover && (
                         <button type="button" className="btn btn-small"

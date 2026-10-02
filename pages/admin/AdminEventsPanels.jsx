@@ -860,7 +860,7 @@ const LectureAdminPanel = ({ go }) => {
                       <div style={{display:'flex', gap:6}}>
                         <label className="btn btn-small" style={{cursor:'pointer'}}>
                           업로드
-                          <input type="file" accept="image/*" onChange={onPickContentCover} style={{display:'none'}}/>
+                          <input type="file" accept="image/*,.heic,.heif" onChange={onPickContentCover} style={{display:'none'}}/>
                         </label>
                         {contentCover && (
                           <button type="button" className="btn btn-small" onClick={() => setContentCover('')}
@@ -1526,7 +1526,7 @@ const TourAdminPanel = ({ go }) => {
                       <div style={{display:'flex', gap:6}}>
                         <label className="btn btn-small" style={{cursor:'pointer'}}>
                           업로드
-                          <input type="file" accept="image/*" onChange={onPickContentCover} style={{display:'none'}}/>
+                          <input type="file" accept="image/*,.heic,.heif" onChange={onPickContentCover} style={{display:'none'}}/>
                         </label>
                         {contentCover && (
                           <button type="button" className="btn btn-small" onClick={() => setContentCover('')}

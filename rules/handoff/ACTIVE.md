@@ -1,4 +1,44 @@
-# ACTIVE — 시스템 안정성 재검토 2차 (v00.312.000)
+# ACTIVE — HEIC 자동 변환 및 오류 예방 (v00.317.000)
+
+## 현재 사용자 지시
+
+> HEIC 업로드 시 자동 JPG 변환을 구현하고, 최근 한 달 오류를 점검해 재발 방지. 작업을 마저 진행하고 멈추지 말 것.
+
+- 시작 2026-10-02, 마지막 확인 2026-10-03 KST.
+- **구현·검증 완료, 사용자 커밋/배포 승인 완료 (2026-10-03), 배포 진행 중.** 상위 `../AGENTS.md`의 사용자 승인 규칙 적용.
+- 운영 기준 v00.316.000 → 로컬 v00.317.000 (build 2026.10.03).
+- 운영 오류 기록 139건 조회. 최근 한 달(2026-09-03~2026-10-03) 신규 기록 0건. 가장 최근은 9월 1일 10MB 초과 PNG 업로드 실패. HEIC·만료 인증 등 과거 기록의 관련 경로까지 점검하고 예방 수정. 오류 로그는 삭제하지 않음.
+- Wrangler 토큰 만료는 이번 프론트엔드 변경과 무관. 관리자 로그인 UI/오류 API로 점검 완료. 이번 Worker 변경 없음. 아래 이전 작업의 Worker 배포 상태는 별도 사항.
+
+### 완료한 변경
+
+1. `components/ImageShrink.jsx` / `src/entry-heic.js`: HEIC/HEIF → JPG, MIME 누락·이미 JPG로 바뀐 HEIC 이름 처리, 순차 변환·캐시·실패 후 재시도·Worker 종료. 한도 초과 이미지는 단계적 자동 축소, 작은 슬롯도 한도 적용.
+2. `data.js`: 공통 업로드 관문·확장자 사전 검사·변환 메타데이터 반환·인증/연결 오류 안내. 회원 첨부·본문·붙여넣기·관리자 커버/갤러리/로고/OG/홈 이미지 경로 적용. 실패를 dataURI 저장으로 위장하는 폴백 제거.
+3. 업로드 중 게시 방지, 중복 선택 방지, 비동기 완료가 기존 이미지 삭제/수정을 되돌리지 않도록 보존. 오류 조회 실패가 0건으로 보이지 않도록 안내.
+4. `AdminLogPanels.jsx`: 실제 `BGNJ_API.errorLog.list`와 `errors` 사용. `analyticsSeries.mjs`: UTC 서버 버킷을 정확히 읽고 시간별 KST 라벨·일별 UTC 집계 안내.
+5. 빌드 3종 + HEIC Worker/라이선스 산출. 모든 정적 HTML 진입점 버전·CSP 해시·worker-src 동기. CI 검사 8종 및 HEIC 파일/라이선스 누락 시 배포 차단.
+
+### 검증
+
+- `node tools/check-all.mjs`: 8종 통과 (smoke 253건 포함).
+- `node tools/build.mjs`, `git diff --check`: 통과.
+- Safari/Chrome localhost: 실제 HEIC→JPG 디코딩 1280×854, 미리보기, JPG 파일명/MIME 전송, 자동 축소, 손상 파일 뒤 정상 파일 처리, 지원하지 않는 확장자 차단, 401 실패·토큰 제거. 15개 동작 확인 + 기대 오류 안내 2개, 실패 0.
+- Safari 실제 새 홈페이지 번들 부팅 및 v00.317.000 푸터 확인.
+- 정적 HTML 실행 스크립트 CSP 해시 전수 검사: 누락 0.
+- 아직 미검증: iPhone 실기기·운영 R2에 새 구현으로 업로드·배포 후 UI. 새 버전은 아직 운영에 반영되지 않음.
+
+### Git / 다음 단계
+
+- `.claude/scheduled_tasks.lock` 삭제 및 `.claude/scheduled_tasks 3.lock` 미추적은 원래 사용자 변경. 커밋에 넣지 말 것.
+- 다수 HTML 변경은 기존 콘텐츠를 보존한 캐시 버전/CSP 동기화. app/admin 번들은 기존 추적 파일, HEIC 산출물은 CI 생성.
+- 사용자 승인에 따라 이번 변경만 커밋·push → GitHub Pages Actions 확인 → 운영 version.json 00.317.000 → 홈페이지 및 실제 HEIC 업로드 확인.
+- 이어서 읽기: 이 파일, `PROJECT_CONTEXT.md`, `README.md`.
+- 이어서 명령: `node tools/check-all.mjs`, `node tools/build.mjs`, `git diff --check`, `git status --short`.
+
+
+---
+
+# 이전 작업 — 시스템 안정성 재검토 2차 (v00.312.000)
 
 > **PC가 바뀌었다면 이 파일부터 읽으세요.**
 
@@ -209,4 +249,3 @@ v00.313 의 `BGNJ_ADMIN_SAVE` 는 `AdminShared.jsx` 에 있어 사용자 화면�
 남은 17곳은 의도적이라 두었다 — 홈넥스트 관리자 편집 오버레이 · 유튜브 로고 `#FF0000` · 상태 색.
 
 시험 4건(22장). 되돌려 실패하는 것 확인. 253건 통과.
-

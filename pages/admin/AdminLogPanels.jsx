@@ -118,12 +118,13 @@ const AuditLogPanel = () => {
 // 사용자 보고 '관리자 활동 로그뿐 아니라 일반 회원 활동까지 모든 기록' — 통합 활동 로그.
 // 다중 소스를 병합 시간 역순:
 //   1) audit_log (admin actions + signup) via BGNJ_API.admin.audit.list
-//   2) error_log (모든 사용자 오류) via BGNJ_API.admin.errorLog.list
+//   2) error_log (모든 사용자 오류) via BGNJ_API.errorLog.list
 //   3) 최근 게시글 / 댓글 (회원 활동) via 로컬 BGNJ_COMMUNITY 캐시
 // 필터: 전체 / admin / signup / error / post / comment.
 const ActivityLogPanel = () => {
   const [auditRows, setAuditRows] = React.useState([]);
   const [errorRows, setErrorRows] = React.useState([]);
+  const [loadError, setLoadError] = React.useState('');
   const [loading, setLoading] = React.useState(true);
   const [filter, setFilter] = React.useState('all');
   const [refreshKey, setRefreshKey] = React.useState(0);
@@ -140,11 +141,12 @@ const ActivityLogPanel = () => {
       try {
         const [auditRes, errorRes] = await Promise.allSettled([
           window.BGNJ_API?.admin?.audit?.list?.({ limit: 300 }),
-          window.BGNJ_API?.admin?.errorLog?.list?.({ limit: 200 }),
+          window.BGNJ_API?.errorLog?.list?.({ limit: 200 }),
         ]);
         if (cancelled) return;
         const audits = (auditRes.status === 'fulfilled' && Array.isArray(auditRes.value?.entries)) ? auditRes.value.entries : [];
-        const errors = (errorRes.status === 'fulfilled' && Array.isArray(errorRes.value?.entries)) ? errorRes.value.entries : [];
+        const errors = (errorRes.status === 'fulfilled' && Array.isArray(errorRes.value?.errors)) ? errorRes.value.errors : [];
+        setLoadError(auditRes.status !== 'fulfilled' || !Array.isArray(auditRes.value?.entries) || errorRes.status !== 'fulfilled' || !Array.isArray(errorRes.value?.errors) ? '일부 기록을 불러오지 못했습니다. 다시 불러와 주세요.' : '');
         setAuditRows(audits);
         setErrorRows(errors);
       } catch (_e) { console.warn('[bgnj] AdminLogPanels.jsx:150 오류(무시하고 진행)', _e); } finally { if (!cancelled) setLoading(false); }
@@ -276,6 +278,7 @@ const ActivityLogPanel = () => {
         title="통합 활동 로그"
         description="관리자 활동 + 회원 활동(가입/게시글) + 오류 보고를 시간 역순으로 통합. 트러블슈팅·운영 모니터링용. 칩으로 유형 필터."/>
 
+      {loadError && <p role="alert" style={{color:'var(--danger)'}}>{loadError}</p>}
       {/* 1행: 유형 필터 칩 + 새로고침 */}
       <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:10}} role="tablist" aria-label="활동 유형 필터">
         {TYPES.map((t) => {

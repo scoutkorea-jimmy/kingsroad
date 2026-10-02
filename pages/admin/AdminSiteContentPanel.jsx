@@ -18,14 +18,6 @@ const SiteContentAdminPanel = () => {
     setTimeout(() => setMsg(''), 2000);
   };
 
-  const fileToDataUri = (file) => new Promise((resolve, reject) => {
-    if (!file) { resolve(''); return; }
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
   // 섹션 단위 폼 — 입력 상태는 sc 변경 시 자동 초기화 (key prop으로 강제 remount).
   const SectionForm = ({ section, fields, onAfterSave }) => {
     const [draft, setDraft] = React.useState(() => ({ ...(sc[section] || {}) }));
@@ -71,7 +63,7 @@ const SiteContentAdminPanel = () => {
     );
   };
 
-  const ImageUploader = ({ section, field, label, hint, previewSize = 56, accept = 'image/*', folder }) => {
+  const ImageUploader = ({ section, field, label, hint, previewSize = 56, accept = 'image/*,.heic,.heif', folder }) => {
     const current = sc[section]?.[field] || '';
     // v00.185 — pickImageWithR2Fallback 헬퍼로 통합. 25 lines → 6 lines.
     const onPick = async (e) => {
@@ -192,7 +184,7 @@ const SiteContentAdminPanel = () => {
         hint="22x22px 표시. PNG/SVG 권장 · 1.5MB 이하."/>
       <ImageUploader section="branding" field="faviconDataUri" label="파비콘"
         hint="32x32 또는 64x64 PNG 권장 · 저장 즉시 브라우저 탭 아이콘이 갱신됩니다."
-        previewSize={40} accept="image/png,image/x-icon,image/svg+xml"/>
+        previewSize={40} accept="image/png,image/x-icon,image/svg+xml,.heic,.heif"/>
 
       <h3 className="ko-serif" style={{fontSize:18, marginBottom:10, marginTop:24}}>로그인 / 회원가입 좌측 영역</h3>
       <p className="dim-2" style={{fontSize:12, marginBottom:12, lineHeight:1.7}}>

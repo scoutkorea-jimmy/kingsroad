@@ -2,24 +2,145 @@
   // components/ImageShrink.jsx
   var _MB = 1024 * 1024;
   var _fmtMB = (bytes) => `${(Number(bytes || 0) / _MB).toFixed(1)}MB`;
+  var isHeicFile = (file) => /\.(heic|heif)$/i.test((file == null ? void 0 : file.name) || "") || /^image\/(heic|heif)(-sequence)?$/i.test((file == null ? void 0 : file.type) || "");
+  var isImageFile = (file) => String((file == null ? void 0 : file.type) || "").startsWith("image/") || /\.(jpe?g|png|gif|webp|svg|avif|ico|heic|heif)$/i.test((file == null ? void 0 : file.name) || "");
+  var decoderLoad = null;
+  var loadHeicDecoder = () => {
+    var _a;
+    if ((_a = window.BGNJ_HEIC_DECODER) == null ? void 0 : _a.convert) return Promise.resolve(window.BGNJ_HEIC_DECODER);
+    if (decoderLoad) return decoderLoad;
+    decoderLoad = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      const appScript = document.querySelector('script[src*="dist/app.js"]');
+      const src = new URL((appScript == null ? void 0 : appScript.src) || "/dist/app.js", location.href);
+      src.pathname = src.pathname.replace(/app\.js$/, "heic.js");
+      script.src = src.href;
+      script.async = true;
+      const fail = () => {
+        clearTimeout(timer);
+        script.remove();
+        decoderLoad = null;
+        reject(new Error("\uC0AC\uC9C4 \uBCC0\uD658 \uAE30\uB2A5\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC778\uD130\uB137 \uC5F0\uACB0\uC744 \uD655\uC778\uD558\uACE0 \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694."));
+      };
+      const timer = setTimeout(fail, 3e4);
+      script.onerror = fail;
+      script.onload = () => {
+        var _a2;
+        clearTimeout(timer);
+        if (!((_a2 = window.BGNJ_HEIC_DECODER) == null ? void 0 : _a2.convert)) {
+          fail();
+          return;
+        }
+        resolve(window.BGNJ_HEIC_DECODER);
+      };
+      document.head.appendChild(script);
+    });
+    return decoderLoad;
+  };
+  var preparedFiles = /* @__PURE__ */ new WeakMap();
+  var conversionQueue = Promise.resolve();
+  var prepareFile = (file) => {
+    if (!file) return Promise.reject(new Error("\uD30C\uC77C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."));
+    const icon = /\.ico$/i.test((file == null ? void 0 : file.name) || "") || /^image\/(x-icon|vnd.microsoft.icon)$/i.test((file == null ? void 0 : file.type) || "");
+    if (!isHeicFile(file) && !icon) return Promise.resolve(file);
+    if (preparedFiles.has(file)) return preparedFiles.get(file);
+    const pending = conversionQueue.then(async () => {
+      var _a, _b;
+      if (file.size > 50 * _MB) throw new Error("\uBCC0\uD658\uD560 \uC774\uBBF8\uC9C0\uB294 \uD55C \uC7A5\uC5D0 \uCD5C\uB300 50MB\uAE4C\uC9C0 \uAC00\uB2A5\uD569\uB2C8\uB2E4.");
+      if (icon) {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const view = new DataView(bytes.buffer);
+        const pngs = [];
+        if (bytes.length >= 6 && view.getUint16(0, true) === 0 && view.getUint16(2, true) === 1) {
+          const count = Math.min(view.getUint16(4, true), 256);
+          for (let i = 0; i < count; i++) {
+            const entry = 6 + i * 16;
+            if (entry + 16 > bytes.length) break;
+            const length = view.getUint32(entry + 8, true);
+            const offset = view.getUint32(entry + 12, true);
+            if (length >= 8 && offset >= 6 + count * 16 && offset + length <= bytes.length && [137, 80, 78, 71, 13, 10, 26, 10].every((value, index) => bytes[offset + index] === value)) {
+              pngs.push({ offset, length, edge: bytes[entry] || 256 });
+            }
+          }
+        }
+        if (pngs.length) {
+          const png = pngs.sort((a, b) => b.edge - a.edge)[0];
+          return new File([bytes.slice(png.offset, png.offset + png.length)], `${String(file.name || "favicon").replace(/\.[^.]+$/, "")}.png`, { type: "image/png", lastModified: file.lastModified });
+        }
+        const { img, revoke } = await _loadImage(file);
+        const canvas = document.createElement("canvas");
+        try {
+          const scale = Math.min(1, 512 / Math.max(img.naturalWidth, img.naturalHeight));
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          const ctx = canvas.getContext("2d");
+          if (!ctx) throw new Error("\uD30C\uBE44\uCF58\uC744 \uBCC0\uD658\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. PNG\uB85C \uC800\uC7A5\uD574 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+          if (!(blob == null ? void 0 : blob.size)) throw new Error("\uD30C\uBE44\uCF58\uC744 \uBCC0\uD658\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. PNG\uB85C \uC800\uC7A5\uD574 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.");
+          return new File([blob], `${String(file.name || "favicon").replace(/\.[^.]+$/, "")}.png`, { type: "image/png", lastModified: file.lastModified });
+        } finally {
+          revoke();
+          canvas.width = 1;
+          canvas.height = 1;
+        }
+      }
+      const signature = new Uint8Array(await file.slice(0, 3).arrayBuffer());
+      if (signature[0] === 255 && signature[1] === 216 && signature[2] === 255) {
+        const name = String(file.name || "image").replace(/\.[^.]+$/, "");
+        return new File([file], `${name}.jpg`, { type: "image/jpeg", lastModified: file.lastModified });
+      }
+      (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.info) == null ? void 0 : _b.call(_a, "\uC544\uC774\uD3F0 \uC0AC\uC9C4\uC744 JPG\uB85C \uBCC0\uD658\uD558\uACE0 \uC788\uC2B5\uB2C8\uB2E4.");
+      try {
+        const decoder = await loadHeicDecoder();
+        let timer;
+        const blob = await Promise.race([
+          decoder.convert({ blob: file, type: "image/jpeg", quality: 0.9 }),
+          new Promise((_, reject) => {
+            timer = setTimeout(() => reject(new Error("\uC0AC\uC9C4 \uBCC0\uD658 \uC2DC\uAC04\uC774 \uCD08\uACFC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.")), 9e4);
+          })
+        ]).finally(() => clearTimeout(timer));
+        if (!(blob == null ? void 0 : blob.size) || blob.type !== "image/jpeg") throw new Error("JPG \uBCC0\uD658 \uACB0\uACFC\uAC00 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
+        const name = String(file.name || "image").replace(/\.[^.]+$/, "");
+        return new File([blob], `${name}.jpg`, { type: "image/jpeg", lastModified: file.lastModified || Date.now() });
+      } catch (cause) {
+        const err = new Error(`'${file.name || "\uC0AC\uC9C4"}'\uC744(\uB97C) JPG\uB85C \uBCC0\uD658\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC0AC\uC9C4 \uC571\uC5D0\uC11C JPG\uB85C \uB0B4\uBCF4\uB0B4 \uB2E4\uC2DC \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.`);
+        err.code = "HEIC_CONVERSION_FAILED";
+        err.cause = cause;
+        throw err;
+      }
+    });
+    preparedFiles.set(file, pending);
+    conversionQueue = pending.catch(() => {
+      preparedFiles.delete(file);
+    });
+    return pending;
+  };
   var _isShrinkable = (file) => {
     const t = String((file == null ? void 0 : file.type) || "").toLowerCase();
-    return t === "image/jpeg" || t === "image/jpg" || t === "image/png" || t === "image/webp";
+    return /^(image\/(jpeg|jpg|png|webp))$/.test(t) || /\.(jpe?g|png|webp)$/i.test((file == null ? void 0 : file.name) || "");
   };
   var _loadImage = (file) => new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
-    img.onload = () => resolve({ img, revoke: () => URL.revokeObjectURL(url) });
-    img.onerror = () => {
+    const fail = () => {
+      clearTimeout(timer);
       URL.revokeObjectURL(url);
       reject(new Error("\uC774\uBBF8\uC9C0\uB97C \uC77D\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."));
     };
+    const timer = setTimeout(fail, 3e4);
+    img.onload = () => {
+      clearTimeout(timer);
+      resolve({ img, revoke: () => URL.revokeObjectURL(url) });
+    };
+    img.onerror = fail;
     img.src = url;
   });
   var shrinkImage = async (file, { maxEdge = 2e3, quality = 0.85 } = {}) => {
     var _a;
     if (!_isShrinkable(file)) return null;
     let handle = null;
+    let canvas = null;
     try {
       handle = await _loadImage(file);
       const { img } = handle;
@@ -29,7 +150,7 @@
       const scale = Math.min(1, maxEdge / Math.max(w, h));
       const outW = Math.max(1, Math.round(w * scale));
       const outH = Math.max(1, Math.round(h * scale));
-      const canvas = document.createElement("canvas");
+      canvas = document.createElement("canvas");
       canvas.width = outW;
       canvas.height = outH;
       const ctx = canvas.getContext("2d");
@@ -46,6 +167,10 @@
       console.warn("[bgnj] \uC0AC\uC9C4 \uCD95\uC18C \uC2E4\uD328 \u2014 \uC6D0\uBCF8\uC73C\uB85C \uC9C4\uD589\uD55C\uB2E4 (ImageShrink.jsx)", _e);
       return null;
     } finally {
+      if (canvas) {
+        canvas.width = 1;
+        canvas.height = 1;
+      }
       try {
         (_a = handle == null ? void 0 : handle.revoke) == null ? void 0 : _a.call(handle);
       } catch (_e) {
@@ -61,22 +186,41 @@
     maxEdge = 2e3,
     quality = 0.85
   } = {}) => {
-    const files = Array.from(fileList || []);
-    if (files.length === 0) return { files: [], cancelled: [] };
-    const targets = files.filter((f) => f && f.size > askOverBytes);
-    if (targets.length === 0) return { files, cancelled: [] };
+    var _a, _b, _c, _d;
+    const files = [];
+    const cancelled = [];
+    for (const file of Array.from(fileList || [])) {
+      try {
+        files.push(await prepareFile(file));
+      } catch (err) {
+        cancelled.push(file);
+        (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.error) == null ? void 0 : _b.call(_a, err.message, { code: err.code || "IMAGE_PREPARE_FAILED" });
+      }
+    }
+    if (files.length === 0) return { files: [], cancelled };
+    const targets = files.filter((f) => f && (f.size > askOverBytes || limitBytes && f.size > limitBytes));
     const shrunkMap = /* @__PURE__ */ new Map();
-    await Promise.all(targets.map(async (f) => {
-      const out2 = await shrinkImage(f, { maxEdge, quality });
+    for (const f of targets) {
+      let out2 = await shrinkImage(f, { maxEdge, quality });
+      if (limitBytes && f.size > limitBytes && (!out2 || out2.size > limitBytes)) {
+        for (const [edge, q] of [[1600, 0.75], [1280, 0.65], [960, 0.55], [640, 0.5]]) {
+          const candidate = await shrinkImage(f, { maxEdge: Math.min(maxEdge, edge), quality: Math.min(quality, q) });
+          if (candidate && (!out2 || candidate.size < out2.size)) out2 = candidate;
+          if (out2 && out2.size <= limitBytes) break;
+        }
+      }
       if (out2) shrunkMap.set(f, out2);
-    }));
+    }
+    const automatic = new Map([...shrunkMap].filter(([f, out2]) => limitBytes && f.size > limitBytes && out2.size <= limitBytes));
+    const optional = new Map([...shrunkMap].filter(([f]) => !limitBytes || f.size <= limitBytes));
+    if (automatic.size) (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.info) == null ? void 0 : _d.call(_c, `\uC0AC\uC9C4 ${automatic.size}\uC7A5\uC744 \uC5C5\uB85C\uB4DC \uAC00\uB2A5\uD55C \uD06C\uAE30\uB85C \uC790\uB3D9 \uCD95\uC18C\uD588\uC2B5\uB2C8\uB2E4.`);
     let accepted = false;
-    if (shrunkMap.size > 0) {
-      const before = [...shrunkMap.keys()].reduce((a, f) => a + f.size, 0);
-      const after = [...shrunkMap.values()].reduce((a, f) => a + f.size, 0);
-      const one = shrunkMap.size === 1;
-      const head = one ? `\uC0AC\uC9C4\uC774 ${_fmtMB(before)} \uB85C \uD07D\uB2C8\uB2E4.` : `\uC0AC\uC9C4 ${shrunkMap.size}\uC7A5\uC774 \uD07D\uB2C8\uB2E4 (\uD569\uACC4 ${_fmtMB(before)}).`;
-      const hasPng = [...shrunkMap.keys()].some((f) => String(f.type).toLowerCase() === "image/png");
+    if (optional.size > 0) {
+      const before = [...optional.keys()].reduce((a, f) => a + f.size, 0);
+      const after = [...optional.values()].reduce((a, f) => a + f.size, 0);
+      const one = optional.size === 1;
+      const head = one ? `\uC0AC\uC9C4\uC774 ${_fmtMB(before)} \uB85C \uD07D\uB2C8\uB2E4.` : `\uC0AC\uC9C4 ${optional.size}\uC7A5\uC774 \uD07D\uB2C8\uB2E4 (\uD569\uACC4 ${_fmtMB(before)}).`;
+      const hasPng = [...optional.keys()].some((f) => String(f.type).toLowerCase() === "image/png");
       accepted = await window.BGNJ_CONFIRM(
         `${head}
 \uC904\uC774\uBA74 ${_fmtMB(after)} \uAC00 \uB429\uB2C8\uB2E4. \uC904\uC5EC\uC11C \uC62C\uB9B4\uAE4C\uC694?
@@ -87,22 +231,23 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       );
     }
     const out = [];
-    const cancelled = [];
+    const oversized = [];
     files.forEach((f) => {
-      const picked = accepted && shrunkMap.get(f) || f;
+      const picked = automatic.get(f) || accepted && optional.get(f) || f;
       if (limitBytes && picked.size > limitBytes) {
         cancelled.push(picked);
+        oversized.push(picked);
         return;
       }
       out.push(picked);
     });
-    if (cancelled.length > 0) {
-      const shrinkable = cancelled.filter((f) => _isShrinkable(f));
-      const notShrinkable = cancelled.filter((f) => !_isShrinkable(f));
+    if (oversized.length > 0) {
+      const shrinkable = oversized.filter((f) => _isShrinkable(f));
+      const notShrinkable = oversized.filter((f) => !_isShrinkable(f));
       const names = (list) => list.map((f) => `'${f.name}'`).join(", ");
       if (shrinkable.length > 0) {
         window.BGNJ_TOAST.error(
-          `${names(shrinkable)} \uC740(\uB294) \uD55C\uB3C4(${_fmtMB(limitBytes)})\uB97C \uB118\uC5B4 \uC62C\uB9B4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC120\uD0DD\uD55C \uB4A4 '\uC904\uC5EC\uC11C \uC62C\uB9AC\uAE30' \uB97C \uB20C\uB7EC \uC8FC\uC138\uC694.`
+          `${names(shrinkable)} \uC740(\uB294) \uD55C\uB3C4(${_fmtMB(limitBytes)})\uB97C \uB118\uC5B4 \uC62C\uB9B4 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4. \uC0AC\uC9C4 \uC571\uC5D0\uC11C \uD06C\uAE30\uB97C \uB354 \uC904\uC774\uAC70\uB098 \uB2E4\uB978 \uC0AC\uC9C4\uC744 \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.`
         );
       }
       if (notShrinkable.length > 0) {
@@ -117,7 +262,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const { files } = await maybeShrinkAll([file], opts);
     return files[0] || null;
   };
-  window.BGNJ_IMAGE_SHRINK = { shrinkImage, maybeShrinkAll, maybeShrinkOne, formatMB: _fmtMB };
+  window.BGNJ_IMAGE_SHRINK = { shrinkImage, maybeShrinkAll, maybeShrinkOne, prepareFile, isHeicFile, isImageFile, formatMB: _fmtMB };
 
   // pages/admin/AdminShared.jsx
   var downloadBlob = (filename, content, mime = "text/plain;charset=utf-8") => {
@@ -137,44 +282,27 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   };
   var downloadCsv = (filename, csv) => downloadBlob(filename, csv, "text/csv;charset=utf-8");
   var downloadJson = (filename, obj) => downloadBlob(filename, JSON.stringify(obj, null, 2), "application/json");
-  var pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024, fallbackMaxBytes = 1.5 * 1024 * 1024 } = {}) => {
+  var pickImageWithR2Fallback = async (e, { folder, maxBytes = 5 * 1024 * 1024 } = {}) => {
     var _a;
-    const raw = (_a = e.target.files) == null ? void 0 : _a[0];
-    if (!raw) return null;
-    const file = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: maxBytes });
-    if (!file) {
-      e.target.value = "";
-      return null;
-    }
+    const input = e.target;
+    const raw = (_a = input.files) == null ? void 0 : _a[0];
+    if (!raw || input.disabled) return null;
+    input.disabled = true;
     try {
+      const file = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: maxBytes });
+      if (!file) return null;
       const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder, maxBytes });
-      e.target.value = "";
       return url;
     } catch (err) {
-      try {
-        console.warn(`[upload] R2 ${folder} \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 dataURI \uD3F4\uBC31:`, err);
-      } catch (_e) {
-        console.warn("[bgnj] AdminShared.jsx:48 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
-      }
-    }
-    if (file.size > fallbackMaxBytes) {
-      window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + ${(fallbackMaxBytes / 1024 / 1024).toFixed(1)}MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
-      e.target.value = "";
-      return null;
-    }
-    try {
-      const dataUri = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+      window.BGNJ_TOAST.error(window.BGNJ_MEDIA.errorMessage(raw.name, err), {
+        code: err.code || "UPLOAD_FAILED",
+        status: err.status,
+        url: err.url
       });
-      e.target.value = "";
-      return dataUri;
-    } catch (err) {
-      window.BGNJ_TOAST.error("\uC774\uBBF8\uC9C0 \uC77D\uAE30 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || ""));
-      e.target.value = "";
       return null;
+    } finally {
+      input.value = "";
+      input.disabled = false;
     }
   };
   var MiniBarChart = ({ series, labels, height = 120, color = "var(--primary)", label, unit = "", formatTooltip, headerRight }) => {
@@ -1176,16 +1304,6 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setMsg(text);
       setTimeout(() => setMsg(""), 2e3);
     };
-    const fileToDataUri = (file) => new Promise((resolve, reject) => {
-      if (!file) {
-        resolve("");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
     const setItem = (idx, patch) => setDraft((arr) => arr.map((it, i) => i === idx ? { ...it, ...patch } : it));
     const addItem = () => setDraft((arr) => [...arr, {
       id: `rec-${Date.now()}`,
@@ -1210,23 +1328,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       });
     };
     const onPickImage = async (idx, e) => {
-      var _a;
-      const file = (_a = e.target.files) == null ? void 0 : _a[0];
-      e.target.value = "";
-      if (!file) return;
-      try {
-        const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: "recommendations", maxBytes: 5 * 1024 * 1024 });
-        setItem(idx, { imageDataUri: url });
-        return;
-      } catch (err) {
-        console.warn("[v00.084] R2 \uCD94\uCC9C \uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 dataURI \uD3F4\uBC31:", err);
-      }
-      if (file.size > 1.5 * 1024 * 1024) {
-        window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + 1.5MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
-        return;
-      }
-      const dataUri = await fileToDataUri(file);
-      setItem(idx, { imageDataUri: dataUri });
+      const url = await pickImageWithR2Fallback(e, { folder: "recommendations" });
+      if (url) setItem(idx, { imageDataUri: url });
     };
     const save = async () => {
       const cleaned = draft.map((it) => ({
@@ -1253,7 +1356,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       background: it.imageDataUri ? `url(${it.imageDataUri}) center/cover` : "var(--bg-3)",
       display: "grid",
       placeItems: "center"
-    } }, !it.imageDataUri && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.18em" } }, "NO IMAGE")), /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer", textAlign: "center" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", style: { display: "none" }, onChange: (e) => onPickImage(idx, e) })), it.imageDataUri && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", style: { fontSize: 11, color: "var(--danger)" }, onClick: () => setItem(idx, { imageDataUri: "" }) }, "\uC774\uBBF8\uC9C0 \uC81C\uAC70")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }, className: "member-act-grid" }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC9C0\uC5ED (\uC608: \uC218\uB3C4\uAD8C)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.region || "", onChange: (e) => setItem(idx, { region: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC81C\uBAA9 (\uC608: \uC11C\uC6B8)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.name || "", onChange: (e) => setItem(idx, { name: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBD80\uC81C (\uC608: \uAD81\uAD90\uACFC \uACE8\uBAA9\uC758 \uB3C4\uC2DC)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.subtitle || "", onChange: (e) => setItem(idx, { subtitle: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC124\uBA85"), /* @__PURE__ */ React.createElement("textarea", { className: "field-input", rows: 2, value: it.desc || "", onChange: (e) => setItem(idx, { desc: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD0DC\uADF8 (\uC27C\uD45C \uB610\uB294 \uAC00\uC6B4\uB383\uC810\uC73C\uB85C \uAD6C\uBD84 \u2014 \uC608: \uAD81\uAD90, \uD55C\uC625, \uC5ED\uC0AC)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.tags || "", onChange: (e) => setItem(idx, { tags: e.target.value }) }))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6, alignItems: "stretch" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: idx === 0, onClick: () => moveItem(idx, -1), "aria-label": "\uC704\uB85C" }, "\u2191"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: idx === draft.length - 1, onClick: () => moveItem(idx, 1), "aria-label": "\uC544\uB798\uB85C" }, "\u2193"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { color: "var(--danger)", borderColor: "var(--danger)" }, onClick: () => removeItem(idx) }, "\uC0AD\uC81C"))))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: addItem }, "\uFF0B \uC0C8 \uCD94\uCC9C \uCD94\uAC00"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setDraft(items) }, "\uBCC0\uACBD \uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: save }, "\uC804\uCCB4 \uC800\uC7A5 (", draft.length, "\uAC1C)"))));
+    } }, !it.imageDataUri && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.18em" } }, "NO IMAGE")), /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer", textAlign: "center" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", style: { display: "none" }, onChange: (e) => onPickImage(idx, e) })), it.imageDataUri && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", style: { fontSize: 11, color: "var(--danger)" }, onClick: () => setItem(idx, { imageDataUri: "" }) }, "\uC774\uBBF8\uC9C0 \uC81C\uAC70")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }, className: "member-act-grid" }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC9C0\uC5ED (\uC608: \uC218\uB3C4\uAD8C)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.region || "", onChange: (e) => setItem(idx, { region: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC81C\uBAA9 (\uC608: \uC11C\uC6B8)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.name || "", onChange: (e) => setItem(idx, { name: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBD80\uC81C (\uC608: \uAD81\uAD90\uACFC \uACE8\uBAA9\uC758 \uB3C4\uC2DC)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.subtitle || "", onChange: (e) => setItem(idx, { subtitle: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC124\uBA85"), /* @__PURE__ */ React.createElement("textarea", { className: "field-input", rows: 2, value: it.desc || "", onChange: (e) => setItem(idx, { desc: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD0DC\uADF8 (\uC27C\uD45C \uB610\uB294 \uAC00\uC6B4\uB383\uC810\uC73C\uB85C \uAD6C\uBD84 \u2014 \uC608: \uAD81\uAD90, \uD55C\uC625, \uC5ED\uC0AC)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.tags || "", onChange: (e) => setItem(idx, { tags: e.target.value }) }))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6, alignItems: "stretch" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: idx === 0, onClick: () => moveItem(idx, -1), "aria-label": "\uC704\uB85C" }, "\u2191"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: idx === draft.length - 1, onClick: () => moveItem(idx, 1), "aria-label": "\uC544\uB798\uB85C" }, "\u2193"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { color: "var(--danger)", borderColor: "var(--danger)" }, onClick: () => removeItem(idx) }, "\uC0AD\uC81C"))))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: addItem }, "\uFF0B \uC0C8 \uCD94\uCC9C \uCD94\uAC00"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setDraft(items) }, "\uBCC0\uACBD \uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: save }, "\uC804\uCCB4 \uC800\uC7A5 (", draft.length, "\uAC1C)"))));
   };
   var TPE_RowActions = ({ i, total, onMove, onRemove }) => /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: i === 0, onClick: () => onMove(i, -1), "aria-label": "\uC704\uB85C", title: "\uC704\uB85C", style: { padding: "6px 10px", fontSize: 13 } }, "\u2191"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: i === total - 1, onClick: () => onMove(i, 1), "aria-label": "\uC544\uB798\uB85C", title: "\uC544\uB798\uB85C", style: { padding: "6px 10px", fontSize: 13 } }, "\u2193"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => onRemove(i), "aria-label": "\uC0AD\uC81C", title: "\uC0AD\uC81C", style: { padding: "6px 10px", fontSize: 11, borderColor: "var(--danger)", color: "var(--danger)" } }, "\u2715"));
   var _parseTimeLabel = (label) => {
@@ -1499,22 +1602,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }
     };
     const onPickCover = async (e) => {
-      var _a;
-      const file = (_a = e.target.files) == null ? void 0 : _a[0];
-      if (!file) return;
-      if (file.size > 1.5 * 1024 * 1024) {
-        window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). 1.5MB \uC774\uD558\uB85C \uC555\uCD95\uD574 \uC8FC\uC138\uC694.`);
-        e.target.value = "";
-        return;
-      }
-      const dataUri = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      setPCover(dataUri);
-      e.target.value = "";
+      const url = await pickImageWithR2Fallback(e, { folder: "tour-covers" });
+      if (url) setPCover(url);
     };
     const clearPerTour = async () => {
       if (!activeTourId) return;
@@ -1666,7 +1755,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       display: "grid",
       placeItems: "center",
       overflow: "hidden"
-    } }, pCover ? /* @__PURE__ */ React.createElement("img", { src: pCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "\uB2F5\uC0AC \uC0C1\uC138 \uD398\uC774\uC9C0 \uC88C\uCE21 \uC0C1\uB2E8\uC5D0 \uD45C\uC2DC\uB420 \uCEE4\uBC84 \uC774\uBBF8\uC9C0. 1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: onPickCover, style: { display: "none" } })), pCover && /* @__PURE__ */ React.createElement(
+    } }, pCover ? /* @__PURE__ */ React.createElement("img", { src: pCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "\uB2F5\uC0AC \uC0C1\uC138 \uD398\uC774\uC9C0 \uC88C\uCE21 \uC0C1\uB2E8\uC5D0 \uD45C\uC2DC\uB420 \uCEE4\uBC84 \uC774\uBBF8\uC9C0. 1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", onChange: onPickCover, style: { display: "none" } })), pCover && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -1848,30 +1937,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }
     };
     const onPickCover = async (e) => {
-      var _a;
-      const file = (_a = e.target.files) == null ? void 0 : _a[0];
-      if (!file) return;
-      try {
-        const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: "lecture-covers", maxBytes: 5 * 1024 * 1024 });
-        setPCover(url);
-        e.target.value = "";
-        return;
-      } catch (err) {
-        console.warn("[v00.083] R2 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 dataURI \uD3F4\uBC31:", err);
-      }
-      if (file.size > 1.5 * 1024 * 1024) {
-        window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + 1.5MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
-        e.target.value = "";
-        return;
-      }
-      const dataUri = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      setPCover(dataUri);
-      e.target.value = "";
+      const url = await pickImageWithR2Fallback(e, { folder: "lecture-covers" });
+      if (url) setPCover(url);
     };
     const clearPerLecture = async () => {
       if (!activeLectureId) return;
@@ -2023,7 +2090,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       display: "grid",
       placeItems: "center",
       overflow: "hidden"
-    } }, pCover ? /* @__PURE__ */ React.createElement("img", { src: pCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 R2 5MB / dataURI \uD3F4\uBC31 1.5MB \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: onPickCover, style: { display: "none" } })), pCover && /* @__PURE__ */ React.createElement(
+    } }, pCover ? /* @__PURE__ */ React.createElement("img", { src: pCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 JPG/PNG/HEIC \xB7 \uCD5C\uB300 5MB \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", onChange: onPickCover, style: { display: "none" } })), pCover && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -2298,7 +2365,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     display: "grid",
     placeItems: "center",
     flexShrink: 0
-  } }, !url && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.15em", marginBottom: 6 } }, label), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, url ? "\uAD50\uCCB4" : "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", style: { display: "none" }, onChange: onPick })), url && /* @__PURE__ */ React.createElement(
+  } }, !url && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.15em", marginBottom: 6 } }, label), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, url ? "\uAD50\uCCB4" : "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", style: { display: "none" }, onChange: onPick })), url && /* @__PURE__ */ React.createElement(
     "button",
     {
       type: "button",
@@ -2343,7 +2410,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       letterSpacing: "0.08em",
       marginBottom: 10,
       color: tooSmall ? "var(--danger)" : "var(--ink-3)"
-    } }, "\uC5C5\uB85C\uB4DC\uB41C \uD06C\uAE30 ", dim.w, " \xD7 ", dim.h, tooSmall && ` \u2014 \uAD8C\uC7A5 \uD3ED ${minWidth}px \uC5D0 \uBABB \uBBF8\uCE69\uB2C8\uB2E4. \uD655\uB300\uB418\uBA74\uC11C \uBB49\uAC1C\uC838 \uBCF4\uC785\uB2C8\uB2E4.`), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, url ? "\uAD50\uCCB4" : "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", style: { display: "none" }, onChange: onPick })), url && /* @__PURE__ */ React.createElement(
+    } }, "\uC5C5\uB85C\uB4DC\uB41C \uD06C\uAE30 ", dim.w, " \xD7 ", dim.h, tooSmall && ` \u2014 \uAD8C\uC7A5 \uD3ED ${minWidth}px \uC5D0 \uBABB \uBBF8\uCE69\uB2C8\uB2E4. \uD655\uB300\uB418\uBA74\uC11C \uBB49\uAC1C\uC838 \uBCF4\uC785\uB2C8\uB2E4.`), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, url ? "\uAD50\uCCB4" : "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", style: { display: "none" }, onChange: onPick })), url && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -3154,27 +3221,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       });
     };
     const onPickItemImage = async (i, e) => {
-      var _a;
-      const file = (_a = e.target.files) == null ? void 0 : _a[0];
-      e.target.value = "";
-      if (!file) return;
-      try {
-        const { url } = await window.BGNJ_MEDIA.uploadFile(file, { folder: `${kind}-items`, maxBytes: 5 * 1024 * 1024 });
-        updateItem(i, { imageUrl: url });
-        return;
-      } catch (err) {
-        console.warn("[v00.106] R2 \uB180\uC790 \uC544\uC774\uD15C \uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 dataURI \uD3F4\uBC31:", err);
-      }
-      if (file.size > 1.5 * 1024 * 1024) {
-        window.BGNJ_TOAST.error(`\uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4(${(file.size / 1024 / 1024).toFixed(1)}MB). R2 \uC2E4\uD328 + 1.5MB \uD3F4\uBC31 \uD55C\uB3C4 \uCD08\uACFC.`);
-        return;
-      }
-      const dataUri = await new Promise((resolve) => {
-        const r = new FileReader();
-        r.onload = () => resolve(r.result);
-        r.readAsDataURL(file);
-      });
-      updateItem(i, { imageUrl: dataUri });
+      const url = await pickImageWithR2Fallback(e, { folder: `${kind}-items` });
+      if (url) updateItem(i, { imageUrl: url });
     };
     const saveItems = async () => {
       try {
@@ -3229,7 +3277,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       placeItems: "center",
       overflow: "hidden",
       marginBottom: 6
-    } }, it.imageUrl ? /* @__PURE__ */ React.createElement("img", { src: it.imageUrl, alt: it.name || "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer", width: "100%", textAlign: "center", display: "block" } }, "\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: (e) => onPickItemImage(i, e), style: { display: "none" } })), it.imageUrl && /* @__PURE__ */ React.createElement(
+    } }, it.imageUrl ? /* @__PURE__ */ React.createElement("img", { src: it.imageUrl, alt: it.name || "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer", width: "100%", textAlign: "center", display: "block" } }, "\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", onChange: (e) => onPickItemImage(i, e), style: { display: "none" } })), it.imageUrl && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -3859,6 +3907,20 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
 
   // pages/admin/AdminDesignHub.jsx
   var ADMIN_VERSION_HISTORY = [
+    {
+      version: "00.317.000",
+      date: "2026-10-03",
+      datetime: "2026-10-03T01:55:06+09:00",
+      summary: "HEIC \uC790\uB3D9 JPG \uBCC0\uD658 \xB7 \uC5C5\uB85C\uB4DC \uC7AC\uBC1C \uBC29\uC9C0 \xB7 \uAD00\uB9AC\uC790 \uB85C\uADF8/\uCC28\uD2B8 \uC218\uC815",
+      details: [
+        "HEIC/HEIF \uC0AC\uC9C4\uC744 \uBE0C\uB77C\uC6B0\uC800 Worker\uC5D0\uC11C JPG\uB85C \uBCC0\uD658. \uD544\uC694\uD55C \uACBD\uC6B0\uC5D0\uB9CC \uBCC0\uD658\uAE30\uB97C \uBD88\uB7EC\uC624\uACE0, \uC5EC\uB7EC \uC7A5\uC740 \uC21C\uCC28 \uBCC0\uD658\uD574 \uBA54\uBAA8\uB9AC\uB97C \uC815\uB9AC\uD569\uB2C8\uB2E4.",
+        "\uC5C5\uB85C\uB4DC \uD55C\uB3C4\uB97C \uB118\uB294 \uC0AC\uC9C4\uC740 \uC790\uB3D9 \uCD95\uC18C. \uC2E4\uD328\uB97C dataURI \uC800\uC7A5 \uC131\uACF5\uC73C\uB85C \uCC98\uB9AC\uD558\uC9C0 \uC54A\uACE0 \uAE30\uC874 \uAE00\xB7\uC774\uBBF8\uC9C0\uB97C \uBCF4\uC874\uD558\uBA70 \uB85C\uADF8\uC778/\uC5F0\uACB0 \uBB38\uC81C\uB97C \uC548\uB0B4\uD569\uB2C8\uB2E4.",
+        "\uAD00\uB9AC\uC790 \uD65C\uB3D9 \uAE30\uB85D\uC758 \uC798\uBABB\uB41C \uC624\uB958 API \uACBD\uB85C\xB7\uC751\uB2F5 \uD544\uB4DC\uB97C \uC218\uC815. \uC624\uB958 \uC870\uD68C \uC2E4\uD328\uB97C 0\uAC74\uC73C\uB85C \uD45C\uC2DC\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.",
+        "\uBC29\uBB38 \uCC28\uD2B8\uC758 \uC11C\uBC84 UTC \uD0A4 \uD574\uC11D \uC218\uC815. \uC2DC\uAC04\uBCC4 \uD45C\uC2DC\uB294 \uD55C\uAD6D \uC2DC\uAC04, \uC77C\uBCC4\uC740 UTC \uC9D1\uACC4 \uAE30\uC900\uC744 \uBA85\uC2DC\uD569\uB2C8\uB2E4.",
+        "\uC6B4\uC601 \uC624\uB958 \uB85C\uADF8 139\uAC74 \uC870\uD68C: 2026-09-03~2026-10-03 \uC2E0\uADDC \uAE30\uB85D 0\uAC74, \uB9C8\uC9C0\uB9C9 \uAE30\uB85D 9\uC6D4 1\uC77C \uB300\uC6A9\uB7C9 \uC0AC\uC9C4 \uC2E4\uD328. \uAE30\uC874 \uAE30\uB85D\uC740 \uBCF4\uC874\uD588\uC2B5\uB2C8\uB2E4.",
+        "\uBE4C\uB4DC 3\uC885\xB7\uC790\uB3D9 \uAC80\uC0AC 8\uC885\xB7\uC2A4\uBAA8\uD06C 253\uAC74 \uD1B5\uACFC. Safari/Chrome \uC2E4\uC81C HEIC \uB514\uCF54\uB529 \uBC0F \uBAA8\uC758 \uC5C5\uB85C\uB4DC \uAC80\uC99D \uD1B5\uACFC. \uC6B4\uC601 \uBC30\uD3EC \uAC80\uC99D\uC740 \uBCC4\uB3C4\uC785\uB2C8\uB2E4."
+      ]
+    },
     {
       version: "00.288.002",
       date: "2026-06-07",
@@ -9253,6 +9315,15 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [ready, setReady] = React.useState(Boolean(window.BGNJ_TIPTAP));
     const [, forceRender] = React.useReducer((x) => x + 1, 0);
     const [uploadingImage, setUploadingImage] = React.useState(false);
+    const uploadsInFlight = React.useRef(0);
+    const beginImageUpload = () => {
+      uploadsInFlight.current += 1;
+      setUploadingImage(true);
+    };
+    const finishImageUpload = () => {
+      uploadsInFlight.current = Math.max(0, uploadsInFlight.current - 1);
+      setUploadingImage(uploadsInFlight.current > 0);
+    };
     React.useEffect(() => {
       onBusyChange == null ? void 0 : onBusyChange(uploadingImage);
     }, [uploadingImage, onBusyChange]);
@@ -9338,26 +9409,31 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             var _a, _b;
             const cd = event.clipboardData;
             if (!cd) return false;
-            const pastedFiles = Array.from(cd.files || []).filter((f) => f.type.startsWith("image/"));
+            const pastedFiles = Array.from(cd.files || []).filter((f) => window.BGNJ_IMAGE_SHRINK.isImageFile(f));
             if (pastedFiles.length > 0) {
               event.preventDefault();
               const folder = preset === "column" ? "column-images" : "post-images";
               (async () => {
-                var _a2, _b2;
-                setUploadingImage(true);
-                const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
-                  pastedFiles,
-                  { limitBytes: 10 * 1024 * 1024 }
-                );
-                for (const f of prepared) {
-                  try {
-                    const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
-                    editor.chain().focus().setImage({ src: url, alt: f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0" }).run();
-                  } catch (err) {
-                    (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, `\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328 \u2014 '${f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0"}' \uB294 \uBCF8\uBB38\uC5D0 \uB123\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uC7A0\uC2DC \uD6C4 '\u{1F5BC} \uBCF8\uBB38 \uC774\uBBF8\uC9C0' \uBC84\uD2BC\uC73C\uB85C \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.`);
+                var _a2, _b2, _c, _d;
+                beginImageUpload();
+                try {
+                  const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
+                    pastedFiles,
+                    { limitBytes: 10 * 1024 * 1024 }
+                  );
+                  for (const f of prepared) {
+                    try {
+                      const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
+                      if (!editor.isDestroyed) editor.chain().focus().setImage({ src: url, alt: f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0" }).run();
+                    } catch (err) {
+                      (_b2 = (_a2 = window.BGNJ_TOAST) == null ? void 0 : _a2.error) == null ? void 0 : _b2.call(_a2, window.BGNJ_MEDIA.errorMessage(f.name || "\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0", err));
+                    }
                   }
+                } catch (err) {
+                  (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.error) == null ? void 0 : _d.call(_c, window.BGNJ_MEDIA.errorMessage("\uBD99\uC5EC\uB123\uC740 \uC774\uBBF8\uC9C0", err));
+                } finally {
+                  finishImageUpload();
                 }
-                setUploadingImage(false);
               })();
               return true;
             }
@@ -9409,26 +9485,26 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const insertInlineImage = () => {
       const input = document.createElement("input");
       input.type = "file";
-      input.accept = "image/*";
+      input.accept = "image/*,.heic,.heif";
       input.onchange = async () => {
         var _a;
         const raw = (_a = input.files) == null ? void 0 : _a[0];
         if (!raw) return;
         const folder = preset === "column" ? "column-images" : "post-images";
-        const f = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 10 * 1024 * 1024 });
-        if (!f) return;
+        beginImageUpload();
         try {
-          setUploadingImage(true);
+          const f = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 10 * 1024 * 1024 });
+          if (!f) return;
           const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
-          ed.chain().focus().setImage({ src: url, alt: f.name }).run();
+          if (!ed.isDestroyed) ed.chain().focus().setImage({ src: url, alt: f.name }).run();
         } catch (err) {
           try {
-            window.BGNJ_TOAST.error("\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || err));
+            window.BGNJ_TOAST.error(window.BGNJ_MEDIA.errorMessage(raw.name, err));
           } catch (_e) {
             console.warn("[bgnj] TiptapEditor.jsx:199 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
           }
         } finally {
-          setUploadingImage(false);
+          finishImageUpload();
         }
       };
       input.click();
@@ -9887,13 +9963,16 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [search, setSearch] = React.useState("");
     const [codeFilter, setCodeFilter] = React.useState("all");
     const [loading, setLoading] = React.useState(false);
+    const [loadError, setLoadError] = React.useState("");
     const refresh = async () => {
       setLoading(true);
       try {
         const { errors: list } = await window.BGNJ_API.errorLog.list({ limit: 500 });
-        setErrors(list || []);
-      } catch (_e) {
-        console.warn("[bgnj] AdminMonitorPanels.jsx:21 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+        if (!Array.isArray(list)) throw new Error("\uC624\uB958 \uAE30\uB85D \uC751\uB2F5\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
+        setErrors(list);
+        setLoadError("");
+      } catch (err) {
+        setLoadError((err == null ? void 0 : err.message) || "\uC624\uB958 \uAE30\uB85D\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.");
       } finally {
         setLoading(false);
       }
@@ -9950,7 +10029,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         style: { borderColor: "var(--danger)", color: "var(--danger)" }
       },
       "\uC804\uCCB4 \uC0AD\uC81C"
-    ), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\uCD1D ", errors.length, "\uAC74 \xB7 \uD45C\uC2DC ", filtered.length, "\uAC74")), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 980 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 160 } }, "\uC2DC\uAC01"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 140 } }, "\uCF54\uB4DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 60 } }, "HTTP"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left" } }, "\uBA54\uC2DC\uC9C0"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 160 } }, "\uACBD\uB85C"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 200 } }, "\uC694\uCCAD URL"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, className: "dim", style: { padding: 32, textAlign: "center" } }, loading ? "\uBD88\uB7EC\uC624\uB294 \uC911..." : "\uC624\uB958 \uB85C\uADF8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.")) : filtered.map((e) => /* @__PURE__ */ React.createElement("tr", { key: e.id, style: { borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 12px", fontSize: 11, verticalAlign: "top" } }, e.ts ? window.BGNJ_FMT.kstDateTime(e.ts) : "-"), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: "10px 12px", fontSize: 11, verticalAlign: "top", color: "var(--danger)", letterSpacing: "0.1em" } }, e.code || "-"), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: "10px 12px", fontSize: 11, verticalAlign: "top" } }, e.status || "-"), /* @__PURE__ */ React.createElement("td", { style: { padding: "10px 12px", fontSize: 13, verticalAlign: "top", lineHeight: 1.6 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 500 } }, e.message), e.hint && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginTop: 4 } }, e.hint)), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 12px", fontSize: 10, verticalAlign: "top", wordBreak: "break-all" } }, e.pathname || "-"), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 12px", fontSize: 10, verticalAlign: "top", wordBreak: "break-all" } }, e.url || "-")))))));
+    ), /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, "\uCD1D ", errors.length, "\uAC74 \xB7 \uD45C\uC2DC ", filtered.length, "\uAC74")), loadError && /* @__PURE__ */ React.createElement("p", { role: "alert", style: { color: "var(--danger)" } }, loadError), /* @__PURE__ */ React.createElement("div", { style: { overflowX: "auto", border: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 980 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-3)" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 160 } }, "\uC2DC\uAC01"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 140 } }, "\uCF54\uB4DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 60 } }, "HTTP"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left" } }, "\uBA54\uC2DC\uC9C0"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 160 } }, "\uACBD\uB85C"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: "10px 12px", textAlign: "left", width: 200 } }, "\uC694\uCCAD URL"))), /* @__PURE__ */ React.createElement("tbody", null, filtered.length === 0 ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: 6, className: "dim", style: { padding: 32, textAlign: "center" } }, loading ? "\uBD88\uB7EC\uC624\uB294 \uC911..." : loadError ? "\uC870\uD68C \uC2E4\uD328 \u2014 \uC0C8\uB85C\uACE0\uCE68\uD574 \uC8FC\uC138\uC694." : "\uC624\uB958 \uB85C\uADF8\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.")) : filtered.map((e) => /* @__PURE__ */ React.createElement("tr", { key: e.id, style: { borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 12px", fontSize: 11, verticalAlign: "top" } }, e.ts ? window.BGNJ_FMT.kstDateTime(e.ts) : "-"), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: "10px 12px", fontSize: 11, verticalAlign: "top", color: "var(--danger)", letterSpacing: "0.1em" } }, e.code || "-"), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: "10px 12px", fontSize: 11, verticalAlign: "top" } }, e.status || "-"), /* @__PURE__ */ React.createElement("td", { style: { padding: "10px 12px", fontSize: 13, verticalAlign: "top", lineHeight: 1.6 } }, /* @__PURE__ */ React.createElement("div", { style: { fontWeight: 500 } }, e.message), e.hint && /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, marginTop: 4 } }, e.hint)), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 12px", fontSize: 10, verticalAlign: "top", wordBreak: "break-all" } }, e.pathname || "-"), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: "10px 12px", fontSize: 10, verticalAlign: "top", wordBreak: "break-all" } }, e.url || "-")))))));
   };
   var SEOAdminPanel = () => {
     const [tick, setTick] = React.useState(0);
@@ -9984,20 +10063,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }
     };
     const onPickImage = async (e, section, field) => {
-      var _a;
-      const file = (_a = e.target.files) == null ? void 0 : _a[0];
-      if (!file) return;
-      if (file.size > 1.5 * 1024 * 1024) {
-        flash("\u2717 \uC774\uBBF8\uC9C0\uAC00 \uB108\uBB34 \uD07D\uB2C8\uB2E4 (1.5MB \uC774\uD558 \uAD8C\uC7A5).");
-        e.target.value = "";
-        return;
-      }
-      const dataUri = await new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(String(r.result || ""));
-        r.onerror = reject;
-        r.readAsDataURL(file);
-      });
+      const dataUri = await pickImageWithR2Fallback(e, { folder: "og", maxBytes: 1.5 * 1024 * 1024 });
+      if (!dataUri) return;
       if (section === "og") {
         const next = { ...og, [field]: dataUri };
         setOg(next);
@@ -10039,7 +10106,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         alt: "OG preview",
         style: { display: "block", maxWidth: 240, maxHeight: 126, marginBottom: 8, border: "1px solid var(--line)" }
       }
-    ), /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/png,image/jpeg", onChange: (e) => onPickImage(e, "og", "imageDataUri") }), og.imageDataUri && /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/png,image/jpeg,.heic,.heif", onChange: (e) => onPickImage(e, "og", "imageDataUri") }), og.imageDataUri && /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -10674,6 +10741,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
   var ActivityLogPanel = () => {
     const [auditRows, setAuditRows] = React.useState([]);
     const [errorRows, setErrorRows] = React.useState([]);
+    const [loadError, setLoadError] = React.useState("");
     const [loading, setLoading] = React.useState(true);
     const [filter, setFilter] = React.useState("all");
     const [refreshKey, setRefreshKey] = React.useState(0);
@@ -10685,15 +10753,16 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       let cancelled = false;
       setLoading(true);
       (async () => {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
         try {
           const [auditRes, errorRes] = await Promise.allSettled([
             (_d = (_c = (_b = (_a = window.BGNJ_API) == null ? void 0 : _a.admin) == null ? void 0 : _b.audit) == null ? void 0 : _c.list) == null ? void 0 : _d.call(_c, { limit: 300 }),
-            (_h = (_g = (_f = (_e = window.BGNJ_API) == null ? void 0 : _e.admin) == null ? void 0 : _f.errorLog) == null ? void 0 : _g.list) == null ? void 0 : _h.call(_g, { limit: 200 })
+            (_g = (_f = (_e = window.BGNJ_API) == null ? void 0 : _e.errorLog) == null ? void 0 : _f.list) == null ? void 0 : _g.call(_f, { limit: 200 })
           ]);
           if (cancelled) return;
-          const audits = auditRes.status === "fulfilled" && Array.isArray((_i = auditRes.value) == null ? void 0 : _i.entries) ? auditRes.value.entries : [];
-          const errors = errorRes.status === "fulfilled" && Array.isArray((_j = errorRes.value) == null ? void 0 : _j.entries) ? errorRes.value.entries : [];
+          const audits = auditRes.status === "fulfilled" && Array.isArray((_h = auditRes.value) == null ? void 0 : _h.entries) ? auditRes.value.entries : [];
+          const errors = errorRes.status === "fulfilled" && Array.isArray((_i = errorRes.value) == null ? void 0 : _i.errors) ? errorRes.value.errors : [];
+          setLoadError(auditRes.status !== "fulfilled" || !Array.isArray((_j = auditRes.value) == null ? void 0 : _j.entries) || errorRes.status !== "fulfilled" || !Array.isArray((_k = errorRes.value) == null ? void 0 : _k.errors) ? "\uC77C\uBD80 \uAE30\uB85D\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uBD88\uB7EC\uC640 \uC8FC\uC138\uC694." : "");
           setAuditRows(audits);
           setErrorRows(errors);
         } catch (_e2) {
@@ -10838,7 +10907,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         title: "\uD1B5\uD569 \uD65C\uB3D9 \uB85C\uADF8",
         description: "\uAD00\uB9AC\uC790 \uD65C\uB3D9 + \uD68C\uC6D0 \uD65C\uB3D9(\uAC00\uC785/\uAC8C\uC2DC\uAE00) + \uC624\uB958 \uBCF4\uACE0\uB97C \uC2DC\uAC04 \uC5ED\uC21C\uC73C\uB85C \uD1B5\uD569. \uD2B8\uB7EC\uBE14\uC288\uD305\xB7\uC6B4\uC601 \uBAA8\uB2C8\uD130\uB9C1\uC6A9. \uCE69\uC73C\uB85C \uC720\uD615 \uD544\uD130."
       }
-    ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }, role: "tablist", "aria-label": "\uD65C\uB3D9 \uC720\uD615 \uD544\uD130" }, TYPES.map((t) => {
+    ), loadError && /* @__PURE__ */ React.createElement("p", { role: "alert", style: { color: "var(--danger)" } }, loadError), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }, role: "tablist", "aria-label": "\uD65C\uB3D9 \uC720\uD615 \uD544\uD130" }, TYPES.map((t) => {
       const active = filter === t.id;
       return /* @__PURE__ */ React.createElement(
         "button",
@@ -11086,16 +11155,6 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const fallback = ((_a2 = realBooks[0]) == null ? void 0 : _a2.id) || null;
       setSelectedId(fallback);
     };
-    const fileToDataUri = (file) => new Promise((resolve, reject) => {
-      if (!file) {
-        resolve("");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
     const addBook = () => {
       if (newDraft) {
         setSelectedId("__new__");
@@ -11472,7 +11531,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         style: { cursor: uploadingCover ? "not-allowed" : "pointer", opacity: uploadingCover ? 0.6 : 1 }
       },
       uploadingCover ? "\u23F3 \uC5C5\uB85C\uB4DC \uC911\u2026" : "\uC5C5\uB85C\uB4DC",
-      /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/png,image/jpeg", onChange: onUploadCover, disabled: uploadingCover, style: { display: "none" } })
+      /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/png,image/jpeg,.heic,.heif", onChange: onUploadCover, disabled: uploadingCover, style: { display: "none" } })
     ), editing.coverDataUri && !uploadingCover && /* @__PURE__ */ React.createElement(
       "button",
       {
@@ -12706,7 +12765,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           style: { borderColor: "var(--danger)", color: "var(--danger)" }
         },
         "\uC0AD\uC81C"
-      )), contentEditingId === l.id && /* @__PURE__ */ React.createElement("section", { style: { marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.22em" } }, "\uC774 \uAC15\uC5F0\uC758 \uC9C4\uD589/\uCC38\uACE0 \uCF58\uD150\uCE20"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 10, fontStyle: "italic" } }, "\uBE44\uC6CC\uB450\uBA74 \uAE00\uB85C\uBC8C (\uC6B4\uC601\uC124\uC815 \u2192 \uC0AC\uC774\uD2B8 \uCF58\uD150\uCE20 \u2192 \uAC15\uC5F0 \uD398\uC774\uC9C0) \uC0AC\uC6A9. \uCEE4\uBC84 \uBE44\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 12, marginBottom: 12, display: "flex", gap: 14, alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 96, height: 60, flexShrink: 0, border: "1px solid var(--line)", background: "var(--bg-2)", display: "grid", placeItems: "center", overflow: "hidden" } }, contentCover ? /* @__PURE__ */ React.createElement("img", { src: contentCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 3 } }, "\uCEE4\uBC84 \uC774\uBBF8\uC9C0"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: onPickContentCover, style: { display: "none" } })), contentCover && /* @__PURE__ */ React.createElement(
+      )), contentEditingId === l.id && /* @__PURE__ */ React.createElement("section", { style: { marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.22em" } }, "\uC774 \uAC15\uC5F0\uC758 \uC9C4\uD589/\uCC38\uACE0 \uCF58\uD150\uCE20"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 10, fontStyle: "italic" } }, "\uBE44\uC6CC\uB450\uBA74 \uAE00\uB85C\uBC8C (\uC6B4\uC601\uC124\uC815 \u2192 \uC0AC\uC774\uD2B8 \uCF58\uD150\uCE20 \u2192 \uAC15\uC5F0 \uD398\uC774\uC9C0) \uC0AC\uC6A9. \uCEE4\uBC84 \uBE44\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 12, marginBottom: 12, display: "flex", gap: 14, alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 96, height: 60, flexShrink: 0, border: "1px solid var(--line)", background: "var(--bg-2)", display: "grid", placeItems: "center", overflow: "hidden" } }, contentCover ? /* @__PURE__ */ React.createElement("img", { src: contentCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 3 } }, "\uCEE4\uBC84 \uC774\uBBF8\uC9C0"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", onChange: onPickContentCover, style: { display: "none" } })), contentCover && /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -13321,7 +13380,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           style: { borderColor: "var(--danger)", color: "var(--danger)" }
         },
         "\uC0AD\uC81C"
-      )), contentEditingId === t.id && /* @__PURE__ */ React.createElement("section", { style: { marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.22em" } }, "\uC774 \uD22C\uC5B4\uC758 \uB2F5\uC0AC \uCF58\uD150\uCE20"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 10, fontStyle: "italic" } }, "\uBE44\uC6CC\uB450\uBA74 \uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815/\uC900\uBE44\uBB3C (\uC6B4\uC601\uC124\uC815 \u2192 \uD22C\uC5B4 \uD398\uC774\uC9C0) \uC0AC\uC6A9. \uCEE4\uBC84 \uBE44\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 12, marginBottom: 12, display: "flex", gap: 14, alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 96, height: 60, flexShrink: 0, border: "1px solid var(--line)", background: "var(--bg-2)", display: "grid", placeItems: "center", overflow: "hidden" } }, contentCover ? /* @__PURE__ */ React.createElement("img", { src: contentCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 3 } }, "\uCEE4\uBC84 \uC774\uBBF8\uC9C0"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*", onChange: onPickContentCover, style: { display: "none" } })), contentCover && /* @__PURE__ */ React.createElement(
+      )), contentEditingId === t.id && /* @__PURE__ */ React.createElement("section", { style: { marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.22em" } }, "\uC774 \uD22C\uC5B4\uC758 \uB2F5\uC0AC \uCF58\uD150\uCE20"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 10, fontStyle: "italic" } }, "\uBE44\uC6CC\uB450\uBA74 \uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815/\uC900\uBE44\uBB3C (\uC6B4\uC601\uC124\uC815 \u2192 \uD22C\uC5B4 \uD398\uC774\uC9C0) \uC0AC\uC6A9. \uCEE4\uBC84 \uBE44\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 12, marginBottom: 12, display: "flex", gap: 14, alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 96, height: 60, flexShrink: 0, border: "1px solid var(--line)", background: "var(--bg-2)", display: "grid", placeItems: "center", overflow: "hidden" } }, contentCover ? /* @__PURE__ */ React.createElement("img", { src: contentCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 3 } }, "\uCEE4\uBC84 \uC774\uBBF8\uC9C0"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", onChange: onPickContentCover, style: { display: "none" } })), contentCover && /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -13486,16 +13545,6 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setMsg(text);
       setTimeout(() => setMsg(""), 2e3);
     };
-    const fileToDataUri = (file) => new Promise((resolve, reject) => {
-      if (!file) {
-        resolve("");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
     const SectionForm = ({ section, fields, onAfterSave }) => {
       const [draft, setDraft] = React.useState(() => ({ ...sc[section] || {} }));
       const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
@@ -13538,7 +13587,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         ));
       })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", borderTop: "1px solid var(--line)", paddingTop: 14, marginTop: 14 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: reset }, "\uAE30\uBCF8\uAC12 \uBCF5\uC6D0"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold" }, "\uC800\uC7A5")));
     };
-    const ImageUploader = ({ section, field, label, hint, previewSize = 56, accept = "image/*", folder }) => {
+    const ImageUploader = ({ section, field, label, hint, previewSize = 56, accept = "image/*,.heic,.heif", folder }) => {
       var _a;
       const current = ((_a = sc[section]) == null ? void 0 : _a[field]) || "";
       const onPick = async (e) => {
@@ -13632,7 +13681,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         label: "\uD30C\uBE44\uCF58",
         hint: "32x32 \uB610\uB294 64x64 PNG \uAD8C\uC7A5 \xB7 \uC800\uC7A5 \uC989\uC2DC \uBE0C\uB77C\uC6B0\uC800 \uD0ED \uC544\uC774\uCF58\uC774 \uAC31\uC2E0\uB429\uB2C8\uB2E4.",
         previewSize: 40,
-        accept: "image/png,image/x-icon,image/svg+xml"
+        accept: "image/png,image/x-icon,image/svg+xml,.heic,.heif"
       }
     ), /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 10, marginTop: 24 } }, "\uB85C\uADF8\uC778 / \uD68C\uC6D0\uAC00\uC785 \uC88C\uCE21 \uC601\uC5ED"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, marginBottom: 12, lineHeight: 1.7 } }, "\uB85C\uADF8\uC778\xB7\uD68C\uC6D0\uAC00\uC785 \uD398\uC774\uC9C0 \uC67C\uCABD\uC5D0 \uB178\uCD9C\uB418\uB294 \uC774\uBBF8\uC9C0\uC640 \uBB38\uAD6C\uC785\uB2C8\uB2E4. \uC774\uBBF8\uC9C0\uB97C \uC5C5\uB85C\uB4DC\uD558\uBA74 \uADF8\uB77C\uB370\uC774\uC158 \uBC30\uACBD \uB300\uC2E0 \uC774\uBBF8\uC9C0\uAC00 \uC0AC\uC6A9\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement(SectionForm, { key: `auth-${tick}`, section: "auth", fields: [
       { key: "eyebrow", label: "\uC717\uCABD \uC791\uC740 \uB77C\uBCA8 (\uB300\uBB38\uC790 \uAD8C\uC7A5)" },
@@ -13743,6 +13792,28 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     ].map((p) => /* @__PURE__ */ React.createElement("tr", { key: p.name, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { style: { padding: 10, color: "var(--ink)", fontWeight: 500 } }, p.name), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, fontSize: 13, color: p.svg === "\u2713" ? "var(--success)" : p.svg === "\u25B3" ? "var(--warning)" : "var(--ink-3)" } }, p.svg), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, fontSize: 13, color: p.png === "\u2713" ? "var(--success)" : "var(--ink-3)" } }, p.png), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, fontSize: 13, color: p.current === "\u2713" ? "var(--success)" : p.current === "\u25B3" ? "var(--warning)" : "var(--danger)", fontWeight: 600 } }, p.current)))))), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.6 } }, "\u24D8 ", /* @__PURE__ */ React.createElement("strong", null, "\uC804 \uD50C\uB7AB\uD3FC \uCEE4\uBC84 \uAD8C\uC7A5:"), " 1200\xD7630 PNG/JPG \uB97C \uC5C5\uB85C\uB4DC\uD558\uBA74 SVG fallback \uC744 \uB36E\uC5B4\uC4F0\uACE0 Facebook/Kakao \uB4F1\uC5D0\uC11C\uB3C4 \uBBF8\uB9AC\uBCF4\uAE30\uAC00 \uD45C\uC2DC\uB429\uB2C8\uB2E4."));
   };
 
+  // pages/admin/analyticsSeries.mjs
+  function pageViewSeries(summary, days, now = Date.now()) {
+    const hourly = days === 1;
+    const step = hourly ? 36e5 : 864e5;
+    const length = hourly ? 24 : days;
+    const end = Math.floor(now / step) * step;
+    const start = end - (length - 1) * step;
+    const counts = Array(length).fill(0);
+    for (const row of (hourly ? summary.hourlySeries : summary.dailySeries) || []) {
+      const stamp = Date.parse(hourly ? `${row.hour}:00:00Z` : `${row.day}T00:00:00Z`);
+      const index = Math.floor((stamp - start) / step);
+      if (Number.isFinite(stamp) && index >= 0 && index < length) counts[index] += Number(row.views) || 0;
+    }
+    const labels = counts.map((_, index) => {
+      const stamp = start + index * step;
+      if (hourly) return index === length - 1 ? "\uC9C0\uAE08" : `${new Date(stamp + 9 * 36e5).getUTCHours()}\uC2DC`;
+      const date = new Date(stamp);
+      return `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
+    });
+    return { counts, labels };
+  }
+
   // pages/admin/AdminDashboardPanel.jsx
   var DashboardPanel = ({ dashboardStats, allUsers, allCommunityPosts, latestCommunityPost, latestColumn, setTab, G }) => {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i;
@@ -13824,46 +13895,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const dayUnique = (_d = pv.dayUnique) != null ? _d : null;
     const weekUnique = (_e = pv.weekUnique) != null ? _e : null;
     const monthUnique = (_f = pv.monthUnique) != null ? _f : null;
-    const pvSeries = (() => {
-      if (pvDays === 1) {
-        const hours = 24;
-        const counts2 = new Array(hours).fill(0);
-        const labels2 = new Array(hours).fill("");
-        const now = /* @__PURE__ */ new Date();
-        now.setMinutes(0, 0, 0);
-        const baseTs = now.getTime() - (hours - 1) * 36e5;
-        (pv.hourlySeries || []).forEach(({ hour, views }) => {
-          const t = Date.parse((hour || "") + ":00:00+09:00");
-          if (isNaN(t)) return;
-          const idx = Math.floor((t - baseTs) / 36e5);
-          if (idx >= 0 && idx < hours) counts2[idx] = Number(views) || 0;
-        });
-        for (let i = 0; i < hours; i++) {
-          const dt = new Date(baseTs + i * 36e5);
-          labels2[i] = i === hours - 1 ? "\uC9C0\uAE08" : `${dt.getHours()}\uC2DC`;
-        }
-        return { counts: counts2, labels: labels2 };
-      }
-      const days = pvDays;
-      const counts = new Array(days).fill(0);
-      const labels = new Array(days).fill("");
-      const todayMid = (() => {
-        const d = /* @__PURE__ */ new Date();
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
-      })();
-      (pv.dailySeries || []).forEach(({ day, views }) => {
-        const t = Date.parse(day + "T00:00:00+09:00");
-        if (isNaN(t)) return;
-        const idx = Math.floor((t - todayMid) / 864e5) + (days - 1);
-        if (idx >= 0 && idx < days) counts[idx] = Number(views) || 0;
-      });
-      for (let i = 0; i < days; i++) {
-        const dt = new Date(todayMid + (i - (days - 1)) * 864e5);
-        labels[i] = i === days - 1 ? "\uC624\uB298" : `${dt.getMonth() + 1}/${dt.getDate()}`;
-      }
-      return { counts, labels };
-    })();
+    const pvSeries = pageViewSeries(pv, pvDays);
     const refs = pv.referrers || [];
     const refTotal = refs.reduce((s, r) => s + r.count, 0) || 1;
     const TodayCard = ({ label, value, prev, sub, warn }) => {
@@ -13962,7 +13994,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         formatTooltip: (v, l) => `${l || ""} \xB7 \uD398\uC774\uC9C0\uBDF0 ${v}\uD68C`,
         headerRight: /* @__PURE__ */ React.createElement(CohortSelector, { value: pvDays, onChange: setPvDays })
       }
-    ), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8, lineHeight: 1.6 } }, summaryError ? "\uC11C\uBC84 \uBD84\uC11D \uB370\uC774\uD130 \uC5C6\uC74C \u2014 schema-v9 + \uC6CC\uCEE4 deploy \uD544\uC694." : pvDays === 1 ? "\uCD5C\uADFC 24\uC2DC\uAC04 \uC2DC\uAC04\uBCC4 \uD398\uC774\uC9C0\uBDF0. \uB9C9\uB300 \uD638\uBC84 \uC2DC \uC815\uD655\uD55C \uAC12." : "\uC2E4\uC81C \uCE21\uC815\uB41C \uC77C\uBCC4 \uD398\uC774\uC9C0\uBDF0 (page_views D1). \uB9C9\uB300\uC5D0 \uD638\uBC84\uD558\uBA74 \uC815\uD655\uD55C \uAC12.")), /* @__PURE__ */ React.createElement("article", { className: "card" }, /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8, lineHeight: 1.6 } }, summaryError ? "\uC11C\uBC84 \uBD84\uC11D \uB370\uC774\uD130 \uC5C6\uC74C \u2014 schema-v9 + \uC6CC\uCEE4 deploy \uD544\uC694." : pvDays === 1 ? "\uCD5C\uADFC 24\uC2DC\uAC04 \uD398\uC774\uC9C0\uBDF0 \xB7 \uC2DC\uAC04 \uD45C\uC2DC\uB294 \uD55C\uAD6D \uC2DC\uAC04. \uB9C9\uB300 \uD638\uBC84 \uC2DC \uC815\uD655\uD55C \uAC12." : "\uC2E4\uC81C \uCE21\uC815\uB41C \uC77C\uBCC4 \uD398\uC774\uC9C0\uBDF0 \xB7 \uC11C\uBC84 \uC9D1\uACC4\uC77C\uC740 UTC \uAE30\uC900. \uB9C9\uB300\uC5D0 \uD638\uBC84\uD558\uBA74 \uC815\uD655\uD55C \uAC12.")), /* @__PURE__ */ React.createElement("article", { className: "card" }, /* @__PURE__ */ React.createElement(
       MiniBarChart,
       {
         label: `\u{1F4CA} ${signupDays === 1 ? "24\uC2DC\uAC04 (1\uC2DC\uAC04 \uB2E8\uC704)" : signupDays + "\uC77C"} \uAC00\uC785 \uCD94\uC774`,
@@ -15571,7 +15603,7 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         onClick: async () => {
           const input = document.createElement("input");
           input.type = "file";
-          input.accept = "image/*";
+          input.accept = "image/*,.heic,.heif";
           input.onchange = async () => {
             var _a2;
             const f = (_a2 = input.files) == null ? void 0 : _a2[0];

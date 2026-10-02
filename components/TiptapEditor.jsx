@@ -12,6 +12,12 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, onBu
   const [, forceRender] = React.useReducer(x => x + 1, 0);
   // v00.138 — 본문 이미지 R2 업로드 상태. early return 이전에 선언 (Rules of Hooks).
   const [uploadingImage, setUploadingImage] = React.useState(false);
+  const uploadsInFlight = React.useRef(0);
+  const beginImageUpload = () => { uploadsInFlight.current += 1; setUploadingImage(true); };
+  const finishImageUpload = () => {
+    uploadsInFlight.current = Math.max(0, uploadsInFlight.current - 1);
+    setUploadingImage(uploadsInFlight.current > 0);
+  };
   // v00.295.005 — 본문 이미지도 업로드가 끝나야 본문에 들어간다. 그 전에 게시하면 사진이 빠진다.
   //   첨부 이미지 칸과 같은 결함이라 같은 방식으로 부모에 알린다.
   React.useEffect(() => { onBusyChange?.(uploadingImage); }, [uploadingImage, onBusyChange]);
@@ -115,12 +121,13 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, onBu
           // base64 가 본문에 박힌다 → ① 1초마다 localStorage 임시저장이 용량 초과로
           // 조용히 실패하고 ② 발행 시 D1 row 가 통째로 비대해진다.
           // 파일로 오는 붙여넣기(스크린샷·이미지 복사)가 이 경로의 대부분이다.
-          const pastedFiles = Array.from(cd.files || []).filter((f) => f.type.startsWith('image/'));
+          const pastedFiles = Array.from(cd.files || []).filter((f) => window.BGNJ_IMAGE_SHRINK.isImageFile(f));
           if (pastedFiles.length > 0) {
             event.preventDefault();
             const folder = preset === 'column' ? 'column-images' : 'post-images';
             (async () => {
-              setUploadingImage(true);
+              beginImageUpload();
+              try {
               // v00.295.004 — 붙여넣은 사진도 크면 줄일지 물어본다. 여러 장이면 한 번만 묻는다.
               const { files: prepared } = await window.BGNJ_IMAGE_SHRINK.maybeShrinkAll(
                 pastedFiles, { limitBytes: 10 * 1024 * 1024 }
@@ -128,13 +135,15 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, onBu
               for (const f of prepared) {
                 try {
                   const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
-                  editor.chain().focus().setImage({ src: url, alt: f.name || '붙여넣은 이미지' }).run();
+                  if (!editor.isDestroyed) editor.chain().focus().setImage({ src: url, alt: f.name || '붙여넣은 이미지' }).run();
                 } catch (err) {
                   // 조용한 base64 폴백을 두지 않는다 — 그게 바로 위 ①② 를 부른다.
-                  window.BGNJ_TOAST?.error?.(`이미지 업로드 실패 — '${f.name || '붙여넣은 이미지'}' 는 본문에 넣지 못했습니다. 잠시 후 '🖼 본문 이미지' 버튼으로 다시 시도해 주세요.`);
+                  window.BGNJ_TOAST?.error?.(window.BGNJ_MEDIA.errorMessage(f.name || '붙여넣은 이미지', err));
                 }
               }
-              setUploadingImage(false);
+              } catch (err) {
+                window.BGNJ_TOAST?.error?.(window.BGNJ_MEDIA.errorMessage('붙여넣은 이미지', err));
+              } finally { finishImageUpload(); }
             })();
             return true;
           }
@@ -193,22 +202,22 @@ const TiptapEditor = ({ preset = "simple", content = "", onUpdate, onReady, onBu
   const insertInlineImage = () => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/*';
+    input.accept = 'image/*,.heic,.heif';
     input.onchange = async () => {
       const raw = input.files?.[0];
       if (!raw) return;
       const folder = preset === 'column' ? 'column-images' : 'post-images';
       // v00.295.004 — 큰 사진은 올리기 전에 줄일지 물어본다. null 이면 한도를 넘어 못 올리는 것.
-      const f = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 10 * 1024 * 1024 });
-      if (!f) return;
+      beginImageUpload();
       try {
-        setUploadingImage(true);
+        const f = await window.BGNJ_IMAGE_SHRINK.maybeShrinkOne(raw, { limitBytes: 10 * 1024 * 1024 });
+        if (!f) return;
         const { url } = await window.BGNJ_MEDIA.uploadFile(f, { folder, maxBytes: 10 * 1024 * 1024 });
-        ed.chain().focus().setImage({ src: url, alt: f.name }).run();
+        if (!ed.isDestroyed) ed.chain().focus().setImage({ src: url, alt: f.name }).run();
       } catch (err) {
-        try { window.BGNJ_TOAST.error('이미지 업로드 실패: ' + (err?.message || err)); } catch (_e) { console.warn('[bgnj] TiptapEditor.jsx:199 오류(무시하고 진행)', _e); }
+        try { window.BGNJ_TOAST.error(window.BGNJ_MEDIA.errorMessage(raw.name, err)); } catch (_e) { console.warn('[bgnj] TiptapEditor.jsx:199 오류(무시하고 진행)', _e); }
       } finally {
-        setUploadingImage(false);
+        finishImageUpload();
       }
     };
     input.click();

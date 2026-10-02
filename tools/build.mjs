@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 뱅기노자 — JSX 번들러 (v00.285 Stage 4)
 //
-// 목적: 페이지/컴포넌트 *.jsx 소스를 단일 번들 2개로 묶는다.
+// 목적: 페이지/컴포넌트 *.jsx 소스를 번들 3개로 묶는다.
 //   - dist/app.js   : 메인 (entry-main.jsx — index.html 이 로드)
 //   - dist/admin.js : 관리자 (entry-admin.jsx — boot 가 admin route 진입 시 동적 주입)
 //   esbuild bundle 모드. 각 모듈은 독립 스코프(구 per-file IIFE 격리와 동일), side-effect
@@ -17,13 +17,14 @@
 //   node tools/build.mjs           # 한 번 빌드 (pre-commit hook / CI / 배포가 호출)
 //   node tools/build.mjs --watch   # 감시 모드 (개발용)
 //
-// dist/ 는 gitignore — 커밋하지 않는다. CI(deploy-pages.yml)가 배포 직전 생성.
+// 기존 app/admin 번들은 추적 중이다. 새 HEIC 산출물은 CI가 배포 직전 생성한다.
 // (v00.285 이전: per-file *.jsx→*.js 사전 컴파일 + 산출물 커밋 방식이었으나 번들로 전환.)
 
 import * as esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse } from '@babel/parser';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +36,7 @@ const WATCH = args.includes('--watch');
 const BUNDLE_TARGETS = [
   { entry: 'src/entry-main.jsx',  outfile: 'dist/app.js'   },
   { entry: 'src/entry-admin.jsx', outfile: 'dist/admin.js' },
+  { entry: 'src/entry-heic.js',   outfile: 'dist/heic.js'  },
 ];
 
 // v00.196 — sourcemap 인라인 base64 는 wire 의 62% 차지(비-admin 에게도 강제 전송) → prod 기본 off.
@@ -52,12 +54,35 @@ const buildOptions = ({ entry, outfile }) => ({
   jsxFragment: 'React.Fragment',
   target: 'es2018',
   sourcemap: includeSourcemap ? 'inline' : false,
-  legalComments: 'none',
+  legalComments: 'eof',
   logLevel: 'warning',
 });
 
+const prepareDecoder = () => {
+  // upstream CSP 빌드 안의 Web Worker 원문을 독립 파일로 배포한다.
+  // blob Worker 대신 동일 출처 파일을 사용해 CSP를 넓히지 않고 종료·재시도를 제어한다.
+  const decoderPath = path.join(__dirname, 'node_modules/heic-to/dist/csp/heic-to.js');
+  const ast = parse(fs.readFileSync(decoderPath, 'utf8'), { sourceType: 'module' });
+  let workerSource = '';
+  const visit = (node) => {
+    if (!node || typeof node !== 'object') return;
+    if (node.type === 'StringLiteral' && node.value.includes('onmessage=') && node.value.includes('HeifDecoder') && node.value.length > workerSource.length) workerSource = node.value;
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) value.forEach(visit);
+      else if (value && typeof value === 'object') visit(value);
+    }
+  };
+  visit(ast.program);
+  if (!workerSource) throw new Error('heic-to CSP Worker를 찾지 못했습니다. 라이브러리 버전과 빌드 형식을 확인하세요.');
+  fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
+  const notice = '/*! heic-to 1.6.5, LGPL-3.0-or-later. Source: https://github.com/hoppergee/heic-to/tree/main. License: heic.LICENSE.txt */\n';
+  fs.writeFileSync(path.join(ROOT, 'dist/heic-worker.js'), notice + workerSource);
+  fs.copyFileSync(path.join(__dirname, 'node_modules/heic-to/LICENSE'), path.join(ROOT, 'dist/heic.LICENSE.txt'));
+};
+
 const bundleOnce = async () => {
   const t0 = Date.now();
+  prepareDecoder();
   for (const target of BUNDLE_TARGETS) {
     await esbuild.build(buildOptions(target));
     const bytes = fs.statSync(path.join(ROOT, target.outfile)).size;
@@ -67,6 +92,7 @@ const bundleOnce = async () => {
 };
 
 if (WATCH) {
+  prepareDecoder();
   for (const target of BUNDLE_TARGETS) {
     const ctx = await esbuild.context(buildOptions(target));
     await ctx.watch();

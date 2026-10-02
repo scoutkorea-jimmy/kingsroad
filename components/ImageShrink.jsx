@@ -1,16 +1,5 @@
-// v00.295.004 — 큰 사진을 올리기 전에 줄여 주는 공용 헬퍼.
-// 사용자 요청: '용량이 크면 크다고 알려주고, 줄이는 기능을 넣어달라.'
-//
-// 왜 필요한가:
-//   휴대폰 사진은 한 장에 5~10MB 가 넘는다. 한도를 넘으면 지금까지는 그냥 실패했고
-//   (2026-08-20 관리자 커버 업로드 5건 연속 실패 — '6.0MB'),
-//   회원 입장에서는 무엇을 어떻게 해야 하는지 알 길이 없었다.
-//
-// 동작:
-//   ① 임계값보다 작으면 아무것도 하지 않는다. 묻지도 않는다.
-//   ② 크면 먼저 줄여 본 뒤 '5.8MB → 0.9MB' 처럼 실제 결과를 보여주며 물어본다.
-//      예측값이 아니라 진짜 줄여 본 값이라 사용자가 판단할 수 있다.
-//   ③ 거절하면 원본을 쓴다. 원본이 한도를 넘어 애초에 못 올라가면 그때는 분명히 알린다.
+// HEIC/HEIF는 JPG로 변환하고, 업로드 한도를 넘는 사진은 자동 축소한다.
+// 한도 안의 큰 사진만 선택적으로 축소 여부를 묻는다. GIF 애니메이션은 보존한다.
 //
 // EXIF 방향 주의:
 //   캔버스로 다시 그리면 EXIF 회전 정보가 사라져 사진이 눕는다.
@@ -23,17 +12,129 @@
 const _MB = 1024 * 1024;
 const _fmtMB = (bytes) => `${(Number(bytes || 0) / _MB).toFixed(1)}MB`;
 
+const isHeicFile = (file) => /\.(heic|heif)$/i.test(file?.name || '') ||
+  /^image\/(heic|heif)(-sequence)?$/i.test(file?.type || '');
+const isImageFile = (file) => String(file?.type || '').startsWith('image/') ||
+  /\.(jpe?g|png|gif|webp|svg|avif|ico|heic|heif)$/i.test(file?.name || '');
+
+let decoderLoad = null;
+const loadHeicDecoder = () => {
+  if (window.BGNJ_HEIC_DECODER?.convert) return Promise.resolve(window.BGNJ_HEIC_DECODER);
+  if (decoderLoad) return decoderLoad;
+  decoderLoad = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    const appScript = document.querySelector('script[src*="dist/app.js"]');
+    const src = new URL(appScript?.src || '/dist/app.js', location.href);
+    src.pathname = src.pathname.replace(/app\.js$/, 'heic.js');
+    script.src = src.href;
+    script.async = true;
+    const fail = () => {
+      clearTimeout(timer);
+      script.remove();
+      decoderLoad = null;
+      reject(new Error('사진 변환 기능을 불러오지 못했습니다. 인터넷 연결을 확인하고 다시 선택해 주세요.'));
+    };
+    const timer = setTimeout(fail, 30_000);
+    script.onerror = fail;
+    script.onload = () => {
+      clearTimeout(timer);
+      if (!window.BGNJ_HEIC_DECODER?.convert) { fail(); return; }
+      resolve(window.BGNJ_HEIC_DECODER);
+    };
+    document.head.appendChild(script);
+  });
+  return decoderLoad;
+};
+
+// 여러 장을 동시에 디코딩하면 휴대폰 메모리가 급증한다. 한 장씩, 같은 File은 한 번만.
+const preparedFiles = new WeakMap();
+let conversionQueue = Promise.resolve();
+const prepareFile = (file) => {
+  if (!file) return Promise.reject(new Error('파일이 없습니다.'));
+  const icon = /\.ico$/i.test(file?.name || '') || /^image\/(x-icon|vnd.microsoft.icon)$/i.test(file?.type || '');
+  if (!isHeicFile(file) && !icon) return Promise.resolve(file);
+  if (preparedFiles.has(file)) return preparedFiles.get(file);
+  const pending = conversionQueue.then(async () => {
+    if (file.size > 50 * _MB) throw new Error('변환할 이미지는 한 장에 최대 50MB까지 가능합니다.');
+    // R2가 ICO 확장자를 받지 않으므로 기존 파비콘 선택 기능은 투명 PNG로 보존한다.
+    if (icon) {
+      // PNG가 들어 있는 ICO는 Safari의 <img> 디코더를 거치지 않고 원본 PNG를 꺼낸다.
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const view = new DataView(bytes.buffer);
+      const pngs = [];
+      if (bytes.length >= 6 && view.getUint16(0, true) === 0 && view.getUint16(2, true) === 1) {
+        const count = Math.min(view.getUint16(4, true), 256);
+        for (let i = 0; i < count; i++) {
+          const entry = 6 + i * 16;
+          if (entry + 16 > bytes.length) break;
+          const length = view.getUint32(entry + 8, true);
+          const offset = view.getUint32(entry + 12, true);
+          if (length >= 8 && offset >= 6 + count * 16 && offset + length <= bytes.length &&
+            [137, 80, 78, 71, 13, 10, 26, 10].every((value, index) => bytes[offset + index] === value)) {
+            pngs.push({ offset, length, edge: bytes[entry] || 256 });
+          }
+        }
+      }
+      if (pngs.length) {
+        const png = pngs.sort((a, b) => b.edge - a.edge)[0];
+        return new File([bytes.slice(png.offset, png.offset + png.length)], `${String(file.name || 'favicon').replace(/\.[^.]+$/, '')}.png`, { type: 'image/png', lastModified: file.lastModified });
+      }
+      const { img, revoke } = await _loadImage(file);
+      const canvas = document.createElement('canvas');
+      try {
+        const scale = Math.min(1, 512 / Math.max(img.naturalWidth, img.naturalHeight));
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('파비콘을 변환하지 못했습니다. PNG로 저장해 선택해 주세요.');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        if (!blob?.size) throw new Error('파비콘을 변환하지 못했습니다. PNG로 저장해 선택해 주세요.');
+        return new File([blob], `${String(file.name || 'favicon').replace(/\.[^.]+$/, '')}.png`, { type: 'image/png', lastModified: file.lastModified });
+      } finally { revoke(); canvas.width = 1; canvas.height = 1; }
+    }
+    // 사진 선택기가 JPEG로 변환하면서 원래 .HEIC 이름을 남기는 경우도 있다.
+    const signature = new Uint8Array(await file.slice(0, 3).arrayBuffer());
+    if (signature[0] === 0xff && signature[1] === 0xd8 && signature[2] === 0xff) {
+      const name = String(file.name || 'image').replace(/\.[^.]+$/, '');
+      return new File([file], `${name}.jpg`, { type: 'image/jpeg', lastModified: file.lastModified });
+    }
+    window.BGNJ_TOAST?.info?.('아이폰 사진을 JPG로 변환하고 있습니다.');
+    try {
+      const decoder = await loadHeicDecoder();
+      let timer;
+      const blob = await Promise.race([
+        decoder.convert({ blob: file, type: 'image/jpeg', quality: 0.9 }),
+        new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('사진 변환 시간이 초과되었습니다.')), 90_000); }),
+      ]).finally(() => clearTimeout(timer));
+      if (!blob?.size || blob.type !== 'image/jpeg') throw new Error('JPG 변환 결과가 올바르지 않습니다.');
+      const name = String(file.name || 'image').replace(/\.[^.]+$/, '');
+      return new File([blob], `${name}.jpg`, { type: 'image/jpeg', lastModified: file.lastModified || Date.now() });
+    } catch (cause) {
+      const err = new Error(`'${file.name || '사진'}'을(를) JPG로 변환하지 못했습니다. 사진 앱에서 JPG로 내보내 다시 선택해 주세요.`);
+      err.code = 'HEIC_CONVERSION_FAILED';
+      err.cause = cause;
+      throw err;
+    }
+  });
+  preparedFiles.set(file, pending);
+  conversionQueue = pending.catch(() => { preparedFiles.delete(file); });
+  return pending;
+};
+
 // 줄여도 되는 형식인가. GIF 는 애니메이션 때문에 제외.
 const _isShrinkable = (file) => {
   const t = String(file?.type || '').toLowerCase();
-  return t === 'image/jpeg' || t === 'image/jpg' || t === 'image/png' || t === 'image/webp';
+  return /^(image\/(jpeg|jpg|png|webp))$/.test(t) || /\.(jpe?g|png|webp)$/i.test(file?.name || '');
 };
 
 const _loadImage = (file) => new Promise((resolve, reject) => {
   const url = URL.createObjectURL(file);
   const img = new Image();
-  img.onload = () => resolve({ img, revoke: () => URL.revokeObjectURL(url) });
-  img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 읽을 수 없습니다.')); };
+  const fail = () => { clearTimeout(timer); URL.revokeObjectURL(url); reject(new Error('이미지를 읽을 수 없습니다.')); };
+  const timer = setTimeout(fail, 30_000);
+  img.onload = () => { clearTimeout(timer); resolve({ img, revoke: () => URL.revokeObjectURL(url) }); };
+  img.onerror = fail;
   img.src = url;
 });
 
@@ -41,6 +142,7 @@ const _loadImage = (file) => new Promise((resolve, reject) => {
 const shrinkImage = async (file, { maxEdge = 2000, quality = 0.85 } = {}) => {
   if (!_isShrinkable(file)) return null;
   let handle = null;
+  let canvas = null;
   try {
     handle = await _loadImage(file);
     const { img } = handle;
@@ -50,7 +152,7 @@ const shrinkImage = async (file, { maxEdge = 2000, quality = 0.85 } = {}) => {
     const scale = Math.min(1, maxEdge / Math.max(w, h));
     const outW = Math.max(1, Math.round(w * scale));
     const outH = Math.max(1, Math.round(h * scale));
-    const canvas = document.createElement('canvas');
+    canvas = document.createElement('canvas');
     canvas.width = outW;
     canvas.height = outH;
     const ctx = canvas.getContext('2d');
@@ -69,6 +171,7 @@ const shrinkImage = async (file, { maxEdge = 2000, quality = 0.85 } = {}) => {
     console.warn('[bgnj] 사진 축소 실패 — 원본으로 진행한다 (ImageShrink.jsx)', _e);
     return null;
   } finally {
+    if (canvas) { canvas.width = 1; canvas.height = 1; }
     try { handle?.revoke?.(); } catch (_e) { console.warn('[bgnj] 임시 URL 정리 (ImageShrink.jsx)', _e); }
   }
 };
@@ -82,28 +185,46 @@ const maybeShrinkAll = async (fileList, {
   maxEdge = 2000,
   quality = 0.85,
 } = {}) => {
-  const files = Array.from(fileList || []);
-  if (files.length === 0) return { files: [], cancelled: [] };
+  const files = [];
+  const cancelled = [];
+  for (const file of Array.from(fileList || [])) {
+    try { files.push(await prepareFile(file)); }
+    catch (err) {
+      cancelled.push(file);
+      window.BGNJ_TOAST?.error?.(err.message, { code: err.code || 'IMAGE_PREPARE_FAILED' });
+    }
+  }
+  if (files.length === 0) return { files: [], cancelled };
 
   // 물어볼 만큼 큰 것만 골라 먼저 줄여 본다. 실제 결과를 보여주기 위해서다.
-  const targets = files.filter((f) => f && f.size > askOverBytes);
-  if (targets.length === 0) return { files, cancelled: [] };
+  const targets = files.filter((f) => f && (f.size > askOverBytes || (limitBytes && f.size > limitBytes)));
 
   const shrunkMap = new Map();
-  await Promise.all(targets.map(async (f) => {
-    const out = await shrinkImage(f, { maxEdge, quality });
+  for (const f of targets) {
+    let out = await shrinkImage(f, { maxEdge, quality });
+    // 작은 이미지 슬롯에서도 한 번의 압축 결과가 한도를 넘으면 단계적으로 더 줄인다.
+    if (limitBytes && f.size > limitBytes && (!out || out.size > limitBytes)) {
+      for (const [edge, q] of [[1600, 0.75], [1280, 0.65], [960, 0.55], [640, 0.5]]) {
+        const candidate = await shrinkImage(f, { maxEdge: Math.min(maxEdge, edge), quality: Math.min(quality, q) });
+        if (candidate && (!out || candidate.size < out.size)) out = candidate;
+        if (out && out.size <= limitBytes) break;
+      }
+    }
     if (out) shrunkMap.set(f, out);
-  }));
+  }
 
+  const automatic = new Map([...shrunkMap].filter(([f, out]) => limitBytes && f.size > limitBytes && out.size <= limitBytes));
+  const optional = new Map([...shrunkMap].filter(([f]) => !limitBytes || f.size <= limitBytes));
+  if (automatic.size) window.BGNJ_TOAST?.info?.(`사진 ${automatic.size}장을 업로드 가능한 크기로 자동 축소했습니다.`);
   let accepted = false;
-  if (shrunkMap.size > 0) {
-    const before = [...shrunkMap.keys()].reduce((a, f) => a + f.size, 0);
-    const after = [...shrunkMap.values()].reduce((a, f) => a + f.size, 0);
-    const one = shrunkMap.size === 1;
+  if (optional.size > 0) {
+    const before = [...optional.keys()].reduce((a, f) => a + f.size, 0);
+    const after = [...optional.values()].reduce((a, f) => a + f.size, 0);
+    const one = optional.size === 1;
     const head = one
       ? `사진이 ${_fmtMB(before)} 로 큽니다.`
-      : `사진 ${shrunkMap.size}장이 큽니다 (합계 ${_fmtMB(before)}).`;
-    const hasPng = [...shrunkMap.keys()].some((f) => String(f.type).toLowerCase() === 'image/png');
+      : `사진 ${optional.size}장이 큽니다 (합계 ${_fmtMB(before)}).`;
+    const hasPng = [...optional.keys()].some((f) => String(f.type).toLowerCase() === 'image/png');
     accepted = await window.BGNJ_CONFIRM(
       `${head}\n줄이면 ${_fmtMB(after)} 가 됩니다. 줄여서 올릴까요?\n\n` +
       `화면에서 보기에는 충분한 화질입니다 (긴 쪽 ${maxEdge}px).` +
@@ -113,25 +234,25 @@ const maybeShrinkAll = async (fileList, {
   }
 
   const out = [];
-  const cancelled = [];
+  const oversized = [];
   files.forEach((f) => {
-    const picked = (accepted && shrunkMap.get(f)) || f;
+    const picked = automatic.get(f) || (accepted && optional.get(f)) || f;
     // 원본을 고집했는데 한도를 넘으면 애초에 올라가지 않는다. 조용히 버리지 말고 알린다.
-    if (limitBytes && picked.size > limitBytes) { cancelled.push(picked); return; }
+    if (limitBytes && picked.size > limitBytes) { cancelled.push(picked); oversized.push(picked); return; }
     out.push(picked);
   });
 
-  if (cancelled.length > 0) {
+  if (oversized.length > 0) {
     // 왜 못 올리는지가 두 가지라 안내도 갈라야 한다.
     //   ㄱ. 줄일 수는 있었는데 '원본 그대로' 를 골랐다 → 다시 골라 줄이면 된다.
-    //   ㄴ. GIF·HEIC 처럼 이 브라우저가 다시 그릴 수 없는 형식이다 → 우리가 해줄 수 있는 게 없다.
-    const shrinkable = cancelled.filter((f) => _isShrinkable(f));
-    const notShrinkable = cancelled.filter((f) => !_isShrinkable(f));
+    //   ㄴ. GIF 등 자동 축소하지 않는 형식이다.
+    const shrinkable = oversized.filter((f) => _isShrinkable(f));
+    const notShrinkable = oversized.filter((f) => !_isShrinkable(f));
     const names = (list) => list.map((f) => `'${f.name}'`).join(', ');
     if (shrinkable.length > 0) {
       window.BGNJ_TOAST.error(
         `${names(shrinkable)} 은(는) 한도(${_fmtMB(limitBytes)})를 넘어 올릴 수 없습니다. ` +
-        `다시 선택한 뒤 '줄여서 올리기' 를 눌러 주세요.`
+        `사진 앱에서 크기를 더 줄이거나 다른 사진을 선택해 주세요.`
       );
     }
     if (notShrinkable.length > 0) {
@@ -150,4 +271,4 @@ const maybeShrinkOne = async (file, opts = {}) => {
   return files[0] || null;
 };
 
-window.BGNJ_IMAGE_SHRINK = { shrinkImage, maybeShrinkAll, maybeShrinkOne, formatMB: _fmtMB };
+window.BGNJ_IMAGE_SHRINK = { shrinkImage, maybeShrinkAll, maybeShrinkOne, prepareFile, isHeicFile, isImageFile, formatMB: _fmtMB };
