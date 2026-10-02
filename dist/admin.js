@@ -319,6 +319,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         "g",
         {
           key: i,
+          role: "img",
+          "aria-label": fmt(v, (labels == null ? void 0 : labels[i]) || ""),
           onMouseEnter: () => setHoverIdx(i),
           onMouseLeave: () => setHoverIdx((c) => c === i ? null : c),
           style: { cursor: "pointer" }
@@ -3907,6 +3909,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
 
   // pages/admin/AdminDesignHub.jsx
   var ADMIN_VERSION_HISTORY = [
+    {
+      version: "00.317.001",
+      date: "2026-10-03",
+      datetime: "2026-10-03T02:13:55+09:00",
+      summary: "\uC6B4\uC601 \uBC30\uD3EC \uAC80\uC99D \uBCF4\uC644 \xB7 \uD1B5\uD569 \uAC10\uC0AC \uAE30\uB85D \uC751\uB2F5 \uD544\uB4DC \uC218\uC815",
+      details: [
+        "\uD1B5\uD569 \uD65C\uB3D9 \uB85C\uADF8\uAC00 \uAC10\uC0AC API\uC758 log \uBC30\uC5F4\uC744 \uC77D\uB3C4\uB85D \uC218\uC815. \uC77C\uBD80 \uC18C\uC2A4 \uC870\uD68C \uC2E4\uD328 \uB54C \uC774\uBBF8 \uC77D\uC740 \uAE30\uB85D\uC744 \uBCF4\uC874\uD558\uBA70 \uACBD\uACE0\uD569\uB2C8\uB2E4.",
+        "\uBC29\uBB38 \uCC28\uD2B8 \uC811\uADFC\uC131 \uC774\uB984\uC5D0 \uCD5C\uC2E0 \uB77C\uBCA8\xB7\uAC12\uC744 \uBA85\uC2DC\uD574 \uCD5C\uCD08 0\uD68C \uC81C\uBAA9\uC774 \uB0A8\uC9C0 \uC54A\uB3C4\uB85D \uBCF4\uC644\uD569\uB2C8\uB2E4.",
+        "GitHub Pages Source\uB97C workflow\uB85C \uC804\uD658\uD574 CI \uC0DD\uC131 HEIC \uD30C\uC77C \uB204\uB77D \uD574\uACB0. CI\uC5D0\uC11C \uBC30\uD3EC \uC124\uC815\uACFC \uC2E4\uC81C \uC6B4\uC601 \uD30C\uC77C SHA-256\uAE4C\uC9C0 \uAC80\uC99D\uD569\uB2C8\uB2E4."
+      ]
+    },
     {
       version: "00.317.000",
       date: "2026-10-03",
@@ -10753,18 +10766,18 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       let cancelled = false;
       setLoading(true);
       (async () => {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
         try {
           const [auditRes, errorRes] = await Promise.allSettled([
             (_d = (_c = (_b = (_a = window.BGNJ_API) == null ? void 0 : _a.admin) == null ? void 0 : _b.audit) == null ? void 0 : _c.list) == null ? void 0 : _d.call(_c, { limit: 300 }),
             (_g = (_f = (_e = window.BGNJ_API) == null ? void 0 : _e.errorLog) == null ? void 0 : _f.list) == null ? void 0 : _g.call(_f, { limit: 200 })
           ]);
           if (cancelled) return;
-          const audits = auditRes.status === "fulfilled" && Array.isArray((_h = auditRes.value) == null ? void 0 : _h.entries) ? auditRes.value.entries : [];
+          const audits = auditRes.status === "fulfilled" && Array.isArray((_h = auditRes.value) == null ? void 0 : _h.log) ? auditRes.value.log : [];
           const errors = errorRes.status === "fulfilled" && Array.isArray((_i = errorRes.value) == null ? void 0 : _i.errors) ? errorRes.value.errors : [];
-          setLoadError(auditRes.status !== "fulfilled" || !Array.isArray((_j = auditRes.value) == null ? void 0 : _j.entries) || errorRes.status !== "fulfilled" || !Array.isArray((_k = errorRes.value) == null ? void 0 : _k.errors) ? "\uC77C\uBD80 \uAE30\uB85D\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uBD88\uB7EC\uC640 \uC8FC\uC138\uC694." : "");
-          setAuditRows(audits);
-          setErrorRows(errors);
+          setLoadError(auditRes.status !== "fulfilled" || !Array.isArray((_j = auditRes.value) == null ? void 0 : _j.log) || errorRes.status !== "fulfilled" || !Array.isArray((_k = errorRes.value) == null ? void 0 : _k.errors) ? "\uC77C\uBD80 \uAE30\uB85D\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uBD88\uB7EC\uC640 \uC8FC\uC138\uC694." : "");
+          if (auditRes.status === "fulfilled" && Array.isArray((_l = auditRes.value) == null ? void 0 : _l.log)) setAuditRows(audits);
+          if (errorRes.status === "fulfilled" && Array.isArray((_m = errorRes.value) == null ? void 0 : _m.errors)) setErrorRows(errors);
         } catch (_e2) {
           console.warn("[bgnj] AdminLogPanels.jsx:150 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         } finally {

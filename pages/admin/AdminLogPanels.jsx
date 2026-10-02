@@ -144,11 +144,11 @@ const ActivityLogPanel = () => {
           window.BGNJ_API?.errorLog?.list?.({ limit: 200 }),
         ]);
         if (cancelled) return;
-        const audits = (auditRes.status === 'fulfilled' && Array.isArray(auditRes.value?.entries)) ? auditRes.value.entries : [];
+        const audits = (auditRes.status === 'fulfilled' && Array.isArray(auditRes.value?.log)) ? auditRes.value.log : [];
         const errors = (errorRes.status === 'fulfilled' && Array.isArray(errorRes.value?.errors)) ? errorRes.value.errors : [];
-        setLoadError(auditRes.status !== 'fulfilled' || !Array.isArray(auditRes.value?.entries) || errorRes.status !== 'fulfilled' || !Array.isArray(errorRes.value?.errors) ? '일부 기록을 불러오지 못했습니다. 다시 불러와 주세요.' : '');
-        setAuditRows(audits);
-        setErrorRows(errors);
+        setLoadError(auditRes.status !== 'fulfilled' || !Array.isArray(auditRes.value?.log) || errorRes.status !== 'fulfilled' || !Array.isArray(errorRes.value?.errors) ? '일부 기록을 불러오지 못했습니다. 다시 불러와 주세요.' : '');
+        if (auditRes.status === 'fulfilled' && Array.isArray(auditRes.value?.log)) setAuditRows(audits);
+        if (errorRes.status === 'fulfilled' && Array.isArray(errorRes.value?.errors)) setErrorRows(errors);
       } catch (_e) { console.warn('[bgnj] AdminLogPanels.jsx:150 오류(무시하고 진행)', _e); } finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; };

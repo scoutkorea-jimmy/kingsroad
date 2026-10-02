@@ -3,6 +3,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { build } from 'esbuild';
+import { fileURLToPath } from 'node:url';
 import { File } from 'node:buffer';
 import { pageViewSeries } from '../pages/admin/analyticsSeries.mjs';
 const ROOT = new URL('../', import.meta.url);
@@ -80,6 +82,49 @@ const logs = fs.readFileSync(new URL('pages/admin/AdminLogPanels.jsx', ROOT), 'u
 assert(logs.includes('window.BGNJ_API?.errorLog?.list?.'));
 assert(logs.includes('errorRes.value?.errors'));
 assert(!logs.includes('BGNJ_API?.admin?.errorLog'));
+// 실제 통합 로그 컴포넌트의 로딩 effect를 실행해 두 API 응답과 부분 실패를 검증한다.
+const states = [], effects = [];
+let hookIndex = 0;
+const activity = {
+  console,
+  React: {
+    createElement: (type, props, ...children) => ({ type, props, children }),
+    useState(initial) {
+      const index = hookIndex++;
+      if (!(index in states)) states[index] = typeof initial === 'function' ? initial() : initial;
+      return [states[index], value => { states[index] = typeof value === 'function' ? value(states[index]) : value; }];
+    },
+    useMemo: fn => fn(), useEffect: fn => effects.push(fn),
+  },
+  BGNJ_FMT: { kstDateTime: value => value },
+  BGNJ_COMMUNITY: { listPosts: () => [] },
+  BGNJ_API: {
+    admin: { audit: { list: async () => ({ log: [{ id: 'audit-1', actor: 'tester', action: 'admin.update', ts: '2026-10-03T00:00:00Z' }] }) } },
+    errorLog: { list: async () => ({ errors: [{ id: 'error-1', message: 'test', ts: '2026-10-03T00:00:00Z' }] }) },
+  },
+};
+activity.window = activity;
+vm.createContext(activity);
+const activityBundle = await build({
+  stdin: { contents: "import { ActivityLogPanel } from './pages/admin/AdminLogPanels.jsx'; globalThis.TestActivity = ActivityLogPanel;", resolveDir: fileURLToPath(ROOT), loader: 'jsx' },
+  bundle: true, write: false, format: 'iife', jsxFactory: 'React.createElement', jsxFragment: 'React.Fragment',
+});
+vm.runInContext(activityBundle.outputFiles[0].text, activity);
+const runActivity = async () => {
+  hookIndex = 0; activity.TestActivity();
+  effects.splice(0).forEach(effect => effect());
+  await new Promise(resolve => setImmediate(resolve));
+};
+await runActivity();
+assert.equal(states[0][0].id, 'audit-1');
+assert.equal(states[1][0].id, 'error-1');
+assert.equal(states[2], '', '정상 응답은 조회 실패로 표시하지 않는다');
+activity.BGNJ_API.admin.audit.list = async () => ({ entries: [] });
+activity.BGNJ_API.errorLog.list = async () => { throw new Error('offline'); };
+await runActivity();
+assert.equal(states[0][0].id, 'audit-1', '부분 실패 때 기존 감사 기록 보존');
+assert.equal(states[1][0].id, 'error-1', '부분 실패 때 기존 오류 기록 보존');
+assert(states[2].includes('불러오지 못했습니다'));
 // 실제 어댑터가 손상 파일·Worker 오류 뒤에 Worker를 정리하는지 검증한다.
 let terminated = 0, workerMode = 'error';
 const adapter = {

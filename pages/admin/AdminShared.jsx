@@ -82,7 +82,7 @@ const MiniBarChart = ({ series, labels, height = 120, color = 'var(--primary)', 
             const h = max > 0 ? (v / max) * (H - 6) : 0;
             const isOther = hoverIdx !== null && hoverIdx !== i;
             return (
-              <g key={i}
+              <g key={i} role="img" aria-label={fmt(v, labels?.[i] || '')}
                 onMouseEnter={() => setHoverIdx(i)}
                 onMouseLeave={() => setHoverIdx((c) => c === i ? null : c)}
                 style={{cursor:'pointer'}}>

@@ -4,6 +4,17 @@
 // 파일 끝에서 Object.assign(window, {...}) 로 명시적 노출 — 그 후 AuthAdminPage 가 trampoline 으로 가져감.
 const ADMIN_VERSION_HISTORY = [
   {
+    version: "00.317.001",
+    date: "2026-10-03",
+    datetime: "2026-10-03T02:13:55+09:00",
+    summary: "운영 배포 검증 보완 · 통합 감사 기록 응답 필드 수정",
+    details: [
+      "통합 활동 로그가 감사 API의 log 배열을 읽도록 수정. 일부 소스 조회 실패 때 이미 읽은 기록을 보존하며 경고합니다.",
+      "방문 차트 접근성 이름에 최신 라벨·값을 명시해 최초 0회 제목이 남지 않도록 보완합니다.",
+      "GitHub Pages Source를 workflow로 전환해 CI 생성 HEIC 파일 누락 해결. CI에서 배포 설정과 실제 운영 파일 SHA-256까지 검증합니다."
+    ]
+  },
+  {
     version: "00.317.000",
     date: "2026-10-03",
     datetime: "2026-10-03T01:55:06+09:00",
