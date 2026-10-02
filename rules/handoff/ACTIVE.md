@@ -5,8 +5,8 @@
 > HEIC 업로드 시 자동 JPG 변환을 구현하고, 최근 한 달 오류를 점검해 재발 방지. 작업을 마저 진행하고 멈추지 말 것.
 
 - 시작 2026-10-02, 마지막 확인 2026-10-03 KST.
-- **구현·검증 완료, 사용자 커밋/배포 승인 완료 (2026-10-03), 배포 진행 중.** 상위 `../AGENTS.md`의 사용자 승인 규칙 적용.
-- 운영 기준 v00.316.000 → 로컬 v00.317.000 (build 2026.10.03).
+- **구현·검증·운영 반영 완료. 배포 소스·운영 파일 재발 방지 검사 추가.** 상위 `../AGENTS.md`의 사용자 승인 규칙 적용.
+- 운영 v00.316.000 → v00.317.000 (build 2026.10.03).
 - 운영 오류 기록 139건 조회. 최근 한 달(2026-09-03~2026-10-03) 신규 기록 0건. 가장 최근은 9월 1일 10MB 초과 PNG 업로드 실패. HEIC·만료 인증 등 과거 기록의 관련 경로까지 점검하고 예방 수정. 오류 로그는 삭제하지 않음.
 - Wrangler 토큰 만료는 이번 프론트엔드 변경과 무관. 관리자 로그인 UI/오류 API로 점검 완료. 이번 Worker 변경 없음. 아래 이전 작업의 Worker 배포 상태는 별도 사항.
 
@@ -25,13 +25,19 @@
 - Safari/Chrome localhost: 실제 HEIC→JPG 디코딩 1280×854, 미리보기, JPG 파일명/MIME 전송, 자동 축소, 손상 파일 뒤 정상 파일 처리, 지원하지 않는 확장자 차단, 401 실패·토큰 제거. 15개 동작 확인 + 기대 오류 안내 2개, 실패 0.
 - Safari 실제 새 홈페이지 번들 부팅 및 v00.317.000 푸터 확인.
 - 정적 HTML 실행 스크립트 CSP 해시 전수 검사: 누락 0.
-- 아직 미검증: iPhone 실기기·운영 R2에 새 구현으로 업로드·배포 후 UI. 새 버전은 아직 운영에 반영되지 않음.
+- 아직 미검증: iPhone 실기기·운영 R2에 새 구현으로 업로드·배포 후 UI. 새 버전의 운영 관리자 화면·버전·변환기/Worker/라이선스 HTTP 200 확인.
+
+### 배포에서 확인하고 수정한 문제
+
+- 첫 코드 커밋 `f65c3674` 배포 Actions는 성공했으나 HEIC 파일 HTTP 404. Pages 설정이 `build_type=legacy`, main 브랜치 직접 배포여서 CI 생성 파일이 실제 운영에서 빠짐.
+- Pages Source를 `workflow`(GitHub Actions)로 변경 후 재배포 `37038559669` 성공. HEIC 변환기·Worker·라이선스 HTTP 200, Worker/라이선스 로컬 해시 일치. 번들의 차이는 esbuild 빌드 디렉터리 소스 주석(`src/` vs `../src/`).
+- 후속 CI에 Pages Source 검사 + `tools/check-deployment.mjs` 실제 운영 HTML/버전/번들/변환 파일 SHA-256 검사를 추가해 같은 누락을 자동 차단.
 
 ### Git / 다음 단계
 
 - `.claude/scheduled_tasks.lock` 삭제 및 `.claude/scheduled_tasks 3.lock` 미추적은 원래 사용자 변경. 커밋에 넣지 말 것.
 - 다수 HTML 변경은 기존 콘텐츠를 보존한 캐시 버전/CSP 동기화. app/admin 번들은 기존 추적 파일, HEIC 산출물은 CI 생성.
-- 사용자 승인에 따라 이번 변경만 커밋·push → GitHub Pages Actions 확인 → 운영 version.json 00.317.000 → 홈페이지 및 실제 HEIC 업로드 확인.
+- 후속 검사·문서 변경을 사용자 배포 승인에 따라 커밋·push → 마지막 CI 운영 해시 검사 확인 → 실제 iPhone HEIC 업로드는 실기기에서 확인.
 - 이어서 읽기: 이 파일, `PROJECT_CONTEXT.md`, `README.md`.
 - 이어서 명령: `node tools/check-all.mjs`, `node tools/build.mjs`, `git diff --check`, `git status --short`.
 

@@ -229,3 +229,8 @@ HEIC_FIXTURE=/tmp/kingsroad-validation/example.heic node tools/test-upload-brows
 사진은 localhost 모의 업로드로만 전송됩니다. 일반 로컬 홈페이지는 운영 API를 사용하므로, 업로드 검증에는 위 검증 페이지를 사용하세요.
 
 현재 점검 결과와 다음 작업은 `PROJECT_CONTEXT.md`, `rules/handoff/ACTIVE.md`에 있습니다. 커밋은 상위 `../AGENTS.md` 규칙에 따라 사용자 승인 뒤 수행합니다.
+
+
+### 배포 소스와 운영 파일 검증
+
+GitHub Settings → Pages → Source는 **GitHub Actions** (`build_type=workflow`)로 유지합니다. 브랜치 직접 배포는 Git에 없는 HEIC 빌드 산출물을 빠뜨립니다. 배포 CI는 이 설정을 검사하고, 배포 뒤 운영 HTML·버전·번들·HEIC Worker·라이선스의 SHA-256을 실제 CI 파일과 비교합니다 (`tools/check-deployment.mjs`). 로컬에서 실행하면 빌드 실행 디렉터리에 따른 esbuild 소스 주석 차이로 번들 해시가 다를 수 있으므로, CI에서 나온 검사 결과를 기준으로 합니다.

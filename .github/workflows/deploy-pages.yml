@@ -55,6 +55,13 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Verify Pages deployment source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          source=$(gh api "repos/${{ github.repository }}/pages" --jq .build_type)
+          test "$source" = workflow || { echo "Pages Source를 GitHub Actions로 설정하세요. 브랜치 배포는 빌드 산출물을 누락시킵니다."; exit 1; }
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@v3
         with:
@@ -63,3 +70,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify live deployment
+        run: node tools/check-deployment.mjs
