@@ -77,7 +77,11 @@ const TourPage = ({ go, user }) => {
     Promise.resolve(window.BGNJ_TOURS?.refresh?.({ includeHidden: true })).finally(() => refresh());
     const onR = () => refresh();
     window.addEventListener('bgnj-tours-refresh', onR);
-    return () => window.removeEventListener('bgnj-tours-refresh', onR);
+    window.addEventListener('bgnj-site-content-refresh', onR);
+    return () => {
+      window.removeEventListener('bgnj-tours-refresh', onR);
+      window.removeEventListener('bgnj-site-content-refresh', onR);
+    };
   }, []);
 
   const [selectedIdx, setSelectedIdx] = React.useState(0);

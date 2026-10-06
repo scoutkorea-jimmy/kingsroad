@@ -31,7 +31,11 @@ const LecturesPage = ({ go, user }) => {
     Promise.resolve(window.BGNJ_LECTURES?.refresh?.({ includeHidden: true })).finally(() => refresh());
     const onR = () => refresh();
     window.addEventListener('bgnj-lectures-refresh', onR);
-    return () => window.removeEventListener('bgnj-lectures-refresh', onR);
+    window.addEventListener('bgnj-site-content-refresh', onR);
+    return () => {
+      window.removeEventListener('bgnj-lectures-refresh', onR);
+      window.removeEventListener('bgnj-site-content-refresh', onR);
+    };
   }, []);
 
   // v00.129 — startsAt 기준 분리. 어제 이후 = upcoming, 그 이전 = past. startsAt 없으면 upcoming.
