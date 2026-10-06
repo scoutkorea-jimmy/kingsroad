@@ -408,7 +408,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.318.000",
+    version: "00.318.001",
     build: "2026.10.06",
     channel: "preview"
   };
@@ -12177,7 +12177,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         type: "button",
         className: "btn btn-gold btn-block",
         disabled: !user || invalidBookingUrl,
-        style: { marginBottom: 10 },
+        style: { marginBottom: 10, opacity: !user || invalidBookingUrl ? 0.45 : 1, cursor: !user || invalidBookingUrl ? "not-allowed" : "pointer" },
         onClick: () => {
           if (!user || invalidBookingUrl) return;
           setOpen(true);

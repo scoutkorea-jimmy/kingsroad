@@ -934,7 +934,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
               {user && externalBookingUrl ? (
                 <a className="btn btn-gold btn-block" href={externalBookingUrl} target="_blank" rel="noopener noreferrer" style={{marginBottom:10}}>답사 신청하기 ↗</a>
               ) : (
-                <button type="button" className="btn btn-gold btn-block" disabled={!user || invalidBookingUrl} style={{marginBottom:10}}
+                <button type="button" className="btn btn-gold btn-block" disabled={!user || invalidBookingUrl} style={{marginBottom:10, opacity: !user || invalidBookingUrl ? 0.45 : 1, cursor: !user || invalidBookingUrl ? 'not-allowed' : 'pointer'}}
                   onClick={() => { if (!user || invalidBookingUrl) return; setOpen(true); setError(''); }}>
                   {isFull ? '대기자 등록' : '답사 신청하기'}
                 </button>

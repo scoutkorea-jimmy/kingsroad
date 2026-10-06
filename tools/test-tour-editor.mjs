@@ -68,6 +68,7 @@ if (process.argv.includes('--serve')) {
   const bookingProps = {tour:w.testTours[0],user:null,seats:{remaining:22,waitlist:0},formatPrice:n=>`${n}원`,onRefresh(){}};
   state=[];tree=render(w.TourBookingPanel,bookingProps);
   assert.equal(button(tree,'답사 신청하기').props.disabled,true);
+  assert.equal(button(tree,'답사 신청하기').props.style.opacity,0.45);
   w.testContent.tourPages.existing.bookingUrl='https://example.org/apply';
   state=[];tree=render(w.TourBookingPanel,bookingProps);
   assert.equal(nodes(tree).some(n=>n.type==='a'&&n.props.href==='https://example.org/apply'),false);
