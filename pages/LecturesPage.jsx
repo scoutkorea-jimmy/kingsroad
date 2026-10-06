@@ -216,6 +216,7 @@ const LecturesPage = ({ go, user }) => {
               const lp = sc.lecturePages?.[lecture.id] || {};
               const galleryPrimary = pickPrimaryImage?.(lp.images);
               const coverUri = galleryPrimary?.url || lp.coverDataUri || '';
+              if (galleryPrimary) return <MediaGalleryView key={lecture.id} images={lp.images} title={lecture.title} sectionLabel="포스터" carousel/>;
               if (coverUri) {
                 return (
                   <div style={{marginBottom:32}}>
@@ -293,12 +294,6 @@ const LecturesPage = ({ go, user }) => {
             {/* v00.239 — 사용자 요청: 강연 제목·주제 줄바꿈 허용. white-space:pre-wrap 으로 \n 보존. */}
             <h2 className="ko-serif" style={{fontSize:40, fontWeight:500, lineHeight:1.2, marginBottom:24, whiteSpace:'pre-wrap'}}>{lecture.topic}</h2>
             <p className="dim" style={{fontSize:16, lineHeight:1.9, marginBottom:32, whiteSpace:'pre-wrap'}}>{lecture.note}</p>
-            {/* v00.235/v00.237 — 포스터 추가 그리드 (대표 외 나머지). 1장이면 cover 와 중복이라 미노출. */}
-            {MediaGalleryView && (() => {
-              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
-              const imgs = sc.lecturePages?.[lecture.id]?.images;
-              return <window.MediaGalleryView images={imgs} title={lecture.title} sectionLabel="포스터"/>;
-            })()}
             {/* v00.237 — 종료된 강연(past)에만 현장 사진 그리드 노출. 사용자 요청. */}
             {MediaGalleryView && _isPast(lecture) && (() => {
               const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});

@@ -340,9 +340,44 @@ const MediaGalleryEditor = ({
 // 표시 우선순위: 대표사진을 cover slot 에 배치 (caller 가 별도로 cover 표시 — 본 컴포넌트는 갤러리 그리드만).
 // 갤러리는 1장이면 미노출 (cover 와 중복), 2장 이상일 때 그리드 표시.
 // v00.237 — withCover=false 면 0번 사진도 그리드에 포함 (현장 사진 등 cover 와 분리된 갤러리).
-const MediaGalleryView = ({ images, title, sectionLabel = '사진', withCover = true }) => {
+const MediaGalleryView = ({ images, title, sectionLabel = '사진', withCover = true, carousel = false }) => {
+  const [index, setIndex] = React.useState(0);
+  const touch = React.useRef(null);
   const norm = withCover ? _withPrimaryFirst(images) : _normalizeImages(images, { showPrimary: false });
   if (!Array.isArray(norm) || norm.length === 0) return null;
+  if (carousel) {
+    const current = index % norm.length;
+    const img = norm[current];
+    const move = (step) => setIndex((current + step + norm.length) % norm.length);
+    return (
+      <section aria-label={`${title || ''} ${sectionLabel}`} style={{marginBottom:32}}>
+        <div style={{position:'relative', touchAction:'pan-y'}} tabIndex={norm.length > 1 ? 0 : undefined}
+          onKeyDown={(e) => { if (norm.length > 1 && ['ArrowLeft','ArrowRight'].includes(e.key)) { e.preventDefault(); move(e.key === 'ArrowLeft' ? -1 : 1); } }}
+          onTouchStart={(e) => { touch.current = [e.touches[0].clientX, e.touches[0].clientY]; }}
+          onTouchCancel={() => { touch.current = null; }}
+          onTouchEnd={(e) => {
+            if (!touch.current || norm.length < 2) return;
+            const dx = e.changedTouches[0].clientX - touch.current[0];
+            const dy = e.changedTouches[0].clientY - touch.current[1];
+            touch.current = null;
+            if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? -1 : 1);
+          }}>
+          <img src={img.url} alt={`${title || sectionLabel} ${current + 1}`}
+            style={{width:'100%', height:'auto', display:'block', borderRadius:2, background:'var(--bg-2)'}}/>
+          {norm.length > 1 && [-1, 1].map((step) => (
+            <button key={step} type="button" className="btn" aria-label={step < 0 ? '이전 포스터' : '다음 포스터'}
+              onClick={() => move(step)} style={{position:'absolute', top:'50%', transform:'translateY(-50%)',
+                [step < 0 ? 'left' : 'right']:8, width:44, height:44, padding:0, borderRadius:'50%',
+                background:'var(--bg)', color:'var(--ink)', border:'1px solid var(--line)', fontSize:28}}>
+              {step < 0 ? '‹' : '›'}
+            </button>
+          ))}
+        </div>
+        {norm.length > 1 && <div aria-live="polite" className="dim mono" style={{textAlign:'center', marginTop:10, fontSize:13}}>포스터 {current + 1} / {norm.length}</div>}
+        {img.credit && <div className="dim mono" style={{fontSize:10, marginTop:6, lineHeight:1.5}}>{img.credit}</div>}
+      </section>
+    );
+  }
   const grid = withCover ? norm.slice(1) : norm; // withCover=true → 0번은 cover 에 사용됨.
   if (grid.length === 0) return null;
   return (

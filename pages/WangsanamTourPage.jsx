@@ -278,6 +278,7 @@ const TourPage = ({ go, user }) => {
               const tp = sc.tourPages?.[tour.id] || {};
               const galleryPrimary = pickPrimaryImage?.(tp.images);
               const coverUri = galleryPrimary?.url || tour.coverUrl || tp.coverDataUri || '';
+              if (galleryPrimary) return <MediaGalleryView key={tour.id} images={tp.images} title={tour.title} sectionLabel="포스터" carousel/>;
               if (coverUri) {
                 return (
                   <div style={{marginBottom:32}}>
@@ -347,12 +348,6 @@ const TourPage = ({ go, user }) => {
               </p>
             )}
             <p className="dim bgnj-multiline" style={{fontSize:16, lineHeight:1.9, marginBottom:32}}>{tour.desc}</p>
-            {/* v00.235 — 사진 갤러리 (대표 외 추가 사진 그리드). */}
-            {MediaGalleryView && (() => {
-              const sc = (window.BGNJ_SITE_CONTENT?.get?.() || {});
-              const imgs = sc.tourPages?.[tour.id]?.images;
-              return <window.MediaGalleryView images={imgs} title={tour.title} sectionLabel="포스터"/>;
-            })()}
             {/* v00.300.002 — 지난 답사에는 후기(현장) 사진을 보여준다.
                 강연은 v00.237 부터 하고 있었는데 투어에만 빠져 있었다.
                 아직 안 다녀온 답사에 현장 사진이 뜨면 이상하므로 _isPast 일 때만. */}

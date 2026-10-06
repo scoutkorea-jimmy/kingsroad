@@ -47,7 +47,7 @@
 <!-- v00.196 — 핵심 weight 1개씩 preload (LCP +200~600ms 회수). nopreload 폴백: stylesheet 가 늦게 와도 swap. -->
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Myeongjo:wght@400;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=00.319.000">
+<link rel="stylesheet" href="/styles.css?v=00.320.000">
 
 
 <!-- v00.297.001 — 검색·AI 크롤러용 본문(#seo-main)을 사람 눈에서 감춘다.
@@ -247,7 +247,7 @@
      v00.285 Stage 3 — per-file 22개 <script> → 단일 번들 dist/app.js.
        엔트리 src/entry-main.jsx 가 기존 로드 순서대로 side-effect import. tools/build.mjs --bundle 산출.
        admin(dist/admin.js)은 boot 가 route 진입 시 동적 주입(코드 스플리팅 유지). -->
-<script defer src="/dist/app.js?v=00.319.000"></script>
+<script defer src="/dist/app.js?v=00.320.000"></script>
 <script>
   // v00.306.005 — 배포했는데 옛 화면이 보이던 것.
   //

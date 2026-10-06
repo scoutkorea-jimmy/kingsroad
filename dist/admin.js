@@ -12892,6 +12892,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [galleryEditTarget, setGalleryEditTarget] = React.useState(null);
     const [addingTour, setAddingTour] = React.useState(false);
     const [savingBasic, setSavingBasic] = React.useState(false);
+    const [savingAll, setSavingAll] = React.useState(false);
     const [savingContent, setSavingContent] = React.useState(false);
     const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
     const [contentEditingId, setContentEditingId] = React.useState(null);
@@ -13090,6 +13091,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         setSavingBasic(false);
       }
     };
+    const saveAll = async () => {
+      if (savingAll || savingBasic || savingContent) return false;
+      setSavingAll(true);
+      try {
+        if (basicDirty && !await saveEdit()) return false;
+        if (contentDirty && !await saveContentEdit()) return false;
+        return true;
+      } finally {
+        setSavingAll(false);
+      }
+    };
     const checkChanges = window.useUnsavedTourChanges({
       dirty: basicDirty || contentDirty,
       onDiscard: () => {
@@ -13099,11 +13111,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           startContentEdit(tour);
         }
       },
-      onSave: async () => {
-        if (basicDirty && !await saveEdit()) return false;
-        if (contentDirty && !await saveContentEdit()) return false;
-        return true;
-      }
+      onSave: saveAll
     });
     const removeTour = async (id) => {
       var _a, _b, _c;
@@ -13132,7 +13140,27 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }
     };
     const [showPageEditor, setShowPageEditor] = React.useState(false);
-    return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 18, border: "1px solid var(--line)", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", null, detailId && detailTab === "info" && !galleryEditTarget && !addingTour && /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: "admin-savebar",
+        role: "region",
+        "aria-label": "\uD22C\uC5B4 \uC800\uC7A5",
+        style: { position: "sticky", top: 72, zIndex: 30, marginTop: 0, marginBottom: 18, boxShadow: "0 4px 16px rgba(0,0,0,0.12)" }
+      },
+      /* @__PURE__ */ React.createElement("span", { className: "admin-savebar__msg", "aria-live": "polite" }, savingAll || savingBasic || savingContent ? "\uC800\uC7A5 \uC911\u2026" : basicDirty || contentDirty ? "\uC800\uC7A5\uD558\uC9C0 \uC54A\uC740 \uBCC0\uACBD\uC0AC\uD56D\uC774 \uC788\uC2B5\uB2C8\uB2E4." : "\uC800\uC7A5\uB41C \uC0C1\uD0DC\uC785\uB2C8\uB2E4."),
+      /* @__PURE__ */ React.createElement("span", { className: "admin-savebar__spacer" }),
+      /* @__PURE__ */ React.createElement(
+        "button",
+        {
+          type: "button",
+          className: "btn btn-gold",
+          onClick: saveAll,
+          disabled: savingAll || savingBasic || savingContent || !(basicDirty || contentDirty)
+        },
+        savingAll || savingBasic || savingContent ? "\uC800\uC7A5 \uC911\u2026" : "\uBCC0\uACBD\uC0AC\uD56D \uC800\uC7A5"
+      )
+    ), /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 18, border: "1px solid var(--line)", background: "var(--bg-2)" } }, /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
@@ -13238,7 +13266,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const regs = window.BGNJ_TOURS.listReservations(t.id);
       const active = regs.filter((r) => r.status !== "cancelled");
       const isEditing = editingId === t.id;
-      return /* @__PURE__ */ React.createElement("article", { key: t.id, className: "card", style: { padding: 20, minWidth: 0, opacity: t.hidden ? 0.55 : 1 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginRight: 8 } }, "#", String(t.id).padStart(2, "0")), t.title, t.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { marginLeft: 10, fontSize: 10, letterSpacing: "0.18em", color: "var(--danger)", border: "1px solid var(--danger)", padding: "1px 6px", borderRadius: 2 } }, "\uC228\uAE40")), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, marginTop: 4, letterSpacing: "0.12em" } }, t.next, " \xB7 ", t.duration, " \xB7 ", t.group, " \xB7 ", t.level)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: seats.remaining <= 0 ? "var(--danger)" : "var(--primary)" } }, "\uC794\uC5EC ", seats.remaining, " / ", seats.capacity), seats.waitlist > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)" } }, "\uB300\uAE30 ", seats.waitlist), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, window.BGNJ_FMT.won(t.priceNumber)))), detailTab === "info" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("fieldset", { disabled: savingBasic || savingContent, style: { border: 0, padding: 0, margin: 0, minWidth: 0 } }, detailId && /* @__PURE__ */ React.createElement(EventCurrentState, { item: t, pageKey: "tourPages" }), isEditing && // v00.106 — 폼 재구성: 사용자 요청 순서. 표시 일정 문구 + startsAt 통합 (next 자동 derive).
+      return /* @__PURE__ */ React.createElement("article", { key: t.id, className: "card", style: { padding: 20, minWidth: 0, opacity: t.hidden ? 0.55 : 1 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginRight: 8 } }, "#", String(t.id).padStart(2, "0")), t.title, t.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { marginLeft: 10, fontSize: 10, letterSpacing: "0.18em", color: "var(--danger)", border: "1px solid var(--danger)", padding: "1px 6px", borderRadius: 2 } }, "\uC228\uAE40")), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, marginTop: 4, letterSpacing: "0.12em" } }, t.next, " \xB7 ", t.duration, " \xB7 ", t.group, " \xB7 ", t.level)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: seats.remaining <= 0 ? "var(--danger)" : "var(--primary)" } }, "\uC794\uC5EC ", seats.remaining, " / ", seats.capacity), seats.waitlist > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)" } }, "\uB300\uAE30 ", seats.waitlist), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, window.BGNJ_FMT.won(t.priceNumber)))), detailTab === "info" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("fieldset", { disabled: savingAll || savingBasic || savingContent, style: { border: 0, padding: 0, margin: 0, minWidth: 0 } }, detailId && /* @__PURE__ */ React.createElement(EventCurrentState, { item: t, pageKey: "tourPages" }), isEditing && // v00.106 — 폼 재구성: 사용자 요청 순서. 표시 일정 문구 + startsAt 통합 (next 자동 derive).
       /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 0", borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD22C\uC5B4\uBA85"), /* @__PURE__ */ React.createElement(
         "input",
         {

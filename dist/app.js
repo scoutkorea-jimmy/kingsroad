@@ -408,7 +408,7 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.319.000",
+    version: "00.320.000",
     build: "2026.10.06",
     channel: "preview"
   };
@@ -7949,9 +7949,75 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       "\uC0AD\uC81C"
     ))))));
   };
-  var MediaGalleryView = ({ images, title, sectionLabel = "\uC0AC\uC9C4", withCover = true }) => {
+  var MediaGalleryView = ({ images, title, sectionLabel = "\uC0AC\uC9C4", withCover = true, carousel = false }) => {
+    const [index, setIndex] = React.useState(0);
+    const touch = React.useRef(null);
     const norm = withCover ? _withPrimaryFirst(images) : _normalizeImages(images, { showPrimary: false });
     if (!Array.isArray(norm) || norm.length === 0) return null;
+    if (carousel) {
+      const current = index % norm.length;
+      const img = norm[current];
+      const move = (step) => setIndex((current + step + norm.length) % norm.length);
+      return /* @__PURE__ */ React.createElement("section", { "aria-label": `${title || ""} ${sectionLabel}`, style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement(
+        "div",
+        {
+          style: { position: "relative", touchAction: "pan-y" },
+          tabIndex: norm.length > 1 ? 0 : void 0,
+          onKeyDown: (e) => {
+            if (norm.length > 1 && ["ArrowLeft", "ArrowRight"].includes(e.key)) {
+              e.preventDefault();
+              move(e.key === "ArrowLeft" ? -1 : 1);
+            }
+          },
+          onTouchStart: (e) => {
+            touch.current = [e.touches[0].clientX, e.touches[0].clientY];
+          },
+          onTouchCancel: () => {
+            touch.current = null;
+          },
+          onTouchEnd: (e) => {
+            if (!touch.current || norm.length < 2) return;
+            const dx = e.changedTouches[0].clientX - touch.current[0];
+            const dy = e.changedTouches[0].clientY - touch.current[1];
+            touch.current = null;
+            if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? -1 : 1);
+          }
+        },
+        /* @__PURE__ */ React.createElement(
+          "img",
+          {
+            src: img.url,
+            alt: `${title || sectionLabel} ${current + 1}`,
+            style: { width: "100%", height: "auto", display: "block", borderRadius: 2, background: "var(--bg-2)" }
+          }
+        ),
+        norm.length > 1 && [-1, 1].map((step) => /* @__PURE__ */ React.createElement(
+          "button",
+          {
+            key: step,
+            type: "button",
+            className: "btn",
+            "aria-label": step < 0 ? "\uC774\uC804 \uD3EC\uC2A4\uD130" : "\uB2E4\uC74C \uD3EC\uC2A4\uD130",
+            onClick: () => move(step),
+            style: {
+              position: "absolute",
+              top: "50%",
+              transform: "translateY(-50%)",
+              [step < 0 ? "left" : "right"]: 8,
+              width: 44,
+              height: 44,
+              padding: 0,
+              borderRadius: "50%",
+              background: "var(--bg)",
+              color: "var(--ink)",
+              border: "1px solid var(--line)",
+              fontSize: 28
+            }
+          },
+          step < 0 ? "\u2039" : "\u203A"
+        ))
+      ), norm.length > 1 && /* @__PURE__ */ React.createElement("div", { "aria-live": "polite", className: "dim mono", style: { textAlign: "center", marginTop: 10, fontSize: 13 } }, "\uD3EC\uC2A4\uD130 ", current + 1, " / ", norm.length), img.credit && /* @__PURE__ */ React.createElement("div", { className: "dim mono", style: { fontSize: 10, marginTop: 6, lineHeight: 1.5 } }, img.credit));
+    }
     const grid = withCover ? norm.slice(1) : norm;
     if (grid.length === 0) return null;
     return /* @__PURE__ */ React.createElement("section", { "aria-label": `${title || ""} ${sectionLabel}`, style: { marginTop: 24, marginBottom: 32 } }, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18, marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid var(--line)" } }, sectionLabel, " ", /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginLeft: 6 } }, grid.length, "\uC7A5")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 10 } }, grid.map((img, i) => /* @__PURE__ */ React.createElement("figure", { key: img.url + i, style: { margin: 0, display: "flex", flexDirection: "column" } }, /* @__PURE__ */ React.createElement("div", { style: { aspectRatio: "4/3", background: "var(--bg-2)", overflow: "hidden", borderRadius: 3 } }, /* @__PURE__ */ React.createElement(
@@ -11638,6 +11704,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const tp = ((_c2 = sc.tourPages) == null ? void 0 : _c2[tour.id]) || {};
       const galleryPrimary = (_d2 = pickPrimaryImage) == null ? void 0 : _d2(tp.images);
       const coverUri = (galleryPrimary == null ? void 0 : galleryPrimary.url) || tour.coverUrl || tp.coverDataUri || "";
+      if (galleryPrimary) return /* @__PURE__ */ React.createElement(MediaGalleryView, { key: tour.id, images: tp.images, title: tour.title, sectionLabel: "\uD3EC\uC2A4\uD130", carousel: true });
       if (coverUri) {
         return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement(
           "img",
@@ -11662,12 +11729,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         onClick: () => setEditTarget(tour)
       },
       "\u270E \uD22C\uC5B4 \uC218\uC815"
-    )), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: tour.subtitle ? 6 : 24 } }, tour.title), tour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "ko-serif gold-2", style: { fontSize: 18, lineHeight: 1.4, marginBottom: 24, fontStyle: "italic" } }, tour.subtitle), /* @__PURE__ */ React.createElement("p", { className: "dim bgnj-multiline", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32 } }, tour.desc), MediaGalleryView && (() => {
-      var _a2, _b2, _c2, _d2;
-      const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
-      const imgs = (_d2 = (_c2 = sc.tourPages) == null ? void 0 : _c2[tour.id]) == null ? void 0 : _d2.images;
-      return /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images: imgs, title: tour.title, sectionLabel: "\uD3EC\uC2A4\uD130" });
-    })(), MediaGalleryView && _isPast(tour) && (() => {
+    )), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: tour.subtitle ? 6 : 24 } }, tour.title), tour.subtitle && /* @__PURE__ */ React.createElement("p", { className: "ko-serif gold-2", style: { fontSize: 18, lineHeight: 1.4, marginBottom: 24, fontStyle: "italic" } }, tour.subtitle), /* @__PURE__ */ React.createElement("p", { className: "dim bgnj-multiline", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32 } }, tour.desc), MediaGalleryView && _isPast(tour) && (() => {
       var _a2, _b2, _c2, _d2;
       const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
       const photos = (_d2 = (_c2 = sc.tourPages) == null ? void 0 : _c2[tour.id]) == null ? void 0 : _d2.photos;
@@ -13919,6 +13981,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const lp = ((_c2 = sc.lecturePages) == null ? void 0 : _c2[lecture.id]) || {};
       const galleryPrimary = (_d2 = pickPrimaryImage) == null ? void 0 : _d2(lp.images);
       const coverUri = (galleryPrimary == null ? void 0 : galleryPrimary.url) || lp.coverDataUri || "";
+      if (galleryPrimary) return /* @__PURE__ */ React.createElement(MediaGalleryView, { key: lecture.id, images: lp.images, title: lecture.title, sectionLabel: "\uD3EC\uC2A4\uD130", carousel: true });
       if (coverUri) {
         return /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 32 } }, /* @__PURE__ */ React.createElement(
           "img",
@@ -13946,12 +14009,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         },
         "\u270E \uAC15\uC5F0 \uC218\uC815"
       ));
-    })(), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: 24, whiteSpace: "pre-wrap" } }, lecture.topic), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32, whiteSpace: "pre-wrap" } }, lecture.note), MediaGalleryView && (() => {
-      var _a2, _b2, _c2, _d2;
-      const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
-      const imgs = (_d2 = (_c2 = sc.lecturePages) == null ? void 0 : _c2[lecture.id]) == null ? void 0 : _d2.images;
-      return /* @__PURE__ */ React.createElement(window.MediaGalleryView, { images: imgs, title: lecture.title, sectionLabel: "\uD3EC\uC2A4\uD130" });
-    })(), MediaGalleryView && _isPast(lecture) && (() => {
+    })(), /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 40, fontWeight: 500, lineHeight: 1.2, marginBottom: 24, whiteSpace: "pre-wrap" } }, lecture.topic), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 16, lineHeight: 1.9, marginBottom: 32, whiteSpace: "pre-wrap" } }, lecture.note), MediaGalleryView && _isPast(lecture) && (() => {
       var _a2, _b2, _c2, _d2;
       const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
       const photos = (_d2 = (_c2 = sc.lecturePages) == null ? void 0 : _c2[lecture.id]) == null ? void 0 : _d2.photos;

@@ -1017,6 +1017,7 @@ const TourAdminPanel = ({ go }) => {
   const [galleryEditTarget, setGalleryEditTarget] = React.useState(null);
   const [addingTour, setAddingTour] = React.useState(false);
   const [savingBasic, setSavingBasic] = React.useState(false);
+  const [savingAll, setSavingAll] = React.useState(false);
   const [savingContent, setSavingContent] = React.useState(false);
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
   // v00.072 — 투어별 답사 일정/준비물/커버 inline 편집용 별도 state.
@@ -1203,17 +1204,23 @@ const TourAdminPanel = ({ go }) => {
   };
 
 
+  const saveAll = async () => {
+    if (savingAll || savingBasic || savingContent) return false;
+    setSavingAll(true);
+    try {
+      if (basicDirty && !(await saveEdit())) return false;
+      if (contentDirty && !(await saveContentEdit())) return false;
+      return true;
+    } finally { setSavingAll(false); }
+  };
+
   const checkChanges = window.useUnsavedTourChanges({
     dirty: basicDirty || contentDirty,
     onDiscard: () => {
       const tour = window.BGNJ_TOURS.getTour(editingId || contentEditingId);
       if (tour) { startEdit(tour); startContentEdit(tour); }
     },
-    onSave: async () => {
-      if (basicDirty && !(await saveEdit())) return false;
-      if (contentDirty && !(await saveContentEdit())) return false;
-      return true;
-    },
+    onSave: saveAll,
   });
 
   // v00.127 — async + await + try/catch. 이전엔 deleteTour fire-and-forget 으로 refresh 가
@@ -1245,6 +1252,19 @@ const TourAdminPanel = ({ go }) => {
 
   return (
     <div>
+      {detailId && detailTab === 'info' && !galleryEditTarget && !addingTour && (
+        <div className="admin-savebar" role="region" aria-label="투어 저장"
+          style={{position:'sticky', top:72, zIndex:30, marginTop:0, marginBottom:18, boxShadow:'0 4px 16px rgba(0,0,0,0.12)'}}>
+          <span className="admin-savebar__msg" aria-live="polite">
+            {savingAll || savingBasic || savingContent ? '저장 중…' : basicDirty || contentDirty ? '저장하지 않은 변경사항이 있습니다.' : '저장된 상태입니다.'}
+          </span>
+          <span className="admin-savebar__spacer"/>
+          <button type="button" className="btn btn-gold" onClick={saveAll}
+            disabled={savingAll || savingBasic || savingContent || !(basicDirty || contentDirty)}>
+            {savingAll || savingBasic || savingContent ? '저장 중…' : '변경사항 저장'}
+          </button>
+        </div>
+      )}
       {/* 통합 페이지 콘텐츠 편집기 (collapsible) */}
       <div style={{marginBottom:18, border:'1px solid var(--line)', background:'var(--bg-2)'}}>
         <button type="button"
@@ -1387,7 +1407,7 @@ const TourAdminPanel = ({ go }) => {
                     </span>
                   </div>
                 </header>
-                {detailTab === 'info' && (<><fieldset disabled={savingBasic || savingContent} style={{border:0, padding:0, margin:0, minWidth:0}}>
+                {detailTab === 'info' && (<><fieldset disabled={savingAll || savingBasic || savingContent} style={{border:0, padding:0, margin:0, minWidth:0}}>
                 {detailId && <EventCurrentState item={t} pageKey="tourPages"/>}
 
                 {/* v00.299.002 — else 분기(버튼 줄)를 밖으로 뺐으므로 삼항이 아니라 && 다. */}
@@ -1489,7 +1509,7 @@ const TourAdminPanel = ({ go }) => {
                       <button type="button" className="btn btn-gold btn-small" onClick={saveEdit} disabled={savingBasic}>{savingBasic ? '저장 중…' : '기본 정보 저장'}</button>
                     </div>
                     <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
-                      기본 정보는 위 버튼으로 저장하고, 아래 일정·준비물은 작성 후 따로 저장해 주세요.
+                      상단 ‘변경사항 저장’으로 기본 정보와 일정·신청 설정을 함께 저장할 수 있습니다.
                     </p>
                   </div>
                 )}
