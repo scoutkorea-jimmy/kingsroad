@@ -284,7 +284,8 @@ const AdminPage = ({ go }) => {
 
   // v00.165 — 사이드바 항목 클릭 시 admin-main 영역 / 윈도우 스크롤 최상단.
   // 사용자 요청: '사이드 메뉴를 클릭하면 자동으로 제일 위로 올라갈수있게'.
-  const handleTabClick = React.useCallback((nextTab) => {
+  const handleTabClick = React.useCallback(async (nextTab) => {
+    if (window.BGNJ_BEFORE_NAV && !(await window.BGNJ_BEFORE_NAV())) return;
     setTab(nextTab);
     // 다음 paint 에 스크롤 (탭 컨텐츠 마운트 후).
     requestAnimationFrame(() => {

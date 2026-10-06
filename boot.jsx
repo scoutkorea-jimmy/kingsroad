@@ -752,7 +752,10 @@ const App = () => {
   const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
   const [editMode, setEditMode] = React.useState(false);
 
-  const go = (r) => {
+  const routeRef = React.useRef(route);
+  routeRef.current = route;
+  const go = async (r) => {
+    if (r !== routeRef.current && window.BGNJ_BEFORE_NAV && !(await window.BGNJ_BEFORE_NAV())) return;
     setRoute(r);
     setPostId(null);
     try { localStorage.setItem('bgnj_route', r); } catch (_e) { console.warn('[bgnj] 화면 이동 힌트 — 실패해도 목록으로 갈 뿐 (boot.jsx:603)', _e); }
@@ -768,8 +771,15 @@ const App = () => {
 
   // 뒤로/앞으로 버튼 동기화 — popstate 시 URL을 다시 라우트로 변환.
   React.useEffect(() => {
-    const onPop = () => {
+    const onPop = async () => {
       const next = pathToRoute(window.location.pathname);
+      if (next === routeRef.current) return;
+      if (window.BGNJ_BEFORE_NAV) {
+        const target = window.location.href;
+        window.history.replaceState(null, '', window.BGNJ_EDIT_URL || routeToPath(routeRef.current));
+        if (!(await window.BGNJ_BEFORE_NAV())) return;
+        window.history.replaceState(null, '', target);
+      }
       setRoute(next);
       setPostId(null);
       window.scrollTo(0, 0);
@@ -861,8 +871,14 @@ const App = () => {
 
   // URL 해시 딥 링크: #col-{id} → 칼럼 상세, #post-{id} → 커뮤니티 상세
   React.useEffect(() => {
-    const applyHash = () => {
+    const applyHash = async () => {
       const h = window.location.hash || '';
+      if (/^#(?:col-|post-|lecture-|tour-)/.test(h) && window.BGNJ_BEFORE_NAV) {
+        const target = window.location.href;
+        window.history.replaceState(null, '', window.BGNJ_EDIT_URL || routeToPath(routeRef.current));
+        if (!(await window.BGNJ_BEFORE_NAV())) return;
+        window.history.replaceState(null, '', target);
+      }
       const colMatch = h.match(/^#col-(.+)$/);
       const postMatch = h.match(/^#post-(.+)$/);
       const lectureMatch = h.match(/^#lecture-(.+)$/);

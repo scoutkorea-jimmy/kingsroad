@@ -34,19 +34,66 @@ const lockBodyScroll   = () => window.BGNJ_SCROLL_LOCK.lock();
 const unlockBodyScroll = () => window.BGNJ_SCROLL_LOCK.unlock();
 
 // === 모달 가드 훅 (v00.067) ====================================
+// 투어 편집의 이동 확인. 새로고침/탭 닫기는 브라우저 기본 경고를 사용한다.
+window.useUnsavedTourChanges = function useUnsavedTourChanges({ dirty, onSave, onDiscard }) {
+  const latest = React.useRef({ dirty, onSave, onDiscard });
+  latest.current = { dirty, onSave, onDiscard };
+  const asking = React.useRef(false);
+  const check = React.useCallback(async () => {
+    if (!latest.current.dirty) return true;
+    if (asking.current) return false;
+    asking.current = true;
+    try {
+      const choice = await window.BGNJ_DRAFT_PROMPT('투어', {
+        message: '투어 수정사항을 저장하고 이동하시겠어요?',
+        saveLabel: '저장 후 이동', discardLabel: '저장하지 않고 이동', cancelLabel: '계속 작성',
+      });
+      if (choice === 'cancel') return false;
+      if (choice === 'save') return (await latest.current.onSave()) !== false;
+      if (choice === 'discard') { await latest.current.onDiscard?.(); return true; }
+      return false;
+    } catch (err) {
+      window.BGNJ_TOAST?.error?.('저장하지 못했습니다. 내용을 확인한 뒤 다시 저장해 주세요. ' + (err?.message || ''));
+      return false;
+    } finally { asking.current = false; }
+  }, []);
+  React.useEffect(() => {
+    if (!dirty) return;
+    const previous = window.BGNJ_BEFORE_NAV;
+    const previousUrl = window.BGNJ_EDIT_URL;
+    window.BGNJ_BEFORE_NAV = check;
+    window.BGNJ_EDIT_URL = window.location.href;
+    const beforeUnload = (e) => { if (latest.current.dirty) { e.preventDefault(); e.returnValue = ''; } };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', beforeUnload);
+      if (window.BGNJ_BEFORE_NAV === check) { window.BGNJ_BEFORE_NAV = previous; window.BGNJ_EDIT_URL = previousUrl; }
+    };
+  }, [dirty, check]);
+  return check;
+};
+
+// 외부 신청 주소는 HTTP(S)만 허용하고 로그인 정보가 포함된 주소는 거부한다.
+window.BGNJ_TOUR_URL = (value) => {
+  if (!String(value || '').trim()) return '';
+  const url = new URL(String(value).trim());
+  if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error('http:// 또는 https://로 시작하는 신청 링크를 입력해 주세요.');
+  return url.href;
+};
+
 // ESC 키 + 외부 클릭(backdrop) + 브라우저 뒤로가기 시 모달을 닫기 전에 dirty 상태면 사용자에게 confirm.
 // 사용법:
 //   const { onBackdropClick } = useModalGuard({ open, dirty, onClose, onSaveDraft });
 //   <div onClick={onBackdropClick}>...</div>
 // onSaveDraft 가 있고 dirty 면 prompt — 저장 / 버리기 / 취소.
-window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label, contentRef }) {
+window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label, contentRef, saveLabel = '임시저장' }) {
   const promptName = label || '작성 중인 내용';
   // v00.127 — handleAttemptClose 를 ref 로 안정화. 이전엔 dirty/onClose/onSaveDraft 가 부모
   // re-render 마다 새 ref → handleAttemptClose 새 ref → useEffect 의 deps 변경 → cleanup 실행
   // → history.back() 호출 → popstate 발생 → modal 닫힘. (모달이 떴다 즉시 사라지는 사용자 보고)
   // ref 패턴으로 useEffect 는 [open] 만 의존, handleAttemptClose 는 항상 최신 상태 사용.
-  const stateRef = React.useRef({ dirty, onClose, onSaveDraft, promptName });
-  stateRef.current = { dirty, onClose, onSaveDraft, promptName };
+  const stateRef = React.useRef({ dirty, onClose, onSaveDraft, promptName, saveLabel });
+  stateRef.current = { dirty, onClose, onSaveDraft, promptName, saveLabel };
 
   const handleAttemptClose = React.useCallback(async () => {
     const s = stateRef.current;
@@ -57,10 +104,10 @@ window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraf
     //   저장 안 하고 닫기 → 변경 폐기 + 닫기
     // BGNJ_DRAFT_PROMPT 가 3-way 헬퍼. onSaveDraft 미전달이면 2-way fallback (저장 옵션 없음).
     if (s.onSaveDraft && window.BGNJ_DRAFT_PROMPT) {
-      const choice = await window.BGNJ_DRAFT_PROMPT(s.promptName, {});
+      const choice = await window.BGNJ_DRAFT_PROMPT(s.promptName, { saveLabel: s.saveLabel });
       if (choice === 'cancel') return;        // 모달 유지
       if (choice === 'save') {
-        try { s.onSaveDraft(); } catch (_e) { console.warn('[bgnj] Shell.jsx:63 오류(무시하고 진행)', _e); }
+        try { if ((await s.onSaveDraft()) === false) return; } catch (_e) { console.warn('[bgnj] 저장 실패 — 작성 화면 유지', _e); return; }
       }
       // 'save' 또는 'discard' 모두 onClose.
       s.onClose?.();

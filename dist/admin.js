@@ -1361,69 +1361,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     } }, !it.imageDataUri && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 9, color: "var(--ink-3)", letterSpacing: "0.18em" } }, "NO IMAGE")), /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer", textAlign: "center" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", style: { display: "none" }, onChange: (e) => onPickImage(idx, e) })), it.imageDataUri && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn-ghost", style: { fontSize: 11, color: "var(--danger)" }, onClick: () => setItem(idx, { imageDataUri: "" }) }, "\uC774\uBBF8\uC9C0 \uC81C\uAC70")), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }, className: "member-act-grid" }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC9C0\uC5ED (\uC608: \uC218\uB3C4\uAD8C)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.region || "", onChange: (e) => setItem(idx, { region: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC81C\uBAA9 (\uC608: \uC11C\uC6B8)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.name || "", onChange: (e) => setItem(idx, { name: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBD80\uC81C (\uC608: \uAD81\uAD90\uACFC \uACE8\uBAA9\uC758 \uB3C4\uC2DC)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.subtitle || "", onChange: (e) => setItem(idx, { subtitle: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC124\uBA85"), /* @__PURE__ */ React.createElement("textarea", { className: "field-input", rows: 2, value: it.desc || "", onChange: (e) => setItem(idx, { desc: e.target.value }) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, gridColumn: "1 / -1" } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD0DC\uADF8 (\uC27C\uD45C \uB610\uB294 \uAC00\uC6B4\uB383\uC810\uC73C\uB85C \uAD6C\uBD84 \u2014 \uC608: \uAD81\uAD90, \uD55C\uC625, \uC5ED\uC0AC)"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: it.tags || "", onChange: (e) => setItem(idx, { tags: e.target.value }) }))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6, alignItems: "stretch" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: idx === 0, onClick: () => moveItem(idx, -1), "aria-label": "\uC704\uB85C" }, "\u2191"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: idx === draft.length - 1, onClick: () => moveItem(idx, 1), "aria-label": "\uC544\uB798\uB85C" }, "\u2193"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", style: { color: "var(--danger)", borderColor: "var(--danger)" }, onClick: () => removeItem(idx) }, "\uC0AD\uC81C"))))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn", onClick: addItem }, "\uFF0B \uC0C8 \uCD94\uCC9C \uCD94\uAC00"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setDraft(items) }, "\uBCC0\uACBD \uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold", onClick: save }, "\uC804\uCCB4 \uC800\uC7A5 (", draft.length, "\uAC1C)"))));
   };
   var TPE_RowActions = ({ i, total, onMove, onRemove }) => /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: i === 0, onClick: () => onMove(i, -1), "aria-label": "\uC704\uB85C", title: "\uC704\uB85C", style: { padding: "6px 10px", fontSize: 13 } }, "\u2191"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: i === total - 1, onClick: () => onMove(i, 1), "aria-label": "\uC544\uB798\uB85C", title: "\uC544\uB798\uB85C", style: { padding: "6px 10px", fontSize: 13 } }, "\u2193"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => onRemove(i), "aria-label": "\uC0AD\uC81C", title: "\uC0AD\uC81C", style: { padding: "6px 10px", fontSize: 11, borderColor: "var(--danger)", color: "var(--danger)" } }, "\u2715"));
-  var _parseTimeLabel = (label) => {
-    const s = String(label || "").trim();
-    const hMatch = s.match(/(\d+)\s*h/i);
-    const mMatch = s.match(/(\d+)\s*m(?!s)/i);
-    return {
-      h: hMatch ? Number(hMatch[1]) : 0,
-      m: mMatch ? Number(mMatch[1]) : 0
-    };
-  };
-  var _formatTimeLabel = (h, m) => {
-    const hi = Math.max(0, Math.min(99, Number(h) || 0));
-    const mi = Math.max(0, Math.min(59, Number(m) || 0));
-    return `${hi}h ${String(mi).padStart(2, "0")}m`;
-  };
-  var TPE_TimeInput = ({ value, onChange }) => {
-    const { h, m } = _parseTimeLabel(value);
-    return /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4, alignItems: "center" } }, /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        type: "number",
-        min: "0",
-        max: "99",
-        value: h,
-        onChange: (e) => onChange(_formatTimeLabel(e.target.value, m)),
-        style: {
-          width: 50,
-          padding: "7px 6px",
-          fontSize: 13,
-          textAlign: "center",
-          fontFamily: "var(--font-mono)",
-          background: "var(--bg-2)",
-          border: "1px solid var(--line)",
-          borderRadius: 2,
-          color: "var(--ink)"
-        },
-        "aria-label": "\uC2DC\uAC04 (h)"
-      }
-    ), /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11 } }, "h"), /* @__PURE__ */ React.createElement(
-      "input",
-      {
-        type: "number",
-        min: "0",
-        max: "59",
-        value: m,
-        onChange: (e) => onChange(_formatTimeLabel(h, e.target.value)),
-        style: {
-          width: 50,
-          padding: "7px 6px",
-          fontSize: 13,
-          textAlign: "center",
-          fontFamily: "var(--font-mono)",
-          background: "var(--bg-2)",
-          border: "1px solid var(--line)",
-          borderRadius: 2,
-          color: "var(--ink)"
-        },
-        "aria-label": "\uBD84 (m)"
-      }
-    ), /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11 } }, "m"));
-  };
-  var TPE_ScheduleEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uB2F5\uC0AC \uC77C\uC815"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.6 } }, "\uC2DC\uC791 \uC2DC\uAC01\uC73C\uB85C\uBD80\uD130 \uACBD\uACFC \uC2DC\uAC04 \uB2E8\uC704. \uCCAB \uD56D\uBAA9\uC740 \uBCF4\uD1B5 0h 0m.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: onAdd }, "\uFF0B \uD56D\uBAA9 \uCD94\uAC00")), rows.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.6, padding: "14px 0", textAlign: "center", background: "var(--bg-2)", border: "1px dashed var(--line)", borderRadius: 2 } }, "\u24D8 \uD56D\uBAA9\uC774 \uC5C6\uC73C\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C '\uB2F5\uC0AC \uC77C\uC815' \uC139\uC158 \uBBF8\uB178\uCD9C."), rows.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: {
+  var TPE_TimeInput = ({ value, onChange }) => /* @__PURE__ */ React.createElement(
+    "input",
+    {
+      type: "text",
+      className: "field-input",
+      value: value || "",
+      onChange: (e) => onChange(e.target.value),
+      placeholder: "1\uC77C\uCC28 10:00",
+      "aria-label": "\uC77C\uC815 \uC2DC\uAC04",
+      style: { padding: "7px 10px", minWidth: 0 }
+    }
+  );
+  var TPE_ScheduleEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uB2F5\uC0AC \uC77C\uC815"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.6 } }, "\uC2DC\uAC04\uACFC \uB0B4\uC6A9\uC744 \uC785\uB825\uD558\uC138\uC694. \uC608: 10:00 / 1\uC77C\uCC28 10:00 / \uCD9C\uBC1C 30\uBD84 \uD6C4")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: onAdd }, "\uFF0B \uD56D\uBAA9 \uCD94\uAC00")), rows.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.6, padding: "14px 0", textAlign: "center", background: "var(--bg-2)", border: "1px dashed var(--line)", borderRadius: 2 } }, "\u24D8 \uD56D\uBAA9\uC774 \uC5C6\uC73C\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C '\uB2F5\uC0AC \uC77C\uC815' \uC139\uC158 \uBBF8\uB178\uCD9C."), rows.map((s, i) => /* @__PURE__ */ React.createElement("div", { key: i, className: "tour-schedule-row", style: {
     display: "grid",
-    gridTemplateColumns: "24px 145px 1fr auto",
+    gridTemplateColumns: "24px 160px minmax(0, 1fr) auto",
     gap: 10,
     marginBottom: 10,
     alignItems: "center",
@@ -1441,7 +1393,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       style: { padding: "7px 10px", fontSize: 14 }
     }
   ), /* @__PURE__ */ React.createElement(TPE_RowActions, { i, total: rows.length, onMove, onRemove }))));
-  var TPE_PrepEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uC900\uBE44\uBB3C"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.6 } }, "\uCC38\uAC00\uC790\uAC00 \uAC00\uC838\uC640\uC57C \uD560 \uBB3C\uD488 / \uC548\uB0B4 \uC0AC\uD56D.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: onAdd }, "\uFF0B \uD56D\uBAA9 \uCD94\uAC00")), rows.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.6, padding: "14px 0", textAlign: "center", background: "var(--bg-2)", border: "1px dashed var(--line)", borderRadius: 2 } }, "\u24D8 \uD56D\uBAA9\uC774 \uC5C6\uC73C\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C '\uC900\uBE44\uBB3C' \uC139\uC158 \uBBF8\uB178\uCD9C."), rows.map((p, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: {
+  var TPE_PrepEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 18, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8, marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.2em" } }, "\uC900\uBE44\uBB3C"), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 4, lineHeight: 1.6 } }, "\uCC38\uAC00\uC790\uAC00 \uAC00\uC838\uC640\uC57C \uD560 \uBB3C\uD488 / \uC548\uB0B4 \uC0AC\uD56D.")), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: onAdd }, "\uFF0B \uD56D\uBAA9 \uCD94\uAC00")), rows.length === 0 && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 12, lineHeight: 1.6, padding: "14px 0", textAlign: "center", background: "var(--bg-2)", border: "1px dashed var(--line)", borderRadius: 2 } }, "\u24D8 \uD56D\uBAA9\uC774 \uC5C6\uC73C\uBA74 \uD398\uC774\uC9C0\uC5D0\uC11C '\uC900\uBE44\uBB3C' \uC139\uC158 \uBBF8\uB178\uCD9C."), rows.map((p, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: {
     display: "grid",
     gridTemplateColumns: "24px 1fr auto",
     gap: 10,
@@ -12938,12 +12890,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [editingId, setEditingId] = React.useState(null);
     const [draft, setDraft] = React.useState({});
     const [galleryEditTarget, setGalleryEditTarget] = React.useState(null);
+    const [addingTour, setAddingTour] = React.useState(false);
+    const [savingBasic, setSavingBasic] = React.useState(false);
+    const [savingContent, setSavingContent] = React.useState(false);
     const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
     const [contentEditingId, setContentEditingId] = React.useState(null);
     const [contentSchedule, setContentSchedule] = React.useState([]);
     const [contentPrep, setContentPrep] = React.useState([]);
     const [contentCover, setContentCover] = React.useState("");
     const [contentMsg, setContentMsg] = React.useState("");
+    const [contentBookingUrl, setContentBookingUrl] = React.useState("");
+    const [basicBaseline, setBasicBaseline] = React.useState("");
+    const [contentBaseline, setContentBaseline] = React.useState("");
+    const contentSnapshot = JSON.stringify([contentSchedule, contentPrep, contentCover, contentBookingUrl]);
+    const basicDirty = editingId != null && JSON.stringify(draft) !== basicBaseline;
+    const contentDirty = contentEditingId != null && contentSnapshot !== contentBaseline;
     const refresh = () => setTick((v) => v + 1);
     const allTours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
     const [search, setSearch] = React.useState("");
@@ -12959,7 +12920,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       if (allTours.length === 0) return;
       if (!allTours.some((x) => String(x.id) === String(detailId))) setDetailId(null);
     }, [detailId, allTours]);
-    const openDetail = (id) => {
+    const openDetail = async (id) => {
+      if (!await checkChanges()) return;
       setDetailId(id);
       setDetailTab("info");
       const item = allTours.find((x) => String(x.id) === String(id));
@@ -12968,7 +12930,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         startContentEdit(item);
       }
     };
-    const closeDetail = () => {
+    const closeDetail = async () => {
+      if (!await checkChanges()) return;
       setDetailId(null);
       setEditingId(null);
       setContentEditingId(null);
@@ -12989,9 +12952,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setContentSchedule(Array.isArray(ovr.schedule) ? ovr.schedule.slice() : []);
       setContentPrep(Array.isArray(ovr.prep) ? ovr.prep.slice() : []);
       setContentCover(t.coverUrl || ovr.coverDataUri || "");
+      setContentBookingUrl(ovr.bookingUrl || "");
+      setContentBaseline(JSON.stringify([Array.isArray(ovr.schedule) ? ovr.schedule : [], Array.isArray(ovr.prep) ? ovr.prep : [], t.coverUrl || ovr.coverDataUri || "", ovr.bookingUrl || ""]));
       setContentMsg("");
     };
-    const cancelContentEdit = () => {
+    const cancelContentEdit = async () => {
+      if (contentDirty && !await checkChanges()) return;
       setContentEditingId(null);
       setContentSchedule([]);
       setContentPrep([]);
@@ -13000,27 +12966,34 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     };
     const saveContentEdit = async () => {
       var _a, _b;
-      if (!contentEditingId) return;
+      if (!contentEditingId || savingContent) return false;
+      setSavingContent(true);
+      let scheduleSaved = false;
       try {
+        const bookingUrl = window.BGNJ_TOUR_URL(contentBookingUrl);
         const sc = ((_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) || {};
         const tourPages = sc.tourPages || {};
         const cleanS = contentSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ""), l: String(s.l || "") }));
         const cleanP = contentPrep.filter((p) => p && String(p).trim()).map((p) => String(p).trim());
         const next = { ...tourPages, [contentEditingId]: {
+          ...tourPages[contentEditingId],
           schedule: cleanS,
-          prep: cleanP
+          prep: cleanP,
+          bookingUrl
         } };
         await window.BGNJ_SITE_CONTENT.saveSection("tourPages", next);
-        try {
-          await window.BGNJ_TOURS.saveTour({ id: contentEditingId, coverUrl: contentCover || "" });
-        } catch (err) {
-          console.warn("[v00.081] cover_url save \uC2E4\uD328 \u2014 site_content fallback \uC0AC\uC6A9 \uAC00\uB2A5", err);
-        }
+        scheduleSaved = true;
+        await window.BGNJ_TOURS.saveTour({ id: contentEditingId, coverUrl: contentCover || "" });
+        setContentBaseline(contentSnapshot);
         setContentMsg("\uC800\uC7A5\uB428 \u2014 \uD22C\uC5B4 \uD398\uC774\uC9C0\uC5D0 \uC989\uC2DC \uBC18\uC601.");
         setTimeout(() => setContentMsg(""), 2500);
         refresh();
+        return true;
       } catch (err) {
-        window.BGNJ_TOAST.error("\uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+        window.BGNJ_TOAST.error((scheduleSaved ? "\uC77C\uC815\xB7\uC900\uBE44\uBB3C\uC740 \uC800\uC7A5\uB410\uC9C0\uB9CC \uB300\uD45C \uC774\uBBF8\uC9C0 \uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC800\uC7A5\uD574 \uC8FC\uC138\uC694: " : "\uC800\uC7A5 \uC2E4\uD328: ") + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+        return false;
+      } finally {
+        setSavingContent(false);
       }
     };
     const onPickContentCover = async (e) => {
@@ -13047,7 +13020,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
       })();
       setEditingId(t.id);
-      setDraft({
+      const nextDraft = {
         title: t.title || "",
         subtitle: t.subtitle || "",
         // v00.106
@@ -13062,21 +13035,28 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         desc: t.desc || "",
         refundPolicy: t.refundPolicy || ""
         // v00.106
-      });
+      };
+      setDraft(nextDraft);
+      setBasicBaseline(JSON.stringify(nextDraft));
     };
     const saveEdit = async () => {
-      var _a, _b;
-      if (editingId == null) return;
+      var _a, _b, _c, _d;
+      if (editingId == null || savingBasic) return false;
       const tour = window.BGNJ_TOURS.getTour(editingId);
-      if (!tour) return;
-      const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : tour.startsAt;
-      const nextLabel = (() => {
-        if (!startsAtIso) return tour.next || "";
-        const d = new Date(startsAtIso);
-        const pad = (n) => String(n).padStart(2, "0");
-        return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      })();
+      if (!tour) return false;
+      if (!((_a = draft.title) == null ? void 0 : _a.trim()) || !draft.startsAt || !Number.isInteger(Number(draft.capacity)) || Number(draft.capacity) < 1 || draft.priceNumber === "" || !Number.isFinite(Number(draft.priceNumber)) || Number(draft.priceNumber) < 0) {
+        window.BGNJ_TOAST.error("\uC81C\uBAA9\xB7\uCD9C\uBC1C \uC77C\uC2DC\xB7\uBAA8\uC9D1 \uC778\uC6D0\xB7\uCC38\uAC00\uBE44\uB97C \uD655\uC778\uD574 \uC8FC\uC138\uC694. \uBB34\uB8CC \uD504\uB85C\uADF8\uB7A8\uC740 0\uC6D0\uC744 \uC785\uB825\uD569\uB2C8\uB2E4.");
+        return false;
+      }
+      setSavingBasic(true);
       try {
+        const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : tour.startsAt;
+        const nextLabel = (() => {
+          if (!startsAtIso) return tour.next || "";
+          const d = new Date(startsAtIso);
+          const pad = (n) => String(n).padStart(2, "0");
+          return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        })();
         await window.BGNJ_TOURS.saveTour({
           id: tour.id,
           title: draft.title,
@@ -13084,7 +13064,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           // v00.106
           level: draft.level,
           duration: draft.duration,
-          group: draft.group,
+          group: !((_b = draft.group) == null ? void 0 : _b.trim()) || draft.group === `${tour.capacity}\uBA85` ? `${Number(draft.capacity)}\uBA85` : draft.group,
           next: nextLabel,
           startsAt: startsAtIso,
           durationMinutes: Number(draft.durationMinutes) || 180,
@@ -13096,48 +13076,32 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           // v00.106
         });
         if (!detailId) setEditingId(null);
-        (_b = (_a = window.BGNJ_TOAST) == null ? void 0 : _a.success) == null ? void 0 : _b.call(_a, "\uC800\uC7A5\uD588\uC2B5\uB2C8\uB2E4.");
+        setBasicBaseline(JSON.stringify(draft));
+        (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.success) == null ? void 0 : _d.call(_c, "\uC800\uC7A5\uD588\uC2B5\uB2C8\uB2E4.");
         refresh();
+        return true;
       } catch (err) {
         window.BGNJ_TOAST.error("\uD22C\uC5B4 \uC800\uC7A5 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
+        return false;
+      } finally {
+        setSavingBasic(false);
       }
     };
-    const addNewTour = async () => {
-      var _a, _b, _c;
-      const id = `tour-${Date.now()}`;
-      const now = new Date(Date.now() + 14 * 24 * 60 * 60 * 1e3);
-      const pad = (n) => String(n).padStart(2, "0");
-      const startsAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T10:00:00+09:00`;
-      const next = `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} 10:00`;
-      try {
-        const tour = await window.BGNJ_TOURS.saveTour({
-          id,
-          title: "\uC0C8 \uB2F5\uC0AC \u2014 \uBD80\uC81C",
-          level: "\uC785\uBB38",
-          duration: "3\uC2DC\uAC04",
-          group: "12\uC778 \uC774\uD558",
-          next,
-          startsAt,
-          durationMinutes: 180,
-          capacity: 12,
-          priceNumber: 8e4,
-          price: 8e4,
-          desc: "\uB2F5\uC0AC \uC548\uB0B4\uB97C \uC785\uB825\uD558\uC138\uC694."
-        });
-        if (!tour) throw new Error("\uC11C\uBC84 \uC751\uB2F5 \uC5C6\uC74C");
-        (_a = window.BGNJ_AUDIT) == null ? void 0 : _a.log({ action: "tour.create", target: `tour:${id}` });
-        try {
-          (_c = (_b = window.BGNJ_BROADCAST) == null ? void 0 : _b.publish) == null ? void 0 : _c.call(_b, "tours");
-        } catch (_e) {
-          console.warn("[bgnj] AdminEventsPanels.jsx:735 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+    const checkChanges = window.useUnsavedTourChanges({
+      dirty: basicDirty || contentDirty,
+      onDiscard: () => {
+        const tour = window.BGNJ_TOURS.getTour(editingId || contentEditingId);
+        if (tour) {
+          startEdit(tour);
+          startContentEdit(tour);
         }
-        refresh();
-        startEdit(tour);
-      } catch (err) {
-        window.BGNJ_TOAST.error("\uD22C\uC5B4 \uC0DD\uC131 \uC2E4\uD328: " + ((err == null ? void 0 : err.message) || "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958"));
-        refresh();
+      },
+      onSave: async () => {
+        if (basicDirty && !await saveEdit()) return false;
+        if (contentDirty && !await saveContentEdit()) return false;
+        return true;
       }
-    };
+    });
     const removeTour = async (id) => {
       var _a, _b, _c;
       if (!await window.BGNJ_CONFIRM("\uC774 \uD22C\uC5B4\uB97C \uC0AD\uC81C\uD558\uC2DC\uACA0\uC5B4\uC694? \uC2DC\uB4DC \uD22C\uC5B4\uB294 \uC790\uB3D9 \uC228\uAE40 \uCC98\uB9AC(\uB370\uC774\uD130 \uBCF4\uC874)\uB429\uB2C8\uB2E4. \uAD00\uB9AC\uC790\uAC00 \uCD94\uAC00\uD55C \uD22C\uC5B4\uB294 \uC644\uC804 \uC0AD\uC81C\uB429\uB2C8\uB2E4.", { danger: true })) return;
@@ -13185,9 +13149,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           alignItems: "center"
         }
       },
-      /* @__PURE__ */ React.createElement("span", null, "\u{1F4CB} \uD22C\uC5B4 \uD398\uC774\uC9C0 \uCF58\uD150\uCE20 \u2014 \uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C / \uD15C\uD50C\uB9BF / \uD22C\uC5B4\uBCC4 override"),
+      /* @__PURE__ */ React.createElement("span", null, "\uACF5\uD1B5 \uC77C\uC815\xB7\uC900\uBE44\uBB3C \uC124\uC815 (\uC120\uD0DD)"),
       /* @__PURE__ */ React.createElement("span", { className: "mono dim-2", style: { fontSize: 11 } }, showPageEditor ? "\u25B2 \uB2EB\uAE30" : "\u25BC \uD3BC\uCE58\uAE30")
-    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, TourPageEditorPanel ? /* @__PURE__ */ React.createElement(window.TourPageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uD22C\uC5B4 \uC815\uC6D0 / \uC77C\uC815 / \uAC00\uACA9\uC744 \uC218\uC815\uD558\uACE0, \uC2E0\uCCAD\uC790 \uC785\uAE08\uC744 \uD655\uC778\uD574 \uCC38\uAC00\uB97C \uD655\uC815\uD569\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4(\uAC15\uC5F0\uACFC \uAC19\uC740 \uACC4\uC88C \uC0AC\uC6A9)."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, allTours.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+    ), showPageEditor && /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderTop: "1px solid var(--line)", background: "var(--bg)" } }, TourPageEditorPanel ? /* @__PURE__ */ React.createElement(window.TourPageEditorPanel, null) : /* @__PURE__ */ React.createElement("p", { className: "dim" }, "\uD328\uB110 \uB85C\uB529 \uC911..."))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 18 } }, /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13, lineHeight: 1.8, margin: 0, flex: 1, minWidth: 280 } }, "\uD22C\uC5B4\uB97C \uC120\uD0DD\uD574 \uAE30\uBCF8 \uC815\uBCF4\uC640 \uC77C\uC815\xB7\uC900\uBE44\uBB3C\uC744 \uC218\uC815\uD569\uB2C8\uB2E4. \uC0C8 \uD22C\uC5B4\uB294 \uB0B4\uC6A9\uC744 \uC791\uC131\uD55C \uB4A4 \uB4F1\uB85D\uB429\uB2C8\uB2E4. \uACB0\uC81C\uB294 \uD604\uC7AC ", /* @__PURE__ */ React.createElement("strong", { className: "gold" }, "\uBB34\uD1B5\uC7A5 \uC785\uAE08"), "\uB9CC \uC9C0\uC6D0\uD569\uB2C8\uB2E4(\uAC15\uC5F0\uACFC \uAC19\uC740 \uACC4\uC88C \uC0AC\uC6A9)."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, allTours.length === 0 && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
       if (!await window.BGNJ_CONFIRM("\uC0D8\uD50C \uB2F5\uC0AC 3\uAC1C\uB97C \uCD94\uAC00\uD569\uB2C8\uB2E4. \uC9C4\uD589\uD560\uAE4C\uC694?", { danger: true })) return;
       const samples = [
         { title: "\uACBD\uBCF5\uAD81 \u2014 \uC655\uC758 \uC77C\uC0C1", location: "\uACBD\uBCF5\uAD81 \uC77C\uB300", host: "\uBC45\uAE30\uB178\uC790", durationMinutes: 180, capacity: 15, price: 3e4, desc: "\uACBD\uBCF5\uAD81 \uC678\uC804\xB7\uB0B4\uC804\uC744 \uB530\uB77C \uC655\uC758 \uD558\uB8E8\uB97C \uC887\uB294 \uB2F5\uC0AC." },
@@ -13218,7 +13182,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         });
       }
       refresh();
-    } }, "\uC0D8\uD50C \uB370\uC774\uD130 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: addNewTour }, "\uFF0B \uC0C8 \uD22C\uC5B4 \uCD94\uAC00"))), !detailId && allTours.length > 0 && /* @__PURE__ */ React.createElement(
+    } }, "\uC0D8\uD50C \uB370\uC774\uD130 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: async () => {
+      if (await checkChanges()) setAddingTour(true);
+    } }, "\uFF0B \uC0C8 \uD22C\uC5B4 \uCD94\uAC00"))), !detailId && allTours.length > 0 && /* @__PURE__ */ React.createElement(
       EventListToolbar,
       {
         search,
@@ -13241,7 +13207,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           title: t.title,
           subtitle: `${t.subtitle || ""}${t.next ? ` \xB7 ${t.next}` : ""}${t.level ? ` \xB7 ${t.level}` : ""}`,
           tab: detailTab,
-          onTab: setDetailTab,
+          onTab: async (tab) => {
+            if (await checkChanges()) setDetailTab(tab);
+          },
           rosterCount: regs.filter((r) => r.status !== "cancelled").length,
           onBack: closeDetail,
           backLabel: "\uD22C\uC5B4 \uBAA9\uB85D\uC73C\uB85C"
@@ -13267,7 +13235,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       const regs = window.BGNJ_TOURS.listReservations(t.id);
       const active = regs.filter((r) => r.status !== "cancelled");
       const isEditing = editingId === t.id;
-      return /* @__PURE__ */ React.createElement("article", { key: t.id, className: "card", style: { padding: 20, opacity: t.hidden ? 0.55 : 1 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginRight: 8 } }, "#", String(t.id).padStart(2, "0")), t.title, t.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { marginLeft: 10, fontSize: 10, letterSpacing: "0.18em", color: "var(--danger)", border: "1px solid var(--danger)", padding: "1px 6px", borderRadius: 2 } }, "\uC228\uAE40")), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, marginTop: 4, letterSpacing: "0.12em" } }, t.next, " \xB7 ", t.duration, " \xB7 ", t.group, " \xB7 ", t.level)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: seats.remaining <= 0 ? "var(--danger)" : "var(--primary)" } }, "\uC794\uC5EC ", seats.remaining, " / ", seats.capacity), seats.waitlist > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)" } }, "\uB300\uAE30 ", seats.waitlist), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, window.BGNJ_FMT.won(t.priceNumber)))), detailTab === "info" && /* @__PURE__ */ React.createElement(React.Fragment, null, detailId && /* @__PURE__ */ React.createElement(EventCurrentState, { item: t, pageKey: "tourPages" }), isEditing && // v00.106 — 폼 재구성: 사용자 요청 순서. 표시 일정 문구 + startsAt 통합 (next 자동 derive).
+      return /* @__PURE__ */ React.createElement("article", { key: t.id, className: "card", style: { padding: 20, minWidth: 0, opacity: t.hidden ? 0.55 : 1 } }, /* @__PURE__ */ React.createElement("header", { style: { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "ko-serif", style: { fontSize: 18 } }, /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 11, marginRight: 8 } }, "#", String(t.id).padStart(2, "0")), t.title, t.hidden && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { marginLeft: 10, fontSize: 10, letterSpacing: "0.18em", color: "var(--danger)", border: "1px solid var(--danger)", padding: "1px 6px", borderRadius: 2 } }, "\uC228\uAE40")), /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 11, marginTop: 4, letterSpacing: "0.12em" } }, t.next, " \xB7 ", t.duration, " \xB7 ", t.group, " \xB7 ", t.level)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: seats.remaining <= 0 ? "var(--danger)" : "var(--primary)" } }, "\uC794\uC5EC ", seats.remaining, " / ", seats.capacity), seats.waitlist > 0 && /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)" } }, "\uB300\uAE30 ", seats.waitlist), /* @__PURE__ */ React.createElement("span", { className: "mono", style: { fontSize: 10, letterSpacing: "0.2em", color: "var(--ink-2)", border: "1px solid var(--line-2)", padding: "1px 6px" } }, window.BGNJ_FMT.won(t.priceNumber)))), detailTab === "info" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("fieldset", { disabled: savingBasic || savingContent, style: { border: 0, padding: 0, margin: 0, minWidth: 0 } }, detailId && /* @__PURE__ */ React.createElement(EventCurrentState, { item: t, pageKey: "tourPages" }), isEditing && // v00.106 — 폼 재구성: 사용자 요청 순서. 표시 일정 문구 + startsAt 통합 (next 자동 derive).
       /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 0", borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD22C\uC5B4\uBA85"), /* @__PURE__ */ React.createElement(
         "input",
         {
@@ -13285,7 +13253,42 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           value: draft.subtitle || "",
           onChange: (e) => setDraft({ ...draft, subtitle: e.target.value })
         }
-      ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uB09C\uC774\uB3C4"), /* @__PURE__ */ React.createElement(
+      ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCD9C\uBC1C \uC77C\uC2DC"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "datetime-local",
+          value: draft.startsAt || "",
+          onChange: (e) => setDraft({ ...draft, startsAt: e.target.value })
+        }
+      ))), /* @__PURE__ */ React.createElement("div", { className: "grid grid-3", style: { gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uAE30\uAC04"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "text",
+          placeholder: "\uC608: 3\uC2DC\uAC04 \uB610\uB294 1\uBC15 2\uC77C",
+          value: draft.duration || "",
+          onChange: (e) => setDraft({ ...draft, duration: e.target.value })
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBAA8\uC9D1 \uC778\uC6D0 (\uBA85)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "number",
+          placeholder: "12",
+          value: (_a = draft.capacity) != null ? _a : "",
+          onChange: (e) => setDraft({ ...draft, capacity: e.target.value })
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCC38\uAC00\uBE44 (\uC6D0)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          type: "number",
+          placeholder: "80000",
+          value: (_b = draft.priceNumber) != null ? _b : "",
+          onChange: (e) => setDraft({ ...draft, priceNumber: e.target.value })
+        }
+      ))), /* @__PURE__ */ React.createElement("details", { style: { marginBottom: 14 } }, /* @__PURE__ */ React.createElement("summary", { style: { cursor: "pointer", fontSize: 13, padding: "10px 0" } }, "\uCD94\uAC00 \uC124\uC815 \u2014 \uB09C\uC774\uB3C4\xB7\uC815\uC6D0 \uD45C\uC2DC\xB7\uCE98\uB9B0\uB354 \uC2DC\uAC04"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-3", style: { gap: 10, marginTop: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uB09C\uC774\uB3C4"), /* @__PURE__ */ React.createElement(
         "input",
         {
           className: "field-input",
@@ -13293,15 +13296,6 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           placeholder: "\uC785\uBB38 / \uC2EC\uD654",
           value: draft.level || "",
           onChange: (e) => setDraft({ ...draft, level: e.target.value })
-        }
-      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          type: "text",
-          placeholder: "3\uC2DC\uAC04",
-          value: draft.duration || "",
-          onChange: (e) => setDraft({ ...draft, duration: e.target.value })
         }
       )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC815\uC6D0 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
         "input",
@@ -13312,42 +13306,16 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           value: draft.group || "",
           onChange: (e) => setDraft({ ...draft, group: e.target.value })
         }
-      ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC77C\uC815 (\uC2E4\uC81C \uC2DC\uC791 \uC2DC\uAC04 \u2014 \uD45C\uC2DC \uBB38\uAD6C\uB294 \uC790\uB3D9 \uC0DD\uC131)"), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          type: "datetime-local",
-          value: draft.startsAt || "",
-          onChange: (e) => setDraft({ ...draft, startsAt: e.target.value })
-        }
-      ))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 \uC2DC\uAC04 (\uBD84)"), /* @__PURE__ */ React.createElement(
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 \uC2DC\uAC04 (\uBD84)"), /* @__PURE__ */ React.createElement(
         "input",
         {
           className: "field-input",
           type: "number",
           placeholder: "180",
-          value: (_a = draft.durationMinutes) != null ? _a : "",
+          value: (_c = draft.durationMinutes) != null ? _c : "",
           onChange: (e) => setDraft({ ...draft, durationMinutes: e.target.value })
         }
-      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC815\uC6D0 (\uC22B\uC790)"), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          type: "number",
-          placeholder: "12",
-          value: (_b = draft.capacity) != null ? _b : "",
-          onChange: (e) => setDraft({ ...draft, capacity: e.target.value })
-        }
-      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCC38\uAC00\uBE44 (\uC6D0)"), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          type: "number",
-          placeholder: "80000",
-          value: (_c = draft.priceNumber) != null ? _c : "",
-          onChange: (e) => setDraft({ ...draft, priceNumber: e.target.value })
-        }
-      ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC124\uBA85"), /* @__PURE__ */ React.createElement(
+      ))), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginTop: 8 } }, "\uAE30\uAC04\uC740 \uCC38\uAC00\uC790\uC5D0\uAC8C \uD45C\uC2DC\uB429\uB2C8\uB2E4. \uC18C\uC694 \uC2DC\uAC04(\uBD84)\uC740 \uCE98\uB9B0\uB354\uC5D0 \uCD94\uAC00\uD560 \uB54C \uC0AC\uC6A9\uD569\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC124\uBA85"), /* @__PURE__ */ React.createElement(
         "textarea",
         {
           className: "field-input",
@@ -13375,7 +13343,9 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           }
         },
         detailId ? "\uBCC0\uACBD \uB418\uB3CC\uB9AC\uAE30" : "\uCDE8\uC18C"
-      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit }, "\uC800\uC7A5")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8, lineHeight: 1.6 } }, "\u203B \uC138\uBD80 \uC77C\uC815 / \uC900\uBE44\uBB3C \uC740 \uC544\uB798 ", /* @__PURE__ */ React.createElement("strong", null, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), " \uBC84\uD2BC\uC5D0\uC11C \uD3B8\uC9D1 (\uC9C4\uD589 \uD750\uB984 + \uC900\uBE44\uBB3C list + \uCEE4\uBC84 \uC774\uBBF8\uC9C0).")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, !isEditing && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(t) }, "\u270E \uD22C\uC5B4 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uB09C\uC774\uB3C4\xB7\uC18C\uC694\uC2DC\uAC04\xB7\uAC00\uACA9)"), contentEditingId !== t.id && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(t) }, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setGalleryEditTarget(t) }, "\u{1F5BC} \uC0AC\uC9C4 \uAC24\uB7EC\uB9AC"), /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveEdit, disabled: savingBasic }, savingBasic ? "\uC800\uC7A5 \uC911\u2026" : "\uAE30\uBCF8 \uC815\uBCF4 \uC800\uC7A5")), /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, marginTop: 8, lineHeight: 1.6 } }, "\uAE30\uBCF8 \uC815\uBCF4\uB294 \uC704 \uBC84\uD2BC\uC73C\uB85C \uC800\uC7A5\uD558\uACE0, \uC544\uB798 \uC77C\uC815\xB7\uC900\uBE44\uBB3C\uC740 \uC791\uC131 \uD6C4 \uB530\uB85C \uC800\uC7A5\uD574 \uC8FC\uC138\uC694.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 10, flexWrap: "wrap" } }, !isEditing && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small btn-gold", onClick: () => startEdit(t) }, "\u270E \uD22C\uC5B4 \uC815\uBCF4 (\uC81C\uBAA9\xB7\uC815\uC6D0\xB7\uB09C\uC774\uB3C4\xB7\uC18C\uC694\uC2DC\uAC04\xB7\uAC00\uACA9)"), contentEditingId !== t.id && /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => startContentEdit(t) }, "\u{1F4CB} \uB2F5\uC0AC \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: async () => {
+        if (await checkChanges()) setGalleryEditTarget(t);
+      } }, "\u{1F5BC} \uC0AC\uC9C4 \uAC24\uB7EC\uB9AC"), /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -13393,7 +13363,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           style: { borderColor: "var(--danger)", color: "var(--danger)" }
         },
         "\uC0AD\uC81C"
-      )), contentEditingId === t.id && /* @__PURE__ */ React.createElement("section", { style: { marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.22em" } }, "\uC774 \uD22C\uC5B4\uC758 \uB2F5\uC0AC \uCF58\uD150\uCE20"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 10, fontStyle: "italic" } }, "\uBE44\uC6CC\uB450\uBA74 \uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815/\uC900\uBE44\uBB3C (\uC6B4\uC601\uC124\uC815 \u2192 \uD22C\uC5B4 \uD398\uC774\uC9C0) \uC0AC\uC6A9. \uCEE4\uBC84 \uBE44\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 12, marginBottom: 12, display: "flex", gap: 14, alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 96, height: 60, flexShrink: 0, border: "1px solid var(--line)", background: "var(--bg-2)", display: "grid", placeItems: "center", overflow: "hidden" } }, contentCover ? /* @__PURE__ */ React.createElement("img", { src: contentCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 3 } }, "\uCEE4\uBC84 \uC774\uBBF8\uC9C0"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", onChange: onPickContentCover, style: { display: "none" } })), contentCover && /* @__PURE__ */ React.createElement(
+      )), contentEditingId === t.id && /* @__PURE__ */ React.createElement("section", { style: { marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10, flexWrap: "wrap", gap: 8 } }, /* @__PURE__ */ React.createElement("div", { className: "mono gold", style: { fontSize: 11, letterSpacing: "0.22em" } }, "\uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uB300\uD45C \uC774\uBBF8\uC9C0"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 10, fontStyle: "italic" } }, "\uBE44\uC6CC\uB450\uBA74 \uAE00\uB85C\uBC8C \uB2F5\uC0AC \uC77C\uC815/\uC900\uBE44\uBB3C (\uC6B4\uC601\uC124\uC815 \u2192 \uD22C\uC5B4 \uD398\uC774\uC9C0) \uC0AC\uC6A9. \uCEE4\uBC84 \uBE44\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { className: "field", style: { marginBottom: 16 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "tour-booking-url" }, "\uC678\uBD80 \uC2E0\uCCAD \uB9C1\uD06C (\uC120\uD0DD)"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          id: "tour-booking-url",
+          type: "url",
+          className: "field-input",
+          value: contentBookingUrl,
+          placeholder: "https://\u2026",
+          onChange: (e) => setContentBookingUrl(e.target.value)
+        }
+      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: !contentBookingUrl, onClick: () => setContentBookingUrl("") }, "\uB9C1\uD06C \uC0AD\uC81C")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginTop: 8 } }, "\uC785\uB825\uD558\uBA74 \uB85C\uADF8\uC778\uD55C \uD68C\uC6D0\uC774 \uC678\uBD80 \uC0AC\uC774\uD2B8\uC5D0\uC11C \uC2E0\uCCAD\uD569\uB2C8\uB2E4. \uBE44\uC6B0\uBA74 \uD648\uD398\uC774\uC9C0 \uC2E0\uCCAD \uD3FC\uC744 \uC0AC\uC6A9\uD569\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 12, marginBottom: 12, display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 96, height: 60, flexShrink: 0, border: "1px solid var(--line)", background: "var(--bg-2)", display: "grid", placeItems: "center", overflow: "hidden" } }, contentCover ? /* @__PURE__ */ React.createElement("img", { src: contentCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 3 } }, "\uCEE4\uBC84 \uC774\uBBF8\uC9C0"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", onChange: onPickContentCover, style: { display: "none" } })), contentCover && /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -13424,7 +13404,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           onUpdate: (i, v) => setContentPrep((a) => _arrUpdate(a, i, v)),
           onMove: (i, d) => setContentPrep((a) => _arrMove(a, i, d))
         }
-      ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 } }, contentMsg && /* @__PURE__ */ React.createElement("span", { role: "status", className: "mono", style: { fontSize: 11, color: "var(--secondary)", fontWeight: 600, marginRight: "auto" } }, contentMsg), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: cancelContentEdit }, "\uB2EB\uAE30"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveContentEdit }, "\uC800\uC7A5")))), detailTab === "roster" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("section", { style: { marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 } }, "\uCC38\uAC00\uC790 \uBA85\uB2E8 \xB7 ", active.length, "\uBA85"), active.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13 } }, "\uC544\uC9C1 \uC2E0\uCCAD\uC790\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC774\uB984"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC774\uBA54\uC77C"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC5F0\uB77D\uCC98"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "right" } }, "\uC778\uC6D0"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC0C1\uD0DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, active.map((r) => /* @__PURE__ */ React.createElement("tr", { key: r.id, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { style: { padding: 10 } }, r.name), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 10, fontSize: 11 } }, r.email), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 10, fontSize: 11 } }, r.phone || "-"), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, textAlign: "right" } }, r.count), /* @__PURE__ */ React.createElement("td", { style: { padding: 10 } }, /* @__PURE__ */ React.createElement(StatusChip, { status: r.status })), /* @__PURE__ */ React.createElement("td", { style: { padding: 10, textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 6, flexWrap: "wrap" } }, r.status === "pending_payment" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 } }, contentMsg && /* @__PURE__ */ React.createElement("span", { role: "status", className: "mono", style: { fontSize: 11, color: "var(--secondary)", fontWeight: 600, marginRight: "auto" } }, contentMsg), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: cancelContentEdit }, "\uB2EB\uAE30"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-gold btn-small", onClick: saveContentEdit, disabled: savingContent }, savingContent ? "\uC800\uC7A5 \uC911\u2026" : "\uC77C\uC815\xB7\uC2E0\uCCAD \uC124\uC815 \uC800\uC7A5"))))), detailTab === "roster" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("section", { style: { marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.22em", marginBottom: 10 } }, "\uCC38\uAC00\uC790 \uBA85\uB2E8 \xB7 ", active.length, "\uBA85"), active.length === 0 ? /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 13 } }, "\uC544\uC9C1 \uC2E0\uCCAD\uC790\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.") : /* @__PURE__ */ React.createElement("table", { style: { width: "100%", borderCollapse: "collapse", fontSize: 12 } }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", { style: { background: "var(--bg-2)", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.2em", color: "var(--ink-3)", textTransform: "uppercase" } }, /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC774\uB984"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC774\uBA54\uC77C"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC5F0\uB77D\uCC98"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "right" } }, "\uC778\uC6D0"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "left" } }, "\uC0C1\uD0DC"), /* @__PURE__ */ React.createElement("th", { scope: "col", style: { padding: 10, textAlign: "right" } }, "\uC561\uC158"))), /* @__PURE__ */ React.createElement("tbody", null, active.map((r) => /* @__PURE__ */ React.createElement("tr", { key: r.id, style: { borderBottom: "1px solid var(--line)" } }, /* @__PURE__ */ React.createElement("td", { style: { padding: 10 } }, r.name), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 10, fontSize: 11 } }, r.email), /* @__PURE__ */ React.createElement("td", { className: "mono dim-2", style: { padding: 10, fontSize: 11 } }, r.phone || "-"), /* @__PURE__ */ React.createElement("td", { className: "mono", style: { padding: 10, textAlign: "right" } }, r.count), /* @__PURE__ */ React.createElement("td", { style: { padding: 10 } }, /* @__PURE__ */ React.createElement(StatusChip, { status: r.status })), /* @__PURE__ */ React.createElement("td", { style: { padding: 10, textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", gap: 6, flexWrap: "wrap" } }, r.status === "pending_payment" && /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",
@@ -13539,7 +13519,22 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         },
         "\uBC18\uB824"
       )))))))))));
-    })), galleryEditTarget && window.TourQuickAddModal && /* @__PURE__ */ React.createElement(
+    })), addingTour && window.TourQuickAddModal && /* @__PURE__ */ React.createElement(
+      window.TourQuickAddModal,
+      {
+        onClose: () => setAddingTour(false),
+        onSaved: (id) => {
+          refresh();
+          const tour = window.BGNJ_TOURS.getTour(id);
+          if (tour) {
+            setDetailId(id);
+            setDetailTab("info");
+            startEdit(tour);
+            startContentEdit(tour);
+          }
+        }
+      }
+    ), galleryEditTarget && window.TourQuickAddModal && /* @__PURE__ */ React.createElement(
       window.TourQuickAddModal,
       {
         onClose: () => setGalleryEditTarget(null),
@@ -16984,7 +16979,8 @@ ${failed.map((f) => `\u2022 ${f.id} (${f.label}): ${f.msg}`).join("\n")}
         return next;
       });
     };
-    const handleTabClick = React.useCallback((nextTab) => {
+    const handleTabClick = React.useCallback(async (nextTab) => {
+      if (window.BGNJ_BEFORE_NAV && !await window.BGNJ_BEFORE_NAV()) return;
       setTab(nextTab);
       requestAnimationFrame(() => {
         try {

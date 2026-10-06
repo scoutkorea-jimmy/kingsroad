@@ -408,8 +408,8 @@
 
   // data.js
   window.BGNJ_VERSION = {
-    version: "00.317.001",
-    build: "2026.10.03",
+    version: "00.318.000",
+    build: "2026.10.06",
     channel: "preview"
   };
   try {
@@ -5129,10 +5129,69 @@
   };
   var lockBodyScroll = () => window.BGNJ_SCROLL_LOCK.lock();
   var unlockBodyScroll = () => window.BGNJ_SCROLL_LOCK.unlock();
-  window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label, contentRef }) {
+  window.useUnsavedTourChanges = function useUnsavedTourChanges({ dirty, onSave, onDiscard }) {
+    const latest = React.useRef({ dirty, onSave, onDiscard });
+    latest.current = { dirty, onSave, onDiscard };
+    const asking = React.useRef(false);
+    const check = React.useCallback(async () => {
+      var _a, _b, _c, _d;
+      if (!latest.current.dirty) return true;
+      if (asking.current) return false;
+      asking.current = true;
+      try {
+        const choice = await window.BGNJ_DRAFT_PROMPT("\uD22C\uC5B4", {
+          message: "\uD22C\uC5B4 \uC218\uC815\uC0AC\uD56D\uC744 \uC800\uC7A5\uD558\uACE0 \uC774\uB3D9\uD558\uC2DC\uACA0\uC5B4\uC694?",
+          saveLabel: "\uC800\uC7A5 \uD6C4 \uC774\uB3D9",
+          discardLabel: "\uC800\uC7A5\uD558\uC9C0 \uC54A\uACE0 \uC774\uB3D9",
+          cancelLabel: "\uACC4\uC18D \uC791\uC131"
+        });
+        if (choice === "cancel") return false;
+        if (choice === "save") return await latest.current.onSave() !== false;
+        if (choice === "discard") {
+          await ((_b = (_a = latest.current).onDiscard) == null ? void 0 : _b.call(_a));
+          return true;
+        }
+        return false;
+      } catch (err) {
+        (_d = (_c = window.BGNJ_TOAST) == null ? void 0 : _c.error) == null ? void 0 : _d.call(_c, "\uC800\uC7A5\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4. \uB0B4\uC6A9\uC744 \uD655\uC778\uD55C \uB4A4 \uB2E4\uC2DC \uC800\uC7A5\uD574 \uC8FC\uC138\uC694. " + ((err == null ? void 0 : err.message) || ""));
+        return false;
+      } finally {
+        asking.current = false;
+      }
+    }, []);
+    React.useEffect(() => {
+      if (!dirty) return;
+      const previous = window.BGNJ_BEFORE_NAV;
+      const previousUrl = window.BGNJ_EDIT_URL;
+      window.BGNJ_BEFORE_NAV = check;
+      window.BGNJ_EDIT_URL = window.location.href;
+      const beforeUnload = (e) => {
+        if (latest.current.dirty) {
+          e.preventDefault();
+          e.returnValue = "";
+        }
+      };
+      window.addEventListener("beforeunload", beforeUnload);
+      return () => {
+        window.removeEventListener("beforeunload", beforeUnload);
+        if (window.BGNJ_BEFORE_NAV === check) {
+          window.BGNJ_BEFORE_NAV = previous;
+          window.BGNJ_EDIT_URL = previousUrl;
+        }
+      };
+    }, [dirty, check]);
+    return check;
+  };
+  window.BGNJ_TOUR_URL = (value) => {
+    if (!String(value || "").trim()) return "";
+    const url = new URL(String(value).trim());
+    if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) throw new Error("http:// \uB610\uB294 https://\uB85C \uC2DC\uC791\uD558\uB294 \uC2E0\uCCAD \uB9C1\uD06C\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
+    return url.href;
+  };
+  window.useModalGuard = function useModalGuard({ open, dirty, onClose, onSaveDraft, label, contentRef, saveLabel = "\uC784\uC2DC\uC800\uC7A5" }) {
     const promptName = label || "\uC791\uC131 \uC911\uC778 \uB0B4\uC6A9";
-    const stateRef = React.useRef({ dirty, onClose, onSaveDraft, promptName });
-    stateRef.current = { dirty, onClose, onSaveDraft, promptName };
+    const stateRef = React.useRef({ dirty, onClose, onSaveDraft, promptName, saveLabel });
+    stateRef.current = { dirty, onClose, onSaveDraft, promptName, saveLabel };
     const handleAttemptClose = React.useCallback(async () => {
       var _a, _b, _c;
       const s = stateRef.current;
@@ -5141,13 +5200,14 @@
         return;
       }
       if (s.onSaveDraft && window.BGNJ_DRAFT_PROMPT) {
-        const choice = await window.BGNJ_DRAFT_PROMPT(s.promptName, {});
+        const choice = await window.BGNJ_DRAFT_PROMPT(s.promptName, { saveLabel: s.saveLabel });
         if (choice === "cancel") return;
         if (choice === "save") {
           try {
-            s.onSaveDraft();
+            if (await s.onSaveDraft() === false) return;
           } catch (_e) {
-            console.warn("[bgnj] Shell.jsx:63 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e);
+            console.warn("[bgnj] \uC800\uC7A5 \uC2E4\uD328 \u2014 \uC791\uC131 \uD654\uBA74 \uC720\uC9C0", _e);
+            return;
           }
         }
         (_b = s.onClose) == null ? void 0 : _b.call(s);
@@ -11661,11 +11721,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [subtitle, setSubtitle] = React.useState((initialTour == null ? void 0 : initialTour.subtitle) || "");
     const [level, setLevel] = React.useState((initialTour == null ? void 0 : initialTour.level) || "\uC785\uBB38");
     const [duration, setDuration] = React.useState((initialTour == null ? void 0 : initialTour.duration) || "3\uC2DC\uAC04");
-    const [group, setGroup] = React.useState((initialTour == null ? void 0 : initialTour.group) || "12\uC778 \uC774\uD558");
+    const [group, setGroup] = React.useState((initialTour == null ? void 0 : initialTour.group) || "");
     const [startsAt, setStartsAt] = React.useState(_toLocalInput(initialTour == null ? void 0 : initialTour.startsAt));
     const [durationMinutes, setDurationMinutes] = React.useState((initialTour == null ? void 0 : initialTour.durationMinutes) || 180);
     const [capacity, setCapacity] = React.useState((initialTour == null ? void 0 : initialTour.capacity) || 12);
-    const [price, setPrice] = React.useState((_b = (_a = initialTour == null ? void 0 : initialTour.priceNumber) != null ? _a : initialTour == null ? void 0 : initialTour.price) != null ? _b : 8e4);
+    const [price, setPrice] = React.useState((_b = (_a = initialTour == null ? void 0 : initialTour.priceNumber) != null ? _a : initialTour == null ? void 0 : initialTour.price) != null ? _b : "");
     const [desc, setDesc] = React.useState((initialTour == null ? void 0 : initialTour.desc) || "");
     const [images, setImages] = React.useState(() => {
       var _a2, _b2, _c2, _d;
@@ -11690,36 +11750,54 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }
     });
     const [hidden, setHidden] = React.useState(!!(initialTour == null ? void 0 : initialTour.hidden));
+    const [bookingUrl, setBookingUrl] = React.useState(() => {
+      var _a2, _b2, _c2, _d, _e;
+      return ((_e = (_d = (_c2 = (_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) == null ? void 0 : _c2.tourPages) == null ? void 0 : _d[initialTour == null ? void 0 : initialTour.id]) == null ? void 0 : _e.bookingUrl) || "";
+    });
     const [error, setError] = React.useState("");
     const [saving, setSaving] = React.useState(false);
-    const dirty = !!(title.trim() || subtitle.trim() || desc.trim() || images.length > 0 || photos.length > 0);
-    const guard = ((_c = window.useModalGuard) == null ? void 0 : _c.call(window, { open: true, dirty, onClose, onSaveDraft: null, label: isEdit ? "\uD22C\uC5B4 \uC218\uC815" : "\uD22C\uC5B4 \uCD94\uAC00" })) || {};
-    const submit = async (e) => {
-      var _a2, _b2, _c2, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m;
-      e.preventDefault();
+    const createdId = React.useRef(null);
+    const snapshot = JSON.stringify([title, subtitle, level, duration, group, startsAt, durationMinutes, capacity, price, desc, images, photos, hidden, bookingUrl]);
+    const [baseline, setBaseline] = React.useState(snapshot);
+    const dirty = snapshot !== baseline;
+    window.useUnsavedTourChanges({ dirty, onSave: () => submit(null, false) });
+    const guard = ((_c = window.useModalGuard) == null ? void 0 : _c.call(window, { open: true, dirty, onClose, onSaveDraft: () => submit(null, false), saveLabel: "\uC800\uC7A5 \uD6C4 \uB2EB\uAE30", label: isEdit ? "\uD22C\uC5B4 \uC218\uC815" : "\uD22C\uC5B4 \uCD94\uAC00" })) || {};
+    const submit = async (e, closeAfter = true) => {
+      var _a2, _b2, _c2, _d, _e, _f, _g, _h, _i, _j, _k;
+      e == null ? void 0 : e.preventDefault();
+      if (saving) return false;
       setError("");
       if (!title.trim()) {
-        setError("\uD22C\uC5B4 \uC81C\uBAA9\uC740 \uD544\uC218\uC785\uB2C8\uB2E4.");
-        return;
+        setError("\uD22C\uC5B4 \uC81C\uBAA9\uC744 \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
+        return false;
       }
       if (!startsAt) {
-        setError("\uC77C\uC2DC\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
-        return;
+        setError("\uCD9C\uBC1C \uC77C\uC2DC\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
+        return false;
+      }
+      if (price === "" || !Number.isFinite(Number(price)) || Number(price) < 0) {
+        setError("\uCC38\uAC00\uBE44\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694. \uBB34\uB8CC \uD504\uB85C\uADF8\uB7A8\uC740 0\uC6D0\uC744 \uC785\uB825\uD569\uB2C8\uB2E4.");
+        return false;
+      }
+      if (!Number.isInteger(Number(capacity)) || Number(capacity) < 1) {
+        setError("\uBAA8\uC9D1 \uC778\uC6D0\uC740 1\uBA85 \uC774\uC0C1\uC758 \uC815\uC218\uB85C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
+        return false;
       }
       setSaving(true);
       try {
+        const safeBookingUrl = window.BGNJ_TOUR_URL(bookingUrl);
         const dt = new Date(startsAt);
         if (isNaN(dt.getTime())) throw new Error("\uC77C\uC2DC \uD615\uC2DD\uC774 \uC62C\uBC14\uB974\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4.");
         const pad = (n) => String(n).padStart(2, "0");
         const next = `${dt.getFullYear()}.${pad(dt.getMonth() + 1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-        const id = isEdit ? initialTour.id : `tour-${Date.now()}`;
+        const id = isEdit ? initialTour.id : createdId.current || `tour-${Date.now()}`;
         await window.BGNJ_TOURS.saveTour({
           id,
           title: title.trim(),
           subtitle: subtitle.trim(),
           level: level.trim() || "\uC785\uBB38",
           duration: duration.trim(),
-          group: group.trim(),
+          group: group.trim() || `${Number(capacity)}\uBA85`,
           next,
           startsAt: dt.toISOString(),
           durationMinutes: Math.max(1, Number(durationMinutes) || 180),
@@ -11730,11 +11808,12 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           hidden: !!hidden
           // v00.236
         });
-        if (images.length > 0 || photos.length > 0 || isEdit) {
+        createdId.current = id;
+        if (images.length > 0 || photos.length > 0 || safeBookingUrl || isEdit) {
           try {
             const sc = ((_b2 = (_a2 = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a2.get) == null ? void 0 : _b2.call(_a2)) || {};
             const existing = sc.tourPages && typeof sc.tourPages === "object" && sc.tourPages[id] || {};
-            await window.BGNJ_SITE_CONTENT.saveSection("tourPages", { [id]: { ...existing, images, photos } });
+            await window.BGNJ_SITE_CONTENT.saveSection("tourPages", { [id]: { ...existing, images, photos, bookingUrl: safeBookingUrl } });
             try {
               (_d = (_c2 = window.BGNJ_BROADCAST) == null ? void 0 : _c2.publish) == null ? void 0 : _d.call(_c2, "site-content");
             } catch (_e2) {
@@ -11746,24 +11825,28 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
             } catch (_e2) {
               console.warn("[bgnj] WangsanamTourPage.jsx:532 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
             }
-            (_f = (_e = window.BGNJ_TOAST) == null ? void 0 : _e.error) == null ? void 0 : _f.call(_e, "\uD22C\uC5B4 \uC815\uBCF4\uB294 \uC800\uC7A5\uB410\uC9C0\uB9CC \uAC24\uB7EC\uB9AC \uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4.");
+            setError("\uD22C\uC5B4 \uC815\uBCF4\uB294 \uC800\uC7A5\uB410\uC9C0\uB9CC \uC0AC\uC9C4\xB7\uC2E0\uCCAD \uB9C1\uD06C \uC800\uC7A5\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC800\uC7A5\uD574 \uC8FC\uC138\uC694.");
+            return false;
           }
         }
         try {
-          await ((_h = (_g = window.BGNJ_AUDIT) == null ? void 0 : _g.log) == null ? void 0 : _h.call(_g, { action: isEdit ? "tour.update" : "tour.create", target: `tour:${id}` }));
+          await ((_f = (_e = window.BGNJ_AUDIT) == null ? void 0 : _e.log) == null ? void 0 : _f.call(_e, { action: isEdit ? "tour.update" : "tour.create", target: `tour:${id}` }));
         } catch (_e2) {
           console.warn("[bgnj] WangsanamTourPage.jsx:536 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
         try {
-          (_j = (_i = window.BGNJ_BROADCAST) == null ? void 0 : _i.publish) == null ? void 0 : _j.call(_i, "tours");
+          (_h = (_g = window.BGNJ_BROADCAST) == null ? void 0 : _g.publish) == null ? void 0 : _h.call(_g, "tours");
         } catch (_e2) {
           console.warn("[bgnj] WangsanamTourPage.jsx:537 \uC624\uB958(\uBB34\uC2DC\uD558\uACE0 \uC9C4\uD589)", _e2);
         }
-        (_l = (_k = window.BGNJ_TOAST) == null ? void 0 : _k.success) == null ? void 0 : _l.call(_k, isEdit ? "\uD22C\uC5B4\uAC00 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4." : "\uD22C\uC5B4\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
-        onSaved == null ? void 0 : onSaved();
-        onClose == null ? void 0 : onClose();
+        (_j = (_i = window.BGNJ_TOAST) == null ? void 0 : _i.success) == null ? void 0 : _j.call(_i, isEdit ? "\uD22C\uC5B4\uAC00 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4." : "\uD22C\uC5B4\uAC00 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.");
+        setBaseline(snapshot);
+        onSaved == null ? void 0 : onSaved(id);
+        if (closeAfter) onClose == null ? void 0 : onClose();
+        return true;
       } catch (err) {
-        setError(((_m = err == null ? void 0 : err.body) == null ? void 0 : _m.error) || (err == null ? void 0 : err.message) || (isEdit ? "\uD22C\uC5B4 \uC218\uC815 \uC2E4\uD328" : "\uD22C\uC5B4 \uC0DD\uC131 \uC2E4\uD328"));
+        setError(((_k = err == null ? void 0 : err.body) == null ? void 0 : _k.error) || (err == null ? void 0 : err.message) || (isEdit ? "\uD22C\uC5B4 \uC218\uC815 \uC2E4\uD328" : "\uD22C\uC5B4 \uC0DD\uC131 \uC2E4\uD328"));
+        return false;
       } finally {
         setSaving(false);
       }
@@ -11784,7 +11867,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         padding: 24,
         marginTop: 24,
         marginBottom: 48
-      } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, isEdit ? "\uD22C\uC5B4 \uC218\uC815" : "\uC0C8 \uD22C\uC5B4 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, isEdit ? "\uAE30\uBCF8 \uC815\uBCF4\uB97C \uC218\uC815\uD569\uB2C8\uB2E4. \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84\xB7\uD658\uBD88\uC815\uCC45 \uB4F1 \uC0C1\uC138\uB294 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uD3B8\uC9D1\uD558\uC138\uC694." : "\uAE30\uBCF8 \uC815\uBCF4\uB9CC \uC785\uB825\uD574 \uBE60\uB974\uAC8C \uB4F1\uB85D\uD569\uB2C8\uB2E4. \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84\xB7\uD658\uBD88\uC815\uCC45 \uB4F1 \uC0C1\uC138 \uD3B8\uC9D1\uC740 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uC774\uC5B4\uC11C \uC9C4\uD589\uD558\uC138\uC694."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit, style: { display: "grid", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD22C\uC5B4 \uC81C\uBAA9 *"), /* @__PURE__ */ React.createElement(
+      } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("h2", { className: "ko-serif", style: { fontSize: 18, margin: 0 } }, isEdit ? "\uD22C\uC5B4 \uC218\uC815" : "\uC0C8 \uD22C\uC5B4 \uCD94\uAC00"), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: guard.handleAttemptClose || onClose }, "\uB2EB\uAE30")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, lineHeight: 1.7, marginBottom: 18 } }, isEdit ? "\uAE30\uBCF8 \uC815\uBCF4\uB97C \uC218\uC815\uD569\uB2C8\uB2E4. \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84\xB7\uD658\uBD88\uC815\uCC45 \uB4F1 \uC0C1\uC138\uB294 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uD3B8\uC9D1\uD558\uC138\uC694." : "\uAE30\uBCF8 \uC815\uBCF4\uB9CC \uC785\uB825\uD574 \uBE60\uB974\uAC8C \uB4F1\uB85D\uD569\uB2C8\uB2E4. \uC77C\uC815\xB7\uC900\uBE44\uBB3C\xB7\uCEE4\uBC84\xB7\uD658\uBD88\uC815\uCC45 \uB4F1 \uC0C1\uC138 \uD3B8\uC9D1\uC740 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uC774\uC5B4\uC11C \uC9C4\uD589\uD558\uC138\uC694."), /* @__PURE__ */ React.createElement("form", { onSubmit: submit }, /* @__PURE__ */ React.createElement("fieldset", { disabled: saving, style: { border: 0, padding: 0, margin: 0, minWidth: 0, display: "grid", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uD22C\uC5B4 \uC81C\uBAA9 *"), /* @__PURE__ */ React.createElement(
         "input",
         {
           className: "field-input",
@@ -11801,31 +11884,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           onChange: (e) => setSubtitle(e.target.value),
           placeholder: "\uC608: \uC815\uC870\uC758 \uD6A8\uC2EC\uC744 \uB530\uB77C"
         }
-      )), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uB09C\uC774\uB3C4"), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          value: level,
-          onChange: (e) => setLevel(e.target.value),
-          placeholder: "\uC785\uBB38/\uC2EC\uD654"
-        }
-      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          value: duration,
-          onChange: (e) => setDuration(e.target.value),
-          placeholder: "3\uC2DC\uAC04"
-        }
-      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uADDC\uBAA8 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          className: "field-input",
-          value: group,
-          onChange: (e) => setGroup(e.target.value),
-          placeholder: "12\uC778 \uC774\uD558"
-        }
-      ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCD9C\uBC1C \uC77C\uC2DC *"), /* @__PURE__ */ React.createElement(
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uCD9C\uBC1C \uC77C\uC2DC *"), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "datetime-local",
@@ -11833,16 +11892,15 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           value: startsAt,
           onChange: (e) => setStartsAt(e.target.value)
         }
-      )), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 (\uBD84)"), /* @__PURE__ */ React.createElement(
+      )), /* @__PURE__ */ React.createElement("div", { className: "grid grid-3", style: { gap: 12 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uAE30\uAC04"), /* @__PURE__ */ React.createElement(
         "input",
         {
-          type: "number",
-          min: 1,
           className: "field-input",
-          value: durationMinutes,
-          onChange: (e) => setDurationMinutes(e.target.value)
+          value: duration,
+          onChange: (e) => setDuration(e.target.value),
+          placeholder: "\uC608: 3\uC2DC\uAC04 \uB610\uB294 1\uBC15 2\uC77C"
         }
-      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC815\uC6D0"), /* @__PURE__ */ React.createElement(
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uBAA8\uC9D1 \uC778\uC6D0 (\uBA85)"), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "number",
@@ -11858,10 +11916,36 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           min: 0,
           step: 1e3,
           className: "field-input",
+          required: true,
           value: price,
           onChange: (e) => setPrice(e.target.value)
         }
-      ))), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uAC1C (\uC120\uD0DD)"), /* @__PURE__ */ React.createElement(
+      ))), /* @__PURE__ */ React.createElement("details", null, /* @__PURE__ */ React.createElement("summary", { style: { cursor: "pointer", fontSize: 13, padding: "10px 0" } }, "\uCD94\uAC00 \uC124\uC815 \u2014 \uB09C\uC774\uB3C4\xB7\uC815\uC6D0 \uD45C\uC2DC\xB7\uCE98\uB9B0\uB354 \uC2DC\uAC04"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-3", style: { gap: 12, marginTop: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uB09C\uC774\uB3C4"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          value: level,
+          onChange: (e) => setLevel(e.target.value),
+          placeholder: "\uC785\uBB38/\uC2EC\uD654"
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uADDC\uBAA8 (\uD45C\uC2DC)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          className: "field-input",
+          value: group,
+          onChange: (e) => setGroup(e.target.value),
+          placeholder: "12\uC778 \uC774\uD558"
+        }
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uC694 (\uBD84)"), /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          type: "number",
+          min: 1,
+          className: "field-input",
+          value: durationMinutes,
+          onChange: (e) => setDurationMinutes(e.target.value)
+        }
+      ))), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginTop: 8 } }, "\uC815\uC6D0 \uD45C\uC2DC\uB294 \uBE44\uC6B0\uBA74 \uBAA8\uC9D1 \uC778\uC6D0\uC73C\uB85C \uD45C\uC2DC\uD569\uB2C8\uB2E4. \uC18C\uC694 \uC2DC\uAC04(\uBD84)\uC740 \uCE98\uB9B0\uB354\uC5D0 \uCD94\uAC00\uD560 \uB54C \uC0AC\uC6A9\uD569\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC18C\uAC1C (\uC120\uD0DD)"), /* @__PURE__ */ React.createElement(
         "textarea",
         {
           className: "field-input",
@@ -11870,7 +11954,17 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           onChange: (e) => setDesc(e.target.value),
           placeholder: "\uB2F5\uC0AC \uC548\uB0B4 (\uC774\uD6C4 \uAD00\uB9AC\uC790 \uD328\uB110\uC5D0\uC11C \uBCF4\uAC15 \uAC00\uB2A5)"
         }
-      )), MediaGalleryEditor && /* @__PURE__ */ React.createElement(
+      )), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label", htmlFor: "quick-tour-booking-url" }, "\uC678\uBD80 \uC2E0\uCCAD \uB9C1\uD06C (\uC120\uD0DD)"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8 } }, /* @__PURE__ */ React.createElement(
+        "input",
+        {
+          id: "quick-tour-booking-url",
+          type: "url",
+          className: "field-input",
+          value: bookingUrl,
+          placeholder: "https://\u2026",
+          onChange: (e) => setBookingUrl(e.target.value)
+        }
+      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: !bookingUrl, onClick: () => setBookingUrl("") }, "\uB9C1\uD06C \uC0AD\uC81C")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginTop: 6 } }, "\uBE44\uC6B0\uBA74 \uD648\uD398\uC774\uC9C0\uC5D0\uC11C \uC2E0\uCCAD\uC744 \uBC1B\uC2B5\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("details", null, /* @__PURE__ */ React.createElement("summary", { style: { cursor: "pointer", fontSize: 13, padding: "10px 0" } }, "\uC0AC\uC9C4 \uCD94\uAC00 (\uC120\uD0DD)"), MediaGalleryEditor && /* @__PURE__ */ React.createElement(
         window.MediaGalleryEditor,
         {
           value: images,
@@ -11888,7 +11982,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           label: "\uB2F5\uC0AC \uD6C4\uAE30 \uC0AC\uC9C4",
           helpText: "\uB2F5\uC0AC\uAC00 \uB05D\uB09C \uB4A4 \uC62C\uB9AC\uBA74 \uC0C1\uC138 \uD654\uBA74\uC5D0 '\uB2F5\uC0AC \uD6C4\uAE30 \uC0AC\uC9C4' \uC73C\uB85C \uD45C\uC2DC\uB429\uB2C8\uB2E4."
         }
-      ), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "center", padding: "8px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6, fontSize: 12, color: "var(--ink-2)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
+      )), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", gap: 8, alignItems: "center", padding: "8px 12px", background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 6, fontSize: 12, color: "var(--ink-2)", cursor: "pointer" } }, /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "checkbox",
@@ -11896,10 +11990,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           onChange: (e) => setHidden(e.target.checked),
           style: { accentColor: "var(--primary)" }
         }
-      ), /* @__PURE__ */ React.createElement("span", null, '\uC784\uC2DC \uC228\uAE40 \u2014 \uC77C\uBC18 \uD68C\uC6D0\uC5D0\uAC8C \uB178\uCD9C \uC548 \uD568 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB294 "\uC228\uAE40" \uB77C\uBCA8\uB85C \uD45C\uC2DC)')), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uD22C\uC5B4 \uC800\uC7A5" : "\uD22C\uC5B4 \uB4F1\uB85D"))))
+      ), /* @__PURE__ */ React.createElement("span", null, '\uC784\uC2DC \uC228\uAE40 \u2014 \uC77C\uBC18 \uD68C\uC6D0\uC5D0\uAC8C \uB178\uCD9C \uC548 \uD568 (\uAD00\uB9AC\uC790\uC5D0\uAC8C\uB294 "\uC228\uAE40" \uB77C\uBCA8\uB85C \uD45C\uC2DC)')), error && /* @__PURE__ */ React.createElement("div", { role: "alert", style: { padding: "8px 10px", background: "rgba(194,74,61,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", fontSize: 12 } }, error), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: guard.handleAttemptClose || onClose, disabled: saving }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: saving || !title.trim() }, saving ? "\uC800\uC7A5 \uC911..." : isEdit ? "\uD22C\uC5B4 \uC800\uC7A5" : "\uD22C\uC5B4 \uB4F1\uB85D")))))
     );
   };
   var TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, formatPrice, onRefresh, go }) => {
+    var _a, _b, _c, _d, _e;
     const [selectedBankId, setSelectedBankId] = React.useState(null);
     const [open, setOpen] = React.useState(false);
     const [name, setName] = React.useState((user == null ? void 0 : user.name) || "");
@@ -11908,8 +12003,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [count, setCount] = React.useState(1);
     const [note, setNote] = React.useState("");
     const [cashReceipt, setCashReceipt] = React.useState(() => {
-      var _a, _b;
-      return ((_b = (_a = window.BGNJ_CashReceipt) == null ? void 0 : _a.empty) == null ? void 0 : _b.call(_a)) || { requested: false, type: "personal", identifier: "" };
+      var _a2, _b2;
+      return ((_b2 = (_a2 = window.BGNJ_CashReceipt) == null ? void 0 : _a2.empty) == null ? void 0 : _b2.call(_a2)) || { requested: false, type: "personal", identifier: "" };
     });
     const [error, setError] = React.useState("");
     const [submitted, setSubmitted] = React.useState(null);
@@ -11918,6 +12013,14 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [refundError, setRefundError] = React.useState("");
     const [agreed, setAgreed] = React.useState(false);
     const [submitting, setSubmitting] = React.useState(false);
+    const rawBookingUrl = ((_e = (_d = (_c = (_b = (_a = window.BGNJ_SITE_CONTENT) == null ? void 0 : _a.get) == null ? void 0 : _b.call(_a)) == null ? void 0 : _c.tourPages) == null ? void 0 : _d[tour.id]) == null ? void 0 : _e.bookingUrl) || "";
+    let externalBookingUrl = "";
+    let invalidBookingUrl = false;
+    try {
+      externalBookingUrl = window.BGNJ_TOUR_URL(rawBookingUrl);
+    } catch (e) {
+      invalidBookingUrl = true;
+    }
     React.useEffect(() => {
       setOpen(false);
       setSubmitted(null);
@@ -11937,7 +12040,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       }
     };
     const submit = async (e) => {
-      var _a, _b, _c;
+      var _a2, _b2, _c2;
       e.preventDefault();
       setError("");
       if (!user) return requireLogin("\uB2F5\uC0AC \uC2E0\uCCAD");
@@ -11952,7 +12055,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       if (submitting) return;
       setSubmitting(true);
       try {
-        const crPrefix = ((_b = (_a = window.BGNJ_CashReceipt) == null ? void 0 : _a.encode) == null ? void 0 : _b.call(_a, cashReceipt)) || "";
+        const crPrefix = ((_b2 = (_a2 = window.BGNJ_CashReceipt) == null ? void 0 : _a2.encode) == null ? void 0 : _b2.call(_a2, cashReceipt)) || "";
         const noteCombined = (crPrefix + (note.trim() || "")).trim();
         const result = await window.BGNJ_TOURS.reserve(tour.id, {
           userId: user.id,
@@ -11970,13 +12073,13 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         onRefresh();
         setOpen(false);
       } catch (err) {
-        setError(((_c = err == null ? void 0 : err.body) == null ? void 0 : _c.error) || (err == null ? void 0 : err.message) || "\uC2E0\uCCAD \uCC98\uB9AC \uC911 \uC624\uB958");
+        setError(((_c2 = err == null ? void 0 : err.body) == null ? void 0 : _c2.error) || (err == null ? void 0 : err.message) || "\uC2E0\uCCAD \uCC98\uB9AC \uC911 \uC624\uB958");
       } finally {
         setSubmitting(false);
       }
     };
     const cancelMyReg = async () => {
-      var _a;
+      var _a2;
       if (!myReg) return;
       if (!await window.BGNJ_CONFIRM("\uC774 \uB2F5\uC0AC \uC2E0\uCCAD\uC744 \uCDE8\uC18C\uD558\uC2DC\uACA0\uC5B4\uC694?", { danger: true })) return;
       try {
@@ -11984,11 +12087,11 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         onRefresh();
         setSubmitted(null);
       } catch (err) {
-        window.BGNJ_TOAST.error("\uCDE8\uC18C \uC2E4\uD328: " + (((_a = err == null ? void 0 : err.body) == null ? void 0 : _a.error) || (err == null ? void 0 : err.message) || ""));
+        window.BGNJ_TOAST.error("\uCDE8\uC18C \uC2E4\uD328: " + (((_a2 = err == null ? void 0 : err.body) == null ? void 0 : _a2.error) || (err == null ? void 0 : err.message) || ""));
       }
     };
     const submitRefund = async () => {
-      var _a;
+      var _a2;
       setRefundError("");
       if (!refundReason.trim()) {
         setRefundError("\uD658\uBD88 \uC0AC\uC720\uB97C \uC785\uB825\uD574 \uC8FC\uC138\uC694.");
@@ -12004,7 +12107,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         setRefundReason("");
         onRefresh();
       } catch (err) {
-        setRefundError(((_a = err == null ? void 0 : err.body) == null ? void 0 : _a.error) || (err == null ? void 0 : err.message) || "\uD658\uBD88 \uC2E0\uCCAD \uC911 \uC624\uB958");
+        setRefundError(((_a2 = err == null ? void 0 : err.body) == null ? void 0 : _a2.error) || (err == null ? void 0 : err.message) || "\uD658\uBD88 \uC2E0\uCCAD \uC911 \uC624\uB958");
       }
     };
     const downloadIcs = () => window.BGNJ_TOURS.downloadIcs(tour.id);
@@ -12068,23 +12171,21 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       display: "flex",
       justifyContent: "space-between",
       alignItems: "baseline"
-    } }, /* @__PURE__ */ React.createElement("span", { className: "dim", style: { fontSize: 13 } }, "\uC785\uAE08 \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold ko-serif", style: { fontSize: 18 } }, formatPrice((tour.priceNumber || 0) * ((myReg == null ? void 0 : myReg.count) || (submitted == null ? void 0 : submitted.count) || 1))))), !myReg && !submitted && /* @__PURE__ */ React.createElement(React.Fragment, null, !open ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(
+    } }, /* @__PURE__ */ React.createElement("span", { className: "dim", style: { fontSize: 13 } }, "\uC785\uAE08 \uAE08\uC561"), /* @__PURE__ */ React.createElement("span", { className: "gold ko-serif", style: { fontSize: 18 } }, formatPrice((tour.priceNumber || 0) * ((myReg == null ? void 0 : myReg.count) || (submitted == null ? void 0 : submitted.count) || 1))))), !myReg && !submitted && /* @__PURE__ */ React.createElement(React.Fragment, null, !open ? /* @__PURE__ */ React.createElement(React.Fragment, null, user && externalBookingUrl ? /* @__PURE__ */ React.createElement("a", { className: "btn btn-gold btn-block", href: externalBookingUrl, target: "_blank", rel: "noopener noreferrer", style: { marginBottom: 10 } }, "\uB2F5\uC0AC \uC2E0\uCCAD\uD558\uAE30 \u2197") : /* @__PURE__ */ React.createElement(
       "button",
       {
         type: "button",
         className: "btn btn-gold btn-block",
+        disabled: !user || invalidBookingUrl,
         style: { marginBottom: 10 },
         onClick: () => {
-          if (!user) {
-            requireLogin("\uB2F5\uC0AC \uC2E0\uCCAD");
-            return;
-          }
+          if (!user || invalidBookingUrl) return;
           setOpen(true);
           setError("");
         }
       },
-      isFull ? "\uB300\uAE30\uC790 \uB4F1\uB85D" : "\uB2F5\uC0AC \uC2E0\uCCAD"
-    ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-block", onClick: downloadIcs }, "\uCE98\uB9B0\uB354\uC5D0 \uCD94\uAC00 (.ics)")) : /* @__PURE__ */ React.createElement("form", { onSubmit: submit }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC774\uB984"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: name, onChange: (e) => setName(e.target.value) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC774\uBA54\uC77C"), /* @__PURE__ */ React.createElement("input", { type: "email", className: "field-input", value: email, onChange: (e) => setEmail(e.target.value) })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 100px", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC5F0\uB77D\uCC98"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: phone, onChange: (e) => setPhone(e.target.value), placeholder: "010-..." })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC778\uC6D0"), /* @__PURE__ */ React.createElement(
+      isFull ? "\uB300\uAE30\uC790 \uB4F1\uB85D" : "\uB2F5\uC0AC \uC2E0\uCCAD\uD558\uAE30"
+    ), externalBookingUrl && /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginBottom: 10 } }, "\uC678\uBD80 \uC2E0\uCCAD \uC0AC\uC774\uD2B8\uAC00 \uC0C8 \uCC3D\uC73C\uB85C \uC5F4\uB9BD\uB2C8\uB2E4."), invalidBookingUrl && /* @__PURE__ */ React.createElement("p", { className: "dim", role: "alert", style: { fontSize: 12, marginBottom: 10 } }, "\uC2E0\uCCAD \uB9C1\uD06C\uB97C \uD655\uC778 \uC911\uC785\uB2C8\uB2E4. \uC6B4\uC601\uC790\uC5D0\uAC8C \uBB38\uC758\uD574 \uC8FC\uC138\uC694."), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-block", onClick: downloadIcs }, "\uCE98\uB9B0\uB354\uC5D0 \uCD94\uAC00 (.ics)")) : /* @__PURE__ */ React.createElement("form", { onSubmit: submit }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gap: 10, marginBottom: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC774\uB984"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: name, onChange: (e) => setName(e.target.value) })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC774\uBA54\uC77C"), /* @__PURE__ */ React.createElement("input", { type: "email", className: "field-input", value: email, onChange: (e) => setEmail(e.target.value) })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 100px", gap: 10 } }, /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC5F0\uB77D\uCC98"), /* @__PURE__ */ React.createElement("input", { className: "field-input", value: phone, onChange: (e) => setPhone(e.target.value), placeholder: "010-..." })), /* @__PURE__ */ React.createElement("div", { className: "field", style: { margin: 0 } }, /* @__PURE__ */ React.createElement("label", { className: "field-label" }, "\uC778\uC6D0"), /* @__PURE__ */ React.createElement(
       "input",
       {
         type: "number",
@@ -12110,7 +12211,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
         style: { background: "none", border: "none", padding: 0, color: "var(--secondary)", textDecoration: "underline", cursor: "pointer", fontSize: "inherit" }
       },
       "\uC790\uC138\uD788 \uBCF4\uAE30"
-    ))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setOpen(false) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: !agreed || submitting }, submitting ? "\uC811\uC218 \uC911\u2026" : "\uC2E0\uCCAD \uC811\uC218")))), !user && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7, marginTop: 14, textAlign: "center" } }, "\uB2F5\uC0AC \uC2E0\uCCAD\uC740 \uD68C\uC6D0\uAC00\uC785\uD55C \uBD84\uB9CC \uAC00\uB2A5\uD569\uB2C8\uB2E4."));
+    ))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", onClick: () => setOpen(false) }, "\uCDE8\uC18C"), /* @__PURE__ */ React.createElement("button", { type: "submit", className: "btn btn-gold btn-small", disabled: !agreed || submitting }, submitting ? "\uC811\uC218 \uC911\u2026" : "\uC2E0\uCCAD \uC811\uC218")))), !user && /* @__PURE__ */ React.createElement("p", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.7, marginTop: 14, textAlign: "center" } }, "\uB85C\uADF8\uC778 \uD6C4 \uB2F5\uC0AC\uB97C \uC2E0\uCCAD\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."));
   };
   var TourReviewsSection = ({ tour, user, go, onRefresh }) => {
     const reviews = window.BGNJ_TOURS.listReviews(tour.id);
@@ -12208,7 +12309,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       "\uC0AD\uC81C"
     )), /* @__PURE__ */ React.createElement("p", { style: { fontFamily: "var(--font-reading)", fontSize: 14, lineHeight: 1.8, color: "var(--ink)", whiteSpace: "pre-wrap" } }, r.text)))));
   };
-  Object.assign(window, { TourQuickAddModal });
+  Object.assign(window, { TourQuickAddModal, TourBookingPanel });
   window.TourQuickAddModal = TourQuickAddModal;
 
   // pages/ColumnPage.jsx
@@ -16368,7 +16469,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     }, [cart]);
     const [tweaks, setTweaks] = React.useState(TWEAK_DEFAULTS);
     const [editMode, setEditMode] = React.useState(false);
-    const go = (r) => {
+    const routeRef = React.useRef(route);
+    routeRef.current = route;
+    const go = async (r) => {
+      if (r !== routeRef.current && window.BGNJ_BEFORE_NAV && !await window.BGNJ_BEFORE_NAV()) return;
       setRoute(r);
       setPostId(null);
       try {
@@ -16387,8 +16491,15 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       window.scrollTo(0, 0);
     };
     React.useEffect(() => {
-      const onPop = () => {
+      const onPop = async () => {
         const next = pathToRoute(window.location.pathname);
+        if (next === routeRef.current) return;
+        if (window.BGNJ_BEFORE_NAV) {
+          const target = window.location.href;
+          window.history.replaceState(null, "", window.BGNJ_EDIT_URL || routeToPath(routeRef.current));
+          if (!await window.BGNJ_BEFORE_NAV()) return;
+          window.history.replaceState(null, "", target);
+        }
         setRoute(next);
         setPostId(null);
         window.scrollTo(0, 0);
@@ -16481,9 +16592,15 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       return () => window.removeEventListener("message", onMsg);
     }, []);
     React.useEffect(() => {
-      const applyHash = () => {
+      const applyHash = async () => {
         var _a, _b;
         const h = window.location.hash || "";
+        if (/^#(?:col-|post-|lecture-|tour-)/.test(h) && window.BGNJ_BEFORE_NAV) {
+          const target = window.location.href;
+          window.history.replaceState(null, "", window.BGNJ_EDIT_URL || routeToPath(routeRef.current));
+          if (!await window.BGNJ_BEFORE_NAV()) return;
+          window.history.replaceState(null, "", target);
+        }
         const colMatch = h.match(/^#col-(.+)$/);
         const postMatch = h.match(/^#post-(.+)$/);
         const lectureMatch = h.match(/^#lecture-(.+)$/);

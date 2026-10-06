@@ -1015,6 +1015,9 @@ const TourAdminPanel = ({ go }) => {
   const [draft, setDraft] = React.useState({});
   // v00.237 — admin 패널에서도 사진 갤러리 통합 편집.
   const [galleryEditTarget, setGalleryEditTarget] = React.useState(null);
+  const [addingTour, setAddingTour] = React.useState(false);
+  const [savingBasic, setSavingBasic] = React.useState(false);
+  const [savingContent, setSavingContent] = React.useState(false);
   const [refundRejectNotes, setRefundRejectNotes] = React.useState({});
   // v00.072 — 투어별 답사 일정/준비물/커버 inline 편집용 별도 state.
   // contentEditingId 가 set 되면 해당 투어 카드 하단에 TPE_ScheduleEditor/TPE_PrepEditor + 커버 업로드 노출.
@@ -1023,6 +1026,12 @@ const TourAdminPanel = ({ go }) => {
   const [contentPrep, setContentPrep] = React.useState([]);
   const [contentCover, setContentCover] = React.useState('');
   const [contentMsg, setContentMsg] = React.useState('');
+  const [contentBookingUrl, setContentBookingUrl] = React.useState('');
+  const [basicBaseline, setBasicBaseline] = React.useState('');
+  const [contentBaseline, setContentBaseline] = React.useState('');
+  const contentSnapshot = JSON.stringify([contentSchedule, contentPrep, contentCover, contentBookingUrl]);
+  const basicDirty = editingId != null && JSON.stringify(draft) !== basicBaseline;
+  const contentDirty = contentEditingId != null && contentSnapshot !== contentBaseline;
   const refresh = () => setTick((v) => v + 1);
   const allTours = React.useMemo(() => window.BGNJ_TOURS.listAll({ includeHidden: true }), [tick]);
   // v00.298 — 강연 패널과 같은 정렬/필터.
@@ -1041,13 +1050,14 @@ const TourAdminPanel = ({ go }) => {
     if (!allTours.some((x) => String(x.id) === String(detailId))) setDetailId(null);
   }, [detailId, allTours]);
   // v00.299.001 — 강연과 같은 이유로 상세 진입 즉시 편집 상태.
-  const openDetail = (id) => {
+  const openDetail = async (id) => {
+    if (!(await checkChanges())) return;
     setDetailId(id);
     setDetailTab('info');
     const item = allTours.find((x) => String(x.id) === String(id));
     if (item) { startEdit(item); startContentEdit(item); }
   };
-  const closeDetail = () => { setDetailId(null); setEditingId(null); setContentEditingId(null); };
+  const closeDetail = async () => { if (!(await checkChanges())) return; setDetailId(null); setEditingId(null); setContentEditingId(null); };
   const tours = React.useMemo(() => filterSortEvents(allTours, {
     search, status: statusFilter, sort: sortKey,
     countOf: (t) => window.BGNJ_TOURS.listReservations(t.id).filter((r) => r.status !== 'cancelled').length,
@@ -1063,14 +1073,20 @@ const TourAdminPanel = ({ go }) => {
     setContentPrep(Array.isArray(ovr.prep) ? ovr.prep.slice() : []);
     // v00.081 — D1 cover_url 우선, site_content_kv legacy 폴백.
     setContentCover(t.coverUrl || ovr.coverDataUri || '');
+    setContentBookingUrl(ovr.bookingUrl || '');
+    setContentBaseline(JSON.stringify([Array.isArray(ovr.schedule) ? ovr.schedule : [], Array.isArray(ovr.prep) ? ovr.prep : [], t.coverUrl || ovr.coverDataUri || '', ovr.bookingUrl || '']));
     setContentMsg('');
   };
-  const cancelContentEdit = () => {
+  const cancelContentEdit = async () => {
+    if (contentDirty && !(await checkChanges())) return;
     setContentEditingId(null); setContentSchedule([]); setContentPrep([]); setContentCover(''); setContentMsg('');
   };
   const saveContentEdit = async () => {
-    if (!contentEditingId) return;
+    if (!contentEditingId || savingContent) return false;
+    setSavingContent(true);
+    let scheduleSaved = false;
     try {
+      const bookingUrl = window.BGNJ_TOUR_URL(contentBookingUrl);
       const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
       const tourPages = sc.tourPages || {};
       const cleanS = contentSchedule.filter((s) => s && (s.t || s.l)).map((s) => ({ t: String(s.t || ''), l: String(s.l || '') }));
@@ -1078,19 +1094,21 @@ const TourAdminPanel = ({ go }) => {
       // v00.081 — schedule / prep 만 site_content_kv 에. cover 는 D1 (tours.cover_url) 로 분기 저장.
       // 기존 site_content_kv.tourPages[id].coverDataUri legacy 는 D1 비면 폴백으로 계속 동작.
       const next = { ...tourPages, [contentEditingId]: {
-        schedule: cleanS, prep: cleanP,
+        ...tourPages[contentEditingId], schedule: cleanS, prep: cleanP, bookingUrl,
       } };
       await window.BGNJ_SITE_CONTENT.saveSection('tourPages', next);
+      scheduleSaved = true;
       // 커버는 D1 에 직접 저장 — saveTour 로 cover_url 패치.
-      try {
-        await window.BGNJ_TOURS.saveTour({ id: contentEditingId, coverUrl: contentCover || '' });
-      } catch (err) {
-        console.warn('[v00.081] cover_url save 실패 — site_content fallback 사용 가능', err);
-      }
+      await window.BGNJ_TOURS.saveTour({ id: contentEditingId, coverUrl: contentCover || '' });
+      setContentBaseline(contentSnapshot);
       setContentMsg('저장됨 — 투어 페이지에 즉시 반영.');
       setTimeout(() => setContentMsg(''), 2500);
       refresh();
-    } catch (err) { window.BGNJ_TOAST.error('저장 실패: ' + (err?.message || '알 수 없는 오류')); }
+      return true;
+    } catch (err) {
+      window.BGNJ_TOAST.error((scheduleSaved ? '일정·준비물은 저장됐지만 대표 이미지 저장에 실패했습니다. 다시 저장해 주세요: ' : '저장 실패: ') + (err?.message || '알 수 없는 오류'));
+      return false;
+    } finally { setSavingContent(false); }
   };
   // v00.184 — DRY: pickImageWithR2Fallback 헬퍼 사용.
   const onPickContentCover = async (e) => {
@@ -1119,7 +1137,7 @@ const TourAdminPanel = ({ go }) => {
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     })();
     setEditingId(t.id);
-    setDraft({
+    const nextDraft = {
       title: t.title || '',
       subtitle: t.subtitle || '', // v00.106
       level: t.level || '입문',
@@ -1131,30 +1149,35 @@ const TourAdminPanel = ({ go }) => {
       priceNumber: t.priceNumber || 0,
       desc: t.desc || '',
       refundPolicy: t.refundPolicy || '', // v00.106
-    });
+    };
+    setDraft(nextDraft); setBasicBaseline(JSON.stringify(nextDraft));
   };
 
   const saveEdit = async () => {
-    if (editingId == null) return;
+    if (editingId == null || savingBasic) return false;
     const tour = window.BGNJ_TOURS.getTour(editingId);
-    if (!tour) return;
-    const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : tour.startsAt;
-    // v00.106 — next 표시 문구는 startsAt 에서 자동 생성. "2026.05.15 10:00" 형태.
-    const nextLabel = (() => {
-      if (!startsAtIso) return tour.next || '';
-      const d = new Date(startsAtIso);
-      const pad = (n) => String(n).padStart(2, '0');
-      return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    })();
-    // v00.127 — async + await + try/catch. 이전엔 fire-and-forget 으로 refresh 가 옛 데이터 사용.
+    if (!tour) return false;
+    if (!draft.title?.trim() || !draft.startsAt || !Number.isInteger(Number(draft.capacity)) || Number(draft.capacity) < 1 || draft.priceNumber === '' || !Number.isFinite(Number(draft.priceNumber)) || Number(draft.priceNumber) < 0) {
+      window.BGNJ_TOAST.error('제목·출발 일시·모집 인원·참가비를 확인해 주세요. 무료 프로그램은 0원을 입력합니다.');
+      return false;
+    }
+    setSavingBasic(true);
     try {
+      const startsAtIso = draft.startsAt ? new Date(draft.startsAt).toISOString() : tour.startsAt;
+      // v00.106 — next 표시 문구는 startsAt 에서 자동 생성. "2026.05.15 10:00" 형태.
+      const nextLabel = (() => {
+        if (!startsAtIso) return tour.next || '';
+        const d = new Date(startsAtIso);
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      })();
       await window.BGNJ_TOURS.saveTour({
         id: tour.id,
         title: draft.title,
         subtitle: draft.subtitle, // v00.106
         level: draft.level,
         duration: draft.duration,
-        group: draft.group,
+        group: !draft.group?.trim() || draft.group === `${tour.capacity}명` ? `${Number(draft.capacity)}명` : draft.group,
         next: nextLabel,
         startsAt: startsAtIso,
         durationMinutes: Number(draft.durationMinutes) || 180,
@@ -1167,45 +1190,29 @@ const TourAdminPanel = ({ go }) => {
       // v00.299.001 — 상세 화면에서는 저장 후에도 폼을 열어 둔다.
       //   닫아 버리면 이어서 고칠 때 다시 [수정] 을 눌러야 한다.
       if (!detailId) setEditingId(null);
+      setBasicBaseline(JSON.stringify(draft));
       window.BGNJ_TOAST?.success?.('저장했습니다.');
       refresh();
+      return true;
     } catch (err) {
       window.BGNJ_TOAST.error('투어 저장 실패: ' + (err?.message || '알 수 없는 오류'));
-    }
+      return false;
+    } finally { setSavingBasic(false); }
   };
 
-  const addNewTour = async () => {
-    const id = `tour-${Date.now()}`;
-    const now = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // +2주
-    const pad = (n) => String(n).padStart(2, '0');
-    const startsAt = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T10:00:00+09:00`;
-    const next = `${now.getFullYear()}.${pad(now.getMonth()+1)}.${pad(now.getDate())} 10:00`;
-    try {
-      // 서버는 priceNumber 우선, price 는 폴백 (parsePrice). 포맷팅 문자열 대신 숫자만 보냄.
-      const tour = await window.BGNJ_TOURS.saveTour({
-        id,
-        title: '새 답사 — 부제',
-        level: '입문',
-        duration: '3시간',
-        group: '12인 이하',
-        next,
-        startsAt,
-        durationMinutes: 180,
-        capacity: 12,
-        priceNumber: 80000,
-        price: 80000,
-        desc: '답사 안내를 입력하세요.',
-      });
-      if (!tour) throw new Error('서버 응답 없음');
-      window.BGNJ_AUDIT?.log({ action: 'tour.create', target: `tour:${id}` });
-      try { window.BGNJ_BROADCAST?.publish?.('tours'); } catch (_e) { console.warn('[bgnj] AdminEventsPanels.jsx:735 오류(무시하고 진행)', _e); }
-      refresh();
-      startEdit(tour);
-    } catch (err) {
-      window.BGNJ_TOAST.error('투어 생성 실패: ' + (err?.message || '알 수 없는 오류'));
-      refresh();
-    }
-  };
+
+  const checkChanges = window.useUnsavedTourChanges({
+    dirty: basicDirty || contentDirty,
+    onDiscard: () => {
+      const tour = window.BGNJ_TOURS.getTour(editingId || contentEditingId);
+      if (tour) { startEdit(tour); startContentEdit(tour); }
+    },
+    onSave: async () => {
+      if (basicDirty && !(await saveEdit())) return false;
+      if (contentDirty && !(await saveContentEdit())) return false;
+      return true;
+    },
+  });
 
   // v00.127 — async + await + try/catch. 이전엔 deleteTour fire-and-forget 으로 refresh 가
   // 즉시 OLD 캐시 사용 → 사용자 화면 변화 없음. 사용자 보고 '삭제 버튼이 정상작동 안하네'.
@@ -1246,7 +1253,7 @@ const TourAdminPanel = ({ go }) => {
             fontSize:13, fontWeight:600, color:'var(--ink)',
             display:'flex', justifyContent:'space-between', alignItems:'center',
           }}>
-          <span>📋 투어 페이지 콘텐츠 — 글로벌 답사 일정·준비물 / 템플릿 / 투어별 override</span>
+          <span>공통 일정·준비물 설정 (선택)</span>
           <span className="mono dim-2" style={{fontSize:11}}>{showPageEditor ? '▲ 닫기' : '▼ 펼치기'}</span>
         </button>
         {showPageEditor && (
@@ -1258,7 +1265,7 @@ const TourAdminPanel = ({ go }) => {
 
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:12, flexWrap:'wrap', marginBottom:18}}>
         <p className="dim" style={{fontSize:13, lineHeight:1.8, margin:0, flex:1, minWidth:280}}>
-          투어 정원 / 일정 / 가격을 수정하고, 신청자 입금을 확인해 참가를 확정합니다.
+          투어를 선택해 기본 정보와 일정·준비물을 수정합니다. 새 투어는 내용을 작성한 뒤 등록됩니다.
           결제는 현재 <strong className="gold">무통장 입금</strong>만 지원합니다(강연과 같은 계좌 사용).
         </p>
         <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
@@ -1289,7 +1296,7 @@ const TourAdminPanel = ({ go }) => {
               refresh();
             }}>샘플 데이터 추가</button>
           )}
-          <button type="button" className="btn btn-gold btn-small" onClick={addNewTour}>＋ 새 투어 추가</button>
+          <button type="button" className="btn btn-gold btn-small" onClick={async () => { if (await checkChanges()) setAddingTour(true); }}>＋ 새 투어 추가</button>
         </div>
       </div>
 
@@ -1309,7 +1316,7 @@ const TourAdminPanel = ({ go }) => {
         return (
           <EventDetailHead
             title={t.title} subtitle={`${t.subtitle || ''}${t.next ? ` · ${t.next}` : ''}${t.level ? ` · ${t.level}` : ''}`}
-            tab={detailTab} onTab={setDetailTab}
+            tab={detailTab} onTab={async (tab) => { if (await checkChanges()) setDetailTab(tab); }}
             rosterCount={regs.filter((r) => r.status !== 'cancelled').length}
             onBack={closeDetail} backLabel="투어 목록으로"/>
         );
@@ -1356,7 +1363,7 @@ const TourAdminPanel = ({ go }) => {
             const active = regs.filter((r) => r.status !== 'cancelled');
             const isEditing = editingId === t.id;
             return (
-              <article key={t.id} className="card" style={{padding:20, opacity: t.hidden ? 0.55 : 1}}>
+              <article key={t.id} className="card" style={{padding:20, minWidth:0, opacity: t.hidden ? 0.55 : 1}}>
                 <header style={{display:'flex', justifyContent:'space-between', gap:12, alignItems:'baseline', flexWrap:'wrap', marginBottom:10}}>
                   <div>
                     <h3 className="ko-serif" style={{fontSize:18}}>
@@ -1378,7 +1385,7 @@ const TourAdminPanel = ({ go }) => {
                     </span>
                   </div>
                 </header>
-                {detailTab === 'info' && (<>
+                {detailTab === 'info' && (<><fieldset disabled={savingBasic || savingContent} style={{border:0, padding:0, margin:0, minWidth:0}}>
                 {detailId && <EventCurrentState item={t} pageKey="tourPages"/>}
 
                 {/* v00.299.002 — else 분기(버튼 줄)를 밖으로 뺐으므로 삼항이 아니라 && 다. */}
@@ -1400,46 +1407,25 @@ const TourAdminPanel = ({ go }) => {
                           onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })}/>
                       </div>
                     </div>
-                    {/* 그룹 2: 표시용 메타 (난이도 / 소요(표시) / 정원(표시)) */}
-                    <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginBottom:10}}>
-                      <div className="field" style={{margin:0}}>
-                        <label className="field-label">난이도</label>
-                        <input className="field-input" type="text" placeholder="입문 / 심화"
-                          value={draft.level || ''}
-                          onChange={(e) => setDraft({ ...draft, level: e.target.value })}/>
-                      </div>
-                      <div className="field" style={{margin:0}}>
-                        <label className="field-label">소요 (표시)</label>
-                        <input className="field-input" type="text" placeholder="3시간"
-                          value={draft.duration || ''}
-                          onChange={(e) => setDraft({ ...draft, duration: e.target.value })}/>
-                      </div>
-                      <div className="field" style={{margin:0}}>
-                        <label className="field-label">정원 (표시)</label>
-                        <input className="field-input" type="text" placeholder="12인 이하"
-                          value={draft.group || ''}
-                          onChange={(e) => setDraft({ ...draft, group: e.target.value })}/>
-                      </div>
-                    </div>
                     {/* 그룹 3: 일정 (통합) — startsAt 만 입력. next 표시 문구는 자동 derive */}
                     <div style={{display:'grid', gridTemplateColumns:'1fr', gap:10, marginBottom:10}}>
                       <div className="field" style={{margin:0}}>
-                        <label className="field-label">일정 (실제 시작 시간 — 표시 문구는 자동 생성)</label>
+                        <label className="field-label">출발 일시</label>
                         <input className="field-input" type="datetime-local"
                           value={draft.startsAt || ''}
                           onChange={(e) => setDraft({ ...draft, startsAt: e.target.value })}/>
                       </div>
                     </div>
                     {/* 그룹 4: 숫자 메타 (소요시간 / 정원 / 참가비) */}
-                    <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginBottom:10}}>
+                    <div className="grid grid-3" style={{gap:10, marginBottom:10}}>
                       <div className="field" style={{margin:0}}>
-                        <label className="field-label">소요 시간 (분)</label>
-                        <input className="field-input" type="number" placeholder="180"
-                          value={draft.durationMinutes ?? ''}
-                          onChange={(e) => setDraft({ ...draft, durationMinutes: e.target.value })}/>
+                        <label className="field-label">기간</label>
+                        <input className="field-input" type="text" placeholder="예: 3시간 또는 1박 2일"
+                          value={draft.duration || ''}
+                          onChange={(e) => setDraft({ ...draft, duration: e.target.value })}/>
                       </div>
                       <div className="field" style={{margin:0}}>
-                        <label className="field-label">정원 (숫자)</label>
+                        <label className="field-label">모집 인원 (명)</label>
                         <input className="field-input" type="number" placeholder="12"
                           value={draft.capacity ?? ''}
                           onChange={(e) => setDraft({ ...draft, capacity: e.target.value })}/>
@@ -1451,6 +1437,30 @@ const TourAdminPanel = ({ go }) => {
                           onChange={(e) => setDraft({ ...draft, priceNumber: e.target.value })}/>
                       </div>
                     </div>
+                    <details style={{marginBottom:14}}>
+                      <summary style={{cursor:'pointer', fontSize:13, padding:'10px 0'}}>추가 설정 — 난이도·정원 표시·캘린더 시간</summary>
+                      <div className="grid grid-3" style={{gap:10, marginTop:10}}>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">난이도</label>
+                        <input className="field-input" type="text" placeholder="입문 / 심화"
+                          value={draft.level || ''}
+                          onChange={(e) => setDraft({ ...draft, level: e.target.value })}/>
+                      </div>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">정원 (표시)</label>
+                        <input className="field-input" type="text" placeholder="12인 이하"
+                          value={draft.group || ''}
+                          onChange={(e) => setDraft({ ...draft, group: e.target.value })}/>
+                      </div>
+                      <div className="field" style={{margin:0}}>
+                        <label className="field-label">소요 시간 (분)</label>
+                        <input className="field-input" type="number" placeholder="180"
+                          value={draft.durationMinutes ?? ''}
+                          onChange={(e) => setDraft({ ...draft, durationMinutes: e.target.value })}/>
+                      </div>
+                      </div>
+                      <p className="dim" style={{fontSize:12, marginTop:8}}>기간은 참가자에게 표시됩니다. 소요 시간(분)은 캘린더에 추가할 때 사용합니다.</p>
+                    </details>
                     {/* 그룹 5: 설명 */}
                     <div className="field" style={{margin:0, marginBottom:10}}>
                       <label className="field-label">설명</label>
@@ -1474,10 +1484,10 @@ const TourAdminPanel = ({ go }) => {
                         onClick={() => { if (detailId) startEdit(t); else setEditingId(null); }}>
                         {detailId ? '변경 되돌리기' : '취소'}
                       </button>
-                      <button type="button" className="btn btn-gold btn-small" onClick={saveEdit}>저장</button>
+                      <button type="button" className="btn btn-gold btn-small" onClick={saveEdit} disabled={savingBasic}>{savingBasic ? '저장 중…' : '기본 정보 저장'}</button>
                     </div>
                     <p className="dim-2" style={{fontSize:11, marginTop:8, lineHeight:1.6}}>
-                      ※ 세부 일정 / 준비물 은 아래 <strong>📋 답사 일정·준비물·커버</strong> 버튼에서 편집 (진행 흐름 + 준비물 list + 커버 이미지).
+                      기본 정보는 위 버튼으로 저장하고, 아래 일정·준비물은 작성 후 따로 저장해 주세요.
                     </p>
                   </div>
                 )}
@@ -1493,7 +1503,7 @@ const TourAdminPanel = ({ go }) => {
                     <button type="button" className="btn btn-small" onClick={() => startContentEdit(t)}>📋 답사 일정·준비물·커버</button>
                   )}
                     {/* v00.237 — 사진 갤러리 (포스터) 통합 편집. window.TourQuickAddModal 재사용. */}
-                    <button type="button" className="btn btn-small" onClick={() => setGalleryEditTarget(t)}>🖼 사진 갤러리</button>
+                    <button type="button" className="btn btn-small" onClick={async () => { if (await checkChanges()) setGalleryEditTarget(t); }}>🖼 사진 갤러리</button>
                     <button type="button" className="btn btn-small"
                       onClick={() => toggleTourHidden(t)}
                       style={{marginLeft:'auto'}}>
@@ -1507,13 +1517,22 @@ const TourAdminPanel = ({ go }) => {
                 {contentEditingId === t.id && (
                   <section style={{marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:10, flexWrap:'wrap', gap:8}}>
-                      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.22em'}}>이 투어의 답사 콘텐츠</div>
+                      <div className="mono gold" style={{fontSize:11, letterSpacing:'0.22em'}}>일정·준비물·대표 이미지</div>
                       <div className="dim-2" style={{fontSize:10, fontStyle:'italic'}}>
                         비워두면 글로벌 답사 일정/준비물 (운영설정 → 투어 페이지) 사용. 커버 비면 placeholder.
                       </div>
                     </div>
+                    <div className="field" style={{marginBottom:16}}>
+                      <label className="field-label" htmlFor="tour-booking-url">외부 신청 링크 (선택)</label>
+                      <div style={{display:'flex', gap:8}}>
+                        <input id="tour-booking-url" type="url" className="field-input" value={contentBookingUrl}
+                          placeholder="https://…" onChange={(e) => setContentBookingUrl(e.target.value)}/>
+                        <button type="button" className="btn btn-small" disabled={!contentBookingUrl} onClick={() => setContentBookingUrl('')}>링크 삭제</button>
+                      </div>
+                      <p className="dim" style={{fontSize:12, marginTop:8}}>입력하면 로그인한 회원이 외부 사이트에서 신청합니다. 비우면 홈페이지 신청 폼을 사용합니다.</p>
+                    </div>
                     {/* 커버 이미지 */}
-                    <div className="card" style={{padding:12, marginBottom:12, display:'flex', gap:14, alignItems:'center'}}>
+                    <div className="card" style={{padding:12, marginBottom:12, display:'flex', flexWrap:'wrap', gap:14, alignItems:'center'}}>
                       <div style={{width:96, height:60, flexShrink:0, border:'1px solid var(--line)', background:'var(--bg-2)', display:'grid', placeItems:'center', overflow:'hidden'}}>
                         {contentCover
                           ? <img src={contentCover} alt="" style={{width:'100%', height:'100%', objectFit:'cover'}}/>
@@ -1548,12 +1567,12 @@ const TourAdminPanel = ({ go }) => {
                     <div style={{display:'flex', justifyContent:'flex-end', gap:8, marginTop:8}}>
                       {contentMsg && <span role="status" className="mono" style={{fontSize:11, color:'var(--secondary)', fontWeight:600, marginRight:'auto'}}>{contentMsg}</span>}
                       <button type="button" className="btn btn-small" onClick={cancelContentEdit}>닫기</button>
-                      <button type="button" className="btn btn-gold btn-small" onClick={saveContentEdit}>저장</button>
+                      <button type="button" className="btn btn-gold btn-small" onClick={saveContentEdit} disabled={savingContent}>{savingContent ? '저장 중…' : '일정·신청 설정 저장'}</button>
                     </div>
                   </section>
                 )}
 
-                  </>)}
+                  </fieldset></>)}
                 {detailTab === 'roster' && (<>
                 {/* Roster */}
                 <section style={{marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)'}}>
@@ -1660,6 +1679,15 @@ const TourAdminPanel = ({ go }) => {
             );
           })}
         </div>
+      )}
+      {addingTour && window.TourQuickAddModal && (
+        <window.TourQuickAddModal
+          onClose={() => setAddingTour(false)}
+          onSaved={(id) => {
+            refresh();
+            const tour = window.BGNJ_TOURS.getTour(id);
+            if (tour) { setDetailId(id); setDetailTab('info'); startEdit(tour); startContentEdit(tour); }
+          }}/>
       )}
       {/* v00.237 — 사진 갤러리 모달. TourQuickAddModal 재사용. */}
       {galleryEditTarget && window.TourQuickAddModal && (

@@ -20,6 +20,7 @@ const CHECKS = [
   { file: "check-ghosts.mjs",   what: "없는 함수를 부르는 곳 (?. 가 감춘 오타)", born: "방문 기록 1,789건이 빈 칸으로 쌓임" },
   { file: "check-patterns.mjs", what: "응답 껍데기 · 세고-나서-넣기 · LIKE 와일드카드", born: "게시글 못 찾음 · 오버부킹 · 위험한 DELETE" },
   { file: "test-upload.mjs", what: "HEIC 큐·재시도·용량 제한·UTC 차트", born: "HEIC 실패 · 대용량 사진 실패 · 로그 누락" },
+  { file: "test-tour-editor.mjs", what: "Tour editing and booking guards", born: "Unsaved changes and external booking" },
   { file: "smoke.mjs",          what: "브라우저 코드를 Node 에서 실제로 실행", born: "API 는 멀쩡한데 화면만 깨진 사고" },
 ];
 

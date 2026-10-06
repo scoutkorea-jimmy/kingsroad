@@ -169,53 +169,19 @@ const TPE_RowActions = ({ i, total, onMove, onRemove }) => (
   </div>
 );
 
-// v00.106 — 시간 라벨 (예: "0h 30m") 을 시/분 분리 input 으로 편집. 출력은 자동 format.
-const _parseTimeLabel = (label) => {
-  // "0h 30m" / "1h" / "30m" / "1h 5m" 등 파싱.
-  const s = String(label || '').trim();
-  const hMatch = s.match(/(\d+)\s*h/i);
-  const mMatch = s.match(/(\d+)\s*m(?!s)/i);
-  return {
-    h: hMatch ? Number(hMatch[1]) : 0,
-    m: mMatch ? Number(mMatch[1]) : 0,
-  };
-};
-const _formatTimeLabel = (h, m) => {
-  const hi = Math.max(0, Math.min(99, Number(h) || 0));
-  const mi = Math.max(0, Math.min(59, Number(m) || 0));
-  return `${hi}h ${String(mi).padStart(2, '0')}m`;
-};
-const TPE_TimeInput = ({ value, onChange }) => {
-  const { h, m } = _parseTimeLabel(value);
-  return (
-    <div style={{display:'flex', gap:4, alignItems:'center'}}>
-      <input type="number" min="0" max="99" value={h}
-        onChange={(e) => onChange(_formatTimeLabel(e.target.value, m))}
-        style={{
-          width:50, padding:'7px 6px', fontSize:13, textAlign:'center',
-          fontFamily:'var(--font-mono)',
-          background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:2, color:'var(--ink)',
-        }}
-        aria-label="시간 (h)"/>
-      <span className="dim-2 mono" style={{fontSize:11}}>h</span>
-      <input type="number" min="0" max="59" value={m}
-        onChange={(e) => onChange(_formatTimeLabel(h, e.target.value))}
-        style={{
-          width:50, padding:'7px 6px', fontSize:13, textAlign:'center',
-          fontFamily:'var(--font-mono)',
-          background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:2, color:'var(--ink)',
-        }}
-        aria-label="분 (m)"/>
-      <span className="dim-2 mono" style={{fontSize:11}}>m</span>
-    </div>
-  );
-};
+// 시간 표기를 그대로 보존해 당일·숙박 프로그램 모두 편집한다.
+const TPE_TimeInput = ({ value, onChange }) => (
+  <input type="text" className="field-input" value={value || ''}
+    onChange={(e) => onChange(e.target.value)}
+    placeholder="1일차 10:00" aria-label="일정 시간"
+    style={{padding:'7px 10px', minWidth:0}}/>
+);
 const TPE_ScheduleEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
   <div className="card" style={{padding:18, marginBottom:14}}>
-    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8, marginBottom:14}}>
       <div>
         <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>답사 일정</div>
-        <p className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.6}}>시작 시각으로부터 경과 시간 단위. 첫 항목은 보통 0h 0m.</p>
+        <p className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.6}}>시간과 내용을 입력하세요. 예: 10:00 / 1일차 10:00 / 출발 30분 후</p>
       </div>
       <button type="button" className="btn btn-gold btn-small" onClick={onAdd}>＋ 항목 추가</button>
     </div>
@@ -225,8 +191,8 @@ const TPE_ScheduleEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
       </p>
     )}
     {rows.map((s, i) => (
-      <div key={i} style={{
-        display:'grid', gridTemplateColumns:'24px 145px 1fr auto', gap:10, marginBottom:10, alignItems:'center',
+      <div key={i} className="tour-schedule-row" style={{
+        display:'grid', gridTemplateColumns:'24px 160px minmax(0, 1fr) auto', gap:10, marginBottom:10, alignItems:'center',
         padding:'8px', background: i % 2 === 0 ? 'var(--bg-2)' : 'var(--bg)', borderRadius:2,
       }}>
         <span className="mono dim-2" style={{fontSize:11, textAlign:'center', fontWeight:600}}>{String(i + 1).padStart(2, '0')}</span>
@@ -241,7 +207,7 @@ const TPE_ScheduleEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
 );
 const TPE_PrepEditor = ({ rows, onAdd, onRemove, onUpdate, onMove }) => (
   <div className="card" style={{padding:18, marginBottom:14}}>
-    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14}}>
+    <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8, marginBottom:14}}>
       <div>
         <div className="mono gold" style={{fontSize:11, letterSpacing:'0.2em'}}>준비물</div>
         <p className="dim-2" style={{fontSize:11, marginTop:4, lineHeight:1.6}}>참가자가 가져와야 할 물품 / 안내 사항.</p>
