@@ -507,10 +507,11 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
   // v00.236 — hidden 토글.
   const [hidden, setHidden] = React.useState(!!initialTour?.hidden);
   const [bookingUrl, setBookingUrl] = React.useState(() => window.BGNJ_SITE_CONTENT?.get?.()?.tourPages?.[initialTour?.id]?.bookingUrl || '');
+  const [showRemainingSeats, setShowRemainingSeats] = React.useState(() => window.BGNJ_TOUR_SHOW_REMAINING(initialTour?.id));
   const [error, setError] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const createdId = React.useRef(null);
-  const snapshot = JSON.stringify([title, subtitle, level, duration, group, startsAt, durationMinutes, capacity, price, desc, images, photos, hidden, bookingUrl]);
+  const snapshot = JSON.stringify([title, subtitle, level, duration, group, startsAt, durationMinutes, capacity, price, desc, images, photos, hidden, bookingUrl, showRemainingSeats]);
   const [baseline, setBaseline] = React.useState(snapshot);
   const dirty = snapshot !== baseline;
   window.useUnsavedTourChanges({ dirty, onSave: () => submit(null, false) });
@@ -551,15 +552,15 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
       });
       createdId.current = id;
       // v00.235 — 갤러리 저장 (site_content_kv.tourPages[id]). 기존 schedule/prep/coverDataUri 보존.
-      if (images.length > 0 || photos.length > 0 || safeBookingUrl || isEdit) {
+      if (images.length > 0 || photos.length > 0 || safeBookingUrl || !showRemainingSeats || isEdit) {
         try {
           const sc = window.BGNJ_SITE_CONTENT?.get?.() || {};
           const existing = (sc.tourPages && typeof sc.tourPages === 'object' && sc.tourPages[id]) || {};
-          await window.BGNJ_SITE_CONTENT.saveSection('tourPages', { [id]: { ...existing, images, photos, bookingUrl: safeBookingUrl } });
+          await window.BGNJ_SITE_CONTENT.saveSection('tourPages', { [id]: { ...existing, images, photos, bookingUrl: safeBookingUrl, showRemainingSeats } });
           try { window.BGNJ_BROADCAST?.publish?.('site-content'); } catch (_e) { console.warn('[bgnj] WangsanamTourPage.jsx:530 오류(무시하고 진행)', _e); }
         } catch (galleryErr) {
           try { console.warn('[TourQuickAddModal] 갤러리 저장 실패:', galleryErr); } catch (_e) { console.warn('[bgnj] WangsanamTourPage.jsx:532 오류(무시하고 진행)', _e); }
-          setError('투어 정보는 저장됐지만 사진·신청 링크 저장에 실패했습니다. 다시 저장해 주세요.');
+          setError('투어 정보는 저장됐지만 사진·신청 설정 저장에 실패했습니다. 다시 저장해 주세요.');
           return false;
         }
       }
@@ -664,6 +665,11 @@ const TourQuickAddModal = ({ onClose, onSaved, initialTour = null }) => {
             </div>
             <p className="dim" style={{fontSize:12, marginTop:6}}>비우면 홈페이지에서 신청을 받습니다.</p>
           </div>
+          <label style={{display:'flex', alignItems:'center', gap:8}}>
+            <input type="checkbox" checked={showRemainingSeats} onChange={(e) => setShowRemainingSeats(e.target.checked)}/>
+            잔여 인원 표시
+          </label>
+          <p className="dim" style={{fontSize:12, margin:0}}>끄면 ‘실시간 확인 불가’로 표시합니다.</p>
           <details>
             <summary style={{cursor:'pointer', fontSize:13, padding:'10px 0'}}>사진 추가 (선택)</summary>
           {/* v00.235 — 사진 갤러리 편집기(포스터·대표 이미지). */}
@@ -719,6 +725,7 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
   const [agreed, setAgreed] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false); // v00.278 — 중복 신청 방지
 
+  const showRemainingSeats = window.BGNJ_TOUR_SHOW_REMAINING(tour.id);
   const rawBookingUrl = window.BGNJ_SITE_CONTENT?.get?.()?.tourPages?.[tour.id]?.bookingUrl || '';
   let externalBookingUrl = '';
   let invalidBookingUrl = false;
@@ -817,8 +824,8 @@ const TourBookingPanel = ({ tour, user, bank, myReg, seats, labelStatus, tone, f
       </div>
       <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)'}}>
         <span className="dim">잔여</span>
-        <span style={{ color: isFull ? 'var(--danger)' : 'var(--secondary)' }}>
-          {isFull ? `대기 ${seats.waitlist}명` : `${seats.remaining}석`}
+        <span className={!showRemainingSeats ? 'dim' : ''} style={{ color: !showRemainingSeats ? undefined : isFull ? 'var(--danger)' : 'var(--secondary)' }}>
+          {!showRemainingSeats ? '실시간 확인 불가' : isFull ? `대기 ${seats.waitlist}명` : `${seats.remaining}석`}
         </span>
       </div>
       <div style={{display:'flex', justifyContent:'space-between', padding:'14px 0', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)', marginBottom:18}}>

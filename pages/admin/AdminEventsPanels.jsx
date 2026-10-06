@@ -1027,9 +1027,10 @@ const TourAdminPanel = ({ go }) => {
   const [contentCover, setContentCover] = React.useState('');
   const [contentMsg, setContentMsg] = React.useState('');
   const [contentBookingUrl, setContentBookingUrl] = React.useState('');
+  const [contentShowRemaining, setContentShowRemaining] = React.useState(true);
   const [basicBaseline, setBasicBaseline] = React.useState('');
   const [contentBaseline, setContentBaseline] = React.useState('');
-  const contentSnapshot = JSON.stringify([contentSchedule, contentPrep, contentCover, contentBookingUrl]);
+  const contentSnapshot = JSON.stringify([contentSchedule, contentPrep, contentCover, contentBookingUrl, contentShowRemaining]);
   const basicDirty = editingId != null && JSON.stringify(draft) !== basicBaseline;
   const contentDirty = contentEditingId != null && contentSnapshot !== contentBaseline;
   const refresh = () => setTick((v) => v + 1);
@@ -1074,7 +1075,8 @@ const TourAdminPanel = ({ go }) => {
     // v00.081 — D1 cover_url 우선, site_content_kv legacy 폴백.
     setContentCover(t.coverUrl || ovr.coverDataUri || '');
     setContentBookingUrl(ovr.bookingUrl || '');
-    setContentBaseline(JSON.stringify([Array.isArray(ovr.schedule) ? ovr.schedule : [], Array.isArray(ovr.prep) ? ovr.prep : [], t.coverUrl || ovr.coverDataUri || '', ovr.bookingUrl || '']));
+    setContentShowRemaining(window.BGNJ_TOUR_SHOW_REMAINING(t.id));
+    setContentBaseline(JSON.stringify([Array.isArray(ovr.schedule) ? ovr.schedule : [], Array.isArray(ovr.prep) ? ovr.prep : [], t.coverUrl || ovr.coverDataUri || '', ovr.bookingUrl || '', window.BGNJ_TOUR_SHOW_REMAINING(t.id)]));
     setContentMsg('');
   };
   const cancelContentEdit = async () => {
@@ -1094,7 +1096,7 @@ const TourAdminPanel = ({ go }) => {
       // v00.081 — schedule / prep 만 site_content_kv 에. cover 는 D1 (tours.cover_url) 로 분기 저장.
       // 기존 site_content_kv.tourPages[id].coverDataUri legacy 는 D1 비면 폴백으로 계속 동작.
       const next = { ...tourPages, [contentEditingId]: {
-        ...tourPages[contentEditingId], schedule: cleanS, prep: cleanP, bookingUrl,
+        ...tourPages[contentEditingId], schedule: cleanS, prep: cleanP, bookingUrl, showRemainingSeats: contentShowRemaining,
       } };
       await window.BGNJ_SITE_CONTENT.saveSection('tourPages', next);
       scheduleSaved = true;
@@ -1531,6 +1533,11 @@ const TourAdminPanel = ({ go }) => {
                       </div>
                       <p className="dim" style={{fontSize:12, marginTop:8}}>입력하면 로그인한 회원이 외부 사이트에서 신청합니다. 비우면 홈페이지 신청 폼을 사용합니다.</p>
                     </div>
+                    <label style={{display:'flex', alignItems:'center', gap:8, marginBottom:8}}>
+                      <input type="checkbox" checked={contentShowRemaining} onChange={(e) => setContentShowRemaining(e.target.checked)}/>
+                      잔여 인원 표시
+                    </label>
+                    <p className="dim" style={{fontSize:12, marginBottom:16}}>끄면 ‘실시간 확인 불가’로 표시합니다. 정원·신청 인원 계산은 유지됩니다.</p>
                     {/* 커버 이미지 */}
                     <div className="card" style={{padding:12, marginBottom:12, display:'flex', flexWrap:'wrap', gap:14, alignItems:'center'}}>
                       <div style={{width:96, height:60, flexShrink:0, border:'1px solid var(--line)', background:'var(--bg-2)', display:'grid', placeItems:'center', overflow:'hidden'}}>

@@ -12900,9 +12900,10 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
     const [contentCover, setContentCover] = React.useState("");
     const [contentMsg, setContentMsg] = React.useState("");
     const [contentBookingUrl, setContentBookingUrl] = React.useState("");
+    const [contentShowRemaining, setContentShowRemaining] = React.useState(true);
     const [basicBaseline, setBasicBaseline] = React.useState("");
     const [contentBaseline, setContentBaseline] = React.useState("");
-    const contentSnapshot = JSON.stringify([contentSchedule, contentPrep, contentCover, contentBookingUrl]);
+    const contentSnapshot = JSON.stringify([contentSchedule, contentPrep, contentCover, contentBookingUrl, contentShowRemaining]);
     const basicDirty = editingId != null && JSON.stringify(draft) !== basicBaseline;
     const contentDirty = contentEditingId != null && contentSnapshot !== contentBaseline;
     const refresh = () => setTick((v) => v + 1);
@@ -12953,7 +12954,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
       setContentPrep(Array.isArray(ovr.prep) ? ovr.prep.slice() : []);
       setContentCover(t.coverUrl || ovr.coverDataUri || "");
       setContentBookingUrl(ovr.bookingUrl || "");
-      setContentBaseline(JSON.stringify([Array.isArray(ovr.schedule) ? ovr.schedule : [], Array.isArray(ovr.prep) ? ovr.prep : [], t.coverUrl || ovr.coverDataUri || "", ovr.bookingUrl || ""]));
+      setContentShowRemaining(window.BGNJ_TOUR_SHOW_REMAINING(t.id));
+      setContentBaseline(JSON.stringify([Array.isArray(ovr.schedule) ? ovr.schedule : [], Array.isArray(ovr.prep) ? ovr.prep : [], t.coverUrl || ovr.coverDataUri || "", ovr.bookingUrl || "", window.BGNJ_TOUR_SHOW_REMAINING(t.id)]));
       setContentMsg("");
     };
     const cancelContentEdit = async () => {
@@ -12979,7 +12981,8 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           ...tourPages[contentEditingId],
           schedule: cleanS,
           prep: cleanP,
-          bookingUrl
+          bookingUrl,
+          showRemainingSeats: contentShowRemaining
         } };
         await window.BGNJ_SITE_CONTENT.saveSection("tourPages", next);
         scheduleSaved = true;
@@ -13373,7 +13376,7 @@ PNG \uB294 JPG \uB85C \uBC14\uB01D\uB2C8\uB2E4.` : ""),
           placeholder: "https://\u2026",
           onChange: (e) => setContentBookingUrl(e.target.value)
         }
-      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: !contentBookingUrl, onClick: () => setContentBookingUrl("") }, "\uB9C1\uD06C \uC0AD\uC81C")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginTop: 8 } }, "\uC785\uB825\uD558\uBA74 \uB85C\uADF8\uC778\uD55C \uD68C\uC6D0\uC774 \uC678\uBD80 \uC0AC\uC774\uD2B8\uC5D0\uC11C \uC2E0\uCCAD\uD569\uB2C8\uB2E4. \uBE44\uC6B0\uBA74 \uD648\uD398\uC774\uC9C0 \uC2E0\uCCAD \uD3FC\uC744 \uC0AC\uC6A9\uD569\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 12, marginBottom: 12, display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 96, height: 60, flexShrink: 0, border: "1px solid var(--line)", background: "var(--bg-2)", display: "grid", placeItems: "center", overflow: "hidden" } }, contentCover ? /* @__PURE__ */ React.createElement("img", { src: contentCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 3 } }, "\uCEE4\uBC84 \uC774\uBBF8\uC9C0"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", onChange: onPickContentCover, style: { display: "none" } })), contentCover && /* @__PURE__ */ React.createElement(
+      ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-small", disabled: !contentBookingUrl, onClick: () => setContentBookingUrl("") }, "\uB9C1\uD06C \uC0AD\uC81C")), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginTop: 8 } }, "\uC785\uB825\uD558\uBA74 \uB85C\uADF8\uC778\uD55C \uD68C\uC6D0\uC774 \uC678\uBD80 \uC0AC\uC774\uD2B8\uC5D0\uC11C \uC2E0\uCCAD\uD569\uB2C8\uB2E4. \uBE44\uC6B0\uBA74 \uD648\uD398\uC774\uC9C0 \uC2E0\uCCAD \uD3FC\uC744 \uC0AC\uC6A9\uD569\uB2C8\uB2E4.")), /* @__PURE__ */ React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 8 } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: contentShowRemaining, onChange: (e) => setContentShowRemaining(e.target.checked) }), "\uC794\uC5EC \uC778\uC6D0 \uD45C\uC2DC"), /* @__PURE__ */ React.createElement("p", { className: "dim", style: { fontSize: 12, marginBottom: 16 } }, "\uB044\uBA74 \u2018\uC2E4\uC2DC\uAC04 \uD655\uC778 \uBD88\uAC00\u2019\uB85C \uD45C\uC2DC\uD569\uB2C8\uB2E4. \uC815\uC6D0\xB7\uC2E0\uCCAD \uC778\uC6D0 \uACC4\uC0B0\uC740 \uC720\uC9C0\uB429\uB2C8\uB2E4."), /* @__PURE__ */ React.createElement("div", { className: "card", style: { padding: 12, marginBottom: 12, display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 96, height: 60, flexShrink: 0, border: "1px solid var(--line)", background: "var(--bg-2)", display: "grid", placeItems: "center", overflow: "hidden" } }, contentCover ? /* @__PURE__ */ React.createElement("img", { src: contentCover, alt: "", style: { width: "100%", height: "100%", objectFit: "cover" } }) : /* @__PURE__ */ React.createElement("span", { className: "dim-2 mono", style: { fontSize: 9, letterSpacing: "0.18em" } }, "NONE")), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { className: "mono dim-2", style: { fontSize: 10, letterSpacing: "0.18em", marginBottom: 3 } }, "\uCEE4\uBC84 \uC774\uBBF8\uC9C0"), /* @__PURE__ */ React.createElement("div", { className: "dim-2", style: { fontSize: 11, lineHeight: 1.5 } }, "1600\xD71000 \uAD8C\uC7A5 \xB7 1.5MB \uC774\uD558 \xB7 \uBE44\uC6B0\uBA74 placeholder.")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6 } }, /* @__PURE__ */ React.createElement("label", { className: "btn btn-small", style: { cursor: "pointer" } }, "\uC5C5\uB85C\uB4DC", /* @__PURE__ */ React.createElement("input", { type: "file", accept: "image/*,.heic,.heif", onChange: onPickContentCover, style: { display: "none" } })), contentCover && /* @__PURE__ */ React.createElement(
         "button",
         {
           type: "button",

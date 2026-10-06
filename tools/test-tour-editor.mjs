@@ -47,7 +47,10 @@ if (process.argv.includes('--serve')) {
   assert.equal(w.testCalls.length,0,'등록 취소 시 저장 금지');
   tree=render(w.TourTest.TourAdminPanel);
   await nodes(tree).find(n=>n.type?.name==='EventListRow').props.onOpen();tree=render(w.TourTest.TourAdminPanel);
+  nodes(tree).find(n=>n.type==='input'&&n.props.checked===true&&n.props.type==='checkbox').props.onChange({target:{checked:false}});
+  tree=render(w.TourTest.TourAdminPanel);
   await button(tree,'일정·신청 설정 저장').props.onClick();
+  assert.equal(w.testContent.tourPages.existing.showRemainingSeats,false);
   assert.equal(w.testContent.tourPages.existing.images[0].url,'/poster.jpg');
   assert.equal(w.testContent.tourPages.existing.photos[0].url,'/photo.jpg');
   assert.equal(w.testContent.tourPages.existing.templateId,'keep');
@@ -67,6 +70,14 @@ if (process.argv.includes('--serve')) {
   // 비로그인/외부/내부/잘못된 링크 분기와 저장 실패 시 이동 차단.
   const bookingProps = {tour:w.testTours[0],user:null,seats:{remaining:22,waitlist:0},formatPrice:n=>`${n}원`,onRefresh(){}};
   state=[];tree=render(w.TourBookingPanel,bookingProps);
+  assert.ok(text(tree).includes('실시간 확인 불가'));
+  assert.ok(!text(tree).includes('22석'));
+  state=[];tree=render(w.TourBookingPanel,{...bookingProps,seats:{remaining:0,waitlist:7}});
+  assert.ok(!text(tree).includes('대기 7명'));
+  assert.equal(w.BGNJ_TOUR_SHOW_REMAINING('tour-1791263396977'),false);
+  w.testContent.tourPages.existing.showRemainingSeats=true;
+  state=[];tree=render(w.TourBookingPanel,bookingProps);
+  assert.ok(text(tree).includes('22석'));
   assert.equal(button(tree,'답사 신청하기').props.disabled,true);
   assert.equal(button(tree,'답사 신청하기').props.style.opacity,0.45);
   w.testContent.tourPages.existing.bookingUrl='https://example.org/apply';

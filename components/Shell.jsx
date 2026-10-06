@@ -73,6 +73,13 @@ window.useUnsavedTourChanges = function useUnsavedTourChanges({ dirty, onSave, o
   return check;
 };
 
+// 무주·전주 탐방은 외부 접수 인원을 실시간 집계하지 않으므로 기본적으로 잔여를 숨긴다.
+// 관리자에서 저장한 투어별 설정이 우선한다.
+window.BGNJ_TOUR_SHOW_REMAINING = (id) => {
+  const saved = window.BGNJ_SITE_CONTENT?.get?.()?.tourPages?.[id]?.showRemainingSeats;
+  return typeof saved === 'boolean' ? saved : id !== 'tour-1791263396977';
+};
+
 // 외부 신청 주소는 HTTP(S)만 허용하고 로그인 정보가 포함된 주소는 거부한다.
 window.BGNJ_TOUR_URL = (value) => {
   if (!String(value || '').trim()) return '';
